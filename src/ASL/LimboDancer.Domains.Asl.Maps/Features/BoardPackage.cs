@@ -18,8 +18,11 @@ public sealed record BoardPackage(BoardRef Board, string Name, FeatureModel Mode
     public const string FeaturesEntry = "features.json";
     public const int FormatVersion = 1;
 
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<BoardPackage, string> Versions = new();
+
     /// <summary>The <c>BoardVersion</c>: lowercase SHA-256 hex.</summary>
-    public string Version => ComputeVersion(DefiningManifestBytes(), FeatureModelJson.Serialize(Model));
+    public string Version => Versions.GetValue(this, static package =>
+        ComputeVersion(package.DefiningManifestBytes(), FeatureModelJson.Serialize(package.Model)));
 
     public byte[] FeaturesBytes() => FeatureModelJson.Serialize(Model);
 
@@ -76,6 +79,9 @@ public sealed record BoardPackageLoad(BoardPackage? Package, IReadOnlyList<MapDi
 /// </summary>
 public sealed class BoardPackageStore(string root)
 {
+    private readonly object cacheGate = new();
+    private readonly Dictionary<string, (string Manifest, string Features, BoardPackageLoad Load)> parsed = new(StringComparer.Ordinal);
+
     public string Root { get; } = root;
 
     public string DirectoryOf(BoardRef board)
@@ -122,10 +128,21 @@ public sealed class BoardPackageStore(string root)
         try
         {
             var features = File.ReadAllBytes(featuresPath);
-            using var manifest = JsonDocument.Parse(File.ReadAllBytes(manifestPath));
+            var manifestBytes = File.ReadAllBytes(manifestPath);
+            var manifestHash = BoardPackage.Hash(manifestBytes);
+            var featuresHash = BoardPackage.Hash(features);
+            // Read and hash both files on every call. Same-size or timestamp-preserving changes are still detected.
+            lock (cacheGate)
+            {
+                if (parsed.TryGetValue(board.Value, out var cached) && cached.Manifest == manifestHash && cached.Features == featuresHash)
+                {
+                    return cached.Load;
+                }
+            }
+            using var manifest = JsonDocument.Parse(manifestBytes);
             var root = manifest.RootElement;
             var expected = root.GetProperty("entries").GetProperty(BoardPackage.FeaturesEntry).GetString();
-            if (expected != BoardPackage.Hash(features))
+            if (expected != featuresHash)
             {
                 return Failed("MAP-PKG-002", $"{board}: {BoardPackage.FeaturesEntry} does not match the hash recorded in {BoardPackage.ManifestEntry}.");
             }
@@ -136,7 +153,16 @@ public sealed class BoardPackageStore(string root)
             }
 
             var model = FeatureModelJson.Deserialize(features);
-            return new BoardPackageLoad(new BoardPackage(board, root.GetProperty("name").GetString() ?? board.Value, model), []);
+            var result = new BoardPackageLoad(new BoardPackage(board, root.GetProperty("name").GetString() ?? board.Value, model), []);
+            lock (cacheGate)
+            {
+                if (parsed.Count >= 8 && !parsed.ContainsKey(board.Value))
+                {
+                    parsed.Remove(parsed.Keys.First());
+                }
+                parsed[board.Value] = (manifestHash, featuresHash, result);
+            }
+            return result;
         }
         catch (Exception exception) when (exception is JsonException or KeyNotFoundException or InvalidOperationException or FormatException or ArgumentException)
         {

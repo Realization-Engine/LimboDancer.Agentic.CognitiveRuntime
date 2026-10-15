@@ -31,7 +31,9 @@ public sealed class ArchitectureTests
                     && !relative.StartsWith("prototypes/", StringComparison.Ordinal)
                     // The code-builders folder holds the tools that build and check the codebase (the user, 2026-10-13, reversing the
                     // early rule not to commit them). They are outside ASL authoring and runtime: no project references them.
-                    && !relative.StartsWith("code-builders/", StringComparison.Ordinal);
+                    && !relative.StartsWith("code-builders/", StringComparison.Ordinal)
+                    // The Campaign tree is outside ASL authoring and runtime (the user, 2026-10-15): it holds the Goodwood audit script.
+                    && !relative.StartsWith("src/Campaign/", StringComparison.Ordinal);
             })
             .ToArray();
         Assert.Empty(unexpectedPython);

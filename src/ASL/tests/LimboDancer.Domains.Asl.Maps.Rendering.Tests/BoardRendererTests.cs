@@ -85,6 +85,42 @@ public sealed class BoardRendererTests
     public void ExactTerrainRefillsToTheGrid() => AssertExactRefill(Synthetic.Value);
 
     [Fact]
+    public void ElevationShadingRefillsEveryCellAcrossTerrainBoundariesAndHoles()
+    {
+        var geometry = SyntheticBoard.Geometry;
+        var codes = new byte[geometry.GridWidth * geometry.GridHeight];
+        var elevations = new sbyte[codes.Length];
+        for (var x = 0; x < geometry.GridWidth; x++)
+        {
+            for (var y = 0; y < geometry.GridHeight; y++)
+            {
+                var cell = x * geometry.GridHeight + y;
+                codes[cell] = (x / 7 + y / 11) % 2 == 0 ? (byte)0 : (byte)60;
+                elevations[cell] = (sbyte)((x / 17 + y / 13) % 5 - 2);
+                if (x is > 25 and < 40 && y is > 25 and < 40)
+                {
+                    elevations[cell] = 0;
+                }
+            }
+        }
+        var grid = new TerrainGrid(geometry, codes, elevations, new bool[geometry.HexCount]);
+        var original = Synthetic.Value;
+        var input = BoardRenderInput.Create(original.Board, original.Title, grid, original.Catalog, original.Facts);
+        var drawing = XDocument.Parse(BoardRenderer.Fragment(input, BoardView.Exact, "exact-elevation"));
+        var paths = drawing.Descendants(Svg + "path").ToArray();
+        Assert.Equal(4, paths.Length);
+        foreach (var path in paths)
+        {
+            var level = sbyte.Parse(path.Attribute("data-elev")!.Value, CultureInfo.InvariantCulture);
+            var coverage = CellCoverage.Fill(ParseRings(path.Attribute("d")!.Value), geometry.GridWidth, geometry.GridHeight);
+            for (var cell = 0; cell < codes.Length; cell++)
+            {
+                Assert.Equal(elevations[cell] == level, coverage[cell]);
+            }
+        }
+    }
+
+    [Fact]
     public void HexFactsViewHasOneGroupPerHex()
     {
         var document = XDocument.Parse(BoardRenderer.Fragment(Synthetic.Value, BoardView.HexFacts, "hexfacts"));

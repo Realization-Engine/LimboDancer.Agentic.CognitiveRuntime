@@ -104,7 +104,7 @@ public sealed class ScriptedDiceTests : IDisposable
         context.Services.AddSingleton(library);
         context.Services.AddSingleton(live);
         context.Services.AddSingleton(games);
-        context.Services.AddSingleton(new GameMaps(boards, maps, new RenderCache(), library, games));
+        context.Services.AddSingleton(new GameMaps(boards, maps, library, games));
         context.UseViewport();
         context.Services.AddSingleton(new StudioLos(boards, maps, options));
         if (scripted is not null)

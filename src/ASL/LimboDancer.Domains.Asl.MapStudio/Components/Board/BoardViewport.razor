@@ -94,9 +94,13 @@
 
     /// <summary>Loads a view: the render URL base and query, its view box, its layers, and the layers shown.</summary>
     public ValueTask Load(string baseUrl, string query, object viewBox, IReadOnlyList<string> layers, IReadOnlyList<string> visible) =>
-        Send("load", baseUrl, query, viewBox, layers, visible);
+        Send("load", baseUrl, RenderQuery(query), viewBox, layers, visible);
 
-    public ValueTask ReloadLayers(string baseUrl, string query, IReadOnlyList<string> layers) => Send("reloadLayers", baseUrl, query, layers);
+    public ValueTask ReloadLayers(string baseUrl, string query, IReadOnlyList<string> layers) => Send("reloadLayers", baseUrl, RenderQuery(query), layers);
+
+    // Preserve the board/view identity for pan and zoom, but invalidate immutable SVG responses when rendering changes.
+    private static string RenderQuery(string query) =>
+        (string.IsNullOrEmpty(query) ? "?" : query + "&") + "renderer=" + BoardRenderer.RendererVersion;
 
     public ValueTask SetVisible(IReadOnlyList<string> visible) => Send("setVisible", visible);
 
@@ -107,6 +111,8 @@
 
     /// <summary>Whether the map is turned; false before the viewport exists.</summary>
     public async ValueTask<bool> IsRotated() => viewport is not null && await viewport.InvokeAsync<bool>("isRotated");
+
+    public async ValueTask<bool> HasRestoredView() => viewport is not null && await viewport.InvokeAsync<bool>("hasRestoredView");
 
     public ValueTask SetLos(string? svg) => Send("setLos", svg);
 

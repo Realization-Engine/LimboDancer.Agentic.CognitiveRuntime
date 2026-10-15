@@ -31,7 +31,7 @@ public sealed class CardEditorPageTests : IDisposable
         context.Services.AddSingleton(library);
         context.Services.AddSingleton(live);
         context.Services.AddSingleton(games);
-        context.Services.AddSingleton(new GameMaps(boards, maps, new RenderCache(), library, games));
+        context.Services.AddSingleton(new GameMaps(boards, maps, library, games));
         context.UseViewport();
         context.Services.AddSingleton(new StudioLos(boards, maps, options));
         context.Services.AddSingleton(dice);
@@ -94,7 +94,8 @@ public sealed class CardEditorPageTests : IDisposable
         // Referee, pass 22: the picker adds the counter it shows, the first of the side it names.
         var shown = editor.Find("#edit-group-1-0-pick-definition option").GetAttribute("value");
         editor.Find("#edit-group-1-0-pick-add").Click();
-        var json = JsonDocument.Parse(editor.Find("#edit-json pre").TextContent).RootElement;
+        using var editedDocument = JsonDocument.Parse(editor.Find("#edit-json pre").TextContent);
+        var json = editedDocument.RootElement;
         Assert.Equal(shown, json.GetProperty("sides")[1].GetProperty("groups")[0].GetProperty("units").EnumerateArray().Last().GetProperty("definition").GetString());
 
         // Referee, pass 22: a second copy under the same id does not overwrite the first.

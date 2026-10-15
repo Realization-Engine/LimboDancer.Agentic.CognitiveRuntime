@@ -1,0 +1,38 @@
+{
+  "runs": [
+    {
+      "seed": "00000000000000000000000000000000",
+      "startupSeconds": 1.2008008,
+      "generationSeconds": 2.1680584,
+      "generationAndOpenSeconds": 2.7295447,
+      "reloadSeconds": 2.1101483,
+      "reloadStagesMs": {
+        "decodeAndIdentity": 62.6539,
+        "compile": 74.3453,
+        "gridHash": 56.0967,
+        "deriveFacts": 646.1686,
+        "validateBoard": 64.9583,
+        "describeCells": 708.5014,
+        "loadTotal": 1613.6985,
+        "validateSetup": 21.4748,
+        "render": 368.4444
+      },
+      "generationPeakWorkingSetBytes": 233365504,
+      "reloadPeakWorkingSetBytes": 232767488,
+      "packageBytes": 693014.0,
+      "savedRequestBytes": 488512,
+      "svgBytes": 227684
+    }
+  ],
+  "notes": "Release; fresh process per generation and reload; unique package roots; OS disk cache not flushed; HTTP serialization included; browser paint excluded; process peak working set, not managed heap.",
+  "cpu": {
+    "Name": "Intel(R) Xeon(R) W-10885M CPU @ 2.40GHz",
+    "NumberOfLogicalProcessors": 16
+  },
+  "runtime": "10.0.402",
+  "os": {
+    "Caption": "Microsoft Windows 10 Pro for Workstations",
+    "TotalVisibleMemorySize": 133840972
+  },
+  "date": "2026-10-14T12:50:13.2116085Z"
+}

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.14.0",
+  "version": "1.17.0",
   "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, LATW, FT, DC, Guns, vehicles, and tanks, with Commissars and six more nationalities, for the reviewed Scenario A1 cases and the scenario cards",
   "publication": "published",
   "vocabulary": [
@@ -12,9 +12,9 @@
       "id": "asl-counter-sheets:scenario-a1",
       "status": "reviewed",
       "record": "docs/ASL/SourceRegistry/CounterSheets/asl-counter-sheets.scenario-a1.source-record.json",
-      "recordSha256": "c39d54816ad21acf34c83e10dec4781c5223f90f849ff8bef604674e409e5942",
+      "recordSha256": "5ece6c950df3c63fb306019f63d84c3caea5f1936158505cf655028206d1cdf3",
       "transcription": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
-      "transcriptionSha256": "3d48d26d05137238ddfef6be80da0ab6a8a73edf80cc140f3b8acd8773a84d50",
+      "transcriptionSha256": "21637b3a3d18cad02a60f47e0b2dbcaf4f3707d55d9cc214b9c86353f7503fcf",
       "transcriber": "Claude (claude-opus-5-5)",
       "reviewer": "Dennis Landi"
     }
@@ -16299,6 +16299,4346 @@
           "trait": "asl:self-rally",
           "present": true,
           "row": 2453
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-81mm-mortar",
+      "kind": "asl:gun",
+      "kindRow": 2454,
+      "nationality": "german",
+      "nationalityRow": 2455,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-81mm-mortar"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2456
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "81 mm mortar (game default)",
+          "row": 2457
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "mtr",
+          "row": 2458
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 81,
+          "row": 2459
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "star",
+          "row": 2460
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 2461
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "printed": false,
+          "row": 2462
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2463
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "value": 3,
+          "row": 2464
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 60,
+          "row": 2465
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2466
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 11,
+          "row": 2467
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "value": "small",
+          "row": 2468
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": true,
+          "row": 2469
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2470
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": true,
+          "row": 2471
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": true,
+          "row": 2472
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2473
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2474
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 30,
+          "row": 2475
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "39-45",
+          "row": 2476
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2477
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2478
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "value": 6,
+          "row": 2479
+        }
+      ]
+    },
+    {
+      "id": "campaign-british-25pdr",
+      "kind": "asl:gun",
+      "kindRow": 2480,
+      "nationality": "british",
+      "nationalityRow": 2481,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-british-25pdr"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2482
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "25-pounder gun-howitzer (game default)",
+          "row": 2483
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "art",
+          "row": 2484
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 88,
+          "row": 2485
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "printed": false,
+          "row": 2486
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 2487
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "printed": false,
+          "row": 2488
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2489
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2490
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 300,
+          "row": 2491
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2492
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 10,
+          "row": 2493
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "value": "small",
+          "row": 2494
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2495
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2496
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": true,
+          "row": 2497
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": true,
+          "row": 2498
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2499
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2500
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 40,
+          "row": 2501
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "44-45",
+          "row": 2502
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2503
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2504
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "value": 6,
+          "row": 2505
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-75mm-at",
+      "kind": "asl:gun",
+      "kindRow": 2506,
+      "nationality": "german",
+      "nationalityRow": 2507,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-75mm-at"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2508
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "75 mm anti-tank gun (game default)",
+          "row": 2509
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "at",
+          "row": 2510
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 75,
+          "row": 2511
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "l",
+          "row": 2512
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 2513
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "printed": false,
+          "row": 2514
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2515
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2516
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 160,
+          "row": 2517
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2518
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 10,
+          "row": 2519
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "value": "small",
+          "row": 2520
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2521
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2522
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": false,
+          "row": 2523
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": true,
+          "row": 2524
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2525
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2526
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 50,
+          "row": 2527
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "44-45",
+          "row": 2528
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2529
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2530
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "value": 6,
+          "row": 2531
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-88mm-at",
+      "kind": "asl:gun",
+      "kindRow": 2532,
+      "nationality": "german",
+      "nationalityRow": 2533,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-88mm-at"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2534
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "88 mm anti-tank gun (game default)",
+          "row": 2535
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "at",
+          "row": 2536
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 88,
+          "row": 2537
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "l",
+          "row": 2538
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 2539
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "printed": false,
+          "row": 2540
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2541
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2542
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 200,
+          "row": 2543
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2544
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 8,
+          "row": 2545
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "value": "large",
+          "row": 2546
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2547
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2548
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": true,
+          "row": 2549
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": false,
+          "row": 2550
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2551
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2552
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 65,
+          "row": 2553
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "44-45",
+          "row": 2554
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2555
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2556
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "value": 6,
+          "row": 2557
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-20mm-aa",
+      "kind": "asl:gun",
+      "kindRow": 2558,
+      "nationality": "german",
+      "nationalityRow": 2559,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-20mm-aa"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2560
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "20 mm anti-aircraft gun (game default)",
+          "row": 2561
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "aa",
+          "row": 2562
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 20,
+          "row": 2563
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "l",
+          "row": 2564
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 3,
+          "row": 2565
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "value": 4,
+          "row": 2566
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2567
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2568
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 100,
+          "row": 2569
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2570
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 12,
+          "row": 2571
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "value": "small",
+          "row": 2572
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2573
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2574
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": true,
+          "row": 2575
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": true,
+          "row": 2576
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2577
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2578
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 25,
+          "row": 2579
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "44-45",
+          "row": 2580
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2581
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2582
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "value": 6,
+          "row": 2583
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-quad20-aa",
+      "kind": "asl:gun",
+      "kindRow": 2584,
+      "nationality": "german",
+      "nationalityRow": 2585,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-quad20-aa"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2586
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Quadruple 20 mm anti-aircraft mount (game default)",
+          "row": 2587
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "aa",
+          "row": 2588
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 20,
+          "row": 2589
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "l",
+          "row": 2590
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 3,
+          "row": 2591
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "value": 8,
+          "row": 2592
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2593
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2594
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 100,
+          "row": 2595
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2596
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 9,
+          "row": 2597
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 2598
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2599
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2600
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": true,
+          "row": 2601
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": false,
+          "row": 2602
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2603
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2604
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 40,
+          "row": 2605
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "44-45",
+          "row": 2606
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2607
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2608
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "value": 6,
+          "row": 2609
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-nebelwerfer",
+      "kind": "asl:gun",
+      "kindRow": 2610,
+      "nationality": "german",
+      "nationalityRow": 2611,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-nebelwerfer"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2612
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "150 mm Nebelwerfer rocket launcher (game default)",
+          "row": 2613
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "art",
+          "row": 2614
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 150,
+          "row": 2615
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "star",
+          "row": 2616
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 1,
+          "row": 2617
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "printed": false,
+          "row": 2618
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2619
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2620
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 175,
+          "row": 2621
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2622
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 8,
+          "row": 2623
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "value": "large",
+          "row": 2624
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": true,
+          "row": 2625
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2626
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": false,
+          "row": 2627
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": false,
+          "row": 2628
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2629
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2630
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 45,
+          "row": 2631
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "44-45",
+          "row": 2632
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2633
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2634
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "value": 6,
+          "row": 2635
+        }
+      ]
+    },
+    {
+      "id": "campaign-british-sexton",
+      "kind": "asl:vehicle",
+      "kindRow": 2636,
+      "nationality": "british",
+      "nationalityRow": 2637,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-british-sexton"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2638
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Sexton (game default)",
+          "row": 2639
+        },
+        {
+          "face": "front",
+          "attribute": "ground-pressure",
+          "printed": false,
+          "row": 2640
+        },
+        {
+          "face": "front",
+          "attribute": "movement-type",
+          "value": "fully-tracked",
+          "row": 2641
+        },
+        {
+          "face": "front",
+          "attribute": "movement-points",
+          "value": 14,
+          "row": 2642
+        },
+        {
+          "face": "front",
+          "attribute": "amphibious-mp",
+          "printed": false,
+          "row": 2643
+        },
+        {
+          "face": "front",
+          "attribute": "af-front",
+          "value": 3,
+          "row": 2644
+        },
+        {
+          "face": "front",
+          "attribute": "af-side",
+          "value": 1,
+          "row": 2645
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-front",
+          "printed": false,
+          "row": 2646
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-side",
+          "printed": false,
+          "row": 2647
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 2648
+        },
+        {
+          "face": "front",
+          "attribute": "ma-type",
+          "value": "nt",
+          "row": 2649
+        },
+        {
+          "face": "front",
+          "attribute": "ma-weapon",
+          "printed": false,
+          "row": 2650
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 88,
+          "row": 2651
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "star",
+          "row": 2652
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 1,
+          "row": 2653
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2654
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2655
+        },
+        {
+          "face": "front",
+          "attribute": "sa-mount",
+          "printed": false,
+          "row": 2656
+        },
+        {
+          "face": "front",
+          "attribute": "sa-caliber",
+          "printed": false,
+          "row": 2657
+        },
+        {
+          "face": "front",
+          "attribute": "towing",
+          "printed": false,
+          "row": 2658
+        },
+        {
+          "face": "front",
+          "attribute": "passenger-capacity",
+          "printed": false,
+          "row": 2659
+        },
+        {
+          "face": "front",
+          "attribute": "bmg",
+          "printed": false,
+          "row": 2660
+        },
+        {
+          "face": "front",
+          "attribute": "cmg",
+          "printed": false,
+          "row": 2661
+        },
+        {
+          "face": "front",
+          "attribute": "aamg",
+          "value": 2,
+          "row": 2662
+        },
+        {
+          "face": "front",
+          "attribute": "hull-rear-mg",
+          "printed": false,
+          "row": 2663
+        },
+        {
+          "face": "front",
+          "attribute": "turret-rear-mg",
+          "printed": false,
+          "row": 2664
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-mount",
+          "printed": false,
+          "row": 2665
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-firepower",
+          "printed": false,
+          "row": 2666
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-removal",
+          "printed": false,
+          "row": 2667
+        },
+        {
+          "face": "wreck",
+          "attribute": "crew-survival",
+          "value": 5,
+          "row": 2668
+        },
+        {
+          "face": "front",
+          "trait": "asl:mechanically-unreliable",
+          "present": false,
+          "row": 2669
+        },
+        {
+          "face": "front",
+          "trait": "asl:unarmored",
+          "present": false,
+          "row": 2670
+        },
+        {
+          "face": "front",
+          "trait": "asl:partially-armored",
+          "present": false,
+          "row": 2671
+        },
+        {
+          "face": "front",
+          "trait": "asl:rear-turret-unarmored",
+          "present": false,
+          "row": 2672
+        },
+        {
+          "face": "front",
+          "trait": "asl:open-topped",
+          "present": true,
+          "row": 2673
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2674
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2675
+        },
+        {
+          "face": "front",
+          "trait": "asl:fixed-bmg",
+          "present": false,
+          "row": 2676
+        },
+        {
+          "face": "front",
+          "trait": "asl:vehicle-ft-range-2",
+          "present": false,
+          "row": 2677
+        },
+        {
+          "face": "front",
+          "trait": "asl:cs-passengers-only",
+          "present": false,
+          "row": 2678
+        }
+      ]
+    },
+    {
+      "id": "campaign-british-achilles",
+      "kind": "asl:vehicle",
+      "kindRow": 2679,
+      "nationality": "british",
+      "nationalityRow": 2680,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-british-achilles"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2681
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Achilles (game default)",
+          "row": 2682
+        },
+        {
+          "face": "front",
+          "attribute": "ground-pressure",
+          "printed": false,
+          "row": 2683
+        },
+        {
+          "face": "front",
+          "attribute": "movement-type",
+          "value": "fully-tracked",
+          "row": 2684
+        },
+        {
+          "face": "front",
+          "attribute": "movement-points",
+          "value": 16,
+          "row": 2685
+        },
+        {
+          "face": "front",
+          "attribute": "amphibious-mp",
+          "printed": false,
+          "row": 2686
+        },
+        {
+          "face": "front",
+          "attribute": "af-front",
+          "value": 4,
+          "row": 2687
+        },
+        {
+          "face": "front",
+          "attribute": "af-side",
+          "value": 2,
+          "row": 2688
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-front",
+          "printed": false,
+          "row": 2689
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-side",
+          "printed": false,
+          "row": 2690
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 2691
+        },
+        {
+          "face": "front",
+          "attribute": "ma-type",
+          "value": "st",
+          "row": 2692
+        },
+        {
+          "face": "front",
+          "attribute": "ma-weapon",
+          "printed": false,
+          "row": 2693
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 76,
+          "row": 2694
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "ll",
+          "row": 2695
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 2696
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2697
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2698
+        },
+        {
+          "face": "front",
+          "attribute": "sa-mount",
+          "printed": false,
+          "row": 2699
+        },
+        {
+          "face": "front",
+          "attribute": "sa-caliber",
+          "printed": false,
+          "row": 2700
+        },
+        {
+          "face": "front",
+          "attribute": "towing",
+          "printed": false,
+          "row": 2701
+        },
+        {
+          "face": "front",
+          "attribute": "passenger-capacity",
+          "printed": false,
+          "row": 2702
+        },
+        {
+          "face": "front",
+          "attribute": "bmg",
+          "printed": false,
+          "row": 2703
+        },
+        {
+          "face": "front",
+          "attribute": "cmg",
+          "printed": false,
+          "row": 2704
+        },
+        {
+          "face": "front",
+          "attribute": "aamg",
+          "value": 4,
+          "row": 2705
+        },
+        {
+          "face": "front",
+          "attribute": "hull-rear-mg",
+          "printed": false,
+          "row": 2706
+        },
+        {
+          "face": "front",
+          "attribute": "turret-rear-mg",
+          "printed": false,
+          "row": 2707
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-mount",
+          "printed": false,
+          "row": 2708
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-firepower",
+          "printed": false,
+          "row": 2709
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-removal",
+          "printed": false,
+          "row": 2710
+        },
+        {
+          "face": "wreck",
+          "attribute": "crew-survival",
+          "value": 5,
+          "row": 2711
+        },
+        {
+          "face": "front",
+          "trait": "asl:mechanically-unreliable",
+          "present": false,
+          "row": 2712
+        },
+        {
+          "face": "front",
+          "trait": "asl:unarmored",
+          "present": false,
+          "row": 2713
+        },
+        {
+          "face": "front",
+          "trait": "asl:partially-armored",
+          "present": false,
+          "row": 2714
+        },
+        {
+          "face": "front",
+          "trait": "asl:rear-turret-unarmored",
+          "present": false,
+          "row": 2715
+        },
+        {
+          "face": "front",
+          "trait": "asl:open-topped",
+          "present": true,
+          "row": 2716
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2717
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2718
+        },
+        {
+          "face": "front",
+          "trait": "asl:fixed-bmg",
+          "present": false,
+          "row": 2719
+        },
+        {
+          "face": "front",
+          "trait": "asl:vehicle-ft-range-2",
+          "present": false,
+          "row": 2720
+        },
+        {
+          "face": "front",
+          "trait": "asl:cs-passengers-only",
+          "present": false,
+          "row": 2721
+        }
+      ]
+    },
+    {
+      "id": "campaign-british-cromwell",
+      "kind": "asl:vehicle",
+      "kindRow": 2722,
+      "nationality": "british",
+      "nationalityRow": 2723,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-british-cromwell"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2724
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Cromwell (game default)",
+          "row": 2725
+        },
+        {
+          "face": "front",
+          "attribute": "ground-pressure",
+          "printed": false,
+          "row": 2726
+        },
+        {
+          "face": "front",
+          "attribute": "movement-type",
+          "value": "fully-tracked",
+          "row": 2727
+        },
+        {
+          "face": "front",
+          "attribute": "movement-points",
+          "value": 24,
+          "row": 2728
+        },
+        {
+          "face": "front",
+          "attribute": "amphibious-mp",
+          "printed": false,
+          "row": 2729
+        },
+        {
+          "face": "front",
+          "attribute": "af-front",
+          "value": 8,
+          "row": 2730
+        },
+        {
+          "face": "front",
+          "attribute": "af-side",
+          "value": 4,
+          "row": 2731
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-front",
+          "printed": false,
+          "row": 2732
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-side",
+          "printed": false,
+          "row": 2733
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 2734
+        },
+        {
+          "face": "front",
+          "attribute": "ma-type",
+          "value": "t",
+          "row": 2735
+        },
+        {
+          "face": "front",
+          "attribute": "ma-weapon",
+          "printed": false,
+          "row": 2736
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 75,
+          "row": 2737
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "printed": false,
+          "row": 2738
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 1,
+          "row": 2739
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2740
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2741
+        },
+        {
+          "face": "front",
+          "attribute": "sa-mount",
+          "printed": false,
+          "row": 2742
+        },
+        {
+          "face": "front",
+          "attribute": "sa-caliber",
+          "printed": false,
+          "row": 2743
+        },
+        {
+          "face": "front",
+          "attribute": "towing",
+          "printed": false,
+          "row": 2744
+        },
+        {
+          "face": "front",
+          "attribute": "passenger-capacity",
+          "printed": false,
+          "row": 2745
+        },
+        {
+          "face": "front",
+          "attribute": "bmg",
+          "value": 3,
+          "row": 2746
+        },
+        {
+          "face": "front",
+          "attribute": "cmg",
+          "value": 5,
+          "row": 2747
+        },
+        {
+          "face": "front",
+          "attribute": "aamg",
+          "printed": false,
+          "row": 2748
+        },
+        {
+          "face": "front",
+          "attribute": "hull-rear-mg",
+          "printed": false,
+          "row": 2749
+        },
+        {
+          "face": "front",
+          "attribute": "turret-rear-mg",
+          "printed": false,
+          "row": 2750
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-mount",
+          "printed": false,
+          "row": 2751
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-firepower",
+          "printed": false,
+          "row": 2752
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-removal",
+          "printed": false,
+          "row": 2753
+        },
+        {
+          "face": "wreck",
+          "attribute": "crew-survival",
+          "value": 6,
+          "row": 2754
+        },
+        {
+          "face": "front",
+          "trait": "asl:mechanically-unreliable",
+          "present": false,
+          "row": 2755
+        },
+        {
+          "face": "front",
+          "trait": "asl:unarmored",
+          "present": false,
+          "row": 2756
+        },
+        {
+          "face": "front",
+          "trait": "asl:partially-armored",
+          "present": false,
+          "row": 2757
+        },
+        {
+          "face": "front",
+          "trait": "asl:rear-turret-unarmored",
+          "present": false,
+          "row": 2758
+        },
+        {
+          "face": "front",
+          "trait": "asl:open-topped",
+          "present": false,
+          "row": 2759
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2760
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2761
+        },
+        {
+          "face": "front",
+          "trait": "asl:fixed-bmg",
+          "present": false,
+          "row": 2762
+        },
+        {
+          "face": "front",
+          "trait": "asl:vehicle-ft-range-2",
+          "present": false,
+          "row": 2763
+        },
+        {
+          "face": "front",
+          "trait": "asl:cs-passengers-only",
+          "present": false,
+          "row": 2764
+        }
+      ]
+    },
+    {
+      "id": "campaign-british-sherman75",
+      "kind": "asl:vehicle",
+      "kindRow": 2765,
+      "nationality": "british",
+      "nationalityRow": 2766,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-british-sherman75"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2767
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Sherman 75 (game default)",
+          "row": 2768
+        },
+        {
+          "face": "front",
+          "attribute": "ground-pressure",
+          "printed": false,
+          "row": 2769
+        },
+        {
+          "face": "front",
+          "attribute": "movement-type",
+          "value": "fully-tracked",
+          "row": 2770
+        },
+        {
+          "face": "front",
+          "attribute": "movement-points",
+          "value": 15,
+          "row": 2771
+        },
+        {
+          "face": "front",
+          "attribute": "amphibious-mp",
+          "printed": false,
+          "row": 2772
+        },
+        {
+          "face": "front",
+          "attribute": "af-front",
+          "value": 8,
+          "row": 2773
+        },
+        {
+          "face": "front",
+          "attribute": "af-side",
+          "value": 4,
+          "row": 2774
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-front",
+          "printed": false,
+          "row": 2775
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-side",
+          "printed": false,
+          "row": 2776
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 2777
+        },
+        {
+          "face": "front",
+          "attribute": "ma-type",
+          "value": "t",
+          "row": 2778
+        },
+        {
+          "face": "front",
+          "attribute": "ma-weapon",
+          "printed": false,
+          "row": 2779
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 75,
+          "row": 2780
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "printed": false,
+          "row": 2781
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 1,
+          "row": 2782
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2783
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2784
+        },
+        {
+          "face": "front",
+          "attribute": "sa-mount",
+          "printed": false,
+          "row": 2785
+        },
+        {
+          "face": "front",
+          "attribute": "sa-caliber",
+          "printed": false,
+          "row": 2786
+        },
+        {
+          "face": "front",
+          "attribute": "towing",
+          "printed": false,
+          "row": 2787
+        },
+        {
+          "face": "front",
+          "attribute": "passenger-capacity",
+          "printed": false,
+          "row": 2788
+        },
+        {
+          "face": "front",
+          "attribute": "bmg",
+          "value": 3,
+          "row": 2789
+        },
+        {
+          "face": "front",
+          "attribute": "cmg",
+          "value": 5,
+          "row": 2790
+        },
+        {
+          "face": "front",
+          "attribute": "aamg",
+          "printed": false,
+          "row": 2791
+        },
+        {
+          "face": "front",
+          "attribute": "hull-rear-mg",
+          "printed": false,
+          "row": 2792
+        },
+        {
+          "face": "front",
+          "attribute": "turret-rear-mg",
+          "printed": false,
+          "row": 2793
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-mount",
+          "printed": false,
+          "row": 2794
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-firepower",
+          "printed": false,
+          "row": 2795
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-removal",
+          "printed": false,
+          "row": 2796
+        },
+        {
+          "face": "wreck",
+          "attribute": "crew-survival",
+          "value": 6,
+          "row": 2797
+        },
+        {
+          "face": "front",
+          "trait": "asl:mechanically-unreliable",
+          "present": false,
+          "row": 2798
+        },
+        {
+          "face": "front",
+          "trait": "asl:unarmored",
+          "present": false,
+          "row": 2799
+        },
+        {
+          "face": "front",
+          "trait": "asl:partially-armored",
+          "present": false,
+          "row": 2800
+        },
+        {
+          "face": "front",
+          "trait": "asl:rear-turret-unarmored",
+          "present": false,
+          "row": 2801
+        },
+        {
+          "face": "front",
+          "trait": "asl:open-topped",
+          "present": false,
+          "row": 2802
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2803
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2804
+        },
+        {
+          "face": "front",
+          "trait": "asl:fixed-bmg",
+          "present": false,
+          "row": 2805
+        },
+        {
+          "face": "front",
+          "trait": "asl:vehicle-ft-range-2",
+          "present": false,
+          "row": 2806
+        },
+        {
+          "face": "front",
+          "trait": "asl:cs-passengers-only",
+          "present": false,
+          "row": 2807
+        }
+      ]
+    },
+    {
+      "id": "campaign-british-firefly",
+      "kind": "asl:vehicle",
+      "kindRow": 2808,
+      "nationality": "british",
+      "nationalityRow": 2809,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-british-firefly"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2810
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Sherman Firefly (game default)",
+          "row": 2811
+        },
+        {
+          "face": "front",
+          "attribute": "ground-pressure",
+          "printed": false,
+          "row": 2812
+        },
+        {
+          "face": "front",
+          "attribute": "movement-type",
+          "value": "fully-tracked",
+          "row": 2813
+        },
+        {
+          "face": "front",
+          "attribute": "movement-points",
+          "value": 14,
+          "row": 2814
+        },
+        {
+          "face": "front",
+          "attribute": "amphibious-mp",
+          "printed": false,
+          "row": 2815
+        },
+        {
+          "face": "front",
+          "attribute": "af-front",
+          "value": 8,
+          "row": 2816
+        },
+        {
+          "face": "front",
+          "attribute": "af-side",
+          "value": 4,
+          "row": 2817
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-front",
+          "printed": false,
+          "row": 2818
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-side",
+          "printed": false,
+          "row": 2819
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 2820
+        },
+        {
+          "face": "front",
+          "attribute": "ma-type",
+          "value": "st",
+          "row": 2821
+        },
+        {
+          "face": "front",
+          "attribute": "ma-weapon",
+          "printed": false,
+          "row": 2822
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 76,
+          "row": 2823
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "ll",
+          "row": 2824
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 2825
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2826
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2827
+        },
+        {
+          "face": "front",
+          "attribute": "sa-mount",
+          "printed": false,
+          "row": 2828
+        },
+        {
+          "face": "front",
+          "attribute": "sa-caliber",
+          "printed": false,
+          "row": 2829
+        },
+        {
+          "face": "front",
+          "attribute": "towing",
+          "printed": false,
+          "row": 2830
+        },
+        {
+          "face": "front",
+          "attribute": "passenger-capacity",
+          "printed": false,
+          "row": 2831
+        },
+        {
+          "face": "front",
+          "attribute": "bmg",
+          "printed": false,
+          "row": 2832
+        },
+        {
+          "face": "front",
+          "attribute": "cmg",
+          "value": 5,
+          "row": 2833
+        },
+        {
+          "face": "front",
+          "attribute": "aamg",
+          "printed": false,
+          "row": 2834
+        },
+        {
+          "face": "front",
+          "attribute": "hull-rear-mg",
+          "printed": false,
+          "row": 2835
+        },
+        {
+          "face": "front",
+          "attribute": "turret-rear-mg",
+          "printed": false,
+          "row": 2836
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-mount",
+          "printed": false,
+          "row": 2837
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-firepower",
+          "printed": false,
+          "row": 2838
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-removal",
+          "printed": false,
+          "row": 2839
+        },
+        {
+          "face": "wreck",
+          "attribute": "crew-survival",
+          "value": 6,
+          "row": 2840
+        },
+        {
+          "face": "front",
+          "trait": "asl:mechanically-unreliable",
+          "present": false,
+          "row": 2841
+        },
+        {
+          "face": "front",
+          "trait": "asl:unarmored",
+          "present": false,
+          "row": 2842
+        },
+        {
+          "face": "front",
+          "trait": "asl:partially-armored",
+          "present": false,
+          "row": 2843
+        },
+        {
+          "face": "front",
+          "trait": "asl:rear-turret-unarmored",
+          "present": false,
+          "row": 2844
+        },
+        {
+          "face": "front",
+          "trait": "asl:open-topped",
+          "present": false,
+          "row": 2845
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2846
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2847
+        },
+        {
+          "face": "front",
+          "trait": "asl:fixed-bmg",
+          "present": false,
+          "row": 2848
+        },
+        {
+          "face": "front",
+          "trait": "asl:vehicle-ft-range-2",
+          "present": false,
+          "row": 2849
+        },
+        {
+          "face": "front",
+          "trait": "asl:cs-passengers-only",
+          "present": false,
+          "row": 2850
+        }
+      ]
+    },
+    {
+      "id": "campaign-british-bren-carrier",
+      "kind": "asl:vehicle",
+      "kindRow": 2851,
+      "nationality": "british",
+      "nationalityRow": 2852,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-british-bren-carrier"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2853
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Bren carrier (game default)",
+          "row": 2854
+        },
+        {
+          "face": "front",
+          "attribute": "ground-pressure",
+          "printed": false,
+          "row": 2855
+        },
+        {
+          "face": "front",
+          "attribute": "movement-type",
+          "value": "fully-tracked",
+          "row": 2856
+        },
+        {
+          "face": "front",
+          "attribute": "movement-points",
+          "value": 18,
+          "row": 2857
+        },
+        {
+          "face": "front",
+          "attribute": "amphibious-mp",
+          "printed": false,
+          "row": 2858
+        },
+        {
+          "face": "front",
+          "attribute": "af-front",
+          "value": 1,
+          "row": 2859
+        },
+        {
+          "face": "front",
+          "attribute": "af-side",
+          "value": 1,
+          "row": 2860
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-front",
+          "printed": false,
+          "row": 2861
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-side",
+          "printed": false,
+          "row": 2862
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 2863
+        },
+        {
+          "face": "front",
+          "attribute": "ma-type",
+          "printed": false,
+          "row": 2864
+        },
+        {
+          "face": "front",
+          "attribute": "ma-weapon",
+          "value": "mg",
+          "row": 2865
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "printed": false,
+          "row": 2866
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "printed": false,
+          "row": 2867
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 1,
+          "row": 2868
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2869
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2870
+        },
+        {
+          "face": "front",
+          "attribute": "sa-mount",
+          "printed": false,
+          "row": 2871
+        },
+        {
+          "face": "front",
+          "attribute": "sa-caliber",
+          "printed": false,
+          "row": 2872
+        },
+        {
+          "face": "front",
+          "attribute": "towing",
+          "printed": false,
+          "row": 2873
+        },
+        {
+          "face": "front",
+          "attribute": "passenger-capacity",
+          "value": 5,
+          "row": 2874
+        },
+        {
+          "face": "front",
+          "attribute": "bmg",
+          "value": 2,
+          "row": 2875
+        },
+        {
+          "face": "front",
+          "attribute": "cmg",
+          "printed": false,
+          "row": 2876
+        },
+        {
+          "face": "front",
+          "attribute": "aamg",
+          "printed": false,
+          "row": 2877
+        },
+        {
+          "face": "front",
+          "attribute": "hull-rear-mg",
+          "printed": false,
+          "row": 2878
+        },
+        {
+          "face": "front",
+          "attribute": "turret-rear-mg",
+          "printed": false,
+          "row": 2879
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-mount",
+          "printed": false,
+          "row": 2880
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-firepower",
+          "printed": false,
+          "row": 2881
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-removal",
+          "printed": false,
+          "row": 2882
+        },
+        {
+          "face": "wreck",
+          "attribute": "crew-survival",
+          "value": 5,
+          "row": 2883
+        },
+        {
+          "face": "front",
+          "trait": "asl:mechanically-unreliable",
+          "present": false,
+          "row": 2884
+        },
+        {
+          "face": "front",
+          "trait": "asl:unarmored",
+          "present": false,
+          "row": 2885
+        },
+        {
+          "face": "front",
+          "trait": "asl:partially-armored",
+          "present": false,
+          "row": 2886
+        },
+        {
+          "face": "front",
+          "trait": "asl:rear-turret-unarmored",
+          "present": false,
+          "row": 2887
+        },
+        {
+          "face": "front",
+          "trait": "asl:open-topped",
+          "present": true,
+          "row": 2888
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2889
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2890
+        },
+        {
+          "face": "front",
+          "trait": "asl:fixed-bmg",
+          "present": false,
+          "row": 2891
+        },
+        {
+          "face": "front",
+          "trait": "asl:vehicle-ft-range-2",
+          "present": false,
+          "row": 2892
+        },
+        {
+          "face": "front",
+          "trait": "asl:cs-passengers-only",
+          "present": false,
+          "row": 2893
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-wespe",
+      "kind": "asl:vehicle",
+      "kindRow": 2894,
+      "nationality": "german",
+      "nationalityRow": 2895,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-wespe"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2896
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Wespe (game default)",
+          "row": 2897
+        },
+        {
+          "face": "front",
+          "attribute": "ground-pressure",
+          "printed": false,
+          "row": 2898
+        },
+        {
+          "face": "front",
+          "attribute": "movement-type",
+          "value": "fully-tracked",
+          "row": 2899
+        },
+        {
+          "face": "front",
+          "attribute": "movement-points",
+          "value": 14,
+          "row": 2900
+        },
+        {
+          "face": "front",
+          "attribute": "amphibious-mp",
+          "printed": false,
+          "row": 2901
+        },
+        {
+          "face": "front",
+          "attribute": "af-front",
+          "value": 2,
+          "row": 2902
+        },
+        {
+          "face": "front",
+          "attribute": "af-side",
+          "value": 1,
+          "row": 2903
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-front",
+          "printed": false,
+          "row": 2904
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-side",
+          "printed": false,
+          "row": 2905
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 2906
+        },
+        {
+          "face": "front",
+          "attribute": "ma-type",
+          "value": "nt",
+          "row": 2907
+        },
+        {
+          "face": "front",
+          "attribute": "ma-weapon",
+          "printed": false,
+          "row": 2908
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 105,
+          "row": 2909
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "star",
+          "row": 2910
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 1,
+          "row": 2911
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2912
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2913
+        },
+        {
+          "face": "front",
+          "attribute": "sa-mount",
+          "printed": false,
+          "row": 2914
+        },
+        {
+          "face": "front",
+          "attribute": "sa-caliber",
+          "printed": false,
+          "row": 2915
+        },
+        {
+          "face": "front",
+          "attribute": "towing",
+          "printed": false,
+          "row": 2916
+        },
+        {
+          "face": "front",
+          "attribute": "passenger-capacity",
+          "printed": false,
+          "row": 2917
+        },
+        {
+          "face": "front",
+          "attribute": "bmg",
+          "printed": false,
+          "row": 2918
+        },
+        {
+          "face": "front",
+          "attribute": "cmg",
+          "printed": false,
+          "row": 2919
+        },
+        {
+          "face": "front",
+          "attribute": "aamg",
+          "value": 2,
+          "row": 2920
+        },
+        {
+          "face": "front",
+          "attribute": "hull-rear-mg",
+          "printed": false,
+          "row": 2921
+        },
+        {
+          "face": "front",
+          "attribute": "turret-rear-mg",
+          "printed": false,
+          "row": 2922
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-mount",
+          "printed": false,
+          "row": 2923
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-firepower",
+          "printed": false,
+          "row": 2924
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-removal",
+          "printed": false,
+          "row": 2925
+        },
+        {
+          "face": "wreck",
+          "attribute": "crew-survival",
+          "value": 5,
+          "row": 2926
+        },
+        {
+          "face": "front",
+          "trait": "asl:mechanically-unreliable",
+          "present": false,
+          "row": 2927
+        },
+        {
+          "face": "front",
+          "trait": "asl:unarmored",
+          "present": false,
+          "row": 2928
+        },
+        {
+          "face": "front",
+          "trait": "asl:partially-armored",
+          "present": false,
+          "row": 2929
+        },
+        {
+          "face": "front",
+          "trait": "asl:rear-turret-unarmored",
+          "present": false,
+          "row": 2930
+        },
+        {
+          "face": "front",
+          "trait": "asl:open-topped",
+          "present": true,
+          "row": 2931
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2932
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2933
+        },
+        {
+          "face": "front",
+          "trait": "asl:fixed-bmg",
+          "present": false,
+          "row": 2934
+        },
+        {
+          "face": "front",
+          "trait": "asl:vehicle-ft-range-2",
+          "present": false,
+          "row": 2935
+        },
+        {
+          "face": "front",
+          "trait": "asl:cs-passengers-only",
+          "present": false,
+          "row": 2936
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-maultier",
+      "kind": "asl:vehicle",
+      "kindRow": 2937,
+      "nationality": "german",
+      "nationalityRow": 2938,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-maultier"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2939
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Maultier rocket launcher (game default)",
+          "row": 2940
+        },
+        {
+          "face": "front",
+          "attribute": "ground-pressure",
+          "printed": false,
+          "row": 2941
+        },
+        {
+          "face": "front",
+          "attribute": "movement-type",
+          "value": "half-tracked",
+          "row": 2942
+        },
+        {
+          "face": "front",
+          "attribute": "movement-points",
+          "value": 12,
+          "row": 2943
+        },
+        {
+          "face": "front",
+          "attribute": "amphibious-mp",
+          "printed": false,
+          "row": 2944
+        },
+        {
+          "face": "front",
+          "attribute": "af-front",
+          "value": 1,
+          "row": 2945
+        },
+        {
+          "face": "front",
+          "attribute": "af-side",
+          "value": 1,
+          "row": 2946
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-front",
+          "printed": false,
+          "row": 2947
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-side",
+          "printed": false,
+          "row": 2948
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 2949
+        },
+        {
+          "face": "front",
+          "attribute": "ma-type",
+          "value": "nt",
+          "row": 2950
+        },
+        {
+          "face": "front",
+          "attribute": "ma-weapon",
+          "printed": false,
+          "row": 2951
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 150,
+          "row": 2952
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "star",
+          "row": 2953
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 1,
+          "row": 2954
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2955
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2956
+        },
+        {
+          "face": "front",
+          "attribute": "sa-mount",
+          "printed": false,
+          "row": 2957
+        },
+        {
+          "face": "front",
+          "attribute": "sa-caliber",
+          "printed": false,
+          "row": 2958
+        },
+        {
+          "face": "front",
+          "attribute": "towing",
+          "printed": false,
+          "row": 2959
+        },
+        {
+          "face": "front",
+          "attribute": "passenger-capacity",
+          "printed": false,
+          "row": 2960
+        },
+        {
+          "face": "front",
+          "attribute": "bmg",
+          "printed": false,
+          "row": 2961
+        },
+        {
+          "face": "front",
+          "attribute": "cmg",
+          "printed": false,
+          "row": 2962
+        },
+        {
+          "face": "front",
+          "attribute": "aamg",
+          "printed": false,
+          "row": 2963
+        },
+        {
+          "face": "front",
+          "attribute": "hull-rear-mg",
+          "printed": false,
+          "row": 2964
+        },
+        {
+          "face": "front",
+          "attribute": "turret-rear-mg",
+          "printed": false,
+          "row": 2965
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-mount",
+          "printed": false,
+          "row": 2966
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-firepower",
+          "printed": false,
+          "row": 2967
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-removal",
+          "printed": false,
+          "row": 2968
+        },
+        {
+          "face": "wreck",
+          "attribute": "crew-survival",
+          "value": 5,
+          "row": 2969
+        },
+        {
+          "face": "front",
+          "trait": "asl:mechanically-unreliable",
+          "present": false,
+          "row": 2970
+        },
+        {
+          "face": "front",
+          "trait": "asl:unarmored",
+          "present": false,
+          "row": 2971
+        },
+        {
+          "face": "front",
+          "trait": "asl:partially-armored",
+          "present": false,
+          "row": 2972
+        },
+        {
+          "face": "front",
+          "trait": "asl:rear-turret-unarmored",
+          "present": false,
+          "row": 2973
+        },
+        {
+          "face": "front",
+          "trait": "asl:open-topped",
+          "present": true,
+          "row": 2974
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": true,
+          "row": 2975
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2976
+        },
+        {
+          "face": "front",
+          "trait": "asl:fixed-bmg",
+          "present": false,
+          "row": 2977
+        },
+        {
+          "face": "front",
+          "trait": "asl:vehicle-ft-range-2",
+          "present": false,
+          "row": 2978
+        },
+        {
+          "face": "front",
+          "trait": "asl:cs-passengers-only",
+          "present": false,
+          "row": 2979
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-hummel",
+      "kind": "asl:vehicle",
+      "kindRow": 2980,
+      "nationality": "german",
+      "nationalityRow": 2981,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-hummel"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2982
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Hummel (game default)",
+          "row": 2983
+        },
+        {
+          "face": "front",
+          "attribute": "ground-pressure",
+          "printed": false,
+          "row": 2984
+        },
+        {
+          "face": "front",
+          "attribute": "movement-type",
+          "value": "fully-tracked",
+          "row": 2985
+        },
+        {
+          "face": "front",
+          "attribute": "movement-points",
+          "value": 14,
+          "row": 2986
+        },
+        {
+          "face": "front",
+          "attribute": "amphibious-mp",
+          "printed": false,
+          "row": 2987
+        },
+        {
+          "face": "front",
+          "attribute": "af-front",
+          "value": 2,
+          "row": 2988
+        },
+        {
+          "face": "front",
+          "attribute": "af-side",
+          "value": 1,
+          "row": 2989
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-front",
+          "printed": false,
+          "row": 2990
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-side",
+          "printed": false,
+          "row": 2991
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 2992
+        },
+        {
+          "face": "front",
+          "attribute": "ma-type",
+          "value": "nt",
+          "row": 2993
+        },
+        {
+          "face": "front",
+          "attribute": "ma-weapon",
+          "printed": false,
+          "row": 2994
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 150,
+          "row": 2995
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "star",
+          "row": 2996
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 1,
+          "row": 2997
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2998
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2999
+        },
+        {
+          "face": "front",
+          "attribute": "sa-mount",
+          "printed": false,
+          "row": 3000
+        },
+        {
+          "face": "front",
+          "attribute": "sa-caliber",
+          "printed": false,
+          "row": 3001
+        },
+        {
+          "face": "front",
+          "attribute": "towing",
+          "printed": false,
+          "row": 3002
+        },
+        {
+          "face": "front",
+          "attribute": "passenger-capacity",
+          "printed": false,
+          "row": 3003
+        },
+        {
+          "face": "front",
+          "attribute": "bmg",
+          "printed": false,
+          "row": 3004
+        },
+        {
+          "face": "front",
+          "attribute": "cmg",
+          "printed": false,
+          "row": 3005
+        },
+        {
+          "face": "front",
+          "attribute": "aamg",
+          "value": 2,
+          "row": 3006
+        },
+        {
+          "face": "front",
+          "attribute": "hull-rear-mg",
+          "printed": false,
+          "row": 3007
+        },
+        {
+          "face": "front",
+          "attribute": "turret-rear-mg",
+          "printed": false,
+          "row": 3008
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-mount",
+          "printed": false,
+          "row": 3009
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-firepower",
+          "printed": false,
+          "row": 3010
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-removal",
+          "printed": false,
+          "row": 3011
+        },
+        {
+          "face": "wreck",
+          "attribute": "crew-survival",
+          "value": 5,
+          "row": 3012
+        },
+        {
+          "face": "front",
+          "trait": "asl:mechanically-unreliable",
+          "present": false,
+          "row": 3013
+        },
+        {
+          "face": "front",
+          "trait": "asl:unarmored",
+          "present": false,
+          "row": 3014
+        },
+        {
+          "face": "front",
+          "trait": "asl:partially-armored",
+          "present": false,
+          "row": 3015
+        },
+        {
+          "face": "front",
+          "trait": "asl:rear-turret-unarmored",
+          "present": false,
+          "row": 3016
+        },
+        {
+          "face": "front",
+          "trait": "asl:open-topped",
+          "present": true,
+          "row": 3017
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": true,
+          "row": 3018
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 3019
+        },
+        {
+          "face": "front",
+          "trait": "asl:fixed-bmg",
+          "present": false,
+          "row": 3020
+        },
+        {
+          "face": "front",
+          "trait": "asl:vehicle-ft-range-2",
+          "present": false,
+          "row": 3021
+        },
+        {
+          "face": "front",
+          "trait": "asl:cs-passengers-only",
+          "present": false,
+          "row": 3022
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-pziv",
+      "kind": "asl:vehicle",
+      "kindRow": 3023,
+      "nationality": "german",
+      "nationalityRow": 3024,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-pziv"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 3025
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Panzer IV H (game default)",
+          "row": 3026
+        },
+        {
+          "face": "front",
+          "attribute": "ground-pressure",
+          "printed": false,
+          "row": 3027
+        },
+        {
+          "face": "front",
+          "attribute": "movement-type",
+          "value": "fully-tracked",
+          "row": 3028
+        },
+        {
+          "face": "front",
+          "attribute": "movement-points",
+          "value": 13,
+          "row": 3029
+        },
+        {
+          "face": "front",
+          "attribute": "amphibious-mp",
+          "printed": false,
+          "row": 3030
+        },
+        {
+          "face": "front",
+          "attribute": "af-front",
+          "value": 8,
+          "row": 3031
+        },
+        {
+          "face": "front",
+          "attribute": "af-side",
+          "value": 3,
+          "row": 3032
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-front",
+          "printed": false,
+          "row": 3033
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-side",
+          "printed": false,
+          "row": 3034
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 3035
+        },
+        {
+          "face": "front",
+          "attribute": "ma-type",
+          "value": "t",
+          "row": 3036
+        },
+        {
+          "face": "front",
+          "attribute": "ma-weapon",
+          "printed": false,
+          "row": 3037
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 75,
+          "row": 3038
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "l",
+          "row": 3039
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 3040
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 3041
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 3042
+        },
+        {
+          "face": "front",
+          "attribute": "sa-mount",
+          "printed": false,
+          "row": 3043
+        },
+        {
+          "face": "front",
+          "attribute": "sa-caliber",
+          "printed": false,
+          "row": 3044
+        },
+        {
+          "face": "front",
+          "attribute": "towing",
+          "printed": false,
+          "row": 3045
+        },
+        {
+          "face": "front",
+          "attribute": "passenger-capacity",
+          "printed": false,
+          "row": 3046
+        },
+        {
+          "face": "front",
+          "attribute": "bmg",
+          "value": 3,
+          "row": 3047
+        },
+        {
+          "face": "front",
+          "attribute": "cmg",
+          "value": 5,
+          "row": 3048
+        },
+        {
+          "face": "front",
+          "attribute": "aamg",
+          "printed": false,
+          "row": 3049
+        },
+        {
+          "face": "front",
+          "attribute": "hull-rear-mg",
+          "printed": false,
+          "row": 3050
+        },
+        {
+          "face": "front",
+          "attribute": "turret-rear-mg",
+          "printed": false,
+          "row": 3051
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-mount",
+          "printed": false,
+          "row": 3052
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-firepower",
+          "printed": false,
+          "row": 3053
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-removal",
+          "printed": false,
+          "row": 3054
+        },
+        {
+          "face": "wreck",
+          "attribute": "crew-survival",
+          "value": 6,
+          "row": 3055
+        },
+        {
+          "face": "front",
+          "trait": "asl:mechanically-unreliable",
+          "present": false,
+          "row": 3056
+        },
+        {
+          "face": "front",
+          "trait": "asl:unarmored",
+          "present": false,
+          "row": 3057
+        },
+        {
+          "face": "front",
+          "trait": "asl:partially-armored",
+          "present": false,
+          "row": 3058
+        },
+        {
+          "face": "front",
+          "trait": "asl:rear-turret-unarmored",
+          "present": false,
+          "row": 3059
+        },
+        {
+          "face": "front",
+          "trait": "asl:open-topped",
+          "present": false,
+          "row": 3060
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 3061
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 3062
+        },
+        {
+          "face": "front",
+          "trait": "asl:fixed-bmg",
+          "present": false,
+          "row": 3063
+        },
+        {
+          "face": "front",
+          "trait": "asl:vehicle-ft-range-2",
+          "present": false,
+          "row": 3064
+        },
+        {
+          "face": "front",
+          "trait": "asl:cs-passengers-only",
+          "present": false,
+          "row": 3065
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-panther",
+      "kind": "asl:vehicle",
+      "kindRow": 3066,
+      "nationality": "german",
+      "nationalityRow": 3067,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-panther"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 3068
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Panther (game default)",
+          "row": 3069
+        },
+        {
+          "face": "front",
+          "attribute": "ground-pressure",
+          "printed": false,
+          "row": 3070
+        },
+        {
+          "face": "front",
+          "attribute": "movement-type",
+          "value": "fully-tracked",
+          "row": 3071
+        },
+        {
+          "face": "front",
+          "attribute": "movement-points",
+          "value": 15,
+          "row": 3072
+        },
+        {
+          "face": "front",
+          "attribute": "amphibious-mp",
+          "printed": false,
+          "row": 3073
+        },
+        {
+          "face": "front",
+          "attribute": "af-front",
+          "value": 18,
+          "row": 3074
+        },
+        {
+          "face": "front",
+          "attribute": "af-side",
+          "value": 6,
+          "row": 3075
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-front",
+          "printed": false,
+          "row": 3076
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-side",
+          "printed": false,
+          "row": 3077
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 3078
+        },
+        {
+          "face": "front",
+          "attribute": "ma-type",
+          "value": "st",
+          "row": 3079
+        },
+        {
+          "face": "front",
+          "attribute": "ma-weapon",
+          "printed": false,
+          "row": 3080
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 75,
+          "row": 3081
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "ll",
+          "row": 3082
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 3083
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 3084
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 3085
+        },
+        {
+          "face": "front",
+          "attribute": "sa-mount",
+          "printed": false,
+          "row": 3086
+        },
+        {
+          "face": "front",
+          "attribute": "sa-caliber",
+          "printed": false,
+          "row": 3087
+        },
+        {
+          "face": "front",
+          "attribute": "towing",
+          "printed": false,
+          "row": 3088
+        },
+        {
+          "face": "front",
+          "attribute": "passenger-capacity",
+          "printed": false,
+          "row": 3089
+        },
+        {
+          "face": "front",
+          "attribute": "bmg",
+          "value": 3,
+          "row": 3090
+        },
+        {
+          "face": "front",
+          "attribute": "cmg",
+          "value": 5,
+          "row": 3091
+        },
+        {
+          "face": "front",
+          "attribute": "aamg",
+          "printed": false,
+          "row": 3092
+        },
+        {
+          "face": "front",
+          "attribute": "hull-rear-mg",
+          "printed": false,
+          "row": 3093
+        },
+        {
+          "face": "front",
+          "attribute": "turret-rear-mg",
+          "printed": false,
+          "row": 3094
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-mount",
+          "printed": false,
+          "row": 3095
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-firepower",
+          "printed": false,
+          "row": 3096
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-removal",
+          "printed": false,
+          "row": 3097
+        },
+        {
+          "face": "wreck",
+          "attribute": "crew-survival",
+          "value": 6,
+          "row": 3098
+        },
+        {
+          "face": "front",
+          "trait": "asl:mechanically-unreliable",
+          "present": false,
+          "row": 3099
+        },
+        {
+          "face": "front",
+          "trait": "asl:unarmored",
+          "present": false,
+          "row": 3100
+        },
+        {
+          "face": "front",
+          "trait": "asl:partially-armored",
+          "present": false,
+          "row": 3101
+        },
+        {
+          "face": "front",
+          "trait": "asl:rear-turret-unarmored",
+          "present": false,
+          "row": 3102
+        },
+        {
+          "face": "front",
+          "trait": "asl:open-topped",
+          "present": false,
+          "row": 3103
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 3104
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 3105
+        },
+        {
+          "face": "front",
+          "trait": "asl:fixed-bmg",
+          "present": false,
+          "row": 3106
+        },
+        {
+          "face": "front",
+          "trait": "asl:vehicle-ft-range-2",
+          "present": false,
+          "row": 3107
+        },
+        {
+          "face": "front",
+          "trait": "asl:cs-passengers-only",
+          "present": false,
+          "row": 3108
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-tiger",
+      "kind": "asl:vehicle",
+      "kindRow": 3109,
+      "nationality": "german",
+      "nationalityRow": 3110,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-tiger"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 3111
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Tiger (game default)",
+          "row": 3112
+        },
+        {
+          "face": "front",
+          "attribute": "ground-pressure",
+          "printed": false,
+          "row": 3113
+        },
+        {
+          "face": "front",
+          "attribute": "movement-type",
+          "value": "fully-tracked",
+          "row": 3114
+        },
+        {
+          "face": "front",
+          "attribute": "movement-points",
+          "value": 11,
+          "row": 3115
+        },
+        {
+          "face": "front",
+          "attribute": "amphibious-mp",
+          "printed": false,
+          "row": 3116
+        },
+        {
+          "face": "front",
+          "attribute": "af-front",
+          "value": 11,
+          "row": 3117
+        },
+        {
+          "face": "front",
+          "attribute": "af-side",
+          "value": 8,
+          "row": 3118
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-front",
+          "printed": false,
+          "row": 3119
+        },
+        {
+          "face": "front",
+          "attribute": "turret-af-side",
+          "printed": false,
+          "row": 3120
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 3121
+        },
+        {
+          "face": "front",
+          "attribute": "ma-type",
+          "value": "st",
+          "row": 3122
+        },
+        {
+          "face": "front",
+          "attribute": "ma-weapon",
+          "printed": false,
+          "row": 3123
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 88,
+          "row": 3124
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "l",
+          "row": 3125
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 3126
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 3127
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 3128
+        },
+        {
+          "face": "front",
+          "attribute": "sa-mount",
+          "printed": false,
+          "row": 3129
+        },
+        {
+          "face": "front",
+          "attribute": "sa-caliber",
+          "printed": false,
+          "row": 3130
+        },
+        {
+          "face": "front",
+          "attribute": "towing",
+          "printed": false,
+          "row": 3131
+        },
+        {
+          "face": "front",
+          "attribute": "passenger-capacity",
+          "printed": false,
+          "row": 3132
+        },
+        {
+          "face": "front",
+          "attribute": "bmg",
+          "value": 3,
+          "row": 3133
+        },
+        {
+          "face": "front",
+          "attribute": "cmg",
+          "value": 5,
+          "row": 3134
+        },
+        {
+          "face": "front",
+          "attribute": "aamg",
+          "printed": false,
+          "row": 3135
+        },
+        {
+          "face": "front",
+          "attribute": "hull-rear-mg",
+          "printed": false,
+          "row": 3136
+        },
+        {
+          "face": "front",
+          "attribute": "turret-rear-mg",
+          "printed": false,
+          "row": 3137
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-mount",
+          "printed": false,
+          "row": 3138
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-firepower",
+          "printed": false,
+          "row": 3139
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-ft-removal",
+          "printed": false,
+          "row": 3140
+        },
+        {
+          "face": "wreck",
+          "attribute": "crew-survival",
+          "value": 6,
+          "row": 3141
+        },
+        {
+          "face": "front",
+          "trait": "asl:mechanically-unreliable",
+          "present": false,
+          "row": 3142
+        },
+        {
+          "face": "front",
+          "trait": "asl:unarmored",
+          "present": false,
+          "row": 3143
+        },
+        {
+          "face": "front",
+          "trait": "asl:partially-armored",
+          "present": false,
+          "row": 3144
+        },
+        {
+          "face": "front",
+          "trait": "asl:rear-turret-unarmored",
+          "present": false,
+          "row": 3145
+        },
+        {
+          "face": "front",
+          "trait": "asl:open-topped",
+          "present": false,
+          "row": 3146
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 3147
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 3148
+        },
+        {
+          "face": "front",
+          "trait": "asl:fixed-bmg",
+          "present": false,
+          "row": 3149
+        },
+        {
+          "face": "front",
+          "trait": "asl:vehicle-ft-range-2",
+          "present": false,
+          "row": 3150
+        },
+        {
+          "face": "front",
+          "trait": "asl:cs-passengers-only",
+          "present": false,
+          "row": 3151
         }
       ]
     }

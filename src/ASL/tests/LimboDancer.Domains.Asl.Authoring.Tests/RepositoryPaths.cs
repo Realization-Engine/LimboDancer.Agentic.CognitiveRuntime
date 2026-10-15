@@ -8,7 +8,7 @@ internal static class RepositoryPaths
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
         {
-            if (Directory.Exists(Path.Combine(directory.FullName, ".git"))
+            if ((Directory.Exists(Path.Combine(directory.FullName, ".git")) || File.Exists(Path.Combine(directory.FullName, ".git")))
                 && Directory.Exists(Path.Combine(directory.FullName, "docs", "ASL")))
             {
                 return directory.FullName;

@@ -35,7 +35,7 @@ public sealed class PlayPageStepsTests : IDisposable
         context.Services.AddSingleton(library);
         context.Services.AddSingleton(live);
         context.Services.AddSingleton(games);
-        context.Services.AddSingleton(new GameMaps(boards, maps, new RenderCache(), library, games));
+        context.Services.AddSingleton(new GameMaps(boards, maps, library, games));
         context.UseViewport();
         context.Services.AddSingleton(new StudioLos(boards, maps, options));
     }
@@ -235,6 +235,15 @@ public sealed class PlayPageStepsTests : IDisposable
         Assert.Equal(["", hexes.Open], page.FindAll("#fire-from option").Select(option => option.GetAttribute("value") ?? string.Empty));
     }
 
+    // Names the catalog the game was set up under from the Play project, so a catalog bump cannot leave the rewrite with nothing to replace.
+    private static void RewriteCatalog(string file, string replacement)
+    {
+        var current = $"{LiveFire.Catalog}@{LiveFire.CatalogVersion}";
+        var text = File.ReadAllText(file);
+        Assert.Contains(current, text, StringComparison.Ordinal);
+        File.WriteAllText(file, text.Replace(current, replacement, StringComparison.Ordinal));
+    }
+
     [Fact]
     public void AGameSetUpUnderAnEarlierCatalogVersionReplaysWithoutRewritingItsRecord()
     {
@@ -244,7 +253,7 @@ public sealed class PlayPageStepsTests : IDisposable
         Commit(page, "#propose-setup");
 
         var file = Directory.GetFiles(live.Root, "village.game.json", SearchOption.AllDirectories).Single();
-        File.WriteAllText(file, File.ReadAllText(file).Replace("asl-scenario-a1@1.14.0", "asl-scenario-a1@1.12.0", StringComparison.Ordinal));
+        RewriteCatalog(file, "asl-scenario-a1@1.12.0");
         var original = File.ReadAllBytes(file);
         var reopened = context.Render<PlayPage>();
         reopened.OpenGame("village");
@@ -266,7 +275,7 @@ public sealed class PlayPageStepsTests : IDisposable
         // The game is rewritten to name a catalog the Studio does not carry. An earlier version of a catalog it carries would replay
         // (the version locks nothing), so the name is of another catalog.
         var file = Directory.GetFiles(live.Root, "village.game.json", SearchOption.AllDirectories).Single();
-        File.WriteAllText(file, File.ReadAllText(file).Replace("asl-scenario-a1@1.14.0", "asl-no-such-catalog@1.0.0", StringComparison.Ordinal));
+        RewriteCatalog(file, "asl-no-such-catalog@1.0.0");
         var reopened = context.Render<PlayPage>();
         reopened.OpenGame("village");
         Assert.Contains("does not replay", reopened.Find("#play-replay-failed").TextContent, StringComparison.Ordinal);

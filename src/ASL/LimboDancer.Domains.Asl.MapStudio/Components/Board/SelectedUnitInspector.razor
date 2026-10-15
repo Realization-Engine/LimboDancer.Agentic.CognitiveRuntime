@@ -14,6 +14,10 @@
             <dt>Conditions</dt><dd>@DisplayText.ConditionsOf(instance)</dd>
             <dt>Good Order</dt><dd>@GoodOrderText(instance)</dd>
             <dt>MF spent this phase</dt><dd>@instance.MfSpent</dd>
+            @foreach (var equipment in view.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == instance.Id))
+            {
+                <dt>@HolderAction(equipment.Holding!.Role)</dt><dd>@Named(equipment.Id)</dd>
+            }
             @if (instance.From.Count > 0)
             {
                 <dt>Produced from</dt><dd>@string.Join(", ", instance.From.Select(Named))</dd>
@@ -38,8 +42,23 @@
         <dl class="unit-details" id="unit-game-facts">
             <dt>Side</dt><dd>@(other.Side is { } side ? DisplayText.Side(side) : "none")</dd>
             <dt>Conditions</dt><dd>@DisplayText.ConditionsOf(other)</dd>
+            @if (other is EquipmentInstance equipment && equipment.Holding is { } holding)
+            {
+                <dt>@EquipmentHolder(holding.Role)</dt><dd>@Named(holding.Holder)</dd>
+            }
         </dl>
     }
+}
+@if (View is { } visible && visible.Units.Cast<IGameObject>().Concat(visible.Equipment).Any(item => item.Id == Unit.Document.Id)
+    && OriginOf?.Invoke(Unit.Document.Id) is { } origin)
+{
+    <h3>Campaign origin</h3>
+    <dl class="unit-details" id="unit-campaign-origin">
+        <dt>Parent formation</dt><dd>@origin.Formation</dd>
+        <dt>Formation hex at handoff</dt><dd>@origin.FormationHex</dd>
+        <dt>Catalog at handoff</dt><dd>@origin.Definition</dd>
+    </dl>
+    <p class="muted">@origin.CatalogStatus</p>
 }
 @if (Note is { Length: > 0 } note)
 {
@@ -68,6 +87,9 @@
     [Parameter]
     public string? Note { get; set; }
 
+    [Parameter]
+    public Func<string, CampaignCounterOrigin?>? OriginOf { get; set; }
+
     // Good Order is unknown while broken, berserk, captured, or Melee is not recorded (ASL-UNIT-023); the inspector says which (pass 29).
     private string GoodOrderText(UnitInstance instance) => GameState.GoodOrder(instance, Vocabulary) switch
     {
@@ -77,19 +99,33 @@
         var other => DisplayText.YesNo(other),
     };
 
+    private static string HolderAction(HoldingRole role) => role switch
+    {
+        HoldingRole.Manned => "Operates",
+        HoldingRole.Towed => "Tows",
+        _ => "Carries",
+    };
+
+    private static string EquipmentHolder(HoldingRole role) => role switch
+    {
+        HoldingRole.Manned => "Manned by",
+        HoldingRole.Towed => "Towed by",
+        _ => "Carried by",
+    };
+
     /// <summary>
     /// A unit named by another's record (its Guard, its parents, its carrier): its name and id when the view holds it. A side's view never reads the
     /// id of one it does not see (referee, pass 29; rulings R23.1, R23.3); the adjudicator and a placement set read the id.
     /// </summary>
     private string Named(string id)
     {
-        if (NameOf(id) is { Length: > 0 } name)
-        {
-            return $"{name} ({id})";
-        }
-
         var seen = View is not { Perspective.IsAdjudicator: false } view
             || view.Units.Cast<IGameObject>().Concat(view.Equipment).Concat(view.Entities).Any(item => item.Id == id);
-        return seen ? id : "a unit not in view";
+        if (!seen)
+        {
+            return "a unit not in view";
+        }
+
+        return NameOf(id) is { Length: > 0 } name ? $"{name} ({id})" : id;
     }
 }

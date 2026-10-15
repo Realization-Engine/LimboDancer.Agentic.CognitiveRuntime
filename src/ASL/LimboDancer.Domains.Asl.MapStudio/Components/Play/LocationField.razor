@@ -3,7 +3,7 @@
    hex picked on the map ("Use G4"), can be armed so the next hex clicked fills it, offers the hex's levels, and, as a route, takes one hex a click. *@
 @implements IDisposable
 <span class="location-field" data-armed="@(Armed ? "true" : "false")">
-    <label title="@Title">@Label <input id="@Id" value="@Shown" disabled="@Disabled" @onchange="@(args => Typed(args.Value as string ?? string.Empty))" size="@Size" placeholder="@Placeholder" aria-describedby="@DescribedBy" /></label>
+    <label title="@Title">@Label <input id="@Id" value="@Shown" disabled="@Disabled" @oninput="CaptureTyped" @onkeydown="ApplyTypedOnEnter" @onchange="@(args => Typed(args.Value as string ?? string.Empty))" size="@Size" placeholder="@Placeholder" aria-describedby="@DescribedBy" /></label>
     @if (!Many && Levels is { Count: > 1 } levels && BoardLocation.TryParse(Value, out var at))
     {
         <select id="@($"{Id}-level")" aria-label="@($"Level of {Label}")" disabled="@Disabled" value="@at.Level" @onchange="@(args => OnChange.InvokeAsync((at with { Level = int.TryParse(args.Value as string, out var level) ? level : 0 }).ToString()))">
@@ -126,11 +126,25 @@
     private Task Take(string picked) => OnChange.InvokeAsync(Many ? string.Join(", ", Tokens.Append(picked)) : picked);
 
     // A route typed with a level in words ("H4, level 1") is read as "H4:1" before its steps are split (the reviews, pass 31c).
-    private Task Typed(string text) => OnChange.InvokeAsync(Many
+    // Keep in-progress text local, so Enter applies it without reformatting each keystroke.
+    private string? typedInput;
+    private string? typedForValue;
+
+    private void CaptureTyped(ChangeEventArgs args) =>
+        (typedInput, typedForValue) = (args.Value as string ?? string.Empty, Value);
+
+    private Task ApplyTypedOnEnter(KeyboardEventArgs args) =>
+        args.Key == "Enter" && typedInput is { } text && typedForValue == Value ? Typed(text) : Task.CompletedTask;
+
+    private Task Typed(string text)
+    {
+        typedInput = null;
+        return OnChange.InvokeAsync(Many
         ? string.Join(", ", System.Text.RegularExpressions.Regex.Replace(System.Text.RegularExpressions.Regex.Replace(text.Replace("[", string.Empty, StringComparison.Ordinal).Replace("]", string.Empty, StringComparison.Ordinal), @",?\s*level\s+(-?\d)", ":$1", System.Text.RegularExpressions.RegexOptions.IgnoreCase),
                 @",?\s*cellar", ":-1", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
             .Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(token => DisplayText.ReadPlace(token, Boards)))
         : DisplayText.ReadPlace(text.Trim(), Boards));
+    }
 
     /// <summary>A field taken off the page while armed disarms, so no pick goes nowhere (the UI review, pass 31c).</summary>
     public void Dispose()

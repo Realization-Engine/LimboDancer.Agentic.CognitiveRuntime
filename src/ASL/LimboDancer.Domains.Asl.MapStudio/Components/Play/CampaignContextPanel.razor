@@ -1,0 +1,36 @@
+@inject CampaignImport Imports
+@inject IConfiguration Configuration
+
+@if (summary is not null)
+{
+    <details class="campaign-origin">
+        <summary>Operation Goodwood campaign</summary>
+        <p>Imported setup: @summary.Counters ground counters from @summary.Formations formations.</p>
+        <p>@summary.Aircraft aircraft remain in campaign air support. Supply and command markers remain in the campaign map.</p>
+        <p>ASL play is saved separately. Returning does not move campaign counters or replace accepted terrain.</p>
+        @if (CampaignContextSummary.ReturnUrl(Configuration["Campaign:AtlasOrigin"]) is { } destination)
+        {
+            <a href="@destination" target="_blank" rel="noopener">Return to campaign map</a>
+        }
+        else
+        {
+            <p>Open the Campaign Atlas tab to return to this Situation.</p>
+        }
+    </details>
+}
+
+@code {
+    [Parameter] public string GameId { get; set; } = string.Empty;
+    private string? loadedGame;
+    private CampaignContextSummary? summary;
+
+    protected override void OnParametersSet()
+    {
+        if (loadedGame == GameId) return;
+        loadedGame = GameId;
+        summary = null;
+        if (!GameId.StartsWith("campaign-", StringComparison.Ordinal)) return;
+        try { summary = CampaignContextSummary.Read(Imports.ReadContext(GameId)); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+    }
+}

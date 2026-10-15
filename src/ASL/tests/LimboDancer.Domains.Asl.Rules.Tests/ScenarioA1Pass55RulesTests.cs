@@ -22,6 +22,8 @@ public sealed class ScenarioA1Pass55RulesTests
     /// <summary>The definitions that came with pass 55: the pin below is of the counters that were there before it.</summary>
     private static readonly string[] Pass55 = ["british-at-gun", "american-at-gun"];
 
+    private static bool Campaign(string id) => id.StartsWith("campaign-", StringComparison.Ordinal);
+
     // The Depletion Numbers of the catalog's counters as they stood before pass 55, by year from 1939 to 1945 (the month matters to HEAT alone).
     private static readonly Dictionary<(string Definition, string Ammunition), int?[]> Pinned = new()
     {
@@ -185,12 +187,24 @@ public sealed class ScenarioA1Pass55RulesTests
             ScenarioA1OrdnanceReference.Color(Ordnance.Guns["american-at-gun"], 1945)));
 
         // Every earlier counter keeps the color it had, whatever the year: the German black, every other red, the British 2-in. mortar among them.
-        foreach (var gun in Ordnance.Guns.Values.Where(gun => !Pass55.Contains(gun.Id)))
+        foreach (var gun in Ordnance.Guns.Values.Where(gun => !Pass55.Contains(gun.Id) && !Campaign(gun.Id)))
         {
             foreach (int? year in new int?[] { null, 1939, 1943, 1944, 1945 })
             {
                 Assert.Equal(gun.Nationality == "german" ? "black" : "red", ScenarioA1OrdnanceReference.Color(gun, year));
                 Assert.Equal(ScenarioA1OrdnanceReference.Color(gun.Nationality), ScenarioA1OrdnanceReference.Color(gun, year));
+            }
+        }
+
+        // The Goodwood game defaults (catalog 1.16.0 and 1.17.0) are British and German, both black in every year by the same chart.
+        var campaign = Ordnance.Guns.Values.Where(gun => Campaign(gun.Id)).ToArray();
+        Assert.NotEmpty(campaign);
+        foreach (var gun in campaign)
+        {
+            Assert.True(gun.Nationality is "british" or "german", gun.Id);
+            foreach (int? year in new int?[] { null, 1939, 1943, 1944, 1945 })
+            {
+                Assert.Equal("black", ScenarioA1OrdnanceReference.Color(gun, year));
             }
         }
 

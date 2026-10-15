@@ -1,0 +1,68 @@
+{
+  "runs": [
+    {
+      "run": 0,
+      "open": 0,
+      "startupMs": 1289.6267,
+      "requestMs": 1461.3145,
+      "serverTiming": "binding;dur=19.97,service;dur=1325.49,responseHeaders;dur=15.61,requestHeaders;dur=1361.07",
+      "stagesMs": {
+        "decodeAndIdentity": 85.4064,
+        "compile": 108.7809,
+        "gridHash": 79.9319,
+        "deriveFacts": 414.4526,
+        "validateBoard": 93.2177,
+        "describeCells": 28.1261,
+        "loadTotal": 811.4099,
+        "validateSetup": 24.3363,
+        "render": 484.988
+      },
+      "contentSha256": "DFFE203D11DFBE5C4A44E578DD6A09A5D21C435D3E4471389C53D58499404190",
+      "peakWorkingSetBytes": 231399424
+    },
+    {
+      "run": 0,
+      "open": 1,
+      "startupMs": 1289.6267,
+      "requestMs": 819.467,
+      "serverTiming": "binding;dur=8.99,service;dur=768.34,responseHeaders;dur=0.34,requestHeaders;dur=777.67",
+      "stagesMs": {
+        "decodeAndIdentity": 32.6125,
+        "compile": 72.6471,
+        "gridHash": 46.3894,
+        "deriveFacts": 188.3034,
+        "validateBoard": 41.9794,
+        "describeCells": 16.0572,
+        "loadTotal": 398.0298,
+        "validateSetup": 15.1926,
+        "render": 355.0469
+      },
+      "contentSha256": "DFFE203D11DFBE5C4A44E578DD6A09A5D21C435D3E4471389C53D58499404190",
+      "peakWorkingSetBytes": 275894272
+    },
+    {
+      "run": 0,
+      "open": 2,
+      "startupMs": 1289.6267,
+      "requestMs": 811.8748,
+      "serverTiming": "binding;dur=5.94,service;dur=766.54,responseHeaders;dur=0.22,requestHeaders;dur=772.70",
+      "stagesMs": {
+        "decodeAndIdentity": 8.2217,
+        "compile": 72.8819,
+        "gridHash": 46.91,
+        "deriveFacts": 173.3229,
+        "validateBoard": 35.0754,
+        "describeCells": 19.2785,
+        "loadTotal": 355.7243,
+        "validateSetup": 3.9865,
+        "render": 406.7883
+      },
+      "contentSha256": "DFFE203D11DFBE5C4A44E578DD6A09A5D21C435D3E4471389C53D58499404190",
+      "peakWorkingSetBytes": 312840192
+    }
+  ],
+  "disableTiering": false,
+  "date": "2026-10-14T13:22:25.2272375Z",
+  "requestFile": "accepted-0.json",
+  "notes": "Release, fresh host per run, three consecutive opens of identical accepted request; HTTP elapsed excludes PowerShell JSON parse; health probe before open; OS caches not flushed. Server-Timing ends when response headers start, not at completion of transfer."
+}

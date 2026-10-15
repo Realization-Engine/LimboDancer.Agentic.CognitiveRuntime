@@ -110,7 +110,7 @@ public sealed class BoardRenderInput
 /// </summary>
 public static partial class BoardRenderer
 {
-    public const string RendererVersion = "1.0.0";
+    public const string RendererVersion = "1.0.1";
     public const string SvgNamespace = "http://www.w3.org/2000/svg";
 
     private const int Margin = 16;
@@ -274,7 +274,9 @@ public static partial class BoardRenderer
     private static void WriteElevation(SvgWriter writer, BoardRenderInput input)
     {
         writer.Start("g", ("shape-rendering", "crispEdges"), ("pointer-events", "none"));
-        foreach (var group in input.ElevationOutlines.Regions.Where(region => region.Elevation != 0).GroupBy(region => region.Elevation))
+        // Terrain regions already partition cells by both terrain code and elevation.
+        // Combining their non-overlapping rings preserves elevation coverage without a second full-grid trace.
+        foreach (var group in input.Outlines.Regions.Where(region => region.Elevation != 0).GroupBy(region => region.Elevation))
         {
             var path = new PathData();
             foreach (var ring in group.SelectMany(region => region.Rings))

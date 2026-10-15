@@ -1,0 +1,28 @@
+{
+  "version": "goodwood-situation-terrain-v1",
+  "sourceSha256": "deb63321535843c26146b374bf0f41f930eaad828d946707a3f9a42b82f6aca8",
+  "catalogSha256": "88255b3e51d0e9d67eeab105aa8f5675451792db870b50777e06a3812a9fea3b",
+  "cropColumn": 52,
+  "cropRow": 90,
+  "width": 33,
+  "height": 20,
+  "roadWidthMm": 10000,
+  "streamWidthMm": 8000,
+  "parcelSpacingMm": 50000,
+  "buildingMinMm": 16000,
+  "buildingMaxMm": 28000,
+  "buildingPercent": 65,
+  "routeClearanceMm": 8000,
+  "boundaryInsetMm": 5000,
+  "anchor": "grancelles-bridge-1",
+  "terrainCodes": {
+    "open": 0,
+    "water": 8,
+    "stream": 32,
+    "building": 40,
+    "woods": 60,
+    "road": 66,
+    "bridge": 84,
+    "marsh": 14
+  }
+}

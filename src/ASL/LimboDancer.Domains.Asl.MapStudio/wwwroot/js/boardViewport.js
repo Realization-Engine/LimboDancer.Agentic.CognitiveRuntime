@@ -6,10 +6,26 @@ const svgNamespace = "http://www.w3.org/2000/svg";
 const hoverInterval = 100;
 const rotationKey = "studio.map.rotated";
 
-// Pass 31c (design D16; play test P-30): the view of a map is kept for its host's key (a game and a view) while the page is open, so a map that
-// is taken away and drawn again, as at a hand-over, comes back where its viewer left it and not at its fit. Each view has its own, so no side
-// sees where the other was looking. A view still at its fit keeps nothing.
+// Views are scoped to game/viewer and the exact rendered board version. Storage failure falls back to this page.
 const keptViews = new Map();
+const viewPrefix = "studio.map.view.v1.";
+
+function rememberView(state) {
+    if (!state.viewKey || !state.box || !state.home) return;
+    const saved = { home: state.home, box: state.box, fitted: state.fitted };
+    keptViews.set(state.viewKey, saved);
+    try { localStorage.setItem(viewPrefix + state.viewKey, JSON.stringify(saved)); } catch { /* Page-only fallback. */ }
+}
+
+function readView(key, home) {
+    if (!key) return null;
+    let saved = keptViews.get(key);
+    try { saved = JSON.parse(localStorage.getItem(viewPrefix + key)) || saved; } catch { /* Retain page-only view. */ }
+    if (!saved || typeof saved.fitted !== "boolean" ||
+        !["x", "y", "width", "height"].every(name => saved.home?.[name] === home[name] && Number.isFinite(saved.box?.[name])) ||
+        saved.box.width <= 0 || saved.box.height <= 0) return null;
+    return saved;
+}
 
 export function create(host, dotnet) {
     const svg = document.createElementNS(svgNamespace, "svg");
@@ -29,6 +45,9 @@ export function create(host, dotnet) {
         applyShape(state);
         if (state.fitted) {
             reset(state);
+        } else {
+            updateUnitTier(state);
+            updateLabelDetail(state);
         }
     });
     shapeWatcher?.observe(host);
@@ -201,15 +220,9 @@ export function create(host, dotnet) {
         fitRect: (x, y, width, height) => fitRect(state, x, y, width, height),
         setRotation: on => setRotation(state, on, true),
         isRotated: () => state.rotated,
+        hasRestoredView: () => state.restoredView === true,
         dispose: () => {
-            const key = host.dataset.viewKey;
-            if (key && state.box && state.home) {
-                if (state.fitted) {
-                    keptViews.delete(key);
-                } else {
-                    keptViews.set(key, { box: { ...state.box }, width: state.home.width, height: state.home.height });
-                }
-            }
+            rememberView(state);
 
             shapeWatcher?.disconnect();
             host.removeEventListener("keydown", onKey);
@@ -233,6 +246,9 @@ async function fetchGroups(baseUrl, query, layers) {
 
 async function load(state, baseUrl, query, viewBox, layers, visible) {
     const generation = ++state.generation;
+    state.loadMetrics = new URLSearchParams(globalThis.location?.search ?? "").get("mapMetrics") === "1"
+        ? { generation, started: performance.now(), reported: false } : null;
+    if (state.loadMetrics) state.host.dataset.mapMetricStatus = "loading";
     const groups = await fetchGroups(baseUrl, query, layers);
     if (generation !== state.generation) {
         return;
@@ -240,15 +256,23 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
 
     const [x, y, width, height] = viewBox.split(" ").map(Number);
     const home = { x, y, width, height };
-    const keepBox = state.home && state.home.width === width && state.home.height === height;
+    const viewKey = state.host.dataset.viewKey ? state.host.dataset.viewKey + "/" + baseUrl : null;
+    const keepBox = state.baseUrl === baseUrl && state.home && state.home.x === x && state.home.y === y && state.home.width === width && state.home.height === height;
+    state.baseUrl = baseUrl;
+    state.viewKey = viewKey;
     state.home = home;
+    // Suppress unreadable text before insertion, avoiding overview layout of every label.
+    for (const group of groups) {
+        if (group.id === "layer-labels") group.setAttribute("data-detail-visible", "false");
+    }
     state.svg.replaceChildren(...groups);
     state.highlight = null;
     state.overlay = null;
     setVisible(state, visible);
-    const kept = keepBox ? null : keptViews.get(state.host.dataset.viewKey);
-    if (kept && kept.width === width && kept.height === height) {
-        setBox(state, kept.box, false);
+    const kept = keepBox ? null : readView(viewKey, home);
+    state.restoredView = Boolean(kept);
+    if (kept) {
+        setBox(state, kept.fitted ? fitBox(state) : kept.box, kept.fitted);
         return;
     }
 
@@ -272,6 +296,7 @@ async function reloadLayers(state, baseUrl, query, layers) {
     }
 
     applyComparison(state);
+    updateLabelDetail(state);
 }
 
 // Applies a render patch (section 5.4): per-feature upserts in paint order and removals, by element id.
@@ -562,6 +587,22 @@ function setUnits(state, markup) {
     }
 
     updateUnitTier(state);
+    reportMeasuredScene(state);
+}
+
+// Optional development diagnostics. The scene includes terrain and counters; two animation frames
+// allow a paint opportunity. This is not a GPU completion or continuous-interactivity measurement.
+function reportMeasuredScene(state) {
+    const metric = state.loadMetrics;
+    if (!metric || metric.reported) return;
+    metric.reported = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (metric.generation !== state.generation) return;
+        const now = performance.now();
+        state.host.dataset.mapSceneLoadMs = (now - metric.started).toFixed(2);
+        state.host.dataset.mapNavigationToSceneMs = now.toFixed(2);
+        state.host.dataset.mapMetricStatus = "ready";
+    }));
 }
 
 // Unit detail tiers (Unit Display Design, section 7.1): the overlay carries every tier, and zoom picks one from the
@@ -581,6 +622,16 @@ function updateUnitTier(state) {
     if (layer.getAttribute("data-active-tier") !== tier) {
         layer.setAttribute("data-active-tier", tier);
     }
+}
+
+// Labels below six screen pixels cannot be read. Keep the explicit layer choice separate
+// from this zoom-dependent detail, so zooming never re-enables a layer the user hid.
+function updateLabelDetail(state) {
+    const labels = state.svg.querySelector("#layer-labels");
+    if (!labels || !state.box) return;
+    const fontSize = Number(labels.firstElementChild?.getAttribute("font-size")) || 9;
+    const readable = fontSize * state.svg.clientWidth / state.box.width >= 6;
+    labels.setAttribute("data-detail-visible", String(readable));
 }
 
 function highlight(state, points) {
@@ -604,7 +655,9 @@ function setBox(state, box, fitted = false) {
     const value = `${box.x} ${box.y} ${box.width} ${box.height}`;
     state.svg.setAttribute("viewBox", value);
     state.side?.setAttribute("viewBox", value);
+    rememberView(state);
     updateUnitTier(state);
+    updateLabelDetail(state);
 }
 
 function toBoard(state, clientX, clientY) {

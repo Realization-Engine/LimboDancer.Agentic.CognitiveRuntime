@@ -235,8 +235,8 @@ public sealed class ScenarioA1OrdnanceReference
 /// </summary>
 public sealed class ScenarioA1OrdnancePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "11aca8573321dc45e5fdedca9211c25835ad474cb6dffd3d0611e6977ef3733c";
-    public const string MatrixSha256 = "c0185c01b4bf4ca5af032728ce6718da18a1b0daa42ffaa77c1858900cf55972";
+    public const string ManifestSha256 = "cb2da4da1bacfde213c6e42179d194b03b897b0a2fc266e535c0bdcaf7ee38a1";
+    public const string MatrixSha256 = "6565961f93c76ee861db7563cc9aaaff20958ec995fd90b7c656088547c12c44";
     /// <summary>
     /// The package as revised at backlog pass 15 (catalog 1.10.0), before its backlog pass 16 revision (the weather cushion and Extreme Winter B#).
     /// Earlier: backlog pass 9b, 120b1df9; backlog pass 9, 58030546.

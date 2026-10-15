@@ -1,0 +1,68 @@
+{
+  "runs": [
+    {
+      "run": 0,
+      "open": 0,
+      "startupMs": 1218.542,
+      "requestMs": 1137.3159,
+      "serverTiming": "binding;dur=14.37,service;dur=1017.70,responseHeaders;dur=14.97,requestHeaders;dur=1047.04",
+      "stagesMs": {
+        "decodeAndIdentity": 69.2858,
+        "compile": 97.3682,
+        "gridHash": 57.6081,
+        "deriveFacts": 122.1523,
+        "validateBoard": 99.7116,
+        "describeCells": 23.3635,
+        "loadTotal": 470.9928,
+        "validateSetup": 15.6558,
+        "render": 525.9336
+      },
+      "contentSha256": "DFFE203D11DFBE5C4A44E578DD6A09A5D21C435D3E4471389C53D58499404190",
+      "peakWorkingSetBytes": 205258752
+    },
+    {
+      "run": 0,
+      "open": 1,
+      "startupMs": 1218.542,
+      "requestMs": 617.0224,
+      "serverTiming": "binding;dur=3.89,service;dur=558.90,responseHeaders;dur=0.32,requestHeaders;dur=563.11",
+      "stagesMs": {
+        "decodeAndIdentity": 29.0951,
+        "compile": 51.0405,
+        "gridHash": 40.7583,
+        "deriveFacts": 76.4735,
+        "validateBoard": 28.4352,
+        "describeCells": 13.0174,
+        "loadTotal": 238.8525,
+        "validateSetup": 10.5653,
+        "render": 309.4303
+      },
+      "contentSha256": "DFFE203D11DFBE5C4A44E578DD6A09A5D21C435D3E4471389C53D58499404190",
+      "peakWorkingSetBytes": 239484928
+    },
+    {
+      "run": 0,
+      "open": 2,
+      "startupMs": 1218.542,
+      "requestMs": 604.13,
+      "serverTiming": "binding;dur=7.52,service;dur=548.51,responseHeaders;dur=0.32,requestHeaders;dur=556.35",
+      "stagesMs": {
+        "decodeAndIdentity": 28.8585,
+        "compile": 54.0479,
+        "gridHash": 46.2796,
+        "deriveFacts": 71.7501,
+        "validateBoard": 27.2448,
+        "describeCells": 12.1808,
+        "loadTotal": 240.3878,
+        "validateSetup": 10.4163,
+        "render": 297.6672
+      },
+      "contentSha256": "DFFE203D11DFBE5C4A44E578DD6A09A5D21C435D3E4471389C53D58499404190",
+      "peakWorkingSetBytes": 256565248
+    }
+  ],
+  "requestFile": "accepted-0.json",
+  "notes": "Release, fresh host per run, three consecutive opens of identical accepted request; HTTP elapsed excludes PowerShell JSON parse; health probe before open; OS caches not flushed. Server-Timing ends when response headers start, not at completion of transfer.",
+  "date": "2026-10-14T13:23:45.1824471Z",
+  "disableTiering": false
+}

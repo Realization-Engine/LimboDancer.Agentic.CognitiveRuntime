@@ -19,18 +19,19 @@ function element(id, attributes = {}) {
     };
 }
 
-function viewportFixture() {
+function viewportFixture(factory = create, viewKey) {
     const handlers = new Map();
     const calls = [];
     const svg = {
         children: [],
         clientWidth: 100,
-        setAttribute() {},
+        attributes: {},
+        setAttribute(name, value) { this.attributes[name] = value; },
         addEventListener(name, handler) { handlers.set(name, handler); },
         setPointerCapture() {},
         replaceChildren(...groups) { this.children = groups; },
         appendChild(group) { this.children.push(group); },
-        querySelector(selector) { return selector === "#layer-units" ? this.children.find(group => group.id === "layer-units") : null; },
+        querySelector(selector) { return this.children.find(group => "#" + group.id === selector); },
         createSVGPoint() { return { matrixTransform() { return { x: 10, y: 20 }; } }; },
         getScreenCTM() { return { inverse() { return {}; } }; },
     };
@@ -49,9 +50,9 @@ function viewportFixture() {
     };
     globalThis.fetch = async () => ({ ok: true, async text() { return "<svg><g id=\"layer-grid\"/></svg>"; } });
     // Pass 31c (design D16): the viewport reads the host's data-view-key for the view it keeps; a host with none keeps no view.
-    const host = { replaceChildren() {}, addEventListener() {}, focus() {}, classList: { toggle() {} }, dataset: {} };
-    const viewport = create(host, { invokeMethodAsync(...args) { calls.push(args); } });
-    return { viewport, svg, handlers, calls };
+    const host = { replaceChildren() {}, addEventListener() {}, focus() {}, removeEventListener() {}, classList: { toggle() {} }, dataset: { viewKey } };
+    const viewport = factory(host, { invokeMethodAsync(...args) { calls.push(args); } });
+    return { viewport, svg, handlers, calls, host };
 }
 
 const unitHit = { closest() { return { getAttribute() { return "demo-a"; } }; } };
@@ -103,4 +104,107 @@ test("zooming switches the tier the units layer shows", async () => {
     assert.equal(layer.getAttribute("data-active-tier"), "near");
     viewport.setUnits(null);
     assert.equal(svg.querySelector("#layer-units"), undefined);
+});
+
+
+test("saved views survive a fresh module, isolate viewers and versions, and retain explicit fit", async () => {
+    const storage = new Map();
+    globalThis.localStorage = {
+        getItem: key => storage.get(key) ?? null,
+        setItem: (key, value) => storage.set(key, value),
+        removeItem: key => storage.delete(key),
+    };
+    const first = viewportFixture(create, "campaign-test/allied");
+    await first.viewport.load("render/board/v1/exact", "", "0 0 1000 1000", [], []);
+    first.viewport.zoom(0.8);
+    const zoomed = first.svg.attributes.viewBox;
+    assert.notEqual(zoomed, "0 0 1000 1000");
+    // No dispose: a reload or service disconnect must not need graceful cleanup to retain the view.
+    const fresh = await import(`data:text/javascript;base64,${source.toString("base64")}#reload`);
+    const restored = viewportFixture(fresh.create, "campaign-test/allied");
+    await restored.viewport.load("render/board/v1/exact", "", "0 0 1000 1000", [], []);
+    assert.equal(restored.svg.attributes.viewBox, zoomed);
+    assert.equal(restored.viewport.hasRestoredView(), true);
+    const enemy = viewportFixture(fresh.create, "campaign-test/german");
+    await enemy.viewport.load("render/board/v1/exact", "", "0 0 1000 1000", [], []);
+    assert.equal(enemy.svg.attributes.viewBox, "0 0 1000 1000");
+    await restored.viewport.load("render/board/v2/exact", "", "0 0 1000 1000", [], []);
+    assert.equal(restored.svg.attributes.viewBox, "0 0 1000 1000");
+    assert.equal(restored.viewport.hasRestoredView(), false);
+    first.viewport.reset();
+    const fitted = viewportFixture(fresh.create, "campaign-test/allied");
+    await fitted.viewport.load("render/board/v1/exact", "", "0 0 1000 1000", [], []);
+    assert.equal(fitted.svg.attributes.viewBox, "0 0 1000 1000");
+    assert.equal(fitted.viewport.hasRestoredView(), true);
+    delete globalThis.localStorage;
+});
+
+test("damaged saved views are ignored and blocked storage keeps map controls working", async () => {
+    globalThis.localStorage = { getItem: () => '{"home":{"x":0,"y":0,"width":100,"height":100},"box":{"x":0,"y":0,"width":-1,"height":100},"fitted":false}', setItem() {}, removeItem() {} };
+    const invalid = viewportFixture(create, "invalid/allied");
+    await invalid.viewport.load("render/board/v1/exact", "", "0 0 100 100", [], []);
+    assert.equal(invalid.svg.attributes.viewBox, "0 0 100 100");
+    assert.equal(invalid.viewport.hasRestoredView(), false);
+    globalThis.localStorage = { getItem() { throw Error("blocked"); }, setItem() { throw Error("blocked"); }, removeItem() { throw Error("blocked"); } };
+    invalid.viewport.zoom(0.8);
+    const zoomed = invalid.svg.attributes.viewBox;
+    const another = viewportFixture(create, "invalid/allied");
+    await another.viewport.load("render/board/v1/exact", "", "0 0 100 100", [], []);
+    assert.equal(another.svg.attributes.viewBox, zoomed);
+    delete globalThis.localStorage;
+});
+
+
+test("optional scene timing waits for counters and paint opportunities and ignores superseded loads", async () => {
+    const previousLocation = globalThis.location;
+    const previousFrame = globalThis.requestAnimationFrame;
+    const frames = [];
+    globalThis.location = { search: "?mapMetrics=1" };
+    globalThis.requestAnimationFrame = callback => frames.push(callback);
+    try {
+        const { viewport, host } = viewportFixture();
+        await viewport.load("render/board/v1/exact", "", "0 0 100 100", ["grid"], ["grid"]);
+        assert.equal(host.dataset.mapMetricStatus, "loading");
+        viewport.setUnits('<g id="layer-units" data-face-size="35"/>');
+        assert.equal(host.dataset.mapMetricStatus, "loading");
+        frames.shift()();
+        assert.equal(host.dataset.mapMetricStatus, "loading");
+        frames.shift()();
+        assert.equal(host.dataset.mapMetricStatus, "ready");
+        assert.ok(Number(host.dataset.mapSceneLoadMs) >= 0);
+        assert.ok(Number(host.dataset.mapNavigationToSceneMs) >= Number(host.dataset.mapSceneLoadMs));
+        await viewport.load("render/board/v2/exact", "", "0 0 100 100", [], []);
+        viewport.setUnits('<g id="layer-units" data-face-size="35"/>');
+        await viewport.load("render/board/v3/exact", "", "0 0 100 100", [], []);
+        frames.shift()();
+        frames.shift()();
+        assert.equal(host.dataset.mapMetricStatus, "loading");
+        globalThis.location = { search: "" };
+        const ordinary = viewportFixture();
+        await ordinary.viewport.load("render/board/v1/exact", "", "0 0 100 100", [], []);
+        ordinary.viewport.setUnits('<g id="layer-units" data-face-size="35"/>');
+        assert.equal(ordinary.host.dataset.mapMetricStatus, undefined);
+    } finally {
+        globalThis.location = previousLocation;
+        globalThis.requestAnimationFrame = previousFrame;
+    }
+});
+
+
+test("hex label detail follows zoom without changing the user's hidden-layer choice", async () => {
+    const { viewport, svg } = viewportFixture();
+    await viewport.load("render/board/v1/exact", "", "0 0 1000 1000", [], []);
+    const labels = element("layer-labels");
+    svg.children.push(labels);
+    viewport.zoom(1);
+    assert.equal(labels.getAttribute("data-detail-visible"), "false");
+    viewport.zoom(0.1);
+    assert.equal(labels.getAttribute("data-detail-visible"), "true");
+    viewport.setVisible([]);
+    viewport.zoom(1);
+    assert.equal(labels.getAttribute("data-detail-visible"), "true");
+    assert.equal(labels.getAttribute("data-layer-hidden"), "true");
+    viewport.zoom(10);
+    assert.equal(labels.getAttribute("data-detail-visible"), "false");
+    assert.equal(labels.getAttribute("data-layer-hidden"), "true");
 });

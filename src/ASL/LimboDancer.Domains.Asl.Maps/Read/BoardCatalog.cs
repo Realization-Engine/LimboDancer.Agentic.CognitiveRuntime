@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Geometry;
@@ -55,7 +56,7 @@ public sealed record VaslBoardSource(string BoardName, string MetadataVersion, s
 /// </summary>
 public sealed class BoardHandle
 {
-    public BoardHandle(BoardRef board, string version, BoardReadStatus status, string provenance, HexFactSet facts, VaslBoardSource? vaslSource = null)
+    public BoardHandle(BoardRef board, string version, BoardReadStatus status, string provenance, HexFactSet facts, VaslBoardSource? vaslSource = null, IEnumerable<HexName>? locationHexes = null)
     {
         ArgumentNullException.ThrowIfNull(board);
         ArgumentNullException.ThrowIfNull(version);
@@ -67,6 +68,11 @@ public sealed class BoardHandle
         Provenance = provenance;
         Facts = facts;
         VaslSource = vaslSource;
+        LocationHexes = locationHexes?.ToFrozenSet();
+        if (LocationHexes is { } footprint && (footprint.Count == 0 || footprint.Any(hex => !Geometry.TryGetIndex(hex, out _))))
+        {
+            throw new ArgumentException("The location footprint must contain valid board hexes.", nameof(locationHexes));
+        }
     }
 
     public BoardRef Ref
@@ -103,6 +109,15 @@ public sealed class BoardHandle
 
     public BoardGeometry Geometry => Facts.Geometry;
 
+    /// <summary>Optional immutable location footprint. The complete facts and raster remain available for rendering and LOS.</summary>
+    public IReadOnlySet<HexName>? LocationHexes
+    {
+        get;
+    }
+
+    /// <summary>Whether a unit location may use this hex, independent of terrain entry costs and combat rules.</summary>
+    public bool ContainsLocation(HexName hex) => Geometry.TryGetIndex(hex, out _) && (LocationHexes is null || LocationHexes.Contains(hex));
+
     /// <summary>
     /// What an LOS read needs beyond the hex facts (LOS Design, section 5): the terrain grid, the terrain catalog, the
     /// hexside annotations, and the LOS scenario-specific rules for composing maps. A handle without it answers no LOS.
@@ -113,15 +128,16 @@ public sealed class BoardHandle
     }
 
     /// <summary>The derived facts of a hex, or null when the hex is not on the board.</summary>
-    public HexFacts? HexFacts(HexName hex) => Geometry.TryGetIndex(hex, out var index) ? Facts[index] : null;
+    public HexFacts? HexFacts(HexName hex) => ContainsLocation(hex) ? Facts[hex] : null;
 
     /// <summary>The hex across a hexside, or null at the board edge or when the hex is not on the board.</summary>
     public HexName? Neighbor(HexName hex, HexsideDirection side) =>
-        Geometry.TryGetIndex(hex, out var index) && Geometry.Neighbor(index, side) is { } neighbor ? Geometry.NameOf(neighbor) : null;
+        ContainsLocation(hex) && Geometry.Neighbor(Geometry.IndexOf(hex), side) is { } neighbor && ContainsLocation(Geometry.NameOf(neighbor))
+            ? Geometry.NameOf(neighbor) : null;
 
     /// <summary>The distance in hexes, or null when either hex is not on the board.</summary>
     public int? Distance(HexName from, HexName to) =>
-        Geometry.TryGetIndex(from, out var source) && Geometry.TryGetIndex(to, out var target) ? Geometry.Distance(source, target) : null;
+        ContainsLocation(from) && ContainsLocation(to) ? Geometry.Distance(Geometry.IndexOf(from), Geometry.IndexOf(to)) : null;
 
     /// <summary>Resolves a location to its facts: the hex must be on this board and the level in the hex's location chain.</summary>
     public LocationReadResult Resolve(BoardLocation location)
@@ -134,7 +150,7 @@ public sealed class BoardHandle
 
         if (HexFacts(location.Hex) is not { } hex)
         {
-            return Fail("MAP-READ-002", $"{location.Hex} is not a hex on {Ref}.");
+            return Fail("MAP-READ-002", $"{location.Hex} is not a location hex on {Ref}.");
         }
 
         if (hex.Locations.FirstOrDefault(level => level.Level == location.Level) is not { } level)

@@ -1,0 +1,38 @@
+name: Campaign CI
+
+# The Campaign suite runs apart from the ASL passes (the user, 2026-10-15): on Campaign changes, nightly on main, and by hand.
+# An ASL change does not start it, and a pass never waits on it. A red run is repaired on the Campaign side.
+on:
+  pull_request:
+    paths:
+      - "src/Campaign/**"
+      - ".github/workflows/campaign-ci.yml"
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  campaign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore src/Campaign/Campaign.slnx --locked-mode
+
+      - name: Build
+        run: dotnet build src/Campaign/Campaign.slnx --configuration Release --no-restore --warnaserror
+
+      - name: Test
+        run: dotnet test src/Campaign/Campaign.slnx --configuration Release --no-build --no-restore

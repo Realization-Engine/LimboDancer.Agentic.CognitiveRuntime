@@ -2451,3 +2451,701 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,american-crew,broken,broken-morale,,,,whole number (A1.23)
 ,american-crew,broken,bpv,,,,whole number
 ,american-crew,broken,asl:self-rally,,,,yes or no
+,campaign-german-81mm-mortar,counter,kind,,,,expected asl:gun
+,campaign-german-81mm-mortar,counter,nationality,,,,Game-default medium mortar; nationality
+,campaign-german-81mm-mortar,front,identity,,,,Game-default medium mortar; identity
+,campaign-german-81mm-mortar,front,designation,,,,Game-default medium mortar; designation
+,campaign-german-81mm-mortar,front,gun-type,,,,Game-default medium mortar; gun-type
+,campaign-german-81mm-mortar,front,caliber,,,,Game-default medium mortar; caliber
+,campaign-german-81mm-mortar,front,caliber-suffix,,,,Game-default medium mortar; caliber-suffix
+,campaign-german-81mm-mortar,front,rate-of-fire,,,,Game-default medium mortar; rate-of-fire
+,campaign-german-81mm-mortar,front,ife,,,,Game-default medium mortar; ife
+,campaign-german-81mm-mortar,front,breakdown,,,,Game-default medium mortar; breakdown
+,campaign-german-81mm-mortar,front,range-minimum,,,,Game-default medium mortar; range-minimum
+,campaign-german-81mm-mortar,front,range-maximum,,,,Game-default medium mortar; range-maximum
+,campaign-german-81mm-mortar,front,special-ammo,,,,Game-default medium mortar; special-ammo
+,campaign-german-81mm-mortar,front,manhandling,,,,Game-default medium mortar; manhandling
+,campaign-german-81mm-mortar,front,target-size,,,,Game-default medium mortar; target-size
+,campaign-german-81mm-mortar,front,asl:no-ap,,,,Game-default medium mortar; asl:no-ap
+,campaign-german-81mm-mortar,front,asl:no-he,,,,Game-default medium mortar; asl:no-he
+,campaign-german-81mm-mortar,front,asl:mount-360,,,,Game-default medium mortar; asl:mount-360
+,campaign-german-81mm-mortar,front,asl:qsu,,,,Game-default medium mortar; asl:qsu
+,campaign-german-81mm-mortar,front,asl:nm,,,,Game-default medium mortar; asl:nm
+,campaign-german-81mm-mortar,front,asl:rfnm,,,,Game-default medium mortar; asl:rfnm
+,campaign-german-81mm-mortar,front,bpv,,,,Game-default medium mortar; bpv
+,campaign-german-81mm-mortar,front,dates,,,,Game-default medium mortar; dates
+,campaign-german-81mm-mortar,front,asl:animal-pack,,,,Game-default medium mortar; asl:animal-pack
+,campaign-german-81mm-mortar,malfunctioned,repair,,,,Game-default medium mortar; repair
+,campaign-german-81mm-mortar,malfunctioned,removal,,,,Game-default medium mortar; removal
+,campaign-british-25pdr,counter,kind,,,,expected asl:gun
+,campaign-british-25pdr,counter,nationality,,,,Game-default medium mortar; nationality
+,campaign-british-25pdr,front,identity,,,,Game-default medium mortar; identity
+,campaign-british-25pdr,front,designation,,,,Game-default medium mortar; designation
+,campaign-british-25pdr,front,gun-type,,,,Game-default medium mortar; gun-type
+,campaign-british-25pdr,front,caliber,,,,Game-default medium mortar; caliber
+,campaign-british-25pdr,front,caliber-suffix,,,,Game-default medium mortar; caliber-suffix
+,campaign-british-25pdr,front,rate-of-fire,,,,Game-default medium mortar; rate-of-fire
+,campaign-british-25pdr,front,ife,,,,Game-default medium mortar; ife
+,campaign-british-25pdr,front,breakdown,,,,Game-default medium mortar; breakdown
+,campaign-british-25pdr,front,range-minimum,,,,Game-default medium mortar; range-minimum
+,campaign-british-25pdr,front,range-maximum,,,,Game-default medium mortar; range-maximum
+,campaign-british-25pdr,front,special-ammo,,,,Game-default medium mortar; special-ammo
+,campaign-british-25pdr,front,manhandling,,,,Game-default medium mortar; manhandling
+,campaign-british-25pdr,front,target-size,,,,Game-default medium mortar; target-size
+,campaign-british-25pdr,front,asl:no-ap,,,,Game-default medium mortar; asl:no-ap
+,campaign-british-25pdr,front,asl:no-he,,,,Game-default medium mortar; asl:no-he
+,campaign-british-25pdr,front,asl:mount-360,,,,Game-default medium mortar; asl:mount-360
+,campaign-british-25pdr,front,asl:qsu,,,,Game-default medium mortar; asl:qsu
+,campaign-british-25pdr,front,asl:nm,,,,Game-default medium mortar; asl:nm
+,campaign-british-25pdr,front,asl:rfnm,,,,Game-default medium mortar; asl:rfnm
+,campaign-british-25pdr,front,bpv,,,,Game-default medium mortar; bpv
+,campaign-british-25pdr,front,dates,,,,Game-default medium mortar; dates
+,campaign-british-25pdr,front,asl:animal-pack,,,,Game-default medium mortar; asl:animal-pack
+,campaign-british-25pdr,malfunctioned,repair,,,,Game-default medium mortar; repair
+,campaign-british-25pdr,malfunctioned,removal,,,,Game-default medium mortar; removal
+,campaign-german-75mm-at,counter,kind,,,,expected asl:gun
+,campaign-german-75mm-at,counter,nationality,,,,Game-default medium mortar; nationality
+,campaign-german-75mm-at,front,identity,,,,Game-default medium mortar; identity
+,campaign-german-75mm-at,front,designation,,,,Game-default medium mortar; designation
+,campaign-german-75mm-at,front,gun-type,,,,Game-default medium mortar; gun-type
+,campaign-german-75mm-at,front,caliber,,,,Game-default medium mortar; caliber
+,campaign-german-75mm-at,front,caliber-suffix,,,,Game-default medium mortar; caliber-suffix
+,campaign-german-75mm-at,front,rate-of-fire,,,,Game-default medium mortar; rate-of-fire
+,campaign-german-75mm-at,front,ife,,,,Game-default medium mortar; ife
+,campaign-german-75mm-at,front,breakdown,,,,Game-default medium mortar; breakdown
+,campaign-german-75mm-at,front,range-minimum,,,,Game-default medium mortar; range-minimum
+,campaign-german-75mm-at,front,range-maximum,,,,Game-default medium mortar; range-maximum
+,campaign-german-75mm-at,front,special-ammo,,,,Game-default medium mortar; special-ammo
+,campaign-german-75mm-at,front,manhandling,,,,Game-default medium mortar; manhandling
+,campaign-german-75mm-at,front,target-size,,,,Game-default medium mortar; target-size
+,campaign-german-75mm-at,front,asl:no-ap,,,,Game-default medium mortar; asl:no-ap
+,campaign-german-75mm-at,front,asl:no-he,,,,Game-default medium mortar; asl:no-he
+,campaign-german-75mm-at,front,asl:mount-360,,,,Game-default medium mortar; asl:mount-360
+,campaign-german-75mm-at,front,asl:qsu,,,,Game-default medium mortar; asl:qsu
+,campaign-german-75mm-at,front,asl:nm,,,,Game-default medium mortar; asl:nm
+,campaign-german-75mm-at,front,asl:rfnm,,,,Game-default medium mortar; asl:rfnm
+,campaign-german-75mm-at,front,bpv,,,,Game-default medium mortar; bpv
+,campaign-german-75mm-at,front,dates,,,,Game-default medium mortar; dates
+,campaign-german-75mm-at,front,asl:animal-pack,,,,Game-default medium mortar; asl:animal-pack
+,campaign-german-75mm-at,malfunctioned,repair,,,,Game-default medium mortar; repair
+,campaign-german-75mm-at,malfunctioned,removal,,,,Game-default medium mortar; removal
+,campaign-german-88mm-at,counter,kind,,,,expected asl:gun
+,campaign-german-88mm-at,counter,nationality,,,,Game-default medium mortar; nationality
+,campaign-german-88mm-at,front,identity,,,,Game-default medium mortar; identity
+,campaign-german-88mm-at,front,designation,,,,Game-default medium mortar; designation
+,campaign-german-88mm-at,front,gun-type,,,,Game-default medium mortar; gun-type
+,campaign-german-88mm-at,front,caliber,,,,Game-default medium mortar; caliber
+,campaign-german-88mm-at,front,caliber-suffix,,,,Game-default medium mortar; caliber-suffix
+,campaign-german-88mm-at,front,rate-of-fire,,,,Game-default medium mortar; rate-of-fire
+,campaign-german-88mm-at,front,ife,,,,Game-default medium mortar; ife
+,campaign-german-88mm-at,front,breakdown,,,,Game-default medium mortar; breakdown
+,campaign-german-88mm-at,front,range-minimum,,,,Game-default medium mortar; range-minimum
+,campaign-german-88mm-at,front,range-maximum,,,,Game-default medium mortar; range-maximum
+,campaign-german-88mm-at,front,special-ammo,,,,Game-default medium mortar; special-ammo
+,campaign-german-88mm-at,front,manhandling,,,,Game-default medium mortar; manhandling
+,campaign-german-88mm-at,front,target-size,,,,Game-default medium mortar; target-size
+,campaign-german-88mm-at,front,asl:no-ap,,,,Game-default medium mortar; asl:no-ap
+,campaign-german-88mm-at,front,asl:no-he,,,,Game-default medium mortar; asl:no-he
+,campaign-german-88mm-at,front,asl:mount-360,,,,Game-default medium mortar; asl:mount-360
+,campaign-german-88mm-at,front,asl:qsu,,,,Game-default medium mortar; asl:qsu
+,campaign-german-88mm-at,front,asl:nm,,,,Game-default medium mortar; asl:nm
+,campaign-german-88mm-at,front,asl:rfnm,,,,Game-default medium mortar; asl:rfnm
+,campaign-german-88mm-at,front,bpv,,,,Game-default medium mortar; bpv
+,campaign-german-88mm-at,front,dates,,,,Game-default medium mortar; dates
+,campaign-german-88mm-at,front,asl:animal-pack,,,,Game-default medium mortar; asl:animal-pack
+,campaign-german-88mm-at,malfunctioned,repair,,,,Game-default medium mortar; repair
+,campaign-german-88mm-at,malfunctioned,removal,,,,Game-default medium mortar; removal
+,campaign-german-20mm-aa,counter,kind,,,,expected asl:gun
+,campaign-german-20mm-aa,counter,nationality,,,,Game-default medium mortar; nationality
+,campaign-german-20mm-aa,front,identity,,,,Game-default medium mortar; identity
+,campaign-german-20mm-aa,front,designation,,,,Game-default medium mortar; designation
+,campaign-german-20mm-aa,front,gun-type,,,,Game-default medium mortar; gun-type
+,campaign-german-20mm-aa,front,caliber,,,,Game-default medium mortar; caliber
+,campaign-german-20mm-aa,front,caliber-suffix,,,,Game-default medium mortar; caliber-suffix
+,campaign-german-20mm-aa,front,rate-of-fire,,,,Game-default medium mortar; rate-of-fire
+,campaign-german-20mm-aa,front,ife,,,,Game-default medium mortar; ife
+,campaign-german-20mm-aa,front,breakdown,,,,Game-default medium mortar; breakdown
+,campaign-german-20mm-aa,front,range-minimum,,,,Game-default medium mortar; range-minimum
+,campaign-german-20mm-aa,front,range-maximum,,,,Game-default medium mortar; range-maximum
+,campaign-german-20mm-aa,front,special-ammo,,,,Game-default medium mortar; special-ammo
+,campaign-german-20mm-aa,front,manhandling,,,,Game-default medium mortar; manhandling
+,campaign-german-20mm-aa,front,target-size,,,,Game-default medium mortar; target-size
+,campaign-german-20mm-aa,front,asl:no-ap,,,,Game-default medium mortar; asl:no-ap
+,campaign-german-20mm-aa,front,asl:no-he,,,,Game-default medium mortar; asl:no-he
+,campaign-german-20mm-aa,front,asl:mount-360,,,,Game-default medium mortar; asl:mount-360
+,campaign-german-20mm-aa,front,asl:qsu,,,,Game-default medium mortar; asl:qsu
+,campaign-german-20mm-aa,front,asl:nm,,,,Game-default medium mortar; asl:nm
+,campaign-german-20mm-aa,front,asl:rfnm,,,,Game-default medium mortar; asl:rfnm
+,campaign-german-20mm-aa,front,bpv,,,,Game-default medium mortar; bpv
+,campaign-german-20mm-aa,front,dates,,,,Game-default medium mortar; dates
+,campaign-german-20mm-aa,front,asl:animal-pack,,,,Game-default medium mortar; asl:animal-pack
+,campaign-german-20mm-aa,malfunctioned,repair,,,,Game-default medium mortar; repair
+,campaign-german-20mm-aa,malfunctioned,removal,,,,Game-default medium mortar; removal
+,campaign-german-quad20-aa,counter,kind,,,,expected asl:gun
+,campaign-german-quad20-aa,counter,nationality,,,,Game-default medium mortar; nationality
+,campaign-german-quad20-aa,front,identity,,,,Game-default medium mortar; identity
+,campaign-german-quad20-aa,front,designation,,,,Game-default medium mortar; designation
+,campaign-german-quad20-aa,front,gun-type,,,,Game-default medium mortar; gun-type
+,campaign-german-quad20-aa,front,caliber,,,,Game-default medium mortar; caliber
+,campaign-german-quad20-aa,front,caliber-suffix,,,,Game-default medium mortar; caliber-suffix
+,campaign-german-quad20-aa,front,rate-of-fire,,,,Game-default medium mortar; rate-of-fire
+,campaign-german-quad20-aa,front,ife,,,,Game-default medium mortar; ife
+,campaign-german-quad20-aa,front,breakdown,,,,Game-default medium mortar; breakdown
+,campaign-german-quad20-aa,front,range-minimum,,,,Game-default medium mortar; range-minimum
+,campaign-german-quad20-aa,front,range-maximum,,,,Game-default medium mortar; range-maximum
+,campaign-german-quad20-aa,front,special-ammo,,,,Game-default medium mortar; special-ammo
+,campaign-german-quad20-aa,front,manhandling,,,,Game-default medium mortar; manhandling
+,campaign-german-quad20-aa,front,target-size,,,,Game-default medium mortar; target-size
+,campaign-german-quad20-aa,front,asl:no-ap,,,,Game-default medium mortar; asl:no-ap
+,campaign-german-quad20-aa,front,asl:no-he,,,,Game-default medium mortar; asl:no-he
+,campaign-german-quad20-aa,front,asl:mount-360,,,,Game-default medium mortar; asl:mount-360
+,campaign-german-quad20-aa,front,asl:qsu,,,,Game-default medium mortar; asl:qsu
+,campaign-german-quad20-aa,front,asl:nm,,,,Game-default medium mortar; asl:nm
+,campaign-german-quad20-aa,front,asl:rfnm,,,,Game-default medium mortar; asl:rfnm
+,campaign-german-quad20-aa,front,bpv,,,,Game-default medium mortar; bpv
+,campaign-german-quad20-aa,front,dates,,,,Game-default medium mortar; dates
+,campaign-german-quad20-aa,front,asl:animal-pack,,,,Game-default medium mortar; asl:animal-pack
+,campaign-german-quad20-aa,malfunctioned,repair,,,,Game-default medium mortar; repair
+,campaign-german-quad20-aa,malfunctioned,removal,,,,Game-default medium mortar; removal
+,campaign-german-nebelwerfer,counter,kind,,,,expected asl:gun
+,campaign-german-nebelwerfer,counter,nationality,,,,Game-default medium mortar; nationality
+,campaign-german-nebelwerfer,front,identity,,,,Game-default medium mortar; identity
+,campaign-german-nebelwerfer,front,designation,,,,Game-default medium mortar; designation
+,campaign-german-nebelwerfer,front,gun-type,,,,Game-default medium mortar; gun-type
+,campaign-german-nebelwerfer,front,caliber,,,,Game-default medium mortar; caliber
+,campaign-german-nebelwerfer,front,caliber-suffix,,,,Game-default medium mortar; caliber-suffix
+,campaign-german-nebelwerfer,front,rate-of-fire,,,,Game-default medium mortar; rate-of-fire
+,campaign-german-nebelwerfer,front,ife,,,,Game-default medium mortar; ife
+,campaign-german-nebelwerfer,front,breakdown,,,,Game-default medium mortar; breakdown
+,campaign-german-nebelwerfer,front,range-minimum,,,,Game-default medium mortar; range-minimum
+,campaign-german-nebelwerfer,front,range-maximum,,,,Game-default medium mortar; range-maximum
+,campaign-german-nebelwerfer,front,special-ammo,,,,Game-default medium mortar; special-ammo
+,campaign-german-nebelwerfer,front,manhandling,,,,Game-default medium mortar; manhandling
+,campaign-german-nebelwerfer,front,target-size,,,,Game-default medium mortar; target-size
+,campaign-german-nebelwerfer,front,asl:no-ap,,,,Game-default medium mortar; asl:no-ap
+,campaign-german-nebelwerfer,front,asl:no-he,,,,Game-default medium mortar; asl:no-he
+,campaign-german-nebelwerfer,front,asl:mount-360,,,,Game-default medium mortar; asl:mount-360
+,campaign-german-nebelwerfer,front,asl:qsu,,,,Game-default medium mortar; asl:qsu
+,campaign-german-nebelwerfer,front,asl:nm,,,,Game-default medium mortar; asl:nm
+,campaign-german-nebelwerfer,front,asl:rfnm,,,,Game-default medium mortar; asl:rfnm
+,campaign-german-nebelwerfer,front,bpv,,,,Game-default medium mortar; bpv
+,campaign-german-nebelwerfer,front,dates,,,,Game-default medium mortar; dates
+,campaign-german-nebelwerfer,front,asl:animal-pack,,,,Game-default medium mortar; asl:animal-pack
+,campaign-german-nebelwerfer,malfunctioned,repair,,,,Game-default medium mortar; repair
+,campaign-german-nebelwerfer,malfunctioned,removal,,,,Game-default medium mortar; removal
+,campaign-british-sexton,counter,kind,,,,expected asl:vehicle
+,campaign-british-sexton,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,campaign-british-sexton,front,identity,,,,"identity as printed, or not-printed"
+,campaign-british-sexton,front,designation,,,,"as printed, or not-printed"
+,campaign-british-sexton,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,campaign-british-sexton,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,campaign-british-sexton,front,movement-points,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,amphibious-mp,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,af-front,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,af-side,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-british-sexton,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-british-sexton,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,campaign-british-sexton,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,campaign-british-sexton,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,campaign-british-sexton,front,caliber,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,campaign-british-sexton,front,rate-of-fire,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,breakdown,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,campaign-british-sexton,front,sa-mount,,,,"turret or bow, or not-printed"
+,campaign-british-sexton,front,sa-caliber,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,towing,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,passenger-capacity,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,bmg,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,cmg,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,aamg,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,hull-rear-mg,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,turret-rear-mg,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,campaign-british-sexton,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,campaign-british-sexton,wreck,crew-survival,,,,"whole number, or not-printed"
+,campaign-british-sexton,front,asl:mechanically-unreliable,,,,yes or no
+,campaign-british-sexton,front,asl:unarmored,,,,yes or no
+,campaign-british-sexton,front,asl:partially-armored,,,,yes or no
+,campaign-british-sexton,front,asl:rear-turret-unarmored,,,,yes or no
+,campaign-british-sexton,front,asl:open-topped,,,,yes or no
+,campaign-british-sexton,front,asl:no-ap,,,,yes or no
+,campaign-british-sexton,front,asl:no-he,,,,yes or no
+,campaign-british-sexton,front,asl:fixed-bmg,,,,yes or no
+,campaign-british-sexton,front,asl:vehicle-ft-range-2,,,,yes or no
+,campaign-british-sexton,front,asl:cs-passengers-only,,,,yes or no
+,campaign-british-achilles,counter,kind,,,,expected asl:vehicle
+,campaign-british-achilles,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,campaign-british-achilles,front,identity,,,,"identity as printed, or not-printed"
+,campaign-british-achilles,front,designation,,,,"as printed, or not-printed"
+,campaign-british-achilles,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,campaign-british-achilles,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,campaign-british-achilles,front,movement-points,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,amphibious-mp,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,af-front,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,af-side,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-british-achilles,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-british-achilles,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,campaign-british-achilles,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,campaign-british-achilles,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,campaign-british-achilles,front,caliber,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,campaign-british-achilles,front,rate-of-fire,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,breakdown,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,campaign-british-achilles,front,sa-mount,,,,"turret or bow, or not-printed"
+,campaign-british-achilles,front,sa-caliber,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,towing,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,passenger-capacity,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,bmg,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,cmg,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,aamg,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,hull-rear-mg,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,turret-rear-mg,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,campaign-british-achilles,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,campaign-british-achilles,wreck,crew-survival,,,,"whole number, or not-printed"
+,campaign-british-achilles,front,asl:mechanically-unreliable,,,,yes or no
+,campaign-british-achilles,front,asl:unarmored,,,,yes or no
+,campaign-british-achilles,front,asl:partially-armored,,,,yes or no
+,campaign-british-achilles,front,asl:rear-turret-unarmored,,,,yes or no
+,campaign-british-achilles,front,asl:open-topped,,,,yes or no
+,campaign-british-achilles,front,asl:no-ap,,,,yes or no
+,campaign-british-achilles,front,asl:no-he,,,,yes or no
+,campaign-british-achilles,front,asl:fixed-bmg,,,,yes or no
+,campaign-british-achilles,front,asl:vehicle-ft-range-2,,,,yes or no
+,campaign-british-achilles,front,asl:cs-passengers-only,,,,yes or no
+,campaign-british-cromwell,counter,kind,,,,expected asl:vehicle
+,campaign-british-cromwell,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,campaign-british-cromwell,front,identity,,,,"identity as printed, or not-printed"
+,campaign-british-cromwell,front,designation,,,,"as printed, or not-printed"
+,campaign-british-cromwell,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,campaign-british-cromwell,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,campaign-british-cromwell,front,movement-points,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,amphibious-mp,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,af-front,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,af-side,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-british-cromwell,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-british-cromwell,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,campaign-british-cromwell,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,campaign-british-cromwell,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,campaign-british-cromwell,front,caliber,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,campaign-british-cromwell,front,rate-of-fire,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,breakdown,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,campaign-british-cromwell,front,sa-mount,,,,"turret or bow, or not-printed"
+,campaign-british-cromwell,front,sa-caliber,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,towing,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,passenger-capacity,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,bmg,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,cmg,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,aamg,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,hull-rear-mg,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,turret-rear-mg,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,campaign-british-cromwell,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,campaign-british-cromwell,wreck,crew-survival,,,,"whole number, or not-printed"
+,campaign-british-cromwell,front,asl:mechanically-unreliable,,,,yes or no
+,campaign-british-cromwell,front,asl:unarmored,,,,yes or no
+,campaign-british-cromwell,front,asl:partially-armored,,,,yes or no
+,campaign-british-cromwell,front,asl:rear-turret-unarmored,,,,yes or no
+,campaign-british-cromwell,front,asl:open-topped,,,,yes or no
+,campaign-british-cromwell,front,asl:no-ap,,,,yes or no
+,campaign-british-cromwell,front,asl:no-he,,,,yes or no
+,campaign-british-cromwell,front,asl:fixed-bmg,,,,yes or no
+,campaign-british-cromwell,front,asl:vehicle-ft-range-2,,,,yes or no
+,campaign-british-cromwell,front,asl:cs-passengers-only,,,,yes or no
+,campaign-british-sherman75,counter,kind,,,,expected asl:vehicle
+,campaign-british-sherman75,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,campaign-british-sherman75,front,identity,,,,"identity as printed, or not-printed"
+,campaign-british-sherman75,front,designation,,,,"as printed, or not-printed"
+,campaign-british-sherman75,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,campaign-british-sherman75,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,campaign-british-sherman75,front,movement-points,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,amphibious-mp,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,af-front,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,af-side,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-british-sherman75,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-british-sherman75,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,campaign-british-sherman75,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,campaign-british-sherman75,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,campaign-british-sherman75,front,caliber,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,campaign-british-sherman75,front,rate-of-fire,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,breakdown,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,campaign-british-sherman75,front,sa-mount,,,,"turret or bow, or not-printed"
+,campaign-british-sherman75,front,sa-caliber,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,towing,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,passenger-capacity,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,bmg,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,cmg,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,aamg,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,hull-rear-mg,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,turret-rear-mg,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,campaign-british-sherman75,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,campaign-british-sherman75,wreck,crew-survival,,,,"whole number, or not-printed"
+,campaign-british-sherman75,front,asl:mechanically-unreliable,,,,yes or no
+,campaign-british-sherman75,front,asl:unarmored,,,,yes or no
+,campaign-british-sherman75,front,asl:partially-armored,,,,yes or no
+,campaign-british-sherman75,front,asl:rear-turret-unarmored,,,,yes or no
+,campaign-british-sherman75,front,asl:open-topped,,,,yes or no
+,campaign-british-sherman75,front,asl:no-ap,,,,yes or no
+,campaign-british-sherman75,front,asl:no-he,,,,yes or no
+,campaign-british-sherman75,front,asl:fixed-bmg,,,,yes or no
+,campaign-british-sherman75,front,asl:vehicle-ft-range-2,,,,yes or no
+,campaign-british-sherman75,front,asl:cs-passengers-only,,,,yes or no
+,campaign-british-firefly,counter,kind,,,,expected asl:vehicle
+,campaign-british-firefly,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,campaign-british-firefly,front,identity,,,,"identity as printed, or not-printed"
+,campaign-british-firefly,front,designation,,,,"as printed, or not-printed"
+,campaign-british-firefly,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,campaign-british-firefly,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,campaign-british-firefly,front,movement-points,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,amphibious-mp,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,af-front,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,af-side,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-british-firefly,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-british-firefly,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,campaign-british-firefly,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,campaign-british-firefly,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,campaign-british-firefly,front,caliber,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,campaign-british-firefly,front,rate-of-fire,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,breakdown,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,campaign-british-firefly,front,sa-mount,,,,"turret or bow, or not-printed"
+,campaign-british-firefly,front,sa-caliber,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,towing,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,passenger-capacity,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,bmg,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,cmg,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,aamg,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,hull-rear-mg,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,turret-rear-mg,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,campaign-british-firefly,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,campaign-british-firefly,wreck,crew-survival,,,,"whole number, or not-printed"
+,campaign-british-firefly,front,asl:mechanically-unreliable,,,,yes or no
+,campaign-british-firefly,front,asl:unarmored,,,,yes or no
+,campaign-british-firefly,front,asl:partially-armored,,,,yes or no
+,campaign-british-firefly,front,asl:rear-turret-unarmored,,,,yes or no
+,campaign-british-firefly,front,asl:open-topped,,,,yes or no
+,campaign-british-firefly,front,asl:no-ap,,,,yes or no
+,campaign-british-firefly,front,asl:no-he,,,,yes or no
+,campaign-british-firefly,front,asl:fixed-bmg,,,,yes or no
+,campaign-british-firefly,front,asl:vehicle-ft-range-2,,,,yes or no
+,campaign-british-firefly,front,asl:cs-passengers-only,,,,yes or no
+,campaign-british-bren-carrier,counter,kind,,,,expected asl:vehicle
+,campaign-british-bren-carrier,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,campaign-british-bren-carrier,front,identity,,,,"identity as printed, or not-printed"
+,campaign-british-bren-carrier,front,designation,,,,"as printed, or not-printed"
+,campaign-british-bren-carrier,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,campaign-british-bren-carrier,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,campaign-british-bren-carrier,front,movement-points,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,amphibious-mp,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,af-front,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,af-side,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-british-bren-carrier,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-british-bren-carrier,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,campaign-british-bren-carrier,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,campaign-british-bren-carrier,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,campaign-british-bren-carrier,front,caliber,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,campaign-british-bren-carrier,front,rate-of-fire,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,breakdown,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,campaign-british-bren-carrier,front,sa-mount,,,,"turret or bow, or not-printed"
+,campaign-british-bren-carrier,front,sa-caliber,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,towing,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,passenger-capacity,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,bmg,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,cmg,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,aamg,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,hull-rear-mg,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,turret-rear-mg,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,campaign-british-bren-carrier,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,wreck,crew-survival,,,,"whole number, or not-printed"
+,campaign-british-bren-carrier,front,asl:mechanically-unreliable,,,,yes or no
+,campaign-british-bren-carrier,front,asl:unarmored,,,,yes or no
+,campaign-british-bren-carrier,front,asl:partially-armored,,,,yes or no
+,campaign-british-bren-carrier,front,asl:rear-turret-unarmored,,,,yes or no
+,campaign-british-bren-carrier,front,asl:open-topped,,,,yes or no
+,campaign-british-bren-carrier,front,asl:no-ap,,,,yes or no
+,campaign-british-bren-carrier,front,asl:no-he,,,,yes or no
+,campaign-british-bren-carrier,front,asl:fixed-bmg,,,,yes or no
+,campaign-british-bren-carrier,front,asl:vehicle-ft-range-2,,,,yes or no
+,campaign-british-bren-carrier,front,asl:cs-passengers-only,,,,yes or no
+,campaign-german-wespe,counter,kind,,,,expected asl:vehicle
+,campaign-german-wespe,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,campaign-german-wespe,front,identity,,,,"identity as printed, or not-printed"
+,campaign-german-wespe,front,designation,,,,"as printed, or not-printed"
+,campaign-german-wespe,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,campaign-german-wespe,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,campaign-german-wespe,front,movement-points,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,amphibious-mp,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,af-front,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,af-side,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-german-wespe,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-german-wespe,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,campaign-german-wespe,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,campaign-german-wespe,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,campaign-german-wespe,front,caliber,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,campaign-german-wespe,front,rate-of-fire,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,breakdown,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,campaign-german-wespe,front,sa-mount,,,,"turret or bow, or not-printed"
+,campaign-german-wespe,front,sa-caliber,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,towing,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,passenger-capacity,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,bmg,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,cmg,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,aamg,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,hull-rear-mg,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,turret-rear-mg,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,campaign-german-wespe,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,campaign-german-wespe,wreck,crew-survival,,,,"whole number, or not-printed"
+,campaign-german-wespe,front,asl:mechanically-unreliable,,,,yes or no
+,campaign-german-wespe,front,asl:unarmored,,,,yes or no
+,campaign-german-wespe,front,asl:partially-armored,,,,yes or no
+,campaign-german-wespe,front,asl:rear-turret-unarmored,,,,yes or no
+,campaign-german-wespe,front,asl:open-topped,,,,yes or no
+,campaign-german-wespe,front,asl:no-ap,,,,yes or no
+,campaign-german-wespe,front,asl:no-he,,,,yes or no
+,campaign-german-wespe,front,asl:fixed-bmg,,,,yes or no
+,campaign-german-wespe,front,asl:vehicle-ft-range-2,,,,yes or no
+,campaign-german-wespe,front,asl:cs-passengers-only,,,,yes or no
+,campaign-german-maultier,counter,kind,,,,expected asl:vehicle
+,campaign-german-maultier,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,campaign-german-maultier,front,identity,,,,"identity as printed, or not-printed"
+,campaign-german-maultier,front,designation,,,,"as printed, or not-printed"
+,campaign-german-maultier,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,campaign-german-maultier,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,campaign-german-maultier,front,movement-points,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,amphibious-mp,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,af-front,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,af-side,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-german-maultier,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-german-maultier,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,campaign-german-maultier,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,campaign-german-maultier,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,campaign-german-maultier,front,caliber,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,campaign-german-maultier,front,rate-of-fire,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,breakdown,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,campaign-german-maultier,front,sa-mount,,,,"turret or bow, or not-printed"
+,campaign-german-maultier,front,sa-caliber,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,towing,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,passenger-capacity,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,bmg,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,cmg,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,aamg,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,hull-rear-mg,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,turret-rear-mg,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,campaign-german-maultier,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,campaign-german-maultier,wreck,crew-survival,,,,"whole number, or not-printed"
+,campaign-german-maultier,front,asl:mechanically-unreliable,,,,yes or no
+,campaign-german-maultier,front,asl:unarmored,,,,yes or no
+,campaign-german-maultier,front,asl:partially-armored,,,,yes or no
+,campaign-german-maultier,front,asl:rear-turret-unarmored,,,,yes or no
+,campaign-german-maultier,front,asl:open-topped,,,,yes or no
+,campaign-german-maultier,front,asl:no-ap,,,,yes or no
+,campaign-german-maultier,front,asl:no-he,,,,yes or no
+,campaign-german-maultier,front,asl:fixed-bmg,,,,yes or no
+,campaign-german-maultier,front,asl:vehicle-ft-range-2,,,,yes or no
+,campaign-german-maultier,front,asl:cs-passengers-only,,,,yes or no
+,campaign-german-hummel,counter,kind,,,,expected asl:vehicle
+,campaign-german-hummel,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,campaign-german-hummel,front,identity,,,,"identity as printed, or not-printed"
+,campaign-german-hummel,front,designation,,,,"as printed, or not-printed"
+,campaign-german-hummel,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,campaign-german-hummel,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,campaign-german-hummel,front,movement-points,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,amphibious-mp,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,af-front,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,af-side,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-german-hummel,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-german-hummel,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,campaign-german-hummel,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,campaign-german-hummel,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,campaign-german-hummel,front,caliber,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,campaign-german-hummel,front,rate-of-fire,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,breakdown,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,campaign-german-hummel,front,sa-mount,,,,"turret or bow, or not-printed"
+,campaign-german-hummel,front,sa-caliber,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,towing,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,passenger-capacity,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,bmg,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,cmg,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,aamg,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,hull-rear-mg,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,turret-rear-mg,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,campaign-german-hummel,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,campaign-german-hummel,wreck,crew-survival,,,,"whole number, or not-printed"
+,campaign-german-hummel,front,asl:mechanically-unreliable,,,,yes or no
+,campaign-german-hummel,front,asl:unarmored,,,,yes or no
+,campaign-german-hummel,front,asl:partially-armored,,,,yes or no
+,campaign-german-hummel,front,asl:rear-turret-unarmored,,,,yes or no
+,campaign-german-hummel,front,asl:open-topped,,,,yes or no
+,campaign-german-hummel,front,asl:no-ap,,,,yes or no
+,campaign-german-hummel,front,asl:no-he,,,,yes or no
+,campaign-german-hummel,front,asl:fixed-bmg,,,,yes or no
+,campaign-german-hummel,front,asl:vehicle-ft-range-2,,,,yes or no
+,campaign-german-hummel,front,asl:cs-passengers-only,,,,yes or no
+,campaign-german-pziv,counter,kind,,,,expected asl:vehicle
+,campaign-german-pziv,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,campaign-german-pziv,front,identity,,,,"identity as printed, or not-printed"
+,campaign-german-pziv,front,designation,,,,"as printed, or not-printed"
+,campaign-german-pziv,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,campaign-german-pziv,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,campaign-german-pziv,front,movement-points,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,amphibious-mp,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,af-front,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,af-side,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-german-pziv,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-german-pziv,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,campaign-german-pziv,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,campaign-german-pziv,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,campaign-german-pziv,front,caliber,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,campaign-german-pziv,front,rate-of-fire,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,breakdown,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,campaign-german-pziv,front,sa-mount,,,,"turret or bow, or not-printed"
+,campaign-german-pziv,front,sa-caliber,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,towing,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,passenger-capacity,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,bmg,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,cmg,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,aamg,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,hull-rear-mg,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,turret-rear-mg,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,campaign-german-pziv,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,campaign-german-pziv,wreck,crew-survival,,,,"whole number, or not-printed"
+,campaign-german-pziv,front,asl:mechanically-unreliable,,,,yes or no
+,campaign-german-pziv,front,asl:unarmored,,,,yes or no
+,campaign-german-pziv,front,asl:partially-armored,,,,yes or no
+,campaign-german-pziv,front,asl:rear-turret-unarmored,,,,yes or no
+,campaign-german-pziv,front,asl:open-topped,,,,yes or no
+,campaign-german-pziv,front,asl:no-ap,,,,yes or no
+,campaign-german-pziv,front,asl:no-he,,,,yes or no
+,campaign-german-pziv,front,asl:fixed-bmg,,,,yes or no
+,campaign-german-pziv,front,asl:vehicle-ft-range-2,,,,yes or no
+,campaign-german-pziv,front,asl:cs-passengers-only,,,,yes or no
+,campaign-german-panther,counter,kind,,,,expected asl:vehicle
+,campaign-german-panther,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,campaign-german-panther,front,identity,,,,"identity as printed, or not-printed"
+,campaign-german-panther,front,designation,,,,"as printed, or not-printed"
+,campaign-german-panther,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,campaign-german-panther,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,campaign-german-panther,front,movement-points,,,,"whole number, or not-printed"
+,campaign-german-panther,front,amphibious-mp,,,,"whole number, or not-printed"
+,campaign-german-panther,front,af-front,,,,"whole number, or not-printed"
+,campaign-german-panther,front,af-side,,,,"whole number, or not-printed"
+,campaign-german-panther,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-german-panther,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-german-panther,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,campaign-german-panther,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,campaign-german-panther,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,campaign-german-panther,front,caliber,,,,"whole number, or not-printed"
+,campaign-german-panther,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,campaign-german-panther,front,rate-of-fire,,,,"whole number, or not-printed"
+,campaign-german-panther,front,breakdown,,,,"whole number, or not-printed"
+,campaign-german-panther,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,campaign-german-panther,front,sa-mount,,,,"turret or bow, or not-printed"
+,campaign-german-panther,front,sa-caliber,,,,"whole number, or not-printed"
+,campaign-german-panther,front,towing,,,,"whole number, or not-printed"
+,campaign-german-panther,front,passenger-capacity,,,,"whole number, or not-printed"
+,campaign-german-panther,front,bmg,,,,"whole number, or not-printed"
+,campaign-german-panther,front,cmg,,,,"whole number, or not-printed"
+,campaign-german-panther,front,aamg,,,,"whole number, or not-printed"
+,campaign-german-panther,front,hull-rear-mg,,,,"whole number, or not-printed"
+,campaign-german-panther,front,turret-rear-mg,,,,"whole number, or not-printed"
+,campaign-german-panther,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,campaign-german-panther,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,campaign-german-panther,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,campaign-german-panther,wreck,crew-survival,,,,"whole number, or not-printed"
+,campaign-german-panther,front,asl:mechanically-unreliable,,,,yes or no
+,campaign-german-panther,front,asl:unarmored,,,,yes or no
+,campaign-german-panther,front,asl:partially-armored,,,,yes or no
+,campaign-german-panther,front,asl:rear-turret-unarmored,,,,yes or no
+,campaign-german-panther,front,asl:open-topped,,,,yes or no
+,campaign-german-panther,front,asl:no-ap,,,,yes or no
+,campaign-german-panther,front,asl:no-he,,,,yes or no
+,campaign-german-panther,front,asl:fixed-bmg,,,,yes or no
+,campaign-german-panther,front,asl:vehicle-ft-range-2,,,,yes or no
+,campaign-german-panther,front,asl:cs-passengers-only,,,,yes or no
+,campaign-german-tiger,counter,kind,,,,expected asl:vehicle
+,campaign-german-tiger,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,campaign-german-tiger,front,identity,,,,"identity as printed, or not-printed"
+,campaign-german-tiger,front,designation,,,,"as printed, or not-printed"
+,campaign-german-tiger,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,campaign-german-tiger,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,campaign-german-tiger,front,movement-points,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,amphibious-mp,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,af-front,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,af-side,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-german-tiger,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,campaign-german-tiger,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,campaign-german-tiger,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,campaign-german-tiger,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,campaign-german-tiger,front,caliber,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,campaign-german-tiger,front,rate-of-fire,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,breakdown,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,campaign-german-tiger,front,sa-mount,,,,"turret or bow, or not-printed"
+,campaign-german-tiger,front,sa-caliber,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,towing,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,passenger-capacity,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,bmg,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,cmg,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,aamg,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,hull-rear-mg,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,turret-rear-mg,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,campaign-german-tiger,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,campaign-german-tiger,wreck,crew-survival,,,,"whole number, or not-printed"
+,campaign-german-tiger,front,asl:mechanically-unreliable,,,,yes or no
+,campaign-german-tiger,front,asl:unarmored,,,,yes or no
+,campaign-german-tiger,front,asl:partially-armored,,,,yes or no
+,campaign-german-tiger,front,asl:rear-turret-unarmored,,,,yes or no
+,campaign-german-tiger,front,asl:open-topped,,,,yes or no
+,campaign-german-tiger,front,asl:no-ap,,,,yes or no
+,campaign-german-tiger,front,asl:no-he,,,,yes or no
+,campaign-german-tiger,front,asl:fixed-bmg,,,,yes or no
+,campaign-german-tiger,front,asl:vehicle-ft-range-2,,,,yes or no
+,campaign-german-tiger,front,asl:cs-passengers-only,,,,yes or no

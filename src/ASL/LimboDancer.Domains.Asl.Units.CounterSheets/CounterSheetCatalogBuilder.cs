@@ -108,7 +108,7 @@ public static class CounterSheetCatalogBuilder
                 diagnostics.Add(UnitDiagnostic.Error("UNIT-CS-005", $"The sheet '{row.Sheet}' is not listed in the source record.", path));
             }
 
-            if (row.Transcriber != record.Transcriber)
+            if (!record.NamesTranscriber(row.Transcriber))
             {
                 diagnostics.Add(UnitDiagnostic.Error("UNIT-CS-006", $"The row's transcriber '{row.Transcriber}' is not the record's '{record.Transcriber}'.", path));
             }

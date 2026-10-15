@@ -1,6 +1,7 @@
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Geometry;
+using LimboDancer.Domains.Asl.Maps.Read;
 
 namespace LimboDancer.Domains.Asl.Units.State;
 
@@ -44,4 +45,25 @@ public sealed class HexFactLocationChains : ILocationChains
 
     private HexFacts? Facts(BoardRef board, HexName hex) =>
         boards.TryGetValue(board, out var entry) && entry.Facts.Geometry.TryGetIndex(hex, out var index) ? entry.Facts[index] : null;
+}
+
+/// <summary>Location chains that retain the exact board handle's playable footprint during event validation.</summary>
+public sealed class BoardHandleLocationChains : ILocationChains
+{
+    private readonly Dictionary<BoardRef, BoardHandle> boards;
+
+    public BoardHandleLocationChains(IEnumerable<BoardHandle> boards)
+    {
+        ArgumentNullException.ThrowIfNull(boards);
+        this.boards = boards.ToDictionary(board => board.Ref);
+    }
+
+    public string? Version(BoardRef board) => boards.GetValueOrDefault(board)?.Version;
+
+    public IReadOnlyList<int>? Levels(BoardRef board, HexName hex) =>
+        boards.GetValueOrDefault(board)?.HexFacts(hex) is { } facts ? [.. facts.Locations.Select(location => location.Level)] : null;
+
+    public bool HasBridge(BoardRef board, HexName hex) => boards.GetValueOrDefault(board)?.HexFacts(hex)?.Bridge is not null;
+
+    public BoardGeometry? Geometry(BoardRef board) => boards.GetValueOrDefault(board)?.Geometry;
 }

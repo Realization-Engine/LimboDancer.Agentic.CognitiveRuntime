@@ -36,7 +36,7 @@ public sealed record GameMapLayers(StudioBoard? Board, string? Source, string? U
 /// built from its placements without saving it, drawn in the Exact view with the units the viewer may see and an
 /// optional highlighted location.
 /// </summary>
-public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache renders, UnitLibrary units, GameLibrary games)
+public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary units, GameLibrary games)
 {
     /// <summary>The maps saved in Map Studio, whose placements a new game may copy.</summary>
     public IReadOnlyList<MapDefinition> Saved() => maps.List();
@@ -158,7 +158,8 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
             return new GameMapLayers(null, null, null, null, [.. loaded.Diagnostics.Select(item => $"{item.Code}: {item.Message}")]);
         }
 
-        if (renders.Get(board, BoardView.Exact, "document", trace: false) is null)
+        // The viewport requests layer fragments. Do not render an unused standalone document here.
+        if (board.InputFor(BoardView.Exact) is null)
         {
             return new GameMapLayers(null, board.Ref.Value, null, null, [$"{board.Ref} has nothing to draw in the Exact view."]);
         }

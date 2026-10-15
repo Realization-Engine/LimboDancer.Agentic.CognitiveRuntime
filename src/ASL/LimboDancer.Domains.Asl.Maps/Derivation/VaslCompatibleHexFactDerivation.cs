@@ -392,7 +392,9 @@ public static class VaslCompatibleHexFactDerivation
     // Hex.fixBridgesTunnelWater
     private static void FixBridgesTunnelWater(Context context, HexState hex)
     {
-        if (!BorderContains(context, hex, terrain => terrain.IsBridge || terrain.IsTunnel, out _))
+        // A rectangle without matching terrain cannot contain it inside the border polygon.
+        // Keep the exact scan for positive rectangles, including VASL scan order and edge behavior.
+        if (!context.BoxHasBridgeOrTunnel(hex) || !BorderContains(context, hex, terrain => terrain.IsBridge || terrain.IsTunnel, out _))
         {
             return;
         }
@@ -539,6 +541,7 @@ public static class VaslCompatibleHexFactDerivation
         private readonly Dictionary<HexIndex, int[]> firstOccurrence = [];
         private readonly Dictionary<HexIndex, bool> boxHasInherent = [];
         private readonly bool[] inherentCodes = new bool[256];
+        private readonly bool[] bridgeOrTunnelCodes = new bool[256];
 
         public Context(TerrainGrid grid, TerrainCatalog catalog, IReadOnlyDictionary<HexIndex, HexState> hexes)
         {
@@ -550,6 +553,7 @@ public static class VaslCompatibleHexFactDerivation
             foreach (var type in catalog.Types)
             {
                 inherentCodes[type.Code] = type.IsInherent;
+                bridgeOrTunnelCodes[type.Code] = type.IsBridge || type.IsTunnel;
             }
         }
 
@@ -601,6 +605,25 @@ public static class VaslCompatibleHexFactDerivation
             return has;
         }
 
+        // Only a negative result skips exact polygon membership. No derived hex state is consulted.
+        public bool BoxHasBridgeOrTunnel(HexState hex)
+        {
+            var bounds = hex.Border;
+            var height = Geometry.GridHeight;
+            var codes = Grid.Codes;
+            for (var x = Math.Max(0, bounds.MinX); x < bounds.MinX + bounds.Width && x < Geometry.GridWidth; x++)
+            {
+                for (var y = Math.Max(0, bounds.MinY); y < bounds.MinY + bounds.Height && y < height; y++)
+                {
+                    if (bridgeOrTunnelCodes[codes[(x * height) + y]])
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
         /// <summary>For each code, the position of its first cell inside the hex border in scan order, or int.MaxValue.</summary>
         public int[] FirstOccurrence(HexState hex)
         {

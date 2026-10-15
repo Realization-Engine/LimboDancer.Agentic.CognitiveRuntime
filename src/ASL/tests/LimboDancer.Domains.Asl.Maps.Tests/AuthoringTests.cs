@@ -115,6 +115,33 @@ public sealed class BoardPackageTests : IDisposable
         Assert.Equal("MAP-PKG-001", Assert.Single(store.Load(BoardRef.Parse("ab-missing")).Diagnostics).Code);
     }
 
+    [Fact]
+    public void CachedPackagesStillCheckBothFilesByContent()
+    {
+        var store = new BoardPackageStore(root);
+        var package = new BoardPackage(BoardRef.Parse("ab-cached"), "Cached", FeatureCompilerTests.SampleModel());
+        store.Save(package);
+        var first = store.Load(package.Board);
+        Assert.Same(first, store.Load(package.Board));
+        var features = Path.Combine(store.DirectoryOf(package.Board), BoardPackage.FeaturesEntry);
+        var bytes = File.ReadAllBytes(features);
+        var timestamp = File.GetLastWriteTimeUtc(features);
+        File.WriteAllText(features, File.ReadAllText(features).Replace("\"layer\":0", "\"layer\":1", StringComparison.Ordinal));
+        File.SetLastWriteTimeUtc(features, timestamp);
+        Assert.Null(store.Load(package.Board).Package);
+        File.WriteAllBytes(features, bytes);
+        Assert.Same(first, store.Load(package.Board));
+        var renamed = package with
+        {
+            Name = "Edited"
+        };
+        store.Save(renamed);
+        var changed = store.Load(package.Board);
+        Assert.NotSame(first, changed);
+        Assert.Equal(renamed.Version, changed.Package!.Version);
+        Assert.NotEqual(first.Package!.Version, changed.Package.Version);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(root))
