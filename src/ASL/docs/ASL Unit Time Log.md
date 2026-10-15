@@ -1458,3 +1458,52 @@ The pass by the clock on 2026-10-15: 10:20 to 15:50, 5:30 in all, with no stop f
 | Sub-task | Start | End | Duration | Notes |
 |---|---|---|---|---|
 | The gate, at the user's word ("Start the gate: run baseline, build, and proofs for pass 60, and stop before the push"): the fetch (origin/main still 380b4a7b); baseline (20 s, the cut's baseline reused) and build (3:49) side by side; proofs stopped by the early check (five Fire plans of older games differing by the planned events' hash alone: `randomDestruction` in a JSON record); `SKIP_JSON` named, proofs again (5 min): text list 31 lines, replay digest no older line, sweep 269 answers in three groups, each read; the documents | 15:58 | 16:16 | 18 min | The gate's first whole run since its repairs of 2026-10-13: about a quarter of an hour, as the standing rules say, with the early check's stop costing two minutes. |
+| The push and the pull request, at the user's word ("Push feature/asl-backlog-pass-60 and open its pull request; read its CI run and stop before the merge"): the fetch (main still 380b4a7b), the push, pull request 15, and its CI run 38808112265 read to its end (11:53, every step passed, the whole ASL solution's tests among them); the gate's `ci` stage said the same | 17:11 | 17:25 | 14 min | The app's pull request panel could not read the checks ("gh is not authenticated"); the shell's `gh` could. |
+| The merge, at the user's word ("Merge pull request 15 into main with --no-ff, push, and read the merge's CI run"): the fetch (main still 380b4a7b, so the pull request's run stands); merged with `--no-ff` in a temporary worktree as 9ce72e29, its tree equal to the branch's; pushed with no force; pull request 15 marked merged; the merge's CI run 38811359573 read to its end (12:09, green) | 17:37 | 17:50 | 13 min | |
+| The closing documents, straight to main as edits of existing documents: these rows and the comparison below; the merged status in the design, the review, and the redesign plan | 17:52 | 18:16 | 24 min | The script that wrote them stays out of main (a new file goes by pull request); it is in the working folder. |
+
+## Pass 55 and pass 60 compared, by the clock
+
+Both passes ran under a word to build without the user's intervention up to the gate, by agents to briefs, with the session reading each diff and playing each task's games. The numbers are this log's rows; times are local, on 2026-10-13 for pass 55 and 2026-10-15 for pass 60. Between the two passes the gate changed (2026-10-13: the local suite and Docker moved to CI on the pull request, the trial was folded into the proofs, the baseline made once at the cut), and pass 60 ran a narrower Studio check at the user's word; both changes are in the numbers below and are named where they matter.
+
+**The scope.**
+
+| | Pass 55 | Pass 60 |
+|---|---|---|
+| Inventory rows | 35 (the plan said 20) | 49 (the plan said 37) |
+| Tasks built | 7 (55.1 to 55.6, and 55.7 carried in) | 6 (60.1 to 60.6, with 50.5 carried in) |
+| The plan's estimate of the build / in all | 3:40 / 4:55 | 4:40 / 5:55 |
+| The frame's estimate of the build / in all | 9:50 / 11:05 | 6:40 / 7:55 |
+| Recorded games of the pass | 31 | 23 |
+| Rulings made under the word | R55.1 to R55.33 (33) | R60.1 to R60.27 (27), three of them correcting the frame's |
+
+**The phases.**
+
+| Phase | Pass 55 | Pass 60 | Difference |
+|---|---|---|---|
+| The frame | 0:24 (06:43 to 07:07) | 0:13 (10:20 to 10:33) | -0:11 |
+| The build | 4:50 (07:07 to 11:57) | 3:50 (10:33 to 14:23) | -1:00 |
+| Build per task | 41 min (7 tasks) | 38 min (6 tasks) | -3 min |
+| Build per inventory row | 8.3 min | 4.7 min | -3.6 min |
+| The build against the frame's estimate | 49% | 57% | |
+| The build against the plan's estimate | 132% | 82% | |
+| The reviews and their fixes | 1:55 (11:57 to 13:52) | 0:46 (14:23 to 15:09) | -1:09 |
+| The Studio check, the strict build, the documents | 0:39 (13:25 to 14:04; the strict build was the gate's) | 0:41 (15:09 to 15:50, the strict build's two runs among them) | +0:02 |
+| From the frame to the documents, by the clock | 7:21 (06:43 to 14:04) | 5:30 (10:20 to 15:50) | -1:51 |
+| The gate | 2:51 (14:47 to 17:38), and about 15 min of reading before it | 0:18 (15:58 to 16:16) | -2:48 |
+| The push and the pull request's CI run | none (the gate ran the suite and Docker locally) | 0:14 (17:11 to 17:25) | +0:14 |
+| The merge and its CI run | 0:02 for the merge (18:31 to 18:33), then a red run and its repair, 0:22 (18:34 to 18:56), and the repaired run (not timed) | 0:13 (17:37 to 17:50), green at once | |
+| Work by the clock, start to a green main, without the waits for the user's word | about 10:50, and the repaired run | 6:15 | about -4:35 |
+| Elapsed, start to a green main, with the waits | about 12:25 (06:43 to about 19:10; the last run's end not recorded) | 7:30 (10:20 to 17:50) | about -4:55 |
+| Waits for the user's word | 0:28 before the gate, 0:53 before the merge | 0:08 before the gate, 0:55 before the push, 0:12 before the merge | |
+
+Pass 55's tool repairs after its merge (0:38, 18:57 to 19:35) are left out of its total: they were the gate's, not the pass's.
+
+**Where the time went, and why.**
+
+- **The build was an hour shorter on more rows.** Pass 60's tasks ran 28 to 49 minutes; pass 55's 23 to 61, its Gun Duels the longest. Both builds came in near half the frame's estimate; pass 60's frame estimated closer (57% against 49%).
+- **The replay digest during the build cost a minute, not a quarter of an hour.** Pass 55 ran it nine times at 10 to 12 minutes each against a base built from main's sources; pass 60 ran it seven times at 41 to 62 seconds each against the gate's own cached baseline (the gate's repairs of 2026-10-13: the replay passes over the cuts), and replayed the pass's own games after each to show the run was not void.
+- **The reviews and their fixes took 1:09 less.** Both passes ran five reviews in parallel and one fixing agent. Pass 55's reviews found 46 findings, one a BLOCKER; pass 60's found about 55 across the five, ten graded MAJOR (eight distinct, three of them hidden information), and their fixes took 38 minutes.
+- **The gate took 2:48 less.** Pass 55's gate ran the whole test suite and Docker on this machine and lost a 53-minute sweep to a game main could not read, then 25 minutes to a package digest that differed by hash alone. Pass 60's gate ran its local stages only (20 seconds of baseline, a 3:49 build, five minutes of proofs) and lost two minutes to its early check, which stopped on a JSON fact the skip list did not reach, as it is built to. The suite ran on CI instead: 11:53 on the pull request, 12:09 on the merge.
+- **The merge cost 0:13 against about 0:40.** Pass 55's merge met a .NET SDK patch released that day (a red CI run and a repaired lock file); pass 60's merge ran green at once, the pull request's run having found nothing.
+- **What pass 60 did not spend:** the full Studio check at five widths (the user scoped it to the narrower check, 4 minutes); a local test suite and Docker (CI's since 2026-10-13). Without the gate's change, pass 60's gate would have run about two hours as pass 55's did (its suite, 35 minutes alone, and Docker, 25); without the narrower check, about another 40 minutes.
