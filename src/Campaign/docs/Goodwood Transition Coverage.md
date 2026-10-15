@@ -477,3 +477,10 @@ Fresh package versions, grid/refinement hashes, ownership counts and world ident
 Opt-in `mapMetrics=1` records scene-load and navigation-relative durations on the board host's data attributes. It reports only after counters are attached and two animation frames have occurred, and ignores superseded loads. Eight viewport JavaScript tests passed. Two frames allow a paint opportunity, not proof of GPU completion or continuous responsiveness. Browser observation calls sometimes timed out while drawing; values were recovered from the same completed tab, without restarting the measured service. Allied navigation-relative timing includes the side-choice pause and was deliberately omitted. Raw browser results: goodwood-browser-metrics.json.
 
 These complete-map timings exceed the earlier bounded-pilot 10-second generation and 2-second reload proposals. No full-map performance pass is claimed. Separate current handoff timing, remaining practical rendering improvements and the final release audit remain open.
+
+
+### Separate complete handoff measurement
+
+`src/Campaign/scripts/Measure-GoodwoodHandoff.ps1` measures the existing local prepare and launch job APIs for an explicitly selected accepted 624-counter save. It verifies the prepared positions and accepted campaign save remain unchanged. On the isolated acceptance service, preparation took 27.9797 seconds and repeated Studio launch/import took 1.6191 seconds. Campaign host lifetime peak working set after preparation was 1,995,714,560 bytes.
+
+Preparation includes accepted-terrain reads, deployment review, full-board assembly/compilation/validation, ASL setup planning/replay and immutable handoff publication. Launch measures import against the existing accepted Studio game; it is not a first import or browser-opening measurement. HTTP serialization and polling (up to 250 ms) are included. The prepared reference remained `bd6932874e5285982bb0d26274f83baa5fea64cd24656af15e00d0c1abaf1cb0`, with the original game identity and board version. No campaign terrain, positions or ASL events changed.
