@@ -1430,3 +1430,13 @@ The pass by the clock on 2026-10-13: 06:43 to 14:04, 7:21 in all, with no stop f
 | The merge, at the user's word ("merge and push"): the fetch (origin/main at 681e8bdb, prototypes only, no file on both sides); merged with --no-ff in a temporary worktree as 50987ff3 and pushed | 18:31 | 18:33 | 2 min | The CI run failed at the locked restore (NU1004). |
 | The CI failure read from the two runs' logs: the workflow's 10.0.x resolved to SDK 10.0.402, new that day; at the user's word ("Move to 10.0.402") the SDK installed by winget, MapStudio's lock entry regenerated, a locked restore run, pushed as 53a22fcf | 18:34 | 18:56 | 22 min | The installer alone took about 12 minutes. The Docker image was still at 10.0.401. |
 | The tool repairs the user approved during the gate: the proof tool, gate.sh with its base, baseline, strict, and trial stages, the 32 cuts, the trial's check; run on pass 55's own data; the documents closed | 18:57 | 19:35 | 38 min | See the design's section 16. |
+
+## The work of 2026-10-13 after pass 55's closing
+
+Not timed. The tools' move into `code-builders`, the gate's changes, and the CI failures and their fixes of 2026-10-13 evening were not logged at the time; pass 55's design, section 16, records the gate and its repairs. Their clock times were not read and are not reconstructed here.
+
+## Pass 60: Armored combat III. To the merge gate
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| One session, 2026-10-15, under the user's word of that day ("this is my word to start pass 60, run without my intervention up to the gate"). The start: the prompt, the standing rules, and the tools' README read; the fetch, origin/main at 380b4a7b (the Goodwood merge, PR 14); the branch feature/asl-backlog-pass-60 cut from it; `gate.sh 60 380b4a7b base` failed at once (`tar` read `E:` as a host), repaired with `--force-local`, and run again: 8 minutes (replay 48 s, sweep 209 s). Increment 1, the frame, read-only: the 49 rows listed; two agents mapped the code and three read the rules (three to six minutes each, in parallel); the design's sections 1 to 6 with rulings R60.1 to R60.22; the code map and the building brief | 10:20 | 10:33 | 13 min | No estimate in the plan for a frame. |

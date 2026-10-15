@@ -85,7 +85,7 @@ tool() {
 main_tool() {
   if [ "$(cat "$S/main-bin/BASE" 2>/dev/null)" != "$BASEFULL" ]; then
     rm -rf "$S/main-src" "$S/main-bin" "$S/main.tar"; mkdir -p "$S/main-src"
-    git -C "$R" archive --format=tar -o "$S/main.tar" "$BASEFULL" && tar -xf "$S/main.tar" -C "$S/main-src" || stop "the archive failed"
+    git -C "$R" archive --format=tar -o "$S/main.tar" "$BASEFULL" && tar --force-local -xf "$S/main.tar" -C "$S/main-src" || stop "the archive failed"
     if [ -n "$PRESENT" ] && ! grep -rqs "$PRESENT" "$S/main-src/src/ASL" --include=*.cs; then stop "the baseline's sources lack $PRESENT"; fi
     if [ -n "$ABSENT" ] && grep -rqs "$ABSENT" "$S/main-src/src/ASL" --include=*.cs; then stop "the baseline's sources hold $ABSENT"; fi
     echo "[$(now)] build of the baseline"
