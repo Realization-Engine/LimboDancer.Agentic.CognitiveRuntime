@@ -9,7 +9,8 @@ public sealed record SituationStartRequest(string CampaignId, string Seed, Forma
     string CampaignContext, string? Saved = null);
 public sealed record SituationSave(string Version, string CampaignId, string Seed, string TerrainManifest,
     string CampaignContext, SituationDeploymentDraft Setup, SituationRosterSnapshot Roster);
-public sealed record SituationPortableSave(SituationSave Save, SituationBundle Terrain);
+public sealed record SituationProgress(string Version, SituationHandoff Handoff, string GameRecord);
+public sealed record SituationPortableSave(SituationSave Save, SituationBundle Terrain, SituationProgress? Progress = null);
 public sealed record SituationJobStatus(string Id, string Status, string Stage, int Done, int Total, string? Result, string? Error);
 
 /// <summary>Background preparation and immutable disk saves for complete Goodwood deployments.</summary>
@@ -110,10 +111,26 @@ public sealed class SituationSessions(PilotInputs inputs, string storageRoot) : 
         return new(save with { Setup = reviewed }, SituationBundles.Export(inputs, path, cancellationToken));
     }
 
-    public string Import(SituationPortableSave portable)
+    public SituationHandoff TransferHandoff(string saveId, string prepared)
+    {
+        var save = Read(saveId);
+        var handoff = ReadHandoff(prepared);
+        if (save.CampaignId != handoff.CampaignId || save.Setup.WorldIdentity != handoff.WorldIdentity
+            || save.CampaignContext != handoff.CampaignContext
+            || JsonSerializer.Serialize(save.Setup) != JsonSerializer.Serialize(handoff.Setup)
+            || JsonSerializer.Serialize(save.Roster) != JsonSerializer.Serialize(handoff.Roster))
+            throw new InvalidDataException("The prepared ASL handoff does not match the campaign save.");
+        return handoff;
+    }
+
+    public string Import(SituationPortableSave portable,
+        Func<SituationHandoff, string, CancellationToken, Task<string>>? restoreProgress = null)
     {
         ArgumentNullException.ThrowIfNull(portable);
         CheckSave(portable.Save);
+        if (portable.Progress is { } attachment && (attachment.Version != "goodwood-asl-progress-1"
+            || string.IsNullOrWhiteSpace(attachment.GameRecord) || attachment.GameRecord.Length > 20_000_000 || restoreProgress is null))
+            throw new InvalidDataException("ASL progress is unsupported or cannot be restored by this host.");
         return Run(async job =>
         {
             job.Stage = "restore terrain";
@@ -125,8 +142,18 @@ public sealed class SituationSessions(PilotInputs inputs, string storageRoot) : 
             job.Stage = "review deployment";
             var reviewed = new SituationDeployment(inputs, map).Review(portable.Save.Setup, token);
             token.ThrowIfCancellationRequested();
-            await Task.CompletedTask;
-            return Write(portable.Save with { TerrainManifest = Path.GetRelativePath(root, path), Setup = reviewed });
+            var restored = portable.Save with { TerrainManifest = Path.GetRelativePath(root, path), Setup = reviewed };
+            if (portable.Progress is not { } progress) return Write(restored);
+            job.Stage = "validate saved ASL progress";
+            var expected = await SituationHandoffs.Prepare(inputs, map, reviewed, restored.CampaignId, restored.CampaignContext, token);
+            if (JsonSerializer.Serialize(expected) != JsonSerializer.Serialize(progress.Handoff))
+                throw new InvalidDataException("Saved ASL progress belongs to different terrain or deployment.");
+            token.ThrowIfCancellationRequested();
+            var url = await restoreProgress!(expected, progress.GameRecord, token);
+            token.ThrowIfCancellationRequested();
+            var prepared = Publish("handoffs", JsonSerializer.SerializeToUtf8Bytes(expected));
+            var save = Write(restored);
+            return JsonSerializer.Serialize(new { save, prepared, url });
         });
     }
 

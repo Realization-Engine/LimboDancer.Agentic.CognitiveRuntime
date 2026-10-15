@@ -427,3 +427,6 @@ Next increment: decide and implement explicit game-default mortar profiles, then
 The next increment is implemented: catalog 1.15.0 includes the manufactured MFG German 81 mm mortar, while retaining the existing 2-2-8 crew. All six weapons and six crews enter ASL setup with separate identities and manned links. Inspection states the operator and game-default provenance. Campaign terrain and deployment are unchanged; prepared artifacts from the previous catalog must be prepared again. Existing Studio game progress is retained separately.
 
 See `src/Campaign/docs/Campaign Mortar Game Default.md` for values, cross-nationality comparisons, compatibility behavior and remaining engine boundaries. Medium-mortar combat support is separate from valid setup data; the profile is not substituted with a different weapon class.
+
+
+Campaign-file progress checkpoint: full Situation capture/restore is now connected to the ASL history service. Full-map reconstruction and mismatch rejection pass integration tests; actual campaign-file export includes all 624 positions and ASL history. Finish live restore/resume acceptance, then continue parent-boundary/viewport usability and the final performance/resource audit. See Goodwood Transition Coverage.md for measured evidence and remaining gates.

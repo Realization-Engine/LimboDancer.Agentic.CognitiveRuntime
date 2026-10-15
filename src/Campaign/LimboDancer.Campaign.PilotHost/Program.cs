@@ -91,28 +91,44 @@ app.MapPost("/api/asl-situation/start", (SituationStartRequest request, Situatio
 app.MapGet("/api/asl-situation/jobs/{id}", (string id, SituationSessions service) => service.Status(id));
 app.MapDelete("/api/asl-situation/jobs/{id}", (string id, SituationSessions service) => { service.Cancel(id); return Results.NoContent(); });
 app.MapGet("/api/asl-situation/saves/{id}", (string id, SituationSessions service) => service.Read(id));
-app.MapGet("/api/asl-situation/saves/{id}/export", (string id, SituationSessions service, HttpContext context) => service.Export(id, context.RequestAborted));
-app.MapPost("/api/asl-situation/import", (SituationPortableSave request, SituationSessions service) => new { job = service.Import(request) });
+app.MapGet("/api/asl-situation/saves/{id}/export", async (string id, string? prepared, bool? progress, SituationSessions service, IHttpClientFactory clients, HttpContext context) =>
+{
+    var portable = service.Export(id, context.RequestAborted);
+    if (progress != true) return portable;
+    var handoff = service.TransferHandoff(id, prepared ?? throw new InvalidDataException("The launched ASL game needs its prepared handoff reference."));
+    try
+    {
+        using var response = await clients.CreateClient("asl-situation-studio").GetAsync("/api/campaign/campaign-" + handoff.SourceHash[..24] + "/progress", context.RequestAborted);
+        if (!response.IsSuccessStatusCode) throw new InvalidDataException("The ASL game progress could not be saved. Retain your existing campaign file and retry with the original ASL Studio running.");
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>(context.RequestAborted);
+        var record = result.GetProperty("gameRecord").GetString() ?? throw new InvalidDataException("Missing ASL game progress.");
+        return portable with { Progress = new("goodwood-asl-progress-1", handoff, record) };
+    }
+    catch (HttpRequestException e)
+    { throw new InvalidDataException("ASL Studio is unavailable. Campaign export needs the launched game's progress; your existing save is unchanged.", e); }
+});
+app.MapPost("/api/asl-situation/import", (SituationPortableSave request, SituationSessions service, IHttpClientFactory clients) => new { job = service.Import(request, (handoff, record, token) => ImportSituation(handoff, record, clients, token)) });
 app.MapPost("/api/asl-situation/saves/{id}/place-remaining", (string id, SituationSessions service) => new { job = service.PlaceRemaining(id) });
 app.MapPost("/api/asl-situation/saves/{id}/prepare", (string id, SituationSessions service) => new { job = service.Prepare(id) });
 app.MapGet("/api/asl-situation/handoffs/{id}", (string id, SituationSessions service) => service.ReadHandoff(id));
 app.MapPost("/api/asl-situation/handoffs/{id}/launch", (string id, SituationSessions service, IHttpClientFactory clients) =>
-    new { job = service.Launch(id, async (handoff, token) =>
+    new { job = service.Launch(id, (handoff, token) => ImportSituation(handoff, null, clients, token)) });
+async Task<string> ImportSituation(SituationHandoff handoff, string? progressRecord, IHttpClientFactory clients, CancellationToken token)
+{
+    var packet = new { board = handoff.Board, name = handoff.Name, version = handoff.BoardVersion,
+        features = handoff.Features, gameRecord = handoff.GameRecord, campaignContext = SituationHandoffs.ContextJson(handoff), progressRecord };
+    try
     {
-        var packet = new { board = handoff.Board, name = handoff.Name, version = handoff.BoardVersion,
-            features = handoff.Features, gameRecord = handoff.GameRecord, campaignContext = SituationHandoffs.ContextJson(handoff) };
-        try
-        {
-            using var response = await clients.CreateClient("asl-situation-studio").PostAsJsonAsync("/api/campaign/import", packet, token);
-            var result = await response.Content.ReadFromJsonAsync<JsonElement>(token);
-            if (!response.IsSuccessStatusCode) throw new InvalidDataException(result.TryGetProperty("error", out var error) ? error.GetString() : "ASL import failed.");
-            var path = result.GetProperty("path").GetString()!;
-            if (!path.StartsWith("/games/play?game=campaign-", StringComparison.Ordinal)) throw new InvalidDataException("Unexpected ASL game address.");
-            return new Uri(studio, path).AbsoluteUri;
-        }
-        catch (Exception e) when (e is HttpRequestException || e is TaskCanceledException && !token.IsCancellationRequested)
-        { throw new InvalidDataException("ASL Studio could not complete the import. Your campaign save is unchanged; retrying preserves an existing ASL game.", e); }
-    }) });
+        using var response = await clients.CreateClient("asl-situation-studio").PostAsJsonAsync("/api/campaign/import", packet, token);
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>(token);
+        if (!response.IsSuccessStatusCode) throw new InvalidDataException(result.TryGetProperty("error", out var error) ? error.GetString() : "ASL import failed.");
+        var path = result.GetProperty("path").GetString()!;
+        if (!path.StartsWith("/games/play?game=campaign-", StringComparison.Ordinal)) throw new InvalidDataException("Unexpected ASL game address.");
+        return new Uri(studio, path).AbsoluteUri;
+    }
+    catch (Exception e) when (e is HttpRequestException || e is TaskCanceledException && !token.IsCancellationRequested)
+    { throw new InvalidDataException("ASL Studio could not complete the import. Your campaign save is unchanged; retrying preserves an existing ASL game.", e); }
+}
 using var files = new PhysicalFileProvider(prototype);
 app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = files });
 app.UseStaticFiles(new StaticFileOptions { FileProvider = files });

@@ -294,3 +294,14 @@ Campaign import accepts an optional complete progress record in addition to the 
 A local server-to-server endpoint exports the complete campaign game record with no-store caching and the same loopback/no-Origin boundary as import. It is not a player-perspective view. The progress payload is limited to 20 MB. Campaign-file capture and restore are not yet connected to this service, so this checkpoint does not close portable-progress acceptance.
 
 Two expanded integration cases passed, covering British engineer squads and German 81 mm mortar/crew pairs: advance phase, export, restore into an empty store, replay the restored revision, repeated restore, older initial setup without rollback, continuation of an existing setup, conflicting-history refusal, malformed progress and cancellation before publication. Accepted campaign deployment and terrain remain unchanged. The full Goodwood transfer and actual campaign-file UI remain to be verified after integration.
+
+
+### Campaign-file ASL progress integration
+
+Campaign-file capture now attaches the launched ASL game's complete history and its independently verifiable prepared handoff. The host checks that the handoff belongs to the exported campaign save. Missing or unavailable launched-game history prevents export instead of silently producing a deployment-only file. Older files without progress remain supported.
+
+Restore reconstructs the handoff from the transferred accepted terrain and deployment, rejects any mismatch before calling Studio, then passes the full history through Studio's existing replay and prefix validation. Only a successful job publishes the immutable campaign save and local prepared/resume references. Existing local history is not rolled back. Ordinary deployment saves retain their small reference format.
+
+The host Release build passed with zero warnings/errors. Browser-module checks passed for progress attachments, local resume metadata, older files, missing history, missing handoff references, unsupported versions, unsafe resume URLs, failed restores and cancellation. Three integration cases passed in 4 minutes 44 seconds, including full Goodwood terrain/deployment transfer with deterministic handoff reconstruction and mismatch rejection, and the two Studio history/restart cases.
+
+A live HTTP export of the accepted 624-position Goodwood save took 17.077 seconds and produced 31,390,922 bytes including 580,107 bytes of ASL history. The actual Save campaign to file button produced a 32,769,662-byte campaign file containing the same complete Situation attachment. These measurements occurred alongside integration tests and are observations, not controlled performance benchmarks. Actual interface restore is under verification; this checkpoint does not yet close that acceptance gate.

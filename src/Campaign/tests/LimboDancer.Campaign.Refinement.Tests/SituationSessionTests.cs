@@ -67,6 +67,31 @@ public sealed class SituationSessionTests
             Assert.Equal(JsonSerializer.Serialize(original.Setup), JsonSerializer.Serialize(restored.Setup));
             Assert.Equal(JsonSerializer.Serialize(original.Roster), JsonSerializer.Serialize(restored.Roster));
             Assert.Equal(original.CampaignContext, restored.CampaignContext);
+            var prepared = await Ready(restarted, restarted.Prepare(id));
+            var handoff = restarted.TransferHandoff(id, prepared);
+            Assert.Throws<InvalidDataException>(() => restarted.TransferHandoff(reviewId, prepared));
+            var withProgress = portable with { Progress = new("goodwood-asl-progress-1", handoff, handoff.GameRecord) };
+            Assert.Throws<InvalidDataException>(() => destination.Import(withProgress));
+            Assert.Throws<InvalidDataException>(() => destination.Import(withProgress with { Progress = withProgress.Progress with { Version = "future" } }, (_, _, _) => Task.FromResult("unused")));
+            var invoked = 0;
+            var result = await Ready(destination, destination.Import(withProgress, (accepted, record, token) =>
+            {
+                token.ThrowIfCancellationRequested();
+                Assert.Equal(JsonSerializer.Serialize(handoff), JsonSerializer.Serialize(accepted));
+                Assert.Equal(handoff.GameRecord, record);
+                invoked++;
+                return Task.FromResult("http://127.0.0.1:5178/games/play?game=campaign-" + accepted.SourceHash[..24]);
+            }));
+            using var metadata = JsonDocument.Parse(result);
+            Assert.Equal(1, invoked);
+            Assert.Equal(restoredId, metadata.RootElement.GetProperty("save").GetString());
+            Assert.Equal(prepared, metadata.RootElement.GetProperty("prepared").GetString());
+            Assert.Equal(JsonSerializer.Serialize(handoff), JsonSerializer.Serialize(destination.ReadHandoff(prepared)));
+            var mismatch = withProgress with { Progress = withProgress.Progress with { Handoff = handoff with { CampaignId = "wrong" } } };
+            var rejected = await Finished(destination, destination.Import(mismatch, (_, _, _) => throw new InvalidOperationException("Must reject before publication")));
+            Assert.Equal("failed", rejected.Status);
+            Assert.Contains("different terrain or deployment", rejected.Error);
+            Assert.Equal(JsonSerializer.Serialize(restored), JsonSerializer.Serialize(destination.Read(restoredId)));
             var saveCount = Directory.GetFiles(Path.Combine(root, "second", "saves"), "*.json").Length;
             var cancelled = destination.Start(request with { CampaignId = "cancelled", Seed = "ffeeddccbbaa99887766554433221100" });
             destination.Cancel(cancelled);

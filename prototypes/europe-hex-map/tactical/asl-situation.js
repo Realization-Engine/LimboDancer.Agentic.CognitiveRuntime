@@ -37,6 +37,7 @@ window.AslSituation = (() => {
     throw Error('Unsupported complete ASL Situation reference.');
    if(!bundle?.save||!bundle.terrain||bundle.save.campaignId!==file.world.id||bundle.save.seed!==ref.seed)
     throw Error('This campaign file is missing its accepted complete ASL terrain or deployment. Save it again from the original campaign host.');
+   if(bundle.progress&&(bundle.progress.version!=='goodwood-asl-progress-1'||!bundle.progress.handoff||typeof bundle.progress.gameRecord!=='string'||!bundle.progress.gameRecord.trim()))throw Error('Invalid or unsupported saved ASL progress.');
   }
   if(Object.keys(bundles).some(key=>!Object.hasOwn(refs,key)))throw Error('Unreferenced complete ASL Situation data.');
  }
@@ -44,7 +45,9 @@ window.AslSituation = (() => {
   const result=copy(file),refs=result.world.aslSituations||{};result.aslSituations={};
   for(const [key,ref]of Object.entries(refs)){
    if(ref?.version!==1||!hash(ref.save))throw Error('Invalid complete ASL Situation reference.');
-   report('Saving accepted ASL terrain and deployment...');result.aslSituations[key]=await api('/saves/'+ref.save+'/export');
+   if(ref.url){safeUrl(ref.url);if(!hash(ref.prepared))throw Error('The launched ASL game is missing its handoff reference. Reopen it before saving.');}
+   report('Saving accepted ASL terrain, deployment and progress...');result.aslSituations[key]=await api('/saves/'+ref.save+'/export'+(ref.url?'?progress=true&prepared='+ref.prepared:''));
+   if(ref.url&&!result.aslSituations[key].progress)throw Error('ASL progress is missing from the export. Your existing campaign file is retained.');
   }
   checkCampaign(result);if(!Object.keys(refs).length)delete result.aslSituations;return result;
  }
@@ -53,8 +56,9 @@ window.AslSituation = (() => {
   for(const [key,bundle]of Object.entries(result.aslSituations||{})){
    if(signal?.aborted)throw Error('Load cancelled. Your current campaign is unchanged.');
    const {job}=await api('/import',bundle),id=await wait(job,state=>report('Restoring ASL Situation: '+state.stage),signal);
-   if(!hash(id))throw Error('Invalid restored Situation identity.');
-   result.world.aslSituations[key]={version:1,seed:bundle.save.seed,save:id};
+   let restored={save:id};if(bundle.progress){try{restored=JSON.parse(id);}catch{throw Error('Invalid restored ASL progress.');}if(!hash(restored.prepared))throw Error('Invalid restored handoff identity.');restored.url=safeUrl(restored.url);}
+   if(!hash(restored.save))throw Error('Invalid restored Situation identity.');
+   result.world.aslSituations[key]={version:1,seed:bundle.save.seed,...restored};
   }
   delete result.aslSituations;return result;
  }
