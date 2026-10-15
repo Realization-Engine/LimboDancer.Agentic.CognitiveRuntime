@@ -8,18 +8,19 @@ using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
-public sealed record CampaignImportRequest(string Board, string Name, string Version, string Features, string GameRecord, string? CampaignContext = null);
+public sealed record CampaignImportRequest(string Board, string Name, string Version, string Features, string GameRecord, string? CampaignContext = null, string? ProgressRecord = null);
 public sealed record CampaignImportResult(string Game, string Path, bool Existing);
 
-/// <summary>Imports a bounded setup without replacing a board or an existing game's progress.</summary>
+/// <summary>Imports campaign setup and compatible saved progress without replacing divergent history.</summary>
 public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, UnitLibrary units)
 {
     private readonly object gate = new();
 
-    public CampaignImportResult Import(CampaignImportRequest request)
+    public CampaignImportResult Import(CampaignImportRequest request, CancellationToken cancellationToken = default)
     {
         lock (gate)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             byte[]? contextBytes = null;
             if (request.CampaignContext is { } context)
             {
@@ -73,6 +74,26 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
 
             GameEvent[] events = [.. record.Events.Select(e => new GameEvent(scope, e.EventId, e.Revision, e.Time, e.Source, e.Type,
                 e.Payload, e.RulePackage, e.Causes, e.Visibility))];
+            if (request.ProgressRecord is { } progress)
+            {
+                if (Encoding.UTF8.GetByteCount(progress) > 20_000_000)
+                {
+                    throw new InvalidDataException("ASL progress exceeds the transfer size limit.");
+                }
+                var progressRead = GameEventReader.Read(Encoding.UTF8.GetBytes(progress));
+                if (progressRead.HasErrors || progressRead.Record is not { } saved || saved.Synthetic
+                    || saved.Events.Any(e => e.Scope.Game != scope.Game))
+                {
+                    throw new InvalidDataException("Invalid ASL progress record or game identity.");
+                }
+                var restored = saved.Events.Select(e => new GameEvent(scope, e.EventId, e.Revision, e.Time, e.Source, e.Type,
+                    e.Payload, e.RulePackage, e.Causes, e.Visibility)).ToArray();
+                if (restored.Length < events.Length || !SamePrefix(scope, events, restored, events.Length))
+                {
+                    throw new InvalidDataException("ASL progress does not belong to this accepted campaign setup.");
+                }
+                events = restored;
+            }
             // Validate before publishing either file. The temporary catalog contains only this exact board.
             var planner = new GamePlanner(live.Store, new InMemoryBoardCatalog([new BoardHandle(board, package.Version,
                 BoardReadStatus.AuthoredValid, "Campaign import", built.Facts)]), units.Vocabulary, live.Catalogs);
@@ -90,11 +111,9 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
             var existing = live.Store.Read(scope);
             if (existing is not null)
             {
-                var expected = GameEventWriter.Write(scope, new GameRecord(record.Label, false, events));
-                var prefix = GameEventWriter.Write(scope, new GameRecord(record.Label, false, existing.Events.Take(events.Length).ToArray()));
-                if (prefix != expected)
+                if (!SamePrefix(scope, events, existing.Events, Math.Min(events.Length, existing.Events.Count)))
                 {
-                    throw new InvalidDataException("The ASL game identity already belongs to a different setup.");
+                    throw new InvalidDataException("The ASL game has divergent history. Existing progress will not be replaced.");
                 }
             }
             var contextPath = ContextPath(scope.Game);
@@ -102,6 +121,7 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
             {
                 throw new InvalidDataException("The ASL game already has different campaign context. It will not be replaced.");
             }
+            cancellationToken.ThrowIfCancellationRequested();
             // Publish the complete package directory in one rename. A retry after game publication fails can reuse it.
             if (!boards.Exists(board))
             {
@@ -148,9 +168,11 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
                     }
                 }
             }
-            if (existing is null)
+            cancellationToken.ThrowIfCancellationRequested();
+            var revision = existing?.Events.Count ?? 0;
+            if (events.Length > revision)
             {
-                var result = live.Store.Append(scope, record.Label, 0, events, live.Planner.Replay);
+                var result = live.Store.Append(scope, existing?.Label ?? record.Label, revision, events.Skip(revision).ToArray(), live.Planner.Replay);
                 if (result.Status != AppendStatus.Committed)
                 {
                     throw new InvalidDataException("ASL import was not saved: " + string.Join("; ", result.Diagnostics.Select(d => d.Message)));
@@ -159,6 +181,18 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
             return new(scope.Game, "/games/play?game=" + Uri.EscapeDataString(scope.Game), existing is not null);
         }
     }
+
+    /// <summary>A complete event snapshot. The caller must include the accepted setup and terrain when transferring it.</summary>
+    public string? ExportProgress(string game)
+    {
+        _ = ContextPath(game); // Apply the same campaign identity bounds before reading the store.
+        var scope = new GameScope(LivePlay.Tenant, game);
+        return live.Store.Read(scope) is { } record ? GameEventWriter.Write(scope, record) : null;
+    }
+
+    private static bool SamePrefix(GameScope scope, IReadOnlyList<GameEvent> left, IReadOnlyList<GameEvent> right, int count) =>
+        GameEventWriter.Write(scope, new GameRecord("Campaign comparison", false, left.Take(count).ToArray()))
+        == GameEventWriter.Write(scope, new GameRecord("Campaign comparison", false, right.Take(count).ToArray()));
 
     public string? ReadContext(string game)
     {

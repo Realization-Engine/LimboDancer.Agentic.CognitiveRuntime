@@ -65,6 +65,35 @@ public sealed class StudioHandoffTests
             Assert.True(next.CanCommit, string.Join("; ", next.Reasons));
             Assert.Equal(AppendStatus.Committed, live.Store.Append(scope, "Campaign setup handoff", history.Current.Revision, next.Events, live.Planner.Replay).Status);
             recorded = GameEventWriter.Write(scope, live.Store.Read(scope)!);
+            Assert.Equal(recorded, importer.ExportProgress(imported.Game));
+            var transfer = packet with { ProgressRecord = importer.ExportProgress(imported.Game) };
+            var transferOptions = new StudioOptions { BoardsRoot = Path.Combine(root, "transferred"), CacheRoot = options.CacheRoot };
+            var (receiver, receiverBoards, receiverLive) = Services(transferOptions);
+            using var cancelled = new CancellationTokenSource();
+            cancelled.Cancel();
+            Assert.Throws<OperationCanceledException>(() => receiver.Import(transfer, cancelled.Token));
+            Assert.Throws<InvalidDataException>(() => receiver.Import(transfer with { ProgressRecord = "{}" }));
+            Assert.Empty(receiverLive.Games());
+            Assert.Empty(receiverBoards.List());
+            Assert.False(receiver.Import(transfer).Existing);
+            Assert.Equal(recorded, GameEventWriter.Write(scope, receiverLive.Store.Read(scope)!));
+            Assert.Equal(history.Current.Revision + next.Events.Count, receiverLive.History(imported.Game)!.Current!.Revision);
+            Assert.True(receiver.Import(packet).Existing); // Older initial setup cannot roll back transferred play.
+            Assert.Equal(recorded, receiver.ExportProgress(imported.Game));
+            Assert.True(receiver.Import(transfer).Existing); // Repeated transfer is idempotent.
+            var conflicting = live.Store.Read(scope)!;
+            var tail = conflicting.Events[^1];
+            var changedTail = new GameEvent(scope, tail.EventId + "-diverged", tail.Revision, tail.Time, tail.Source,
+                tail.Type, tail.Payload, tail.RulePackage, tail.Causes, tail.Visibility);
+            var divergent = GameEventWriter.Write(scope, conflicting with { Events = [.. conflicting.Events.SkipLast(1), changedTail] });
+            Assert.Throws<InvalidDataException>(() => receiver.Import(transfer with { ProgressRecord = divergent }));
+            Assert.Equal(recorded, receiver.ExportProgress(imported.Game));
+            var advanceOptions = new StudioOptions { BoardsRoot = Path.Combine(root, "existing-initial"), CacheRoot = options.CacheRoot };
+            var (advancer, _, advanceLive) = Services(advanceOptions);
+            advancer.Import(packet);
+            Assert.True(advancer.Import(transfer).Existing); // Append the transferred continuation to an existing matching setup.
+            Assert.Equal(recorded, advancer.ExportProgress(imported.Game));
+            Assert.False(advanceLive.History(imported.Game)!.HasErrors);
             var (restarted, reloadedBoards, reloadedLive) = Services(options);
             Assert.True(restarted.Import(packet).Existing);
             Assert.Single(reloadedLive.Games());
