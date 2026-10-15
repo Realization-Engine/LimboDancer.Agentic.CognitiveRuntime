@@ -454,3 +454,6 @@ Explicit footprint integration checkpoint: full Goodwood import and live board c
 
 
 Rendering checkpoint: eliminated redundant full-grid elevation tracing and unused document generation during game opening. Full Goodwood elevation raster equivalence passed for every pixel at each nonzero level. Controlled standalone rendering fell from 32.961 seconds to 10.626 / 10.631 seconds, with about 46% fewer cumulative managed allocations. These are server rendering measurements, not browser-open timings. Finish actual-interface performance and perimeter acceptance, later-phase campaign-file transfer, legacy compatibility, and the final resource audit before closing the goal. See Goodwood Transition Coverage.md for evidence and measurement scope.
+
+
+Later-phase restore checkpoint: the complete 624-counter Goodwood game advanced to Allied Prep Fire through normal UI, exported all 626 events, restored through campaign-file loading, and reopened at the same phase after a full browser reload. Existing-service history matched the export exactly. Next verify the portable file against empty service storage, complete actual perimeter/legacy-deployment acceptance, and finish controlled performance/resource measurements. See Goodwood Transition Coverage.md for evidence and limits.
