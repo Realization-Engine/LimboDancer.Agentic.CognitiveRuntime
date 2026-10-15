@@ -11,7 +11,7 @@ Until 2026-10-13 these lived outside the repository, by an early rule not to com
 | `merge-gate/` | The merge gate of a rule pass: `gate.sh`, its helpers, the text list, the test suite and chart supplement runners. `pass-configs/` has one `.conf` a pass. |
 | `proof-tool/` | The C# tool behind the gate's replay digest and planner sweep, and its self-test. |
 | `diagnostics/` | What names a difference once the gate has found one: `dump_both_sides.sh` writes a game's planned events, fire plans, or one state in full from each side; comparers of digests and sweeps; the reader of a failed test run. |
-| `build-and-test/` | The Studio build, a filtered test run, the whitespace formatter, the commit helpers. |
+| `build-and-test/` | The Studio build, a filtered test run, the whitespace formatter, the commit helpers, and `how_to_reach_main.sh`, which says whether a branch needs a pull request and a CI run or may go straight. |
 | `test-games/` | `game_file.py`, the library that writes a small Studio test game as a file (it replaces the libraries of passes 45, 50, and 55), and the readers of recorded games. |
 | `rulebook/` | Page dumps, term and counter scans, and page renders of the rulebook PDF. |
 | `documents/` | The multi-file edit helper, and the checkers of the rule inventory and the rule coverage. |
@@ -33,7 +33,7 @@ Three more settings have defaults for the machine the code is built on: `ASL_REP
 bash code-builders/merge-gate/gate.sh <pass> <base commit> <stage>
 ```
 
-The script's header lists the stages and their order. In short: `base` when the pass's branch is cut, `strict` before the documents commit, and at the gate `baseline`, `build`, `trial`, `proofs` beside `docker`, then `suite`. A pass supplies `merge-gate/pass-configs/pass<pass>.conf`. The procedure a pass follows is in `src/ASL/docs/Prompts/Pass Standing Rules and Harness Lessons.md`.
+The script's header lists the stages and their order. In short: `base` when the pass's branch is cut, `strict` before the documents commit, and at the gate `baseline`, `build`, and `proofs` on this machine, about a quarter of an hour. Then the branch is pushed and its pull request opened, and CI runs the whole test suite on Linux; `ci` says whether that run has passed. The `suite` and `docker` stages run the same tests on this machine and in a Linux container, on demand. A pass supplies `merge-gate/pass-configs/pass<pass>.conf`. The procedure a pass follows is in `src/ASL/docs/Prompts/Pass Standing Rules and Harness Lessons.md`.
 
 After a change to the proof tool, run `proof-tool/selftest.sh` before anything long.
 

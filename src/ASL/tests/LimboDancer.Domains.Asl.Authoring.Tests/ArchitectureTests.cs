@@ -28,7 +28,10 @@ public sealed class ArchitectureTests
                 // The prototypes folder is outside ASL authoring and runtime (the user, 2026-10-05): the map prototypes there are Python.
                 return relative != AslSourceRegistryBuilder.ConversionToolPath
                     && relative != "utils/asl_curated_edition/build_curated_edition.py"
-                    && !relative.StartsWith("prototypes/", StringComparison.Ordinal);
+                    && !relative.StartsWith("prototypes/", StringComparison.Ordinal)
+                    // The code-builders folder holds the tools that build and check the codebase (the user, 2026-10-13, reversing the
+                    // early rule not to commit them). They are outside ASL authoring and runtime: no project references them.
+                    && !relative.StartsWith("code-builders/", StringComparison.Ordinal);
             })
             .ToArray();
         Assert.Empty(unexpectedPython);
