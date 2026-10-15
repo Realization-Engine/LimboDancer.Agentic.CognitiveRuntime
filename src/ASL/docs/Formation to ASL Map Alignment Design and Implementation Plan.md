@@ -457,3 +457,6 @@ Rendering checkpoint: eliminated redundant full-grid elevation tracing and unuse
 
 
 Later-phase restore checkpoint: the complete 624-counter Goodwood game advanced to Allied Prep Fire through normal UI, exported all 626 events, restored through campaign-file loading, and reopened at the same phase after a full browser reload. Existing-service history matched the export exactly. Next verify the portable file against empty service storage, complete actual perimeter/legacy-deployment acceptance, and finish controlled performance/resource measurements. See Goodwood Transition Coverage.md for evidence and limits.
+
+
+Independent-transfer checkpoint: normal campaign-file loading into a new browser origin and previously empty Campaign/Studio storage reconstructed the complete map, campaign metadata, playable footprint and all 626 events byte-for-byte. Actual ASL UI resumed Allied Prep Fire. Continue actual perimeter interaction and deployment compatibility, then controlled whole-map performance/resource acceptance and final requirement audit.

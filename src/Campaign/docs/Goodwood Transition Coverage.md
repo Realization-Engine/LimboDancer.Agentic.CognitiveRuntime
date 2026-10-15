@@ -401,3 +401,14 @@ The complete Goodwood game advanced through the ordinary proposal-and-confirm in
 Load campaign from file and its confirmation restored the exported file through the normal terrain and saved-progress validation stages. Open complete ASL setup reported 114 formations, 624 counters, zero review findings and eight off-map aircraft. Open ASL map retained game `campaign-d52f7b3704cf7cd4d56818f1`. A full page reload and Allied-view selection displayed Turn 1, Allied Prep Fire and the corresponding end-Prep-Fire proposal control. The retained history equals the exported JSON record, with SHA-256 `155cd7bc7870ca1d2582534edf567dca4ea3df49e59e28fdfb9bee00e7d485aa`. Screenshot: goodwood-restored-prep-fire.png.
 
 This proves actual-interface later-phase restoration against the existing service and browser reload. It does not prove transfer into empty service storage; that remains a distinct acceptance check. One screenshot request timed out during rendering; a subsequent capture of the same tab succeeded. No browser-opening performance pass is inferred.
+
+
+### Empty-storage portable transfer acceptance
+
+Started separate Campaign (8098) and Studio (5198) processes with a previously nonexistent `artifacts/goodwood-transfer-acceptance` storage root and separate browser origin. The original services and saves were left intact. The new Campaign page initially showed an unstarted Goodwood operation. Through Load campaign from file and confirmation, imported the 32,770,026-byte Prep Fire export. No source service files were copied into the new store.
+
+The restored complete-ASL dialog reported 114 formations, 624 counters, zero review findings and eight off-map aircraft, with its Open ASL map link targeting port 5198. Following that link and choosing the Allied view displayed Turn 1, Allied Prep Fire with the full map rendered. Screenshot: goodwood-empty-store-transfer.png.
+
+Independent file comparison found byte-identical board.json, features.json, campaign context, parent ownership metadata, playable footprint and 626-event game history between original and reconstructed stores. The history SHA-256 remains `155cd7bc7870ca1d2582534edf567dca4ea3df49e59e28fdfb9bee00e7d485aa`. This closes the full-map portable later-phase transfer check against empty service storage.
+
+Diagnostic new-service timings were compilation 1.632 seconds, derivation 1.897 seconds, validation 10.571 seconds, and subsequent warm-board history replay 0.587 seconds. Terrain/elevation layer requests took 7.716 / 7.560 seconds with shared work. These are stage diagnostics, not an end-to-end timing benchmark. Actual perimeter interaction, final deployment compatibility review and controlled performance/resource acceptance remain open.
