@@ -438,6 +438,9 @@ public sealed class PlayRecords
                     + (shot.SameHex == true ? "in its own hex: the Target Facing by the colored dr, D3.2)"
                         : $"hull {aimed.HullFacing}" + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : "") + " toward the firer)")
                     : shot?.TargetType == OrdnanceTargetTypes.Area ? $"HE at {fired.Target} on the Area Target Type" + (shot.Spotter is { } spotter ? $", spotted by {spotter.UnitId}" : "")
+                    // C8.31 (pass 60): the round and the FP its HE Equivalency attacks with, as the record names it.
+                    : resolution.HeEquivalency is { } equivalency
+                    ? $"{(shot?.Gun?.DefinitionId == OrdnanceTargetTypes.Panzerfaust ? "a PF" : ScenarioA1Definitions.AmmunitionName(shot?.Ammunition ?? string.Empty))} at {fired.Target} ({equivalency} FP by HE Equivalency, C8.31)"
                     : $"HE at {fired.Target}";
                 var check = resolution.PanzerfaustCheck is { } pf ? $"PF Check dr {pf.Dr}{ModifierText(pf.Drm)} = {pf.FinalDr}: a shot; " : "";
                 var parts = new List<string>

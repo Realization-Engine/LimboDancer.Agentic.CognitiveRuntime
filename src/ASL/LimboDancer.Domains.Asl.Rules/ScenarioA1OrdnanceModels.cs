@@ -110,6 +110,17 @@ public sealed record OrdnanceShot(
     }
 
     /// <summary>
+    /// Whether the target receives a wall's TEM from the firer (B9.3), which lets HEAT be fired at Infantry (C8.31, p. 178; pass 60, ruling R60.4): the
+    /// planner's map read, made for a HEAT shot at a Location with no vehicle named. Null is false: no shot recorded before the pass was HEAT at
+    /// Infantry.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? WallTem
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The Low Visibility DRM of night and weather on the TH DR (E1.7, E3.1; referee, pass 16): a Case R Hindrance of its own, which cancels neither FFMO
     /// nor the Open Ground cases. Null is 0.
     /// </summary>
@@ -501,6 +512,16 @@ public sealed record OrdnanceResolution(
         get; init;
     }
 
+    /// <summary>
+    /// The HE Equivalency FP the hit attacked with (C8.31, p. 178; pass 60, ruling R60.4): AP, APCR, APDS, HEAT, an ATR, a PF, or a PSK on the
+    /// Infantry Target Type. Null for HE, as in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? HeEquivalency
+    {
+        get; init;
+    }
+
     /// <summary>The unit a Critical Hit among several targets fell on by Random Selection (C3.74); null otherwise.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? CriticalTarget
@@ -548,7 +569,17 @@ public sealed record OrdnanceResolution(
 /// One ammunition a Gun may be asked to fire at a kind of target (C8.1; pass 55), for the list a player chooses from: its words with the
 /// Depletion Number it has at the game's date (C8.9), one more for an Elite force (C8.2), and, when the Gun cannot fire it now, why.
 /// </summary>
-public sealed record AmmunitionChoice(string Ammunition, string Label, int? DepletionNumber, string? Unavailable);
+public sealed record AmmunitionChoice(string Ammunition, string Label, int? DepletionNumber, string? Unavailable)
+{
+    /// <summary>
+    /// At Infantry, what the round attacks with by its HE Equivalency (C8.31; pass 60), such as "2 FP by HE Equivalency, C8.31"; null for HE and
+    /// Canister, and at a vehicle.
+    /// </summary>
+    public string? Equivalency
+    {
+        get; init;
+    }
+}
 
 /// <summary>A Gun as the Ordnance package reads its reviewed catalog definition (C2.21 to C2.3).</summary>
 public sealed record GunDefinition(

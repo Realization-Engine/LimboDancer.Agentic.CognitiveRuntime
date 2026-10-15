@@ -103,6 +103,13 @@ public static class ScenarioA1OrdnanceMapRules
     public static bool? HeightAdvantage(bool? read, int? hexsideTem, bool areaTargetType = false) => read == true && hexsideTem is not > 0 && !areaTargetType ? true : null;
 
     /// <summary>
+    /// C8.31 (p. 178; pass 60, ruling R60.4): whether a HEAT shot with no vehicle named is at Infantry "receiving a wall ... TEM" from the firer, as the
+    /// fire probe's read of the hexside found it (B9.3). Null for every other shot, so that no record gains the fact but a HEAT shot at Infantry.
+    /// </summary>
+    public static bool? HeatWallTem(bool vehicleTarget, string? ammunition, string? hexsideTerrain) =>
+        !vehicleTarget && ammunition == "heat" && hexsideTerrain == "wall" ? true : null;
+
+    /// <summary>
     /// C13.8 (p. 185), its last sentence: "These weapons [PF/PFk, BAZ, PSK, RCL] also may not fire at a target two or more levels higher in an
     /// adjacent hex, or directly above them in the same hex." C2.6 frees a LATW of its own limit, so this one is the weapon's. An ATR is not
     /// one of "these weapons". <paramref name="targetAbove"/> is the target's elevation less the firer's.

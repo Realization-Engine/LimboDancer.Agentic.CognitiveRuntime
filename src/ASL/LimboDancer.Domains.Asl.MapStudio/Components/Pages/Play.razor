@@ -874,9 +874,9 @@ else if (state is not null)
                             <Target>
                                 <OrdnanceTargetFields Targets="@([.. FireTargets(firing)])" Vehicles="@OrdnanceVehicleChoices(firing)" Ammunition="@OrdnanceAmmunitionKind"
                                     Fixed="@OrdnanceFixedAmmunition" Ammunitions="@OrdnanceAmmunitionChoices(shotAtVehicle)" Target="@ordnanceTarget" Vehicle="@ordnanceVehicle"
-                                    Chosen="@(OrdnanceAmmunitionFor(shotAtVehicle) ?? ordnanceAmmunition)"
+                                    Chosen="@(OrdnanceAmmunitionFor(shotAtVehicle) ?? (shotAtVehicle ? ordnanceAmmunition : ordnanceInfantryAmmunition))"
                                     OnTarget="@(at => { ordnanceTarget = at; ordnanceVehicle = string.Empty; })" OnVehicle="@(id => ordnanceVehicle = id)"
-                                    OnAmmunition="@(ammunition => ordnanceAmmunition = ammunition)"
+                                    OnAmmunition="@(ammunition => { if (shotAtVehicle) { ordnanceAmmunition = ammunition; } else { ordnanceInfantryAmmunition = ammunition; } })"
                                     CanisterAims="@canisterAims" CanisterAim="@ordnanceCanisterAim"
                                     CanisterFacings="@OrdnanceCanisterFacings" CanisterFacing="@OrdnanceCanisterFacing"
                                     OnCanisterAim="@(aim => ordnanceCanisterAim = aim)" OnCanisterFacing="@(facing => { ordnanceCanisterFacing = facing; ordnanceCanisterAim = string.Empty; })" />
@@ -4431,6 +4431,9 @@ else if (state is not null)
     private string ordnanceTarget = string.Empty;
     private string ordnanceVehicle = string.Empty;
     private string ordnanceAmmunition = "ap";
+
+    // C8.31 (pass 60): the ammunition chosen at Infantry, HE until another is chosen, apart from the one chosen at a vehicle.
+    private string ordnanceInfantryAmmunition = "he";
     private string shockVehicle = string.Empty;
 
     /// <summary>The firing side's tanks, whose MA fires as a Gun (D1.3; ruling R7.10).</summary>
@@ -4450,6 +4453,14 @@ else if (state is not null)
         _ => ["ap", "apcr", "heat", "he"],
     };
 
+    /// <summary>The chosen Gun's or tank's catalog definition; null for any other weapon.</summary>
+    private string? OrdnanceGunDefinition => state?.Find(ordnanceGun) switch
+    {
+        UnitInstance { Definition: { } tank } => tank.Definition,
+        EquipmentInstance { Definition: { } gun } => gun.Definition,
+        _ => null,
+    };
+
     /// <summary>
     /// What the chosen Gun or tank may fire at a vehicle or at Infantry now (C8.1, C2.21; pass 55), as Rules lists it: each Special Ammunition with
     /// its Depletion Number at the game's date, and why one is not offered. The panel is its owner's, so the numbers are its own Gun's.
@@ -4460,7 +4471,8 @@ else if (state is not null)
     private string? OrdnanceAmmunitionFor(bool vehicleTarget)
     {
         var offered = OrdnanceAmmunitionChoices(vehicleTarget).Where(item => item.Unavailable is null).Select(item => item.Ammunition).ToArray();
-        return offered.Contains(ordnanceAmmunition) ? ordnanceAmmunition : offered.FirstOrDefault();
+        var chosen = vehicleTarget ? ordnanceAmmunition : ordnanceInfantryAmmunition;
+        return offered.Contains(chosen) ? chosen : offered.FirstOrDefault();
     }
 
     private string ordnanceCanisterAim = string.Empty;
@@ -4695,10 +4707,14 @@ else if (state is not null)
                 : OrdnanceAmmunitionKind == OrdnanceTargetFields.AmmunitionKind.Selectable ? OrdnanceAmmunitionFor(true) ?? ordnanceAmmunition : ordnanceAmmunition;
         }
         else if (OrdnanceAmmunitionKind == OrdnanceTargetFields.AmmunitionKind.Selectable
-            && (OrdnanceAmmunitionFor(false) ?? OrdnanceAmmunitionChoices(false).FirstOrDefault()?.Ammunition) is { } named)
+            && (OrdnanceAmmunitionFor(false) ?? OrdnanceAmmunitionChoices(false).FirstOrDefault()?.Ammunition) is { } named
+            && !(named == "he" && OrdnanceGunDefinition is { } definition && ScenarioA1Definitions.HeAssumed(definition)
+                && !OrdnanceAmmunitionChoices(false).Any(item => item.Ammunition == ScenarioA1CanisterCalculator.Ammunition)))
         {
             // C2.21, C8.8 (pass 55): a Gun whose HE has a Depletion Number fires it at Infantry only when the shot names it. It is named also when
-            // the Gun has none now, so that the refusal says that and not that the HE was left unnamed.
+            // the Gun has none now, so that the refusal says that and not that the HE was left unnamed. C8.31 (pass 60): AP, APCR, APDS, or HEAT
+            // named at Infantry attacks by its HE Equivalency; an HE that is assumed stays unnamed, as before the pass (a Canister Gun's named, as
+            // in pass 55).
             arguments["ammunition"] = named;
         }
 
@@ -5871,6 +5887,7 @@ else if (state is not null)
         ordnanceSpotter = ordnanceDirector = string.Empty;
         ordnanceIntensive = false;
         ordnanceAmmunition = "ap";
+        ordnanceInfantryAmmunition = "he";
 
         // D2.401 (the UI review of pass 55): the Motion attempt's vehicle and the VCA and TCA named for it.
         motionVehicle = motionFacing = motionTurret = string.Empty;
@@ -6396,6 +6413,7 @@ else if (state is not null)
     {
         ordnanceGun = id;
         ordnanceAmmunition = OrdnanceAmmunitions.FirstOrDefault() ?? "ap";
+        ordnanceInfantryAmmunition = "he";
         ordnanceSpotter = string.Empty;
         ordnanceDirector = string.Empty;
         ordnanceVehicle = string.Empty;

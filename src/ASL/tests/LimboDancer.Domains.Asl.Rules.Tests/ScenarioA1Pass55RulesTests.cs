@@ -235,7 +235,8 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Contains(AmmunitionOutside, Resolve(Gun("american", 1944, "canister", vehicle: true, toHit: [3, 1])).Reasons);
         Assert.Contains("asl.a1.ordnance.fact-missing:canister", Resolve(Gun("american", 1944, "canister", toHit: [3, 1])).Reasons);
         Assert.DoesNotContain(ScenarioA1Definitions.AmmunitionChoices("american-at-gun", true, 1944, 6, false, []), item => item.Ammunition == "canister");
-        Assert.Empty(ScenarioA1Definitions.AmmunitionChoices("attacker-inf-gun", false, 1944, 6, false, []));
+        // Pass 60 (C8.31): at Infantry the leIG 18 offers its HE and its HEAT by HE Equivalency, never Canister.
+        Assert.DoesNotContain(ScenarioA1Definitions.AmmunitionChoices("attacker-inf-gun", false, 1944, 6, false, []), item => item.Ammunition == "canister");
 
         // The American 37mm fires its AP at a tank (C7.31: 37LL is 11) and its HE at Infantry.
         var ap = Resolve(Gun("american", 1944, "ap", vehicle: true, toHit: [5, 6]));
@@ -706,8 +707,6 @@ public sealed class ScenarioA1Pass55RulesTests
         // C2.21 (p. 167): a Gun "is otherwise always assumed to be firing HE vs unarmored targets ... provided that ammunition type is available,
         // is not Special Ammunition (i.e., has no Depletion #; 8.8)".
         Assert.Equal([HeNotNamed], Resolve(He([2, 1], ammunition: null)).Reasons);
-        Assert.Equal(["asl.a1.ordnance.he-equivalency-not-built"], Resolve(He([2, 1], ammunition: "ap")).Reasons);
-        Assert.Equal(["asl.a1.ordnance.he-equivalency-not-built"], Resolve(He([2, 1], ammunition: "apds")).Reasons);
 
         // Named, it needs the number's date (none in 1942, none with no year) and a round left.
         Assert.Equal([HeUnavailable], Resolve(He([2, 1], 1942)).Reasons);
@@ -723,12 +722,12 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Equal((OrdnanceResolution.Resolved, null), (plain.Disposition, plain.AmmunitionUse));
         Assert.Null(Resolve(Gun("american", 1944, "he", toHit: [5, 6])).AmmunitionUse);
 
-        // What the player chooses from: at Infantry the 6-Pounder's HE alone, with its number; nothing for a Gun whose HE is assumed.
-        var choice = Assert.Single(ScenarioA1Definitions.AmmunitionChoices("british-at-gun", false, 1944, 6, false, []));
+        // What the player chooses from: at Infantry the 6-Pounder's HE first, with its number (pass 60: then its AP and APDS by HE Equivalency).
+        AmmunitionChoice ChoiceAt(int year, IReadOnlyList<string> depleted) => ScenarioA1Definitions.AmmunitionChoices("british-at-gun", false, year, 6, false, depleted)[0];
+        var choice = ChoiceAt(1944, []);
         Assert.Equal(("he", "HE (Depletion Number 8)", 8, null), (choice.Ammunition, choice.Label, choice.DepletionNumber, choice.Unavailable));
-        Assert.NotNull(Assert.Single(ScenarioA1Definitions.AmmunitionChoices("british-at-gun", false, 1942, 6, false, [])).Unavailable);
-        Assert.Contains("C8.9", Assert.Single(ScenarioA1Definitions.AmmunitionChoices("british-at-gun", false, 1944, 6, false, ["he"])).Unavailable, StringComparison.Ordinal);
-        Assert.Empty(ScenarioA1Definitions.AmmunitionChoices("attacker-inf-gun", false, 1944, 6, false, []));
+        Assert.NotNull(ChoiceAt(1942, []).Unavailable);
+        Assert.Contains("C8.9", ChoiceAt(1944, ["he"]).Unavailable, StringComparison.Ordinal);
 
         // At a vehicle: AP, APDS from June 1944, and HE by its number.
         Assert.Equal(["AP", "APDS (Depletion Number 6)", "HE (Depletion Number 8)"],
@@ -1319,8 +1318,9 @@ public sealed class ScenarioA1Pass55RulesTests
     [Fact]
     public void AGunThatListsCanisterOffersItBesideItsHe()
     {
-        // C8.4, C2.21 (pass 55): at Infantry the 37mm chooses between the HE it fires and its Canister, with the number at the game's date.
-        Assert.Equal([("he", "HE", null), ("canister", "Canister (Depletion Number 7)", 7)],
+        // C8.4, C2.21 (pass 55): at Infantry the 37mm chooses between the HE it fires and its Canister, with the number at the game's date; pass 60
+        // (C8.31) adds its AP by HE Equivalency.
+        Assert.Equal([("he", "HE", null), ("canister", "Canister (Depletion Number 7)", 7), ("ap", "AP", null)],
             ScenarioA1Definitions.AmmunitionChoices("american-at-gun", false, 1944, 6, false, []).Select(item => (item.Ammunition, item.Label, item.DepletionNumber)));
         Assert.All(ScenarioA1Definitions.AmmunitionChoices("american-at-gun", false, 1944, 6, false, []), item => Assert.Null(item.Unavailable));
         Assert.Equal("Canister (Depletion Number 8: 7, and 1 for Elite, C8.2)",
@@ -2043,7 +2043,8 @@ public sealed class ScenarioA1Pass55RulesTests
     /// The names the same calculators give to what is no To Hit DRM: the PF Check's drm (C13.31), a PF's range on its TH# (C13.33), and the To
     /// Kill number's Case A for a rear hit (C7.21); its Cases C and D share their names with To Hit cases.
     /// </summary>
-    private static readonly string[] NotToHitDrm = ["1945", "hs-or-crew", "smc", "pf-range", "case-a"];
+    // Pass 60 (C13.31): the PF Check's drm of August and September 1943 and of a target that is not an AFV.
+    private static readonly string[] NotToHitDrm = ["1945", "hs-or-crew", "smc", "pf-range", "case-a", "aug-sept-1943", "not-afv"];
 
     /// <summary>The names a calculator's source gives its modifiers as literals: the text after <c>new FireModifier("</c>.</summary>
     private static IEnumerable<string> ModifierNames(string file)
@@ -2498,16 +2499,9 @@ public sealed class ScenarioA1Pass55RulesTests
     public void AnotherAmmunitionNamedAtInfantryIsHeEquivalencyAndNotAnUnnamedHe()
     {
         // C2.21, C8.8, C8.31 (the referee's review): the 6-Pounder's HE has a Depletion Number, so HE is named for the shot; AP or APDS named at
-        // Infantry is HE Equivalency, which is not built, and the reason says that.
-        const string equivalency = "asl.a1.ordnance.he-equivalency-not-built";
+        // Infantry is HE Equivalency (built in pass 60), never refused as an HE that was not named.
         Assert.Contains(HeNotNamed, Resolve(He([3, 3], ammunition: null)).Reasons);
-        Assert.DoesNotContain(equivalency, Resolve(He([3, 3], ammunition: null)).Reasons);
-        Assert.All(ArmorPiercingKinds, named =>
-        {
-            var reasons = Resolve(He([3, 3], ammunition: named)).Reasons;
-            Assert.Contains(equivalency, reasons);
-            Assert.DoesNotContain(HeNotNamed, reasons);
-        });
+        Assert.All(ArmorPiercingKinds, named => Assert.DoesNotContain(HeNotNamed, Resolve(He([3, 3], ammunition: named)).Reasons));
         Assert.Equal(OrdnanceResolution.Resolved, Resolve(He([3, 3])).Disposition);
     }
 

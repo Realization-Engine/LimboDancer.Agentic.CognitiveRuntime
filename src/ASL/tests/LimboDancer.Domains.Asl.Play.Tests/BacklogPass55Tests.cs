@@ -567,10 +567,7 @@ public sealed class BacklogPass55Tests : IDisposable
         await SetupBritish(1944, 6, [], [.. SixPounder(), GermanSquad()]);
         Refused(await FireAtSquad(null, 3, 3), "asl.a1.ordnance.he-not-named", "name HE for the shot (C2.21, C8.8)", "C8.31");
 
-        // The referee's review: AP named at Infantry is refused for what it is, HE Equivalency, and not as an HE that was not named.
-        var named = await FireAtSquad("ap", 3, 3);
-        Refused(named, "asl.a1.ordnance.he-equivalency-not-built", "HE Equivalency, which is not built (C8.31)");
-        Assert.DoesNotContain(named.Reasons, reason => reason.Contains("he-not-named", StringComparison.Ordinal));
+        // The referee's review: AP named at Infantry is no HE that was not named; since pass 60 it fires by its HE Equivalency (C8.31).
     }
 
     [Fact]
@@ -578,7 +575,7 @@ public sealed class BacklogPass55Tests : IDisposable
     {
         // British Ordnance Note 6 (p. 426): HE from February 1943. Before it the Gun fires nothing at Infantry: AP there is C8.31's.
         await SetupBritish(1942, 6, [], [.. SixPounder(), GermanSquad()]);
-        Refused(await FireAtSquad("he", 3, 3), "asl.a1.ordnance.he-unavailable", "Special Ammunition (C8.8) and it has none now", "C8.31, HE Equivalency");
+        Refused(await FireAtSquad("he", 3, 3), "asl.a1.ordnance.he-unavailable", "Special Ammunition (C8.8) and it has none now", "HE Equivalency instead (C8.31)");
         Refused(await FireAtSquad(null, 3, 3), "asl.a1.ordnance.he-not-named");
     }
 

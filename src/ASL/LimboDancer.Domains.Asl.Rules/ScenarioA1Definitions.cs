@@ -224,9 +224,10 @@ public static class ScenarioA1Definitions
     /// <summary>
     /// The ammunition a player may choose for a Gun or MA of this definition at a vehicle or at Infantry (C8.1, C2.21; pass 55), each with its
     /// Depletion Number at the game's date and, when the Gun has none then or has run out, the reason. At a vehicle: what the definition may
-    /// carry but Canister, which "is ineffective vs armored targets" (C8.4). At Infantry: nothing to choose, HE being assumed, unless the Gun's
-    /// HE is Special Ammunition, which is fired only when named (C2.21, C8.8), or the Gun lists Canister (C8.4), which is then chosen beside the
-    /// HE it fires.
+    /// carry but Canister, which "is ineffective vs armored targets" (C8.4). At Infantry: HE first, then Canister where the Gun lists it (C8.4),
+    /// then AP, APCR, APDS, and HEAT by their HE Equivalency (C8.31; pass 60), each with the FP it attacks with; HEAT only for a Gun with an HE FP,
+    /// and only at Infantry behind a wall or in a building or rubble, which the shot decides. Nothing to choose when the Gun has only an HE that is
+    /// assumed (C2.21); its HE is then not named.
     /// </summary>
     public static IReadOnlyList<AmmunitionChoice> AmmunitionChoices(string definition, bool vehicleTarget, int? year, int? month, bool elite, IReadOnlyList<string> depleted)
     {
@@ -238,18 +239,34 @@ public static class ScenarioA1Definitions
 
         var canister = ScenarioA1ArmorCalculator.Lists(gun, ScenarioA1CanisterCalculator.Ammunition) && ScenarioA1CanisterCalculator.Firepower(gun.Caliber) is not null;
         var namedHe = ScenarioA1ArmorCalculator.Lists(gun, "he");
+        var heFirepower = gun.NoHe && !namedHe ? (int?)null : OrdnanceReference.Value.HeFirepower(gun.Caliber);
+        string[] equivalent = [.. Ammunitions(definition).Where(item => item is "ap" or "apcr" or "apds" || (item == "heat" && heFirepower is > 0))];
         string[] offered = vehicleTarget ? [.. Ammunitions(definition).Where(item => item != ScenarioA1CanisterCalculator.Ammunition)]
-            : [.. new[] { ("he", namedHe || (canister && !gun.NoHe)), (ScenarioA1CanisterCalculator.Ammunition, canister) }.Where(item => item.Item2).Select(item => item.Item1)];
+            : [.. new[] { ("he", namedHe || ((canister || equivalent.Length > 0) && !gun.NoHe)), (ScenarioA1CanisterCalculator.Ammunition, canister) }.Where(item => item.Item2)
+                .Select(item => item.Item1), .. equivalent];
         return [.. offered.Select(ammunition =>
         {
             var special = ammunition is "apcr" or "apds" or "heat" || ScenarioA1ArmorCalculator.Lists(gun, ammunition);
             var number = special ? ScenarioA1ArmorCalculator.Depletion(gun, ammunition, year, month, elite) : null;
             var name = AmmunitionName(ammunition);
+            var fp = vehicleTarget ? null : ScenarioA1HeEquivalency.Firepower(ammunition, ScenarioA1HeEquivalency.Gun, gun.Caliber, heFirepower);
             return new AmmunitionChoice(ammunition, number is { } held ? $"{name} ({DepletionWords(held, elite, ": ", string.Empty)})" : name, number,
                 depleted.Contains(ammunition, StringComparer.Ordinal) ? "it has run out (C8.9)"
-                    : special && number is null ? NoneAtTheDate(ammunition, ScenarioA1ArmorCalculator.StartMonthUnknown(gun, ammunition, year, month)) : null);
+                    : special && number is null ? NoneAtTheDate(ammunition, ScenarioA1ArmorCalculator.StartMonthUnknown(gun, ammunition, year, month)) : null)
+            {
+                Equivalency = fp is { } equivalency
+                    ? $"{equivalency.ToString(System.Globalization.CultureInfo.InvariantCulture)} FP by HE Equivalency{(ammunition == "heat" ? ", only at a Gun or at Infantry behind a wall or in a building or rubble" : string.Empty)}, C8.31"
+                    : null,
+            };
         })];
     }
+
+    /// <summary>
+    /// Whether a Gun or MA of this definition fires HE at Infantry with no ammunition named (C2.21; pass 60): it has HE with no Depletion Number, so
+    /// the shot leaves it unnamed, as every shot before pass 55 did.
+    /// </summary>
+    public static bool HeAssumed(string definition) =>
+        OrdnanceReference.Value.Guns.TryGetValue(definition, out var gun) && !gun.NoHe && !ScenarioA1ArmorCalculator.Lists(gun, "he");
 
     /// <summary>
     /// The start of the detail a refusal's code carries when the ammunition starts in a month of the game's year and the game gives no month

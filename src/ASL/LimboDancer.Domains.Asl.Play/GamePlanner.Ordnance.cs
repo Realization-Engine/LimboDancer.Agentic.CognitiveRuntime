@@ -193,6 +193,10 @@ public sealed partial class GamePlanner
             ? $"{(facts.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {facts.TargetLocationId} (Vehicle Target Type; "
                 + (facts.SameHex == true ? "in its own hex, so the colored dr gives the Target Facing: 1-2 rear, 3-4 side, 5-6 front, D3.2)"
                     : $"hull {aimed.HullFacing}" + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : string.Empty) + " facing the firer)")
+            // C8.31 (pass 60): AP, APCR, APDS, HEAT, and a LATW's round at Infantry or a Gun, by their HE Equivalency.
+            : ScenarioA1OrdnanceCalculator.HeEquivalency(facts, OrdnanceReference.Value) is { } equivalency
+            ? (facts.Gun!.DefinitionId == OrdnanceTargetTypes.Panzerfaust ? "a PF (after a PF Check)" : ScenarioA1Definitions.AmmunitionName(facts.Ammunition!))
+                + $" at {facts.TargetLocationId} ({equivalency} FP by HE Equivalency, C8.31)"
             : $"HE at {facts.TargetLocationId}";
 
         // C8.9 (pass 55, ruling R55.7): the Depletion Number the declared ammunition is fired under, and what an Original DR above it means.
@@ -367,6 +371,9 @@ public sealed partial class GamePlanner
 
             // B10.31 (pass 55): the Height Advantage the probe read, for Case Q.
             HeightAdvantage = ScenarioA1OrdnanceMapRules.HeightAdvantage(read.HeightAdvantage, read.HexsideTem?.Tem),
+
+            // C8.31 (pass 60, ruling R60.4): a wall's TEM lets HEAT be fired at Infantry; read for a HEAT shot with no vehicle named.
+            WallTem = ScenarioA1OrdnanceMapRules.HeatWallTem(shot.VehicleTarget is not null, shot.Ammunition, read.HexsideTem?.Terrain),
             Hit = hit,
             VehicleTarget = aimed ?? shot.VehicleTarget,
         };
@@ -480,6 +487,9 @@ public sealed partial class GamePlanner
 
             // B10.31, C6.8 (pass 55): Height Advantage is Case Q on a LATW's To Hit DR; the Area Target Type takes no Case Q.
             HeightAdvantage = ScenarioA1OrdnanceMapRules.HeightAdvantage(read.HeightAdvantage, read.HexsideTem?.Tem, shot.TargetType == OrdnanceTargetTypes.Area),
+
+            // C8.31 (pass 60, ruling R60.5): a wall's TEM lets a PF's or PSK's HEAT be fired at Infantry.
+            WallTem = ScenarioA1OrdnanceMapRules.HeatWallTem(shot.VehicleTarget is not null, shot.Ammunition, read.HexsideTem?.Terrain),
             Hit = shot.Hit! with
             {
                 Range = null,

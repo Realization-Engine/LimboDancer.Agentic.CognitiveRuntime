@@ -54,7 +54,8 @@ public static class ScenarioA1OrdnanceCalculator
                 };
             }
 
-            var fired = ScenarioA1ArmorCalculator.Run(shot, gun, reference);
+            // C13.31, C8.31 (pass 60, ruling R60.5): at Personnel a PF fires on the Infantry Target Type at its HE Equivalency.
+            var fired = shot.VehicleTarget is not null ? ScenarioA1ArmorCalculator.Run(shot, gun, reference) : Run(shot, reference);
             return fired.Disposition == OrdnanceResolution.Resolved ? fired with
             {
                 PanzerfaustCheck = check
@@ -112,6 +113,18 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("cx", 1, "C13.31"));
         }
 
+        // C13.31 (p. 183; pass 60, ruling R60.5): +1 in August and September 1943, and +1 at other than an AFV. A PF shot recorded before the pass
+        // was at an AFV, after September 1943.
+        if (shot.ScenarioYear == 1943 && shot.Hit?.ScenarioMonth is 8 or 9)
+        {
+            drm.Add(new FireModifier("aug-sept-1943", 1, "C13.31"));
+        }
+
+        if (shot.VehicleTarget is null)
+        {
+            drm.Add(new FireModifier("not-afv", 1, "C13.31"));
+        }
+
         var final = dr + (int)drm.Sum(item => item.Value);
         var outcome = dr == 6
             ? crew.Pinned != true ? OrdnancePanzerfaustCheck.Pinned
@@ -166,7 +179,7 @@ public static class ScenarioA1OrdnanceCalculator
         var reasons = new List<string>();
         foreach (var critical in new[] { false, true })
         {
-            reasons.AddRange(ScenarioA1FireCalculator.Precheck(HitAttack(shot, gun, reference, critical, shot.Hit!.Targets!, null), reference.Fire)
+            reasons.AddRange(ScenarioA1FireCalculator.Precheck(HitAttack(shot, gun, reference, critical, HitTargets(shot, gun), null), reference.Fire)
                 .Select(reason => Prefix + (critical ? "critical-hit:" : "hit:") + reason));
         }
 
@@ -333,9 +346,13 @@ public static class ScenarioA1OrdnanceCalculator
         // mounts are not reviewed.
         var gunShot = shot.Gun!;
         var canister = IsCanister(shot);
+
+        // C8.31 (p. 178; pass 60, ruling R60.4): AP, APCR, APDS, and HEAT named at a target with no vehicle attack by their HE Equivalency, so a
+        // Gun with no HE may fire them there.
+        var equivalency = Equivalency(shot);
         if (!reference.Guns.TryGetValue(gunShot.DefinitionId!, out var gun) || gun.Nationality != shot.FiringNationality || gun.Mount360
             || !(shot.Vehicle is null ? AdmittedGunTypes.Contains(gun.GunType) : gun.GunType == "vehicle")
-            || (shot.VehicleTarget is null && !canister && !ScenarioA1ArmorCalculator.Lists(gun, "he") && (gun.NoHe || shot.Ammunition is not (null or "he"))))
+            || (shot.VehicleTarget is null && !canister && !equivalency && !ScenarioA1ArmorCalculator.Lists(gun, "he") && (gun.NoHe || shot.Ammunition is not (null or "he"))))
         {
             outside.Add(Prefix + "gun-outside");
             return outside;
@@ -350,18 +367,13 @@ public static class ScenarioA1OrdnanceCalculator
 
         // C2.21, C8.8 (pp. 167, 179; pass 55, ruling R55.7): a Gun is "always assumed to be firing HE vs unarmored targets" only when that
         // ammunition "is not Special Ammunition (i.e., has no Depletion #; 8.8)": one whose counter lists an HE Depletion Number fires HE only
-        // when the shot names it, and not at all before the number's date or once it has run out (C8.9). Its AP at Infantry is C8.31's HE
-        // Equivalency, which is not built.
-        if (shot.VehicleTarget is null && !canister && ScenarioA1ArmorCalculator.Lists(gun, "he"))
+        // when the shot names it, and not at all before the number's date or once it has run out (C8.9). Another ammunition named there is
+        // C8.31's HE Equivalency (pass 60), decided below.
+        if (shot.VehicleTarget is null && !canister && !equivalency && ScenarioA1ArmorCalculator.Lists(gun, "he"))
         {
             if (shot.Ammunition is null)
             {
                 outside.Add(Prefix + "he-not-named");
-            }
-            else if (shot.Ammunition != "he")
-            {
-                // C8.31: another ammunition named at Infantry is HE Equivalency, which is not built; the reason says so, not that HE was not named.
-                outside.Add(Prefix + "he-equivalency-not-built");
             }
             else if (ScenarioA1ArmorCalculator.ShotDepletion(shot, gun) is null || gunShot.Depleted?.Contains("he", StringComparer.Ordinal) == true)
             {
@@ -369,12 +381,20 @@ public static class ScenarioA1OrdnanceCalculator
             }
         }
 
-        // C9.1, C3.33 (rulings R9.2, R9.3): a mortar always fires on the Area Target Type; other Guns' Area Target Type fire is not built. C13.1,
-        // C13.3 (ruling R9.8): a PF fires only on the Vehicle Target Type. A SW has no CA, and neither Intensive Fires (Case F is NA to SW).
+        // C9.1, C3.33 (rulings R9.2, R9.3): a mortar always fires on the Area Target Type; other Guns' Area Target Type fire is not built. C13.1:
+        // a LATW never uses the Area Target Type. C8.31, C13.24, C11.52, C13.23 (pass 60, rulings R60.4 to R60.6): a PF or PSK fires at Personnel
+        // on the Infantry Target Type, an ATR only at a Gun's crew unless it is 20L (at Personnel it is Small Arms). A SW has no CA, and neither
+        // Intensive Fires (Case F is NA to SW).
         var mortar = gun.GunType == "mortar";
         var latw = gun.GunType == "latw";
         var pf = gun.LatwType == "pf";
-        if ((shot.TargetType == OrdnanceTargetTypes.Area) != mortar || (latw && shot.VehicleTarget is null)
+        if (!mortar && equivalency)
+        {
+            EquivalencyOutside(shot, gun, reference, outside);
+        }
+
+        if ((shot.TargetType == OrdnanceTargetTypes.Area) != mortar
+            || (latw && shot.VehicleTarget is null && gun.LatwType == "atr" && gun.Caliber != 20 && !AtrAtGun(shot, gun))
             || ((mortar || latw) && (shot.HexspinesToTurn != 0 || shot.IntensiveFire == true || shot.BoreSighted == true || shot.NonQualified == true))
             // C9.3 (referee, pass 9): a Spotter is designated in the PFPh or DFPh; Opportunity Fire, which would let it spot in the AFPh, is not built.
             || (shot.Spotter is not null && (!mortar || shot.Phase is not ("PFPh" or "DFPh"))) || (shot.Director is not null && !mortar && !latw))
@@ -701,16 +721,17 @@ public static class ScenarioA1OrdnanceCalculator
     private static bool CrewRevealed(OrdnanceShot shot) => shot.Range <= 16 && shot.Hit!.Targets!.Any(item => item.Broken == false && item.Dummy != true);
 
     /// <summary>
-    /// The IFT attack of a hit: the Gun's HE FP column (C.6), doubled by a Critical Hit (C3.71), on the given targets; the Location's
-    /// other units, which the other attack of a split hit attacks, are its companions for a berserk leader's NTC (A15.41).
+    /// The IFT attack of a hit: the Gun's HE FP column (C.6) or its round's HE Equivalency (C8.31), doubled by a Critical Hit (C3.71), on the given
+    /// targets; the Location's other units, which the other attack of a split hit attacks, are its companions for a berserk leader's NTC (A15.41).
     /// </summary>
     internal static FireAttack HitAttack(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, bool critical,
         IReadOnlyList<FireTarget> targets, FireRolls? rolls)
     {
         // C3.33, C9.5 (ruling R9.3): an Area Target Type hit attacks at half the HE FP (the IFT column at or below it), a Critical Hit at the
         // full HE FP doubled.
+        // C8.31 (pass 60, ruling R60.4): AP, APCR, APDS, HEAT, and a LATW's round at their HE Equivalency, on the same column.
         var area = shot.TargetType == OrdnanceTargetTypes.Area;
-        var firepower = reference.HeFirepower(gun.Caliber);
+        var firepower = HeEquivalency(shot, reference) ?? reference.HeFirepower(gun.Caliber);
         if (area && !critical)
         {
             firepower = ScenarioA1FireReference.ColumnFp.Where(column => column * 2 <= firepower).DefaultIfEmpty(0).Max();
@@ -745,9 +766,18 @@ public static class ScenarioA1OrdnanceCalculator
         var range = shot.Range!.Value;
         var color = ScenarioA1OrdnanceReference.Color(gun, shot.ScenarioYear);
 
-        // C3.3, C4: the Basic TH# of the Infantry Target Type by range and color, and the Gun and Ammo modifications.
-        var basic = reference.BasicToHit(color, range);
-        var modifications = reference.Modifications(gun, range);
+        // C3.3, C4: the Basic TH# of the Infantry Target Type by range and color, and the Gun and Ammo modifications. A LATW (pass 60, rulings
+        // R60.5, R60.6) takes the To Hit it takes at a vehicle: a PF 10 less two a hex (C13.33), a PSK its own table (C13.42, C13.48), an ATR the
+        // black row (C13.2).
+        var latw = gun.GunType == "latw";
+        if (gun.LatwType == "atr")
+        {
+            color = "black";
+        }
+
+        var basic = gun.LatwType == "pf" ? 10 : gun.ToHitTable.Count > 0 ? gun.ToHitTable[range - 1] : reference.BasicToHit(color, range);
+        IReadOnlyList<FireModifier> modifications = gun.LatwType == "pf" ? [new FireModifier("pf-range", -2 * range, "C13.33")]
+            : gun.ToHitTable.Count > 0 ? [] : reference.Modifications(gun, range);
         var modified = basic + (int)modifications.Sum(item => item.Value);
 
         var drm = new List<FireModifier>();
@@ -765,7 +795,23 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-a:maintained", maintained, "D3.51"));
         }
 
-        if (CaseC(shot, gun) is { } caseC)
+        if (latw)
+        {
+            // C13.1, C13.8 (ruling R9.8): a LATW's Case C3 instead of Case B, for the AFPh and for the Backblast of a PF or PSK from a ground-level
+            // building or rubble; C5.34: neither for an Opportunity Firer. A7.531, C13.35: a directing leader.
+            if (AfphFire(shot))
+            {
+                drm.Add(new FireModifier("case-c3:afph", 2, "C13.1"));
+            }
+
+            if (shot.Panzerfaust?.FromBuilding == true && gun.LatwType is "pf" or "psk" && !OpportunityFire(shot))
+            {
+                drm.Add(new FireModifier("case-c3:backblast", 2, "C13.8"));
+            }
+
+            drm.AddRange(Leadership(shot, reference));
+        }
+        else if (CaseC(shot, gun) is { } caseC)
         {
             drm.Add(caseC);
         }
@@ -815,14 +861,17 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-o", -2, "C6.6"));
         }
 
-        var concealedTarget = hit.Targets!.All(Concealed);
+        // C13.23 (pass 60, ruling R60.6): an ATR that is not 20L attacks only the Gun and its manning crew.
+        var targetsHit = HitTargets(shot, gun);
+        var concealedTarget = targetsHit.All(Concealed);
         if (concealedTarget)
         {
             drm.Add(new FireModifier("case-k", 2, "C6.2"));
         }
 
-        // C6.3 (p. 174; review of pass 50): "Case L is not applicable if ... the firer is in-Motion/Non-Stopped".
-        if (range is >= 1 and <= 2 && !sameHex && shot.Vehicle?.InMotion != true)
+        // C6.3 (p. 174; review of pass 50): "Case L is not applicable if ... the firer is in-Motion/Non-Stopped". Cases M and N are not LATW DRM;
+        // Case L is the ATR's, which reads no To Hit Table of its own (pass 35, task 35.10).
+        if (range is >= 1 and <= 2 && !sameHex && shot.Vehicle?.InMotion != true && (!latw || gun.LatwType == "atr"))
         {
             drm.Add(new FireModifier("case-l", range == 1 ? -2 : -1, "C6.3"));
         }
@@ -832,14 +881,17 @@ public static class ScenarioA1OrdnanceCalculator
         {
             drm.Add(new FireModifier("case-m", -2, "C6.4"));
         }
-        else if (shot.Acquisition is int acquired && acquired < 0 && !concealedTarget && !AcquisitionDenied(shot))
+        else if (!latw && shot.Acquisition is int acquired && acquired < 0 && !concealedTarget && !AcquisitionDenied(shot))
         {
             // C6.51, C6.57: the Acquisition applies only to Known units, and a shot at a concealed target loses it.
             drm.Add(new FireModifier("case-n", acquired, "C6.5"));
         }
 
         var tem = ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
-        var gunTarget = ScenarioA1FireCalculator.GunCrewAlone(hit) ? hit.GunTarget : null;
+        var gunTarget = ScenarioA1FireCalculator.GunCrewAlone(hit with
+        {
+            Targets = targetsHit
+        }) ? hit.GunTarget : null;
         if (gunTarget is not null && reference.Guns.GetValueOrDefault(gunTarget.DefinitionId ?? string.Empty)?.TargetSize is { } size && size != "average")
         {
             // C11.2, C2.271 (ruling R8.3): the Gun's Target Size.
@@ -948,6 +1000,20 @@ public static class ScenarioA1OrdnanceCalculator
         // C2.28: an Original To Hit DR at or above the B# malfunctions the Gun; C5.62: two lower while Intensive Firing.
         var malfunctioned = original >= Breakdown(shot, gun, reference);
 
+        // C13.36 (ruling R9.8; pass 60): a PF never malfunctions, but an Original 12 misses and gives its firer Casualty Reduction; an 11 or 12 for
+        // Inexperienced Infantry (A19.32).
+        var casualty = gun.LatwType == "pf"
+            && original >= (reference.Fire.Definitions.GetValueOrDefault(shot.Crew.DefinitionId ?? string.Empty)?.Class is "green" or "conscript" ? 11 : 12);
+        if (casualty)
+        {
+            isHit = critical = false;
+            toHit = toHit with
+            {
+                Hit = false,
+                CriticalHit = false
+            };
+        }
+
         // C8.9, C8.8 (p. 179; pass 55, ruling R55.7): HE with a Depletion Number is used below it, used and run out at it, and above it "the firer
         // had no such ammunition and is considered not to have fired yet for any purpose unless Gun Malfunction ... occurs": no ROF check, no hit,
         // and no IFT DR for a round that was not there. A shot that names no ammunition, as every one before the pass, has no such number.
@@ -979,7 +1045,8 @@ public static class ScenarioA1OrdnanceCalculator
             rof--;
         }
 
-        if (shot.Crew.Pinned == true || AfphFire(shot))
+        // C13.1 (pass 60): a LATW has no Multiple ROF.
+        if (shot.Crew.Pinned == true || AfphFire(shot) || latw)
         {
             rof = 0;
         }
@@ -990,7 +1057,22 @@ public static class ScenarioA1OrdnanceCalculator
         string? criticalTarget = null;
         if (isHit)
         {
-            var targets = hit.Targets!;
+            var targets = targetsHit;
+            if (gun.LatwType == "pf" && targets.Count > 1)
+            {
+                // C13.31 (p. 183; pass 60, ruling R60.5): a PF "may not directly affect more than one unit ... unless the Random Selection DR
+                // indicates several units are affected": the units the Random Selection dr picks (the highest, every tied unit alike; A.9), by the
+                // same dr that picks a Critical Hit's unit (C3.74). The firer's choice of a Known unit manning a Gun or SW is left out (backlog).
+                var key = "criticalSelection:" + string.Join(",", targets.Select(item => item.UnitId));
+                if (rolls.CriticalSelection is not { } picks || targets.Any(item => !picks.ContainsKey(item.UnitId!)))
+                {
+                    return Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:" + key]);
+                }
+
+                var top = targets.Max(item => picks[item.UnitId!]);
+                targets = [.. targets.Where(item => picks[item.UnitId!] == top)];
+            }
+
             IReadOnlyList<FireTarget> criticalTargets = [];
             if (critical)
             {
@@ -1038,20 +1120,24 @@ public static class ScenarioA1OrdnanceCalculator
         // C6.5, C6.57: the shot acquires the target Location, one step more (to -2) if already acquired, unless the Gun malfunctions; a
         // concealed target is acquired only when the shot costs it its concealment.
         var effects = (normal?.Effects ?? []).Concat(criticalHit?.Effects ?? []).ToArray();
-        var acquires = !malfunctioned && (!concealedTarget || effects.Any(item => item.ConcealmentLost));
+        // C6.5 (the chart's G): a non-mortar SW acquires nothing.
+        var acquires = !malfunctioned && !latw && (!concealedTarget || effects.Any(item => item.ConcealmentLost));
         var acquisition = !acquires ? 0 : concealedTarget ? -1 : Math.Max((AcquisitionDenied(shot) ? 0 : shot.Acquisition!.Value) - 1, -2);
         var gunEffect = new OrdnanceGunEffect(Breakdown(shot, gun, reference), malfunctioned, kept ? Math.Max(rof, 0) : shot.IntensiveFire == true ? 0 : Math.Max(rof, 0), kept, counter,
             acquisition, acquires ? shot.TargetLocationId : null);
 
-        // C11.4, C11.6 (ruling R8.3): a Critical Hit destroys the Gun; a KIA before the gunshield destroys it, a K malfunctions it.
+        // C11.4, C11.6 (ruling R8.3): a Critical Hit destroys the Gun; a KIA before the gunshield destroys it, a K malfunctions it. C11.52, C13.23,
+        // the table's note 5 (p. 182; pass 60, ruling R60.6): "The Gun and any manning Infantry are destroyed by a CH/any K/KIA result" of AP,
+        // APCR, APDS, or an ATR; HEAT destroys it "using the same mechanics as an HE hit" (C11.51).
         string? fate = null;
         if (gunTarget is not null && isHit)
         {
             var result = (normal ?? criticalHit)?.Arithmetic?.Result ?? string.Empty;
+            var armorPiercing = shot.VehicleTarget is null && (shot.Ammunition is "ap" or "apcr" or "apds" || gun.LatwType == "atr");
             fate = criticalHit is not null ? "destroyed"
                 : (normal?.Arithmetic?.Drm.Any(item => item.Name.StartsWith("gunshield:", StringComparison.Ordinal)) ?? false) ? null
                 : System.Text.RegularExpressions.Regex.IsMatch(result, "^([1-7])?KIA$") ? "destroyed"
-                : System.Text.RegularExpressions.Regex.IsMatch(result, "^K/([1-4])$") ? "malfunctioned"
+                : System.Text.RegularExpressions.Regex.IsMatch(result, "^K/([1-4])$") ? armorPiercing ? "destroyed" : "malfunctioned"
                 : null;
         }
 
@@ -1064,7 +1150,91 @@ public static class ScenarioA1OrdnanceCalculator
             CriticalTarget = criticalTarget,
             GunTargetFate = fate,
             AmmunitionUse = use,
+            HeEquivalency = HeEquivalency(shot, reference),
+            FirerEffect = casualty ? OrdnancePanzerfaustCheck.CasualtyReduction : null,
         };
+    }
+
+    /// <summary>
+    /// Whether the shot attacks by HE Equivalency (C8.31, p. 178; pass 60, ruling R60.4): AP, APCR, APDS, or HEAT named on the Infantry Target Type
+    /// at a Location with no vehicle named. A LATW names its own round (a PSK's and a PF's HEAT, an ATR's AP).
+    /// </summary>
+    private static bool Equivalency(OrdnanceShot shot) =>
+        shot.VehicleTarget is null && shot.TargetType is null && shot.Ammunition is "ap" or "apcr" or "apds" or "heat";
+
+    /// <summary>
+    /// The HE Equivalency FP a shot on the Infantry Target Type attacks with (C8.31, p. 178; pass 60, rulings R60.4 to R60.6), or null for HE: the
+    /// table's value for its round and weapon, the HEAT of a Gun one IFT column left of its HE FP. Null also for a Gun's HEAT with no HE FP.
+    /// </summary>
+    public static int? HeEquivalency(OrdnanceShot shot, ScenarioA1OrdnanceReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(shot);
+        ArgumentNullException.ThrowIfNull(reference);
+        return Equivalency(shot) && reference.Guns.TryGetValue(shot.Gun?.DefinitionId ?? string.Empty, out var gun)
+            ? ScenarioA1HeEquivalency.Firepower(shot.Ammunition, ScenarioA1HeEquivalency.Weapon(gun), gun.Caliber, HeFirepowerOf(gun, reference))
+            : null;
+    }
+
+    /// <summary>A Gun's normal HE FP (C.6), or null when it has no HE: its listing denies it and gives no HE Depletion Number (C2.21, C8.8).</summary>
+    private static int? HeFirepowerOf(GunDefinition gun, ScenarioA1OrdnanceReference reference) =>
+        gun.NoHe && !ScenarioA1ArmorCalculator.Lists(gun, "he") ? null : reference.HeFirepower(gun.Caliber) is var fp and > 0 ? fp : null;
+
+    /// <summary>
+    /// The units an Infantry Target Type hit attacks (C3.32): every in-LOS enemy unit of the Location, but only the Gun's manning crew for an ATR that
+    /// is not 20L (C13.23, C13.24; pass 60, ruling R60.6).
+    /// </summary>
+    private static IReadOnlyList<FireTarget> HitTargets(OrdnanceShot shot, GunDefinition gun) =>
+        gun.LatwType == "atr" && gun.Caliber != 20 && shot.Hit!.GunTarget is { CrewUnitId: { } crew }
+            ? [.. shot.Hit.Targets!.Where(item => item.UnitId == crew)]
+            : shot.Hit!.Targets!;
+
+    /// <summary>Whether an ATR that is not 20L fires at a Gun's manning crew (C11.52, C13.23; pass 60, ruling R60.6), its only target on the Infantry Target Type.</summary>
+    private static bool AtrAtGun(OrdnanceShot shot, GunDefinition gun) =>
+        HitTargets(shot, gun) is [_] && ScenarioA1FireCalculator.GunCrewAlone(shot.Hit! with
+        {
+            Targets = HitTargets(shot, gun)
+        });
+
+    /// <summary>
+    /// The reasons a shot by HE Equivalency is outside (C8.1, C8.9, C8.31; pass 60, ruling R60.4): a Gun fires AP unless its listing denies it, and
+    /// APCR, APDS, and HEAT where it lists them, by the Depletion Number of pass 55; a Gun's HEAT needs a printed HE FP to step left from; and
+    /// "HEAT may only be fired at a vehicle or Gun, or at Infantry/Cavalry receiving a wall/building/rubble/pillbox TEM".
+    /// </summary>
+    private static void EquivalencyOutside(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, List<string> outside)
+    {
+        var ammunition = shot.Ammunition!;
+        if (gun.GunType != "latw")
+        {
+            var special = ammunition is "apcr" or "apds" or "heat";
+            if ((ammunition == "ap" && gun.NoAp) || (special && !ScenarioA1ArmorCalculator.Lists(gun, ammunition)))
+            {
+                outside.Add(Prefix + "ammunition-outside");
+                return;
+            }
+
+            if ((special || ScenarioA1ArmorCalculator.Lists(gun, ammunition)) && ScenarioA1ArmorCalculator.ShotDepletion(shot, gun) is null)
+            {
+                outside.Add(Prefix + "ammunition-unavailable" + ScenarioA1ArmorCalculator.StartMonthDetail(shot, gun));
+            }
+
+            if (shot.Gun!.Depleted?.Contains(ammunition, StringComparer.Ordinal) == true)
+            {
+                outside.Add(Prefix + "ammunition-depleted");
+            }
+
+            if (ammunition == "heat" && HeFirepowerOf(gun, reference) is null)
+            {
+                outside.Add(Prefix + "heat-no-he");
+            }
+        }
+
+        // B23.3, B24.3, B9.3: a building or rubble Location, or a wall's TEM toward the firer; no pillbox is built. A Gun's crew alone is the Gun's.
+        var hit = shot.Hit!;
+        if (ammunition == "heat" && hit.GunTarget is null && !ScenarioA1Definitions.IsBuildingTerrain(hit.TargetTerrain)
+            && !ScenarioA1Definitions.IsRubbleTerrain(hit.TargetTerrain) && shot.WallTem != true)
+        {
+            outside.Add(Prefix + "heat-target-outside");
+        }
     }
 
     /// <summary>The Gun's B#, two lower while Intensive Firing (C5.62), and lower in Extreme Winter (E3.741; ruling R16.14).</summary>

@@ -249,7 +249,9 @@ public static class LiveOrdnance
 
             // C8.2 (pass 55, ruling R55.6): the game's special rule makes the side's force Elite for its Depletion Numbers.
             Elite = ScenarioA1Definitions.EliteAmmunition(state.SpecialRules, side) ? true : null,
-            ScenarioYear = ScenarioA1OrdnanceEligibility.RecordsYear(vehicleTarget is not null, ammunition is not null, state.Side(side)?.Nationality) ? state.ScenarioYear : null,
+            // C13.48 (pass 60): a LATW at Personnel names its round, and a PSK's date is read from the year.
+            ScenarioYear = ScenarioA1OrdnanceEligibility.RecordsYear(vehicleTarget is not null, ammunition is not null || gun.Kind == "asl:latw", state.Side(side)?.Nationality)
+                ? state.ScenarioYear : null,
             IntensiveFire = intensive ? true : null,
             // C5.8 (ruling R8.8): a squad or HS manning a Gun is non-qualified.
             NonQualified = ScenarioA1OrdnanceEligibility.NonQualified(gun is EquipmentInstance, crew.Kind, sw),
@@ -444,17 +446,31 @@ public static class LiveOrdnance
             return (null, halted);
         }
 
-        if (targetVehicle is null || state.Unit(targetVehicle) is not { Status: InstanceStatus.Active } vehicle || !LiveFire.IsVehicle(vehicle) || vehicle.Side == unit.Side
-            || state.Location(vehicle.Id)?.Location != target)
+        // C13.31, C8.31 (pass 60, ruling R60.5): with no vehicle named, a PF fires at the Location's Personnel on the Infantry Target Type.
+        UnitInstance? vehicle = null;
+        if (targetVehicle is not null && (state.Unit(targetVehicle) is not { Status: InstanceStatus.Active } named || !LiveFire.IsVehicle(named) || (vehicle = named).Side == unit.Side
+            || state.Location(named.Id)?.Location != target))
         {
             return (null, ScenarioA1OrdnanceEligibility.PanzerfaustTargetRefusal(target.ToString()));
         }
 
         if (phase == "MPh" && ScenarioA1OrdnanceEligibility.OutsideMphWindow(unit.Side == state.PhasingSide, state.Movement is { WindowOpen: true },
-            () => state.Movement!.Location == target && state.Movement.Movers.Contains(vehicle.Id)))
+            () => state.Movement!.Location == target && (vehicle is null || state.Movement.Movers.Contains(vehicle.Id))))
         {
             return (null, ScenarioA1OrdnanceEligibility.PanzerfaustWindowRefusal);
         }
+
+        IReadOnlyList<string>? movers = phase == "MPh" ? state.Movement!.Movers : null;
+        UnitInstance[] targets = vehicle is not null ? [] : [.. state.At(target).OfType<UnitInstance>()
+            .Where(other => ScenarioA1OrdnanceEligibility.AreaTarget(other.Status == InstanceStatus.Active, other.Side != unit.Side, false, () => LiveFire.IsVehicle(other),
+                () => Is(other, Conditions.Captured), movers is null ? null : () => movers.Contains(other.Id)))
+            .OrderBy(other => other.Id, StringComparer.Ordinal)];
+        if (targets.Any(other => other.Definition is null && other.Kind != UnitKinds.Dummy))
+        {
+            return (null, ScenarioA1OrdnanceEligibility.TargetOutsideCatalogRefusal);
+        }
+
+        var targetSide = vehicle?.Side ?? targets.FirstOrDefault()?.Side ?? state.Sides.FirstOrDefault(item => item.Id != unit.Side)?.Id;
 
         var firingSide = unit.Side == state.PhasingSide ? "phasing" : "non-phasing";
         var checks = state.OrdnanceShots.FirstOrDefault(item => item.Gun == gunId)?.Shots ?? 0;
@@ -467,8 +483,11 @@ public static class LiveOrdnance
         {
             return (null, refusal);
         }
-        var hit = new FireAttack(phase, firingSide, null, null, target.ToString(), [], null, null, null, null, state.ScenarioMonth, null, [],
-            state.Side(vehicle.Side!)?.Elr, null);
+        var hit = new FireAttack(phase, firingSide, null, null, target.ToString(), [], null, null, null, null, state.ScenarioMonth, null,
+            [.. targets.Select(other => LiveFire.Target(state, other, target))], targetSide is null ? null : state.Side(targetSide)?.Elr, null)
+        {
+            TargetSideNoQuarter = vehicle is null && targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
+        };
         var shot = new OrdnanceShot(phase, firingSide, state.Side(unit.Side!)?.Nationality,
             new OrdnanceGun(gunId, OrdnanceTargetTypes.Panzerfaust, false, checks, false, fired),
             new OrdnanceCrew(unit.Id, unit.Definition.Definition, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk),
@@ -481,7 +500,7 @@ public static class LiveOrdnance
         {
             Ammunition = "heat",
             ScenarioYear = state.ScenarioYear,
-            VehicleTarget = VehicleTargetFacts(state, vehicle),
+            VehicleTarget = vehicle is null ? null : VehicleTargetFacts(state, vehicle),
             Panzerfaust = new OrdnancePanzerfaust(state.PanzerfaustShots.GetValueOrDefault(unit.Side!), PanzerfaustAllowance(state, unit.Side!), null, Is(unit, Conditions.Heroic)),
         };
         if (director is not null)
@@ -505,7 +524,11 @@ public static class LiveOrdnance
             shot = shot with
             {
                 FireKind = "first-fire",
-                Movement = ScenarioA1OrdnanceEligibility.MphMovement(true, moving.Assault, moving.HalfMfInLocation, here?.Shots, here?.Mp),
+                Movement = ScenarioA1OrdnanceEligibility.MphMovement(vehicle is not null, moving.Assault, moving.HalfMfInLocation, here?.Shots, here?.Mp),
+                Hit = shot.Hit! with
+                {
+                    TargetMovement = vehicle is null ? new FireMovement(moving.Assault) : null
+                },
             };
         }
 

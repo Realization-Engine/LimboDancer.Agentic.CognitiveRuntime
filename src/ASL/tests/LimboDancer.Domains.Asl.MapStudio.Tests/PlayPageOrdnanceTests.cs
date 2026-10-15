@@ -143,9 +143,11 @@ public sealed class PlayPageOrdnanceTests : IDisposable
         page.Find("#ordnance-gun").Change("uk-gun");
         page.Find("#ordnance-target").Change(hexes.Two);
         Assert.Empty(page.FindAll("#ordnance-vehicle"));
-        var option = Assert.Single(page.FindAll("#ordnance-ammunition option"));
+        // Pass 60 (C8.31): HE first, then AP and APDS by their HE Equivalency, the note saying what each attacks with.
+        var option = page.FindAll("#ordnance-ammunition option")[0];
         Assert.Equal(("he", "HE (Depletion Number 8)"), (option.GetAttribute("value"), option.TextContent));
-        Assert.Empty(page.FindAll("#ordnance-ammunition-note"));
+        Assert.Equal(["he", "ap", "apds"], page.FindAll("#ordnance-ammunition option").Select(item => item.GetAttribute("value")));
+        Assert.Contains("AP: 2 FP by HE Equivalency, C8.31", page.Find("#ordnance-ammunition-note").TextContent, StringComparison.Ordinal);
         dice.Enqueue(5);
         dice.Enqueue(4);
         Commit(page, "#propose-ordnance");
@@ -170,17 +172,11 @@ public sealed class PlayPageOrdnanceTests : IDisposable
         Assert.DoesNotContain("miss", record, StringComparison.Ordinal);
         Assert.DoesNotContain("may fire again this phase", record, StringComparison.Ordinal);
 
-        // The Gun has not fired and is still offered, with no HE left to name.
+        // The Gun has not fired and is still offered, with no HE left to name; since pass 60 its AP is offered at Infantry instead (C8.31).
         page.Find("#ordnance-gun").Change("uk-gun");
         page.Find("#ordnance-target").Change(hexes.Two);
-        Assert.Empty(page.FindAll("#ordnance-ammunition"));
-        Assert.Equal("HE: it has run out (C8.9)", page.Find("#ordnance-ammunition-note").TextContent);
-
-        // The shot still names HE, so the refusal is that the Gun has none, not that it was left unnamed.
-        page.Find("#propose-ordnance").Click();
-        page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.True(page.Find("#play-proposal").TextContent.Contains("it has none now", StringComparison.Ordinal), page.Find("#play-proposal").TextContent);
-        Assert.DoesNotContain("name HE for the shot", page.Find("#play-proposal").TextContent, StringComparison.Ordinal);
+        Assert.Equal(["ap", "apds"], page.FindAll("#ordnance-ammunition option").Select(item => item.GetAttribute("value")));
+        Assert.StartsWith("HE: it has run out (C8.9); AP: 2 FP by HE Equivalency, C8.31", page.Find("#ordnance-ammunition-note").TextContent, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -284,7 +280,8 @@ public sealed class PlayPageOrdnanceTests : IDisposable
         page.EndPhase(Commit);
 
         page.Find("#ordnance-gun").Change("us-gun");
-        Assert.Equal([("he", "HE"), ("canister", "Canister (Depletion Number 7)")], page.FindAll("#ordnance-ammunition option").Select(option => (option.GetAttribute("value"), option.TextContent)));
+        // Pass 60 (C8.31): its AP by HE Equivalency after them.
+        Assert.Equal([("he", "HE"), ("canister", "Canister (Depletion Number 7)"), ("ap", "AP")], page.FindAll("#ordnance-ammunition option").Select(option => (option.GetAttribute("value"), option.TextContent)));
         Assert.Single(page.FindAll("#ordnance-target"));
         Assert.Empty(page.FindAll("#ordnance-canister-aim"));
 

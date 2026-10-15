@@ -472,6 +472,9 @@ public static class ScenarioA1OrdnanceEligibility
             // The map read of pass 55: Height Advantage (B10.31); a record made before it has none.
             HeightAdvantage = recorded.HeightAdvantage,
 
+            // The map read of pass 60: a wall's TEM for HEAT at Infantry (C8.31); a record made before it has none, and was no such shot.
+            WallTem = recorded.WallTem,
+
             // The map read of pass 9: a PF fired from a ground-level building (C13.8).
             Panzerfaust = expected.Panzerfaust is null ? null : expected.Panzerfaust with
             {
