@@ -94,7 +94,8 @@ public sealed class CardEditorPageTests : IDisposable
         // Referee, pass 22: the picker adds the counter it shows, the first of the side it names.
         var shown = editor.Find("#edit-group-1-0-pick-definition option").GetAttribute("value");
         editor.Find("#edit-group-1-0-pick-add").Click();
-        var json = JsonDocument.Parse(editor.Find("#edit-json pre").TextContent).RootElement;
+        using var editedDocument = JsonDocument.Parse(editor.Find("#edit-json pre").TextContent);
+        var json = editedDocument.RootElement;
         Assert.Equal(shown, json.GetProperty("sides")[1].GetProperty("groups")[0].GetProperty("units").EnumerateArray().Last().GetProperty("definition").GetString());
 
         // Referee, pass 22: a second copy under the same id does not overwrite the first.

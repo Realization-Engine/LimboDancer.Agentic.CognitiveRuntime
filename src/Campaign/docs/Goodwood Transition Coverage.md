@@ -238,3 +238,9 @@ The service persistence/recovery test passed in 2 minutes 23 seconds: missing pa
 The updated campaign host reopened the original incomplete live save with 90 gaps unchanged. Selecting Place remaining counters produced save 7c12837c0e4b62229cb233ec4010d9391e8928f1f862f3634701f89419e8158b: 624 positions, zero review findings. Direct comparison with the old snapshot confirms all 534 old coordinates and the terrain manifest, roster and campaign context are identical.
 
 Prepare and open ASL setup reached Ready in approximately 332 seconds, observed by browser polling rather than instrumented stage timing. The generated handoff is bd6932874e5285982bb0d26274f83baa5fea64cd24656af15e00d0c1abaf1cb0; Studio game campaign-d52f7b3704cf7cd4d56818f1 opened at its Allied hand-over screen. The popup appeared after a long delay; a duplicate diagnostic tab was closed. Initial page navigation caused observation timeouts before eventually loading. Selecting the Allied view still requires rendering acceptance. These results verify live recovery and import, not full map usability or the performance target.
+
+### ASL campaign provenance and return navigation
+
+The ASL Play context now includes a compact Goodwood campaign panel with imported formation/counter totals, off-map aircraft accounting, and an explanation that supply/command markers remain in campaign setup. Return navigation opens Campaign Atlas without modifying the ASL game or campaign deployment. The destination comes from the local Studio configuration `Campaign:AtlasOrigin` (default http://127.0.0.1:8093), never from an imported save URL. Unknown or damaged context does not prevent ordinary play.
+
+Sixteen targeted context and card-editor tests passed with warnings treated as errors. The newer SDK also exposed an existing undisposed JSON document in a card-editor test; it now has an explicit lifetime. Live rendered return/navigation acceptance remains outstanding.
