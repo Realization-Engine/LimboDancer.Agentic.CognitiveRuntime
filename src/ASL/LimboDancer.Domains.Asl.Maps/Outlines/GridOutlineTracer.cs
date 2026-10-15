@@ -42,37 +42,51 @@ public static class GridOutlineTracer
             var label = regions.Count + 1;
             var code = codes[start];
             var elevation = elevations[start];
-            var cells = new List<int>();
+            var boundaryCells = new List<int>();
+            var cellCount = 0;
             labels[start] = label;
             queue.Enqueue(start);
             while (queue.Count > 0)
             {
                 var cell = queue.Dequeue();
-                cells.Add(cell);
+                cellCount++;
                 var x = cell / height;
                 var y = cell % height;
-                Visit(x - 1, y);
-                Visit(x + 1, y);
-                Visit(x, y - 1);
-                Visit(x, y + 1);
+                // Visit all four neighbors even when an earlier one is outside. Interior cells
+                // contribute no edges, so do not retain them for the later ring tracing pass.
+                var boundary = !Visit(x - 1, y);
+                boundary |= !Visit(x + 1, y);
+                boundary |= !Visit(x, y - 1);
+                boundary |= !Visit(x, y + 1);
+                if (boundary)
+                {
+                    boundaryCells.Add(cell);
+                }
             }
 
-            regions.Add(new OutlineRegion(code, elevation, new GridPoint(start / height, start % height), cells.Count,
-                TraceRings(cells, labels, label, width, height)));
+            regions.Add(new OutlineRegion(code, elevation, new GridPoint(start / height, start % height), cellCount,
+                TraceRings(boundaryCells, labels, label, width, height)));
 
-            void Visit(int x, int y)
+            bool Visit(int x, int y)
             {
                 if (x < 0 || y < 0 || x >= width || y >= height)
                 {
-                    return;
+                    return false;
                 }
 
                 var index = (x * height) + y;
-                if (labels[index] == 0 && codes[index] == code && elevations[index] == elevation)
+                if (codes[index] != code || elevations[index] != elevation)
+                {
+                    return false;
+                }
+
+                if (labels[index] == 0)
                 {
                     labels[index] = label;
                     queue.Enqueue(index);
                 }
+
+                return true;
             }
         }
 
@@ -127,9 +141,19 @@ public static class GridOutlineTracer
         }
 
         var rings = new List<OutlineRing>();
+        // Dictionary enumeration restarts at its first slot, including removed entries. Repeating
+        // Keys.First for every hole becomes quadratic on large maps. Visit the original start
+        // vertices once, retaining a vertex until all its outgoing edges have been consumed.
+        var starts = outgoing.Keys.ToArray();
+        var nextStart = 0;
         while (outgoing.Count > 0)
         {
-            var start = outgoing.Keys.First();
+            while (!outgoing.ContainsKey(starts[nextStart]))
+            {
+                nextStart++;
+            }
+
+            var start = starts[nextStart];
             var path = new List<(int X, int Y)>();
             var directions = new List<Direction>();
             var current = start;

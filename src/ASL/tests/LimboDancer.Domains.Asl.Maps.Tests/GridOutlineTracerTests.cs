@@ -51,6 +51,24 @@ public sealed class GridOutlineTracerTests
     }
 
     [Fact]
+    public void ManyHolesAndPinchVerticesRemainLossless()
+    {
+        // A connected background surrounds many diagonal pairs. Each pair also creates a
+        // shared boundary vertex with two outgoing edges, which must both be consumed.
+        var grid = Build(Small, (x, y) => x > 0 && y > 0
+            && x < Small.GridWidth - 2 && y < Small.GridHeight - 2
+            && ((x % 8, y % 8) is (2, 2) or (3, 3)) ? (byte)2 : (byte)0);
+        var outlines = GridOutlineTracer.Trace(grid);
+        var background = Assert.Single(outlines.Regions, region => region.Code == 0);
+        var islands = outlines.Regions.Where(region => region.Code == 2).ToArray();
+        Assert.True(islands.Length > 100);
+        Assert.All(islands, island => Assert.Equal(1, island.CellCount));
+        Assert.Equal(islands.Length / 2, background.Rings.Count(ring => ring.IsHole));
+        Assert.Single(background.Rings, ring => !ring.IsHole);
+        AssertLossless(grid, outlines);
+    }
+
+    [Fact]
     public void ElevationSplitsRegionsOfOneCode()
     {
         var grid = Build(Small, (_, _) => 0, (x, _) => x < 50 ? (sbyte)0 : (sbyte)1);
