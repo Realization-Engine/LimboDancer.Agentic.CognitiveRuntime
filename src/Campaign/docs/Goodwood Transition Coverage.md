@@ -421,3 +421,14 @@ Review during perimeter acceptance found that DisplayText.ReadPlace limited shor
 All 40 focused LocationWords tests passed with warnings treated as errors. The new full-map case round-trips every one of the 40,441 Goodwood geometry addresses in both single-board and multiple-board display forms; it also checks lowercase input, levels, authored-board words, malformed names and ambiguous board selection. The Goodwood inventory audit and diff whitespace checks passed.
 
 The live isolated game reopened after the service restart in Allied Movement Phase, retaining the previously accepted history. Browser automation entered a long destination, but the movement form did not enable reliably after field entry; live typed-input acceptance remains unresolved. No movement was confirmed. The earlier exterior A1 proposal was refused as a non-adjacent/unreadable Location, which alone does not isolate playable-footprint enforcement. No accepted counter is adjacent to the outer guard; an initial-setup copy is the next suitable actual-interface perimeter test.
+
+
+### Actual-interface playable perimeter acceptance
+
+Restored the earlier 625-event initial-setup campaign export into a separate previously empty `artifacts/goodwood-perimeter-acceptance` store, preserving both original and later-phase transfer stores. The complete Goodwood ASL page displayed Turn 1 Allied Rally with setup open. A British squad was staged through the existing setup editor, then its destination was selected through the map.
+
+At exterior guard A1, Propose setup was refused with `UNIT-STATE-010 revision 626: A1 is not a hex on` the accepted full Goodwood board. The persisted footprint independently excludes A1. Selecting owned interior CCCCCCC13 for the same staged counter and proposing again passed every check and offered Confirm. Setup admission has no adjacency requirement, so this paired actual-interface check isolates the accepted location area from the earlier non-adjacent movement rejection. Screenshots: goodwood-exterior-setup-refused.png and goodwood-interior-setup-accepted.png.
+
+The interior proposal was cancelled. No setup placement or movement was confirmed. The accepted history still contains 625 events and retains SHA-256 `b106c5ad14cee682b679e86e752f980f46cd40456a89a84913c4d3da58b6af93`. This closes actual-interface exterior setup admission acceptance, supported by the existing engine/import/replay footprint checks. It does not claim a live adjacent movement crossing was exercised.
+
+Browser typed-input automation remains unresolved: selecting definitions and map locations worked, but entered text did not reliably reach the staged form state. The perimeter result uses map selection and a generated temporary counter ID. The full-map typed-coordinate parser itself passed all 40 focused tests in the prior checkpoint. Final compatibility, performance/resource and release-audit work remains open.

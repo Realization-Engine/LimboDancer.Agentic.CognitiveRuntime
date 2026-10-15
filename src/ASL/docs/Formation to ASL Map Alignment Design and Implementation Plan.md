@@ -460,3 +460,6 @@ Later-phase restore checkpoint: the complete 624-counter Goodwood game advanced 
 
 
 Independent-transfer checkpoint: normal campaign-file loading into a new browser origin and previously empty Campaign/Studio storage reconstructed the complete map, campaign metadata, playable footprint and all 626 events byte-for-byte. Actual ASL UI resumed Allied Prep Fire. Continue actual perimeter interaction and deployment compatibility, then controlled whole-map performance/resource acceptance and final requirement audit.
+
+
+Live perimeter checkpoint: on an isolated full Goodwood initial-setup copy, map-picked exterior A1 was refused by existing setup admission, while the same staged squad at owned interior CCCCCCC13 passed every check. The proposal was cancelled and the accepted 625-event history remained byte-identical. Continue deployment compatibility, typed-input interaction investigation, controlled performance/resource measurements and final release audit.
