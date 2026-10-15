@@ -130,11 +130,27 @@ public sealed class StudioHandoffTests
             FeatureModelJson.Deserialize(Encoding.UTF8.GetBytes(handoff.Features)));
         var ownership = SituationMapOwnership.Create(Inputs, acceptedBoard);
         var packet = new CampaignImportRequest(handoff.Board, handoff.Name, handoff.BoardVersion,
-            handoff.Features, handoff.GameRecord, context, MapOwnership: JsonSerializer.Serialize(ownership));
+            handoff.Features, handoff.GameRecord, context, MapOwnership: JsonSerializer.Serialize(ownership), EnforceMapOwnership: true);
         var options = new StudioOptions { BoardsRoot = Path.Combine(root, "boards"), CacheRoot = Path.Combine(root, "cache") };
         var (importer, boards, live) = Services(options);
+        var owned = ownership.Parents.Values.SelectMany(hexes => hexes).ToHashSet(StringComparer.Ordinal);
+        var guard = acceptedBoard.Model.Geometry.Hexes().Select(acceptedBoard.Model.Geometry.NameOf).First(hex => !owned.Contains(hex.ToString()));
+        var original = GameEventReader.Read(Encoding.UTF8.GetBytes(handoff.GameRecord)).Record!;
+        var altered = original.Events.ToArray();
+        var firstCounter = Array.FindIndex(altered, item => item.Payload is InstanceCreated { Instance.Position: MapPosition });
+        var created = (InstanceCreated)altered[firstCounter].Payload;
+        altered[firstCounter] = altered[firstCounter] with
+        {
+            Payload = new InstanceCreated(created.Instance with { Position = new MapPosition(new BoardLocation(acceptedBoard.Board, guard, 0)) }),
+        };
+        var outside = GameEventWriter.Write(altered[0].Scope, original with { Events = altered });
+        var refused = Assert.Throws<InvalidDataException>(() => importer.Import(packet with { GameRecord = outside }));
+        Assert.Contains("ASL setup validation", refused.Message, StringComparison.Ordinal);
+        Assert.Empty(live.Games());
+        Assert.Null(live.Footprints.Read(acceptedBoard.Board, acceptedBoard.Version, acceptedBoard.Model.Geometry));
         var imported = importer.Import(packet);
         Assert.False(imported.Existing);
+        Assert.Equal(37788, live.Footprints.Read(acceptedBoard.Board, acceptedBoard.Version, acceptedBoard.Model.Geometry)!.Count);
         Assert.Equal(context, importer.ReadContext(imported.Game));
         var importedOwnership = importer.ReadOwnership(imported.Game, handoff.Board)!;
         Assert.Equal(37788, importedOwnership.Count);
@@ -173,6 +189,7 @@ public sealed class StudioHandoffTests
         var recorded = GameEventWriter.Write(scope, live.Store.Read(scope)!);
         var (restarted, reloadedBoards, reloadedLive) = Services(options);
         Assert.True(restarted.Import(packet).Existing);
+        Assert.Equal(37788, reloadedLive.Footprints.Read(acceptedBoard.Board, acceptedBoard.Version, acceptedBoard.Model.Geometry)!.Count);
         Assert.Equal(recorded, GameEventWriter.Write(scope, reloadedLive.Store.Read(scope)!));
         Assert.Equal(context, restarted.ReadContext(imported.Game));
         Assert.Equal(handoff.BoardVersion, reloadedBoards.LoadPackage(BoardRef.Parse(handoff.Board)).Package!.Version);

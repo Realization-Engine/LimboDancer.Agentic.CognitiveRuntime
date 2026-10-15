@@ -120,7 +120,7 @@ async Task<string> ImportSituation(SituationHandoff handoff, string? progressRec
         LimboDancer.Domains.Asl.Maps.Features.FeatureModelJson.Deserialize(System.Text.Encoding.UTF8.GetBytes(handoff.Features)));
     var mapOwnership = JsonSerializer.Serialize(SituationMapOwnership.Create(inputs, ownershipBoard, token));
     var packet = new { board = handoff.Board, name = handoff.Name, version = handoff.BoardVersion,
-        features = handoff.Features, gameRecord = handoff.GameRecord, campaignContext = SituationHandoffs.ContextJson(handoff), progressRecord, mapOwnership };
+        features = handoff.Features, gameRecord = handoff.GameRecord, campaignContext = SituationHandoffs.ContextJson(handoff), progressRecord, mapOwnership, enforceMapOwnership = true };
     try
     {
         using var response = await clients.CreateClient("asl-situation-studio").PostAsJsonAsync("/api/campaign/import", packet, token);

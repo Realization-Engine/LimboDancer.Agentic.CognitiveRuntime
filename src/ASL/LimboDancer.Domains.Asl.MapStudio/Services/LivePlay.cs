@@ -34,9 +34,15 @@ public sealed class LivePlay
 
         // Pass 22 (ruling R22.2): the user's cards are saved beside the saved maps, under the boards root.
         Cards = new ScenarioCardLibrary(Path.Combine(Path.GetDirectoryName(units.UnitsRoot)!, "cards"));
-        Planner = new GamePlanner(Store, new StudioBoardCatalog(boards), units.Vocabulary, Catalogs, cardLibrary: Cards);
+        Footprints = new CampaignPlayableFootprints(Path.GetDirectoryName(units.UnitsRoot)!);
+        Planner = new GamePlanner(Store, new StudioBoardCatalog(boards, Footprints), units.Vocabulary, Catalogs, cardLibrary: Cards);
         Audit = new FileAuditSink(Path.Combine(Root, "audit.jsonl"));
         Play = new GamePlay(Planner, Store, Audit, roller: roller);
+    }
+
+    public CampaignPlayableFootprints Footprints
+    {
+        get;
     }
 
     public IReadOnlyList<UnitCatalog> Catalogs

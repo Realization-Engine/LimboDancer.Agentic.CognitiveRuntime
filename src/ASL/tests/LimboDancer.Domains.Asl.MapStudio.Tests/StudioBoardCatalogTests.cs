@@ -23,6 +23,46 @@ public sealed class StudioBoardCatalogTests
         Assert.Equal(1, provider.LatestReads);
     }
 
+    [Fact]
+    public void NewlyPublishedFootprintReplacesUnrestrictedCachedHandleAndSurvivesRestart()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "asl-catalog-footprint-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var provider = new VersionedBoards();
+            var footprints = new CampaignPlayableFootprints(root);
+            var catalog = new StudioBoardCatalog(provider, footprints);
+            var board = FakeBoardProvider.Board;
+            var hexes = board.Facts.Hexes.Take(2).Select(hex => hex.Hex).ToArray();
+            var before = catalog.TryGetBoard(board.Ref, board.Version).Board!;
+            Assert.NotNull(before.HexFacts(hexes[1]));
+            var json = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                Version = "goodwood-map-ownership-1",
+                Board = board.Ref.Value,
+                BoardVersion = board.Version,
+                Parents = new Dictionary<string, string[]> { ["A/A-1"] = [hexes[0].ToString()] },
+            });
+            footprints.Publish(board.Ref, board.Version, board.Facts.Geometry, json);
+            var after = catalog.TryGetBoard(board.Ref, board.Version).Board!;
+            Assert.NotSame(before, after);
+            Assert.Same(before.Facts, after.Facts);
+            Assert.Equal(before.Version, after.Version);
+            Assert.NotNull(after.HexFacts(hexes[0]));
+            Assert.Null(after.HexFacts(hexes[1]));
+            Assert.Same(after, catalog.TryGetBoard(board.Ref, board.Version).Board);
+            var restarted = new StudioBoardCatalog(provider, new CampaignPlayableFootprints(root));
+            Assert.Null(restarted.TryGetBoard(board.Ref, board.Version).Board!.HexFacts(hexes[1]));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, true);
+            }
+        }
+    }
+
     private sealed class VersionedBoards : IBoardProvider
     {
         public int LatestReads

@@ -448,3 +448,6 @@ Boundary overlay checkpoint: optional formation-parent transitions and the owned
 
 
 Playable-footprint foundation: board handles can retain an immutable location area while keeping all terrain facts for rendering/LOS. Planner replay now preserves the handle's area instead of stripping it to raw facts. All 820 Play tests passed. Next wire an explicit authoritative Goodwood footprint into import and live board loading. Validate retained history before publication; do not reinterpret optional partial ownership-inspection metadata as a play restriction. Actual perimeter movement, restart and existing-history acceptance remain required.
+
+
+Explicit footprint integration checkpoint: full Goodwood import and live board catalogs now share a persisted, explicitly requested playable area. Thirteen Studio checks and three Campaign integration cases passed, including all 624 counters, rejected exterior setup before publication, phase advancement and restart/repeated-import progress preservation. Complete actual-interface acceptance on the existing Goodwood game next; final progress-transfer, compatibility and performance/resource gates remain open.

@@ -2,13 +2,17 @@ using System.Text;
 using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Features;
+using LimboDancer.Domains.Asl.Maps.Geometry;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
 /// <summary>Validated, optional campaign inspection data. Does not change ASL terrain or events.</summary>
 public static class CampaignMapOwnership
 {
-    public static IReadOnlyDictionary<string, string> Read(string json, BoardPackage board)
+    public static IReadOnlyDictionary<string, string> Read(string json, BoardPackage board) =>
+        Read(json, board.Board, board.Version, board.Model.Geometry);
+
+    public static IReadOnlyDictionary<string, string> Read(string json, BoardRef board, string version, BoardGeometry geometry)
     {
         if (Encoding.UTF8.GetByteCount(json) > 2_000_000)
         {
@@ -19,8 +23,8 @@ public static class CampaignMapOwnership
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
             if (root.GetProperty("Version").GetString() != "goodwood-map-ownership-1" ||
-                root.GetProperty("Board").GetString() != board.Board.Value ||
-                root.GetProperty("BoardVersion").GetString() != board.Version)
+                root.GetProperty("Board").GetString() != board.Value ||
+                root.GetProperty("BoardVersion").GetString() != version)
             {
                 throw new InvalidDataException("Campaign ownership does not match this board version.");
             }
@@ -37,7 +41,7 @@ public static class CampaignMapOwnership
                 {
                     var name = item.GetString();
                     if (name is null || !HexName.TryParse(name, out var hex) || hex.ToString() != name ||
-                        !board.Model.Geometry.TryGetIndex(hex, out _) || !result.TryAdd(name, parent.Name))
+                        !geometry.TryGetIndex(hex, out _) || !result.TryAdd(name, parent.Name))
                     {
                         throw new InvalidDataException("Invalid or duplicate campaign ownership hex.");
                     }

@@ -10,12 +10,14 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 /// The map read API (ASL-MAP-080) over the boards the Studio can load: each board's exact version, its derived hex
 /// facts, its verification status (ASL-MAP-044), and its provenance.
 /// </summary>
-public sealed class StudioBoardCatalog(IBoardProvider boards) : IBoardCatalog
+public sealed class StudioBoardCatalog(IBoardProvider boards, CampaignPlayableFootprints? footprints = null) : IBoardCatalog
 {
     // Pass 31c (design D18; play test P-24): one handle for a loaded board, for as long as the board is loaded. The planner keeps a board's LOS
     // map and every LOS it has read by the board's handle, so a handle made anew on each call threw that work away: a rout's search then built
     // the LOS map again for every LOS it read. The handle holds what the board holds and nothing else, so its reads are the same.
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<StudioBoard, BoardHandle> Handles = new();
+
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<StudioBoard, BoardHandle> restrictedHandles = new();
 
     public BoardReadResult TryGetBoard(BoardRef board, string? version = null)
     {
@@ -28,11 +30,14 @@ public sealed class StudioBoardCatalog(IBoardProvider boards) : IBoardCatalog
             return new BoardReadResult(null, [new MapDiagnostic("MAP-READ-001", MapDiagnosticSeverity.Error, $"The Studio cannot load {board}.")]);
         }
 
-        return new InMemoryBoardCatalog([Handles.GetValue(loaded, Handle)]).TryGetBoard(board, version);
+        var footprint = footprints?.Read(loaded.Ref, loaded.Version, loaded.Facts.Geometry);
+        var handle = footprint is null ? Handles.GetValue(loaded, item => Handle(item))
+            : restrictedHandles.GetValue(loaded, item => Handle(item, footprint));
+        return new InMemoryBoardCatalog([handle]).TryGetBoard(board, version);
     }
 
     // LOS data (LOS Design, section 5): the board's grid and catalog, and a VASL board's hexside annotations.
-    private static BoardHandle Handle(StudioBoard loaded) => new(loaded.Ref, loaded.Version, Status(loaded.Status), Provenance(loaded), loaded.Facts, VaslSource(loaded))
+    private static BoardHandle Handle(StudioBoard loaded, IReadOnlySet<HexName>? footprint = null) => new(loaded.Ref, loaded.Version, Status(loaded.Status), Provenance(loaded), loaded.Facts, VaslSource(loaded), footprint)
     {
         Los = loaded.Composition is not null ? null
             : loaded.Ingested is { } ingested

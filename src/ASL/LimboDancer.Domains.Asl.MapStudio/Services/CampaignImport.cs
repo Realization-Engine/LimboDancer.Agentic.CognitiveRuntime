@@ -8,7 +8,7 @@ using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
-public sealed record CampaignImportRequest(string Board, string Name, string Version, string Features, string GameRecord, string? CampaignContext = null, string? ProgressRecord = null, string? MapOwnership = null);
+public sealed record CampaignImportRequest(string Board, string Name, string Version, string Features, string GameRecord, string? CampaignContext = null, string? ProgressRecord = null, string? MapOwnership = null, bool EnforceMapOwnership = false);
 public sealed record CampaignImportResult(string Game, string Path, bool Existing);
 
 /// <summary>Imports campaign setup and compatible saved progress without replacing divergent history.</summary>
@@ -50,6 +50,20 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
             if (request.MapOwnership is { } ownership)
             {
                 _ = CampaignMapOwnership.Read(ownership, package);
+            }
+            var footprint = live.Footprints.Read(board, package.Version, package.Model.Geometry);
+            if (request.EnforceMapOwnership)
+            {
+                if (request.MapOwnership is not { } fullOwnership)
+                {
+                    throw new InvalidDataException("An explicit playable footprint requires complete map ownership.");
+                }
+                var proposed = CampaignMapOwnership.Read(fullOwnership, package).Keys.Select(HexName.Parse).ToHashSet();
+                if (footprint is not null && !footprint.SetEquals(proposed))
+                {
+                    throw new InvalidDataException("An accepted playable footprint cannot be replaced.");
+                }
+                footprint = proposed;
             }
             var catalog = boards.Catalog ?? throw new InvalidDataException("Configure the ASL terrain catalog before importing a campaign.");
             if (package.Model.CatalogHash != catalog.Hash)
@@ -100,7 +114,7 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
             }
             // Validate before publishing either file. The temporary catalog contains only this exact board.
             var planner = new GamePlanner(live.Store, new InMemoryBoardCatalog([new BoardHandle(board, package.Version,
-                BoardReadStatus.AuthoredValid, "Campaign import", built.Facts)]), units.Vocabulary, live.Catalogs);
+                BoardReadStatus.AuthoredValid, "Campaign import", built.Facts, locationHexes: footprint)]), units.Vocabulary, live.Catalogs);
             var history = planner.Replay(events);
             if (history.HasErrors)
             {
@@ -118,6 +132,23 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
                 if (!SamePrefix(scope, events, existing.Events, Math.Min(events.Length, existing.Events.Count)))
                 {
                     throw new InvalidDataException("The ASL game has divergent history. Existing progress will not be replaced.");
+                }
+            }
+            if (footprint is not null)
+            {
+                // A board can be shared by several saved games. Do not invalidate any retained history.
+                foreach (var retainedScope in live.Games())
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var retained = live.Store.Read(retainedScope);
+                    if (retained is { Events.Count: > 0 } && retained.Events[0].Payload is GameStarted retainedStart &&
+                        retainedStart.Map.Boards.Any(item => item.Board == board && item.Version == package.Version))
+                    {
+                        if (retainedStart.Map.Boards.Count != 1 || planner.Replay(retained.Events).HasErrors)
+                        {
+                            throw new InvalidDataException("The playable footprint conflicts with retained ASL history. No progress was replaced.");
+                        }
+                    }
                 }
             }
             var contextPath = ContextPath(scope.Game);
@@ -206,6 +237,10 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
                 }
             }
             cancellationToken.ThrowIfCancellationRequested();
+            if (request.EnforceMapOwnership)
+            {
+                live.Footprints.Publish(board, package.Version, package.Model.Geometry, request.MapOwnership!);
+            }
             var revision = existing?.Events.Count ?? 0;
             if (events.Length > revision)
             {
