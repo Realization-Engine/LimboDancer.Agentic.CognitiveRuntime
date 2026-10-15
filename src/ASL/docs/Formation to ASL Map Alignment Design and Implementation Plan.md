@@ -430,3 +430,6 @@ See `src/Campaign/docs/Campaign Mortar Game Default.md` for values, cross-nation
 
 
 Campaign-file progress checkpoint: full Situation capture/restore is now connected to the ASL history service. Full-map reconstruction and mismatch rejection pass integration tests; actual campaign-file export includes all 624 positions and ASL history. Finish live restore/resume acceptance, then continue parent-boundary/viewport usability and the final performance/resource audit. See Goodwood Transition Coverage.md for measured evidence and remaining gates.
+
+
+Viewport checkpoint: per-game/per-viewer/per-board-version pan and zoom persistence is implemented and verified by a full Goodwood page reload. Automatic initial setup framing respects restored views. Continue with parent-hex ownership/boundary inspection and remaining full-map release gates.

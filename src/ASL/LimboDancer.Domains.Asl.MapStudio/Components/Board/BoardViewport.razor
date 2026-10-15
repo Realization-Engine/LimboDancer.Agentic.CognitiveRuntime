@@ -108,6 +108,8 @@
     /// <summary>Whether the map is turned; false before the viewport exists.</summary>
     public async ValueTask<bool> IsRotated() => viewport is not null && await viewport.InvokeAsync<bool>("isRotated");
 
+    public async ValueTask<bool> HasRestoredView() => viewport is not null && await viewport.InvokeAsync<bool>("hasRestoredView");
+
     public ValueTask SetLos(string? svg) => Send("setLos", svg);
 
     /// <summary>Outlines picked hexes: an SVG group with the id <c>layer-marks</c>, drawn on top; null clears it (pass 28, the card editor's map).</summary>

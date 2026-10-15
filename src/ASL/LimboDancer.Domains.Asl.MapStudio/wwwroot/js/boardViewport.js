@@ -6,10 +6,26 @@ const svgNamespace = "http://www.w3.org/2000/svg";
 const hoverInterval = 100;
 const rotationKey = "studio.map.rotated";
 
-// Pass 31c (design D16; play test P-30): the view of a map is kept for its host's key (a game and a view) while the page is open, so a map that
-// is taken away and drawn again, as at a hand-over, comes back where its viewer left it and not at its fit. Each view has its own, so no side
-// sees where the other was looking. A view still at its fit keeps nothing.
+// Views are scoped to game/viewer and the exact rendered board version. Storage failure falls back to this page.
 const keptViews = new Map();
+const viewPrefix = "studio.map.view.v1.";
+
+function rememberView(state) {
+    if (!state.viewKey || !state.box || !state.home) return;
+    const saved = { home: state.home, box: state.box, fitted: state.fitted };
+    keptViews.set(state.viewKey, saved);
+    try { localStorage.setItem(viewPrefix + state.viewKey, JSON.stringify(saved)); } catch { /* Page-only fallback. */ }
+}
+
+function readView(key, home) {
+    if (!key) return null;
+    let saved = keptViews.get(key);
+    try { saved = JSON.parse(localStorage.getItem(viewPrefix + key)) || saved; } catch { /* Retain page-only view. */ }
+    if (!saved || typeof saved.fitted !== "boolean" ||
+        !["x", "y", "width", "height"].every(name => saved.home?.[name] === home[name] && Number.isFinite(saved.box?.[name])) ||
+        saved.box.width <= 0 || saved.box.height <= 0) return null;
+    return saved;
+}
 
 export function create(host, dotnet) {
     const svg = document.createElementNS(svgNamespace, "svg");
@@ -201,15 +217,9 @@ export function create(host, dotnet) {
         fitRect: (x, y, width, height) => fitRect(state, x, y, width, height),
         setRotation: on => setRotation(state, on, true),
         isRotated: () => state.rotated,
+        hasRestoredView: () => state.restoredView === true,
         dispose: () => {
-            const key = host.dataset.viewKey;
-            if (key && state.box && state.home) {
-                if (state.fitted) {
-                    keptViews.delete(key);
-                } else {
-                    keptViews.set(key, { box: { ...state.box }, width: state.home.width, height: state.home.height });
-                }
-            }
+            rememberView(state);
 
             shapeWatcher?.disconnect();
             host.removeEventListener("keydown", onKey);
@@ -240,15 +250,19 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
 
     const [x, y, width, height] = viewBox.split(" ").map(Number);
     const home = { x, y, width, height };
-    const keepBox = state.home && state.home.width === width && state.home.height === height;
+    const viewKey = state.host.dataset.viewKey ? state.host.dataset.viewKey + "/" + baseUrl : null;
+    const keepBox = state.baseUrl === baseUrl && state.home && state.home.x === x && state.home.y === y && state.home.width === width && state.home.height === height;
+    state.baseUrl = baseUrl;
+    state.viewKey = viewKey;
     state.home = home;
     state.svg.replaceChildren(...groups);
     state.highlight = null;
     state.overlay = null;
     setVisible(state, visible);
-    const kept = keepBox ? null : keptViews.get(state.host.dataset.viewKey);
-    if (kept && kept.width === width && kept.height === height) {
-        setBox(state, kept.box, false);
+    const kept = keepBox ? null : readView(viewKey, home);
+    state.restoredView = Boolean(kept);
+    if (kept) {
+        setBox(state, kept.fitted ? fitBox(state) : kept.box, kept.fitted);
         return;
     }
 
@@ -604,6 +618,7 @@ function setBox(state, box, fitted = false) {
     const value = `${box.x} ${box.y} ${box.width} ${box.height}`;
     state.svg.setAttribute("viewBox", value);
     state.side?.setAttribute("viewBox", value);
+    rememberView(state);
     updateUnitTier(state);
 }
 

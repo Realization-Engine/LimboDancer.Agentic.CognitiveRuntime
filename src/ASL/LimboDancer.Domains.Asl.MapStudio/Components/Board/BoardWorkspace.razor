@@ -394,6 +394,8 @@
         }
     }
 
+    public async ValueTask<bool> HasRestoredView() => viewport is not null && await viewport.HasRestoredView();
+
     /// <summary>Shows an area of the board whole, in board units (pass 30: the setup areas).</summary>
     public async Task FitArea(double x, double y, double width, double height)
     {

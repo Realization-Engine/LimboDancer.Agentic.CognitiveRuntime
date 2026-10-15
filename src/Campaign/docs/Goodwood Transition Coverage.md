@@ -308,3 +308,10 @@ A live HTTP export of the accepted 624-position Goodwood save took 17.077 second
 
 
 Live restore follow-up: the exported campaign file was loaded through Load campaign from file and its confirmation dialog. The host reconstructed the handoff and returned to Campaign Atlas. Open complete ASL setup showed 114 formations, 624 counters, zero review findings, eight off-map aircraft and an Open ASL map link to the original campaign-d52f7b3704cf7cd4d56818f1 game. Following the link reopened Turn 1 Allied Rally Phase with setup open. The exported and retained live ASL histories are byte-identical (SHA-256 b106c5ad14cee682b679e86e752f980f46cd40456a89a84913c4d3da58b6af93). This verifies the live full-map setup-history round trip; later-phase history is covered by the two Studio integration cases, not yet by a full-map live later-phase transfer.
+
+
+### Persistent map view acceptance
+
+ASL map pan/zoom now survives page reload and browser navigation through local view storage scoped to game, viewing side and exact board render version. Ordinary views keep their in-page fallback when storage is blocked. Invalid stored boxes are ignored; explicit Fit is retained. A newly loaded or changed board does not reuse a different board version's position. Initial setup-area framing no longer overrides a restored view.
+
+Seven viewport JavaScript tests and 37 targeted Studio play/render tests passed. On the actual full Goodwood map, Zoom in produced viewBox `1157.1999999999998 1234.0999999999995 9385.6 10000.800000000001`. Reloading and reopening the Allied view restored precisely the same value. The browser observation timed out during full-map drawing, then inspection of the same tab succeeded without restarting it. Screenshot: goodwood-retained-map-view.png. This proves live page-reload view retention; it is not a performance-target pass. Parent-boundary inspection and the final full-map resource/performance audit remain open.
