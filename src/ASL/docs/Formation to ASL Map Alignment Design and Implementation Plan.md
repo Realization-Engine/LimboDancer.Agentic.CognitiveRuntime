@@ -442,3 +442,6 @@ Map ownership checkpoint: the full-board ownership metadata producer is implemen
 
 
 Ownership integration checkpoint: the host sends validated, exact-board-version metadata separately from immutable handoff context. Studio retains it across restart and repeated imports, and selected-hex inspection exposes the formation parent. Full Goodwood import tests cover every ownership entry alongside all 624 counters. Finish live inspector acceptance, then optional parent-boundary drawing and exterior playable-boundary enforcement.
+
+
+Boundary overlay checkpoint: optional formation-parent transitions and the owned perimeter are implemented, tested and visually verified on the complete Goodwood map. Toggle operation preserves pan/zoom and retains existing setup marks. Next enforce the exterior playable perimeter through existing ASL map/setup validation, then finish full-map progress-transfer and performance/resource acceptance.
