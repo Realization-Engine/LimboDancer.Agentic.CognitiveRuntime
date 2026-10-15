@@ -445,3 +445,6 @@ Ownership integration checkpoint: the host sends validated, exact-board-version 
 
 
 Boundary overlay checkpoint: optional formation-parent transitions and the owned perimeter are implemented, tested and visually verified on the complete Goodwood map. Toggle operation preserves pan/zoom and retains existing setup marks. Next enforce the exterior playable perimeter through existing ASL map/setup validation, then finish full-map progress-transfer and performance/resource acceptance.
+
+
+Playable-footprint foundation: board handles can retain an immutable location area while keeping all terrain facts for rendering/LOS. Planner replay now preserves the handle's area instead of stripping it to raw facts. All 820 Play tests passed. Next wire an explicit authoritative Goodwood footprint into import and live board loading. Validate retained history before publication; do not reinterpret optional partial ownership-inspection metadata as a play restriction. Actual perimeter movement, restart and existing-history acceptance remain required.

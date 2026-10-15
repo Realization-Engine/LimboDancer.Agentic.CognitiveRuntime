@@ -2072,14 +2072,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         return ComposedMapRead.Create(placed).Read;
     }
 
-    private List<(BoardRef, string, HexFactSet)>? BoardsOf(IReadOnlyList<GameEvent> events)
+    private List<BoardHandle>? BoardsOf(IReadOnlyList<GameEvent> events)
     {
         if (events.Count == 0 || events[0].Payload is not GameStarted started)
         {
             return null;
         }
 
-        var loaded = new List<(BoardRef, string, HexFactSet)>();
+        var loaded = new List<BoardHandle>();
         foreach (var placed in started.Map.Boards)
         {
             if (boards.TryGetBoard(placed.Board, placed.Version).Board is not { } handle)
@@ -2087,13 +2087,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 return null;
             }
 
-            loaded.Add((handle.Ref, handle.Version, handle.Facts));
+            loaded.Add(handle);
         }
 
         return loaded;
     }
 
-    private HexFactLocationChains? Chains(IReadOnlyList<GameEvent> events) => BoardsOf(events) is { } loaded ? new HexFactLocationChains(loaded) : null;
+    private BoardHandleLocationChains? Chains(IReadOnlyList<GameEvent> events) => BoardsOf(events) is { } loaded ? new BoardHandleLocationChains(loaded) : null;
 
     private static bool IsTrue(JsonElement placement, string condition) =>
         placement.TryGetProperty("conditions", out var conditions) && conditions.ValueKind == JsonValueKind.Object

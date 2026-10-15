@@ -355,3 +355,12 @@ Thirty-four targeted Studio tests passed, including same-parent suppression, dis
 
 
 Live boundary acceptance: the existing Goodwood game reopened with the Formation boundaries control. Its complete overlay contains 24,951 segments in one SVG path (706,950 characters of path data), with non-scaling stroke and no pointer interception. Keyboard toggling removed/restored the layer. A directly measured off/on check preserved viewBox `5627.423627061753 4576.132985952769 716.064453125 763.0004882812501` exactly. An earlier observation saw the view scale change between reads and was not used as evidence of preservation. Screenshot goodwood-formation-boundaries.png shows the enabled overlay and counter inspector. Exterior playable-boundary enforcement remains open; the overlay alone is visual.
+
+
+### Playable footprint validation foundation
+
+BoardHandle now accepts an optional immutable set of location hexes. Resolve, terrain-location reads, neighbors and distance reject excluded cells; the complete terrain facts and geometry remain available for rendering and LOS. Ordinary boards retain their existing location area.
+
+A planner test exposed that replay previously reduced board handles to unrestricted terrain facts. The planner now retains handles in its location-chain adapter, so the existing event projector also checks the footprint. Nine targeted tests passed, including an accepted interior setup and refusal of an exterior setup. The extended test also checks replay of an older unrestricted exterior placement. All 820 Play regression tests passed in 8 minutes, including rejection on replay of the older exterior placement. The Maps suite previously passed all 251 tests.
+
+This is a foundation checkpoint, not live Goodwood perimeter acceptance. The authoritative footprint must still be published separately from optional inspection metadata, validated against retained history, and loaded consistently by import and live play. Partial inspection metadata must never silently restrict an existing game. Terrain version, accepted deployment and game identity must remain unchanged; incompatible retained history must be refused without overwriting it.
