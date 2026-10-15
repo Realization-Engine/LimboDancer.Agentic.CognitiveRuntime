@@ -71,9 +71,34 @@ public sealed class SituationDeploymentTests
                 var crew = draft.Positions.Single(p => p.UnitId == weapon.Holding!.Holder);
                 Assert.Equal((crew.Column, crew.Row), (p.Column, p.Row));
             }
-            var handoff = await SituationHandoffs.Prepare(inputs, map, draft, "whole-goodwood-test");
+            // A player's accepted adjustments must survive review, save/reload and real ASL import.
+            // Swap complete mortar detachments, rifle squads and two same-model vehicles within their parents.
+            var adjustedPositions = draft.Positions.ToDictionary(p => p.UnitId, StringComparer.Ordinal);
+            foreach (var (first, second) in new[]
+            {
+                ("de-81mm-01/crew-1", "de-81mm-01/crew-2"),
+                ("de-81mm-01/mortar-1", "de-81mm-01/mortar-2"),
+                ("uk-rifle-01/squad-1", "uk-rifle-01/squad-2"),
+                ("uk-sherman-01/vehicle-1", "uk-sherman-01/vehicle-2"),
+            })
+            {
+                var left = adjustedPositions[first];
+                var right = adjustedPositions[second];
+                Assert.NotEqual((left.Column, left.Row), (right.Column, right.Row));
+                adjustedPositions[first] = right with { UnitId = first };
+                adjustedPositions[second] = left with { UnitId = second };
+            }
+            var adjusted = service.Review(draft with { Positions = draft.Positions.Select(p => adjustedPositions[p.UnitId]).ToArray() });
+            Assert.True(adjusted.Ready, string.Join("; ", adjusted.Review.Select(r => r.Reason)));
+            Assert.Equal(8, adjusted.Positions.Count(p => !draft.Positions.Contains(p)));
+            var adjustedJson = JsonSerializer.Serialize(adjusted);
+            var adjustedReload = JsonSerializer.Deserialize<SituationDeploymentDraft>(adjustedJson)!;
+            Assert.Equal(adjustedJson, JsonSerializer.Serialize(service.Review(adjustedReload)));
+            Assert.Equal(adjustedJson, JsonSerializer.Serialize(service.Assemble(formations, adjustedReload.Positions)));
+            Assert.Equal(fullBoard.Version, SituationAslBoard.Assemble(inputs, map).Version);
+            var handoff = await SituationHandoffs.Prepare(inputs, map, adjustedReload, "whole-goodwood-test");
             Assert.Equal(fullBoard.Version, handoff.BoardVersion);
-            Assert.Equal(json, JsonSerializer.Serialize(handoff.Setup));
+            Assert.Equal(adjustedJson, JsonSerializer.Serialize(handoff.Setup));
             Assert.Equal(8, handoff.Roster.AirSupport.Aircraft.Length);
             var restoredHandoff = JsonSerializer.Deserialize<SituationHandoff>(JsonSerializer.Serialize(handoff))!;
             await StudioHandoffTests.AssertFullImport(restoredHandoff, Path.Combine(root, "studio"));

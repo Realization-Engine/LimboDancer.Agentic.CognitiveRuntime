@@ -466,3 +466,6 @@ Live perimeter checkpoint: on an isolated full Goodwood initial-setup copy, map-
 
 
 Keyboard checkpoint: typed full-board Goodwood coordinates can be applied with Enter and were accepted by the actual setup proposal gate without committing a placement. All 41 location checks and nine selected save/equipment compatibility tests passed. Continue the full-map compatibility evidence audit, controlled performance/resource measurements and final release checklist.
+
+
+Full-map compatibility checkpoint: the complete integration now preserves eight manual changes across rifle squads, same-model vehicles and linked mortar detachments through JSON reload, preserved-position assembly, existing ASL planning, Studio import/restart and repeated handoff. All 624 counters and the accepted board identity remain intact. Passed in 3 minutes 10 seconds. Remaining work is controlled whole-map timing/resource evidence and the final requirement-by-requirement release audit.

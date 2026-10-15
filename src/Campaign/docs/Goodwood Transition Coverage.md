@@ -443,3 +443,12 @@ Actual-interface acceptance on the complete Goodwood initial-setup copy entered 
 The setup editor intentionally has no active map-picking board context, so its short address alone is not resolved. The full board-qualified form succeeds. Earlier short-form browser observations therefore do not prove an input failure. Movement fields with one known board and the parser regression retain short-address support; the setup row's map picker is also available.
 
 Nine selected Campaign compatibility tests passed without rebuilding the running services: older catalog positions/operator links, complete and incomplete legacy mortar migration, pair movement/stacking, infantry catalog metadata preservation and accepted legacy terrain identity. The coverage inventory audit and whitespace checks passed. This supplies focused compatibility evidence; the final full-map/manual-deployment evidence audit remains required.
+
+
+### Full-map manual-deployment compatibility acceptance
+
+The complete terrain/deployment/handoff/Studio integration test now swaps eight accepted positions within their original formation parents: two rifle squads, two same-model Sherman vehicles, and both identities of two mortar detachments. Each original location is distinct before the swap. Review and JSON reload retain every adjusted coordinate, and preserved-position assembly does not replace those player choices with automatic placement. The complete board identity remains unchanged.
+
+The adjusted full 624-counter deployment is then prepared through the existing ASL planner and passed to the real Studio import/restart/repeated-import acceptance helper, preserving identities, catalog references, positions, all weapon/crew links, campaign context, ownership and the playable footprint. The full test passed in 3 minutes 10 seconds. This is combined integration duration, not generation or browser-opening latency.
+
+Together with the nine selected earlier-save/catalog/equipment compatibility cases and the actual original-save gap recovery/portable transfer evidence, this closes the identified manual-deployment compatibility gap for the Goodwood transition. Arbitrary invalid retained edits still produce review without relocation. Final controlled performance/resource measurements and the consolidated release audit remain open.
