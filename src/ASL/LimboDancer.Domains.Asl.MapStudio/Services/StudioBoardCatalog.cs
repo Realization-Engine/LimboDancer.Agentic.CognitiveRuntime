@@ -20,7 +20,10 @@ public sealed class StudioBoardCatalog(IBoardProvider boards) : IBoardCatalog
     public BoardReadResult TryGetBoard(BoardRef board, string? version = null)
     {
         ArgumentNullException.ThrowIfNull(board);
-        if (boards.Load(board).Board is not { } loaded)
+        // A game pins its terrain version. Reuse that accepted version instead of reading and hashing
+        // the current authored package again for every rules lookup. Unversioned requests still load latest.
+        var loaded = version is null ? boards.Load(board).Board : boards.LoadVersion(board, version);
+        if (loaded is null)
         {
             return new BoardReadResult(null, [new MapDiagnostic("MAP-READ-001", MapDiagnosticSeverity.Error, $"The Studio cannot load {board}.")]);
         }

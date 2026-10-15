@@ -244,3 +244,9 @@ Prepare and open ASL setup reached Ready in approximately 332 seconds, observed 
 The ASL Play context now includes a compact Goodwood campaign panel with imported formation/counter totals, off-map aircraft accounting, and an explanation that supply/command markers remain in campaign setup. Return navigation opens Campaign Atlas without modifying the ASL game or campaign deployment. The destination comes from the local Studio configuration `Campaign:AtlasOrigin` (default http://127.0.0.1:8093), never from an imported save URL. Unknown or damaged context does not prevent ordinary play.
 
 Sixteen targeted context and card-editor tests passed with warnings treated as errors. The newer SDK also exposed an existing undisposed JSON document in a card-editor test; it now has an explicit lifetime. Live rendered return/navigation acceptance remains outstanding.
+
+### Pinned board lookup performance
+
+StudioBoardCatalog now resolves a requested terrain version through the existing LoadVersion API. Previously every rules lookup loaded and hashed the current authored package before checking its version, even when the accepted version was already compiled in memory. Unversioned lookups still read the latest board; an unavailable pinned version remains an error. A regression test verifies accepted-version reuse, changed-current isolation and refusal of an unavailable version. Thirty-eight targeted catalog, render-endpoint and play-page tests passed. Full Goodwood browser timing after this change is still pending.
+
+Live inspection confirmed the campaign provenance totals and return link. Its styles were moved into the existing site stylesheet because this application does not include a component-scoped stylesheet bundle.
