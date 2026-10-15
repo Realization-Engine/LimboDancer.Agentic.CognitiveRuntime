@@ -3252,6 +3252,29 @@ else if (state is not null)
         return counterOrigins.GetValueOrDefault(id);
     }
 
+    private string? ownershipKey;
+    private IReadOnlyDictionary<string, string>? mapOwnership;
+
+    private IReadOnlyList<string> ParentNotes(string board, string hex)
+    {
+        var key = gameId + "/" + board;
+        if (ownershipKey != key)
+        {
+            ownershipKey = key;
+            mapOwnership = null;
+            if (gameId.StartsWith("campaign-", StringComparison.Ordinal) && Services.GetService<CampaignImport>() is { } imports)
+            {
+                try { mapOwnership = imports.ReadOwnership(gameId, board); }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidDataException)
+                {
+                    // Optional inspection metadata must not interrupt ordinary play.
+                }
+            }
+        }
+        return mapOwnership is null ? [] : mapOwnership.TryGetValue(hex, out var parent)
+            ? [$"Formation parent: {parent}"] : ["Outside campaign ownership: exterior compilation guard."];
+    }
+
     private GameHistory? history;
     private GameState? state;
     private string newId = "village";
@@ -7159,7 +7182,7 @@ else if (state is not null)
         }
 
         bool Here(BoardLocation at) => at.Board == hex.Board && at.Hex == hex.Hex;
-        return [.. state.ResidualFire.Where(item => Here(item.Location)).Select(item => $"{item.Fp} Residual FP in {PlaceOf(item.Location)} (A8.2)"),
+        return [.. ParentNotes(hex.Board.Value, hex.Hex.ToString()), .. state.ResidualFire.Where(item => Here(item.Location)).Select(item => $"{item.Fp} Residual FP in {PlaceOf(item.Location)} (A8.2)"),
             .. VisibleUnits.Where(unit => GameState.Condition(unit, Conditions.Melee) == ConditionState.True && state.Location(unit.Id)?.Location is { } at && Here(at))
                 .Select(unit => state.Location(unit.Id)!.Location).Distinct().Select(at => $"Melee in {PlaceOf(at)} (A11.15)")];
     }

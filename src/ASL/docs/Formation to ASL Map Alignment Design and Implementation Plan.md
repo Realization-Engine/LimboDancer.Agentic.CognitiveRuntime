@@ -439,3 +439,6 @@ Counter provenance checkpoint: visible ASL counters expose immutable parent form
 
 
 Map ownership checkpoint: the full-board ownership metadata producer is implemented and verified across every Goodwood hex address. Keep this optional metadata separate from immutable campaign context and game history so existing accepted games retain their identities. Complete import validation/storage and the inspector/boundary interface next. Guard exclusion in metadata alone does not enforce a playable boundary.
+
+
+Ownership integration checkpoint: the host sends validated, exact-board-version metadata separately from immutable handoff context. Studio retains it across restart and repeated imports, and selected-hex inspection exposes the formation parent. Full Goodwood import tests cover every ownership entry alongside all 624 counters. Finish live inspector acceptance, then optional parent-boundary drawing and exterior playable-boundary enforcement.

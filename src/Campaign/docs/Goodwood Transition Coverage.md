@@ -331,3 +331,12 @@ SituationMapOwnership now projects the stable formation ownership lattice into t
 Two Release tests passed with warnings treated as errors. They inspect every hex in the full board geometry, verify 37,788 unique owned centers across 1,038 parents, prove guard exclusion and unchanged feature bytes, check deterministic JSON/save reload, reject tile-sized geometry and honor cancellation. The test board uses the real Goodwood ownership geometry with an empty feature model, so this is ownership/address validation, not a new terrain-render acceptance claim.
 
 Next: transmit and validate this separate metadata alongside the existing immutable handoff, retain it safely on repeated import, expose parent ownership in terrain inspection, and render optional parent boundaries. Actual exterior play restriction remains a separate acceptance item.
+
+
+### Ownership handoff and hex inspection
+
+The campaign host now computes ownership metadata from the full accepted board when launching or restoring a handoff. Studio validates the exact board/version, schema version, canonical in-bounds hex addresses, unique parents and unique ownership before publication. The optional metadata is stored atomically in a separate immutable sidecar. It can be attached to an older accepted game; older callers cannot erase it, and conflicting replacements are refused. Terrain, context and game-event identities remain unchanged.
+
+Selecting an ASL hex now shows its formation parent in the existing inspector. An unowned hex is labelled outside campaign ownership. This inspection label is not an engine play restriction. Parent-boundary drawing and exterior movement restrictions remain open.
+
+Thirty-one targeted Studio metadata/play-page tests passed. Three Campaign integration cases passed in 2 minutes 41 seconds, including the full Goodwood map and all 624 counters, every one of the 37,788 ownership entries, preserved progress on repeated import, restart retention, attachment to older games and conflict rejection. Actual full-map inspector acceptance is in progress.

@@ -115,8 +115,12 @@ app.MapPost("/api/asl-situation/handoffs/{id}/launch", (string id, SituationSess
     new { job = service.Launch(id, (handoff, token) => ImportSituation(handoff, null, clients, token)) });
 async Task<string> ImportSituation(SituationHandoff handoff, string? progressRecord, IHttpClientFactory clients, CancellationToken token)
 {
+    var ownershipBoard = new LimboDancer.Domains.Asl.Maps.Features.BoardPackage(
+        LimboDancer.Domains.Asl.Maps.Coordinates.BoardRef.Parse(handoff.Board), handoff.Name,
+        LimboDancer.Domains.Asl.Maps.Features.FeatureModelJson.Deserialize(System.Text.Encoding.UTF8.GetBytes(handoff.Features)));
+    var mapOwnership = JsonSerializer.Serialize(SituationMapOwnership.Create(inputs, ownershipBoard, token));
     var packet = new { board = handoff.Board, name = handoff.Name, version = handoff.BoardVersion,
-        features = handoff.Features, gameRecord = handoff.GameRecord, campaignContext = SituationHandoffs.ContextJson(handoff), progressRecord };
+        features = handoff.Features, gameRecord = handoff.GameRecord, campaignContext = SituationHandoffs.ContextJson(handoff), progressRecord, mapOwnership };
     try
     {
         using var response = await clients.CreateClient("asl-situation-studio").PostAsJsonAsync("/api/campaign/import", packet, token);

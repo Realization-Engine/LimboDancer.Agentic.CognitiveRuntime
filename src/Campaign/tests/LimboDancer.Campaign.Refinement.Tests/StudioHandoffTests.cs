@@ -42,6 +42,14 @@ public sealed class StudioHandoffTests
             Assert.Empty(live.Games());
             var imported = importer.Import(packet);
             Assert.False(imported.Existing);
+            Assert.Null(importer.ReadOwnership(imported.Game, packet.Board));
+            var ownership = JsonSerializer.Serialize(new { Version = "goodwood-map-ownership-1", Board = packet.Board,
+                BoardVersion = packet.Version, Parents = new Dictionary<string, string[]> { [anchor] = [setup.Placements[0].Hex] } });
+            packet = packet with { MapOwnership = ownership };
+            Assert.True(importer.Import(packet).Existing); // Attach metadata to an older accepted game without replacing it.
+            Assert.Equal(anchor, importer.ReadOwnership(imported.Game, packet.Board)![setup.Placements[0].Hex]);
+            Assert.Throws<InvalidDataException>(() => importer.Import(packet with { MapOwnership = ownership.Replace(anchor, "other", StringComparison.Ordinal) }));
+            Assert.Equal(anchor, importer.ReadOwnership(imported.Game, packet.Board)![setup.Placements[0].Hex]);
             var scope = Assert.Single(live.Games());
             Assert.Equal(imported.Game, scope.Game);
             var recorded = GameEventWriter.Write(scope, live.Store.Read(scope)!);
@@ -95,6 +103,8 @@ public sealed class StudioHandoffTests
             Assert.Equal(recorded, advancer.ExportProgress(imported.Game));
             Assert.False(advanceLive.History(imported.Game)!.HasErrors);
             var (restarted, reloadedBoards, reloadedLive) = Services(options);
+            Assert.True(restarted.Import(packet with { MapOwnership = null }).Existing); // Older callers cannot erase metadata.
+            Assert.Equal(anchor, restarted.ReadOwnership(imported.Game, packet.Board)![setup.Placements[0].Hex]);
             Assert.True(restarted.Import(packet).Existing);
             Assert.Single(reloadedLive.Games());
             Assert.Equal(recorded, GameEventWriter.Write(scope, reloadedLive.Store.Read(scope)!));
@@ -116,13 +126,19 @@ public sealed class StudioHandoffTests
     internal static async Task AssertFullImport(SituationHandoff handoff, string root)
     {
         var context = SituationHandoffs.ContextJson(handoff);
+        var acceptedBoard = new BoardPackage(BoardRef.Parse(handoff.Board), handoff.Name,
+            FeatureModelJson.Deserialize(Encoding.UTF8.GetBytes(handoff.Features)));
+        var ownership = SituationMapOwnership.Create(Inputs, acceptedBoard);
         var packet = new CampaignImportRequest(handoff.Board, handoff.Name, handoff.BoardVersion,
-            handoff.Features, handoff.GameRecord, context);
+            handoff.Features, handoff.GameRecord, context, MapOwnership: JsonSerializer.Serialize(ownership));
         var options = new StudioOptions { BoardsRoot = Path.Combine(root, "boards"), CacheRoot = Path.Combine(root, "cache") };
         var (importer, boards, live) = Services(options);
         var imported = importer.Import(packet);
         Assert.False(imported.Existing);
         Assert.Equal(context, importer.ReadContext(imported.Game));
+        var importedOwnership = importer.ReadOwnership(imported.Game, handoff.Board)!;
+        Assert.Equal(37788, importedOwnership.Count);
+        Assert.All(ownership.Parents, parent => Assert.All(parent.Value, hex => Assert.Equal(parent.Key, importedOwnership[hex])));
         var history = live.History(imported.Game)!;
         Assert.False(history.HasErrors, string.Join("; ", history.Diagnostics.Select(d => d.Message)));
         var state = history.Current!;

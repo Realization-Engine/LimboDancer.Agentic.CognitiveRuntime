@@ -8,7 +8,7 @@ using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
-public sealed record CampaignImportRequest(string Board, string Name, string Version, string Features, string GameRecord, string? CampaignContext = null, string? ProgressRecord = null);
+public sealed record CampaignImportRequest(string Board, string Name, string Version, string Features, string GameRecord, string? CampaignContext = null, string? ProgressRecord = null, string? MapOwnership = null);
 public sealed record CampaignImportResult(string Game, string Path, bool Existing);
 
 /// <summary>Imports campaign setup and compatible saved progress without replacing divergent history.</summary>
@@ -47,6 +47,10 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
                 throw new InvalidDataException("Campaign board version does not match its contents.");
             }
 
+            if (request.MapOwnership is { } ownership)
+            {
+                _ = CampaignMapOwnership.Read(ownership, package);
+            }
             var catalog = boards.Catalog ?? throw new InvalidDataException("Configure the ASL terrain catalog before importing a campaign.");
             if (package.Model.CatalogHash != catalog.Hash)
             {
@@ -121,6 +125,12 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
             {
                 throw new InvalidDataException("The ASL game already has different campaign context. It will not be replaced.");
             }
+            var ownershipPath = contextPath + ".map.json";
+            if (request.MapOwnership is { } proposedOwnership && File.Exists(ownershipPath) &&
+                File.ReadAllText(ownershipPath, Encoding.UTF8) != proposedOwnership)
+            {
+                throw new InvalidDataException("The ASL game already has different map ownership. It will not be replaced.");
+            }
             cancellationToken.ThrowIfCancellationRequested();
             // Publish the complete package directory in one rename. A retry after game publication fails can reuse it.
             if (!boards.Exists(board))
@@ -168,6 +178,33 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
                     }
                 }
             }
+            if (request.MapOwnership is { } newOwnership && !File.Exists(ownershipPath))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(ownershipPath)!);
+                var stage = ownershipPath + ".stage-" + Guid.NewGuid().ToString("N");
+                try
+                {
+                    File.WriteAllText(stage, newOwnership, new UTF8Encoding(false));
+                    try
+                    {
+                        File.Move(stage, ownershipPath);
+                    }
+                    catch (IOException) when (File.Exists(ownershipPath))
+                    {
+                        if (File.ReadAllText(ownershipPath, Encoding.UTF8) != newOwnership)
+                        {
+                            throw;
+                        }
+                    }
+                }
+                finally
+                {
+                    if (File.Exists(stage))
+                    {
+                        File.Delete(stage);
+                    }
+                }
+            }
             cancellationToken.ThrowIfCancellationRequested();
             var revision = existing?.Events.Count ?? 0;
             if (events.Length > revision)
@@ -198,6 +235,18 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
     {
         var path = ContextPath(game);
         return File.Exists(path) ? File.ReadAllText(path, Encoding.UTF8) : null;
+    }
+
+    public IReadOnlyDictionary<string, string>? ReadOwnership(string game, string board)
+    {
+        var path = ContextPath(game) + ".map.json";
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+        var package = boards.LoadPackage(BoardRef.Parse(board)).Package
+            ?? throw new InvalidDataException("Campaign ownership board is unavailable.");
+        return CampaignMapOwnership.Read(File.ReadAllText(path, Encoding.UTF8), package);
     }
 
     private string ContextPath(string game)
