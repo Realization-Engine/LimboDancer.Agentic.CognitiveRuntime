@@ -179,7 +179,10 @@ public static class ScenarioA1OrdnanceCalculator
         var reasons = new List<string>();
         foreach (var critical in new[] { false, true })
         {
-            reasons.AddRange(ScenarioA1FireCalculator.Precheck(HitAttack(shot, gun, reference, critical, HitTargets(shot, gun), null, HitVehicles(shot, reference)), reference.Fire)
+            // B23.32, C3.332 (pass 60, rulings R60.10, R60.11): a mortar's hit is an attack on each Location of its hex, vehicles included.
+            IEnumerable<FireAttack> attacks = shot.TargetType == OrdnanceTargetTypes.Area ? ScenarioA1AreaCalculator.PrecheckAttacks(shot, gun, reference, critical)
+                : [HitAttack(shot, gun, reference, critical, HitTargets(shot, gun), null, HitVehicles(shot, reference))];
+            reasons.AddRange(attacks.SelectMany(attack => ScenarioA1FireCalculator.Precheck(attack, reference.Fire))
                 .Select(reason => Prefix + (critical ? "critical-hit:" : "hit:") + reason));
         }
 
@@ -539,35 +542,40 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         // C3.32: the Infantry Target Type attacks the in-LOS enemy units of the target Location; one with no unit is not reviewed.
-        if (hit.Targets!.Any(item => item.Dummy != true && reference.Fire.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty)?.Nationality == gun.Nationality))
+        // C3.33 (ruling R9.3): the Area Target Type would hit friendly units and vehicles too, on their own side's ELR, which is not built.
+        var inLocation = hit.Vehicles ?? [];
+        if (hit.Targets!.Any(item => item.Dummy != true && reference.Fire.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty)?.Nationality == gun.Nationality)
+            || (mortar && inLocation.Any(item => reference.Fire.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty)?.Nationality == gun.Nationality)))
         {
-            // C3.33 (ruling R9.3): the Area Target Type would hit friendly units too, on their own side's ELR, which is not built.
             outside.Add(Prefix + (mortar ? "area-friendly-units" : "target-outside"));
-        }
-
-        // Ruling R9.3: an Area Target Type shot at a Gun and its crew is not built.
-        if (mortar && hit.GunTarget is not null)
-        {
-            outside.Add(Prefix + "target-outside");
         }
 
         // C3.32, C3.41, A7.308 (pp. 169, 170, 56; pass 60, ruling R60.8): the vehicles of the Location, in a fire phase; an AFV is immune, so a
         // Location of AFVs alone is the Vehicle Target Type's. No more unarmored vehicles than the column's highest KIA# may be affected by one DR,
-        // and their Random Selection is not built.
-        var inLocation = hit.Vehicles ?? [];
+        // and their Random Selection is not built. C3.332, C1.55 (pp. 170, 165; pass 60, ruling R60.10): a mortar's hit attacks every vehicle of
+        // its hex, AFVs too, and no more of them than the highest KIA# of its column.
         var unarmored = inLocation.Count(item => Unarmored(item, reference));
-        if (inLocation.Count > 0 && (shot.FireKind is not null || mortar
-            || inLocation.Any(item => item.LocationId != shot.TargetLocationId || reference.Fire.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty) is not { IsVehicle: true })))
+        if (inLocation.Count > 0 && (shot.FireKind is not null
+            || inLocation.Any(item => (mortar ? !InTargetHex(shot, item.LocationId) : item.LocationId != shot.TargetLocationId)
+                || reference.Fire.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty) is not { IsVehicle: true })))
         {
             outside.Add(Prefix + "target-outside");
         }
-        else if (unarmored > 0 && Array.IndexOf(ScenarioA1FireReference.ColumnFp, HeEquivalency(shot, reference) ?? reference.HeFirepower(gun.Caliber)) is var column and >= 0
-            && unarmored > reference.Fire.HighestKia(column))
+        else if ((mortar ? inLocation.Count : unarmored) is var affected and > 0
+            && Array.IndexOf(ScenarioA1FireReference.ColumnFp, mortar ? AreaFirepower(shot, gun, reference) : HeEquivalency(shot, reference) ?? reference.HeFirepower(gun.Caliber)) is var column and >= 0
+            && affected > reference.Fire.HighestKia(column))
         {
             outside.Add(Prefix + "vehicles-beyond-kia");
         }
 
-        if ((hit.Targets!.Count == 0 && unarmored == 0) || hit.TargetLocationId != shot.TargetLocationId || hit.Phase != shot.Phase || hit.FiringSide != shot.FiringSide
+        // B23.32 (pass 60, ruling R60.11): a mortar's Locations of one building hex, the named one among them, each target in one of them.
+        if ((shot.AreaLocations is { } levels && (!mortar || !levels.Any(item => item.LocationId == shot.TargetLocationId)))
+            || (mortar && hit.Targets!.Any(item => !InTargetHex(shot, item.LocationId))))
+        {
+            outside.Add(Prefix + "target-outside");
+        }
+
+        if ((hit.Targets!.Count == 0 && unarmored == 0 && !(mortar && inLocation.Count > 0)) || hit.TargetLocationId != shot.TargetLocationId || hit.Phase != shot.Phase || hit.FiringSide != shot.FiringSide
             || hit.Firers is { Count: > 0 } || hit.Director is not null || hit.FireKind is not null || hit.OrdnanceHit is not null)
         {
             outside.Add(Prefix + "target-outside");
@@ -686,7 +694,8 @@ public static class ScenarioA1OrdnanceCalculator
     {
         static bool Dice(IReadOnlyList<int>? dice) => dice is not null && (dice.Count != 2 || dice.Any(die => die is < 1 or > 6));
         return Dice(rolls.ToHit) || rolls.Subsequent is < 1 or > 6 || rolls.CriticalSelection?.Values.Any(dr => dr is < 1 or > 6) == true
-            || Dice(rolls.ToKill) || Dice(rolls.ShockCheck) || Dice(rolls.CrewCheck) || Dice(rolls.CrewSurvival) || Dice(rolls.CollateralCheck) || rolls.PanzerfaustCheck is < 1 or > 6;
+            || Dice(rolls.ToKill) || Dice(rolls.ShockCheck) || Dice(rolls.CrewCheck) || Dice(rolls.CrewSurvival) || Dice(rolls.CollateralCheck) || rolls.PanzerfaustCheck is < 1 or > 6
+            || rolls.AreaSurvival?.Values.Any(Dice) == true;
     }
 
     private static List<string> Undecided(OrdnanceShot shot)
@@ -737,18 +746,13 @@ public static class ScenarioA1OrdnanceCalculator
     /// The vehicles it hit are attacked on the same DR (C3.32, A7.308; pass 60, ruling R60.8).
     /// </summary>
     internal static FireAttack HitAttack(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, bool critical,
-        IReadOnlyList<FireTarget> targets, FireRolls? rolls, IReadOnlyList<FireVehicle>? vehicles = null)
+        IReadOnlyList<FireTarget> targets, FireRolls? rolls, IReadOnlyList<FireVehicle>? vehicles = null, bool heightAdvantage = false)
     {
         // C3.33, C9.5 (ruling R9.3): an Area Target Type hit attacks at half the HE FP (the IFT column at or below it), a Critical Hit at the
         // full HE FP doubled.
         // C8.31 (pass 60, ruling R60.4): AP, APCR, APDS, HEAT, and a LATW's round at their HE Equivalency, on the same column.
         var area = shot.TargetType == OrdnanceTargetTypes.Area;
-        var firepower = HeEquivalency(shot, reference) ?? reference.HeFirepower(gun.Caliber);
-        if (area && !critical)
-        {
-            firepower = ScenarioA1FireReference.ColumnFp.Where(column => column * 2 <= firepower).DefaultIfEmpty(0).Max();
-        }
-
+        var firepower = area && !critical ? AreaFirepower(shot, gun, reference) : HeEquivalency(shot, reference) ?? reference.HeFirepower(gun.Caliber);
         var others = shot.Hit!.Targets!.Where(item => !targets.Contains(item)).ToArray();
 
         // Ruling R5.8: each attack of a split hit answers the options of its own targets, a vehicle's Unlikely Kill among them.
@@ -765,7 +769,10 @@ public static class ScenarioA1OrdnanceCalculator
             Companions = others.Length > 0 ? [.. others, .. shot.Hit.Companions ?? []] : shot.Hit.Companions,
             OrdnanceHit = new FireOrdnanceHit(shot.Gun!.GunId, firepower, critical)
             {
-                Area = area ? true : null
+                Area = area ? true : null,
+
+                // C3.71 (pass 60, rulings R60.3, R60.14): a Critical Hit's reversal of Height Advantage, when the record carries the rule.
+                HeightAdvantage = critical && heightAdvantage && shot.ReversesHeightAdvantage == true ? true : null,
             },
             Rolls = rolls ?? new FireRolls(null, null, null, null),
         };
@@ -945,6 +952,9 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-q:height-advantage", 1, "B10.31"));
             drm.RemoveAll(item => item.Name == "case-j4");
         }
+
+        // C3.71 (pass 60, ruling R60.14): a Critical Hit reverses the Height Advantage claimed here.
+        var heightClaimed = drm.Any(item => item.Name == "case-q:height-advantage");
 
         // E1.7, E3.1 (referee, pass 16): the Low Visibility DRM is a Hindrance of its own on the TH DR.
         if (shot.LowVisibilityDrm is > 0 and var lowVisibility)
@@ -1157,7 +1167,7 @@ public static class ScenarioA1OrdnanceCalculator
             FireVehicle[] criticalVehicles = [.. struck.Where(item => picked.Contains(item.VehicleId!))];
             if (picked.Count > 0)
             {
-                criticalHit = ScenarioA1FireCalculator.Resolve(HitAttack(shot, gun, reference, true, criticalTargets, rolls.CriticalHit, criticalVehicles), reference.Fire);
+                criticalHit = ScenarioA1FireCalculator.Resolve(HitAttack(shot, gun, reference, true, criticalTargets, rolls.CriticalHit, criticalVehicles, heightClaimed), reference.Fire);
                 if (Pending(criticalHit, "critical-hit:") is { } pending)
                 {
                     return pending;
@@ -1243,6 +1253,17 @@ public static class ScenarioA1OrdnanceCalculator
     /// <summary>A Gun's normal HE FP (C.6), or null when it has no HE: its listing denies it and gives no HE Depletion Number (C2.21, C8.8).</summary>
     internal static int? HeFirepowerOf(GunDefinition gun, ScenarioA1OrdnanceReference reference) =>
         gun.NoHe && !ScenarioA1ArmorCalculator.Lists(gun, "he") ? null : reference.HeFirepower(gun.Caliber) is var fp and > 0 ? fp : null;
+
+    /// <summary>The FP of an Area Target Type hit (C3.33, C9.5; ruling R9.3): half the HE FP, on the IFT column at or below it.</summary>
+    internal static int AreaFirepower(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference)
+    {
+        var firepower = HeEquivalency(shot, reference) ?? reference.HeFirepower(gun.Caliber);
+        return ScenarioA1FireReference.ColumnFp.Where(column => column * 2 <= firepower).DefaultIfEmpty(0).Max();
+    }
+
+    /// <summary>Whether a Location is one a mortar's shot attacks (B23.32; pass 60, ruling R60.11): the named one, or another of its building hex.</summary>
+    internal static bool InTargetHex(OrdnanceShot shot, string? locationId) =>
+        locationId == shot.TargetLocationId || shot.AreaLocations?.Any(item => item.LocationId == locationId) == true;
 
     /// <summary>
     /// The units an Infantry Target Type hit attacks (C3.32): every in-LOS enemy unit of the Location, but only the Gun's manning crew for an ATR that

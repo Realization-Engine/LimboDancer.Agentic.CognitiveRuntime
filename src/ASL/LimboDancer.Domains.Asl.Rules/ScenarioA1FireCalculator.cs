@@ -529,11 +529,12 @@ public static class ScenarioA1FireCalculator
         // AFV open-topped or closed-topped, whose CE crew alone is Vulnerable (R25.1, R7.11). An AFV in terrain with a positive TEM (not
         // cumulative with its crew's CE DRM, D5.31) is not reviewed (ruling R25.6).
         // C3.32, A7.308 (pp. 169, 56; pass 60, ruling R60.8): an Infantry Target Type hit attacks every unarmored vehicle it hit on the Vehicle line,
-        // and the Vulnerable crew of each AFV whose own TH# it reached with the CE DRM alone (D5.31: not cumulative with a positive TEM). The Area
-        // Target Type's hit on a vehicle is not built.
+        // and the Vulnerable crew of each AFV whose own TH# it reached with the CE DRM alone (D5.31: not cumulative with a positive TEM).
+        // C3.332, C1.55 (pp. 170, 165; pass 60, ruling R60.10): an Area Target Type hit attacks its unarmored vehicles on the Vehicle line and the
+        // Vulnerable crews of its AFVs alike; the Ordnance package resolves each AFV itself on the IFT.
         var vehicles = attack.Vehicles ?? [];
-        var ordnanceHit = attack.OrdnanceHit is { Area: not true };
-        if ((vehicles.Count > 1 && !ordnanceHit) || (vehicles.Count > 0 && attack.OrdnanceHit is { Area: true })
+        var ordnanceHit = attack.OrdnanceHit is not null;
+        if ((vehicles.Count > 1 && !ordnanceHit)
             || (!ordnanceHit && (attack.TargetTerrain is { } vehicleTerrain && ScenarioA1FireReference.Tem.TryGetValue(vehicleTerrain, out var vehicleTem) && vehicleTem > 0)
                 && vehicles.Any(item => reference.Definitions.GetValueOrDefault(item.DefinitionId!) is { IsVehicle: true, Unarmored: not true }))
             || vehicles.Any(item => item.LocationId != attack.TargetLocationId
@@ -1180,6 +1181,13 @@ public static class ScenarioA1FireCalculator
     /// <summary>Whether the attack's targets are exactly the crew of the Gun it names (ruling R8.3).</summary>
     internal static bool GunCrewAlone(FireAttack attack) => attack.GunTarget is { CrewUnitId: { } crew } && attack.Targets is [{ } only] && only.UnitId == crew;
 
+    /// <summary>
+    /// Whether an AFV of an Area Target Type hit is attacked as unarmored (D5.311, B13.3, p. 203; pass 60, ruling R60.12): an OT AFV in woods, whose
+    /// crew's CE DRM the Air Bursts reduce, is resolved on the Vehicle line with no Air Burst TEM.
+    /// </summary>
+    internal static bool AirBurstUnarmored(bool area, string? terrain, FireDefinition definition) =>
+        area && terrain == "woods" && definition.Unarmored != true && definition.OpenTopped == true;
+
     /// <summary>Whether a Good Order crew's gunshield faces the attack (C11.5).</summary>
     private static bool GunshieldFaces(FireAttack attack, FireGunTarget gun) => gun.Gunshield == true && attack.Targets is [{ Broken: not true }];
 
@@ -1688,13 +1696,20 @@ public static class ScenarioA1FireCalculator
                 var column = columnFp is { } fp ? Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp) : -1;
                 var id = vehicle.VehicleId!;
                 var definition = reference.Definitions[vehicle.DefinitionId!];
-                if (definition.Unarmored == true)
+                if (definition.Unarmored == true || AirBurstUnarmored(attack.OrdnanceHit is { Area: true }, attack.TargetTerrain, definition))
                 {
+                    // C3.331, C3.332 and its EX, C3.71, D5.311 (pp. 170, 203; pass 60, rulings R60.10, R60.12): on the Area Target Type the vehicle takes
+                    // the TEM that gives it no HD, reversed by a Critical Hit, and the Air Bursts in woods; an OT AFV hit by Air Bursts takes none of them.
+                    var line = attack.OrdnanceHit is not { Area: true } ? drm
+                        : AirBurstUnarmored(attack.OrdnanceHit is { Area: true }, attack.TargetTerrain, definition) ? [.. drm.Where(item => item.Name != "air-burst")]
+                        : [.. arithmetic.Drm.Where(item => !TargetOwn(item) || item.Name.StartsWith("tem:", StringComparison.Ordinal)
+                            || (item.Name.StartsWith("critical-hit-tem:", StringComparison.Ordinal) && item.Name != "critical-hit-tem:height-advantage"))];
+                    var lineFinal = arithmetic.OriginalDr + (int)line.Sum(item => item.Value);
                     var kill = column < 0 ? (int?)null : reference.KillNumber(column);
                     var result = kill is not { } number ? FireVehicleEffect.None
-                        : final * 2 <= number ? FireVehicleEffect.BurningWreck
-                        : final < number ? FireVehicleEffect.Eliminated
-                        : final == number ? FireVehicleEffect.Immobilized
+                        : lineFinal * 2 <= number ? FireVehicleEffect.BurningWreck
+                        : lineFinal < number ? FireVehicleEffect.Eliminated
+                        : lineFinal == number ? FireVehicleEffect.Immobilized
                         : FireVehicleEffect.None;
                     int? unlikely = null;
                     bool? declined = null;
@@ -1739,7 +1754,7 @@ public static class ScenarioA1FireCalculator
                         }
                     }
 
-                    effects.Add(new FireVehicleEffect(id, definition.Id, result, kill, drm, final, unlikely, null, FireVehicleEffect.None) { UnlikelyKillDeclined = declined });
+                    effects.Add(new FireVehicleEffect(id, definition.Id, result, kill, line, lineFinal, unlikely, null, FireVehicleEffect.None) { UnlikelyKillDeclined = declined });
                     continue;
                 }
 
@@ -2255,6 +2270,17 @@ public static class ScenarioA1FireCalculator
             {
                 // B13.3, C3.71 (ruling R9.3): a mortar's hit in woods takes the -1 of Air Bursts instead of the +1, never reversed.
                 drm.Add(new FireModifier("air-burst", -1m, "B13.3"));
+
+                // B13.3, C11.2 (p. 128; pass 60, ruling R60.12): the -1 "is always applicable", even with "emplacements": with the Emplacement TEM.
+                if (hit.CriticalHit != true && GunCrewAlone(attack) && attack.GunTarget is { Emplaced: true } dugIn)
+                {
+                    drm.Add(new FireModifier("emplacement:" + dugIn.GunId, 2m, "C11.2"));
+                }
+            }
+            else if (hit is { Area: true, CriticalHit: not true } && GunCrewAlone(attack) && attack.GunTarget is { Emplaced: true } emplaced && tem < 2)
+            {
+                // C11.2, C3.331 (pass 60, ruling R60.14): an Emplaced Gun's crew takes the Emplacement TEM instead of a lower one.
+                drm.Add(new FireModifier("emplacement:" + emplaced.GunId, 2m, "C11.2"));
             }
             else if (hit is { Area: true } && hit.CriticalHit != true && tem != 0)
             {
@@ -2273,6 +2299,12 @@ public static class ScenarioA1FireCalculator
                 if (hit.CriticalHit == true && tem != 0)
                 {
                     drm.Add(new FireModifier("critical-hit-tem:" + attack.TargetTerrain, -Math.Abs(tem), "C3.71"));
+                }
+
+                // C3.71, B10.31 (p. 170; pass 60, ruling R60.14): the Height Advantage the target claimed on the To Hit DR is reversed as well.
+                if (hit.CriticalHit == true && hit.HeightAdvantage == true)
+                {
+                    drm.Add(new FireModifier("critical-hit-tem:height-advantage", -1m, "C3.71"));
                 }
             }
             else if (GunCrewAlone(attack) && attack.GunTarget is { } gunTarget && Math.Max(gunTarget.Emplaced == true ? 2 : 0, GunshieldFaces(attack, gunTarget) ? 2 : 0) > tem)
@@ -2294,6 +2326,13 @@ public static class ScenarioA1FireCalculator
             else if (tem != 0)
             {
                 drm.Add(new FireModifier("tem:" + attack.TargetTerrain, tem, "A7.6"));
+            }
+
+            // B23.32, C3.71 (pp. 136, 170; pass 60, ruling R60.11): +1 for each non-rooftop building level above the target Location, against an Area
+            // Target Type hit, which a Critical Hit does not reverse.
+            if (hit is { Area: true } && attack.LevelsAbove is > 0 and var above)
+            {
+                drm.Add(new FireModifier("tem:levels-above", above, "B23.32"));
             }
 
             // B10.31 (ruling R10.4): Height Advantage, +1 TEM for a target with no other positive TEM.
@@ -2502,12 +2541,15 @@ public static class ScenarioA1FireCalculator
             int? pinnedFinal = attack.Overrun is null && moving != 0 && movers.Any(unit => unit.Target.Pinned == true) && movers.Any(unit => unit.Target.Pinned != true)
                 ? final - moving : null;
 
-            // C11.4 (ruling R8.3): an HE hit whose DR gives no KIA or K on the Gun is a Near Miss, and the crew's gunshield adds +2 to it.
+            // C11.4 (ruling R8.3): an HE hit whose DR gives no KIA or K on the Gun is a Near Miss, and the crew's gunshield adds +2 to it. C11.4, C11.5
+            // (p. 182; pass 60, ruling R60.14): +1 against Indirect Fire, which the crew takes only where it has no positive TEM, the two never cumulative.
+            var indirect = hit is { Area: true };
             if (hit is { CriticalHit: false } && GunCrewAlone(attack) && attack.GunTarget is { } shielded && GunshieldFaces(attack, shielded)
-                && !Regex.IsMatch(result, "^([1-7])?KIA$") && !Regex.IsMatch(result, "^K/([1-4])$"))
+                && !Regex.IsMatch(result, "^([1-7])?KIA$") && !Regex.IsMatch(result, "^K/([1-4])$")
+                && !(indirect && drm.Any(item => item.Value > 0 && (item.Name.StartsWith("tem:", StringComparison.Ordinal) || item.Name.StartsWith("emplacement:", StringComparison.Ordinal)))))
             {
-                drm.Add(new FireModifier("gunshield:" + shielded.GunId, 2m, "C11.4"));
-                final += 2;
+                drm.Add(new FireModifier("gunshield:" + shielded.GunId, indirect ? 1m : 2m, "C11.4"));
+                final += indirect ? 1 : 2;
                 (column, shifted, result) = Column(main, shift, final);
             }
             FireColumn? second = null;

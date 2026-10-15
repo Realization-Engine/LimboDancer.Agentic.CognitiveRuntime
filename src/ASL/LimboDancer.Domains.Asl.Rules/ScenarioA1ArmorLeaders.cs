@@ -181,7 +181,7 @@ public static class ScenarioA1ArmorLeaders
         ArgumentNullException.ThrowIfNull(shot);
         ArgumentNullException.ThrowIfNull(resolution);
         var target = KillChecked(resolution) ? shot.VehicleTarget : WithoutMorale(shot.VehicleTarget);
-        var vehicles = Recorded(shot.Hit?.Vehicles, [.. Checked(resolution.Hit), .. Checked(resolution.CriticalHit)]);
+        var vehicles = Recorded(shot.Hit?.Vehicles, [.. Checked(resolution.Hit), .. Checked(resolution.CriticalHit), .. (resolution.LevelHits ?? []).SelectMany(Checked)]);
         if (ReferenceEquals(target, shot.VehicleTarget) && ReferenceEquals(vehicles, shot.Hit?.Vehicles))
         {
             return shot;

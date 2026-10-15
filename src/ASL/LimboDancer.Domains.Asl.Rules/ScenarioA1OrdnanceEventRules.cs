@@ -52,6 +52,16 @@ public static class ScenarioA1OrdnanceEventRules
     /// </summary>
     public static IReadOnlyList<(UnitCondition Condition, bool Value)> KillConditions(OrdnanceKill kill, bool concealedOrHidden)
     {
+        ArgumentNullException.ThrowIfNull(kill);
+        return KillConditions(kill.Result, kill.Shocked == true, concealedOrHidden);
+    }
+
+    /// <summary>
+    /// The conditions of a result in the To Kill vocabulary (pass 60): a To Kill DR's, or a mortar's IFT attack on an AFV (C1.55), whose
+    /// <c>shock</c> always Shocks it.
+    /// </summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> KillConditions(string result, bool shocked, bool concealedOrHidden)
+    {
         var changed = new List<(UnitCondition, bool)>();
         if (concealedOrHidden)
         {
@@ -59,13 +69,13 @@ public static class ScenarioA1OrdnanceEventRules
             changed.Add((UnitCondition.Hidden, false));
         }
 
-        if (kill.Result == OrdnanceKill.Immobilized)
+        if (result == OrdnanceKill.Immobilized)
         {
             changed.Add((UnitCondition.Immobilized, true));
             changed.Add((UnitCondition.Motion, false));
         }
 
-        if (kill.Shocked == true)
+        if (shocked)
         {
             changed.Add((UnitCondition.Shocked, true));
             changed.Add((UnitCondition.UnconfirmedKill, false));

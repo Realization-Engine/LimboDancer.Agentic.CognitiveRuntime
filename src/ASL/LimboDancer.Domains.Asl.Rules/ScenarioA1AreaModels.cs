@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace LimboDancer.Domains.Asl.Rules;
 
 /// <summary>
@@ -17,6 +19,37 @@ public sealed record OrdnancePanzerfaust(int? ShotsTaken, int? ShotsAllowed, boo
 /// it alone, its Final DR, and whether the shot hit it.
 /// </summary>
 public sealed record OrdnanceAreaTarget(string UnitId, IReadOnlyList<FireModifier> Drm, int FinalDr, bool Hit);
+
+/// <summary>
+/// One Location of a mortar's target building hex that holds its targets (B23.32, p. 136; pass 60, ruling R60.11): its terrain and its LOS from the
+/// firer or Spotter, whose Hindrance is its own Case R (C3.4), and the non-rooftop building levels above it, each +1 to the hit's IFT DR. Every
+/// building hex is taken as not an Interior Building Hex, which the board data does not tell.
+/// </summary>
+public sealed record OrdnanceAreaLocation(string LocationId, string? TargetTerrain, FireLos? Los, int? LevelsAbove);
+
+/// <summary>
+/// A mortar's hit on an AFV, resolved on the IFT and never on a To Kill Table (C1.55, C7.345, C9.1, p. 165; pass 60, ruling R60.10): the turret or
+/// hull struck (C3.9, from the Original IFT DR; C7.7 note E, ruling R60.23), the FP (half the HE FP, or the full FP doubled by a Critical Hit, C3.72), the Effects DR with the AF and OT
+/// DRM and the TEM that gives no HD, the Final DR of the column's K/# result, and the result: <c>burn</c> at most half that DR, <c>eliminated</c> on
+/// any other KIA, <c>shock</c> (turret) or <c>immobilized</c> (hull) on that DR and the one above it, else <c>none</c>.
+/// </summary>
+public sealed record OrdnanceAreaVehicle(string VehicleId, string DefinitionId, string HitLocation, int Firepower, IReadOnlyList<int> Dice, IReadOnlyList<FireModifier> Drm,
+    int FinalDr, int KillDr, string Result)
+{
+    /// <summary>Whether a Critical Hit fell on it (C3.72, C3.74); null when not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Critical
+    {
+        get; init;
+    }
+
+    /// <summary>The Crew Survival DR of an AFV destroyed and not burnt (D5.6); null when none is rolled.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceCrewSurvival? CrewSurvival
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// A PF Check dr (C13.31; ruling R9.7): the dr, its drm, the final dr, and what it gave: <c>shot</c> (1 to 3), <c>no-shot</c> (4 or more),

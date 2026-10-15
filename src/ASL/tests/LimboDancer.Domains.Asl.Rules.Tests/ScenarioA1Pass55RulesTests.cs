@@ -2044,8 +2044,9 @@ public sealed class ScenarioA1Pass55RulesTests
     /// Kill number's Case A for a rear hit (C7.21); its Cases C and D share their names with To Hit cases.
     /// </summary>
     // Pass 60 (C13.31): the PF Check's drm of August and September 1943 and of a target that is not an AFV; (D.8A, D5.31) the CE DRM of a Specific
-    // Collateral Attack.
-    private static readonly string[] NotToHitDrm = ["1945", "hs-or-crew", "smc", "pf-range", "case-a", "aug-sept-1943", "not-afv", "crew-exposed"];
+    // Collateral Attack; (C1.55) the IFT DRM of a mortar's hit on an AFV.
+    private static readonly string[] NotToHitDrm = ["1945", "hs-or-crew", "smc", "pf-range", "case-a", "aug-sept-1943", "not-afv", "crew-exposed",
+        "all-af-4-or-less", "open-topped", "all-af-8-or-more", "tem:"];
 
     /// <summary>The names a calculator's source gives its modifiers as literals: the text after <c>new FireModifier("</c>.</summary>
     private static IEnumerable<string> ModifierNames(string file)

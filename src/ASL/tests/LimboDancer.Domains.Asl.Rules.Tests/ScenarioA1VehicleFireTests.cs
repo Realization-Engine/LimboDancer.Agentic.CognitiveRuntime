@@ -210,18 +210,19 @@ public sealed class ScenarioA1VehicleFireTests
     }
 
     [Fact]
-    public void TwoVehiclesOrAVehicleUnderAnAreaHitAreOutside()
+    public void TwoVehiclesAreOutsideAndAnOrdnanceHitAttacksItsVehicles()
     {
         Assert.Contains("asl.a1.fire.vehicle-outside",
             ScenarioA1FireCalculator.Resolve(Attack([3, 4], [Vehicle("de-t", "attacker-truck"), Vehicle("de-ht", "attacker-halftrack")]), Reference).Reasons);
 
-        // C3.32, A7.308 (pass 60, ruling R60.8): an Infantry Target Type hit attacks the vehicles it hit; the Area Target Type's is not built.
+        // C3.32, A7.308 (pass 60, ruling R60.8): an Infantry Target Type hit attacks the vehicles it hit; C3.332 (ruling R60.10): so does the Area
+        // Target Type's.
         var hit = Attack([3, 4], [Vehicle("de-t", "attacker-truck")], firers: []) with
         {
             OrdnanceHit = new FireOrdnanceHit("ru-gun", 4, false),
         };
         Assert.DoesNotContain("asl.a1.fire.vehicle-outside", ScenarioA1FireCalculator.Resolve(hit, Reference).Reasons);
-        Assert.Contains("asl.a1.fire.vehicle-outside", ScenarioA1FireCalculator.Resolve(hit with
+        Assert.DoesNotContain("asl.a1.fire.vehicle-outside", ScenarioA1FireCalculator.Resolve(hit with
         {
             OrdnanceHit = new FireOrdnanceHit("ru-gun", 4, false) { Area = true },
         }, Reference).Reasons);

@@ -147,6 +147,16 @@ public sealed record FireAttack(
     }
 
     /// <summary>
+    /// The non-rooftop building levels above the target Location, each +1 to an Area Target Type hit's IFT DR, never reversed by a Critical Hit
+    /// (B23.32, C3.71, p. 136; pass 60, ruling R60.11). Null is none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? LevelsAbove
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The manned Gun whose crew is the attack's target (C11; backlog pass 8, ruling R8.3): whether it is Emplaced, and whether its gunshield
     /// faces the attack. Null when the target Location holds no Gun.
     /// </summary>
@@ -586,6 +596,16 @@ public sealed record FireOrdnanceHit(string? GunId, int? Firepower, bool? Critic
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Area
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the target claimed Height Advantage on the To Hit DR of a Direct Fire Critical Hit that reverses it to -1 on the IFT DR (C3.71, B10.31;
+    /// pass 60, ruling R60.14); null is not.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? HeightAdvantage
     {
         get; init;
     }

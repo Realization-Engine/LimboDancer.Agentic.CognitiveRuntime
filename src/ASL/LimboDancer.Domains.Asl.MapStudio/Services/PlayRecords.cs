@@ -467,7 +467,9 @@ public sealed class PlayRecords
                     parts.Add($"{fired.Crew}: {firerEffect} (C13.36)");
                 }
 
-                foreach (var (label, attack) in new[] { ("Critical Hit", resolution.CriticalHit), ("hit", resolution.Hit) })
+                // B23.32 (pass 60): a mortar's hit on each other Location of a building hex, on the same DR.
+                foreach (var (label, attack) in new[] { ("Critical Hit", resolution.CriticalHit), ("hit", resolution.Hit) }
+                    .Concat((resolution.LevelHits ?? []).Select(level => ("hit", (FireResolution?)level))))
                 {
                     if (attack?.Arithmetic is { } arithmetic)
                     {
@@ -521,6 +523,22 @@ public sealed class PlayRecords
                         + (kill.CrewCheck is { } tc ? $"; crew TC DR {tc.FinalDr} against {Against(tc)}: {(tc.Passed ? "passed" : "Abandoned")}" : "")
                         + (kill.CrewSurvival is { } cs ? $"; Crew Survival DR {cs.FinalDr} against CS# {cs.CrewSurvival}: {(cs.Survived ? "the crew survives" : "no survivors")}" : "");
                     parts.Add($"{kill.HitLocation} hit, {kill.TargetFacing} Target Facing, {kill.Ammunition.ToUpperInvariant()}: {tk}; TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
+                }
+
+                // C1.55, C9.1 (pass 60): a mortar's hit on each AFV, on the IFT.
+                foreach (var afv in resolution.AreaVehicles ?? [])
+                {
+                    var fate = afv.Result switch
+                    {
+                        OrdnanceKill.Burn => "burns (a burning wreck)",
+                        OrdnanceKill.Eliminated => "eliminated (a wreck)",
+                        OrdnanceKill.Immobilized => "immobilized",
+                        OrdnanceKill.Shock => "Shocked",
+                        _ => "no effect",
+                    };
+                    parts.Add($"{afv.VehicleId}: {(afv.Critical == true ? "a Critical Hit, " : "")}{afv.HitLocation} hit on the IFT (C1.55): {afv.Firepower} FP, DR "
+                        + $"{string.Join(", ", afv.Dice)}{ModifierText(afv.Drm)} = {afv.FinalDr} against the K/# DR {afv.KillDr}: {fate}"
+                        + (afv.CrewSurvival is { } survival ? $"; Crew Survival DR {survival.FinalDr} against CS# {survival.CrewSurvival}: {(survival.Survived ? "the crew survives" : "no survivors")}" : ""));
                 }
 
                 // D.8A (pass 60): the Specific Collateral Attack on the CE crew of the AFV the hit left standing.

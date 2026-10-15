@@ -304,6 +304,25 @@ public static class ScenarioA1OrdnanceEligibility
                 + "the Vehicle Target Type by naming it (C3.41, D.6)"
             : null;
 
+    /// <summary>
+    /// Whether a vehicle of the target hex is attacked by a mortar's Area Target Type hit (C3.332, C1.55, p. 170; pass 60, ruling R60.10): an active
+    /// vehicle of either side, the firer's own refused. The vehicle fact is read only when asked.
+    /// </summary>
+    public static bool AreaVehicle(bool mortar, bool active, Func<bool> vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return mortar && active && vehicle();
+    }
+
+    /// <summary>
+    /// Why a mortar's shot is refused at a hex holding a vehicle (C3.332; pass 60, ruling R60.10), or null: a vehicle in Bypass, whose terrain is not the
+    /// hex's, and Defensive First Fire at a moving vehicle are not built.
+    /// </summary>
+    public static string? AreaVehicleRefusal(string vehicle, bool bypass, bool mph) =>
+        bypass ? $"play.ordnance-area-vehicle: {vehicle} is in Bypass in the target hex; a mortar's hit on a vehicle in Bypass is not built (B13.3, D2.3; ruling R60.12)"
+            : mph ? $"play.ordnance-area-vehicle: {vehicle} is in the target hex; a mortar's Defensive First Fire hit beside a moving vehicle is not built (C3.332; ruling R60.10)"
+            : null;
+
     /// <summary>The refusal of a target Location holding a unit outside the catalog.</summary>
     public const string TargetOutsideCatalogRefusal = "play.ordnance-target: the target Location holds a unit outside the catalog";
 
@@ -459,14 +478,31 @@ public static class ScenarioA1OrdnanceEligibility
                 Los = recorded.Hit.Los,
                 TargetTerrain = recorded.Hit.TargetTerrain,
                 Targets = recorded.Hit.Targets is null ? expected.Hit.Targets
-                    : [.. expected.Hit.Targets!.Zip(recorded.Hit.Targets, (fact, record) => fact with { KnownEnemyInLos = record.KnownEnemyInLos, Captors = record.Captors })],
+                    : [.. expected.Hit.Targets!.Zip(recorded.Hit.Targets, (fact, record) => fact with
+                    {
+                        KnownEnemyInLos = record.KnownEnemyInLos,
+                        Captors = record.Captors,
+
+                        // A7.72 (pass 60): an upper-level target's Encirclement is the planner's read of the map, recorded with the shot, as an IFT
+                        // attack's is (LiveFire); a mortar's hit on a building's upper level reads it.
+                        Encircled = fact.Encircled ?? record.Encircled,
+                    })],
 
                 // The owners' answers are declared, and the projector checks them against the choices made (ruling R5.8).
                 Choices = recorded.Hit.Choices,
 
                 // Backlog pass 16 (rulings R16.12, R16.13): the weather cushion of the hit's attack, from the SSRs.
                 CushionedOpenGround = recorded.Hit.CushionedOpenGround,
+
+                // D9.3 (pass 60, ruling R60.10): the AFV or wreck a mortar's target Infantry shelter beside, a map read; none in a record made before it.
+                AfvCover = recorded.Hit.AfvCover,
             },
+
+            // The facts of pass 60 that gate its rules for older records (ruling R60.3): C3.71's reversal of Height Advantage, a mortar's building
+            // Locations (B23.32), and its Area Acquisition of the hex (C6.521); a record made before the pass has none and resolves as it did.
+            ReversesHeightAdvantage = recorded.ReversesHeightAdvantage,
+            AreaLocations = recorded.AreaLocations,
+            AreaAcquisition = recorded.AreaAcquisition,
 
             // Backlog pass 16 (rulings R16.12 to R16.14): the weather cushion and the Extreme Winter B#, from the SSRs.
             CushionedOpenGround = recorded.CushionedOpenGround,

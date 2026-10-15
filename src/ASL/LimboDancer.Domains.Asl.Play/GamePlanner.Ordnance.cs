@@ -98,20 +98,13 @@ public sealed partial class GamePlanner
             return (null, [$"play.fire-barred: {shooter.Id} {GamePlanner.FireBar(state, shooter)}"]);
         }
 
-        // C3.33, C3.332 (ruling R9.3): a mortar's Area Target Type shot at a hex holding a vehicle, or units in another Location of the hex, is not built.
-        if (shot.TargetType == OrdnanceTargetTypes.Area)
+        // C3.332, C1.55, B23.32 (pass 60, rulings R60.10, R60.11): a mortar's Area Target Type shot attacks the vehicles and the Locations of its hex;
+        // Rules says where a vehicle there is still refused.
+        if (shot.TargetType == OrdnanceTargetTypes.Area && state.Units.Where(unit => unit.Status is InstanceStatus.Active && LiveFire.IsVehicle(unit)
+                && state.Location(unit.Id)?.Location is { } at && at.Board == target.Board && at.Hex == target.Hex)
+            .Select(unit => ScenarioA1OrdnanceEligibility.AreaVehicleRefusal(unit.Id, unit.Straddling is not null, state.Phase == "mph")).FirstOrDefault(item => item is not null) is { } areaVehicle)
         {
-            if (state.Units.FirstOrDefault(unit => unit.Status is InstanceStatus.Active && LiveFire.IsVehicle(unit) && state.Location(unit.Id)?.Location is { } at
-                && at.Board == target.Board && at.Hex == target.Hex) is { } inHex)
-            {
-                return (null, [$"play.ordnance-area-vehicle: {inHex.Id} is in the target hex; a mortar's hit on a vehicle is not built (C3.332, C1.55; ruling R9.3)"]);
-            }
-
-            if (state.Units.Any(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location is { } other && other.Board == target.Board
-                && other.Hex == target.Hex && other != target))
-            {
-                return (null, ["play.ordnance-area-levels: the target hex holds units in more than one Location, which the Area Target Type is not built for (C3.33; ruling R9.3)"]);
-            }
+            return (null, [areaVehicle]);
         }
 
         // C3.32, C3.41 (pass 60, ruling R60.8): an Infantry Target Type shot at a Location holding a vehicle attacks its Infantry and unarmored vehicles
@@ -388,8 +381,10 @@ public sealed partial class GamePlanner
             // C2.6 (ruling R8.7; pass 55): a Gun fires at another level, up or down, only if the range is at least the elevation difference.
             ElevationAllowed = ScenarioA1OrdnanceMapRules.ElevationAllowed(targetAbove, read.Range, definition?.GunType),
 
-            // B10.31 (pass 55): the Height Advantage the probe read, for Case Q.
+            // B10.31 (pass 55): the Height Advantage the probe read, for Case Q. C3.71 (pass 60, ruling R60.14): a Critical Hit reverses it, for a shot
+            // made since the pass.
             HeightAdvantage = ScenarioA1OrdnanceMapRules.HeightAdvantage(read.HeightAdvantage, read.HexsideTem?.Tem),
+            ReversesHeightAdvantage = ScenarioA1OrdnanceMapRules.HeightAdvantage(read.HeightAdvantage, read.HexsideTem?.Tem) == true ? true : null,
 
             // C8.31 (pass 60, ruling R60.4): a wall's TEM lets HEAT be fired at Infantry; read for a HEAT shot with no vehicle named.
             WallTem = ScenarioA1OrdnanceMapRules.HeatWallTem(shot.VehicleTarget is not null, shot.Ammunition, read.HexsideTem?.Terrain),
@@ -497,6 +492,14 @@ public sealed partial class GamePlanner
         }
 
         var revealing = HeatOfBattleFacts(state, read);
+        var area = shot.TargetType == OrdnanceTargetTypes.Area;
+        var (levels, levelsReason) = area ? AreaLocations(state, shot, target, probe, read) : (null, null);
+        if (levelsReason is not null)
+        {
+            return (null, levelsReason);
+        }
+
+        var heightAdvantage = ScenarioA1OrdnanceMapRules.HeightAdvantage(read.HeightAdvantage, read.HexsideTem?.Tem, area);
         return ((shot with
         {
             Range = ranged.Range,
@@ -504,8 +507,13 @@ public sealed partial class GamePlanner
             FirerInWoodsOrBuilding = WoodsOrBuilding.Contains(firerTerrain),
             ElevationAllowed = ScenarioA1OrdnanceMapRules.ElevationAllowed(targetAbove, ranged.Range, definition?.GunType),
 
-            // B10.31, C6.8 (pass 55): Height Advantage is Case Q on a LATW's To Hit DR; the Area Target Type takes no Case Q.
-            HeightAdvantage = ScenarioA1OrdnanceMapRules.HeightAdvantage(read.HeightAdvantage, read.HexsideTem?.Tem, shot.TargetType == OrdnanceTargetTypes.Area),
+            // B10.31, C6.8 (pass 55): Height Advantage is Case Q on a LATW's To Hit DR; the Area Target Type takes no Case Q. C3.71 (pass 60, ruling
+            // R60.14): a Critical Hit reverses it, for a shot made since the pass.
+            HeightAdvantage = heightAdvantage,
+            ReversesHeightAdvantage = heightAdvantage == true ? true : null,
+
+            // B23.32 (pass 60, ruling R60.11): the Locations of a mortar's building hex.
+            AreaLocations = levels,
 
             // C8.31 (pass 60, ruling R60.5): a wall's TEM lets a PF's or PSK's HEAT be fired at Infantry.
             WallTem = ScenarioA1OrdnanceMapRules.HeatWallTem(shot.VehicleTarget is not null, shot.Ammunition, read.HexsideTem?.Terrain),
@@ -518,6 +526,9 @@ public sealed partial class GamePlanner
                 BeyondNvr = read.BeyondNvr,
                 TargetTerrain = read.TargetTerrain,
                 Targets = revealing.Targets,
+
+                // D9.3, C9.5 EX (pass 60, ruling R60.10): a mortar's target Infantry keep the +1 of a friendly AFV or wreck beside them.
+                AfvCover = area ? read.AfvCover : null,
             },
             VehicleTarget = aimed ?? shot.VehicleTarget,
             Panzerfaust = shot.Panzerfaust is null ? null : shot.Panzerfaust with
@@ -525,6 +536,45 @@ public sealed partial class GamePlanner
                 FromBuilding = ScenarioA1OrdnanceMapRules.IsBackblastLocation(firerTerrain)
             },
         }, null), null);
+    }
+
+    /// <summary>
+    /// The Locations of a mortar's target hex in a building of more than one level (B23.32, C3.4; pass 60, ruling R60.11): the named one and each
+    /// other that holds a unit or vehicle, lowest first, with its terrain and LOS read from the firer or Spotter and the building levels above it.
+    /// Null for any other hex. The board data does not tell an Interior Building Hex, and has no rooftop: every building hex is taken as not Interior.
+    /// </summary>
+    private (IReadOnlyList<OrdnanceAreaLocation>? Locations, string? Reason) AreaLocations(GameState state, OrdnanceShot shot, BoardLocation target, FireAttack probe,
+        FireAttack read)
+    {
+        if (!ScenarioA1Definitions.IsBuildingTerrain(read.TargetTerrain) || ReadLocation(state, target) is not { Hex.Locations.Count: > 1 } targetRead)
+        {
+            return (null, null);
+        }
+
+        int LevelsAbove(int level) => targetRead.Hex.Locations.Count(item => item.Level > level
+            && ReadLocation(state, target with { Level = item.Level }) is { } above && IsBuildingTerrain(TerrainKey(above)));
+        BoardLocation[] places = [.. shot.Hit!.Targets!.Select(item => item.LocationId).Concat((shot.Hit.Vehicles ?? []).Select(item => item.LocationId))
+            .OfType<string>().Select(BoardLocation.Parse).Append(target).Distinct().OrderBy(item => item.Level)];
+        var locations = new List<OrdnanceAreaLocation>();
+        foreach (var place in places)
+        {
+            var placeRead = read;
+            if (place != target)
+            {
+                var (other, reason) = FireMapFacts(state, probe, place);
+                if (other is null)
+                {
+                    return (null, reason);
+                }
+
+                placeRead = other;
+            }
+
+            var above = LevelsAbove(place.Level);
+            locations.Add(new OrdnanceAreaLocation(place.ToString(), placeRead.TargetTerrain, placeRead.Los, above > 0 ? above : null));
+        }
+
+        return (locations, null);
     }
 
     /// <summary>
@@ -568,7 +618,8 @@ public sealed partial class GamePlanner
             };
         }
 
-        if (shot.VehicleTarget is null && shot.TargetType is null && GunAt(state, target, side, [from]) is { } gunTarget)
+        // C11.4, C11.5 (pass 60, ruling R60.14): a mortar's hit on a Gun's crew alone, its gunshield facing the mortar's own Location.
+        if (shot.VehicleTarget is null && GunAt(state, target, side, [from]) is { } gunTarget)
         {
             shot = shot with
             {
@@ -789,6 +840,9 @@ public sealed partial class GamePlanner
 
                 // C8.4 (pass 55): a Canister shot's one DR, on the IFT.
                 "canister" => (2, "ordnance-canister"),
+
+                // C1.55, D5.6 (pass 60): the Crew Survival DR of an AFV a mortar's hit destroyed.
+                _ when key.StartsWith("areaSurvival:", StringComparison.Ordinal) => (2, "ordnance-crew-survival"),
                 _ when selected.Length > 0 => (selected.Length, "ordnance-random-selection"),
                 _ => FireRollShape(inner!),
             };
@@ -856,8 +910,21 @@ public sealed partial class GamePlanner
         }
 
         // The hit's effects: the Critical Hit's and the normal hit's units, with DM for a broken unit an attack could have given a NMC (A10.62).
+        // C1.55, C9.1 (pass 60, ruling R60.10): what a mortar's hit did to each AFV it hit, as a To Kill result is written, its Shock automatic.
+        foreach (var afv in resolution.AreaVehicles ?? [])
+        {
+            if (state.Unit(afv.VehicleId) is { } armored)
+            {
+                foreach (var (type, payload) in AreaVehicleEvents(state, armored, afv, attemptId))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [recordId]));
+                }
+            }
+        }
+
+        // B23.32 (pass 60, ruling R60.11): the attacks on the other Locations of a mortar's building hex.
         var effects = new List<FireUnitEffect>();
-        foreach (var attack in new[] { resolution.CriticalHit, resolution.Hit }.OfType<FireResolution>())
+        foreach (var attack in new[] { resolution.CriticalHit, resolution.Hit }.OfType<FireResolution>().Concat(resolution.LevelHits ?? []))
         {
             var nestedFacts = facts.Hit! with
             {
@@ -1068,6 +1135,18 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// The events of a mortar's hit on an AFV (C1.55; pass 60, ruling R60.10), written as a To Kill result's are: a burning wreck, a wreck its crew may
+    /// survive, an Immobilization, or a Shock, which is never a possible one. A result of none writes nothing, and the AFV keeps any "?".
+    /// </summary>
+    private static IEnumerable<(string Type, EventPayload Payload)> AreaVehicleEvents(GameState state, UnitInstance vehicle, OrdnanceAreaVehicle hit, string attemptId) =>
+        hit.Result == OrdnanceKill.None ? []
+            : KillEvents(state, vehicle, new OrdnanceKill("he", hit.HitLocation, "none", null, hit.Drm, null, null, hit.KillDr, hit.Dice, hit.FinalDr, hit.Result)
+            {
+                Shocked = hit.Result == OrdnanceKill.Shock ? true : null,
+                CrewSurvival = hit.CrewSurvival,
+            }, attemptId);
+
+    /// <summary>
     /// The events of what an ordnance hit did to a vehicle or its crew (pass 60, rulings R60.7, R60.8), as an IFT attack's are written: the Vehicle
     /// line's result or the crew's, and a Recalled AFV on its way off the map that is immobilized Abandoned by its crew (D5.341, D5.41).
     /// </summary>
@@ -1167,9 +1246,19 @@ public sealed partial class GamePlanner
             "crewSurvival" => rolls with { CrewSurvival = values },
             "collateralCheck" => rolls with { CollateralCheck = values },
             "canister" => rolls with { Canister = values },
+
+            // C3.74 (pass 60): a mortar's Critical Hit picks a Location of its building hex, then a unit there; C1.55, D5.6: an AFV's Crew Survival DR.
             _ when selected.Length > 0 => rolls with
             {
-                CriticalSelection = selected.Select((id, index) => (id, index)).ToDictionary(item => item.id, item => values[item.index], StringComparer.Ordinal)
+                CriticalSelection = new Dictionary<string, int>(selected.Select((id, index) => KeyValuePair.Create(id, values[index]))
+                    .Concat((rolls.CriticalSelection ?? new Dictionary<string, int>()).Where(item => !selected.Contains(item.Key))), StringComparer.Ordinal)
+            },
+            _ when key.StartsWith("areaSurvival:", StringComparison.Ordinal) => rolls with
+            {
+                AreaSurvival = new Dictionary<string, IReadOnlyList<int>>(rolls.AreaSurvival ?? new Dictionary<string, IReadOnlyList<int>>(), StringComparer.Ordinal)
+                {
+                    [key["areaSurvival:".Length..]] = values
+                }
             },
             _ when key.StartsWith("hit:", StringComparison.Ordinal) => rolls with { Hit = ApplyFireRoll(rolls.Hit ?? new FireRolls(null, null, null, null), key["hit:".Length..], values) },
             _ => rolls with { CriticalHit = ApplyFireRoll(rolls.CriticalHit ?? new FireRolls(null, null, null, null), key["critical-hit:".Length..], values) },

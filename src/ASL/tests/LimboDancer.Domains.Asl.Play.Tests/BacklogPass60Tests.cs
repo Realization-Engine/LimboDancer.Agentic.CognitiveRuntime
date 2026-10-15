@@ -53,6 +53,9 @@ public sealed class BacklogPass60Tests : IDisposable
     {
         public Dictionary<string, string> Terrain { get; } = new(StringComparer.Ordinal);
 
+        /// <summary>The hexes with more than one level (pass 60), each of its terrain at every level.</summary>
+        public Dictionary<string, int> Levels { get; } = new(StringComparer.Ordinal);
+
         private static TerrainType Type(string name) => new()
         {
             Code = (byte)(Math.Abs(name.GetHashCode(StringComparison.Ordinal)) % 250 + 1),
@@ -71,7 +74,8 @@ public sealed class BacklogPass60Tests : IDisposable
                 var type = Type(Terrain.GetValueOrDefault(text) ?? "Open Ground");
                 var center = new LocationFacts(0, type, null);
                 HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, type, null, false, false, false, false, null))];
-                hexes.Add(new HexFacts(name, index, 0, false, center, [center], hexsides, null, CenterTerrainSource.CenterSample));
+                LocationFacts[] locations = [.. Enumerable.Range(0, Levels.GetValueOrDefault(text, 1)).Select(level => level == 0 ? center : new LocationFacts(level, type, null))];
+                hexes.Add(new HexFacts(name, index, 0, false, center, locations, hexsides, null, CenterTerrainSource.CenterSample));
             }
 
             return new BoardHandle(BoardCatalogTerrainEvidence.Board, "authored", BoardReadStatus.Verified, "pass 60 test board", new HexFactSet(geometry, "pass60", hexes));
@@ -335,7 +339,13 @@ public sealed class BacklogPass60Tests : IDisposable
         await Setup("german", "russian", 1942, 7, Vehicle("de-tank", "attacker-tank", Firer, "german", "north-east"),
             Vehicle("ru-tank", "defender-tank", Target, "russian", "south-west", crewExposed: true));
         var before = Revision;
-        var result = await Do(GameActions.FireOrdnance, Once(4, 2, 1, 2, 2, 2, 2, 2), new { gunId = "de-tank", target = Target, targetVehicle = "ru-tank", ammunition = "he" });
+        var result = await Do(GameActions.FireOrdnance, Once(4, 2, 1, 2, 2, 2, 2, 2), new
+        {
+            gunId = "de-tank",
+            target = Target,
+            targetVehicle = "ru-tank",
+            ammunition = "he"
+        });
         Committed(result);
         var shot = LastShot(before);
         Assert.True(shot.Facts.GetProperty("specificCollateral").GetBoolean());
@@ -354,7 +364,13 @@ public sealed class BacklogPass60Tests : IDisposable
         await Setup("german", "russian", 1942, 7, Vehicle("de-tank", "attacker-tank", Firer, "german", "north-east"),
             Vehicle("ru-tank", "defender-tank", Target, "russian", "south-west", crewExposed: true));
         var before = Revision;
-        Committed(await Do(GameActions.FireOrdnance, Once(4, 2, 3, 4), new { gunId = "de-tank", target = Target, targetVehicle = "ru-tank", ammunition = "ap" }));
+        Committed(await Do(GameActions.FireOrdnance, Once(4, 2, 3, 4), new
+        {
+            gunId = "de-tank",
+            target = Target,
+            targetVehicle = "ru-tank",
+            ammunition = "ap"
+        }));
         var collateral = LastShot(before).Resolution.GetProperty("specificCollateral");
         Assert.Equal((2, "none", 9), (collateral.GetProperty("firepower").GetInt32(), collateral.GetProperty("result").GetString(),
             collateral.GetProperty("effect").GetProperty("finalDr").GetInt32()));
@@ -436,6 +452,57 @@ public sealed class BacklogPass60Tests : IDisposable
         Assert.Equal([("de-c", false), ("de-s", true)], TargetHits(shot));
         Assert.Equal(["de-s"], Ids(shot.Resolution, "hit", "effects", "unitId"));
         Assert.Equal(ConditionState.True, GameState.Condition(Planner().Replay(store.Read(Scope)!.Events).Current!.Unit("de-c")!, Conditions.Concealed));
+        NoReplayErrors();
+    }
+
+    // Increment 2c: Indirect Fire (C1.55, C3.332, B23.32, D9.3; rulings R60.10, R60.11).
+
+    /// <summary>A light mortar possessed by its holder.</summary>
+    private static Dictionary<string, object> LightMortar(string id, string definition, string holder, string side)
+    {
+        var mortar = Latw(id, definition, holder, side);
+        mortar["kind"] = "asl:light-mortar";
+        return mortar;
+    }
+
+    [Fact]
+    public async Task AMortarsHitOnATankBesideASquadShocksItOnTheIft()
+    {
+        // C1.55, C3.332: the German 50mm at B8 two hexes off, a squad and its friendly T-34 there, both hit on a To Hit DR of 6. One IFT DR of 3 on the
+        // 2 column is one above its K/# DR, its colored 1 below its white 2 a turret hit (C7.7 note E; ruling R60.23): it Shocks the T-34; the squad
+        // takes the same DR with D9.3's +1 beside its AFV (C9.5 EX).
+        await Setup("german", "russian", 1943, 7, Unit("g1", "asl:squad", "attacker-squad", Firer, "german"), LightMortar("de-mtr", "attacker-light-mortar", "g1", "german"),
+            Unit("r1", "asl:squad", "defender-squad", Target, "russian"), Vehicle("ru-tank", "defender-tank", Target, "russian", "south-west"));
+        var before = Revision;
+        Committed(await Shoot("de-mtr", null, 4, 2, 1, 2, 2, 2, 2, 2, 2, 2));
+        var shot = LastShot(before);
+        var tank = shot.Resolution.GetProperty("areaVehicles").EnumerateArray().Single();
+        Assert.Equal(("ru-tank", "turret", "shock"), (tank.GetProperty("vehicleId").GetString(), tank.GetProperty("hitLocation").GetString(), tank.GetProperty("result").GetString()));
+        Assert.Equal("ru-tank", shot.Facts.GetProperty("hit").GetProperty("afvCover").GetString());
+        Assert.Contains(shot.Resolution.GetProperty("hit").GetProperty("arithmetic").GetProperty("drm").EnumerateArray(), item => item.GetProperty("name").GetString() == "afv-cover:ru-tank");
+        Assert.Equal(ConditionState.True, GameState.Condition(Planner().Replay(store.Read(Scope)!.Events).Current!.Unit("ru-tank")!, Conditions.Shocked));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AMortarsHitOnATwoLevelBuildingAttacksBothLevels()
+    {
+        // B23.32: the German 50mm at B8, a stone building of two levels with a Russian squad on each; one IFT DR of 7 attacks the ground level with +3
+        // and +1 for the level above it, and Level 1 with +3. The record keeps both Locations.
+        board.Terrain["B8"] = Building;
+        board.Levels["B8"] = 2;
+        await Setup("german", "russian", 1943, 7, Unit("g1", "asl:squad", "attacker-squad", Firer, "german"), LightMortar("de-mtr", "attacker-light-mortar", "g1", "german"),
+            Unit("r1", "asl:squad", "defender-squad", Target, "russian"), Unit("r2", "asl:squad", "defender-squad", "bd01:B8:1", "russian"));
+        var before = Revision;
+        Committed(await Shoot("de-mtr", null, 2, 3, 3, 4));
+        var shot = LastShot(before);
+        var levels = shot.Facts.GetProperty("areaLocations").EnumerateArray().ToArray();
+        Assert.Equal([Target, "bd01:B8:1"], levels.Select(item => item.GetProperty("locationId").GetString()));
+        Assert.Equal(1, levels[0].GetProperty("levelsAbove").GetInt32());
+        Assert.Equal(["r1"], Ids(shot.Resolution, "hit", "effects", "unitId"));
+        Assert.Equal(11, shot.Resolution.GetProperty("hit").GetProperty("arithmetic").GetProperty("finalDr").GetInt32());
+        var upper = shot.Resolution.GetProperty("levelHits").EnumerateArray().Single();
+        Assert.Equal(("r2", 10), (upper.GetProperty("effects")[0].GetProperty("unitId").GetString(), upper.GetProperty("arithmetic").GetProperty("finalDr").GetInt32()));
         NoReplayErrors();
     }
 }

@@ -201,7 +201,14 @@ public static class LiveOrdnance
         // there, friendly ones too; C3.4: in the MPh only the moving units.
         var mortar = gun.Kind == "asl:light-mortar";
         var sw = mortar || gun.Kind == "asl:latw";
-        UnitInstance[] targets = vehicleTarget is not null || canister ? [] : [.. state.At(target).OfType<UnitInstance>()
+
+        // B23.32 (pass 60, ruling R60.11): a mortar's hit attacks every Location of its target hex. A record made before the pass had its hex's units
+        // in one Location (ruling R9.3 refused any other), so it reads the same.
+        UnitInstance[] present = mortar
+            ? [.. state.Objects.OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && state.Aboard(unit.Id) is null
+                && state.Location(unit.Id)?.Location is { } at && at.Board == target.Board && at.Hex == target.Hex)]
+            : [.. state.At(target).OfType<UnitInstance>()];
+        UnitInstance[] targets = vehicleTarget is not null || canister ? [] : [.. present
             .Where(unit => ScenarioA1OrdnanceEligibility.AreaTarget(unit.Status == InstanceStatus.Active, unit.Side != side, mortar, () => LiveFire.IsVehicle(unit),
                 () => Is(unit, Conditions.Captured), movers is null ? null : () => movers.Contains(unit.Id)))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
@@ -222,8 +229,19 @@ public static class LiveOrdnance
             .Where(unit => ScenarioA1OrdnanceEligibility.LocationVehicle(vehicleTarget is null && !canister && !mortar, unit.Status == InstanceStatus.Active, unit.Side != side,
                 phase == "MPh", () => LiveFire.IsVehicle(unit)))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => LiveFire.Vehicle(unit, target))];
+
+        // C3.332, C1.55 (pass 60, ruling R60.10): a mortar's hit attacks the vehicles of its hex too; before the pass a vehicle there was refused.
+        if (mortar && vehicleTarget is null)
+        {
+            vehicles = [.. present.Where(unit => ScenarioA1OrdnanceEligibility.AreaVehicle(mortar, unit.Status == InstanceStatus.Active, () => LiveFire.IsVehicle(unit)))
+                .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => LiveFire.Vehicle(unit, state.Location(unit.Id)!.Location))];
+        }
+
+        // C6.521 (pass 60, ruling R60.13): a mortar's Area Acquisition covers every Location of its hex.
+        int? areaAcquisition = mortar && acquisition == 0 && state.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id && item.Location is { } acquired
+            && acquired.Board == target.Board && acquired.Hex == target.Hex) is { Level: < 0 } hexAcquired ? hexAcquired.Level : null;
         var hit = new FireAttack(phase, firingSide, null, null, target.ToString(), [], null, null, null, null, state.ScenarioMonth, null,
-            [.. targets.Select(unit => LiveFire.Target(state, unit, target))], targetSide is null ? null : state.Side(targetSide)?.Elr, null)
+            [.. targets.Select(unit => LiveFire.Target(state, unit, mortar ? state.Location(unit.Id)!.Location : target))], targetSide is null ? null : state.Side(targetSide)?.Elr, null)
         {
             TargetSideNoQuarter = targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
             Vehicles = vehicles.Length > 0 ? vehicles : null,
@@ -262,6 +280,7 @@ public static class LiveOrdnance
             // C5.8 (ruling R8.8): a squad or HS manning a Gun is non-qualified.
             NonQualified = ScenarioA1OrdnanceEligibility.NonQualified(gun is EquipmentInstance, crew.Kind, sw),
             TargetType = mortar ? OrdnanceTargetTypes.Area : null,
+            AreaAcquisition = areaAcquisition,
         };
         if (mortar)
         {
@@ -584,6 +603,7 @@ public static class LiveOrdnance
         IReadOnlyList<int>? toHit = null;
         int? subsequent = null, panzerfaustCheck = null;
         Dictionary<string, int>? selection = null;
+        Dictionary<string, IReadOnlyList<int>>? survival = null;
         var hit = new Dictionary<string, string>(StringComparer.Ordinal);
         var critical = new Dictionary<string, string>(StringComparer.Ordinal);
         var extra = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
@@ -608,7 +628,18 @@ public static class LiveOrdnance
             }
             else if (key.StartsWith("criticalSelection:", StringComparison.Ordinal) && key["criticalSelection:".Length..].Split(',') is var ids && ids.Length == roll.Count)
             {
-                selection = ids.Select((id, index) => (id, index)).ToDictionary(item => item.id, item => roll.Values[item.index], StringComparer.Ordinal);
+                // C3.74 (pass 60): a mortar's Critical Hit picks a Location of its building hex, then a unit there, each by a selection of its own.
+                selection ??= new Dictionary<string, int>(StringComparer.Ordinal);
+                foreach (var (id, index) in ids.Select((id, index) => (id, index)))
+                {
+                    selection[id] = roll.Values[index];
+                }
+            }
+            else if (key.StartsWith("areaSurvival:", StringComparison.Ordinal) && roll.Count == 2)
+            {
+                // C1.55, D5.6 (pass 60): the Crew Survival DR of an AFV a mortar's hit destroyed.
+                survival ??= new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
+                survival[key["areaSurvival:".Length..]] = roll.Values;
             }
             else if (key is "toKill" or "shockCheck" or "crewCheck" or "crewSurvival" or "canister" or "collateralCheck" && roll.Count == 2)
             {
@@ -647,6 +678,7 @@ public static class LiveOrdnance
 
                 // D.8A (pass 60): the check of a Specific Collateral Attack.
                 CollateralCheck = extra.GetValueOrDefault("collateralCheck"),
+                AreaSurvival = survival,
             };
     }
 

@@ -132,6 +132,39 @@ public sealed record OrdnanceShot(
     }
 
     /// <summary>
+    /// Whether a Critical Hit reverses the Height Advantage the target claimed on the To Hit DR into a -1 on the IFT DR (C3.71, p. 170; pass 60,
+    /// rulings R60.3, R60.14): set by the planner on every shot since the pass that carries <see cref="HeightAdvantage"/>, and taken from the record at
+    /// replay. Null is false: a Critical Hit recorded before the pass resolves as it did.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? ReversesHeightAdvantage
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Locations of a mortar's target building hex that hold its targets (B23.32, p. 136; pass 60, ruling R60.11), the named one among them: the
+    /// planner's map reads, taken from the record at replay. Null for any other shot, as in every record made before the pass: the target hex is the
+    /// one Location, with no level above it.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<OrdnanceAreaLocation>? AreaLocations
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// A mortar's Area Acquisition of another Location of the target hex (C6.521, p. 174; pass 60, ruling R60.13), when the shot names a Location its
+    /// counter is not on: a state read taken from the record at replay. Null when there is none, as in every record made before the pass, which then
+    /// resolves with <see cref="Acquisition"/> as it did.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? AreaAcquisition
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The Low Visibility DRM of night and weather on the TH DR (E1.7, E3.1; referee, pass 16): a Case R Hindrance of its own, which cancels neither FFMO
     /// nor the Open Ground cases. Null is 0.
     /// </summary>
@@ -443,6 +476,13 @@ public sealed record OrdnanceRolls(IReadOnlyList<int>? ToHit, int? Subsequent, I
     {
         get; init;
     }
+
+    /// <summary>The Crew Survival DR of each AFV a mortar's hit destroyed without burning it (C1.55, D5.6; pass 60), by vehicle id.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, IReadOnlyList<int>>? AreaSurvival
+    {
+        get; init;
+    }
 }
 
 /// <summary>The To Hit arithmetic (C3.3, C4, C5, C6): Basic and Modified TH#, the DRM, the Final DR, and what it achieved.</summary>
@@ -550,6 +590,26 @@ public sealed record OrdnanceResolution(
     /// <summary>The To Hit DR as judged for each unit of an Area Target Type shot's hex (C3.331; ruling R9.3); null otherwise.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<OrdnanceAreaTarget>? AreaTargets
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The IFT resolutions of a mortar's normal hit on the other Locations of a building hex it hit (B23.32, p. 136; pass 60, ruling R60.11), on the
+    /// same DR as <see cref="Hit"/>, which holds the first; null when one Location was hit, as in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireResolution>? LevelHits
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// What a mortar's hit did to each AFV it hit, on the IFT (C1.55, C9.1, p. 165; pass 60, ruling R60.10); null when it hit none, as in every record
+    /// made before the pass. Its unarmored vehicles and AFV crews are in the IFT resolutions' vehicle effects.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<OrdnanceAreaVehicle>? AreaVehicles
     {
         get; init;
     }

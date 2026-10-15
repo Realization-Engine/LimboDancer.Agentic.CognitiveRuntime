@@ -88,6 +88,16 @@ public sealed class ScenarioA1Pass60RulesTests
 
             var key = reason["asl.a1.ordnance.roll-missing:".Length..];
             last = key;
+            if (key.StartsWith("areaSurvival:", StringComparison.Ordinal))
+            {
+                // C1.55, D5.6 (pass 60): the Crew Survival DR of an AFV a mortar destroyed.
+                rolls = rolls with
+                {
+                    AreaSurvival = new Dictionary<string, IReadOnlyList<int>>(rolls.AreaSurvival ?? new Dictionary<string, IReadOnlyList<int>>()) { [key["areaSurvival:".Length..]] = [3, 4] }
+                };
+                continue;
+            }
+
             var critical = key.StartsWith("critical-hit:", StringComparison.Ordinal);
             var inner = key[(key.IndexOf(':', StringComparison.Ordinal) + 1)..];
             var unit = inner.Contains(':', StringComparison.Ordinal) ? inner[(inner.IndexOf(':', StringComparison.Ordinal) + 1)..] : string.Empty;
@@ -463,5 +473,224 @@ public sealed class ScenarioA1Pass60RulesTests
         Assert.Equal([("de-s", true), ("de-c", false)], result.TargetHits!.Select(item => (item.UnitId, item.Hit)));
         Assert.Contains(result.TargetHits!.Single(item => item.UnitId == "de-c").Drm, item => item.Name == "case-k");
         Assert.Equal(["de-s"], new[] { result.Hit, result.CriticalHit }.OfType<FireResolution>().SelectMany(attack => attack.Effects).Select(effect => effect.UnitId));
+    }
+
+    // Increment 2c: Indirect Fire (C1.55, C3.332, C3.72, C9.1, B23.32, B13.3, C6.521, C11.4, C3.71; rulings R60.10 to R60.14). The Russian 50mm
+    // mortar's 6 HE FP: a hit on the 2 column (half), a Critical Hit on the 12 column (full, doubled).
+
+    private const string Upstairs = "bd01:G5:1";
+
+    /// <summary>The Russian 50mm mortar's squad on the Area Target Type at German targets five hexes away (Modified TH# 7), in July 1943.</summary>
+    private static OrdnanceShot Mortar(string terrain, FireTarget[] targets, params FireVehicle[] vehicles)
+    {
+        var shot = new OrdnanceShot("PFPh", "phasing", "russian", new OrdnanceGun("ru-mtr", "defender-light-mortar", false, 0, false, false),
+            new OrdnanceCrew("ru-s", "defender-squad", false, false, false, false, false), At, 5, 0, false, true, 0, Hit(terrain, targets),
+            new OrdnanceRolls(null, null, null, null, null))
+        {
+            TargetType = OrdnanceTargetTypes.Area,
+        };
+        return shot with
+        {
+            Hit = shot.Hit! with
+            {
+                Vehicles = vehicles.Length > 0 ? vehicles : null
+            }
+        };
+    }
+
+    [Fact]
+    public void AMortarsHitOnATruckIsOnTheVehicleLine()
+    {
+        // C1.55, C3.332: a truck hit by HE on the Area Target Type is resolved on the Vehicle line of the hit's column (2 FP, Kill Number 4): an IFT DR of
+        // 3 eliminates it, and the squad beside it takes the same DR.
+        var result = Resolve(Mortar("open-ground", [Target("de-s", "attacker-squad")], Vehicle("de-truck", "attacker-truck")), [2, 3], ift: [1, 2]);
+        Resolved(result);
+        Assert.Equal([("de-s", true), ("de-truck", true)], result.AreaTargets!.Select(item => (item.UnitId, item.Hit)));
+        var truck = result.Hit!.VehicleEffects!.Single();
+        Assert.Equal(("de-truck", 4, FireVehicleEffect.Eliminated), (truck.VehicleId, truck.KillNumber, truck.Result));
+        Assert.Equal(["de-s"], result.Hit.Effects.Select(item => item.UnitId));
+        Assert.Null(result.AreaVehicles);
+    }
+
+    [Fact]
+    public void AMortarsHitOnAPzKpfwIiiHIsOnTheIftAtHalfFp()
+    {
+        // C1.55, C9.1: never a To Kill DR; the 2 column's K/# is a DR of 2, and its AF (hull 6 front, so not all 4 or less) give no DRM. C7.7 note E
+        // (ruling R60.23): the Original IFT DR's colored dr below the white strikes the turret (C3.9), whatever the To Hit DR's dice: a DR of 2 or 3
+        // Shocks it; otherwise the hull, which they immobilize.
+        var turret = Resolve(Mortar("open-ground", [], Vehicle("de-tank", "attacker-tank")), [4, 2], ift: [1, 2]);
+        Resolved(turret);
+        var shocked = turret.AreaVehicles!.Single();
+        Assert.Equal(("turret", 2, 3, 2, OrdnanceKill.Shock), (shocked.HitLocation, shocked.Firepower, shocked.FinalDr, shocked.KillDr, shocked.Result));
+        Assert.Empty(shocked.Drm);
+        var hull = Resolve(Mortar("open-ground", [], Vehicle("de-tank", "attacker-tank")), [2, 4], ift: [2, 1]);
+        Assert.Equal(("hull", 3, OrdnanceKill.Immobilized), (hull.AreaVehicles!.Single().HitLocation, hull.AreaVehicles![0].FinalDr, hull.AreaVehicles[0].Result));
+
+        // A MC or PTC does nothing to the AFV.
+        Assert.Equal(OrdnanceKill.None, Resolve(Mortar("open-ground", [], Vehicle("de-tank", "attacker-tank")), [4, 2], ift: [2, 2]).AreaVehicles!.Single().Result);
+    }
+
+    [Fact]
+    public void AMortarsHitOnAnOtHalftrackTakesTheAfAndOtDrm()
+    {
+        // C1.55: the SPW 251/1's every AF is 1 (-1) and it is OT (-1): an IFT DR of 4 is a Final 2, the K/# DR, a hull hit, immobilizing it.
+        var result = Resolve(Mortar("open-ground", [], Vehicle("de-ht", "attacker-halftrack", crewExposed: true)), [2, 3], ift: [2, 2]);
+        Resolved(result);
+        var halftrack = result.AreaVehicles!.Single();
+        Assert.Equal(["all-af-4-or-less", "open-topped"], halftrack.Drm.Select(item => item.Name));
+        Assert.Equal((2, OrdnanceKill.Immobilized), (halftrack.FinalDr, halftrack.Result));
+
+        // D.8B, C3.332: the standing AFV's CE crew is attacked Collaterally on the same DR with its CE DRM alone, not the AFV's AF and OT DRM.
+        var crew = result.Hit!.VehicleEffects!.Single();
+        Assert.Equal(["crew-exposed"], crew.Drm.Select(item => item.Name));
+        Assert.Equal(6, crew.FinalDr);
+    }
+
+    [Fact]
+    public void ACriticalHitOnAnAfvIsAtDoubledFullFpWithNoTem()
+    {
+        // C3.72, C9.5: the 12 column (K/# a DR of 3), the stone rubble's +3 left out; an IFT DR of 2 is a KIA but not at most half of 3: the PzKpfw
+        // IIIH is a wreck its crew may survive (D5.6). A normal hit there takes the +3 on the 2 column.
+        var critical = Resolve(Mortar("stone-rubble", [], Vehicle("de-tank", "attacker-tank")), [1, 1], ift: [1, 1]);
+        Resolved(critical);
+        var made = critical.AreaVehicles!.Single();
+        Assert.Equal((true, 12, 3, OrdnanceKill.Eliminated), (made.Critical, made.Firepower, made.KillDr, made.Result));
+        Assert.Empty(made.Drm);
+        Assert.Null(critical.Hit);
+        var normal = Resolve(Mortar("stone-rubble", [], Vehicle("de-tank", "attacker-tank")), [2, 3], ift: [1, 1]).AreaVehicles!.Single();
+        Assert.Equal((2, "tem:stone-rubble", 5), (normal.Firepower, normal.Drm.Single().Name, normal.FinalDr));
+    }
+
+    [Fact]
+    public void AnOtHalftrackInWoodsIsHitAsUnarmoredAndACeTanksCrewTakesTheAirBurst()
+    {
+        // D5.311, B13.3: an OT AFV hit by Air Bursts is attacked as unarmored, on the Vehicle line, with no Air Burst TEM: an IFT DR of 4 equals the
+        // 2 column's Kill Number and immobilizes it.
+        var halftrack = Resolve(Mortar("woods", [], Vehicle("de-ht", "attacker-halftrack", crewExposed: true)), [2, 2], ift: [2, 2]);
+        Resolved(halftrack);
+        Assert.Null(halftrack.AreaVehicles);
+        var line = halftrack.Hit!.VehicleEffects!.Single();
+        Assert.Equal((4, FireVehicleEffect.Immobilized), (line.FinalDr, line.Result));
+        Assert.DoesNotContain(line.Drm, item => item.Name == "air-burst");
+
+        // A CT AFV takes nothing from the woods; its CE crew takes the -1 with its +2 (B13.3, D5.31).
+        var tank = Resolve(Mortar("woods", [], Vehicle("de-tank", "attacker-tank", crewExposed: true)), [2, 2], ift: [2, 2]);
+        Resolved(tank);
+        Assert.Empty(tank.AreaVehicles!.Single().Drm);
+        Assert.Equal(["air-burst", "crew-exposed"], tank.Hit!.VehicleEffects!.Single().Drm.Select(item => item.Name).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void AnEmplacedGunInWoodsTakesItsEmplacementWithTheAirBurst()
+    {
+        // B13.3 (the foxhole EX's rule; no entrenchment is built): the -1 "is always applicable", even with "emplacements": +2 -1.
+        var shot = AtGun(Mortar("woods", []), "de-gun", "attacker-inf-gun", "de-crew", "attacker-crew");
+        shot = shot with
+        {
+            Hit = shot.Hit! with
+            {
+                GunTarget = new FireGunTarget("de-gun", "attacker-inf-gun", "de-crew", true, true)
+            }
+        };
+        var result = Resolve(shot, [2, 3], ift: [3, 4]);
+        Resolved(result);
+        Assert.Equal([("air-burst", -1m), ("emplacement:de-gun", 2m)], result.Hit!.Arithmetic!.Drm.Select(item => (item.Name, item.Value)));
+    }
+
+    [Fact]
+    public void AGunshieldGivesPlusOneAgainstAMortarAndAKMalfunctionsTheGun()
+    {
+        // C11.4, C11.5: a Near Miss on the crew of the leIG 18 in the open takes its gunshield's +1, not +2, against Indirect Fire.
+        var shot = AtGun(Mortar("open-ground", []), "de-gun", "attacker-inf-gun", "de-crew", "attacker-crew");
+        shot = shot with
+        {
+            Hit = shot.Hit! with
+            {
+                GunTarget = new FireGunTarget("de-gun", "attacker-inf-gun", "de-crew", false, true)
+            }
+        };
+        var near = Resolve(shot, [1, 2], ift: [3, 4]);
+        Resolved(near);
+        Assert.Contains(near.Hit!.Arithmetic!.Drm, item => item.Name == "gunshield:de-gun" && item.Value == 1);
+        Assert.Null(near.GunTargetFate);
+
+        // A K (the 2 column's DR of 2) is a Direct Hit: the Gun malfunctions; a Critical Hit destroys it.
+        Assert.Equal("malfunctioned", Resolve(shot, [1, 2], ift: [1, 1]).GunTargetFate);
+        Assert.Equal("destroyed", Resolve(shot, [1, 1], ift: [3, 4]).GunTargetFate);
+    }
+
+    [Fact]
+    public void ATwoLevelStoneBuildingIsHitAtEachLevelWithPlusOneBelow()
+    {
+        // B23.32: one IFT DR attacks both levels, the ground level with +1 for the level above it (its +3 a +4, as the EX's Level 1 squad of a stone
+        // Multi-Story Building), Level 1 with the building's +3.
+        var shot = Mortar("stone-building", [Target("de-a", "attacker-squad"), Target("de-b", "attacker-squad") with { LocationId = Upstairs }]) with
+        {
+            AreaLocations = [new OrdnanceAreaLocation(At, "stone-building", new FireLos(false, 0, true, false), 1),
+                new OrdnanceAreaLocation(Upstairs, "stone-building", new FireLos(false, 0, true, false), null)],
+        };
+        var result = Resolve(shot, [2, 3], ift: [3, 4]);
+        Resolved(result);
+        Assert.Equal([("de-a", true), ("de-b", true)], result.AreaTargets!.Select(item => (item.UnitId, item.Hit)));
+        Assert.Equal(["de-a"], result.Hit!.Effects.Select(item => item.UnitId));
+        Assert.Equal(11, result.Hit.Arithmetic!.FinalDr);
+        Assert.Contains(result.Hit.Arithmetic.Drm, item => item.Name == "tem:levels-above" && item.Value == 1);
+        var upper = result.LevelHits!.Single();
+        Assert.Equal(["de-b"], upper.Effects.Select(item => item.UnitId));
+        Assert.Equal(10, upper.Arithmetic!.FinalDr);
+
+        // C3.4: a Location out of the firer's LOS is not attacked; one in it with a Hindrance has its own Case R.
+        var blocked = Resolve(shot with
+        {
+            AreaLocations = [shot.AreaLocations![0], shot.AreaLocations[1] with { Los = new FireLos(true, 0, true, false) }],
+        }, [2, 3], ift: [3, 4]);
+        Assert.Equal(["de-a"], blocked.AreaTargets!.Select(item => item.UnitId));
+        Assert.Null(blocked.LevelHits);
+        var hindered = Resolve(shot with
+        {
+            AreaLocations = [shot.AreaLocations![0], shot.AreaLocations[1] with { Los = new FireLos(false, 3, true, false) }],
+        }, [2, 3], ift: [3, 4]);
+        Assert.Equal([("de-a", true), ("de-b", false)], hindered.AreaTargets!.Select(item => (item.UnitId, item.Hit)));
+    }
+
+    [Fact]
+    public void AreaAcquisitionCoversAnotherLocationOfTheHex()
+    {
+        // C6.521: the -1 Area Acquired counter on the hex applies at its other Location in LOS; the shot steps it to -2 there. A shot with no such fact,
+        // as one recorded before the pass, has none.
+        var shot = Mortar("open-ground", [Target("de-s", "attacker-squad")]) with
+        {
+            AreaAcquisition = -1
+        };
+        var result = Resolve(shot, [3, 4], ift: [3, 4]);
+        Resolved(result);
+        Assert.Contains(result.AreaTargets!.Single().Drm, item => item.Name == "case-n" && item.Value == -1);
+        Assert.Equal((-2, At), (result.Gun!.Acquisition, result.Gun.AcquiredLocationId));
+        Assert.DoesNotContain(Resolve(shot with
+        {
+            AreaAcquisition = null
+        }, [3, 4], ift: [3, 4]).AreaTargets!.Single().Drm, item => item.Name == "case-n");
+    }
+
+    [Fact]
+    public void ACriticalHitUphillReversesHeightAdvantageOnlyWithThePassesFact()
+    {
+        // C3.71: "any positive TEM ... which that target would normally be entitled to for TH ... purposes is reversed": the 45mm's Critical Hit
+        // (an Original 2) on a squad that claimed Height Advantage takes -1 on the IFT DR. A shot without the fact resolves as before the pass.
+        var shot = Russian(null) with
+        {
+            HeightAdvantage = true,
+            ReversesHeightAdvantage = true,
+            Rolls = new OrdnanceRolls(null, 1, null, null, null),
+        };
+        var result = Resolve(shot, [1, 1], ift: [3, 4]);
+        Resolved(result);
+        Assert.Contains(result.ToHit!.Drm, item => item.Name == "case-q:height-advantage");
+        Assert.Contains(result.CriticalHit!.Arithmetic!.Drm, item => item.Name == "critical-hit-tem:height-advantage" && item.Value == -1);
+        var older = Resolve(shot with
+        {
+            ReversesHeightAdvantage = null
+        }, [1, 1], ift: [3, 4]);
+        Assert.DoesNotContain(older.CriticalHit!.Arithmetic!.Drm, item => item.Name == "critical-hit-tem:height-advantage");
     }
 }

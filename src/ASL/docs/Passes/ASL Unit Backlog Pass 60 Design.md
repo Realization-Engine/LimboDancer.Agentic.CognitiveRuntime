@@ -126,3 +126,72 @@ Each was put to a read-only agent with a proposal and is answered by a ruling de
 **F9. 60.6 and the carried-in MG.** **R60.19:** a SW MG fired alone at a named AFV within Normal Range in the PFPh or DFPh is a To Hit DR on the Vehicle Target Type with black numbers, then a To Kill DR with Basic TK# 4 (12.7mm and 15mm by their rows), Case A, the 25mm row of Case D, less the AF; below the number eliminates (at most half burns), equal Stuns, and there is no Shock, Immobilization, Critical Hit, or Multiple Hit; the ROF is kept as ordnance; R60.7's attack follows. A vehicle's MA that is a MG may make it (D3.54); its other MGs may not. Its Residual FP and the AFPh: backlog. **R60.20:** A9.223's narrow reading: a Fire Lane is cancelled when its MG fires CC Reaction Fire; D7.21's CC counter bars its SW and Guns from Non-CC Reaction Fire. **R60.21:** A5.132 moves to pass 110. **R60.22:** the upper superstructure of a non-turreted AFV (C3.9) is built with a fact on the record if 2f has time, else moved to pass 105.
 
 **F10. The estimate.** Section 2's table: 6:40 of building against the plan's 4:40, from the code the agents mapped and pass 55's rate (7 increments in 4:50 against 9:50 estimated).
+
+## 7. HE Equivalency: 60.4, and C11.52 and C13.23 of 60.5 (increment 2a)
+
+Built on 2026-10-15 in one commit (afdcb2b5) by a building agent to a brief (`brief_build.md` and `brief_2a.md` in the pass's folder of `code-builders/pass-history`), its diff read and its games played in the Studio by the session.
+
+### 7.1 Departures from the frame, first
+
+Each decided under the user's word of 2026-10-15; each gets a backlog row.
+
+- **The PF Check's +1 in August and September 1943 cannot be reached:** the PF's date bar refuses it before October 1943, and the PFk is not built. The modifier is in the calculator with no test.
+- **HEAT's bar at Infantry reads a building, rubble, or a wall; no pillbox** (none is built). The wall's TEM is still not applied to the ordnance To Hit DR (an older gap, pass 100's, backlog section 59.1), so HEAT behind a wall takes no Case Q from the wall.
+- **The page offers HEAT at Infantry whatever the target's terrain;** its note gives the bar, and Rules refuses the shot at a target in the open. The refusal's advice ("fire HE or AP at Infantry in the open") reads oddly for a PSK, which has neither.
+- **The H#[9] HEAT of the German 37mm Guns** is in the table and no catalog Gun maps to it.
+- **A non-20L ATR attacks only the Gun's crew** where `GunAt` finds a crewed Gun; at any other target it stays Small Arms and is refused as ordnance.
+
+### 7.2 What is built
+
+`ScenarioA1HeEquivalency` holds C8.31's table (R60.2). AP, APCR, APDS, and HEAT named at a target with no vehicle pass the old refusals (`gun-outside`, `he-equivalency-not-built`) where the Gun lists them at the date, run pass 55's Depletion Number steps, and resolve by the HE path at the equivalency FP; new refusals `heat-no-he` and `heat-target-outside`. A LATW on the Infantry Target Type: the PF's To Hit of 10 less 2 a hex, the PSK's table, the ATR's black row; no ROF or Acquisition; a PF's Original 12 Casualty-Reduces its firer; the PF Check's `not-afv` and `aug-sept-1943` modifiers; one unit by Random Selection, on the roll C3.74 uses. A Gun's fate under AP, APCR, APDS, or an ATR: a K destroys it; under HEAT a K malfunctions it. The page's Infantry ammunition list names each kind with its equivalency ("AP: 2 FP by HE Equivalency, C8.31"). Tests that asserted the old refusals were brought to the rule (`ScenarioA1Pass55RulesTests`, `BacklogPass55Tests`, `PlayPageOrdnanceTests`).
+
+**New in a record:** `wallTem` on an ordnance shot (taken from the record at replay; absent on every older record, none of which was HEAT at Infantry); `heEquivalency` on its resolution (null for every shot the old rules allowed). Every new path was refused before the pass, so no recorded attack changes.
+
+### 7.3 The games and the tests
+
+In my Studio on port 6671, board 3, scripted dice; each game's file was read back.
+
+| Game | What it shows |
+|---|---|
+| `p60-ap` | July 1942: a 6-Pounder with no HE yet fires AP at a squad in [D10]; the list says "AP: 2 FP by HE Equivalency"; a hit on 4,3; the 2 FP column on 2,1 is a 1MC; the squad breaks. Recorded. |
+| `p60-psk` | July 1944: a PSK at a squad in the stone building [O5]: Case Q +3 on the To Hit DR, a hit on 2,2, the 12 FP column on 4,4, a 1MC, the squad pinned. Recorded. |
+| `p60-psk-open` | CONTROL: the same PSK at a squad in the open: refused with C8.31's bar. |
+| `p60-pf` | A PF at two squads in [O5]: Check dr 2, +1 not an AFV, a shot; a hit on 1,2 with +3; Random Selection takes one squad; the 16 FP column on 4,3, a 2MC; it breaks. Recorded. |
+| `p60-atr-gun` | 1943: a Russian ATR at a German INF Gun in [D10]: AP at 1 FP; Case P and the Emplacement on the To Hit DR; on the IFT only the crew, with the gunshield's +2; no effect. Recorded. |
+
+Run by the agent: Rules, the pass 60 class and the ordnance passes' classes, 202 passed; Play, 134 passed; MapStudio's ordnance page and record classes, 9 passed (logs in the working folder's `test-classes`). `ScenarioA1Pass60RulesTests` has 16 tests and `BacklogPass60Tests` 5.
+
+## 8. The Specific Collateral Attack and mixed Locations: 60.1 (increment 2b)
+
+Built on 2026-10-15 in one commit (4a628394) by a building agent to a brief (`brief_2b.md`), its diff read and its games played in the Studio by the session.
+
+### 8.1 Departures from the frame, first
+
+Each decided under the user's word of 2026-10-15; each gets a backlog row.
+
+- **More unarmored vehicles in the Location than the column's highest KIA# refuses the shot** (`vehicles-beyond-kia`). A7.308's Random Selection of the vehicles affected is not built.
+- **A PF's or an ATR's shot at a Location with a vehicle stays refused** unless the vehicle is named; the 20L ATR too.
+- **In the MPh, Defensive First Fire at a Location where a vehicle moves with the Infantry stays refused,** and vehicles that are not moving are left out of the hit, as C3.4 has it for every non-moving unit. That includes a phasing vehicle's Bounding First Fire.
+- **No Specific Collateral Attack after the crew Abandons on a failed Immobilization Task Check,** and none for a Gun's HEAT with no HE FP to step from. The attack applies to AFVs only: an unarmored vehicle's Vulnerable PRC on the Vehicle Target Type is pass 65's (with Passengers).
+- **A CE AFV in terrain with a positive TEM is admitted for an ordnance hit only:** its crew takes +2 for CE alone (D5.31). The Fire package's refusal of it for other IFT attacks (ruling R25.6) stands.
+- **A vehicle's own To Hit DRM** are Case K or N, Case P for its size, and the Location's terrain TEM as on the Vehicle Target Type: no Bypass distinction, and the C3.32 example's point that a shellhole's TEM is the Infantry's alone is not modelled.
+- **A Critical Hit's Random Selection** takes units and unarmored vehicles into its pool, never an AFV.
+
+### 8.2 What is built
+
+`ScenarioA1ArmorCalculator.SpecificCollateral` makes D.8A's attack on the Original TK DR with +2 for CE; its result is `specificCollateral` in the resolution (FP, result, effect) and a record line on the page. The Infantry Target Type at a mixed Location (`ScenarioA1OrdnanceCalculator.Run`) judges target by target (`targetHits`), puts the unarmored vehicles hit on the Vehicle line with the units' one Effects DR, and attacks a CE AFV's crew when the AFV's own TH# is reached. `concealment-mixed` is gone. The IFT's crew outcome was moved into `CrewChecks` and `CrewOutcome`, which the IFT and the ordnance hit share; the moved body is the old one (read in the diff).
+
+**New in a record:** `specificCollateral` on an ordnance shot (taken from the record; absent: no attack, and `vehicleTarget.crewExposed` is dropped from the state-built facts); `hit.vehicles` (built only outside the MPh for an Infantry Target Type shot, which was refused with any vehicle in the Location before); the roll `collateralCheck`; `targetHits` and `specificCollateral` in the resolution.
+
+### 8.3 The games and the tests
+
+Board 3, firer in [F10], target in [D10], scripted dice.
+
+| Game | What it shows |
+|---|---|
+| `p60-coll` | A PzKpfw IIIH's HE at a CE T-34: a hull hit on 4,2; the TK DR 1,2 against a Final TK# of -5 does nothing; the crew takes 6 FP on that DR 3, +2 for CE, a 1MC, passed on 2,2. Recorded. |
+| `p60-mixed` | A 45L's HE at a squad and a truck in [D10], no vehicle named: both hit on 3,3; one Effects DR 7 on the 4 FP column, a PTC for the squad (passed) and nothing for the truck on the Vehicle line (Kill number 5). Recorded. |
+| `p60-mixed-ce` | The same at a squad beside a CE PzKpfw IIIH: the squad's PTC; the tank's crew takes the same DR with +2, Final 9, nothing. Recorded. |
+| `p60-conc` | The same at a Known squad beside a concealed one, To Hit 4,4: the Known squad hit (Final 7), the concealed one missed with Case K (Final 9) and keeps its "?". Recorded. |
+
+Run by the agent: Rules classes of the pass and the ordnance passes, 189 passed; Play, 139 passed, among them `AnOlderRecordOfAHitOnACeTankReplaysAsItWas`, which strips the pass's facts from a recorded hit and replays it; MapStudio, 3 passed.

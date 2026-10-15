@@ -497,6 +497,13 @@ public sealed class ScenarioA1FireReference
             .Select(match => match.Groups[1].Success ? int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture) : 1).DefaultIfEmpty(0).Max();
 
     /// <summary>
+    /// The Final DR of a column index's K/# result (C1.55, p. 165; pass 60): an Indirect Fire attack on an AFV burns it at most half this DR, and
+    /// Shocks or immobilizes it on this DR and the one above it.
+    /// </summary>
+    public int KillDr(int column) =>
+        Enumerable.Range(0, results.Length).Where(dr => System.Text.RegularExpressions.Regex.IsMatch(results[dr][column], "^K/([1-9])$")).DefaultIfEmpty(0).Max();
+
+    /// <summary>
     /// The Morale Level of an AFV's Inherent crew (D5.1): that of its nationality's best unbroken elite Infantry MMC, read from the
     /// reviewed catalog's elite squads and half-squads; null when the catalog has none.
     /// </summary>
