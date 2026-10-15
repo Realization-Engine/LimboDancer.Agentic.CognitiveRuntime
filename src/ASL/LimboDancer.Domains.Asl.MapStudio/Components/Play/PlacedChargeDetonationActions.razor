@@ -1,21 +1,38 @@
 @* Plan N12 (pass 27): the operably Placed DCs detonate in the AFPh (A23.4). The page passes the charges the firing side may detonate with what
-   it may read of the target; each button proposes, and the gate detonates only once confirmed. *@
+   it may read of the target; each button proposes, and the gate detonates only once confirmed. Pass 60 (ruling R60.16): a DC whose Location holds an
+   enemy AFV the side sees may name it instead (A23.5). *@
 <ActionSection Title="Placed DCs" Key="placed-dcs">
 <div class="toolbar">
     @foreach (var placed in Charges)
     {
         <button class="detonate-dc" data-dc="@placed.Charge" @onclick="@(() => OnDetonate.InvokeAsync(placed.Charge))">Propose: detonate @placed.Charge in @placed.Target (30 FP@(placed.TargetsConcealed ? ", halved" : "")@(placed.Cx ? ", +1 CX" : ""); A23.4)</button>
+        @foreach (var vehicle in placed.Vehicles)
+        {
+            <button class="detonate-dc-vehicle" data-dc="@placed.Charge" data-vehicle="@vehicle.Id" @onclick="@(() => OnDetonateAt.InvokeAsync(new DetonateAt(placed.Charge, vehicle.Id)))">Propose: detonate @placed.Charge at @vehicle.Label (a Position DR first; A23.5, C7.346)</button>
+        }
     }
 </div>
 </ActionSection>
 
 @code {
-    /// <summary>An operable Placed DC, its target Location, whether its attack is halved against concealed units, and whether its placer is CX.</summary>
-    public sealed record Placed(string Charge, string Target, bool TargetsConcealed, bool Cx);
+    /// <summary>
+    /// An operable Placed DC, its target Location, whether its attack is halved against concealed units, whether its placer is CX, and the enemy AFVs
+    /// the side sees there, which it may name.
+    /// </summary>
+    public sealed record Placed(string Charge, string Target, bool TargetsConcealed, bool Cx)
+    {
+        public IReadOnlyList<PlayChoice> Vehicles { get; init; } = [];
+    }
+
+    /// <summary>A DC detonated at the AFV it names.</summary>
+    public sealed record DetonateAt(string Charge, string Vehicle);
 
     [Parameter, EditorRequired]
     public IReadOnlyList<Placed> Charges { get; set; } = [];
 
     [Parameter]
     public EventCallback<string> OnDetonate { get; set; }
+
+    [Parameter]
+    public EventCallback<DetonateAt> OnDetonateAt { get; set; }
 }

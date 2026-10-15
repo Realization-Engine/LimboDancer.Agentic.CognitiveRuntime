@@ -346,6 +346,23 @@ public sealed partial class GamePlanner
 
         attack = HeatOfBattleFacts(state, map);
 
+        // A22.34, A22.612 (pass 60, ruling R60.15): a FT or MOL attack may name an AFV in the target Location, its Target Facing read from the MOL's user's
+        // Location or the firer's; Rules says whether it may.
+        if (Text(arguments, "vehicle", out var vehicleId))
+        {
+            var from = BoardLocation.Parse((attack.Firers!.FirstOrDefault(item => item.Mol == true) ?? attack.Firers![0]).LocationId!);
+            var (aimed, aimedWhy) = WithNamedVehicle(state, attack, vehicleId, from, target);
+            if (aimed is null)
+            {
+                return Refused(scope, label, expected, aimedWhy!) with
+                {
+                    Fire = Proposal(attack)
+                };
+            }
+
+            attack = aimed;
+        }
+
         // C11 (ruling R8.3): a Gun's crew alone in the target Location takes its gunshield, facing every firer's Location, or its Emplacement; Rules says
         // which fire reads it (pass 32.c).
         if (ScenarioA1FireEligibility.InfantryFireAtGun(attack) && attack.Firers is { } firing
@@ -393,7 +410,8 @@ public sealed partial class GamePlanner
             blockedFirst = blockedPart;
             attack = openPart with
             {
-                GunTarget = attack.GunTarget
+                GunTarget = attack.GunTarget,
+                TargetVehicle = attack.TargetVehicle,
             };
         }
 
@@ -543,7 +561,8 @@ public sealed partial class GamePlanner
                 {
                     AddFireEvents(scope, attemptId, expected, actor, after, HeatOfBattleFacts(after, rereadMap) with
                     {
-                        GunTarget = facts.GunTarget
+                        GunTarget = facts.GunTarget,
+                        TargetVehicle = facts.TargetVehicle,
                     }, targetSide, step, events, draw);
                 }
 
@@ -575,7 +594,8 @@ public sealed partial class GamePlanner
                 + (lane is { } declared ? $"; a Fire Lane of {declared.Weapon} to {declared.Entries[^1].Location} (A9.22)" : string.Empty)
                 + (blockedFirst is not null ? "; the firers whose LOS is blocked fire first and drop out (A6.11, A7.52)" : string.Empty)
                 + (encircles is not null ? $"; this attack Encircles the {encircles} units at {facts.TargetLocationId} (A7.7)" : string.Empty)
-                + (mol is not null ? $"; {mol} makes a MOL Check first: a dr of 3 or less after its drm adds four FP (A22.611)" : string.Empty),
+                + (mol is not null ? $"; {mol} makes a MOL Check first: a dr of 3 or less after its drm adds four FP (A22.611)" : string.Empty)
+                + (ScenarioA1FireCalculator.NamedVehicleTerms(facts, FireReference.Value) is { } terms ? "; " + terms : string.Empty),
 
                 // Pass 31 (play test P-12, P-13): a shot with no LOS, or one that also hits the firing side's own units, is said before it is confirmed.
                 .. FireWarnings(facts)])
@@ -632,6 +652,42 @@ public sealed partial class GamePlanner
                     && item.TryGetProperty("mol", out var used) && used.ValueKind == JsonValueKind.True)),
             _ => new MolEventFacts(false, false),
         });
+
+    /// <summary>
+    /// The AFV a FT, MOL, or DC attack names (A22.34, A22.612, A23.5, D3.2; pass 60, ruling R60.15): a vehicle in the target Location, its state facts,
+    /// and the Target Facings of the target hexside the attack crosses from <paramref name="from"/>, read as an ordnance shot's are; none from within its
+    /// Location. Rules decides whether it may be named.
+    /// </summary>
+    private (FireAttack? Attack, string? Reason) WithNamedVehicle(GameState state, FireAttack attack, string vehicleId, BoardLocation from, BoardLocation target)
+    {
+        if (state.Unit(vehicleId) is not { Status: InstanceStatus.Active } vehicle || !LiveFire.IsVehicle(vehicle) || state.Location(vehicle.Id)?.Location != target)
+        {
+            return (null, $"play.fire-vehicle: {vehicleId} is not a vehicle in {target}; a FT, MOL, or DC names an AFV in the Location it attacks (A22.34, A22.612, A23.5)");
+        }
+
+        var named = LiveFire.NamedVehicle(state, vehicle);
+        if (from != target)
+        {
+            if (Bearing(state, target, from) is not { } back || (vehicle.Position as MapPosition)?.Facing is not { } hull)
+            {
+                return (null, $"play.ordnance-facing: {vehicle.Id}'s Target Facing is read only on one board not reversed, from a vehicle with a VCA (D3.2)");
+            }
+
+            var turreted = FireReference.Value.Armor.GetValueOrDefault(vehicle.Definition?.Definition ?? string.Empty)?.Turreted == true;
+            var (hullFacing, turretFacing) = ScenarioA1OrdnanceMapRules.VehicleTargetFacings(back, (int)hull, turreted, BypassTargetFacing(state, vehicle, from),
+                () => (int?)LiveOrdnance.TurretFacing(state, vehicle));
+            named = named with
+            {
+                HullFacing = hullFacing,
+                TurretFacing = turretFacing,
+            };
+        }
+
+        return (attack with
+        {
+            TargetVehicle = named
+        }, null);
+    }
 
     private static IEnumerable<string> Strings(JsonElement arguments, string name) =>
         arguments.TryGetProperty(name, out var list) && list.ValueKind == JsonValueKind.Array
@@ -883,7 +939,7 @@ public sealed partial class GamePlanner
         // A12.13: concealed, hidden, and Dummy targets have their own column when known targets share the Location. A
         // result that leaves unseen targets, or nothing, unaffected is not identified to the firing side (A12.14; R21.1).
         var arithmetic = resolution.Arithmetic!;
-        var hidesIdentity = ScenarioA1FireFollowUps.HidesIdentity(arithmetic, facts.Targets!);
+        var hidesIdentity = ScenarioA1FireFollowUps.HidesIdentity(facts, arithmetic);
         var fireId = EventId(attemptId, events.Count + 1);
         var firerLocation = facts.FirerLocationId ?? facts.TargetLocationId!;
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "fire-resolved",
@@ -931,6 +987,24 @@ public sealed partial class GamePlanner
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, package, null, [fireId]));
                 }
+            }
+        }
+
+        // A22.34, A22.612, A23.5, D.8A (pass 60, rulings R60.15, R60.16): what a FT, MOL, or DC did to the AFV it named, as a To Kill result is written,
+        // then its crew's Specific Collateral Attack, as an IFT attack's crew result is.
+        if (facts.TargetVehicle?.VehicleId is { } namedId && state.Unit(namedId) is { } named)
+        {
+            if (resolution.VehicleKill is { } kill)
+            {
+                foreach (var (type, payload) in KillEvents(state, named, kill, attemptId))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [fireId]));
+                }
+            }
+
+            if (resolution.SpecificCollateral is { } collateral)
+            {
+                VehicleEffectsAfterHit(state, collateral.Effect, facts, scope, attemptId, expected, package, fireId, events);
             }
         }
 

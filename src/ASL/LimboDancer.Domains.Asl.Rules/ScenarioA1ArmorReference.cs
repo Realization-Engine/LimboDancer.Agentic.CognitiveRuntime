@@ -225,11 +225,14 @@ public sealed class ScenarioA1ArmorReference
         (int, string)[] heat = [.. root.GetProperty("heat").GetProperty("basic").EnumerateArray()
             .SelectMany(item => item.GetProperty("guns").EnumerateArray().Select(gun => (item.GetProperty("tk").GetInt32(), gun.GetString()!)))];
 
-        var vehicles = catalog.RootElement.GetProperty("definitions").EnumerateArray().Where(item => item.GetProperty("kind").GetString() == "asl:vehicle")
-            .Select(Vehicle).ToDictionary(item => item.Id, StringComparer.Ordinal);
         return new ScenarioA1ArmorReference(vehicle, apcrToHit, Columns(root.GetProperty("ap")), Columns(root.GetProperty("apcr")), heat, he,
-            CaseD(root.GetProperty("ap")), CaseD(root.GetProperty("apcr")), Ranges(root.GetProperty("ap")), Ranges(root.GetProperty("apcr")), vehicles);
+            CaseD(root.GetProperty("ap")), CaseD(root.GetProperty("apcr")), Ranges(root.GetProperty("ap")), Ranges(root.GetProperty("apcr")), ReadVehicles(catalog.RootElement));
     }
+
+    /// <summary>The armor of a reviewed catalog's vehicles, by definition id (D1.6, D1.7, D5.6).</summary>
+    internal static Dictionary<string, ArmorDefinition> ReadVehicles(JsonElement catalog) =>
+        catalog.GetProperty("definitions").EnumerateArray().Where(item => item.GetProperty("kind").GetString() == "asl:vehicle")
+            .Select(Vehicle).ToDictionary(item => item.Id, StringComparer.Ordinal);
 
     private static ArmorDefinition Vehicle(JsonElement item)
     {

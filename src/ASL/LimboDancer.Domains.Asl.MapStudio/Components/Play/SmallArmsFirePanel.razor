@@ -91,6 +91,19 @@
     </label>
     <PickedOption For="fire-target" Options="@Targets" Value="@Target" OnChange="@OnTarget" />
     <LocationField Id="fire-free-target" Label="Or any Location" Name="the target" Value="@FreeTarget" OnChange="@OnFreeTarget" />
+    @* Pass 60 (ruling R60.15): a FT or MOL attack may name an AFV the side sees in the target Location as its target (A22.34, A22.612). *@
+    @if (VehicleChoices.Count > 0)
+    {
+        <label title="A22.34, A22.612: a FT or MOL names the AFV as its target; it then makes a To Kill DR on the C7.34 FT or MOL column, and the AFV's CE crew takes a Specific Collateral Attack if it stands.">At the AFV
+            <select id="fire-vehicle" value="@Vehicle" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">none: fire at the Location</option>
+                @foreach (var vehicle in VehicleChoices)
+                {
+                    <option value="@vehicle.Id">@Say(vehicle.Label)</option>
+                }
+            </select>
+        </label>
+    }
     @if (RangeSummary is { } summary)
     {
         <details class="fire-range" id="fire-range">
@@ -239,6 +252,17 @@
 
     [Parameter]
     public string Mol { get; set; } = string.Empty;
+
+    /// <summary>The enemy AFVs the side sees in the target Location, offered when the attack holds a FT or a MOL (pass 60, ruling R60.15).</summary>
+    [Parameter]
+    public IReadOnlyList<PlayChoice> VehicleChoices { get; set; } = [];
+
+    /// <summary>The AFV the attack names, or empty.</summary>
+    [Parameter]
+    public string Vehicle { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnVehicle { get; set; }
 
     /// <summary>The Locations the side knows to hold an enemy.</summary>
     [Parameter]

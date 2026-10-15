@@ -16,7 +16,7 @@ public sealed partial class GamePlanner
     /// <summary>
     /// A23.3 (ruling R15.2): a unit of the moving stack Places its DC in an ADJACENT Location in its LOS by spending, as the stack's expenditure in its own
     /// Location, the MF entering that Location would cost; not after firing in the PFPh, not pinned, not berserk (A15.431), and not where an enemy AFV is
-    /// (the PAATC is not built).
+    /// (pass 60: there only after a PAATC).
     /// </summary>
     private GamePlan PlanPlaceDc(GameScope scope, string attemptId, long expected, string label, GameState state, UnitInstance[] movers,
         IReadOnlyList<string> ids, BoardLocation from, string chargeId, string targetText, bool assault, bool doubleTime)
@@ -54,10 +54,15 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.dc-target: a DC is Placed in an ADJACENT Location in the placer's LOS, not {target} (A23.3, A23.61)");
         }
 
-        if (state.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)))
+        // A23.3, A23.5 (pass 60, ruling R60.16): a DC is Placed where an enemy AFV is once its placer passes a PAATC; one at an unarmored vehicle, or where a
+        // friendly vehicle is, is not built.
+        UnitInstance[] vehicles = [.. state.At(target).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit))];
+        if (vehicles.Any(unit => !IsAfv(unit) || unit.Side == placer.Side))
         {
-            return Refused(scope, label, expected, "play.dc-vehicle: a DC is not Placed where a vehicle is: its attack on a vehicle and the PAATC are not built (A23.3, A23.5)");
+            return Refused(scope, label, expected, "play.dc-vehicle: a DC is not Placed where an unarmored or friendly vehicle is: its attack on such a vehicle is not built (A23.3, A23.5)");
         }
+
+        var afv = vehicles.FirstOrDefault(unit => NeedsPaatc(state, placer, unit));
 
         if (ReadLocation(state, target) is not { } targetRead || TerrainKey(targetRead) is not { } targetTerrain || !ScenarioA1FireReference.Tem.ContainsKey(targetTerrain))
         {
@@ -90,13 +95,35 @@ public sealed partial class GamePlanner
         var step = (current?.Step ?? 0) + 1;
         var package = ScenarioA1FirePackage.Identity.ToString();
         var placement = new DcPlacement(placer.Id, charge.Id, target, doubleTime || Is(placer, Conditions.Cx), concealed);
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-            [Event(scope, attemptId, 1, expected, "movement-step", new MovementStepped(ids, from, halfMf, current?.Assault ?? assault, step)
+        var placing = Event(scope, attemptId, 1, expected, "movement-step", new MovementStepped(ids, from, halfMf, current?.Assault ?? assault, step)
+        {
+            DoubleTime = doubleTime,
+            DcPlacement = placement,
+        }, package, null);
+        var summary = $"play.place-dc: {placer.Id} Places {charge.Id} in {target} for {halfMf / 2m} MF of the stack; it is operably Placed once {placer.Id} leaves {from} or ends its move neither broken nor pinned, and detonates in the AFPh with 30 FP (A23.3, A23.4)";
+        if (afv is null)
+        {
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [placing], [summary]);
+        }
+
+        // A23.3, A11.6 (pass 60, ruling R60.16): the placer passes a PAATC first, aided by a leader in its Location; one that fails is pinned and Places nothing.
+        IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
+        {
+            var built = new List<GameEvent>();
+            AddPaatc(scope, attemptId, expected, "system", state, [placer], afv, from, built, draw, out var passed);
+            if (passed)
             {
-                DoubleTime = doubleTime,
-                DcPlacement = placement,
-            }, package, null)],
-            [$"play.place-dc: {placer.Id} Places {charge.Id} in {target} for {halfMf / 2m} MF of the stack; it is operably Placed once {placer.Id} leaves {from} or ends its move neither broken nor pinned, and detonates in the AFPh with 30 FP (A23.3, A23.4)"]);
+                built.Add(Event(scope, attemptId, built.Count + 1, expected, "movement-step", placing.Payload, package, null));
+            }
+
+            return built;
+        }
+
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [summary, $"play.place-dc-paatc: {placer.Id} first passes a PAATC, as {afv.Id} is in {target}; if it fails, it is pinned and Places nothing (A23.3, A11.6)"])
+        {
+            Roll = new PlannedRoll("paatc", Build),
+            FirstEventId = EventId(attemptId, 1),
+        };
     }
 
     /// <summary>A23.4 (ruling R15.2): in its side's AFPh, an operably Placed DC detonates on its target Location, and is removed.</summary>
@@ -123,13 +150,29 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, reason!);
         }
 
-        return ChargePlan(scope, existing, attemptId, expected, label, actor, state, facts with
+        facts = facts with
         {
             Range = 1,
             SameLevel = placed.From.Level == placed.Target.Level,
             TargetLevelAbove = placed.From.Level == placed.Target.Level ? null : placed.Target.Level - placed.From.Level,
             TargetTerrain = ReadLocation(state, placed.Target) is { } read ? TerrainKey(read) : null,
-        }, null, chargeId, $"play.detonate-dc: {chargeId} detonates in {placed.Target} with 30 FP{(placed.TargetsConcealed ? ", halved for its concealed targets" : string.Empty)}, and is removed (A23.1, A23.4)");
+        };
+
+        // A23.5 (pass 60, ruling R60.16): a Placed DC may name the AFV in its target Location, its Target Facing that of the hexside it was Placed through.
+        if (Text(arguments, "vehicle", out var vehicleId))
+        {
+            var (named, namedWhy) = WithNamedVehicle(state, facts, vehicleId, placed.From, placed.Target);
+            if (named is null)
+            {
+                return Refused(scope, label, expected, namedWhy!);
+            }
+
+            facts = named;
+        }
+
+        return ChargePlan(scope, existing, attemptId, expected, label, actor, state, facts, null, chargeId, facts.TargetVehicle is null
+            ? $"play.detonate-dc: {chargeId} detonates in {placed.Target} with 30 FP{(placed.TargetsConcealed ? ", halved for its concealed targets" : string.Empty)}, and is removed (A23.1, A23.4)"
+            : $"play.detonate-dc: {chargeId} detonates in {placed.Target} at {vehicleId}: {ScenarioA1FireCalculator.NamedVehicleTerms(facts, FireReference.Value)}; the DC is removed (A23.4, A23.5)");
     }
 
     /// <summary>
@@ -194,12 +237,28 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, reason!);
         }
 
-        return ChargePlan(scope, existing, attemptId, expected, label, actor, state, facts with
+        facts = facts with
         {
             Range = 1,
             SameLevel = true,
             TargetTerrain = ReadLocation(state, target) is { } read ? TerrainKey(read) : null,
-        }, from, chargeId, $"play.throw-dc: {unitId} Throws {chargeId} into {target}: 30 FP with +2 there, then its own Location with +3 on a DR of its own{(state.Phase == "afph" ? ", each +1 in the AFPh" : string.Empty)} (A23.6, A23.62)");
+        };
+
+        // A23.5 (pass 60, ruling R60.16): a Thrown DC may name an AFV in its target Location, its Target Facing that of the hexside it is Thrown through.
+        if (Text(arguments, "vehicle", out var vehicleId))
+        {
+            var (named, namedWhy) = WithNamedVehicle(state, facts, vehicleId, from, target);
+            if (named is null)
+            {
+                return Refused(scope, label, expected, namedWhy!);
+            }
+
+            facts = named;
+        }
+
+        return ChargePlan(scope, existing, attemptId, expected, label, actor, state, facts, from, chargeId, facts.TargetVehicle is null
+            ? $"play.throw-dc: {unitId} Throws {chargeId} into {target}: 30 FP with +2 there, then its own Location with +3 on a DR of its own{(state.Phase == "afph" ? ", each +1 in the AFPh" : string.Empty)} (A23.6, A23.62)"
+            : $"play.throw-dc: {unitId} Throws {chargeId} into {target} at {vehicleId}: {ScenarioA1FireCalculator.NamedVehicleTerms(facts, FireReference.Value)}; then its own Location with +3 on a DR of its own{(state.Phase == "afph" ? ", +1 in the AFPh" : string.Empty)} (A23.5, A23.6)");
     }
 
     /// <summary>The DC's attack (and, for a Thrown one, its thrower's Location next), its removal, and any Sniper attack the DRs call for.</summary>

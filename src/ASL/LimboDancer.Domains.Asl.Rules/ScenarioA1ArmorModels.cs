@@ -140,6 +140,16 @@ public sealed record OrdnanceVehicleTarget(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the target is Immobile, immobilized or bogged (C7.346, p. 177; pass 60, ruling R60.16): -2 to a DC's Position DR. A state fact, given only
+    /// on the AFV a FT, MOL, or DC attack names; null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Immobile
+    {
+        get; init;
+    }
 }
 
 /// <summary>

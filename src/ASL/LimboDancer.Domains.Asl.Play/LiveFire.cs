@@ -400,6 +400,15 @@ public static class LiveFire
         });
 
     /// <summary>
+    /// The AFV a FT, MOL, or DC attack names (A22.34, A22.612, A23.5; pass 60, ruling R60.15): a vehicle target's state facts, and whether it is Immobile,
+    /// immobilized or bogged (C7.346). Its Target Facings are the planner's map reads.
+    /// </summary>
+    internal static OrdnanceVehicleTarget NamedVehicle(GameState state, UnitInstance vehicle) => LiveOrdnance.VehicleTargetFacts(state, vehicle) with
+    {
+        Immobile = Is(vehicle, Conditions.Immobilized) || Is(vehicle, Conditions.Bogged) ? true : null,
+    };
+
+    /// <summary>
     /// The leadership modifier a vehicle's crew brings to its attacks (D3.44, D3.45; pass 55, rulings R55.16, R55.18): its Armor Leader's, or an
     /// Inexperienced Crew's +1; null with neither. Rules decides which.
     /// </summary>
@@ -577,6 +586,7 @@ public static class LiveFire
         Dictionary<string, IReadOnlyList<int>>? crewChecks = null;
         Dictionary<string, int>? unlikelyKill = null;
         int? molCheck = null;
+        var named = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
 
         // A selection roll names the units it selects among, one die each, in order.
         static bool Select(ref Dictionary<string, int>? into, string ids, DiceRolled roll)
@@ -666,6 +676,11 @@ public static class LiveFire
                 case "molCheck" when roll.Count == 1:
                     molCheck = roll.Values[0];
                     break;
+
+                // Pass 60 (rulings R60.15, R60.16): a DC's Position DR and the checks of a named AFV's crew.
+                case "position" or "crewSurvival" or "taskCheck" or "collateralCheck" when roll.Count == 2 && unit.Length == 0:
+                    named[kind] = roll.Values;
+                    break;
                 default:
                     return null;
             }
@@ -681,6 +696,10 @@ public static class LiveFire
             CrewChecks = crewChecks,
             UnlikelyKill = unlikelyKill,
             MolCheck = molCheck,
+            Position = named.GetValueOrDefault("position"),
+            CrewSurvival = named.GetValueOrDefault("crewSurvival"),
+            TaskCheck = named.GetValueOrDefault("taskCheck"),
+            CollateralCheck = named.GetValueOrDefault("collateralCheck"),
         };
     }
 
@@ -891,6 +910,16 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             // C11 (ruling R8.3): the Gun in the target Location, its Emplacement and gunshield, is a map read recorded with the attack.
             GunTarget = recorded.GunTarget,
 
+            // Pass 60 (ruling R60.15): the AFV a FT, MOL, or DC names is read from the state, its Target Facings from the record (a map read); a record
+            // made before the pass names none.
+            TargetVehicle = recorded.TargetVehicle is { VehicleId: { } namedId } recordedNamed && state.Unit(namedId) is { } namedUnit
+                ? ScenarioA1ArmorLeaders.AsRecorded(LiveFire.NamedVehicle(state, namedUnit) with
+                {
+                    HullFacing = recordedNamed.HullFacing,
+                    TurretFacing = recordedNamed.TurretFacing,
+                }, recordedNamed)
+                : null,
+
             // Backlog pass 10 (rulings R10.4 to R10.8, R10.13): the levels, the wall or hedge TEM with Wall Advantage, Height Advantage, and
             // Hazardous Movement are map reads recorded with the attack; a Snap Shot is the DEFENDER's declaration.
             TargetLevelAbove = recorded.TargetLevelAbove,
@@ -955,6 +984,7 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         // D3.41, D3.42 (pass 55, rulings R55.15, R55.17): a record keeps a crew's Morale Level only when the attack made that crew check, so one
         // it leaves out is left out of the comparison; the checks it holds are held to the state's below.
         var stateVehicles = merged.Vehicles;
+        var stateNamed = recorded.TargetVehicle?.VehicleId is { } aimedId && state.Unit(aimedId) is { } aimedUnit ? LiveFire.NamedVehicle(state, aimedUnit) : null;
         merged = merged with
         {
             Vehicles = ScenarioA1ArmorLeaders.AsRecorded(merged.Vehicles, recorded.Vehicles),
@@ -985,6 +1015,7 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             ? "The fire record's facts and rolls do not resolve: " + string.Join("; ", resolution.Reasons)
             : !JsonElement.DeepEquals(JsonSerializer.SerializeToElement(resolution, LiveFire.Json), fire.Resolution)
                 ? "The fire record's resolution differs from what its facts and rolls give."
-                : ScenarioA1ArmorLeaders.RecordRefusal(stateVehicles, recorded.Vehicles, ScenarioA1ArmorLeaders.Checked(resolution));
+                : ScenarioA1ArmorLeaders.RecordRefusal(stateVehicles, recorded.Vehicles, ScenarioA1ArmorLeaders.Checked(resolution))
+                    ?? ScenarioA1ArmorLeaders.RecordRefusal(stateNamed, recorded.TargetVehicle, resolution);
     }
 }

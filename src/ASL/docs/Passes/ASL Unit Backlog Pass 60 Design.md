@@ -195,3 +195,40 @@ Board 3, firer in [F10], target in [D10], scripted dice.
 | `p60-conc` | The same at a Known squad beside a concealed one, To Hit 4,4: the Known squad hit (Final 7), the concealed one missed with Case K (Final 9) and keeps its "?". Recorded. |
 
 Run by the agent: Rules classes of the pass and the ordnance passes, 189 passed; Play, 139 passed, among them `AnOlderRecordOfAHitOnACeTankReplaysAsItWas`, which strips the pass's facts from a recorded hit and replays it; MapStudio, 3 passed.
+
+## 9. Indirect Fire: 60.2 (increment 2c)
+
+Built on 2026-10-15 in one commit (3ac44bea) by a building agent to a brief (`brief_2c.md`), with one change sent back, its diff read and its games played in the Studio by the session.
+
+### 9.1 Departures from the frame, first
+
+Each decided under the user's word of 2026-10-15; each gets a backlog row.
+
+- **R60.23, correcting R60.10:** a mortar's hit on an AFV takes its hit Location from the Original IFT DR, not from the To Hit DR. My frame said the To Hit DR; the C9.5 example and the C7.7 chart's note E ("Indirect Fire uses the Original IFT DR for hit location") say the IFT DR. The agent built the frame's reading and was sent back.
+- **No Immobilization Task Check (D5.5)** after a mortar immobilizes an AFV, as on the IFT's Vehicle line today.
+- **An OT AFV hit by Air Bursts (D5.311)** goes on the Vehicle line with no Air Burst TEM, but its crew is not attacked: D5.311's Infantry-like crew (break, rout, no Stun or Recall) is not built.
+- **Crew Survival's +1** reads Stunned, Recalled, or Stun +1 only; the vehicle's facts carry no Shocked or Abandoned.
+- **A Critical Hit across Locations:** a tied Random Selection goes to the lowest Location (the agent's choice).
+- **Still refused:** a vehicle in Bypass in the target hex, and a mortar's Defensive First Fire with a vehicle in the hex.
+- **No entrenchment exists,** so Air Bursts with an entrenchment rest on an Emplaced Gun in woods (+2 -1). **The board data has no Interior Building Hex and no rooftop:** every building hex is taken as not Interior, and no rooftop is attacked.
+
+### 9.2 What is built
+
+`ScenarioA1AreaCalculator` was rewritten around Locations: each Location of the target hex with a target in the firer's LOS is judged on its own To Hit (Case K, N, P, R), and one Effects DR attacks each Location hit with its building TEM and `tem:levels-above` (B23.32); vehicles are judged with the units. An AFV is attacked on the IFT (`AfvAttack`): the AF and OT modifiers, the TEM but on a Critical Hit, a burning wreck, elimination with Crew Survival, Shock or Immobilization at and one above the K/# DR. An unarmored vehicle is on the Vehicle line, an OT AFV in woods under Air Bursts too. A Critical Hit picks a Location, then a unit. The Area Acquisition covers the hex. A mortar may fire at a crewed Gun: Emplacement on the Area hit, the gunshield's +1 against Indirect Fire where no other positive TEM applies, the Gun's fate. `critical-hit-tem:height-advantage` reverses Height Advantage on a Direct Fire Critical Hit. `area-friendly-units` has its sentence.
+
+**Found outside the task and fixed:** the ordnance record check recomputed a target's `encircled` fact from the state; any recorded shot at an upper-level unit the planner had read as Encircled failed replay. It is now taken from the record, as fire records take it.
+
+**New in a record:** on the shot `reversesHeightAdvantage`, `areaLocations` (each with its terrain, LOS, and levels above), `areaAcquisition`, and `afvCover` on a mortar's hit; on the resolution `levelHits` and `areaVehicles`; the roll `areaSurvival`. Each is taken from the record or absent from every older one: units on two levels and vehicles in a mortar's hex were refused before, a Critical Hit's reversal is gated, and the Area Acquisition's hex is gated since a later shot at another level of an acquired hex could be made before.
+
+### 9.3 The games and the tests
+
+Board 3, scripted dice; each game's file read back. The LOS from [K3] to both levels of [M2] was read on the board viewer first.
+
+| Game | What it shows |
+|---|---|
+| `p60-mtr-afv` | A German 50mm mortar in [H10] at [D10], a Russian squad beside a BU T-34: both hit on 4,2; the squad on the 2 FP column with D9.3's +1 beside the AFV, a 1MC passed; the T-34 on the same IFT DR 3, one above the K/# DR, a turret hit by the IFT dice (colored 1 below white 2): Shocked. Recorded. |
+| `p60-mtr-truck` | The same at a truck: Case P +1 for a small target; the Vehicle line, DR 3 below the Kill number 4: eliminated. Recorded. |
+| `p60-mtr-levels` | The mortar in [K3] at [M2], a squad on each level: the ground level with the grain's Hindrance (Case R +1), both hit; one Effects DR 7, the ground +3 stone +2 levels above (12), level 1 +3 +1 (11): no effect. Recorded. |
+| `p60-mtr-gun` | A Russian mortar at an Emplaced German INF Gun: Case P on the To Hit; the Emplacement's +2 taken over the gunshield's +1 (not cumulative, C11.2). Recorded. |
+
+Run by the agent: Rules, ten classes, 246 passed; Play, 147 passed; MapStudio 13; Units 50. After the change sent back: the pass 60 and pass 9 classes, Rules 49 and Play 29 passed.

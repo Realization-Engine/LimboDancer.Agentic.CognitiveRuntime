@@ -384,7 +384,7 @@ public static class LiveOrdnance
     /// A vehicle target's state facts (C6.1 Case J, C.8, D5.5, D5.6): a vehicle that entered a new hex or moved in Motion this Player Turn, or is in
     /// Motion, is moving; a Stunned, Shocked, or Recalled crew adds one to Crew Survival. The Target Facings are the planner's map reads.
     /// </summary>
-    private static OrdnanceVehicleTarget VehicleTargetFacts(GameState state, UnitInstance vehicleTarget)
+    internal static OrdnanceVehicleTarget VehicleTargetFacts(GameState state, UnitInstance vehicleTarget)
     {
         return ScenarioA1OrdnanceEligibility.VehicleTarget(new OrdnanceVehicleTargetStateFacts(vehicleTarget.Id, vehicleTarget.Definition?.Definition,
             Is(vehicleTarget, Conditions.Motion), state.MovedVehicles.Contains(vehicleTarget.Id, StringComparer.Ordinal),

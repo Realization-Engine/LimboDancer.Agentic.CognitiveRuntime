@@ -834,6 +834,8 @@ else if (state is not null)
                         Firers="@FirerChoices(firing)" SelectedFirers="@fireFirers" Weapons="@([.. FireWeapons.Select(weapon => new SmallArmsFirePanel.Weapon(weapon.Id, weapon.Holding!.Holder, LiveFire.WeaponBar(weapon), weapon.Kind == "asl:ft")), .. FireVehicleMgs])"
                         SelectedWeapons="@fireWeapons" Alone="@fireAlone" Leaders="@([.. FireLeaders(firing).Select(leader => leader.Id)])" Director="@fireDirector"
                         MolAllowed='@state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal)' Mol="@fireMol" Targets="@byRange.Targets" Target="@fireTarget"
+                        VehicleChoices="@(fireMol.Length > 0 || FireWeapons.Any(weapon => weapon.Kind == "asl:ft" && fireWeapons.Contains(weapon.Id)) ? NamedVehicleChoices(firing, FireTarget) : [])"
+                        Vehicle="@fireVehicle" OnVehicle="@(id => fireVehicle = id)"
                         FreeTarget="@fireFreeTarget" SnapShot="@fireSnapShot" Spray="@fireSpray" LaneWeapon="@fireLaneWeapon" LaneTo="@fireLaneTo" Partners="@FirePartners(firing)"
                         Partner="@firePartner" OnFrom="@(at => { fireFrom = at; fireAlso.Clear(); PruneFire(); })" OnFirer="@(pick => Toggle(fireFirers, pick.Id, pick.On))"
                         OnWeapon="@(pick => Toggle(fireWeapons, pick.Id, pick.On))" OnAlone="@(pick => Toggle(fireAlone, pick.Id, pick.On))" OnDirector="@(id => fireDirector = id)"
@@ -847,7 +849,8 @@ else if (state is not null)
                     @if (DcHolders(firing).Any())
                     {
                         <ThrowDemolitionChargeAction Charges="@([.. DcHolders(firing).Select(item => new ThrowDemolitionChargeAction.HeldCharge(item.Unit, item.Charge))])" Charge="@throwDc"
-                            At="@throwDcAt" OnCharge="@(value => throwDc = value)" OnAt="@(at => throwDcAt = at)" OnPropose="@ProposeThrowDc" />
+                            At="@throwDcAt" OnCharge="@(value => throwDc = value)" OnAt="@(at => throwDcAt = at)" OnPropose="@ProposeThrowDc"
+                            Vehicles="@NamedVehicleChoices(firing, throwDcAt)" Vehicle="@throwDcVehicle" OnVehicle="@(id => throwDcVehicle = id)" />
                     }
                     @if (state.Night && StarshellFirers(firing).Any())
                     {
@@ -856,8 +859,11 @@ else if (state is not null)
                     }
                     @if (state.Phase == "afph" && state.PlacedCharges.Any(item => item.Operable))
                     {
-                        <PlacedChargeDetonationActions Charges="@([.. state.PlacedCharges.Where(item => item.Operable).Select(item => new PlacedChargeDetonationActions.Placed(item.Charge, item.Target.ToString(), item.TargetsConcealed, item.Cx))])"
-                            OnDetonate="@ProposeDetonateDc" />
+                        <PlacedChargeDetonationActions Charges="@([.. state.PlacedCharges.Where(item => item.Operable).Select(item => new PlacedChargeDetonationActions.Placed(item.Charge, item.Target.ToString(), item.TargetsConcealed, item.Cx)
+                            {
+                                Vehicles = NamedVehicleChoices(firing, item.Target.ToString()),
+                            })])"
+                            OnDetonate="@ProposeDetonateDc" OnDetonateAt="@(pick => ProposeDetonateDc(pick.Charge, pick.Vehicle))" />
                     }
                     @if ((state.Phase is "pfph" or "afph" or "dfph" || (state.Phase == "mph" && state.Movement is { WindowOpen: true })) && (OrdnanceGuns(firing).Any() || OrdnanceTanks(firing).Any() || PanzerfaustFirers(firing).Any()))
                     {
@@ -4959,11 +4965,14 @@ else if (state is not null)
         fireLaneTo = string.Empty;
         firePartner = string.Empty;
         fireMol = string.Empty;
+        fireVehicle = string.Empty;
     }
 
     private string fireMol = string.Empty;
+    private string fireVehicle = string.Empty;
     private string throwDc = string.Empty;
     private string throwDcAt = string.Empty;
+    private string throwDcVehicle = string.Empty;
     private string placeDc = string.Empty;
     private string placeDcAt = string.Empty;
     private string moveKeep = string.Empty;
@@ -4983,11 +4992,20 @@ else if (state is not null)
     private Task ProposeThrowDc()
     {
         var parts = throwDc.Split('|');
-        return Propose(GameActions.ThrowDc, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        var arguments = new Dictionary<string, object>
         {
             ["gameId"] = gameId, ["attemptId"] = Attempt("throw-dc"), ["expectedRevision"] = (long)history!.Events.Count, ["unitId"] = parts[0],
             ["equipmentId"] = parts.Length > 1 ? parts[1] : string.Empty, ["target"] = throwDcAt.Trim(),
-        }));
+        };
+
+        // A23.5 (pass 60, ruling R60.16): the AFV the DC names, while it is still one the side sees there.
+        if (state is not null && throwDcVehicle.Length > 0 && NamedVehicleChoices(state.Units.FirstOrDefault(unit => unit.Id == parts[0])?.Side ?? string.Empty, throwDcAt)
+            .Any(choice => choice.Id == throwDcVehicle))
+        {
+            arguments["vehicle"] = throwDcVehicle;
+        }
+
+        return Propose(GameActions.ThrowDc, JsonSerializer.SerializeToElement(arguments));
     }
 
     private string starshellUnit = string.Empty;
@@ -5103,10 +5121,28 @@ else if (state is not null)
         ["gameId"] = gameId, ["attemptId"] = Attempt("place-hidden"), ["expectedRevision"] = (long)history!.Events.Count, ["unitIds"] = new[] { unit },
     }));
 
-    private Task ProposeDetonateDc(string charge) => Propose(GameActions.DetonateDc, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    private Task ProposeDetonateDc(string charge) => ProposeDetonateDc(charge, null);
+
+    /// <summary>A Placed DC's detonation, at the AFV it names when one is given (A23.5; pass 60, ruling R60.16).</summary>
+    private Task ProposeDetonateDc(string charge, string? vehicle)
     {
-        ["gameId"] = gameId, ["attemptId"] = Attempt("detonate-dc"), ["expectedRevision"] = (long)history!.Events.Count, ["equipmentId"] = charge,
-    }));
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("detonate-dc"), ["expectedRevision"] = (long)history!.Events.Count, ["equipmentId"] = charge,
+        };
+        if (vehicle is { Length: > 0 })
+        {
+            arguments["vehicle"] = vehicle;
+        }
+
+        return Propose(GameActions.DetonateDc, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    /// <summary>The enemy AFVs the view sees in a Location, which a FT, MOL, or DC may name as its target (A22.34, A22.612, A23.5; pass 60, ruling R60.15).</summary>
+    private IReadOnlyList<PlayChoice> NamedVehicleChoices(string side, string location) =>
+        state is null || !BoardLocation.TryParse(location.Trim(), out var at) ? []
+            : [.. SeenOnly(state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && GamePlanner.IsArmoredVehicle(unit))
+                .OrderBy(unit => unit.Id, StringComparer.Ordinal)).Select(vehicle => new PlayChoice(vehicle.Id, $"{vehicle.Id} ({vehicle.Definition?.Definition})"))];
 
     private Task ProposePlaceDc()
     {
@@ -5661,6 +5697,14 @@ else if (state is not null)
         if (fireMol.Length > 0 && fireFirers.Contains(fireMol))
         {
             arguments["mol"] = fireMol;
+        }
+
+        // A22.34, A22.612 (pass 60, ruling R60.15): the AFV a FT or MOL names, while the panel still offers it.
+        if (fireVehicle.Length > 0 && state is not null && FiringSide is { } side
+            && (fireMol.Length > 0 || FireWeapons.Any(weapon => weapon.Kind == "asl:ft" && fireWeapons.Contains(weapon.Id)))
+            && NamedVehicleChoices(side, FireTarget).Any(choice => choice.Id == fireVehicle))
+        {
+            arguments["vehicle"] = fireVehicle;
         }
 
         return Propose(GameActions.Fire, JsonSerializer.SerializeToElement(arguments));

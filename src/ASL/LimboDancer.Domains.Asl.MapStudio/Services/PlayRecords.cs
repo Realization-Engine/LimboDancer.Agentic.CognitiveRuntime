@@ -600,6 +600,9 @@ public sealed class PlayRecords
                         LosBlocked = resolution.LosBlocked == true,
                         Weapons = resolution.WeaponEffects,
                         Vehicles = resolution.VehicleEffects,
+
+                        // Pass 60 (rulings R60.15, R60.16): the AFV a FT, MOL, or DC named.
+                        NamedVehicle = facts?.TargetVehicle?.VehicleId is { } namedId ? FireText.NamedVehicleLines(namedId, resolution) : null,
                         BrokenBefore = before.Where(target => target.Broken == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
                         PinnedBefore = before.Where(target => target.Pinned == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
                     });

@@ -418,6 +418,18 @@ public static class ScenarioA1FireCalculator
             Need(vehicle.Immobilized, at + "immobilized");
         }
 
+        // A22.34, A22.612, A23.5 (pass 60, ruling R60.15): the AFV a FT, MOL, or DC attack names, with the state facts its To Kill and Position DR read.
+        if (attack.TargetVehicle is { } named)
+        {
+            Need(named.VehicleId, "targetVehicle.vehicleId");
+            Need(named.DefinitionId, "targetVehicle.definitionId");
+            Need(named.Moving, "targetVehicle.moving");
+            Need(named.NonStopped, "targetVehicle.nonStopped");
+            Need(named.Concealed, "targetVehicle.concealed");
+            Need(named.CrewImpaired, "targetVehicle.crewImpaired");
+            Need(named.CrewMayTakeTc, "targetVehicle.crewMayTakeTc");
+        }
+
         // Ruling R10.4: a target at another level names how many levels above the firer it is, for PBF (A7.21).
         if (attack.VehicleFire is null && attack.OrdnanceHit is null && attack.Overrun is null && attack.DemolitionCharge is null && attack.Canister is null && !residual)
         {
@@ -532,15 +544,42 @@ public static class ScenarioA1FireCalculator
         // and the Vulnerable crew of each AFV whose own TH# it reached with the CE DRM alone (D5.31: not cumulative with a positive TEM).
         // C3.332, C1.55 (pp. 170, 165; pass 60, ruling R60.10): an Area Target Type hit attacks its unarmored vehicles on the Vehicle line and the
         // Vulnerable crews of its AFVs alike; the Ordnance package resolves each AFV itself on the IFT.
+        // D5.31 (pass 60, ruling R60.15): the CE crew of an AFV a FT, MOL, or DC names takes the CE DRM alone, in a positive TEM too.
         var vehicles = attack.Vehicles ?? [];
         var ordnanceHit = attack.OrdnanceHit is not null;
         if ((vehicles.Count > 1 && !ordnanceHit)
-            || (!ordnanceHit && (attack.TargetTerrain is { } vehicleTerrain && ScenarioA1FireReference.Tem.TryGetValue(vehicleTerrain, out var vehicleTem) && vehicleTem > 0)
+            || (!ordnanceHit && attack.TargetVehicle is null
+                && (attack.TargetTerrain is { } vehicleTerrain && ScenarioA1FireReference.Tem.TryGetValue(vehicleTerrain, out var vehicleTem) && vehicleTem > 0)
                 && vehicles.Any(item => reference.Definitions.GetValueOrDefault(item.DefinitionId!) is { IsVehicle: true, Unarmored: not true }))
             || vehicles.Any(item => item.LocationId != attack.TargetLocationId
                 || reference.Definitions.GetValueOrDefault(item.DefinitionId!) is not { IsVehicle: true }))
         {
             outside.Add("asl.a1.fire.vehicle-outside");
+        }
+
+        // A22.34, A22.612, A23.5 (pp. 89 to 91; pass 60, ruling R60.15): only a FT, a MOL, or a Placed or Thrown DC names an AFV, an enemy armored vehicle
+        // in the target Location; its Target Facing is that of the hexside crossed, and none from within its Location (the rear). A Location that also
+        // holds concealed or hidden units or Dummies is not built: the record of an attack on the AFV would name them.
+        if (attack.TargetVehicle is { } named)
+        {
+            var assault = (attack.Firers ?? []).Any(item => item.Mol == true)
+                || (attack.Firers ?? []).SelectMany(item => item.Weapons ?? []).Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsFt == true)
+                || attack.DemolitionCharge is { Mode: FireDemolitionCharge.Placed or FireDemolitionCharge.Thrown };
+            var within = attack.FirerLocationId == attack.TargetLocationId;
+            if (!assault || attack.OrdnanceHit is not null || attack.VehicleFire is not null || attack.Overrun is not null || attack.Canister is not null
+                || reference.Armor.GetValueOrDefault(named.DefinitionId!) is not { Unarmored: false, FrontAf: not null } armor
+                || FiringNationalities(attack, reference).Contains(armor.Nationality)
+                || !vehicles.Any(item => item.VehicleId == named.VehicleId && item.DefinitionId == named.DefinitionId)
+                || (within ? named.HullFacing is not null : named.HullFacing is not ("front" or "side" or "rear"))
+                || named.TurretFacing is not (null or "front" or "side" or "rear"))
+            {
+                outside.Add("asl.a1.fire.target-vehicle-outside");
+            }
+
+            if (targets.Any(item => item.Concealed == true || item.Hidden == true || item.Dummy == true))
+            {
+                outside.Add("asl.a1.fire.target-vehicle-concealed");
+            }
         }
 
         // C8.4, C8.41 (p. 178; pass 55, ruling R55.9): a Canister shot's attack on one Location has no firers, leader, or fire group (A7.51), the
@@ -715,10 +754,11 @@ public static class ScenarioA1FireCalculator
         }
 
         // A22.611 (ruling R15.4): one MOL Check per attack, by an unpinned unit in a PBF or TPBF attack, not Subsequent First Fire or FPF, with no
-        // vehicle in the target Location; a squad adds its inherent FP and fires no SW, a HS, crew, or hero no SW.
+        // vehicle in the target Location; a squad adds its inherent FP and fires no SW, a HS, crew, or hero no SW. A22.612 (pass 60, ruling R60.15): the
+        // vehicle it names (a MOL at an unarmored vehicle is not built).
         var mol = firers.Where(item => item.Mol == true).ToArray();
         if (mol.Length > 1 || mol.Any(item => item.Pinned == true || RangeOf(attack, item) > 1 || item.UsesInherentFp == false || item.Weapons is { Count: > 0 }
-            || kind is SubsequentFirstFire or FinalProtectiveFire || flamethrower || (attack.Vehicles ?? []).Count > 0
+            || kind is SubsequentFirstFire or FinalProtectiveFire || flamethrower || ((attack.Vehicles ?? []).Count > 0 && attack.TargetVehicle is null)
             || reference.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty) is not { } molUser || !(molUser.IsMmc || molUser.IsHero || molUser.Kind == "asl:crew")))
         {
             outside.Add("asl.a1.fire.mol-outside");
@@ -893,7 +933,8 @@ public static class ScenarioA1FireCalculator
     /// <summary>
     /// A DC's attack (A23.1 to A23.63; rulings R15.2, R15.3): a DC of the catalog and its Personnel user; no firer or leader joins it; a Placed DC
     /// detonates in its side's AFPh, a Thrown one in a friendly fire phase or as Defensive First Fire, at an ADJACENT Location (the target) or its
-    /// thrower's own (the thrower's); every unit there is attacked, of either side, and a Location holding a vehicle is not reviewed (backlog).
+    /// thrower's own (the thrower's); every unit there is attacked, of either side, and a Location holding a vehicle is not reviewed (backlog) unless the
+    /// DC names it, an AFV (A23.5; pass 60, ruling R60.16).
     /// </summary>
     private static void DemolitionChargeOutside(FireAttack attack, FireDemolitionCharge charge, ScenarioA1FireReference reference,
         IReadOnlyList<FireDefinition?> targetDefinitions, List<string> outside)
@@ -921,7 +962,7 @@ public static class ScenarioA1FireCalculator
         if (attack.Targets!.Any(item => item.LocationId != attack.TargetLocationId)
             || attack.Targets!.Zip(targetDefinitions).Any(pair => pair.Second is null
                 || (pair.Second != DummyDefinition && sides.Contains(pair.Second.Nationality) != (pair.First.Friendly == true)))
-            || (attack.Vehicles ?? []).Count > 0 || !ScenarioA1FireReference.Tem.ContainsKey(attack.TargetTerrain!))
+            || (attack.Vehicles ?? []).Any(item => item.VehicleId != attack.TargetVehicle?.VehicleId) || !ScenarioA1FireReference.Tem.ContainsKey(attack.TargetTerrain!))
         {
             outside.Add("asl.a1.fire.target-outside");
         }
@@ -1124,7 +1165,9 @@ public static class ScenarioA1FireCalculator
         || rolls.BerserkChecks?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
         || rolls.CrewChecks?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
         || rolls.UnlikelyKill?.Values.Any(dr => dr is < 1 or > 6) == true
-        || rolls.MolCheck is < 1 or > 6;
+        || rolls.MolCheck is < 1 or > 6
+        || !Dice(rolls.Position, allowEmpty: true) || !Dice(rolls.CrewSurvival, allowEmpty: true) || !Dice(rolls.TaskCheck, allowEmpty: true)
+        || !Dice(rolls.CollateralCheck, allowEmpty: true);
 
     /// <summary>Whether a unit may fire in this attack under the fire-phase and First Fire rules (A7.1, A8.1, A8.3, A8.31, A8.4, A9.2).</summary>
     /// <summary>A leader firing one MG, alone or with a stacked SMC as his partner (A9.12; ruling R12.4); he has no inherent FP.</summary>
@@ -1336,6 +1379,18 @@ public static class ScenarioA1FireCalculator
         return within ? null : cover;
     }
 
+    /// <summary>
+    /// What a proposal states of a FT, MOL, or DC at the AFV it names before any roll (A22.34, A22.612, C7.346; pass 60, rulings R60.15, R60.16): the
+    /// Final TK# with its modifiers, or the Position DRM; null for any other attack.
+    /// </summary>
+    public static string? NamedVehicleTerms(FireAttack attack, ScenarioA1FireReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(reference);
+        return attack.TargetVehicle is { DefinitionId: { } id } named && reference.Armor.TryGetValue(id, out var armor) && (attack.Firers is { Count: > 0 } || attack.DemolitionCharge is not null)
+            ? new Resolution(attack, reference).Terms(named, armor) : null;
+    }
+
     /// <summary>One resolution, with the target units' changing state.</summary>
     private sealed class Resolution(FireAttack attack, ScenarioA1FireReference reference)
     {
@@ -1356,6 +1411,14 @@ public static class ScenarioA1FireCalculator
 
         // A23.4 (ruling R15.2): whether the DC's Original DR reached its malfunction number.
         private bool dcMalfunctioned;
+
+        // Pass 60 (rulings R60.15, R60.16): a FT, MOL, or DC at a named AFV: its Position DR, To Kill DR, and Specific Collateral Attack, and whether the
+        // attack spares the Location's units or the AFV's crew the IFT attack.
+        private FirePosition? position;
+        private OrdnanceKill? vehicleKill;
+        private OrdnanceCollateral? specificCollateral;
+        private bool targetsSpared;
+        private bool vehicleSpared;
 
         /// <summary>A FT attack (A22; ruling R15.1): its one firer's one weapon is a FT.</summary>
         private bool Flamethrower => (attack.Firers ?? []).SelectMany(item => item.Weapons ?? [])
@@ -1426,7 +1489,11 @@ public static class ScenarioA1FireCalculator
             // arithmetic does not tell the firing side which it was (A12.3, A12.13; ruling R21.1). A vehicle is a Known target.
             // A12.13 (ruling R6.7): a concealed vehicle is attacked on the halved FP's column, as a concealed unit is.
             var knownVehicles = vehicles.Count(item => item.Concealed != true);
-            var arithmetic = Arithmetic(known.Length > 0 || knownVehicles > 0, concealed.Length > 0 || knownVehicles < vehicles.Count || (known.Length == 0 && vehicles.Count == 0));
+
+            // A22.34 (pass 60, ruling R60.15): a FT at a named AFV attacks it alone, at its full FP.
+            var flameAtAfv = attack.TargetVehicle is not null && Flamethrower;
+            var arithmetic = flameAtAfv ? Arithmetic(true, false)
+                : Arithmetic(known.Length > 0 || knownVehicles > 0, concealed.Length > 0 || knownVehicles < vehicles.Count || (known.Length == 0 && vehicles.Count == 0));
             if (arithmetic is null)
             {
                 return Refused(FireResolution.Indeterminate, undecided);
@@ -1435,26 +1502,33 @@ public static class ScenarioA1FireCalculator
             usedRolls.Add("attack");
             var concealedResult = arithmetic.Concealed?.Result ?? arithmetic.Result;
 
+            // A22.34, A22.612, A23.5, C7.346 (pass 60, rulings R60.15, R60.16): a FT, MOL, or DC at the AFV it names.
+            if (attack.TargetVehicle is not null && !NamedVehicleAttack(arithmetic))
+            {
+                return Refused(FireResolution.Indeterminate, undecided.Distinct().ToArray());
+            }
+
             // A7.83 (ruling R12.3): the pinned movers of a mixed stack take the result of their own Final DR.
             var split = arithmetic.PinnedFinalDr is not null;
             TargetState[] Unpinned(TargetState[] group) => split ? [.. group.Where(unit => !unit.Target.Pinned.GetValueOrDefault())] : group;
             TargetState[] PinnedOf(TargetState[] group) => split ? [.. group.Where(unit => unit.Target.Pinned == true)] : [];
-            if (Unpinned(known) is { Length: > 0 } knownUnpinned)
+            // Pass 60 (rulings R60.15, R60.16): the units of the Location are spared an attack that falls on the named AFV alone.
+            if (Unpinned(known) is { Length: > 0 } knownUnpinned && !targetsSpared)
             {
                 ApplyGroup(arithmetic.Result, knownUnpinned, arithmetic, concealedGroup: false, pinnedGroup: false);
             }
 
-            if (PinnedOf(known) is { Length: > 0 } knownPinned && undecided.Count == 0)
+            if (PinnedOf(known) is { Length: > 0 } knownPinned && undecided.Count == 0 && !targetsSpared)
             {
                 ApplyGroup(arithmetic.PinnedResult!, knownPinned, arithmetic, concealedGroup: false, pinnedGroup: true);
             }
 
-            if (Unpinned(concealed) is { Length: > 0 } concealedUnpinned && undecided.Count == 0)
+            if (Unpinned(concealed) is { Length: > 0 } concealedUnpinned && undecided.Count == 0 && !targetsSpared)
             {
                 ApplyGroup(concealedResult, concealedUnpinned, arithmetic, concealedGroup: true, pinnedGroup: false);
             }
 
-            if (PinnedOf(concealed) is { Length: > 0 } concealedPinned && undecided.Count == 0)
+            if (PinnedOf(concealed) is { Length: > 0 } concealedPinned && undecided.Count == 0 && !targetsSpared)
             {
                 ApplyGroup(arithmetic.PinnedConcealedResult ?? arithmetic.PinnedResult!, concealedPinned, arithmetic, concealedGroup: true, pinnedGroup: true);
             }
@@ -1475,7 +1549,7 @@ public static class ScenarioA1FireCalculator
 
             // A12.14: a concealed target loses "?" on a PTC or worse result; a hidden unit is placed without "?" (A12.3,
             // A12.31); a Dummy that loses "?" in the LOS of a Good Order enemy is removed (A12.11).
-            if (concealedResult != "none")
+            if (concealedResult != "none" && !targetsSpared)
             {
                 foreach (var unit in concealed)
                 {
@@ -1504,7 +1578,7 @@ public static class ScenarioA1FireCalculator
 
             var overrunEffect = attack.Overrun is { } overrunning ? OverrunEffect(overrunning, arithmetic) : null;
             var firerEffects = attack.FireKind == FinalProtectiveFire ? FinalProtectiveFireChecks(arithmetic) : null;
-            var vehicleEffects = vehicles.Count == 0 ? null : VehicleEffects(arithmetic);
+            var vehicleEffects = vehicles.Count == 0 || vehicleSpared ? null : VehicleEffects(arithmetic);
             if (undecided.Count != 0)
             {
                 return Refused(FireResolution.Indeterminate, undecided.Distinct().ToArray());
@@ -1542,7 +1616,353 @@ public static class ScenarioA1FireCalculator
                 FlamethrowerRemoved = weapons?.FirstOrDefault(item => item.Malfunctioned
                     && (attack.Firers ?? []).SelectMany(firer => firer.Weapons ?? []).Any(weapon => weapon.EquipmentId == item.EquipmentId
                         && reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsFt == true))?.EquipmentId,
+                Position = position,
+                VehicleKill = vehicleKill,
+                SpecificCollateral = specificCollateral,
             };
+        }
+
+        /// <summary>
+        /// A FT, MOL, or DC at the AFV it names (A22.34, A22.612, A23.5, C7.344, C7.346, D.8A; pass 60, rulings R60.15, R60.16). A FT's DR is its To Kill
+        /// DR on the FT/MOL column, and the Location's other units are spared. A MOL that passed its Check makes the same DR its To Kill DR, and its four FP
+        /// go to the crew's Specific Collateral Attack alone; one that failed, or broke its user, attacks as before, the AFV's CE crew by a General
+        /// Collateral Attack. A DC rolls its Position DR: at the malfunction number nothing detonates; 12 or more spares the AFV and attacks the other
+        /// units; less spares them, and its second DR, the IFT DR, is the To Kill DR (8 or less) or the crew's attack (9 to 11). If the AFV stands, its
+        /// CE crew takes the Specific Collateral Attack on that DR. False when a roll is missing.
+        /// </summary>
+        private bool NamedVehicleAttack(FireArithmetic arithmetic)
+        {
+            var named = attack.TargetVehicle!;
+            var armor = reference.Armor[named.DefinitionId!];
+            var dice = arithmetic.Dice;
+            decimal collateralFp;
+            var shift = 0;
+            OrdnanceKill? kill = null;
+            if (attack.DemolitionCharge is { } charge)
+            {
+                if (attack.Rolls!.Position is not { } positionDice)
+                {
+                    undecided.Add("asl.a1.fire.roll-missing:position");
+                    return false;
+                }
+
+                usedRolls.Add("position");
+                position = Position(charge, named, armor, positionDice);
+                vehicleSpared = true;
+
+                // A23.4 (p. 90): "An Original malfunction DR of 12 (or >= 10 if captured) for a Placed/Thrown DC attack" removes it without detonation.
+                if (position.OriginalDr >= AssaultWeaponRemoval(reference.Definitions[charge.DefinitionId!], reference.Definitions.GetValueOrDefault(charge.UserDefinitionId ?? string.Empty),
+                    charge.Captured == true, charge.Inexperienced == true))
+                {
+                    dcMalfunctioned = true;
+                    targetsSpared = true;
+                    return true;
+                }
+
+                if (position.Result == FirePosition.None)
+                {
+                    return true;
+                }
+
+                targetsSpared = true;
+                collateralFp = reference.Definitions[charge.DefinitionId!].Firepower!.Value;
+                if (position.Result != FirePosition.Poor)
+                {
+                    kill = ChargeKill(named, armor, position, dice);
+                    if (kill is null)
+                    {
+                        return false;
+                    }
+                }
+            }
+            else if (Flamethrower)
+            {
+                targetsSpared = vehicleSpared = true;
+                collateralFp = arithmetic.TotalFirepower;
+                shift = arithmetic.ColumnShift;
+                kill = FlameKill(ScenarioA1FlameKill.Flamethrower, named, armor, dice);
+            }
+            else
+            {
+                if (molCheck is not { Passed: true, UserBroken: false })
+                {
+                    return true;
+                }
+
+                vehicleSpared = true;
+                collateralFp = arithmetic.TotalFirepower + 4;
+                shift = arithmetic.ColumnShift;
+                kill = FlameKill(ScenarioA1FlameKill.Molotov, named, armor, dice);
+            }
+
+            if (kill is not null && !KillChecks(ref kill, named, armor))
+            {
+                return false;
+            }
+
+            vehicleKill = kill;
+
+            // D.8, D.8A (p. 192; pass 60): an AFV left standing exposes its Vulnerable crew to a full-strength attack with the CE DRM alone, on the same
+            // Original DR; none after a Dud, a Shock, or an Abandonment, nor at a crew stunned, shocked, or BU.
+            var standing = kill is null || (kill.Result is not (OrdnanceKill.Dud or OrdnanceKill.Burn or OrdnanceKill.Eliminated or OrdnanceKill.Shock)
+                && kill.Shocked != true && kill.Abandoned != true);
+            if (!standing || named.CrewExposed != true || named.CrewImpaired == true || named.Abandoned == true)
+            {
+                return true;
+            }
+
+            var column = Array.FindLastIndex(ScenarioA1FireReference.ColumnFp, fp => fp <= collateralFp) - shift;
+            if (column < 0)
+            {
+                return true;
+            }
+
+            var morale = named.CrewMorale ?? reference.AfvCrewMorale(armor.Nationality)!.Value;
+            var final = dice[0] + dice[1] + 2;
+            var result = reference.Result(final, column);
+            if (CrewChecks(result))
+            {
+                if (attack.Rolls!.CollateralCheck is null)
+                {
+                    undecided.Add("asl.a1.fire.roll-missing:collateralCheck");
+                    return false;
+                }
+
+                usedRolls.Add("collateralCheck");
+            }
+
+            var (check, crew) = CrewOutcome(result, attack.Rolls!.CollateralCheck, named.StunRecovery == true, morale, named.CrewMorale);
+            specificCollateral = new OrdnanceCollateral(ScenarioA1FireReference.ColumnFp[column], result,
+                new FireVehicleEffect(named.VehicleId!, named.DefinitionId!, FireVehicleEffect.None, null, [new FireModifier("crew-exposed", 2m, "D5.31")], final, null, check, crew));
+            return true;
+        }
+
+        /// <summary>What a proposal states of the attack on the named AFV: the FT's or MOL's Final TK# with its modifiers, or the DC's Position DRM.</summary>
+        public string? Terms(OrdnanceVehicleTarget named, ArmorDefinition armor)
+        {
+            if (attack.DemolitionCharge is null && !Flamethrower && (attack.Firers ?? []).All(item => item.Mol != true))
+            {
+                return null;
+            }
+
+            if (attack.DemolitionCharge is { } charge)
+            {
+                var drm = Position(charge, named, armor, [1, 1]).Drm;
+                return $"a Position DR at {named.VehicleId} first{ScenarioA1FlameKill.ModifierText(drm)} (C7.346): 5 or less, a To Kill DR against 16 less its Aerial AF; "
+                    + "6 to 8, against 16 less its AF; 9 to 11, its CE crew alone; 12 or more, the Location's other units alone, as Area Fire";
+            }
+
+            var ft = Flamethrower;
+            var kill = FlameKill(ft ? ScenarioA1FlameKill.Flamethrower : ScenarioA1FlameKill.Molotov, named, armor, [1, 1]);
+            return $"a To Kill DR at {named.VehicleId} on the {(ft ? "FT" : "MOL")} column, Basic TK# {kill.BasicTk}{ScenarioA1FlameKill.ModifierText(kill.Modifications)}, "
+                + $"no AF: Final TK# {kill.FinalTk}; below it burns, equal eliminates (C7.34, C7.344){(ft ? string.Empty : ", if the MOL Check passes (A22.612)")}";
+        }
+
+        /// <summary>
+        /// A DC's Position DR at an AFV (C7.346, p. 177; D2.41, A23.4, A23.6, A23.62): +2 for a Non-Stopped, Motion, or concealed target; +2 Thrown; +1
+        /// through the hull front; +1 CE; +1 Thrown in the AFPh but by an Opportunity Firer; +1 CX; -1 through the hull rear; -1 (-2 OT) for an elevation
+        /// advantage (Case B, applied inversely); -2 Immobile; -2 OT. The Bypass DRM is never reached: a DC is not Placed or Thrown into its own Location.
+        /// A colored dr below the white strikes a turret (C3.9).
+        /// </summary>
+        private FirePosition Position(FireDemolitionCharge charge, OrdnanceVehicleTarget named, ArmorDefinition armor, IReadOnlyList<int> dice)
+        {
+            var drm = new List<FireModifier>();
+            if (named.NonStopped == true || named.Concealed == true)
+            {
+                drm.Add(new FireModifier("non-stopped-or-concealed", 2m, "C7.346"));
+            }
+
+            if (charge.Mode == FireDemolitionCharge.Thrown)
+            {
+                drm.Add(new FireModifier("thrown-dc", 2m, "A23.6"));
+            }
+
+            if (named.HullFacing == "front")
+            {
+                drm.Add(new FireModifier("hull-front", 1m, "C7.346"));
+            }
+
+            if (named.CrewExposed == true)
+            {
+                drm.Add(new FireModifier("crew-exposed", 1m, "C7.346"));
+            }
+
+            if (charge.Mode == FireDemolitionCharge.Thrown && attack.Phase == "AFPh" && charge.OpportunityFire != true)
+            {
+                drm.Add(new FireModifier("thrown-dc-afph", 1m, "A23.62"));
+            }
+
+            if (charge.Cx == true)
+            {
+                drm.Add(new FireModifier("cx:" + charge.UserId, 1m, "A23.4"));
+            }
+
+            if (named.HullFacing == "rear")
+            {
+                drm.Add(new FireModifier("hull-rear", -1m, "C7.346"));
+            }
+
+            if (attack.SameLevel == false && attack.TargetLevelAbove is < 0)
+            {
+                drm.Add(new FireModifier("case-b", armor.OpenTopped ? -2m : -1m, "C7.22"));
+            }
+
+            if (named.Immobile == true)
+            {
+                drm.Add(new FireModifier("immobile", -2m, "C7.346"));
+            }
+
+            if (armor.OpenTopped)
+            {
+                drm.Add(new FireModifier("open-topped", -2m, "C7.346"));
+            }
+
+            var original = dice[0] + dice[1];
+            var final = original + (int)drm.Sum(item => item.Value);
+            return new FirePosition([.. dice], original, drm, final, armor.Turreted && dice[0] < dice[1] ? "turret" : "hull", ScenarioA1FlameKill.PositionResult(final));
+        }
+
+        /// <summary>
+        /// A DC's To Kill DR (C7.346, C7.21, C7.12; p. 190): the Basic TK# of 16, +1 through the rear Target Facing of the part struck, less the Aerial AF
+        /// (an optimal Position) or the AF of that part's facing; results on the DC column.
+        /// </summary>
+        private static OrdnanceKill ChargeKill(OrdnanceVehicleTarget named, ArmorDefinition armor, FirePosition position, IReadOnlyList<int> dice)
+        {
+            var location = position.HitLocation;
+            var facing = location == "turret" ? named.TurretFacing ?? named.HullFacing ?? "rear" : named.HullFacing ?? "rear";
+            var basic = ScenarioA1FlameKill.BasicTk(ScenarioA1FlameKill.DemolitionCharge);
+            var modifiers = new List<FireModifier>();
+            if (facing == "rear")
+            {
+                modifiers.Add(new FireModifier("case-a", 1m, "C7.21"));
+            }
+
+            var modified = basic + (int)modifiers.Sum(item => item.Value);
+            var af = position.Result == FirePosition.Optimal ? ScenarioA1FlameKill.AerialAf(armor)!.Value : ScenarioA1ArmorReference.ArmorFactor(armor, location, facing)!.Value;
+            var finalTk = modified - af;
+            var dr = dice[0] + dice[1];
+            return new OrdnanceKill(ScenarioA1FlameKill.DemolitionCharge, location, facing, basic, modifiers, modified, af, finalTk, [.. dice], dr,
+                ScenarioA1FlameKill.ChargeResult(dr, finalTk, location == "turret"));
+        }
+
+        /// <summary>
+        /// A FT's or MOL's To Kill DR (A22.34, A22.612, C7.344, C7.21, C7.22, C.8; p. 190), on its Original DR with nothing added: a FT's Basic TK# of 8,
+        /// halved at Long Range before +1 CE and +2 OT (both if both); a MOL's of 6, +2 OT or else +1 CE, -2 against a moving target, and +1 (+2 OT) from at
+        /// least a level higher; both +1 through the rear (any attack from within the AFV's Location); no AF. Results on the FT/MOL column.
+        /// </summary>
+        private OrdnanceKill FlameKill(string weapon, OrdnanceVehicleTarget named, ArmorDefinition armor, IReadOnlyList<int> dice)
+        {
+            var basic = ScenarioA1FlameKill.BasicTk(weapon);
+            var modifiers = new List<FireModifier>();
+            var firer = attack.Firers![0];
+            if (weapon == ScenarioA1FlameKill.Flamethrower)
+            {
+                // C7.344: halved first, so the halving is the first modification.
+                var ft = firer.Weapons!.Select(item => reference.Definitions[item.DefinitionId!]).First(item => item.IsFt);
+                if (RangeOf(attack, firer) > ft.Range)
+                {
+                    modifiers.Add(new FireModifier("long-range", -basic / 2m, "C7.344"));
+                }
+
+                if (named.CrewExposed == true)
+                {
+                    modifiers.Add(new FireModifier("crew-exposed", 1m, "A22.34"));
+                }
+
+                if (armor.OpenTopped)
+                {
+                    modifiers.Add(new FireModifier("open-topped", 2m, "A22.34"));
+                }
+            }
+            else
+            {
+                if (armor.OpenTopped)
+                {
+                    modifiers.Add(new FireModifier("open-topped", 2m, "A22.612"));
+                }
+                else if (named.CrewExposed == true)
+                {
+                    modifiers.Add(new FireModifier("crew-exposed", 1m, "A22.612"));
+                }
+
+                if (named.Moving == true)
+                {
+                    modifiers.Add(new FireModifier("moving-target", -2m, "C.8"));
+                }
+
+                var mol = attack.Firers!.First(item => item.Mol == true);
+                if (LevelAboveOf(attack, mol) < 0)
+                {
+                    modifiers.Add(new FireModifier("case-b", armor.OpenTopped ? 2m : 1m, "C7.22"));
+                }
+            }
+
+            var facing = named.HullFacing ?? "rear";
+            if (facing == "rear")
+            {
+                modifiers.Add(new FireModifier("case-a", 1m, "C7.21"));
+            }
+
+            var finalTk = basic + (int)modifiers.Sum(item => item.Value);
+            var dr = dice[0] + dice[1];
+            return new OrdnanceKill(weapon, "hull", facing, basic, modifiers, finalTk, null, finalTk, [.. dice], dr, ScenarioA1FlameKill.FlameResult(dr, finalTk));
+        }
+
+        /// <summary>
+        /// The crew's checks after a To Kill result (C7.42, D5.5, D5.6), as an ordnance hit's are: a DC's Shock is automatic; its Immobilization makes the
+        /// crew take a TC, failure Abandoning the AFV; an elimination that is no burning wreck gives the crew its Crew Survival DR, +1 when it was
+        /// Stunned, Shocked, Recalled, or under a "+1" counter. False when a roll is missing.
+        /// </summary>
+        private bool KillChecks(ref OrdnanceKill kill, OrdnanceVehicleTarget named, ArmorDefinition armor)
+        {
+            var plusOne = named.StunRecovery == true ? 1 : 0;
+            if (kill.Result == OrdnanceKill.Shock)
+            {
+                kill = kill with
+                {
+                    Shocked = true
+                };
+            }
+            else if (kill.Result == OrdnanceKill.Immobilized && named.CrewMayTakeTc == true)
+            {
+                if (attack.Rolls!.TaskCheck is not { } check)
+                {
+                    undecided.Add("asl.a1.fire.roll-missing:taskCheck");
+                    return false;
+                }
+
+                usedRolls.Add("taskCheck");
+                var morale = named.CrewMorale ?? reference.AfvCrewMorale(armor.Nationality)!.Value;
+                var total = check[0] + check[1];
+                var passed = total + plusOne <= morale;
+                IReadOnlyList<FireModifier> checkDrm = plusOne == 0 ? [] : [new FireModifier("stun", 1, "D5.34")];
+                kill = kill with
+                {
+                    CrewCheck = new FireCheck("TC", [.. check], total, checkDrm, total + plusOne, morale, passed, passed ? "none" : "abandoned")
+                    {
+                        MoraleSource = ScenarioA1ArmorLeaders.MoraleSource(named.CrewMorale),
+                    },
+                    Abandoned = passed ? null : true,
+                };
+            }
+            else if (kill.Result == OrdnanceKill.Eliminated && armor.CrewSurvival is { } cs && !armor.CrewSurvivalPassengersOnly && named.Abandoned != true)
+            {
+                if (attack.Rolls!.CrewSurvival is not { } survival)
+                {
+                    undecided.Add("asl.a1.fire.roll-missing:crewSurvival");
+                    return false;
+                }
+
+                usedRolls.Add("crewSurvival");
+                var drmValue = named.CrewImpaired == true || named.StunRecovery == true ? 1 : 0;
+                var finalDr = survival[0] + survival[1] + drmValue;
+                kill = kill with
+                {
+                    CrewSurvival = new OrdnanceCrewSurvival([.. survival], drmValue, finalDr, cs, finalDr <= cs)
+                };
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -2060,7 +2480,7 @@ public static class ScenarioA1FireCalculator
             decimal known = 0, vsConcealed = 0;
 
             // A22.611 (ruling R15.4): the MOL Check dr, made before the IFT DR: 1 to 3 passes, +1 for a HS or crew, +2 for a SMC, +1 when CX, and +1
-            // against a non-AFV (always, here: an AFV target is not reviewed).
+            // against a non-AFV: every attack but one that names an AFV (A22.612; pass 60, ruling R60.15).
             if ((attack.Firers ?? []).FirstOrDefault(item => item.Mol == true) is { } molFirer && molCheck is null)
             {
                 if (attack.Rolls!.MolCheck is not { } molDr)
@@ -2086,7 +2506,11 @@ public static class ScenarioA1FireCalculator
                     molDrm.Add(new FireModifier("cx", 1m, "A22.611"));
                 }
 
-                molDrm.Add(new FireModifier("non-afv", 1m, "A22.611"));
+                if (attack.TargetVehicle is null)
+                {
+                    molDrm.Add(new FireModifier("non-afv", 1m, "A22.611"));
+                }
+
                 var molFinal = molDr + (int)molDrm.Sum(item => item.Value);
                 // A22.6111: an Original colored dr of 6 on the IFT DR breaks the MOL's user and voids its FP and the MOL's.
                 molCheck = new FireMolCheck(molFirer.UnitId!, molDr, molDrm, molFinal, molFinal <= 3, molFinal <= 3 && dice is [6, _]);
@@ -2129,6 +2553,14 @@ public static class ScenarioA1FireCalculator
                 {
                     List<FireModifier> multipliers = placedConcealed || (charge.Mode != FireDemolitionCharge.Placed && concealedTargets)
                         ? [new FireModifier("area-fire-concealed-target", 0.5m, "A23.1")] : [];
+
+                    // C7.346 (p. 177; pass 60, ruling R60.16): a DC at a named AFV attacks the Location's other units, on a Position DR of 12 or more, as Area
+                    // Fire.
+                    if (attack.TargetVehicle is not null && charge.Mode != FireDemolitionCharge.Thrower)
+                    {
+                        multipliers.Add(new FireModifier("area-fire-afv-target", 0.5m, "C7.346"));
+                    }
+
                     return new FirerFirepower(charge.EquipmentId!, printed, multipliers, multipliers.Aggregate((decimal)printed, (value, item) => value * item.Value));
                 }
 
@@ -2215,8 +2647,9 @@ public static class ScenarioA1FireCalculator
                     vsConcealed = concealedFp.Sum(item => item.Firepower);
                 }
 
-                // A22.611 (ruling R15.4): a passed MOL adds four FP after every other modification, unless its user broke on the colored dr.
-                if (molCheck is { Passed: true, UserBroken: false } bonus)
+                // A22.611 (ruling R15.4): a passed MOL adds four FP after every other modification, unless its user broke on the colored dr. A22.612 (pass
+                // 60, ruling R60.15): at a named AFV the four FP go to its crew's Specific Collateral Attack alone, and the other units take the rest.
+                if (molCheck is { Passed: true, UserBroken: false } bonus && attack.TargetVehicle is null)
                 {
                     if (hasKnown)
                     {
@@ -2403,16 +2836,18 @@ public static class ScenarioA1FireCalculator
                 drm.Add(new FireModifier("encircled:" + encircled.UnitId, 1m, "A7.7"));
             }
 
-            // A4.51 (ruling R5.2): +1 when a CX unit makes or directs the attack, once however many do.
+            // A4.51 (ruling R5.2): +1 when a CX unit makes or directs the attack, once however many do. A23.4, A23.6, A23.62, C7.346 (pass 60, ruling
+            // R60.16): a DC at a named AFV takes its CX, Thrown, and AFPh DRM on its Position DR instead.
+            var chargeAtAfv = attack.DemolitionCharge is not null && attack.TargetVehicle is not null;
             if (((attack.Firers ?? []).FirstOrDefault(item => item.Cx == true)?.UnitId ?? Directors(attack).FirstOrDefault(item => item.Cx == true)?.UnitId
-                ?? (attack.DemolitionCharge is { Cx: true } cxCharge ? cxCharge.UserId : null)) is { } exhausted)
+                ?? (attack.DemolitionCharge is { Cx: true } cxCharge && !chargeAtAfv ? cxCharge.UserId : null)) is { } exhausted)
             {
                 drm.Add(new FireModifier("cx:" + exhausted, 1m, attack.DemolitionCharge is null ? "A4.51" : "A23.4"));
             }
 
             // A23.6, A23.62 (ruling R15.3): a Thrown DC is +2 at its target and +3 at its thrower's Location, each +1 more in the AFPh unless its
             // thrower is an Opportunity Firer.
-            if (attack.DemolitionCharge is { Mode: not FireDemolitionCharge.Placed } thrown)
+            if (attack.DemolitionCharge is { Mode: not FireDemolitionCharge.Placed } thrown && !chargeAtAfv)
             {
                 drm.Add(thrown.Mode == FireDemolitionCharge.Thrown ? new FireModifier("thrown-dc", 2m, "A23.6") : new FireModifier("thrower-location", 3m, "A23.6"));
                 if (attack.Phase == "AFPh" && thrown.OpportunityFire != true)
@@ -2559,8 +2994,9 @@ public static class ScenarioA1FireCalculator
                 second = new FireColumn(vsConcealed, c2, s2, r2);
             }
 
-            // A23.4 (ruling R15.2): a DC's Original DR at its malfunction number removes it with no effect.
-            if (attack.DemolitionCharge is { Mode: not FireDemolitionCharge.Thrower } exploded && original >= AssaultWeaponRemoval(reference.Definitions[exploded.DefinitionId!],
+            // A23.4 (ruling R15.2): a DC's Original DR at its malfunction number removes it with no effect. C7.346 (pass 60, ruling R60.16): at a named AFV,
+            // its Original Position DR does instead.
+            if (attack.DemolitionCharge is { Mode: not FireDemolitionCharge.Thrower } exploded && !chargeAtAfv && original >= AssaultWeaponRemoval(reference.Definitions[exploded.DefinitionId!],
                 reference.Definitions.GetValueOrDefault(exploded.UserDefinitionId ?? string.Empty), exploded.Captured == true, exploded.Inexperienced == true))
             {
                 dcMalfunctioned = true;
@@ -3692,7 +4128,9 @@ public static class ScenarioA1FireCalculator
                 .Concat(rolls.BerserkChecks?.Keys.Select(id => "berserkCheck:" + id) ?? [])
                 .Concat(rolls.CrewChecks?.Keys.Select(id => "crewCheck:" + id) ?? [])
                 .Concat(rolls.UnlikelyKill?.Keys.Select(id => "unlikelyKill:" + id) ?? [])
-                .Concat(rolls.MolCheck is null ? [] : ["molCheck"]);
+                .Concat(rolls.MolCheck is null ? [] : ["molCheck"])
+                .Concat(new[] { ("position", rolls.Position), ("crewSurvival", rolls.CrewSurvival), ("taskCheck", rolls.TaskCheck), ("collateralCheck", rolls.CollateralCheck) }
+                    .Where(item => item.Item2 is not null).Select(item => item.Item1));
             return supplied.Where(key => !usedRolls.Contains(key)).Select(key => "asl.a1.fire.extra-roll:" + key).ToList();
         }
 

@@ -693,4 +693,261 @@ public sealed class ScenarioA1Pass60RulesTests
         }, [1, 1], ift: [3, 4]);
         Assert.DoesNotContain(older.CriticalHit!.Arithmetic!.Drm, item => item.Name == "critical-hit-tem:height-advantage");
     }
+
+    // Increment 2d: FT, MOL, and DC at an AFV (A22.34, A22.612, A23.5, C7.344, C7.346, C7.7, D.8A; rulings R60.15, R60.16). A Russian squad's FT, MOL, or
+    // DC at the German PzKpfw IIIH (AF 6 front, 3 side, turret 4 both; worst 3, Aerial AF 2) or the OT SPW 251/1 (AF 1).
+    private const string FiredFrom = "bd01:F5:0";
+
+    private static FireFirer Squad(string id = "ru-1") => new(id, "defender-squad", FiredFrom, false, false, false, false, false)
+    {
+        KnownEnemyInLos = true,
+        Captors = [],
+    };
+
+    private static FireFirer FtSquad() => Squad() with
+    {
+        Weapons = [new FireWeapon("ru-ft", "defender-ft", false, false, false)],
+        UsesInherentFp = false,
+        UsesSupportWeapon = true,
+    };
+
+    private static OrdnanceVehicleTarget Named(string facing = "rear", bool ce = true, string vehicle = "attacker-tank") =>
+        new("de-afv", vehicle, facing, vehicle == "attacker-tank" ? facing : null, false, false, false, false, true)
+        {
+            CrewExposed = ce,
+        };
+
+    private static FireAttack AtAfv(FireFirer firer, OrdnanceVehicleTarget named, int range = 1, FireTarget[]? others = null) =>
+        new FireAttack("PFPh", "phasing", true, FiredFrom, At, [firer], null, range, true, new FireLos(false, 0, true, false), 7, "open-ground", others ?? [], 3,
+            new FireRolls(null, null, null, null))
+        {
+            Vehicles = [new FireVehicle("de-afv", named.DefinitionId, At, named.CrewExposed, false, false, false)],
+            TargetVehicle = named,
+        };
+
+    private static FireAttack Charge(string mode, OrdnanceVehicleTarget named, FireTarget[]? others = null, string user = "defender-elite-squad", string dc = "defender-dc") =>
+        new FireAttack(mode == FireDemolitionCharge.Placed ? "AFPh" : "PFPh", "phasing", null, FiredFrom, At, null, null, 1, true, null, 7, "open-ground", others ?? [], 3,
+            new FireRolls(null, null, null, null))
+        {
+            DemolitionCharge = new FireDemolitionCharge("ru-dc", dc, mode, "ru-1", user, false, false, mode == FireDemolitionCharge.Placed ? false : null, null),
+            Vehicles = [new FireVehicle("de-afv", named.DefinitionId, At, named.CrewExposed, false, false, false)],
+            TargetVehicle = named,
+        };
+
+    /// <summary>Resolves an attack on the given IFT DR, Position DR, and check DR, every check DR 2, 2 unless given.</summary>
+    private static FireResolution Named(FireAttack attack, int[] dice, int[]? position = null, int molCheck = 1, int[]? checks = null)
+    {
+        IReadOnlyList<int> check = checks ?? [2, 2];
+        var rolls = new FireRolls(dice, null, null, null)
+        {
+            MolCheck = attack.Firers?.Any(item => item.Mol == true) == true ? molCheck : null,
+            Position = position,
+        };
+        for (var step = 0; step < 10; step++)
+        {
+            var result = ScenarioA1FireCalculator.Resolve(attack with
+            {
+                Rolls = rolls
+            }, Reference.Fire);
+            rolls = result.Reasons switch
+            {
+                ["asl.a1.fire.roll-missing:crewSurvival"] => rolls with { CrewSurvival = check },
+                ["asl.a1.fire.roll-missing:taskCheck"] => rolls with { TaskCheck = check },
+                ["asl.a1.fire.roll-missing:collateralCheck"] => rolls with { CollateralCheck = check },
+                ["asl.a1.fire.roll-missing:crewCheck:de-afv"] => rolls with { CrewChecks = new Dictionary<string, IReadOnlyList<int>> { ["de-afv"] = check } },
+                [var other, ..] when other.StartsWith("asl.a1.fire.roll-missing:checks:", StringComparison.Ordinal) => rolls with
+                {
+                    Checks = new Dictionary<string, IReadOnlyList<int>>(rolls.Checks ?? new Dictionary<string, IReadOnlyList<int>>()) { [other["asl.a1.fire.roll-missing:checks:".Length..]] = check }
+                },
+                _ => null!,
+            };
+            if (rolls is null)
+            {
+                Assert.Equal(FireResolution.Resolved, result.Disposition);
+                return result;
+            }
+        }
+
+        throw new InvalidOperationException("The attack asked for too many rolls.");
+    }
+
+    [Fact]
+    public void AFlamethrowersTkNumberIsEightHalvedAtLongRangeFirstThenCeOtAndRear()
+    {
+        // C7.344, A22.34 (p. 177, 89): 8, +1 CE, +1 through the rear: 10; at Long Range halved first: 4 +1 = 5 from the front; at the OT halftrack
+        // +2 OT and +1 CE: 11 from the side; never an AF.
+        var rear = Named(AtAfv(FtSquad(), Named()), [6, 6]).VehicleKill!;
+        Assert.Equal((8, 10, (int?)null), (rear.BasicTk!.Value, rear.FinalTk, rear.ArmorFactor));
+        Assert.Equal(["crew-exposed", "case-a"], rear.Modifications.Select(item => item.Name));
+        var far = Named(AtAfv(FtSquad(), Named("front"), range: 2), [6, 6]).VehicleKill!;
+        Assert.Equal(5, far.FinalTk);
+        Assert.Equal(["long-range", "crew-exposed"], far.Modifications.Select(item => item.Name));
+        var halftrack = Named(AtAfv(FtSquad(), Named("side", vehicle: "attacker-halftrack")), [6, 6]).VehicleKill!;
+        Assert.Equal(11, halftrack.FinalTk);
+    }
+
+    [Fact]
+    public void TheFtMolColumnBurnsBelowEliminatesOnEqualAndLeavesTheCrewItsSpecificCollateralAttack()
+    {
+        // C7.7 (p. 190), C7.6: below the Final TK# of 10 burns, equal eliminates with Crew Survival, one above does nothing, an Original 12 is a Dud.
+        var attack = AtAfv(FtSquad(), Named());
+        var burns = Named(attack, [4, 5]);
+        Assert.Equal(OrdnanceKill.Burn, burns.VehicleKill!.Result);
+        Assert.Null(burns.SpecificCollateral);
+        Assert.Empty(burns.Effects);
+        var eliminated = Named(attack, [4, 6]);
+        Assert.Equal(OrdnanceKill.Eliminated, eliminated.VehicleKill!.Result);
+        Assert.NotNull(eliminated.VehicleKill.CrewSurvival);
+        Assert.Null(eliminated.SpecificCollateral);
+        Assert.Equal(OrdnanceKill.Dud, Named(attack, [6, 6]).VehicleKill!.Result);
+        Assert.Null(Named(attack, [6, 6]).SpecificCollateral);
+
+        // D.8A: the AFV stands on 11, and its CE crew takes the FT's 24 FP on that DR, +2 for CE alone: 13. Not CE, no attack.
+        var stands = Named(attack, [5, 6]);
+        Assert.Equal(OrdnanceKill.None, stands.VehicleKill!.Result);
+        Assert.Equal((24, 13), (stands.SpecificCollateral!.Firepower, stands.SpecificCollateral.Effect.FinalDr));
+        Assert.Equal(Reference.Fire.Result(13, Array.IndexOf(ScenarioA1FireReference.ColumnFp, 24)), stands.SpecificCollateral.Result);
+        Assert.Null(stands.VehicleEffects);
+        Assert.Null(Named(AtAfv(FtSquad(), Named(ce: false)), [5, 6]).SpecificCollateral);
+
+        // At Long Range, 12 FP: a Final TK# of 5 from the front; a DR of 7 leaves it standing, and the crew takes 12 FP on 9.
+        var far = Named(AtAfv(FtSquad(), Named("front"), range: 2), [3, 4]);
+        Assert.Equal((12, 9), (far.SpecificCollateral!.Firepower, far.SpecificCollateral.Effect.FinalDr));
+    }
+
+    [Fact]
+    public void AMolsOneDrIsItsToKillDrTheCrewsAttackWithFourMoreFpAndTheOthersAttack()
+    {
+        // A22.612 (p. 89, 90): 6, +1 CE (closed-topped), +1 rear: 8. The squad beside the AFV takes the squad's own 8 FP (PBF) without the MOL's
+        // four; the crew 12 FP with +2 CE. The MOL Check takes no non-AFV drm.
+        var squad = Target("de-s", "attacker-squad");
+        var attack = AtAfv(Squad() with
+        {
+            Mol = true
+        }, Named(), others: [squad]);
+        var standing = Named(attack, [4, 5]);
+        Assert.Equal((8, OrdnanceKill.None), (standing.VehicleKill!.FinalTk, standing.VehicleKill.Result));
+        Assert.Equal(8m, standing.Arithmetic!.TotalFirepower);
+        Assert.DoesNotContain(standing.MolCheck!.Drm, item => item.Name == "non-afv");
+        Assert.Equal((12, 11), (standing.SpecificCollateral!.Firepower, standing.SpecificCollateral.Effect.FinalDr));
+        Assert.Single(standing.Effects);
+        Assert.Equal(OrdnanceKill.Burn, Named(attack, [3, 4]).VehicleKill!.Result);
+
+        // C.8, D2.41: -2 against a moving AFV, the D2.41 +2 being a DC's alone; +2 OT replaces +1 CE.
+        var moving = Named(attack with
+        {
+            TargetVehicle = Named() with
+            {
+                Moving = true
+            }
+        }, [4, 5]);
+        Assert.Equal(6, moving.VehicleKill!.FinalTk);
+        var open = Named(AtAfv(Squad() with
+        {
+            Mol = true
+        }, Named("side", vehicle: "attacker-halftrack")), [4, 5]);
+        Assert.Equal(["open-topped"], open.VehicleKill!.Modifications.Select(item => item.Name));
+
+        // A failed Check: no To Kill DR; the crew takes a General Collateral Attack with the others, without the four FP.
+        var failed = Named(attack, [4, 5], molCheck: 5);
+        Assert.False(failed.MolCheck!.Passed);
+        Assert.Null(failed.VehicleKill);
+        Assert.Equal("de-afv", failed.VehicleEffects!.Single().VehicleId);
+    }
+
+    [Fact]
+    public void ADcsPositionDrPicksTheAfAndItsDcColumnBurnsKillsImmobilizesAndShocks()
+    {
+        // C7.346 (p. 177): a Placed DC through the hull side, the crew BU: no DRM. Position 1, 2 (3): optimal, a turret hit (colored below white), the
+        // Aerial AF 2: TK# 14. The DC column: 7 or less burns, below 14 eliminates, 14 and 15 Shock a turret.
+        var placed = Charge(FireDemolitionCharge.Placed, Named("side", ce: false));
+        var optimal = Named(placed, [3, 4], position: [1, 2]);
+        Assert.Equal((FirePosition.Optimal, "turret"), (optimal.Position!.Result, optimal.Position.HitLocation));
+        Assert.Equal((2, 14), (optimal.VehicleKill!.ArmorFactor!.Value, optimal.VehicleKill.FinalTk));
+        Assert.Equal(OrdnanceKill.Burn, optimal.VehicleKill.Result);
+        Assert.Equal(OrdnanceKill.Eliminated, Named(placed, [6, 5], position: [1, 2]).VehicleKill!.Result);
+
+        // Position 4, 3 (7): positioned, a hull hit against the side AF 3: TK# 13; a 7 eliminates, an Original 12 is a Dud.
+        var hull = Named(placed, [6, 1], position: [4, 3]);
+        Assert.Equal((FirePosition.Positioned, "hull"), (hull.Position!.Result, hull.Position.HitLocation));
+        Assert.Equal((3, 13, OrdnanceKill.Eliminated), (hull.VehicleKill!.ArmorFactor!.Value, hull.VehicleKill.FinalTk, hull.VehicleKill.Result));
+        Assert.Equal(OrdnanceKill.Dud, Named(placed, [6, 6], position: [4, 3]).VehicleKill!.Result);
+
+        // Through the hull front (+1 on the Position DR), AF 6: TK# 10. 10 and 11 immobilize a hull hit, and the crew takes its TC: a 12 Abandons it.
+        var front = Charge(FireDemolitionCharge.Placed, Named("front", ce: false));
+        var immobilized = Named(front, [5, 5], position: [4, 3]);
+        Assert.Equal((10, OrdnanceKill.Immobilized), (immobilized.VehicleKill!.FinalTk, immobilized.VehicleKill.Result));
+        Assert.True(immobilized.VehicleKill.CrewCheck!.Passed);
+        var abandoned = Named(front, [5, 6], position: [4, 3], checks: [6, 6]);
+        Assert.Equal((OrdnanceKill.Immobilized, true), (abandoned.VehicleKill!.Result, abandoned.VehicleKill.Abandoned));
+
+        // Through the rear the TK# rises by one and the Position DR falls by one.
+        var rear = Named(Charge(FireDemolitionCharge.Placed, Named("rear", ce: false)), [6, 1], position: [4, 4]);
+        Assert.Contains(rear.Position!.Drm, item => item.Name == "hull-rear" && item.Value == -1);
+        Assert.Equal(14, rear.VehicleKill!.FinalTk);
+
+        // A German DC at the T-34's turret front (AF 11, inferior turret 8): TK# 8; 8 and 9 Shock a turret hit, 7 eliminates, 4 burns.
+        var german = Charge(FireDemolitionCharge.Placed, Named("front", ce: false, vehicle: "defender-tank"), user: "attacker-squad", dc: "attacker-dc");
+        var shocked = Named(german, [4, 5], position: [2, 3]);
+        Assert.Equal(("turret", 8), (shocked.Position!.HitLocation, shocked.VehicleKill!.FinalTk));
+        Assert.Equal((OrdnanceKill.Shock, true), (shocked.VehicleKill.Result, shocked.VehicleKill.Shocked));
+        Assert.Equal(OrdnanceKill.Eliminated, Named(german, [3, 4], position: [2, 3]).VehicleKill!.Result);
+        Assert.Equal(OrdnanceKill.Burn, Named(german, [2, 2], position: [2, 3]).VehicleKill!.Result);
+    }
+
+    [Fact]
+    public void ADcPoorlyPositionedAttacksTheCrewOnTheSecondDrAndOneOfTwelveOrMoreTheOthersAsAreaFire()
+    {
+        // C7.346: a Thrown DC at a CE AFV through the hull front: +2 Thrown, +1 front, +1 CE. Position 2, 3 (5 + 4 = 9): poor; the crew alone takes
+        // 30 FP on the IFT DR 3, 4, +2 CE: 9. The squad beside it is spared.
+        var squad = Target("de-s", "attacker-squad");
+        var thrown = Charge(FireDemolitionCharge.Thrown, Named("front"), [squad]);
+        var poor = Named(thrown, [3, 4], position: [2, 3]);
+        Assert.Equal((9, FirePosition.Poor), (poor.Position!.FinalDr, poor.Position.Result));
+        Assert.Equal(["thrown-dc", "hull-front", "crew-exposed"], poor.Position.Drm.Select(item => item.Name));
+        Assert.Null(poor.VehicleKill);
+        Assert.Equal((30, 9), (poor.SpecificCollateral!.Firepower, poor.SpecificCollateral.Effect.FinalDr));
+        Assert.False(poor.Effects.Single().Broken || poor.Effects.Single().Pinned || poor.Effects.Single().Eliminated);
+
+        // Position 4, 4 (12): no effect on the AFV or its crew; the squad takes 15 FP as Area Fire, with no Thrown DRM on the IFT DR.
+        var none = Named(thrown, [2, 2], position: [4, 4]);
+        Assert.Equal(FirePosition.None, none.Position!.Result);
+        Assert.Null(none.SpecificCollateral);
+        Assert.Null(none.VehicleEffects);
+        Assert.Equal(15m, none.Arithmetic!.TotalFirepower);
+        Assert.DoesNotContain(none.Arithmetic.Drm, item => item.Name == "thrown-dc");
+
+        // A23.4: an Original Position DR of 12 malfunctions the DC; nothing is attacked.
+        var dud = Named(thrown, [2, 2], position: [6, 6]);
+        Assert.True(dud.DemolitionChargeMalfunctioned);
+        Assert.Null(dud.VehicleKill);
+        Assert.False(dud.Effects.Single().Broken);
+
+        // OT and Immobile are -2 each; the AFPh +1 for a Thrown DC but by an Opportunity Firer.
+        var halftrack = Named(Charge(FireDemolitionCharge.Thrown, Named("side", vehicle: "attacker-halftrack") with
+        {
+            Immobile = true
+        }) with
+        {
+            Phase = "AFPh"
+        }, [3, 4], position: [3, 3]);
+        Assert.Equal(["thrown-dc", "crew-exposed", "thrown-dc-afph", "immobile", "open-topped"], halftrack.Position!.Drm.Select(item => item.Name));
+    }
+
+    [Fact]
+    public void OnlyAFtMolOrDcNamesAnEnemyArmoredVehicleInTheTargetLocation()
+    {
+        // R60.15: a squad's own fire names none; a vehicle not in the Location, a friendly one, or one beside concealed units is refused.
+        Assert.Contains("asl.a1.fire.target-vehicle-outside", ScenarioA1FireCalculator.Resolve(AtAfv(Squad(), Named()), Reference.Fire).Reasons);
+        Assert.Contains("asl.a1.fire.target-vehicle-outside", ScenarioA1FireCalculator.Resolve(AtAfv(FtSquad(), Named()) with
+        {
+            Vehicles = null
+        }, Reference.Fire).Reasons);
+        Assert.Contains("asl.a1.fire.target-vehicle-outside", ScenarioA1FireCalculator.Resolve(AtAfv(FtSquad(), Named(vehicle: "defender-tank")), Reference.Fire).Reasons);
+        Assert.Contains("asl.a1.fire.target-vehicle-concealed", ScenarioA1FireCalculator.Resolve(AtAfv(FtSquad(), Named(),
+            others: [Target("de-s", "attacker-squad") with { Concealed = true }]), Reference.Fire).Reasons);
+
+        // The proposal states the Final TK# and its modifiers.
+        Assert.Contains("Final TK# 10", ScenarioA1FireCalculator.NamedVehicleTerms(AtAfv(FtSquad(), Named()), Reference.Fire), StringComparison.Ordinal);
+    }
 }

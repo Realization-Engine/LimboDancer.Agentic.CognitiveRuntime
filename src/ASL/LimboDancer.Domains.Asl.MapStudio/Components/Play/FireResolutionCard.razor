@@ -22,6 +22,16 @@
                 }
             </ul>
         }
+        @* Pass 60 (rulings R60.15, R60.16): a FT's, MOL's, or DC's attack on the AFV it named. *@
+        @if (Record.NamedVehicle is { Count: > 0 } named)
+        {
+            <ul class="fire-named-vehicle">
+                @foreach (var line in named)
+                {
+                    <li>@DisplayText.Sentence(Record.Say(line)).</li>
+                }
+            </ul>
+        }
         @if (Record.Effects is { } effects && (effects.Count > 0 || Record.Vehicles is not { Count: > 0 }))
         {
             <InfantryFireEffectsTable Effects="@effects" BrokenBefore="@Record.BrokenBefore" PinnedBefore="@Record.PinnedBefore" Say="@Record.Say" />

@@ -158,6 +158,12 @@ public static class ScenarioA1FireFollowUps
             "crewCheck" => (2, "fire-crew-check"),
             "unlikelyKill" => (1, "fire-unlikely-kill"),
             "molCheck" => (1, "fire-mol-check"),
+
+            // Pass 60 (rulings R60.15, R60.16): a DC's Position DR, and the crew's checks of a FT, MOL, or DC at a named AFV.
+            "position" => (2, "fire-dc-position"),
+            "crewSurvival" => (2, "fire-crew-survival"),
+            "taskCheck" => (2, "fire-task-check"),
+            "collateralCheck" => (2, "fire-collateral-check"),
             _ => (1, "fire-wound-severity"),
         };
         return new FireNextStep(false, null, key, count, purpose, null);
@@ -170,6 +176,13 @@ public static class ScenarioA1FireFollowUps
         ArgumentNullException.ThrowIfNull(targets);
         var hiddenResult = arithmetic.Concealed?.Result ?? arithmetic.Result;
         return hiddenResult == "none" && (targets.Count == 0 || targets.Any(item => item.Concealed == true || item.Hidden == true || item.Dummy == true));
+    }
+
+    /// <summary>The same for an attack that may name an AFV (pass 60, ruling R60.15): an attack on a named AFV is always told to its firing side, which sees the AFV.</summary>
+    public static bool HidesIdentity(FireAttack attack, FireArithmetic arithmetic)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        return attack.TargetVehicle is null && HidesIdentity(arithmetic, attack.Targets!);
     }
 
     /// <summary>A10.62: a broken target attacked by FP that could inflict at least a NMC, allowing for Cowering, is under DM; <paramref name="couldCauseNmc"/> is the attack's read, by column (concealed or known).</summary>

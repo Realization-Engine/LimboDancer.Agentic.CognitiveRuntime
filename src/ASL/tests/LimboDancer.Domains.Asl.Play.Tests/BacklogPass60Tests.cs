@@ -38,6 +38,9 @@ public sealed class BacklogPass60Tests : IDisposable
     private readonly StubLos los = new();
     private readonly Pass60Board board = new();
 
+    // The SSRs a test's game is set up with, such as the MOL's (A22.6).
+    private string[] rules = [];
+
     public BacklogPass60Tests() => store = new FileGameStore(root);
 
     public void Dispose()
@@ -175,6 +178,7 @@ public sealed class BacklogPass60Tests : IDisposable
                 ["catalog"] = "asl-scenario-a1@1.17.0",
                 ["boards"] = Bd01,
                 ["firstSide"] = firstSide,
+                ["specialRules"] = rules,
                 ["scenarioMonth"] = month,
                 ["scenarioYear"] = year,
                 ["sides"] = new object[]
@@ -503,6 +507,127 @@ public sealed class BacklogPass60Tests : IDisposable
         Assert.Equal(11, shot.Resolution.GetProperty("hit").GetProperty("arithmetic").GetProperty("finalDr").GetInt32());
         var upper = shot.Resolution.GetProperty("levelHits").EnumerateArray().Single();
         Assert.Equal(("r2", 10), (upper.GetProperty("effects")[0].GetProperty("unitId").GetString(), upper.GetProperty("arithmetic").GetProperty("finalDr").GetInt32()));
+        NoReplayErrors();
+    }
+
+    // Increment 2d: FT, MOL, and DC at an AFV (A22.34, A22.612, A23.5, C7.346; rulings R60.15, R60.16). The attacker in B9, beside the AFV in B8,
+    // which faces north-east, so the attack crosses its rear.
+    private const string Beside = "bd01:B9:0";
+
+    /// <summary>A FT or DC possessed by its holder.</summary>
+    private static Dictionary<string, object> Held(string id, string kind, string definition, string holder, string side)
+    {
+        var weapon = Latw(id, definition, holder, side);
+        weapon["kind"] = kind;
+        return weapon;
+    }
+
+    private FireResolved LastFire(long before) => Since(before).Select(item => item.Payload).OfType<FireResolved>().First();
+
+    private GameState Current => Planner().Replay(store.Read(Scope)!.Events).Current!;
+
+    [Fact]
+    public async Task AFtAtACeTankMakesItsToKillDrAndAttacksItsCrew()
+    {
+        // A22.34, C7.344: 8, +1 CE, +1 rear: TK# 10; a DR of 11 leaves the PzKpfw IIIH standing, and its CE crew takes the FT's 24 FP on that DR with +2 for
+        // CE alone (D.8A). The FT runs out of fuel on its Original 11 (A22.5).
+        await Setup("russian", "german", 1943, 7, Unit("r1", "asl:squad", "defender-squad", Beside, "russian"), Held("ru-ft", "asl:ft", "defender-ft", "r1", "russian"),
+            Vehicle("de-tank", "attacker-tank", Target, "german", "north-east", crewExposed: true));
+        var before = Revision;
+        var result = await Do(GameActions.Fire, Once(5, 6, 2, 2), new
+        {
+            firers = new[] { "r1" },
+            target = Target,
+            weapons = new Dictionary<string, string[]> { ["r1"] = ["ru-ft"] },
+            vehicle = "de-tank",
+        });
+        Committed(result);
+        Assert.Contains(result.Plan!.Reasons, reason => reason.Contains("on the FT column, Basic TK# 8, CE +1, rear +1, no AF: Final TK# 10", StringComparison.Ordinal));
+        var fire = LastFire(before);
+        Assert.Equal(("de-tank", "rear"), (fire.Facts.GetProperty("targetVehicle").GetProperty("vehicleId").GetString(),
+            fire.Facts.GetProperty("targetVehicle").GetProperty("hullFacing").GetString()));
+        var kill = fire.Resolution.GetProperty("vehicleKill");
+        Assert.Equal(("ft", 10, 11, "none"), (kill.GetProperty("ammunition").GetString(), kill.GetProperty("finalTk").GetInt32(), kill.GetProperty("originalDr").GetInt32(),
+            kill.GetProperty("result").GetString()));
+        var collateral = fire.Resolution.GetProperty("specificCollateral");
+        Assert.Equal((24, 13), (collateral.GetProperty("firepower").GetInt32(), collateral.GetProperty("effect").GetProperty("finalDr").GetInt32()));
+        Assert.Equal(InstanceStatus.Eliminated, Current.Find("ru-ft")!.Status);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AMolAtATankBesideASquadBurnsItAndAttacksTheSquadWithoutTheFourFp()
+    {
+        // A22.612: the MOL Check dr 1 passes; 6, +1 CE, +1 rear: TK# 8, and the DR of 7 burns the PzKpfw IIIH. The same DR attacks the German squad in
+        // its Location at the Russian squad's 8 FP (PBF), not 12.
+        rules = ["mol:russian"];
+        await Setup("russian", "german", 1943, 7, Unit("r1", "asl:squad", "defender-squad", Beside, "russian"),
+            Vehicle("de-tank", "attacker-tank", Target, "german", "north-east", crewExposed: true), Unit("g1", "asl:squad", "attacker-squad", Target, "german"));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(1, 3, 4, 2, 2, 2, 2), new
+        {
+            firers = new[] { "r1" },
+            target = Target,
+            mol = "r1",
+            vehicle = "de-tank",
+        }));
+        var fire = LastFire(before);
+        Assert.Equal((8, "burn"), (fire.Resolution.GetProperty("vehicleKill").GetProperty("finalTk").GetInt32(), fire.Resolution.GetProperty("vehicleKill").GetProperty("result").GetString()));
+        Assert.Equal(8, fire.Resolution.GetProperty("arithmetic").GetProperty("totalFirepower").GetInt32());
+        Assert.Equal("g1", fire.Resolution.GetProperty("effects")[0].GetProperty("unitId").GetString());
+        Assert.False(fire.Resolution.TryGetProperty("specificCollateral", out _));
+        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("de-tank")!.Status);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task APlacedDcAtATankAfterItsPaatcBurnsIt()
+    {
+        // A23.3, A11.6: the German squad passes a PAATC (DR 4) to Place its DC from B9 in B8, where the T-34 is. A23.5, C7.346: detonated at the T-34 in
+        // the AFPh, a Position DR of 5 through the hull rear (-1) is 4: optimal, against the Aerial AF 3 (worst AF 6): TK# 16 + 1 - 3 = 14; the second DR
+        // of 7 burns it.
+        await Setup("german", "russian", 1943, 7, Unit("g1", "asl:squad", "attacker-squad", Beside, "german"), Held("dc", "asl:dc", "attacker-dc", "g1", "german"),
+            Vehicle("ru-tank", "defender-tank", Target, "russian", "north-east"));
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        var placing = Revision;
+        Committed(await Do(GameActions.Move, Once(2, 2), new
+        {
+            unitIds = new[] { "g1" },
+            to = Beside,
+            placeDc = "dc",
+            placeDcAt = Target,
+        }));
+        Assert.Contains(Since(placing), item => item.Payload is PaatcTaken { Passed: true });
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+        for (var step = 0; step < 2; step++)
+        {
+            Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+            {
+            }));
+        }
+
+        var before = Revision;
+        var result = await Do(GameActions.DetonateDc, Once(3, 4, 3, 2), new
+        {
+            equipmentId = "dc",
+            vehicle = "ru-tank",
+        });
+        Committed(result);
+        Assert.Contains(result.Plan!.Reasons, reason => reason.Contains("a Position DR at ru-tank first, hull rear -1", StringComparison.Ordinal));
+        var fire = LastFire(before);
+        var position = fire.Resolution.GetProperty("position");
+        Assert.Equal((4, "optimal", "hull"), (position.GetProperty("finalDr").GetInt32(), position.GetProperty("result").GetString(), position.GetProperty("hitLocation").GetString()));
+        var kill = fire.Resolution.GetProperty("vehicleKill");
+        Assert.Equal(("dc", 3, 14, "burn"), (kill.GetProperty("ammunition").GetString(), kill.GetProperty("armorFactor").GetInt32(), kill.GetProperty("finalTk").GetInt32(),
+            kill.GetProperty("result").GetString()));
+        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("ru-tank")!.Status);
         NoReplayErrors();
     }
 }

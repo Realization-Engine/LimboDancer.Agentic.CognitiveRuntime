@@ -16,6 +16,19 @@
         </select>
     </label>
     <LocationField Id="throw-dc-at" Label="into" Name="the Location the DC is thrown into" Value="@At" OnChange="@OnAt" />
+    @* Pass 60 (ruling R60.16): the DC may name an enemy AFV the side sees there (A23.5). *@
+    @if (Vehicles.Count > 0)
+    {
+        <label title="A23.5, C7.346: a DC named against the AFV makes a Position DR, then a To Kill DR on the C7.34 DC column.">At the AFV
+            <select id="throw-dc-vehicle" value="@Vehicle" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">none: the Location</option>
+                @foreach (var vehicle in Vehicles)
+                {
+                    <option value="@vehicle.Id">@vehicle.Label</option>
+                }
+            </select>
+        </label>
+    }
     <button id="propose-throw-dc" disabled="@(Charge.Length == 0 || At.Trim().Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: Throw the DC</button>
 </div>
 </ActionSection>
@@ -44,6 +57,17 @@
 
     [Parameter]
     public EventCallback<string> OnAt { get; set; }
+
+    /// <summary>The enemy AFVs the side sees in the Location typed (pass 60, ruling R60.16).</summary>
+    [Parameter]
+    public IReadOnlyList<PlayChoice> Vehicles { get; set; } = [];
+
+    /// <summary>The AFV the DC names, or empty.</summary>
+    [Parameter]
+    public string Vehicle { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnVehicle { get; set; }
 
     [Parameter]
     public EventCallback OnPropose { get; set; }

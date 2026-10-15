@@ -478,11 +478,19 @@ public sealed class ScenarioA1FireReference
 
     private readonly int[] killNumbers;
 
-    private ScenarioA1FireReference(string[][] results, int[] killNumbers, IReadOnlyDictionary<string, FireDefinition> definitions)
+    private ScenarioA1FireReference(string[][] results, int[] killNumbers, IReadOnlyDictionary<string, FireDefinition> definitions,
+        IReadOnlyDictionary<string, ArmorDefinition> armor)
     {
         this.results = results;
         this.killNumbers = killNumbers;
         Definitions = definitions;
+        Armor = armor;
+    }
+
+    /// <summary>The armor of the catalog's vehicles (D1.6, D1.7, D5.6; pass 60): what a FT, MOL, or DC at an AFV reads.</summary>
+    public IReadOnlyDictionary<string, ArmorDefinition> Armor
+    {
+        get;
     }
 
     /// <summary>The Vehicle line's Kill Number for a column index (A7.308).</summary>
@@ -609,7 +617,7 @@ public sealed class ScenarioA1FireReference
             throw new InvalidOperationException("The IFT Vehicle line transcription changed.");
         }
 
-        return new ScenarioA1FireReference(table, kills, ReadDefinitions(catalog.RootElement));
+        return new ScenarioA1FireReference(table, kills, ReadDefinitions(catalog.RootElement), ScenarioA1ArmorReference.ReadVehicles(catalog.RootElement));
     }
 
     /// <summary>Every definition of a reviewed catalog, by id.</summary>

@@ -1319,6 +1319,12 @@ public sealed partial class GamePlanner
             "crewCheck" => rolls with { CrewChecks = Add(rolls.CrewChecks, unit, values) },
             "unlikelyKill" => rolls with { UnlikelyKill = Add(rolls.UnlikelyKill, unit, values[0]) },
             "molCheck" => rolls with { MolCheck = values[0] },
+
+            // Pass 60 (rulings R60.15, R60.16): a DC's Position DR and the checks of a named AFV's crew.
+            "position" => rolls with { Position = values },
+            "crewSurvival" => rolls with { CrewSurvival = values },
+            "taskCheck" => rolls with { TaskCheck = values },
+            "collateralCheck" => rolls with { CollateralCheck = values },
             _ => rolls with { WoundSeverity = Add(rolls.WoundSeverity, unit, values[0]) },
         };
     }

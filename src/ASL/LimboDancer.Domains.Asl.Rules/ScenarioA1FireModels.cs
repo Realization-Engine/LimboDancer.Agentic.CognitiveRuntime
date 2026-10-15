@@ -395,6 +395,17 @@ public sealed record FireAttack(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The AFV in the target Location a FT, MOL, or DC attack is predesignated against (A22.34, A22.612, A23.5, p. 89 to 91; pass 60, ruling R60.15): its
+    /// state facts and the Target Facing of the hexside the attack crosses (none from within its Location, which is the rear). Null for every other
+    /// attack, and in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceVehicleTarget? TargetVehicle
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -1068,6 +1079,34 @@ public sealed record FireRolls(
     {
         get; init;
     }
+
+    /// <summary>The Position DR of a DC at an AFV (C7.346; pass 60, ruling R60.16).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? Position
+    {
+        get; init;
+    }
+
+    /// <summary>The Crew Survival DR of an AFV a FT, MOL, or DC eliminated (D5.6; pass 60).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? CrewSurvival
+    {
+        get; init;
+    }
+
+    /// <summary>The Immobilization TC of the crew of an AFV a DC immobilized (D5.5; pass 60).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? TaskCheck
+    {
+        get; init;
+    }
+
+    /// <summary>The MC or NTC DR of the crew of an AFV a FT, MOL, or DC attack names, in its Specific Collateral Attack (D.8A; pass 60).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? CollateralCheck
+    {
+        get; init;
+    }
 }
 
 /// <summary>One modifier with its value and rule.</summary>
@@ -1272,6 +1311,19 @@ public sealed record FireUnitEffect(
 /// </summary>
 public sealed record MgSightingFacts(bool Sighted, bool ByItsPossessor, bool AtItsSetupLocation, bool OnTheTarget, bool Dismantled);
 
+/// <summary>
+/// A DC's Position DR at an AFV (C7.346, p. 177; pass 60, ruling R60.16): the dice, the DRM, the Final DR, the hit's Location (C3.9: a colored dr below
+/// the white strikes a turret), and the result: <c>optimal</c> (5 or less, the Aerial AF), <c>positioned</c> (6 to 8, the AF), <c>poor</c> (9 to 11, the
+/// crew alone), or <c>none</c> (12 or more, the other units alone).
+/// </summary>
+public sealed record FirePosition(IReadOnlyList<int> Dice, int OriginalDr, IReadOnlyList<FireModifier> Drm, int FinalDr, string HitLocation, string Result)
+{
+    public const string Optimal = "optimal";
+    public const string Positioned = "positioned";
+    public const string Poor = "poor";
+    public const string None = "none";
+}
+
 /// <summary>The MOL Check of an attack (A22.611, A22.6111; ruling R15.4): its dr, drm, and pass, and whether the MOL user broke on a colored dr of 6.</summary>
 public sealed record FireMolCheck(string UnitId, int Dr, IReadOnlyList<FireModifier> Drm, int Final, bool Passed, bool UserBroken);
 
@@ -1364,6 +1416,30 @@ public sealed record FireResolution(
     /// <summary>The FT whose Original DR ran it out of fuel (A22.5; ruling R15.1): removed after the attack; null when none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? FlamethrowerRemoved
+    {
+        get; init;
+    }
+
+    /// <summary>The Position DR of a DC at the AFV it names (C7.346; pass 60, ruling R60.16); null for any other attack.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FirePosition? Position
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The To Kill DR of a FT, MOL, or DC at the AFV it names, on the C7.34 HE and Flame To Kill Table (A22.34, A22.612, C7.344, C7.346; pass 60,
+    /// rulings R60.15, R60.16); null when none was made.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceKill? VehicleKill
+    {
+        get; init;
+    }
+
+    /// <summary>The Specific Collateral Attack on the CE crew of the AFV a FT, MOL, or DC names (D.8A; pass 60); null when there was none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceCollateral? SpecificCollateral
     {
         get; init;
     }
