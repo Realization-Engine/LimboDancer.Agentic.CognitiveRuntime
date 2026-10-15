@@ -899,7 +899,7 @@ else if (state is not null)
         }
         @if (MapLayers is { Board: { } mapBoard } layers)
         {
-            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" OriginOf="@CounterOrigin" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@SetupMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
+            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" OriginOf="@CounterOrigin" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@MapMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => PickHex(mapBoard, facts))"
                             @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null), proposalBlock)])"
@@ -919,6 +919,12 @@ else if (state is not null)
                         <button type="button" id="play-map-zoom-out" aria-label="Zoom out" @onclick="@(() => workspace!.Zoom(1.25))">-</button>
                         <button type="button" id="play-map-fit" @onclick="@(() => workspace!.Fit())">Fit</button>
                         <button type="button" id="map-rotate" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())">Rotate map</button>
+                        @if (OwnershipFor(mapBoard) is not null)
+                        {
+                            <button type="button" id="map-parent-boundaries" aria-pressed="@(showParentBoundaries ? "true" : "false")"
+                                    title="Show formation parent boundaries and the campaign map perimeter"
+                                    @onclick="@(() => showParentBoundaries = !showParentBoundaries)">Formation boundaries</button>
+                        }
                         <span class="muted" id="play-map-keys">Drag to pan. With the map focused, + and - zoom and 0 fits. Click a hex or a counter to inspect it.</span>
                     </div>
                     @if (SetupMode && PlansOffered is { Plans.Count: > 0 } switchable)
@@ -3254,25 +3260,43 @@ else if (state is not null)
 
     private string? ownershipKey;
     private IReadOnlyDictionary<string, string>? mapOwnership;
+    private string? parentBoundaryDrawing;
+    private bool showParentBoundaries;
 
-    private IReadOnlyList<string> ParentNotes(string board, string hex)
+    private IReadOnlyDictionary<string, string>? OwnershipFor(StudioBoard board)
     {
-        var key = gameId + "/" + board;
+        var key = gameId + "/" + board.Ref.Value + "/" + board.Version;
         if (ownershipKey != key)
         {
             ownershipKey = key;
             mapOwnership = null;
+            parentBoundaryDrawing = null;
             if (gameId.StartsWith("campaign-", StringComparison.Ordinal) && Services.GetService<CampaignImport>() is { } imports)
             {
-                try { mapOwnership = imports.ReadOwnership(gameId, board); }
+                try { mapOwnership = imports.ReadOwnership(gameId, board.Ref.Value, board.Version); }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidDataException)
                 {
                     // Optional inspection metadata must not interrupt ordinary play.
                 }
             }
         }
-        return mapOwnership is null ? [] : mapOwnership.TryGetValue(hex, out var parent)
-            ? [$"Formation parent: {parent}"] : ["Outside campaign ownership: exterior compilation guard."];
+        return mapOwnership;
+    }
+
+    private IReadOnlyList<string> ParentNotes(StudioBoard board, string hex) => OwnershipFor(board) is not { } ownership ? []
+        : ownership.TryGetValue(hex, out var parent) ? [$"Formation parent: {parent}"]
+        : ["Outside campaign ownership: exterior compilation guard."];
+
+    private string? MapMarks(StudioBoard board, string? marks)
+    {
+        var setup = SetupMarks(board, marks);
+        if (!showParentBoundaries || handOver is not null || OwnershipFor(board) is not { } ownership)
+        {
+            return setup;
+        }
+        parentBoundaryDrawing ??= CampaignMapBoundaries.Draw(board.Render.Grid.Geometry, ownership);
+        return setup is { Length: > 4 } && setup.EndsWith("</g>", StringComparison.Ordinal)
+            ? $"{setup[..^4]}{parentBoundaryDrawing}</g>" : $"<g id=\"layer-marks\">{parentBoundaryDrawing}</g>";
     }
 
     private GameHistory? history;
@@ -7182,7 +7206,7 @@ else if (state is not null)
         }
 
         bool Here(BoardLocation at) => at.Board == hex.Board && at.Hex == hex.Hex;
-        return [.. ParentNotes(hex.Board.Value, hex.Hex.ToString()), .. state.ResidualFire.Where(item => Here(item.Location)).Select(item => $"{item.Fp} Residual FP in {PlaceOf(item.Location)} (A8.2)"),
+        return [.. ParentNotes(board, hex.Hex.ToString()), .. state.ResidualFire.Where(item => Here(item.Location)).Select(item => $"{item.Fp} Residual FP in {PlaceOf(item.Location)} (A8.2)"),
             .. VisibleUnits.Where(unit => GameState.Condition(unit, Conditions.Melee) == ConditionState.True && state.Location(unit.Id)?.Location is { } at && Here(at))
                 .Select(unit => state.Location(unit.Id)!.Location).Distinct().Select(at => $"Melee in {PlaceOf(at)} (A11.15)")];
     }

@@ -345,3 +345,10 @@ Thirty-one targeted Studio metadata/play-page tests passed. Three Campaign integ
 Live ownership acceptance: the existing full Goodwood save was reopened through Open Situation map, Open complete ASL setup and Recheck ASL handoff. It retained 114 formations, 624 counters and zero review findings. The 387,498-byte sidecar contains all 1,038 parents and 37,788 hexes. Opening ASL and keyboard-selecting de-rifle-01--squad-1 at MM150 displayed both the counter's original formation hex C/AA-4 and the selected hex note "Formation parent: C/AA-4". Screenshot: goodwood-hex-parent-inspection.png. The normal repeated handoff attached metadata without changing the game identity. This also supplies live counter-origin evidence for that squad; earlier unit tests cover all 624 origins.
 
 This run's map document generation took 15.353 seconds, following 1.529 seconds compile, 1.760 seconds derive and 10.103 seconds validation during repeated handoff. These are diagnostic stage observations, not controlled cold-opening measurements or a performance pass. The saved map view was rotated, as retained from prior interaction. Parent boundary drawing and final performance acceptance remain open.
+
+
+### Optional formation boundary overlay
+
+ASL Play now offers a Formation boundaries toggle when validated campaign ownership is available. It draws parent transitions and the owned perimeter in one cached SVG path, omits edges within a parent, and draws shared transitions only once. The overlay ignores pointer events and uses a non-scaling stroke. Existing setup marks are retained. The cache is scoped to game and exact displayed board version, and inspection refuses metadata for another displayed version.
+
+Thirty-four targeted Studio tests passed, including same-parent suppression, distinct-parent shared-edge deduplication, expected ASL vertex placement, deterministic output across input ordering and decimal-comma cultures, empty ownership, metadata validation and existing play-page behavior. Live full-map toggle, map-position preservation and visual acceptance remain under verification.

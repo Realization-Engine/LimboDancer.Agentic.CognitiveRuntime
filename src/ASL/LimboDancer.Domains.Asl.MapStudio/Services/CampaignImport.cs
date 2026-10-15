@@ -237,7 +237,7 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
         return File.Exists(path) ? File.ReadAllText(path, Encoding.UTF8) : null;
     }
 
-    public IReadOnlyDictionary<string, string>? ReadOwnership(string game, string board)
+    public IReadOnlyDictionary<string, string>? ReadOwnership(string game, string board, string? expectedVersion = null)
     {
         var path = ContextPath(game) + ".map.json";
         if (!File.Exists(path))
@@ -246,6 +246,10 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
         }
         var package = boards.LoadPackage(BoardRef.Parse(board)).Package
             ?? throw new InvalidDataException("Campaign ownership board is unavailable.");
+        if (expectedVersion is not null && expectedVersion != package.Version)
+        {
+            throw new InvalidDataException("Campaign ownership does not match the displayed board version.");
+        }
         return CampaignMapOwnership.Read(File.ReadAllText(path, Encoding.UTF8), package);
     }
 
