@@ -1274,7 +1274,10 @@ public sealed class ScenarioA1Pass60RulesTests
     public void ARecordNamesNoWeaponItsTargetsHoldAndWritesNoNullMembers()
     {
         // The boundary review: both sides read a record, so a concealed unit's SW are never written; the verifier reads them from the state.
-        var target = Target("de-s", "attacker-squad") with { HeldWeapons = [Held("de-lmg", "attacker-lmg")] };
+        var target = Target("de-s", "attacker-squad") with
+        {
+            HeldWeapons = [Held("de-lmg", "attacker-lmg")]
+        };
         Assert.DoesNotContain("heldWeapons", JsonSerializer.Serialize(target, Web), StringComparison.Ordinal);
         Assert.DoesNotContain("malfunctioned", JsonSerializer.Serialize(Held("de-lmg", "attacker-lmg"), Web), StringComparison.Ordinal);
         Assert.DoesNotContain("\"dr\"", JsonSerializer.Serialize(new FireWeaponDestruction("ru-gun", "ru-crew", "3KIA", "destroyed", "C11.6"), Web), StringComparison.Ordinal);
@@ -1314,7 +1317,10 @@ public sealed class ScenarioA1Pass60RulesTests
         {
             AreaAcquisition = -1
         };
-        int? Merged(int? recorded) => ScenarioA1OrdnanceEligibility.WithRecomputedStateFacts(state, state with { AreaAcquisition = recorded }, false, 0, () => 0, _ => null).AreaAcquisition;
+        int? Merged(int? recorded) => ScenarioA1OrdnanceEligibility.WithRecomputedStateFacts(state, state with
+        {
+            AreaAcquisition = recorded
+        }, false, 0, () => 0, _ => null).AreaAcquisition;
         Assert.Equal(((int?)-1, (int?)null), (Merged(-2), Merged(null)));
     }
 

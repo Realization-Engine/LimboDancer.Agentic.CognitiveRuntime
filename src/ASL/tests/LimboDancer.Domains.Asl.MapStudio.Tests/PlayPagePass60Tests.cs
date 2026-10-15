@@ -17,6 +17,8 @@ namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 /// </summary>
 public sealed class PlayPagePass60Tests : IDisposable
 {
+    private static readonly string[] G1 = ["g1"];
+
     private const string Game = "pass60";
     private readonly string root = Path.Combine(Path.GetTempPath(), "asl-play-60-" + Guid.NewGuid().ToString("N"));
     private readonly ScriptedDice dice = new();
@@ -191,7 +193,7 @@ public sealed class PlayPagePass60Tests : IDisposable
         dice.Enqueue([2, 2]);
         await Do(GameActions.Move, new
         {
-            unitIds = new[] { "g1" },
+            unitIds = G1,
             to = At(5),
             placeDc = "dc",
             placeDcAt = At(6),

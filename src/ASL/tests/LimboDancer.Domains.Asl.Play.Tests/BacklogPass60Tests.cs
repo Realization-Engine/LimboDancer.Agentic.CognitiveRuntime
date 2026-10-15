@@ -24,6 +24,9 @@ public sealed class BacklogPass60Tests : IDisposable
     private static readonly Guid Tenant = Guid.Parse("7b1d2c3e-0000-4000-8000-00000000f560");
     private static readonly GameScope Scope = new(Tenant, "pass60");
     private static readonly UnitVocabulary Vocabulary = UnitVocabulary.Asl();
+    private static readonly string[] R1 = ["r1"];
+    private static readonly string[] R1R2 = ["r1", "r2"];
+    private static readonly string[] G1 = ["g1"];
     private static readonly UnitCatalog Catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary)!.Catalog!;
     private static readonly string[] Bd01 = ["bd01"];
     private const string Firer = "bd01:B10:0";
@@ -558,7 +561,7 @@ public sealed class BacklogPass60Tests : IDisposable
         var before = Revision;
         var result = await Do(GameActions.Fire, Once(5, 6, 2, 2), new
         {
-            firers = new[] { "r1" },
+            firers = R1,
             target = Target,
             weapons = new Dictionary<string, string[]> { ["r1"] = ["ru-ft"] },
             vehicle = "de-tank",
@@ -588,7 +591,7 @@ public sealed class BacklogPass60Tests : IDisposable
         var before = Revision;
         Committed(await Do(GameActions.Fire, Once(1, 3, 4, 2, 2, 2, 2), new
         {
-            firers = new[] { "r1" },
+            firers = R1,
             target = Target,
             mol = "r1",
             vehicle = "de-tank",
@@ -616,7 +619,7 @@ public sealed class BacklogPass60Tests : IDisposable
         var placing = Revision;
         Committed(await Do(GameActions.Move, Once(2, 2), new
         {
-            unitIds = new[] { "g1" },
+            unitIds = G1,
             to = Beside,
             placeDc = "dc",
             placeDcAt = Target,
@@ -675,7 +678,7 @@ public sealed class BacklogPass60Tests : IDisposable
         }));
         Committed(await Do(GameActions.Move, Once(2, 2), new
         {
-            unitIds = new[] { "g1" },
+            unitIds = G1,
             to = Beside,
             placeDc = "dc",
             placeDcAt = Target,
@@ -728,7 +731,7 @@ public sealed class BacklogPass60Tests : IDisposable
             Unit("g1", "asl:squad", "attacker-squad", Target, "german"), Held("de-lmg", "asl:mg", "attacker-lmg", "g1", "german"));
         Committed(await Do(GameActions.Fire, Once(dice), new
         {
-            firers = new[] { "r1", "r2" },
+            firers = R1R2,
             target = Target,
         }));
     }
