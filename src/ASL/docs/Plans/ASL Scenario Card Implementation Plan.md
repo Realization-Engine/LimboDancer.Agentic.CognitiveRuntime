@@ -8,7 +8,7 @@
 
 **What stays in the Redesign Plan.** The decisions the rule passes rest on, under their numbers: section 19, decision 5 (rules and cards are separate tracks, and this track is deferred), decision 6 (complete rule coverage of Chapters A to E; Chapters F, G, and H deferred), and decision 7 (every ASL rule in the Rules project). The rule passes, 35 to 185, are its sections 22.1 and 23; "playable after pass N" below names those passes, and its section 4 has the renumberings they follow.
 
-**Related documents:** the [ASL Unit Backlog](<../ASL Unit Backlog.md>) (sections 32 and 33); the [ASL Rule Coverage](<../ASL Rule Coverage.md>); the [ASL Unit Scenario Card Games Plan](<ASL Unit Scenario Card Games Plan.md>) (passes 18 to 22: the card format and card-driven play).
+**Related documents:** the [ASL Unit Backlog](<../ASL Unit Backlog.md>) (sections 32 and 33); the [ASL Rule Coverage](<../ASL Rule Coverage.md>); the [ASL Unit Backlog Passes Plan](<../ASL Unit Backlog Passes Plan.md>), sections 3 and 4 (pass 17, the card format, and passes 18 to 22, card-driven play).
 
 **Contents:** section 1, the outcome and the decisions, with the method per card; section 2, what the cards need; section 3, the display batches and their schedule; section 4, risks; Appendix A, the legacy card catalog.
 

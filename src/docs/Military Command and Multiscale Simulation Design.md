@@ -788,7 +788,7 @@ Before generated maps enter executable play, choose source coverage, geographic 
 - [GameGate](../ASL/LimboDancer.Domains.Asl.Play/GameGate.cs), [GameStore](../ASL/LimboDancer.Domains.Asl.Play/GameStore.cs) and [GamePlanner](../ASL/LimboDancer.Domains.Asl.Play/GamePlanner.cs), current commit/replay and disclosure patterns.
 - [ASL LOS calculator](../ASL/LimboDancer.Domains.Asl.Maps/Los/LosCalculator.cs) and [ASL state types](../ASL/LimboDancer.Domains.Asl.Units/State/GameTypes.cs), evidence of domain-specific semantics.
 
-- **A1. Existing Scenario Card foundation:** [Card model and validation](../ASL/LimboDancer.Domains.Asl.Play/ScenarioCards.cs), [setup adapter](../ASL/LimboDancer.Domains.Asl.Play/ScenarioSetup.cs), [card reference](../ASL/LimboDancer.Domains.Asl.Units/State/GameTypes.cs), and [Scenario Card Games Plan](<../ASL/docs/ASL Unit Scenario Card Games Plan.md>), Section 1. Establishes the existing card-based entry path, core fields and ID/hash provenance. Section 14.12 proposes operational extensions; it does not claim they are implemented.
+- **A1. Existing Scenario Card foundation:** [Card model and validation](../ASL/LimboDancer.Domains.Asl.Play/ScenarioCards.cs), [setup adapter](../ASL/LimboDancer.Domains.Asl.Play/ScenarioSetup.cs), [card reference](../ASL/LimboDancer.Domains.Asl.Units/State/GameTypes.cs), and [Scenario Card Games Plan](<../ASL/docs/ASL Unit Backlog Passes Plan.md>), now section 3 of the ASL Unit Backlog Passes Plan ("Passes 18 to 22: card-driven play"). Establishes the existing card-based entry path, core fields and ID/hash provenance. Section 14.12 proposes operational extensions; it does not claim they are implemented.
 
 ### Corpus references used in this design
 
