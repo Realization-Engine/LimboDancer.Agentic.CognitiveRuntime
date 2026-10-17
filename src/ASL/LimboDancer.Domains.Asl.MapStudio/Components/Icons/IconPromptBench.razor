@@ -49,7 +49,7 @@
         @if (Bench.Origin is { } origin)
         {
             <p class="muted" id="icon-bench-record">
-                @(Bench.Changed
+                @(Altered
                     ? $"Saving makes a new batch; {origin.Id} stays as it was sent."
                     : $"{origin.Id} is a record of what was sent. A new name renames it; new slots, a new mode, or a new style reference save a new batch.")
             </p>
@@ -117,7 +117,7 @@
         }
         <div class="toolbar icon-bench-actions">
             <button type="button" @onclick="@(() => editingStyle = !editingStyle)" aria-expanded="@(editingStyle ? "true" : "false")">Edit the shared style</button>
-            <button type="button" id="icon-bench-save" @onclick="SaveBatch">@(Bench.BatchId is null ? "Save batch" : "Save the name")</button>
+            <button type="button" id="icon-bench-save" @onclick="SaveBatch">@(Altered || Bench.Origin is null ? "Save batch" : "Save the name")</button>
             <button type="button" class="primary" id="icon-bench-copy" @onclick="CopyPrompt">Copy prompt</button>
         </div>
 
@@ -198,7 +198,13 @@
 
     private static string ComponentOf(string control) => control.Split('#', ':')[0];
 
-    private string Title => Bench.Origin is not { } origin ? "New batch" : Bench.Changed ? $"New batch, from {origin.Id}" : $"Batch {origin.Id}";
+    private string Title => Bench.Origin is not { } origin ? "New batch" : Altered ? $"New batch, from {origin.Id}" : $"Batch {origin.Id}";
+
+    /// <summary>
+    /// Whether what would be sent differs from the opened batch: its slots, mode, or style reference, or the prompt itself, as when a brief
+    /// was edited since the batch was sent.
+    /// </summary>
+    private bool Altered => Bench.Changed || (Bench.Origin is { Sent.Length: > 0 } origin && origin.Sent != PromptText);
 
     /// <summary>
     /// Where a slot's icon will be seen: each control that uses it, its pages, the strip it sits in with the icons already beside it, and
@@ -331,12 +337,12 @@
         }
 
         // An unchanged batch keeps its id, so only its name changes; a changed one is saved as a new batch beside it.
-        var id = Bench.BatchId ?? Plan.NextBatchId(DateOnly.FromDateTime(DateTime.Now));
+        var id = !Altered && Bench.Origin is { } kept ? kept.Id : Plan.NextBatchId(DateOnly.FromDateTime(DateTime.Now));
         var name = Bench.Name.Trim() is { Length: > 0 } given ? given
             : Bench.Filled.SelectMany(Plan.ControlsOf).Select(ComponentOf).FirstOrDefault() ?? $"Batch {id}";
         var created = Plan.Batches.FirstOrDefault(batch => batch.Id == id)?.Created ?? DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-        var batch = new IconBatch(id, name, [.. Bench.Filled], Bench.Sref.Trim(), created, Bench.OneIcon);
-        var from = Bench.Changed ? Bench.Origin?.Id : null;
+        var batch = new IconBatch(id, name, [.. Bench.Filled], Bench.Sref.Trim(), created, Bench.OneIcon, PromptText);
+        var from = Altered ? Bench.Origin?.Id : null;
         await OnSaveBatch.InvokeAsync(batch);
         Bench.Load(batch);
         givenName = null;

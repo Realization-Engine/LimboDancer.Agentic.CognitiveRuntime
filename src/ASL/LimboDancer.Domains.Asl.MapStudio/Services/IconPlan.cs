@@ -29,7 +29,8 @@ public sealed record IconAssignment(string Control, string Icon);
 /// A batch of up to four briefs prompted together, in the order of Midjourney's 2x2 grid, with its style reference; or, when
 /// <see cref="OneIcon"/>, one brief prompted alone for four tries at it.
 /// </summary>
-public sealed record IconBatch(string Id, string Name, IReadOnlyList<string> Icons, string Sref, string Created, bool OneIcon = false);
+/// <see cref="Sent"/> is the prompt exactly as saved and copied, so a brief edited later does not rewrite what this batch sent.
+public sealed record IconBatch(string Id, string Name, IReadOnlyList<string> Icons, string Sref, string Created, bool OneIcon = false, string Sent = "");
 
 /// <summary>
 /// The Icon Lab's plan, kept in <c>wwwroot/icons/icon-plan.json</c> and committed with the icons: the prompt style, the briefs, which
@@ -87,9 +88,15 @@ public sealed partial record IconPlan(IconPromptStyle Style, IReadOnlyList<IconB
             : (Style.Opening.Trim() + " Icons: ", string.Join("; ", briefs.Select((brief, index) => $"{index + 1}. {Clean(brief)}")), after.ToString());
     }
 
-    /// <summary>The prompt of a saved batch, or null when one of its briefs is gone.</summary>
+    /// <summary>The prompt a saved batch sent: the one kept with it, or, for a batch saved before prompts were kept, the one its briefs make
+    /// now (null when one of them is gone).</summary>
     public string? Prompt(IconBatch batch)
     {
+        if (batch.Sent.Length > 0)
+        {
+            return batch.Sent;
+        }
+
         var briefs = batch.Icons.Select(Brief).ToList();
         return briefs.Any(brief => brief is null) ? null : Prompt(briefs!, batch.Sref, batch.OneIcon);
     }

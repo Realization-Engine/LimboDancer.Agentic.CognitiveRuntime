@@ -72,9 +72,9 @@
     {
       "key": "play",
       "label": "Play",
-      "brief": "a square olive game counter with slightly rounded corners, bearing a bold slate-navy silhouette of a WWII infantryman in a steel helmet advancing mid-stride with his rifle at the ready, play the game",
-      "meaning": "Where the side plays: its actions in the game. A squad counter with its soldier figure, as ASL is played; never a media play triangle. At 20 px only the counter and one bold figure survive.",
-      "reference": ""
+      "brief": "a square game counter with an off-white face and a thick olive frame with rounded corners, bearing a bold slate-navy silhouette of a WWII infantryman in a steel helmet advancing mid-stride with his rifle at the ready, his helmet brim, face, pack, arms, rifle, belt, and legs delineated by subtle thin white piping lines inside the silhouette, play the game",
+      "meaning": "Where the side plays: its actions in the game. A squad counter with its soldier figure, as ASL is played; never a media play triangle. The silhouette stays one bold shape: the piping is subtle hairlines, never gaps, and the face is off-white so the white piping reads. At 20 px only the counter and the figure survive.",
+      "reference": "Play, one icon, the advancing infantryman the user picked; add white piping between parts"
     }
   ],
   "assignments": [
@@ -99,7 +99,8 @@
       ],
       "sref": "",
       "created": "2026-10-17",
-      "oneIcon": false
+      "oneIcon": false,
+      "sent": ""
     },
     {
       "id": "2026-10-17-2",
@@ -112,7 +113,8 @@
       ],
       "sref": "",
       "created": "2026-10-17",
-      "oneIcon": false
+      "oneIcon": false,
+      "sent": ""
     },
     {
       "id": "2026-10-17-3",
@@ -122,7 +124,8 @@
       ],
       "sref": "",
       "created": "2026-10-17",
-      "oneIcon": true
+      "oneIcon": true,
+      "sent": "a single flat vector icon, centered on a flat solid warm cream background (#f2ecdc), no texture, filling a square with even margins, one icon only. Icon: a clipboard with a checkmark box and a pencil, a proposed order awaiting confirmation. WWII tactical wargame aesthetic, SVG icon style, vector glyph pictograms, solid ink shapes, flat fills, crisp geometric edges, bold uniform stroke weight legible at 24 pixels, simple shapes, minimal professional UI icon set. Palette strictly limited to: deep slate-navy #203446 as primary ink, muted olive green #788848, soft sage woods green #7c9c7c, brick red #a04030 as a single sparing accent, dusty steel blue #4c6878, faded khaki tan #9a8c6a, near-black charcoal #1c1c1a outlines --no text, letters, numbers, labels, shadows, gradients, panels, tiles, cell borders, grid lines, texture, grain, noise --style raw --stylize 50 --ar 1:1"
     },
     {
       "id": "2026-10-17-4",
@@ -132,7 +135,19 @@
       ],
       "sref": "",
       "created": "2026-10-17",
-      "oneIcon": true
+      "oneIcon": true,
+      "sent": "a single flat vector icon, centered on a flat solid warm cream background (#f2ecdc), no texture, filling a square with even margins, one icon only. Icon: a square olive game counter with slightly rounded corners, bearing a bold slate-navy silhouette of a WWII infantryman in a steel helmet advancing mid-stride with his rifle at the ready, play the game. WWII tactical wargame aesthetic, SVG icon style, vector glyph pictograms, solid ink shapes, flat fills, crisp geometric edges, bold uniform stroke weight legible at 24 pixels, simple shapes, minimal professional UI icon set. Palette strictly limited to: deep slate-navy #203446 as primary ink, muted olive green #788848, soft sage woods green #7c9c7c, brick red #a04030 as a single sparing accent, dusty steel blue #4c6878, faded khaki tan #9a8c6a, near-black charcoal #1c1c1a outlines --no text, letters, numbers, labels, shadows, gradients, panels, tiles, cell borders, grid lines, texture, grain, noise --style raw --stylize 50 --ar 1:1"
+    },
+    {
+      "id": "2026-10-17-5",
+      "name": "Play, with piping",
+      "icons": [
+        "play"
+      ],
+      "sref": "",
+      "created": "2026-10-17",
+      "oneIcon": true,
+      "sent": "a single flat vector icon, centered on a flat solid warm cream background (#f2ecdc), no texture, filling a square with even margins, one icon only. Icon: a square game counter with an off-white face and a thick olive frame with rounded corners, bearing a bold slate-navy silhouette of a WWII infantryman in a steel helmet advancing mid-stride with his rifle at the ready, his helmet brim, face, pack, arms, rifle, belt, and legs delineated by subtle thin white piping lines inside the silhouette, play the game. WWII tactical wargame aesthetic, SVG icon style, vector glyph pictograms, solid ink shapes, flat fills, crisp geometric edges, bold uniform stroke weight legible at 24 pixels, simple shapes, minimal professional UI icon set. Palette strictly limited to: deep slate-navy #203446 as primary ink, muted olive green #788848, soft sage woods green #7c9c7c, brick red #a04030 as a single sparing accent, dusty steel blue #4c6878, faded khaki tan #9a8c6a, near-black charcoal #1c1c1a outlines --no text, letters, numbers, labels, shadows, gradients, panels, tiles, cell borders, grid lines, texture, grain, noise --style raw --stylize 50 --ar 1:1"
     }
   ]
 }
