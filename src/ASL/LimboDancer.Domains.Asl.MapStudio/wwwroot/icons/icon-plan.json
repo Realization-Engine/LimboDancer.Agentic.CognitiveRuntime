@@ -103,6 +103,13 @@
       "brief": "a small olive pennant flag on a slate-navy pole planted on a single hexagon, victory standing",
       "meaning": "How the Victory Conditions stand after the step shown: who holds what. A flag planted on a hex is control, not a trophy or a chart.",
       "reference": "Inspector tabs, second set (2026-10-17-6): the user\u0027s pick, bottom right"
+    },
+    {
+      "key": "step",
+      "label": "Step",
+      "brief": "a short horizontal track of four square record boxes, an olive game counter sitting in the third box, a small brick red pointer above it, the step shown in the game\u0027s sequence",
+      "meaning": "The one moment of the game the replay is on: its account, when it was, what changed, its dice. A marker on a turn record track, as on an ASL card; never media playback, a row of hexes (Range), sheets or dice (Records), or a footprint (movement).",
+      "reference": ""
     }
   ],
   "assignments": [
@@ -133,6 +140,10 @@
     {
       "control": "Replay#units",
       "icon": "units"
+    },
+    {
+      "control": "Replay#step",
+      "icon": "step"
     }
   ],
   "batches": [
@@ -210,6 +221,17 @@
       "created": "2026-10-17",
       "oneIcon": false,
       "sent": "set of 4 flat vector icons, 2\u00D72 grid, evenly spaced on a flat solid warm cream background (#f2ecdc), no texture, each icon centered in an equal square cell, same size and same visual weight, every icon fits a square. Icons: 1. a stack of three ruled record sheets with a pair of dice resting on the bottom corner, the game records; 2. a stack of three square game counters, each slightly offset up and to the right, the top one bearing a small slate-navy soldier silhouette, the units in play; 3. a white die and a brick red die side by side, beside a small ruled list sheet, scripted dice for tests; 4. a small olive pennant flag on a slate-navy pole planted on a single hexagon, victory standing. WWII tactical wargame aesthetic, SVG icon style, vector glyph pictograms, solid ink shapes, flat fills, crisp geometric edges, bold uniform stroke weight legible at 24 pixels, simple shapes, minimal professional UI icon set. Palette strictly limited to: deep slate-navy #203446 as primary ink, muted olive green #788848, soft sage woods green #7c9c7c, brick red #a04030 as a single sparing accent, dusty steel blue #4c6878, faded khaki tan #9a8c6a, near-black charcoal #1c1c1a outlines --no text, letters, numbers, labels, shadows, gradients, panels, tiles, cell borders, grid lines, texture, grain, noise --style raw --stylize 50 --ar 1:1"
+    },
+    {
+      "id": "2026-10-17-7",
+      "name": "Step",
+      "icons": [
+        "step"
+      ],
+      "sref": "",
+      "created": "2026-10-17",
+      "oneIcon": true,
+      "sent": "a single flat vector icon, centered on a flat solid warm cream background (#f2ecdc), no texture, filling a square with even margins, one icon only. Icon: a short horizontal track of four square record boxes, an olive game counter sitting in the third box, a small brick red pointer above it, the step shown in the game\u0027s sequence. WWII tactical wargame aesthetic, SVG icon style, vector glyph pictograms, solid ink shapes, flat fills, crisp geometric edges, bold uniform stroke weight legible at 24 pixels, simple shapes, minimal professional UI icon set. Palette strictly limited to: deep slate-navy #203446 as primary ink, muted olive green #788848, soft sage woods green #7c9c7c, brick red #a04030 as a single sparing accent, dusty steel blue #4c6878, faded khaki tan #9a8c6a, near-black charcoal #1c1c1a outlines --no text, letters, numbers, labels, shadows, gradients, panels, tiles, cell borders, grid lines, texture, grain, noise --style raw --stylize 50 --ar 1:1"
     }
   ]
 }
