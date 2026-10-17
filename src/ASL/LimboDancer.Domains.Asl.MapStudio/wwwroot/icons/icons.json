@@ -20,6 +20,11 @@
     "group": "Map toolbar"
   },
   {
+    "key": "proposal",
+    "label": "Proposal",
+    "group": "Inspector tab"
+  },
+  {
     "key": "selection",
     "label": "Selection",
     "group": "Inspector tab"

@@ -84,6 +84,30 @@ def rotate():
         + head)
 
 
+def proposal():
+    """A clipboard with one ticked box and a pencil across its corner: an order proposed, not yet confirmed (Proposal, one icon,
+    top row 3rd)."""
+    ink = c("ink")
+    # The pencil runs up and to the right at 45 degrees: its tip at the lower left, the red eraser at the upper right.
+    along = (1 / math.sqrt(2), -1 / math.sqrt(2))
+    across = (1 / math.sqrt(2), 1 / math.sqrt(2))
+    half = 1.6
+    start, end, eraser = (12.6, 16.4), (18.4, 10.6), (20.0, 9.0)
+    tip = (start[0] - along[0] * 3, start[1] - along[1] * 3)
+    base = [(start[0] + across[0] * half, start[1] + across[1] * half), (start[0] - across[0] * half, start[1] - across[1] * half)]
+    point = " ".join(f"{f(x)},{f(y)}" for x, y in [tip, *base])
+    return svg(
+        f'<rect x="4" y="4" width="13" height="17" rx="0.6" fill="{c("eye")}" stroke="{ink}" stroke-width="2"/>'
+        f'<rect x="7.8" y="2.6" width="5.4" height="2.8" rx="0.7" fill="{c("olive")}"/>'
+        f'<circle cx="10.5" cy="2.7" r="1" fill="{c("olive")}"/>'
+        f'<rect x="6.4" y="7.4" width="5.2" height="5.2" fill="none" stroke="{ink}" stroke-width="1.4"/>'
+        f'<path d="M7.6 10.1L8.9 11.3L10.6 8.9" fill="none" stroke="{ink}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>'
+        f'<path d="M{f(start[0])} {f(start[1])}L{f(end[0])} {f(end[1])}" stroke="{c("olive")}" stroke-width="{f(half * 2)}"/>'
+        f'<path d="M{f(end[0])} {f(end[1])}L{f(end[0] + 0.7)} {f(end[1] - 0.7)}" stroke="{ink}" stroke-width="{f(half * 2)}"/>'
+        f'<path d="M{f(end[0] + 0.7)} {f(end[1] - 0.7)}L{f(eraser[0])} {f(eraser[1])}" stroke="{c("red")}" stroke-width="{f(half * 2)}"/>'
+        f'<polygon points="{point}" fill="{ink}"/>')
+
+
 def selection():
     pointer = [(0, 0), (0, 13), (3.3, 10), (5.6, 15), (8, 14), (5.7, 9.1), (10, 9.1)]
     scale, tx, ty = 0.74, 12.4, 11.2
@@ -136,6 +160,7 @@ ICONS = [
     ("zoom-out", "Zoom out", "Map toolbar", zoom("-")),
     ("fit", "Fit", "Map toolbar", fit()),
     ("rotate", "Rotate map", "Map toolbar", rotate()),
+    ("proposal", "Proposal", "Inspector tab", proposal()),
     ("selection", "Selection", "Inspector tab", selection()),
     ("los", "LOS", "Inspector tab", los()),
     ("range", "Range", "Inspector tab", range_()),

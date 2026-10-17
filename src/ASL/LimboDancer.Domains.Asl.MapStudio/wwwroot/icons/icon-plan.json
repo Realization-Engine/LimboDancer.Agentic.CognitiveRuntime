@@ -1,6 +1,6 @@
 {
   "style": {
-    "opening": "set of 4 flat vector icons, 2×2 grid, evenly spaced on a flat solid warm cream background (#f2ecdc), no texture, each icon centered in an equal square cell, same size and same visual weight, every icon fits a square.",
+    "opening": "set of 4 flat vector icons, 2\u00D72 grid, evenly spaced on a flat solid warm cream background (#f2ecdc), no texture, each icon centered in an equal square cell, same size and same visual weight, every icon fits a square.",
     "style": "WWII tactical wargame aesthetic, SVG icon style, vector glyph pictograms, solid ink shapes, flat fills, crisp geometric edges, bold uniform stroke weight legible at 24 pixels, simple shapes, minimal professional UI icon set. Palette strictly limited to: deep slate-navy #203446 as primary ink, muted olive green #788848, soft sage woods green #7c9c7c, brick red #a04030 as a single sparing accent, dusty steel blue #4c6878, faded khaki tan #9a8c6a, near-black charcoal #1c1c1a outlines",
     "parameters": "--no text, letters, numbers, labels, shadows, gradients, panels, tiles, cell borders, grid lines, texture, grain, noise --style raw --stylize 50 --ar 1:1",
     "singleOpening": "a single flat vector icon, centered on a flat solid warm cream background (#f2ecdc), no texture, filling a square with even margins, one icon only."
@@ -61,9 +61,21 @@
       "brief": "an open book with cream pages and a bold slate-navy outline, three thick horizontal bars on each page, one brick red bookmark ribbon hanging from the bottom center, evidence",
       "meaning": "The rule citations and grid samples behind what the inspector shows. Horizontal bars: vertical ones read as a barcode.",
       "reference": "Set Two, final round, top row 3rd"
+    },
+    {
+      "key": "proposal",
+      "label": "Proposal",
+      "brief": "a clipboard with a checkmark box and a pencil, a proposed order awaiting confirmation",
+      "meaning": "An order proposed but not yet carried out: the side reviews it, then confirms or cancels. Not a finished order, so not a bare checkmark.",
+      "reference": "Proposal, one icon, top row 3rd"
     }
   ],
-  "assignments": [],
+  "assignments": [
+    {
+      "control": "Play#proposal",
+      "icon": "proposal"
+    }
+  ],
   "batches": [
     {
       "id": "2026-10-17-1",
@@ -75,7 +87,8 @@
         "rotate"
       ],
       "sref": "",
-      "created": "2026-10-17"
+      "created": "2026-10-17",
+      "oneIcon": false
     },
     {
       "id": "2026-10-17-2",
@@ -87,7 +100,18 @@
         "evidence"
       ],
       "sref": "",
-      "created": "2026-10-17"
+      "created": "2026-10-17",
+      "oneIcon": false
+    },
+    {
+      "id": "2026-10-17-3",
+      "name": "Proposal",
+      "icons": [
+        "proposal"
+      ],
+      "sref": "",
+      "created": "2026-10-17",
+      "oneIcon": true
     }
   ]
 }
