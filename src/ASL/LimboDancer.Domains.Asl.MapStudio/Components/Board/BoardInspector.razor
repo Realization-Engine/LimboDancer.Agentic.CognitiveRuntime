@@ -84,7 +84,7 @@
     /// <summary>A tab the host adds, with the markup it shows when chosen; placed before the built-in tabs, or after them when <paramref name="Last"/>.</summary>
     public sealed record ExtraTab(InspectorTabs.Tab Tab, RenderFragment Content, bool Last = false);
 
-    private static readonly IReadOnlyList<InspectorTabs.Tab> BuiltIn = [new("selection", "Selection"), new("los", "LOS"), new("range", "Range"), new("evidence", "Evidence")];
+    private static readonly IReadOnlyList<InspectorTabs.Tab> BuiltIn = [new("selection", "Selection", Icon: "selection"), new("los", "LOS", Icon: "los"), new("range", "Range", Icon: "range"), new("evidence", "Evidence", Icon: "evidence")];
 
     // The hex under the pointer while none is kept. The workspace sets it here, so a hover redraws the inspector alone (pass 29).
     private HexFacts? hovered;

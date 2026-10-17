@@ -1152,6 +1152,142 @@ textarea.placements-text {
     border-color: var(--command);
 }
 
+/* ---- Icons and the Icon Lab -------------------------------------------------- */
+
+/* The icon palettes: the --i-* colors every icon in wwwroot/icons draws with. The Studio palette is the root's, so every
+   icon in the Studio draws in the Studio's tokens; the Icon Lab can show the Midjourney palette, which is also the icons'
+   fallback. The Studio has no mid green, so the Studio palette borrows sage. */
+.icon-palette-mj {
+    --i-ink: #203446;
+    --i-olive: #788848;
+    --i-sage: #7c9c7c;
+    --i-red: #a04030;
+    --i-lens: #cbd6de;
+    --i-page: #ebe2c9;
+    --i-eye: #fbf8f0;
+}
+
+:root,
+.icon-palette-studio {
+    --i-ink: var(--ink);
+    --i-olive: var(--accent);
+    --i-sage: #7c9c7c;
+    --i-red: var(--fail);
+    --i-lens: var(--info-bg);
+    --i-page: var(--warn-bg);
+    --i-eye: var(--surface);
+}
+
+/* A button whose label is an icon: square, the icon centered, the label in its tooltip and accessible name. */
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    padding: 0;
+}
+
+.icon-button svg,
+.icon-tab svg {
+    display: block;
+}
+
+.icon-button[aria-pressed="true"] {
+    background: var(--accent-tint);
+    border-color: var(--accent);
+}
+
+.icon-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.2rem;
+}
+
+.icon-lab-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+}
+
+.icon-lab-palette label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.icon-lab > section {
+    margin-bottom: 1.5rem;
+}
+
+.icon-lab-place {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2.5rem;
+    align-items: flex-start;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.icon-lab-sample {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.icon-lab-sample .tabs {
+    margin-bottom: 0;
+}
+
+.icon-lab-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.icon-lab-sizes td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.icon-lab-sizes td svg {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.icon-lab-sizes th[scope="row"] {
+    text-align: left;
+}
+
+.icon-lab-sizes th[scope="row"] span {
+    display: block;
+    font-weight: 400;
+    font-size: 0.8rem;
+}
+
+.icon-lab-detail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.icon-lab-detail figure {
+    display: grid;
+    justify-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.icon-lab-detail svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
 /* ---- Unit Lab -------------------------------------------------------------- */
 
 .lab {
