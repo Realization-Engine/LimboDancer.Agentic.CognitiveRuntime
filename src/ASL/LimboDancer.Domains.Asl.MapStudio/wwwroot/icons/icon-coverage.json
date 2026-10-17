@@ -1587,6 +1587,33 @@
         },
         {
           "kind": "tab",
+          "label": "Records",
+          "dynamic": false,
+          "id": "records",
+          "status": "needed",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
+        },
+        {
+          "kind": "tab",
+          "label": "Units",
+          "dynamic": false,
+          "id": "units",
+          "status": "needed",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
+        },
+        {
+          "kind": "tab",
+          "label": "Scripted dice",
+          "dynamic": false,
+          "id": "dice",
+          "status": "needed",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
+        },
+        {
+          "kind": "tab",
           "label": "Map",
           "dynamic": false,
           "id": "map",
