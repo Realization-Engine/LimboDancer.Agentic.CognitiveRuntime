@@ -13,7 +13,10 @@
         }
         else
         {
-            <button type="button" id="icon-bench-fill" @onclick="FillFromOneComponent">Fill the slots from one component</button>
+            @if (!Bench.OneIcon)
+            {
+                <button type="button" id="icon-bench-fill" @onclick="FillFromOneComponent">Fill the slots from one component</button>
+            }
             @foreach (var group in Queue)
             {
                 <div class="icon-bench-group">
@@ -48,14 +51,23 @@
             <input id="icon-bench-name" @bind="Bench.Name" @bind:event="oninput" placeholder="Replay transport" />
         </label>
 
-        <ol class="icon-bench-slots" aria-label="The four slots, in Midjourney's 2x2 order">
-            @for (var slot = 0; slot < IconPlan.Slots; slot++)
+        <fieldset class="plain icon-bench-mode">
+            <legend class="visually-hidden">What the prompt asks Midjourney for</legend>
+            <label><input type="radio" name="icon-bench-mode" id="icon-bench-four" checked="@(!Bench.OneIcon)" @onchange="@(() => SetOneIcon(false))" /> Set of four</label>
+            <label><input type="radio" name="icon-bench-mode" id="icon-bench-single" checked="@Bench.OneIcon" @onchange="@(() => SetOneIcon(true))" /> One icon, four tries</label>
+            <span class="muted">
+                @(Bench.OneIcon ? "Midjourney's four images are four tries at this one icon; pick the best." : "Four icons in one 2x2 set, drawn alike; the slots follow the grid.")
+            </span>
+        </fieldset>
+
+        <ol class="@(Bench.OneIcon ? "icon-bench-slots single" : "icon-bench-slots")" aria-label="@(Bench.OneIcon ? "The icon" : "The four slots, in Midjourney's 2x2 order")">
+            @for (var slot = 0; slot < Bench.Needed; slot++)
             {
                 var index = slot;
                 var key = Bench.Slots[index];
                 var brief = key is null ? null : Plan.Brief(key);
                 <li class="@(key is null ? "icon-bench-slot empty" : "icon-bench-slot")" data-slot="@(index + 1)">
-                    <span class="muted">@(index + 1), @IconPlan.SlotNames[index]</span>
+                    <span class="muted">@(Bench.OneIcon ? "The icon" : $"{index + 1}, {IconPlan.SlotNames[index]}")</span>
                     @if (key is null)
                     {
                         <span class="muted">Empty: add a brief from the list.</span>
@@ -104,7 +116,8 @@
         {
             <div class="icon-bench-style">
                 <p class="muted">Shared by every batch. A prompt is the opening, the numbered briefs, the style, the --sref, then the parameters.</p>
-                <label>Opening <textarea rows="3" @bind="opening"></textarea></label>
+                <label>Opening for a set of four <textarea rows="3" @bind="opening"></textarea></label>
+                <label>Opening for one icon <textarea rows="2" id="icon-bench-single-opening" @bind="singleOpening"></textarea></label>
                 <label>Style <textarea rows="5" @bind="style"></textarea></label>
                 <label>Parameters <textarea rows="2" @bind="parameters"></textarea></label>
                 <div class="toolbar">
@@ -143,6 +156,7 @@
     private string opening = string.Empty;
     private string style = string.Empty;
     private string parameters = string.Empty;
+    private string singleOpening = string.Empty;
     private string? message;
     private bool messageIsError;
     private IJSObjectReference? clipboard;
@@ -158,12 +172,12 @@
 
     private IReadOnlyList<IconBrief> SlotBriefs => Bench.Filled.Select(Plan.Brief).OfType<IconBrief>().ToList();
 
-    private string PromptText => Plan.Prompt(SlotBriefs, Bench.Sref);
+    private string PromptText => Plan.Prompt(SlotBriefs, Bench.Sref, Bench.OneIcon);
 
     /// <summary>The prompt with this batch's numbered briefs marked, so they stand out from the shared style around them.</summary>
     private RenderFragment PromptView => builder =>
     {
-        var (before, briefs, after) = Plan.PromptParts(SlotBriefs, Bench.Sref);
+        var (before, briefs, after) = Plan.PromptParts(SlotBriefs, Bench.Sref, Bench.OneIcon);
         builder.AddContent(0, before);
         builder.OpenElement(1, "mark");
         builder.AddAttribute(2, "class", "icon-bench-briefs");
@@ -178,13 +192,13 @@
     {
         if (!editingStyle)
         {
-            (opening, style, parameters) = (Plan.Style.Opening, Plan.Style.Style, Plan.Style.Parameters);
+            (opening, style, parameters, singleOpening) = (Plan.Style.Opening, Plan.Style.Style, Plan.Style.Parameters, Plan.Style.SingleOpening);
         }
     }
 
     private void Add(string key)
     {
-        message = Bench.Add(key) ? null : "Every slot is full; remove one first.";
+        message = Bench.Add(key) ? null : Bench.OneIcon ? "One icon holds one brief; remove it first, or switch to a set of four." : "Every slot is full; remove one first.";
         messageIsError = message is not null;
     }
 
@@ -208,6 +222,12 @@
         {
             Bench.Name = group.Key;
         }
+    }
+
+    private void SetOneIcon(bool oneIcon)
+    {
+        Bench.SetOneIcon(oneIcon);
+        message = null;
     }
 
     private void StartNew()
@@ -240,7 +260,7 @@
         var name = Bench.Name.Trim() is { Length: > 0 } given ? given
             : Bench.Filled.SelectMany(Plan.ControlsOf).Select(ComponentOf).FirstOrDefault() ?? $"Batch {id}";
         var created = Plan.Batches.FirstOrDefault(batch => batch.Id == id)?.Created ?? DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-        await OnSaveBatch.InvokeAsync(new IconBatch(id, name, [.. Bench.Filled], Bench.Sref.Trim(), created));
+        await OnSaveBatch.InvokeAsync(new IconBatch(id, name, [.. Bench.Filled], Bench.Sref.Trim(), created, Bench.OneIcon));
         Bench.BatchId = id;
         Bench.Name = name;
         (message, messageIsError) = ($"Saved as {id}.", false);
@@ -248,9 +268,9 @@
 
     private async Task CopyPrompt()
     {
-        if (SlotBriefs.Count < IconPlan.Slots)
+        if (SlotBriefs.Count < Bench.Needed)
         {
-            (message, messageIsError) = ("Fill all four slots first: the prompt asks Midjourney for a 2x2 set.", true);
+            (message, messageIsError) = (Bench.OneIcon ? "Add the brief first." : "Fill all four slots first: the prompt asks Midjourney for a 2x2 set.", true);
             return;
         }
 
@@ -268,7 +288,7 @@
     private async Task SaveStyle()
     {
         editingStyle = false;
-        await OnSaveStyle.InvokeAsync(new IconPromptStyle(opening.Trim(), style.Trim(), parameters.Trim()));
+        await OnSaveStyle.InvokeAsync(new IconPromptStyle(opening.Trim(), style.Trim(), parameters.Trim(), singleOpening.Trim()));
     }
 
     public async ValueTask DisposeAsync()

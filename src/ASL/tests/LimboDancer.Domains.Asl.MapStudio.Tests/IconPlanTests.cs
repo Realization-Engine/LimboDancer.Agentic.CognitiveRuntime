@@ -11,7 +11,7 @@ namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 /// <summary>The Icon Lab's plan: briefs, decisions, batches, the prompt they make, and the Coverage, Prompts, and Batches tabs.</summary>
 public sealed class IconPlanTests(StudioFactory factory) : IClassFixture<StudioFactory>, IDisposable
 {
-    private static readonly IconPromptStyle Style = new("set of 4 flat vector icons, 2x2 grid.", "Flat ink.", "--style raw --ar 1:1");
+    private static readonly IconPromptStyle Style = new("set of 4 flat vector icons, 2x2 grid.", "Flat ink.", "--style raw --ar 1:1", "a single flat vector icon.");
 
     private readonly BunitContext context = new();
     private readonly DirectoryInfo scratch = Directory.CreateTempSubdirectory("icon-plan-");
@@ -38,6 +38,18 @@ public sealed class IconPlanTests(StudioFactory factory) : IClassFixture<StudioF
 
         var batch = new IconBatch("2026-10-17-1", "Two", ["a", "gone"], string.Empty, "2026-10-17");
         Assert.Null(plan.WithBatch(batch).Prompt(batch));
+    }
+
+    [Fact]
+    public void AOneIconPromptOpensWithTheSingleOpeningAndNamesItsOneBriefUnnumbered()
+    {
+        var plan = Plan(Brief("proposal", "a clipboard with a checkmark box and a pencil, a proposed order awaiting confirmation."));
+        Assert.Equal("a single flat vector icon. Icon: a clipboard with a checkmark box and a pencil, a proposed order awaiting confirmation. Flat ink. --style raw --ar 1:1",
+            plan.Prompt([plan.Brief("proposal")!], string.Empty, oneIcon: true));
+
+        var batch = new IconBatch("2026-10-17-1", "Proposal", ["proposal"], string.Empty, "2026-10-17", OneIcon: true);
+        Assert.StartsWith("a single flat vector icon. Icon: a clipboard", plan.WithBatch(batch).Prompt(batch), StringComparison.Ordinal);
+        Assert.True(IconPlan.Read(plan.WithBatch(batch).Write()).Batches.Single().OneIcon);
     }
 
     [Fact]
@@ -173,6 +185,40 @@ public sealed class IconPlanTests(StudioFactory factory) : IClassFixture<StudioF
     }
 
     /// <summary>A library with no icons and no coverage.</summary>
+    [Fact]
+    public void TheBenchInOneIconModeHoldsOneBriefCopiesItAloneAndSavesASingleBatch()
+    {
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        var plan = Plan(Brief("proposal", "a clipboard with a checkmark box"), Brief("other", "something else")).WithAssignment("Play#proposal", "proposal");
+        IconBatch? saved = null;
+        var bench = new IconBench();
+        bench.Add("other");
+        bench.Add("proposal");
+        var view = context.Render<IconPromptBench>(parameters => parameters
+            .Add(component => component.Plan, plan)
+            .Add(component => component.Icons, EmptyLibrary())
+            .Add(component => component.Bench, bench)
+            .Add(component => component.OnSaveBatch, (IconBatch batch) => saved = batch));
+
+        // Switching to one icon keeps the first brief and shows one slot, with no fill from a component.
+        view.Find("#icon-bench-single").Change(true);
+        Assert.True(bench.OneIcon);
+        Assert.Equal(["other"], bench.Filled);
+        Assert.Single(view.FindAll(".icon-bench-slot"));
+        Assert.Empty(view.FindAll("#icon-bench-fill"));
+        Assert.StartsWith("a single flat vector icon. Icon: something else.", view.Find("#icon-bench-prompt").TextContent, StringComparison.Ordinal);
+
+        // The one slot is full until its brief is removed; then the next brief takes it.
+        Assert.False(bench.Add("proposal"));
+        view.FindAll(".icon-bench-slot button").First(button => button.TextContent == "Remove").Click();
+        Assert.True(bench.Add("proposal"));
+
+        view.Find("#icon-bench-save").Click();
+        Assert.Equal(["proposal"], saved!.Icons);
+        Assert.True(saved.OneIcon);
+        Assert.Equal("Play", saved.Name);
+    }
+
     private IconLibrary EmptyLibrary() => new(provider ??= new PhysicalFileProvider(scratch.FullName));
 
     private static AngleSharp.Dom.IElement Row(IRenderedComponent<IconCoverageView> view, string control) => view.Find($"tr[data-control='{control}']");

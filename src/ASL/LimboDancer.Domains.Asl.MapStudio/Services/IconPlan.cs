@@ -7,9 +7,10 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
 /// <summary>
 /// The Midjourney prompt template every batch shares. A prompt is the opening, the four numbered briefs after "Icons:", the style, the
-/// batch's <c>--sref</c> when it has one, and the parameters.
+/// batch's <c>--sref</c> when it has one, and the parameters. A one-icon batch opens with <see cref="SingleOpening"/> and has its one
+/// brief after "Icon:", so Midjourney's four images are four tries at the same icon.
 /// </summary>
-public sealed record IconPromptStyle(string Opening, string Style, string Parameters);
+public sealed record IconPromptStyle(string Opening, string Style, string Parameters, string SingleOpening = "");
 
 /// <summary>
 /// One icon to make or already made: its key (the file name in wwwroot/icons without <c>.svg</c>), the label of the control it stands
@@ -24,8 +25,11 @@ public sealed record IconBrief(string Key, string Label, string Brief, string Me
 /// </summary>
 public sealed record IconAssignment(string Control, string Icon);
 
-/// <summary>A batch of up to four briefs prompted together, in the order of Midjourney's 2x2 grid, with its style reference.</summary>
-public sealed record IconBatch(string Id, string Name, IReadOnlyList<string> Icons, string Sref, string Created);
+/// <summary>
+/// A batch of up to four briefs prompted together, in the order of Midjourney's 2x2 grid, with its style reference; or, when
+/// <see cref="OneIcon"/>, one brief prompted alone for four tries at it.
+/// </summary>
+public sealed record IconBatch(string Id, string Name, IReadOnlyList<string> Icons, string Sref, string Created, bool OneIcon = false);
 
 /// <summary>
 /// The Icon Lab's plan, kept in <c>wwwroot/icons/icon-plan.json</c> and committed with the icons: the prompt style, the briefs, which
@@ -58,18 +62,18 @@ public sealed partial record IconPlan(IconPromptStyle Style, IReadOnlyList<IconB
     public static string? ControlKey(ComponentCoverage component, ControlCoverage control) =>
         control.Id is { } id ? $"{component.Name}#{id}" : control.Dynamic ? null : $"{component.Name}:{control.Label}";
 
-    /// <summary>The full Midjourney prompt of a batch's briefs, in slot order.</summary>
-    public string Prompt(IReadOnlyList<IconBrief> briefs, string sref)
+    /// <summary>The full Midjourney prompt of a batch's briefs, in slot order; or, for one icon, of its first brief alone.</summary>
+    public string Prompt(IReadOnlyList<IconBrief> briefs, string sref, bool oneIcon = false)
     {
-        var (before, numbered, after) = PromptParts(briefs, sref);
+        var (before, numbered, after) = PromptParts(briefs, sref, oneIcon);
         return before + numbered + after;
     }
 
     /// <summary>
-    /// A prompt in three parts: the opening up to "Icons:", the numbered briefs, and the rest (the style, the --sref, the parameters), so
-    /// a page can show the batch's own words apart from the shared style.
+    /// A prompt in three parts: the opening up to "Icons:" (or "Icon:" for one icon), the briefs, and the rest (the style, the --sref,
+    /// the parameters), so a page can show the batch's own words apart from the shared style.
     /// </summary>
-    public (string Before, string Briefs, string After) PromptParts(IReadOnlyList<IconBrief> briefs, string sref)
+    public (string Before, string Briefs, string After) PromptParts(IReadOnlyList<IconBrief> briefs, string sref, bool oneIcon = false)
     {
         var after = new StringBuilder(". ").Append(Style.Style.Trim());
         if (sref.Trim() is { Length: > 0 } reference)
@@ -78,17 +82,19 @@ public sealed partial record IconPlan(IconPromptStyle Style, IReadOnlyList<IconB
         }
 
         after.Append(' ').Append(Style.Parameters.Trim());
-        return (Style.Opening.Trim() + " Icons: ",
-            string.Join("; ", briefs.Select((brief, index) => $"{index + 1}. {brief.Brief.Trim().TrimEnd('.', ';')}")),
-            after.ToString());
+        return oneIcon
+            ? (Style.SingleOpening.Trim() + " Icon: ", briefs.Count == 0 ? string.Empty : Clean(briefs[0]), after.ToString())
+            : (Style.Opening.Trim() + " Icons: ", string.Join("; ", briefs.Select((brief, index) => $"{index + 1}. {Clean(brief)}")), after.ToString());
     }
 
     /// <summary>The prompt of a saved batch, or null when one of its briefs is gone.</summary>
     public string? Prompt(IconBatch batch)
     {
         var briefs = batch.Icons.Select(Brief).ToList();
-        return briefs.Any(brief => brief is null) ? null : Prompt(briefs!, batch.Sref);
+        return briefs.Any(brief => brief is null) ? null : Prompt(briefs!, batch.Sref, batch.OneIcon);
     }
+
+    private static string Clean(IconBrief brief) => brief.Brief.Trim().TrimEnd('.', ';');
 
     public IconPlan WithBrief(IconBrief brief) =>
         this with

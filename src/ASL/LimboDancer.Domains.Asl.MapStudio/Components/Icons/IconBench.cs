@@ -19,15 +19,25 @@ public sealed class IconBench
 
     public string Sref { get; set; } = string.Empty;
 
-    public IEnumerable<string> Filled => Slots.OfType<string>();
+    /// <summary>One icon, four tries: the batch prompts the first slot's brief alone.</summary>
+    public bool OneIcon
+    {
+        get; set;
+    }
 
-    public bool Holds(string key) => Slots.Contains(key);
+    /// <summary>The slots this batch prompts: every filled one, or the first filled one for one icon.</summary>
+    public IEnumerable<string> Filled => OneIcon ? Slots.OfType<string>().Take(1) : Slots.OfType<string>();
 
-    /// <summary>Puts an icon in the first empty slot; false when every slot is full.</summary>
+    /// <summary>How many briefs the prompt needs: four, or one.</summary>
+    public int Needed => OneIcon ? 1 : IconPlan.Slots;
+
+    public bool Holds(string key) => Filled.Contains(key);
+
+    /// <summary>Puts an icon in the first empty slot; false when the batch is full (four slots, or one for one icon).</summary>
     public bool Add(string key)
     {
         var free = Array.IndexOf(Slots, null);
-        if (free < 0 || Holds(key))
+        if (free < 0 || Holds(key) || Filled.Count() >= Needed)
         {
             return false;
         }
@@ -36,11 +46,28 @@ public sealed class IconBench
         return true;
     }
 
+    /// <summary>
+    /// Switches between a set of four and one icon; going to one icon keeps the first filled slot's brief in the first slot and empties
+    /// the rest.
+    /// </summary>
+    public void SetOneIcon(bool oneIcon)
+    {
+        if (oneIcon && !OneIcon)
+        {
+            var first = Slots.OfType<string>().FirstOrDefault();
+            Array.Fill(Slots, null);
+            Slots[0] = first;
+        }
+
+        OneIcon = oneIcon;
+    }
+
     public void Clear()
     {
         BatchId = null;
         Name = string.Empty;
         Sref = string.Empty;
+        OneIcon = false;
         Array.Fill(Slots, null);
     }
 
@@ -50,6 +77,7 @@ public sealed class IconBench
         BatchId = batch.Id;
         Name = batch.Name;
         Sref = batch.Sref;
+        OneIcon = batch.OneIcon;
         for (var slot = 0; slot < Math.Min(IconPlan.Slots, batch.Icons.Count); slot++)
         {
             Slots[slot] = batch.Icons[slot];

@@ -1426,6 +1426,37 @@ textarea.placements-text {
     list-style: none;
 }
 
+.icon-bench-slots.single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.icon-bench-mode {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 1.25rem;
+    margin: 0;
+}
+
+.icon-bench-mode label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.icon-bench-mode .muted {
+    flex-basis: 100%;
+    font-size: 0.85rem;
+}
+
+.icon-batch-mode {
+    font-size: 0.8rem;
+    padding: 0 0.4rem;
+    border-radius: var(--radius);
+    background: var(--accent-tint);
+    color: var(--accent-ink);
+}
+
 .icon-bench-slot {
     display: grid;
     align-content: start;

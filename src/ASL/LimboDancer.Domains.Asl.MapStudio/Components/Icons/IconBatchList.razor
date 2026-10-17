@@ -15,6 +15,10 @@
             <header class="icon-batch-head">
                 <strong>@batch.Name</strong>
                 <span class="muted">@batch.Id</span>
+                @if (batch.OneIcon)
+                {
+                    <span class="icon-batch-mode">one icon, four tries</span>
+                }
                 @if (batch.Sref.Length > 0)
                 {
                     <span class="muted">--sref @batch.Sref</span>
@@ -35,7 +39,7 @@
                     var brief = Plan.Brief(key);
                     var stage = IconStages.Of(key, Plan, Icons, Coverage);
                     <li data-icon="@key">
-                        <span class="muted">@(slot + 1), @IconPlan.SlotNames[Math.Min(slot, IconPlan.SlotNames.Count - 1)]</span>
+                        <span class="muted">@(batch.OneIcon ? "The icon" : $"{slot + 1}, {IconPlan.SlotNames[Math.Min(slot, IconPlan.SlotNames.Count - 1)]}")</span>
                         <span class="icon-batch-glyph">
                             @if (Icons.Find(key) is { } icon && IconLibrary.Sized(icon, 32) is { } markup)
                             {

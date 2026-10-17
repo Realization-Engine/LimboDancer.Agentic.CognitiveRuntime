@@ -2,7 +2,8 @@
   "style": {
     "opening": "set of 4 flat vector icons, 2×2 grid, evenly spaced on a flat solid warm cream background (#f2ecdc), no texture, each icon centered in an equal square cell, same size and same visual weight, every icon fits a square.",
     "style": "WWII tactical wargame aesthetic, SVG icon style, vector glyph pictograms, solid ink shapes, flat fills, crisp geometric edges, bold uniform stroke weight legible at 24 pixels, simple shapes, minimal professional UI icon set. Palette strictly limited to: deep slate-navy #203446 as primary ink, muted olive green #788848, soft sage woods green #7c9c7c, brick red #a04030 as a single sparing accent, dusty steel blue #4c6878, faded khaki tan #9a8c6a, near-black charcoal #1c1c1a outlines",
-    "parameters": "--no text, letters, numbers, labels, shadows, gradients, panels, tiles, cell borders, grid lines, texture, grain, noise --style raw --stylize 50 --ar 1:1"
+    "parameters": "--no text, letters, numbers, labels, shadows, gradients, panels, tiles, cell borders, grid lines, texture, grain, noise --style raw --stylize 50 --ar 1:1",
+    "singleOpening": "a single flat vector icon, centered on a flat solid warm cream background (#f2ecdc), no texture, filling a square with even margins, one icon only."
   },
   "briefs": [
     {
