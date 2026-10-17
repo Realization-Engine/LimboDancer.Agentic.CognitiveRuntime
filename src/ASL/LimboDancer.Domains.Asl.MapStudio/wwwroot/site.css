@@ -2919,6 +2919,43 @@ details.advanced > summary {
     }
 }
 
+/* Play from 1024px: the actions are the inspector's Play tab, so the map takes the width the actions column had, beside one inspector column
+   wide enough for the actions; the activity strip stays below. Setup, whose forms are wider, gets a broader inspector. Replay keeps its own. */
+.play-workspace:not(.replay):not(.narrow) {
+    grid-template-columns: minmax(0, 1fr) minmax(24rem, 30rem);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "map review"
+        "activity activity";
+}
+
+.play-workspace.setup:not(.replay):not(.narrow) {
+    grid-template-columns: minmax(0, 1fr) minmax(26rem, 34rem);
+}
+
+/* From 1024px to 1439px the inspector is no wider than the side column was, so the map never loses width to the move. */
+@media (max-width: 1439.98px) {
+    .play-workspace:not(.replay):not(.narrow) {
+        grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
+    }
+
+    .play-workspace.setup:not(.replay):not(.narrow) {
+        grid-template-columns: minmax(0, 1fr) minmax(22rem, 28rem);
+    }
+}
+
+/* The actions inside the inspector are its tab's content, not a pane of their own. */
+.play-review .play-actions {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+}
+
+.inspector-kept[hidden] {
+    display: none;
+}
+
 /* Under 1024px (and at 200% zoom): the context scrolls away with the page, so it does not fill a short window, and its Review and hand-over
    buttons stay reachable in a bar fixed to the window's foot (plan section 13.1). */
 @media (max-width: 1023.98px), (max-height: 599.98px) {

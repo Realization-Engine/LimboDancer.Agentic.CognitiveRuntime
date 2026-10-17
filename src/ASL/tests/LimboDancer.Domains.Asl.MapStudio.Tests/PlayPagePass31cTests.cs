@@ -305,7 +305,7 @@ public sealed class PlayPagePass31cTests : IDisposable
     {
         var hexes = Hexes();
         var page = FireGame(hexes, concealed: true);
-        Assert.Equal(["Proposal", "Selection", "LOS", "Range", "Evidence"], Texts(page, "[role=tablist][aria-label='Review and inspector'] [role=tab]"));
+        Assert.Equal(["Play", "Proposal", "Selection", "LOS", "Range", "Evidence"], Texts(page, "[role=tablist][aria-label='Play, review, and inspector'] [role=tab]"));
         page.Find("#play-inspector-tab-range").Click();
         Assert.Empty(page.FindAll("#range-result"));
         page.Find("#range-source").Change(hexes.From);

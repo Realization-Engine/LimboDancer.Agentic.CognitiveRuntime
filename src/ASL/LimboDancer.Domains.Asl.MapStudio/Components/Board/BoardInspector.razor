@@ -5,9 +5,17 @@
    before them. It shows only what it is given: the units come already read for the view, and the host keeps the selection, the LOS check, and
    the open tab. *@
 <InspectorTabs Tabs="@TabList" Selected="@Panel" SelectedChanged="@PanelChanged" Label="@Label" IdPrefix="@IdPrefix">
+    @* A tab kept mounted (Play's actions) stays rendered, hidden while another tab is open, so what is typed in it is not lost. *@
+    @foreach (var kept in Extras.Where(extra => extra.KeepMounted))
+    {
+        <div @key="@kept.Tab.Id" class="inspector-kept" hidden="@(kept.Tab.Id != Panel)">@kept.Content</div>
+    }
     @if (Extras.FirstOrDefault(extra => extra.Tab.Id == Panel) is { } shownExtra)
     {
-        @shownExtra.Content
+        @if (!shownExtra.KeepMounted)
+        {
+            @shownExtra.Content
+        }
     }
     else
     {
@@ -81,8 +89,11 @@
 </InspectorTabs>
 
 @code {
-    /// <summary>A tab the host adds, with the markup it shows when chosen; placed before the built-in tabs, or after them when <paramref name="Last"/>.</summary>
-    public sealed record ExtraTab(InspectorTabs.Tab Tab, RenderFragment Content, bool Last = false);
+    /// <summary>
+    /// A tab the host adds, with the markup it shows when chosen; placed before the built-in tabs, or after them when <paramref name="Last"/>.
+    /// When <paramref name="KeepMounted"/>, its markup stays rendered and is only hidden while another tab is open, so its state survives.
+    /// </summary>
+    public sealed record ExtraTab(InspectorTabs.Tab Tab, RenderFragment Content, bool Last = false, bool KeepMounted = false);
 
     private static readonly IReadOnlyList<InspectorTabs.Tab> BuiltIn = [new("selection", "Selection", Icon: "selection"), new("los", "LOS", Icon: "los"), new("range", "Range", Icon: "range"), new("evidence", "Evidence", Icon: "evidence")];
 

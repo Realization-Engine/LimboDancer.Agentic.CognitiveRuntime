@@ -349,12 +349,9 @@ else if (state is not null)
                     <p class="muted" id="play-picked-note">@pickedNote</p>
                 }
             </div>;
-            RenderFragment between = @<text>
-        @if (narrow)
-        {
-            <InspectorTabs Tabs="@PaneTabs" Selected="@paneTab" SelectedChanged="@(tab => paneTab = tab)" Label="Workspace" IdPrefix="play" SeparatePanels="true" />
-        }
-        <section id="play-panel-actions" class="play-pane play-actions" tabindex="-1" @ref="actionsPane" @attributes="@Pane("actions", "Actions")">
+            @* The actions: from 1024px the inspector's first tab, Play, kept rendered while another tab is open, so the map has the width the
+               actions column had; under 1024px their own pane, as the Actions tab of the workspace. *@
+            RenderFragment actionsBlock = @<section id="play-panel-actions" class="play-pane play-actions" tabindex="-1" @ref="actionsPane" @attributes="@Pane("actions", "Actions")">
             @* Table player, pass 29: the hex picked on the map is offered to every typed Location of the actions. *@
             <CascadingValue Name="PickedLocation" Value="@highlight?.ToString()">
             @* Pass 31c (design D13): a typed Location can be armed, and the next hex clicked on the map fills it. Setup has its own picking. *@
@@ -909,7 +906,13 @@ else if (state is not null)
             </CascadingValue>
             </CascadingValue>
             </CascadingValue>
-        </section>
+        </section>;
+            RenderFragment between = @<text>
+        @if (narrow)
+        {
+            <InspectorTabs Tabs="@PaneTabs" Selected="@paneTab" SelectedChanged="@(tab => paneTab = tab)" Label="Workspace" IdPrefix="play" SeparatePanels="true" />
+            @actionsBlock
+        }
             </text>;
         }
         @if (MapLayers is { Board: { } mapBoard } layers)
@@ -917,8 +920,8 @@ else if (state is not null)
             <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" OriginOf="@CounterOrigin" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@MapMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => PickHex(mapBoard, facts))"
-                            @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null, Icon: "proposal"), proposalBlock)])"
-                            HoldPanel="@(AwaitingConfirm || SetupMode)" OnKey="@MapKey" InspectorLabel="Review and inspector" IdPrefix="play-inspector" MapLabel="The game's map" InspectorFirst="@(!narrow)"
+                            Panel="@InspectorPanel" PanelChanged="@(tab => inspectorTab = tab)" Extras="@InspectorExtras(actionsBlock, proposalBlock)"
+                            HoldPanel="@(AwaitingConfirm || SetupMode || InspectorPanel == PlayTab)" OnKey="@MapKey" InspectorLabel="Play, review, and inspector" IdPrefix="play-inspector" MapLabel="The game's map" InspectorFirst="@(!narrow)"
                             InspectorClass="play-pane play-review inspector" InspectorAttributes="@ReviewAttributes"
                             StageClass="play-pane play-map-pane play-map" StageAttributes="@MapAttributes(layers.Source)" Between="@between">
                 <Toolbar>
@@ -1031,6 +1034,10 @@ else if (state is not null)
                 @proposalBlock
             </section>
             @between
+            @if (!narrow)
+            {
+                @actionsBlock
+            }
             <section id="play-panel-map" class="play-pane play-map-pane" @attributes="@Pane("map", "Map")">
                 <ul id="play-map-problems">
                     @foreach (var problem in MapLayers?.Problems ?? [])
@@ -4344,7 +4351,7 @@ else if (state is not null)
         pending = null;
         status = string.Empty;
         highlight = null;
-        inspectorTab = "selection";
+        inspectorTab = PlayTab;
         ClearPlacements();
         (shownPlan, setupTab, setupDone, setupReview, revealId) = (null, null, null, null, null);
         (theirOutline, swapNote) = (true, null);
@@ -5848,7 +5855,7 @@ else if (state is not null)
         handOver = null;
         lastShown.Clear();
         (highlight, openingHex) = (null, null);
-        inspectorTab = "selection";
+        inspectorTab = PlayTab;
 
         // Pass 29: the address names the game, so a reload opens it again (behind the hand-over).
         Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?> { ["game"] = gameId.Length > 0 ? gameId : null, ["hex"] = null }), replace: true);
@@ -7073,8 +7080,25 @@ else if (state is not null)
 
     private BoardWorkspace? workspace;
 
-    // The inspector's open tab: "proposal" while a proposal waits, otherwise what the player chose (pass 29).
-    private string inspectorTab = "selection";
+    // The inspector's open tab: "play" (the actions) from 1024px, "proposal" while a proposal waits, otherwise what the player chose (pass 29).
+    private string inspectorTab = PlayTab;
+
+    /// <summary>The id of the inspector's Play tab, which holds the actions from 1024px.</summary>
+    private const string PlayTab = "play";
+
+    /// <summary>The inspector's open tab: under 1024px the actions have their own pane, so Play is not a tab and Selection opens instead.</summary>
+    private string InspectorPanel => narrow && inspectorTab == PlayTab ? "selection" : inspectorTab;
+
+    /// <summary>
+    /// The inspector's tabs before its own: Play (the actions, kept rendered so a form keeps what is typed while another tab is open) from
+    /// 1024px, then Proposal.
+    /// </summary>
+    private IReadOnlyList<BoardInspector.ExtraTab> InspectorExtras(RenderFragment actions, RenderFragment proposal)
+    {
+        var review = new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null, Icon: "proposal"), proposal);
+        // The id is written out, not PlayTab, so the Icon Lab's coverage, which reads the source, finds the tab.
+        return narrow ? [review] : [new BoardInspector.ExtraTab(new("play", "Play"), actions, KeepMounted: true), review];
+    }
 
     // The hex the address asks for (from the board viewer's "Back to Play"), kept until the hand-over on load is confirmed.
     private LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation? openingHex;
@@ -7460,6 +7484,10 @@ else if (state is not null)
         if (narrow)
         {
             paneTab = "actions";
+        }
+        else if (!AwaitingConfirm)
+        {
+            inspectorTab = PlayTab;
         }
     }
 

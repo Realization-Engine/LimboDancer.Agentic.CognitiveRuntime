@@ -232,7 +232,7 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.False(page.Find("#play-panel-actions").HasAttribute("hidden"));
     }
 
-    // Wide, the panes are named regions with no tabs.
+    // Wide, the panes are named regions with no tabs; the actions are the inspector's first tab, Play, open from the start.
     [Fact]
     public void WideThePanesAreNamedRegions()
     {
@@ -240,6 +240,8 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.Empty(page.FindAll("#play-workspace [role=tablist][aria-label=Workspace]"));
         Assert.Equal("Actions", page.Find("#play-panel-actions").GetAttribute("aria-label"));
         Assert.False(page.Find("#play-panel-actions").HasAttribute("hidden"));
+        Assert.NotNull(page.Find("#play-panel-review").QuerySelector("#play-panel-actions"));
+        Assert.Equal("true", page.Find("#play-inspector-tab-play").GetAttribute("aria-selected"));
         Assert.Contains("Live", page.Find("#play-live").TextContent, StringComparison.Ordinal);
     }
 }
