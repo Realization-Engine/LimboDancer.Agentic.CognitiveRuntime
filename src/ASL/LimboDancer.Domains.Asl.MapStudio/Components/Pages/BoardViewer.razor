@@ -47,7 +47,7 @@ else if (board is null)
                 <BoardViewerToolbar Board="@board" OnFit="@(() => workspace!.Fit())" Preparing="@preparing">
                     <BoardViewPicker Views="@Views" Value="@view" ValueChanged="@ChangeView" />
                     @* UI review, pass 29: the side-by-side comparison draws two maps in one pane, which a turned pane cannot hold. *@
-                    <button type="button" id="map-rotate" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" disabled="@SideBySide" title="@(SideBySide ? "The side-by-side comparison is not turned." : null)" @onclick="@(() => workspace!.ToggleRotation())">Rotate map</button>
+                    <button type="button" id="map-rotate" class="icon-button" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" disabled="@SideBySide" title="@(SideBySide ? "Rotate map: the side-by-side comparison is not turned." : "Rotate map")" @onclick="@(() => workspace!.ToggleRotation())"><IconLabel Icon="rotate" Label="Rotate map" /></button>
                     @if (view == BoardView.Comparison)
                     {
                         <BoardComparisonControls Mode="@comparisonMode" ModeChanged="@ChangeComparisonMode" Value="@comparisonValue" ValueChanged="@(value => comparisonValue = value)" />

@@ -41,6 +41,28 @@ public sealed class IconLabTests(StudioFactory factory) : IClassFixture<StudioFa
     }
 
     [Fact]
+    public async Task TheBoardViewersToolbarAndInspectorTabsDrawTheirIconsAndKeepTheirWords()
+    {
+        using var client = factory.CreateClient();
+        var html = await client.GetStringAsync(new Uri("/boards/ab-synthetic", UriKind.Relative));
+        foreach (var (id, label) in new[] { ("viewer-fit", "Fit"), ("map-rotate", "Rotate map") })
+        {
+            var button = Element(html, $"id=\"{id}\"");
+            Assert.Contains("class=\"icon-button\"", button, StringComparison.Ordinal);
+            Assert.Contains("<svg", button, StringComparison.Ordinal);
+            Assert.Contains($"<span class=\"visually-hidden\">{label}</span>", button, StringComparison.Ordinal);
+        }
+
+        foreach (var (key, label) in new[] { ("selection", "Selection"), ("los", "LOS"), ("range", "Range"), ("evidence", "Evidence") })
+        {
+            var tab = Element(html, $"id=\"viewer-tab-{key}\"");
+            Assert.Contains("icon-tab", tab, StringComparison.Ordinal);
+            Assert.Contains($"title=\"{label}\"", tab, StringComparison.Ordinal);
+            Assert.Contains($"<span class=\"visually-hidden\">{label}</span>", tab, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void AMissingManifestOrFileIsReportedNotThrown()
     {
         var root = Directory.CreateTempSubdirectory("icon-lab-");
@@ -67,6 +89,16 @@ public sealed class IconLabTests(StudioFactory factory) : IClassFixture<StudioFa
         {
             root.Delete(true);
         }
+    }
+
+    /// <summary>The button whose opening tag holds an attribute, from that tag to its closing tag.</summary>
+    private static string Element(string html, string attribute)
+    {
+        var at = html.IndexOf(attribute, StringComparison.Ordinal);
+        Assert.True(at >= 0, $"No element with {attribute}.");
+        var start = html.LastIndexOf("<button", at, StringComparison.Ordinal);
+        var end = html.IndexOf("</button>", at, StringComparison.Ordinal);
+        return html[start..end];
     }
 
     private static int CountOf(string text, string part)

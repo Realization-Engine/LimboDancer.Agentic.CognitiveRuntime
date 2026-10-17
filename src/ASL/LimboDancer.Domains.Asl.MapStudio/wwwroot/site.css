@@ -1154,8 +1154,9 @@ textarea.placements-text {
 
 /* ---- Icons and the Icon Lab -------------------------------------------------- */
 
-/* The icon palettes: the --i-* colors every icon in wwwroot/icons draws with. An icon outside a palette draws in its
-   fallbacks, which are the Midjourney palette. The Studio has no mid green, so the Studio palette borrows sage. */
+/* The icon palettes: the --i-* colors every icon in wwwroot/icons draws with. The Studio palette is the root's, so every
+   icon in the Studio draws in the Studio's tokens; the Icon Lab can show the Midjourney palette, which is also the icons'
+   fallback. The Studio has no mid green, so the Studio palette borrows sage. */
 .icon-palette-mj {
     --i-ink: #203446;
     --i-olive: #788848;
@@ -1166,6 +1167,7 @@ textarea.placements-text {
     --i-eye: #fbf8f0;
 }
 
+:root,
 .icon-palette-studio {
     --i-ink: var(--ink);
     --i-olive: var(--accent);
