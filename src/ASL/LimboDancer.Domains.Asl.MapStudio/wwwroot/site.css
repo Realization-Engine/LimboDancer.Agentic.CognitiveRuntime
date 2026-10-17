@@ -3044,8 +3044,9 @@ details.advanced > summary {
     }
 }
 
-/* The inspector holds six tabs here, which wrap in a narrow pane rather than run out of it. */
-.play-workspace.replay .tabs {
+/* The inspector holds six tabs on Replay and up to nine on Play, which wrap in a narrow pane rather than run out of it. */
+.play-workspace.replay .tabs,
+.play-review .tabs {
     flex-wrap: wrap;
     gap: 0 0.9rem;
 }

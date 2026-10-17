@@ -305,7 +305,7 @@ public sealed class PlayPagePass31cTests : IDisposable
     {
         var hexes = Hexes();
         var page = FireGame(hexes, concealed: true);
-        Assert.Equal(["Play", "Proposal", "Selection", "LOS", "Range", "Evidence"], Texts(page, "[role=tablist][aria-label='Play, review, and inspector'] [role=tab]"));
+        Assert.Equal(["Play", "Proposal", "Selection", "LOS", "Range", "Evidence", "Records", "Units", "Scripted dice"], Texts(page, "[role=tablist][aria-label='Play, review, and inspector'] [role=tab]"));
         page.Find("#play-inspector-tab-range").Click();
         Assert.Empty(page.FindAll("#range-result"));
         page.Find("#range-source").Change(hexes.From);
@@ -395,17 +395,14 @@ public sealed class PlayPagePass31cTests : IDisposable
         page.WaitForAssertion(() => Assert.Contains(context.JSInterop.Invocations, invocation => invocation.Identifier == "openDetails" && invocation.Arguments is ["play-card"]));
         Assert.NotEmpty(page.FindAll("#play-card-close"));
 
-        // The units table: a panel over the activity strip, closed until its button opens it, and closed again when another panel opens.
-        Assert.NotEmpty(page.FindAll("#play-panel-activity #play-units-panel #play-units tr[data-unit='r1']"));
-        Assert.True(page.Find("#play-units-panel").HasAttribute("hidden"));
-        Assert.Equal("false", page.Find("#play-activity-units").GetAttribute("aria-expanded"));
-        page.Find("#play-activity-units").Click();
-        Assert.False(page.Find("#play-units-panel").HasAttribute("hidden"));
-        Assert.Equal("true", page.Find("#play-activity-units").GetAttribute("aria-expanded"));
-        page.Find("#play-activity-records").Click();
-        Assert.True(page.Find("#play-units-panel").HasAttribute("hidden"));
-        Assert.False(page.Find("#play-history").HasAttribute("hidden"));
-        Assert.Equal(["Records", "Units", "Scripted dice"], Texts(page, ".play-activity-tabs button"));
+        // From 1024px the units, the records, and the scripted dice are inspector tabs after Evidence; the activity strip offers no panels.
+        Assert.Empty(page.FindAll(".play-activity-tabs button"));
+        page.Find("#play-inspector-tab-units").Click();
+        Assert.NotEmpty(page.FindAll("#play-panel-review #play-units-panel #play-units tr[data-unit='r1']"));
+        page.Find("#play-inspector-tab-records").Click();
+        Assert.Empty(page.FindAll("#play-units-panel"));
+        Assert.NotEmpty(page.FindAll("#play-panel-review #play-history"));
+        page.Find("#play-inspector-tab-units").Click();
 
         // No revision for a side: not in the header, the units table's note, or the board link. The adjudicator reads it in each.
         var revision = live.History("village")!.Events.Count;
@@ -415,9 +412,10 @@ public sealed class PlayPagePass31cTests : IDisposable
         Assert.DoesNotContain("revision", page.Find("#play-summary").TextContent, StringComparison.OrdinalIgnoreCase);
         page.ViewAs(Perspective.AdjudicatorName);
         Assert.Equal($"revision {revision}", page.Find("#play-revision").TextContent.Trim());
+        page.Find("#play-inspector-tab-units").Click();
         Assert.Equal($"As the adjudicator sees them: every unit, at revision {revision}.", page.Find("#play-units-view").TextContent);
         Assert.Contains($"revision={revision}", page.Find("#play-view").GetAttribute("href"), StringComparison.Ordinal);
-        Assert.Equal(["Records", "Units", "Scripted dice", "Audit"], Texts(page, ".play-activity-tabs button"));
+        Assert.Equal(["Audit"], Texts(page, ".play-activity-tabs button"));
         page.ViewAs("russian");
 
         // The header's Review button: there while a proposal waits for Confirm, and gone once it is committed.
