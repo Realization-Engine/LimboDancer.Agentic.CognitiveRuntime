@@ -81,28 +81,28 @@
       "label": "Records",
       "brief": "a stack of three ruled record sheets with a pair of dice resting on the bottom corner, the game records",
       "meaning": "Every roll and every action recorded so far, latest first; each record opens its step on Replay. Sheets and dice, not a book: Evidence already has the book.",
-      "reference": ""
+      "reference": "Inspector tabs, second set (2026-10-17-6): the user\u0027s pick, top left"
     },
     {
       "key": "units",
       "label": "Units",
       "brief": "a stack of three square game counters, each slightly offset up and to the right, the top one bearing a small slate-navy soldier silhouette, the units in play",
       "meaning": "The units the view may see, in a table. A stack of counters, as ASL stacks units in a hex; the plural of the Play counter, so it must not look like a single counter.",
-      "reference": ""
+      "reference": "Inspector tabs, second set (2026-10-17-6): the user\u0027s pick, top right"
     },
     {
       "key": "scripted-dice",
       "label": "Scripted dice",
       "brief": "a white die and a brick red die side by side, beside a small ruled list sheet, scripted dice for tests",
       "meaning": "Test runs only: dice queued in advance. ASL rolls a white die and a coloured die, so one of the two is red.",
-      "reference": ""
+      "reference": "Inspector tabs, second set (2026-10-17-6): the user\u0027s pick, bottom left"
     },
     {
       "key": "standing",
       "label": "Standing",
       "brief": "a small olive pennant flag on a slate-navy pole planted on a single hexagon, victory standing",
       "meaning": "How the Victory Conditions stand after the step shown: who holds what. A flag planted on a hex is control, not a trophy or a chart.",
-      "reference": ""
+      "reference": "Inspector tabs, second set (2026-10-17-6): the user\u0027s pick, bottom right"
     }
   ],
   "assignments": [

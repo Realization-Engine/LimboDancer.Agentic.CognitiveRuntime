@@ -7131,9 +7131,9 @@ else if (state is not null)
         [
             new BoardInspector.ExtraTab(new("play", "Play", Icon: "play"), actions, KeepMounted: true),
             review,
-            new BoardInspector.ExtraTab(new("records", "Records"), Region("play-history", "Records, latest first", records), Last: true),
-            new BoardInspector.ExtraTab(new("units", "Units"), Region("play-units-panel", "Units", units), Last: true),
-            .. Scripted is null ? Array.Empty<BoardInspector.ExtraTab>() : [new BoardInspector.ExtraTab(new("dice", "Scripted dice"), Region("play-dice-panel", "Scripted dice", dice), Last: true)],
+            new BoardInspector.ExtraTab(new("records", "Records", Icon: "records"), Region("play-history", "Records, latest first", records), Last: true),
+            new BoardInspector.ExtraTab(new("units", "Units", Icon: "units"), Region("play-units-panel", "Units", units), Last: true),
+            .. Scripted is null ? Array.Empty<BoardInspector.ExtraTab>() : [new BoardInspector.ExtraTab(new("dice", "Scripted dice", Icon: "scripted-dice"), Region("play-dice-panel", "Scripted dice", dice), Last: true)],
         ];
     }
 

@@ -30,6 +30,26 @@
     "group": "Inspector tab"
   },
   {
+    "key": "records",
+    "label": "Records",
+    "group": "Inspector tab"
+  },
+  {
+    "key": "units",
+    "label": "Units",
+    "group": "Inspector tab"
+  },
+  {
+    "key": "scripted-dice",
+    "label": "Scripted dice",
+    "group": "Inspector tab"
+  },
+  {
+    "key": "standing",
+    "label": "Standing",
+    "group": "Inspector tab"
+  },
+  {
     "key": "selection",
     "label": "Selection",
     "group": "Inspector tab"

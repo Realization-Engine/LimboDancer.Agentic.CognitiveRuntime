@@ -98,6 +98,74 @@ def play():
         '</g>')
 
 
+def pips(points, color, radius=0.6):
+    return "".join(f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(radius)}" fill="{color}"/>' for x, y in points)
+
+
+def records():
+    """Two ruled record sheets with a pair of black dice on the front sheet's corner (Inspector tabs, second set, top left)."""
+    ink, sheet = c("ink"), c("eye")
+    lines = "".join(f"M9.6 {y}H17.6" for y in (9.6, 11.8, 14.0))
+    return svg(
+        f'<rect x="4.4" y="3.6" width="12" height="13.4" rx="0.6" fill="{sheet}" stroke="{ink}" stroke-width="1.2"/>'
+        f'<rect x="7.4" y="6.4" width="12.2" height="13.4" rx="0.6" fill="{sheet}" stroke="{ink}" stroke-width="1.2"/>'
+        f'<path d="{lines}" stroke="{ink}" stroke-width="1"/>'
+        f'<rect x="11.2" y="14.6" width="5.6" height="5.6" rx="1.1" fill="{ink}" stroke="{sheet}" stroke-width="0.6"/>'
+        + pips([(12.6, 16), (14, 17.4), (15.4, 18.8)], sheet, 0.5)
+        + f'<rect x="15.6" y="16.6" width="5" height="5" rx="1" fill="{ink}" stroke="{sheet}" stroke-width="0.6"/>'
+        + pips([(16.9, 17.9), (19.3, 20.3)], sheet, 0.5))
+
+
+def units():
+    """A stack of three olive counters, the top one bearing the Play soldier (Inspector tabs, second set, top right): the plural of the
+    Play counter, as ASL stacks its units in a hex."""
+    olive = c("olive")
+    face = c("eye")
+    body = ""
+    for offset in (6.0, 3.0, 0.0):
+        top = [(12, 4.4 + offset), (20, 8.2 + offset), (12, 12 + offset), (4, 8.2 + offset)]
+        side = [(4, 8.2 + offset), (12, 12 + offset), (20, 8.2 + offset), (20, 10.4 + offset), (12, 14.2 + offset), (4, 10.4 + offset)]
+        body += (f'<polygon points="{" ".join(f"{f(x)},{f(y)}" for x, y in side)}" fill="{olive}" stroke="{face}" stroke-width="0.4" stroke-linejoin="round"/>'
+                 f'<polygon points="{" ".join(f"{f(x)},{f(y)}" for x, y in side)}" fill="{c("ink")}" fill-opacity="0.35"/>'
+                 f'<polygon points="{" ".join(f"{f(x)},{f(y)}" for x, y in top)}" fill="{olive}" stroke="{face}" stroke-width="0.4" stroke-linejoin="round"/>')
+    _, figure = (REPO / "code-builders" / "studio-icons" / "traced" / "play-figure.txt").read_text(encoding="utf-8").splitlines()
+    body += f'<g transform="translate(12 7.6) scale(0.27) translate(-12 -12)"><path d="{figure}" fill="{c("ink")}" fill-rule="evenodd"/></g>'
+    return svg(body)
+
+
+def scripted_dice():
+    """A white die and a red die, ASL's two, before a small ruled list (Inspector tabs, second set, bottom left)."""
+    ink, white, red = c("ink"), c("eye"), c("red")
+    lines = "".join(f"M13.6 {y}H19.4" for y in (6.6, 8.6, 10.6))
+    shade = f'fill="{ink}" fill-opacity="0.3"'
+    return svg(
+        f'<rect x="12.2" y="3.8" width="8.6" height="9.6" rx="0.5" fill="{white}" stroke="{ink}" stroke-width="1"/>'
+        f'<path d="{lines}" stroke="{ink}" stroke-width="0.9"/>'
+        # The red die, behind and to the right.
+        f'<polygon points="11.4,11.8 13.2,10 20.2,10 18.4,11.8" fill="{red}" stroke="{ink}" stroke-width="0.8" stroke-linejoin="round"/>'
+        f'<polygon points="18.4,11.8 20.2,10 20.2,17 18.4,18.8" fill="{red}" stroke="{ink}" stroke-width="0.8" stroke-linejoin="round"/>'
+        f'<polygon points="18.4,11.8 20.2,10 20.2,17 18.4,18.8" {shade}/>'
+        f'<rect x="11.4" y="11.8" width="7" height="7" fill="{red}" stroke="{ink}" stroke-width="0.8"/>'
+        + pips([(13.3, 13.7), (16.5, 16.9)], white)
+        # The white die, in front and to the left.
+        + f'<polygon points="3.6,12.6 5.4,10.8 12.4,10.8 10.6,12.6" fill="{white}" stroke="{ink}" stroke-width="0.8" stroke-linejoin="round"/>'
+        f'<polygon points="10.6,12.6 12.4,10.8 12.4,17.8 10.6,19.6" fill="{white}" stroke="{ink}" stroke-width="0.8" stroke-linejoin="round"/>'
+        f'<polygon points="10.6,12.6 12.4,10.8 12.4,17.8 10.6,19.6" fill="{ink}" fill-opacity="0.15"/>'
+        f'<rect x="3.6" y="12.6" width="7" height="7" fill="{white}" stroke="{ink}" stroke-width="0.8"/>'
+        + pips([(5.4, 14.4), (7.1, 16.1), (8.8, 17.8)], ink))
+
+
+def standing():
+    """A red pennant on a dark pole planted on an olive tile: who holds what, as the Victory Conditions stand (Inspector tabs, second
+    set, bottom right)."""
+    ink = c("ink")
+    return svg(
+        f'<polygon points="4.6,19.2 12,16 19.4,19.2 12,22.4" fill="{c("olive")}"/>'
+        f'<polygon points="4.6,19.2 12,22.4 12,23.2 4.6,20" fill="{ink}" fill-opacity="0.35"/>'
+        f'<polygon points="12,22.4 19.4,19.2 19.4,20 12,23.2" fill="{ink}" fill-opacity="0.2"/>'
+        f'<rect x="11.1" y="2.8" width="1.8" height="16.8" rx="0.4" fill="{ink}"/>'
+        f'<polygon points="12.9,3.2 21,6.2 12.9,9.2" fill="{c("red")}"/>')
+
 def proposal():
     """A clipboard with one ticked box and a pencil across its corner: an order proposed, not yet confirmed (Proposal, one icon,
     top row 3rd)."""
@@ -176,6 +244,10 @@ ICONS = [
     ("rotate", "Rotate map", "Map toolbar", rotate()),
     ("play", "Play", "Inspector tab", play()),
     ("proposal", "Proposal", "Inspector tab", proposal()),
+    ("records", "Records", "Inspector tab", records()),
+    ("units", "Units", "Inspector tab", units()),
+    ("scripted-dice", "Scripted dice", "Inspector tab", scripted_dice()),
+    ("standing", "Standing", "Inspector tab", standing()),
     ("selection", "Selection", "Inspector tab", selection()),
     ("los", "LOS", "Inspector tab", los()),
     ("range", "Range", "Inspector tab", range_()),

@@ -1590,7 +1590,8 @@
           "label": "Records",
           "dynamic": false,
           "id": "records",
-          "status": "needed",
+          "icon": "records",
+          "status": "icon",
           "strip": "BoardInspector tabs",
           "rendersIn": "BoardInspector"
         },
@@ -1599,7 +1600,8 @@
           "label": "Units",
           "dynamic": false,
           "id": "units",
-          "status": "needed",
+          "icon": "units",
+          "status": "icon",
           "strip": "BoardInspector tabs",
           "rendersIn": "BoardInspector"
         },
@@ -1608,7 +1610,8 @@
           "label": "Scripted dice",
           "dynamic": false,
           "id": "dice",
-          "status": "needed",
+          "icon": "scripted-dice",
+          "status": "icon",
           "strip": "BoardInspector tabs",
           "rendersIn": "BoardInspector"
         },
@@ -1676,7 +1679,8 @@
           "label": "Units",
           "dynamic": false,
           "id": "units",
-          "status": "needed",
+          "icon": "units",
+          "status": "icon",
           "strip": "BoardInspector tabs",
           "rendersIn": "BoardInspector"
         },
@@ -1685,7 +1689,8 @@
           "label": "Standing",
           "dynamic": false,
           "id": "standing",
-          "status": "needed",
+          "icon": "standing",
+          "status": "icon",
           "strip": "BoardInspector tabs",
           "rendersIn": "BoardInspector"
         },
