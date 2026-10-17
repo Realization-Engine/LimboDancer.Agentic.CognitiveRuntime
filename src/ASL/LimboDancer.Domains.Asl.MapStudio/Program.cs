@@ -22,6 +22,8 @@ public static class Program
         builder.Services.AddSingleton<IFidelityBatch, VaslFidelityBatch>();
         builder.Services.AddSingleton<FidelityJobRunner>();
         builder.Services.AddSingleton<UnitLibrary>();
+        builder.Services.AddSingleton(services => new IconLibrary(services.GetRequiredService<IWebHostEnvironment>()));
+        builder.Services.AddSingleton(services => new IconPlanStore(services.GetRequiredService<IWebHostEnvironment>()));
         if (ScriptedDice.Enabled(builder.Environment, builder.Configuration))
         {
             // UI test runs only: the Play page queues the dice (ScriptedDice).

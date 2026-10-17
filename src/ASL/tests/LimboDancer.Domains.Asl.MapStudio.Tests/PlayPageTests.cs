@@ -158,7 +158,7 @@ public sealed class PlayPageTests : IDisposable
         Assert.Empty(page.FindAll("#propose-opportunity"));
         page.ViewAs("german");
         page.EndPhase(Commit);
-        Assert.Contains("Movement Phase", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Movement Phase", page.Find("#play-context").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll(".move-unit"));
         page.ViewAs("russian");
         Assert.Empty(page.FindAll(".move-unit"));
@@ -183,14 +183,16 @@ public sealed class PlayPageTests : IDisposable
         // Pass 31c (design D15): a side is shown no revision number in a game still played; the adjudicator reads it.
         Assert.Equal(2, live.History("village")!.Events.Count);
         Assert.Empty(page.FindAll("#play-revision"));
-        Assert.Contains("Setup is open", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Setup is open", page.Find("#play-context").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll("#play-units tr[data-unit='g1']"));
 
         // The audit tail is the adjudicator's; a side's view does not show it.
         Assert.DoesNotContain("ExecutorCompleted", page.Markup, StringComparison.Ordinal);
         page.ViewAs(Perspective.AdjudicatorName);
         Assert.Contains("ExecutorCompleted", page.Markup, StringComparison.Ordinal);
-        Assert.Equal("revision 2", page.Find("#play-revision").TextContent.Trim());
+
+        // From 1024px the one-line banner names the game, the turn, and the phase, not the revision; Replay shows it.
+        Assert.Empty(page.FindAll("#play-revision"));
     }
 
     [Fact]
@@ -200,7 +202,7 @@ public sealed class PlayPageTests : IDisposable
         var page = StartGame(from);
         page.EndPhase(Commit);
         page.EndPhase(Commit);
-        Assert.Contains("Movement Phase", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Movement Phase", page.Find("#play-context").TextContent, StringComparison.Ordinal);
 
         page.ViewAs(Perspective.AdjudicatorName);
         page.Find("#enter-location").Change(building);

@@ -26,6 +26,17 @@
         Live games are the Studio's chosen game source (D2). Every change is a registered action through the Execution Gate: the Studio proposes it,
         the gate checks it against the current game, boards, and catalog, and it commits only after you confirm. Nothing here edits a game directly.
     </RuleHelp>;
+    // The game and view pickers: from 1024px with a game open, at the top of the Play tab (the user, 2026-10-17); in the lobby, on the
+    // hand-over screen, and under 1024px, where there is no Play tab, in the context above.
+    RenderFragment pickers = @<text>
+        <LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
+                         ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" BoardLabel="@ViewTarget"
+                         BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, Viewer.IsAdjudicator || state.Ended is not null ? state.Revision : null, highlight?.ToString()) : null)" />
+        @if (gameId.StartsWith("campaign-", StringComparison.Ordinal))
+        {
+            <CampaignContextPanel GameId="@gameId" />
+        }
+    </text>;
 }
 @if (history is null)
 {
@@ -42,17 +53,16 @@ else
     <h2 class="page visually-hidden">Play</h2>
 }
 
-<PlayContextHeader Summary="@ContextSummary" Revision="@(state is not null && history?.Current is not null && (Viewer.IsAdjudicator || state.Ended is not null) ? state.Revision : null)" Acting="@ActingNote" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
+@* The user, 2026-10-17: with a game open, the context is a one-line banner from 1024px; "How this works" is the lobby's alone, and the page
+   no longer says what the shown view does now. *@
+<PlayContextHeader Summary="@ContextSummary" Banner="@(Compact ? BannerParts : null)" Revision="@(state is not null && history?.Current is not null && (Viewer.IsAdjudicator || state.Ended is not null) ? state.Revision : null)" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
                    Result="@ResultTitle" ResultReason="@ResultReason" ResultWhy="@ResultWhy"
                    Conditions="@(state is null ? null : NightAndWeather(state))" HasCard="@(state?.Scenario is not null && handOver is null)" CardChanged="@(state?.Scenario is { } changedCard && !Live.Cards.Matches(changedCard.Id, changedCard.Sha256))"
                    PendingTitle="@(handOver is null && pending is { Result.Outcome: PlayOutcome.NeedsConfirmation } waitingProposal ? DisplayText.Action(waitingProposal.Action.Name) : null)" Review="@FocusReview" Awaiting="@(AwaitingView is { } awaited ? ViewLabel(awaited) : null)"
-                   AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@Said(status)" OpenCard="@OpenCard" Help="@(history is null ? null : intro)" Reserve="true">
-    <LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
-                     ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" BoardLabel="@ViewTarget"
-                     BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, Viewer.IsAdjudicator || state.Ended is not null ? state.Revision : null, highlight?.ToString()) : null)" />
-    @if (gameId.StartsWith("campaign-", StringComparison.Ordinal))
+                   AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@Said(status)" OpenCard="@OpenCard" Reserve="@(!Compact)">
+    @if (!Compact)
     {
-        <CampaignContextPanel GameId="@gameId" />
+        @pickers
     }
 </PlayContextHeader>
 
@@ -338,6 +348,33 @@ else if (state is not null)
        the review pane are BoardWorkspace, the review pane its inspector, with the proposal as its first tab. *@
     <div id="play-workspace" class="@((narrow ? "play-workspace narrow" : "play-workspace") + (SetupMode ? " setup" : string.Empty))">
         @{
+            RenderFragment recordsBlock = @<text>
+                @if (NoRecords)
+                {
+                    <p class="muted" id="play-records-none">No dice rolled and no actions recorded yet.</p>
+                }
+                <DiceRollHistory Rolls="@RollRows" Scripted="@(Scripted is not null)" />
+                @* Pass 31b: each record leads to its step on the Replay page, read in the view shown here. *@
+                <ActionRecordList Heading="Ordnance" ListId="play-ordnance" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(OrdnanceRecords, "ordnance")' />
+                <FireHistory Records="@FireRecords" When="@WhenOf" Replay="@ReplayFrom" />
+                <ActionRecordList Heading="Close Combat" ListId="play-close-combats" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(CloseCombatRecords, "cc")' />
+                <ActionRecordList Heading="Night and weather" ListId="play-night" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(NightRecords, "night")' />
+                <ActionRecordList Heading="Snipers" ListId="play-snipers" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(SniperRecords, "sniper")' />
+                <ActionRecordList Heading="Rally, Rout, and other actions" ListId="play-rallies" When="@WhenOf" Replay="@ReplayFrom"
+                                  Records="@([.. RallyAndRepairRecords.Select(item => new ActionRecordList.Entry(item.EventId, item.Kind, item.Text))])" />
+            </text>;
+            RenderFragment unitsBlock = @<text>
+                <h3 class="@PlayHeadingClass">Units</h3>
+                @* A side is shown no revision in a game still played (backlog section 49; ruling R31b.1). *@
+                <PlayUnitTable ViewNote="@(Viewer.IsAdjudicator ? $"As the adjudicator sees them: every unit, at revision {state.Revision}." : $"As {DisplayText.ViewName(Viewer.Name)} sees them{(state.Ended is not null ? $", at revision {state.Revision}" : string.Empty)}.")"
+                               Rows="@UnitRows" Sealed="@([.. SealedPresences])" Locate="@LocateHex" />
+            </text>;
+            RenderFragment diceBlock = @<text>
+                @if (Scripted is { } scriptedDice)
+                {
+                    <ScriptedDicePanel Queued="@([.. scriptedDice.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scriptedDice.Clear())" Problem="@scriptedProblem" />
+                }
+            </text>;
             RenderFragment proposalBlock = @<div id="play-proposal-tab">
                 @if (pending is null)
                 {
@@ -349,12 +386,13 @@ else if (state is not null)
                     <p class="muted" id="play-picked-note">@pickedNote</p>
                 }
             </div>;
-            RenderFragment between = @<text>
-        @if (narrow)
-        {
-            <InspectorTabs Tabs="@PaneTabs" Selected="@paneTab" SelectedChanged="@(tab => paneTab = tab)" Label="Workspace" IdPrefix="play" SeparatePanels="true" />
-        }
-        <section id="play-panel-actions" class="play-pane play-actions" tabindex="-1" @ref="actionsPane" @attributes="@Pane("actions", "Actions")">
+            @* The actions: from 1024px the inspector's first tab, Play, kept rendered while another tab is open, so the map has the width the
+               actions column had; under 1024px their own pane, as the Actions tab of the workspace. *@
+            RenderFragment actionsBlock = @<section id="play-panel-actions" class="play-pane play-actions" tabindex="-1" @ref="actionsPane" @attributes="@Pane("actions", "Actions")">
+            @if (Compact)
+            {
+                <div class="play-tab-context" id="play-tab-context">@pickers</div>
+            }
             @* Table player, pass 29: the hex picked on the map is offered to every typed Location of the actions. *@
             <CascadingValue Name="PickedLocation" Value="@highlight?.ToString()">
             @* Pass 31c (design D13): a typed Location can be armed, and the next hex clicked on the map fills it. Setup has its own picking. *@
@@ -374,7 +412,7 @@ else if (state is not null)
             @if (state is { Ended: not null } && history?.Current is not null)
             {
                 @* Ruling R20.1: nothing happens in a game that has ended, so the page offers no action; its records, units, and map stay. *@
-                <h3>Play</h3>
+                <h3 class="@PlayHeadingClass">Play</h3>
                 <p id="play-over" class="muted">The game is over, and no more actions are proposed (A3.9; ruling R20.1).</p>
                 @* Pass 31 (play test P-08): the result stands here too, with the account of every condition. *@
                 <p id="play-over-result"><strong>@ResultTitle</strong> @ResultReason</p>
@@ -392,7 +430,7 @@ else if (state is not null)
             }
             else if (state is not null && history?.Current is not null && !(SetupOpen && SetupView is not null && SetupIncomplete))
             {
-                <h3>Play</h3>
+                <h3 class="@PlayHeadingClass">Play</h3>
                 @* Table player, pass 28c: what play waits on comes first. *@
                 @if (state.Choice is { } choice)
                 {
@@ -909,7 +947,13 @@ else if (state is not null)
             </CascadingValue>
             </CascadingValue>
             </CascadingValue>
-        </section>
+        </section>;
+            RenderFragment between = @<text>
+        @if (narrow)
+        {
+            <InspectorTabs Tabs="@PaneTabs" Selected="@paneTab" SelectedChanged="@(tab => paneTab = tab)" Label="Workspace" IdPrefix="play" SeparatePanels="true" />
+            @actionsBlock
+        }
             </text>;
         }
         @if (MapLayers is { Board: { } mapBoard } layers)
@@ -917,8 +961,8 @@ else if (state is not null)
             <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" OriginOf="@CounterOrigin" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@MapMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => PickHex(mapBoard, facts))"
-                            @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null), proposalBlock)])"
-                            HoldPanel="@(AwaitingConfirm || SetupMode)" OnKey="@MapKey" InspectorLabel="Review and inspector" IdPrefix="play-inspector" MapLabel="The game's map" InspectorFirst="@(!narrow)"
+                            Panel="@InspectorPanel" PanelChanged="@(tab => inspectorTab = tab)" Extras="@InspectorExtras(actionsBlock, proposalBlock, recordsBlock, unitsBlock, diceBlock)"
+                            HoldPanel="@(AwaitingConfirm || SetupMode || InspectorPanel == PlayTab)" OnKey="@MapKey" InspectorLabel="Play, review, and inspector" IdPrefix="play-inspector" MapLabel="The game's map" InspectorFirst="@(!narrow)"
                             InspectorClass="play-pane play-review inspector" InspectorAttributes="@ReviewAttributes"
                             StageClass="play-pane play-map-pane play-map" StageAttributes="@MapAttributes(layers.Source)" Between="@between">
                 <Toolbar>
@@ -930,10 +974,10 @@ else if (state is not null)
                         </p>
                     }
                     <div class="toolbar play-map-tools">
-                        <button type="button" id="play-map-zoom-in" aria-label="Zoom in" @onclick="@(() => workspace!.Zoom(0.8))">+</button>
-                        <button type="button" id="play-map-zoom-out" aria-label="Zoom out" @onclick="@(() => workspace!.Zoom(1.25))">-</button>
-                        <button type="button" id="play-map-fit" @onclick="@(() => workspace!.Fit())">Fit</button>
-                        <button type="button" id="map-rotate" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())">Rotate map</button>
+                        <button type="button" id="play-map-zoom-in" class="icon-button" title="Zoom in" @onclick="@(() => workspace!.Zoom(0.8))"><IconLabel Icon="zoom-in" Label="Zoom in" /></button>
+                        <button type="button" id="play-map-zoom-out" class="icon-button" title="Zoom out" @onclick="@(() => workspace!.Zoom(1.25))"><IconLabel Icon="zoom-out" Label="Zoom out" /></button>
+                        <button type="button" id="play-map-fit" class="icon-button" title="Fit" @onclick="@(() => workspace!.Fit())"><IconLabel Icon="fit" Label="Fit" /></button>
+                        <button type="button" id="map-rotate" class="icon-button" title="Rotate map" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())"><IconLabel Icon="rotate" Label="Rotate map" /></button>
                         @if (OwnershipFor(mapBoard) is not null)
                         {
                             <button type="button" id="map-parent-boundaries" aria-pressed="@(showParentBoundaries ? "true" : "false")"
@@ -1031,6 +1075,10 @@ else if (state is not null)
                 @proposalBlock
             </section>
             @between
+            @if (!narrow)
+            {
+                @actionsBlock
+            }
             <section id="play-panel-map" class="play-pane play-map-pane" @attributes="@Pane("map", "Map")">
                 <ul id="play-map-problems">
                     @foreach (var problem in MapLayers?.Problems ?? [])
@@ -1068,28 +1116,22 @@ else if (state is not null)
                     </ol>
                 </div>
             }
-            <div id="play-history" class="play-activity-panel" role="region" aria-label="Records, latest first" hidden="@(activityTab != "records")">
-                <DiceRollHistory Rolls="@RollRows" Scripted="@(Scripted is not null)" />
-                @* Pass 31b: each record leads to its step on the Replay page, read in the view shown here. *@
-                <ActionRecordList Heading="Ordnance" ListId="play-ordnance" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(OrdnanceRecords, "ordnance")' />
-                <FireHistory Records="@FireRecords" When="@WhenOf" Replay="@ReplayFrom" />
-                <ActionRecordList Heading="Close Combat" ListId="play-close-combats" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(CloseCombatRecords, "cc")' />
-                <ActionRecordList Heading="Night and weather" ListId="play-night" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(NightRecords, "night")' />
-                <ActionRecordList Heading="Snipers" ListId="play-snipers" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(SniperRecords, "sniper")' />
-                <ActionRecordList Heading="Rally, Rout, and other actions" ListId="play-rallies" When="@WhenOf" Replay="@ReplayFrom"
-                                  Records="@([.. RallyAndRepairRecords.Select(item => new ActionRecordList.Entry(item.EventId, item.Kind, item.Text))])" />
-            </div>
-            <div id="play-units-panel" class="play-activity-panel" role="region" aria-label="Units" hidden="@(activityTab != "units")">
-                <h3>Units</h3>
-                @* A side is shown no revision in a game still played (backlog section 49; ruling R31b.1). *@
-                <PlayUnitTable ViewNote="@(Viewer.IsAdjudicator ? $"As the adjudicator sees them: every unit, at revision {state.Revision}." : $"As {DisplayText.ViewName(Viewer.Name)} sees them{(state.Ended is not null ? $", at revision {state.Revision}" : string.Empty)}.")"
-                               Rows="@UnitRows" Sealed="@([.. SealedPresences])" Locate="@LocateHex" />
-            </div>
-            @if (Scripted is { } scriptedDice)
+            @* With the map, from 1024px, the records, the units, and the scripted dice are the inspector's last tabs; otherwise they open over
+               this strip. *@
+            @if (StripHoldsRecords)
             {
-                <div id="play-dice-panel" class="play-activity-panel" role="region" aria-label="Scripted dice" hidden="@(activityTab != "dice")">
-                    <ScriptedDicePanel Queued="@([.. scriptedDice.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scriptedDice.Clear())" Problem="@scriptedProblem" />
+                <div id="play-history" class="play-activity-panel" role="region" aria-label="Records, latest first" hidden="@(activityTab != "records")">
+                    @recordsBlock
                 </div>
+                <div id="play-units-panel" class="play-activity-panel" role="region" aria-label="Units" hidden="@(activityTab != "units")">
+                    @unitsBlock
+                </div>
+                @if (Scripted is not null)
+                {
+                    <div id="play-dice-panel" class="play-activity-panel" role="region" aria-label="Scripted dice" hidden="@(activityTab != "dice")">
+                        @diceBlock
+                    </div>
+                }
             }
             @if (Viewer.IsAdjudicator)
             {
@@ -4344,7 +4386,7 @@ else if (state is not null)
         pending = null;
         status = string.Empty;
         highlight = null;
-        inspectorTab = "selection";
+        inspectorTab = PlayTab;
         ClearPlacements();
         (shownPlan, setupTab, setupDone, setupReview, revealId) = (null, null, null, null, null);
         (theirOutline, swapNote) = (true, null);
@@ -5848,7 +5890,7 @@ else if (state is not null)
         handOver = null;
         lastShown.Clear();
         (highlight, openingHex) = (null, null);
-        inspectorTab = "selection";
+        inspectorTab = PlayTab;
 
         // Pass 29: the address names the game, so a reload opens it again (behind the hand-over).
         Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?> { ["game"] = gameId.Length > 0 ? gameId : null, ["hex"] = null }), replace: true);
@@ -6973,9 +7015,12 @@ else if (state is not null)
             }
 
             // Table player and UI review, pass 29: Confirm is gone with the commit, so the focus goes to the actions; under 1024px their tab opens.
-            // Wider, the panes are side by side and nothing scrolls, so the outcome stays in view.
+            // Wider, the Proposal tab stays open, so the outcome and its rolls stay in view; the Play tab is a click away.
             activityTab = null;
-            ShowActions(scroll: narrow);
+            if (narrow)
+            {
+                ShowActions();
+            }
         }
 
         Refresh();
@@ -7073,8 +7118,56 @@ else if (state is not null)
 
     private BoardWorkspace? workspace;
 
-    // The inspector's open tab: "proposal" while a proposal waits, otherwise what the player chose (pass 29).
-    private string inspectorTab = "selection";
+    // The inspector's open tab: "play" (the actions) from 1024px, "proposal" while a proposal waits, otherwise what the player chose (pass 29).
+    private string inspectorTab = PlayTab;
+
+    /// <summary>The actions' "Play" heading: from 1024px the Play tab names them, so it is kept for screen readers and not shown.</summary>
+    private string? PlayHeadingClass => narrow ? null : "visually-hidden";
+
+    /// <summary>The id of the inspector's Play tab, which holds the actions from 1024px.</summary>
+    private const string PlayTab = "play";
+
+    /// <summary>
+    /// Whether the activity strip holds the records, the units, and the scripted dice: under 1024px, and wherever the map, and with it the
+    /// inspector, is not drawn.
+    /// </summary>
+    private bool StripHoldsRecords => narrow || MapLayers is not { Board: not null };
+
+    /// <summary>The inspector's open tab: under 1024px the actions have their own pane, so Play is not a tab and Selection opens instead.</summary>
+    private string InspectorPanel => narrow && inspectorTab == PlayTab ? "selection" : inspectorTab;
+
+    /// <summary>
+    /// The inspector's tabs before its own: Play (the actions, kept rendered so a form keeps what is typed while another tab is open) from
+    /// 1024px, then Proposal.
+    /// </summary>
+    private IReadOnlyList<BoardInspector.ExtraTab> InspectorExtras(RenderFragment actions, RenderFragment proposal, RenderFragment records,
+        RenderFragment units, RenderFragment dice)
+    {
+        var review = new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null, Icon: "proposal"), proposal);
+        if (narrow)
+        {
+            return [review];
+        }
+
+        // The ids are written out, not PlayTab, so the Icon Lab's coverage, which reads the source, finds the tabs. Records, Units, and
+        // Scripted dice come after the inspector's own tabs, as Units and Standing do on Replay; their panels keep the ids they had
+        // and, as in the activity strip, stay rendered while hidden.
+        return
+        [
+            new BoardInspector.ExtraTab(new("play", "Play", Icon: "play"), actions, KeepMounted: true),
+            review,
+            new BoardInspector.ExtraTab(new("records", "Records", Icon: "records"), Region("play-history", "Records, latest first", records), Last: true, KeepMounted: true),
+            new BoardInspector.ExtraTab(new("units", "Units", Icon: "units"), Region("play-units-panel", "Units", units), Last: true, KeepMounted: true),
+            .. Scripted is null ? Array.Empty<BoardInspector.ExtraTab>() : [new BoardInspector.ExtraTab(new("dice", "Scripted dice", Icon: "scripted-dice"), Region("play-dice-panel", "Scripted dice", dice), Last: true, KeepMounted: true)],
+        ];
+    }
+
+    /// <summary>Whether the records have nothing to list yet: no roll and no record of any kind, so the Records tab says so.</summary>
+    private bool NoRecords => RollRows.Count == 0 && OrdnanceRecords.Count == 0 && FireRecords.Count == 0 && CloseCombatRecords.Count == 0
+        && NightRecords.Count == 0 && SniperRecords.Count == 0 && RallyAndRepairRecords.Count == 0;
+
+    /// <summary>A panel of the inspector with the id and name it had in the activity strip.</summary>
+    private static RenderFragment Region(string id, string label, RenderFragment content) => @<div id="@id" role="region" aria-label="@label">@content</div>;
 
     // The hex the address asks for (from the board viewer's "Back to Play"), kept until the hand-over on load is confirmed.
     private LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation? openingHex;
@@ -7128,6 +7221,22 @@ else if (state is not null)
         : (history.Current is not null ? string.Empty : "The game does not replay: ") + $"Turn {state.Turn}{TurnsText}, {DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}."
             + (SetupOpen ? " Setup is open." : state.Ended is not null ? " The game has ended; nothing more is played." : string.Empty);
 
+    /// <summary>
+    /// Whether the context is the one-line banner and the pickers are in the Play tab: a game is open and in view (no hand-over waits) from 1024px,
+    /// where the actions are the inspector's Play tab (the user, 2026-10-17).
+    /// </summary>
+    private bool Compact => state is not null && history is not null && handOver is null && !narrow && MapLayers is { Board: not null };
+
+    /// <summary>The banner: the scenario's title (the game's id when it has none), the turn of the card's count, the phasing side's phase, and setup
+    /// open, the game ended, or the game not replaying when so.</summary>
+    private IReadOnlyList<string> BannerParts => state is null ? [] :
+    [
+        state.Scenario?.Title is { Length: > 0 } title ? title : gameId,
+        $"Turn {state.Turn}{TurnsText}",
+        $"{DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}",
+        .. history?.Current is null ? ["The game does not replay"] : SetupOpen ? ["Setup is open"] : state.Ended is not null ? ["The game has ended"] : Array.Empty<string>(),
+    ];
+
     /// <summary>Pass 31 (play test P-08): the card's count of Game Turns beside the turn, and a word when the turn is the last (A3.9; ruling R20.1).</summary>
     private string TurnsText => state?.Scenario is { } scenario && CardRead(scenario.Id)?.Card?.Turns is { } turns
         ? $" of {turns.Count}" + (state.Ended is null && state.Turn >= turns.Count ? turns.HalfTurn ? " (the last turn, one Player Turn)" : " (the last turn)" : string.Empty)
@@ -7170,10 +7279,6 @@ else if (state is not null)
     }
 
     private string AwaitingNote => state is null ? string.Empty : Awaiting(state).Note;
-
-    /// <summary>What the shown view does now, when the game waits on no other view (table player, pass 28c); null otherwise.</summary>
-    private string? ActingNote => state is null || history?.Current is null || state.Ended is not null || SetupOpen || Viewer.IsAdjudicator || handOver is not null
-        || AwaitingView is not null ? null : $"You act: {Awaiting(state).Note}";
 
     /// <summary>Where the moving stack is, which the DEFENDER sees as units or a "?" (A8.1); null when no stack moves.</summary>
     private BoardLocation? MovingAt => state?.Movement switch
@@ -7461,6 +7566,10 @@ else if (state is not null)
         {
             paneTab = "actions";
         }
+        else if (!AwaitingConfirm)
+        {
+            inspectorTab = PlayTab;
+        }
     }
 
     // Pass 31c (design D15): the panel open over the activity strip: "since", "records", "units", "dice", "audit", or none.
@@ -7478,9 +7587,9 @@ else if (state is not null)
     private IEnumerable<(string Key, string Label, string Panel)> ActivityTabs =>
     [
         .. SinceLooked.Count > 0 ? [("since", $"Since you last looked ({SinceLooked.Count})", "play-since-panel")] : Array.Empty<(string, string, string)>(),
-        ("records", "Records", "play-history"),
-        ("units", "Units", "play-units-panel"),
-        .. Scripted is null ? Array.Empty<(string, string, string)>() : [("dice", "Scripted dice", "play-dice-panel")],
+        // With the map, from 1024px, the records, the units, and the scripted dice are inspector tabs; otherwise the strip offers them.
+        .. StripHoldsRecords ? [("records", "Records", "play-history"), ("units", "Units", "play-units-panel")] : Array.Empty<(string, string, string)>(),
+        .. Scripted is null || !StripHoldsRecords ? Array.Empty<(string, string, string)>() : [("dice", "Scripted dice", "play-dice-panel")],
         .. Viewer.IsAdjudicator ? [("audit", "Audit", "play-audit-panel")] : Array.Empty<(string, string, string)>(),
     ];
 
@@ -7505,7 +7614,8 @@ else if (state is not null)
             paneTab = "map";
         }
 
-        if (!AwaitingConfirm)
+        // From the Units tab the hex is shown and the tab stays open, so the next unit is a click away.
+        if (!AwaitingConfirm && inspectorTab != "units")
         {
             inspectorTab = "selection";
         }

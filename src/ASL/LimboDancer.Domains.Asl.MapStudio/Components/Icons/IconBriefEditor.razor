@@ -1,0 +1,91 @@
+@* One icon's brief: its key, the control label it stands for, what is drawn (the sentence that goes into a prompt's numbered slot), and
+   what the drawing must respect. Used from Coverage (a new icon for a control) and from the Prompts bench (a slot's brief). *@
+<div class="icon-brief-editor" id="@IdPrefix">
+    <div class="icon-brief-fields">
+        <label for="@($"{IdPrefix}-key")">Key</label>
+        <div>
+            <input id="@($"{IdPrefix}-key")" @bind="key" @bind:event="oninput" readonly="@(!IsNew)" aria-describedby="@($"{IdPrefix}-key-help")" />
+            <span id="@($"{IdPrefix}-key-help")" class="muted">@(IsNew ? "The SVG's file name: lower case words joined by hyphens." : "Fixed once made.")</span>
+            @if (keyError is not null)
+            {
+                <span class="fail" role="alert">@keyError</span>
+            }
+        </div>
+
+        <label for="@($"{IdPrefix}-label")">Label</label>
+        <input id="@($"{IdPrefix}-label")" @bind="label" @bind:event="oninput" />
+
+        <label for="@($"{IdPrefix}-brief")">Brief</label>
+        <div>
+            <textarea id="@($"{IdPrefix}-brief")" rows="2" @bind="brief" @bind:event="oninput" placeholder="a bar and a single arrowhead pointing left, step back"></textarea>
+            <span class="muted">What is drawn, then what it means, in one line. Place things in the square; at most seven hexes.</span>
+            @if (briefError is not null)
+            {
+                <span class="fail" role="alert">@briefError</span>
+            }
+        </div>
+
+        <label for="@($"{IdPrefix}-meaning")">Meaning</label>
+        <div>
+            <input id="@($"{IdPrefix}-meaning")" @bind="meaning" @bind:event="oninput" placeholder="One event back in the replay, not undo." />
+            <span class="muted">What the drawing must respect, for whoever draws or judges it.</span>
+        </div>
+    </div>
+    <div class="toolbar">
+        <button type="button" class="primary" @onclick="Save">@(IsNew ? "Save brief" : "Save changes")</button>
+        <button type="button" @onclick="OnCancel">Cancel</button>
+    </div>
+</div>
+
+@code {
+    /// <summary>The brief to edit; a new one carries a suggested key and label.</summary>
+    [Parameter, EditorRequired]
+    public IconBrief Brief { get; set; } = null!;
+
+    [Parameter]
+    public bool IsNew { get; set; }
+
+    /// <summary>The keys already taken, which a new brief may not reuse.</summary>
+    [Parameter]
+    public IReadOnlyCollection<string> TakenKeys { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public string IdPrefix { get; set; } = "icon-brief";
+
+    [Parameter]
+    public EventCallback<IconBrief> OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private string key = string.Empty;
+    private string label = string.Empty;
+    private string brief = string.Empty;
+    private string meaning = string.Empty;
+    private string? keyError;
+    private string? briefError;
+    private IconBrief? shown;
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(shown, Brief))
+        {
+            shown = Brief;
+            (key, label, brief, meaning) = (Brief.Key, Brief.Label, Brief.Brief, Brief.Meaning);
+            keyError = briefError = null;
+        }
+    }
+
+    private async Task Save()
+    {
+        key = key.Trim();
+        keyError = !IconPlan.IsKey(key) ? "Use lower case letters, digits, and hyphens, such as step-back."
+            : IsNew && TakenKeys.Contains(key) ? $"{key} is taken; choose another key, or use the existing icon."
+            : null;
+        briefError = brief.Trim().Length == 0 ? "Describe what is drawn." : null;
+        if (keyError is null && briefError is null)
+        {
+            await OnSave.InvokeAsync(Brief with { Key = key, Label = label.Trim(), Brief = brief.Trim(), Meaning = meaning.Trim() });
+        }
+    }
+}

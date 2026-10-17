@@ -114,7 +114,7 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.Empty(opened.FindAll("#play-panel-map"));
 
         // The context is known to both sides, so it shows during the hand-over.
-        Assert.Contains("Rally Phase", opened.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Rally Phase", opened.Find("#play-context").TextContent, StringComparison.Ordinal);
         opened.Find("#play-handover-confirm").Click();
         Assert.Single(opened.FindAll("#play-workspace"));
 
@@ -232,7 +232,7 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.False(page.Find("#play-panel-actions").HasAttribute("hidden"));
     }
 
-    // Wide, the panes are named regions with no tabs.
+    // Wide, the panes are named regions with no tabs; the actions are the inspector's first tab, Play, open from the start.
     [Fact]
     public void WideThePanesAreNamedRegions()
     {
@@ -240,6 +240,12 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.Empty(page.FindAll("#play-workspace [role=tablist][aria-label=Workspace]"));
         Assert.Equal("Actions", page.Find("#play-panel-actions").GetAttribute("aria-label"));
         Assert.False(page.Find("#play-panel-actions").HasAttribute("hidden"));
-        Assert.Contains("Live", page.Find("#play-live").TextContent, StringComparison.Ordinal);
+        Assert.NotNull(page.Find("#play-panel-review").QuerySelector("#play-panel-actions"));
+        // The setup's commit leaves its outcome open in the Proposal tab; the Play tab is a click away.
+        Assert.Equal("true", page.Find("#play-inspector-tab-proposal").GetAttribute("aria-selected"));
+        page.Find("#play-inspector-tab-play").Click();
+        Assert.Equal("true", page.Find("#play-inspector-tab-play").GetAttribute("aria-selected"));
+        // The banner says only when the game does not replay; a live game needs no badge.
+        Assert.DoesNotContain("does not replay", page.Find("#play-banner").TextContent, StringComparison.Ordinal);
     }
 }

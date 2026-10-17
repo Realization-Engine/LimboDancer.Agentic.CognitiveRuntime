@@ -16,7 +16,7 @@
         <a href="@($"maps?edit={Board.Ref.Value}")">Edit map</a>
     }
     <a href="@($"units/lab?board={Board.Ref.Value}")">Unit Lab</a>
-    <button id="viewer-fit" @onclick="OnFit">Fit</button>
+    <button id="viewer-fit" class="icon-button" title="Fit" @onclick="OnFit"><IconLabel Icon="fit" Label="Fit" /></button>
     @if (Preparing is not null)
     {
         <span class="muted" role="status">@Preparing</span>

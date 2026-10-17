@@ -1,0 +1,3320 @@
+{
+  "components": [
+    {
+      "name": "BoardEditorHeader",
+      "path": "Components/Board/BoardEditorHeader.razor",
+      "pages": [
+        "/author/{BoardName}"
+      ],
+      "usedBy": [
+        "Author"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Undo",
+          "dynamic": false,
+          "id": "editor-undo",
+          "status": "needed",
+          "strip": "BoardEditorHeader editor-header"
+        },
+        {
+          "kind": "button",
+          "label": "Redo",
+          "dynamic": false,
+          "id": "editor-redo",
+          "status": "needed",
+          "strip": "BoardEditorHeader editor-header"
+        },
+        {
+          "kind": "button",
+          "label": "@(IsDraft ? \u0022Save draft\u0022 : \u0022Save\u0022)",
+          "dynamic": true,
+          "id": "editor-save",
+          "status": "needed",
+          "strip": "BoardEditorHeader editor-header"
+        }
+      ]
+    },
+    {
+      "name": "BoardInspector",
+      "path": "Components/Board/BoardInspector.razor",
+      "pages": [
+        "/boards/{BoardName}",
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "BoardWorkspace"
+      ],
+      "controls": [
+        {
+          "kind": "tab",
+          "label": "Selection",
+          "dynamic": false,
+          "id": "selection",
+          "icon": "selection",
+          "status": "icon",
+          "strip": "BoardInspector tabs"
+        },
+        {
+          "kind": "tab",
+          "label": "LOS",
+          "dynamic": false,
+          "id": "los",
+          "icon": "los",
+          "status": "icon",
+          "strip": "BoardInspector tabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Range",
+          "dynamic": false,
+          "id": "range",
+          "icon": "range",
+          "status": "icon",
+          "strip": "BoardInspector tabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Evidence",
+          "dynamic": false,
+          "id": "evidence",
+          "icon": "evidence",
+          "status": "icon",
+          "strip": "BoardInspector tabs"
+        }
+      ]
+    },
+    {
+      "name": "BoardViewerToolbar",
+      "path": "Components/Board/BoardViewerToolbar.razor",
+      "pages": [
+        "/boards/{BoardName}"
+      ],
+      "usedBy": [
+        "BoardViewer"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Fit",
+          "dynamic": false,
+          "id": "viewer-fit",
+          "icon": "fit",
+          "status": "icon",
+          "strip": "BoardViewerToolbar viewer-toolbar"
+        }
+      ]
+    },
+    {
+      "name": "BoardWorkspace",
+      "path": "Components/Board/BoardWorkspace.razor",
+      "pages": [
+        "/boards/{BoardName}",
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "BoardViewer",
+        "Play",
+        "Replay"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Try again",
+          "dynamic": false,
+          "id": "workspace-retry",
+          "status": "needed",
+          "strip": "BoardWorkspace"
+        }
+      ]
+    },
+    {
+      "name": "FeatureProperties",
+      "path": "Components/Board/FeatureProperties.razor",
+      "pages": [
+        "/author/{BoardName}"
+      ],
+      "usedBy": [
+        "Author"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Delete feature",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "FeatureProperties"
+        }
+      ]
+    },
+    {
+      "name": "HexInspector",
+      "path": "Components/Board/HexInspector.razor",
+      "pages": [
+        "/author/{BoardName}",
+        "/boards/{BoardName}",
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "Author",
+        "BoardInspector"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@Location",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "HexInspector"
+        },
+        {
+          "kind": "button",
+          "label": "@Describe(feature)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "HexInspector"
+        }
+      ]
+    },
+    {
+      "name": "HexUnitStackList",
+      "path": "Components/Board/HexUnitStackList.razor",
+      "pages": [
+        "/boards/{BoardName}",
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "BoardInspector"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@member.Name",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "HexUnitStackList"
+        }
+      ]
+    },
+    {
+      "name": "LayerList",
+      "path": "Components/Board/LayerList.razor",
+      "pages": [
+        "/author/{BoardName}"
+      ],
+      "usedBy": [
+        "Author"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@Label(feature)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "LayerList"
+        }
+      ]
+    },
+    {
+      "name": "LosPanel",
+      "path": "Components/Board/LosPanel.razor",
+      "pages": [
+        "/boards/{BoardName}",
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "BoardInspector"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "selected hex",
+          "dynamic": false,
+          "id": "los-source-selected",
+          "status": "needed",
+          "strip": "LosPanel"
+        },
+        {
+          "kind": "button",
+          "label": "selected hex",
+          "dynamic": false,
+          "id": "los-target-selected",
+          "status": "needed",
+          "strip": "LosPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Check LOS",
+          "dynamic": false,
+          "id": "los-check",
+          "status": "needed",
+          "strip": "LosPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Clear",
+          "dynamic": false,
+          "id": "los-clear",
+          "status": "needed",
+          "strip": "LosPanel"
+        }
+      ]
+    },
+    {
+      "name": "RangePanel",
+      "path": "Components/Board/RangePanel.razor",
+      "pages": [
+        "/boards/{BoardName}",
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "BoardInspector"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "selected hex",
+          "dynamic": false,
+          "id": "range-source-selected",
+          "status": "needed",
+          "strip": "RangePanel"
+        },
+        {
+          "kind": "button",
+          "label": "selected hex",
+          "dynamic": false,
+          "id": "range-target-selected",
+          "status": "needed",
+          "strip": "RangePanel"
+        },
+        {
+          "kind": "button",
+          "label": "Read the range",
+          "dynamic": false,
+          "id": "range-check",
+          "status": "needed",
+          "strip": "RangePanel"
+        },
+        {
+          "kind": "button",
+          "label": "Clear",
+          "dynamic": false,
+          "id": "range-clear",
+          "status": "needed",
+          "strip": "RangePanel"
+        }
+      ]
+    },
+    {
+      "name": "ToolPalette",
+      "path": "Components/Board/ToolPalette.razor",
+      "pages": [
+        "/author/{BoardName}"
+      ],
+      "usedBy": [
+        "Author"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@tool.Label",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "ToolPalette"
+        }
+      ]
+    },
+    {
+      "name": "ValidationPanel",
+      "path": "Components/Board/ValidationPanel.razor",
+      "pages": [
+        "/author/{BoardName}"
+      ],
+      "usedBy": [
+        "Author"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@finding.Code",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "ValidationPanel"
+        }
+      ]
+    },
+    {
+      "name": "CardAreaFields",
+      "path": "Components/Cards/CardAreaFields.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardGroupFields"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Pick on the map",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardAreaFields"
+        },
+        {
+          "kind": "button",
+          "label": "Remove the area",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardAreaFields"
+        }
+      ]
+    },
+    {
+      "name": "CardGroupFields",
+      "path": "Components/Cards/CardGroupFields.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardSideFields"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Remove the group",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardGroupFields"
+        },
+        {
+          "kind": "button",
+          "label": "Add an area",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardGroupFields"
+        },
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardGroupFields"
+        }
+      ]
+    },
+    {
+      "name": "CardMapFields",
+      "path": "Components/Cards/CardMapFields.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardEditorForm"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardMapFields"
+        },
+        {
+          "kind": "button",
+          "label": "Add a board",
+          "dynamic": false,
+          "id": "edit-board-add",
+          "status": "needed",
+          "strip": "CardMapFields"
+        },
+        {
+          "kind": "button",
+          "label": "Use its boards",
+          "dynamic": false,
+          "id": "edit-saved-map-use",
+          "status": "needed",
+          "strip": "CardMapFields"
+        }
+      ]
+    },
+    {
+      "name": "CardMapPicker",
+      "path": "Components/Cards/CardMapPicker.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardMapFields"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Done",
+          "dynamic": false,
+          "id": "edit-map-done",
+          "status": "needed",
+          "strip": "CardMapPicker"
+        }
+      ]
+    },
+    {
+      "name": "CardRulesFields",
+      "path": "Components/Cards/CardRulesFields.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardEditorForm"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Up",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardRulesFields"
+        },
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardRulesFields"
+        },
+        {
+          "kind": "button",
+          "label": "Add an SSR",
+          "dynamic": false,
+          "id": "edit-ssr-add",
+          "status": "needed",
+          "strip": "CardRulesFields"
+        }
+      ]
+    },
+    {
+      "name": "CardSaveActions",
+      "path": "Components/Cards/CardSaveActions.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardEditor"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(Source is { Length: \u003E 0 } kept \u0026\u0026 RenameTo is { Length: \u003E 0 } other \u0026\u0026 othe...",
+          "dynamic": true,
+          "id": "edit-save",
+          "status": "needed",
+          "strip": "CardSaveActions card-save-actions"
+        },
+        {
+          "kind": "button",
+          "label": "Rename \u0027@source\u0027 to \u0027@target\u0027",
+          "dynamic": true,
+          "id": "edit-rename",
+          "status": "needed",
+          "strip": "CardSaveActions card-save-actions"
+        },
+        {
+          "kind": "button",
+          "label": "Delete this card",
+          "dynamic": false,
+          "id": "edit-delete",
+          "status": "needed",
+          "strip": "CardSaveActions card-save-actions"
+        },
+        {
+          "kind": "button",
+          "label": "Delete",
+          "dynamic": false,
+          "id": "edit-delete-confirm",
+          "status": "needed",
+          "strip": "CardSaveActions"
+        },
+        {
+          "kind": "button",
+          "label": "Rename",
+          "dynamic": false,
+          "id": "edit-rename-confirm",
+          "status": "needed",
+          "strip": "CardSaveActions"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "id": "edit-confirm-cancel",
+          "status": "needed",
+          "strip": "CardSaveActions"
+        }
+      ]
+    },
+    {
+      "name": "CardSideFields",
+      "path": "Components/Cards/CardSideFields.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardEditorForm"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardSideFields"
+        },
+        {
+          "kind": "button",
+          "label": "Add an OB group",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardSideFields"
+        }
+      ]
+    },
+    {
+      "name": "CardVictoryFields",
+      "path": "Components/Cards/CardVictoryFields.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardEditorForm"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Remove the outcome",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardVictoryFields"
+        },
+        {
+          "kind": "button",
+          "label": "Pick on the map",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardVictoryFields"
+        },
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardVictoryFields"
+        },
+        {
+          "kind": "button",
+          "label": "Add a condition",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardVictoryFields"
+        },
+        {
+          "kind": "button",
+          "label": "Add an outcome",
+          "dynamic": false,
+          "id": "edit-outcome-add",
+          "status": "needed",
+          "strip": "CardVictoryFields"
+        }
+      ]
+    },
+    {
+      "name": "ObCounterPicker",
+      "path": "Components/Cards/ObCounterPicker.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardGroupFields",
+        "CardSideFields"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Add",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "ObCounterPicker"
+        }
+      ]
+    },
+    {
+      "name": "FidelityRunControls",
+      "path": "Components/Fidelity/FidelityRunControls.razor",
+      "pages": [
+        "/fidelity"
+      ],
+      "usedBy": [
+        "Fidelity"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Run batch",
+          "dynamic": false,
+          "id": "fidelity-start",
+          "status": "needed",
+          "strip": "FidelityRunControls"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "id": "fidelity-cancel",
+          "status": "needed",
+          "strip": "FidelityRunControls"
+        }
+      ]
+    },
+    {
+      "name": "LosFidelityPanel",
+      "path": "Components/Fidelity/LosFidelityPanel.razor",
+      "pages": [
+        "/fidelity"
+      ],
+      "usedBy": [
+        "Fidelity"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Check LOS",
+          "dynamic": false,
+          "id": "los-fidelity-run",
+          "status": "needed",
+          "strip": "LosFidelityPanel"
+        }
+      ]
+    },
+    {
+      "name": "GameReplayToolbar",
+      "path": "Components/Games/GameReplayToolbar.razor",
+      "pages": [
+        "/units/games"
+      ],
+      "usedBy": [
+        "Games"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Show on @BoardName",
+          "dynamic": true,
+          "id": "game-show",
+          "status": "needed",
+          "strip": "GameReplayToolbar game-toolbar"
+        }
+      ]
+    },
+    {
+      "name": "ReadCaseForm",
+      "path": "Components/Games/ReadCaseForm.razor",
+      "pages": [
+        "/units/games"
+      ],
+      "usedBy": [
+        "Games"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Read",
+          "dynamic": false,
+          "id": "case-read",
+          "status": "needed",
+          "strip": "ReadCaseForm case-form"
+        }
+      ]
+    },
+    {
+      "name": "IconBatchList",
+      "path": "Components/Icons/IconBatchList.razor",
+      "pages": [
+        "/lab/icons"
+      ],
+      "usedBy": [
+        "IconLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Open on the bench",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconBatchList"
+        },
+        {
+          "kind": "button",
+          "label": "Copy prompt",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconBatchList"
+        },
+        {
+          "kind": "button",
+          "label": "Save",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconBatchList"
+        }
+      ]
+    },
+    {
+      "name": "IconBriefEditor",
+      "path": "Components/Icons/IconBriefEditor.razor",
+      "pages": [
+        "/lab/icons"
+      ],
+      "usedBy": [
+        "IconCoverageView",
+        "IconPromptBench"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(IsNew ? \u0022Save brief\u0022 : \u0022Save changes\u0022)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "IconBriefEditor toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconBriefEditor toolbar"
+        }
+      ]
+    },
+    {
+      "name": "IconCoverageView",
+      "path": "Components/Icons/IconCoverageView.razor",
+      "pages": [
+        "/lab/icons"
+      ],
+      "usedBy": [
+        "IconLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(marked == 0 ? \u0022Keep words for the checked\u0022 : $\u0022Keep words for the {marked} ...",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "IconCoverageView toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Check every open one",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconCoverageView toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "New icon",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconCoverageView"
+        },
+        {
+          "kind": "button",
+          "label": "Keep words",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconCoverageView"
+        },
+        {
+          "kind": "button",
+          "label": "Change",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconCoverageView"
+        }
+      ]
+    },
+    {
+      "name": "IconPromptBench",
+      "path": "Components/Icons/IconPromptBench.razor",
+      "pages": [
+        "/lab/icons"
+      ],
+      "usedBy": [
+        "IconLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Fill the slots from one component",
+          "dynamic": false,
+          "id": "icon-bench-fill",
+          "status": "needed",
+          "strip": "IconPromptBench"
+        },
+        {
+          "kind": "button",
+          "label": "@(Bench.Holds(brief.Key) ? \u0022In a slot\u0022 : \u0022Add\u0022)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "IconPromptBench"
+        },
+        {
+          "kind": "button",
+          "label": "Write a brief with no control yet",
+          "dynamic": false,
+          "id": "icon-bench-new-brief",
+          "status": "needed",
+          "strip": "IconPromptBench"
+        },
+        {
+          "kind": "button",
+          "label": "Start a new batch",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconPromptBench"
+        },
+        {
+          "kind": "button",
+          "label": "Edit brief",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconPromptBench"
+        },
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconPromptBench"
+        },
+        {
+          "kind": "button",
+          "label": "Edit the shared style",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconPromptBench icon-bench-actions"
+        },
+        {
+          "kind": "button",
+          "label": "@(Altered || Bench.Origin is null ? \u0022Save batch\u0022 : \u0022Save the name\u0022)",
+          "dynamic": true,
+          "id": "icon-bench-save",
+          "status": "needed",
+          "strip": "IconPromptBench icon-bench-actions"
+        },
+        {
+          "kind": "button",
+          "label": "Copy prompt",
+          "dynamic": false,
+          "id": "icon-bench-copy",
+          "status": "needed",
+          "strip": "IconPromptBench icon-bench-actions"
+        },
+        {
+          "kind": "button",
+          "label": "Save style",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconPromptBench toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "IconPromptBench toolbar"
+        }
+      ]
+    },
+    {
+      "name": "MainLayout",
+      "path": "Components/Layout/MainLayout.razor",
+      "pages": [],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "\u2630",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "MainLayout"
+        }
+      ]
+    },
+    {
+      "name": "LibraryFilterBar",
+      "path": "Components/Library/LibraryFilterBar.razor",
+      "pages": [
+        "/"
+      ],
+      "usedBy": [
+        "Home"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Clear filters",
+          "dynamic": false,
+          "id": "library-clear",
+          "status": "needed",
+          "strip": "LibraryFilterBar"
+        }
+      ]
+    },
+    {
+      "name": "MapSummaryList",
+      "path": "Components/Library/MapSummaryList.razor",
+      "pages": [
+        "/",
+        "/maps"
+      ],
+      "usedBy": [
+        "Home",
+        "Maps"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Edit",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "MapSummaryList"
+        },
+        {
+          "kind": "button",
+          "label": "Delete",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "MapSummaryList"
+        }
+      ]
+    },
+    {
+      "name": "MapBuildActions",
+      "path": "Components/Maps/MapBuildActions.razor",
+      "pages": [
+        "/maps"
+      ],
+      "usedBy": [
+        "Maps"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Check",
+          "dynamic": false,
+          "id": "map-check",
+          "status": "needed",
+          "strip": "MapBuildActions"
+        },
+        {
+          "kind": "button",
+          "label": "Save and view",
+          "dynamic": false,
+          "id": "map-save",
+          "status": "needed",
+          "strip": "MapBuildActions"
+        }
+      ]
+    },
+    {
+      "name": "MapPlacementEditor",
+      "path": "Components/Maps/MapPlacementEditor.razor",
+      "pages": [
+        "/maps"
+      ],
+      "usedBy": [
+        "Maps"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "MapPlacementEditor"
+        },
+        {
+          "kind": "button",
+          "label": "Add a board",
+          "dynamic": false,
+          "id": "map-add-board",
+          "status": "needed",
+          "strip": "MapPlacementEditor"
+        }
+      ]
+    },
+    {
+      "name": "NewBoardForm",
+      "path": "Components/Maps/NewBoardForm.razor",
+      "pages": [
+        "/author/new"
+      ],
+      "usedBy": [
+        "NewBoard"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Create",
+          "dynamic": false,
+          "id": "board-create",
+          "status": "needed",
+          "strip": "NewBoardForm"
+        }
+      ]
+    },
+    {
+      "name": "PlacementTextEditor",
+      "path": "Components/Maps/PlacementTextEditor.razor",
+      "pages": [
+        "/maps"
+      ],
+      "usedBy": [
+        "Maps"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Use this text",
+          "dynamic": false,
+          "id": "map-use-text",
+          "status": "needed",
+          "strip": "PlacementTextEditor"
+        }
+      ]
+    },
+    {
+      "name": "ScenarioRuleEditor",
+      "path": "Components/Maps/ScenarioRuleEditor.razor",
+      "pages": [
+        "/maps"
+      ],
+      "usedBy": [
+        "Maps"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Up",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "ScenarioRuleEditor"
+        },
+        {
+          "kind": "button",
+          "label": "Down",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "ScenarioRuleEditor"
+        },
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "ScenarioRuleEditor"
+        },
+        {
+          "kind": "button",
+          "label": "Add rule",
+          "dynamic": false,
+          "id": "map-add-rule",
+          "status": "needed",
+          "strip": "ScenarioRuleEditor"
+        }
+      ]
+    },
+    {
+      "name": "Author",
+      "path": "Components/Pages/Author.razor",
+      "pages": [
+        "/author/{BoardName}"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "tab",
+          "label": "Properties",
+          "dynamic": false,
+          "id": "Properties",
+          "status": "needed",
+          "strip": "Author InspectorTabList"
+        },
+        {
+          "kind": "tab",
+          "label": "Layers",
+          "dynamic": false,
+          "id": "Layers",
+          "status": "needed",
+          "strip": "Author InspectorTabList"
+        },
+        {
+          "kind": "tab",
+          "label": "Validation",
+          "dynamic": false,
+          "id": "Validation",
+          "status": "needed",
+          "strip": "Author InspectorTabList"
+        },
+        {
+          "kind": "tab",
+          "label": "Hex",
+          "dynamic": false,
+          "id": "Hex",
+          "status": "needed",
+          "strip": "Author InspectorTabList"
+        }
+      ]
+    },
+    {
+      "name": "BoardViewer",
+      "path": "Components/Pages/BoardViewer.razor",
+      "pages": [
+        "/boards/{BoardName}"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Rotate map",
+          "dynamic": false,
+          "id": "map-rotate",
+          "icon": "rotate",
+          "status": "icon",
+          "strip": "BoardViewer"
+        }
+      ]
+    },
+    {
+      "name": "Home",
+      "path": "Components/Pages/Home.razor",
+      "pages": [
+        "/"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Clear filters",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "Home"
+        }
+      ]
+    },
+    {
+      "name": "IconLab",
+      "path": "Components/Pages/IconLab.razor",
+      "pages": [
+        "/lab/icons"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "tab",
+          "label": "Icons",
+          "dynamic": false,
+          "id": "icons",
+          "status": "needed",
+          "strip": "IconLab Tabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Coverage",
+          "dynamic": false,
+          "id": "coverage",
+          "status": "needed",
+          "strip": "IconLab Tabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Prompts",
+          "dynamic": false,
+          "id": "prompts",
+          "status": "needed",
+          "strip": "IconLab Tabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Batches",
+          "dynamic": false,
+          "id": "batches",
+          "status": "needed",
+          "strip": "IconLab Tabs"
+        }
+      ]
+    },
+    {
+      "name": "Play",
+      "path": "Components/Pages/Play.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Tick every stack that may take a \u0022?\u0022 (@choices.Count)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: place @DisplayText.Side(side.Id)\u0027s non-OB \u0022?\u0022",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
+          "label": "Hand the screen to the @DisplayText.Side(nextSide) side",
+          "dynamic": true,
+          "id": "setup-handover",
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
+          "label": "@(topUp ? $\u0022Add what {group.Name} still owes\u0022 : $\u0022Set up {group.Name}\u0022)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play setup-groups"
+        },
+        {
+          "kind": "button",
+          "label": "Start the game, then set up on the map",
+          "dynamic": false,
+          "id": "start-game",
+          "status": "needed",
+          "strip": "Play start-game-bar"
+        },
+        {
+          "kind": "button",
+          "label": "@refusal.Text",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
+          "label": "Stop picking",
+          "dynamic": false,
+          "id": "play-picking-stop",
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: end the @Games.PhaseLabel(state.Phase)",
+          "dynamic": true,
+          "id": "propose-advance",
+          "status": "needed",
+          "strip": "Play toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: place @Words(unit.Id) in @PlaceOf(state.Location(unit.Id)!.Location)...",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play play-hidden"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @WordsAt(guard) Deploys",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play guard-deploy"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @WordsAt(unit.Id) massacres @Words(prisoner.Id)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play play-massacres"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: the SMC moves away from the OVR",
+          "dynamic": false,
+          "id": "propose-overrun-evade",
+          "status": "needed",
+          "strip": "Play overrun-evade"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: give up the ROF for @forfeit.Fp Residual FP",
+          "dynamic": true,
+          "id": "propose-forfeit-rof",
+          "status": "needed",
+          "strip": "Play forfeit-rof"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @Words(motionChosen.Vehicle) attempts Motion",
+          "dynamic": true,
+          "id": "propose-motion-attempt",
+          "status": "needed",
+          "strip": "Play motion-attempt"
+        },
+        {
+          "kind": "button",
+          "label": "Show it on the map",
+          "dynamic": false,
+          "id": "dff-show",
+          "status": "needed",
+          "strip": "Play dff-window"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: the Mandatory FG attacks",
+          "dynamic": false,
+          "id": "propose-mandatory-fire",
+          "status": "needed",
+          "strip": "Play dff-window"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @Words(owing) attacks",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play dff-window"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: the DEFENDER passes",
+          "dynamic": false,
+          "id": "propose-pass",
+          "status": "needed",
+          "strip": "Play dff-window"
+        },
+        {
+          "kind": "button",
+          "label": "Zoom in",
+          "dynamic": false,
+          "id": "play-map-zoom-in",
+          "icon": "zoom-in",
+          "status": "icon",
+          "strip": "Play play-map-tools"
+        },
+        {
+          "kind": "button",
+          "label": "Zoom out",
+          "dynamic": false,
+          "id": "play-map-zoom-out",
+          "icon": "zoom-out",
+          "status": "icon",
+          "strip": "Play play-map-tools"
+        },
+        {
+          "kind": "button",
+          "label": "Fit",
+          "dynamic": false,
+          "id": "play-map-fit",
+          "icon": "fit",
+          "status": "icon",
+          "strip": "Play play-map-tools"
+        },
+        {
+          "kind": "button",
+          "label": "Rotate map",
+          "dynamic": false,
+          "id": "map-rotate",
+          "icon": "rotate",
+          "status": "icon",
+          "strip": "Play play-map-tools"
+        },
+        {
+          "kind": "button",
+          "label": "Formation boundaries",
+          "dynamic": false,
+          "id": "map-parent-boundaries",
+          "status": "needed",
+          "strip": "Play play-map-tools"
+        },
+        {
+          "kind": "button",
+          "label": "@plan.Name",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play setup-switcher"
+        },
+        {
+          "kind": "button",
+          "label": "My list",
+          "dynamic": false,
+          "id": "map-show-list",
+          "status": "needed",
+          "strip": "Play setup-switcher"
+        },
+        {
+          "kind": "button",
+          "label": "@asked.Yes",
+          "dynamic": true,
+          "id": "map-ask-yes",
+          "status": "needed",
+          "strip": "Play toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Keep my list",
+          "dynamic": false,
+          "id": "map-ask-no",
+          "status": "needed",
+          "strip": "Play toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Propose setup",
+          "dynamic": false,
+          "id": "map-propose-setup",
+          "status": "needed",
+          "strip": "Play toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Edit the list (@placements.Count)",
+          "dynamic": true,
+          "id": "map-edit-list",
+          "status": "needed",
+          "strip": "Play toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Use @shownOne.Name",
+          "dynamic": true,
+          "id": "map-use-shown",
+          "status": "needed",
+          "strip": "Play toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Zoom to the setup area",
+          "dynamic": false,
+          "id": "map-zoom-setup",
+          "status": "needed",
+          "strip": "Play setup-map-tools"
+        },
+        {
+          "kind": "button",
+          "label": "Their plan\u0027s outline",
+          "dynamic": false,
+          "id": "map-their-outline",
+          "status": "needed",
+          "strip": "Play setup-map-tools"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "id": "setup-move-cancel",
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "id": "setup-swap-cancel",
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
+          "label": "@label",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play More of the game"
+        },
+        {
+          "kind": "tab",
+          "label": "Plans",
+          "dynamic": false,
+          "id": "plans",
+          "status": "needed",
+          "strip": "Play SetupTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Counters",
+          "dynamic": false,
+          "id": "counters",
+          "status": "needed",
+          "strip": "Play SetupTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Card OB",
+          "dynamic": false,
+          "id": "ob",
+          "status": "needed",
+          "strip": "Play SetupTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Proposal",
+          "dynamic": false,
+          "id": "proposal",
+          "icon": "proposal",
+          "status": "icon",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
+        },
+        {
+          "kind": "tab",
+          "label": "Play",
+          "dynamic": false,
+          "id": "play",
+          "icon": "play",
+          "status": "icon",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
+        },
+        {
+          "kind": "tab",
+          "label": "Records",
+          "dynamic": false,
+          "id": "records",
+          "icon": "records",
+          "status": "icon",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
+        },
+        {
+          "kind": "tab",
+          "label": "Units",
+          "dynamic": false,
+          "id": "units",
+          "icon": "units",
+          "status": "icon",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
+        },
+        {
+          "kind": "tab",
+          "label": "Scripted dice",
+          "dynamic": false,
+          "id": "dice",
+          "icon": "scripted-dice",
+          "status": "icon",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
+        },
+        {
+          "kind": "tab",
+          "label": "Map",
+          "dynamic": false,
+          "id": "map",
+          "status": "needed",
+          "strip": "Play PaneTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Actions",
+          "dynamic": false,
+          "id": "actions",
+          "status": "needed",
+          "strip": "Play PaneTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Activity",
+          "dynamic": false,
+          "id": "activity",
+          "status": "needed",
+          "strip": "Play PaneTabs"
+        }
+      ]
+    },
+    {
+      "name": "Replay",
+      "path": "Components/Pages/Replay.razor",
+      "pages": [
+        "/games/replay"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(playing ? \u0022Stop\u0022 : \u0022Play\u0022)",
+          "dynamic": true,
+          "id": "replay-play",
+          "status": "needed",
+          "strip": "Replay"
+        },
+        {
+          "kind": "button",
+          "label": "Make the game and open it on Play",
+          "dynamic": false,
+          "id": "replay-play-on-make",
+          "status": "needed",
+          "strip": "Replay toolbar"
+        },
+        {
+          "kind": "tab",
+          "label": "Step",
+          "dynamic": false,
+          "id": "step",
+          "icon": "step",
+          "status": "icon",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
+        },
+        {
+          "kind": "tab",
+          "label": "Units",
+          "dynamic": false,
+          "id": "units",
+          "icon": "units",
+          "status": "icon",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
+        },
+        {
+          "kind": "tab",
+          "label": "Standing",
+          "dynamic": false,
+          "id": "standing",
+          "icon": "standing",
+          "status": "icon",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
+        },
+        {
+          "kind": "button",
+          "label": "Zoom in",
+          "dynamic": false,
+          "id": "replay-map-zoom-in",
+          "icon": "zoom-in",
+          "status": "icon",
+          "strip": "Replay play-map-tools"
+        },
+        {
+          "kind": "button",
+          "label": "Zoom out",
+          "dynamic": false,
+          "id": "replay-map-zoom-out",
+          "icon": "zoom-out",
+          "status": "icon",
+          "strip": "Replay play-map-tools"
+        },
+        {
+          "kind": "button",
+          "label": "Fit",
+          "dynamic": false,
+          "id": "replay-map-fit",
+          "icon": "fit",
+          "status": "icon",
+          "strip": "Replay play-map-tools"
+        },
+        {
+          "kind": "button",
+          "label": "Rotate map",
+          "dynamic": false,
+          "id": "replay-map-rotate",
+          "icon": "rotate",
+          "status": "icon",
+          "strip": "Replay play-map-tools"
+        },
+        {
+          "kind": "tab",
+          "label": "Map",
+          "dynamic": false,
+          "id": "map",
+          "status": "needed",
+          "strip": "Replay PaneTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Timeline",
+          "dynamic": false,
+          "id": "timeline",
+          "status": "needed",
+          "strip": "Replay PaneTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Details",
+          "dynamic": false,
+          "id": "details",
+          "status": "needed",
+          "strip": "Replay PaneTabs"
+        }
+      ]
+    },
+    {
+      "name": "AdvanceActionPanel",
+      "path": "Components/Play/AdvanceActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: advance",
+          "dynamic": false,
+          "id": "propose-advance-units",
+          "status": "needed",
+          "strip": "AdvanceActionPanel toolbar"
+        }
+      ]
+    },
+    {
+      "name": "AmbushWithdrawalActions",
+      "path": "Components/Play/AmbushWithdrawalActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "CloseCombatPanel"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: @Say(withdrawal.Unit) withdraws to @Say(withdrawal.To)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "AmbushWithdrawalActions cc-ambush-withdrawal"
+        }
+      ]
+    },
+    {
+      "name": "BerserkOverrunCloseCombat",
+      "path": "Components/Play/BerserkOverrunCloseCombat.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: the OVR\u0027s CC",
+          "dynamic": false,
+          "id": "propose-overrun-cc",
+          "status": "needed",
+          "strip": "BerserkOverrunCloseCombat overrun-cc"
+        }
+      ]
+    },
+    {
+      "name": "BoundingFireAction",
+      "path": "Components/Play/BoundingFireAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: MA Bounding First Fire",
+          "dynamic": false,
+          "id": "vehicle-bff-ma",
+          "status": "needed",
+          "strip": "BoundingFireAction"
+        },
+        {
+          "kind": "button",
+          "label": "@(Weapons.Count \u003E 0 ? \u0022Propose: MG Bounding First Fire\u0022 : \u0022Propose: Bounding ...",
+          "dynamic": true,
+          "id": "vehicle-bff",
+          "status": "needed",
+          "strip": "BoundingFireAction"
+        }
+      ]
+    },
+    {
+      "name": "BuildingEntryAction",
+      "path": "Components/Play/BuildingEntryAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: enter a building",
+          "dynamic": false,
+          "id": "propose-enter",
+          "status": "needed",
+          "strip": "BuildingEntryAction toolbar"
+        }
+      ]
+    },
+    {
+      "name": "CloseCombatAttackBuilder",
+      "path": "Components/Play/CloseCombatAttackBuilder.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "CloseCombatPanel"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Add the attack",
+          "dynamic": false,
+          "id": "cc-add-attack",
+          "status": "needed",
+          "strip": "CloseCombatAttackBuilder cc-attack"
+        }
+      ]
+    },
+    {
+      "name": "CloseCombatPanel",
+      "path": "Components/Play/CloseCombatPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: roll for Ambush",
+          "dynamic": false,
+          "id": "propose-ambush",
+          "status": "needed",
+          "strip": "CloseCombatPanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: resolve CC@(Attacks.Count == 0 ? \u0022 with no attacks\u0022 : \u0022\u0022)",
+          "dynamic": true,
+          "id": "propose-cc",
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        }
+      ]
+    },
+    {
+      "name": "CrewExposureActions",
+      "path": "Components/Play/CrewExposureActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: @afv.Id @(afv.ButtonedUp ? \u0022exposes its crew (CE)\u0022 : \u0022buttons up (BU)\u0022)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "CrewExposureActions toolbar"
+        }
+      ]
+    },
+    {
+      "name": "DeployActionPanel",
+      "path": "Components/Play/DeployActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: deploy",
+          "dynamic": false,
+          "id": "propose-deploy",
+          "status": "needed",
+          "strip": "DeployActionPanel toolbar"
+        }
+      ]
+    },
+    {
+      "name": "GunArcAction",
+      "path": "Components/Play/GunArcAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: turn without firing",
+          "dynamic": false,
+          "id": "propose-turn-gun",
+          "status": "needed",
+          "strip": "GunArcAction toolbar"
+        }
+      ]
+    },
+    {
+      "name": "HandOverScreen",
+      "path": "Components/Play/HandOverScreen.razor",
+      "pages": [
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "Play",
+        "Replay"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "I am @Label: show my view",
+          "dynamic": true,
+          "id": "play-handover-confirm",
+          "status": "needed",
+          "strip": "HandOverScreen"
+        }
+      ]
+    },
+    {
+      "name": "InfantryMovementAction",
+      "path": "Components/Play/InfantryMovementAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: the OVR\u0027s NTC",
+          "dynamic": false,
+          "id": "propose-overrun-ntc",
+          "status": "needed",
+          "strip": "InfantryMovementAction"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: move",
+          "dynamic": false,
+          "id": "propose-move",
+          "status": "needed",
+          "strip": "InfantryMovementAction"
+        }
+      ]
+    },
+    {
+      "name": "LocationField",
+      "path": "Components/Play/LocationField.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "BuildingEntryAction",
+        "InfantryMovementAction",
+        "PlaceDemolitionChargeAction",
+        "RoutActionPanel",
+        "SetupPlacementEditor",
+        "SmallArmsFirePanel",
+        "StarshellActionPanel",
+        "ThrowDemolitionChargeAction"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(Armed ? \u0022Stop picking\u0022 : \u0022Pick on the map\u0022)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "LocationField"
+        },
+        {
+          "kind": "button",
+          "label": "@(Many ? \u0022Add\u0022 : \u0022Use\u0022) @Words(picked)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "LocationField"
+        },
+        {
+          "kind": "button",
+          "label": "Remove @Short(Tokens[^1])",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "LocationField"
+        },
+        {
+          "kind": "button",
+          "label": "Clear the route",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "LocationField"
+        }
+      ]
+    },
+    {
+      "name": "MapExitAction",
+      "path": "Components/Play/MapExitAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "AdvanceActionPanel",
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: leave the map",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "MapExitAction"
+        }
+      ]
+    },
+    {
+      "name": "MoppingUpAction",
+      "path": "Components/Play/MoppingUpAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: Mop Up",
+          "dynamic": false,
+          "id": "propose-mop-up",
+          "status": "needed",
+          "strip": "MoppingUpAction mop-up"
+        }
+      ]
+    },
+    {
+      "name": "MovementWindowActions",
+      "path": "Components/Play/MovementWindowActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: the DEFENDER passes",
+          "dynamic": false,
+          "id": "propose-pass",
+          "status": "needed",
+          "strip": "MovementWindowActions"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: end the move@(EndingSome ? \u0022 of the checked units\u0022 : \u0022\u0022)",
+          "dynamic": true,
+          "id": "propose-end-move",
+          "status": "needed",
+          "strip": "MovementWindowActions"
+        }
+      ]
+    },
+    {
+      "name": "OpenEntryDeclaration",
+      "path": "Components/Play/OpenEntryDeclaration.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: decline the OVR",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "OpenEntryDeclaration"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: elect the OVR",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "OpenEntryDeclaration"
+        }
+      ]
+    },
+    {
+      "name": "OpportunityFireAction",
+      "path": "Components/Play/OpportunityFireAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: Opportunity Fire",
+          "dynamic": false,
+          "id": "propose-opportunity",
+          "status": "needed",
+          "strip": "OpportunityFireAction toolbar"
+        }
+      ]
+    },
+    {
+      "name": "OrdnanceFirePanel",
+      "path": "Components/Play/OrdnanceFirePanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: fire",
+          "dynamic": false,
+          "id": "propose-ordnance",
+          "status": "needed",
+          "strip": "OrdnanceFirePanel toolbar"
+        }
+      ]
+    },
+    {
+      "name": "PendingChoicePanel",
+      "path": "Components/Play/PendingChoicePanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: @option.Text",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "PendingChoicePanel"
+        }
+      ]
+    },
+    {
+      "name": "PendingSurrenderPanel",
+      "path": "Components/Play/PendingSurrenderPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: @At(captor) takes it prisoner",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "PendingSurrenderPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: reject the surrender (No Quarter)",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "PendingSurrenderPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: free it as Unarmed (no captor can guard it; A20.21)",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "PendingSurrenderPanel"
+        }
+      ]
+    },
+    {
+      "name": "PickedOption",
+      "path": "Components/Play/PickedOption.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "AdvanceActionPanel",
+        "CloseCombatPanel",
+        "OrdnanceTargetFields",
+        "SmallArmsFirePanel",
+        "SmokeGrenadeAction"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Use @Say(option)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "PickedOption"
+        }
+      ]
+    },
+    {
+      "name": "PlaceDemolitionChargeAction",
+      "path": "Components/Play/PlaceDemolitionChargeAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: Place the DC",
+          "dynamic": false,
+          "id": "propose-place-dc",
+          "status": "needed",
+          "strip": "PlaceDemolitionChargeAction"
+        }
+      ]
+    },
+    {
+      "name": "PlacedChargeDetonationActions",
+      "path": "Components/Play/PlacedChargeDetonationActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: detonate @Say(placed.Charge) in @Say(placed.Target) (30 FP@(placed.T...",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "PlacedChargeDetonationActions toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: detonate @Say(placed.Charge) in @Say(placed.Target) at @Say(vehicle....",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "PlacedChargeDetonationActions toolbar"
+        }
+      ]
+    },
+    {
+      "name": "PlayCardPanel",
+      "path": "Components/Play/PlayCardPanel.razor",
+      "pages": [
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "Play",
+        "Replay"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Close the card",
+          "dynamic": false,
+          "id": "play-card-close",
+          "status": "needed",
+          "strip": "PlayCardPanel"
+        }
+      ]
+    },
+    {
+      "name": "PlayContextHeader",
+      "path": "Components/Play/PlayContextHeader.razor",
+      "pages": [
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "Play",
+        "Replay"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Review: @title",
+          "dynamic": true,
+          "id": "play-review-jump",
+          "status": "needed",
+          "strip": "PlayContextHeader"
+        },
+        {
+          "kind": "button",
+          "label": "Hand over to @awaiting",
+          "dynamic": true,
+          "id": "play-hand-over",
+          "status": "needed",
+          "strip": "PlayContextHeader"
+        },
+        {
+          "kind": "button",
+          "label": "Review: @title",
+          "dynamic": true,
+          "id": "play-review-jump",
+          "status": "needed",
+          "strip": "PlayContextHeader"
+        },
+        {
+          "kind": "button",
+          "label": "Hand over to @awaiting",
+          "dynamic": true,
+          "id": "play-hand-over",
+          "status": "needed",
+          "strip": "PlayContextHeader"
+        }
+      ]
+    },
+    {
+      "name": "PlayUnitTable",
+      "path": "Components/Play/PlayUnitTable.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@Say(at.ToString())",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "PlayUnitTable"
+        }
+      ]
+    },
+    {
+      "name": "PrisonerCustodyActions",
+      "path": "Components/Play/PrisonerCustodyActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: @At(guard.Id) hands its prisoners to @Say(heir)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "PrisonerCustodyActions play-guards"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @At(guard.Id) abandons its prisoners",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "PrisonerCustodyActions play-guards"
+        }
+      ]
+    },
+    {
+      "name": "ProposalReviewPanel",
+      "path": "Components/Play/ProposalReviewPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(Busy ? \u0022Confirming\u0022 : ConfirmLabel)",
+          "dynamic": true,
+          "id": "play-confirm",
+          "status": "needed",
+          "strip": "ProposalReviewPanel play-proposal-actions"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "id": "play-cancel",
+          "status": "needed",
+          "strip": "ProposalReviewPanel play-proposal-actions"
+        }
+      ]
+    },
+    {
+      "name": "RallyActionPanel",
+      "path": "Components/Play/RallyActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: rally",
+          "dynamic": false,
+          "id": "propose-rally",
+          "status": "needed",
+          "strip": "RallyActionPanel toolbar"
+        }
+      ]
+    },
+    {
+      "name": "ReactionFireAction",
+      "path": "Components/Play/ReactionFireAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: CC Reaction Fire at @Vehicle",
+          "dynamic": true,
+          "id": "propose-reaction",
+          "status": "needed",
+          "strip": "ReactionFireAction toolbar"
+        }
+      ]
+    },
+    {
+      "name": "RecombineActionPanel",
+      "path": "Components/Play/RecombineActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: recombine",
+          "dynamic": false,
+          "id": "propose-recombine",
+          "status": "needed",
+          "strip": "RecombineActionPanel toolbar"
+        }
+      ]
+    },
+    {
+      "name": "RepairActionPanel",
+      "path": "Components/Play/RepairActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: repair",
+          "dynamic": false,
+          "id": "propose-repair",
+          "status": "needed",
+          "strip": "RepairActionPanel toolbar"
+        }
+      ]
+    },
+    {
+      "name": "RoutActionPanel",
+      "path": "Components/Play/RoutActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Use the route to @Say(way.Target)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "RoutActionPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: rout",
+          "dynamic": false,
+          "id": "propose-rout",
+          "status": "needed",
+          "strip": "RoutActionPanel toolbar"
+        }
+      ]
+    },
+    {
+      "name": "ScriptedDicePanel",
+      "path": "Components/Play/ScriptedDicePanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Add",
+          "dynamic": false,
+          "id": "scripted-dice-add",
+          "status": "needed",
+          "strip": "ScriptedDicePanel scripted-dice"
+        },
+        {
+          "kind": "button",
+          "label": "clear",
+          "dynamic": false,
+          "id": "scripted-dice-clear",
+          "status": "needed",
+          "strip": "ScriptedDicePanel scripted-dice"
+        }
+      ]
+    },
+    {
+      "name": "SetupBar",
+      "path": "Components/Play/SetupBar.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@Yes",
+          "dynamic": true,
+          "id": "setup-ask-yes",
+          "status": "needed",
+          "strip": "SetupBar setup-bar-ask"
+        },
+        {
+          "kind": "button",
+          "label": "Keep my list",
+          "dynamic": false,
+          "id": "setup-ask-no",
+          "status": "needed",
+          "strip": "SetupBar setup-bar-ask"
+        },
+        {
+          "kind": "button",
+          "label": "Propose setup",
+          "dynamic": false,
+          "id": "propose-setup",
+          "status": "needed",
+          "strip": "SetupBar setup-bar-actions"
+        },
+        {
+          "kind": "button",
+          "label": "Clear",
+          "dynamic": false,
+          "id": "place-clear",
+          "status": "needed",
+          "strip": "SetupBar setup-bar-actions"
+        }
+      ]
+    },
+    {
+      "name": "SetupCounters",
+      "path": "Components/Play/SetupCounters.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@stack.Title",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "SetupCounters"
+        },
+        {
+          "kind": "button",
+          "label": "Move stack",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "SetupCounters"
+        },
+        {
+          "kind": "button",
+          "label": "Swap",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "SetupCounters"
+        },
+        {
+          "kind": "button",
+          "label": "@moveWord",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "SetupCounters"
+        },
+        {
+          "kind": "button",
+          "label": "remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "SetupCounters"
+        }
+      ]
+    },
+    {
+      "name": "SetupPlacementEditor",
+      "path": "Components/Play/SetupPlacementEditor.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Add",
+          "dynamic": false,
+          "id": "place-add",
+          "status": "needed",
+          "strip": "SetupPlacementEditor toolbar"
+        }
+      ]
+    },
+    {
+      "name": "SetupPlacementList",
+      "path": "Components/Play/SetupPlacementList.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(item.Picking ? \u0022Click a hex on the map\u0022 : \u0022Pick on the map\u0022)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "SetupPlacementList"
+        },
+        {
+          "kind": "button",
+          "label": "remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "SetupPlacementList"
+        },
+        {
+          "kind": "button",
+          "label": "Clear the list",
+          "dynamic": false,
+          "id": "place-clear",
+          "status": "needed",
+          "strip": "SetupPlacementList"
+        },
+        {
+          "kind": "button",
+          "label": "Propose setup",
+          "dynamic": false,
+          "id": "propose-setup",
+          "status": "needed",
+          "strip": "SetupPlacementList"
+        }
+      ]
+    },
+    {
+      "name": "SetupPlanPicker",
+      "path": "Components/Play/SetupPlanPicker.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(shown ? \u0022Shown on the map\u0022 : \u0022Show on map\u0022)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "SetupPlanPicker toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Reset to @plan.Name",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "SetupPlanPicker toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Use this plan",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "SetupPlanPicker toolbar"
+        }
+      ]
+    },
+    {
+      "name": "ShockRecoveryAction",
+      "path": "Components/Play/ShockRecoveryAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: roll for it",
+          "dynamic": false,
+          "id": "propose-shock",
+          "status": "needed",
+          "strip": "ShockRecoveryAction toolbar"
+        }
+      ]
+    },
+    {
+      "name": "SmallArmsFirePanel",
+      "path": "Components/Play/SmallArmsFirePanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "SmallArmsFirePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Show the range on the map",
+          "dynamic": false,
+          "id": "fire-range-show",
+          "status": "needed",
+          "strip": "SmallArmsFirePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: fire",
+          "dynamic": false,
+          "id": "propose-fire",
+          "status": "needed",
+          "strip": "SmallArmsFirePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "clear",
+          "dynamic": false,
+          "id": "fire-clear",
+          "status": "needed",
+          "strip": "SmallArmsFirePanel toolbar"
+        }
+      ]
+    },
+    {
+      "name": "SmokeGrenadeAction",
+      "path": "Components/Play/SmokeGrenadeAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: SMOKE grenades",
+          "dynamic": false,
+          "id": "propose-smoke",
+          "status": "needed",
+          "strip": "SmokeGrenadeAction"
+        }
+      ]
+    },
+    {
+      "name": "StarshellActionPanel",
+      "path": "Components/Play/StarshellActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: fire a Starshell",
+          "dynamic": false,
+          "id": "propose-starshell",
+          "status": "needed",
+          "strip": "StarshellActionPanel toolbar"
+        }
+      ]
+    },
+    {
+      "name": "SupportWeaponActionPanel",
+      "path": "Components/Play/SupportWeaponActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: transfer",
+          "dynamic": false,
+          "id": "propose-transfer",
+          "status": "needed",
+          "strip": "SupportWeaponActionPanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: drop",
+          "dynamic": false,
+          "id": "propose-drop",
+          "status": "needed",
+          "strip": "SupportWeaponActionPanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: recover",
+          "dynamic": false,
+          "id": "propose-recover",
+          "status": "needed",
+          "strip": "SupportWeaponActionPanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: dismantle or assemble",
+          "dynamic": false,
+          "id": "propose-dismantle",
+          "status": "needed",
+          "strip": "SupportWeaponActionPanel toolbar"
+        }
+      ]
+    },
+    {
+      "name": "ThrowDemolitionChargeAction",
+      "path": "Components/Play/ThrowDemolitionChargeAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: Throw the DC",
+          "dynamic": false,
+          "id": "propose-throw-dc",
+          "status": "needed",
+          "strip": "ThrowDemolitionChargeAction toolbar"
+        }
+      ]
+    },
+    {
+      "name": "VehicleCloseCombatPanel",
+      "path": "Components/Play/VehicleCloseCombatPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: Infantry attack the vehicle",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "VehicleCloseCombatPanel vehicle-cc"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: the vehicle attacks the checked Infantry",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "VehicleCloseCombatPanel vehicle-cc"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: the @location.NextSide side passes",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "VehicleCloseCombatPanel vehicle-cc"
+        }
+      ]
+    },
+    {
+      "name": "VehicleStepChoices",
+      "path": "Components/Play/VehicleStepChoices.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: enter the map",
+          "dynamic": false,
+          "id": "vehicle-enter-map",
+          "status": "needed",
+          "strip": "VehicleStepChoices"
+        },
+        {
+          "kind": "button",
+          "label": "@step.Label",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "VehicleStepChoices"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: ESB",
+          "dynamic": false,
+          "id": "vehicle-esb",
+          "status": "needed",
+          "strip": "VehicleStepChoices"
+        },
+        {
+          "kind": "button",
+          "label": "@exit.Label",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "VehicleStepChoices"
+        },
+        {
+          "kind": "button",
+          "label": "@hex",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "VehicleStepChoices"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: board",
+          "dynamic": false,
+          "id": "vehicle-load",
+          "status": "needed",
+          "strip": "VehicleStepChoices"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: unload",
+          "dynamic": false,
+          "id": "vehicle-unload",
+          "status": "needed",
+          "strip": "VehicleStepChoices"
+        }
+      ]
+    },
+    {
+      "name": "VehicleTowingActions",
+      "path": "Components/Play/VehicleTowingActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: unhook @gun.Id (half its MP)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "VehicleTowingActions"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: hook up @gun.Id (half its MP; C10.11)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "VehicleTowingActions"
+        }
+      ]
+    },
+    {
+      "name": "ReplayTimelineList",
+      "path": "Components/Replay/ReplayTimelineList.razor",
+      "pages": [
+        "/games/replay"
+      ],
+      "usedBy": [
+        "Replay"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@step.Number @step.Title@(step.Read == ReplayRead.Part ? \u0022 (read in part)\u0022 : ...",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "ReplayTimelineList"
+        }
+      ]
+    },
+    {
+      "name": "ReplayTransport",
+      "path": "Components/Replay/ReplayTransport.razor",
+      "pages": [
+        "/games/replay"
+      ],
+      "usedBy": [
+        "Replay"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "\u2039 Step",
+          "dynamic": false,
+          "id": "replay-back",
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
+        },
+        {
+          "kind": "button",
+          "label": "Step \u203A",
+          "dynamic": false,
+          "id": "replay-forward",
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
+        },
+        {
+          "kind": "button",
+          "label": "\u2039 Phase",
+          "dynamic": false,
+          "id": "replay-phase-back",
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
+        },
+        {
+          "kind": "button",
+          "label": "Phase \u203A",
+          "dynamic": false,
+          "id": "replay-phase-forward",
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
+        },
+        {
+          "kind": "button",
+          "label": "\u2039 Turn",
+          "dynamic": false,
+          "id": "replay-turn-back",
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
+        },
+        {
+          "kind": "button",
+          "label": "Turn \u203A",
+          "dynamic": false,
+          "id": "replay-turn-forward",
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
+        },
+        {
+          "kind": "button",
+          "label": "First",
+          "dynamic": false,
+          "id": "replay-first",
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
+        },
+        {
+          "kind": "button",
+          "label": "Last",
+          "dynamic": false,
+          "id": "replay-last",
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
+        }
+      ]
+    },
+    {
+      "name": "RevisionNavigator",
+      "path": "Components/Shared/RevisionNavigator.razor",
+      "pages": [
+        "/boards/{BoardName}",
+        "/units/games"
+      ],
+      "usedBy": [
+        "GameReplayToolbar",
+        "UnitOverlayControls"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Previous revision",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "RevisionNavigator"
+        },
+        {
+          "kind": "button",
+          "label": "Next revision",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "RevisionNavigator"
+        }
+      ]
+    },
+    {
+      "name": "AttachedEquipmentEditor",
+      "path": "Components/Units/AttachedEquipmentEditor.razor",
+      "pages": [
+        "/units/lab"
+      ],
+      "usedBy": [
+        "UnitLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "AttachedEquipmentEditor"
+        },
+        {
+          "kind": "button",
+          "label": "Attach equipment",
+          "dynamic": false,
+          "id": "lab-attach",
+          "status": "needed",
+          "strip": "AttachedEquipmentEditor"
+        }
+      ]
+    },
+    {
+      "name": "UnitDocumentOutput",
+      "path": "Components/Units/UnitDocumentOutput.razor",
+      "pages": [
+        "/units/lab"
+      ],
+      "usedBy": [
+        "UnitLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Save document",
+          "dynamic": false,
+          "id": "lab-save-document",
+          "status": "needed",
+          "strip": "UnitDocumentOutput toolbar"
+        }
+      ]
+    },
+    {
+      "name": "UnitPlacementSetEditor",
+      "path": "Components/Units/UnitPlacementSetEditor.razor",
+      "pages": [
+        "/units/lab"
+      ],
+      "usedBy": [
+        "UnitLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Place this unit",
+          "dynamic": false,
+          "id": "lab-place",
+          "status": "needed",
+          "strip": "UnitPlacementSetEditor toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Load set",
+          "dynamic": false,
+          "id": "lab-load-set",
+          "status": "needed",
+          "strip": "UnitPlacementSetEditor toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Save set",
+          "dynamic": false,
+          "id": "lab-save-set",
+          "status": "needed",
+          "strip": "UnitPlacementSetEditor toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "UnitPlacementSetEditor"
+        }
+      ]
+    },
+    {
+      "name": "UnitStyleSheetEditor",
+      "path": "Components/Units/UnitStyleSheetEditor.razor",
+      "pages": [
+        "/units/lab"
+      ],
+      "usedBy": [
+        "UnitLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Save sheet as",
+          "dynamic": false,
+          "id": "lab-save-sheet",
+          "status": "needed",
+          "strip": "UnitStyleSheetEditor toolbar"
+        }
+      ]
+    }
+  ]
+}

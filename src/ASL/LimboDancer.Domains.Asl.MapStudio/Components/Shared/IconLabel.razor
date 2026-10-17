@@ -1,0 +1,27 @@
+@inject IServiceProvider Services
+
+@* A control's label drawn as its icon from wwwroot/icons, the words kept for assistive technology and tests; the words alone show when the
+   Studio has no such icon, or no icon library (a component test). The caller puts the label in the control's title for the tooltip. *@
+@if (Markup is { } markup)
+{
+    @((MarkupString)markup)<span class="visually-hidden">@Label</span>
+}
+else
+{
+    @Label
+}
+
+@code {
+    /// <summary>The icon's key, its file name in wwwroot/icons without <c>.svg</c>.</summary>
+    [Parameter, EditorRequired]
+    public string Icon { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = string.Empty;
+
+    /// <summary>The icon's size in CSS pixels.</summary>
+    [Parameter]
+    public int Size { get; set; } = 20;
+
+    private string? Markup => Services.GetService<IconLibrary>()?.Find(Icon) is { } icon ? IconLibrary.Sized(icon, Size) : null;
+}
