@@ -1,0 +1,42 @@
+[
+  {
+    "key": "zoom-in",
+    "label": "Zoom in",
+    "group": "Map toolbar"
+  },
+  {
+    "key": "zoom-out",
+    "label": "Zoom out",
+    "group": "Map toolbar"
+  },
+  {
+    "key": "fit",
+    "label": "Fit",
+    "group": "Map toolbar"
+  },
+  {
+    "key": "rotate",
+    "label": "Rotate map",
+    "group": "Map toolbar"
+  },
+  {
+    "key": "selection",
+    "label": "Selection",
+    "group": "Inspector tab"
+  },
+  {
+    "key": "los",
+    "label": "LOS",
+    "group": "Inspector tab"
+  },
+  {
+    "key": "range",
+    "label": "Range",
+    "group": "Inspector tab"
+  },
+  {
+    "key": "evidence",
+    "label": "Evidence",
+    "group": "Inspector tab"
+  }
+]
