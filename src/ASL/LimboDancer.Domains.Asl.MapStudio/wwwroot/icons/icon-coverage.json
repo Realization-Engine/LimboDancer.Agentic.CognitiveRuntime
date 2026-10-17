@@ -1358,7 +1358,7 @@
         },
         {
           "kind": "button",
-          "label": "ProposeSimple(GameActions.ForfeitRof, \u0022forfeit-rof\u0022))\u0027\u003EPropose: give up the R...",
+          "label": "Propose: give up the ROF for @forfeit.Fp Residual FP",
           "dynamic": true,
           "id": "propose-forfeit-rof",
           "status": "needed",
@@ -1397,7 +1397,7 @@
         },
         {
           "kind": "button",
-          "label": "ProposeSimple(GameActions.PassFire, \u0022pass\u0022))\u0027\u003EPropose: the DEFENDER passes",
+          "label": "Propose: the DEFENDER passes",
           "dynamic": false,
           "id": "propose-pass",
           "status": "needed",
@@ -1408,7 +1408,8 @@
           "label": "Proposal",
           "dynamic": false,
           "id": "proposal",
-          "status": "needed",
+          "icon": "proposal",
+          "status": "icon",
           "strip": "BoardInspector tabs",
           "rendersIn": "BoardInspector"
         },

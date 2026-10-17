@@ -173,28 +173,39 @@ public static partial class IconCoverageScanner
         return name;
     }
     /// <summary>
-    /// Where an opening tag's '>' is: outside an attribute's quotes, where a quote inside an attribute's <c>@(...)</c> (a lambda's string
-    /// argument, a conditional's two strings) neither opens nor closes the attribute.
+    /// Where an opening tag's '>' is: outside an attribute's quotes, double or single. Only the quote that opened an attribute closes it,
+    /// and not inside its <c>@(...)</c>, so a lambda's string argument (<c>@onclick='@(() => Propose("pass"))'</c>) or a conditional's two
+    /// strings neither open nor close it.
     /// </summary>
     private static int OpenTagEnd(string text, int from)
     {
-        var quoted = false;
+        char? quote = null;
         var depth = 0;
         for (var at = from; at < text.Length; at++)
         {
-            switch (text[at])
+            var c = text[at];
+            if (quote is null)
             {
-                case '"' when depth == 0:
-                    quoted = !quoted;
-                    break;
-                case '(' when quoted:
-                    depth++;
-                    break;
-                case ')' when quoted && depth > 0:
-                    depth--;
-                    break;
-                case '>' when !quoted:
+                if (c is '"' or '\'')
+                {
+                    quote = c;
+                }
+                else if (c == '>')
+                {
                     return at;
+                }
+            }
+            else if (c == '(')
+            {
+                depth++;
+            }
+            else if (c == ')' && depth > 0)
+            {
+                depth--;
+            }
+            else if (c == quote && depth == 0)
+            {
+                quote = null;
             }
         }
 
@@ -228,7 +239,7 @@ public static partial class IconCoverageScanner
     }
 
     private static string? Attribute(string tag, string name) =>
-        Regex.Match(tag, $@"(?<![\w-]){Regex.Escape(name)}=""(?<value>[^""]*)""") is { Success: true } match ? match.Groups["value"].Value : null;
+        Regex.Match(tag, $@"(?<![\w-]){Regex.Escape(name)}=(?:""(?<value>[^""]*)""|'(?<value>[^']*)')") is { Success: true } match ? match.Groups["value"].Value : null;
 
     private static string? Literal(string? value) => value is null || value.Contains('@', StringComparison.Ordinal) || value.Length == 0 ? null : value;
 
@@ -246,7 +257,7 @@ public static partial class IconCoverageScanner
     [GeneratedRegex(@"<button\b")]
     private static partial Regex ButtonStart();
 
-    [GeneratedRegex(@"</?div\b(?:[^>""]|""[^""]*"")*>")]
+    [GeneratedRegex(@"</?div\b(?:[^>""']|""[^""]*""|'[^']*')*>")]
     private static partial Regex DivTag();
 
     [GeneratedRegex(@"<IconLabel\b[^>]*>")]

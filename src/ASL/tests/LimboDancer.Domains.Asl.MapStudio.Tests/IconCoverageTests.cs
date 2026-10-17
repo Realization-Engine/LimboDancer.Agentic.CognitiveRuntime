@@ -46,7 +46,10 @@ public sealed class IconCoverageTests(StudioFactory factory) : IClassFixture<Stu
         var play = Assert.Single(coverage.Components, component => component.Name == "Play");
         Assert.Contains("/games/play", play.Pages);
         Assert.Contains(play.Controls, control => control.Id == "play-map-fit" && control.Icon == "fit" && control.Status == IconCoverage.HasIcon);
-        Assert.Contains(play.Controls, control => control is { Kind: "tab", Id: "proposal", Status: IconCoverage.Needed });
+        Assert.Contains(play.Controls, control => control is { Kind: "tab", Id: "proposal", Icon: "proposal", Status: IconCoverage.HasIcon });
+
+        // A handler in single quotes, with double quotes inside it, does not end the tag early: the label is the button's words.
+        Assert.Equal("Propose: the DEFENDER passes", Assert.Single(play.Controls, control => control.Id == "propose-pass").Label);
 
         var inspector = Assert.Single(coverage.Components, component => component.Name == "BoardInspector");
         Assert.Equal(["selection", "los", "range", "evidence"], inspector.Controls.Where(control => control.Kind == "tab").Select(control => control.Icon));
