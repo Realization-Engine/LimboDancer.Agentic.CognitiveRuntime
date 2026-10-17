@@ -173,7 +173,7 @@ public sealed class IconPlanTests(StudioFactory factory) : IClassFixture<StudioF
         Assert.Contains("Fill all four slots first", view.Markup, StringComparison.Ordinal);
 
         view.Find("#icon-bench-fill").Click();
-        Assert.Equal(["step-back", "play", "step-forward", "to-end"], bench.Slots);
+        Assert.Equal(["step-back", "play", "step-forward", "to-end"], bench.Filled);
         Assert.Equal("ReplayTransport", bench.Name);
         Assert.Contains("Icons: 1. a bar and an arrowhead left; 2. a triangle right; 3. an arrowhead and a bar right; 4. two arrowheads and a bar right.",
             view.Find("#icon-bench-prompt").TextContent, StringComparison.Ordinal);
@@ -188,7 +188,13 @@ public sealed class IconPlanTests(StudioFactory factory) : IClassFixture<StudioF
     public void TheBenchInOneIconModeHoldsOneBriefNamesTheBatchAfterItAndSavesASingleBatch()
     {
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        var plan = Plan(Brief("proposal", "a clipboard with a checkmark box") with { Label = "Proposal" }, Brief("other", "something else") with { Label = "Other" })
+        var plan = Plan(Brief("proposal", "a clipboard with a checkmark box") with
+        {
+            Label = "Proposal"
+        }, Brief("other", "something else") with
+        {
+            Label = "Other"
+        })
             .WithAssignment("Play#proposal", "proposal");
         IconBatch? saved = null;
         var bench = new IconBench();
@@ -270,7 +276,13 @@ public sealed class IconPlanTests(StudioFactory factory) : IClassFixture<StudioF
             new ComponentCoverage("Replay", "Components/Pages/Replay.razor", ["/games/replay"], [],
                 [new ControlCoverage("tab", "Step", false, "step", null, IconCoverage.Needed, "BoardInspector tabs", "BoardInspector")]),
         ]);
-        var plan = Plan(Brief("proposal", "a clipboard"), Brief("selection", "a hexagon") with { Reference = "Set Two, top row 3rd" }, Brief("los", "an eye") with { Reference = "Set Two, bottom row 3rd" })
+        var plan = Plan(Brief("proposal", "a clipboard"), Brief("selection", "a hexagon") with
+        {
+            Reference = "Set Two, top row 3rd"
+        }, Brief("los", "an eye") with
+        {
+            Reference = "Set Two, bottom row 3rd"
+        })
             .WithAssignment("Play#proposal", "proposal")
             .WithBatch(new IconBatch("2026-10-17-2", "Inspector tabs", ["selection", "los"], string.Empty, "2026-10-17"));
 
