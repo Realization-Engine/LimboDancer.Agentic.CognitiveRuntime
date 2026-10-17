@@ -1,0 +1,2773 @@
+{
+  "components": [
+    {
+      "name": "BoardEditorHeader",
+      "path": "Components/Board/BoardEditorHeader.razor",
+      "pages": [
+        "/author/{BoardName}"
+      ],
+      "usedBy": [
+        "Author"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Undo",
+          "dynamic": false,
+          "id": "editor-undo",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Redo",
+          "dynamic": false,
+          "id": "editor-redo",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@(IsDraft ? \u0022Save draft\u0022 : \u0022Save\u0022)",
+          "dynamic": true,
+          "id": "editor-save",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "BoardInspector",
+      "path": "Components/Board/BoardInspector.razor",
+      "pages": [
+        "/boards/{BoardName}",
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "BoardWorkspace"
+      ],
+      "controls": [
+        {
+          "kind": "tab",
+          "label": "Selection",
+          "dynamic": false,
+          "id": "selection",
+          "icon": "selection",
+          "status": "icon"
+        },
+        {
+          "kind": "tab",
+          "label": "LOS",
+          "dynamic": false,
+          "id": "los",
+          "icon": "los",
+          "status": "icon"
+        },
+        {
+          "kind": "tab",
+          "label": "Range",
+          "dynamic": false,
+          "id": "range",
+          "icon": "range",
+          "status": "icon"
+        },
+        {
+          "kind": "tab",
+          "label": "Evidence",
+          "dynamic": false,
+          "id": "evidence",
+          "icon": "evidence",
+          "status": "icon"
+        }
+      ]
+    },
+    {
+      "name": "BoardViewerToolbar",
+      "path": "Components/Board/BoardViewerToolbar.razor",
+      "pages": [
+        "/boards/{BoardName}"
+      ],
+      "usedBy": [
+        "BoardViewer"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Fit",
+          "dynamic": false,
+          "id": "viewer-fit",
+          "icon": "fit",
+          "status": "icon"
+        }
+      ]
+    },
+    {
+      "name": "BoardWorkspace",
+      "path": "Components/Board/BoardWorkspace.razor",
+      "pages": [
+        "/boards/{BoardName}",
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "BoardViewer",
+        "Play",
+        "Replay"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Try again",
+          "dynamic": false,
+          "id": "workspace-retry",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "FeatureProperties",
+      "path": "Components/Board/FeatureProperties.razor",
+      "pages": [
+        "/author/{BoardName}"
+      ],
+      "usedBy": [
+        "Author"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Delete feature",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "HexInspector",
+      "path": "Components/Board/HexInspector.razor",
+      "pages": [
+        "/author/{BoardName}",
+        "/boards/{BoardName}",
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "Author",
+        "BoardInspector"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@Location",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@Describe(feature)",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "HexUnitStackList",
+      "path": "Components/Board/HexUnitStackList.razor",
+      "pages": [
+        "/boards/{BoardName}",
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "BoardInspector"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@member.Name",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "LayerList",
+      "path": "Components/Board/LayerList.razor",
+      "pages": [
+        "/author/{BoardName}"
+      ],
+      "usedBy": [
+        "Author"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@Label(feature)",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "LosPanel",
+      "path": "Components/Board/LosPanel.razor",
+      "pages": [
+        "/boards/{BoardName}",
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "BoardInspector"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "selected hex",
+          "dynamic": false,
+          "id": "los-source-selected",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "selected hex",
+          "dynamic": false,
+          "id": "los-target-selected",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Check LOS",
+          "dynamic": false,
+          "id": "los-check",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Clear",
+          "dynamic": false,
+          "id": "los-clear",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "RangePanel",
+      "path": "Components/Board/RangePanel.razor",
+      "pages": [
+        "/boards/{BoardName}",
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "BoardInspector"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "selected hex",
+          "dynamic": false,
+          "id": "range-source-selected",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "selected hex",
+          "dynamic": false,
+          "id": "range-target-selected",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Read the range",
+          "dynamic": false,
+          "id": "range-check",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Clear",
+          "dynamic": false,
+          "id": "range-clear",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "ToolPalette",
+      "path": "Components/Board/ToolPalette.razor",
+      "pages": [
+        "/author/{BoardName}"
+      ],
+      "usedBy": [
+        "Author"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@tool.Label",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "ValidationPanel",
+      "path": "Components/Board/ValidationPanel.razor",
+      "pages": [
+        "/author/{BoardName}"
+      ],
+      "usedBy": [
+        "Author"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@finding.Code",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "CardAreaFields",
+      "path": "Components/Cards/CardAreaFields.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardGroupFields"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Pick on the map",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Remove the area",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "CardGroupFields",
+      "path": "Components/Cards/CardGroupFields.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardSideFields"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Remove the group",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Add an area",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "CardMapFields",
+      "path": "Components/Cards/CardMapFields.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardEditorForm"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Add a board",
+          "dynamic": false,
+          "id": "edit-board-add",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Use its boards",
+          "dynamic": false,
+          "id": "edit-saved-map-use",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "CardMapPicker",
+      "path": "Components/Cards/CardMapPicker.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardMapFields"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Done",
+          "dynamic": false,
+          "id": "edit-map-done",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "CardRulesFields",
+      "path": "Components/Cards/CardRulesFields.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardEditorForm"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Up",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Add an SSR",
+          "dynamic": false,
+          "id": "edit-ssr-add",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "CardSaveActions",
+      "path": "Components/Cards/CardSaveActions.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardEditor"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(Source is { Length: \u003E 0 } kept \u0026\u0026 RenameTo is { Length: \u003E 0 } other \u0026\u0026 othe...",
+          "dynamic": true,
+          "id": "edit-save",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Rename \u0027@source\u0027 to \u0027@target\u0027",
+          "dynamic": true,
+          "id": "edit-rename",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Delete this card",
+          "dynamic": false,
+          "id": "edit-delete",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Delete",
+          "dynamic": false,
+          "id": "edit-delete-confirm",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Rename",
+          "dynamic": false,
+          "id": "edit-rename-confirm",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "id": "edit-confirm-cancel",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "CardSideFields",
+      "path": "Components/Cards/CardSideFields.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardEditorForm"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Add an OB group",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "CardVictoryFields",
+      "path": "Components/Cards/CardVictoryFields.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardEditorForm"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Remove the outcome",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Pick on the map",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Add a condition",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Add an outcome",
+          "dynamic": false,
+          "id": "edit-outcome-add",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "ObCounterPicker",
+      "path": "Components/Cards/ObCounterPicker.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardGroupFields",
+        "CardSideFields"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Add",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "FidelityRunControls",
+      "path": "Components/Fidelity/FidelityRunControls.razor",
+      "pages": [
+        "/fidelity"
+      ],
+      "usedBy": [
+        "Fidelity"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Run batch",
+          "dynamic": false,
+          "id": "fidelity-start",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "id": "fidelity-cancel",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "LosFidelityPanel",
+      "path": "Components/Fidelity/LosFidelityPanel.razor",
+      "pages": [
+        "/fidelity"
+      ],
+      "usedBy": [
+        "Fidelity"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Check LOS",
+          "dynamic": false,
+          "id": "los-fidelity-run",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "GameReplayToolbar",
+      "path": "Components/Games/GameReplayToolbar.razor",
+      "pages": [
+        "/units/games"
+      ],
+      "usedBy": [
+        "Games"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Show on @BoardName",
+          "dynamic": true,
+          "id": "game-show",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "ReadCaseForm",
+      "path": "Components/Games/ReadCaseForm.razor",
+      "pages": [
+        "/units/games"
+      ],
+      "usedBy": [
+        "Games"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Read",
+          "dynamic": false,
+          "id": "case-read",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "MainLayout",
+      "path": "Components/Layout/MainLayout.razor",
+      "pages": [],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "\u2630",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "LibraryFilterBar",
+      "path": "Components/Library/LibraryFilterBar.razor",
+      "pages": [
+        "/"
+      ],
+      "usedBy": [
+        "Home"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Clear filters",
+          "dynamic": false,
+          "id": "library-clear",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "MapSummaryList",
+      "path": "Components/Library/MapSummaryList.razor",
+      "pages": [
+        "/",
+        "/maps"
+      ],
+      "usedBy": [
+        "Home",
+        "Maps"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Edit",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Delete",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "MapBuildActions",
+      "path": "Components/Maps/MapBuildActions.razor",
+      "pages": [
+        "/maps"
+      ],
+      "usedBy": [
+        "Maps"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Check",
+          "dynamic": false,
+          "id": "map-check",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Save and view",
+          "dynamic": false,
+          "id": "map-save",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "MapPlacementEditor",
+      "path": "Components/Maps/MapPlacementEditor.razor",
+      "pages": [
+        "/maps"
+      ],
+      "usedBy": [
+        "Maps"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Add a board",
+          "dynamic": false,
+          "id": "map-add-board",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "NewBoardForm",
+      "path": "Components/Maps/NewBoardForm.razor",
+      "pages": [
+        "/author/new"
+      ],
+      "usedBy": [
+        "NewBoard"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Create",
+          "dynamic": false,
+          "id": "board-create",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "PlacementTextEditor",
+      "path": "Components/Maps/PlacementTextEditor.razor",
+      "pages": [
+        "/maps"
+      ],
+      "usedBy": [
+        "Maps"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Use this text",
+          "dynamic": false,
+          "id": "map-use-text",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "ScenarioRuleEditor",
+      "path": "Components/Maps/ScenarioRuleEditor.razor",
+      "pages": [
+        "/maps"
+      ],
+      "usedBy": [
+        "Maps"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Up",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Down",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Add rule",
+          "dynamic": false,
+          "id": "map-add-rule",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "Author",
+      "path": "Components/Pages/Author.razor",
+      "pages": [
+        "/author/{BoardName}"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "tab",
+          "label": "Properties",
+          "dynamic": false,
+          "id": "Properties",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Layers",
+          "dynamic": false,
+          "id": "Layers",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Validation",
+          "dynamic": false,
+          "id": "Validation",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Hex",
+          "dynamic": false,
+          "id": "Hex",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "BoardViewer",
+      "path": "Components/Pages/BoardViewer.razor",
+      "pages": [
+        "/boards/{BoardName}"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Rotate map",
+          "dynamic": false,
+          "id": "map-rotate",
+          "icon": "rotate",
+          "status": "icon"
+        }
+      ]
+    },
+    {
+      "name": "Home",
+      "path": "Components/Pages/Home.razor",
+      "pages": [
+        "/"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Clear filters",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "Play",
+      "path": "Components/Pages/Play.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "tab",
+          "label": "Map",
+          "dynamic": false,
+          "id": "map",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Actions",
+          "dynamic": false,
+          "id": "actions",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Activity",
+          "dynamic": false,
+          "id": "activity",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Tick every stack that may take a \u0022?\u0022 (@choices.Count)",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: place @DisplayText.Side(side.Id)\u0027s non-OB \u0022?\u0022",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Hand the screen to the @DisplayText.Side(nextSide) side",
+          "dynamic": true,
+          "id": "setup-handover",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@(topUp ? $\u0022Add what {group.Name} still owes\u0022 : $\u0022Set up {group.Name}\u0022)",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Start the game, then set up on the map",
+          "dynamic": false,
+          "id": "start-game",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@refusal.Text",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Stop picking",
+          "dynamic": false,
+          "id": "play-picking-stop",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: end the @Games.PhaseLabel(state.Phase)",
+          "dynamic": true,
+          "id": "propose-advance",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: place @Words(unit.Id) in @PlaceOf(state.Location(unit.Id)!.Location)...",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @WordsAt(guard) Deploys",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @WordsAt(unit.Id) massacres @Words(prisoner.Id)",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: the SMC moves away from the OVR",
+          "dynamic": false,
+          "id": "propose-overrun-evade",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "ProposeSimple(GameActions.ForfeitRof, \u0022forfeit-rof\u0022))\u0027\u003EPropose: give up the R...",
+          "dynamic": true,
+          "id": "propose-forfeit-rof",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @Words(motionChosen.Vehicle) attempts Motion",
+          "dynamic": true,
+          "id": "propose-motion-attempt",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Show it on the map",
+          "dynamic": false,
+          "id": "dff-show",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: the Mandatory FG attacks",
+          "dynamic": false,
+          "id": "propose-mandatory-fire",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @Words(owing) attacks",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "ProposeSimple(GameActions.PassFire, \u0022pass\u0022))\u0027\u003EPropose: the DEFENDER passes",
+          "dynamic": false,
+          "id": "propose-pass",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Proposal",
+          "dynamic": false,
+          "id": "proposal",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Zoom in",
+          "dynamic": false,
+          "id": "play-map-zoom-in",
+          "icon": "zoom-in",
+          "status": "icon"
+        },
+        {
+          "kind": "button",
+          "label": "Zoom out",
+          "dynamic": false,
+          "id": "play-map-zoom-out",
+          "icon": "zoom-out",
+          "status": "icon"
+        },
+        {
+          "kind": "button",
+          "label": "Fit",
+          "dynamic": false,
+          "id": "play-map-fit",
+          "icon": "fit",
+          "status": "icon"
+        },
+        {
+          "kind": "button",
+          "label": "Rotate map",
+          "dynamic": false,
+          "id": "map-rotate",
+          "icon": "rotate",
+          "status": "icon"
+        },
+        {
+          "kind": "button",
+          "label": "Formation boundaries",
+          "dynamic": false,
+          "id": "map-parent-boundaries",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@plan.Name",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "My list",
+          "dynamic": false,
+          "id": "map-show-list",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@asked.Yes",
+          "dynamic": true,
+          "id": "map-ask-yes",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Keep my list",
+          "dynamic": false,
+          "id": "map-ask-no",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose setup",
+          "dynamic": false,
+          "id": "map-propose-setup",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Edit the list (@placements.Count)",
+          "dynamic": true,
+          "id": "map-edit-list",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Use @shownOne.Name",
+          "dynamic": true,
+          "id": "map-use-shown",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Zoom to the setup area",
+          "dynamic": false,
+          "id": "map-zoom-setup",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Their plan\u0027s outline",
+          "dynamic": false,
+          "id": "map-their-outline",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "id": "setup-move-cancel",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "id": "setup-swap-cancel",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@label",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Plans",
+          "dynamic": false,
+          "id": "plans",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Counters",
+          "dynamic": false,
+          "id": "counters",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Card OB",
+          "dynamic": false,
+          "id": "ob",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "Replay",
+      "path": "Components/Pages/Replay.razor",
+      "pages": [
+        "/games/replay"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "tab",
+          "label": "Map",
+          "dynamic": false,
+          "id": "map",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Timeline",
+          "dynamic": false,
+          "id": "timeline",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Details",
+          "dynamic": false,
+          "id": "details",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@(playing ? \u0022Stop\u0022 : \u0022Play\u0022)",
+          "dynamic": true,
+          "id": "replay-play",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Make the game and open it on Play",
+          "dynamic": false,
+          "id": "replay-play-on-make",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Step",
+          "dynamic": false,
+          "id": "step",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Units",
+          "dynamic": false,
+          "id": "units",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Standing",
+          "dynamic": false,
+          "id": "standing",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Zoom in",
+          "dynamic": false,
+          "id": "replay-map-zoom-in",
+          "icon": "zoom-in",
+          "status": "icon"
+        },
+        {
+          "kind": "button",
+          "label": "Zoom out",
+          "dynamic": false,
+          "id": "replay-map-zoom-out",
+          "icon": "zoom-out",
+          "status": "icon"
+        },
+        {
+          "kind": "button",
+          "label": "Fit",
+          "dynamic": false,
+          "id": "replay-map-fit",
+          "icon": "fit",
+          "status": "icon"
+        },
+        {
+          "kind": "button",
+          "label": "Rotate map",
+          "dynamic": false,
+          "id": "replay-map-rotate",
+          "icon": "rotate",
+          "status": "icon"
+        }
+      ]
+    },
+    {
+      "name": "AdvanceActionPanel",
+      "path": "Components/Play/AdvanceActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: advance",
+          "dynamic": false,
+          "id": "propose-advance-units",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "AmbushWithdrawalActions",
+      "path": "Components/Play/AmbushWithdrawalActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "CloseCombatPanel"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: @Say(withdrawal.Unit) withdraws to @Say(withdrawal.To)",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "BerserkOverrunCloseCombat",
+      "path": "Components/Play/BerserkOverrunCloseCombat.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: the OVR\u0027s CC",
+          "dynamic": false,
+          "id": "propose-overrun-cc",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "BoundingFireAction",
+      "path": "Components/Play/BoundingFireAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: MA Bounding First Fire",
+          "dynamic": false,
+          "id": "vehicle-bff-ma",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@(Weapons.Count \u003E 0 ? \u0022Propose: MG Bounding First Fire\u0022 : \u0022Propose: Bounding ...",
+          "dynamic": true,
+          "id": "vehicle-bff",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "BuildingEntryAction",
+      "path": "Components/Play/BuildingEntryAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: enter a building",
+          "dynamic": false,
+          "id": "propose-enter",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "CloseCombatAttackBuilder",
+      "path": "Components/Play/CloseCombatAttackBuilder.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "CloseCombatPanel"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Add the attack",
+          "dynamic": false,
+          "id": "cc-add-attack",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "CloseCombatPanel",
+      "path": "Components/Play/CloseCombatPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: roll for Ambush",
+          "dynamic": false,
+          "id": "propose-ambush",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "remove",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: resolve CC@(Attacks.Count == 0 ? \u0022 with no attacks\u0022 : \u0022\u0022)",
+          "dynamic": true,
+          "id": "propose-cc",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "CrewExposureActions",
+      "path": "Components/Play/CrewExposureActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: @afv.Id @(afv.ButtonedUp ? \u0022exposes its crew (CE)\u0022 : \u0022buttons up (BU)\u0022)",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "DeployActionPanel",
+      "path": "Components/Play/DeployActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: deploy",
+          "dynamic": false,
+          "id": "propose-deploy",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "GunArcAction",
+      "path": "Components/Play/GunArcAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: turn without firing",
+          "dynamic": false,
+          "id": "propose-turn-gun",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "HandOverScreen",
+      "path": "Components/Play/HandOverScreen.razor",
+      "pages": [
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "Play",
+        "Replay"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "I am @Label: show my view",
+          "dynamic": true,
+          "id": "play-handover-confirm",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "InfantryMovementAction",
+      "path": "Components/Play/InfantryMovementAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: the OVR\u0027s NTC",
+          "dynamic": false,
+          "id": "propose-overrun-ntc",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: move",
+          "dynamic": false,
+          "id": "propose-move",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "LocationField",
+      "path": "Components/Play/LocationField.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "BuildingEntryAction",
+        "InfantryMovementAction",
+        "PlaceDemolitionChargeAction",
+        "RoutActionPanel",
+        "SetupPlacementEditor",
+        "SmallArmsFirePanel",
+        "StarshellActionPanel",
+        "ThrowDemolitionChargeAction"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(Armed ? \u0022Stop picking\u0022 : \u0022Pick on the map\u0022)",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@(Many ? \u0022Add\u0022 : \u0022Use\u0022) @Words(picked)",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Remove @Short(Tokens[^1])",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Clear the route",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "MapExitAction",
+      "path": "Components/Play/MapExitAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "AdvanceActionPanel",
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: leave the map",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "MoppingUpAction",
+      "path": "Components/Play/MoppingUpAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: Mop Up",
+          "dynamic": false,
+          "id": "propose-mop-up",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "MovementWindowActions",
+      "path": "Components/Play/MovementWindowActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: the DEFENDER passes",
+          "dynamic": false,
+          "id": "propose-pass",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: end the move@(EndingSome ? \u0022 of the checked units\u0022 : \u0022\u0022)",
+          "dynamic": true,
+          "id": "propose-end-move",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "OpenEntryDeclaration",
+      "path": "Components/Play/OpenEntryDeclaration.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: decline the OVR",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: elect the OVR",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "OpportunityFireAction",
+      "path": "Components/Play/OpportunityFireAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: Opportunity Fire",
+          "dynamic": false,
+          "id": "propose-opportunity",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "OrdnanceFirePanel",
+      "path": "Components/Play/OrdnanceFirePanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: fire",
+          "dynamic": false,
+          "id": "propose-ordnance",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "PendingChoicePanel",
+      "path": "Components/Play/PendingChoicePanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: @option.Text",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "PendingSurrenderPanel",
+      "path": "Components/Play/PendingSurrenderPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: @At(captor) takes it prisoner",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: reject the surrender (No Quarter)",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: free it as Unarmed (no captor can guard it; A20.21)",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "PickedOption",
+      "path": "Components/Play/PickedOption.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "AdvanceActionPanel",
+        "CloseCombatPanel",
+        "OrdnanceTargetFields",
+        "SmallArmsFirePanel",
+        "SmokeGrenadeAction"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Use @Say(option)",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "PlaceDemolitionChargeAction",
+      "path": "Components/Play/PlaceDemolitionChargeAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: Place the DC",
+          "dynamic": false,
+          "id": "propose-place-dc",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "PlacedChargeDetonationActions",
+      "path": "Components/Play/PlacedChargeDetonationActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: detonate @Say(placed.Charge) in @Say(placed.Target) (30 FP@(placed.T...",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: detonate @Say(placed.Charge) in @Say(placed.Target) at @Say(vehicle....",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "PlayCardPanel",
+      "path": "Components/Play/PlayCardPanel.razor",
+      "pages": [
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "Play",
+        "Replay"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Close the card",
+          "dynamic": false,
+          "id": "play-card-close",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "PlayContextHeader",
+      "path": "Components/Play/PlayContextHeader.razor",
+      "pages": [
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "Play",
+        "Replay"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Review: @title",
+          "dynamic": true,
+          "id": "play-review-jump",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Hand over to @awaiting",
+          "dynamic": true,
+          "id": "play-hand-over",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "PlayUnitTable",
+      "path": "Components/Play/PlayUnitTable.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@Say(at.ToString())",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "PrisonerCustodyActions",
+      "path": "Components/Play/PrisonerCustodyActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: @At(guard.Id) hands its prisoners to @Say(heir)",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @At(guard.Id) abandons its prisoners",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "ProposalReviewPanel",
+      "path": "Components/Play/ProposalReviewPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(Busy ? \u0022Confirming\u0022 : ConfirmLabel)",
+          "dynamic": true,
+          "id": "play-confirm",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "id": "play-cancel",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "RallyActionPanel",
+      "path": "Components/Play/RallyActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: rally",
+          "dynamic": false,
+          "id": "propose-rally",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "ReactionFireAction",
+      "path": "Components/Play/ReactionFireAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: CC Reaction Fire at @Vehicle",
+          "dynamic": true,
+          "id": "propose-reaction",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "RecombineActionPanel",
+      "path": "Components/Play/RecombineActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: recombine",
+          "dynamic": false,
+          "id": "propose-recombine",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "RepairActionPanel",
+      "path": "Components/Play/RepairActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: repair",
+          "dynamic": false,
+          "id": "propose-repair",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "RoutActionPanel",
+      "path": "Components/Play/RoutActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Use the route to @Say(way.Target)",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: rout",
+          "dynamic": false,
+          "id": "propose-rout",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "ScriptedDicePanel",
+      "path": "Components/Play/ScriptedDicePanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Add",
+          "dynamic": false,
+          "id": "scripted-dice-add",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "clear",
+          "dynamic": false,
+          "id": "scripted-dice-clear",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "SetupBar",
+      "path": "Components/Play/SetupBar.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@Yes",
+          "dynamic": true,
+          "id": "setup-ask-yes",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Keep my list",
+          "dynamic": false,
+          "id": "setup-ask-no",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose setup",
+          "dynamic": false,
+          "id": "propose-setup",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Clear",
+          "dynamic": false,
+          "id": "place-clear",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "SetupCounters",
+      "path": "Components/Play/SetupCounters.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@stack.Title",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Move stack",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Swap",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@moveWord",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "remove",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "SetupPlacementEditor",
+      "path": "Components/Play/SetupPlacementEditor.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Add",
+          "dynamic": false,
+          "id": "place-add",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "SetupPlacementList",
+      "path": "Components/Play/SetupPlacementList.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(item.Picking ? \u0022Click a hex on the map\u0022 : \u0022Pick on the map\u0022)",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "remove",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Clear the list",
+          "dynamic": false,
+          "id": "place-clear",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose setup",
+          "dynamic": false,
+          "id": "propose-setup",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "SetupPlanPicker",
+      "path": "Components/Play/SetupPlanPicker.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(shown ? \u0022Shown on the map\u0022 : \u0022Show on map\u0022)",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Reset to @plan.Name",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Use this plan",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "ShockRecoveryAction",
+      "path": "Components/Play/ShockRecoveryAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: roll for it",
+          "dynamic": false,
+          "id": "propose-shock",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "SmallArmsFirePanel",
+      "path": "Components/Play/SmallArmsFirePanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "remove",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Show the range on the map",
+          "dynamic": false,
+          "id": "fire-range-show",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: fire",
+          "dynamic": false,
+          "id": "propose-fire",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "clear",
+          "dynamic": false,
+          "id": "fire-clear",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "SmokeGrenadeAction",
+      "path": "Components/Play/SmokeGrenadeAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: SMOKE grenades",
+          "dynamic": false,
+          "id": "propose-smoke",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "StarshellActionPanel",
+      "path": "Components/Play/StarshellActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: fire a Starshell",
+          "dynamic": false,
+          "id": "propose-starshell",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "SupportWeaponActionPanel",
+      "path": "Components/Play/SupportWeaponActionPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: transfer",
+          "dynamic": false,
+          "id": "propose-transfer",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: drop",
+          "dynamic": false,
+          "id": "propose-drop",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: recover",
+          "dynamic": false,
+          "id": "propose-recover",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: dismantle or assemble",
+          "dynamic": false,
+          "id": "propose-dismantle",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "ThrowDemolitionChargeAction",
+      "path": "Components/Play/ThrowDemolitionChargeAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: Throw the DC",
+          "dynamic": false,
+          "id": "propose-throw-dc",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "VehicleCloseCombatPanel",
+      "path": "Components/Play/VehicleCloseCombatPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: Infantry attack the vehicle",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: the vehicle attacks the checked Infantry",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: the @location.NextSide side passes",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "VehicleStepChoices",
+      "path": "Components/Play/VehicleStepChoices.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: enter the map",
+          "dynamic": false,
+          "id": "vehicle-enter-map",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@step.Label",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: ESB",
+          "dynamic": false,
+          "id": "vehicle-esb",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@exit.Label",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@hex",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: board",
+          "dynamic": false,
+          "id": "vehicle-load",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: unload",
+          "dynamic": false,
+          "id": "vehicle-unload",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "VehicleTowingActions",
+      "path": "Components/Play/VehicleTowingActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: unhook @gun.Id (half its MP)",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: hook up @gun.Id (half its MP; C10.11)",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "ReplayTimelineList",
+      "path": "Components/Replay/ReplayTimelineList.razor",
+      "pages": [
+        "/games/replay"
+      ],
+      "usedBy": [
+        "Replay"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@step.Number @step.Title@(step.Read == ReplayRead.Part ? \u0022 (read in part)\u0022 : ...",
+          "dynamic": true,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "ReplayTransport",
+      "path": "Components/Replay/ReplayTransport.razor",
+      "pages": [
+        "/games/replay"
+      ],
+      "usedBy": [
+        "Replay"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "\u2039 Step",
+          "dynamic": false,
+          "id": "replay-back",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Step \u203A",
+          "dynamic": false,
+          "id": "replay-forward",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "\u2039 Phase",
+          "dynamic": false,
+          "id": "replay-phase-back",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Phase \u203A",
+          "dynamic": false,
+          "id": "replay-phase-forward",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "\u2039 Turn",
+          "dynamic": false,
+          "id": "replay-turn-back",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Turn \u203A",
+          "dynamic": false,
+          "id": "replay-turn-forward",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "First",
+          "dynamic": false,
+          "id": "replay-first",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Last",
+          "dynamic": false,
+          "id": "replay-last",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "RevisionNavigator",
+      "path": "Components/Shared/RevisionNavigator.razor",
+      "pages": [
+        "/boards/{BoardName}",
+        "/units/games"
+      ],
+      "usedBy": [
+        "GameReplayToolbar",
+        "UnitOverlayControls"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Previous revision",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Next revision",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "AttachedEquipmentEditor",
+      "path": "Components/Units/AttachedEquipmentEditor.razor",
+      "pages": [
+        "/units/lab"
+      ],
+      "usedBy": [
+        "UnitLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "remove",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Attach equipment",
+          "dynamic": false,
+          "id": "lab-attach",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "UnitDocumentOutput",
+      "path": "Components/Units/UnitDocumentOutput.razor",
+      "pages": [
+        "/units/lab"
+      ],
+      "usedBy": [
+        "UnitLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Save document",
+          "dynamic": false,
+          "id": "lab-save-document",
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "UnitPlacementSetEditor",
+      "path": "Components/Units/UnitPlacementSetEditor.razor",
+      "pages": [
+        "/units/lab"
+      ],
+      "usedBy": [
+        "UnitLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Place this unit",
+          "dynamic": false,
+          "id": "lab-place",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Load set",
+          "dynamic": false,
+          "id": "lab-load-set",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Save set",
+          "dynamic": false,
+          "id": "lab-save-set",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "remove",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "UnitStyleSheetEditor",
+      "path": "Components/Units/UnitStyleSheetEditor.razor",
+      "pages": [
+        "/units/lab"
+      ],
+      "usedBy": [
+        "UnitLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Save sheet as",
+          "dynamic": false,
+          "id": "lab-save-sheet",
+          "status": "needed"
+        }
+      ]
+    }
+  ]
+}

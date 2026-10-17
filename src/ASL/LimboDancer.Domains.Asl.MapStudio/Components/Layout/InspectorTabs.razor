@@ -6,11 +6,11 @@
     {
         var selected = tab.Id == Selected;
         <button @key="tab.Id" @ref="buttons[tab.Id]" id="@TabId(tab.Id)" role="tab" class="@(TabClass(tab, selected))" aria-selected="@(selected ? "true" : "false")"
-                aria-controls="@(SeparatePanels ? PanelFor(IdPrefix, tab.Id) : PanelId)" tabindex="@(selected ? 0 : -1)" title="@(tab.Icon is null ? null : tab.Title)"
+                aria-controls="@(SeparatePanels ? PanelFor(IdPrefix, tab.Id) : PanelId)" tabindex="@(selected ? 0 : -1)" title="@(DrawsIcon(tab) ? tab.Title : null)"
                 @onclick="() => Select(tab.Id, false)" @onkeydown="args => Key(tab.Id, args)">
-            @if (tab.Icon is { } icon)
+            @if (DrawsIcon(tab))
             {
-                <IconLabel Icon="@icon" Label="@tab.Title" />@(tab.Count is { } shown ? $" ({shown})" : string.Empty)
+                <IconLabel Icon="@(tab.Icon!)" Label="@tab.Title" />@(tab.Count is { } shown ? $" ({shown})" : string.Empty)
             }
             else
             {
@@ -27,10 +27,15 @@
 }
 
 @code {
-    /// <summary>One tab: its id, its title, an optional count shown after it, and an optional icon from wwwroot/icons drawn for the title.</summary>
+    /// <summary>
+    /// One tab: its id, its title, an optional count shown after it, and an optional icon from wwwroot/icons drawn for the title
+    /// (<see cref="IconLibrary.TextByDesign"/> marks a tab that keeps its words, for the Icon Lab's coverage).
+    /// </summary>
     public sealed record Tab(string Id, string Title, int? Count = null, string? Icon = null);
 
-    private static string TabClass(Tab tab, bool selected) => (selected ? "tab active" : "tab") + (tab.Icon is null ? string.Empty : " icon-tab");
+    private static bool DrawsIcon(Tab tab) => tab.Icon is { } icon && icon != IconLibrary.TextByDesign;
+
+    private static string TabClass(Tab tab, bool selected) => (selected ? "tab active" : "tab") + (DrawsIcon(tab) ? " icon-tab" : string.Empty);
 
     private readonly Dictionary<string, ElementReference> buttons = new(StringComparer.Ordinal);
     private string? focusPending;

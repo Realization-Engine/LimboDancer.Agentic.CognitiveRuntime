@@ -1,0 +1,149 @@
+@* The Icon Lab's coverage: each component's buttons and tabs, with its icon, or that it needs one, or that it keeps its words by design;
+   the pages each component appears on and the components that place it. Filtered by status and by a component's name, path, or page. *@
+<section id="icon-lab-coverage">
+    <h3>By component</h3>
+    @if (Coverage is null)
+    {
+        <p class="fail">wwwroot/@IconLibrary.Folder/@IconCoverage.File is missing; run IconCoverageTests with ASL_ICONS_UPDATE_COVERAGE=1.</p>
+    }
+    else
+    {
+        var controls = Coverage.Controls.ToList();
+        <p class="muted" id="icon-lab-coverage-summary">
+            @controls.Count buttons and tabs in @Coverage.Components.Count components:
+            @(controls.Count(control => control.Status == IconCoverage.HasIcon)) with an icon,
+            @(controls.Count(control => control.Status == IconCoverage.Needed)) needing one,
+            @(controls.Count(control => control.Status == IconCoverage.Text)) keeping their words by design.
+        </p>
+        <div class="toolbar icon-lab-filters">
+            <label>
+                Show
+                <select @bind="status" id="icon-lab-status">
+                    <option value="">every control</option>
+                    <option value="@IconCoverage.Needed">needs an icon</option>
+                    <option value="@IconCoverage.HasIcon">has an icon</option>
+                    <option value="@IconCoverage.Text">text by design</option>
+                </select>
+            </label>
+            <label>
+                Component or page
+                <input type="search" id="icon-lab-search" @bind="search" @bind:event="oninput" placeholder="Play, /games/replay" />
+            </label>
+        </div>
+
+        var shown = Shown().ToList();
+        @if (shown.Count == 0)
+        {
+            <p class="muted">No component has a control that matches.</p>
+        }
+        @foreach (var (component, rows) in shown)
+        {
+            <details class="icon-lab-component" data-component="@component.Name">
+                <summary>
+                    <strong>@component.Name</strong>
+                    <span class="muted">@component.Path</span>
+                    <span class="icon-lab-counts">@Counts(component)</span>
+                </summary>
+                <p class="muted">
+                    On @(component.Pages.Count == 0 ? "no page found (a layout, or placed at run time)" : string.Join(", ", component.Pages))@(component.UsedBy.Count == 0 ? "." : $"; placed by {string.Join(", ", component.UsedBy)}.")
+                </p>
+                <div class="icon-lab-scroll">
+                    <table class="icon-lab-controls">
+                        <thead>
+                            <tr><th scope="col">Icon</th><th scope="col">Label</th><th scope="col">Kind</th><th scope="col">Id</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var control in rows)
+                            {
+                                <tr data-status="@control.Status">
+                                    <td>@IconCell(control)</td>
+                                    <td>
+                                        @if (control.Dynamic)
+                                        {
+                                            <code>@control.Label</code><span class="muted"> (worked out at run time)</span>
+                                        }
+                                        else
+                                        {
+                                            @control.Label
+                                        }
+                                    </td>
+                                    <td>@control.Kind</td>
+                                    <td>@if (control.Id is { } id)
+                                        {
+                                            <code>@id</code>
+                                        }</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        }
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public IconCoverage? Coverage { get; set; }
+
+    [Parameter, EditorRequired]
+    public IconLibrary Icons { get; set; } = null!;
+
+    private string status = IconCoverage.Needed;
+    private string search = string.Empty;
+
+    /// <summary>The components with a control of the chosen status that match the search, the most icons needed first.</summary>
+    private IEnumerable<(ComponentCoverage Component, IReadOnlyList<ControlCoverage> Rows)> Shown()
+    {
+        var term = search.Trim();
+        return Coverage!.Components
+            .Where(component => term.Length == 0 || component.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || component.Path.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || component.Pages.Any(page => page.Contains(term, StringComparison.OrdinalIgnoreCase)))
+            .Select(component => (Component: component, Rows: (IReadOnlyList<ControlCoverage>)component.Controls.Where(control => status.Length == 0 || control.Status == status).ToList()))
+            .Where(item => item.Rows.Count > 0)
+            .OrderByDescending(item => item.Component.Count(IconCoverage.Needed))
+            .ThenBy(item => item.Component.Name, StringComparer.Ordinal);
+    }
+
+    private static string Counts(ComponentCoverage component)
+    {
+        var parts = new List<string>();
+        if (component.Count(IconCoverage.Needed) is > 0 and var needed)
+        {
+            parts.Add($"{needed} need{(needed == 1 ? "s" : string.Empty)} an icon");
+        }
+
+        if (component.Count(IconCoverage.HasIcon) is > 0 and var drawn)
+        {
+            parts.Add($"{drawn} with an icon");
+        }
+
+        if (component.Count(IconCoverage.Text) is > 0 and var text)
+        {
+            parts.Add($"{text} text by design");
+        }
+
+        return string.Join(", ", parts);
+    }
+
+    private RenderFragment IconCell(ControlCoverage control) => builder =>
+    {
+        if (control.Status == IconCoverage.HasIcon && control.Icon is { } key && Icons.Find(key) is { } icon && IconLibrary.Sized(icon, 20) is { } markup)
+        {
+            builder.AddMarkupContent(0, markup);
+        }
+        else
+        {
+            builder.OpenElement(1, "span");
+            builder.AddAttribute(2, "class", control.Status == IconCoverage.Needed ? "icon-lab-needed" : "muted");
+            builder.AddContent(3, control.Status switch
+            {
+                IconCoverage.Needed => "needs one",
+                IconCoverage.Text => "text by design",
+                _ => control.Icon ?? "worked out at run time",
+            });
+            builder.CloseElement();
+        }
+    };
+}

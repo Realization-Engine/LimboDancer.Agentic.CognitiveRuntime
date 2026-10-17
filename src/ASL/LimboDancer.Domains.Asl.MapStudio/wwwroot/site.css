@@ -1265,6 +1265,45 @@ textarea.placements-text {
     font-size: 0.8rem;
 }
 
+.icon-lab-filters label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.icon-lab-component {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.icon-lab-component summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    cursor: pointer;
+}
+
+.icon-lab-counts {
+    font-size: 0.85rem;
+}
+
+.icon-lab-controls td {
+    vertical-align: middle;
+}
+
+.icon-lab-controls td svg {
+    display: block;
+}
+
+.icon-lab-needed {
+    color: var(--warn);
+    font-weight: 600;
+}
+
 .icon-lab-detail {
     display: flex;
     flex-wrap: wrap;
