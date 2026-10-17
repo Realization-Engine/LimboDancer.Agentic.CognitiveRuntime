@@ -114,7 +114,7 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.Empty(opened.FindAll("#play-panel-map"));
 
         // The context is known to both sides, so it shows during the hand-over.
-        Assert.Contains("Rally Phase", opened.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Rally Phase", opened.Find("#play-context").TextContent, StringComparison.Ordinal);
         opened.Find("#play-handover-confirm").Click();
         Assert.Single(opened.FindAll("#play-workspace"));
 
@@ -241,7 +241,11 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.Equal("Actions", page.Find("#play-panel-actions").GetAttribute("aria-label"));
         Assert.False(page.Find("#play-panel-actions").HasAttribute("hidden"));
         Assert.NotNull(page.Find("#play-panel-review").QuerySelector("#play-panel-actions"));
+        // The setup's commit leaves its outcome open in the Proposal tab; the Play tab is a click away.
+        Assert.Equal("true", page.Find("#play-inspector-tab-proposal").GetAttribute("aria-selected"));
+        page.Find("#play-inspector-tab-play").Click();
         Assert.Equal("true", page.Find("#play-inspector-tab-play").GetAttribute("aria-selected"));
-        Assert.Contains("Live", page.Find("#play-live").TextContent, StringComparison.Ordinal);
+        // The banner says only when the game does not replay; a live game needs no badge.
+        Assert.DoesNotContain("does not replay", page.Find("#play-banner").TextContent, StringComparison.Ordinal);
     }
 }

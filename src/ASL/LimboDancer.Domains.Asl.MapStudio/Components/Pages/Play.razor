@@ -1116,8 +1116,9 @@ else if (state is not null)
                     </ol>
                 </div>
             }
-            @* From 1024px the records, the units, and the scripted dice are the inspector's last tabs; under 1024px they open over this strip. *@
-            @if (narrow)
+            @* With the map, from 1024px, the records, the units, and the scripted dice are the inspector's last tabs; otherwise they open over
+               this strip. *@
+            @if (StripHoldsRecords)
             {
                 <div id="play-history" class="play-activity-panel" role="region" aria-label="Records, latest first" hidden="@(activityTab != "records")">
                     @recordsBlock
@@ -7014,9 +7015,12 @@ else if (state is not null)
             }
 
             // Table player and UI review, pass 29: Confirm is gone with the commit, so the focus goes to the actions; under 1024px their tab opens.
-            // Wider, the panes are side by side and nothing scrolls, so the outcome stays in view.
+            // Wider, the Proposal tab stays open, so the outcome and its rolls stay in view; the Play tab is a click away.
             activityTab = null;
-            ShowActions(scroll: narrow);
+            if (narrow)
+            {
+                ShowActions();
+            }
         }
 
         Refresh();
@@ -7123,6 +7127,12 @@ else if (state is not null)
     /// <summary>The id of the inspector's Play tab, which holds the actions from 1024px.</summary>
     private const string PlayTab = "play";
 
+    /// <summary>
+    /// Whether the activity strip holds the records, the units, and the scripted dice: under 1024px, and wherever the map, and with it the
+    /// inspector, is not drawn.
+    /// </summary>
+    private bool StripHoldsRecords => narrow || MapLayers is not { Board: not null };
+
     /// <summary>The inspector's open tab: under 1024px the actions have their own pane, so Play is not a tab and Selection opens instead.</summary>
     private string InspectorPanel => narrow && inspectorTab == PlayTab ? "selection" : inspectorTab;
 
@@ -7140,14 +7150,15 @@ else if (state is not null)
         }
 
         // The ids are written out, not PlayTab, so the Icon Lab's coverage, which reads the source, finds the tabs. Records, Units, and
-        // Scripted dice come after the inspector's own tabs, as Units and Standing do on Replay; their panels keep the ids they had.
+        // Scripted dice come after the inspector's own tabs, as Units and Standing do on Replay; their panels keep the ids they had
+        // and, as in the activity strip, stay rendered while hidden.
         return
         [
             new BoardInspector.ExtraTab(new("play", "Play", Icon: "play"), actions, KeepMounted: true),
             review,
-            new BoardInspector.ExtraTab(new("records", "Records", Icon: "records"), Region("play-history", "Records, latest first", records), Last: true),
-            new BoardInspector.ExtraTab(new("units", "Units", Icon: "units"), Region("play-units-panel", "Units", units), Last: true),
-            .. Scripted is null ? Array.Empty<BoardInspector.ExtraTab>() : [new BoardInspector.ExtraTab(new("dice", "Scripted dice", Icon: "scripted-dice"), Region("play-dice-panel", "Scripted dice", dice), Last: true)],
+            new BoardInspector.ExtraTab(new("records", "Records", Icon: "records"), Region("play-history", "Records, latest first", records), Last: true, KeepMounted: true),
+            new BoardInspector.ExtraTab(new("units", "Units", Icon: "units"), Region("play-units-panel", "Units", units), Last: true, KeepMounted: true),
+            .. Scripted is null ? Array.Empty<BoardInspector.ExtraTab>() : [new BoardInspector.ExtraTab(new("dice", "Scripted dice", Icon: "scripted-dice"), Region("play-dice-panel", "Scripted dice", dice), Last: true, KeepMounted: true)],
         ];
     }
 
@@ -7576,9 +7587,9 @@ else if (state is not null)
     private IEnumerable<(string Key, string Label, string Panel)> ActivityTabs =>
     [
         .. SinceLooked.Count > 0 ? [("since", $"Since you last looked ({SinceLooked.Count})", "play-since-panel")] : Array.Empty<(string, string, string)>(),
-        // From 1024px the records, the units, and the scripted dice are inspector tabs, so the strip offers them only under 1024px.
-        .. narrow ? [("records", "Records", "play-history"), ("units", "Units", "play-units-panel")] : Array.Empty<(string, string, string)>(),
-        .. Scripted is null || !narrow ? Array.Empty<(string, string, string)>() : [("dice", "Scripted dice", "play-dice-panel")],
+        // With the map, from 1024px, the records, the units, and the scripted dice are inspector tabs; otherwise the strip offers them.
+        .. StripHoldsRecords ? [("records", "Records", "play-history"), ("units", "Units", "play-units-panel")] : Array.Empty<(string, string, string)>(),
+        .. Scripted is null || !StripHoldsRecords ? Array.Empty<(string, string, string)>() : [("dice", "Scripted dice", "play-dice-panel")],
         .. Viewer.IsAdjudicator ? [("audit", "Audit", "play-audit-panel")] : Array.Empty<(string, string, string)>(),
     ];
 

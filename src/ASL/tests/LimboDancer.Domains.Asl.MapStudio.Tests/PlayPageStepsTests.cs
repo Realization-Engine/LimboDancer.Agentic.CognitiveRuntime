@@ -167,7 +167,7 @@ public sealed class PlayPageStepsTests : IDisposable
         Commit(page, "#propose-setup");
         page.EndPhase(Commit);
         page.EndPhase(Commit);
-        Assert.Contains("Movement", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Movement", page.Find("#play-context").TextContent, StringComparison.Ordinal);
 
         // U25 on the page: g1 enters the building; the DEFENDER's window opens and the ATTACKER waits.
         page.Find(".move-unit[data-unit='g1']").Change(true);

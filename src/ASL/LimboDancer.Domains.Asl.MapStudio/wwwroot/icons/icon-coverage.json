@@ -2379,6 +2379,22 @@
           "id": "play-hand-over",
           "status": "needed",
           "strip": "PlayContextHeader"
+        },
+        {
+          "kind": "button",
+          "label": "Review: @title",
+          "dynamic": true,
+          "id": "play-review-jump",
+          "status": "needed",
+          "strip": "PlayContextHeader"
+        },
+        {
+          "kind": "button",
+          "label": "Hand over to @awaiting",
+          "dynamic": true,
+          "id": "play-hand-over",
+          "status": "needed",
+          "strip": "PlayContextHeader"
         }
       ]
     },

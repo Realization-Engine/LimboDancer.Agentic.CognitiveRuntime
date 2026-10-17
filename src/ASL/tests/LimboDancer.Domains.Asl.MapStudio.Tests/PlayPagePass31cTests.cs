@@ -400,18 +400,19 @@ public sealed class PlayPagePass31cTests : IDisposable
         page.Find("#play-inspector-tab-units").Click();
         Assert.NotEmpty(page.FindAll("#play-panel-review #play-units-panel #play-units tr[data-unit='r1']"));
         page.Find("#play-inspector-tab-records").Click();
-        Assert.Empty(page.FindAll("#play-units-panel"));
+        Assert.True(page.Find("#play-units-panel").ParentElement!.HasAttribute("hidden"));
         Assert.NotEmpty(page.FindAll("#play-panel-review #play-history"));
         page.Find("#play-inspector-tab-units").Click();
 
-        // No revision for a side: not in the header, the units table's note, or the board link. The adjudicator reads it in each.
+        // No revision for a side: not in the header, the units table's note, or the board link. The adjudicator reads it in the units table's
+        // note and the board link; from 1024px the one-line banner names no revision for anyone.
         var revision = live.History("village")!.Events.Count;
         Assert.Empty(page.FindAll("#play-revision"));
         Assert.Equal("As the Russian side sees them.", page.Find("#play-units-view").TextContent);
         Assert.DoesNotContain("revision", page.Find("#play-view").GetAttribute("href"), StringComparison.Ordinal);
-        Assert.DoesNotContain("revision", page.Find("#play-summary").TextContent, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("revision", page.Find("#play-context").TextContent, StringComparison.OrdinalIgnoreCase);
         page.ViewAs(Perspective.AdjudicatorName);
-        Assert.Equal($"revision {revision}", page.Find("#play-revision").TextContent.Trim());
+        Assert.Empty(page.FindAll("#play-revision"));
         page.Find("#play-inspector-tab-units").Click();
         Assert.Equal($"As the adjudicator sees them: every unit, at revision {revision}.", page.Find("#play-units-view").TextContent);
         Assert.Contains($"revision={revision}", page.Find("#play-view").GetAttribute("href"), StringComparison.Ordinal);
@@ -529,14 +530,14 @@ public sealed class PlayPagePass31cTests : IDisposable
         Commit(page, "#propose-setup");
 
         // Setup is still open: a side sets up out of the other's sight, so the screen has no map.
-        Assert.Contains("Setup is open", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Setup is open", page.Find("#play-context").TextContent, StringComparison.Ordinal);
         page.Find("#play-perspective").Change("russian");
         Assert.NotEmpty(page.FindAll("#play-handover"));
         Assert.Empty(page.FindAll("#play-handover-map"));
         page.Find("#play-handover-confirm").Click();
         page.ViewAs("german");
         page.EndPhase(Commit);
-        Assert.DoesNotContain("Setup is open", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("Setup is open", page.Find("#play-context").TextContent, StringComparison.Ordinal);
 
         page.Find("#play-perspective").Change("russian");
         var map = page.Find("#play-handover #play-handover-map");

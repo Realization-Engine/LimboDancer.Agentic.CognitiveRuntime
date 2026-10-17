@@ -139,7 +139,7 @@ public sealed class CardEditorPageTests : IDisposable
         page.Find("#place-add").Click();
         page.Find("#propose-setup").Click();
         page.WaitForElement("#play-confirm").Click();
-        page.WaitForAssertion(() => Assert.Contains("Setup is open", page.Find("#play-summary").TextContent, StringComparison.Ordinal));
+        page.WaitForAssertion(() => Assert.Contains("Setup is open", page.Find("#play-context").TextContent, StringComparison.Ordinal));
         Assert.Contains("My game", page.Find("#play-card").TextContent, StringComparison.Ordinal);
         Assert.Contains("matches", page.Find("#play-card-provenance .provenance-match").TextContent, StringComparison.Ordinal);
         Assert.Contains("Your card", page.Find("#play-card-provenance .provenance-kept").TextContent, StringComparison.Ordinal);
@@ -175,7 +175,7 @@ public sealed class CardEditorPageTests : IDisposable
         var navigation = context.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>();
         navigation.NavigateTo("play?game=old");
         var page = context.Render<PlayPage>();
-        Assert.Contains("Setup is open", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Setup is open", page.Find("#play-context").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#play-card"));
         Assert.Empty(page.FindAll("#play-replay-failed"));
     }

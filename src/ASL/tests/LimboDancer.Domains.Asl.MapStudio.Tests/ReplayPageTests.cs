@@ -241,7 +241,7 @@ public sealed class ReplayPageTests : IDisposable
         // The Play page opens the new game, at the phase the step left it in.
         var play = context.Render<PlayPage>();
         play.OpenGame("village-on");
-        Assert.Contains("Prep Fire Phase", play.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Prep Fire Phase", play.Find("#play-context").TextContent, StringComparison.Ordinal);
     }
 
     // Ruling R31b.1: an ended game opens in the adjudicator's view at its first step, and any view is chosen at once.

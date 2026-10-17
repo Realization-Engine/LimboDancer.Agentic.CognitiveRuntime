@@ -110,7 +110,7 @@ public sealed class PlayPageFireTests : IDisposable
         Place(page, "g2", "attacker-squad", hexes.Open);
         Commit(page, "#propose-setup");
         page.EndPhase(Commit);
-        Assert.Contains("Prep Fire", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Prep Fire", page.Find("#play-context").TextContent, StringComparison.Ordinal);
         return page;
     }
 
@@ -309,7 +309,7 @@ public sealed class PlayPageFireTests : IDisposable
         // In the MPh fire is the DEFENDER's (A8.1), offered from its side's Locations; with no stack moving, the planner
         // refuses it (FireTests).
         page.EndPhase(Commit);
-        Assert.Contains("Movement", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Movement", page.Find("#play-context").TextContent, StringComparison.Ordinal);
         Assert.Contains("The German side may fire now", page.Find("#fire-elsewhere").TextContent, StringComparison.Ordinal);
         Assert.NotNull(page.Find("#propose-move"));
 
