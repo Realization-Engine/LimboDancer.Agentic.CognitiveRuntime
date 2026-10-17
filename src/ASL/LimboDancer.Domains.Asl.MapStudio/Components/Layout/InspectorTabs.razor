@@ -10,7 +10,7 @@
                 @onclick="() => Select(tab.Id, false)" @onkeydown="args => Key(tab.Id, args)">
             @if (DrawsIcon(tab))
             {
-                <IconLabel Icon="@(tab.Icon!)" Label="@tab.Title" />@(tab.Count is { } shown ? $" ({shown})" : string.Empty)
+                <IconLabel Icon="@(tab.Icon!)" Label="@tab.Title" Size="@TabIconSize" />@(tab.Count is { } shown ? $" ({shown})" : string.Empty)
             }
             else
             {
@@ -32,6 +32,12 @@
     /// (<see cref="IconLibrary.TextByDesign"/> marks a tab that keeps its words, for the Icon Lab's coverage).
     /// </summary>
     public sealed record Tab(string Id, string Title, int? Count = null, string? Icon = null);
+
+    /// <summary>
+    /// A tab's icon size in CSS pixels: larger than a toolbar button's 20, since a tab has no button box around it, so the two read the same
+    /// size side by side.
+    /// </summary>
+    private const int TabIconSize = 24;
 
     private static bool DrawsIcon(Tab tab) => tab.Icon is { } icon && icon != IconLibrary.TextByDesign;
 
