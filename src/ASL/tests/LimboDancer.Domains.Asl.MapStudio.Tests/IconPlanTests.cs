@@ -184,41 +184,119 @@ public sealed class IconPlanTests(StudioFactory factory) : IClassFixture<StudioF
         Assert.Equal(saved.Id, bench.BatchId);
     }
 
-    /// <summary>A library with no icons and no coverage.</summary>
     [Fact]
-    public void TheBenchInOneIconModeHoldsOneBriefCopiesItAloneAndSavesASingleBatch()
+    public void TheBenchInOneIconModeHoldsOneBriefNamesTheBatchAfterItAndSavesASingleBatch()
     {
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        var plan = Plan(Brief("proposal", "a clipboard with a checkmark box"), Brief("other", "something else")).WithAssignment("Play#proposal", "proposal");
+        var plan = Plan(Brief("proposal", "a clipboard with a checkmark box") with { Label = "Proposal" }, Brief("other", "something else") with { Label = "Other" })
+            .WithAssignment("Play#proposal", "proposal");
         IconBatch? saved = null;
         var bench = new IconBench();
         bench.Add("other");
-        bench.Add("proposal");
         var view = context.Render<IconPromptBench>(parameters => parameters
             .Add(component => component.Plan, plan)
             .Add(component => component.Icons, EmptyLibrary())
             .Add(component => component.Bench, bench)
             .Add(component => component.OnSaveBatch, (IconBatch batch) => saved = batch));
 
-        // Switching to one icon keeps the first brief and shows one slot, with no fill from a component.
+        // Switching to one icon keeps the first brief, shows one slot with no fill from a component, and names the batch after the icon.
         view.Find("#icon-bench-single").Change(true);
         Assert.True(bench.OneIcon);
         Assert.Equal(["other"], bench.Filled);
         Assert.Single(view.FindAll(".icon-bench-slot"));
         Assert.Empty(view.FindAll("#icon-bench-fill"));
+        Assert.Equal("Other", bench.Name);
         Assert.StartsWith("a single flat vector icon. Icon: something else.", view.Find("#icon-bench-prompt").TextContent, StringComparison.Ordinal);
 
-        // The one slot is full until its brief is removed; then the next brief takes it.
+        // The one slot is full until its brief is removed; the next brief takes it, and the name follows.
         Assert.False(bench.Add("proposal"));
         view.FindAll(".icon-bench-slot button").First(button => button.TextContent == "Remove").Click();
-        Assert.True(bench.Add("proposal"));
+        view.FindAll(".icon-bench-queue li").First(item => item.TextContent.Contains("proposal", StringComparison.Ordinal)).QuerySelector("button")!.Click();
+        Assert.Equal("Proposal", bench.Name);
 
         view.Find("#icon-bench-save").Click();
         Assert.Equal(["proposal"], saved!.Icons);
         Assert.True(saved.OneIcon);
-        Assert.Equal("Play", saved.Name);
+        Assert.Equal("Proposal", saved.Name);
     }
 
+    [Fact]
+    public void ASavedBatchIsARecordRenamingKeepsItButNewSlotsOrAModeSaveANewBatch()
+    {
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        var tabs = new IconBatch("2026-10-17-2", "Inspector tabs", ["selection", "los", "range", "evidence"], string.Empty, "2026-10-17");
+        var plan = Plan(Brief("selection", "a hexagon and a pointer"), Brief("los", "an eye"), Brief("range", "a row of hexes"), Brief("evidence", "a book"))
+            .WithBatch(tabs);
+        var saves = new List<IconBatch>();
+        var bench = new IconBench();
+        bench.Load(tabs);
+        var view = context.Render<IconPromptBench>(parameters => parameters
+            .Add(component => component.Plan, plan)
+            .Add(component => component.Icons, EmptyLibrary())
+            .Add(component => component.Bench, bench)
+            .Add(component => component.OnSaveBatch, (IconBatch batch) => saves.Add(batch)));
+        Assert.Equal("Batch 2026-10-17-2", view.Find("#icon-bench-batch-title").TextContent);
+        Assert.Equal("Save the name", view.Find("#icon-bench-save").TextContent);
+
+        // A new name alone renames the record.
+        view.Find("#icon-bench-name").Input("Inspector tab strip");
+        view.Find("#icon-bench-save").Click();
+        Assert.Equal(("2026-10-17-2", "Inspector tab strip"), (saves[^1].Id, saves[^1].Name));
+
+        // One icon changes what is sent: the title says so, and saving makes a new batch named after the icon, leaving 2026-10-17-2 alone.
+        view.Find("#icon-bench-single").Change(true);
+        Assert.Equal("New batch, from 2026-10-17-2", view.Find("#icon-bench-batch-title").TextContent);
+        Assert.Contains("2026-10-17-2 stays as it was sent", view.Find("#icon-bench-record").TextContent, StringComparison.Ordinal);
+        view.Find("#icon-bench-save").Click();
+        Assert.NotEqual("2026-10-17-2", saves[^1].Id);
+        Assert.Equal(("selection", true), (saves[^1].Icons.Single(), saves[^1].OneIcon));
+        Assert.Equal(saves[^1].Id, bench.BatchId);
+        Assert.Contains("2026-10-17-2 stays as it was", view.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ASlotShowsWhereItsIconGoesTheIconsBesideItAndTheResultToMatch()
+    {
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        var coverage = new IconCoverage(
+        [
+            new ComponentCoverage("BoardInspector", "Components/Board/BoardInspector.razor", ["/games/play", "/games/replay"], ["BoardWorkspace"],
+            [
+                new ControlCoverage("tab", "Selection", false, "selection", "selection", IconCoverage.HasIcon, "BoardInspector tabs"),
+                new ControlCoverage("tab", "LOS", false, "los", "los", IconCoverage.HasIcon, "BoardInspector tabs"),
+            ]),
+            new ComponentCoverage("Play", "Components/Pages/Play.razor", ["/games/play"], [],
+                [new ControlCoverage("tab", "Proposal", false, "proposal", null, IconCoverage.Needed, "BoardInspector tabs", "BoardInspector")]),
+            new ComponentCoverage("Replay", "Components/Pages/Replay.razor", ["/games/replay"], [],
+                [new ControlCoverage("tab", "Step", false, "step", null, IconCoverage.Needed, "BoardInspector tabs", "BoardInspector")]),
+        ]);
+        var plan = Plan(Brief("proposal", "a clipboard"), Brief("selection", "a hexagon") with { Reference = "Set Two, top row 3rd" }, Brief("los", "an eye") with { Reference = "Set Two, bottom row 3rd" })
+            .WithAssignment("Play#proposal", "proposal")
+            .WithBatch(new IconBatch("2026-10-17-2", "Inspector tabs", ["selection", "los"], string.Empty, "2026-10-17"));
+
+        var placement = IconPlacement.Find(coverage, "Play#proposal")!;
+        Assert.Equal("BoardInspector", placement.Home);
+        Assert.Equal(["Selection", "LOS"], placement.Neighbours.Select(neighbour => neighbour.Label));
+        var source = Assert.Single(placement.StyleSources(plan));
+        Assert.Equal("2026-10-17-2", source.Batch.Id);
+        Assert.Equal(["Set Two, top row 3rd", "Set Two, bottom row 3rd"], source.References);
+
+        var bench = new IconBench { OneIcon = true };
+        bench.Add("proposal");
+        var view = context.Render<IconPromptBench>(parameters => parameters
+            .Add(component => component.Plan, plan)
+            .Add(component => component.Icons, EmptyLibrary())
+            .Add(component => component.Coverage, coverage)
+            .Add(component => component.Bench, bench));
+        var where = view.Find(".icon-bench-slot .icon-bench-where").TextContent;
+        Assert.Contains("Play#proposal", where, StringComparison.Ordinal);
+        Assert.Contains("shown in BoardInspector", where, StringComparison.Ordinal);
+        Assert.Contains("Selection", where, StringComparison.Ordinal);
+        Assert.DoesNotContain("Step", where, StringComparison.Ordinal);
+        Assert.Contains("Inspector tabs (2026-10-17-2): Set Two, top row 3rd; Set Two, bottom row 3rd", view.Find(".icon-bench-match").TextContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>A library with no icons and no coverage.</summary>
     private IconLibrary EmptyLibrary() => new(provider ??= new PhysicalFileProvider(scratch.FullName));
 
     private static AngleSharp.Dom.IElement Row(IRenderedComponent<IconCoverageView> view, string control) => view.Find($"tr[data-control='{control}']");

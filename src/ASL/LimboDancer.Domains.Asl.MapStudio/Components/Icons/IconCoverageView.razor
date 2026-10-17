@@ -50,6 +50,17 @@
                 <p class="muted">
                     On @(component.Pages.Count == 0 ? "no page found (a layout, or placed at run time)" : string.Join(", ", component.Pages))@(component.UsedBy.Count == 0 ? "." : $"; placed by {string.Join(", ", component.UsedBy)}.")
                 </p>
+                @{
+                    var guests = Guests(component).ToList();
+                }
+                @if (guests.Count > 0)
+                {
+                    <p class="muted icon-lab-guests">
+                        Also shown here, handed in by other components:
+                        @string.Join("; ", guests.Select(guest => $"{guest.Control.Label} from {guest.Owner.Name} ({DecisionWords(Decision(guest.Owner, guest.Control))})")).
+                        Each is decided under the component that writes it.
+                    </p>
+                }
                 @if (openKeys.Count > 1)
                 {
                     var marked = openKeys.Count(checkedControls.Contains);
@@ -58,7 +69,11 @@
                         <button type="button" class="link" @onclick="@(() => checkedControls.UnionWith(openKeys))">Check every open one</button>
                     </div>
                 }
-                <div class="icon-lab-scroll">
+                @if (rows.Count == 0)
+                {
+                    <p class="muted">None of its own controls match; the tabs above are decided under the components that write them.</p>
+                }
+                <div class="icon-lab-scroll" hidden="@(rows.Count == 0)">
                     <table class="icon-lab-controls">
                         <thead>
                             <tr><th scope="col"><span class="visually-hidden">Check</span></th><th scope="col">Icon</th><th scope="col">Label</th><th scope="col">Kind</th><th scope="col">Id</th><th scope="col">Decision</th></tr>
@@ -86,7 +101,13 @@
                                             @control.Label
                                         }
                                     </td>
-                                    <td>@control.Kind</td>
+                                    <td>
+                                        @control.Kind
+                                        @if (control.RendersIn is { } home)
+                                        {
+                                            <span class="muted">, shown in @home</span>
+                                        }
+                                    </td>
                                     <td>@if (control.Id is { } id)
                                         {
                                             <code>@id</code>
@@ -173,12 +194,26 @@
         return Coverage!.Components
             .Where(component => term.Length == 0 || component.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
                 || component.Path.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || component.Pages.Any(page => page.Contains(term, StringComparison.OrdinalIgnoreCase)))
+                || component.Pages.Any(page => page.Contains(term, StringComparison.OrdinalIgnoreCase))
+                || component.Controls.Any(control => control.RendersIn?.Contains(term, StringComparison.OrdinalIgnoreCase) == true))
             .Select(component => (Component: component, Rows: (IReadOnlyList<ControlCoverage>)component.Controls.Where(control => filter.Length == 0 || Decision(component, control) == filter).ToList()))
-            .Where(item => item.Rows.Count > 0)
+            .Where(item => item.Rows.Count > 0 || Guests(item.Component).Any(guest => filter.Length == 0 || Decision(guest.Owner, guest.Control) == filter))
             .OrderByDescending(item => item.Component.Controls.Count(control => Decision(item.Component, control) == Open))
             .ThenBy(item => item.Component.Name, StringComparer.Ordinal);
     }
+
+    /// <summary>The tabs other components hand to a component, such as Play's Proposal tab in BoardInspector.</summary>
+    private IEnumerable<(ComponentCoverage Owner, ControlCoverage Control)> Guests(ComponentCoverage component) =>
+        Coverage!.Components.Where(other => other.Name != component.Name)
+            .SelectMany(other => other.Controls.Where(control => control.RendersIn == component.Name).Select(control => (Owner: other, Control: control)));
+
+    private static string DecisionWords(string decision) => decision switch
+    {
+        Open => "still open",
+        Planned => "planned",
+        Drawn => "with an icon",
+        _ => "keeps its words",
+    };
 
     private string Counts(ComponentCoverage component)
     {

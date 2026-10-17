@@ -15,21 +15,24 @@
           "label": "Undo",
           "dynamic": false,
           "id": "editor-undo",
-          "status": "needed"
+          "status": "needed",
+          "strip": "BoardEditorHeader editor-header"
         },
         {
           "kind": "button",
           "label": "Redo",
           "dynamic": false,
           "id": "editor-redo",
-          "status": "needed"
+          "status": "needed",
+          "strip": "BoardEditorHeader editor-header"
         },
         {
           "kind": "button",
           "label": "@(IsDraft ? \u0022Save draft\u0022 : \u0022Save\u0022)",
           "dynamic": true,
           "id": "editor-save",
-          "status": "needed"
+          "status": "needed",
+          "strip": "BoardEditorHeader editor-header"
         }
       ]
     },
@@ -51,7 +54,8 @@
           "dynamic": false,
           "id": "selection",
           "icon": "selection",
-          "status": "icon"
+          "status": "icon",
+          "strip": "BoardInspector tabs"
         },
         {
           "kind": "tab",
@@ -59,7 +63,8 @@
           "dynamic": false,
           "id": "los",
           "icon": "los",
-          "status": "icon"
+          "status": "icon",
+          "strip": "BoardInspector tabs"
         },
         {
           "kind": "tab",
@@ -67,7 +72,8 @@
           "dynamic": false,
           "id": "range",
           "icon": "range",
-          "status": "icon"
+          "status": "icon",
+          "strip": "BoardInspector tabs"
         },
         {
           "kind": "tab",
@@ -75,7 +81,8 @@
           "dynamic": false,
           "id": "evidence",
           "icon": "evidence",
-          "status": "icon"
+          "status": "icon",
+          "strip": "BoardInspector tabs"
         }
       ]
     },
@@ -95,7 +102,8 @@
           "dynamic": false,
           "id": "viewer-fit",
           "icon": "fit",
-          "status": "icon"
+          "status": "icon",
+          "strip": "BoardViewerToolbar viewer-toolbar"
         }
       ]
     },
@@ -118,7 +126,8 @@
           "label": "Try again",
           "dynamic": false,
           "id": "workspace-retry",
-          "status": "needed"
+          "status": "needed",
+          "strip": "BoardWorkspace"
         }
       ]
     },
@@ -136,7 +145,8 @@
           "kind": "button",
           "label": "Delete feature",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "FeatureProperties"
         }
       ]
     },
@@ -158,13 +168,15 @@
           "kind": "button",
           "label": "@Location",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "HexInspector"
         },
         {
           "kind": "button",
           "label": "@Describe(feature)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "HexInspector"
         }
       ]
     },
@@ -184,7 +196,8 @@
           "kind": "button",
           "label": "@member.Name",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "HexUnitStackList"
         }
       ]
     },
@@ -202,7 +215,8 @@
           "kind": "button",
           "label": "@Label(feature)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "LayerList"
         }
       ]
     },
@@ -223,28 +237,32 @@
           "label": "selected hex",
           "dynamic": false,
           "id": "los-source-selected",
-          "status": "needed"
+          "status": "needed",
+          "strip": "LosPanel"
         },
         {
           "kind": "button",
           "label": "selected hex",
           "dynamic": false,
           "id": "los-target-selected",
-          "status": "needed"
+          "status": "needed",
+          "strip": "LosPanel"
         },
         {
           "kind": "button",
           "label": "Check LOS",
           "dynamic": false,
           "id": "los-check",
-          "status": "needed"
+          "status": "needed",
+          "strip": "LosPanel"
         },
         {
           "kind": "button",
           "label": "Clear",
           "dynamic": false,
           "id": "los-clear",
-          "status": "needed"
+          "status": "needed",
+          "strip": "LosPanel"
         }
       ]
     },
@@ -265,28 +283,32 @@
           "label": "selected hex",
           "dynamic": false,
           "id": "range-source-selected",
-          "status": "needed"
+          "status": "needed",
+          "strip": "RangePanel"
         },
         {
           "kind": "button",
           "label": "selected hex",
           "dynamic": false,
           "id": "range-target-selected",
-          "status": "needed"
+          "status": "needed",
+          "strip": "RangePanel"
         },
         {
           "kind": "button",
           "label": "Read the range",
           "dynamic": false,
           "id": "range-check",
-          "status": "needed"
+          "status": "needed",
+          "strip": "RangePanel"
         },
         {
           "kind": "button",
           "label": "Clear",
           "dynamic": false,
           "id": "range-clear",
-          "status": "needed"
+          "status": "needed",
+          "strip": "RangePanel"
         }
       ]
     },
@@ -304,7 +326,8 @@
           "kind": "button",
           "label": "@tool.Label",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "ToolPalette"
         }
       ]
     },
@@ -322,7 +345,8 @@
           "kind": "button",
           "label": "@finding.Code",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "ValidationPanel"
         }
       ]
     },
@@ -340,13 +364,15 @@
           "kind": "button",
           "label": "Pick on the map",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardAreaFields"
         },
         {
           "kind": "button",
           "label": "Remove the area",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardAreaFields"
         }
       ]
     },
@@ -364,19 +390,22 @@
           "kind": "button",
           "label": "Remove the group",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardGroupFields"
         },
         {
           "kind": "button",
           "label": "Add an area",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardGroupFields"
         },
         {
           "kind": "button",
           "label": "Remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardGroupFields"
         }
       ]
     },
@@ -394,21 +423,24 @@
           "kind": "button",
           "label": "Remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardMapFields"
         },
         {
           "kind": "button",
           "label": "Add a board",
           "dynamic": false,
           "id": "edit-board-add",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardMapFields"
         },
         {
           "kind": "button",
           "label": "Use its boards",
           "dynamic": false,
           "id": "edit-saved-map-use",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardMapFields"
         }
       ]
     },
@@ -427,7 +459,8 @@
           "label": "Done",
           "dynamic": false,
           "id": "edit-map-done",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardMapPicker"
         }
       ]
     },
@@ -445,20 +478,23 @@
           "kind": "button",
           "label": "Up",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardRulesFields"
         },
         {
           "kind": "button",
           "label": "Remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardRulesFields"
         },
         {
           "kind": "button",
           "label": "Add an SSR",
           "dynamic": false,
           "id": "edit-ssr-add",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardRulesFields"
         }
       ]
     },
@@ -477,42 +513,48 @@
           "label": "@(Source is { Length: \u003E 0 } kept \u0026\u0026 RenameTo is { Length: \u003E 0 } other \u0026\u0026 othe...",
           "dynamic": true,
           "id": "edit-save",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardSaveActions card-save-actions"
         },
         {
           "kind": "button",
           "label": "Rename \u0027@source\u0027 to \u0027@target\u0027",
           "dynamic": true,
           "id": "edit-rename",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardSaveActions card-save-actions"
         },
         {
           "kind": "button",
           "label": "Delete this card",
           "dynamic": false,
           "id": "edit-delete",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardSaveActions card-save-actions"
         },
         {
           "kind": "button",
           "label": "Delete",
           "dynamic": false,
           "id": "edit-delete-confirm",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardSaveActions"
         },
         {
           "kind": "button",
           "label": "Rename",
           "dynamic": false,
           "id": "edit-rename-confirm",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardSaveActions"
         },
         {
           "kind": "button",
           "label": "Cancel",
           "dynamic": false,
           "id": "edit-confirm-cancel",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardSaveActions"
         }
       ]
     },
@@ -530,13 +572,15 @@
           "kind": "button",
           "label": "Remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardSideFields"
         },
         {
           "kind": "button",
           "label": "Add an OB group",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardSideFields"
         }
       ]
     },
@@ -554,32 +598,37 @@
           "kind": "button",
           "label": "Remove the outcome",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardVictoryFields"
         },
         {
           "kind": "button",
           "label": "Pick on the map",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardVictoryFields"
         },
         {
           "kind": "button",
           "label": "Remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardVictoryFields"
         },
         {
           "kind": "button",
           "label": "Add a condition",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardVictoryFields"
         },
         {
           "kind": "button",
           "label": "Add an outcome",
           "dynamic": false,
           "id": "edit-outcome-add",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CardVictoryFields"
         }
       ]
     },
@@ -598,7 +647,8 @@
           "kind": "button",
           "label": "Add",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "ObCounterPicker"
         }
       ]
     },
@@ -617,14 +667,16 @@
           "label": "Run batch",
           "dynamic": false,
           "id": "fidelity-start",
-          "status": "needed"
+          "status": "needed",
+          "strip": "FidelityRunControls"
         },
         {
           "kind": "button",
           "label": "Cancel",
           "dynamic": false,
           "id": "fidelity-cancel",
-          "status": "needed"
+          "status": "needed",
+          "strip": "FidelityRunControls"
         }
       ]
     },
@@ -643,7 +695,8 @@
           "label": "Check LOS",
           "dynamic": false,
           "id": "los-fidelity-run",
-          "status": "needed"
+          "status": "needed",
+          "strip": "LosFidelityPanel"
         }
       ]
     },
@@ -662,7 +715,8 @@
           "label": "Show on @BoardName",
           "dynamic": true,
           "id": "game-show",
-          "status": "needed"
+          "status": "needed",
+          "strip": "GameReplayToolbar game-toolbar"
         }
       ]
     },
@@ -681,7 +735,8 @@
           "label": "Read",
           "dynamic": false,
           "id": "case-read",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ReadCaseForm case-form"
         }
       ]
     },
@@ -699,19 +754,22 @@
           "kind": "button",
           "label": "Open on the bench",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconBatchList"
         },
         {
           "kind": "button",
           "label": "Copy prompt",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconBatchList"
         },
         {
           "kind": "button",
           "label": "Save",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconBatchList"
         }
       ]
     },
@@ -730,13 +788,15 @@
           "kind": "button",
           "label": "@(IsNew ? \u0022Save brief\u0022 : \u0022Save changes\u0022)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconBriefEditor toolbar"
         },
         {
           "kind": "button",
           "label": "Cancel",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconBriefEditor toolbar"
         }
       ]
     },
@@ -754,31 +814,36 @@
           "kind": "button",
           "label": "@(marked == 0 ? \u0022Keep words for the checked\u0022 : $\u0022Keep words for the {marked} ...",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconCoverageView toolbar"
         },
         {
           "kind": "button",
           "label": "Check every open one",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconCoverageView toolbar"
         },
         {
           "kind": "button",
           "label": "New icon",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconCoverageView"
         },
         {
           "kind": "button",
           "label": "Keep words",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconCoverageView"
         },
         {
           "kind": "button",
           "label": "Change",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconCoverageView"
         }
       ]
     },
@@ -797,70 +862,81 @@
           "label": "Fill the slots from one component",
           "dynamic": false,
           "id": "icon-bench-fill",
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconPromptBench"
         },
         {
           "kind": "button",
           "label": "@(Bench.Holds(brief.Key) ? \u0022In a slot\u0022 : \u0022Add\u0022)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconPromptBench"
         },
         {
           "kind": "button",
           "label": "Write a brief with no control yet",
           "dynamic": false,
           "id": "icon-bench-new-brief",
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconPromptBench"
         },
         {
           "kind": "button",
           "label": "Start a new batch",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconPromptBench"
         },
         {
           "kind": "button",
           "label": "Edit brief",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconPromptBench"
         },
         {
           "kind": "button",
           "label": "Remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconPromptBench"
         },
         {
           "kind": "button",
           "label": "Edit the shared style",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconPromptBench icon-bench-actions"
         },
         {
           "kind": "button",
-          "label": "@(Bench.BatchId is null ? \u0022Save batch\u0022 : \u0022Save changes\u0022)",
+          "label": "@(Bench.BatchId is null ? \u0022Save batch\u0022 : \u0022Save the name\u0022)",
           "dynamic": true,
           "id": "icon-bench-save",
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconPromptBench icon-bench-actions"
         },
         {
           "kind": "button",
           "label": "Copy prompt",
           "dynamic": false,
           "id": "icon-bench-copy",
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconPromptBench icon-bench-actions"
         },
         {
           "kind": "button",
           "label": "Save style",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconPromptBench toolbar"
         },
         {
           "kind": "button",
           "label": "Cancel",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconPromptBench toolbar"
         }
       ]
     },
@@ -874,7 +950,8 @@
           "kind": "button",
           "label": "\u2630",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "MainLayout"
         }
       ]
     },
@@ -893,7 +970,8 @@
           "label": "Clear filters",
           "dynamic": false,
           "id": "library-clear",
-          "status": "needed"
+          "status": "needed",
+          "strip": "LibraryFilterBar"
         }
       ]
     },
@@ -913,13 +991,15 @@
           "kind": "button",
           "label": "Edit",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "MapSummaryList"
         },
         {
           "kind": "button",
           "label": "Delete",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "MapSummaryList"
         }
       ]
     },
@@ -938,14 +1018,16 @@
           "label": "Check",
           "dynamic": false,
           "id": "map-check",
-          "status": "needed"
+          "status": "needed",
+          "strip": "MapBuildActions"
         },
         {
           "kind": "button",
           "label": "Save and view",
           "dynamic": false,
           "id": "map-save",
-          "status": "needed"
+          "status": "needed",
+          "strip": "MapBuildActions"
         }
       ]
     },
@@ -963,14 +1045,16 @@
           "kind": "button",
           "label": "Remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "MapPlacementEditor"
         },
         {
           "kind": "button",
           "label": "Add a board",
           "dynamic": false,
           "id": "map-add-board",
-          "status": "needed"
+          "status": "needed",
+          "strip": "MapPlacementEditor"
         }
       ]
     },
@@ -989,7 +1073,8 @@
           "label": "Create",
           "dynamic": false,
           "id": "board-create",
-          "status": "needed"
+          "status": "needed",
+          "strip": "NewBoardForm"
         }
       ]
     },
@@ -1008,7 +1093,8 @@
           "label": "Use this text",
           "dynamic": false,
           "id": "map-use-text",
-          "status": "needed"
+          "status": "needed",
+          "strip": "PlacementTextEditor"
         }
       ]
     },
@@ -1026,26 +1112,30 @@
           "kind": "button",
           "label": "Up",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "ScenarioRuleEditor"
         },
         {
           "kind": "button",
           "label": "Down",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "ScenarioRuleEditor"
         },
         {
           "kind": "button",
           "label": "Remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "ScenarioRuleEditor"
         },
         {
           "kind": "button",
           "label": "Add rule",
           "dynamic": false,
           "id": "map-add-rule",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ScenarioRuleEditor"
         }
       ]
     },
@@ -1062,28 +1152,32 @@
           "label": "Properties",
           "dynamic": false,
           "id": "Properties",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Author InspectorTabList"
         },
         {
           "kind": "tab",
           "label": "Layers",
           "dynamic": false,
           "id": "Layers",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Author InspectorTabList"
         },
         {
           "kind": "tab",
           "label": "Validation",
           "dynamic": false,
           "id": "Validation",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Author InspectorTabList"
         },
         {
           "kind": "tab",
           "label": "Hex",
           "dynamic": false,
           "id": "Hex",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Author InspectorTabList"
         }
       ]
     },
@@ -1101,7 +1195,8 @@
           "dynamic": false,
           "id": "map-rotate",
           "icon": "rotate",
-          "status": "icon"
+          "status": "icon",
+          "strip": "BoardViewer"
         }
       ]
     },
@@ -1117,7 +1212,8 @@
           "kind": "button",
           "label": "Clear filters",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "Home"
         }
       ]
     },
@@ -1134,28 +1230,32 @@
           "label": "Icons",
           "dynamic": false,
           "id": "icons",
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconLab Tabs"
         },
         {
           "kind": "tab",
           "label": "Coverage",
           "dynamic": false,
           "id": "coverage",
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconLab Tabs"
         },
         {
           "kind": "tab",
           "label": "Prompts",
           "dynamic": false,
           "id": "prompts",
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconLab Tabs"
         },
         {
           "kind": "tab",
           "label": "Batches",
           "dynamic": false,
           "id": "batches",
-          "status": "needed"
+          "status": "needed",
+          "strip": "IconLab Tabs"
         }
       ]
     },
@@ -1168,150 +1268,149 @@
       "usedBy": [],
       "controls": [
         {
-          "kind": "tab",
-          "label": "Map",
-          "dynamic": false,
-          "id": "map",
-          "status": "needed"
-        },
-        {
-          "kind": "tab",
-          "label": "Actions",
-          "dynamic": false,
-          "id": "actions",
-          "status": "needed"
-        },
-        {
-          "kind": "tab",
-          "label": "Activity",
-          "dynamic": false,
-          "id": "activity",
-          "status": "needed"
-        },
-        {
           "kind": "button",
           "label": "Tick every stack that may take a \u0022?\u0022 (@choices.Count)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play"
         },
         {
           "kind": "button",
           "label": "Propose: place @DisplayText.Side(side.Id)\u0027s non-OB \u0022?\u0022",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play"
         },
         {
           "kind": "button",
           "label": "Hand the screen to the @DisplayText.Side(nextSide) side",
           "dynamic": true,
           "id": "setup-handover",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play"
         },
         {
           "kind": "button",
           "label": "@(topUp ? $\u0022Add what {group.Name} still owes\u0022 : $\u0022Set up {group.Name}\u0022)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play setup-groups"
         },
         {
           "kind": "button",
           "label": "Start the game, then set up on the map",
           "dynamic": false,
           "id": "start-game",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play start-game-bar"
         },
         {
           "kind": "button",
           "label": "@refusal.Text",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play"
         },
         {
           "kind": "button",
           "label": "Stop picking",
           "dynamic": false,
           "id": "play-picking-stop",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play"
         },
         {
           "kind": "button",
           "label": "Propose: end the @Games.PhaseLabel(state.Phase)",
           "dynamic": true,
           "id": "propose-advance",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play toolbar"
         },
         {
           "kind": "button",
           "label": "Propose: place @Words(unit.Id) in @PlaceOf(state.Location(unit.Id)!.Location)...",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play play-hidden"
         },
         {
           "kind": "button",
           "label": "Propose: @WordsAt(guard) Deploys",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play guard-deploy"
         },
         {
           "kind": "button",
           "label": "Propose: @WordsAt(unit.Id) massacres @Words(prisoner.Id)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play play-massacres"
         },
         {
           "kind": "button",
           "label": "Propose: the SMC moves away from the OVR",
           "dynamic": false,
           "id": "propose-overrun-evade",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play overrun-evade"
         },
         {
           "kind": "button",
           "label": "ProposeSimple(GameActions.ForfeitRof, \u0022forfeit-rof\u0022))\u0027\u003EPropose: give up the R...",
           "dynamic": true,
           "id": "propose-forfeit-rof",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play forfeit-rof"
         },
         {
           "kind": "button",
           "label": "Propose: @Words(motionChosen.Vehicle) attempts Motion",
           "dynamic": true,
           "id": "propose-motion-attempt",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play motion-attempt"
         },
         {
           "kind": "button",
           "label": "Show it on the map",
           "dynamic": false,
           "id": "dff-show",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play dff-window"
         },
         {
           "kind": "button",
           "label": "Propose: the Mandatory FG attacks",
           "dynamic": false,
           "id": "propose-mandatory-fire",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play dff-window"
         },
         {
           "kind": "button",
           "label": "Propose: @Words(owing) attacks",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play dff-window"
         },
         {
           "kind": "button",
           "label": "ProposeSimple(GameActions.PassFire, \u0022pass\u0022))\u0027\u003EPropose: the DEFENDER passes",
           "dynamic": false,
           "id": "propose-pass",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play dff-window"
         },
         {
           "kind": "tab",
           "label": "Proposal",
           "dynamic": false,
           "id": "proposal",
-          "status": "needed"
+          "status": "needed",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
         },
         {
           "kind": "button",
@@ -1319,7 +1418,8 @@
           "dynamic": false,
           "id": "play-map-zoom-in",
           "icon": "zoom-in",
-          "status": "icon"
+          "status": "icon",
+          "strip": "Play play-map-tools"
         },
         {
           "kind": "button",
@@ -1327,7 +1427,8 @@
           "dynamic": false,
           "id": "play-map-zoom-out",
           "icon": "zoom-out",
-          "status": "icon"
+          "status": "icon",
+          "strip": "Play play-map-tools"
         },
         {
           "kind": "button",
@@ -1335,7 +1436,8 @@
           "dynamic": false,
           "id": "play-map-fit",
           "icon": "fit",
-          "status": "icon"
+          "status": "icon",
+          "strip": "Play play-map-tools"
         },
         {
           "kind": "button",
@@ -1343,117 +1445,158 @@
           "dynamic": false,
           "id": "map-rotate",
           "icon": "rotate",
-          "status": "icon"
+          "status": "icon",
+          "strip": "Play play-map-tools"
         },
         {
           "kind": "button",
           "label": "Formation boundaries",
           "dynamic": false,
           "id": "map-parent-boundaries",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play play-map-tools"
         },
         {
           "kind": "button",
           "label": "@plan.Name",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play setup-switcher"
         },
         {
           "kind": "button",
           "label": "My list",
           "dynamic": false,
           "id": "map-show-list",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play setup-switcher"
         },
         {
           "kind": "button",
           "label": "@asked.Yes",
           "dynamic": true,
           "id": "map-ask-yes",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play toolbar"
         },
         {
           "kind": "button",
           "label": "Keep my list",
           "dynamic": false,
           "id": "map-ask-no",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play toolbar"
         },
         {
           "kind": "button",
           "label": "Propose setup",
           "dynamic": false,
           "id": "map-propose-setup",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play toolbar"
         },
         {
           "kind": "button",
           "label": "Edit the list (@placements.Count)",
           "dynamic": true,
           "id": "map-edit-list",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play toolbar"
         },
         {
           "kind": "button",
           "label": "Use @shownOne.Name",
           "dynamic": true,
           "id": "map-use-shown",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play toolbar"
         },
         {
           "kind": "button",
           "label": "Zoom to the setup area",
           "dynamic": false,
           "id": "map-zoom-setup",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play setup-map-tools"
         },
         {
           "kind": "button",
           "label": "Their plan\u0027s outline",
           "dynamic": false,
           "id": "map-their-outline",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play setup-map-tools"
         },
         {
           "kind": "button",
           "label": "Cancel",
           "dynamic": false,
           "id": "setup-move-cancel",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play"
         },
         {
           "kind": "button",
           "label": "Cancel",
           "dynamic": false,
           "id": "setup-swap-cancel",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play"
         },
         {
           "kind": "button",
           "label": "@label",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play More of the game"
         },
         {
           "kind": "tab",
           "label": "Plans",
           "dynamic": false,
           "id": "plans",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play SetupTabs"
         },
         {
           "kind": "tab",
           "label": "Counters",
           "dynamic": false,
           "id": "counters",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play SetupTabs"
         },
         {
           "kind": "tab",
           "label": "Card OB",
           "dynamic": false,
           "id": "ob",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Play SetupTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Map",
+          "dynamic": false,
+          "id": "map",
+          "status": "needed",
+          "strip": "Play PaneTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Actions",
+          "dynamic": false,
+          "id": "actions",
+          "status": "needed",
+          "strip": "Play PaneTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Activity",
+          "dynamic": false,
+          "id": "activity",
+          "status": "needed",
+          "strip": "Play PaneTabs"
         }
       ]
     },
@@ -1466,60 +1609,47 @@
       "usedBy": [],
       "controls": [
         {
-          "kind": "tab",
-          "label": "Map",
-          "dynamic": false,
-          "id": "map",
-          "status": "needed"
-        },
-        {
-          "kind": "tab",
-          "label": "Timeline",
-          "dynamic": false,
-          "id": "timeline",
-          "status": "needed"
-        },
-        {
-          "kind": "tab",
-          "label": "Details",
-          "dynamic": false,
-          "id": "details",
-          "status": "needed"
-        },
-        {
           "kind": "button",
           "label": "@(playing ? \u0022Stop\u0022 : \u0022Play\u0022)",
           "dynamic": true,
           "id": "replay-play",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Replay"
         },
         {
           "kind": "button",
           "label": "Make the game and open it on Play",
           "dynamic": false,
           "id": "replay-play-on-make",
-          "status": "needed"
+          "status": "needed",
+          "strip": "Replay toolbar"
         },
         {
           "kind": "tab",
           "label": "Step",
           "dynamic": false,
           "id": "step",
-          "status": "needed"
+          "status": "needed",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
         },
         {
           "kind": "tab",
           "label": "Units",
           "dynamic": false,
           "id": "units",
-          "status": "needed"
+          "status": "needed",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
         },
         {
           "kind": "tab",
           "label": "Standing",
           "dynamic": false,
           "id": "standing",
-          "status": "needed"
+          "status": "needed",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
         },
         {
           "kind": "button",
@@ -1527,7 +1657,8 @@
           "dynamic": false,
           "id": "replay-map-zoom-in",
           "icon": "zoom-in",
-          "status": "icon"
+          "status": "icon",
+          "strip": "Replay play-map-tools"
         },
         {
           "kind": "button",
@@ -1535,7 +1666,8 @@
           "dynamic": false,
           "id": "replay-map-zoom-out",
           "icon": "zoom-out",
-          "status": "icon"
+          "status": "icon",
+          "strip": "Replay play-map-tools"
         },
         {
           "kind": "button",
@@ -1543,7 +1675,8 @@
           "dynamic": false,
           "id": "replay-map-fit",
           "icon": "fit",
-          "status": "icon"
+          "status": "icon",
+          "strip": "Replay play-map-tools"
         },
         {
           "kind": "button",
@@ -1551,7 +1684,32 @@
           "dynamic": false,
           "id": "replay-map-rotate",
           "icon": "rotate",
-          "status": "icon"
+          "status": "icon",
+          "strip": "Replay play-map-tools"
+        },
+        {
+          "kind": "tab",
+          "label": "Map",
+          "dynamic": false,
+          "id": "map",
+          "status": "needed",
+          "strip": "Replay PaneTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Timeline",
+          "dynamic": false,
+          "id": "timeline",
+          "status": "needed",
+          "strip": "Replay PaneTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Details",
+          "dynamic": false,
+          "id": "details",
+          "status": "needed",
+          "strip": "Replay PaneTabs"
         }
       ]
     },
@@ -1570,7 +1728,8 @@
           "label": "Propose: advance",
           "dynamic": false,
           "id": "propose-advance-units",
-          "status": "needed"
+          "status": "needed",
+          "strip": "AdvanceActionPanel toolbar"
         }
       ]
     },
@@ -1588,7 +1747,8 @@
           "kind": "button",
           "label": "Propose: @Say(withdrawal.Unit) withdraws to @Say(withdrawal.To)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "AmbushWithdrawalActions cc-ambush-withdrawal"
         }
       ]
     },
@@ -1607,7 +1767,8 @@
           "label": "Propose: the OVR\u0027s CC",
           "dynamic": false,
           "id": "propose-overrun-cc",
-          "status": "needed"
+          "status": "needed",
+          "strip": "BerserkOverrunCloseCombat overrun-cc"
         }
       ]
     },
@@ -1626,14 +1787,16 @@
           "label": "Propose: MA Bounding First Fire",
           "dynamic": false,
           "id": "vehicle-bff-ma",
-          "status": "needed"
+          "status": "needed",
+          "strip": "BoundingFireAction"
         },
         {
           "kind": "button",
           "label": "@(Weapons.Count \u003E 0 ? \u0022Propose: MG Bounding First Fire\u0022 : \u0022Propose: Bounding ...",
           "dynamic": true,
           "id": "vehicle-bff",
-          "status": "needed"
+          "status": "needed",
+          "strip": "BoundingFireAction"
         }
       ]
     },
@@ -1652,7 +1815,8 @@
           "label": "Propose: enter a building",
           "dynamic": false,
           "id": "propose-enter",
-          "status": "needed"
+          "status": "needed",
+          "strip": "BuildingEntryAction toolbar"
         }
       ]
     },
@@ -1671,7 +1835,8 @@
           "label": "Add the attack",
           "dynamic": false,
           "id": "cc-add-attack",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CloseCombatAttackBuilder cc-attack"
         }
       ]
     },
@@ -1690,20 +1855,23 @@
           "label": "Propose: roll for Ambush",
           "dynamic": false,
           "id": "propose-ambush",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CloseCombatPanel toolbar"
         },
         {
           "kind": "button",
           "label": "remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CloseCombatPanel"
         },
         {
           "kind": "button",
           "label": "Propose: resolve CC@(Attacks.Count == 0 ? \u0022 with no attacks\u0022 : \u0022\u0022)",
           "dynamic": true,
           "id": "propose-cc",
-          "status": "needed"
+          "status": "needed",
+          "strip": "CloseCombatPanel"
         }
       ]
     },
@@ -1721,7 +1889,8 @@
           "kind": "button",
           "label": "Propose: @afv.Id @(afv.ButtonedUp ? \u0022exposes its crew (CE)\u0022 : \u0022buttons up (BU)\u0022)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "CrewExposureActions toolbar"
         }
       ]
     },
@@ -1740,7 +1909,8 @@
           "label": "Propose: deploy",
           "dynamic": false,
           "id": "propose-deploy",
-          "status": "needed"
+          "status": "needed",
+          "strip": "DeployActionPanel toolbar"
         }
       ]
     },
@@ -1759,7 +1929,8 @@
           "label": "Propose: turn without firing",
           "dynamic": false,
           "id": "propose-turn-gun",
-          "status": "needed"
+          "status": "needed",
+          "strip": "GunArcAction toolbar"
         }
       ]
     },
@@ -1780,7 +1951,8 @@
           "label": "I am @Label: show my view",
           "dynamic": true,
           "id": "play-handover-confirm",
-          "status": "needed"
+          "status": "needed",
+          "strip": "HandOverScreen"
         }
       ]
     },
@@ -1799,14 +1971,16 @@
           "label": "Propose: the OVR\u0027s NTC",
           "dynamic": false,
           "id": "propose-overrun-ntc",
-          "status": "needed"
+          "status": "needed",
+          "strip": "InfantryMovementAction"
         },
         {
           "kind": "button",
           "label": "Propose: move",
           "dynamic": false,
           "id": "propose-move",
-          "status": "needed"
+          "status": "needed",
+          "strip": "InfantryMovementAction"
         }
       ]
     },
@@ -1831,25 +2005,29 @@
           "kind": "button",
           "label": "@(Armed ? \u0022Stop picking\u0022 : \u0022Pick on the map\u0022)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "LocationField"
         },
         {
           "kind": "button",
           "label": "@(Many ? \u0022Add\u0022 : \u0022Use\u0022) @Words(picked)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "LocationField"
         },
         {
           "kind": "button",
           "label": "Remove @Short(Tokens[^1])",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "LocationField"
         },
         {
           "kind": "button",
           "label": "Clear the route",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "LocationField"
         }
       ]
     },
@@ -1868,7 +2046,8 @@
           "kind": "button",
           "label": "Propose: leave the map",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "MapExitAction"
         }
       ]
     },
@@ -1887,7 +2066,8 @@
           "label": "Propose: Mop Up",
           "dynamic": false,
           "id": "propose-mop-up",
-          "status": "needed"
+          "status": "needed",
+          "strip": "MoppingUpAction mop-up"
         }
       ]
     },
@@ -1906,14 +2086,16 @@
           "label": "Propose: the DEFENDER passes",
           "dynamic": false,
           "id": "propose-pass",
-          "status": "needed"
+          "status": "needed",
+          "strip": "MovementWindowActions"
         },
         {
           "kind": "button",
           "label": "Propose: end the move@(EndingSome ? \u0022 of the checked units\u0022 : \u0022\u0022)",
           "dynamic": true,
           "id": "propose-end-move",
-          "status": "needed"
+          "status": "needed",
+          "strip": "MovementWindowActions"
         }
       ]
     },
@@ -1931,13 +2113,15 @@
           "kind": "button",
           "label": "Propose: decline the OVR",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "OpenEntryDeclaration"
         },
         {
           "kind": "button",
           "label": "Propose: elect the OVR",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "OpenEntryDeclaration"
         }
       ]
     },
@@ -1956,7 +2140,8 @@
           "label": "Propose: Opportunity Fire",
           "dynamic": false,
           "id": "propose-opportunity",
-          "status": "needed"
+          "status": "needed",
+          "strip": "OpportunityFireAction toolbar"
         }
       ]
     },
@@ -1975,7 +2160,8 @@
           "label": "Propose: fire",
           "dynamic": false,
           "id": "propose-ordnance",
-          "status": "needed"
+          "status": "needed",
+          "strip": "OrdnanceFirePanel toolbar"
         }
       ]
     },
@@ -1993,7 +2179,8 @@
           "kind": "button",
           "label": "Propose: @option.Text",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "PendingChoicePanel"
         }
       ]
     },
@@ -2011,19 +2198,22 @@
           "kind": "button",
           "label": "Propose: @At(captor) takes it prisoner",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "PendingSurrenderPanel"
         },
         {
           "kind": "button",
           "label": "Propose: reject the surrender (No Quarter)",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "PendingSurrenderPanel"
         },
         {
           "kind": "button",
           "label": "Propose: free it as Unarmed (no captor can guard it; A20.21)",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "PendingSurrenderPanel"
         }
       ]
     },
@@ -2045,7 +2235,8 @@
           "kind": "button",
           "label": "Use @Say(option)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "PickedOption"
         }
       ]
     },
@@ -2064,7 +2255,8 @@
           "label": "Propose: Place the DC",
           "dynamic": false,
           "id": "propose-place-dc",
-          "status": "needed"
+          "status": "needed",
+          "strip": "PlaceDemolitionChargeAction"
         }
       ]
     },
@@ -2082,13 +2274,15 @@
           "kind": "button",
           "label": "Propose: detonate @Say(placed.Charge) in @Say(placed.Target) (30 FP@(placed.T...",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "PlacedChargeDetonationActions toolbar"
         },
         {
           "kind": "button",
           "label": "Propose: detonate @Say(placed.Charge) in @Say(placed.Target) at @Say(vehicle....",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "PlacedChargeDetonationActions toolbar"
         }
       ]
     },
@@ -2109,7 +2303,8 @@
           "label": "Close the card",
           "dynamic": false,
           "id": "play-card-close",
-          "status": "needed"
+          "status": "needed",
+          "strip": "PlayCardPanel"
         }
       ]
     },
@@ -2130,14 +2325,16 @@
           "label": "Review: @title",
           "dynamic": true,
           "id": "play-review-jump",
-          "status": "needed"
+          "status": "needed",
+          "strip": "PlayContextHeader"
         },
         {
           "kind": "button",
           "label": "Hand over to @awaiting",
           "dynamic": true,
           "id": "play-hand-over",
-          "status": "needed"
+          "status": "needed",
+          "strip": "PlayContextHeader"
         }
       ]
     },
@@ -2155,7 +2352,8 @@
           "kind": "button",
           "label": "@Say(at.ToString())",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "PlayUnitTable"
         }
       ]
     },
@@ -2173,13 +2371,15 @@
           "kind": "button",
           "label": "Propose: @At(guard.Id) hands its prisoners to @Say(heir)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "PrisonerCustodyActions play-guards"
         },
         {
           "kind": "button",
           "label": "Propose: @At(guard.Id) abandons its prisoners",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "PrisonerCustodyActions play-guards"
         }
       ]
     },
@@ -2198,14 +2398,16 @@
           "label": "@(Busy ? \u0022Confirming\u0022 : ConfirmLabel)",
           "dynamic": true,
           "id": "play-confirm",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ProposalReviewPanel play-proposal-actions"
         },
         {
           "kind": "button",
           "label": "Cancel",
           "dynamic": false,
           "id": "play-cancel",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ProposalReviewPanel play-proposal-actions"
         }
       ]
     },
@@ -2224,7 +2426,8 @@
           "label": "Propose: rally",
           "dynamic": false,
           "id": "propose-rally",
-          "status": "needed"
+          "status": "needed",
+          "strip": "RallyActionPanel toolbar"
         }
       ]
     },
@@ -2243,7 +2446,8 @@
           "label": "Propose: CC Reaction Fire at @Vehicle",
           "dynamic": true,
           "id": "propose-reaction",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ReactionFireAction toolbar"
         }
       ]
     },
@@ -2262,7 +2466,8 @@
           "label": "Propose: recombine",
           "dynamic": false,
           "id": "propose-recombine",
-          "status": "needed"
+          "status": "needed",
+          "strip": "RecombineActionPanel toolbar"
         }
       ]
     },
@@ -2281,7 +2486,8 @@
           "label": "Propose: repair",
           "dynamic": false,
           "id": "propose-repair",
-          "status": "needed"
+          "status": "needed",
+          "strip": "RepairActionPanel toolbar"
         }
       ]
     },
@@ -2299,14 +2505,16 @@
           "kind": "button",
           "label": "Use the route to @Say(way.Target)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "RoutActionPanel"
         },
         {
           "kind": "button",
           "label": "Propose: rout",
           "dynamic": false,
           "id": "propose-rout",
-          "status": "needed"
+          "status": "needed",
+          "strip": "RoutActionPanel toolbar"
         }
       ]
     },
@@ -2325,14 +2533,16 @@
           "label": "Add",
           "dynamic": false,
           "id": "scripted-dice-add",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ScriptedDicePanel scripted-dice"
         },
         {
           "kind": "button",
           "label": "clear",
           "dynamic": false,
           "id": "scripted-dice-clear",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ScriptedDicePanel scripted-dice"
         }
       ]
     },
@@ -2351,28 +2561,32 @@
           "label": "@Yes",
           "dynamic": true,
           "id": "setup-ask-yes",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupBar setup-bar-ask"
         },
         {
           "kind": "button",
           "label": "Keep my list",
           "dynamic": false,
           "id": "setup-ask-no",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupBar setup-bar-ask"
         },
         {
           "kind": "button",
           "label": "Propose setup",
           "dynamic": false,
           "id": "propose-setup",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupBar setup-bar-actions"
         },
         {
           "kind": "button",
           "label": "Clear",
           "dynamic": false,
           "id": "place-clear",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupBar setup-bar-actions"
         }
       ]
     },
@@ -2390,31 +2604,36 @@
           "kind": "button",
           "label": "@stack.Title",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupCounters"
         },
         {
           "kind": "button",
           "label": "Move stack",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupCounters"
         },
         {
           "kind": "button",
           "label": "Swap",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupCounters"
         },
         {
           "kind": "button",
           "label": "@moveWord",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupCounters"
         },
         {
           "kind": "button",
           "label": "remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupCounters"
         }
       ]
     },
@@ -2433,7 +2652,8 @@
           "label": "Add",
           "dynamic": false,
           "id": "place-add",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupPlacementEditor toolbar"
         }
       ]
     },
@@ -2451,27 +2671,31 @@
           "kind": "button",
           "label": "@(item.Picking ? \u0022Click a hex on the map\u0022 : \u0022Pick on the map\u0022)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupPlacementList"
         },
         {
           "kind": "button",
           "label": "remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupPlacementList"
         },
         {
           "kind": "button",
           "label": "Clear the list",
           "dynamic": false,
           "id": "place-clear",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupPlacementList"
         },
         {
           "kind": "button",
           "label": "Propose setup",
           "dynamic": false,
           "id": "propose-setup",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupPlacementList"
         }
       ]
     },
@@ -2489,19 +2713,22 @@
           "kind": "button",
           "label": "@(shown ? \u0022Shown on the map\u0022 : \u0022Show on map\u0022)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupPlanPicker toolbar"
         },
         {
           "kind": "button",
           "label": "Reset to @plan.Name",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupPlanPicker toolbar"
         },
         {
           "kind": "button",
           "label": "Use this plan",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "SetupPlanPicker toolbar"
         }
       ]
     },
@@ -2520,7 +2747,8 @@
           "label": "Propose: roll for it",
           "dynamic": false,
           "id": "propose-shock",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ShockRecoveryAction toolbar"
         }
       ]
     },
@@ -2538,28 +2766,32 @@
           "kind": "button",
           "label": "remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "SmallArmsFirePanel toolbar"
         },
         {
           "kind": "button",
           "label": "Show the range on the map",
           "dynamic": false,
           "id": "fire-range-show",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SmallArmsFirePanel toolbar"
         },
         {
           "kind": "button",
           "label": "Propose: fire",
           "dynamic": false,
           "id": "propose-fire",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SmallArmsFirePanel toolbar"
         },
         {
           "kind": "button",
           "label": "clear",
           "dynamic": false,
           "id": "fire-clear",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SmallArmsFirePanel toolbar"
         }
       ]
     },
@@ -2578,7 +2810,8 @@
           "label": "Propose: SMOKE grenades",
           "dynamic": false,
           "id": "propose-smoke",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SmokeGrenadeAction"
         }
       ]
     },
@@ -2597,7 +2830,8 @@
           "label": "Propose: fire a Starshell",
           "dynamic": false,
           "id": "propose-starshell",
-          "status": "needed"
+          "status": "needed",
+          "strip": "StarshellActionPanel toolbar"
         }
       ]
     },
@@ -2616,28 +2850,32 @@
           "label": "Propose: transfer",
           "dynamic": false,
           "id": "propose-transfer",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SupportWeaponActionPanel toolbar"
         },
         {
           "kind": "button",
           "label": "Propose: drop",
           "dynamic": false,
           "id": "propose-drop",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SupportWeaponActionPanel toolbar"
         },
         {
           "kind": "button",
           "label": "Propose: recover",
           "dynamic": false,
           "id": "propose-recover",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SupportWeaponActionPanel toolbar"
         },
         {
           "kind": "button",
           "label": "Propose: dismantle or assemble",
           "dynamic": false,
           "id": "propose-dismantle",
-          "status": "needed"
+          "status": "needed",
+          "strip": "SupportWeaponActionPanel toolbar"
         }
       ]
     },
@@ -2656,7 +2894,8 @@
           "label": "Propose: Throw the DC",
           "dynamic": false,
           "id": "propose-throw-dc",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ThrowDemolitionChargeAction toolbar"
         }
       ]
     },
@@ -2674,19 +2913,22 @@
           "kind": "button",
           "label": "Propose: Infantry attack the vehicle",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "VehicleCloseCombatPanel vehicle-cc"
         },
         {
           "kind": "button",
           "label": "Propose: the vehicle attacks the checked Infantry",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "VehicleCloseCombatPanel vehicle-cc"
         },
         {
           "kind": "button",
           "label": "Propose: the @location.NextSide side passes",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "VehicleCloseCombatPanel vehicle-cc"
         }
       ]
     },
@@ -2705,46 +2947,53 @@
           "label": "Propose: enter the map",
           "dynamic": false,
           "id": "vehicle-enter-map",
-          "status": "needed"
+          "status": "needed",
+          "strip": "VehicleStepChoices"
         },
         {
           "kind": "button",
           "label": "@step.Label",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "VehicleStepChoices"
         },
         {
           "kind": "button",
           "label": "Propose: ESB",
           "dynamic": false,
           "id": "vehicle-esb",
-          "status": "needed"
+          "status": "needed",
+          "strip": "VehicleStepChoices"
         },
         {
           "kind": "button",
           "label": "@exit.Label",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "VehicleStepChoices"
         },
         {
           "kind": "button",
           "label": "@hex",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "VehicleStepChoices"
         },
         {
           "kind": "button",
           "label": "Propose: board",
           "dynamic": false,
           "id": "vehicle-load",
-          "status": "needed"
+          "status": "needed",
+          "strip": "VehicleStepChoices"
         },
         {
           "kind": "button",
           "label": "Propose: unload",
           "dynamic": false,
           "id": "vehicle-unload",
-          "status": "needed"
+          "status": "needed",
+          "strip": "VehicleStepChoices"
         }
       ]
     },
@@ -2762,13 +3011,15 @@
           "kind": "button",
           "label": "Propose: unhook @gun.Id (half its MP)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "VehicleTowingActions"
         },
         {
           "kind": "button",
           "label": "Propose: hook up @gun.Id (half its MP; C10.11)",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "VehicleTowingActions"
         }
       ]
     },
@@ -2786,7 +3037,8 @@
           "kind": "button",
           "label": "@step.Number @step.Title@(step.Read == ReplayRead.Part ? \u0022 (read in part)\u0022 : ...",
           "dynamic": true,
-          "status": "needed"
+          "status": "needed",
+          "strip": "ReplayTimelineList"
         }
       ]
     },
@@ -2805,56 +3057,64 @@
           "label": "\u2039 Step",
           "dynamic": false,
           "id": "replay-back",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
         },
         {
           "kind": "button",
           "label": "Step \u203A",
           "dynamic": false,
           "id": "replay-forward",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
         },
         {
           "kind": "button",
           "label": "\u2039 Phase",
           "dynamic": false,
           "id": "replay-phase-back",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
         },
         {
           "kind": "button",
           "label": "Phase \u203A",
           "dynamic": false,
           "id": "replay-phase-forward",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
         },
         {
           "kind": "button",
           "label": "\u2039 Turn",
           "dynamic": false,
           "id": "replay-turn-back",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
         },
         {
           "kind": "button",
           "label": "Turn \u203A",
           "dynamic": false,
           "id": "replay-turn-forward",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
         },
         {
           "kind": "button",
           "label": "First",
           "dynamic": false,
           "id": "replay-first",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
         },
         {
           "kind": "button",
           "label": "Last",
           "dynamic": false,
           "id": "replay-last",
-          "status": "needed"
+          "status": "needed",
+          "strip": "ReplayTransport replay-transport"
         }
       ]
     },
@@ -2874,13 +3134,15 @@
           "kind": "button",
           "label": "Previous revision",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "RevisionNavigator"
         },
         {
           "kind": "button",
           "label": "Next revision",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "RevisionNavigator"
         }
       ]
     },
@@ -2898,14 +3160,16 @@
           "kind": "button",
           "label": "remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "AttachedEquipmentEditor"
         },
         {
           "kind": "button",
           "label": "Attach equipment",
           "dynamic": false,
           "id": "lab-attach",
-          "status": "needed"
+          "status": "needed",
+          "strip": "AttachedEquipmentEditor"
         }
       ]
     },
@@ -2924,7 +3188,8 @@
           "label": "Save document",
           "dynamic": false,
           "id": "lab-save-document",
-          "status": "needed"
+          "status": "needed",
+          "strip": "UnitDocumentOutput toolbar"
         }
       ]
     },
@@ -2943,27 +3208,31 @@
           "label": "Place this unit",
           "dynamic": false,
           "id": "lab-place",
-          "status": "needed"
+          "status": "needed",
+          "strip": "UnitPlacementSetEditor toolbar"
         },
         {
           "kind": "button",
           "label": "Load set",
           "dynamic": false,
           "id": "lab-load-set",
-          "status": "needed"
+          "status": "needed",
+          "strip": "UnitPlacementSetEditor toolbar"
         },
         {
           "kind": "button",
           "label": "Save set",
           "dynamic": false,
           "id": "lab-save-set",
-          "status": "needed"
+          "status": "needed",
+          "strip": "UnitPlacementSetEditor toolbar"
         },
         {
           "kind": "button",
           "label": "remove",
           "dynamic": false,
-          "status": "needed"
+          "status": "needed",
+          "strip": "UnitPlacementSetEditor"
         }
       ]
     },
@@ -2982,7 +3251,8 @@
           "label": "Save sheet as",
           "dynamic": false,
           "id": "lab-save-sheet",
-          "status": "needed"
+          "status": "needed",
+          "strip": "UnitStyleSheetEditor toolbar"
         }
       ]
     }

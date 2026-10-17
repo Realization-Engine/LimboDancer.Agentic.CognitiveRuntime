@@ -68,6 +68,9 @@ public sealed record ComponentCoverage(string Name, string Path, IReadOnlyList<s
 
 /// <summary>
 /// One button or tab: "button" or "tab", its label (its tooltip, accessible name, or words; the source expression when the label is
-/// worked out at run time, with <see cref="Dynamic"/> set), its id when it has one, its icon key, and its status.
+/// worked out at run time, with <see cref="Dynamic"/> set), its id when it has one, its icon key, and its status; the strip it sits in
+/// (a toolbar or tab strip, named the same wherever its members are written), and the component it renders in when that is not the one
+/// that writes it, such as a tab Play hands to BoardInspector.
 /// </summary>
-public sealed record ControlCoverage(string Kind, string Label, bool Dynamic, string? Id, string? Icon, string Status);
+public sealed record ControlCoverage(string Kind, string Label, bool Dynamic, string? Id, string? Icon, string Status, string? Strip = null,
+    string? RendersIn = null);

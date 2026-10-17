@@ -40,15 +40,23 @@
 
     <section class="icon-bench-batch" aria-labelledby="icon-bench-batch-title">
         <div class="icon-bench-head">
-            <h3 id="icon-bench-batch-title">@(Bench.BatchId is null ? "New batch" : $"Batch {Bench.BatchId}")</h3>
-            @if (Bench.BatchId is not null || Bench.Filled.Any())
+            <h3 id="icon-bench-batch-title">@Title</h3>
+            @if (Bench.Origin is not null || Bench.Filled.Any())
             {
                 <button type="button" class="link" @onclick="StartNew">Start a new batch</button>
             }
         </div>
+        @if (Bench.Origin is { } origin)
+        {
+            <p class="muted" id="icon-bench-record">
+                @(Bench.Changed
+                    ? $"Saving makes a new batch; {origin.Id} stays as it was sent."
+                    : $"{origin.Id} is a record of what was sent. A new name renames it; new slots, a new mode, or a new style reference save a new batch.")
+            </p>
+        }
         <label class="icon-bench-name">
-            Name
-            <input id="icon-bench-name" @bind="Bench.Name" @bind:event="oninput" placeholder="Replay transport" />
+            Batch name
+            <input id="icon-bench-name" @bind="Bench.Name" @bind:event="oninput" placeholder="@(Bench.OneIcon ? "Proposal" : "Replay transport")" />
         </label>
 
         <fieldset class="plain icon-bench-mode">
@@ -76,6 +84,7 @@
                     {
                         <strong>@(brief?.Label ?? key)</strong>
                         <span>@(brief?.Brief ?? "This brief is gone.")</span>
+                        @Placement(key)
                         <span class="toolbar">
                             @if (brief is not null)
                             {
@@ -108,7 +117,7 @@
         }
         <div class="toolbar icon-bench-actions">
             <button type="button" @onclick="@(() => editingStyle = !editingStyle)" aria-expanded="@(editingStyle ? "true" : "false")">Edit the shared style</button>
-            <button type="button" id="icon-bench-save" @onclick="SaveBatch">@(Bench.BatchId is null ? "Save batch" : "Save changes")</button>
+            <button type="button" id="icon-bench-save" @onclick="SaveBatch">@(Bench.BatchId is null ? "Save batch" : "Save the name")</button>
             <button type="button" class="primary" id="icon-bench-copy" @onclick="CopyPrompt">Copy prompt</button>
         </div>
 
@@ -157,6 +166,7 @@
     private string style = string.Empty;
     private string parameters = string.Empty;
     private string singleOpening = string.Empty;
+    private string? givenName;
     private string? message;
     private bool messageIsError;
     private IJSObjectReference? clipboard;
@@ -188,6 +198,55 @@
 
     private static string ComponentOf(string control) => control.Split('#', ':')[0];
 
+    private string Title => Bench.Origin is not { } origin ? "New batch" : Bench.Changed ? $"New batch, from {origin.Id}" : $"Batch {origin.Id}";
+
+    /// <summary>
+    /// Where a slot's icon will be seen: each control that uses it, its pages, the strip it sits in with the icons already beside it, and
+    /// the Midjourney result to attach as the style so it matches them.
+    /// </summary>
+    private RenderFragment Placement(string key) => @<text>
+        @{
+            var placements = Coverage is null ? new List<IconPlacement>() : Plan.ControlsOf(key).Select(control => IconPlacement.Find(Coverage, control)).OfType<IconPlacement>().ToList();
+            var sources = placements.SelectMany(placement => placement.StyleSources(Plan)).DistinctBy(source => source.Batch.Id).ToList();
+        }
+        @if (placements.Count == 0)
+        {
+            <span class="muted icon-bench-where">No control uses this brief yet; give it one from Coverage to see where it goes.</span>
+        }
+        @foreach (var placement in placements)
+        {
+            <span class="icon-bench-where">
+                For <code>@placement.Control</code> on @(placement.Component.Pages.Count == 0 ? "no page found" : string.Join(", ", placement.Component.Pages))@(placement.Item.RendersIn is { } home ? $", shown in {home}" : string.Empty).
+                @if (placement.Neighbours.Count > 0)
+                {
+                    <span>In the @placement.Item.Strip strip, beside:</span>
+                    <span class="icon-bench-neighbours">
+                        @foreach (var neighbour in placement.Neighbours.Take(8))
+                        {
+                            <span class="icon-bench-neighbour" title="@neighbour.Label">
+                                @if (neighbour.Icon is { } icon && Icons.Find(icon) is { } drawn && IconLibrary.Sized(drawn, 16) is { } markup)
+                                {
+                                    @((MarkupString)markup)
+                                }
+                                @neighbour.Label
+                            </span>
+                        }
+                        @if (placement.Neighbours.Count > 8)
+                        {
+                            <span class="muted">and @(placement.Neighbours.Count - 8) more</span>
+                        }
+                    </span>
+                }
+            </span>
+        }
+        @foreach (var (batch, references) in sources)
+        {
+            <span class="icon-bench-match">
+                To match them, attach as the style the result of <strong>@batch.Name</strong> (@batch.Id): @string.Join("; ", references).
+            </span>
+        }
+    </text>;
+
     protected override void OnParametersSet()
     {
         if (!editingStyle)
@@ -200,6 +259,20 @@
     {
         message = Bench.Add(key) ? null : Bench.OneIcon ? "One icon holds one brief; remove it first, or switch to a set of four." : "Every slot is full; remove one first.";
         messageIsError = message is not null;
+        NameAfterTheIcon();
+    }
+
+    /// <summary>
+    /// In one-icon mode the batch is the icon, so its name follows the icon's label, unless the name was typed: an empty name, the opened
+    /// batch's name, or a name given this way before is replaced.
+    /// </summary>
+    private void NameAfterTheIcon()
+    {
+        if (Bench.OneIcon && SlotBriefs.FirstOrDefault() is { } brief
+            && (Bench.Name.Length == 0 || Bench.Name == Bench.Origin?.Name || Bench.Name == givenName))
+        {
+            Bench.Name = givenName = brief.Label;
+        }
     }
 
     private void FillFromOneComponent()
@@ -228,6 +301,7 @@
     {
         Bench.SetOneIcon(oneIcon);
         message = null;
+        NameAfterTheIcon();
     }
 
     private void StartNew()
@@ -256,14 +330,17 @@
             return;
         }
 
+        // An unchanged batch keeps its id, so only its name changes; a changed one is saved as a new batch beside it.
         var id = Bench.BatchId ?? Plan.NextBatchId(DateOnly.FromDateTime(DateTime.Now));
         var name = Bench.Name.Trim() is { Length: > 0 } given ? given
             : Bench.Filled.SelectMany(Plan.ControlsOf).Select(ComponentOf).FirstOrDefault() ?? $"Batch {id}";
         var created = Plan.Batches.FirstOrDefault(batch => batch.Id == id)?.Created ?? DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-        await OnSaveBatch.InvokeAsync(new IconBatch(id, name, [.. Bench.Filled], Bench.Sref.Trim(), created, Bench.OneIcon));
-        Bench.BatchId = id;
-        Bench.Name = name;
-        (message, messageIsError) = ($"Saved as {id}.", false);
+        var batch = new IconBatch(id, name, [.. Bench.Filled], Bench.Sref.Trim(), created, Bench.OneIcon);
+        var from = Bench.Changed ? Bench.Origin?.Id : null;
+        await OnSaveBatch.InvokeAsync(batch);
+        Bench.Load(batch);
+        givenName = null;
+        (message, messageIsError) = (from is null ? $"Saved as {id}." : $"Saved as {id}; {from} stays as it was.", false);
     }
 
     private async Task CopyPrompt()

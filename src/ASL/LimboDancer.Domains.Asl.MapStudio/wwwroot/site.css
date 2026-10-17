@@ -1473,6 +1473,34 @@ textarea.placements-text {
     background: var(--surface-2);
 }
 
+.icon-bench-where,
+.icon-bench-match {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.icon-bench-match {
+    color: var(--accent-ink);
+}
+
+.icon-bench-neighbours {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.6rem;
+    margin-left: 0.25rem;
+}
+
+.icon-bench-neighbour {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    color: var(--ink);
+}
+
+.icon-bench-neighbour svg {
+    display: block;
+}
+
 .icon-bench-prompt {
     display: grid;
     gap: 0.25rem;

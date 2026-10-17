@@ -53,6 +53,13 @@ public sealed class IconCoverageTests(StudioFactory factory) : IClassFixture<Stu
         Assert.Contains("BoardWorkspace", inspector.UsedBy);
         Assert.Contains("/games/replay", inspector.Pages);
 
+        // Proposal is written in Play but shown in BoardInspector's strip, beside its own four tabs; the map toolbar is one strip.
+        var proposal = Assert.Single(play.Controls, control => control.Id == "proposal");
+        Assert.Equal(("BoardInspector tabs", "BoardInspector"), (proposal.Strip, proposal.RendersIn));
+        Assert.All(inspector.Controls.Where(control => control.Kind == "tab"), control => Assert.Equal("BoardInspector tabs", control.Strip));
+        Assert.Single(play.Controls.Where(control => control.Id is "play-map-zoom-in" or "play-map-fit").Select(control => control.Strip).Distinct());
+        Assert.Equal("Play PaneTabs", Assert.Single(play.Controls, control => control.Id == "map").Strip);
+
         Assert.DoesNotContain(coverage.Components, component => component.Name is "IconGallery" or "InspectorTabs");
         var lab = Assert.Single(coverage.Components, component => component.Name == "IconLab");
         Assert.Equal(["icons", "coverage", "prompts", "batches"], lab.Controls.Select(control => control.Id));

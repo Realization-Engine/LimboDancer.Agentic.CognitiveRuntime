@@ -23,6 +23,11 @@ public static partial class IconCoverageScanner
 
     private const int LongestLabel = 80;
 
+    /// <summary>The inspector whose tab strip other components add tabs to with <c>BoardInspector.ExtraTab</c>.</summary>
+    private const string Inspector = "BoardInspector";
+
+    private const string InspectorStrip = "BoardInspector tabs";
+
     /// <summary>The coverage of every .razor file under a project folder, paths relative to it with forward slashes.</summary>
     public static IconCoverage Scan(string projectRoot)
     {
@@ -53,7 +58,7 @@ public static partial class IconCoverageScanner
         var components = new List<ComponentCoverage>();
         foreach (var file in files.Where(file => !Skipped.Contains(file.Name)))
         {
-            var controls = Controls(file.Text);
+            var controls = Controls(file.Name, file.Text);
             if (controls.Count > 0)
             {
                 components.Add(new ComponentCoverage(file.Name, file.Path, PagesOf(file.Name, users, routes), [.. users[file.Name]], controls));
@@ -85,7 +90,7 @@ public static partial class IconCoverageScanner
         return [.. pages];
     }
 
-    private static List<ControlCoverage> Controls(string text)
+    private static List<ControlCoverage> Controls(string name, string text)
     {
         var found = new List<(int At, ControlCoverage Control)>();
         foreach (Match button in ButtonStart().Matches(text))
@@ -95,40 +100,78 @@ public static partial class IconCoverageScanner
             var close = text.IndexOf("</button>", tagEnd, StringComparison.Ordinal);
             if (tagEnd < text.Length && close >= 0)
             {
-                found.Add((button.Index, ButtonControl(text[attrsStart..tagEnd], text[(tagEnd + 1)..close])));
+                found.Add((button.Index, ButtonControl(text[attrsStart..tagEnd], text[(tagEnd + 1)..close], ContainerStrip(name, text, button.Index))));
             }
         }
 
         var tabIds = new HashSet<string>(StringComparer.Ordinal);
-        void AddTab(Match record)
+        void AddTab(int at, Match record, string strip, string? rendersIn = null)
         {
             if (tabIds.Add(record.Groups["id"].Value))
             {
-                found.Add((record.Index, TabControl(record)));
+                found.Add((at, TabControl(record, strip, rendersIn)));
             }
+        }
+
+        // Tabs in a declared list first, so each knows its list; a list in BoardInspector is the inspector's own strip.
+        foreach (Match list in TabList().Matches(text))
+        {
+            var strip = name == Inspector ? InspectorStrip : $"{name} {list.Groups["list"].Value}";
+            var body = list.Groups["body"];
+            foreach (var record in ShortTabRecord().Matches(body.Value).Concat(TabRecord().Matches(body.Value)).OrderBy(record => record.Index))
+            {
+                AddTab(body.Index + record.Index, record, strip);
+            }
+        }
+
+        // A tab handed to BoardInspector joins the inspector's own strip there.
+        foreach (Match record in ExtraTabRecord().Matches(text))
+        {
+            AddTab(record.Index, record, InspectorStrip, Inspector);
         }
 
         foreach (Match record in TabRecord().Matches(text))
         {
-            AddTab(record);
-        }
-
-        foreach (Match record in ExtraTabRecord().Matches(text))
-        {
-            AddTab(record);
-        }
-
-        foreach (Match list in TabList().Matches(text))
-        {
-            foreach (Match record in ShortTabRecord().Matches(list.Groups["body"].Value))
-            {
-                AddTab(record);
-            }
+            AddTab(record.Index, record, $"{name} tabs");
         }
 
         return [.. found.OrderBy(item => item.At).Select(item => item.Control)];
     }
 
+    /// <summary>
+    /// The strip a button sits in: the innermost toolbar, tab list, or group still open where the button starts, named by the component
+    /// and the container's id, accessible name, or other class; the component's name alone when there is none.
+    /// </summary>
+    private static string ContainerStrip(string name, string text, int at)
+    {
+        var open = new Stack<Match>();
+        foreach (Match tag in DivTag().Matches(text[..at]))
+        {
+            if (tag.Value.StartsWith("</", StringComparison.Ordinal))
+            {
+                open.TryPop(out _);
+            }
+            else
+            {
+                open.Push(tag);
+            }
+        }
+
+        foreach (var div in open)
+        {
+            var attrs = div.Value;
+            var classes = (Attribute(attrs, "class") ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var role = Attribute(attrs, "role");
+            if (classes.Contains("toolbar") || role is "tablist" or "group")
+            {
+                var label = Literal(Attribute(attrs, "id")) ?? Literal(Attribute(attrs, "aria-label"))
+                    ?? classes.FirstOrDefault(other => other != "toolbar" && !other.Contains('@', StringComparison.Ordinal)) ?? "toolbar";
+                return $"{name} {label}";
+            }
+        }
+
+        return name;
+    }
     /// <summary>
     /// Where an opening tag's '>' is: outside an attribute's quotes, where a quote inside an attribute's <c>@(...)</c> (a lambda's string
     /// argument, a conditional's two strings) neither opens nor closes the attribute.
@@ -158,7 +201,7 @@ public static partial class IconCoverageScanner
         return text.Length;
     }
 
-    private static ControlCoverage ButtonControl(string attrs, string inner)
+    private static ControlCoverage ButtonControl(string attrs, string inner, string strip)
     {
         var kind = Attribute(attrs, "role") == "tab" ? "tab" : "button";
         var id = Literal(Attribute(attrs, "id"));
@@ -166,21 +209,22 @@ public static partial class IconCoverageScanner
         {
             var icon = Attribute(iconLabel.Value, "Icon");
             var label = Attribute(iconLabel.Value, "Label") ?? string.Empty;
-            return new ControlCoverage(kind, Shorten(label), IsDynamic(label), id, icon, IconCoverage.HasIcon);
+            return new ControlCoverage(kind, Shorten(label), IsDynamic(label), id, icon, IconCoverage.HasIcon, strip);
         }
 
         var inside = Words(inner);
         // A title is often an explanation, not a name, so it labels only a button with no words of its own.
         var words = Literal(inside) ?? Literal(Attribute(attrs, "aria-label")) ?? (inside.Length > 0 ? inside : Literal(Attribute(attrs, "title")) ?? inside);
         var status = Attribute(attrs, "data-icon") == IconLibrary.TextByDesign ? IconCoverage.Text : IconCoverage.Needed;
-        return new ControlCoverage(kind, Shorten(words), IsDynamic(words), id, null, status);
+        return new ControlCoverage(kind, Shorten(words), IsDynamic(words), id, null, status, strip);
     }
 
-    private static ControlCoverage TabControl(Match record)
+    private static ControlCoverage TabControl(Match record, string strip, string? rendersIn)
     {
         var icon = TabIcon().Match(record.Groups["rest"].Value) is { Success: true } match ? match.Groups["icon"].Value : null;
         var status = icon is null ? IconCoverage.Needed : icon == IconLibrary.TextByDesign ? IconCoverage.Text : IconCoverage.HasIcon;
-        return new ControlCoverage("tab", record.Groups["title"].Value, false, record.Groups["id"].Value, status == IconCoverage.HasIcon ? icon : null, status);
+        return new ControlCoverage("tab", record.Groups["title"].Value, false, record.Groups["id"].Value, status == IconCoverage.HasIcon ? icon : null, status,
+            strip, rendersIn);
     }
 
     private static string? Attribute(string tag, string name) =>
@@ -202,6 +246,9 @@ public static partial class IconCoverageScanner
     [GeneratedRegex(@"<button\b")]
     private static partial Regex ButtonStart();
 
+    [GeneratedRegex(@"</?div\b(?:[^>""]|""[^""]*"")*>")]
+    private static partial Regex DivTag();
+
     [GeneratedRegex(@"<IconLabel\b[^>]*>")]
     private static partial Regex IconLabelTag();
 
@@ -217,7 +264,7 @@ public static partial class IconCoverageScanner
     [GeneratedRegex(@"ExtraTab\(\s*new\s*\(\s*""(?<id>[^""]+)""\s*,\s*""(?<title>[^""]+)""(?<rest>[^)]*)\)")]
     private static partial Regex ExtraTabRecord();
 
-    [GeneratedRegex(@"IReadOnlyList<InspectorTabs\.Tab>\s+\w+\s*=>?(?<body>[^;]*);")]
+    [GeneratedRegex(@"IReadOnlyList<InspectorTabs\.Tab>\s+(?<list>\w+)\s*=>?(?<body>[^;]*);")]
     private static partial Regex TabList();
 
     [GeneratedRegex(@"new\s*\(\s*""(?<id>[^""]+)""\s*,\s*""(?<title>[^""]+)""(?<rest>[^)]*)\)")]

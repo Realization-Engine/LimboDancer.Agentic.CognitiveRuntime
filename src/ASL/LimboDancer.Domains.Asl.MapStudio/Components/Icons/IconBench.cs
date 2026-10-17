@@ -3,15 +3,24 @@ using LimboDancer.Domains.Asl.MapStudio.Services;
 namespace LimboDancer.Domains.Asl.MapStudio.Components.Icons;
 
 /// <summary>
-/// The batch on the Prompts bench, kept by the Icon Lab page so it outlives a switch of tabs: the saved batch it edits, if any, its
-/// name, its four slots in Midjourney's 2x2 order, and its style reference.
+/// The batch on the Prompts bench, kept by the Icon Lab page so it outlives a switch of tabs: the saved batch it was opened from, if any,
+/// its name, its four slots in Midjourney's 2x2 order, and its style reference. A saved batch is a record of what was sent to Midjourney:
+/// once its slots, its mode, or its style reference change, saving makes a new batch and the opened one stays as it was.
 /// </summary>
 public sealed class IconBench
 {
-    public string? BatchId
+    /// <summary>The saved batch the bench was opened from, or last saved as.</summary>
+    public IconBatch? Origin
     {
-        get; set;
+        get; private set;
     }
+
+    /// <summary>The batch a save changes in place: the origin while what was sent is unchanged; else none, and a save makes a new one.</summary>
+    public string? BatchId => Changed ? null : Origin?.Id;
+
+    /// <summary>Whether what would be sent differs from the origin: its slots, its mode, or its style reference.</summary>
+    public bool Changed => Origin is { } origin
+        && (!Filled.SequenceEqual(origin.Icons, StringComparer.Ordinal) || OneIcon != origin.OneIcon || Sref.Trim() != origin.Sref);
 
     public string Name { get; set; } = string.Empty;
 
@@ -64,7 +73,7 @@ public sealed class IconBench
 
     public void Clear()
     {
-        BatchId = null;
+        Origin = null;
         Name = string.Empty;
         Sref = string.Empty;
         OneIcon = false;
@@ -74,7 +83,7 @@ public sealed class IconBench
     public void Load(IconBatch batch)
     {
         Clear();
-        BatchId = batch.Id;
+        Origin = batch;
         Name = batch.Name;
         Sref = batch.Sref;
         OneIcon = batch.OneIcon;
