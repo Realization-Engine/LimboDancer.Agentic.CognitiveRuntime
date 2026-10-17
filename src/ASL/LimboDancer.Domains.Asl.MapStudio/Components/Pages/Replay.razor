@@ -155,7 +155,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
             <BoardWorkspace @key="@($"{gameId}/{viewAs}")" @ref="workspace" Board="@mapBoard" Units="@layers.Overlay" UnitView="@layers.View" Marks="@layers.Marks" Vocabulary="@Library.Vocabulary" OnLoaded="@RevealOnMap"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => highlight = facts is null ? null : GameMaps.LocationOf(mapBoard, facts.Index))"
-                            @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("step", "Step"), stepBlock), new BoardInspector.ExtraTab(new("units", "Units", Icon: "units"), unitsBlock, Last: true), new BoardInspector.ExtraTab(new("standing", "Standing", Icon: "standing"), standingBlock, Last: true)])"
+                            @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("step", "Step", Icon: "step"), stepBlock), new BoardInspector.ExtraTab(new("units", "Units", Icon: "units"), unitsBlock, Last: true), new BoardInspector.ExtraTab(new("standing", "Standing", Icon: "standing"), standingBlock, Last: true)])"
                             InspectorLabel="The step and the inspector" IdPrefix="replay-inspector" MapLabel="The game's map at this step"
                             InspectorClass="play-pane play-review inspector" InspectorAttributes="@DetailsAttributes"
                             StageClass="play-pane play-map-pane play-map" StageAttributes="@MapAttributes(layers.Source)" Between="@between">

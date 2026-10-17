@@ -166,6 +166,21 @@ def standing():
         f'<rect x="11.1" y="2.8" width="1.8" height="16.8" rx="0.4" fill="{ink}"/>'
         f'<polygon points="12.9,3.2 21,6.2 12.9,9.2" fill="{c("red")}"/>')
 
+def step():
+    """A turn record track with a marker: four square record boxes, the third filled olive with a red diamond resting on it, the moment
+    of the game the replay is on (Step, 2026-10-17-7, the user's pick)."""
+    ink = c("ink")
+    # Large boxes and thick lines, so the track holds its own beside the solid icons of the strip at 24 px.
+    size, gap, top, line = 5.0, 0.35, 12.0, 1.7
+    boxes = ""
+    for index in range(4):
+        x = 1.5 + index * (size + gap)
+        fill = c("olive") if index == 2 else "none"
+        boxes += f'<rect x="{f(x + line / 2)}" y="{f(top + line / 2)}" width="{f(size - line)}" height="{f(size - line)}" fill="{fill}" stroke="{ink}" stroke-width="{f(line)}"/>'
+    centre = 1.5 + 2 * (size + gap) + size / 2
+    marker = f'<polygon points="{f(centre)},{f(top - 4.6)} {f(centre + 2.3)},{f(top - 2.3)} {f(centre)},{f(top)} {f(centre - 2.3)},{f(top - 2.3)}" fill="{c("red")}"/>'
+    return svg(boxes + marker)
+
 def proposal():
     """A clipboard with one ticked box and a pencil across its corner: an order proposed, not yet confirmed (Proposal, one icon,
     top row 3rd)."""
@@ -248,6 +263,7 @@ ICONS = [
     ("units", "Units", "Inspector tab", units()),
     ("scripted-dice", "Scripted dice", "Inspector tab", scripted_dice()),
     ("standing", "Standing", "Inspector tab", standing()),
+    ("step", "Step", "Inspector tab", step()),
     ("selection", "Selection", "Inspector tab", selection()),
     ("los", "LOS", "Inspector tab", los()),
     ("range", "Range", "Inspector tab", range_()),

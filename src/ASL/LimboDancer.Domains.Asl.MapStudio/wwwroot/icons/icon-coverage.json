@@ -1670,7 +1670,8 @@
           "label": "Step",
           "dynamic": false,
           "id": "step",
-          "status": "needed",
+          "icon": "step",
+          "status": "icon",
           "strip": "BoardInspector tabs",
           "rendersIn": "BoardInspector"
         },

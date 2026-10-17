@@ -12,7 +12,7 @@ public sealed class IconLabTests(StudioFactory factory) : IClassFixture<StudioFa
     {
         var icons = factory.Services.GetRequiredService<IconLibrary>();
         Assert.Null(icons.Problem);
-        Assert.Equal(["zoom-in", "zoom-out", "fit", "rotate", "play", "proposal", "records", "units", "scripted-dice", "standing", "selection", "los", "range", "evidence"], icons.Icons.Select(icon => icon.Key));
+        Assert.Equal(["zoom-in", "zoom-out", "fit", "rotate", "play", "proposal", "records", "units", "scripted-dice", "standing", "step", "selection", "los", "range", "evidence"], icons.Icons.Select(icon => icon.Key));
         Assert.Equal(["Map toolbar", "Inspector tab"], icons.Groups);
         Assert.All(icons.Icons, icon =>
         {
@@ -33,8 +33,8 @@ public sealed class IconLabTests(StudioFactory factory) : IClassFixture<StudioFa
         Assert.Contains("class=\"icon-lab icon-palette-mj\"", html, StringComparison.Ordinal);
         Assert.Contains("aria-label=\"Rotate map\"", html, StringComparison.Ordinal);
         Assert.Contains("aria-label=\"Evidence\"", html, StringComparison.Ordinal);
-        Assert.Equal(14, CountOf(html, "<figure>"));
-        Assert.Equal(14, CountOf(html, "width=\"144\" height=\"144\""));
+        Assert.Equal(15, CountOf(html, "<figure>"));
+        Assert.Equal(15, CountOf(html, "width=\"144\" height=\"144\""));
         Assert.DoesNotContain("<canvas", html, StringComparison.Ordinal);
         Assert.Contains(">Lab</span>", html, StringComparison.Ordinal);
         Assert.Contains("href=\"lab/icons\"", html, StringComparison.Ordinal);
