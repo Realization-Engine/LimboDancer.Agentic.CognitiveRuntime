@@ -686,6 +686,185 @@
       ]
     },
     {
+      "name": "IconBatchList",
+      "path": "Components/Icons/IconBatchList.razor",
+      "pages": [
+        "/lab/icons"
+      ],
+      "usedBy": [
+        "IconLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Open on the bench",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Copy prompt",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Save",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "IconBriefEditor",
+      "path": "Components/Icons/IconBriefEditor.razor",
+      "pages": [
+        "/lab/icons"
+      ],
+      "usedBy": [
+        "IconCoverageView",
+        "IconPromptBench"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(IsNew ? \u0022Save brief\u0022 : \u0022Save changes\u0022)",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "IconCoverageView",
+      "path": "Components/Icons/IconCoverageView.razor",
+      "pages": [
+        "/lab/icons"
+      ],
+      "usedBy": [
+        "IconLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(marked == 0 ? \u0022Keep words for the checked\u0022 : $\u0022Keep words for the {marked} ...",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Check every open one",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "New icon",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Keep words",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Change",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "IconPromptBench",
+      "path": "Components/Icons/IconPromptBench.razor",
+      "pages": [
+        "/lab/icons"
+      ],
+      "usedBy": [
+        "IconLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Fill the slots from one component",
+          "dynamic": false,
+          "id": "icon-bench-fill",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@(Bench.Holds(brief.Key) ? \u0022In a slot\u0022 : \u0022Add\u0022)",
+          "dynamic": true,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Write a brief with no control yet",
+          "dynamic": false,
+          "id": "icon-bench-new-brief",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Start a new batch",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Edit brief",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Edit the shared style",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "@(Bench.BatchId is null ? \u0022Save batch\u0022 : \u0022Save changes\u0022)",
+          "dynamic": true,
+          "id": "icon-bench-save",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Copy prompt",
+          "dynamic": false,
+          "id": "icon-bench-copy",
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Save style",
+          "dynamic": false,
+          "status": "needed"
+        },
+        {
+          "kind": "button",
+          "label": "Cancel",
+          "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
       "name": "MainLayout",
       "path": "Components/Layout/MainLayout.razor",
       "pages": [],
@@ -938,6 +1117,44 @@
           "kind": "button",
           "label": "Clear filters",
           "dynamic": false,
+          "status": "needed"
+        }
+      ]
+    },
+    {
+      "name": "IconLab",
+      "path": "Components/Pages/IconLab.razor",
+      "pages": [
+        "/lab/icons"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "tab",
+          "label": "Icons",
+          "dynamic": false,
+          "id": "icons",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Coverage",
+          "dynamic": false,
+          "id": "coverage",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Prompts",
+          "dynamic": false,
+          "id": "prompts",
+          "status": "needed"
+        },
+        {
+          "kind": "tab",
+          "label": "Batches",
+          "dynamic": false,
+          "id": "batches",
           "status": "needed"
         }
       ]

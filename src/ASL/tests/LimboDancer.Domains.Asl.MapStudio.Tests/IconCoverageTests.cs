@@ -53,6 +53,8 @@ public sealed class IconCoverageTests(StudioFactory factory) : IClassFixture<Stu
         Assert.Contains("BoardWorkspace", inspector.UsedBy);
         Assert.Contains("/games/replay", inspector.Pages);
 
-        Assert.DoesNotContain(coverage.Components, component => component.Name is "IconLab" or "InspectorTabs");
+        Assert.DoesNotContain(coverage.Components, component => component.Name is "IconGallery" or "InspectorTabs");
+        var lab = Assert.Single(coverage.Components, component => component.Name == "IconLab");
+        Assert.Equal(["icons", "coverage", "prompts", "batches"], lab.Controls.Select(control => control.Id));
     }
 }

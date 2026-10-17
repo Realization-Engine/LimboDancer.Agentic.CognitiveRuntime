@@ -1,0 +1,92 @@
+{
+  "style": {
+    "opening": "set of 4 flat vector icons, 2×2 grid, evenly spaced on a flat solid warm cream background (#f2ecdc), no texture, each icon centered in an equal square cell, same size and same visual weight, every icon fits a square.",
+    "style": "WWII tactical wargame aesthetic, SVG icon style, vector glyph pictograms, solid ink shapes, flat fills, crisp geometric edges, bold uniform stroke weight legible at 24 pixels, simple shapes, minimal professional UI icon set. Palette strictly limited to: deep slate-navy #203446 as primary ink, muted olive green #788848, soft sage woods green #7c9c7c, brick red #a04030 as a single sparing accent, dusty steel blue #4c6878, faded khaki tan #9a8c6a, near-black charcoal #1c1c1a outlines",
+    "parameters": "--no text, letters, numbers, labels, shadows, gradients, panels, tiles, cell borders, grid lines, texture, grain, noise --style raw --stylize 50 --ar 1:1"
+  },
+  "briefs": [
+    {
+      "key": "zoom-in",
+      "label": "Zoom in",
+      "brief": "a magnifying glass with a bold plus sign inside the lens, zoom in",
+      "meaning": "Zooms the map in a step.",
+      "reference": "Set One, final round, top row 2nd"
+    },
+    {
+      "key": "zoom-out",
+      "label": "Zoom out",
+      "brief": "the same magnifying glass with a bold minus sign inside the lens, zoom out",
+      "meaning": "Zooms the map out a step.",
+      "reference": "Set One, final round, top row 2nd"
+    },
+    {
+      "key": "fit",
+      "label": "Fit",
+      "brief": "four thick corner brackets around a compact cluster of seven large olive hexagons, fit to view",
+      "meaning": "Fits the whole map in the pane. At most seven hexes, or it turns to mush at 16 px.",
+      "reference": "Set One, final round, top row 2nd"
+    },
+    {
+      "key": "rotate",
+      "label": "Rotate map",
+      "brief": "the same cluster of seven large olive hexagons, one hexagon brick red, with a single thick curved arrow sweeping a quarter turn around it, rotate",
+      "meaning": "Turns the whole map a quarter clockwise. One arrow, never two: two read as refresh.",
+      "reference": "Set One, final round, top row 2nd"
+    },
+    {
+      "key": "selection",
+      "label": "Selection",
+      "brief": "a single large olive hexagon with a classic slate-navy mouse pointer arrow touching its lower right edge, selection",
+      "meaning": "The hex or counter last clicked, and its facts.",
+      "reference": "Set Two, final round, top row 3rd"
+    },
+    {
+      "key": "los",
+      "label": "LOS",
+      "brief": "a small bold eye in the upper left corner, a thick dashed sight line starting at the outer corner of the eye and running diagonally down to one small olive hexagon in the lower right corner, the line never crosses or overlaps the eye, line of sight",
+      "meaning": "Line of sight in ASL is a straight line between hex centers: never bent. A line through the eye reads as hide.",
+      "reference": "Set Two, final round, bottom row 3rd"
+    },
+    {
+      "key": "range",
+      "label": "Range",
+      "brief": "a straight horizontal row of four hexagons touching edge to edge, only the two end hexagons solid olive, the two middle hexagons outlined only, a slate-navy bracket under the whole row, range counted in hexes",
+      "meaning": "Range is counted in hexes, not measured with a ruler.",
+      "reference": "Set Two, final round, top row 3rd"
+    },
+    {
+      "key": "evidence",
+      "label": "Evidence",
+      "brief": "an open book with cream pages and a bold slate-navy outline, three thick horizontal bars on each page, one brick red bookmark ribbon hanging from the bottom center, evidence",
+      "meaning": "The rule citations and grid samples behind what the inspector shows. Horizontal bars: vertical ones read as a barcode.",
+      "reference": "Set Two, final round, top row 3rd"
+    }
+  ],
+  "assignments": [],
+  "batches": [
+    {
+      "id": "2026-10-17-1",
+      "name": "Map toolbar",
+      "icons": [
+        "zoom-in",
+        "zoom-out",
+        "fit",
+        "rotate"
+      ],
+      "sref": "",
+      "created": "2026-10-17"
+    },
+    {
+      "id": "2026-10-17-2",
+      "name": "Inspector tabs",
+      "icons": [
+        "selection",
+        "los",
+        "range",
+        "evidence"
+      ],
+      "sref": "",
+      "created": "2026-10-17"
+    }
+  ]
+}

@@ -19,7 +19,7 @@ namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 public static partial class IconCoverageScanner
 {
     /// <summary>Files whose buttons are not the Studio's controls: the Icon Lab's samples, and the template that draws every Tab record.</summary>
-    private static readonly HashSet<string> Skipped = new(StringComparer.Ordinal) { "IconLab", "InspectorTabs" };
+    private static readonly HashSet<string> Skipped = new(StringComparer.Ordinal) { "IconGallery", "InspectorTabs" };
 
     private const int LongestLabel = 80;
 

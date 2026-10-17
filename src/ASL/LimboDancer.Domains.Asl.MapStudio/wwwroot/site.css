@@ -1304,6 +1304,274 @@ textarea.placements-text {
     font-weight: 600;
 }
 
+.icon-lab-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+}
+
+.icon-lab-actions select {
+    max-width: 14rem;
+}
+
+.icon-lab-brief-row td {
+    background: var(--surface-2);
+}
+
+/* A brief: labels in one column and their fields in the other, stacked on a narrow screen. */
+.icon-brief-editor {
+    display: grid;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.icon-brief-fields {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
+    gap: 0.5rem 0.75rem;
+    align-items: start;
+}
+
+.icon-brief-fields > label {
+    padding-top: 0.35rem;
+    color: var(--muted);
+}
+
+.icon-brief-fields > div {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.icon-brief-fields input,
+.icon-brief-fields textarea {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.icon-brief-fields .muted,
+.icon-brief-fields .fail {
+    font-size: 0.8rem;
+}
+
+/* The Prompts bench: the queue beside the batch, the four slots in Midjourney's 2x2 order. */
+.icon-bench {
+    display: grid;
+    grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+.icon-bench > section {
+    display: grid;
+    gap: 0.6rem;
+    min-width: 0;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.icon-bench h3 {
+    margin: 0;
+}
+
+.icon-bench-group ul {
+    margin: 0.2rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.icon-bench-group li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.15rem 0;
+}
+
+.icon-bench-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.icon-bench-name,
+.icon-bench-sref,
+.icon-bench-style label {
+    display: grid;
+    gap: 0.25rem;
+    color: var(--muted);
+}
+
+.icon-bench-name input,
+.icon-bench-sref input,
+.icon-bench-style textarea {
+    width: 100%;
+    box-sizing: border-box;
+    color: var(--ink);
+}
+
+.icon-bench-slots {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.icon-bench-slot {
+    display: grid;
+    align-content: start;
+    gap: 0.25rem;
+    min-height: 6rem;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--control-line);
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+}
+
+.icon-bench-slot.empty {
+    border-style: dashed;
+    background: var(--surface-2);
+}
+
+.icon-bench-prompt {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.icon-bench-prompt-text {
+    margin: 0;
+    padding: 0.5rem 0.65rem;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.icon-bench-prompt-text {
+    color: var(--muted);
+}
+
+.icon-bench-briefs {
+    background: var(--accent-tint);
+    color: var(--ink);
+    padding: 0 0.1rem;
+}
+
+.icon-bench-actions {
+    justify-content: flex-end;
+}
+
+.icon-bench-style {
+    display: grid;
+    gap: 0.5rem;
+}
+
+/* The Batches tab. */
+.icon-batch {
+    display: grid;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.icon-batch-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+}
+
+.icon-batch-head .toolbar {
+    margin-left: auto;
+}
+
+.icon-batch-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.icon-batch-slots li {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+    gap: 0.2rem 0.5rem;
+    align-items: center;
+    padding: 0.5rem;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+}
+
+.icon-batch-slots li > .muted {
+    grid-column: 1 / -1;
+}
+
+.icon-batch-glyph {
+    grid-row: span 2;
+}
+
+.icon-batch-glyph svg {
+    display: block;
+}
+
+.icon-batch-reference {
+    grid-column: 2 / 3;
+}
+
+.icon-batch-reference input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.icon-stage {
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+
+.icon-stage[data-stage="Referenced"],
+.icon-stage[data-stage="Drawn"],
+.icon-stage[data-stage="Wired"] {
+    color: var(--pass);
+}
+
+@media (max-width: 900px) {
+    .icon-bench {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 560px) {
+    .icon-brief-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .icon-brief-fields > label {
+        padding-top: 0;
+    }
+
+    .icon-bench-slots {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 .icon-lab-detail {
     display: flex;
     flex-wrap: wrap;

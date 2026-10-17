@@ -1,140 +1,82 @@
 @page "/lab/icons"
 @inject IconLibrary Icons
+@inject IconPlanStore Store
+@inject NavigationManager Navigation
 
 <PageTitle>Icon Lab - ASL Map Studio</PageTitle>
 
 <PageHeader Title="Icon Lab">
     <p>
-        The Studio's icons in <code>wwwroot/@IconLibrary.Folder</code>, as they sit in a toolbar and a tab strip, at each size, and large.
-        Each is a 24-unit SVG whose colors come from an icon palette; <code>code-builders/studio-icons/make_icons.py</code> draws them.
+        The Studio's icons from brief to drawing. <strong>Icons</strong> shows the drawn ones in place and at each size; <strong>Coverage</strong>
+        decides, control by control, which need an icon; <strong>Prompts</strong> turns four briefs into a Midjourney prompt;
+        <strong>Batches</strong> records the result chosen for each icon. The plan is saved to <code>wwwroot/@IconLibrary.Folder/@IconPlan.File</code>;
+        commit it with the icons.
     </p>
 </PageHeader>
 
-@if (Icons.Icons.Count == 0)
-{
-    <p id="icon-lab-empty" class="fail">@(Icons.Problem ?? "The manifest lists no icons.")</p>
-}
-else
-{
-    <fieldset class="icon-lab-palette">
-        <legend>Palette</legend>
-        @foreach (var choice in Palettes)
-        {
-            <label><input type="radio" name="icon-palette" value="@choice.Class" checked="@(palette == choice.Class)" @onchange="@(() => palette = choice.Class)" /> @choice.Label</label>
-        }
-    </fieldset>
-
-    @if (Missing.Count > 0)
+<InspectorTabs Tabs="@Tabs" Selected="@Tab" SelectedChanged="@ChangeTab" Label="Icon Lab" IdPrefix="icon-lab">
+    @switch (Tab)
     {
-        <p id="icon-lab-missing" class="fail">The manifest names icons with no file: @string.Join(", ", Missing.Select(icon => $"{icon.Key}.svg")).</p>
+        case "coverage":
+            <IconCoverageView Coverage="@Icons.Coverage" Icons="@Icons" Plan="@plan" OnAssign="Assign" OnBrief="BriefForControl" />
+            break;
+        case "prompts":
+            <IconPromptBench Plan="@plan" Icons="@Icons" Coverage="@Icons.Coverage" Bench="@bench" OnSaveBrief="SaveBrief" OnSaveBatch="SaveBatch" OnSaveStyle="SaveStyle" />
+            break;
+        case "batches":
+            <IconBatchList Plan="@plan" Icons="@Icons" Coverage="@Icons.Coverage" OnReference="SaveReference" OnOpen="OpenBatch" />
+            break;
+        default:
+            <IconGallery Icons="@Icons" />
+            break;
     }
-
-    <div class="icon-lab @palette">
-        <section>
-            <h3>In place</h3>
-            <p class="muted">The Studio's own toolbar and tab styles, with each label in the tooltip and the accessible name.</p>
-            <div class="icon-lab-place">
-                @foreach (var group in Icons.Groups)
-                {
-                    var members = Drawn.Where(icon => icon.Group == group).ToList();
-                    <div class="icon-lab-sample">
-                        <span class="muted">@group</span>
-                        @if (group.Contains("tab", StringComparison.OrdinalIgnoreCase))
-                        {
-                            <div class="tabs" role="tablist" aria-label="@group">
-                                @foreach (var icon in members)
-                                {
-                                    var selected = icon.Key == SelectedTab(members);
-                                    <button type="button" role="tab" class="@(selected ? "tab icon-tab active" : "tab icon-tab")" aria-selected="@(selected ? "true" : "false")"
-                                            title="@icon.Label" aria-label="@icon.Label" @onclick="@(() => tab = icon.Key)">@((MarkupString)IconLibrary.Sized(icon, 20)!)</button>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="toolbar">
-                                @foreach (var icon in members)
-                                {
-                                    var pressed = pressedTools.Contains(icon.Key);
-                                    <button type="button" class="icon-button" title="@icon.Label" aria-label="@icon.Label" aria-pressed="@(pressed ? "true" : "false")"
-                                            @onclick="@(() => Press(icon.Key))">@((MarkupString)IconLibrary.Sized(icon, 20)!)</button>
-                                }
-                            </div>
-                        }
-                    </div>
-                }
-            </div>
-        </section>
-
-        <section>
-            <h3>Sizes</h3>
-            <div class="icon-lab-scroll">
-                <table class="icon-lab-sizes">
-                    <thead>
-                        <tr>
-                            <th scope="col">Icon</th>
-                            @foreach (var size in Sizes)
-                            {
-                                <th scope="col">@size px</th>
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var icon in Drawn)
-                        {
-                            <tr>
-                                <th scope="row">@icon.Label<span class="muted">@icon.Group, @(icon.Key).svg</span></th>
-                                @foreach (var size in Sizes)
-                                {
-                                    <td>@((MarkupString)IconLibrary.Sized(icon, size)!)</td>
-                                }
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <section>
-            <h3>Detail</h3>
-            <p class="muted">Each icon drawn large, as the vector it is, to judge its shapes and colors.</p>
-            <div class="icon-lab-detail">
-                @foreach (var icon in Drawn)
-                {
-                    <figure>
-                        @((MarkupString)IconLibrary.Sized(icon, DetailSize)!)
-                        <figcaption class="muted">@icon.Label</figcaption>
-                    </figure>
-                }
-            </div>
-        </section>
-
-        <IconCoverageView Coverage="@Icons.Coverage" Icons="@Icons" />
-    </div>
-}
+</InspectorTabs>
 
 @code {
-    private sealed record Palette(string Class, string Label);
+    private static readonly IReadOnlyList<string> TabIds = ["icons", "coverage", "prompts", "batches"];
 
-    private static readonly IReadOnlyList<Palette> Palettes = [new("icon-palette-mj", "Midjourney palette"), new("icon-palette-studio", "Studio tokens")];
-    private static readonly int[] Sizes = [16, 20, 24, 32, 96];
-    private const int DetailSize = 144;
+    [SupplyParameterFromQuery(Name = "tab")]
+    public string? TabQuery { get; set; }
 
-    private readonly HashSet<string> pressedTools = new(StringComparer.Ordinal);
-    private string palette = Palettes[0].Class;
-    private string? tab;
+    private readonly IconBench bench = new();
+    private IconPlan plan = IconPlan.Empty;
 
-    private IReadOnlyList<StudioIcon> Drawn => Icons.Icons.Where(icon => icon.Markup is not null).ToList();
+    private string Tab => TabQuery is { } tab && TabIds.Contains(tab) ? tab : TabIds[0];
 
-    private IReadOnlyList<StudioIcon> Missing => Icons.Icons.Where(icon => icon.Markup is null).ToList();
+    /// <summary>The tabs, with how many controls are still open and how many briefs wait for a batch.</summary>
+    private IReadOnlyList<InspectorTabs.Tab> Tabs =>
+    [
+        new("icons", "Icons", Icons.Icons.Count),
+        new("coverage", "Coverage", OpenControls),
+        new("prompts", "Prompts", plan.Briefs.Count(brief => IconStages.Of(brief.Key, plan, Icons, Icons.Coverage) == IconStage.Briefed)),
+        new("batches", "Batches", plan.Batches.Count),
+    ];
 
-    private string? SelectedTab(IReadOnlyList<StudioIcon> members) => tab is { } key && members.Any(icon => icon.Key == key) ? key : members.FirstOrDefault()?.Key;
+    private int OpenControls => Icons.Coverage is not { } coverage ? 0
+        : coverage.Components.Sum(component => component.Controls.Count(control =>
+            control.Status == IconCoverage.Needed && (IconPlan.ControlKey(component, control) is not { } key || plan.IconOf(key) is null)));
 
-    private void Press(string key)
+    protected override void OnInitialized() => plan = Store.Load();
+
+    private void ChangeTab(string tab) => Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("tab", tab == TabIds[0] ? null : tab), replace: true);
+
+    private void Assign(IReadOnlyList<(string Control, string? Icon)> decisions) =>
+        plan = Store.Update(current => decisions.Aggregate(current, (next, decision) => next.WithAssignment(decision.Control, decision.Icon)));
+
+    private void BriefForControl((IconBrief Brief, string Control) made) =>
+        plan = Store.Update(current => current.WithBrief(made.Brief).WithAssignment(made.Control, made.Brief.Key));
+
+    private void SaveBrief(IconBrief brief) => plan = Store.Update(current => current.WithBrief(brief));
+
+    private void SaveBatch(IconBatch batch) => plan = Store.Update(current => current.WithBatch(batch));
+
+    private void SaveStyle(IconPromptStyle style) => plan = Store.Update(current => current with { Style = style });
+
+    private void SaveReference((string Key, string Reference) chosen) => plan = Store.Update(current => current.WithReference(chosen.Key, chosen.Reference));
+
+    private void OpenBatch(IconBatch batch)
     {
-        if (!pressedTools.Remove(key))
-        {
-            pressedTools.Add(key);
-        }
+        bench.Load(batch);
+        ChangeTab("prompts");
     }
 }

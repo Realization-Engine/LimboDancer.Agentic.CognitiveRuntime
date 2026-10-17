@@ -1,0 +1,300 @@
+@* The Icon Lab's Coverage tab: each component's buttons and tabs, and the decision for each: it draws an icon, it is planned for one, it
+   keeps its words, or it is still open. An open control gets a new icon (a brief), an existing icon, or its words; several open controls
+   of a component can keep their words at once. Filtered by decision and by a component's name, path, or page. *@
+<section id="icon-lab-coverage">
+    @if (Coverage is null)
+    {
+        <p class="fail">wwwroot/@IconLibrary.Folder/@IconCoverage.File is missing; run IconCoverageTests with ASL_ICONS_UPDATE_COVERAGE=1.</p>
+    }
+    else
+    {
+        var all = Coverage.Components.SelectMany(component => component.Controls.Select(control => Decision(component, control))).ToList();
+        <p class="muted" id="icon-lab-coverage-summary">
+            @all.Count buttons and tabs in @Coverage.Components.Count components:
+            @(all.Count(decision => decision == Open)) still open,
+            @(all.Count(decision => decision == Planned)) planned for an icon,
+            @(all.Count(decision => decision == Drawn)) with an icon,
+            @(all.Count(decision => decision == Words)) keeping their words.
+        </p>
+        <div class="toolbar icon-lab-filters">
+            <label>
+                Show
+                <select @bind="filter" id="icon-lab-status">
+                    <option value="@Open">still open</option>
+                    <option value="@Planned">planned for an icon</option>
+                    <option value="@Drawn">with an icon</option>
+                    <option value="@Words">keeping their words</option>
+                    <option value="">every control</option>
+                </select>
+            </label>
+            <label>
+                Component or page
+                <input type="search" id="icon-lab-search" @bind="search" @bind:event="oninput" placeholder="Play, /games/replay" />
+            </label>
+        </div>
+
+        var shown = Shown().ToList();
+        @if (shown.Count == 0)
+        {
+            <p class="muted">@(filter == Open ? "Every control has a decision." : "No component has a control that matches.")</p>
+        }
+        @foreach (var (component, rows) in shown)
+        {
+            var openKeys = rows.Where(row => Decision(component, row) == Open).Select(row => IconPlan.ControlKey(component, row)).OfType<string>().ToList();
+            <details class="icon-lab-component" data-component="@component.Name" open="@(shown.Count == 1)">
+                <summary>
+                    <strong>@component.Name</strong>
+                    <span class="muted">@component.Path</span>
+                    <span class="icon-lab-counts">@Counts(component)</span>
+                </summary>
+                <p class="muted">
+                    On @(component.Pages.Count == 0 ? "no page found (a layout, or placed at run time)" : string.Join(", ", component.Pages))@(component.UsedBy.Count == 0 ? "." : $"; placed by {string.Join(", ", component.UsedBy)}.")
+                </p>
+                @if (openKeys.Count > 1)
+                {
+                    var marked = openKeys.Count(checkedControls.Contains);
+                    <div class="toolbar">
+                        <button type="button" @onclick="@(() => KeepWords(openKeys.Where(checkedControls.Contains).ToList()))">@(marked == 0 ? "Keep words for the checked" : $"Keep words for the {marked} checked")</button>
+                        <button type="button" class="link" @onclick="@(() => checkedControls.UnionWith(openKeys))">Check every open one</button>
+                    </div>
+                }
+                <div class="icon-lab-scroll">
+                    <table class="icon-lab-controls">
+                        <thead>
+                            <tr><th scope="col"><span class="visually-hidden">Check</span></th><th scope="col">Icon</th><th scope="col">Label</th><th scope="col">Kind</th><th scope="col">Id</th><th scope="col">Decision</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var control in rows)
+                            {
+                                var controlKey = IconPlan.ControlKey(component, control);
+                                var decision = Decision(component, control);
+                                <tr data-status="@decision" data-control="@controlKey">
+                                    <td>
+                                        @if (decision == Open && controlKey is not null)
+                                        {
+                                            <input type="checkbox" aria-label="@($"Check {control.Label}")" checked="@checkedControls.Contains(controlKey)" @onchange="@(args => Mark(controlKey, args))" />
+                                        }
+                                    </td>
+                                    <td>@IconCell(component, control, decision)</td>
+                                    <td>
+                                        @if (control.Dynamic)
+                                        {
+                                            <code>@control.Label</code><span class="muted"> (worked out at run time)</span>
+                                        }
+                                        else
+                                        {
+                                            @control.Label
+                                        }
+                                    </td>
+                                    <td>@control.Kind</td>
+                                    <td>@if (control.Id is { } id)
+                                        {
+                                            <code>@id</code>
+                                        }</td>
+                                    <td class="icon-lab-decision">@DecisionCell(component, control, controlKey, decision)</td>
+                                </tr>
+                                @if (controlKey is not null && controlKey == briefFor)
+                                {
+                                    <tr class="icon-lab-brief-row">
+                                        <td colspan="6">
+                                            <IconBriefEditor Brief="@(newBrief!)" IsNew="true" TakenKeys="@TakenKeys" IdPrefix="coverage-brief"
+                                                             OnSave="@(brief => SaveBrief(brief, controlKey))" OnCancel="@(() => briefFor = null)" />
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        }
+    }
+</section>
+
+@code {
+    private const string Open = "open";
+    private const string Planned = "planned";
+    private const string Drawn = "drawn";
+    private const string Words = "words";
+
+    [Parameter, EditorRequired]
+    public IconCoverage? Coverage { get; set; }
+
+    [Parameter, EditorRequired]
+    public IconLibrary Icons { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public IconPlan Plan { get; set; } = null!;
+
+    /// <summary>Records controls' icons: each control's key and an icon key, <see cref="IconLibrary.TextByDesign"/>, or null to reopen it.</summary>
+    [Parameter]
+    public EventCallback<IReadOnlyList<(string Control, string? Icon)>> OnAssign { get; set; }
+
+    /// <summary>Saves a new brief for a control and points the control at it.</summary>
+    [Parameter]
+    public EventCallback<(IconBrief Brief, string Control)> OnBrief { get; set; }
+
+    private readonly HashSet<string> checkedControls = new(StringComparer.Ordinal);
+    private string filter = Open;
+    private string search = string.Empty;
+    private string? briefFor;
+    private IconBrief? newBrief;
+
+    /// <summary>The keys a new brief may not take: every brief's and every drawn icon's.</summary>
+    private IReadOnlyCollection<string> TakenKeys => Plan.Briefs.Select(brief => brief.Key).Concat(Icons.Icons.Select(icon => icon.Key)).ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>The icons a control can be pointed at: every brief and every drawn icon, by label.</summary>
+    private IEnumerable<(string Key, string Label)> Choices =>
+        Plan.Briefs.Select(brief => (brief.Key, brief.Label))
+            .Concat(Icons.Icons.Where(icon => Plan.Brief(icon.Key) is null).Select(icon => (icon.Key, icon.Label)))
+            .OrderBy(choice => choice.Label, StringComparer.OrdinalIgnoreCase);
+
+    private string Decision(ComponentCoverage component, ControlCoverage control)
+    {
+        if (control.Status == IconCoverage.HasIcon)
+        {
+            return Drawn;
+        }
+
+        if (control.Status == IconCoverage.Text)
+        {
+            return Words;
+        }
+
+        return IconPlan.ControlKey(component, control) is { } key && Plan.IconOf(key) is { } icon
+            ? icon == IconLibrary.TextByDesign ? Words : Planned
+            : Open;
+    }
+
+    /// <summary>The components with a control of the chosen decision that match the search, the most still open first.</summary>
+    private IEnumerable<(ComponentCoverage Component, IReadOnlyList<ControlCoverage> Rows)> Shown()
+    {
+        var term = search.Trim();
+        return Coverage!.Components
+            .Where(component => term.Length == 0 || component.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || component.Path.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || component.Pages.Any(page => page.Contains(term, StringComparison.OrdinalIgnoreCase)))
+            .Select(component => (Component: component, Rows: (IReadOnlyList<ControlCoverage>)component.Controls.Where(control => filter.Length == 0 || Decision(component, control) == filter).ToList()))
+            .Where(item => item.Rows.Count > 0)
+            .OrderByDescending(item => item.Component.Controls.Count(control => Decision(item.Component, control) == Open))
+            .ThenBy(item => item.Component.Name, StringComparer.Ordinal);
+    }
+
+    private string Counts(ComponentCoverage component)
+    {
+        var parts = new List<string>();
+        foreach (var (decision, words) in new[] { (Open, "still open"), (Planned, "planned"), (Drawn, "with an icon"), (Words, "keeping words") })
+        {
+            if (component.Controls.Count(control => Decision(component, control) == decision) is > 0 and var count)
+            {
+                parts.Add($"{count} {words}");
+            }
+        }
+
+        return string.Join(", ", parts);
+    }
+
+    private void Mark(string control, ChangeEventArgs args)
+    {
+        if (args.Value is true)
+        {
+            checkedControls.Add(control);
+        }
+        else
+        {
+            checkedControls.Remove(control);
+        }
+    }
+
+    private void StartBrief(string control, ControlCoverage source)
+    {
+        var label = source.Dynamic ? string.Empty : source.Label;
+        newBrief = new IconBrief(IconPlan.Slug(label), label, string.Empty);
+        briefFor = control;
+    }
+
+    private async Task SaveBrief(IconBrief brief, string control)
+    {
+        briefFor = null;
+        await OnBrief.InvokeAsync((brief, control));
+    }
+
+    private async Task KeepWords(IReadOnlyList<string> controls)
+    {
+        if (controls.Count == 0)
+        {
+            return;
+        }
+
+        checkedControls.ExceptWith(controls);
+        await OnAssign.InvokeAsync([.. controls.Select(control => (control, (string?)IconLibrary.TextByDesign))]);
+    }
+
+    private Task Assign(string control, string? icon) => OnAssign.InvokeAsync([(control, icon)]);
+
+    private RenderFragment IconCell(ComponentCoverage component, ControlCoverage control, string decision) => builder =>
+    {
+        var key = decision == Drawn ? control.Icon : decision == Planned && IconPlan.ControlKey(component, control) is { } controlKey ? Plan.IconOf(controlKey) : null;
+        if (key is not null && Icons.Find(key) is { } icon && IconLibrary.Sized(icon, 20) is { } markup)
+        {
+            builder.AddMarkupContent(0, markup);
+        }
+        else
+        {
+            builder.OpenElement(1, "span");
+            builder.AddAttribute(2, "class", decision == Open ? "icon-lab-needed" : "muted");
+            builder.AddContent(3, decision switch
+            {
+                Open => "needs one",
+                Words => "words",
+                Planned => "not drawn",
+                _ => "worked out at run time",
+            });
+            builder.CloseElement();
+        }
+    };
+
+    private RenderFragment DecisionCell(ComponentCoverage component, ControlCoverage control, string? controlKey, string decision) => @<text>
+        @if (decision == Drawn)
+        {
+            <span class="muted">draws @control.Icon</span>
+        }
+        else if (controlKey is null)
+        {
+            <span class="muted">Give it an id to plan it.</span>
+        }
+        else if (decision == Open)
+        {
+            <span class="icon-lab-actions">
+                <button type="button" @onclick="@(() => StartBrief(controlKey, control))">New icon</button>
+                <select aria-label="@($"Use an existing icon for {control.Label}")" @onchange="@(args => Assign(controlKey, args.Value as string is { Length: > 0 } value ? value : null))">
+                    <option value="">Use existing</option>
+                    @foreach (var (key, label) in Choices)
+                    {
+                        <option value="@key">@label (@key)</option>
+                    }
+                </select>
+                <button type="button" @onclick="@(() => KeepWords([controlKey]))">Keep words</button>
+            </span>
+        }
+        else if (control.Status == IconCoverage.Text)
+        {
+            <span class="muted">words, marked in the source</span>
+        }
+        else
+        {
+            var icon = Plan.IconOf(controlKey)!;
+            <span class="icon-lab-actions">
+                @if (icon == IconLibrary.TextByDesign)
+                {
+                    <span>keeps its words</span>
+                }
+                else
+                {
+                    <span>@icon, @IconStages.Words(IconStages.Of(icon, Plan, Icons, Coverage))</span>
+                }
+                <button type="button" class="link" @onclick="@(() => Assign(controlKey, null))">Change</button>
+            </span>
+        }
+    </text>;
+}
