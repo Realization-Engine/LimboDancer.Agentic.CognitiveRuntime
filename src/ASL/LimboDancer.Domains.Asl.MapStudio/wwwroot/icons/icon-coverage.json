@@ -910,7 +910,7 @@
         },
         {
           "kind": "button",
-          "label": "@(Bench.BatchId is null ? \u0022Save batch\u0022 : \u0022Save the name\u0022)",
+          "label": "@(Altered || Bench.Origin is null ? \u0022Save batch\u0022 : \u0022Save the name\u0022)",
           "dynamic": true,
           "id": "icon-bench-save",
           "status": "needed",
@@ -1580,7 +1580,8 @@
           "label": "Play",
           "dynamic": false,
           "id": "play",
-          "status": "needed",
+          "icon": "play",
+          "status": "icon",
           "strip": "BoardInspector tabs",
           "rendersIn": "BoardInspector"
         },

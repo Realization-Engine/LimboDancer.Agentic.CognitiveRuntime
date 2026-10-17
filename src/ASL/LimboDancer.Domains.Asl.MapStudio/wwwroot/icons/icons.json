@@ -20,6 +20,11 @@
     "group": "Map toolbar"
   },
   {
+    "key": "play",
+    "label": "Play",
+    "group": "Inspector tab"
+  },
+  {
     "key": "proposal",
     "label": "Proposal",
     "group": "Inspector tab"

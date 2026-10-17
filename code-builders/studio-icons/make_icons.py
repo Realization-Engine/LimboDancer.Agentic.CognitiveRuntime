@@ -16,7 +16,7 @@ OUT = REPO / "src" / "ASL" / "LimboDancer.Domains.Asl.MapStudio" / "wwwroot" / "
 # The Midjourney palette: the fallback of every color variable. site.css repeats it as .icon-palette-mj.
 MJ = {
     "ink": "#203446", "olive": "#788848", "sage": "#7c9c7c", "red": "#a04030",
-    "lens": "#cbd6de", "page": "#ebe2c9", "eye": "#fbf8f0",
+    "lens": "#cbd6de", "page": "#ebe2c9", "eye": "#fbf8f0", "paper": "#f2ecdc",
 }
 
 
@@ -82,6 +82,20 @@ def rotate():
         cluster(cx, cy, 2.0, 1.72, [olive, c("red")] + [olive] * 5)
         + f'<path d="M{f(sx)} {f(sy)}A{f(radius)} {f(radius)} 0 1 1 {f(ex)} {f(ey)}" fill="none" stroke="{ink}" stroke-width="2.2"/>'
         + head)
+
+
+def play():
+    """A squad counter: an olive-framed counter whose off-white face bears a WWII infantryman advancing with his rifle, white piping
+    between his parts (Play, with piping, 2026-10-17-5). The figure is traced from the chosen image by trace_figure.py: the whole figure
+    is laid in white, and the figure, cut into parts by its piping, in ink over it, so the piping shows white on the off-white face."""
+    whole, parts = (REPO / "code-builders" / "studio-icons" / "traced" / "play-figure.txt").read_text(encoding="utf-8").splitlines()
+    return svg(
+        f'<rect x="2.6" y="2.6" width="18.8" height="18.8" rx="3.2" fill="{c("paper")}" stroke="{c("olive")}" stroke-width="2.2"/>'
+        # The image's frame is thinner than the icon's, so the figure is drawn 10% smaller about the centre and clears the frame.
+        '<g transform="translate(12 12) scale(0.9) translate(-12 -12)">'
+        f'<path d="{whole}" fill="#ffffff"/>'
+        f'<path d="{parts}" fill="{c("ink")}" fill-rule="evenodd"/>'
+        '</g>')
 
 
 def proposal():
@@ -160,6 +174,7 @@ ICONS = [
     ("zoom-out", "Zoom out", "Map toolbar", zoom("-")),
     ("fit", "Fit", "Map toolbar", fit()),
     ("rotate", "Rotate map", "Map toolbar", rotate()),
+    ("play", "Play", "Inspector tab", play()),
     ("proposal", "Proposal", "Inspector tab", proposal()),
     ("selection", "Selection", "Inspector tab", selection()),
     ("los", "LOS", "Inspector tab", los()),

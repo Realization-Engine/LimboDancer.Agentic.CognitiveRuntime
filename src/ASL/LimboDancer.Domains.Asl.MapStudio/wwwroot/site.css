@@ -1165,6 +1165,7 @@ textarea.placements-text {
     --i-lens: #cbd6de;
     --i-page: #ebe2c9;
     --i-eye: #fbf8f0;
+    --i-paper: #f2ecdc;
 }
 
 :root,
@@ -1176,6 +1177,7 @@ textarea.placements-text {
     --i-lens: var(--info-bg);
     --i-page: var(--warn-bg);
     --i-eye: var(--surface);
+    --i-paper: var(--ground);
 }
 
 /* A button whose label is an icon: square, the icon centered, the label in its tooltip and accessible name. */

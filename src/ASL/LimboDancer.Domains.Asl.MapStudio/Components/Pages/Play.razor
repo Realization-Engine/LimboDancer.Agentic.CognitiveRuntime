@@ -7100,7 +7100,7 @@ else if (state is not null)
     {
         var review = new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null, Icon: "proposal"), proposal);
         // The id is written out, not PlayTab, so the Icon Lab's coverage, which reads the source, finds the tab.
-        return narrow ? [review] : [new BoardInspector.ExtraTab(new("play", "Play"), actions, KeepMounted: true), review];
+        return narrow ? [review] : [new BoardInspector.ExtraTab(new("play", "Play", Icon: "play"), actions, KeepMounted: true), review];
     }
 
     // The hex the address asks for (from the board viewer's "Back to Play"), kept until the hand-over on load is confirmed.
