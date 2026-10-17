@@ -68,12 +68,23 @@
       "brief": "a clipboard with a checkmark box and a pencil, a proposed order awaiting confirmation",
       "meaning": "An order proposed but not yet carried out: the side reviews it, then confirms or cancels. Not a finished order, so not a bare checkmark.",
       "reference": "Proposal, one icon, top row 3rd"
+    },
+    {
+      "key": "play",
+      "label": "Play",
+      "brief": "a square olive game counter with slightly rounded corners, bearing a bold slate-navy silhouette of a WWII infantryman in a steel helmet advancing mid-stride with his rifle at the ready, play the game",
+      "meaning": "Where the side plays: its actions in the game. A squad counter with its soldier figure, as ASL is played; never a media play triangle. At 20 px only the counter and one bold figure survive.",
+      "reference": ""
     }
   ],
   "assignments": [
     {
       "control": "Play#proposal",
       "icon": "proposal"
+    },
+    {
+      "control": "Play#play",
+      "icon": "play"
     }
   ],
   "batches": [
@@ -108,6 +119,16 @@
       "name": "Proposal",
       "icons": [
         "proposal"
+      ],
+      "sref": "",
+      "created": "2026-10-17",
+      "oneIcon": true
+    },
+    {
+      "id": "2026-10-17-4",
+      "name": "Play",
+      "icons": [
+        "play"
       ],
       "sref": "",
       "created": "2026-10-17",

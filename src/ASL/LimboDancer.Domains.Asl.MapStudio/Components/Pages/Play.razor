@@ -371,7 +371,7 @@ else if (state is not null)
             @if (state is { Ended: not null } && history?.Current is not null)
             {
                 @* Ruling R20.1: nothing happens in a game that has ended, so the page offers no action; its records, units, and map stay. *@
-                <h3>Play</h3>
+                <h3 class="@PlayHeadingClass">Play</h3>
                 <p id="play-over" class="muted">The game is over, and no more actions are proposed (A3.9; ruling R20.1).</p>
                 @* Pass 31 (play test P-08): the result stands here too, with the account of every condition. *@
                 <p id="play-over-result"><strong>@ResultTitle</strong> @ResultReason</p>
@@ -389,7 +389,7 @@ else if (state is not null)
             }
             else if (state is not null && history?.Current is not null && !(SetupOpen && SetupView is not null && SetupIncomplete))
             {
-                <h3>Play</h3>
+                <h3 class="@PlayHeadingClass">Play</h3>
                 @* Table player, pass 28c: what play waits on comes first. *@
                 @if (state.Choice is { } choice)
                 {
@@ -7082,6 +7082,9 @@ else if (state is not null)
 
     // The inspector's open tab: "play" (the actions) from 1024px, "proposal" while a proposal waits, otherwise what the player chose (pass 29).
     private string inspectorTab = PlayTab;
+
+    /// <summary>The actions' "Play" heading: from 1024px the Play tab names them, so it is kept for screen readers and not shown.</summary>
+    private string? PlayHeadingClass => narrow ? null : "visually-hidden";
 
     /// <summary>The id of the inspector's Play tab, which holds the actions from 1024px.</summary>
     private const string PlayTab = "play";

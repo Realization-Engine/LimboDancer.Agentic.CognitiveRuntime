@@ -1404,16 +1404,6 @@
           "strip": "Play dff-window"
         },
         {
-          "kind": "tab",
-          "label": "Proposal",
-          "dynamic": false,
-          "id": "proposal",
-          "icon": "proposal",
-          "status": "icon",
-          "strip": "BoardInspector tabs",
-          "rendersIn": "BoardInspector"
-        },
-        {
           "kind": "button",
           "label": "Zoom in",
           "dynamic": false,
@@ -1574,6 +1564,25 @@
           "id": "ob",
           "status": "needed",
           "strip": "Play SetupTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Proposal",
+          "dynamic": false,
+          "id": "proposal",
+          "icon": "proposal",
+          "status": "icon",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
+        },
+        {
+          "kind": "tab",
+          "label": "Play",
+          "dynamic": false,
+          "id": "play",
+          "status": "needed",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
         },
         {
           "kind": "tab",
