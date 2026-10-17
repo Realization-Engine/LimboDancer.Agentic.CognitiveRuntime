@@ -2782,6 +2782,62 @@ details.advanced > summary {
     margin-top: 0.4rem;
 }
 
+/* The one-line banner of Play from 1024px: its parts parted by a rule, the review, the hand-over, and the status at the right end. */
+.play-context.banner {
+    padding: 0.35rem 0.75rem;
+}
+
+.play-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0;
+    min-height: 2.1rem;
+}
+
+.play-banner-part {
+    padding: 0 0.75rem;
+    border-left: 1px solid var(--line);
+}
+
+.play-banner-part:first-child {
+    padding-left: 0;
+    border-left: 0;
+    font-weight: 600;
+}
+
+.play-banner #play-conditions {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.play-banner-end {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.play-banner .play-status {
+    margin: 0;
+    max-width: 30rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* The game and view pickers at the top of the Play tab. */
+.play-tab-context {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.play-tab-context .toolbar {
+    flex-wrap: wrap;
+}
+
 /* Wide (1440px and up): the actions, the map, and the review side by side over the activity strip. The workspace fills the window below the
    context; each pane scrolls on its own, so the map stays in view. */
 .play-workspace {

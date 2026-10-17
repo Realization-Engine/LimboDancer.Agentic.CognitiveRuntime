@@ -26,6 +26,17 @@
         Live games are the Studio's chosen game source (D2). Every change is a registered action through the Execution Gate: the Studio proposes it,
         the gate checks it against the current game, boards, and catalog, and it commits only after you confirm. Nothing here edits a game directly.
     </RuleHelp>;
+    // The game and view pickers: from 1024px with a game open, at the top of the Play tab (the user, 2026-10-17); in the lobby, on the
+    // hand-over screen, and under 1024px, where there is no Play tab, in the context above.
+    RenderFragment pickers = @<text>
+        <LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
+                         ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" BoardLabel="@ViewTarget"
+                         BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, Viewer.IsAdjudicator || state.Ended is not null ? state.Revision : null, highlight?.ToString()) : null)" />
+        @if (gameId.StartsWith("campaign-", StringComparison.Ordinal))
+        {
+            <CampaignContextPanel GameId="@gameId" />
+        }
+    </text>;
 }
 @if (history is null)
 {
@@ -42,17 +53,16 @@ else
     <h2 class="page visually-hidden">Play</h2>
 }
 
-<PlayContextHeader Summary="@ContextSummary" Revision="@(state is not null && history?.Current is not null && (Viewer.IsAdjudicator || state.Ended is not null) ? state.Revision : null)" Acting="@ActingNote" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
+@* The user, 2026-10-17: with a game open, the context is a one-line banner from 1024px; "How this works" is the lobby's alone, and the page
+   no longer says what the shown view does now. *@
+<PlayContextHeader Summary="@ContextSummary" Banner="@(Compact ? BannerParts : null)" Revision="@(state is not null && history?.Current is not null && (Viewer.IsAdjudicator || state.Ended is not null) ? state.Revision : null)" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
                    Result="@ResultTitle" ResultReason="@ResultReason" ResultWhy="@ResultWhy"
                    Conditions="@(state is null ? null : NightAndWeather(state))" HasCard="@(state?.Scenario is not null && handOver is null)" CardChanged="@(state?.Scenario is { } changedCard && !Live.Cards.Matches(changedCard.Id, changedCard.Sha256))"
                    PendingTitle="@(handOver is null && pending is { Result.Outcome: PlayOutcome.NeedsConfirmation } waitingProposal ? DisplayText.Action(waitingProposal.Action.Name) : null)" Review="@FocusReview" Awaiting="@(AwaitingView is { } awaited ? ViewLabel(awaited) : null)"
-                   AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@Said(status)" OpenCard="@OpenCard" Help="@(history is null ? null : intro)" Reserve="true">
-    <LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
-                     ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" BoardLabel="@ViewTarget"
-                     BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, Viewer.IsAdjudicator || state.Ended is not null ? state.Revision : null, highlight?.ToString()) : null)" />
-    @if (gameId.StartsWith("campaign-", StringComparison.Ordinal))
+                   AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@Said(status)" OpenCard="@OpenCard" Reserve="@(!Compact)">
+    @if (!Compact)
     {
-        <CampaignContextPanel GameId="@gameId" />
+        @pickers
     }
 </PlayContextHeader>
 
@@ -379,6 +389,10 @@ else if (state is not null)
             @* The actions: from 1024px the inspector's first tab, Play, kept rendered while another tab is open, so the map has the width the
                actions column had; under 1024px their own pane, as the Actions tab of the workspace. *@
             RenderFragment actionsBlock = @<section id="play-panel-actions" class="play-pane play-actions" tabindex="-1" @ref="actionsPane" @attributes="@Pane("actions", "Actions")">
+            @if (Compact)
+            {
+                <div class="play-tab-context" id="play-tab-context">@pickers</div>
+            }
             @* Table player, pass 29: the hex picked on the map is offered to every typed Location of the actions. *@
             <CascadingValue Name="PickedLocation" Value="@highlight?.ToString()">
             @* Pass 31c (design D13): a typed Location can be armed, and the next hex clicked on the map fills it. Setup has its own picking. *@
@@ -7196,6 +7210,22 @@ else if (state is not null)
         : (history.Current is not null ? string.Empty : "The game does not replay: ") + $"Turn {state.Turn}{TurnsText}, {DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}."
             + (SetupOpen ? " Setup is open." : state.Ended is not null ? " The game has ended; nothing more is played." : string.Empty);
 
+    /// <summary>
+    /// Whether the context is the one-line banner and the pickers are in the Play tab: a game is open and in view (no hand-over waits) from 1024px,
+    /// where the actions are the inspector's Play tab (the user, 2026-10-17).
+    /// </summary>
+    private bool Compact => state is not null && history is not null && handOver is null && !narrow && MapLayers is { Board: not null };
+
+    /// <summary>The banner: the scenario's title (the game's id when it has none), the turn of the card's count, the phasing side's phase, and setup
+    /// open, the game ended, or the game not replaying when so.</summary>
+    private IReadOnlyList<string> BannerParts => state is null ? [] :
+    [
+        state.Scenario?.Title is { Length: > 0 } title ? title : gameId,
+        $"Turn {state.Turn}{TurnsText}",
+        $"{DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}",
+        .. history?.Current is null ? ["The game does not replay"] : SetupOpen ? ["Setup is open"] : state.Ended is not null ? ["The game has ended"] : Array.Empty<string>(),
+    ];
+
     /// <summary>Pass 31 (play test P-08): the card's count of Game Turns beside the turn, and a word when the turn is the last (A3.9; ruling R20.1).</summary>
     private string TurnsText => state?.Scenario is { } scenario && CardRead(scenario.Id)?.Card?.Turns is { } turns
         ? $" of {turns.Count}" + (state.Ended is null && state.Turn >= turns.Count ? turns.HalfTurn ? " (the last turn, one Player Turn)" : " (the last turn)" : string.Empty)
@@ -7238,10 +7268,6 @@ else if (state is not null)
     }
 
     private string AwaitingNote => state is null ? string.Empty : Awaiting(state).Note;
-
-    /// <summary>What the shown view does now, when the game waits on no other view (table player, pass 28c); null otherwise.</summary>
-    private string? ActingNote => state is null || history?.Current is null || state.Ended is not null || SetupOpen || Viewer.IsAdjudicator || handOver is not null
-        || AwaitingView is not null ? null : $"You act: {Awaiting(state).Note}";
 
     /// <summary>Where the moving stack is, which the DEFENDER sees as units or a "?" (A8.1); null when no stack moves.</summary>
     private BoardLocation? MovingAt => state?.Movement switch
