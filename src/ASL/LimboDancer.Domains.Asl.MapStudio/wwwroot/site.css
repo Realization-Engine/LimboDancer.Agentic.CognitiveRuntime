@@ -2795,9 +2795,12 @@ details.advanced > summary {
     min-height: 2.1rem;
 }
 
+/* The banner is the page's main information (the user, 2026-10-17): its parts are twice the context's size; its buttons and status are not. */
 .play-banner-part {
     padding: 0 0.75rem;
     border-left: 1px solid var(--line);
+    font-size: 2em;
+    line-height: 1.2;
 }
 
 .play-banner-part:first-child {
@@ -2808,7 +2811,6 @@ details.advanced > summary {
 
 .play-banner #play-conditions {
     margin: 0;
-    font-size: 0.875rem;
 }
 
 .play-banner-end {
