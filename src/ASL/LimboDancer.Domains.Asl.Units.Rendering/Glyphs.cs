@@ -112,10 +112,12 @@ internal static class Glyphs
         var scale = Math.Min(box.Width * 0.92 / across, box.Height * 0.92 / down);
         var left = box.CenterX - (across * scale / 2);
         var top = box.CenterY - (down * scale / 2);
-        var helmet = art.Helmet(side);
+        // A pose whose arm or weapon lies over the helmet keeps the helmet it was drawn with.
+        var helmet = pose.OwnHelmet ? null : art.Helmet(side);
         var weapon = pose.Grip is null ? null : art.WeaponOf(side, pose.Weapon);
         var head = pose.Head;
-        var onHead = $"translate({FigureArt.Number(head.X)} {FigureArt.Number(head.Y)}) scale({FigureArt.Number(head.Radius / 100)})";
+        var onHead = $"translate({FigureArt.Number(head.X)} {FigureArt.Number(head.Y)})"
+            + (head.Tilt != 0 ? $" rotate({FigureArt.Number(head.Tilt)})" : string.Empty) + $" scale({FigureArt.Number(head.Radius / 100)})";
         var alongGrip = pose.Grip is { } grip
             ? $"translate({FigureArt.Number(grip.X1)} {FigureArt.Number(grip.Y1)}) rotate({FigureArt.Number(Math.Atan2(grip.Y2 - grip.Y1, grip.X2 - grip.X1) * 180 / Math.PI)})"
             : null;

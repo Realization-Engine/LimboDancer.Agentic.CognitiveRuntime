@@ -86,6 +86,20 @@ public sealed class FigureArtTests
     }
 
     [Fact]
+    public void ATiltedHeadTurnsTheSidesHelmetAndAPoseWithItsOwnHelmetGetsNone()
+    {
+        // The standing pose's head is the fixture's first.
+        var head = Fixture.IndexOf("\"radius\": 80", StringComparison.Ordinal) + "\"radius\": 80".Length;
+        var tilted = FigureArt.Read(Fixture.Insert(head, ", \"tilt\": 29"));
+        var helmet = Figures(tilted, "example-squad")[0].Elements().Single(element => element.Attribute("data-helmet") is not null);
+        Assert.Equal("translate(200 100) rotate(29) scale(0.8)", helmet.Attribute("transform")!.Value);
+
+        var own = FigureArt.Read(Fixture.Replace("\"weapon\": \"rifle\", \"accepted\": true", "\"weapon\": \"rifle\", \"ownHelmet\": true, \"accepted\": true", StringComparison.Ordinal));
+        Assert.True(own.Pose("standing")!.OwnHelmet);
+        Assert.DoesNotContain(Figures(own, "example-squad")[0].Elements(), element => element.Attribute("data-helmet") is not null || element.Attribute("data-helmet-ring") is not null);
+    }
+
+    [Fact]
     public void AStandInIsDrawnOnlyWhenAskedFor()
     {
         var art = FigureArt.Read(Fixture);

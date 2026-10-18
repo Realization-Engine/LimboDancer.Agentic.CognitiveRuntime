@@ -9,7 +9,7 @@ by hand after looking at the traced figure (--head, --grip). The pose is a stand
 
     python code-builders/unit-figures/trace_pose.py <image> <pose> [--cell 1-4] [--crop x,y,w,h] [--mirror] [--lying]
         [--head cx,cy,r] [--grip x1,y1,x2,y2] [--weapon rifle|smg] [--source "batch 2026-10-18-1, top right"] [--accept]
-        [--tolerance 2.0] [--close pixels] [--bare] [--bare-width radii] [--bare-back radii] [--frame x0,y0,x1,y1] [--out file]
+        [--tolerance 2.0] [--close pixels] [--bare] [--bare-width radii] [--bare-back radii] [--frame x0,y0,x1,y1] [--own-helmet] [--out file]
 Then:  python code-builders/unit-figures/build_figures.py
 """
 import argparse
@@ -35,6 +35,15 @@ def numbers(text, count, name):
     if len(values) != count:
         raise SystemExit(f"--{name} takes {count} numbers")
     return values
+
+
+def head_numbers(text):
+    """The head anchor: its center and radius in body units, and how far it is tilted, in degrees clockwise (a bowed head is
+    positive); the tilt may be left out."""
+    values = [float(part) for part in text.split(",")]
+    if len(values) not in (3, 4):
+        raise SystemExit("--head takes cx,cy,r or cx,cy,r,tilt")
+    return (*values[:3], values[3] if len(values) == 4 else 0.0)
 
 
 def cut(image, cell, crop):
@@ -72,6 +81,8 @@ def main():
     parser.add_argument("--source", default="")
     parser.add_argument("--accept", action="store_true")
     parser.add_argument("--tolerance", type=float, default=2.0)
+    parser.add_argument("--own-helmet", action="store_true",
+                        help="keep the drawn helmet and draw no side's helmet on it, for a pose whose arm or weapon lies over the helmet")
     parser.add_argument("--bare", action="store_true",
                         help="remove the drawn helmet: everything above the head anchor around the head, leaving a skull for the side's helmet")
     parser.add_argument("--bare-width", type=float, default=2.0,
@@ -119,26 +130,33 @@ def main():
         # head anchor (where a brim sits) within two head radii is removed, a skull is put back under where the side's helmet sits, and the figure is traced again.
         if not args.head:
             raise SystemExit("--bare needs --head")
-        hx, hy, hr = numbers(args.head, 3, "head")
+        hx, hy, hr, tilt = head_numbers(args.head)
         px, py, pr = left + hx / scale, top + hy / scale, hr / scale
         rows, columns = np.ogrid[:mask.shape[0], :mask.shape[1]]
+        # Across and down the head as tilted: a bowed head's brim runs downhill to the front, and the cut follows it.
+        angle = np.radians(tilt)
+        across = (columns - px) * np.cos(angle) + (rows - py) * np.sin(angle)
+        down = -(columns - px) * np.sin(angle) + (rows - py) * np.cos(angle)
         mask = mask.copy()
-        mask[(rows < py + 0.3 * pr) & (np.abs(columns - px) < args.bare_width * pr)] = False
-        mask[(rows < py + args.bare_back * pr) & (columns < px) & (columns > px - args.bare_width * pr)] = False
+        mask[(down < 0.3 * pr) & (np.abs(across) < args.bare_width * pr)] = False
+        mask[(down < args.bare_back * pr) & (across < 0) & (across > -args.bare_width * pr)] = False
         mask |= (rows - py) ** 2 + (columns - px) ** 2 <= (0.95 * pr) ** 2
         traced = [(area(simple), simple) for loop in loops(mask)
                   if len(loop) >= 8 * ENLARGE and len(simple := simplify(loop, args.tolerance * ENLARGE)) >= 3]
         kept = [(turn, points) for turn, points in traced if abs(turn) >= largest / 100]
 
     shapes = ["M" + "L".join(f"{px:.1f} {py:.1f}" for px, py in (place(x, y) for x, y in points)) + "Z" for _, points in kept]
+    tilt = 0.0
     if args.head:
-        cx, cy, r = numbers(args.head, 3, "head")
+        cx, cy, r, tilt = head_numbers(args.head)
     elif args.lying:
         raise SystemExit("a lying figure's head is given by hand: --head cx,cy,r in body units")
     else:
         hx, hy, hr = head_of(mask, int(top), int(bottom))
         (cx, cy), r = place(hx, hy), hr * scale
-    attributes = f' data-head="{cx:.0f} {cy:.0f} {r:.0f}"'
+    attributes = f' data-head="{cx:.0f} {cy:.0f} {r:.0f}' + (f' {tilt:g}' if tilt else '') + '"'
+    if args.own_helmet:
+        attributes += ' data-own-helmet="true"'
     if args.grip:
         if not args.weapon:
             raise SystemExit("--grip needs --weapon")

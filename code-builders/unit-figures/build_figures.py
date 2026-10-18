@@ -3,7 +3,7 @@
 Sources, under src/ASL/units/figures:
   poses/<pose>.svg           a body pose in body units (poses/<pose>.<side>.svg: that side's version, such as a hero with its
                              side's grenade; a side without one gets the general pose) (a man standing is 1000 high): viewBox "0 0 <width> <height>", 1000 high when
-                             upright and cropped to the body when lying; data-head="cx cy r"; data-grip="x1 y1 x2 y2" and
+                             upright and cropped to the body when lying; data-head="cx cy r [tilt]"; data-grip="x1 y1 x2 y2" and
                              data-weapon="rifle|smg" when it holds a weapon
   kit/<side>-helmet.svg      a helmet about a head of radius 100 at the origin
   kit/<side>-<weapon>.svg    a weapon in body units, the rear hand at the origin, the muzzle toward +x
@@ -48,8 +48,14 @@ def pose(path):
     box = numbers(root.get("viewBox", ""), 4, path)
     if box[0] != 0 or box[1] != 0 or box[2] <= 0 or box[3] <= 0 or box[3] > 1000:
         raise SystemExit(f"{path}: a pose's viewBox starts at 0 0 and is at most 1000 high")
-    x, y, r = numbers(root.get("data-head", ""), 3, f"{path} data-head")
-    entry = {"path": d, "width": box[2], "height": box[3], "head": {"x": x, "y": y, "radius": r}}
+    head = [float(part) for part in root.get("data-head", "").split()]
+    if len(head) not in (3, 4):
+        raise SystemExit(f"{path} data-head: expected cx cy r, or cx cy r tilt")
+    entry = {"path": d, "width": box[2], "height": box[3], "head": {"x": head[0], "y": head[1], "radius": head[2]}}
+    if len(head) == 4 and head[3]:
+        entry["head"]["tilt"] = head[3]
+    if root.get("data-own-helmet") == "true":
+        entry["ownHelmet"] = True
     if root.get("data-grip"):
         x1, y1, x2, y2 = numbers(root.get("data-grip"), 4, f"{path} data-grip")
         weapon = root.get("data-weapon", "")
