@@ -155,7 +155,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
             <BoardWorkspace @key="@($"{gameId}/{viewAs}")" @ref="workspace" Board="@mapBoard" Units="@layers.Overlay" UnitView="@layers.View" Marks="@layers.Marks" Vocabulary="@Library.Vocabulary" OnLoaded="@RevealOnMap"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => highlight = facts is null ? null : GameMaps.LocationOf(mapBoard, facts.Index))"
-                            @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("step", "Step"), stepBlock), new BoardInspector.ExtraTab(new("units", "Units"), unitsBlock, Last: true), new BoardInspector.ExtraTab(new("standing", "Standing"), standingBlock, Last: true)])"
+                            @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("step", "Step", Icon: "step"), stepBlock), new BoardInspector.ExtraTab(new("units", "Units", Icon: "units"), unitsBlock, Last: true), new BoardInspector.ExtraTab(new("standing", "Standing", Icon: "standing"), standingBlock, Last: true)])"
                             InspectorLabel="The step and the inspector" IdPrefix="replay-inspector" MapLabel="The game's map at this step"
                             InspectorClass="play-pane play-review inspector" InspectorAttributes="@DetailsAttributes"
                             StageClass="play-pane play-map-pane play-map" StageAttributes="@MapAttributes(layers.Source)" Between="@between">
@@ -165,10 +165,10 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
                         <p id="replay-residual">Residual FP this MPh (A8.2): @string.Join("; ", state.ResidualFire.Select(item => $"{item.Fp} in {DisplayText.Place(history?.Current?.Map.Boards.Count ?? 2, item.Location)}"))</p>
                     }
                     <div class="toolbar play-map-tools">
-                        <button type="button" id="replay-map-zoom-in" aria-label="Zoom in" @onclick="@(() => workspace!.Zoom(0.8))">+</button>
-                        <button type="button" id="replay-map-zoom-out" aria-label="Zoom out" @onclick="@(() => workspace!.Zoom(1.25))">-</button>
-                        <button type="button" id="replay-map-fit" @onclick="@(() => workspace!.Fit())">Fit</button>
-                        <button type="button" id="replay-map-rotate" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())">Rotate map</button>
+                        <button type="button" id="replay-map-zoom-in" class="icon-button" title="Zoom in" @onclick="@(() => workspace!.Zoom(0.8))"><IconLabel Icon="zoom-in" Label="Zoom in" /></button>
+                        <button type="button" id="replay-map-zoom-out" class="icon-button" title="Zoom out" @onclick="@(() => workspace!.Zoom(1.25))"><IconLabel Icon="zoom-out" Label="Zoom out" /></button>
+                        <button type="button" id="replay-map-fit" class="icon-button" title="Fit" @onclick="@(() => workspace!.Fit())"><IconLabel Icon="fit" Label="Fit" /></button>
+                        <button type="button" id="replay-map-rotate" class="icon-button" title="Rotate map" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())"><IconLabel Icon="rotate" Label="Rotate map" /></button>
                         <span class="muted" id="replay-map-legend">This step: a blue arrow is a move, a red dashed arrow is fire, an amber outline is another change.</span>
                     </div>
                 </Toolbar>

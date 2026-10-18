@@ -122,7 +122,7 @@ public sealed class TablePlayer22Tests : IDisposable
         Save(editor);
 
         var page = StartMinimal("quick", "quick-1");
-        output.WriteLine("summary: " + page.Find("#play-summary").TextContent);
+        output.WriteLine("summary: " + page.Find("#play-context").TextContent);
         for (var step = 0; step < 4; step++)
         {
             // Pass 31 (ruling R31.6): the phase is ended from the view of the side that ends it; the DEFENDER ends the DFPh.
@@ -133,10 +133,10 @@ public sealed class TablePlayer22Tests : IDisposable
             }
 
             Assert.Contains("Committed", Propose(page, "#propose-advance"), StringComparison.Ordinal);
-            output.WriteLine("summary: " + page.Find("#play-summary").TextContent.Trim());
+            output.WriteLine("summary: " + page.Find("#play-context").TextContent.Trim());
         }
 
-        Assert.DoesNotContain("Setup is open", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("Setup is open", page.Find("#play-context").TextContent, StringComparison.Ordinal);
         Assert.Contains("2 Game Turns", page.Find("#play-card-turns").TextContent, StringComparison.Ordinal);
     }
 
@@ -413,7 +413,7 @@ public sealed class TablePlayer22Tests : IDisposable
         page.Find("#new-id").Change("old");
         Place(page, "attacker-squad", "g1", $"{Board}:A1:0");
         Assert.Contains("Committed", Propose(page, "#propose-setup"), StringComparison.Ordinal);
-        output.WriteLine("game: " + page.Find("#play-summary").TextContent.Trim());
+        output.WriteLine("game: " + page.Find("#play-context").TextContent.Trim());
     }
 
     // 12. Changing side 1's nationality: the turn selects should follow.

@@ -1,0 +1,82 @@
+@page "/lab/icons"
+@inject IconLibrary Icons
+@inject IconPlanStore Store
+@inject NavigationManager Navigation
+
+<PageTitle>Icon Lab - ASL Map Studio</PageTitle>
+
+<PageHeader Title="Icon Lab">
+    <p>
+        The Studio's icons from brief to drawing. <strong>Icons</strong> shows the drawn ones in place and at each size; <strong>Coverage</strong>
+        decides, control by control, which need an icon; <strong>Prompts</strong> turns four briefs into a Midjourney prompt;
+        <strong>Batches</strong> records the result chosen for each icon. The plan is saved to <code>wwwroot/@IconLibrary.Folder/@IconPlan.File</code>;
+        commit it with the icons.
+    </p>
+</PageHeader>
+
+<InspectorTabs Tabs="@Tabs" Selected="@Tab" SelectedChanged="@ChangeTab" Label="Icon Lab" IdPrefix="icon-lab">
+    @switch (Tab)
+    {
+        case "coverage":
+            <IconCoverageView Coverage="@Icons.Coverage" Icons="@Icons" Plan="@plan" OnAssign="Assign" OnBrief="BriefForControl" />
+            break;
+        case "prompts":
+            <IconPromptBench Plan="@plan" Icons="@Icons" Coverage="@Icons.Coverage" Bench="@bench" OnSaveBrief="SaveBrief" OnSaveBatch="SaveBatch" OnSaveStyle="SaveStyle" />
+            break;
+        case "batches":
+            <IconBatchList Plan="@plan" Icons="@Icons" Coverage="@Icons.Coverage" OnReference="SaveReference" OnOpen="OpenBatch" />
+            break;
+        default:
+            <IconGallery Icons="@Icons" />
+            break;
+    }
+</InspectorTabs>
+
+@code {
+    private static readonly IReadOnlyList<string> TabIds = ["icons", "coverage", "prompts", "batches"];
+
+    [SupplyParameterFromQuery(Name = "tab")]
+    public string? TabQuery { get; set; }
+
+    private readonly IconBench bench = new();
+    private IconPlan plan = IconPlan.Empty;
+
+    private string Tab => TabQuery is { } tab && TabIds.Contains(tab) ? tab : TabIds[0];
+
+    /// <summary>The tabs, with how many controls are still open and how many briefs wait for a batch.</summary>
+    private IReadOnlyList<InspectorTabs.Tab> Tabs =>
+    [
+        new("icons", "Icons", Icons.Icons.Count),
+        new("coverage", "Coverage", OpenControls),
+        new("prompts", "Prompts", plan.Briefs.Count(brief => IconStages.Of(brief.Key, plan, Icons, Icons.Coverage) == IconStage.Briefed)),
+        new("batches", "Batches", plan.Batches.Count),
+    ];
+
+    private int OpenControls => Icons.Coverage is not { } coverage ? 0
+        : coverage.Components.Sum(component => component.Controls.Count(control =>
+            control.Status == IconCoverage.Needed && (IconPlan.ControlKey(component, control) is not { } key || plan.IconOf(key) is null)));
+
+    protected override void OnInitialized() => plan = Store.Load();
+
+    private void ChangeTab(string tab) => Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("tab", tab == TabIds[0] ? null : tab), replace: true);
+
+    private void Assign(IReadOnlyList<(string Control, string? Icon)> decisions) =>
+        plan = Store.Update(current => decisions.Aggregate(current, (next, decision) => next.WithAssignment(decision.Control, decision.Icon)));
+
+    private void BriefForControl((IconBrief Brief, string Control) made) =>
+        plan = Store.Update(current => current.WithBrief(made.Brief).WithAssignment(made.Control, made.Brief.Key));
+
+    private void SaveBrief(IconBrief brief) => plan = Store.Update(current => current.WithBrief(brief));
+
+    private void SaveBatch(IconBatch batch) => plan = Store.Update(current => current.WithBatch(batch));
+
+    private void SaveStyle(IconPromptStyle style) => plan = Store.Update(current => current with { Style = style });
+
+    private void SaveReference((string Key, string Reference) chosen) => plan = Store.Update(current => current.WithReference(chosen.Key, chosen.Reference));
+
+    private void OpenBatch(IconBatch batch)
+    {
+        bench.Load(batch);
+        ChangeTab("prompts");
+    }
+}

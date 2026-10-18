@@ -100,7 +100,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
             page.EndPhase(Commit);
         }
 
-        Assert.Contains("Advance", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Advance", page.Find("#play-context").TextContent, StringComparison.Ordinal);
 
         // The German squad and its leader advance into the Russian squad's Location (A4.7).
         page.Find(".advance-unit[data-unit='g1']").Change(true);
@@ -108,7 +108,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         page.Find("#advance-to").Change(hexes.Two);
         Commit(page, "#propose-advance-units");
         page.EndPhase(Commit);
-        Assert.Contains("Close Combat", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Close Combat", page.Find("#play-context").TextContent, StringComparison.Ordinal);
 
         // The CCPh panel: the leader is stacked with g1 (A11.14); the Germans attack at 1-1 (5-4) with the 8-1's -1 and the Russians
         // at 1-2 (4-5); 6+6 and 6+5 have no effect.
@@ -219,7 +219,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
             page.EndPhase(Commit);
         }
 
-        Assert.Contains("Close Combat", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Close Combat", page.Find("#play-context").TextContent, StringComparison.Ordinal);
         page.Find("#cc-location").Change(hexes.Two);
         Assert.Equal(2, page.FindAll(".cc-withdraw").Count);
         page.Find(".cc-withdraw[data-unit='r1']").Change(hexes.One);

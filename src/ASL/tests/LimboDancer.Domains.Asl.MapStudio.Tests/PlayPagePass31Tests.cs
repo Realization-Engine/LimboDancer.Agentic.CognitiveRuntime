@@ -132,7 +132,7 @@ public sealed class PlayPagePass31Tests : IDisposable
         Place(page, "g1", "attacker-squad", hexes.One);
         Place(page, "r1", "defender-squad", hexes.Two);
         Commit(page, "#propose-setup");
-        Assert.Matches("^Turn 1 of [0-9]+", page.Find("#play-summary").TextContent.Trim());
+        Assert.Matches("^Turn 1 of [0-9]+$", page.FindAll("#play-banner .play-banner-part")[1].TextContent.Trim());
 
         // The first phase end closes setup; the German side then acts in its Prep Fire Phase, and the game does not wait on the Russian side.
         page.EndPhase(Commit);

@@ -1,0 +1,390 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@* The Icon Lab's Prompts tab: briefs waiting for a batch, grouped by the component that will draw them; four slots in Midjourney's 2x2
+   order; the prompt they make with the shared style and the style reference; copy it, save the batch, or edit the shared style. *@
+<div class="icon-bench">
+    <section class="icon-bench-queue" aria-labelledby="icon-bench-queue-title">
+        <h3 id="icon-bench-queue-title">Ready to prompt</h3>
+        <p class="muted">Briefs in no batch and not drawn, by the component that will draw them.</p>
+        @if (Queue.Count == 0)
+        {
+            <p class="muted" id="icon-bench-queue-empty">Every brief is in a batch. Write briefs from Coverage with New icon, or here.</p>
+        }
+        else
+        {
+            @if (!Bench.OneIcon)
+            {
+                <button type="button" id="icon-bench-fill" @onclick="FillFromOneComponent">Fill the slots from one component</button>
+            }
+            @foreach (var group in Queue)
+            {
+                <div class="icon-bench-group">
+                    <span class="muted">@group.Key</span>
+                    <ul>
+                        @foreach (var brief in group)
+                        {
+                            <li>
+                                <button type="button" class="link" title="@brief.Brief" disabled="@Bench.Holds(brief.Key)" @onclick="@(() => Add(brief.Key))">
+                                    @(Bench.Holds(brief.Key) ? "In a slot" : "Add")
+                                </button>
+                                <span>@brief.Label</span> <code class="muted">@brief.Key</code>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+        }
+        <button type="button" class="link" id="icon-bench-new-brief" @onclick="@(() => editing = (new IconBrief(string.Empty, string.Empty, string.Empty), true))">Write a brief with no control yet</button>
+    </section>
+
+    <section class="icon-bench-batch" aria-labelledby="icon-bench-batch-title">
+        <div class="icon-bench-head">
+            <h3 id="icon-bench-batch-title">@Title</h3>
+            @if (Bench.Origin is not null || Bench.Filled.Any())
+            {
+                <button type="button" class="link" @onclick="StartNew">Start a new batch</button>
+            }
+        </div>
+        @if (Bench.Origin is { } origin)
+        {
+            <p class="muted" id="icon-bench-record">
+                @(Altered
+                    ? $"Saving makes a new batch; {origin.Id} stays as it was sent."
+                    : $"{origin.Id} is a record of what was sent. A new name renames it; new slots, a new mode, or a new style reference save a new batch.")
+            </p>
+        }
+        <label class="icon-bench-name">
+            Batch name
+            <input id="icon-bench-name" @bind="Bench.Name" @bind:event="oninput" placeholder="@(Bench.OneIcon ? "Proposal" : "Replay transport")" />
+        </label>
+
+        <fieldset class="plain icon-bench-mode">
+            <legend class="visually-hidden">What the prompt asks Midjourney for</legend>
+            <label><input type="radio" name="icon-bench-mode" id="icon-bench-four" checked="@(!Bench.OneIcon)" @onchange="@(() => SetOneIcon(false))" /> Set of four</label>
+            <label><input type="radio" name="icon-bench-mode" id="icon-bench-single" checked="@Bench.OneIcon" @onchange="@(() => SetOneIcon(true))" /> One icon, four tries</label>
+            <span class="muted">
+                @(Bench.OneIcon ? "Midjourney's four images are four tries at this one icon; pick the best." : "Four icons in one 2x2 set, drawn alike; the slots follow the grid.")
+            </span>
+        </fieldset>
+
+        <ol class="@(Bench.OneIcon ? "icon-bench-slots single" : "icon-bench-slots")" aria-label="@(Bench.OneIcon ? "The icon" : "The four slots, in Midjourney's 2x2 order")">
+            @for (var slot = 0; slot < Bench.Needed; slot++)
+            {
+                var index = slot;
+                var key = Bench.Slots[index];
+                var brief = key is null ? null : Plan.Brief(key);
+                <li class="@(key is null ? "icon-bench-slot empty" : "icon-bench-slot")" data-slot="@(index + 1)">
+                    <span class="muted">@(Bench.OneIcon ? "The icon" : $"{index + 1}, {IconPlan.SlotNames[index]}")</span>
+                    @if (key is null)
+                    {
+                        <span class="muted">Empty: add a brief from the list.</span>
+                    }
+                    else
+                    {
+                        <strong>@(brief?.Label ?? key)</strong>
+                        <span>@(brief?.Brief ?? "This brief is gone.")</span>
+                        @Placement(key)
+                        <span class="toolbar">
+                            @if (brief is not null)
+                            {
+                                <button type="button" class="link" @onclick="@(() => editing = (brief, false))">Edit brief</button>
+                            }
+                            <button type="button" class="link" @onclick="@(() => Bench.Slots[index] = null)">Remove</button>
+                        </span>
+                    }
+                </li>
+            }
+        </ol>
+
+        @if (editing is { } edit)
+        {
+            <IconBriefEditor Brief="@edit.Brief" IsNew="@edit.IsNew" TakenKeys="@TakenKeys" IdPrefix="bench-brief" OnSave="SaveBrief" OnCancel="@(() => editing = null)" />
+        }
+
+        <label class="icon-bench-sref">
+            Style reference (--sref)
+            <input id="icon-bench-sref" @bind="Bench.Sref" @bind:event="oninput" placeholder="https://cdn.midjourney.com/... or leave empty and attach a style in Midjourney" />
+        </label>
+
+        <div class="icon-bench-prompt">
+            <span class="muted">The prompt</span>
+            <p id="icon-bench-prompt" class="icon-bench-prompt-text">@PromptView</p>
+        </div>
+        @if (message is not null)
+        {
+            <p class="@(messageIsError ? "fail" : "pass")" role="status">@message</p>
+        }
+        <div class="toolbar icon-bench-actions">
+            <button type="button" @onclick="@(() => editingStyle = !editingStyle)" aria-expanded="@(editingStyle ? "true" : "false")">Edit the shared style</button>
+            <button type="button" id="icon-bench-save" @onclick="SaveBatch">@(Altered || Bench.Origin is null ? "Save batch" : "Save the name")</button>
+            <button type="button" class="primary" id="icon-bench-copy" @onclick="CopyPrompt">Copy prompt</button>
+        </div>
+
+        @if (editingStyle)
+        {
+            <div class="icon-bench-style">
+                <p class="muted">Shared by every batch. A prompt is the opening, the numbered briefs, the style, the --sref, then the parameters.</p>
+                <label>Opening for a set of four <textarea rows="3" @bind="opening"></textarea></label>
+                <label>Opening for one icon <textarea rows="2" id="icon-bench-single-opening" @bind="singleOpening"></textarea></label>
+                <label>Style <textarea rows="5" @bind="style"></textarea></label>
+                <label>Parameters <textarea rows="2" @bind="parameters"></textarea></label>
+                <div class="toolbar">
+                    <button type="button" class="primary" @onclick="SaveStyle">Save style</button>
+                    <button type="button" @onclick="@(() => editingStyle = false)">Cancel</button>
+                </div>
+            </div>
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IconPlan Plan { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public IconLibrary Icons { get; set; } = null!;
+
+    [Parameter]
+    public IconCoverage? Coverage { get; set; }
+
+    [Parameter, EditorRequired]
+    public IconBench Bench { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<IconBrief> OnSaveBrief { get; set; }
+
+    [Parameter]
+    public EventCallback<IconBatch> OnSaveBatch { get; set; }
+
+    [Parameter]
+    public EventCallback<IconPromptStyle> OnSaveStyle { get; set; }
+
+    private (IconBrief Brief, bool IsNew)? editing;
+    private bool editingStyle;
+    private string opening = string.Empty;
+    private string style = string.Empty;
+    private string parameters = string.Empty;
+    private string singleOpening = string.Empty;
+    private string? givenName;
+    private string? message;
+    private bool messageIsError;
+    private IJSObjectReference? clipboard;
+
+    private IReadOnlyCollection<string> TakenKeys => Plan.Briefs.Select(brief => brief.Key).Concat(Icons.Icons.Select(icon => icon.Key)).ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>The briefs waiting for a batch, grouped by the component of the first control that uses each.</summary>
+    private IReadOnlyList<IGrouping<string, IconBrief>> Queue =>
+        Plan.Briefs.Where(brief => IconStages.Of(brief.Key, Plan, Icons, Coverage) == IconStage.Briefed)
+            .GroupBy(brief => Plan.ControlsOf(brief.Key).Select(ComponentOf).FirstOrDefault() ?? "No control yet")
+            .OrderByDescending(group => group.Count()).ThenBy(group => group.Key, StringComparer.Ordinal)
+            .ToList();
+
+    private IReadOnlyList<IconBrief> SlotBriefs => Bench.Filled.Select(Plan.Brief).OfType<IconBrief>().ToList();
+
+    private string PromptText => Plan.Prompt(SlotBriefs, Bench.Sref, Bench.OneIcon);
+
+    /// <summary>The prompt with this batch's numbered briefs marked, so they stand out from the shared style around them.</summary>
+    private RenderFragment PromptView => builder =>
+    {
+        var (before, briefs, after) = Plan.PromptParts(SlotBriefs, Bench.Sref, Bench.OneIcon);
+        builder.AddContent(0, before);
+        builder.OpenElement(1, "mark");
+        builder.AddAttribute(2, "class", "icon-bench-briefs");
+        builder.AddContent(3, briefs);
+        builder.CloseElement();
+        builder.AddContent(4, after);
+    };
+
+    private static string ComponentOf(string control) => control.Split('#', ':')[0];
+
+    private string Title => Bench.Origin is not { } origin ? "New batch" : Altered ? $"New batch, from {origin.Id}" : $"Batch {origin.Id}";
+
+    /// <summary>
+    /// Whether what would be sent differs from the opened batch: its slots, mode, or style reference, or the prompt itself, as when a brief
+    /// was edited since the batch was sent.
+    /// </summary>
+    private bool Altered => Bench.Changed || (Bench.Origin is { Sent.Length: > 0 } origin && origin.Sent != PromptText);
+
+    /// <summary>
+    /// Where a slot's icon will be seen: each control that uses it, its pages, the strip it sits in with the icons already beside it, and
+    /// the Midjourney result to attach as the style so it matches them.
+    /// </summary>
+    private RenderFragment Placement(string key) => @<text>
+        @{
+            var placements = Coverage is null ? new List<IconPlacement>() : Plan.ControlsOf(key).Select(control => IconPlacement.Find(Coverage, control)).OfType<IconPlacement>().ToList();
+            var sources = placements.SelectMany(placement => placement.StyleSources(Plan)).DistinctBy(source => source.Batch.Id).ToList();
+        }
+        @if (placements.Count == 0)
+        {
+            <span class="muted icon-bench-where">No control uses this brief yet; give it one from Coverage to see where it goes.</span>
+        }
+        @foreach (var placement in placements)
+        {
+            <span class="icon-bench-where">
+                For <code>@placement.Control</code> on @(placement.Component.Pages.Count == 0 ? "no page found" : string.Join(", ", placement.Component.Pages))@(placement.Item.RendersIn is { } home ? $", shown in {home}" : string.Empty).
+                @if (placement.Neighbours.Count > 0)
+                {
+                    <span>In the @placement.Item.Strip strip, beside:</span>
+                    <span class="icon-bench-neighbours">
+                        @foreach (var neighbour in placement.Neighbours.Take(8))
+                        {
+                            <span class="icon-bench-neighbour" title="@neighbour.Label">
+                                @if (neighbour.Icon is { } icon && Icons.Find(icon) is { } drawn && IconLibrary.Sized(drawn, 16) is { } markup)
+                                {
+                                    @((MarkupString)markup)
+                                }
+                                @neighbour.Label
+                            </span>
+                        }
+                        @if (placement.Neighbours.Count > 8)
+                        {
+                            <span class="muted">and @(placement.Neighbours.Count - 8) more</span>
+                        }
+                    </span>
+                }
+            </span>
+        }
+        @foreach (var (batch, references) in sources)
+        {
+            <span class="icon-bench-match">
+                To match them, attach as the style the result of <strong>@batch.Name</strong> (@batch.Id): @string.Join("; ", references).
+            </span>
+        }
+    </text>;
+
+    protected override void OnParametersSet()
+    {
+        if (!editingStyle)
+        {
+            (opening, style, parameters, singleOpening) = (Plan.Style.Opening, Plan.Style.Style, Plan.Style.Parameters, Plan.Style.SingleOpening);
+        }
+    }
+
+    private void Add(string key)
+    {
+        message = Bench.Add(key) ? null : Bench.OneIcon ? "One icon holds one brief; remove it first, or switch to a set of four." : "Every slot is full; remove one first.";
+        messageIsError = message is not null;
+        NameAfterTheIcon();
+    }
+
+    /// <summary>
+    /// In one-icon mode the batch is the icon, so its name follows the icon's label, unless the name was typed: an empty name, the opened
+    /// batch's name, or a name given this way before is replaced.
+    /// </summary>
+    private void NameAfterTheIcon()
+    {
+        if (Bench.OneIcon && SlotBriefs.FirstOrDefault() is { } brief
+            && (Bench.Name.Length == 0 || Bench.Name == Bench.Origin?.Name || Bench.Name == givenName))
+        {
+            Bench.Name = givenName = brief.Label;
+        }
+    }
+
+    private void FillFromOneComponent()
+    {
+        var group = Queue.FirstOrDefault(candidate => candidate.Any(brief => !Bench.Holds(brief.Key)));
+        if (group is null)
+        {
+            return;
+        }
+
+        foreach (var brief in group.Where(brief => !Bench.Holds(brief.Key)))
+        {
+            if (!Bench.Add(brief.Key))
+            {
+                break;
+            }
+        }
+
+        if (Bench.Name.Length == 0)
+        {
+            Bench.Name = group.Key;
+        }
+    }
+
+    private void SetOneIcon(bool oneIcon)
+    {
+        Bench.SetOneIcon(oneIcon);
+        message = null;
+        NameAfterTheIcon();
+    }
+
+    private void StartNew()
+    {
+        Bench.Clear();
+        editing = null;
+        message = null;
+    }
+
+    private async Task SaveBrief(IconBrief brief)
+    {
+        var wasNew = editing?.IsNew == true;
+        editing = null;
+        await OnSaveBrief.InvokeAsync(brief);
+        if (wasNew)
+        {
+            Bench.Add(brief.Key);
+        }
+    }
+
+    private async Task SaveBatch()
+    {
+        if (!Bench.Filled.Any())
+        {
+            (message, messageIsError) = ("Add at least one brief to a slot first.", true);
+            return;
+        }
+
+        // An unchanged batch keeps its id, so only its name changes; a changed one is saved as a new batch beside it.
+        var id = !Altered && Bench.Origin is { } kept ? kept.Id : Plan.NextBatchId(DateOnly.FromDateTime(DateTime.Now));
+        var name = Bench.Name.Trim() is { Length: > 0 } given ? given
+            : Bench.Filled.SelectMany(Plan.ControlsOf).Select(ComponentOf).FirstOrDefault() ?? $"Batch {id}";
+        var created = Plan.Batches.FirstOrDefault(batch => batch.Id == id)?.Created ?? DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        var batch = new IconBatch(id, name, [.. Bench.Filled], Bench.Sref.Trim(), created, Bench.OneIcon, PromptText);
+        var from = Altered ? Bench.Origin?.Id : null;
+        await OnSaveBatch.InvokeAsync(batch);
+        Bench.Load(batch);
+        givenName = null;
+        (message, messageIsError) = (from is null ? $"Saved as {id}." : $"Saved as {id}; {from} stays as it was.", false);
+    }
+
+    private async Task CopyPrompt()
+    {
+        if (SlotBriefs.Count < Bench.Needed)
+        {
+            (message, messageIsError) = (Bench.OneIcon ? "Add the brief first." : "Fill all four slots first: the prompt asks Midjourney for a 2x2 set.", true);
+            return;
+        }
+
+        try
+        {
+            clipboard ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/clipboard.js");
+            var copied = await clipboard.InvokeAsync<bool>("copy", PromptText);
+            (message, messageIsError) = copied ? ("Prompt copied.", false) : ("The browser refused the copy; select the prompt and copy it.", true);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+
+    private async Task SaveStyle()
+    {
+        editingStyle = false;
+        await OnSaveStyle.InvokeAsync(new IconPromptStyle(opening.Trim(), style.Trim(), parameters.Trim(), singleOpening.Trim()));
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (clipboard is not null)
+        {
+            try
+            {
+                await clipboard.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+}

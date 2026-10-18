@@ -1,0 +1,130 @@
+@* The Icon Lab's Icons tab: the drawn icons in the Studio's toolbar and tab styles, at each size, and large, in either icon palette. *@
+@if (Icons.Icons.Count == 0)
+{
+    <p id="icon-lab-empty" class="fail">@(Icons.Problem ?? "The manifest lists no icons.")</p>
+}
+else
+{
+    <fieldset class="icon-lab-palette">
+        <legend>Palette</legend>
+        @foreach (var choice in Palettes)
+        {
+            <label><input type="radio" name="icon-palette" value="@choice.Class" checked="@(palette == choice.Class)" @onchange="@(() => palette = choice.Class)" /> @choice.Label</label>
+        }
+    </fieldset>
+
+    @if (Missing.Count > 0)
+    {
+        <p id="icon-lab-missing" class="fail">The manifest names icons with no file: @string.Join(", ", Missing.Select(icon => $"{icon.Key}.svg")).</p>
+    }
+
+    <div class="icon-lab @palette">
+        <section>
+            <h3>In place</h3>
+            <p class="muted">The Studio's own toolbar and tab styles, with each label in the tooltip and the accessible name.</p>
+            <div class="icon-lab-place">
+                @foreach (var group in Icons.Groups)
+                {
+                    var members = Drawn.Where(icon => icon.Group == group).ToList();
+                    <div class="icon-lab-sample">
+                        <span class="muted">@group</span>
+                        @if (group.Contains("tab", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <div class="tabs" role="tablist" aria-label="@group">
+                                @foreach (var icon in members)
+                                {
+                                    var selected = icon.Key == SelectedTab(members);
+                                    <button type="button" role="tab" class="@(selected ? "tab icon-tab active" : "tab icon-tab")" aria-selected="@(selected ? "true" : "false")"
+                                            title="@icon.Label" aria-label="@icon.Label" @onclick="@(() => tab = icon.Key)">@((MarkupString)IconLibrary.Sized(icon, 20)!)</button>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="toolbar">
+                                @foreach (var icon in members)
+                                {
+                                    var pressed = pressedTools.Contains(icon.Key);
+                                    <button type="button" class="icon-button" title="@icon.Label" aria-label="@icon.Label" aria-pressed="@(pressed ? "true" : "false")"
+                                            @onclick="@(() => Press(icon.Key))">@((MarkupString)IconLibrary.Sized(icon, 20)!)</button>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+
+        <section>
+            <h3>Sizes</h3>
+            <div class="icon-lab-scroll">
+                <table class="icon-lab-sizes">
+                    <thead>
+                        <tr>
+                            <th scope="col">Icon</th>
+                            @foreach (var size in Sizes)
+                            {
+                                <th scope="col">@size px</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var icon in Drawn)
+                        {
+                            <tr>
+                                <th scope="row">@icon.Label<span class="muted">@icon.Group, @(icon.Key).svg</span></th>
+                                @foreach (var size in Sizes)
+                                {
+                                    <td>@((MarkupString)IconLibrary.Sized(icon, size)!)</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h3>Detail</h3>
+            <p class="muted">Each icon drawn large, as the vector it is, to judge its shapes and colors.</p>
+            <div class="icon-lab-detail">
+                @foreach (var icon in Drawn)
+                {
+                    <figure>
+                        @((MarkupString)IconLibrary.Sized(icon, DetailSize)!)
+                        <figcaption class="muted">@icon.Label</figcaption>
+                    </figure>
+                }
+            </div>
+        </section>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IconLibrary Icons { get; set; } = null!;
+
+    private sealed record Palette(string Class, string Label);
+
+    private static readonly IReadOnlyList<Palette> Palettes = [new("icon-palette-mj", "Midjourney palette"), new("icon-palette-studio", "Studio tokens")];
+    private static readonly int[] Sizes = [16, 20, 24, 32, 96];
+    private const int DetailSize = 144;
+
+    private readonly HashSet<string> pressedTools = new(StringComparer.Ordinal);
+    private string palette = Palettes[0].Class;
+    private string? tab;
+
+    private IReadOnlyList<StudioIcon> Drawn => Icons.Icons.Where(icon => icon.Markup is not null).ToList();
+
+    private IReadOnlyList<StudioIcon> Missing => Icons.Icons.Where(icon => icon.Markup is null).ToList();
+
+    private string? SelectedTab(IReadOnlyList<StudioIcon> members) => tab is { } key && members.Any(icon => icon.Key == key) ? key : members.FirstOrDefault()?.Key;
+
+    private void Press(string key)
+    {
+        if (!pressedTools.Remove(key))
+        {
+            pressedTools.Add(key);
+        }
+    }
+}

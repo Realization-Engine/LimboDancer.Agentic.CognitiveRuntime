@@ -5,9 +5,17 @@
     @foreach (var tab in Tabs)
     {
         var selected = tab.Id == Selected;
-        <button @key="tab.Id" @ref="buttons[tab.Id]" id="@TabId(tab.Id)" role="tab" class="@(selected ? "tab active" : "tab")" aria-selected="@(selected ? "true" : "false")"
-                aria-controls="@(SeparatePanels ? PanelFor(IdPrefix, tab.Id) : PanelId)" tabindex="@(selected ? 0 : -1)" @onclick="() => Select(tab.Id, false)" @onkeydown="args => Key(tab.Id, args)">
-            @tab.Title@(tab.Count is { } count ? $" ({count})" : string.Empty)
+        <button @key="tab.Id" @ref="buttons[tab.Id]" id="@TabId(tab.Id)" role="tab" class="@(TabClass(tab, selected))" aria-selected="@(selected ? "true" : "false")"
+                aria-controls="@(SeparatePanels ? PanelFor(IdPrefix, tab.Id) : PanelId)" tabindex="@(selected ? 0 : -1)" title="@(DrawsIcon(tab) ? tab.Title : null)"
+                @onclick="() => Select(tab.Id, false)" @onkeydown="args => Key(tab.Id, args)">
+            @if (DrawsIcon(tab))
+            {
+                <IconLabel Icon="@(tab.Icon!)" Label="@tab.Title" Size="@TabIconSize" />@(tab.Count is { } shown ? $" ({shown})" : string.Empty)
+            }
+            else
+            {
+                @tab.Title@(tab.Count is { } count ? $" ({count})" : string.Empty)
+            }
         </button>
     }
 </div>
@@ -19,8 +27,21 @@
 }
 
 @code {
-    /// <summary>One tab: its id, its title, and an optional count shown after it.</summary>
-    public sealed record Tab(string Id, string Title, int? Count = null);
+    /// <summary>
+    /// One tab: its id, its title, an optional count shown after it, and an optional icon from wwwroot/icons drawn for the title
+    /// (<see cref="IconLibrary.TextByDesign"/> marks a tab that keeps its words, for the Icon Lab's coverage).
+    /// </summary>
+    public sealed record Tab(string Id, string Title, int? Count = null, string? Icon = null);
+
+    /// <summary>
+    /// A tab's icon size in CSS pixels: larger than a toolbar button's 20, since a tab has no button box around it, so the two read the same
+    /// size side by side.
+    /// </summary>
+    private const int TabIconSize = 24;
+
+    private static bool DrawsIcon(Tab tab) => tab.Icon is { } icon && icon != IconLibrary.TextByDesign;
+
+    private static string TabClass(Tab tab, bool selected) => (selected ? "tab active" : "tab") + (DrawsIcon(tab) ? " icon-tab" : string.Empty);
 
     private readonly Dictionary<string, ElementReference> buttons = new(StringComparer.Ordinal);
     private string? focusPending;

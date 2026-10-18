@@ -1152,6 +1152,510 @@ textarea.placements-text {
     border-color: var(--command);
 }
 
+/* ---- Icons and the Icon Lab -------------------------------------------------- */
+
+/* The icon palettes: the --i-* colors every icon in wwwroot/icons draws with. The Studio palette is the root's, so every
+   icon in the Studio draws in the Studio's tokens; the Icon Lab can show the Midjourney palette, which is also the icons'
+   fallback. The Studio has no mid green, so the Studio palette borrows sage. */
+.icon-palette-mj {
+    --i-ink: #203446;
+    --i-olive: #788848;
+    --i-sage: #7c9c7c;
+    --i-red: #a04030;
+    --i-lens: #cbd6de;
+    --i-page: #ebe2c9;
+    --i-eye: #fbf8f0;
+    --i-paper: #f2ecdc;
+}
+
+:root,
+.icon-palette-studio {
+    --i-ink: var(--ink);
+    --i-olive: var(--accent);
+    --i-sage: #7c9c7c;
+    --i-red: var(--fail);
+    --i-lens: var(--info-bg);
+    --i-page: var(--warn-bg);
+    --i-eye: var(--surface);
+    --i-paper: var(--ground);
+}
+
+/* A button whose label is an icon: square, the icon centered, the label in its tooltip and accessible name. */
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    padding: 0;
+}
+
+.icon-button svg,
+.icon-tab svg {
+    display: block;
+}
+
+.icon-button[aria-pressed="true"] {
+    background: var(--accent-tint);
+    border-color: var(--accent);
+}
+
+.icon-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.2rem;
+}
+
+.icon-lab-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+}
+
+.icon-lab-palette label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.icon-lab > section {
+    margin-bottom: 1.5rem;
+}
+
+.icon-lab-place {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2.5rem;
+    align-items: flex-start;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.icon-lab-sample {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.icon-lab-sample .tabs {
+    margin-bottom: 0;
+}
+
+.icon-lab-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.icon-lab-sizes td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.icon-lab-sizes td svg {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.icon-lab-sizes th[scope="row"] {
+    text-align: left;
+}
+
+.icon-lab-sizes th[scope="row"] span {
+    display: block;
+    font-weight: 400;
+    font-size: 0.8rem;
+}
+
+.icon-lab-filters label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.icon-lab-component {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.icon-lab-component summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    cursor: pointer;
+}
+
+.icon-lab-counts {
+    font-size: 0.85rem;
+}
+
+.icon-lab-controls td {
+    vertical-align: middle;
+}
+
+.icon-lab-controls td svg {
+    display: block;
+}
+
+.icon-lab-needed {
+    color: var(--warn);
+    font-weight: 600;
+}
+
+.icon-lab-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+}
+
+.icon-lab-actions select {
+    max-width: 14rem;
+}
+
+.icon-lab-brief-row td {
+    background: var(--surface-2);
+}
+
+/* A brief: labels in one column and their fields in the other, stacked on a narrow screen. */
+.icon-brief-editor {
+    display: grid;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.icon-brief-fields {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
+    gap: 0.5rem 0.75rem;
+    align-items: start;
+}
+
+.icon-brief-fields > label {
+    padding-top: 0.35rem;
+    color: var(--muted);
+}
+
+.icon-brief-fields > div {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.icon-brief-fields input,
+.icon-brief-fields textarea {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.icon-brief-fields .muted,
+.icon-brief-fields .fail {
+    font-size: 0.8rem;
+}
+
+/* The Prompts bench: the queue beside the batch, the four slots in Midjourney's 2x2 order. */
+.icon-bench {
+    display: grid;
+    grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+.icon-bench > section {
+    display: grid;
+    gap: 0.6rem;
+    min-width: 0;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.icon-bench h3 {
+    margin: 0;
+}
+
+.icon-bench-group ul {
+    margin: 0.2rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.icon-bench-group li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.15rem 0;
+}
+
+.icon-bench-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.icon-bench-name,
+.icon-bench-sref,
+.icon-bench-style label {
+    display: grid;
+    gap: 0.25rem;
+    color: var(--muted);
+}
+
+.icon-bench-name input,
+.icon-bench-sref input,
+.icon-bench-style textarea {
+    width: 100%;
+    box-sizing: border-box;
+    color: var(--ink);
+}
+
+.icon-bench-slots {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.icon-bench-slots.single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.icon-bench-mode {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 1.25rem;
+    margin: 0;
+}
+
+.icon-bench-mode label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.icon-bench-mode .muted {
+    flex-basis: 100%;
+    font-size: 0.85rem;
+}
+
+.icon-batch-mode {
+    font-size: 0.8rem;
+    padding: 0 0.4rem;
+    border-radius: var(--radius);
+    background: var(--accent-tint);
+    color: var(--accent-ink);
+}
+
+.icon-bench-slot {
+    display: grid;
+    align-content: start;
+    gap: 0.25rem;
+    min-height: 6rem;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--control-line);
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+}
+
+.icon-bench-slot.empty {
+    border-style: dashed;
+    background: var(--surface-2);
+}
+
+.icon-bench-where,
+.icon-bench-match {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.icon-bench-match {
+    color: var(--accent-ink);
+}
+
+.icon-bench-neighbours {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.6rem;
+    margin-left: 0.25rem;
+}
+
+.icon-bench-neighbour {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    color: var(--ink);
+}
+
+.icon-bench-neighbour svg {
+    display: block;
+}
+
+.icon-bench-prompt {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.icon-bench-prompt-text {
+    margin: 0;
+    padding: 0.5rem 0.65rem;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.icon-bench-prompt-text {
+    color: var(--muted);
+}
+
+.icon-bench-briefs {
+    background: var(--accent-tint);
+    color: var(--ink);
+    padding: 0 0.1rem;
+}
+
+.icon-bench-actions {
+    justify-content: flex-end;
+}
+
+.icon-bench-style {
+    display: grid;
+    gap: 0.5rem;
+}
+
+/* The Batches tab. */
+.icon-batch {
+    display: grid;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.icon-batch-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+}
+
+.icon-batch-head .toolbar {
+    margin-left: auto;
+}
+
+.icon-batch-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.icon-batch-slots li {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+    gap: 0.2rem 0.5rem;
+    align-items: center;
+    padding: 0.5rem;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+}
+
+.icon-batch-slots li > .muted {
+    grid-column: 1 / -1;
+}
+
+.icon-batch-glyph {
+    grid-row: span 2;
+}
+
+.icon-batch-glyph svg {
+    display: block;
+}
+
+.icon-batch-reference {
+    grid-column: 2 / 3;
+}
+
+.icon-batch-reference input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.icon-stage {
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+
+.icon-stage[data-stage="Referenced"],
+.icon-stage[data-stage="Drawn"],
+.icon-stage[data-stage="Wired"] {
+    color: var(--pass);
+}
+
+@media (max-width: 900px) {
+    .icon-bench {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 560px) {
+    .icon-brief-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .icon-brief-fields > label {
+        padding-top: 0;
+    }
+
+    .icon-bench-slots {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.icon-lab-detail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.icon-lab-detail figure {
+    display: grid;
+    justify-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.icon-lab-detail svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
 /* ---- Unit Lab -------------------------------------------------------------- */
 
 .lab {
@@ -2278,6 +2782,64 @@ details.advanced > summary {
     margin-top: 0.4rem;
 }
 
+/* The one-line banner of Play from 1024px: its parts parted by a rule, the review, the hand-over, and the status at the right end. */
+.play-context.banner {
+    padding: 0.35rem 0.75rem;
+}
+
+.play-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0;
+    min-height: 2.1rem;
+}
+
+/* The banner is the page's main information (the user, 2026-10-17): its parts are twice the context's size; its buttons and status are not. */
+.play-banner-part {
+    padding: 0 0.75rem;
+    border-left: 1px solid var(--line);
+    font-size: 2em;
+    line-height: 1.2;
+}
+
+.play-banner-part:first-child {
+    padding-left: 0;
+    border-left: 0;
+    font-weight: 600;
+}
+
+.play-banner #play-conditions {
+    margin: 0;
+}
+
+.play-banner-end {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.play-banner .play-status {
+    margin: 0;
+    max-width: 30rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* The game and view pickers at the top of the Play tab. */
+.play-tab-context {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.play-tab-context .toolbar {
+    flex-wrap: wrap;
+}
+
 /* Wide (1440px and up): the actions, the map, and the review side by side over the activity strip. The workspace fills the window below the
    context; each pane scrolls on its own, so the map stays in view. */
 .play-workspace {
@@ -2417,6 +2979,43 @@ details.advanced > summary {
     }
 }
 
+/* Play from 1024px: the actions are the inspector's Play tab, so the map takes the width the actions column had, beside one inspector column
+   wide enough for the actions; the activity strip stays below. Setup, whose forms are wider, gets a broader inspector. Replay keeps its own. */
+.play-workspace:not(.replay):not(.narrow) {
+    grid-template-columns: minmax(0, 1fr) minmax(24rem, 30rem);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "map review"
+        "activity activity";
+}
+
+.play-workspace.setup:not(.replay):not(.narrow) {
+    grid-template-columns: minmax(0, 1fr) minmax(26rem, 34rem);
+}
+
+/* From 1024px to 1439px the inspector is no wider than the side column was, so the map never loses width to the move. */
+@media (max-width: 1439.98px) {
+    .play-workspace:not(.replay):not(.narrow) {
+        grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
+    }
+
+    .play-workspace.setup:not(.replay):not(.narrow) {
+        grid-template-columns: minmax(0, 1fr) minmax(22rem, 28rem);
+    }
+}
+
+/* The actions inside the inspector are its tab's content, not a pane of their own. */
+.play-review .play-actions {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+}
+
+.inspector-kept[hidden] {
+    display: none;
+}
+
 /* Under 1024px (and at 200% zoom): the context scrolls away with the page, so it does not fill a short window, and its Review and hand-over
    buttons stay reachable in a bar fixed to the window's foot (plan section 13.1). */
 @media (max-width: 1023.98px), (max-height: 599.98px) {
@@ -2503,8 +3102,9 @@ details.advanced > summary {
     }
 }
 
-/* The inspector holds six tabs here, which wrap in a narrow pane rather than run out of it. */
-.play-workspace.replay .tabs {
+/* The inspector holds six tabs on Replay and up to nine on Play, which wrap in a narrow pane rather than run out of it. */
+.play-workspace.replay .tabs,
+.play-review .tabs {
     flex-wrap: wrap;
     gap: 0 0.9rem;
 }

@@ -1,0 +1,131 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@* The Icon Lab's Batches tab: each batch prompted, newest first, with its four icons, each icon's stage and the Midjourney result chosen
+   as its reference, and the batch's prompt to copy again or open on the bench. *@
+<section id="icon-lab-batches">
+    @if (Plan.Batches.Count == 0)
+    {
+        <p class="muted">No batch yet. Fill the slots on the Prompts tab and save.</p>
+    }
+    @foreach (var batch in Plan.Batches.Reverse())
+    {
+        var prompt = Plan.Prompt(batch);
+        <article class="icon-batch" data-batch="@batch.Id">
+            <header class="icon-batch-head">
+                <strong>@batch.Name</strong>
+                <span class="muted">@batch.Id</span>
+                @if (batch.OneIcon)
+                {
+                    <span class="icon-batch-mode">one icon, four tries</span>
+                }
+                @if (batch.Sref.Length > 0)
+                {
+                    <span class="muted">--sref @batch.Sref</span>
+                }
+                <span class="toolbar">
+                    <button type="button" class="link" @onclick="@(() => OnOpen.InvokeAsync(batch))">Open on the bench</button>
+                    <button type="button" @onclick="@(() => Copy(batch.Id, prompt))" disabled="@(prompt is null)">Copy prompt</button>
+                </span>
+            </header>
+            @if (copied?.Batch == batch.Id)
+            {
+                <p class="@(copied.Value.Ok ? "pass" : "fail")" role="status">@(copied.Value.Ok ? "Prompt copied." : "The browser refused the copy.")</p>
+            }
+            <ol class="icon-batch-slots">
+                @for (var slot = 0; slot < batch.Icons.Count; slot++)
+                {
+                    var key = batch.Icons[slot];
+                    var brief = Plan.Brief(key);
+                    var stage = IconStages.Of(key, Plan, Icons, Coverage);
+                    <li data-icon="@key">
+                        <span class="muted">@(batch.OneIcon ? "The icon" : $"{slot + 1}, {IconPlan.SlotNames[Math.Min(slot, IconPlan.SlotNames.Count - 1)]}")</span>
+                        <span class="icon-batch-glyph">
+                            @if (Icons.Find(key) is { } icon && IconLibrary.Sized(icon, 32) is { } markup)
+                            {
+                                @((MarkupString)markup)
+                            }
+                        </span>
+                        <strong>@(brief?.Label ?? key)</strong>
+                        <span class="icon-stage" data-stage="@stage">@IconStages.Words(stage)</span>
+                        @if (brief is not null)
+                        {
+                            <label class="icon-batch-reference">
+                                <span class="visually-hidden">Reference for @brief.Label</span>
+                                <input value="@(draft.GetValueOrDefault(key, brief.Reference))" placeholder="top row 3rd, or the image's link"
+                                       @oninput="@(args => draft[key] = args.Value as string ?? string.Empty)" />
+                            </label>
+                            <button type="button" class="link" disabled="@(!draft.ContainsKey(key))" @onclick="@(() => SaveReference(key))">Save</button>
+                        }
+                    </li>
+                }
+            </ol>
+            <details>
+                <summary class="muted">The prompt</summary>
+                <p class="icon-bench-prompt-text">@(prompt ?? "A brief in this batch is gone, so its prompt cannot be made.")</p>
+            </details>
+        </article>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public IconPlan Plan { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public IconLibrary Icons { get; set; } = null!;
+
+    [Parameter]
+    public IconCoverage? Coverage { get; set; }
+
+    /// <summary>Saves the Midjourney result chosen for an icon.</summary>
+    [Parameter]
+    public EventCallback<(string Key, string Reference)> OnReference { get; set; }
+
+    /// <summary>Opens a batch on the Prompts bench.</summary>
+    [Parameter]
+    public EventCallback<IconBatch> OnOpen { get; set; }
+
+    private readonly Dictionary<string, string> draft = new(StringComparer.Ordinal);
+    private (string Batch, bool Ok)? copied;
+    private IJSObjectReference? clipboard;
+
+    private async Task SaveReference(string key)
+    {
+        if (draft.Remove(key, out var reference))
+        {
+            await OnReference.InvokeAsync((key, reference));
+        }
+    }
+
+    private async Task Copy(string batch, string? prompt)
+    {
+        if (prompt is null)
+        {
+            return;
+        }
+
+        try
+        {
+            clipboard ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/clipboard.js");
+            copied = (batch, await clipboard.InvokeAsync<bool>("copy", prompt));
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (clipboard is not null)
+        {
+            try
+            {
+                await clipboard.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+}
