@@ -63,8 +63,11 @@ public sealed class FigureArtLabTests : IDisposable
     {
         // Every catalog side has its kit drawn (stage 6); a side outside the catalog has none.
         Assert.Contains("helmet", lab.Missing("standing", "japanese"));
-        // The traced standing pose carries its rifle; the leader stand-in holds a drawn SMG, which a side without kit lacks.
-        Assert.Contains("SMG", lab.Missing("leader", "japanese"));
+        // A traced pose carries its own weapon; a pose that still holds a drawn one lacks it on a side without kit.
+        if (FigureArt.PoseNames.FirstOrDefault(pose => lab.Art.Pose(pose) is { Grip: not null }) is { } armed)
+        {
+            Assert.Contains(lab.Art.Pose(armed)!.Weapon == "smg" ? "SMG" : "rifle", lab.Missing(armed, "japanese"));
+        }
         Assert.DoesNotContain("helmet", lab.Missing("standing", "german"));
         Assert.Contains("pose (stand-in)", lab.Missing("standing", "german"));
         // Any pose with no art yet lacks its pose; which one changes as the picks are traced.
