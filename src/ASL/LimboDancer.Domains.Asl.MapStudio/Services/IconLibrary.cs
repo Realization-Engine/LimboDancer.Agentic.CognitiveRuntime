@@ -14,7 +14,7 @@ public sealed record StudioIcon(string Key, string Label, string Group, string? 
 /// <c>--i-*</c> variables of an icon palette in site.css, with the Midjourney palette as their fallbacks. They are written by
 /// <c>code-builders/studio-icons/make_icons.py</c>; the Icon Lab shows them.
 /// </summary>
-public sealed class IconLibrary(IFileProvider webRoot)
+public sealed class IconLibrary(IFileProvider webRoot) : IArtShelf
 {
     public const string Folder = "icons";
     public const string Manifest = "icons.json";
@@ -56,6 +56,14 @@ public sealed class IconLibrary(IFileProvider webRoot)
     }
 
     public StudioIcon? Find(string key) => Icons.FirstOrDefault(icon => icon.Key == key);
+
+    IEnumerable<string> IArtShelf.Keys => Icons.Select(icon => icon.Key);
+
+    string IArtShelf.Noun => "icon";
+
+    bool IArtShelf.Has(string key) => Find(key)?.Markup is not null;
+
+    string? IArtShelf.Thumbnail(string key, int pixels) => Find(key) is { } icon ? Sized(icon, pixels) : null;
 
     /// <summary>An icon's markup drawn at a size in CSS pixels, or null when it has none.</summary>
     public static string? Sized(StudioIcon icon, int pixels) =>

@@ -1,9 +1,9 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 
-@* The Icon Lab's Batches tab: each batch prompted, newest first, with its four icons, each icon's stage and the Midjourney result chosen
-   as its reference, and the batch's prompt to copy again or open on the bench. *@
-<section id="icon-lab-batches">
+@* The Batches tab of the Icon Lab and of the Unit Lab's Art: each batch prompted, newest first, with its four drawings, each one's stage
+   and the Midjourney result chosen as its reference, and the batch's prompt to copy again or open on the bench. *@
+<section id="@Id">
     @if (Plan.Batches.Count == 0)
     {
         <p class="muted">No batch yet. Fill the slots on the Prompts tab and save.</p>
@@ -17,7 +17,7 @@
                 <span class="muted">@batch.Id</span>
                 @if (batch.OneIcon)
                 {
-                    <span class="icon-batch-mode">one icon, four tries</span>
+                    <span class="icon-batch-mode">one @Shelf.Noun, four tries</span>
                 }
                 @if (batch.Sref.Length > 0)
                 {
@@ -37,11 +37,11 @@
                 {
                     var key = batch.Icons[slot];
                     var brief = Plan.Brief(key);
-                    var stage = IconStages.Of(key, Plan, Icons, Coverage);
+                    var stage = IconStages.Of(key, Plan, Shelf, Coverage);
                     <li data-icon="@key">
-                        <span class="muted">@(batch.OneIcon ? "The icon" : $"{slot + 1}, {IconPlan.SlotNames[Math.Min(slot, IconPlan.SlotNames.Count - 1)]}")</span>
+                        <span class="muted">@(batch.OneIcon ? $"The {Shelf.Noun}" : $"{slot + 1}, {IconPlan.SlotNames[Math.Min(slot, IconPlan.SlotNames.Count - 1)]}")</span>
                         <span class="icon-batch-glyph">
-                            @if (Icons.Find(key) is { } icon && IconLibrary.Sized(icon, 32) is { } markup)
+                            @if (Shelf.Thumbnail(key, 32) is { } markup)
                             {
                                 @((MarkupString)markup)
                             }
@@ -73,12 +73,15 @@
     public IconPlan Plan { get; set; } = null!;
 
     [Parameter, EditorRequired]
-    public IconLibrary Icons { get; set; } = null!;
+    public IArtShelf Shelf { get; set; } = null!;
+
+    [Parameter]
+    public string Id { get; set; } = "icon-lab-batches";
 
     [Parameter]
     public IconCoverage? Coverage { get; set; }
 
-    /// <summary>Saves the Midjourney result chosen for an icon.</summary>
+    /// <summary>Saves the Midjourney result chosen for a drawing.</summary>
     [Parameter]
     public EventCallback<(string Key, string Reference)> OnReference { get; set; }
 

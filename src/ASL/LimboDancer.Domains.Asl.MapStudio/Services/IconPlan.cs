@@ -183,14 +183,14 @@ public enum IconStage
 
 public static class IconStages
 {
-    public static IconStage Of(string key, IconPlan plan, IconLibrary icons, IconCoverage? coverage)
+    public static IconStage Of(string key, IconPlan plan, IArtShelf shelf, IconCoverage? coverage)
     {
         if (coverage is not null && coverage.Controls.Any(control => control.Status == IconCoverage.HasIcon && control.Icon == key))
         {
             return IconStage.Wired;
         }
 
-        if (icons.Find(key)?.Markup is not null)
+        if (shelf.Has(key))
         {
             return IconStage.Drawn;
         }

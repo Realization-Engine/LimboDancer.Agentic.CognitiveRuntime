@@ -21,10 +21,10 @@
             <IconCoverageView Coverage="@Icons.Coverage" Icons="@Icons" Plan="@plan" OnAssign="Assign" OnBrief="BriefForControl" />
             break;
         case "prompts":
-            <IconPromptBench Plan="@plan" Icons="@Icons" Coverage="@Icons.Coverage" Bench="@bench" OnSaveBrief="SaveBrief" OnSaveBatch="SaveBatch" OnSaveStyle="SaveStyle" />
+            <IconPromptBench Plan="@plan" Shelf="@Icons" Coverage="@Icons.Coverage" Bench="@bench" OnSaveBrief="SaveBrief" OnSaveBatch="SaveBatch" OnSaveStyle="SaveStyle" />
             break;
         case "batches":
-            <IconBatchList Plan="@plan" Icons="@Icons" Coverage="@Icons.Coverage" OnReference="SaveReference" OnOpen="OpenBatch" />
+            <IconBatchList Plan="@plan" Shelf="@Icons" Coverage="@Icons.Coverage" OnReference="SaveReference" OnOpen="OpenBatch" />
             break;
         default:
             <IconGallery Icons="@Icons" />

@@ -859,8 +859,8 @@
       "controls": [
         {
           "kind": "button",
-          "label": "Fill the slots from one component",
-          "dynamic": false,
+          "label": "@(GroupOf is null ? \u0022Fill the slots from one component\u0022 : \u0022Fill the slots fro...",
+          "dynamic": true,
           "id": "icon-bench-fill",
           "status": "needed",
           "strip": "IconPromptBench"
@@ -874,8 +874,8 @@
         },
         {
           "kind": "button",
-          "label": "Write a brief with no control yet",
-          "dynamic": false,
+          "label": "@(GroupOf is null ? \u0022Write a brief with no control yet\u0022 : \u0022Write a brief\u0022)",
+          "dynamic": true,
           "id": "icon-bench-new-brief",
           "status": "needed",
           "strip": "IconPromptBench"
