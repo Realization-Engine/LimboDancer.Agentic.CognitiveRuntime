@@ -12,7 +12,13 @@ namespace LimboDancer.Domains.Asl.Units.Rendering;
 /// from the rear hand toward the front hand, which places and turns the weapon of kind <see cref="Weapon"/>.
 /// </summary>
 public sealed record FigurePose(string Path, double Width, FigureHead Head, FigureGrip? Grip, string? Weapon, bool Accepted, string Source,
-    double Height = 1000, bool OwnHelmet = false);
+    double Height = 1000, bool OwnHelmet = false, FigureBody? Body = null);
+
+/// <summary>
+/// Where the body lies across a pose, apart from what it carries beyond it (a rifle trailed behind): a file of men is spaced by the body's
+/// width, so a long weapon does not push the men apart and shrink them.
+/// </summary>
+public sealed record FigureBody(double Left, double Right);
 
 /// <summary>The head's center and radius, and its tilt in degrees clockwise (a bowed head's is positive), which turns the side's helmet with it.</summary>
 public sealed record FigureHead(double X, double Y, double Radius, double Tilt = 0);

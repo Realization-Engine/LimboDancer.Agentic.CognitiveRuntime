@@ -9,7 +9,7 @@ by hand after looking at the traced figure (--head, --grip). The pose is a stand
 
     python code-builders/unit-figures/trace_pose.py <image> <pose> [--cell 1-4] [--crop x,y,w,h] [--mirror] [--lying]
         [--head cx,cy,r] [--grip x1,y1,x2,y2] [--weapon rifle|smg] [--source "batch 2026-10-18-1, top right"] [--accept]
-        [--tolerance 2.0] [--close pixels] [--bare] [--bare-width radii] [--bare-back radii] [--frame x0,y0,x1,y1] [--own-helmet] [--out file]
+        [--tolerance 2.0] [--close pixels] [--bare] [--bare-width radii] [--bare-back radii] [--frame x0,y0,x1,y1] [--own-helmet] [--body x0,x1] [--out file]
 Then:  python code-builders/unit-figures/build_figures.py
 """
 import argparse
@@ -81,6 +81,7 @@ def main():
     parser.add_argument("--source", default="")
     parser.add_argument("--accept", action="store_true")
     parser.add_argument("--tolerance", type=float, default=2.0)
+    parser.add_argument("--body", help="x0,x1 in body units: where the body lies across the pose, apart from a weapon trailed beyond it; a file of men is spaced by it")
     parser.add_argument("--own-helmet", action="store_true",
                         help="keep the drawn helmet and draw no side's helmet on it, for a pose whose arm or weapon lies over the helmet")
     parser.add_argument("--bare", action="store_true",
@@ -157,6 +158,9 @@ def main():
     attributes = f' data-head="{cx:.0f} {cy:.0f} {r:.0f}' + (f' {tilt:g}' if tilt else '') + '"'
     if args.own_helmet:
         attributes += ' data-own-helmet="true"'
+    if args.body:
+        body_left, body_right = numbers(args.body, 2, "body")
+        attributes += f' data-body="{body_left:.0f} {body_right:.0f}"'
     if args.grip:
         if not args.weapon:
             raise SystemExit("--grip needs --weapon")

@@ -9,6 +9,10 @@
         "y": 110.0,
         "radius": 60.0
       },
+      "body": {
+        "left": 480.0,
+        "right": 1268.0
+      },
       "ownHelmet": true,
       "accepted": false,
       "source": "Traced from the user's pick, 2026-10-18 (ChatGPT image from the broken prompt: cowering, arm over the helmet, rifle trailing); it keeps its own helmet, which the arm lies over."

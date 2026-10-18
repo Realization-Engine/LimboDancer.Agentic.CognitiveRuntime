@@ -70,12 +70,13 @@ asl|crew {
                  "fp    d1    range d2    morale .";
 }
 
-/* Personnel, broken face: prone figures, the Basic Point Value upper left, the Broken Morale Level large lower right. */
+/* Personnel, broken face: the broken figures, the Basic Point Value upper left, the Broken Morale Level large lower right. The figures
+   take the same four columns of six as on the front face (the user, 2026-10-18: they were half the width, out of step with the others). */
 asl|personnel:face(broken) {
   fill: side(fill-muted);
-  face-template: "bpv bpv .       ."
-                 "fig fig bmorale bmorale"
-                 "fig fig bmorale bmorale";
+  face-template: "bpv bpv bpv bpv .       ."
+                 "fig fig fig fig bmorale bmorale"
+                 "fig fig fig fig bmorale bmorale";
 }
 asl|personnel:face(broken)::slot(fig)     { content: glyph(size-figures, broken); }
 asl|personnel:face(broken)::slot(bpv)     { content: attr(bpv); font-size: 0.18; align: start; }

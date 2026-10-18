@@ -54,6 +54,9 @@ def pose(path):
     entry = {"path": d, "width": box[2], "height": box[3], "head": {"x": head[0], "y": head[1], "radius": head[2]}}
     if len(head) == 4 and head[3]:
         entry["head"]["tilt"] = head[3]
+    if root.get("data-body"):
+        body_left, body_right = numbers(root.get("data-body"), 2, f"{path} data-body")
+        entry["body"] = {"left": body_left, "right": body_right}
     if root.get("data-own-helmet") == "true":
         entry["ownHelmet"] = True
     if root.get("data-grip"):

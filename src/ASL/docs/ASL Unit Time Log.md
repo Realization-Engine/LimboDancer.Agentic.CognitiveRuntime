@@ -1523,3 +1523,18 @@ Each end is the stage's commit time (`git log`); the plan's start was read from 
 | Stages 4 and 6: the pose tracer; every side's kit | 21:09 | 21:17 | 0:08 | Two helmets redrawn after the preview |
 | Stage 7: a prisoner's pose (asl@1.17.0) | 21:17 | 21:24 | 0:07 | Two golden SVGs added for the new state |
 | Stage 8: the strict build and the whole suite, two Units tests updated for asl@1.17.0 | 21:24 | 21:58 | 0:34 | The suite itself ran 28 minutes |
+
+## The figure art plan, the infantry poses, 2026-10-17 and 18
+
+Each end is the commit time (`git log`).
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| The rifleman traced; its helmet removed | 21:58 | 22:16 | 0:18 | Midjourney's first run was civilians; the pick came from ChatGPT |
+| The staggered file and the helmet rings (F10) | 22:16 | 22:45 | 0:29 | A comparison of three layouts first; a CI failure of the trace commit fixed with it |
+| Piping and the far numbers (F12, F13); the briefs rewritten | 22:45 | 23:14 | 0:29 | 52 golden SVGs, far tier only |
+| The crew traced | 23:14 | 23:38 | 0:24 | |
+| The leader traced; a leader's figure at mid (F14) | 23:38 | 00:05 | 0:27 | Two leader goldens, mid tier only |
+| The hero traced, one version per side | 00:05 | 00:31 | 0:26 | |
+| The wounded and broken traced; tilt and own helmet | 00:31 | 00:49 | 0:18 | |
+| The broken counter in step (F15); the body extent | 00:49 | 01:05 | 0:16 | One golden, near tier only |

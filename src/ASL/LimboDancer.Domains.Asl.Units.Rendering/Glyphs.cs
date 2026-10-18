@@ -107,7 +107,9 @@ internal static class Glyphs
         var width = pose.Width / 1000;
         var height = pose.Height / 1000;
         var lying = width > 1.5 * height;
-        var across = lying ? width : width + (width * Step * (count - 1));
+        // The men are spaced by the body's width, or the pose's when it names no body.
+        var body = pose.Body is { } extent ? (extent.Right - extent.Left) / 1000 : width;
+        var across = lying ? width : width + (body * Step * (count - 1));
         var down = lying ? height + (height * LyingStep * (count - 1)) : height + (height * Rise * (count - 1));
         var scale = Math.Min(box.Width * 0.92 / across, box.Height * 0.92 / down);
         var left = box.CenterX - (across * scale / 2);
@@ -123,7 +125,7 @@ internal static class Glyphs
             : null;
         for (var index = 0; index < count; index++)
         {
-            var x = lying ? left : left + (index * width * Step * scale);
+            var x = lying ? left : left + (index * body * Step * scale);
             var y = lying ? top + (index * height * LyingStep * scale) : top + (index * height * Rise * scale);
             svg.Start("g", ("transform", $"translate({N(x)} {N(y)}) scale({FigureArt.Number(scale / 1000)})"), ("fill", color));
             var ring = piping ?? ground;

@@ -151,3 +151,28 @@ Durations go in `src/ASL/docs/ASL Unit Time Log.md`. Out-of-scope items go in `s
 3. The go or no-go of stage 4 on the German and Russian squads at the far level.
 4. Accepting a pose or a kit part (`data-accepted="true"`), which changes the counters in play and regenerates the golden SVGs (stage 8).
 5. The provisional decisions F3 to F6.
+
+## 9. Status, 2026-10-18: the infantry poses
+
+The poses came from ChatGPT, not Midjourney: Midjourney refused the military prompts (F11). The user picked each image; Claude traced it.
+
+| Pose | State | How it was traced |
+|---|---|---|
+| standing | Traced, a stand-in until accepted | Its helmet removed (`--bare`); the rifle part of the body |
+| crew | Traced | A kneeling loader with a shell, rifle slung; a narrower cut spares the slung rifle (`--bare-width`) |
+| leader | Traced | Pointing, SMG at the hip, binoculars; a deeper cut behind the head (`--bare-back`) |
+| hero | Traced, one version per side | German with the stick grenade, Russian with its own, the general pose with an egg grenade for the rest (`hero.<side>.svg`); scaled from one frame (`--frame`) |
+| wounded | Traced | The head bowed, so the head anchor carries a tilt and the side's helmet turns with it |
+| broken | Traced | The arm lies over the helmet, so the pose keeps its own helmet (`ownHelmet`); the file of men is spaced by the body, not the trailed rifle (`body`) |
+| pinned, berserk, prisoner | Waiting | The user's pinned and berserk pictures arrived inside a working turn and were not saved where Claude could open them; the prisoner's was not received. To be sent again. |
+
+**What else changed at the user's word (2026-10-17 and 18).**
+
+- F10: a squad stands in a staggered file, each man ringed apart, each helmet ringed, the skull drawn again inside the ring.
+- F12: the classic sheet pipes every figure and helmet in a thin light line (`figure-piping: #ece6d6`), for its darker faces.
+- F13: the far level keeps the major numbers: Firepower, range, and Morale; Broken Morale; a leader's modifier and Morale.
+- F14: a leader shows its figure at mid, as at far and near.
+- F15: on the classic sheet, the broken face's figures take four columns of six, as on the front face.
+- The pose format gained, as the picks needed them: a version per side, a head tilt, an own helmet, and a body extent.
+
+Nothing is accepted yet: the counters in play draw the old figures until the user accepts a pose (`data-accepted="true"`).
