@@ -11,6 +11,7 @@ public sealed class FigureArtTests
           "poses": {
             "standing": { "path": "M0 0L100 0L100 1000Z", "width": 400, "head": { "x": 200, "y": 100, "radius": 80 },
                           "grip": { "x1": 150, "y1": 450, "x2": 300, "y2": 450 }, "weapon": "rifle", "accepted": true, "source": "test" },
+            "prisoner": { "path": "M7 7L300 7L300 1000Z", "width": 300, "head": { "x": 150, "y": 100, "radius": 80 }, "accepted": true, "source": "test" },
             "broken": { "path": "M0 0L1500 0L1500 300Z", "width": 1500, "height": 300, "head": { "x": 1400, "y": 800, "radius": 80 },
                         "accepted": false, "source": "test" }
           },
@@ -52,6 +53,26 @@ public sealed class FigureArtTests
         Assert.NotNull(art.WithStandIns().Pose("broken"));
         Assert.Empty(Figures(art, "example-squad", face: "broken"));
         Assert.NotEmpty(Figures(art.WithStandIns(), "example-squad", face: "broken"));
+    }
+
+    [Fact]
+    public void AnUnarmedPrisonerRaisesItsHandsAndHoldsNoWeapon()
+    {
+        var art = FigureArt.Read(Fixture);
+        var squad = RenderingTestData.Catalog.Value["example-squad"];
+        var captured = squad with
+        {
+            States = [.. squad.States, "asl:captured"]
+        };
+        var renderer = new UnitRenderer(RenderingTestData.Vocabulary.Value, RenderingTestData.Renderer(UnitStyles.Digital).Sheet,
+            RenderingTestData.Renderer(UnitStyles.Digital).Palette)
+        {
+            Figures = art
+        };
+        var svg = RenderingTestData.Render(renderer, captured, DetailTier.Far);
+        var paths = svg.Descendants().Where(element => element.Name.LocalName == "path").Select(element => element.Attribute("d")!.Value).ToList();
+        Assert.Contains("M7 7L300 7L300 1000Z", paths);
+        Assert.DoesNotContain("M-200 -10L400 -10L400 10L-200 10Z", paths);
     }
 
     [Fact]

@@ -60,7 +60,7 @@ public sealed class FigureArtLab(string folder) : IArtShelf
 
     /// <summary>
     /// The counter a side's figure is judged on in a pose: the Studio's synthetic example of the kind that takes the pose, given the side,
-    /// with nothing attached, and the face or state that chooses the pose; null for a pose no counter can show yet (the prisoner, stage 7).
+    /// with nothing attached, and the face or state that chooses the pose; null for a pose no counter takes.
     /// </summary>
     public static (UnitDocument Document, string? Face)? Sample(IReadOnlyList<UnitDocument> examples, string pose, string side)
     {
@@ -74,6 +74,7 @@ public sealed class FigureArtLab(string folder) : IArtShelf
             "broken" => ("example-squad", "broken", null),
             "pinned" => ("example-squad", null, "asl:pinned"),
             "berserk" => ("example-squad", null, "asl:berserk"),
+            "prisoner" => ("example-squad", null, "asl:captured"),
             _ => null,
         };
         if (choice is not { } chosen || examples.FirstOrDefault(example => example.Id == chosen.Id) is not { } document)

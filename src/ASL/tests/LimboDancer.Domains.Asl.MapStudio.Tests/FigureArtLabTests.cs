@@ -42,6 +42,7 @@ public sealed class FigureArtLabTests : IDisposable
     [InlineData("broken", "asl:squad", "broken", null)]
     [InlineData("pinned", "asl:squad", null, "asl:pinned")]
     [InlineData("berserk", "asl:squad", null, "asl:berserk")]
+    [InlineData("prisoner", "asl:squad", null, "asl:captured")]
     public void EachPoseIsJudgedOnTheCounterThatTakesIt(string pose, string kind, string? face, string? state)
     {
         var sample = FigureArtLab.Sample(library.Examples, pose, "russian");
@@ -56,9 +57,6 @@ public sealed class FigureArtLabTests : IDisposable
             Assert.Contains(state, document.States);
         }
     }
-
-    [Fact]
-    public void ThePrisonerWaitsForStageSeven() => Assert.Null(FigureArtLab.Sample(library.Examples, "prisoner", "german"));
 
     [Fact]
     public void ASideWithoutKitLacksItsHelmetAndWeapon()
@@ -89,7 +87,7 @@ public sealed class FigureArtLabTests : IDisposable
         var view = context.Render<FigureArtBench>();
         Assert.Equal(FigureArtLab.Sides.Count, view.FindAll(".figure-art-row[data-side]").Count);
         Assert.Equal(FigureArtLab.Sides.Count * FigureArt.PoseNames.Count, view.FindAll(".figure-art-cell").Count);
-        Assert.Equal(FigureArtLab.Sides.Count * (FigureArt.PoseNames.Count - 1), view.FindAll(".figure-art-cell svg").Count);
+        Assert.Equal(FigureArtLab.Sides.Count * FigureArt.PoseNames.Count, view.FindAll(".figure-art-cell svg").Count);
         Assert.Contains("needs", view.Find(".figure-art-cell[data-side='british'][data-pose='standing']").TextContent, StringComparison.Ordinal);
     }
 

@@ -46,6 +46,7 @@ asl|hero::slot(fig)   { content: glyph(size-figures, hero); }
 asl|smc:face(wounded)::slot(fig) { content: glyph(size-figures, wounded); }
 asl|personnel:asl\:pinned::slot(fig)  { content: glyph(size-figures, pinned); }
 asl|personnel:asl\:berserk::slot(fig) { content: glyph(size-figures, berserk); }
+asl|personnel:asl\:captured::slot(fig) { content: glyph(size-figures, prisoner); }
 asl|personnel::slot(class)  { content: attr(class); font-size: 0.24; font-weight: bold; }
 asl|personnel::slot(fp)     { content: attr(firepower); font-size: 0.28; font-weight: bold; }
 asl|personnel::slot(d1)     { content: "-"; font-size: 0.24; }
@@ -409,6 +410,7 @@ asl|dummy::slot(label) { content: "Dummy"; font-weight: bold; font-size: 0.24; }
   asl|smc:face(wounded)::slot(fig) { content: glyph(size-figures, wounded); }
   asl|personnel:asl\:pinned::slot(fig)  { content: glyph(size-figures, pinned); }
   asl|personnel:asl\:berserk::slot(fig) { content: glyph(size-figures, berserk); }
+  asl|personnel:asl\:captured::slot(fig) { content: glyph(size-figures, prisoner); }
   asl|mg::slot(fig) { content: glyph(mg); }
   asl|ft::slot(fig) { content: glyph(ft); }
   asl|dc::slot(fig) { content: glyph(dc); }
