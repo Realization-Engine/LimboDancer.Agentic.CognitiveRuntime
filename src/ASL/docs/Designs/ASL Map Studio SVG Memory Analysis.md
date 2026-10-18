@@ -623,3 +623,90 @@ And beyond allocation: the render cache keeps one version of a board, as bytes; 
 ### Note on task 3
 
 A fresh Studio starts at about 80 to 185 MB of private memory, depending on when the sampler first reads it, against the 306 MB of the long-running Studio in section 2.2: much of that morning figure was the age of the process, not the replay.
+
+## 11. Why committed memory rose after the plan
+
+Task 11 found the collector's committed memory and the process's private memory higher after the plan in all three pairs, with the live heap unchanged. This section tests why (2026-10-18, after task 11), with task 11's method: a fresh Studio per run, the Replay page's server-paced run forward at one step a second on cd-guards-5, `dotnet-counters` every second, a heap dump after. Both builds ran from copies outside my Studio's build output: the after build (`e7af7274`, the plan's code) on port 6672 and the before build (`c3033048`, from a temporary worktree) on port 6671. No product code or setting was changed.
+
+### The tool: a startup hook
+
+Task 11's counters give heap sizes by generation but not what is allocated where, nor why a collection ran. A small diagnostic startup hook, built in my scratchpad and loaded through `STARTUP_HOOKS` in the copied build's `runtimeconfig.json`, listens in process to the runtime's GC events and writes:
+
+- every collection, with its generation, reason, kind (blocking or background), and the heap count DATAS chose;
+- at verbose level only, the allocation ticks: bytes allocated on the small object heap and on the large object heap (LOH, objects of 85,000 bytes and more), and by type.
+
+The verbose level inflates allocation in the before build (31.5 MB a step by the counter against 20 to 22 in task 11; the cause is not known), so its runs are used only for the split between the heaps and for the types, never for totals. The informational level (collections and heap counts only) leaves allocation as task 11 measured it (20.05 MB a step in IB1).
+
+Three runs: HA1 (after, verbose), HB1 (before, verbose), IB1 (before, informational). All three covered all 258 steps; the page was hidden for parts of each, which the server-paced run does not feel.
+
+### Where the extra memory is
+
+Task 11's counters, split by generation (the GC's heap sizes after its last collection, in MB):
+
+| Run | Committed, peak | LOH at that peak | Gen 2 at that peak | LOH free space, most |
+|---|---|---|---|---|
+| B1 | 274 | 134 | 29 | 48 |
+| B2 | 257 | 127 | 28 | 67 |
+| B3 | 256 | 122 | 27 | 64 |
+| HB1 | 244 | 125 | 27 | 56 |
+| IB1 | 252 | 120 | 27 | 64 |
+| A1 | 309 | 174 | 26 | 86 |
+| A2 | 365 | 236 | 27 | 118 |
+| A3 | 316 | 178 | 27 | 80 |
+| HA1 | 287 | 153 | 27 | 56 |
+
+The small object heap is the same in both builds (gen 2 about 27 MB, gen 0 and gen 1 a few MB after a collection). **The extra committed memory is all in the large object heap:** 120 to 134 MB before, 153 to 236 MB after, with more free space inside it (the LOH is swept, not compacted, so its free space stays committed).
+
+### What is allocated on the LOH
+
+The allocation ticks of HA1 and HB1, between the first step and the last:
+
+| | Before (HB1) | After (HA1) |
+|---|---|---|
+| LOH, a step | 4.40 MB | 4.48 MB |
+| LOH over the process: strings | 999.5 MB | 999.9 MB |
+| LOH over the process: `byte[]` | 376.3 MB | 250.6 MB |
+| LOH over the process: `char[]` | 92.0 MB | 119.1 MB |
+
+**The plan did not change what goes on the LOH.** The large strings (the counter layer's document, about 3.9 MB of them a step) are the same to the megabyte. The pooled writer's `char[]` buffers add 27 MB over the whole process, about 0.1 MB a step: the pool mostly reuses them. The dumps after the runs hold 2 to 10 MB of `char[]`.
+
+### What differs: the heap count
+
+The .NET 10 Server GC adapts its number of heaps to the load (DATAS), and it can only revise that number at a collection. The heap count at each tenth of the replay:
+
+| Run | At start-up, most | During the replay, at each tenth |
+|---|---|---|
+| HB1 (before) | 5 | 5, 5, 3, 2, 1, 1, 1, 1, 1, 1, 2 |
+| IB1 (before) | 8 | 8, 5, 5, 3, 3, 2, 1, 1, 1, 1, 1 |
+| HA1 (after) | 12 | 12, 12, 12, 12, 8, 8, 8, 8, 5, 5, 4 |
+
+Before the plan, a step's 20 MB of allocation set off about one collection a second (274 to 313 in a run of 285 s); DATAS revised the heap count often and brought it to one heap by the middle of the replay. After the plan, a step's 9 MB set off 90 to 121 collections in a run (gen 1 almost none); DATAS revised the count less often and held eight to twelve heaps for most of the replay, four at its end. Each heap keeps its own allocation budgets and its own LOH regions, so more heaps let the LOH grow further before a gen 2 collection sweeps it. The heap count at start-up differs between runs (5, 8, 12), so one run of each build shows the direction, not its size.
+
+### Is the rise real?
+
+With the three new runs added to task 11's six:
+
+| Measure | Before (5 runs) | After (4 runs) | Ranges overlap? |
+|---|---|---|---|
+| Committed, peak | 244 to 274 MB, mean 257 | 287 to 365 MB, mean 319 | No: the nearest pair is 13 MB apart |
+| Private, peak | 295 to 329 MB, mean 315 | 358 to 432 MB, mean 391 | No |
+| Private, end | 189 to 245 MB, mean 211 | 213 to 333 MB, mean 290 | Yes: HA1 ended at 213 MB |
+| Live heap after | 58.7 to 71.6 MB | 58.4 to 75.8 MB | Yes: the same |
+
+The rise at the peak is real, about 60 MB of committed memory, larger than the spread between runs. It is the collector's sizing, not data: the live heap is the same, and the extra memory is free LOH space and budget on extra heaps. At the end of a run it is within the spread for one of the four runs, because DATAS keeps lowering the heap count as the replay goes on.
+
+### The hypotheses
+
+| Hypothesis | Verdict | Evidence |
+|---|---|---|
+| With gen 1 collections gone, the collector compacts rarely and keeps what it grew into | Rejected as stated; a related cause found | The small object heap, which gen 1 collections compact, is the same size in both builds. The extra memory is in the LOH, which gen 1 collections never touch. The fewer collections matter through DATAS, which revises the heap count only at a collection, so it stays high for longer |
+| The pooled `SvgWriter` buffer (`ArrayPool<char>.Shared`) is retained | Rejected | LOH `char[]` allocation rose by 27 MB over a whole run (0.1 MB a step); the dumps hold 2 to 10 MB of `char[]` |
+| The 1.4 MB counter-layer strings behave differently on the LOH | Rejected as a change | LOH strings are 999.5 MB before and 999.9 MB after; LOH allocation per step is 4.40 and 4.48 MB. They are the LOH's main traffic in both builds, and with more heaps the same traffic leaves more behind |
+| Collector settings: `GCConserveMemory`, `GCgen0size`, Workstation GC on the after build | Not run | The user's ruling (2026-10-18): "Yes, skip the three collector-setting experiments", after HA1 landed near the before runs and the user judged the committed memory "may be unimportant" |
+
+### Recommendation
+
+Leave it. The rise is the collector's choice of heap count, a peak of about 60 MB on a single-user desktop tool, with nothing more held. The plan's allocation saving (55% a step) and its fewer collections stand. If committed memory matters later, two routes, neither a code fix for this rise:
+
+- **A collector setting.** Workstation GC, or Server GC with a capped heap count (`System.GC.HeapCount`) or `System.GC.ConserveMemory` (which also compacts the LOH when its free space is large). Each is one line in the Studio's project file and needs the same three-runs-a-setting measurement. Ruling 1's revision (section 8) left the defaults; this evidence does not reopen it on its own.
+- **Less LOH traffic.** The counter layer's strings, about 3.9 MB a step, are almost all of what goes on the LOH. Options C, D, E and Q (the next group) shrink or stop resending that document, which lowers what the LOH grows from under any heap count.

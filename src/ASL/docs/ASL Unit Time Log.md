@@ -1566,3 +1566,4 @@ The ASL Map Studio SVG Memory Plan (`src/ASL/docs/Plans`), approved by the user 
 | 10. Studio checks, strict build, the four test projects in full | 15:10 | 16:16 | 1:06 | Two strict builds of 14 min; a test's formatting fixed; the Bash guard refuses the emptying one-liner; the after-replay not comparable (hidden page) |
 | The replay again, visible; a heap dump; task 11 planned | 16:16 | 16:43 | 0:27 | Not definitive: private memory no lower, live heap 70 MB of 318 MB private |
 | 11. Six replays, before and after, by the runtime's counters | 16:44 | 17:46 | 1:02 | Allocation per step -55%; a click stopped the first A1 (discarded); the worktree removed |
+| Why committed memory rose (analysis section 11): a GC startup hook, three replays | 18:04 | 18:35 | 0:31 | The extra is LOH space under a higher DATAS heap count; LOH allocation unchanged; collector-setting runs skipped at the user's word; the first HA1 start discarded (no boards root) |
