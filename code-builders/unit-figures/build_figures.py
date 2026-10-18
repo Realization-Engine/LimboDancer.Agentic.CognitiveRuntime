@@ -1,7 +1,8 @@
 """Builds src/ASL/units/figures/figures.json from the figure parts' SVG sources (ASL Unit Figure Art Plan, section 3).
 
 Sources, under src/ASL/units/figures:
-  poses/<pose>.svg           a body pose in body units (a man standing is 1000 high): viewBox "0 0 <width> <height>", 1000 high when
+  poses/<pose>.svg           a body pose in body units (poses/<pose>.<side>.svg: that side's version, such as a hero with its
+                             side's grenade; a side without one gets the general pose) (a man standing is 1000 high): viewBox "0 0 <width> <height>", 1000 high when
                              upright and cropped to the body when lying; data-head="cx cy r"; data-grip="x1 y1 x2 y2" and
                              data-weapon="rifle|smg" when it holds a weapon
   kit/<side>-helmet.svg      a helmet about a head of radius 100 at the origin
@@ -69,8 +70,8 @@ def kit(path):
 def build():
     poses, helmets, weapons = {}, {}, {}
     for path in sorted((FIGURES / "poses").glob("*.svg")):
-        if path.stem not in POSES:
-            raise SystemExit(f"{path}: not a pose ({', '.join(POSES)})")
+        if path.stem.split(".")[0] not in POSES:
+            raise SystemExit(f"{path}: not a pose ({', '.join(POSES)}), or a pose and a side")
         poses[path.stem] = pose(path)
     for path in sorted((FIGURES / "kit").glob("*.svg")):
         side, _, part = path.stem.rpartition("-")

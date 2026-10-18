@@ -9,7 +9,7 @@ by hand after looking at the traced figure (--head, --grip). The pose is a stand
 
     python code-builders/unit-figures/trace_pose.py <image> <pose> [--cell 1-4] [--crop x,y,w,h] [--mirror] [--lying]
         [--head cx,cy,r] [--grip x1,y1,x2,y2] [--weapon rifle|smg] [--source "batch 2026-10-18-1, top right"] [--accept]
-        [--tolerance 2.0] [--close pixels] [--bare] [--bare-width radii] [--bare-back radii] [--out file]
+        [--tolerance 2.0] [--close pixels] [--bare] [--bare-width radii] [--bare-back radii] [--frame x0,y0,x1,y1] [--out file]
 Then:  python code-builders/unit-figures/build_figures.py
 """
 import argparse
@@ -78,6 +78,7 @@ def main():
                         help="how many head radii to each side of the head --bare clears; less when a slung weapon rises close behind the head")
     parser.add_argument("--bare-back", type=float, default=0.3,
                         help="how many head radii below the head anchor --bare clears behind the head, where a helmet's rim hangs lower")
+    parser.add_argument("--frame", help="x0,y0,x1,y1 in source pixels: scale from this box, not the figure's own, so variants of one pose (the same body with a side's grenade) come out alike")
     parser.add_argument("--close", type=int, default=0,
                         help="fill light gaps up to twice this many source pixels wide (the thin lines between an arm and the body)")
     parser.add_argument("--out", help="write here instead of the pose source, to try a trace")
@@ -105,6 +106,8 @@ def main():
     xs = [x for turn, points in kept if turn > 0 for x, _ in points]
     ys = [y for turn, points in kept if turn > 0 for _, y in points]
     left, top, right, bottom = min(xs), min(ys), max(xs), max(ys)
+    if args.frame:
+        left, top, right, bottom = (value * ENLARGE for value in numbers(args.frame, 4, "frame"))
     scale = LYING_LENGTH / (right - left) if args.lying else 1000 / (bottom - top)
     width, height = (right - left) * scale, (bottom - top) * scale
 

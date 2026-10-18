@@ -74,6 +74,18 @@ public sealed class FigureArtTests
     }
 
     [Fact]
+    public void ASidesOwnVersionOfAPoseWinsAndOtherSidesGetTheGeneralOne()
+    {
+        var art = FigureArt.Read(Fixture.Replace("\"poses\": {", """
+            "poses": {
+            "standing.russian": { "path": "M5 5L95 5L95 995Z", "width": 400, "head": { "x": 200, "y": 100, "radius": 80 }, "accepted": true, "source": "test" },
+            """, StringComparison.Ordinal));
+        Assert.Equal("M5 5L95 5L95 995Z", art.Pose("standing", "russian")!.Path);
+        Assert.Equal("M0 0L100 0L100 1000Z", art.Pose("standing", "german")!.Path);
+        Assert.Equal("M0 0L100 0L100 1000Z", art.Pose("standing")!.Path);
+    }
+
+    [Fact]
     public void AStandInIsDrawnOnlyWhenAskedFor()
     {
         var art = FigureArt.Read(Fixture);
@@ -129,7 +141,8 @@ public sealed class FigureArtTests
     public void TheEmbeddedPartsGoByKnownNames()
     {
         var art = FigureArt.BuiltIn.WithStandIns();
-        Assert.All(art.PoseKeys, pose => Assert.Contains(pose, FigureArt.PoseNames));
+        Assert.All(art.PoseKeys, pose => Assert.Contains(pose.Split('.')[0], FigureArt.PoseNames));
+        Assert.All(art.PoseKeys.Where(pose => pose.Contains('.', StringComparison.Ordinal)), pose => Assert.Contains(pose.Split('.')[1], art.HelmetSides));
         Assert.All(art.WeaponKeys, key => Assert.Contains(key.Weapon, FigureArt.WeaponNames));
     }
 

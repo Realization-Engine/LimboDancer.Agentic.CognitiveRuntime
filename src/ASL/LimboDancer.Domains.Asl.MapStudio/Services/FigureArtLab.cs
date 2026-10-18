@@ -39,8 +39,8 @@ public sealed class FigureArtLab(string folder) : IArtShelf
     public IReadOnlyList<string> Missing(string pose, string side)
     {
         var missing = new List<string>();
-        var drawn = Art.Pose(pose);
-        if (FigureArt.BuiltIn.Pose(pose) is null)
+        var drawn = Art.Pose(pose, side);
+        if (FigureArt.BuiltIn.Pose(pose, side) is null)
         {
             missing.Add(drawn is null ? "pose" : "pose (stand-in)");
         }

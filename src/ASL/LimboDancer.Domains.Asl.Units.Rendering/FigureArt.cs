@@ -81,8 +81,17 @@ public sealed partial class FigureArt
 
     public IEnumerable<(string Side, string Weapon)> WeaponKeys => weapons.SelectMany(side => side.Value.Keys.Select(weapon => (side.Key, weapon)));
 
-    /// <summary>A pose by its name or its older name, when it is drawn under this setting.</summary>
-    public FigurePose? Pose(string? name) => poses.GetValueOrDefault(PoseName(name)) is { } pose && (pose.Accepted || StandIns) ? pose : null;
+    /// <summary>
+    /// A pose by its name or its older name, when it is drawn under this setting: the side's own version (<c>hero.german</c>, the hero
+    /// with the side's grenade) when there is one, otherwise the general pose.
+    /// </summary>
+    public FigurePose? Pose(string? name, string? side = null)
+    {
+        var general = PoseName(name);
+        return Drawn(side is null ? null : poses.GetValueOrDefault($"{general}.{side}")) ?? Drawn(poses.GetValueOrDefault(general));
+    }
+
+    private FigurePose? Drawn(FigurePose? pose) => pose is not null && (pose.Accepted || StandIns) ? pose : null;
 
     public FigureKit? Helmet(string? side) => side is not null && helmets.GetValueOrDefault(side) is { } helmet && (helmet.Accepted || StandIns) ? helmet : null;
 

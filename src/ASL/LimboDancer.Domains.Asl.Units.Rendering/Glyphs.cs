@@ -28,7 +28,7 @@ internal static class Glyphs
         switch (name)
         {
             case "size-figures":
-                if (art?.Pose(argument) is { } pose)
+                if (art?.Pose(argument, side) is { } pose)
                 {
                     ArtFigures(svg, art, pose, side, box, color, ground, piping, figures);
                 }
