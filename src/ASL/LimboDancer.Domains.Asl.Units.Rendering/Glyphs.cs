@@ -15,13 +15,21 @@ internal static class Glyphs
         "crosshair", "foxhole", "trench", "wire", "mines", "roadblock", "pillbox", "fortified", "fire", "rubble", "residual",
     };
 
-    /// <summary>Draws a glyph in a box; returns false for an unknown name.</summary>
-    public static bool Draw(SvgWriter svg, string name, string? argument, Box box, string color, int figures)
+    /// <summary>
+    /// Draws a glyph in a box; returns false for an unknown name. <c>size-figures</c> takes a pose as its argument and is drawn from the
+    /// figure parts when the pose has art (the ASL Unit Figure Art Plan), with the side's helmet and weapon; otherwise as before, prone for
+    /// the pinned and the broken poses and standing for the rest.
+    /// </summary>
+    public static bool Draw(SvgWriter svg, string name, string? argument, Box box, string color, int figures, FigureArt? art = null, string? side = null)
     {
         switch (name)
         {
             case "size-figures":
-                if (argument == "prone")
+                if (art?.Pose(argument) is { } pose)
+                {
+                    ArtFigures(svg, art, pose, side, box, color, figures);
+                }
+                else if (FigureArt.FallsBackProne(argument))
                 {
                     ProneFigures(svg, box, color, figures);
                 }
@@ -59,6 +67,53 @@ internal static class Glyphs
                 .LineTo(N(x + (width * 0.46)), N(bottom))
                 .Close();
             svg.Empty("path", ("d", path.ToString()), ("fill", color));
+        }
+    }
+
+    /// <summary>The share of a standing pose's width between one figure and the next, so two or three overlap a little.</summary>
+    private const double Step = 0.78;
+
+    /// <summary>The share of a lying pose's height between one figure and the next.</summary>
+    private const double LyingStep = 0.62;
+
+    /// <summary>
+    /// One to three figures composed from a pose, the side's helmet on the head, and the side's weapon along the grip; each in one group
+    /// filled with the slot's color. A standing pose repeats to the right; a lying one (wider than one and a half heights) repeats downward.
+    /// </summary>
+    private static void ArtFigures(SvgWriter svg, FigureArt art, FigurePose pose, string? side, Box box, string color, int count)
+    {
+        count = Math.Clamp(count, 1, 3);
+        var width = pose.Width / 1000;
+        var lying = width > 1.5;
+        var across = lying ? width : width + (width * Step * (count - 1));
+        var down = lying ? 1 + (LyingStep * (count - 1)) : 1;
+        var scale = Math.Min(box.Width * 0.92 / across, box.Height * 0.92 / down);
+        var left = box.CenterX - (across * scale / 2);
+        var top = box.CenterY - (down * scale / 2);
+        var helmet = art.Helmet(side);
+        var weapon = pose.Grip is null ? null : art.WeaponOf(side, pose.Weapon);
+        for (var index = 0; index < count; index++)
+        {
+            var x = lying ? left : left + (index * width * Step * scale);
+            var y = lying ? top + (index * LyingStep * scale) : top;
+            svg.Start("g", ("transform", $"translate({N(x)} {N(y)}) scale({FigureArt.Number(scale / 1000)})"), ("fill", color));
+            svg.Empty("path", ("d", pose.Path));
+            if (helmet is not null)
+            {
+                var head = pose.Head;
+                svg.Empty("path", ("d", helmet.Path),
+                    ("transform", $"translate({FigureArt.Number(head.X)} {FigureArt.Number(head.Y)}) scale({FigureArt.Number(head.Radius / 100)})"));
+            }
+
+            if (weapon is not null && pose.Grip is { } grip)
+            {
+                // The weapon keeps its length in body units whatever the pose; the grip only places and turns it.
+                var angle = Math.Atan2(grip.Y2 - grip.Y1, grip.X2 - grip.X1) * 180 / Math.PI;
+                svg.Empty("path", ("d", weapon.Path),
+                    ("transform", $"translate({FigureArt.Number(grip.X1)} {FigureArt.Number(grip.Y1)}) rotate({FigureArt.Number(angle)})"));
+            }
+
+            svg.End();
         }
     }
 

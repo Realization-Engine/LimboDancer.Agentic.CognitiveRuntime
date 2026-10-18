@@ -39,6 +39,15 @@ public sealed class UnitRenderer
         get;
     }
 
+    /// <summary>
+    /// The figure parts personnel are drawn from (the ASL Unit Figure Art Plan): the embedded ones, accepted parts only, unless a caller
+    /// such as the Unit Lab's Art tab asks for the stand-ins too.
+    /// </summary>
+    public FigureArt Figures
+    {
+        get; init;
+    } = FigureArt.BuiltIn;
+
     public StyleSheet Sheet
     {
         get;
@@ -204,7 +213,7 @@ public sealed class UnitRenderer
         if (style["glyph"] is { } watermark && evaluator.Glyph(watermark) is { } mark)
         {
             svg.Start("g", ("opacity", "0.25"));
-            Glyphs.Draw(svg, mark.Name, mark.Argument, inner, textColor, document.Figures(Vocabulary) ?? 1);
+            Glyphs.Draw(svg, mark.Name, mark.Argument, inner, textColor, document.Figures(Vocabulary) ?? 1, Figures, document.Side);
             svg.End();
         }
 
@@ -397,7 +406,7 @@ public sealed class UnitRenderer
 
             if (evaluator.Glyph(content) is { } glyph)
             {
-                if (!Glyphs.Draw(svg, glyph.Name, glyph.Argument, box, color, subject.Document.Figures(Vocabulary) ?? 1))
+                if (!Glyphs.Draw(svg, glyph.Name, glyph.Argument, box, color, subject.Document.Figures(Vocabulary) ?? 1, Figures, subject.Document.Side))
                 {
                     warnings.Add(new(subject.Document.Id, $"Slot '{region.Name}': '{glyph.Name}' is not a glyph."));
                 }

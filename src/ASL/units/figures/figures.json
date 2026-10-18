@@ -1,0 +1,96 @@
+{
+  "poses": {
+    "leader": {
+      "path": "M300 104L297.8 123.1L291.5 141.3L281.2 157.6L267.6 171.2L251.3 181.5L233.1 187.8L214 190L194.9 187.8L176.7 181.5L160.4 171.2L146.8 157.6L136.5 141.3L130.2 123.1L128 104L130.2 84.9L136.5 66.7L146.8 50.4L160.4 36.8L176.7 26.5L194.9 20.2L214 18L233.1 20.2L251.3 26.5L267.6 36.8L281.2 50.4L291.5 66.7L297.8 84.9Z M178 170L252 170L282 210L292 340L272 528L156 528L146 340L154 210Z M160 500L232 512L204 760L190 1000L116 1000L130 760Z M204 512L272 500L286 760L310 1000L236 1000L220 770Z M236 206L282 214L470 214L470 254L276 268Z M160 214L214 214L230 380L184 396Z",
+      "width": 520.0,
+      "head": {
+        "x": 214.0,
+        "y": 104.0,
+        "radius": 86.0
+      },
+      "grip": {
+        "x1": 160.0,
+        "y1": 420.0,
+        "x2": 300.0,
+        "y2": 360.0
+      },
+      "weapon": "smg",
+      "accepted": false,
+      "source": "Stand-in: a geometric body holding the anchors until the user's Midjourney pick is traced."
+    },
+    "pinned": {
+      "path": "M1106 840L1103.8 859.1L1097.5 877.3L1087.2 893.6L1073.6 907.2L1057.3 917.5L1039.1 923.8L1020 926L1000.9 923.8L982.7 917.5L966.4 907.2L952.8 893.6L942.5 877.3L936.2 859.1L934 840L936.2 820.9L942.5 802.7L952.8 786.4L966.4 772.8L982.7 762.5L1000.9 756.2L1020 754L1039.1 756.2L1057.3 762.5L1073.6 772.8L1087.2 786.4L1097.5 802.7L1103.8 820.9Z M420 860L950 790L970 900L420 960Z M80 910L430 862L430 958L80 990Z M900 870L990 860L1060 970L980 995Z",
+      "width": 1500.0,
+      "head": {
+        "x": 1020.0,
+        "y": 840.0,
+        "radius": 86.0
+      },
+      "grip": {
+        "x1": 960.0,
+        "y1": 930.0,
+        "x2": 1200.0,
+        "y2": 940.0
+      },
+      "weapon": "rifle",
+      "accepted": false,
+      "source": "Stand-in: a geometric body holding the anchors until the user's Midjourney pick is traced."
+    },
+    "standing": {
+      "path": "M300 104L297.8 123.1L291.5 141.3L281.2 157.6L267.6 171.2L251.3 181.5L233.1 187.8L214 190L194.9 187.8L176.7 181.5L160.4 171.2L146.8 157.6L136.5 141.3L130.2 123.1L128 104L130.2 84.9L136.5 66.7L146.8 50.4L160.4 36.8L176.7 26.5L194.9 20.2L214 18L233.1 20.2L251.3 26.5L267.6 36.8L281.2 50.4L291.5 66.7L297.8 84.9Z M178 170L252 170L282 210L296 340L276 528L154 528L142 340L152 210Z M156 500L230 512L164 760L128 1000L52 1000L94 760Z M206 512L280 500L334 760L392 1000L316 1000L262 772Z M160 214L222 214L218 478L160 478Z M236 212L290 206L352 372L308 402Z",
+      "width": 600.0,
+      "head": {
+        "x": 214.0,
+        "y": 104.0,
+        "radius": 86.0
+      },
+      "grip": {
+        "x1": 190.0,
+        "y1": 462.0,
+        "x2": 334.0,
+        "y2": 382.0
+      },
+      "weapon": "rifle",
+      "accepted": false,
+      "source": "Stand-in: a geometric body holding the anchors until the user's Midjourney pick is traced."
+    }
+  },
+  "helmets": {
+    "german": {
+      "path": "M120 42L70 50L-10 60L-84 76L-128 124L-196 118L-150 46L-132 4L-128.8 -27.2L-119.5 -56.7L-104.5 -83.3L-84.6 -105.5L-60.7 -122.1L-34 -132.5L-6 -136L22 -132.5L48.7 -122.1L72.6 -105.5L92.5 -83.3L107.5 -56.7L116.8 -27.2L122 8L168 30Z",
+      "accepted": false,
+      "source": "M35 Stahlhelm; Kar98k 1.11 m; MP40. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
+    },
+    "russian": {
+      "path": "M118 60L-118 60L-150 52L-118 30L-115 -7.4L-106.3 -42.9L-92.3 -74.7L-73.6 -101.3L-51.2 -121.4L-26.3 -133.8L0 -138L26.3 -133.8L51.2 -121.4L73.6 -101.3L92.3 -74.7L106.3 -42.9L115 -7.4L118 30L150 52Z",
+      "accepted": false,
+      "source": "SSh-40; Mosin-Nagant 91/30 with its bayonet fixed, 1.66 m; PPSh-41 with its drum. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
+    }
+  },
+  "weapons": {
+    "german": {
+      "rifle": {
+        "path": "M-240 -16L40 -16L60 -22L470 -22L470 6L70 10L0 26L-130 44L-240 56Z",
+        "accepted": false,
+        "source": "M35 Stahlhelm; Kar98k 1.11 m; MP40. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
+      },
+      "smg": {
+        "path": "M-190 -8L-40 -14L-40 4L-190 12Z M-40 -26L300 -26L300 -4L-40 -2Z M96 -6L130 -6L130 170L96 170Z M-10 -6L24 -6L12 70L-22 70Z",
+        "accepted": false,
+        "source": "M35 Stahlhelm; Kar98k 1.11 m; MP40. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
+      }
+    },
+    "russian": {
+      "rifle": {
+        "path": "M-250 -16L40 -16L60 -22L490 -22L670 -10L490 2L490 6L70 10L0 26L-140 44L-250 56Z",
+        "accepted": false,
+        "source": "SSh-40; Mosin-Nagant 91/30 with its bayonet fixed, 1.66 m; PPSh-41 with its drum. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
+      },
+      "smg": {
+        "path": "M-250 -6L0 -24L300 -24L300 -4L0 22L-250 44Z M174 66L172.4 80.2L167.7 93.8L160 105.9L149.9 116L137.8 123.7L124.2 128.4L110 130L95.8 128.4L82.2 123.7L70.1 116L60 105.9L52.3 93.8L47.6 80.2L46 66L47.6 51.8L52.3 38.2L60 26.1L70.1 16L82.2 8.3L95.8 3.6L110 2L124.2 3.6L137.8 8.3L149.9 16L160 26.1L167.7 38.2L172.4 51.8Z",
+        "accepted": false,
+        "source": "SSh-40; Mosin-Nagant 91/30 with its bayonet fixed, 1.66 m; PPSh-41 with its drum. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
+      }
+    }
+  }
+}
