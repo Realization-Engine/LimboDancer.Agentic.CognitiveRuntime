@@ -6,11 +6,13 @@ using System.Text.RegularExpressions;
 namespace LimboDancer.Domains.Asl.Units.Rendering;
 
 /// <summary>
-/// A traced body pose (ASL Unit Figure Art Plan, section 3): one filled path, bareheaded and unarmed, in a box 1000 units high and
-/// <see cref="Width"/> wide, with the head's center and radius (where the helmet sits) and, when the pose holds a weapon, the grip: the line
+/// A traced body pose (ASL Unit Figure Art Plan, section 3): one filled path, bareheaded and unarmed, in body units (a man standing is
+/// 1000 high), in a box <see cref="Width"/> wide and <see cref="Height"/> high: 1000 for an upright pose, less for a lying one, cropped to
+/// the body; with the head's center and radius (where the helmet sits) and, when the pose holds a weapon, the grip: the line
 /// from the rear hand toward the front hand, which places and turns the weapon of kind <see cref="Weapon"/>.
 /// </summary>
-public sealed record FigurePose(string Path, double Width, FigureHead Head, FigureGrip? Grip, string? Weapon, bool Accepted, string Source);
+public sealed record FigurePose(string Path, double Width, FigureHead Head, FigureGrip? Grip, string? Weapon, bool Accepted, string Source,
+    double Height = 1000);
 
 public sealed record FigureHead(double X, double Y, double Radius);
 
@@ -95,8 +97,11 @@ public sealed partial class FigureArt
         _ => argument,
     };
 
-    /// <summary>Whether the drawn fallback of a pose lies prone, as the broken and the pinned figures did before any art.</summary>
-    public static bool FallsBackProne(string? argument) => PoseName(argument) is "pinned" or "broken";
+    /// <summary>
+    /// Whether the drawn fallback of a pose lies prone: the broken pose, and <c>prone</c>, which the style sheets gave the broken face before
+    /// the poses had names. Every other pose falls back to the standing figure, as those units were drawn before (decision F8).
+    /// </summary>
+    public static bool FallsBackProne(string? argument) => argument is "prone" or "broken";
 
     public static FigureArt Read(string json)
     {
@@ -118,10 +123,10 @@ public sealed partial class FigureArt
     }
 
     private static FigurePose Checked(FigurePose pose) =>
-        pose.Width > 0 && pose.Head.Radius > 0 ? pose with
+        pose.Width > 0 && pose.Height > 0 && pose.Head.Radius > 0 ? pose with
         {
             Path = CheckedPath(pose.Path)
-        } : throw new InvalidDataException("A pose needs a width and a head.");
+        } : throw new InvalidDataException("A pose needs a width, a height, and a head.");
 
     private static FigureKit Checked(FigureKit kit) => kit with { Path = CheckedPath(kit.Path) };
 

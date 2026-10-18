@@ -128,14 +128,15 @@ def leader():
 
 
 def pinned():
-    """A soldier prone, head to the right, the rifle along the ground ahead of him."""
+    """A soldier prone, head to the right, the rifle along the ground ahead of him; the box cropped to the body (a man lying is about a
+    third as high as he is long)."""
     shapes = [
-        circle(1020, 840, 86),
-        polygon([(420, 860), (950, 790), (970, 900), (420, 960)]),
-        polygon([(80, 910), (430, 862), (430, 958), (80, 990)]),
-        polygon([(900, 870), (990, 860), (1060, 970), (980, 995)]),
+        circle(1020, 150, 86),
+        polygon([(420, 180), (950, 100), (970, 210), (420, 280)]),
+        polygon([(40, 230), (430, 182), (430, 278), (40, 320)]),
+        polygon([(900, 190), (990, 180), (1060, 290), (980, 315)]),
     ]
-    return shapes, 'viewBox="0 0 1500 1000"', ' data-head="1020 840 86" data-grip="960 930 1200 940" data-weapon="rifle"'
+    return shapes, 'viewBox="0 0 1460 340"', ' data-head="1020 150 86" data-grip="960 250 1200 262" data-weapon="rifle"'
 
 
 SIDES = {

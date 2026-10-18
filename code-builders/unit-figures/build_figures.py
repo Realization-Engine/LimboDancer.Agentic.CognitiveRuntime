@@ -1,7 +1,8 @@
 """Builds src/ASL/units/figures/figures.json from the figure parts' SVG sources (ASL Unit Figure Art Plan, section 3).
 
 Sources, under src/ASL/units/figures:
-  poses/<pose>.svg           a body pose: viewBox "0 0 <width> 1000"; data-head="cx cy r"; data-grip="x1 y1 x2 y2" and
+  poses/<pose>.svg           a body pose in body units (a man standing is 1000 high): viewBox "0 0 <width> <height>", 1000 high when
+                             upright and cropped to the body when lying; data-head="cx cy r"; data-grip="x1 y1 x2 y2" and
                              data-weapon="rifle|smg" when it holds a weapon
   kit/<side>-helmet.svg      a helmet about a head of radius 100 at the origin
   kit/<side>-<weapon>.svg    a weapon in body units, the rear hand at the origin, the muzzle toward +x
@@ -44,10 +45,10 @@ def read(path):
 def pose(path):
     root, d, source, accepted = read(path)
     box = numbers(root.get("viewBox", ""), 4, path)
-    if box[3] != 1000:
-        raise SystemExit(f"{path}: a pose's viewBox is 1000 high")
+    if box[0] != 0 or box[1] != 0 or box[2] <= 0 or box[3] <= 0 or box[3] > 1000:
+        raise SystemExit(f"{path}: a pose's viewBox starts at 0 0 and is at most 1000 high")
     x, y, r = numbers(root.get("data-head", ""), 3, f"{path} data-head")
-    entry = {"path": d, "width": box[2], "head": {"x": x, "y": y, "radius": r}}
+    entry = {"path": d, "width": box[2], "height": box[3], "head": {"x": x, "y": y, "radius": r}}
     if root.get("data-grip"):
         x1, y1, x2, y2 = numbers(root.get("data-grip"), 4, f"{path} data-grip")
         weapon = root.get("data-weapon", "")

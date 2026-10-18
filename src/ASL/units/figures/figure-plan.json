@@ -1,0 +1,75 @@
+{
+  "style": {
+    "opening": "set of 4 solid black silhouettes of the same WWII infantry soldier in four poses, 2×2 grid, evenly spaced on a flat pure white background, each figure whole from head to boots, centered in an equal square cell, the same height and the same build in every cell.",
+    "style": "full side profile facing right, bareheaded with a plain round head (no helmet, no cap), empty hands placed where the weapon would be held but no weapon drawn, plain trousers and a plain tunic with no visible kit, solid flat black fill, crisp clean outline, no interior lines, strong readable outline at small size, stocky toy soldier proportions: broad shoulders, thick arms and legs, a slightly large head, and bold hands",
+    "parameters": "--no helmet, hat, cap, rifle, gun, weapon, bayonet, pack, text, ground, floor, shadow, gradient, scenery, color --style raw --stylize 50 --ar 1:1",
+    "singleOpening": "a single solid black silhouette of a WWII infantry soldier on a flat pure white background, the whole figure from head to boots, centered with even margins, one figure only."
+  },
+  "briefs": [
+    {
+      "key": "pose-standing",
+      "label": "Squad: standing rifleman",
+      "brief": "an infantryman advancing at a steady walk, mid-stride, torso upright and leaning slightly forward, rear hand low at the hip and front hand forward at chest height as if carrying a rifle at the ready",
+      "meaning": "Squads and half-squads, front face; repeated two or three times for size (A1.2).",
+      "reference": ""
+    },
+    {
+      "key": "pose-crew",
+      "label": "Crew: kneeling",
+      "brief": "a gun crewman kneeling on one knee, torso upright, both hands forward at waist height as if working a gun breech",
+      "meaning": "Crews (A1.123, A21), so a crew reads apart from a half-squad.",
+      "reference": ""
+    },
+    {
+      "key": "pose-leader",
+      "label": "Leader: pointing",
+      "brief": "an officer standing upright, front arm fully extended pointing forward, rear hand low at the hip as if holding a submachine gun",
+      "meaning": "Leaders (A10.7): one figure, directing.",
+      "reference": ""
+    },
+    {
+      "key": "pose-hero",
+      "label": "Hero: charging",
+      "brief": "a soldier charging forward at a run, body leaning hard forward, rear arm drawn back, front arm forward as if about to throw a grenade",
+      "meaning": "Heroes (A15.2).",
+      "reference": ""
+    },
+    {
+      "key": "pose-wounded",
+      "label": "Wounded leader or hero",
+      "brief": "a wounded soldier standing hunched, one hand pressed to his side, the other arm hanging low, knees slightly bent",
+      "meaning": "The wounded face of a leader or a hero (A15.2, A17).",
+      "reference": ""
+    },
+    {
+      "key": "pose-broken",
+      "label": "Broken: falling back",
+      "brief": "a soldier crouching low and turning away to the left, hunched over, head down, one arm raised over the head for cover",
+      "meaning": "The broken face of any personnel (A10).",
+      "reference": ""
+    },
+    {
+      "key": "pose-pinned",
+      "label": "Pinned: prone",
+      "brief": "a soldier lying flat on his stomach, head toward the right raised slightly, elbows on the ground, hands forward as if aiming a rifle",
+      "meaning": "A pinned unit (A7.8).",
+      "reference": ""
+    },
+    {
+      "key": "pose-berserk",
+      "label": "Berserk: bayonet charge",
+      "brief": "a soldier in a wild sprint, legs in a long stride, both hands thrust forward low as if driving a bayonet, head forward, shouting",
+      "meaning": "A berserk unit (A15.4).",
+      "reference": ""
+    },
+    {
+      "key": "pose-prisoner",
+      "label": "Prisoner: hands raised",
+      "brief": "a prisoner standing upright, both hands raised above the head, palms open, weaponless",
+      "meaning": "A captured unit in a Guard's custody (A20.5).",
+      "reference": ""
+    }
+  ],
+  "assignments": [],
+  "batches": []
+}

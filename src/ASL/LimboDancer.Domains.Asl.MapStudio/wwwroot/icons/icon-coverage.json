@@ -744,9 +744,11 @@
       "name": "IconBatchList",
       "path": "Components/Icons/IconBatchList.razor",
       "pages": [
-        "/lab/icons"
+        "/lab/icons",
+        "/units/lab"
       ],
       "usedBy": [
+        "FigureArtBench",
         "IconLab"
       ],
       "controls": [
@@ -777,7 +779,8 @@
       "name": "IconBriefEditor",
       "path": "Components/Icons/IconBriefEditor.razor",
       "pages": [
-        "/lab/icons"
+        "/lab/icons",
+        "/units/lab"
       ],
       "usedBy": [
         "IconCoverageView",
@@ -851,9 +854,11 @@
       "name": "IconPromptBench",
       "path": "Components/Icons/IconPromptBench.razor",
       "pages": [
-        "/lab/icons"
+        "/lab/icons",
+        "/units/lab"
       ],
       "usedBy": [
+        "FigureArtBench",
         "IconLab"
       ],
       "controls": [
@@ -1754,6 +1759,32 @@
           "id": "details",
           "status": "needed",
           "strip": "Replay PaneTabs"
+        }
+      ]
+    },
+    {
+      "name": "UnitLab",
+      "path": "Components/Pages/UnitLab.razor",
+      "pages": [
+        "/units/lab"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "tab",
+          "label": "Unit",
+          "dynamic": false,
+          "id": "unit",
+          "status": "needed",
+          "strip": "UnitLab PageTabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Art",
+          "dynamic": false,
+          "id": "art",
+          "status": "needed",
+          "strip": "UnitLab PageTabs"
         }
       ]
     },
@@ -3230,6 +3261,42 @@
           "id": "lab-attach",
           "status": "needed",
           "strip": "AttachedEquipmentEditor"
+        }
+      ]
+    },
+    {
+      "name": "FigureArtBench",
+      "path": "Components/Units/FigureArtBench.razor",
+      "pages": [
+        "/units/lab"
+      ],
+      "usedBy": [
+        "UnitLab"
+      ],
+      "controls": [
+        {
+          "kind": "tab",
+          "label": "Coverage",
+          "dynamic": false,
+          "id": "coverage",
+          "status": "needed",
+          "strip": "FigureArtBench Tabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Prompts",
+          "dynamic": false,
+          "id": "prompts",
+          "status": "needed",
+          "strip": "FigureArtBench Tabs"
+        },
+        {
+          "kind": "tab",
+          "label": "Batches",
+          "dynamic": false,
+          "id": "batches",
+          "status": "needed",
+          "strip": "FigureArtBench Tabs"
         }
       ]
     },

@@ -11,7 +11,7 @@ public sealed class FigureArtTests
           "poses": {
             "standing": { "path": "M0 0L100 0L100 1000Z", "width": 400, "head": { "x": 200, "y": 100, "radius": 80 },
                           "grip": { "x1": 150, "y1": 450, "x2": 300, "y2": 450 }, "weapon": "rifle", "accepted": true, "source": "test" },
-            "pinned": { "path": "M0 0L1500 0L1500 1000Z", "width": 1500, "head": { "x": 1400, "y": 800, "radius": 80 },
+            "broken": { "path": "M0 0L1500 0L1500 300Z", "width": 1500, "height": 300, "head": { "x": 1400, "y": 800, "radius": 80 },
                         "accepted": false, "source": "test" }
           },
           "helmets": { "german": { "path": "M-100 0L100 0L0 -120Z", "accepted": true, "source": "test" } },
@@ -48,8 +48,8 @@ public sealed class FigureArtTests
     public void AStandInIsDrawnOnlyWhenAskedFor()
     {
         var art = FigureArt.Read(Fixture);
-        Assert.Null(art.Pose("prone"));
-        Assert.NotNull(art.WithStandIns().Pose("prone"));
+        Assert.Null(art.Pose("broken"));
+        Assert.NotNull(art.WithStandIns().Pose("broken"));
         Assert.Empty(Figures(art, "example-squad", face: "broken"));
         Assert.NotEmpty(Figures(art.WithStandIns(), "example-squad", face: "broken"));
     }

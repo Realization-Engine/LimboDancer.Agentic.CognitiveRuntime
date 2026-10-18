@@ -78,15 +78,17 @@ internal static class Glyphs
 
     /// <summary>
     /// One to three figures composed from a pose, the side's helmet on the head, and the side's weapon along the grip; each in one group
-    /// filled with the slot's color. A standing pose repeats to the right; a lying one (wider than one and a half heights) repeats downward.
+    /// filled with the slot's color. An upright pose repeats to the right; a lying one (wider than one and a half times its height) repeats
+    /// downward.
     /// </summary>
     private static void ArtFigures(SvgWriter svg, FigureArt art, FigurePose pose, string? side, Box box, string color, int count)
     {
         count = Math.Clamp(count, 1, 3);
         var width = pose.Width / 1000;
-        var lying = width > 1.5;
+        var height = pose.Height / 1000;
+        var lying = width > 1.5 * height;
         var across = lying ? width : width + (width * Step * (count - 1));
-        var down = lying ? 1 + (LyingStep * (count - 1)) : 1;
+        var down = lying ? height + (height * LyingStep * (count - 1)) : height;
         var scale = Math.Min(box.Width * 0.92 / across, box.Height * 0.92 / down);
         var left = box.CenterX - (across * scale / 2);
         var top = box.CenterY - (down * scale / 2);
@@ -95,7 +97,7 @@ internal static class Glyphs
         for (var index = 0; index < count; index++)
         {
             var x = lying ? left : left + (index * width * Step * scale);
-            var y = lying ? top + (index * LyingStep * scale) : top;
+            var y = lying ? top + (index * height * LyingStep * scale) : top;
             svg.Start("g", ("transform", $"translate({N(x)} {N(y)}) scale({FigureArt.Number(scale / 1000)})"), ("fill", color));
             svg.Empty("path", ("d", pose.Path));
             if (helmet is not null)

@@ -37,6 +37,14 @@ asl|personnel {
                  "fp    range morale";
 }
 asl|personnel::slot(glyph)  { content: glyph(size-figures); }
+/* The figure's pose (ASL Unit Figure Art Plan): each falls back to the drawn figure until its art is accepted, standing but for the
+   broken pose, which lies prone. */
+asl|crew::slot(glyph)   { content: glyph(size-figures, crew); }
+asl|leader::slot(glyph) { content: glyph(size-figures, leader); }
+asl|hero::slot(glyph)   { content: glyph(size-figures, hero); }
+asl|smc:face(wounded)::slot(glyph) { content: glyph(size-figures, wounded); }
+asl|personnel:asl\:pinned::slot(glyph)  { content: glyph(size-figures, pinned); }
+asl|personnel:asl\:berserk::slot(glyph) { content: glyph(size-figures, berserk); }
 asl|personnel::slot(ident)  { content: attr(identity); font-size: 0.2; }
 asl|personnel::slot(class)  { content: attr(class); font-size: 0.22; font-weight: bold; }
 asl|personnel::slot(fp)     { content: attr(firepower); font-size: 0.34; font-weight: bold; }
@@ -57,7 +65,7 @@ asl|personnel:face(broken) {
   face-template: "glyph   glyph   ident"
                  "bmorale bmorale bmorale";
 }
-asl|personnel:face(broken)::slot(glyph)   { content: glyph(size-figures, prone); }
+asl|personnel:face(broken)::slot(glyph)   { content: glyph(size-figures, broken); }
 asl|personnel:face(broken)::slot(bmorale) { content: attr(broken-morale); font-size: 0.34; font-weight: bold; }
 asl|personnel:face(broken)::slot(ident)   { content: attr(identity, front); }
 asl|personnel:face(broken).asl\:self-rally::slot(bmorale) { mark: box; }
@@ -401,7 +409,13 @@ asl|dummy::slot(label) { content: "DUMMY"; font-weight: bold; font-size: 0.24; }
   unit { face-template: "glyph"; badges: none; }
   unit::slot(glyph) { content: glyph(size-figures); }
   unit:concealed { face-template: "q"; }
-  asl|personnel:face(broken)::slot(glyph) { content: glyph(size-figures, prone); }
+  asl|personnel:face(broken)::slot(glyph) { content: glyph(size-figures, broken); }
+  asl|crew::slot(glyph)   { content: glyph(size-figures, crew); }
+  asl|leader::slot(glyph) { content: glyph(size-figures, leader); }
+  asl|hero::slot(glyph)   { content: glyph(size-figures, hero); }
+  asl|smc:face(wounded)::slot(glyph) { content: glyph(size-figures, wounded); }
+  asl|personnel:asl\:pinned::slot(glyph)  { content: glyph(size-figures, pinned); }
+  asl|personnel:asl\:berserk::slot(glyph) { content: glyph(size-figures, berserk); }
   asl|mg::slot(glyph) { content: glyph(mg); }
   asl|ft::slot(glyph) { content: glyph(ft); }
   asl|dc::slot(glyph) { content: glyph(dc); }
