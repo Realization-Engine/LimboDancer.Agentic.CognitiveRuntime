@@ -1568,3 +1568,11 @@ The ASL Map Studio SVG Memory Plan (`src/ASL/docs/Plans`), approved by the user 
 | 11. Six replays, before and after, by the runtime's counters | 16:44 | 17:46 | 1:02 | Allocation per step -55%; a click stopped the first A1 (discarded); the worktree removed |
 | Why committed memory rose (analysis section 11): a GC startup hook, three replays | 18:04 | 18:35 | 0:31 | The extra is LOH space under a higher DATAS heap count; LOH allocation unchanged; collector-setting runs skipped at the user's word; the first HA1 start discarded (no boards root) |
 | Where a replay step's time goes (analysis section 12): a server trace and the browser's frame timing | 18:40 | 18:57 | 0:17 | Start approximate; dotnet-trace installed at the user's word; the layer resent every step (set id carries the revision) |
+
+## The replay re-enactment scope, 2026-10-18
+
+Branch `claude/replay-reenact-scope-9c9f9a`, analysis only. Times from the shell's clock.
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| Records read (cd-guards-5, guards-06-dlandi); actions, gate, store, and dice traced; the scope written (`Designs/ASL Replay Re-enactment Scope.md`) | 19:33 | 19:41 | 0:08 | No product code; every rule package is newer than the records |
