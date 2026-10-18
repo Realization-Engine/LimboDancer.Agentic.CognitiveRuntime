@@ -402,27 +402,37 @@ Each stage is checked by the golden SVGs, which must not change by a byte.
 | Q symbols per distinct face | about -55% before C and D; far more with D | indirect | same | moderate to large | yes, counters drawn at the origin |
 | R counters as data, JS templates | smallest | indirect | smallest | large | the C# renderer no longer draws the page |
 
-## 7. Proposed order
+## 7. The order
 
-My proposal, to be confirmed or changed:
+Settled by the rulings of section 8 (2026-10-18).
 
-1. Measure first, cheaply: N (one setting, the same replay) and M (read the setting). Both may answer most of the memory question without touching rendering.
-2. The safe, output-identical group: G1 and S1 first (the two cheapest changes, measured or profiled at the largest gains), then J, K, L, then G2 and G3. All are checked byte for byte by the existing goldens, and J and K end the only unbounded growth found.
+On a branch from `main`, since none of these files differ on `unit-figure-art` (ruling 5):
+
+1. N2: Server GC with memory conservation, its level chosen by measuring the cd-guards-5 replay at two or three settings against section 2.2. M: read the connection's compression setting.
+2. The output-identical group: G1 and S1 first (the two cheapest changes, measured or profiled at the largest gains), then J, K, L, then G2 and G3. All are checked byte for byte by the existing goldens, and J and K end the only unbounded growth found.
+
+After `unit-figure-art` merges, because these change `Glyphs` and `UnitRenderer`, which that branch changes:
+
 3. The counter layer: C1, then D with E. C1 is small and halves every step; D and E make steps cost what changed.
-4. Then Q, the template idea in the page: with D in place, a step sends `<use>` references and only new faces.
-5. Decide F after D and Q: with deltas and shared faces, the three tiers cost less, and the zoom latency trade may not be needed.
-6. P only if the renderers are rewritten for readability anyway; G gets its allocation gain with far less change.
-7. Not A, B, H, or R.
+4. Then Q, the template idea in the page: with D in place, a step sends `<use>` references and only new faces. C2 follows D (ruling 2).
+5. F: all three tiers stay (F3) until D and Q are built, then the replay is measured again and F decided on that (ruling 3).
+6. Not P (G gets its allocation gain with far less change; ruling 4), A, B, H, or R.
 
 Section 5.1 measured the writer and profiled the cascade. Before step 3, one more measurement would sharpen the rest: an allocation trace of a few replay steps (`dotnet-trace` with the GC allocation events, as in the Studio profiling practice), and a heap dump with retention paths for the 8.4 MB of `char[]`.
 
-## 8. Decisions for the user
+## 8. Rulings
 
-1. Whether the Studio, a single-user desktop tool, may run Workstation GC (N1), or should keep Server GC with conservation (N2).
-2. Where the shared figure outlines live: in the counter layer (C1), in the viewport's defs (C2), or in a static sprite file (C3). My lean: C1 now, C2 when D is built.
-3. Whether zoom may wait for a tier (F1), or all three tiers stay in the page.
-4. For templates: whether they live on the server as an interpolated string handler (P), in the page as one symbol per distinct face (Q), or in the browser as JavaScript (R). My lean: Q, with G instead of P.
-5. Whether this work waits until `unit-figure-art` merges (this branch carries its commits), or the output-identical group (G, J, K, L) goes on a branch from `main`, where it applies equally.
+The user's rulings of 2026-10-18. Ruling 1 is the user's choice; rulings 2 to 5 are the user's acceptance of my recommendation.
+
+| Ruling | Question | Decided |
+|---|---|---|
+| 1 | Workstation GC (N1), or Server GC with conservation (N2) | N2: the Studio keeps Server GC, with `System.GC.ConserveMemory` set; the level is measured, not guessed |
+| 2 | Where the shared figure outlines live: the counter layer (C1), the viewport's defs (C2), or a static sprite file (C3) | C1 first; C2 when D is built; not C3 |
+| 3 | Whether zoom may wait for a tier (F1), or all three tiers stay | All three stay (F3) until D and Q are built; then measured again and decided |
+| 4 | Templates on the server (P), in the page as symbols (Q), or in the browser (R) | Q, with G in place of P; not R |
+| 5 | Whether the work waits for `unit-figure-art` to merge | Split: N2, M, G, S, J, K, L go on a branch from `main` now, since `unit-figure-art` does not change their files (`SvgWriter`, `PathData`, `StyleCascade`, `RenderEndpoints`, `Maps.cs`, the Studio project file); C, D, E, Q, F wait for that merge, since they change `Glyphs` and `UnitRenderer`, which it changes |
+
+`FixedPoint` (for G2's `TryFormat`) is in `LimboDancer.Domains.Asl.Maps`, also unchanged by `unit-figure-art`.
 
 ## 9. Not measured
 
