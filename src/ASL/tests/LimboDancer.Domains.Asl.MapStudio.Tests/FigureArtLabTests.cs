@@ -63,8 +63,9 @@ public sealed class FigureArtLabTests : IDisposable
     [Fact]
     public void ASideWithoutKitLacksItsHelmetAndWeapon()
     {
-        Assert.Contains("helmet", lab.Missing("standing", "british"));
-        Assert.Contains("rifle", lab.Missing("standing", "british"));
+        // Every catalog side has its kit drawn (stage 6); a side outside the catalog has none.
+        Assert.Contains("helmet", lab.Missing("standing", "japanese"));
+        Assert.Contains("rifle", lab.Missing("standing", "japanese"));
         Assert.DoesNotContain("helmet", lab.Missing("standing", "german"));
         Assert.Contains("pose (stand-in)", lab.Missing("standing", "german"));
         Assert.Contains("pose", lab.Missing("crew", "german"));
@@ -75,10 +76,11 @@ public sealed class FigureArtLabTests : IDisposable
     {
         Assert.True(lab.Has("german-helmet"));
         Assert.True(lab.Has("russian-rifle"));
-        Assert.False(lab.Has("british-helmet"));
+        Assert.True(lab.Has("british-helmet"));
+        Assert.False(lab.Has("japanese-helmet"));
         Assert.Equal(FigureArt.BuiltIn.Pose("standing") is not null, lab.Has("pose-standing"));
         Assert.Contains("<path", lab.Thumbnail("german-helmet", 22), StringComparison.Ordinal);
-        Assert.Null(lab.Thumbnail("british-helmet", 22));
+        Assert.Null(lab.Thumbnail("japanese-helmet", 22));
     }
 
     [Fact]
