@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Globalization;
 using System.Text;
 using LimboDancer.Domains.Asl.Maps.Geometry;
@@ -10,6 +11,9 @@ namespace LimboDancer.Domains.Asl.Maps.Rendering;
 /// </summary>
 public sealed class SvgWriter
 {
+    private static readonly SearchValues<char> AttributeSpecials = SearchValues.Create("&<\"");
+    private static readonly SearchValues<char> TextSpecials = SearchValues.Create("&<>");
+
     private readonly StringBuilder builder = new();
     private readonly Stack<string> open = new();
 
@@ -29,16 +33,7 @@ public sealed class SvgWriter
     public void Text(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
-        foreach (var character in text)
-        {
-            builder.Append(character switch
-            {
-                '&' => "&amp;",
-                '<' => "&lt;",
-                '>' => "&gt;",
-                _ => character.ToString(),
-            });
-        }
+        Escaped(text, TextSpecials);
     }
 
     public void End()
@@ -70,19 +65,30 @@ public sealed class SvgWriter
         foreach (var (attributeName, value) in attributes)
         {
             builder.Append(' ').Append(attributeName).Append("=\"");
-            foreach (var character in value)
-            {
-                builder.Append(character switch
-                {
-                    '&' => "&amp;",
-                    '<' => "&lt;",
-                    '"' => "&quot;",
-                    _ => character.ToString(),
-                });
-            }
-
+            Escaped(value, AttributeSpecials);
             builder.Append('"');
         }
+    }
+
+    /// <summary>
+    /// Appends text with the given characters escaped: the runs between them are copied whole, so nothing is allocated for the
+    /// characters that need no escaping (Option G1 of the SVG memory analysis).
+    /// </summary>
+    private void Escaped(ReadOnlySpan<char> text, SearchValues<char> specials)
+    {
+        while (text.IndexOfAny(specials) is var at and >= 0)
+        {
+            builder.Append(text[..at]).Append(text[at] switch
+            {
+                '&' => "&amp;",
+                '<' => "&lt;",
+                '>' => "&gt;",
+                _ => "&quot;",
+            });
+            text = text[(at + 1)..];
+        }
+
+        builder.Append(text);
     }
 }
 

@@ -32,6 +32,42 @@ public sealed class SvgWriterTests
         Assert.Equal("a \"b\" & <c>", System.Xml.Linq.XDocument.Parse(svg).Root!.Attribute("data-note")!.Value);
     }
 
+    // An attribute escapes &, <, and "; > stays as it is. The cases cover where an escaped character falls in the value.
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("plain", "plain")]
+    [InlineData("&start", "&amp;start")]
+    [InlineData("end<", "end&lt;")]
+    [InlineData("\"\"", "&quot;&quot;")]
+    [InlineData("&<\"", "&amp;&lt;&quot;")]
+    [InlineData("a>b", "a>b")]
+    [InlineData("Kübelwagen & crew", "Kübelwagen &amp; crew")]
+    public void AttributeValuesAreEscapedWherever(string value, string expected)
+    {
+        var writer = new SvgWriter();
+        writer.Empty("g", ("data-note", value));
+        Assert.Equal($"<g data-note=\"{expected}\"/>", writer.ToString());
+    }
+
+    // Text escapes &, <, and >; " stays as it is.
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("plain", "plain")]
+    [InlineData("&start", "&amp;start")]
+    [InlineData("end>", "end&gt;")]
+    [InlineData("<<", "&lt;&lt;")]
+    [InlineData("&<>", "&amp;&lt;&gt;")]
+    [InlineData("say \"hi\"", "say \"hi\"")]
+    [InlineData("Kübelwagen <crew>", "Kübelwagen &lt;crew&gt;")]
+    public void TextIsEscapedWherever(string text, string expected)
+    {
+        var writer = new SvgWriter();
+        writer.Start("title");
+        writer.Text(text);
+        writer.End();
+        Assert.Equal($"<title>{expected}</title>", writer.ToString());
+    }
+
     [Fact]
     public void RingsUseAlternatingHorizontalAndVerticalCommands()
     {

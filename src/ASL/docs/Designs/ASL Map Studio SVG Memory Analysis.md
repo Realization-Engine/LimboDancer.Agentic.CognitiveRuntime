@@ -474,10 +474,25 @@ The cd-guards-5 replay of section 2.2, all 258 steps, each run on a freshly star
 | Level | Peak | Settled (last 30 s) | Mean step | Slowest step |
 |---|---|---|---|---|
 | 0 (default), first run | 286 MB | 205 MB | 330 ms | 744 ms |
-| 0 (default), second run | 333 MB | 273 MB (sampling ended early) | 459 ms | 3,066 ms |
+| 0 (default), second run | 333 MB | 272 MB | 459 ms | 3,066 ms |
 | 5 | 316 MB | 230 MB | 370 ms | 606 ms |
 | 7 | 303 MB | 219 MB | 1,105 ms | 2,012 ms |
 
 Two identical runs at the default differ by 47 MB at the peak, more than any level differs from them. So no level gives a saving this measurement can see, and level 7 makes steps three times slower. The user's ruling (2026-10-18): leave it off ("This was not the main refactor approach anyway, but more as a 'nice-to-have'"). The Studio keeps .NET's defaults; the project file is not changed.
+
+### Task 4. G1: escaping by span
+
+`SvgWriter.Text` and `SvgWriter.WriteTag` now append the runs between characters that need escaping (`SearchValues<char>`, `IndexOfAny`). No API change. Every golden is unchanged (51 tests of `Maps.Rendering.Tests` with the two VASL board tests, 367 of `Units.Rendering.Tests`), and 16 new cases pin where an escaped character can fall.
+
+| Workload | Before | After G1 | Change |
+|---|---|---|---|
+| bd01 exact | 9,513,538 bytes | 3,831,600 bytes | -60% |
+| bd01 hex facts | 5,636,964 bytes | 3,833,569 bytes | -32% |
+| 80 counters with figures | 56,244,460 bytes | 36,745,689 bytes | -35% |
+| 9 demo counters | 4,532,377 bytes | 3,591,049 bytes | -21% |
+
+As section 5.1 predicted for bd01 exact (about 3.8 MB). On counters the writer's share is now small; the cascade (task 5) is the larger part.
+
+### Note on task 3
 
 A fresh Studio starts at about 80 to 185 MB of private memory, depending on when the sampler first reads it, against the 306 MB of the long-running Studio in section 2.2: much of that morning figure was the age of the process, not the replay.
