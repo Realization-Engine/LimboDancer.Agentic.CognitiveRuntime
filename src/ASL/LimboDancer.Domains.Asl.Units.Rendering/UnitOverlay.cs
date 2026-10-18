@@ -125,7 +125,7 @@ public static class UnitOverlayBuilder
         var faceSizes = located.Select(unit => renderer.FaceSize(unit.Document, DetailTier.Near, hexHeight)).ToArray();
         var reference = faceSizes.Length == 0 ? hexHeight * UnitRenderer.DefaultFaceSize : faceSizes.Min();
         var svg = new SvgWriter();
-        svg.Start("g", ("id", "layer-units"), ("data-face-size", SvgWriter.Number(reference)), ("data-unit-set", setId));
+        svg.Start("g", ("id", "layer-units"), ("data-face-size", SvgValue.Number(reference)), ("data-unit-set", setId));
         var placed = new List<PlacedUnit>();
         foreach (var hexGroup in located.GroupBy(unit => unit.Hex).OrderBy(group => group.Key.Column).ThenBy(group => group.Key.Row))
         {
@@ -166,8 +166,8 @@ public static class UnitOverlayBuilder
                     var size = face * 0.34;
                     var right = center.X + Offset(Math.Min(2, shown - 1), shown, face).Dx + (face / 2);
                     svg.Start("g", ("data-stack-count", more));
-                    svg.Empty("rect", ("x", SvgWriter.Number(right - (size * 0.6))), ("y", SvgWriter.Number(top - (size * 0.6))), ("width", SvgWriter.Number(size * 1.4)),
-                        ("height", SvgWriter.Number(size)), ("rx", SvgWriter.Number(size * 0.3)), ("fill", "#17212b"));
+                    svg.Empty("rect", ("x", SvgValue.Number(right - (size * 0.6))), ("y", SvgValue.Number(top - (size * 0.6))), ("width", SvgValue.Number(size * 1.4)),
+                        ("height", SvgValue.Number(size)), ("rx", SvgValue.Number(size * 0.3)), ("fill", "#17212b"));
                     Text(svg, right + (size * 0.1), top - (size * 0.6) + (size * 0.72), size * 0.7, more, "#ffffff");
                     svg.End();
                 }
@@ -177,8 +177,8 @@ public static class UnitOverlayBuilder
                     var tab = face * 0.3;
                     var label = level < 0 ? "C" : "L" + level.ToString(CultureInfo.InvariantCulture);
                     svg.Start("g", ("data-level", level.ToString(CultureInfo.InvariantCulture)));
-                    svg.Empty("rect", ("x", SvgWriter.Number(left)), ("y", SvgWriter.Number(top - tab)), ("width", SvgWriter.Number(tab * 1.6)),
-                        ("height", SvgWriter.Number(tab)), ("fill", "#17212b"));
+                    svg.Empty("rect", ("x", SvgValue.Number(left)), ("y", SvgValue.Number(top - tab)), ("width", SvgValue.Number(tab * 1.6)),
+                        ("height", SvgValue.Number(tab)), ("fill", "#17212b"));
                     Text(svg, left + (tab * 0.8), top - (tab * 0.25), tab * 0.72, label, "#ffffff");
                     svg.End();
                 }
@@ -207,7 +207,7 @@ public static class UnitOverlayBuilder
 
     private static void Text(SvgWriter svg, double x, double y, double size, string text, string color)
     {
-        svg.Start("text", ("x", SvgWriter.Number(x)), ("y", SvgWriter.Number(y)), ("font-size", SvgWriter.Number(size)), ("font-family", "sans-serif"),
+        svg.Start("text", ("x", SvgValue.Number(x)), ("y", SvgValue.Number(y)), ("font-size", SvgValue.Number(size)), ("font-family", "sans-serif"),
             ("font-weight", "bold"), ("text-anchor", "middle"), ("fill", color), ("pointer-events", "none"));
         svg.Text(text);
         svg.End();
@@ -229,8 +229,8 @@ public static class UnitPreview
         var size = tiers.Max(tier => renderer.FaceSize(document, tier, HexHeight));
         var extent = size * 2.2;
         var svg = new SvgWriter();
-        svg.Start("svg", ("xmlns", "http://www.w3.org/2000/svg"), ("viewBox", $"0 0 {SvgWriter.Number(extent)} {SvgWriter.Number(extent)}"),
-            ("width", SvgWriter.Number(extent * scale)), ("height", SvgWriter.Number(extent * scale)));
+        svg.Start("svg", ("xmlns", "http://www.w3.org/2000/svg"), ("viewBox", $"0 0 {SvgValue.Number(extent)} {SvgValue.Number(extent)}"),
+            ("width", SvgValue.Number(extent * scale)), ("height", SvgValue.Number(extent * scale)));
         renderer.WriteUnit(svg, document, extent / 2, extent * 0.44, HexHeight, tiers, face, null, warnings);
         svg.End();
         return svg.ToString();

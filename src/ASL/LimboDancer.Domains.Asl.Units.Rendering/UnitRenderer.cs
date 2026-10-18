@@ -166,7 +166,7 @@ public sealed class UnitRenderer
         var stroke = evaluator.Color(style["stroke"]) ?? ink;
         var strokeWidth = size * (evaluator.Number(style["stroke-width"]) ?? 0.03);
         var opacity = evaluator.Number(style["opacity"]);
-        var shapeAttributes = new List<(string, string)>();
+        var shapeAttributes = new List<(string, SvgValue)>();
         var shape = evaluator.Ident(style["shape"]) ?? "square";
         if (shape == "circle")
         {
@@ -258,7 +258,7 @@ public sealed class UnitRenderer
         var (x1, y1) = Point(degrees - 30);
         var (x2, y2) = Point(degrees + 30);
         var path = new PathData().MoveTo(N(centerX), N(centerY)).LineTo(N(x1), N(y1)).LineTo(N(x2), N(y2)).Close();
-        svg.Empty("path", ("d", path.ToString()), ("fill", color), ("fill-opacity", "0.16"), ("stroke", color), ("stroke-width", N(size * 0.03)),
+        svg.Empty("path", ("d", path), ("fill", color), ("fill-opacity", "0.16"), ("stroke", color), ("stroke-width", N(size * 0.03)),
             ("stroke-dasharray", $"{N(size * 0.12)} {N(size * 0.08)}"), ("pointer-events", "none"), (marker, facing.Name()));
     }
 
@@ -285,11 +285,11 @@ public sealed class UnitRenderer
             .Close();
         if (filled)
         {
-            svg.Empty("path", ("d", path.ToString()), ("fill", color), marker);
+            svg.Empty("path", ("d", path), ("fill", color), marker);
         }
         else
         {
-            svg.Empty("path", ("d", path.ToString()), ("fill", "#ffffff"), ("stroke", color), ("stroke-width", N(size * 0.04)), marker);
+            svg.Empty("path", ("d", path), ("fill", "#ffffff"), ("stroke", color), ("stroke-width", N(size * 0.04)), marker);
         }
     }
 
@@ -430,7 +430,7 @@ public sealed class UnitRenderer
                     _ => (box.CenterX, "middle", box.CenterX - (width / 2)),
                 };
                 var baseline = box.CenterY + (fontSize * 0.35);
-                var attributes = new List<(string, string)>
+                var attributes = new List<(string, SvgValue)>
                 {
                     ("x", N(x)), ("y", N(baseline)), ("font-size", N(fontSize)), ("font-family", "sans-serif"), ("text-anchor", anchor), ("fill", color),
                 };
@@ -519,7 +519,7 @@ public sealed class UnitRenderer
                     .MoveTo(N(box.CenterX + half), N(box.CenterY - half + gap)).LineTo(N(box.CenterX + half), N(box.CenterY + half - gap))
                     .MoveTo(N(box.CenterX + half - gap), N(box.CenterY + half)).LineTo(N(box.CenterX - half + gap), N(box.CenterY + half))
                     .MoveTo(N(box.CenterX - half), N(box.CenterY + half - gap)).LineTo(N(box.CenterX - half), N(box.CenterY - half + gap));
-                svg.Empty("path", ("d", path.ToString()), ("fill", "none"), ("stroke", color), ("stroke-width", thick), ("data-outline", outline));
+                svg.Empty("path", ("d", path), ("fill", "none"), ("stroke", color), ("stroke-width", thick), ("data-outline", outline));
                 return;
             default:
                 warnings.Add(new(subject.Document.Id, $"'{outline}' is not an outline; use circle, square, thick-square, cornerless-square, or none."));
@@ -651,7 +651,7 @@ public sealed class UnitRenderer
     /// <summary>An estimate of sans-serif text width; used for marks and badges, never for layout the viewer depends on.</summary>
     private static double TextWidth(string text, double fontSize) => text.Length * fontSize * 0.6;
 
-    private static string N(double value) => SvgWriter.Number(value);
+    private static SvgValue N(double value) => SvgValue.Number(value);
 
     /// <summary>Resolves declaration values for one subject: tokens, <c>side()</c>, <c>attr()</c>, and <c>glyph()</c>.</summary>
     private sealed class Evaluator(UnitRenderer renderer, StyleSubject subject, string? side, List<RenderWarning>? warnings, string? slot)

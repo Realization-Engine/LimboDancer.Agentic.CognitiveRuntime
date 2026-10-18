@@ -68,6 +68,34 @@ public sealed class SvgWriterTests
         Assert.Equal($"<title>{expected}</title>", writer.ToString());
     }
 
+    // The writer's pooled buffer goes back to the pool when the document is made (option G3 of the SVG memory analysis).
+    [Fact]
+    public void TheDocumentIsMadeOnceAndTheWriterThenTakesNoMore()
+    {
+        var writer = new SvgWriter();
+        writer.Empty("rect", ("x", SvgValue.Number(1.5)), ("width", SvgValue.Number(3)), ("d", new PathData().MoveTo(SvgValue.Fixed(1), "2").Close()));
+        var document = writer.ToString();
+        Assert.Equal("<rect x=\"1.5\" width=\"3\" d=\"M0.015625 2Z\"/>", document);
+        Assert.Same(document, writer.ToString());
+        Assert.Throws<InvalidOperationException>(() => writer.Empty("g"));
+    }
+
+    [Fact]
+    public void ALongDocumentGrowsTheBuffer()
+    {
+        var writer = new SvgWriter();
+        writer.Start("g");
+        for (var index = 0; index < 5000; index++)
+        {
+            writer.Empty("circle", ("r", SvgValue.Number(index)), ("data-note", "a & b"));
+        }
+
+        writer.End();
+        var document = writer.ToString();
+        Assert.Equal(5000, System.Xml.Linq.XDocument.Parse(document).Root!.Elements().Count());
+        Assert.EndsWith("<circle r=\"4999\" data-note=\"a &amp; b\"/></g>", document, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void RingsUseAlternatingHorizontalAndVerticalCommands()
     {

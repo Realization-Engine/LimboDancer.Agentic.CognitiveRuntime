@@ -518,6 +518,24 @@ When `MapService` clears its 32 recent placement maps, the builds behind them le
 
 `/render` sends the cache's gzip copy, with `Content-Encoding: gzip`, when the request accepts gzip (named or `*`, quality above zero), and the plain bytes otherwise; every response carries `Vary: Accept-Encoding`, and the entity tag is the same either way, so a `304` answers as before. Six new cases (`GzipIsSentWhenAccepted`) pass with the existing endpoint tests. Measured in the browser in task 10.
 
+### Task 9. G2 and G3: the span writer
+
+- `FixedPoint` implements `ISpanFormattable`: `TryFormat` writes the same text `ToString` gave (checked against the old algorithm on every raw value from -100,000 to 100,000 and the extremes), and `ToString` now uses it.
+- `SvgValue`, a struct, carries an attribute value or path coordinate as text, a fixed-point number, an integer, path data, or trusted text. A string converts to it implicitly, so most call sites are unchanged; each renderer's `N(…)` helper now returns it, and in an interpolated string it formats straight into the result.
+- `SvgWriter` writes into one buffer rented from `ArrayPool<char>.Shared` and returns it when `ToString` makes the document; afterwards it takes no more output. Numbers are formatted into it, a `PathData` is copied from its builder's chunks, and figure outlines (`SvgValue.Trusted`, proven by `FigureArt.CheckedPath`) are copied without escaping.
+- `PathData` takes `SvgValue` coordinates and formats numbers straight into its builder.
+
+Every golden is unchanged (17 tests of `Maps.Tests`, 53 of `Maps.Rendering.Tests` with both VASL board tests, 367 of `Units.Rendering.Tests`); three new writer tests.
+
+| Workload | Baseline | After G1 and S1 | After G2 and G3 | Since the baseline |
+|---|---|---|---|---|
+| bd01 exact | 9,513,538 bytes | 3,831,600 bytes | 1,179,506 bytes | -88% |
+| bd01 hex facts | 5,636,964 bytes | 3,833,569 bytes | 1,551,499 bytes | -72% |
+| 80 counters with figures | 56,244,460 bytes | 13,450,610 bytes | 11,157,410 bytes | -80% |
+| 9 demo counters | 4,532,377 bytes | 1,324,785 bytes | 1,126,313 bytes | -75% |
+
+bd01 exact ends at 1.18 MB, not the 0.6 MB section 5.1 predicted: the prototype wrote path numbers straight into the output, while `PathData` still builds each path in a `StringBuilder` of its own before its element is written (about 0.57 MB of builder chunks on bd01). The output string itself (0.49 MB) is the floor. The attribute arrays grew a little, since a `(string, SvgValue)` pair is larger than a `(string, string)` pair (1.35 MB for 80 counters). Both are small follow-ups, not part of this plan: a pooled buffer for `PathData`, and fewer `params` arrays.
+
 ### Note on task 3
 
 A fresh Studio starts at about 80 to 185 MB of private memory, depending on when the sampler first reads it, against the 306 MB of the long-running Studio in section 2.2: much of that morning figure was the age of the process, not the replay.

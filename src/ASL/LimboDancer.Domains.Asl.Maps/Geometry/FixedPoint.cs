@@ -6,7 +6,7 @@ namespace LimboDancer.Domains.Asl.Maps.Geometry;
 /// A board-space coordinate in 1/64 pixel units. Every value has an exact decimal form,
 /// so Feature Model geometry and SVG output never depend on floating-point formatting.
 /// </summary>
-public readonly record struct FixedPoint(int Raw) : IComparable<FixedPoint>
+public readonly record struct FixedPoint(int Raw) : IComparable<FixedPoint>, ISpanFormattable
 {
     public const int UnitsPerPixel = 64;
 
@@ -68,20 +68,73 @@ public readonly record struct FixedPoint(int Raw) : IComparable<FixedPoint>
 
     public static FixedPoint Negate(FixedPoint value) => -value;
 
+    /// <summary>The longest text a value formats to: a sign, eight digits of whole pixels, a point, and six decimals.</summary>
+    public const int MaxTextLength = 16;
+
     /// <summary>Formats the exact pixel value with invariant culture and no trailing zeros.</summary>
     public override string ToString()
     {
+        Span<char> text = stackalloc char[MaxTextLength];
+        TryFormat(text, out var written, default, CultureInfo.InvariantCulture);
+        return new string(text[..written]);
+    }
+
+    public string ToString(string? format, IFormatProvider? formatProvider) => ToString();
+
+    /// <summary>
+    /// Writes <see cref="ToString()"/>'s text into a span, without a string in between, so SVG output can carry numbers straight
+    /// into its buffer (option G2 of the SVG memory analysis). The format and provider are ignored: the text is always invariant.
+    /// </summary>
+    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format = default, IFormatProvider? provider = null)
+    {
+        charsWritten = 0;
         var magnitude = Math.Abs((long)Raw);
         var whole = magnitude / UnitsPerPixel;
         var remainder = magnitude % UnitsPerPixel;
-        var sign = Raw < 0 ? "-" : string.Empty;
-        if (remainder == 0)
+        var at = 0;
+        if (Raw < 0)
         {
-            return sign + whole.ToString(CultureInfo.InvariantCulture);
+            if (destination.IsEmpty)
+            {
+                return false;
+            }
+
+            destination[at++] = '-';
         }
 
-        // remainder / 64 = remainder * 15625 / 1000000, exact in six decimal digits.
-        var fraction = (remainder * 15625).ToString("D6", CultureInfo.InvariantCulture).TrimEnd('0');
-        return sign + whole.ToString(CultureInfo.InvariantCulture) + "." + fraction;
+        if (!whole.TryFormat(destination[at..], out var digits, default, CultureInfo.InvariantCulture))
+        {
+            return false;
+        }
+
+        at += digits;
+        if (remainder != 0)
+        {
+            // remainder / 64 = remainder * 15625 / 1000000, exact in six decimal digits; trailing zeros are dropped.
+            var fraction = remainder * 15625;
+            var places = 6;
+            while (fraction % 10 == 0)
+            {
+                fraction /= 10;
+                places--;
+            }
+
+            if (destination.Length < at + 1 + places)
+            {
+                return false;
+            }
+
+            destination[at++] = '.';
+            for (var place = places - 1; place >= 0; place--)
+            {
+                destination[at + place] = (char)('0' + (fraction % 10));
+                fraction /= 10;
+            }
+
+            at += places;
+        }
+
+        charsWritten = at;
+        return true;
     }
 }

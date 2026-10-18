@@ -1562,3 +1562,4 @@ The ASL Map Studio SVG Memory Plan (`src/ASL/docs/Plans`), approved by the user 
 | 6. J: the render cache bounded, bytes and a gzip copy | 14:30 | 14:50 | 0:20 | Most of it the Studio test project's build; K written meanwhile |
 | 7. K: the map cache bounded; saved maps' stale builds dropped | 14:50 | 14:59 | 0:09 | One test fix: VASL lays out at most 3 boards across |
 | 8. L: gzip from the render cache | 14:50 | 14:59 | 0:09 | Built and tested with K, in the same runs |
+| 9. G2 and G3: SvgValue, FixedPoint.TryFormat, the pooled writer | 14:59 | 15:10 | 0:11 | A one-line Python edit emptied three files (opened for writing before reading); restored from this session and git |

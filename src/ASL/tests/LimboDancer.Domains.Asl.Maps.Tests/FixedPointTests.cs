@@ -1,3 +1,4 @@
+using System.Globalization;
 using LimboDancer.Domains.Asl.Maps.Geometry;
 
 namespace LimboDancer.Domains.Asl.Maps.Tests;
@@ -43,6 +44,42 @@ public sealed class FixedPointTests
             var value = FixedPoint.FromRaw(raw);
             Assert.Equal((decimal)raw / 64, decimal.Parse(value.ToString(), System.Globalization.CultureInfo.InvariantCulture));
         }
+    }
+
+    // TryFormat (option G2 of the SVG memory analysis) must give the text the SVG goldens were written with: the formatting
+    // ToString had before, kept here as the reference.
+    [Fact]
+    public void TryFormatGivesTheReferenceText()
+    {
+        static string Reference(int raw)
+        {
+            var magnitude = Math.Abs((long)raw);
+            var whole = magnitude / FixedPoint.UnitsPerPixel;
+            var remainder = magnitude % FixedPoint.UnitsPerPixel;
+            var sign = raw < 0 ? "-" : string.Empty;
+            return remainder == 0
+                ? sign + whole.ToString(CultureInfo.InvariantCulture)
+                : sign + whole.ToString(CultureInfo.InvariantCulture) + "." + (remainder * 15625).ToString("D6", CultureInfo.InvariantCulture).TrimEnd('0');
+        }
+
+        Span<char> text = stackalloc char[FixedPoint.MaxTextLength];
+        var values = Enumerable.Range(-100_000, 200_001).Concat([int.MaxValue, int.MinValue, int.MinValue + 1, 1_000_000_001, -999_999_999]);
+        foreach (var raw in values)
+        {
+            Assert.True(FixedPoint.FromRaw(raw).TryFormat(text, out var written, default, CultureInfo.InvariantCulture));
+            Assert.Equal(Reference(raw), new string(text[..written]));
+            Assert.Equal(Reference(raw), FixedPoint.FromRaw(raw).ToString());
+        }
+    }
+
+    [Fact]
+    public void TryFormatRefusesAShortDestination()
+    {
+        Span<char> text = stackalloc char[4];
+        Assert.False(FixedPoint.FromRaw(-2401).TryFormat(text, out _, default, CultureInfo.InvariantCulture));
+        Assert.True(FixedPoint.FromRaw(64).TryFormat(text, out var written, default, CultureInfo.InvariantCulture));
+        Assert.Equal("1", new string(text[..written]));
+        Assert.Equal("37.515625", string.Create(CultureInfo.InvariantCulture, $"{FixedPoint.FromRaw(2401)}"));
     }
 
     [Fact]
