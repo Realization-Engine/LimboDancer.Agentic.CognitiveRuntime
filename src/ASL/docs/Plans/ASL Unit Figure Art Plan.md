@@ -121,3 +121,31 @@ Sources: the standard issue of each army, as documented in the general literatur
 ## 7. Record
 
 Durations go in `src/ASL/docs/ASL Unit Time Log.md`. Out-of-scope items go in `src/ASL/docs/ASL Unit Backlog.md`. Progress is reported by stage number.
+
+## 8. Status, 2026-10-17
+
+| Stage | State | Commit |
+|---|---|---|
+| 1. Shared art components | Built | 0450b5bd |
+| 2. The renderer reads figure files | Built | b0153b17 |
+| 3. The Unit Lab's Art tab | Built | bc34d57c |
+| 4. The pilot | Built up to the Midjourney run: the pose tracer, the German and Russian kit, the prompts | cabe9c26 |
+| 5. The other eight poses | Briefs and prompts written, style rules in place; waiting on the Midjourney runs | bc34d57c |
+| 6. The other six sides' kit | Built | cabe9c26 |
+| 7. Prisoners | Built: `asl:captured` is a vocabulary state (asl@1.17.0) | 08e56fd8 |
+| 8. Golden SVGs and the play check | The suite run on the branch; golden SVGs unchanged but for the new state | |
+
+**Where the build left the plan.**
+
+- Stage 1 did not move the Icon Lab's components into a shared folder. They stay in `Components/Icons` and take an `IArtShelf` (what a lab has drawn) in place of the icon library, which made them shared with less churn.
+- Poses gained a height (stage 3): a lying pose is cropped to the body, or the pinned figure draws as a hairline.
+- The pose style asks Midjourney for stocky figures: beside the old drawn figures, the thin geometric stand-ins read weakly at the far level.
+- The pinned pose falls back to the standing figure (as pinned units were drawn before) and the broken pose to the prone one, so no counter changes until art is accepted.
+
+**What waits on the user.**
+
+1. The Midjourney runs: the Unit Lab, Art, Prompts tab, one pose at a time (or a set of four). Save the four results; name the pick in Batches.
+2. Claude traces the pick: `python code-builders/unit-figures/trace_pose.py <image> <pose> --cell <n>`, sets the grip by eye, rebuilds `figures.json`, and shows it in the Art tab.
+3. The go or no-go of stage 4 on the German and Russian squads at the far level.
+4. Accepting a pose or a kit part (`data-accepted="true"`), which changes the counters in play and regenerates the golden SVGs (stage 8).
+5. The provisional decisions F3 to F6.

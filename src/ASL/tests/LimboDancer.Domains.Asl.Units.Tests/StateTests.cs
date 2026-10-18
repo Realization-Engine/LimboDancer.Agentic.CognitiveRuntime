@@ -252,7 +252,8 @@ public sealed class StateTests
 
         var russian = GameDocuments.For(GameView.Of(history, 18, Perspective.Side("russian")), vocabulary, [Catalog.Value]);
         var prisoner = Assert.Single(russian, document => document.Id == "r1");
-        Assert.Equal(["asl:broken"], prisoner.States);
+        // Captured is a vocabulary state since asl@1.17.0, so the display draws the prisoner's pose (ASL Unit Figure Art Plan, stage 7).
+        Assert.Equal(["asl:broken", "asl:captured"], prisoner.States);
         Assert.Equal("broken", prisoner.ShownFace(vocabulary));
         Assert.Contains(russian, document => document.Id == "f1" && document.Kind == "asl:foxhole");
         var set = GameDocuments.PlacementSet(GameView.Of(history, 18, Perspective.Adjudicator), "game-test", "test", vocabulary, [Catalog.Value]);

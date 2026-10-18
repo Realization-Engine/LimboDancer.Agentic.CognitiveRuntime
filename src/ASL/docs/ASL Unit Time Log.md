@@ -1507,3 +1507,19 @@ Pass 55's tool repairs after its merge (0:38, 18:57 to 19:35) are left out of it
 - **The gate took 2:48 less.** Pass 55's gate ran the whole test suite and Docker on this machine and lost a 53-minute sweep to a game main could not read, then 25 minutes to a package digest that differed by hash alone. Pass 60's gate ran its local stages only (20 seconds of baseline, a 3:49 build, five minutes of proofs) and lost two minutes to its early check, which stopped on a JSON fact the skip list did not reach, as it is built to. The suite ran on CI instead: 11:53 on the pull request, 12:09 on the merge.
 - **The merge cost 0:13 against about 0:40.** Pass 55's merge met a .NET SDK patch released that day (a red CI run and a repaired lock file); pass 60's merge ran green at once, the pull request's run having found nothing.
 - **What pass 60 did not spend:** the full Studio check at five widths (the user scoped it to the narrower check, 4 minutes); a local test suite and Docker (CI's since 2026-10-13). Without the gate's change, pass 60's gate would have run about two hours as pass 55's did (its suite, 35 minutes alone, and Docker, 25); without the narrower check, about another 40 minutes.
+
+
+## The figure art plan, 2026-10-17
+
+The ASL Unit Figure Art Plan (`src/ASL/docs/Plans`), worked without the user's intervention on branch `unit-figure-art`.
+
+Each end is the stage's commit time (`git log`); the plan's start was read from the clock.
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| The plan written, the branch cut, and stage 1: the Icon Lab's workflow shared (IArtShelf) | 20:07 | 20:20 | 0:13 | One coverage refresh |
+| Stage 2: the renderer composes figures; the German and Russian kit and three stand-ins drawn | 20:20 | 20:34 | 0:14 | A test helper picked an attached SW's slot first |
+| Stage 3: the Unit Lab's Art tab; the style sheets name the poses | 20:34 | 21:09 | 0:35 | Lying poses given a height after the Studio check; two Studio rebuilds |
+| Stages 4 and 6: the pose tracer; every side's kit | 21:09 | 21:17 | 0:08 | Two helmets redrawn after the preview |
+| Stage 7: a prisoner's pose (asl@1.17.0) | 21:17 | 21:24 | 0:07 | Two golden SVGs added for the new state |
+| Stage 8: the strict build and the whole suite, two Units tests updated for asl@1.17.0 | 21:24 | 21:58 | 0:34 | The suite itself ran 28 minutes |

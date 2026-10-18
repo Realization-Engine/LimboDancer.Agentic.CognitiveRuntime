@@ -1166,3 +1166,14 @@ Written with the pass's documents on 2026-10-15. The first table is what a secti
 | A vehicle's MA MG's To Kill attack in the AFPh, unhalved | Pass 60 reviews, 2026-10-15 (second referee) | D3.53, D3.54, p. 201 | Pass 110, with the MG's AFPh | Refused. |
 | A Manned Gun counted as possessed for A9.74; a DC Placement's PAATC decided in Play | Pass 60 reviews, 2026-10-15 (table player) | A9.74; A23.3, A23.5 | A fix in the member named in the review | Each works today; the Placement bar itself is now Rules'. |
 | A MG-armed vehicle's MA proposed as ordnance at a Location with no AFV is refused with the package's generic "the Gun is not one the package reviews", where before the pass the VCA bar refused it in words of its own | The gate's sweep, 2026-10-15 (`p35-bog`, two lines) | A9.61, D3.54 | A fix in `LiveOrdnance.FromState` or `ScenarioA1MachineGunKill.Outside`: the MG's own refusal, as a SW MG gets (`play.mg-to-kill`) | Refused, with poorer words. |
+
+## 61. Added by the figure art plan
+
+The ASL Unit Figure Art Plan (`src/ASL/docs/Plans`), 2026-10-17: nationality figures for the personnel counters.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| A figure for each Axis Minor nation (Hungarian, Romanian, Bulgarian, Slovak, Croatian), whose helmets differ | Figure art plan, decision F5 | A25.7, Axis Minor nationality | A nationality field on a unit apart from its side, which is only `axis-minor` | One shared Axis Minor figure: a German-pattern helmet with a rounder skirt. |
+| Early-war and late-war kit (the American M1917 against the M1, the Soviet SSh-36 against the SSh-40, the British Mk III) | Figure art plan, decision F6 | (display) | The scenario's date reaching the renderer | One helmet per side, the war's most common. |
+| Japanese and Chinese figures | Figure art plan, decision F5 | A25 | Japanese or Chinese units in the catalog | The vocabulary has a Japanese side; it draws the standing figure with no kit. |
+| Icons for the Unit Lab's Unit and Art tabs and the Art tab's Coverage, Prompts, and Batches | Figure art plan, stage 3 | (UI) | An Icon Lab batch | The Icon Lab's Coverage lists them as needing an icon; they keep their words. |
