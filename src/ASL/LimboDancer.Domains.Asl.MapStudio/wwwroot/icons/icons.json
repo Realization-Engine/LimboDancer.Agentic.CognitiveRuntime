@@ -73,5 +73,10 @@
     "key": "evidence",
     "label": "Evidence",
     "group": "Inspector tab"
+  },
+  {
+    "key": "layers",
+    "label": "Layers",
+    "group": "Inspector tab"
   }
 ]

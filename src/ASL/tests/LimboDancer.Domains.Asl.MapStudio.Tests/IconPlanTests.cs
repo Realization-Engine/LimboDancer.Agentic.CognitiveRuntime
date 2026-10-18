@@ -165,7 +165,7 @@ public sealed class IconPlanTests(StudioFactory factory) : IClassFixture<StudioF
         var bench = new IconBench();
         var view = context.Render<IconPromptBench>(parameters => parameters
             .Add(component => component.Plan, plan)
-            .Add(component => component.Icons, EmptyLibrary())
+            .Add(component => component.Shelf, EmptyLibrary())
             .Add(component => component.Bench, bench)
             .Add(component => component.OnSaveBatch, (IconBatch batch) => saved = batch));
 
@@ -201,7 +201,7 @@ public sealed class IconPlanTests(StudioFactory factory) : IClassFixture<StudioF
         bench.Add("other");
         var view = context.Render<IconPromptBench>(parameters => parameters
             .Add(component => component.Plan, plan)
-            .Add(component => component.Icons, EmptyLibrary())
+            .Add(component => component.Shelf, EmptyLibrary())
             .Add(component => component.Bench, bench)
             .Add(component => component.OnSaveBatch, (IconBatch batch) => saved = batch));
 
@@ -238,7 +238,7 @@ public sealed class IconPlanTests(StudioFactory factory) : IClassFixture<StudioF
         bench.Load(tabs);
         var view = context.Render<IconPromptBench>(parameters => parameters
             .Add(component => component.Plan, plan)
-            .Add(component => component.Icons, EmptyLibrary())
+            .Add(component => component.Shelf, EmptyLibrary())
             .Add(component => component.Bench, bench)
             .Add(component => component.OnSaveBatch, (IconBatch batch) => saves.Add(batch)));
         Assert.Equal("Batch 2026-10-17-2", view.Find("#icon-bench-batch-title").TextContent);
@@ -297,7 +297,7 @@ public sealed class IconPlanTests(StudioFactory factory) : IClassFixture<StudioF
         bench.Add("proposal");
         var view = context.Render<IconPromptBench>(parameters => parameters
             .Add(component => component.Plan, plan)
-            .Add(component => component.Icons, EmptyLibrary())
+            .Add(component => component.Shelf, EmptyLibrary())
             .Add(component => component.Coverage, coverage)
             .Add(component => component.Bench, bench));
         var where = view.Find(".icon-bench-slot .icon-bench-where").TextContent;

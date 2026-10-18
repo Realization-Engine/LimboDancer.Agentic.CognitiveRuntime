@@ -1,21 +1,22 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 
-@* The Icon Lab's Prompts tab: briefs waiting for a batch, grouped by the component that will draw them; four slots in Midjourney's 2x2
-   order; the prompt they make with the shared style and the style reference; copy it, save the batch, or edit the shared style. *@
+@* The Prompts tab of the Icon Lab and of the Unit Lab's Art: briefs waiting for a batch, grouped by the component that will draw them
+   (the Icon Lab) or by their group (the Unit Lab); four slots in Midjourney's 2x2 order; the prompt they make with the shared style and the
+   style reference; copy it, save the batch, or edit the shared style. *@
 <div class="icon-bench">
     <section class="icon-bench-queue" aria-labelledby="icon-bench-queue-title">
         <h3 id="icon-bench-queue-title">Ready to prompt</h3>
-        <p class="muted">Briefs in no batch and not drawn, by the component that will draw them.</p>
+        <p class="muted">@(GroupOf is null ? "Briefs in no batch and not drawn, by the component that will draw them." : "Briefs in no batch and not drawn, by group.")</p>
         @if (Queue.Count == 0)
         {
-            <p class="muted" id="icon-bench-queue-empty">Every brief is in a batch. Write briefs from Coverage with New icon, or here.</p>
+            <p class="muted" id="icon-bench-queue-empty">@(GroupOf is null ? "Every brief is in a batch. Write briefs from Coverage with New icon, or here." : "Every brief is in a batch, or drawn.")</p>
         }
         else
         {
             @if (!Bench.OneIcon)
             {
-                <button type="button" id="icon-bench-fill" @onclick="FillFromOneComponent">Fill the slots from one component</button>
+                <button type="button" id="icon-bench-fill" @onclick="FillFromOneComponent">@(GroupOf is null ? "Fill the slots from one component" : "Fill the slots from one group")</button>
             }
             @foreach (var group in Queue)
             {
@@ -35,7 +36,7 @@
                 </div>
             }
         }
-        <button type="button" class="link" id="icon-bench-new-brief" @onclick="@(() => editing = (new IconBrief(string.Empty, string.Empty, string.Empty), true))">Write a brief with no control yet</button>
+        <button type="button" class="link" id="icon-bench-new-brief" @onclick="@(() => editing = (new IconBrief(string.Empty, string.Empty, string.Empty), true))">@(GroupOf is null ? "Write a brief with no control yet" : "Write a brief")</button>
     </section>
 
     <section class="icon-bench-batch" aria-labelledby="icon-bench-batch-title">
@@ -62,20 +63,20 @@
         <fieldset class="plain icon-bench-mode">
             <legend class="visually-hidden">What the prompt asks Midjourney for</legend>
             <label><input type="radio" name="icon-bench-mode" id="icon-bench-four" checked="@(!Bench.OneIcon)" @onchange="@(() => SetOneIcon(false))" /> Set of four</label>
-            <label><input type="radio" name="icon-bench-mode" id="icon-bench-single" checked="@Bench.OneIcon" @onchange="@(() => SetOneIcon(true))" /> One icon, four tries</label>
+            <label><input type="radio" name="icon-bench-mode" id="icon-bench-single" checked="@Bench.OneIcon" @onchange="@(() => SetOneIcon(true))" /> One @Shelf.Noun, four tries</label>
             <span class="muted">
-                @(Bench.OneIcon ? "Midjourney's four images are four tries at this one icon; pick the best." : "Four icons in one 2x2 set, drawn alike; the slots follow the grid.")
+                @(Bench.OneIcon ? $"Midjourney's four images are four tries at this one {Shelf.Noun}; pick the best." : "Four drawings in one 2x2 set, drawn alike; the slots follow the grid.")
             </span>
         </fieldset>
 
-        <ol class="@(Bench.OneIcon ? "icon-bench-slots single" : "icon-bench-slots")" aria-label="@(Bench.OneIcon ? "The icon" : "The four slots, in Midjourney's 2x2 order")">
+        <ol class="@(Bench.OneIcon ? "icon-bench-slots single" : "icon-bench-slots")" aria-label="@(Bench.OneIcon ? $"The {Shelf.Noun}" : "The four slots, in Midjourney's 2x2 order")">
             @for (var slot = 0; slot < Bench.Needed; slot++)
             {
                 var index = slot;
                 var key = Bench.Slots[index];
                 var brief = key is null ? null : Plan.Brief(key);
                 <li class="@(key is null ? "icon-bench-slot empty" : "icon-bench-slot")" data-slot="@(index + 1)">
-                    <span class="muted">@(Bench.OneIcon ? "The icon" : $"{index + 1}, {IconPlan.SlotNames[index]}")</span>
+                    <span class="muted">@(Bench.OneIcon ? $"The {Shelf.Noun}" : $"{index + 1}, {IconPlan.SlotNames[index]}")</span>
                     @if (key is null)
                     {
                         <span class="muted">Empty: add a brief from the list.</span>
@@ -84,7 +85,14 @@
                     {
                         <strong>@(brief?.Label ?? key)</strong>
                         <span>@(brief?.Brief ?? "This brief is gone.")</span>
-                        @Placement(key)
+                        @if (Where is { } where)
+                        {
+                            @where(key)
+                        }
+                        else
+                        {
+                            @Placement(key)
+                        }
                         <span class="toolbar">
                             @if (brief is not null)
                             {
@@ -126,7 +134,7 @@
             <div class="icon-bench-style">
                 <p class="muted">Shared by every batch. A prompt is the opening, the numbered briefs, the style, the --sref, then the parameters.</p>
                 <label>Opening for a set of four <textarea rows="3" @bind="opening"></textarea></label>
-                <label>Opening for one icon <textarea rows="2" id="icon-bench-single-opening" @bind="singleOpening"></textarea></label>
+                <label>Opening for one @Shelf.Noun <textarea rows="2" id="icon-bench-single-opening" @bind="singleOpening"></textarea></label>
                 <label>Style <textarea rows="5" @bind="style"></textarea></label>
                 <label>Parameters <textarea rows="2" @bind="parameters"></textarea></label>
                 <div class="toolbar">
@@ -143,7 +151,18 @@
     public IconPlan Plan { get; set; } = null!;
 
     [Parameter, EditorRequired]
-    public IconLibrary Icons { get; set; } = null!;
+    public IArtShelf Shelf { get; set; } = null!;
+
+    /// <summary>
+    /// The group a brief waits in, for a lab whose briefs belong to no control (the Unit Lab's figure parts); when null, a brief waits under
+    /// the component of the first control that uses it.
+    /// </summary>
+    [Parameter]
+    public Func<IconBrief, string>? GroupOf { get; set; }
+
+    /// <summary>Where a slot's drawing will be seen, for a lab that shows it its own way; when null, the controls that use it.</summary>
+    [Parameter]
+    public RenderFragment<string>? Where { get; set; }
 
     [Parameter]
     public IconCoverage? Coverage { get; set; }
@@ -171,12 +190,12 @@
     private bool messageIsError;
     private IJSObjectReference? clipboard;
 
-    private IReadOnlyCollection<string> TakenKeys => Plan.Briefs.Select(brief => brief.Key).Concat(Icons.Icons.Select(icon => icon.Key)).ToHashSet(StringComparer.Ordinal);
+    private IReadOnlyCollection<string> TakenKeys => Plan.Briefs.Select(brief => brief.Key).Concat(Shelf.Keys).ToHashSet(StringComparer.Ordinal);
 
     /// <summary>The briefs waiting for a batch, grouped by the component of the first control that uses each.</summary>
     private IReadOnlyList<IGrouping<string, IconBrief>> Queue =>
-        Plan.Briefs.Where(brief => IconStages.Of(brief.Key, Plan, Icons, Coverage) == IconStage.Briefed)
-            .GroupBy(brief => Plan.ControlsOf(brief.Key).Select(ComponentOf).FirstOrDefault() ?? "No control yet")
+        Plan.Briefs.Where(brief => IconStages.Of(brief.Key, Plan, Shelf, Coverage) == IconStage.Briefed)
+            .GroupBy(brief => GroupOf?.Invoke(brief) ?? Plan.ControlsOf(brief.Key).Select(ComponentOf).FirstOrDefault() ?? "No control yet")
             .OrderByDescending(group => group.Count()).ThenBy(group => group.Key, StringComparer.Ordinal)
             .ToList();
 
@@ -230,7 +249,7 @@
                         @foreach (var neighbour in placement.Neighbours.Take(8))
                         {
                             <span class="icon-bench-neighbour" title="@neighbour.Label">
-                                @if (neighbour.Icon is { } icon && Icons.Find(icon) is { } drawn && IconLibrary.Sized(drawn, 16) is { } markup)
+                                @if (neighbour.Icon is { } icon && Shelf.Thumbnail(icon, 16) is { } markup)
                                 {
                                     @((MarkupString)markup)
                                 }
@@ -263,7 +282,7 @@
 
     private void Add(string key)
     {
-        message = Bench.Add(key) ? null : Bench.OneIcon ? "One icon holds one brief; remove it first, or switch to a set of four." : "Every slot is full; remove one first.";
+        message = Bench.Add(key) ? null : Bench.OneIcon ? $"One {Shelf.Noun} holds one brief; remove it first, or switch to a set of four." : "Every slot is full; remove one first.";
         messageIsError = message is not null;
         NameAfterTheIcon();
     }

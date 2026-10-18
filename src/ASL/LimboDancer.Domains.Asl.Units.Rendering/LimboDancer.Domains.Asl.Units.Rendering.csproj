@@ -6,5 +6,6 @@
   <ItemGroup>
     <EmbeddedResource Include="..\units\styles\*.uss" LogicalName="Styles.%(Filename)%(Extension)" Link="Styles\%(Filename)%(Extension)" WithCulture="false" />
     <EmbeddedResource Include="..\units\palettes\*.palette.json" LogicalName="Palettes.%(Filename)%(Extension)" Link="Palettes\%(Filename)%(Extension)" WithCulture="false" />
+    <EmbeddedResource Include="..\units\figures\figures.json" LogicalName="Figures.figures.json" Link="Figures\figures.json" WithCulture="false" />
   </ItemGroup>
 </Project>

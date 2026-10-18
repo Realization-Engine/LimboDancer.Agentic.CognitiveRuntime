@@ -39,6 +39,15 @@ public sealed class UnitRenderer
         get;
     }
 
+    /// <summary>
+    /// The figure parts personnel are drawn from (the ASL Unit Figure Art Plan): the embedded ones, accepted parts only, unless a caller
+    /// such as the Unit Lab's Art tab asks for the stand-ins too.
+    /// </summary>
+    public FigureArt Figures
+    {
+        get; init;
+    } = FigureArt.BuiltIn;
+
     public StyleSheet Sheet
     {
         get;
@@ -204,11 +213,11 @@ public sealed class UnitRenderer
         if (style["glyph"] is { } watermark && evaluator.Glyph(watermark) is { } mark)
         {
             svg.Start("g", ("opacity", "0.25"));
-            Glyphs.Draw(svg, mark.Name, mark.Argument, inner, textColor, document.Figures(Vocabulary) ?? 1);
+            Glyphs.Draw(svg, mark.Name, mark.Argument, inner, textColor, document.Figures(Vocabulary) ?? 1, Figures, document.Side, fill, key: document.Id + "-mark");
             svg.End();
         }
 
-        WriteSlots(svg, subject, owner, style, evaluator, inner, size, tier, textColor, side, warnings);
+        WriteSlots(svg, subject, owner, style, evaluator, inner, size, tier, textColor, side, fill, warnings);
         if (document.Facing is { } markFacing && evaluator.Ident(style["direction-mark"]) == "arrow")
         {
             DirectionArrow(svg, markFacing, centerX, centerY, size, evaluator.Color(style["direction-color"]) ?? stroke, filled: true);
@@ -306,7 +315,7 @@ public sealed class UnitRenderer
     }
 
     private void WriteSlots(SvgWriter svg, StyleSubject subject, StyleSubject? owner, ComputedStyle face, Evaluator faceEvaluator, Box inner, double size,
-        DetailTier tier, string textColor, string? side, List<RenderWarning> warnings)
+        DetailTier tier, string textColor, string? side, string faceFill, List<RenderWarning> warnings)
     {
         if (face["face-template"] is not { Count: > 0 } template)
         {
@@ -397,7 +406,11 @@ public sealed class UnitRenderer
 
             if (evaluator.Glyph(content) is { } glyph)
             {
-                if (!Glyphs.Draw(svg, glyph.Name, glyph.Argument, box, color, subject.Document.Figures(Vocabulary) ?? 1))
+                // The figures are ringed apart in the color behind them: the slot's own background, or the face's.
+                var ground = evaluator.Color(slotStyle["fill"]) ?? faceFill;
+                var piping = evaluator.Color(slotStyle["figure-piping"]);
+                if (!Glyphs.Draw(svg, glyph.Name, glyph.Argument, box, color, subject.Document.Figures(Vocabulary) ?? 1, Figures, subject.Document.Side, ground, piping,
+                    subject.Document.Id))
                 {
                     warnings.Add(new(subject.Document.Id, $"Slot '{region.Name}': '{glyph.Name}' is not a glyph."));
                 }

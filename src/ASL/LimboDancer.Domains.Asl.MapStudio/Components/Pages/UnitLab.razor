@@ -6,16 +6,25 @@
 @inject UnitLibrary Library
 @inject IBoardProvider Boards
 @inject MapService Maps
+@inject NavigationManager Navigation
 
 <PageTitle>Unit Lab - ASL Map Studio</PageTitle>
 
 <PageHeader Title="Unit Lab">
     <p>
         Describe a unit in the vocabulary (@Library.Vocabulary.Identity), preview it under each style sheet and detail tier, edit a sheet,
-        and place units on a board or map. Documents made here are synthetic display input, never game state.
+        and place units on a board or map. Documents made here are synthetic display input, never game state. <strong>Art</strong> makes the
+        personnel figures: every side in every pose as a counter, and the Midjourney prompts and batches of their poses.
     </p>
 </PageHeader>
 
+<InspectorTabs Tabs="@PageTabs" Selected="@PageTab" SelectedChanged="@ChangePageTab" Label="Unit Lab" IdPrefix="unit-lab">
+@if (PageTab == "art")
+{
+    <FigureArtBench />
+}
+else
+{
 <div class="lab">
     <section class="lab-fields">
         <UnitTemplatePicker Examples="@Library.Examples" Catalog="@Library.CatalogChoices" Vocabulary="@Library.Vocabulary" Value="@exampleId" ValueChanged="@LoadExample" />
@@ -58,6 +67,8 @@
     <UnitPlacementSetEditor @bind-Draft="placement" Boards="@boardListings" Placed="@placed" Vocabulary="@Library.Vocabulary" CanPlace="@(document is not null)"
                             OnPlace="@Place" OnLoad="@LoadSet" OnSave="@SaveSet" OnRemove="@Unplace" Message="@placeMessage" Failed="@placeFailed" SavedBoard="@savedBoard" />
 </div>
+}
+</InspectorTabs>
 
 @code {
     private static readonly DetailTier[] Tiers = [DetailTier.Far, DetailTier.Mid, DetailTier.Near];
@@ -91,6 +102,17 @@
 
     [SupplyParameterFromQuery(Name = "board")]
     public string? BoardQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "tab")]
+    public string? TabQuery { get; set; }
+
+    private static readonly IReadOnlyList<InspectorTabs.Tab> PageTabs = [new("unit", "Unit"), new("art", "Art")];
+
+    /// <summary>The page's tab: the unit described and previewed, or the figure art (ASL Unit Figure Art Plan, stage 3).</summary>
+    private string PageTab => TabQuery == "art" ? "art" : "unit";
+
+    private void ChangePageTab(string tab) =>
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?> { ["tab"] = tab == "art" ? "art" : null, ["art"] = null }), replace: true);
 
     protected override void OnInitialized()
     {

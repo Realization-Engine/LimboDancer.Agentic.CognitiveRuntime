@@ -1,0 +1,75 @@
+{
+  "style": {
+    "opening": "a set of 4 solid black silhouettes of the same WWII infantry soldier in four poses, 2 by 2 grid, evenly spaced on a flat pure white background, each figure whole from helmet to boots and centered in an equal square cell, the same build and the same scale in every cell.",
+    "style": "Full side profile facing right, field uniform with webbing belt, ammunition pouches and a small pack, a simple round steel helmet, stocky proportions like a classic plastic army man: broad shoulders, thick arms and legs, slightly large head, solid flat black fill, crisp clean outline, no interior lines, readable at small size",
+    "parameters": "--no text, ground, shadow, scenery, color --style raw --stylize 50 --ar 1:1",
+    "singleOpening": "a single solid black silhouette of a WWII infantry soldier, the whole figure from helmet to boots, centered with even margins on a flat pure white background, one figure only."
+  },
+  "briefs": [
+    {
+      "key": "pose-standing",
+      "label": "Squad: standing rifleman",
+      "brief": "a rifleman advancing in a low combat crouch, mid-stride, leaning forward, a bolt-action rifle held diagonally across the body with both hands, rear hand at the hip, front hand on the fore-end, muzzle pointing forward and up",
+      "meaning": "Squads and half-squads, front face; repeated two or three times for size (A1.2).",
+      "reference": ""
+    },
+    {
+      "key": "pose-crew",
+      "label": "Crew: kneeling",
+      "brief": "a gun crewman kneeling on one knee, torso upright, both hands forward at waist height as if loading a shell into a gun breech, a rifle slung across his back",
+      "meaning": "Crews (A1.123, A21), so a crew reads apart from a half-squad.",
+      "reference": ""
+    },
+    {
+      "key": "pose-leader",
+      "label": "Leader: pointing",
+      "brief": "an officer standing upright and half turned toward the viewer's right, front arm fully extended pointing forward with the index finger, rear hand low at the hip holding a submachine gun by its grip, muzzle down",
+      "meaning": "Leaders (A10.7): one figure, directing.",
+      "reference": ""
+    },
+    {
+      "key": "pose-hero",
+      "label": "Hero: charging",
+      "brief": "a soldier charging forward at a full run, body leaning hard forward, rear arm drawn back high about to throw a stick grenade, front hand holding a rifle low at the side",
+      "meaning": "Heroes (A15.2).",
+      "reference": ""
+    },
+    {
+      "key": "pose-wounded",
+      "label": "Wounded leader or hero",
+      "brief": "a wounded soldier standing hunched, one hand pressed to his side, the other arm hanging low holding a pistol pointed at the ground, knees slightly bent, head lowered",
+      "meaning": "The wounded face of a leader or a hero (A15.2, A17).",
+      "reference": ""
+    },
+    {
+      "key": "pose-broken",
+      "label": "Broken: falling back",
+      "brief": "a soldier falling back in retreat, running away to the left while looking back over his shoulder to the right, hunched low, one arm raised over the helmet for cover, rifle trailing in the other hand",
+      "meaning": "The broken face of any personnel (A10).",
+      "reference": ""
+    },
+    {
+      "key": "pose-pinned",
+      "label": "Pinned: prone",
+      "brief": "a soldier lying flat on his stomach, head toward the right, helmet down, elbows on the ground, a bolt-action rifle held forward along the ground aiming to the right",
+      "meaning": "A pinned unit (A7.8).",
+      "reference": ""
+    },
+    {
+      "key": "pose-berserk",
+      "label": "Berserk: bayonet charge",
+      "brief": "a soldier in a wild bayonet charge, legs in a long running stride, a rifle with a fixed bayonet thrust forward low with both hands, head forward, mouth open shouting",
+      "meaning": "A berserk unit (A15.4).",
+      "reference": ""
+    },
+    {
+      "key": "pose-prisoner",
+      "label": "Prisoner: hands raised",
+      "brief": "a prisoner standing upright, both hands raised high above the helmet with palms open, no weapon, webbing belt and empty pouches",
+      "meaning": "A captured unit in a Guard's custody (A20.5).",
+      "reference": ""
+    }
+  ],
+  "assignments": [],
+  "batches": []
+}

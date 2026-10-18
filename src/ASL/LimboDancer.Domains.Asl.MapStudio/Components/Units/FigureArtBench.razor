@@ -1,0 +1,180 @@
+@using LimboDancer.Domains.Asl.MapStudio.Components.Icons
+@inject FigureArtLab Lab
+@inject UnitLibrary Library
+@inject NavigationManager Navigation
+
+@* The Unit Lab's Art (ASL Unit Figure Art Plan, stage 3): the personnel figures from brief to counter. Coverage shows every side in every
+   pose as the full counter, stand-ins included, with what each still lacks; Prompts and Batches are the Icon Lab's, on the figure plan. *@
+<InspectorTabs Tabs="@Tabs" Selected="@Tab" SelectedChanged="@ChangeTab" Label="Figure art" IdPrefix="figure-art">
+    @switch (Tab)
+    {
+        case "prompts":
+            <IconPromptBench Plan="@plan" Shelf="@Lab" Bench="@bench" GroupOf="@(_ => "Poses")" Where="@Where"
+                             OnSaveBrief="SaveBrief" OnSaveBatch="SaveBatch" OnSaveStyle="SaveStyle" />
+            break;
+        case "batches":
+            <IconBatchList Plan="@plan" Shelf="@Lab" Id="figure-art-batches" OnReference="SaveReference" OnOpen="OpenBatch" />
+            break;
+        default:
+            <section id="figure-art-coverage" aria-label="Figure coverage">
+                <p class="muted">
+                    Every side in every pose, drawn as the counter it will be. Poses are traced from the user's picks and carry their own
+                    weapons; each side's helmet is drawn from its documented issue and set on the head. A pose shows here until it is accepted,
+                    and only then on the counters in play. Sources: <code>src/ASL/units/figures</code>.
+                </p>
+                <div class="toolbar figure-art-controls">
+                    <label>
+                        Style sheet
+                        <select id="figure-art-sheet" @bind="sheet" @bind:after="Draw">
+                            @foreach (var name in UnitStyles.BuiltIn)
+                            {
+                                <option value="@name">@name</option>
+                            }
+                        </select>
+                    </label>
+                    <fieldset class="plain">
+                        <legend class="visually-hidden">Detail level</legend>
+                        @foreach (var level in Levels)
+                        {
+                            <label>
+                                <input type="radio" name="figure-art-tier" checked="@(tier == level)" @onchange="@(() => SetTier(level))" />
+                                @level.ToString().ToLowerInvariant()
+                            </label>
+                        }
+                    </fieldset>
+                </div>
+                <div class="figure-art-grid" role="table" aria-label="Sides against poses">
+                    <div role="row" class="figure-art-row figure-art-head">
+                        <span role="columnheader">Side</span>
+                        @foreach (var pose in FigureArt.PoseNames)
+                        {
+                            <span role="columnheader" data-pose="@pose" title="@(plan.Brief(FigureArtLab.PoseKey(pose))?.Brief)">
+                                @pose
+                                <span class="figure-art-state" data-state="@Lab.PoseState(pose)">@Lab.PoseState(pose)</span>
+                            </span>
+                        }
+                    </div>
+                    @foreach (var side in FigureArtLab.Sides)
+                    {
+                        <div role="row" class="figure-art-row" data-side="@side">
+                            <span role="rowheader" class="figure-art-side">
+                                @DisplayText.Side(side)
+                                @if (Lab.Thumbnail($"{side}-helmet", 120) is { } helmet)
+                                {
+                                    <span class="figure-art-kit" title="@($"{DisplayText.Side(side)} helmet")">@((MarkupString)helmet)</span>
+                                }
+                            </span>
+                            @foreach (var pose in FigureArt.PoseNames)
+                            {
+                                var missing = Lab.Missing(pose, side);
+                                <span role="cell" class="figure-art-cell" data-pose="@pose" data-side="@side">
+                                    @if (cells.TryGetValue((side, pose), out var svg))
+                                    {
+                                        @((MarkupString)svg)
+                                    }
+                                    else
+                                    {
+                                        <span class="muted">no counter</span>
+                                    }
+                                    @if (missing.Count > 0)
+                                    {
+                                        <span class="figure-art-missing">needs @string.Join(", ", missing)</span>
+                                    }
+                                </span>
+                            }
+                        </div>
+                    }
+                </div>
+            </section>
+            break;
+    }
+</InspectorTabs>
+
+@code {
+    private static readonly IReadOnlyList<string> TabIds = ["coverage", "prompts", "batches"];
+    private static readonly DetailTier[] Levels = [DetailTier.Far, DetailTier.Mid, DetailTier.Near];
+
+    [SupplyParameterFromQuery(Name = "art")]
+    public string? TabQuery { get; set; }
+
+    private readonly IconBench bench = new();
+    private IconPlan plan = IconPlan.Empty;
+    private string sheet = UnitLibrary.DefaultSheet;
+    // Far first: the figure fills the counter there, and it is where a figure is hardest to read (decision F9).
+    private DetailTier tier = DetailTier.Far;
+    private Dictionary<(string Side, string Pose), string> cells = [];
+
+    private string Tab => TabQuery is { } tab && TabIds.Contains(tab) ? tab : TabIds[0];
+
+    private IReadOnlyList<InspectorTabs.Tab> Tabs =>
+    [
+        new("coverage", "Coverage", FigureArt.PoseNames.Count(pose => Lab.PoseState(pose) != "accepted")),
+        new("prompts", "Prompts", plan.Briefs.Count(brief => IconStages.Of(brief.Key, plan, Lab, null) == IconStage.Briefed)),
+        new("batches", "Batches", plan.Batches.Count),
+    ];
+
+    protected override void OnInitialized()
+    {
+        plan = Lab.Plans.Load();
+        bench.SetOneIcon(true);
+        Draw();
+    }
+
+    private void SetTier(DetailTier level)
+    {
+        tier = level;
+        Draw();
+    }
+
+    /// <summary>Renders every side in every pose under the chosen sheet and level, stand-ins included.</summary>
+    private void Draw()
+    {
+        cells = [];
+        if (Library.Renderer(sheet) is not { } plain)
+        {
+            return;
+        }
+
+        var renderer = Lab.WithStandIns(plain);
+        foreach (var side in FigureArtLab.Sides)
+        {
+            foreach (var pose in FigureArt.PoseNames)
+            {
+                if (FigureArtLab.Sample(Library.Examples, pose, side) is { } sample)
+                {
+                    cells[(side, pose)] = UnitPreview.Document(renderer, sample.Document, [tier], sample.Face, 2.4, []);
+                }
+            }
+        }
+    }
+
+    /// <summary>Where a pose is seen: its meaning, and the German and Russian counters it will draw, stand-in or traced.</summary>
+    private RenderFragment<string> Where => key => @<span class="icon-bench-where">
+        @(plan.Brief(key)?.Meaning)
+        @if (key.StartsWith("pose-", StringComparison.Ordinal) && cells.TryGetValue(("german", key["pose-".Length..]), out var german))
+        {
+            <span class="figure-art-where">@((MarkupString)german)
+                @if (cells.TryGetValue(("russian", key["pose-".Length..]), out var russian))
+                {
+                    @((MarkupString)russian)
+                }
+            </span>
+        }
+    </span>;
+
+    private void ChangeTab(string tab) => Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("art", tab == TabIds[0] ? null : tab), replace: true);
+
+    private void SaveBrief(IconBrief brief) => plan = Lab.Plans.Update(current => current.WithBrief(brief));
+
+    private void SaveBatch(IconBatch batch) => plan = Lab.Plans.Update(current => current.WithBatch(batch));
+
+    private void SaveStyle(IconPromptStyle style) => plan = Lab.Plans.Update(current => current with { Style = style });
+
+    private void SaveReference((string Key, string Reference) chosen) => plan = Lab.Plans.Update(current => current.WithReference(chosen.Key, chosen.Reference));
+
+    private void OpenBatch(IconBatch batch)
+    {
+        bench.Load(batch);
+        ChangeTab("prompts");
+    }
+}

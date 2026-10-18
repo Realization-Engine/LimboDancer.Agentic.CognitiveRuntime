@@ -38,6 +38,17 @@ asl|personnel {
                  "fp  d1    range d2    morale ident";
 }
 asl|personnel::slot(fig)    { content: glyph(size-figures); }
+/* A thin light line around each figure, so dark figures stand out on the darker faces (the user, 2026-10-17). */
+asl|personnel::slot(fig)    { figure-piping: #ece6d6; }
+/* The figure's pose (ASL Unit Figure Art Plan): each falls back to the drawn figure until its art is accepted, standing but for the
+   broken pose, which lies prone. */
+asl|crew::slot(fig)   { content: glyph(size-figures, crew); }
+asl|leader::slot(fig) { content: glyph(size-figures, leader); }
+asl|hero::slot(fig)   { content: glyph(size-figures, hero); }
+asl|smc:face(wounded)::slot(fig) { content: glyph(size-figures, wounded); }
+asl|personnel:asl\:pinned::slot(fig)  { content: glyph(size-figures, pinned); }
+asl|personnel:asl\:berserk::slot(fig) { content: glyph(size-figures, berserk); }
+asl|personnel:asl\:captured::slot(fig) { content: glyph(size-figures, prisoner); }
 asl|personnel::slot(class)  { content: attr(class); font-size: 0.24; font-weight: bold; }
 asl|personnel::slot(fp)     { content: attr(firepower); font-size: 0.28; font-weight: bold; }
 asl|personnel::slot(d1)     { content: "-"; font-size: 0.24; }
@@ -59,14 +70,15 @@ asl|crew {
                  "fp    d1    range d2    morale .";
 }
 
-/* Personnel, broken face: prone figures, the Basic Point Value upper left, the Broken Morale Level large lower right. */
+/* Personnel, broken face: the broken figures, the Basic Point Value upper left, the Broken Morale Level large lower right. The figures
+   take the same four columns of six as on the front face (the user, 2026-10-18: they were half the width, out of step with the others). */
 asl|personnel:face(broken) {
   fill: side(fill-muted);
-  face-template: "bpv bpv .       ."
-                 "fig fig bmorale bmorale"
-                 "fig fig bmorale bmorale";
+  face-template: "bpv bpv bpv bpv .       ."
+                 "fig fig fig fig bmorale bmorale"
+                 "fig fig fig fig bmorale bmorale";
 }
-asl|personnel:face(broken)::slot(fig)     { content: glyph(size-figures, prone); }
+asl|personnel:face(broken)::slot(fig)     { content: glyph(size-figures, broken); }
 asl|personnel:face(broken)::slot(bpv)     { content: attr(bpv); font-size: 0.18; align: start; }
 asl|personnel:face(broken)::slot(bmorale) { content: attr(broken-morale); font-size: 0.36; font-weight: bold; }
 asl|personnel:face(broken).asl\:self-rally::slot(bmorale) { mark: box; }
@@ -374,7 +386,8 @@ asl|dummy::slot(label) { content: "Dummy"; font-weight: bold; font-size: 0.24; }
   unit:concealed { face-template: "q"; }
   asl|personnel { face-template: "fig fig fig fig class" "fp d1 range d2 morale"; }
   asl|personnel:face(broken) { face-template: "fig" "bmorale"; }
-  asl|leader { face-template: "drm" "morale"; }
+  /* A leader keeps its figure at mid, as at far and near (the user, 2026-10-18). */
+  asl|leader { face-template: "fig fig" "drm morale"; }
   asl|sw { face-template: "label label label" "fp dash range"; }
   asl|dc { face-template: "label" "fp"; }
   asl|latw, asl|light-mortar { face-template: "label"; }
@@ -394,7 +407,20 @@ asl|dummy::slot(label) { content: "Dummy"; font-weight: bold; font-size: 0.24; }
   unit { face-template: "fig"; badges: none; }
   unit::slot(fig) { content: glyph(size-figures); }
   unit:concealed { face-template: "q"; }
-  asl|personnel:face(broken)::slot(fig) { content: glyph(size-figures, prone); }
+  asl|personnel:face(broken)::slot(fig) { content: glyph(size-figures, broken); }
+  asl|crew::slot(fig)   { content: glyph(size-figures, crew); }
+  asl|leader::slot(fig) { content: glyph(size-figures, leader); }
+  asl|hero::slot(fig)   { content: glyph(size-figures, hero); }
+  asl|smc:face(wounded)::slot(fig) { content: glyph(size-figures, wounded); }
+  asl|personnel:asl\:pinned::slot(fig)  { content: glyph(size-figures, pinned); }
+  asl|personnel:asl\:berserk::slot(fig) { content: glyph(size-figures, berserk); }
+  asl|personnel:asl\:captured::slot(fig) { content: glyph(size-figures, prisoner); }
+  /* The major numbers stay at far (the user, 2026-10-17): Firepower, range, and Morale; a broken unit's Broken Morale; a leader's
+     modifier and Morale. */
+  asl|personnel { face-template: "fig fig fig fig fig" "fp d1 range d2 morale"; }
+  asl|personnel:face(broken) { face-template: "fig" "bmorale"; }
+  asl|leader { face-template: "fig fig" "drm morale"; }
+  asl|personnel::slot(fp), asl|personnel::slot(range), asl|personnel::slot(morale), asl|personnel::slot(bmorale) { mark: none; superscript: none; }
   asl|mg::slot(fig) { content: glyph(mg); }
   asl|ft::slot(fig) { content: glyph(ft); }
   asl|dc::slot(fig) { content: glyph(dc); }

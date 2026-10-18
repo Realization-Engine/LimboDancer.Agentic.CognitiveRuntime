@@ -122,7 +122,7 @@ else if (board is null)
     /// <summary>Claude Design's review: the rendered layers and the trace sit in a Layers tab after the inspector's own, not in a row above the map.</summary>
     private IReadOnlyList<BoardInspector.ExtraTab> LayerTabs =>
     [
-        new(new("layers", "Layers"), @<div>
+        new(new("layers", "Layers", Icon: "layers"), @<div>
             <BoardLayerToggles Layers="@ToggleLayers" Visible="@visible" LayerChanged="@ToggleLayer" TraceAvailable="@(view == BoardView.HexFacts)" Trace="@trace" TraceChanged="@(on => trace = on)" />
             @if (unitSets.Count > 0 || unitGames.Count > 0)
             {

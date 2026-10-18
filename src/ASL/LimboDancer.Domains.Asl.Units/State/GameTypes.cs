@@ -155,7 +155,7 @@ public enum ConditionState
 
 /// <summary>
 /// The condition dimensions an instance can have (ASL-UNIT-023): each a separate dimension, never one state enumeration.
-/// They are the vocabulary's states, which the display draws, plus two the display does not draw.
+/// They are the vocabulary's states, which the display draws, plus one the display does not draw (Melee).
 /// </summary>
 public static class Conditions
 {
@@ -205,7 +205,10 @@ public static class Conditions
     /// <summary>A malfunctioned SW (A9.7, p. 65): it cannot fire until repaired (A9.72).</summary>
     public const string Malfunctioned = "asl:malfunctioned";
 
-    /// <summary>Captured (A20.2, p. 86), held by a captor (A20.5, p. 87).</summary>
+    /// <summary>
+    /// Captured (A20.2, p. 86), held by a captor (A20.5, p. 87). A vocabulary state since <c>asl@1.17.0</c>, so a prisoner is drawn in the
+    /// prisoner's pose (ASL Unit Figure Art Plan, stage 7).
+    /// </summary>
     public const string Captured = "asl:captured";
 
     /// <summary>Held in Melee (A11.15, p. 72).</summary>

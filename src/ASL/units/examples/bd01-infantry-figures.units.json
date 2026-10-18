@@ -1,0 +1,1587 @@
+{
+  "schemaVersion": 1,
+  "setId": "bd01-infantry-figures",
+  "label": "Synthetic infantry on board 1: every side in every infantry type",
+  "synthetic": true,
+  "vocabulary": [
+    "asl@1.17.0"
+  ],
+  "units": [
+    {
+      "id": "german-squad",
+      "kind": "asl:squad",
+      "side": "german",
+      "location": "bd01:C1:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 6,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      }
+    },
+    {
+      "id": "german-half-squad",
+      "kind": "asl:half-squad",
+      "side": "german",
+      "location": "bd01:C2:0",
+      "faces": {
+        "front": {
+          "firepower": 2,
+          "range": 3,
+          "morale": 7,
+          "identity": "B",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 5
+        }
+      }
+    },
+    {
+      "id": "german-crew",
+      "kind": "asl:crew",
+      "side": "german",
+      "location": "bd01:C3:0",
+      "faces": {
+        "front": {
+          "firepower": 2,
+          "range": 2,
+          "morale": 7,
+          "identity": "3"
+        },
+        "broken": {
+          "broken-morale": 7
+        }
+      }
+    },
+    {
+      "id": "german-leader",
+      "kind": "asl:leader",
+      "side": "german",
+      "location": "bd01:C4:0",
+      "faces": {
+        "front": {
+          "leadership": -1,
+          "morale": 8
+        },
+        "broken": {
+          "broken-morale": 8
+        }
+      }
+    },
+    {
+      "id": "german-hero",
+      "kind": "asl:hero",
+      "side": "german",
+      "location": "bd01:C5:0",
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "german-hero-wounded",
+      "kind": "asl:hero",
+      "side": "german",
+      "location": "bd01:C6:0",
+      "states": [
+        "asl:wounded"
+      ],
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "german-broken",
+      "kind": "asl:squad",
+      "side": "german",
+      "location": "bd01:C7:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 6,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:broken"
+      ]
+    },
+    {
+      "id": "german-pinned",
+      "kind": "asl:squad",
+      "side": "german",
+      "location": "bd01:C8:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 6,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:pinned"
+      ]
+    },
+    {
+      "id": "german-berserk",
+      "kind": "asl:squad",
+      "side": "german",
+      "location": "bd01:C9:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 6,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:berserk"
+      ]
+    },
+    {
+      "id": "german-prisoner",
+      "kind": "asl:squad",
+      "side": "german",
+      "location": "bd01:C10:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 6,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:captured"
+      ]
+    },
+    {
+      "id": "russian-squad",
+      "kind": "asl:squad",
+      "side": "russian",
+      "location": "bd01:G1:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      }
+    },
+    {
+      "id": "russian-half-squad",
+      "kind": "asl:half-squad",
+      "side": "russian",
+      "location": "bd01:G2:0",
+      "faces": {
+        "front": {
+          "firepower": 2,
+          "range": 2,
+          "morale": 7,
+          "identity": "B",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 5
+        }
+      }
+    },
+    {
+      "id": "russian-crew",
+      "kind": "asl:crew",
+      "side": "russian",
+      "location": "bd01:G3:0",
+      "faces": {
+        "front": {
+          "firepower": 2,
+          "range": 2,
+          "morale": 7,
+          "identity": "3"
+        },
+        "broken": {
+          "broken-morale": 7
+        }
+      }
+    },
+    {
+      "id": "russian-leader",
+      "kind": "asl:leader",
+      "side": "russian",
+      "location": "bd01:G4:0",
+      "faces": {
+        "front": {
+          "leadership": -1,
+          "morale": 8
+        },
+        "broken": {
+          "broken-morale": 8
+        }
+      }
+    },
+    {
+      "id": "russian-hero",
+      "kind": "asl:hero",
+      "side": "russian",
+      "location": "bd01:G5:0",
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "russian-hero-wounded",
+      "kind": "asl:hero",
+      "side": "russian",
+      "location": "bd01:G6:0",
+      "states": [
+        "asl:wounded"
+      ],
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "russian-broken",
+      "kind": "asl:squad",
+      "side": "russian",
+      "location": "bd01:G7:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:broken"
+      ]
+    },
+    {
+      "id": "russian-pinned",
+      "kind": "asl:squad",
+      "side": "russian",
+      "location": "bd01:G8:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:pinned"
+      ]
+    },
+    {
+      "id": "russian-berserk",
+      "kind": "asl:squad",
+      "side": "russian",
+      "location": "bd01:G9:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:berserk"
+      ]
+    },
+    {
+      "id": "russian-prisoner",
+      "kind": "asl:squad",
+      "side": "russian",
+      "location": "bd01:G10:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:captured"
+      ]
+    },
+    {
+      "id": "british-squad",
+      "kind": "asl:squad",
+      "side": "british",
+      "location": "bd01:K1:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 5,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      }
+    },
+    {
+      "id": "british-half-squad",
+      "kind": "asl:half-squad",
+      "side": "british",
+      "location": "bd01:K2:0",
+      "faces": {
+        "front": {
+          "firepower": 2,
+          "range": 2,
+          "morale": 7,
+          "identity": "B",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 5
+        }
+      }
+    },
+    {
+      "id": "british-crew",
+      "kind": "asl:crew",
+      "side": "british",
+      "location": "bd01:K3:0",
+      "faces": {
+        "front": {
+          "firepower": 2,
+          "range": 2,
+          "morale": 7,
+          "identity": "3"
+        },
+        "broken": {
+          "broken-morale": 7
+        }
+      }
+    },
+    {
+      "id": "british-leader",
+      "kind": "asl:leader",
+      "side": "british",
+      "location": "bd01:K4:0",
+      "faces": {
+        "front": {
+          "leadership": -1,
+          "morale": 8
+        },
+        "broken": {
+          "broken-morale": 8
+        }
+      }
+    },
+    {
+      "id": "british-hero",
+      "kind": "asl:hero",
+      "side": "british",
+      "location": "bd01:K5:0",
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "british-hero-wounded",
+      "kind": "asl:hero",
+      "side": "british",
+      "location": "bd01:K6:0",
+      "states": [
+        "asl:wounded"
+      ],
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "british-broken",
+      "kind": "asl:squad",
+      "side": "british",
+      "location": "bd01:K7:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 5,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:broken"
+      ]
+    },
+    {
+      "id": "british-pinned",
+      "kind": "asl:squad",
+      "side": "british",
+      "location": "bd01:K8:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 5,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:pinned"
+      ]
+    },
+    {
+      "id": "british-berserk",
+      "kind": "asl:squad",
+      "side": "british",
+      "location": "bd01:K9:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 5,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:berserk"
+      ]
+    },
+    {
+      "id": "british-prisoner",
+      "kind": "asl:squad",
+      "side": "british",
+      "location": "bd01:K10:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 5,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:captured"
+      ]
+    },
+    {
+      "id": "american-squad",
+      "kind": "asl:squad",
+      "side": "american",
+      "location": "bd01:O1:0",
+      "faces": {
+        "front": {
+          "firepower": 6,
+          "range": 6,
+          "morale": 6,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 6,
+          "bpv": 10
+        }
+      }
+    },
+    {
+      "id": "american-half-squad",
+      "kind": "asl:half-squad",
+      "side": "american",
+      "location": "bd01:O2:0",
+      "faces": {
+        "front": {
+          "firepower": 3,
+          "range": 3,
+          "morale": 6,
+          "identity": "B",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 6,
+          "bpv": 5
+        }
+      }
+    },
+    {
+      "id": "american-crew",
+      "kind": "asl:crew",
+      "side": "american",
+      "location": "bd01:O3:0",
+      "faces": {
+        "front": {
+          "firepower": 2,
+          "range": 2,
+          "morale": 7,
+          "identity": "3"
+        },
+        "broken": {
+          "broken-morale": 7
+        }
+      }
+    },
+    {
+      "id": "american-leader",
+      "kind": "asl:leader",
+      "side": "american",
+      "location": "bd01:O4:0",
+      "faces": {
+        "front": {
+          "leadership": -1,
+          "morale": 8
+        },
+        "broken": {
+          "broken-morale": 8
+        }
+      }
+    },
+    {
+      "id": "american-hero",
+      "kind": "asl:hero",
+      "side": "american",
+      "location": "bd01:O5:0",
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "american-hero-wounded",
+      "kind": "asl:hero",
+      "side": "american",
+      "location": "bd01:O6:0",
+      "states": [
+        "asl:wounded"
+      ],
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "american-broken",
+      "kind": "asl:squad",
+      "side": "american",
+      "location": "bd01:O7:0",
+      "faces": {
+        "front": {
+          "firepower": 6,
+          "range": 6,
+          "morale": 6,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 6,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:broken"
+      ]
+    },
+    {
+      "id": "american-pinned",
+      "kind": "asl:squad",
+      "side": "american",
+      "location": "bd01:O8:0",
+      "faces": {
+        "front": {
+          "firepower": 6,
+          "range": 6,
+          "morale": 6,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 6,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:pinned"
+      ]
+    },
+    {
+      "id": "american-berserk",
+      "kind": "asl:squad",
+      "side": "american",
+      "location": "bd01:O9:0",
+      "faces": {
+        "front": {
+          "firepower": 6,
+          "range": 6,
+          "morale": 6,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 6,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:berserk"
+      ]
+    },
+    {
+      "id": "american-prisoner",
+      "kind": "asl:squad",
+      "side": "american",
+      "location": "bd01:O10:0",
+      "faces": {
+        "front": {
+          "firepower": 6,
+          "range": 6,
+          "morale": 6,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 6,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:captured"
+      ]
+    },
+    {
+      "id": "finnish-squad",
+      "kind": "asl:squad",
+      "side": "finnish",
+      "location": "bd01:S1:0",
+      "faces": {
+        "front": {
+          "firepower": 6,
+          "range": 4,
+          "morale": 8,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 8,
+          "bpv": 10
+        }
+      }
+    },
+    {
+      "id": "finnish-half-squad",
+      "kind": "asl:half-squad",
+      "side": "finnish",
+      "location": "bd01:S2:0",
+      "faces": {
+        "front": {
+          "firepower": 3,
+          "range": 2,
+          "morale": 8,
+          "identity": "B",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 8,
+          "bpv": 5
+        }
+      }
+    },
+    {
+      "id": "finnish-crew",
+      "kind": "asl:crew",
+      "side": "finnish",
+      "location": "bd01:S3:0",
+      "faces": {
+        "front": {
+          "firepower": 2,
+          "range": 2,
+          "morale": 7,
+          "identity": "3"
+        },
+        "broken": {
+          "broken-morale": 7
+        }
+      }
+    },
+    {
+      "id": "finnish-leader",
+      "kind": "asl:leader",
+      "side": "finnish",
+      "location": "bd01:S4:0",
+      "faces": {
+        "front": {
+          "leadership": -1,
+          "morale": 8
+        },
+        "broken": {
+          "broken-morale": 8
+        }
+      }
+    },
+    {
+      "id": "finnish-hero",
+      "kind": "asl:hero",
+      "side": "finnish",
+      "location": "bd01:S5:0",
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "finnish-hero-wounded",
+      "kind": "asl:hero",
+      "side": "finnish",
+      "location": "bd01:S6:0",
+      "states": [
+        "asl:wounded"
+      ],
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "finnish-broken",
+      "kind": "asl:squad",
+      "side": "finnish",
+      "location": "bd01:S7:0",
+      "faces": {
+        "front": {
+          "firepower": 6,
+          "range": 4,
+          "morale": 8,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 8,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:broken"
+      ]
+    },
+    {
+      "id": "finnish-pinned",
+      "kind": "asl:squad",
+      "side": "finnish",
+      "location": "bd01:S8:0",
+      "faces": {
+        "front": {
+          "firepower": 6,
+          "range": 4,
+          "morale": 8,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 8,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:pinned"
+      ]
+    },
+    {
+      "id": "finnish-berserk",
+      "kind": "asl:squad",
+      "side": "finnish",
+      "location": "bd01:S9:0",
+      "faces": {
+        "front": {
+          "firepower": 6,
+          "range": 4,
+          "morale": 8,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 8,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:berserk"
+      ]
+    },
+    {
+      "id": "finnish-prisoner",
+      "kind": "asl:squad",
+      "side": "finnish",
+      "location": "bd01:S10:0",
+      "faces": {
+        "front": {
+          "firepower": 6,
+          "range": 4,
+          "morale": 8,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 8,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:captured"
+      ]
+    },
+    {
+      "id": "italian-squad",
+      "kind": "asl:squad",
+      "side": "italian",
+      "location": "bd01:W1:0",
+      "faces": {
+        "front": {
+          "firepower": 3,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      }
+    },
+    {
+      "id": "italian-half-squad",
+      "kind": "asl:half-squad",
+      "side": "italian",
+      "location": "bd01:W2:0",
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 2,
+          "morale": 7,
+          "identity": "B",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 5
+        }
+      }
+    },
+    {
+      "id": "italian-crew",
+      "kind": "asl:crew",
+      "side": "italian",
+      "location": "bd01:W3:0",
+      "faces": {
+        "front": {
+          "firepower": 2,
+          "range": 2,
+          "morale": 7,
+          "identity": "3"
+        },
+        "broken": {
+          "broken-morale": 7
+        }
+      }
+    },
+    {
+      "id": "italian-leader",
+      "kind": "asl:leader",
+      "side": "italian",
+      "location": "bd01:W4:0",
+      "faces": {
+        "front": {
+          "leadership": -1,
+          "morale": 8
+        },
+        "broken": {
+          "broken-morale": 8
+        }
+      }
+    },
+    {
+      "id": "italian-hero",
+      "kind": "asl:hero",
+      "side": "italian",
+      "location": "bd01:W5:0",
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "italian-hero-wounded",
+      "kind": "asl:hero",
+      "side": "italian",
+      "location": "bd01:W6:0",
+      "states": [
+        "asl:wounded"
+      ],
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "italian-broken",
+      "kind": "asl:squad",
+      "side": "italian",
+      "location": "bd01:W7:0",
+      "faces": {
+        "front": {
+          "firepower": 3,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:broken"
+      ]
+    },
+    {
+      "id": "italian-pinned",
+      "kind": "asl:squad",
+      "side": "italian",
+      "location": "bd01:W8:0",
+      "faces": {
+        "front": {
+          "firepower": 3,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:pinned"
+      ]
+    },
+    {
+      "id": "italian-berserk",
+      "kind": "asl:squad",
+      "side": "italian",
+      "location": "bd01:W9:0",
+      "faces": {
+        "front": {
+          "firepower": 3,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:berserk"
+      ]
+    },
+    {
+      "id": "italian-prisoner",
+      "kind": "asl:squad",
+      "side": "italian",
+      "location": "bd01:W10:0",
+      "faces": {
+        "front": {
+          "firepower": 3,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:captured"
+      ]
+    },
+    {
+      "id": "axisminor-squad",
+      "kind": "asl:squad",
+      "side": "axis-minor",
+      "location": "bd01:AA1:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      }
+    },
+    {
+      "id": "axisminor-half-squad",
+      "kind": "asl:half-squad",
+      "side": "axis-minor",
+      "location": "bd01:AA2:0",
+      "faces": {
+        "front": {
+          "firepower": 2,
+          "range": 2,
+          "morale": 7,
+          "identity": "B",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 5
+        }
+      }
+    },
+    {
+      "id": "axisminor-crew",
+      "kind": "asl:crew",
+      "side": "axis-minor",
+      "location": "bd01:AA3:0",
+      "faces": {
+        "front": {
+          "firepower": 2,
+          "range": 2,
+          "morale": 7,
+          "identity": "3"
+        },
+        "broken": {
+          "broken-morale": 7
+        }
+      }
+    },
+    {
+      "id": "axisminor-leader",
+      "kind": "asl:leader",
+      "side": "axis-minor",
+      "location": "bd01:AA4:0",
+      "faces": {
+        "front": {
+          "leadership": -1,
+          "morale": 8
+        },
+        "broken": {
+          "broken-morale": 8
+        }
+      }
+    },
+    {
+      "id": "axisminor-hero",
+      "kind": "asl:hero",
+      "side": "axis-minor",
+      "location": "bd01:AA5:0",
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "axisminor-hero-wounded",
+      "kind": "asl:hero",
+      "side": "axis-minor",
+      "location": "bd01:AA6:0",
+      "states": [
+        "asl:wounded"
+      ],
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "axisminor-broken",
+      "kind": "asl:squad",
+      "side": "axis-minor",
+      "location": "bd01:AA7:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:broken"
+      ]
+    },
+    {
+      "id": "axisminor-pinned",
+      "kind": "asl:squad",
+      "side": "axis-minor",
+      "location": "bd01:AA8:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:pinned"
+      ]
+    },
+    {
+      "id": "axisminor-berserk",
+      "kind": "asl:squad",
+      "side": "axis-minor",
+      "location": "bd01:AA9:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:berserk"
+      ]
+    },
+    {
+      "id": "axisminor-prisoner",
+      "kind": "asl:squad",
+      "side": "axis-minor",
+      "location": "bd01:AA10:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 4,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:captured"
+      ]
+    },
+    {
+      "id": "french-squad",
+      "kind": "asl:squad",
+      "side": "french",
+      "location": "bd01:EE1:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 5,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      }
+    },
+    {
+      "id": "french-half-squad",
+      "kind": "asl:half-squad",
+      "side": "french",
+      "location": "bd01:EE2:0",
+      "faces": {
+        "front": {
+          "firepower": 2,
+          "range": 2,
+          "morale": 7,
+          "identity": "B",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 5
+        }
+      }
+    },
+    {
+      "id": "french-crew",
+      "kind": "asl:crew",
+      "side": "french",
+      "location": "bd01:EE3:0",
+      "faces": {
+        "front": {
+          "firepower": 2,
+          "range": 2,
+          "morale": 7,
+          "identity": "3"
+        },
+        "broken": {
+          "broken-morale": 7
+        }
+      }
+    },
+    {
+      "id": "french-leader",
+      "kind": "asl:leader",
+      "side": "french",
+      "location": "bd01:EE4:0",
+      "faces": {
+        "front": {
+          "leadership": -1,
+          "morale": 8
+        },
+        "broken": {
+          "broken-morale": 8
+        }
+      }
+    },
+    {
+      "id": "french-hero",
+      "kind": "asl:hero",
+      "side": "french",
+      "location": "bd01:EE5:0",
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "french-hero-wounded",
+      "kind": "asl:hero",
+      "side": "french",
+      "location": "bd01:EE6:0",
+      "states": [
+        "asl:wounded"
+      ],
+      "faces": {
+        "front": {
+          "firepower": 1,
+          "range": 4,
+          "morale": 9
+        },
+        "wounded": {
+          "firepower": 1,
+          "range": 3,
+          "morale": 8
+        }
+      }
+    },
+    {
+      "id": "french-broken",
+      "kind": "asl:squad",
+      "side": "french",
+      "location": "bd01:EE7:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 5,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:broken"
+      ]
+    },
+    {
+      "id": "french-pinned",
+      "kind": "asl:squad",
+      "side": "french",
+      "location": "bd01:EE8:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 5,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:pinned"
+      ]
+    },
+    {
+      "id": "french-berserk",
+      "kind": "asl:squad",
+      "side": "french",
+      "location": "bd01:EE9:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 5,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:berserk"
+      ]
+    },
+    {
+      "id": "french-prisoner",
+      "kind": "asl:squad",
+      "side": "french",
+      "location": "bd01:EE10:0",
+      "faces": {
+        "front": {
+          "firepower": 4,
+          "range": 5,
+          "morale": 7,
+          "identity": "A",
+          "class": "1st-line"
+        },
+        "broken": {
+          "broken-morale": 7,
+          "bpv": 10
+        }
+      },
+      "states": [
+        "asl:captured"
+      ]
+    }
+  ]
+}

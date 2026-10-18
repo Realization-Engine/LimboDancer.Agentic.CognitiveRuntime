@@ -94,11 +94,13 @@ public sealed class GoldenTests
         const string Name = "German 1st Line squad A, 4-6-7, pinned, with light MG 3-6";
         Assert.Equal(Name, svg.Attribute("aria-label")!.Value);
         Assert.Equal(Name, svg.Element("title")!.Value);
-        Assert.DoesNotContain(svg.Descendants(), element => element.Name.LocalName is "image" or "script" or "foreignObject" || element.Attribute("href") is not null);
+        // No image, script, or outside reference; a figure's <use> of an outline in its own counter (#id) is the only href allowed.
+        Assert.DoesNotContain(svg.Descendants(), element => element.Name.LocalName is "image" or "script" or "foreignObject"
+            || (element.Attribute("href")?.Value is { } href && !href.StartsWith('#')));
     }
 
     [Fact]
-    public void EveryTierIsWrittenOnceAndFarShowsOnlyTheShapeAndGlyph()
+    public void EveryTierIsWrittenOnceAndFarShowsTheGlyphAndTheMajorNumbers()
     {
         var renderer = RenderingTestData.Renderer(UnitStyles.Digital);
         var squad = Documents()["state-pinned"];
@@ -106,7 +108,8 @@ public sealed class GoldenTests
         renderer.WriteUnit(svg, squad, 50, 50, UnitPreview.HexHeight, Tiers, null, null, []);
         var tiers = XElement.Parse(svg.ToString()).Elements("g").ToArray();
         Assert.Equal(["far", "mid", "near"], tiers.Select(tier => tier.Attribute("data-tier")!.Value));
-        Assert.Equal(["glyph"], SlotsOf(tiers[0]));
+        // Far keeps a personnel unit's Firepower, range, and Morale under its figures (the user, 2026-10-17), and nothing else.
+        Assert.Equal(["glyph", "fp", "range", "morale"], SlotsOf(tiers[0]));
         Assert.DoesNotContain(tiers[0].Descendants(), element => element.Attribute("data-badge") is not null);
         Assert.DoesNotContain(tiers[0].Descendants(), element => element.Attribute("data-attached-id") is not null && element.HasElements);
         Assert.Contains("fp", SlotsOf(tiers[1]));
