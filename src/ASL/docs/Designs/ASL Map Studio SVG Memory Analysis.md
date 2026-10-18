@@ -510,6 +510,10 @@ The boxed `Selector` enumerator, the `Func<string, bool>` delegates, and their c
 
 For bd01's exact document, an entry falls from 494,620 bytes (the string) to 247,310 bytes plus its gzip copy; an authoring session no longer keeps a copy per edit.
 
+### Task 7. K: the map cache bounded
+
+When `MapService` clears its 32 recent placement maps, the builds behind them leave the cache too (all but the one just built). A finding in passing, fixed with it: `Save` and `Delete` removed the cache entry keyed by the map's reference alone, but saved maps are cached under the reference and the placement text, so the removal never matched and a re-saved map kept its old build; both now drop every build of the map. Two new tests (`MapCacheTests`: forty different maps leave at most 33 cached; a save and a delete drop the old build); the card editor, collection, and game state tests pass. The card editor's Studio check is in task 10.
+
 ### Note on task 3
 
 A fresh Studio starts at about 80 to 185 MB of private memory, depending on when the sampler first reads it, against the 306 MB of the long-running Studio in section 2.2: much of that morning figure was the age of the process, not the replay.
