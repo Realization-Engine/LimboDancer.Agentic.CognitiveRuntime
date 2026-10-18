@@ -9,7 +9,7 @@ by hand after looking at the traced figure (--head, --grip). The pose is a stand
 
     python code-builders/unit-figures/trace_pose.py <image> <pose> [--cell 1-4] [--crop x,y,w,h] [--mirror] [--lying]
         [--head cx,cy,r] [--grip x1,y1,x2,y2] [--weapon rifle|smg] [--source "batch 2026-10-18-1, top right"] [--accept]
-        [--tolerance 2.0] [--close pixels] [--bare] [--out file]
+        [--tolerance 2.0] [--close pixels] [--bare] [--bare-width radii] [--out file]
 Then:  python code-builders/unit-figures/build_figures.py
 """
 import argparse
@@ -74,6 +74,8 @@ def main():
     parser.add_argument("--tolerance", type=float, default=2.0)
     parser.add_argument("--bare", action="store_true",
                         help="remove the drawn helmet: everything above the head anchor around the head, leaving a skull for the side's helmet")
+    parser.add_argument("--bare-width", type=float, default=2.0,
+                        help="how many head radii to each side of the head --bare clears; less when a slung weapon rises close behind the head")
     parser.add_argument("--close", type=int, default=0,
                         help="fill light gaps up to twice this many source pixels wide (the thin lines between an arm and the body)")
     parser.add_argument("--out", help="write here instead of the pose source, to try a trace")
@@ -116,7 +118,7 @@ def main():
         px, py, pr = left + hx / scale, top + hy / scale, hr / scale
         rows, columns = np.ogrid[:mask.shape[0], :mask.shape[1]]
         mask = mask.copy()
-        mask[(rows < py + 0.3 * pr) & (np.abs(columns - px) < 2 * pr)] = False
+        mask[(rows < py + 0.3 * pr) & (np.abs(columns - px) < args.bare_width * pr)] = False
         mask |= (rows - py) ** 2 + (columns - px) ** 2 <= (0.95 * pr) ** 2
         traced = [(area(simple), simple) for loop in loops(mask)
                   if len(loop) >= 8 * ENLARGE and len(simple := simplify(loop, args.tolerance * ENLARGE)) >= 3]
