@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
@@ -8,13 +9,21 @@ using Microsoft.Net.Http.Headers;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
-/// <summary>A rendered SVG and its content-hash entity tag.</summary>
-public sealed record RenderedSvg(string Svg, string ETag);
+/// <summary>A rendered SVG as UTF-8 bytes, a gzip copy of them, and their content-hash entity tag.</summary>
+public sealed record RenderedSvg(byte[] Svg, byte[] Gzip, string ETag);
 
-/// <summary>Content-addressed cache of rendered documents and layer fragments.</summary>
+/// <summary>
+/// Content-addressed cache of rendered documents and layer fragments. It keeps one version of each board: the version last asked
+/// for. An authoring session makes a new version with every edit, and without this the old ones stayed for the life of the
+/// process (option J of the SVG memory analysis). Entries are UTF-8 bytes, half the size of a string, served without re-encoding.
+/// </summary>
 public sealed class RenderCache(ILogger<RenderCache>? logger = null)
 {
     private readonly ConcurrentDictionary<(string Board, string Version, BoardView View, string Layer, bool Trace), RenderedSvg> cache = new();
+    private readonly ConcurrentDictionary<string, string> versions = new(StringComparer.Ordinal);
+
+    /// <summary>The number of rendered layers and documents held.</summary>
+    public int Count => cache.Count;
 
     /// <summary>The rendered layer or document, or null when the board has no input for the view.</summary>
     public RenderedSvg? Get(StudioBoard board, BoardView view, string layer, bool trace)
@@ -25,6 +34,15 @@ public sealed class RenderCache(ILogger<RenderCache>? logger = null)
             return null;
         }
 
+        if (versions.TryGetValue(board.Ref.Value, out var held) && held != board.Version)
+        {
+            foreach (var key in cache.Keys.Where(key => key.Board == board.Ref.Value && key.Version != board.Version))
+            {
+                cache.TryRemove(key, out _);
+            }
+        }
+
+        versions[board.Ref.Value] = board.Version;
         return cache.GetOrAdd((board.Ref.Value, board.Version, view, layer, trace), key =>
         {
             var timer = Stopwatch.StartNew();
@@ -32,9 +50,21 @@ public sealed class RenderCache(ILogger<RenderCache>? logger = null)
                 ? BoardRenderer.Document(input, view, trace)
                 : BoardRenderer.Fragment(input, view, key.Layer, trace);
             LoadMeasurements.Record(logger, board.Ref.Value, layer, timer.Elapsed.TotalMilliseconds);
-            var hash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(svg)));
-            return new RenderedSvg(svg, "\"" + hash + "\"");
+            var bytes = Encoding.UTF8.GetBytes(svg);
+            var hash = Convert.ToHexStringLower(SHA256.HashData(bytes));
+            return new RenderedSvg(bytes, Compressed(bytes), "\"" + hash + "\"");
         });
+    }
+
+    private static byte[] Compressed(byte[] bytes)
+    {
+        using var output = new MemoryStream();
+        using (var gzip = new GZipStream(output, CompressionLevel.Optimal, leaveOpen: true))
+        {
+            gzip.Write(bytes);
+        }
+
+        return output.ToArray();
     }
 }
 
@@ -87,6 +117,6 @@ public static class RenderEndpoints
             return Results.StatusCode(StatusCodes.Status304NotModified);
         }
 
-        return Results.Text(rendered.Svg, "image/svg+xml", Encoding.UTF8);
+        return Results.Bytes(rendered.Svg, "image/svg+xml; charset=utf-8");
     }
 }

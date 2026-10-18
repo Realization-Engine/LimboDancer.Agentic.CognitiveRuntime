@@ -504,6 +504,12 @@ As section 5.1 predicted for bd01 exact (about 3.8 MB). On counters the writer's
 
 The boxed `Selector` enumerator, the `Func<string, bool>` delegates, and their closures no longer appear among the largest allocations. Strings (5.8 MB, the numbers and paths of G2) and the cascade's per-call dictionaries (1.1 MB) lead what remains.
 
+### Task 6. J: the render cache keeps one version of a board, as bytes
+
+`RenderCache` keeps the version of each board last asked for and drops the others; its entries are UTF-8 bytes (half the size of the string they replace), a gzip copy for task 8, and the same ETag as before (the SHA-256 of the same bytes, so browsers' cached copies stay valid). The endpoint writes the bytes without re-encoding them. Three new tests (`RenderCacheTests`) and the existing endpoint tests pass.
+
+For bd01's exact document, an entry falls from 494,620 bytes (the string) to 247,310 bytes plus its gzip copy; an authoring session no longer keeps a copy per edit.
+
 ### Note on task 3
 
 A fresh Studio starts at about 80 to 185 MB of private memory, depending on when the sampler first reads it, against the 306 MB of the long-running Studio in section 2.2: much of that morning figure was the age of the process, not the replay.
