@@ -1561,3 +1561,4 @@ The ASL Map Studio SVG Memory Plan (`src/ASL/docs/Plans`), approved by the user 
 | 5. S1: the cascade's index loops | 14:27 | 14:30 | 0:03 | Written during task 3's replays; goldens unchanged; 80 counters -63% |
 | 6. J: the render cache bounded, bytes and a gzip copy | 14:30 | 14:50 | 0:20 | Most of it the Studio test project's build; K written meanwhile |
 | 7. K: the map cache bounded; saved maps' stale builds dropped | 14:50 | 14:59 | 0:09 | One test fix: VASL lays out at most 3 boards across |
+| 8. L: gzip from the render cache | 14:50 | 14:59 | 0:09 | Built and tested with K, in the same runs |

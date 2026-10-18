@@ -112,11 +112,24 @@ public static class RenderEndpoints
 
         context.Response.Headers.ETag = rendered.ETag;
         context.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+        context.Response.Headers.Vary = "Accept-Encoding";
         if (context.Request.Headers.IfNoneMatch.ToString() == rendered.ETag)
         {
             return Results.StatusCode(StatusCodes.Status304NotModified);
         }
 
+        // The cache holds a gzip copy, so a compressed response costs nothing per request (option L of the SVG memory analysis).
+        if (AcceptsGzip(context.Request))
+        {
+            context.Response.Headers.ContentEncoding = "gzip";
+            return Results.Bytes(rendered.Gzip, "image/svg+xml; charset=utf-8");
+        }
+
         return Results.Bytes(rendered.Svg, "image/svg+xml; charset=utf-8");
     }
+
+    /// <summary>Whether the request accepts gzip: named, or <c>*</c>, with a quality above zero.</summary>
+    private static bool AcceptsGzip(HttpRequest request) =>
+        StringWithQualityHeaderValue.TryParseList(request.Headers.AcceptEncoding, out var codings)
+        && codings.Any(coding => (coding.Value.Equals("gzip", StringComparison.OrdinalIgnoreCase) || coding.Value == "*") && coding.Quality is not 0);
 }

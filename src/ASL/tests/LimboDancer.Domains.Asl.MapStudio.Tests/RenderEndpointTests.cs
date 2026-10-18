@@ -187,6 +187,42 @@ public sealed class RenderEndpointTests(StudioFactory factory) : IClassFixture<S
         Assert.Equal(HttpStatusCode.NotModified, second.StatusCode);
     }
 
+    // Option L of the SVG memory analysis: the cache's gzip copy goes to a browser that accepts gzip, under the same entity tag.
+    [Theory]
+    [InlineData("gzip, deflate, br", true)]
+    [InlineData("br;q=1.0, gzip;q=0.5", true)]
+    [InlineData("*", true)]
+    [InlineData("gzip;q=0", false)]
+    [InlineData("br", false)]
+    [InlineData(null, false)]
+    public async Task GzipIsSentWhenAccepted(string? acceptEncoding, bool compressed)
+    {
+        using var client = factory.CreateClient();
+        var uri = new Uri($"{Base}/exact/exact-terrain.svg", UriKind.Relative);
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        if (acceptEncoding is not null)
+        {
+            request.Headers.TryAddWithoutValidation("Accept-Encoding", acceptEncoding);
+        }
+
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Accept-Encoding", response.Headers.Vary);
+        Assert.Equal(compressed, response.Content.Headers.ContentEncoding.Contains("gzip"));
+        var body = await response.Content.ReadAsByteArrayAsync();
+        if (compressed)
+        {
+            using var unzip = new System.IO.Compression.GZipStream(new MemoryStream(body), System.IO.Compression.CompressionMode.Decompress);
+            using var plain = new MemoryStream();
+            await unzip.CopyToAsync(plain);
+            body = plain.ToArray();
+        }
+
+        Assert.Equal(BoardRenderer.Fragment(FakeBoardProvider.Board.Render, BoardView.Exact, "exact-terrain"), System.Text.Encoding.UTF8.GetString(body));
+        using var plainResponse = await client.GetAsync(uri);
+        Assert.Equal(plainResponse.Headers.ETag, response.Headers.ETag);
+    }
+
     [Fact]
     public async Task TraceModeChangesTheHexFactsLayer()
     {
