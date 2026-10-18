@@ -1538,3 +1538,11 @@ Each end is the commit time (`git log`).
 | The hero traced, one version per side | 00:05 | 00:31 | 0:26 | |
 | The wounded and broken traced; tilt and own helmet | 00:31 | 00:49 | 0:18 | |
 | The broken counter in step (F15); the body extent | 00:49 | 01:05 | 0:16 | One golden, near tier only |
+
+## The SVG memory analysis, 2026-10-18
+
+Branch `svg-memory-analysis`, analysis only. The start is the first measurement file's time; reading the renderers came before it and was not timed.
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| bd01 measured; cd-guards-5 replayed with memory samples and heap dumps; the analysis written, templates (P to R) added | 09:14 | 09:29 | 0:15 | No code changed |
