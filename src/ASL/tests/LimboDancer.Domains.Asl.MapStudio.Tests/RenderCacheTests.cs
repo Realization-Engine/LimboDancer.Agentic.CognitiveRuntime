@@ -20,7 +20,11 @@ public sealed class RenderCacheTests
         cache.Get(Board, BoardView.Exact, "document", trace: false);
         Assert.Equal(2, cache.Count);
 
-        cache.Get(Board with { Version = new string('1', 40) }, BoardView.Exact, "grid", trace: false);
+        var next = Board with
+        {
+            Version = new string('1', 40)
+        };
+        cache.Get(next, BoardView.Exact, "grid", trace: false);
         Assert.Equal(1, cache.Count);
     }
 
@@ -29,7 +33,11 @@ public sealed class RenderCacheTests
     {
         var cache = new RenderCache();
         cache.Get(Board, BoardView.Exact, "grid", trace: false);
-        cache.Get(Board with { Ref = BoardRef.Parse("ab-other") }, BoardView.Exact, "grid", trace: false);
+        var other = Board with
+        {
+            Ref = BoardRef.Parse("ab-other")
+        };
+        cache.Get(other, BoardView.Exact, "grid", trace: false);
         cache.Get(Board, BoardView.Exact, "legend", trace: false);
         Assert.Equal(3, cache.Count);
     }

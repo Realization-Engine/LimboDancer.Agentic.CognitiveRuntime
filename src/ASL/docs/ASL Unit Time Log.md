@@ -1556,10 +1556,11 @@ The ASL Map Studio SVG Memory Plan (`src/ASL/docs/Plans`), approved by the user 
 |---|---|---|---|---|
 | 1. main merged in; the baseline benchmark | 13:56 | 13:58 | 0:02 | Allocations match section 5.1 |
 | 2. M: the connection's compression read | 13:58 | 13:59 | 0:01 | permessage-deflate on by default; my Studio rebuilt and restarted |
-| 3. N2: four replays at levels 0, 5, 7, and 0 again | 13:59 | 14:23 | 0:24 | No measurable gain; the user ruled to leave it off |
+| 3. N2: four replays at levels 0, 5, 7, and 0 again | 13:59 | 14:23 | 0:24 | No measurable gain; the user ruled to leave it off (step times later found distorted by a hidden page) |
 | 4. G1: escaping by span, 16 new test cases | 14:23 | 14:27 | 0:04 | Written during task 3's replays; goldens unchanged; bd01 exact -60% |
 | 5. S1: the cascade's index loops | 14:27 | 14:30 | 0:03 | Written during task 3's replays; goldens unchanged; 80 counters -63% |
 | 6. J: the render cache bounded, bytes and a gzip copy | 14:30 | 14:50 | 0:20 | Most of it the Studio test project's build; K written meanwhile |
 | 7. K: the map cache bounded; saved maps' stale builds dropped | 14:50 | 14:59 | 0:09 | One test fix: VASL lays out at most 3 boards across |
 | 8. L: gzip from the render cache | 14:50 | 14:59 | 0:09 | Built and tested with K, in the same runs |
 | 9. G2 and G3: SvgValue, FixedPoint.TryFormat, the pooled writer | 14:59 | 15:10 | 0:11 | A one-line Python edit emptied three files (opened for writing before reading); restored from this session and git |
+| 10. Studio checks, strict build, the four test projects in full | 15:10 | 16:16 | 1:06 | Two strict builds of 14 min; a test's formatting fixed; the Bash guard refuses the emptying one-liner; the after-replay not comparable (hidden page) |

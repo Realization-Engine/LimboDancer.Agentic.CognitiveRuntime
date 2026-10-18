@@ -49,7 +49,7 @@ Test projects: `Maps.Tests` (FixedPoint), `Maps.Rendering.Tests` (SvgWriter, 4 b
 - Choose the lowest level that gives most of the saving, without step time rising by more than 10% over level 0.
 - Set it in the Studio's project file (`RuntimeHostConfigurationOption` `System.GC.ConserveMemory`), so it reaches `runtimeconfig.json`.
 - **Done when:** the three runs and the choice are in section 10; the Studio runs with the chosen level; `MapStudio.Tests` pass.
-- **Outcome (2026-10-18):** no level gave a measurable saving (two default runs differed by more than the levels did), and level 7 tripled the step time. The user ruled to leave it off; the project file is not changed. Section 10 of the analysis has the runs.
+- **Outcome (2026-10-18):** no level gave a measurable saving (two default runs differed by more than the levels did). The user ruled to leave it off; the project file is not changed. Section 10 of the analysis has the runs, and a correction: the step times first reported were distorted by a hidden page's throttled timers.
 
 ### Task 4. G1: escape by span
 

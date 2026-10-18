@@ -478,7 +478,9 @@ The cd-guards-5 replay of section 2.2, all 258 steps, each run on a freshly star
 | 5 | 316 MB | 230 MB | 370 ms | 606 ms |
 | 7 | 303 MB | 219 MB | 1,105 ms | 2,012 ms |
 
-Two identical runs at the default differ by 47 MB at the peak, more than any level differs from them. So no level gives a saving this measurement can see, and level 7 makes steps three times slower. The user's ruling (2026-10-18): leave it off ("This was not the main refactor approach anyway, but more as a 'nice-to-have'"). The Studio keeps .NET's defaults; the project file is not changed.
+Two identical runs at the default differ by 47 MB at the peak, more than any level differs from them. So no level gives a saving this measurement can see. The user's ruling (2026-10-18): leave it off ("This was not the main refactor approach anyway, but more as a 'nice-to-have'"). The Studio keeps .NET's defaults; the project file is not changed.
+
+Correction (task 10): the step times are not comparable between these runs. The stepping script waits on browser timers, and while the page is hidden (the pane displayed but the app not in front) the browser throttles them to about one a second, which puts a ceiling of about 2 s on a step. The level 7 run and the second default run reached that ceiling (2,012 ms and 3,066 ms at most, means pulled up with them), so "level 7 makes steps three times slower", reported first, is not supported. The memory figures do not depend on the step times and stand.
 
 ### Task 4. G1: escaping by span
 
@@ -535,6 +537,31 @@ Every golden is unchanged (17 tests of `Maps.Tests`, 53 of `Maps.Rendering.Tests
 | 9 demo counters | 4,532,377 bytes | 1,324,785 bytes | 1,126,313 bytes | -75% |
 
 bd01 exact ends at 1.18 MB, not the 0.6 MB section 5.1 predicted: the prototype wrote path numbers straight into the output, while `PathData` still builds each path in a `StringBuilder` of its own before its element is written (about 0.57 MB of builder chunks on bd01). The output string itself (0.49 MB) is the floor. The attribute arrays grew a little, since a `(string, SvgValue)` pair is larger than a `(string, string)` pair (1.35 MB for 80 counters). Both are small follow-ups, not part of this plan: a pooled buffer for `PathData`, and fewer `params` arrays.
+
+### Task 10. The checks, and what the plan achieved
+
+In my Studio, rebuilt with every task:
+
+- **The counter layer is the same.** At step 13 of cd-guards-5 it has 696,691 characters, 243 outline paths (6 distinct), and 4,425 elements, as in the morning's measurement before any change.
+- **bd01 in the board viewer** draws as before, with its counters.
+- **L in the browser:** the board viewer's layers came from the browser's cache (immutable URLs, nothing transferred); fetched again, the terrain layer arrives with `Content-Encoding: gzip` and `Vary: Accept-Encoding`, 84,664 bytes for 196,322.
+- **K in the card editor:** turning bd01 and adding bd02 beside it builds a new placed map, drawn two boards wide, its layers gzipped (14,935 bytes for 74,153). Nothing was saved.
+- **The replay after the changes** cannot be compared with task 3's runs: the page was hidden for most of it, so the stepping script ran at about one step in 2 s and covered 162 of 258 steps in its window. The benchmark below is the comparable measure.
+
+The strict build of the solution (warnings as errors) first failed on the formatting of two `with` expressions in `RenderCacheTests`; fixed by hand, it passes with no warnings. The four test projects pass in full: `Maps.Tests` 253, `Maps.Rendering.Tests` 53 (with the two VASL board tests), `Units.Rendering.Tests` 367, `MapStudio.Tests` 490.
+
+Open: a replay of cd-guards-5 before and after the plan, measured the same way as section 2.2 but comparable, is not yet done (see the replay item above).
+
+What the plan achieved, per render, from the benchmark (allocation repeats to the byte; every golden SVG unchanged throughout):
+
+| Workload | Before the plan | After | Change |
+|---|---|---|---|
+| bd01 exact | 9,513,538 bytes | 1,179,506 bytes | -88% |
+| bd01 hex facts | 5,636,964 bytes | 1,551,499 bytes | -72% |
+| 80 counters with figures | 56,244,460 bytes | 11,157,410 bytes | -80% |
+| 9 demo counters | 4,532,377 bytes | 1,126,313 bytes | -75% |
+
+And beyond allocation: the render cache keeps one version of a board, as bytes; the map cache is bounded; board layers travel gzipped. What the plan did not touch, and the next group addresses: each replay step still rebuilds and resends the whole counter layer (options C, D, E, Q).
 
 ### Note on task 3
 
