@@ -428,7 +428,7 @@ The user's rulings of 2026-10-18. Ruling 1 is the user's choice; rulings 2 to 5 
 
 | Ruling | Question | Decided |
 |---|---|---|
-| 1 | Workstation GC (N1), or Server GC with conservation (N2) | N2: the Studio keeps Server GC, with `System.GC.ConserveMemory` set; the level is measured, not guessed |
+| 1 | Workstation GC (N1), or Server GC with conservation (N2) | N2: the Studio keeps Server GC, with `System.GC.ConserveMemory` set; the level is measured, not guessed. **Revised 2026-10-18 after task 3 measured no gain (section 10): left off; the Studio keeps the defaults.** |
 | 2 | Where the shared figure outlines live: the counter layer (C1), the viewport's defs (C2), or a static sprite file (C3) | C1 first; C2 when D is built; not C3 |
 | 3 | Whether zoom may wait for a tier (F1), or all three tiers stay | All three stay (F3) until D and Q are built; then measured again and decided |
 | 4 | Templates on the server (P), in the page as symbols (Q), or in the browser (R) | Q, with G in place of P; not R |
@@ -466,3 +466,18 @@ These match section 5.1 within a few hundred bytes.
 A WebSocket opened to the Studio's `/_blazor` endpoint through the same negotiate step Blazor uses reports `extensions: permessage-deflate; client_max_window_bits=15`. Interactive server rendering in .NET 10 compresses the circuit by default, and the Studio does not turn it off (`AddInteractiveServerRenderMode()` with no options).
 
 So the counter layer crosses the wire compressed: about 33 KB for the 697,000 characters of step 13 (the gzip figure of section 2.2), not 1.4 MB. Option M needs no change, and no ruling is needed. The per-step cost that remains is on the server (building, comparing, and serializing the string) and in the browser (parsing and importing it), which options D and Q address.
+
+### Task 3. N2: no measurable gain; left off
+
+The cd-guards-5 replay of section 2.2, all 258 steps, each run on a freshly started Studio, with `System.GC.ConserveMemory` set in the built `runtimeconfig.json`. Private memory sampled every second for 330 seconds from the start of the run:
+
+| Level | Peak | Settled (last 30 s) | Mean step | Slowest step |
+|---|---|---|---|---|
+| 0 (default), first run | 286 MB | 205 MB | 330 ms | 744 ms |
+| 0 (default), second run | 333 MB | 273 MB (sampling ended early) | 459 ms | 3,066 ms |
+| 5 | 316 MB | 230 MB | 370 ms | 606 ms |
+| 7 | 303 MB | 219 MB | 1,105 ms | 2,012 ms |
+
+Two identical runs at the default differ by 47 MB at the peak, more than any level differs from them. So no level gives a saving this measurement can see, and level 7 makes steps three times slower. The user's ruling (2026-10-18): leave it off ("This was not the main refactor approach anyway, but more as a 'nice-to-have'"). The Studio keeps .NET's defaults; the project file is not changed.
+
+A fresh Studio starts at about 80 to 185 MB of private memory, depending on when the sampler first reads it, against the 306 MB of the long-running Studio in section 2.2: much of that morning figure was the age of the process, not the replay.
