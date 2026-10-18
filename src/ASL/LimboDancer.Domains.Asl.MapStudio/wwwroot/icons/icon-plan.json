@@ -63,6 +63,13 @@
       "reference": "Set Two, final round, top row 3rd"
     },
     {
+      "key": "layers",
+      "label": "Layers",
+      "brief": "three flat-topped hexagons seen at a slant, stacked one above another like sheets, cream on top, olive in the middle, sage at the bottom, each with a bold slate-navy outline, map layers",
+      "meaning": "The board viewer's rendered layers and the counter style. Hexes, as the boards' own, rather than the usual squares.",
+      "reference": "Drawn by make_icons.py to match its neighbors (2026-10-18), not from Midjourney"
+    },
+    {
       "key": "proposal",
       "label": "Proposal",
       "brief": "a clipboard with a checkmark box and a pencil, a proposed order awaiting confirmation",

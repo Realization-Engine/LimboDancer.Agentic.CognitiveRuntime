@@ -252,6 +252,19 @@ def evidence():
         f'<polygon points="15,17.4 17.8,17.4 17.8,23 16.4,21.5 15,23" fill="{c("red")}"/>')
 
 
+def layers():
+    """Three flat-topped hexes seen at a slant, stacked: the board's layers, one over another, the top one the page they show."""
+    ink = c("ink")
+
+    def slab(cy, fill):
+        rx, ry = 9.6, 4.2
+        pts = [(12 + rx, cy), (12 + rx / 2, cy + ry), (12 - rx / 2, cy + ry), (12 - rx, cy), (12 - rx / 2, cy - ry), (12 + rx / 2, cy - ry)]
+        points = " ".join(f"{f(x)},{f(y)}" for x, y in pts)
+        return f'<polygon points="{points}" fill="{fill}" stroke="{ink}" stroke-width="1.6" stroke-linejoin="round"/>'
+
+    return svg(slab(17.2, c("sage")) + slab(12.4, c("olive")) + slab(7.6, c("page")))
+
+
 ICONS = [
     ("zoom-in", "Zoom in", "Map toolbar", zoom("+")),
     ("zoom-out", "Zoom out", "Map toolbar", zoom("-")),
@@ -268,6 +281,7 @@ ICONS = [
     ("los", "LOS", "Inspector tab", los()),
     ("range", "Range", "Inspector tab", range_()),
     ("evidence", "Evidence", "Inspector tab", evidence()),
+    ("layers", "Layers", "Inspector tab", layers()),
 ]
 
 def main():
