@@ -9,7 +9,7 @@ by hand after looking at the traced figure (--head, --grip). The pose is a stand
 
     python code-builders/unit-figures/trace_pose.py <image> <pose> [--cell 1-4] [--crop x,y,w,h] [--mirror] [--lying]
         [--head cx,cy,r] [--grip x1,y1,x2,y2] [--weapon rifle|smg] [--source "batch 2026-10-18-1, top right"] [--accept]
-        [--tolerance 2.0] [--out file]
+        [--tolerance 2.0] [--close pixels] [--bare] [--out file]
 Then:  python code-builders/unit-figures/build_figures.py
 """
 import argparse
@@ -20,7 +20,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "studio-icons"))
-from trace_figure import area, loops, simplify  # noqa: E402
+from trace_figure import area, closed, loops, simplify  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 POSES = ROOT / "src" / "ASL" / "units" / "figures" / "poses"
@@ -72,6 +72,10 @@ def main():
     parser.add_argument("--source", default="")
     parser.add_argument("--accept", action="store_true")
     parser.add_argument("--tolerance", type=float, default=2.0)
+    parser.add_argument("--bare", action="store_true",
+                        help="remove the drawn helmet: everything above the head anchor around the head, leaving a skull for the side's helmet")
+    parser.add_argument("--close", type=int, default=0,
+                        help="fill light gaps up to twice this many source pixels wide (the thin lines between an arm and the body)")
     parser.add_argument("--out", help="write here instead of the pose source, to try a trace")
     args = parser.parse_args()
 
@@ -80,6 +84,9 @@ def main():
         picture = picture.transpose(Image.FLIP_LEFT_RIGHT)
     picture = picture.resize((picture.width * ENLARGE, picture.height * ENLARGE), Image.LANCZOS)
     mask = np.asarray(picture) < DARK
+    if args.close:
+        # A thin light line inside the figure would trace as a hole that turns to specks at counter size; it is filled.
+        mask = closed(mask, args.close * ENLARGE)
 
     traced = []
     for loop in loops(mask):
@@ -99,6 +106,21 @@ def main():
 
     def place(x, y):
         return (x - left) * scale, (y - top) * scale
+
+    if args.bare:
+        # The picked image's own helmet would show around the side's helmet, both filled alike: everything above a line a little under the
+        # head anchor (where a brim sits) within two head radii is removed, a skull is put back under where the side's helmet sits, and the figure is traced again.
+        if not args.head:
+            raise SystemExit("--bare needs --head")
+        hx, hy, hr = numbers(args.head, 3, "head")
+        px, py, pr = left + hx / scale, top + hy / scale, hr / scale
+        rows, columns = np.ogrid[:mask.shape[0], :mask.shape[1]]
+        mask = mask.copy()
+        mask[(rows < py + 0.3 * pr) & (np.abs(columns - px) < 2 * pr)] = False
+        mask |= (rows - py) ** 2 + (columns - px) ** 2 <= (0.95 * pr) ** 2
+        traced = [(area(simple), simple) for loop in loops(mask)
+                  if len(loop) >= 8 * ENLARGE and len(simple := simplify(loop, args.tolerance * ENLARGE)) >= 3]
+        kept = [(turn, points) for turn, points in traced if abs(turn) >= largest / 100]
 
     shapes = ["M" + "L".join(f"{px:.1f} {py:.1f}" for px, py in (place(x, y) for x, y in points)) + "Z" for _, points in kept]
     if args.head:
