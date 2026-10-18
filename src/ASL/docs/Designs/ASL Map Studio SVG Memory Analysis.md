@@ -12,6 +12,7 @@ Short answer:
 - The cost is churn, not retention. Every replay step rebuilds the whole counter layer (about 700,000 characters for 42 counters), compares it, and sends all of it to the browser when anything changed, though most steps change 0 to 6 counters.
 - Nearly half of that layer is the same few figure outlines written again and again: 243 outline paths, of which 6 are distinct.
 - Constants, in the sense of C# `const` or literals, would not help: the compiler already keeps one copy of every literal, and the figure outlines are already held once in memory. The duplication is in the output, so the remedy is to write repeated content once and refer to it. That is the "constant" idea applied where it pays.
+- Spans instead of strings (option G, measured in section 5.1) pay well inside the writer: today it appends a new one-character string for nearly every character of output. Escaping by span alone removes 60% to 78% of the writer's allocation, with output byte-identical; a full span writer removes 91% to 95%. In counter renders the style cascade allocates as much again (option S).
 - Templates with interpolated runtime values (section 5, P to R) save memory only when the template is sent once and each counter refers to it: one SVG symbol per distinct face in the page (Q). Interpolation on the server alone (P) produces the same output, at most with fewer allocations.
 
 ## 2. What was measured
@@ -182,8 +183,8 @@ No change to the output; `SvgWriter` and `PathData` only.
 - Write numbers straight into the builder (a `TryFormat` on `FixedPoint` into a `Span<char>`) instead of building three or four strings per number.
 - Avoid the `params` tuple array per element where the attribute count is fixed (minor).
 
-- Gain: fewer short-lived allocations and less CPU on every build, boards and counters alike. Measured only indirectly here; worth a before and after allocation trace.
-- Cost: small, and confined to two classes.
+- Gain: measured in section 5.1: the writer's own allocation falls by 78% to 95%, and a counter layer's writing time by about three quarters.
+- Cost: from two methods (G1) to every renderer call site (G2, G3); see section 5.1.
 - Risk: low. The golden SVGs must stay byte-identical, which makes them a complete check.
 
 ### H. Cache number text
@@ -250,6 +251,22 @@ There is no leak, and memory returns after use.
 - Gain: no work.
 - Cost: step time stays at about 0.76 s; long authoring and card editing sessions keep growing through J and K; larger scenarios (more counters) scale the per-step cost linearly.
 
+### S. Make the style cascade allocate less
+
+Found while measuring G (section 5.1): rendering counters spends as much allocation in the style cascade as in writing SVG. `StyleCascade.Compute` walks every rule of the sheet for every face, every slot, and every tier. Three things allocate on each walk:
+
+- `foreach (var selector in rule.Selectors)` over an `IReadOnlyList<Selector>` boxes the list's enumerator: 18.6 MB per render of 80 counters, the largest single item.
+- `selector.Traits.Any(trait => …)` and `selector.States.Any(state => …)` make a closure and a delegate on every selector test: about 5 MB together.
+- Every `Compute` builds a new `ComputedStyle` dictionary: about 1 MB.
+
+Two levels of fix:
+
+- S1. Index loops (`for (var i = 0; i < list.Count; i++)`) instead of `foreach` over interfaces, and plain loops instead of `Any` with a lambda, in `Compute`, `Rank`, and `Matches`. No change in results. Small.
+- S2. Memoize computed styles by what they depend on: the sheet, the subject's kind, face, states, traits, and the attributes the sheet's selectors read, the owner, the slot, and the tier. Counters of one kind in one state share a style. Moderate; the key must be complete.
+
+- Gain: S1 removes about 25 MB of the 56 MB that a render of 80 counters allocates (measured by type, not yet prototyped). S2 removes most of the cascade's time as well.
+- Risk: S1 low (the goldens check it); S2 as for E (a stale style if the key misses an input).
+
 ### P, Q, R. Templates with runtime values
 
 The user's suggestion (2026-10-18): treat the SVG as templates and inject the runtime values (counter values, colors, positions) by C# string interpolation. Where the template lives decides what it saves, so it is three options.
@@ -288,6 +305,77 @@ The server sends each counter as data (face values, colors, state, position) and
 - Risk: two renderers that drift apart; the counter export and the Unit Lab still need the C# renderer.
 - Verdict: not recommended. Q gets most of the gain while the C# renderer stays the single source of a counter's look.
 
+## 5.1 Option G in depth: spans instead of strings
+
+### Background
+
+`Span<T>` and `ReadOnlySpan<T>` (C# 7.2 and .NET Core 2.1, 2018) are views over memory that already exists: part of a string, an array, or a stack buffer. Code can read, slice, and copy through a span without making a new string. Later releases built the parts this option uses on top of them: `ISpanFormattable` and `TryFormat` (.NET 6) write a number's text straight into a span; interpolated string handlers (C# 10) let `$"…"` write into a buffer without a string in between; `SearchValues<T>` (.NET 8) finds any of a set of characters in a span with vectorized search. The Studio runs .NET 10, so all of them are available.
+
+### Where today's writer allocates
+
+Tracing one attribute value through `SvgWriter` today:
+
+1. Each number goes through `FixedPoint.ToString`: `whole.ToString`, the fraction's `ToString("D6")`, `TrimEnd`, and a concatenation, so up to four strings per number.
+2. Path data collects those strings in a `PathData` `StringBuilder`, then `PathData.ToString` makes the whole path a string.
+3. The renderer puts the value in a `(string Name, string Value)` tuple, and the `params` array holding the tuples is allocated per element.
+4. `WriteTag` copies the value character by character, and for every character that needs no escaping it appends `character.ToString()`: a new one-character string (24 bytes) for nearly every character of the output. .NET does not cache these.
+5. The output `StringBuilder` grows in chunks, and `ToString` copies everything once more.
+
+Step 4 is the largest by far, and it is the easiest to remove.
+
+### How it was measured
+
+A scratch console program (not in the repository) referencing the product's projects, run in Release on .NET 10 with workstation GC:
+
+- Real renders: bd01 from the VASL checkout (exact and hex facts documents) and the counter layer from the repository's examples (`bd01-infantry-figures`, 80 counters with figure art; `bd01-demo`, 9 counters). Time and allocated bytes per render after warm-up, and allocation by type from the runtime's allocation events.
+- A replay: each render's output parsed back into the writer calls that made it, with numbers as fixed-point values and path data as commands and numbers, then written by four writers. Every writer's output was compared with the real render: all four are byte-identical on all four workloads.
+  - Today's writer: a copy of `SvgWriter` and `PathData` as they are.
+  - G1, today's API with span escaping: the same strings in, only the escape loop changed to append the spans between characters that need escaping (`SearchValues` and `IndexOfAny`).
+  - G2, a span writer: numbers formatted straight into the output (a `TryFormat` for `FixedPoint`), path data written straight into the attribute, figure outlines (already proven to be path data by `FigureArt.CheckedPath`) copied unescaped, and escaping by span.
+  - G3, the same with a pooled `char` buffer (`ArrayPool<char>`) in place of the `StringBuilder`, so the final string is the only allocation of its size.
+
+### Results
+
+Allocation and time of the writer layer alone, per render:
+
+| Workload | Today | G1 span escaping | G2 span writer | G3 pooled buffer |
+|---|---|---|---|---|
+| bd01 exact (247,310 characters, 54,127 numbers) | 9.43 MB, 11.4 ms | 3.75 MB, 5.6 ms | 1.00 MB, 6.9 ms | 0.49 MB, 6.6 ms |
+| bd01 hex facts (107,705 characters) | 3.86 MB, 6.7 ms | 2.05 MB, 3.6 ms | 0.44 MB, 3.2 ms | 0.22 MB, 3.7 ms |
+| 80 counters with figures (1,089,845 characters) | 24.83 MB, 20.1 ms | 5.35 MB, 5.7 ms | 4.37 MB, 4.9 ms | 2.18 MB, 4.2 ms |
+| 9 demo counters (62,571 characters) | 1.36 MB, 1.0 ms | 0.42 MB, 0.4 ms | 0.26 MB, 0.2 ms | 0.13 MB, 0.2 ms |
+
+G3's remaining allocation is the output string itself (2 bytes per character): the floor for any writer that returns a `string` (option I goes below it with UTF-8).
+
+The writer's share of a whole render:
+
+| Workload | Whole render today | Writer layer today | Rest |
+|---|---|---|---|
+| bd01 exact | 9.51 MB, 22.2 ms | 9.43 MB (99%) | geometry |
+| 80 counters with figures | 56.24 MB, 108.6 ms | 24.83 MB (44%) | style cascade (option S) and layout |
+
+Allocation by type in the counter render: strings 24.9 MB; the cascade's boxed `Selector` enumerators 18.6 MB; delegates and closures from `Any` about 5 MB; `char[]` 1.7 MB; `StringBuilder` 1.1 MB; the cascade's dictionaries 1.1 MB; attribute tuple arrays 0.9 MB.
+
+Number formatting alone (all 54,127 numbers of bd01 exact): today 1.69 MB and 3.5 ms; `TryFormat` into a span 0 bytes and 3.7 ms. The prototype agrees with `FixedPoint.ToString` on every value and on the edge values (zero, plus and minus one, 1/64 steps, the extremes of `int`). The time is equal within noise, so the gain from numbers is memory only.
+
+### What this means
+
+- The per-character `ToString` is the dominant cost. G1 alone removes 60% (board) to 78% (counters) of the writer's allocation, and halves to quarters its time, with no change to any caller: it changes `SvgWriter.Text` and `SvgWriter.WriteTag` only.
+- G2 removes the number and path strings. It needs an API change: `PathData` and the attribute values must accept numbers (`FixedPoint`, or `double` rounded as `SvgWriter.Number` does now) instead of strings, so every `N(…)` and `SvgWriter.Number(…)` at a call site (about 100 across the renderers) changes. On the board, where 99% of render allocation is the writer and most of it is path numbers, G2 is worth it; on counters, G1 has already taken most of the gain.
+- G3 halves what remains by keeping one pooled buffer instead of `StringBuilder` chunks. Small and internal, once G2's shape is in place.
+- After G1 to G3, the counter render is dominated by the cascade (option S), not by strings.
+- Expected whole-render effect (writer measured, cascade estimated from the type profile): bd01 exact from 9.5 MB and 22 ms to about 0.6 MB and 17 ms; 80 counters from 56 MB and 109 ms to about 34 MB and 93 ms after G, and to about 9 MB after G and S1.
+
+### The staged form of G
+
+| Stage | Change | Touches | Gain |
+|---|---|---|---|
+| G1 | Escape by span (`SearchValues`, `IndexOfAny`, `Append(ReadOnlySpan<char>)`) | `SvgWriter.Text`, `SvgWriter.WriteTag` | 60% to 78% of writer allocation; writer time halved or better |
+| G2 | Numbers and path data written as numbers; trusted figure outlines unescaped | `SvgWriter`, `PathData`, `FixedPoint` (a `TryFormat`), every renderer call site | the rest of the per-number strings; board writer allocation to about a tenth |
+| G3 | Pooled `char` buffer in place of `StringBuilder` | `SvgWriter` | about half of what is left |
+
+Each stage is checked by the golden SVGs, which must not change by a byte.
+
 ## 6. Comparison
 
 | Option | Memory per step | Resident size | Network per step | Effort | Output changes |
@@ -298,7 +386,10 @@ The server sends each counter as data (face values, colors, state, position) and
 | D changed stacks only | -85% to -100% sent | indirect | -85% to -100% | moderate to large | no (same SVG, sent in parts) |
 | E fragment cache | fewer rebuilds | + bounded cache | none | moderate | no |
 | F1 one tier | -66% | indirect | -66% | moderate | yes, by tier |
-| G leaner writer | fewer allocations | indirect | none | small | no |
+| G1 span escaping | writer -60% to -78% (measured) | indirect | none | very small | no |
+| G2, G3 span writer, pooled buffer | writer -91% to -95% (measured) | indirect | none | moderate (call sites) | no |
+| S1 cascade loops | counters about -25 MB of 56 MB (by type profile) | indirect | none | small | no |
+| S2 cascade memo | most cascade work | + bounded cache | none | moderate | no |
 | H number text cache | small | small | none | small | no |
 | I UTF-8 bytes | -50% per document | indirect | escaping removed | moderate | no |
 | J bounded render cache | none | stops growth, about -50% | with L | small | no |
@@ -316,14 +407,14 @@ The server sends each counter as data (face values, colors, state, position) and
 My proposal, to be confirmed or changed:
 
 1. Measure first, cheaply: N (one setting, the same replay) and M (read the setting). Both may answer most of the memory question without touching rendering.
-2. The safe, output-identical group: G, J, K, L. Small, checked byte for byte by the existing goldens, and J and K end the only unbounded growth found.
+2. The safe, output-identical group: G1 and S1 first (the two cheapest changes, measured or profiled at the largest gains), then J, K, L, then G2 and G3. All are checked byte for byte by the existing goldens, and J and K end the only unbounded growth found.
 3. The counter layer: C1, then D with E. C1 is small and halves every step; D and E make steps cost what changed.
 4. Then Q, the template idea in the page: with D in place, a step sends `<use>` references and only new faces.
 5. Decide F after D and Q: with deltas and shared faces, the three tiers cost less, and the zoom latency trade may not be needed.
 6. P only if the renderers are rewritten for readability anyway; G gets its allocation gain with far less change.
 7. Not A, B, H, or R.
 
-Before step 3, one more measurement would sharpen the estimates: an allocation trace of a few replay steps (`dotnet-trace` with the GC allocation events, as in the Studio profiling practice), and a heap dump with retention paths for the 8.4 MB of `char[]`.
+Section 5.1 measured the writer and profiled the cascade. Before step 3, one more measurement would sharpen the rest: an allocation trace of a few replay steps (`dotnet-trace` with the GC allocation events, as in the Studio profiling practice), and a heap dump with retention paths for the 8.4 MB of `char[]`.
 
 ## 8. Decisions for the user
 

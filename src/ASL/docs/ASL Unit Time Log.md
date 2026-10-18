@@ -1546,3 +1546,4 @@ Branch `svg-memory-analysis`, analysis only. The start is the first measurement 
 | Task | Start | End | Duration | Note |
 |---|---|---|---|---|
 | bd01 measured; cd-guards-5 replayed with memory samples and heap dumps; the analysis written, templates (P to R) added | 09:14 | 09:29 | 0:15 | No code changed |
+| Option G in depth: the writer benchmark and its span prototypes; the cascade found (S); section 5.1 written | 09:31 | 09:58 | 0:27 | Benchmark kept in code-builders/diagnostics/svg-memory; no product code changed |
