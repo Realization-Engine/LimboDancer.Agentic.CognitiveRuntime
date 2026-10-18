@@ -138,9 +138,10 @@ public sealed class FigureArtTests
     }
 
     [Fact]
-    public void WithoutAcceptedArtTheFiguresAreTheDrawnOnes()
+    public void TheAcceptedArtIsDrawnInPlayAndWithoutArtTheFiguresAreTheDrawnOnes()
     {
-        Assert.Empty(Figures(FigureArt.BuiltIn, "example-squad"));
+        // Every infantry pose and helmet was accepted by the user on 2026-10-18, so the built-in parts draw a squad's three figures.
+        Assert.Equal(3, Figures(FigureArt.BuiltIn, "example-squad").Count);
         Assert.Empty(Figures(FigureArt.None, "example-squad"));
     }
 

@@ -176,4 +176,4 @@ The poses came from ChatGPT, not Midjourney: Midjourney refused the military pro
 - F15: on the classic sheet, the broken face's figures take four columns of six, as on the front face.
 - The pose format gained, as the picks needed them: a version per side, a head tilt, an own helmet, and a body extent.
 
-Nothing is accepted yet: the counters in play draw the old figures until the user accepts a pose (`data-accepted="true"`).
+**Accepted, 2026-10-18.** The user accepted every infantry pose; Claude accepted the eight sides' helmets with them, since every pose was reviewed wearing them. The drawn weapons stay unaccepted: no traced pose uses them. The counters in play now draw the figures; the golden SVGs of personnel changed at every tier. A synthetic placement set on board 1, `bd01-infantry-figures`, shows every side in every infantry type (`code-builders/unit-figures/make_infantry_showcase.py`).

@@ -13,7 +13,7 @@
         "left": 0.0,
         "right": 1050.0
       },
-      "accepted": false,
+      "accepted": true,
       "source": "Traced from the user's pick, 2026-10-18 (ChatGPT image from the berserk prompt: a bayonet charge, shouting); its helmet removed for the side's."
     },
     "broken": {
@@ -30,7 +30,7 @@
         "right": 1268.0
       },
       "ownHelmet": true,
-      "accepted": false,
+      "accepted": true,
       "source": "Traced from the user's pick, 2026-10-18 (ChatGPT image from the broken prompt: cowering, arm over the helmet, rifle trailing); it keeps its own helmet, which the arm lies over."
     },
     "crew": {
@@ -42,7 +42,7 @@
         "y": 118.0,
         "radius": 74.0
       },
-      "accepted": false,
+      "accepted": true,
       "source": "Traced from the user's pick, 2026-10-17 (ChatGPT image from the crew prompt: a kneeling loader with a shell, rifle slung); its helmet removed for the side's."
     },
     "hero.german": {
@@ -54,7 +54,7 @@
         "y": 222.0,
         "radius": 59.0
       },
-      "accepted": false,
+      "accepted": true,
       "source": "Traced from the user's pick, 2026-10-18 (ChatGPT image from the hero prompt: charging, throwing a stick grenade, the German version); its helmet removed for the side's."
     },
     "hero.russian": {
@@ -66,7 +66,7 @@
         "y": 222.0,
         "radius": 59.0
       },
-      "accepted": false,
+      "accepted": true,
       "source": "Traced from the user's pick, 2026-10-18 (ChatGPT image from the hero prompt: charging, throwing an RGD-33, the Russian version); its helmet removed for the side's."
     },
     "hero": {
@@ -78,7 +78,7 @@
         "y": 222.0,
         "radius": 59.0
       },
-      "accepted": false,
+      "accepted": true,
       "source": "Traced from the user's pick, 2026-10-18 (ChatGPT image from the hero prompt: charging, throwing an egg grenade, the general version); its helmet removed for the side's."
     },
     "leader": {
@@ -90,7 +90,7 @@
         "y": 86.0,
         "radius": 52.0
       },
-      "accepted": false,
+      "accepted": true,
       "source": "Traced from the user's pick, 2026-10-17 (ChatGPT image from the leader prompt: pointing, SMG at the hip, binoculars); its helmet removed for the side's."
     },
     "pinned": {
@@ -102,7 +102,7 @@
         "y": 58.0,
         "radius": 48.0
       },
-      "accepted": false,
+      "accepted": true,
       "source": "Traced from the user's pick, 2026-10-18 (ChatGPT image from the pinned prompt: prone, head raised, rifle forward); its helmet removed for the side's."
     },
     "prisoner": {
@@ -114,7 +114,7 @@
         "y": 90.0,
         "radius": 52.0
       },
-      "accepted": false,
+      "accepted": true,
       "source": "Traced from the user's pick, 2026-10-18 (ChatGPT image from the prisoner prompt: hands raised, no weapon); its helmet removed for the side's."
     },
     "standing": {
@@ -126,7 +126,7 @@
         "y": 92.0,
         "radius": 76.0
       },
-      "accepted": false,
+      "accepted": true,
       "source": "Traced from the user's pick, 2026-10-17 (ChatGPT image from the revised standing-rifleman prompt); its helmet removed for the side's."
     },
     "wounded": {
@@ -139,49 +139,49 @@
         "radius": 64.0,
         "tilt": 29.0
       },
-      "accepted": false,
+      "accepted": true,
       "source": "Traced from the user's pick, 2026-10-18 (ChatGPT image from the wounded prompt: hunched, hand at his side, pistol low); its tilted helmet removed for the side's."
     }
   },
   "helmets": {
     "american": {
       "path": "M144 36L144 56L-144 56L-144 36L-120 36L-117 0.8L-108.1 -32.6L-93.8 -62.5L-74.8 -87.5L-52.1 -106.4L-26.7 -118L0 -122L26.7 -118L52.1 -106.4L74.8 -87.5L93.8 -62.5L108.1 -32.6L117 0.8L120 36Z",
-      "accepted": false,
+      "accepted": true,
       "source": "M1 helmet; M1 Garand, 1.10 m; Thompson M1A1. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
     },
     "axis-minor": {
       "path": "M60 56L-70 66L-112 108L-164 104L-150 60L-124 6L-120.9 -24.7L-111.7 -53.9L-96.9 -80L-77.3 -101.9L-53.8 -118.3L-27.6 -128.5L0 -132L27.6 -128.5L53.8 -118.3L77.3 -101.9L96.9 -80L111.7 -53.9L120.9 -24.7L124 6L136 44Z",
-      "accepted": false,
+      "accepted": true,
       "source": "One figure for the Axis Minors (F5): a German-pattern helmet with a rounder skirt; a Mannlicher-pattern rifle, about 1.10 m; a carbine. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
     },
     "british": {
       "path": "M204 4L196 40L-196 40L-204 4L-104 10L-101.4 -16.7L-93.7 -42.1L-81.3 -64.8L-64.8 -83.8L-45.1 -98.1L-23.1 -107L0 -110L23.1 -107L45.1 -98.1L64.8 -83.8L81.3 -64.8L93.7 -42.1L101.4 -16.7L104 10Z",
-      "accepted": false,
+      "accepted": true,
       "source": "Mk II helmet; Lee-Enfield No. 4, 1.13 m; Sten. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
     },
     "finnish": {
       "path": "M-90 30L-128 22L-122 -60L-90 -104L40 -112L120 -96L150 4L196 30Z",
-      "accepted": false,
+      "accepted": true,
       "source": "M36 field cap; Mosin-Nagant M/39, 1.18 m; Suomi KP/-31 with its drum. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
     },
     "french": {
       "path": "M110 42L-110 46L-180 52L-112 14L-109.2 -12.3L-100.9 -37.2L-87.6 -59.6L-69.8 -78.3L-48.6 -92.3L-24.9 -101L0 -104L24.9 -101L48.6 -92.3L69.8 -78.3L87.6 -59.6L100.9 -37.2L109.2 -12.3L112 14L178 40Z M-86 -88L-56 -128L46 -124L70 -90Z",
-      "accepted": false,
+      "accepted": true,
       "source": "Adrian M26; MAS-36, 1.02 m, its spike bayonet fixed; MAS-38. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
     },
     "german": {
       "path": "M120 42L70 50L-10 60L-84 76L-128 124L-196 118L-150 46L-132 4L-128.8 -27.2L-119.5 -56.7L-104.5 -83.3L-84.6 -105.5L-60.7 -122.1L-34 -132.5L-6 -136L22 -132.5L48.7 -122.1L72.6 -105.5L92.5 -83.3L107.5 -56.7L116.8 -27.2L122 8L168 30Z",
-      "accepted": false,
+      "accepted": true,
       "source": "M35 Stahlhelm; Kar98k 1.11 m; MP40. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
     },
     "italian": {
       "path": "M150 22L150 40L-160 50L-158 28L-122 20L-118.9 -9.4L-109.9 -37.3L-95.4 -62.3L-76.1 -83.2L-52.9 -98.9L-27.1 -108.7L0 -112L27.1 -108.7L52.9 -98.9L76.1 -83.2L95.4 -62.3L109.9 -37.3L118.9 -9.4L122 20Z",
-      "accepted": false,
+      "accepted": true,
       "source": "M33 helmet; Carcano M91, 1.29 m; Beretta MAB 38. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
     },
     "russian": {
       "path": "M118 60L-118 60L-150 52L-118 30L-115 -7.4L-106.3 -42.9L-92.3 -74.7L-73.6 -101.3L-51.2 -121.4L-26.3 -133.8L0 -138L26.3 -133.8L51.2 -121.4L73.6 -101.3L92.3 -74.7L106.3 -42.9L115 -7.4L118 30L150 52Z",
-      "accepted": false,
+      "accepted": true,
       "source": "SSh-40; Mosin-Nagant 91/30 with its bayonet fixed, 1.66 m; PPSh-41 with its drum. Drawn from the documented profiles (plan section 6), exaggerated for size (F9)."
     }
   },

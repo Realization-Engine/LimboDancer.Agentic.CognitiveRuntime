@@ -88,7 +88,7 @@ public sealed class DirectionTests
     [Fact]
     public void TheDemoSetShowsAGunWithItsDirection()
     {
-        var set = UnitExamples.PlacementSets(RenderingTestData.Vocabulary.Value).Single().Set!;
+        var set = UnitExamples.PlacementSets(RenderingTestData.Vocabulary.Value).Single(result => result.Set?.SetId == "bd01-demo").Set!;
         var overlay = UnitOverlayBuilder.Build(UnitMapTarget.ForBoard(Maps.Coordinates.BoardRef.Parse("bd01"), Maps.Geometry.BoardGeometry.StandardGeomorphic),
             set.SetId, set.Units, RenderingTestData.Renderer(UnitStyles.Digital));
         var gun = overlay.Units.Single(unit => unit.Document.Id == "demo-e");

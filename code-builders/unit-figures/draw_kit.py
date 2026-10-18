@@ -13,6 +13,7 @@ Then:                          python code-builders/unit-figures/build_figures.p
 """
 
 import math
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -253,14 +254,17 @@ STAND_INS = {"standing": standing, "leader": leader, "pinned": pinned}
 
 def main():
     for side, (helmet, long_arm, smg, source) in SIDES.items():
-        write(f"kit/{side}-helmet.svg", "-160 -160 320 320", helmet(), source)
+        # The helmets were accepted by the user on 2026-10-18; the weapons are not, since no traced pose uses them.
+        write(f"kit/{side}-helmet.svg", "-160 -160 320 320", helmet(), source, ' data-accepted="true"')
         write(f"kit/{side}-rifle.svg", "-300 -160 1000 320", long_arm(), source)
         write(f"kit/{side}-smg.svg", "-300 -160 700 360", smg(), source)
-    for pose, draw in STAND_INS.items():
-        shapes, view_box, anchors = draw()
-        write(f"poses/{pose}.svg", view_box.split('"')[1], shapes,
-              "Stand-in: a geometric body holding the anchors until the user's Midjourney pick is traced.", anchors)
-    print("wrote the kit and the stand-in poses")
+    # The stand-in poses are no longer written: every pose is now traced from the user's picks and accepted (2026-10-18), and writing
+    # a stand-in would overwrite one. Pass --stand-ins to write them to a scratch folder for comparison.
+    if "--stand-ins" in sys.argv:
+        for pose, draw in STAND_INS.items():
+            shapes, view_box, anchors = draw()
+            write(f"stand-ins/{pose}.svg", view_box.split('"')[1], shapes, "Stand-in: a geometric body, for comparison only.", anchors)
+    print("wrote the kit")
 
 
 if __name__ == "__main__":

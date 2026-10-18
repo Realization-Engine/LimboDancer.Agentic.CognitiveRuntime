@@ -51,7 +51,7 @@ public sealed class UnitStudioTests : IDisposable
     [Fact]
     public void TheBuiltInSetIsSyntheticAndShowsOnlyWhereItsBoardIs()
     {
-        var entry = Assert.Single(library.Sets());
+        var entry = Assert.Single(library.Sets(), set => set.Set.SetId == "bd01-demo");
         Assert.True(entry.BuiltIn);
         Assert.True(entry.Set.Synthetic);
         Assert.Equal("bd01-demo", entry.Set.SetId);

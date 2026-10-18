@@ -84,9 +84,10 @@ public sealed class DocumentTests
     {
         var vocabulary = UnitsTestData.Asl.Value;
         Assert.Equal(33, UnitExamples.Catalog(vocabulary).Count);
-        var set = Assert.Single(UnitExamples.PlacementSets(vocabulary));
-        Assert.Empty(set.Diagnostics);
-        Assert.Equal("bd01-demo", set.Set!.SetId);
+        // Two built-in sets since 2026-10-18: the demo and the infantry figures on board 1; both read without a finding.
+        var sets = UnitExamples.PlacementSets(vocabulary);
+        Assert.Equal(["bd01-demo", "bd01-infantry-figures"], sets.Select(set => set.Set!.SetId));
+        Assert.All(sets, set => Assert.Empty(set.Diagnostics));
     }
 
     [Theory]
