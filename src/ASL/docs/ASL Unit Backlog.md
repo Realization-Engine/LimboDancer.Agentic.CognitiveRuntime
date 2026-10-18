@@ -1177,3 +1177,11 @@ The ASL Unit Figure Art Plan (`src/ASL/docs/Plans`), 2026-10-17: nationality fig
 | Early-war and late-war kit (the American M1917 against the M1, the Soviet SSh-36 against the SSh-40, the British Mk III) | Figure art plan, decision F6 | (display) | The scenario's date reaching the renderer | One helmet per side, the war's most common. |
 | Japanese and Chinese figures | Figure art plan, decision F5 | A25 | Japanese or Chinese units in the catalog | The vocabulary has a Japanese side; it draws the standing figure with no kit. |
 | Icons for the Unit Lab's Unit and Art tabs and the Art tab's Coverage, Prompts, and Batches | Figure art plan, stage 3 | (UI) | An Icon Lab batch | The Icon Lab's Coverage lists them as needing an icon; they keep their words. |
+
+## 62. Added by the counter layer design
+
+The ASL Map Studio Counter Layer Design (`src/ASL/docs/Designs`), 2026-10-18: the second group of the SVG memory analysis.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| The rest of a replay step measured and reduced: projection, rules, render tree, and the page's serialization, about 6 MB of a 9.4 MB step | Counter layer plan, section 3 | (performance) | The counter layer plan done, so the rest is measured on its own | Untouched; after the plan it is the larger part of a step. |

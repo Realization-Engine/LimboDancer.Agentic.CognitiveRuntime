@@ -1570,3 +1570,11 @@ The ASL Map Studio SVG Memory Plan (`src/ASL/docs/Plans`), approved by the user 
 | Where a replay step's time goes (analysis section 12): a server trace and the browser's frame timing | 18:40 | 18:57 | 0:17 | Start approximate; dotnet-trace installed at the user's word; the layer resent every step (set id carries the revision) |
 | Where a Play step's time goes (analysis section 13): the follow control built and tested (branch play-follow-profile), Play followed and a setup sample profiled | 19:10 | 20:08 | 0:58 | Start approximate; the scoping of re-enactment ran in its own session; the board lookup's footprint check is two thirds of a Play step |
 | The footprint check and the set id fixed, tested, and measured (analysis section 14) | 20:08 | 20:34 | 0:26 | Play's server step -68%; Replay's browser step -48% |
+
+## The SVG memory counter layer design, 2026-10-18
+
+Branch `svg-memory-design-2`, from `main`. Design and plan only; no code changed. Times from the shell's clock; the start is the session's first read.
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| The analysis and the counter code read; the design and plan written | 18:00 | 18:22 | 0:22 | Start approximate (the clock was first read at 18:15, after the reading); a worktree under the long scratchpad path failed to check out, so it sits at a short path |
