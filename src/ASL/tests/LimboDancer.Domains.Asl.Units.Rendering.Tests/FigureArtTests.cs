@@ -26,10 +26,14 @@ public sealed class FigureArtTests
         var figures = Figures(FigureArt.Read(Fixture), "example-squad");
         Assert.Equal(3, figures.Count);
         var first = figures[0];
-        var paths = first.Elements().Where(element => element.Name.LocalName == "path").ToList();
-        Assert.Equal("M0 0L100 0L100 1000Z", paths[0].Attribute("d")!.Value);
-        Assert.Equal("translate(150 450) rotate(0)", paths.Single(path => path.Attribute("d")!.Value.StartsWith("M-200", StringComparison.Ordinal)).Attribute("transform")!.Value);
-        Assert.Equal("translate(200 100) scale(0.8)", paths.Single(path => path.Attribute("data-helmet")?.Value == "german").Attribute("transform")!.Value);
+        // The outlines are written once for the counter, in a defs beside the figures, and each man draws them by reference.
+        var defs = first.Parent!.Elements().Single(element => element.Name.LocalName == "defs").Elements().ToDictionary(path => path.Attribute("id")!.Value);
+        string Outline(XElement use) => defs[use.Attribute("href")!.Value.TrimStart('#')].Attribute("d")!.Value;
+        var uses = first.Elements().Where(element => element.Name.LocalName == "use").ToList();
+        Assert.Equal("M0 0L100 0L100 1000Z", Outline(uses.Single(use => use.Attribute("data-figure-body") is not null)));
+        Assert.Equal("translate(150 450) rotate(0)", uses.Single(use => Outline(use).StartsWith("M-200", StringComparison.Ordinal)).Attribute("transform")!.Value);
+        Assert.Equal("translate(200 100) scale(0.8)", uses.Single(use => use.Attribute("data-helmet")?.Value == "german").Attribute("transform")!.Value);
+        Assert.Equal(3, defs.Count);
         Assert.NotNull(first.Attribute("fill"));
         Assert.StartsWith("translate(", first.Attribute("transform")!.Value, StringComparison.Ordinal);
     }
@@ -133,8 +137,8 @@ public sealed class FigureArtTests
     public void ASideWithoutKitGetsTheBareFigure()
     {
         var art = FigureArt.Read(Fixture.Replace("\"german\"", "\"french\"", StringComparison.Ordinal));
-        var paths = Figures(art, "example-squad")[0].Elements().Where(element => element.Name.LocalName == "path").ToList();
-        Assert.Single(paths);
+        var drawn = Figures(art, "example-squad")[0].Elements().Where(element => element.Name.LocalName is "path" or "use").ToList();
+        Assert.Single(drawn);
     }
 
     [Fact]

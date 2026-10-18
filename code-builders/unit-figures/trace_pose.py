@@ -146,7 +146,8 @@ def main():
                   if len(loop) >= 8 * ENLARGE and len(simple := simplify(loop, args.tolerance * ENLARGE)) >= 3]
         kept = [(turn, points) for turn, points in traced if abs(turn) >= largest / 100]
 
-    shapes = ["M" + "L".join(f"{px:.1f} {py:.1f}" for px, py in (place(x, y) for x, y in points)) + "Z" for _, points in kept]
+    # Whole body units: a unit is a thousandth of a figure's height, far finer than a pixel on any counter.
+    shapes = ["M" + "L".join(f"{px:.0f} {py:.0f}" for px, py in (place(x, y) for x, y in points)) + "Z" for _, points in kept]
     tilt = 0.0
     if args.head:
         cx, cy, r, tilt = head_numbers(args.head)

@@ -94,7 +94,9 @@ public sealed class GoldenTests
         const string Name = "German 1st Line squad A, 4-6-7, pinned, with light MG 3-6";
         Assert.Equal(Name, svg.Attribute("aria-label")!.Value);
         Assert.Equal(Name, svg.Element("title")!.Value);
-        Assert.DoesNotContain(svg.Descendants(), element => element.Name.LocalName is "image" or "script" or "foreignObject" || element.Attribute("href") is not null);
+        // No image, script, or outside reference; a figure's <use> of an outline in its own counter (#id) is the only href allowed.
+        Assert.DoesNotContain(svg.Descendants(), element => element.Name.LocalName is "image" or "script" or "foreignObject"
+            || (element.Attribute("href")?.Value is { } href && !href.StartsWith('#')));
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using System.Globalization;
 using LimboDancer.Domains.Asl.Maps.Rendering;
 
 namespace LimboDancer.Domains.Asl.Units.Rendering;
@@ -20,17 +21,18 @@ internal static class Glyphs
     /// figure parts when the pose has art (the ASL Unit Figure Art Plan), with the side's helmet and weapon; otherwise as before, prone for
     /// the pinned and the broken poses and standing for the rest. <paramref name="ground"/> is the color behind the glyph, which rings
     /// overlapping figures and helmets apart; <paramref name="piping"/>, when the style sheet gives one, is a thin line of its own color
-    /// around every figure and helmet instead, so dark figures stand out on a dark face.
+    /// around every figure and helmet instead, so dark figures stand out on a dark face. <paramref name="key"/> names the unit, so the figure
+    /// parts written once for its counter have ids no other counter shares.
     /// </summary>
     public static bool Draw(SvgWriter svg, string name, string? argument, Box box, string color, int figures, FigureArt? art = null, string? side = null,
-        string? ground = null, string? piping = null)
+        string? ground = null, string? piping = null, string? key = null)
     {
         switch (name)
         {
             case "size-figures":
                 if (art?.Pose(argument, side) is { } pose)
                 {
-                    ArtFigures(svg, art, pose, side, box, color, ground, piping, figures);
+                    ArtFigures(svg, art, pose, side, box, color, ground, piping, figures, key);
                 }
                 else if (FigureArt.FallsBackProne(argument))
                 {
@@ -101,7 +103,7 @@ internal static class Glyphs
     /// the face meets the helmet. With piping, every figure, the rearmost too, and every helmet get a thin line of the piping's color instead.
     /// </summary>
     private static void ArtFigures(SvgWriter svg, FigureArt art, FigurePose pose, string? side, Box box, string color, string? ground, string? piping,
-        int count)
+        int count, string? key)
     {
         count = Math.Clamp(count, 1, 3);
         var width = pose.Width / 1000;
@@ -123,6 +125,25 @@ internal static class Glyphs
         var alongGrip = pose.Grip is { } grip
             ? $"translate({FigureArt.Number(grip.X1)} {FigureArt.Number(grip.Y1)}) rotate({FigureArt.Number(Math.Atan2(grip.Y2 - grip.Y1, grip.X2 - grip.X1) * 180 / Math.PI)})"
             : null;
+
+        // Each outline is written once for the counter and drawn by reference for every man, his ring, and his piping; a traced outline is
+        // some thousands of characters, and a squad would otherwise carry it up to six times.
+        var id = FigureId(key, box, pose.Path + helmet?.Path + weapon?.Path);
+        svg.Start("defs");
+        svg.Empty("path", ("id", id + "-body"), ("d", pose.Path));
+        if (helmet is not null)
+        {
+            svg.Empty("path", ("id", id + "-helmet"), ("d", helmet.Path));
+        }
+
+        if (weapon is not null)
+        {
+            svg.Empty("path", ("id", id + "-weapon"), ("d", weapon.Path));
+        }
+
+        svg.End();
+        var bodyRef = $"#{id}-body";
+        var helmetRef = $"#{id}-helmet";
         for (var index = 0; index < count; index++)
         {
             var x = lying ? left : left + (index * body * Step * scale);
@@ -133,37 +154,55 @@ internal static class Glyphs
             {
                 svg.Start("g", ("fill", ring), ("stroke", ring), ("stroke-width", FigureArt.Number(piping is null ? FigureRing : Piping * 2)),
                     ("stroke-linejoin", "round"), ("data-figure-ring", piping is null ? "ground" : "piping"));
-                svg.Empty("path", ("d", pose.Path));
+                svg.Empty("use", ("href", bodyRef));
                 if (helmet is not null)
                 {
-                    svg.Empty("path", ("d", helmet.Path), ("transform", onHead));
+                    svg.Empty("use", ("href", helmetRef), ("transform", onHead));
                 }
 
                 svg.End();
             }
 
-            svg.Empty("path", ("d", pose.Path));
+            svg.Empty("use", ("href", bodyRef), ("data-figure-body", "true"));
             if (weapon is not null && alongGrip is not null)
             {
                 // The weapon keeps its length in body units whatever the pose; the grip only places and turns it.
-                svg.Empty("path", ("d", weapon.Path), ("transform", alongGrip));
+                svg.Empty("use", ("href", $"#{id}-weapon"), ("transform", alongGrip));
             }
 
             if (helmet is not null)
             {
                 if (ring is not null)
                 {
-                    svg.Empty("path", ("d", helmet.Path), ("transform", onHead), ("stroke", ring),
+                    svg.Empty("use", ("href", helmetRef), ("transform", onHead), ("stroke", ring),
                         ("stroke-width", FigureArt.Number((piping is null ? HelmetRing : Piping) * 100 / head.Radius)), ("stroke-linejoin", "round"),
                         ("data-helmet-ring", "true"));
                     svg.Empty("circle", ("cx", FigureArt.Number(head.X)), ("cy", FigureArt.Number(head.Y)), ("r", FigureArt.Number(head.Radius * 0.95)));
                 }
 
-                svg.Empty("path", ("d", helmet.Path), ("transform", onHead), ("data-helmet", side ?? string.Empty));
+                svg.Empty("use", ("href", helmetRef), ("transform", onHead), ("data-helmet", side ?? string.Empty));
             }
 
             svg.End();
         }
+    }
+
+    /// <summary>
+    /// The id stem of a counter's figure parts: a hash of the outlines it holds, the unit's id, and where its glyph sits. Two counters on one
+    /// page can share an id only when they hold the same outlines, so a reference that finds the other counter's still draws the same
+    /// figure; the same unit in several poses (the Unit Lab's Art tab) or at several detail levels in one picture never clashes.
+    /// </summary>
+    private static string FigureId(string? key, Box box, string outlines)
+    {
+        var name = new string([.. (key ?? "unit").Select(character => char.IsAsciiLetterOrDigit(character) ? character : '-')]);
+        // FNV-1a over the outlines: stable across runs, unlike string.GetHashCode, so the golden SVGs do not change from run to run.
+        var hash = 2166136261u;
+        foreach (var character in outlines)
+        {
+            hash = unchecked((hash ^ character) * 16777619u);
+        }
+
+        return string.Create(CultureInfo.InvariantCulture, $"fig-{hash:x8}-{name}-{(int)Math.Round(box.X * 8)}-{(int)Math.Round(box.Y * 8)}");
     }
 
     private static void ProneFigures(SvgWriter svg, Box box, string color, int count)
