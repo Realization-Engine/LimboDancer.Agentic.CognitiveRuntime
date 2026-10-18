@@ -18,16 +18,18 @@ internal static class Glyphs
     /// <summary>
     /// Draws a glyph in a box; returns false for an unknown name. <c>size-figures</c> takes a pose as its argument and is drawn from the
     /// figure parts when the pose has art (the ASL Unit Figure Art Plan), with the side's helmet and weapon; otherwise as before, prone for
-    /// the pinned and the broken poses and standing for the rest.
+    /// the pinned and the broken poses and standing for the rest. <paramref name="ground"/> is the color behind the glyph, which rings
+    /// overlapping figures and helmets apart.
     /// </summary>
-    public static bool Draw(SvgWriter svg, string name, string? argument, Box box, string color, int figures, FigureArt? art = null, string? side = null)
+    public static bool Draw(SvgWriter svg, string name, string? argument, Box box, string color, int figures, FigureArt? art = null, string? side = null,
+        string? ground = null)
     {
         switch (name)
         {
             case "size-figures":
                 if (art?.Pose(argument) is { } pose)
                 {
-                    ArtFigures(svg, art, pose, side, box, color, figures);
+                    ArtFigures(svg, art, pose, side, box, color, ground, figures);
                 }
                 else if (FigureArt.FallsBackProne(argument))
                 {
@@ -70,49 +72,83 @@ internal static class Glyphs
         }
     }
 
-    /// <summary>The share of a standing pose's width between one figure and the next, so two or three overlap a little.</summary>
-    private const double Step = 0.78;
+    /// <summary>
+    /// The staggered file a squad's figures stand in (the user's choice, 2026-10-17): each man a half pose width further on, the man behind
+    /// raised by a seventh of a height, so the heads and the helmets stay clear of one another.
+    /// </summary>
+    private const double Step = 0.5;
+
+    private const double Rise = 0.14;
 
     /// <summary>The share of a lying pose's height between one figure and the next.</summary>
     private const double LyingStep = 0.62;
 
+    /// <summary>The ring, in body units, that keeps a figure apart from the one behind it.</summary>
+    private const double FigureRing = 70;
+
+    /// <summary>The ring, in body units, that keeps the side's helmet apart from the pack and the shoulders behind it.</summary>
+    private const double HelmetRing = 36;
+
     /// <summary>
     /// One to three figures composed from a pose, the side's helmet on the head, and the side's weapon along the grip; each in one group
-    /// filled with the slot's color. An upright pose repeats to the right; a lying one (wider than one and a half times its height) repeats
-    /// downward.
+    /// filled with the slot's color. An upright pose repeats as a staggered file, the man behind higher and drawn first; a lying one (wider
+    /// than one and a half times its height) repeats downward. On a known ground (the face or slot behind the glyph), every figure but the
+    /// rearmost is ringed in it, so overlapping men stay apart, and the helmet is ringed too, with the skull drawn again inside the ring so
+    /// the face meets the helmet.
     /// </summary>
-    private static void ArtFigures(SvgWriter svg, FigureArt art, FigurePose pose, string? side, Box box, string color, int count)
+    private static void ArtFigures(SvgWriter svg, FigureArt art, FigurePose pose, string? side, Box box, string color, string? ground, int count)
     {
         count = Math.Clamp(count, 1, 3);
         var width = pose.Width / 1000;
         var height = pose.Height / 1000;
         var lying = width > 1.5 * height;
         var across = lying ? width : width + (width * Step * (count - 1));
-        var down = lying ? height + (height * LyingStep * (count - 1)) : height;
+        var down = lying ? height + (height * LyingStep * (count - 1)) : height + (height * Rise * (count - 1));
         var scale = Math.Min(box.Width * 0.92 / across, box.Height * 0.92 / down);
         var left = box.CenterX - (across * scale / 2);
         var top = box.CenterY - (down * scale / 2);
         var helmet = art.Helmet(side);
         var weapon = pose.Grip is null ? null : art.WeaponOf(side, pose.Weapon);
+        var head = pose.Head;
+        var onHead = $"translate({FigureArt.Number(head.X)} {FigureArt.Number(head.Y)}) scale({FigureArt.Number(head.Radius / 100)})";
+        var alongGrip = pose.Grip is { } grip
+            ? $"translate({FigureArt.Number(grip.X1)} {FigureArt.Number(grip.Y1)}) rotate({FigureArt.Number(Math.Atan2(grip.Y2 - grip.Y1, grip.X2 - grip.X1) * 180 / Math.PI)})"
+            : null;
         for (var index = 0; index < count; index++)
         {
             var x = lying ? left : left + (index * width * Step * scale);
-            var y = lying ? top + (index * height * LyingStep * scale) : top;
+            var y = lying ? top + (index * height * LyingStep * scale) : top + (index * height * Rise * scale);
             svg.Start("g", ("transform", $"translate({N(x)} {N(y)}) scale({FigureArt.Number(scale / 1000)})"), ("fill", color));
-            svg.Empty("path", ("d", pose.Path));
-            if (helmet is not null)
+            if (ground is not null && index > 0)
             {
-                var head = pose.Head;
-                svg.Empty("path", ("d", helmet.Path),
-                    ("transform", $"translate({FigureArt.Number(head.X)} {FigureArt.Number(head.Y)}) scale({FigureArt.Number(head.Radius / 100)})"));
+                svg.Start("g", ("fill", ground), ("stroke", ground), ("stroke-width", FigureArt.Number(FigureRing)), ("stroke-linejoin", "round"),
+                    ("data-figure-ring", "true"));
+                svg.Empty("path", ("d", pose.Path));
+                if (helmet is not null)
+                {
+                    svg.Empty("path", ("d", helmet.Path), ("transform", onHead));
+                }
+
+                svg.End();
             }
 
-            if (weapon is not null && pose.Grip is { } grip)
+            svg.Empty("path", ("d", pose.Path));
+            if (weapon is not null && alongGrip is not null)
             {
                 // The weapon keeps its length in body units whatever the pose; the grip only places and turns it.
-                var angle = Math.Atan2(grip.Y2 - grip.Y1, grip.X2 - grip.X1) * 180 / Math.PI;
-                svg.Empty("path", ("d", weapon.Path),
-                    ("transform", $"translate({FigureArt.Number(grip.X1)} {FigureArt.Number(grip.Y1)}) rotate({FigureArt.Number(angle)})"));
+                svg.Empty("path", ("d", weapon.Path), ("transform", alongGrip));
+            }
+
+            if (helmet is not null)
+            {
+                if (ground is not null)
+                {
+                    svg.Empty("path", ("d", helmet.Path), ("transform", onHead), ("stroke", ground),
+                        ("stroke-width", FigureArt.Number(HelmetRing * 100 / head.Radius)), ("stroke-linejoin", "round"), ("data-helmet-ring", "true"));
+                    svg.Empty("circle", ("cx", FigureArt.Number(head.X)), ("cy", FigureArt.Number(head.Y)), ("r", FigureArt.Number(head.Radius * 0.95)));
+                }
+
+                svg.Empty("path", ("d", helmet.Path), ("transform", onHead), ("data-helmet", side ?? string.Empty));
             }
 
             svg.End();

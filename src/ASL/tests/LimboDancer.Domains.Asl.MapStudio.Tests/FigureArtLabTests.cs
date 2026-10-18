@@ -63,7 +63,8 @@ public sealed class FigureArtLabTests : IDisposable
     {
         // Every catalog side has its kit drawn (stage 6); a side outside the catalog has none.
         Assert.Contains("helmet", lab.Missing("standing", "japanese"));
-        Assert.Contains("rifle", lab.Missing("standing", "japanese"));
+        // The traced standing pose carries its rifle; the leader stand-in holds a drawn SMG, which a side without kit lacks.
+        Assert.Contains("SMG", lab.Missing("leader", "japanese"));
         Assert.DoesNotContain("helmet", lab.Missing("standing", "german"));
         Assert.Contains("pose (stand-in)", lab.Missing("standing", "german"));
         Assert.Contains("pose", lab.Missing("crew", "german"));

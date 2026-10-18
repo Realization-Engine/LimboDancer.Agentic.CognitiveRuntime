@@ -27,22 +27,34 @@ public sealed class FigureArtTests
         Assert.Equal(3, figures.Count);
         var first = figures[0];
         var paths = first.Elements().Where(element => element.Name.LocalName == "path").ToList();
-        Assert.Equal(3, paths.Count);
         Assert.Equal("M0 0L100 0L100 1000Z", paths[0].Attribute("d")!.Value);
-        Assert.Equal("translate(200 100) scale(0.8)", paths[1].Attribute("transform")!.Value);
-        Assert.Equal("translate(150 450) rotate(0)", paths[2].Attribute("transform")!.Value);
+        Assert.Equal("translate(150 450) rotate(0)", paths.Single(path => path.Attribute("d")!.Value.StartsWith("M-200", StringComparison.Ordinal)).Attribute("transform")!.Value);
+        Assert.Equal("translate(200 100) scale(0.8)", paths.Single(path => path.Attribute("data-helmet")?.Value == "german").Attribute("transform")!.Value);
         Assert.NotNull(first.Attribute("fill"));
         Assert.StartsWith("translate(", first.Attribute("transform")!.Value, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void TheCopiesStandSideBySideAndOverlapALittle()
+    public void TheHelmetIsRingedInTheFacesColorAndTheSkullDrawnAgainSoTheFaceMeetsIt()
     {
-        var offsets = Figures(FigureArt.Read(Fixture), "example-squad").Select(group => X(group.Attribute("transform")!.Value)).ToList();
-        var step = offsets[1] - offsets[0];
-        Assert.True(step > 0);
-        // Positions are written to 1/64 of a pixel, so the steps agree to that.
-        Assert.InRange(Math.Abs(step - (offsets[2] - offsets[1])), 0, 2.0 / 64);
+        var first = Figures(FigureArt.Read(Fixture), "example-squad")[0];
+        var elements = first.Elements().ToList();
+        var ring = elements.FindIndex(element => element.Attribute("data-helmet-ring") is not null);
+        var skull = elements.FindIndex(element => element.Name.LocalName == "circle");
+        var helmet = elements.FindIndex(element => element.Attribute("data-helmet") is not null);
+        Assert.True(ring >= 0 && ring < skull && skull < helmet);
+        Assert.Equal(elements[ring].Attribute("stroke")!.Value, Face(FigureArt.Read(Fixture), "example-squad"));
+    }
+
+    [Fact]
+    public void TheSquadStandsInAStaggeredFileTheManBehindHigherAndRingedApart()
+    {
+        var figures = Figures(FigureArt.Read(Fixture), "example-squad");
+        var places = figures.Select(group => Translate(group.Attribute("transform")!.Value)).ToList();
+        Assert.True(places[0].X < places[1].X && places[1].X < places[2].X);
+        Assert.True(places[0].Y < places[1].Y && places[1].Y < places[2].Y);
+        Assert.Null(figures[0].Elements().FirstOrDefault(element => element.Attribute("data-figure-ring") is not null));
+        Assert.All(figures.Skip(1), group => Assert.NotNull(group.Elements().FirstOrDefault(element => element.Attribute("data-figure-ring") is not null)));
     }
 
     [Fact]
@@ -139,6 +151,21 @@ public sealed class FigureArtTests
         return svg.Descendants().Where(element => element.Attribute("data-slot")?.Value == "glyph").SelectMany(slot => slot.Descendants()).Where(element => element.Name.LocalName == "g" && element.Attribute("transform")?.Value.Contains("scale(", StringComparison.Ordinal) == true).ToList();
     }
 
-    private static double X(string transform) =>
-        double.Parse(transform["translate(".Length..transform.IndexOf(' ', StringComparison.Ordinal)], System.Globalization.CultureInfo.InvariantCulture);
+    private static (double X, double Y) Translate(string transform)
+    {
+        var numbers = transform["translate(".Length..transform.IndexOf(')', StringComparison.Ordinal)].Split(' ');
+        return (double.Parse(numbers[0], System.Globalization.CultureInfo.InvariantCulture), double.Parse(numbers[1], System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>The fill of a unit's face at the near tier.</summary>
+    private static string Face(FigureArt art, string unit)
+    {
+        var renderer = new UnitRenderer(RenderingTestData.Vocabulary.Value, RenderingTestData.Renderer(UnitStyles.Digital).Sheet,
+            RenderingTestData.Renderer(UnitStyles.Digital).Palette)
+        {
+            Figures = art
+        };
+        var svg = RenderingTestData.Render(renderer, RenderingTestData.Catalog.Value[unit], DetailTier.Near);
+        return svg.Descendants().First(element => element.Attribute("data-face") is not null).Attribute("fill")!.Value;
+    }
 }

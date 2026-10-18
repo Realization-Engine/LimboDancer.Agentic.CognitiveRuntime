@@ -27,6 +27,8 @@ Made in the conversation of 2026-10-17; the ones marked *provisional* were propo
 | F6 | *Provisional.* **No early-war and late-war variants** for now (M1917 against M1, SSh-36 against SSh-40); the backlog holds them, chosen later by the scenario's date. |
 | F7 | **Sources are facts, not art.** The Osprey books in `E:\Archive\WWII-Docs\4-Armies-Units-and-Soldiers` and the Panzer Leader counters the campaign layer cropped are used for facts and as references in a brief; nothing is traced from them or committed (ASL-UNIT-072). |
 | F8 | **Nothing changes until art exists.** A pose, helmet, or weapon without a file falls back to today's figure, so the golden SVGs change only when an accepted batch lands. |
+| F10 | **The user's ruling, 2026-10-17: a squad stands in a staggered file,** each man half a pose width on and the man behind raised; every figure but the rearmost, and every helmet, is ringed in the counter's color, with the skull drawn again inside the helmet's ring so the face meets the helmet. A multi-man counter shows multiple men. |
+| F11 | **The pose's weapon comes from the pick** (revising F1 after the first Midjourney run, 2026-10-17): a soldier drawn without a weapon came out as a civilian walking, so the pick carries its rifle and helmet; the tracer removes the helmet (`--bare`) and the side's helmet is drawn on the skull. The drawn weapons stay for poses traced without one. |
 | F9 | **Same pose, same framing, for every nation,** so only the national kit differs; the kit is exaggerated (a larger helmet, a bolder weapon) where the far detail level needs it, since a figure there is about ten pixels tall. |
 
 ## 3. How a figure is made

@@ -213,11 +213,11 @@ public sealed class UnitRenderer
         if (style["glyph"] is { } watermark && evaluator.Glyph(watermark) is { } mark)
         {
             svg.Start("g", ("opacity", "0.25"));
-            Glyphs.Draw(svg, mark.Name, mark.Argument, inner, textColor, document.Figures(Vocabulary) ?? 1, Figures, document.Side);
+            Glyphs.Draw(svg, mark.Name, mark.Argument, inner, textColor, document.Figures(Vocabulary) ?? 1, Figures, document.Side, fill);
             svg.End();
         }
 
-        WriteSlots(svg, subject, owner, style, evaluator, inner, size, tier, textColor, side, warnings);
+        WriteSlots(svg, subject, owner, style, evaluator, inner, size, tier, textColor, side, fill, warnings);
         if (document.Facing is { } markFacing && evaluator.Ident(style["direction-mark"]) == "arrow")
         {
             DirectionArrow(svg, markFacing, centerX, centerY, size, evaluator.Color(style["direction-color"]) ?? stroke, filled: true);
@@ -315,7 +315,7 @@ public sealed class UnitRenderer
     }
 
     private void WriteSlots(SvgWriter svg, StyleSubject subject, StyleSubject? owner, ComputedStyle face, Evaluator faceEvaluator, Box inner, double size,
-        DetailTier tier, string textColor, string? side, List<RenderWarning> warnings)
+        DetailTier tier, string textColor, string? side, string faceFill, List<RenderWarning> warnings)
     {
         if (face["face-template"] is not { Count: > 0 } template)
         {
@@ -406,7 +406,9 @@ public sealed class UnitRenderer
 
             if (evaluator.Glyph(content) is { } glyph)
             {
-                if (!Glyphs.Draw(svg, glyph.Name, glyph.Argument, box, color, subject.Document.Figures(Vocabulary) ?? 1, Figures, subject.Document.Side))
+                // The figures are ringed apart in the color behind them: the slot's own background, or the face's.
+                var ground = evaluator.Color(slotStyle["fill"]) ?? faceFill;
+                if (!Glyphs.Draw(svg, glyph.Name, glyph.Argument, box, color, subject.Document.Figures(Vocabulary) ?? 1, Figures, subject.Document.Side, ground))
                 {
                     warnings.Add(new(subject.Document.Id, $"Slot '{region.Name}': '{glyph.Name}' is not a glyph."));
                 }
