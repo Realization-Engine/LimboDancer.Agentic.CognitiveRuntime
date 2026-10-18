@@ -145,7 +145,7 @@ public static partial class BoardRenderer
         writer.Start("title");
         writer.Text(input.Title);
         writer.End();
-        writer.Empty("rect", ("x", SvgWriter.Number(-Margin)), ("y", SvgWriter.Number(-Margin)), ("width", "100%"), ("height", "100%"), ("fill", "#ffffff"));
+        writer.Empty("rect", ("x", SvgValue.Number(-Margin)), ("y", SvgValue.Number(-Margin)), ("width", "100%"), ("height", "100%"), ("fill", "#ffffff"));
         foreach (var layer in Layers(view))
         {
             WriteLayer(writer, input, view, layer, traceMode);
@@ -260,11 +260,11 @@ public static partial class BoardRenderer
             var color = input.Catalog.TryGet(group.Key.Code, out var terrain) ? terrain.MapColor.ToHex() : "#ff00ff";
             writer.Empty("path",
                 ("id", $"t{group.Key.Code}e{group.Key.Elevation}".ToString(CultureInfo.InvariantCulture)),
-                ("data-code", SvgWriter.Number(group.Key.Code)),
-                ("data-elev", SvgWriter.Number(group.Key.Elevation)),
+                ("data-code", SvgValue.Number(group.Key.Code)),
+                ("data-elev", SvgValue.Number(group.Key.Elevation)),
                 ("fill", color),
                 ("fill-rule", "evenodd"),
-                ("d", path.ToString()));
+                ("d", path));
         }
 
         writer.End();
@@ -287,12 +287,12 @@ public static partial class BoardRenderer
             var level = group.Key;
             var opacity = Math.Min(0.5, 0.12 * Math.Abs(level)).ToString("0.00", CultureInfo.InvariantCulture);
             writer.Empty("path",
-                ("id", "elev" + SvgWriter.Number(level)),
-                ("data-elev", SvgWriter.Number(level)),
+                ("id", "elev" + SvgValue.Number(level)),
+                ("data-elev", SvgValue.Number(level)),
                 ("fill", level > 0 ? "#000000" : "#1f4e79"),
                 ("fill-opacity", opacity),
                 ("fill-rule", "evenodd"),
-                ("d", path.ToString()));
+                ("d", path));
         }
 
         writer.End();
@@ -308,10 +308,10 @@ public static partial class BoardRenderer
             var center = geometry.CenterDot(facts.Index);
             writer.Start("g", ("id", "h-" + name), ("data-hex", name));
             var fill = traceMode ? TraceColor(facts.CenterSource) : facts.Center.Terrain?.MapColor.ToHex() ?? "#ffffff";
-            writer.Empty("path", ("fill", fill), ("d", new PathData().Polygon(vertices).ToString()));
+            writer.Empty("path", ("fill", fill), ("d", new PathData().Polygon(vertices)));
             if (facts.Center.DepressionTerrain is not null)
             {
-                writer.Empty("path", ("fill", "url(#depression-hatch)"), ("d", new PathData().Polygon(vertices).ToString()));
+                writer.Empty("path", ("fill", "url(#depression-hatch)"), ("d", new PathData().Polygon(vertices)));
             }
 
             for (var side = 0; side < 6; side++)
@@ -319,16 +319,16 @@ public static partial class BoardRenderer
                 var hexside = facts.Hexsides[side];
                 var from = vertices[side];
                 var to = vertices[(side + 1) % 6];
-                var segment = new PathData().MoveTo(SvgWriter.Number(from.X), SvgWriter.Number(from.Y))
-                    .LineTo(SvgWriter.Number(to.X), SvgWriter.Number(to.Y)).ToString();
+                var segment = new PathData().MoveTo(SvgValue.Number(from.X), SvgValue.Number(from.Y))
+                    .LineTo(SvgValue.Number(to.X), SvgValue.Number(to.Y)).ToString();
                 if (!hexside.OnMap)
                 {
-                    writer.Empty("path", ("data-side", SvgWriter.Number(side)), ("stroke", "#c00000"), ("stroke-width", "1.5"),
+                    writer.Empty("path", ("data-side", SvgValue.Number(side)), ("stroke", "#c00000"), ("stroke-width", "1.5"),
                         ("stroke-dasharray", "3 3"), ("fill", "none"), ("d", segment));
                 }
                 else if (hexside.HexsideTerrain is { } terrain)
                 {
-                    writer.Empty("path", ("data-side", SvgWriter.Number(side)), ("data-terrain", terrain.Name),
+                    writer.Empty("path", ("data-side", SvgValue.Number(side)), ("data-terrain", terrain.Name),
                         ("stroke", HexsideColor(terrain)), ("stroke-width", hexside.Cliff ? "5" : "4"), ("stroke-linecap", "round"),
                         ("fill", "none"), ("d", segment));
                 }
@@ -343,7 +343,7 @@ public static partial class BoardRenderer
     {
         if (facts.Stairway)
         {
-            writer.Empty("rect", ("x", SvgWriter.Number(center.X - 3)), ("y", SvgWriter.Number(center.Y - 3)), ("width", "6"), ("height", "6"),
+            writer.Empty("rect", ("x", SvgValue.Number(center.X - 3)), ("y", SvgValue.Number(center.Y - 3)), ("width", "6"), ("height", "6"),
                 ("fill", "#ffffff"), ("stroke", "#000000"), ("stroke-width", "0.75"));
         }
 
@@ -351,12 +351,12 @@ public static partial class BoardRenderer
         var marks = new List<string>();
         if (facts.BaseLevel != 0)
         {
-            marks.Add((facts.BaseLevel > 0 ? "+" : string.Empty) + SvgWriter.Number(facts.BaseLevel));
+            marks.Add((facts.BaseLevel > 0 ? "+" : string.Empty) + SvgValue.Number(facts.BaseLevel));
         }
 
         if (upper > 0)
         {
-            marks.Add("L" + SvgWriter.Number(upper));
+            marks.Add("L" + SvgValue.Number(upper));
         }
 
         if (facts.Bridge is not null)
@@ -366,7 +366,7 @@ public static partial class BoardRenderer
 
         if (marks.Count > 0)
         {
-            writer.Start("text", ("x", SvgWriter.Number(center.X)), ("y", SvgWriter.Number(center.Y + 16)), ("font-family", "Arial, sans-serif"),
+            writer.Start("text", ("x", SvgValue.Number(center.X)), ("y", SvgValue.Number(center.Y + 16)), ("font-family", "Arial, sans-serif"),
                 ("font-size", "9"), ("text-anchor", "middle"), ("fill", "#000000"));
             writer.Text(string.Join(' ', marks));
             writer.End();
@@ -381,14 +381,14 @@ public static partial class BoardRenderer
         {
             outlines.Polygon(geometry.Vertices(hex));
             var center = geometry.CenterDot(hex);
-            dots.MoveTo(SvgWriter.Number(center.X - 1), SvgWriter.Number(center.Y - 1))
-                .Horizontal(SvgWriter.Number(center.X + 1)).Vertical(SvgWriter.Number(center.Y + 1))
-                .Horizontal(SvgWriter.Number(center.X - 1)).Close();
+            dots.MoveTo(SvgValue.Number(center.X - 1), SvgValue.Number(center.Y - 1))
+                .Horizontal(SvgValue.Number(center.X + 1)).Vertical(SvgValue.Number(center.Y + 1))
+                .Horizontal(SvgValue.Number(center.X - 1)).Close();
         }
 
         writer.Empty("path", ("fill", "none"), ("stroke", "#000000"), ("stroke-opacity", "0.45"), ("stroke-width", "0.75"),
-            ("pointer-events", "none"), ("d", outlines.ToString()));
-        writer.Empty("path", ("fill", "#000000"), ("fill-opacity", "0.6"), ("pointer-events", "none"), ("d", dots.ToString()));
+            ("pointer-events", "none"), ("d", outlines));
+        writer.Empty("path", ("fill", "#000000"), ("fill-opacity", "0.6"), ("pointer-events", "none"), ("d", dots));
     }
 
     private static void WriteLabels(SvgWriter writer, BoardGeometry geometry)
@@ -398,7 +398,7 @@ public static partial class BoardRenderer
         foreach (var hex in geometry.Hexes())
         {
             var center = geometry.CenterDot(hex);
-            writer.Start("text", ("x", SvgWriter.Number(center.X)), ("y", SvgWriter.Number(center.Y - 22)));
+            writer.Start("text", ("x", SvgValue.Number(center.X)), ("y", SvgValue.Number(center.Y - 22)));
             writer.Text(geometry.NameOf(hex).ToString());
             writer.End();
         }
@@ -416,9 +416,9 @@ public static partial class BoardRenderer
         {
             var x = (index % perRow) * LegendColumnWidth;
             var y = geometry.GridHeight + Margin + ((index / perRow) * LegendRowHeight);
-            writer.Empty("rect", ("x", SvgWriter.Number(x)), ("y", SvgWriter.Number(y)), ("width", "14"), ("height", "14"),
+            writer.Empty("rect", ("x", SvgValue.Number(x)), ("y", SvgValue.Number(y)), ("width", "14"), ("height", "14"),
                 ("fill", entries[index].Color), ("stroke", "#000000"), ("stroke-width", "0.5"));
-            writer.Start("text", ("x", SvgWriter.Number(x + 20)), ("y", SvgWriter.Number(y + 11)));
+            writer.Start("text", ("x", SvgValue.Number(x + 20)), ("y", SvgValue.Number(y + 11)));
             writer.Text(entries[index].Label);
             writer.End();
         }
@@ -444,7 +444,7 @@ public static partial class BoardRenderer
                 .Where(terrain => terrain is not null).Select(terrain => terrain!.Code).Distinct().Order();
         return codes.Select(code => input.Catalog.TryGet(code, out var terrain)
             ? (view == BoardView.HexFacts && terrain.IsHexsideTerrain ? HexsideColor(terrain) : terrain.MapColor.ToHex(), terrain.Name)
-            : ("#ff00ff", "Unknown code " + SvgWriter.Number(code))).ToList();
+            : ("#ff00ff", "Unknown code " + SvgValue.Number(code))).ToList();
     }
 
     private static int LegendHeight(BoardRenderInput input, BoardView view)

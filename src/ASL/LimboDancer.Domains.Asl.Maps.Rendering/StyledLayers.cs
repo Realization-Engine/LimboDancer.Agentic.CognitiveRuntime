@@ -78,9 +78,9 @@ public static partial class BoardRenderer
         writer.Start("defs");
         foreach (var pattern in theme.Patterns)
         {
-            writer.Start("pattern", ("id", "pattern-" + pattern.Id), ("width", SvgWriter.Number(pattern.Width)), ("height", SvgWriter.Number(pattern.Height)),
+            writer.Start("pattern", ("id", "pattern-" + pattern.Id), ("width", SvgValue.Number(pattern.Width)), ("height", SvgValue.Number(pattern.Height)),
                 ("patternUnits", "userSpaceOnUse"));
-            writer.Empty("rect", ("width", SvgWriter.Number(pattern.Width)), ("height", SvgWriter.Number(pattern.Height)), ("fill", pattern.Background));
+            writer.Empty("rect", ("width", SvgValue.Number(pattern.Width)), ("height", SvgValue.Number(pattern.Height)), ("fill", pattern.Background));
             foreach (var (name, attributes) in pattern.Elements)
             {
                 writer.Empty(name, [.. attributes]);
@@ -105,7 +105,7 @@ public static partial class BoardRenderer
         var geometry = styled.Model.Geometry;
         if (layer == "styled-elevation")
         {
-            writer.Empty("rect", ("x", "0"), ("y", "0"), ("width", SvgWriter.Number(geometry.GridWidth)), ("height", SvgWriter.Number(geometry.GridHeight)),
+            writer.Empty("rect", ("x", "0"), ("y", "0"), ("width", SvgValue.Number(geometry.GridWidth)), ("height", SvgValue.Number(geometry.GridHeight)),
                 ("fill", input.Theme.Tint(styled.Model.BaseElevation)));
         }
 
@@ -119,7 +119,7 @@ public static partial class BoardRenderer
             foreach (var hex in styled.Model.Annotations.Stairways.Where(geometry.Contains).OrderBy(hex => hex.Column).ThenBy(hex => hex.Row))
             {
                 var center = geometry.CenterDot(hex);
-                writer.Empty("rect", ("id", "stair-" + geometry.NameOf(hex)), ("x", SvgWriter.Number(center.X - 3)), ("y", SvgWriter.Number(center.Y - 3)),
+                writer.Empty("rect", ("id", "stair-" + geometry.NameOf(hex)), ("x", SvgValue.Number(center.X - 3)), ("y", SvgValue.Number(center.Y - 3)),
                     ("width", "6"), ("height", "6"), ("fill", "#ffffff"), ("stroke", "#000000"), ("stroke-width", "0.75"));
             }
         }
@@ -133,12 +133,12 @@ public static partial class BoardRenderer
         var terrain = code is { } value && input.Catalog.TryGet(value, out var type) ? type : null;
         var style = terrain is null ? null : theme.StyleFor(terrain);
         var fallback = terrain?.MapColor.ToHex() ?? "#ff00ff";
-        writer.Start("g", ("id", "f-" + feature.Id), ("data-kind", KindName(feature)), ("data-code", code is { } dataCode ? SvgWriter.Number(dataCode) : string.Empty));
+        writer.Start("g", ("id", "f-" + feature.Id), ("data-kind", KindName(feature)), ("data-code", code is { } dataCode ? SvgValue.Number(dataCode) : string.Empty));
         switch (feature)
         {
             case ElevationRegion region:
                 writer.Empty("path", ("fill", theme.Tint(region.Level)), ("stroke", theme.Crest.Stroke ?? "none"), ("stroke-width", theme.Crest.StrokeWidth ?? "1"),
-                    ("fill-rule", "nonzero"), ("d", Smooth(region.Shape).ToString()));
+                    ("fill-rule", "nonzero"), ("d", Smooth(region.Shape)));
                 break;
             case AreaTerrainFeature area:
                 Fill(writer, Smooth(area.Shape), style, fallback);
@@ -151,7 +151,7 @@ public static partial class BoardRenderer
                 {
                     if (style is { Shadow: true } && terrain is { Height: >= 2 } or { IsFactory: true })
                     {
-                        writer.Empty("path", ("fill", "#000000"), ("fill-opacity", "0.25"), ("d", Sharp(footprint, 2 * FixedPoint.UnitsPerPixel).ToString()));
+                        writer.Empty("path", ("fill", "#000000"), ("fill-opacity", "0.25"), ("d", Sharp(footprint, 2 * FixedPoint.UnitsPerPixel)));
                     }
 
                     Fill(writer, Sharp(footprint), style, fallback);
@@ -161,7 +161,7 @@ public static partial class BoardRenderer
             case LinearTerrainFeature linear:
                 if (linear.Outline is { } outline)
                 {
-                    writer.Empty("path", ("fill", style?.Fill ?? fallback), ("d", Smooth(outline).ToString()));
+                    writer.Empty("path", ("fill", style?.Fill ?? fallback), ("d", Smooth(outline)));
                 }
 
                 if (linear.Centerline is { } centerline)
@@ -170,9 +170,9 @@ public static partial class BoardRenderer
                     foreach (var stroke in strokes)
                     {
                         var width = linear.Width.Raw + (int)Math.Round(stroke.Extra * FixedPoint.UnitsPerPixel);
-                        var attributes = new List<(string, string)>
+                        var attributes = new List<(string, SvgValue)>
                         {
-                            ("fill", "none"), ("stroke", stroke.Color), ("stroke-width", SvgWriter.Fixed(width)),
+                            ("fill", "none"), ("stroke", stroke.Color), ("stroke-width", SvgValue.Fixed(width)),
                             ("stroke-linecap", "round"), ("stroke-linejoin", "round"),
                         };
                         if (stroke.Dash is { } dash)
@@ -180,7 +180,7 @@ public static partial class BoardRenderer
                             attributes.Add(("stroke-dasharray", dash));
                         }
 
-                        attributes.Add(("d", Centerline(centerline).ToString()));
+                        attributes.Add(("d", Centerline(centerline)));
                         writer.Empty("path", [.. attributes]);
                     }
                 }
@@ -192,11 +192,11 @@ public static partial class BoardRenderer
                     var (from, to) = FeatureCompiler.HexsideEndpoints(geometry, span.Side);
                     var start = Lerp(from, to, span.From);
                     var end = Lerp(from, to, span.To);
-                    var attributes = new List<(string, string)>
+                    var attributes = new List<(string, SvgValue)>
                     {
                         ("fill", "none"),
                         ("stroke", style?.Stroke ?? fallback),
-                        ("stroke-width", span.Width is { } spanWidth ? SvgWriter.Number(spanWidth) : style?.StrokeWidth ?? SvgWriter.Number(theme.HexsideWidth)),
+                        ("stroke-width", span.Width is { } spanWidth ? SvgValue.Number(spanWidth) : style?.StrokeWidth ?? SvgValue.Number(theme.HexsideWidth)),
                         ("stroke-linecap", "butt"),
                     };
                     if (style?.Dash is { } dash)
@@ -204,14 +204,14 @@ public static partial class BoardRenderer
                         attributes.Add(("stroke-dasharray", dash));
                     }
 
-                    attributes.Add(("d", new PathData().MoveTo(SvgWriter.Fixed(start.X), SvgWriter.Fixed(start.Y)).LineTo(SvgWriter.Fixed(end.X), SvgWriter.Fixed(end.Y)).ToString()));
+                    attributes.Add(("d", new PathData().MoveTo(SvgValue.Fixed(start.X), SvgValue.Fixed(start.Y)).LineTo(SvgValue.Fixed(end.X), SvgValue.Fixed(end.Y))));
                     writer.Empty("path", [.. attributes]);
                 }
 
                 break;
             case FidelityPin pin:
                 writer.Empty("path", ("class", "pin"), ("fill", "#ff00ff"), ("fill-opacity", "0.45"), ("stroke", "#ff00ff"), ("stroke-width", "1"),
-                    ("d", Sharp(pin.Shape).ToString()));
+                    ("d", Sharp(pin.Shape)));
                 break;
         }
 
@@ -220,7 +220,7 @@ public static partial class BoardRenderer
 
     private static void Fill(SvgWriter writer, PathData path, TerrainStyle? style, string fallback)
     {
-        var attributes = new List<(string, string)> { ("fill", style?.Fill ?? fallback) };
+        var attributes = new List<(string, SvgValue)> { ("fill", style?.Fill ?? fallback) };
         if (style?.Stroke is { } stroke)
         {
             attributes.Add(("stroke", stroke));
@@ -228,7 +228,7 @@ public static partial class BoardRenderer
         }
 
         attributes.Add(("fill-rule", "nonzero"));
-        attributes.Add(("d", path.ToString()));
+        attributes.Add(("d", path));
         writer.Empty("path", [.. attributes]);
     }
 
@@ -240,7 +240,7 @@ public static partial class BoardRenderer
         foreach (var ring in shape.Rings)
         {
             var count = ring.Count;
-            path.MoveTo(SvgWriter.Fixed(ring[0].X), SvgWriter.Fixed(ring[0].Y));
+            path.MoveTo(SvgValue.Fixed(ring[0].X), SvgValue.Fixed(ring[0].Y));
             for (var index = 0; index < count; index++)
             {
                 var p0 = ring[(index - 1 + count) % count];
@@ -248,9 +248,9 @@ public static partial class BoardRenderer
                 var p2 = ring[(index + 1) % count];
                 var p3 = ring[(index + 2) % count];
                 path.CubicTo(
-                    SvgWriter.Fixed(p1.X + FixedGeometry.RoundDiv(p2.X - p0.X, 6)), SvgWriter.Fixed(p1.Y + FixedGeometry.RoundDiv(p2.Y - p0.Y, 6)),
-                    SvgWriter.Fixed(p2.X - FixedGeometry.RoundDiv(p3.X - p1.X, 6)), SvgWriter.Fixed(p2.Y - FixedGeometry.RoundDiv(p3.Y - p1.Y, 6)),
-                    SvgWriter.Fixed(p2.X), SvgWriter.Fixed(p2.Y));
+                    SvgValue.Fixed(p1.X + FixedGeometry.RoundDiv(p2.X - p0.X, 6)), SvgValue.Fixed(p1.Y + FixedGeometry.RoundDiv(p2.Y - p0.Y, 6)),
+                    SvgValue.Fixed(p2.X - FixedGeometry.RoundDiv(p3.X - p1.X, 6)), SvgValue.Fixed(p2.Y - FixedGeometry.RoundDiv(p3.Y - p1.Y, 6)),
+                    SvgValue.Fixed(p2.X), SvgValue.Fixed(p2.Y));
             }
 
             path.Close();
@@ -264,10 +264,10 @@ public static partial class BoardRenderer
         var path = new PathData();
         foreach (var ring in shape.Rings)
         {
-            path.MoveTo(SvgWriter.Fixed(ring[0].X + offset), SvgWriter.Fixed(ring[0].Y + offset));
+            path.MoveTo(SvgValue.Fixed(ring[0].X + offset), SvgValue.Fixed(ring[0].Y + offset));
             for (var index = 1; index < ring.Count; index++)
             {
-                path.LineTo(SvgWriter.Fixed(ring[index].X + offset), SvgWriter.Fixed(ring[index].Y + offset));
+                path.LineTo(SvgValue.Fixed(ring[index].X + offset), SvgValue.Fixed(ring[index].Y + offset));
             }
 
             path.Close();
@@ -278,16 +278,16 @@ public static partial class BoardRenderer
 
     private static PathData Centerline(CenterlinePath centerline)
     {
-        var path = new PathData().MoveTo(SvgWriter.Fixed(centerline.Start.X), SvgWriter.Fixed(centerline.Start.Y));
+        var path = new PathData().MoveTo(SvgValue.Fixed(centerline.Start.X), SvgValue.Fixed(centerline.Start.Y));
         foreach (var segment in centerline.Segments)
         {
             if (segment.Control1 is { } c1 && segment.Control2 is { } c2)
             {
-                path.CubicTo(SvgWriter.Fixed(c1.X), SvgWriter.Fixed(c1.Y), SvgWriter.Fixed(c2.X), SvgWriter.Fixed(c2.Y), SvgWriter.Fixed(segment.End.X), SvgWriter.Fixed(segment.End.Y));
+                path.CubicTo(SvgValue.Fixed(c1.X), SvgValue.Fixed(c1.Y), SvgValue.Fixed(c2.X), SvgValue.Fixed(c2.Y), SvgValue.Fixed(segment.End.X), SvgValue.Fixed(segment.End.Y));
             }
             else
             {
-                path.LineTo(SvgWriter.Fixed(segment.End.X), SvgWriter.Fixed(segment.End.Y));
+                path.LineTo(SvgValue.Fixed(segment.End.X), SvgValue.Fixed(segment.End.Y));
             }
         }
 
@@ -331,7 +331,7 @@ public static partial class BoardRenderer
         }
 
         var hexes = HexFactComparer.DifferingHexes(input.Facts, styled.Facts);
-        writer.Start("g", ("id", "diff-summary"), ("data-cells", SvgWriter.Number(cells)), ("data-hexes", SvgWriter.Number(hexes.Count)), ("pointer-events", "none"));
+        writer.Start("g", ("id", "diff-summary"), ("data-cells", SvgValue.Number(cells)), ("data-hexes", SvgValue.Number(hexes.Count)), ("pointer-events", "none"));
         if (cells > 0)
         {
             var outlines = GridOutlineTracer.Trace(new TerrainGrid(grid.Geometry, labels, new sbyte[labels.Length], new bool[grid.Geometry.HexCount]));
@@ -342,14 +342,14 @@ public static partial class BoardRenderer
             }
 
             writer.Empty("path", ("id", "diff-cells"), ("fill", "url(#diff-hatch)"), ("stroke", DiffColor), ("stroke-width", "0.5"), ("fill-rule", "evenodd"),
-                ("shape-rendering", "crispEdges"), ("d", path.ToString()));
+                ("shape-rendering", "crispEdges"), ("d", path));
         }
 
         foreach (var hex in hexes)
         {
             var name = grid.Geometry.NameOf(hex).ToString();
             writer.Empty("path", ("id", "d-" + name), ("fill", "none"), ("stroke", DiffColor), ("stroke-width", "3"),
-                ("d", new PathData().Polygon(grid.Geometry.Vertices(hex)).ToString()));
+                ("d", new PathData().Polygon(grid.Geometry.Vertices(hex))));
         }
 
         writer.End();
@@ -367,7 +367,7 @@ public static partial class BoardRenderer
         {
             if (!input.Catalog.TryGet(code, out var terrain))
             {
-                return ("#ff00ff", "Unknown code " + SvgWriter.Number(code));
+                return ("#ff00ff", "Unknown code " + SvgValue.Number(code));
             }
 
             var style = input.Theme.StyleFor(terrain);

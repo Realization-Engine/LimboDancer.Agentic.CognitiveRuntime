@@ -55,12 +55,18 @@ public sealed class MapService(StudioOptions options, IVaslMapSource source)
 {
     public const string FormatVersion = "1";
 
+    private const int MaxPlaced = 32;
+    private const string PlacedPrefix = "map-placed-";
+
     private readonly ConcurrentDictionary<string, Lazy<BoardLoadResult>> cache = new(StringComparer.Ordinal);
 
     // Pass 28: a map built from placements keeps its derived reference, so the render endpoint can draw it for the card editor.
     private readonly ConcurrentDictionary<BoardRef, BoardLoadResult> placed = new();
 
     public string MapsRoot => Path.Combine(options.ResolveBoardsRoot(), "maps");
+
+    /// <summary>The number of built maps held, saved and placed.</summary>
+    public int CachedCount => cache.Count;
 
     public IReadOnlyList<MapDefinition> List()
     {
@@ -113,7 +119,7 @@ public sealed class MapService(StudioOptions options, IVaslMapSource source)
             ["placements"] = placements.Select(placement => (object?)placement.ToString()).ToList(),
         });
         File.WriteAllBytes(Path.Combine(MapsRoot, slug + ".json"), json);
-        cache.TryRemove(map.Value, out _);
+        Forget(map.Value + "\n");
         return new MapOutcome(map, diagnostics);
     }
 
@@ -121,7 +127,7 @@ public sealed class MapService(StudioOptions options, IVaslMapSource source)
     {
         ArgumentNullException.ThrowIfNull(map);
         var path = map.Kind == BoardRefKind.ComposedMap ? Path.Combine(MapsRoot, map.Value[4..] + ".json") : null;
-        cache.TryRemove(map.Value, out _);
+        Forget(map.Value + "\n");
         if (path is null || !File.Exists(path))
         {
             return false;
@@ -153,21 +159,38 @@ public sealed class MapService(StudioOptions options, IVaslMapSource source)
         ArgumentNullException.ThrowIfNull(placements);
         var text = string.Join(' ', placements);
         var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)))[..12];
-        var reference = BoardRef.Parse("map-placed-" + hash);
+        var reference = BoardRef.Parse(PlacedPrefix + hash);
         var result = cache.GetOrAdd(reference.Value + "|" + text,
             _ => new Lazy<BoardLoadResult>(() => LoadUncached(new MapDefinition(reference, "Game map", placements)))).Value;
         if (result.Board is not null)
         {
-            // UI review, pass 28: the card editor builds a map per board change; keep only the recent ones.
-            if (placed.Count >= 32)
+            // UI review, pass 28: the card editor builds a map per board change; keep only the recent ones. The built maps go from
+            // the cache with them, all but this one (option K of the SVG memory analysis).
+            if (placed.Count >= MaxPlaced)
             {
                 placed.Clear();
+                Forget(PlacedPrefix, except: reference.Value + "|" + text);
             }
 
             placed[reference] = result;
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Drops the cached maps whose key starts with a prefix: a saved map's builds are keyed by its reference and placement text, so a
+    /// save or delete drops every build of it, not only one keyed by the reference alone.
+    /// </summary>
+    private void Forget(string prefix, string? except = null)
+    {
+        foreach (var key in cache.Keys)
+        {
+            if (key.StartsWith(prefix, StringComparison.Ordinal) && key != except)
+            {
+                cache.TryRemove(key, out _);
+            }
+        }
     }
 
     private BoardLoadResult LoadUncached(MapDefinition definition)

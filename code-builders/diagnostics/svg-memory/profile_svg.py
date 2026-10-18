@@ -1,0 +1,16 @@
+import collections, gzip, re, sys
+
+s = open(sys.argv[1], encoding="utf-8").read()
+n = len(s)
+print("chars", n, "utf16 bytes", 2 * n, "gzip", len(gzip.compress(s.encode())))
+nums = re.findall(r"-?\d+(?:\.\d+)?", s)
+print("numbers", len(nums), "chars in numbers", sum(map(len, nums)), "distinct", len(set(nums)))
+names = re.findall(r' ([a-z-]+)="', s)
+print("attributes", len(names), "chars in names+syntax", sum(len(x) + 3 for x in names))
+tags = re.findall(r"</?([a-z]+)", s)
+print("tags", len(tags))
+vals = re.findall(r'="([^"]*)"', s)
+c = collections.Counter(vals)
+print("attr values", len(vals), "distinct", len(c), "chars in values", sum(map(len, vals)))
+print("chars in distinct values", sum(map(len, c)))
+print(c.most_common(8))

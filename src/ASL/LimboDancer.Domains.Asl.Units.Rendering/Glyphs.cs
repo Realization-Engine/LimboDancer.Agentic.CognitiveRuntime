@@ -71,7 +71,7 @@ internal static class Glyphs
                 .LineTo(N(x + (width * 0.32)), N(bottom - (height * 0.68)))
                 .LineTo(N(x + (width * 0.46)), N(bottom))
                 .Close();
-            svg.Empty("path", ("d", path.ToString()), ("fill", color));
+            svg.Empty("path", ("d", path), ("fill", color));
         }
     }
 
@@ -130,15 +130,15 @@ internal static class Glyphs
         // some thousands of characters, and a squad would otherwise carry it up to six times.
         var id = FigureId(key, box, pose.Path + helmet?.Path + weapon?.Path);
         svg.Start("defs");
-        svg.Empty("path", ("id", id + "-body"), ("d", pose.Path));
+        svg.Empty("path", ("id", id + "-body"), ("d", SvgValue.Trusted(pose.Path)));
         if (helmet is not null)
         {
-            svg.Empty("path", ("id", id + "-helmet"), ("d", helmet.Path));
+            svg.Empty("path", ("id", id + "-helmet"), ("d", SvgValue.Trusted(helmet.Path)));
         }
 
         if (weapon is not null)
         {
-            svg.Empty("path", ("id", id + "-weapon"), ("d", weapon.Path));
+            svg.Empty("path", ("id", id + "-weapon"), ("d", SvgValue.Trusted(weapon.Path)));
         }
 
         svg.End();
@@ -221,7 +221,7 @@ internal static class Glyphs
                 .LineTo(N(left + length), N(y + (thickness * 0.3)))
                 .LineTo(N(left + (length * 0.24)), N(y + (thickness / 2)))
                 .Close();
-            svg.Empty("path", ("d", path.ToString()), ("fill", color));
+            svg.Empty("path", ("d", path), ("fill", color));
         }
     }
 
@@ -230,8 +230,8 @@ internal static class Glyphs
         var side = Math.Min(box.Width, box.Height) * 0.92;
         var x0 = box.CenterX - (side / 2);
         var y0 = box.CenterY - (side / 2);
-        string X(double u) => N(x0 + (u * side));
-        string Y(double v) => N(y0 + (v * side));
+        SvgValue X(double u) => N(x0 + (u * side));
+        SvgValue Y(double v) => N(y0 + (v * side));
         void Polygon(params (double U, double V)[] points)
         {
             var path = new PathData().MoveTo(X(points[0].U), Y(points[0].V));
@@ -240,7 +240,7 @@ internal static class Glyphs
                 path.LineTo(X(u), Y(v));
             }
 
-            svg.Empty("path", ("d", path.Close().ToString()), ("fill", color));
+            svg.Empty("path", ("d", path.Close()), ("fill", color));
         }
 
         void Line(double u0, double v0, double u1, double v1) =>
@@ -428,7 +428,7 @@ internal static class Glyphs
         }
     }
 
-    private static string N(double value) => SvgWriter.Number(value);
+    private static SvgValue N(double value) => SvgValue.Number(value);
 }
 
 /// <summary>A rectangle in board pixels.</summary>

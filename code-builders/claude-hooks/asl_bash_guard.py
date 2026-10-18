@@ -19,6 +19,10 @@ def check(command):
     # Pass 60: py and python.exe too; a building agent's multi-line -c went through under one of them.
     if re.search(r"\b(python3?|py)(\.exe)?\"?\s+(-\w+\s+)*-c\b", command) and "\n" in command:
         reasons.append("a multi-line python -c: write the script with the Write tool and run the file")
+    # SVG memory plan, 2026-10-18: open(f, 'w').write(open(f).read()...) in one -c line truncated three files before reading them.
+    if (re.search(r"\b(python3?|py)(\.exe)?\"?\s+(-\w+\s+)*-c\b", command) and re.search(r"open\([^)]*['\"][wa]\+?['\"]", command)
+            and ".read(" in command):
+        reasons.append("a python -c that reads and rewrites files: write the script with the Write tool, reading each file whole before opening it for writing")
     if re.search(r"\b(python3?|py)(\.exe)?\"?\s+-(\s|$)", command):
         reasons.append("a bare 'python -': write the script with the Write tool and run the file")
     for target in re.findall(r"(?:^|&&|;|\|\||\n)\s*cd\s+\"?([^\s\"&;|)]+)", command):
