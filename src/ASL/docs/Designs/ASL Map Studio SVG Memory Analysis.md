@@ -710,3 +710,46 @@ Leave it. The rise is the collector's choice of heap count, a peak of about 60 M
 
 - **A collector setting.** Workstation GC, or Server GC with a capped heap count (`System.GC.HeapCount`) or `System.GC.ConserveMemory` (which also compacts the LOH when its free space is large). Each is one line in the Studio's project file and needs the same three-runs-a-setting measurement. Ruling 1's revision (section 8) left the defaults; this evidence does not reopen it on its own.
 - **Less LOH traffic.** The counter layer's strings, about 3.9 MB a step, are almost all of what goes on the LOH. Options C, D, E and Q (the next group) shrink or stop resending that document, which lowers what the LOH grows from under any heap count.
+
+## 12. Where a replay step's time goes
+
+2026-10-18, at the user's word that the aim of the memory work is performance. Measured on `main` after pull request 19, before the counter-layer plan (`svg-memory-design-2`) is approved, to set its expectations in milliseconds. My Studio (port 6670) runs a Debug build, as the Studio is always run; times on the server would be lower in Release, the shares likely similar.
+
+### How it was measured
+
+- **Server:** `dotnet-trace` (installed in my scratchpad at the user's word), profile `dotnet-sampled-thread-time`, 90 s of the cd-guards-5 replay at a step a second (85 steps, from step 1), read by method and by stage.
+- **Browser:** the page's Long Animation Frame timing (frames over 50 ms, each with its scripts, the forced layout inside them, and the style and layout after them), over the same 85 steps; the page was visible.
+- **The counter layer alone in the browser:** at step 146, its real markup (611,877 characters, 3,894 elements) parsed, imported, swapped in, and laid out five times in the page.
+
+### Results
+
+| Where | Per step | What |
+|---|---|---|
+| Server: rendering the Replay page | about 87 ms | 7.37 s of thread time over 85 steps |
+| of which: building the counter layer | about 73 ms (84%) | `UnitOverlayBuilder.Build`, reached through `Replay.MapLayers` (built once per step; the page caches it by revision) |
+| of which, inside it: the style cascade | about 31 ms | `StyleCascade.Compute`; also `UnitVocabulary.TryResolveAttribute` and LINQ `ToArray` about 23 ms each |
+| Server: JS interop and SignalR sending | about 17 ms | serializing and sending the step |
+| Browser: blocked main thread | about 285 ms | 153 long frames, 24.1 s over 85 steps |
+| of which: script | about 187 ms | all inside Blazor's WebSocket message handler: applying the render batch and the JS calls it makes, `setUnits` among them |
+| of which, inside the scripts: forced style and layout | about 102 ms | |
+| of which: style and layout after the scripts | about 79 ms | |
+
+The counter layer alone, in the browser: parsing 20 to 45 ms, importing 14 to 36 ms, swapping 22 to 33 ms, then a forced layout of the board of 130 to 400 ms. Time to the painted frame could not be measured: the browser pane slows frame production while the app is not in front (frames 2 to 6 s apart with nothing changing), so paint is not in these figures.
+
+So a step costs about three times as much in the browser as on the server, and the counter layer is most of the server's share and, by the isolated swap, a large share of the browser's.
+
+### A finding: the layer is resent when nothing changed
+
+The Studio skips sending the counter layer when its text is unchanged (`BoardWorkspace`: `Units?.Svg != sent.Units`). It almost never skips: the layer was replaced on 39 of 40 steps. The layer's root attribute `data-unit-set` carries the game revision (`game-live:cd-guards-5-adjudicator-r700`, then `r711`, `r716`), made in `GameLibrary.cs` (line 120), so the text differs on every step. On a step where no counter changed (2 of 9 sampled steps here, 4 of 12 in section 2.2), the whole layer, about 600,000 characters, is still built, compared, sent, parsed, and laid out.
+
+A small fix, apart from the counter-layer plan: leave the revision out of the layer's set id (or out of the comparison). It removes the browser's whole layer work on those steps, about a third of them. The counter-layer plan's D (send only changed hexes) would cover it too, since it compares fragments, but the fix is a few lines and can come first.
+
+### Also seen: the finalizer thread waits on the array pool
+
+The trace shows the finalizer thread spending long stretches in `SharedArrayPool.Trim` (called from a gen 2 collection callback), waiting on a lock (`Monitor.Enter_Slowpath`), and in the finalizers of dynamic methods. This profile counts blocked managed time as running, so these figures are not CPU (the runtime's counters put the whole process at about 0.16 CPU seconds a second in section 10). It is off a step's path, but a finalizer thread held up delays every finalizer. The pooled writer buffer (G3) rents from `ArrayPool<char>.Shared`, so it may be related. Not investigated further.
+
+### What this means for the counter-layer plan
+
+- The plan targets the largest measured costs on both sides: the counter layer's build (73 of 87 ms on the server) and its parse, import, and layout in the browser.
+- Restated in milliseconds, as estimates to be measured in the plan's last task: E (the fragment cache) should take the server's counter work on a typical step from about 73 ms to about 10 ms; D and Q should take the browser's counter work from a whole layer of about 3,900 elements to a few hexes, which, with the rest of the page's batch unchanged, may bring a step's blocked main thread from about 285 ms to about 100 to 150 ms.
+- The rest of a step (the page's other render work, Blazor's batch, the layout of the board) is outside the plan and becomes the larger part.
