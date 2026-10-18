@@ -1558,3 +1558,4 @@ The ASL Map Studio SVG Memory Plan (`src/ASL/docs/Plans`), approved by the user 
 | 2. M: the connection's compression read | 13:58 | 13:59 | 0:01 | permessage-deflate on by default; my Studio rebuilt and restarted |
 | 3. N2: four replays at levels 0, 5, 7, and 0 again | 13:59 | 14:23 | 0:24 | No measurable gain; the user ruled to leave it off |
 | 4. G1: escaping by span, 16 new test cases | 14:23 | 14:27 | 0:04 | Written during task 3's replays; goldens unchanged; bd01 exact -60% |
+| 5. S1: the cascade's index loops | 14:27 | 14:30 | 0:03 | Written during task 3's replays; goldens unchanged; 80 counters -63% |

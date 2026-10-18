@@ -493,6 +493,17 @@ Two identical runs at the default differ by 47 MB at the peak, more than any lev
 
 As section 5.1 predicted for bd01 exact (about 3.8 MB). On counters the writer's share is now small; the cascade (task 5) is the larger part.
 
+### Task 5. S1: the cascade without boxing or closures
+
+`StyleCascade.Compute` and `Matches` loop by index over the sheet's rules, each rule's selectors, and each selector's traits, states, and attributes, instead of `foreach` over `IReadOnlyList` (which boxed the enumerator) and `Any` with a lambda (a closure and a delegate per test). Which rules match, and their rank, are unchanged: all 367 tests of `Units.Rendering.Tests` pass with every golden unchanged.
+
+| Workload | Before (after G1) | After S1 | Change | Since the baseline |
+|---|---|---|---|---|
+| 80 counters with figures | 36,745,689 bytes | 13,450,610 bytes | -63% | -76% |
+| 9 demo counters | 3,591,049 bytes | 1,324,785 bytes | -63% | -71% |
+
+The boxed `Selector` enumerator, the `Func<string, bool>` delegates, and their closures no longer appear among the largest allocations. Strings (5.8 MB, the numbers and paths of G2) and the cascade's per-call dictionaries (1.1 MB) lead what remains.
+
 ### Note on task 3
 
 A fresh Studio starts at about 80 to 185 MB of private memory, depending on when the sampler first reads it, against the 306 MB of the long-running Studio in section 2.2: much of that morning figure was the age of the process, not the replay.

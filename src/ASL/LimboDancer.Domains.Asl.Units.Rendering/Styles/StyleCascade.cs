@@ -100,17 +100,22 @@ public static class StyleCascade
         ArgumentNullException.ThrowIfNull(vocabulary);
         ArgumentNullException.ThrowIfNull(subject);
         var style = new ComputedStyle();
-        foreach (var rule in sheet.Rules)
+        // Index loops throughout the cascade: a foreach over an IReadOnlyList boxes its enumerator, and the cascade runs for every
+        // face, slot, and tier of every counter (option S1 of the SVG memory analysis).
+        var rules = sheet.Rules;
+        for (var ruleIndex = 0; ruleIndex < rules.Count; ruleIndex++)
         {
+            var rule = rules[ruleIndex];
             if (rule.Tier is { } ruleTier && ruleTier != tier)
             {
                 continue;
             }
 
             CascadeRank? best = null;
-            foreach (var selector in rule.Selectors)
+            var selectors = rule.Selectors;
+            for (var selectorIndex = 0; selectorIndex < selectors.Count; selectorIndex++)
             {
-                if (Rank(selector, vocabulary, subject, owner, slot, rule) is { } rank && (best is null || rank > best.Value))
+                if (Rank(selectors[selectorIndex], vocabulary, subject, owner, slot, rule) is { } rank && (best is null || rank > best.Value))
                 {
                     best = rank;
                 }
@@ -182,18 +187,28 @@ public static class StyleCascade
         }
 
         var faceContent = subject.FaceContent;
-        if (selector.Traits.Any(trait => faceContent is null || !faceContent.HasTrait(trait)))
+        var traits = selector.Traits;
+        for (var index = 0; index < traits.Count; index++)
         {
-            return false;
+            if (faceContent is null || !faceContent.HasTrait(traits[index]))
+            {
+                return false;
+            }
         }
 
-        if (selector.States.Any(state => !document.HasState(state)))
+        var states = selector.States;
+        for (var index = 0; index < states.Count; index++)
         {
-            return false;
+            if (!document.HasState(states[index]))
+            {
+                return false;
+            }
         }
 
-        foreach (var condition in selector.Attributes)
+        var attributes = selector.Attributes;
+        for (var index = 0; index < attributes.Count; index++)
         {
+            var condition = attributes[index];
             var value = AttributeText(condition.Name, vocabulary, subject);
             if (value is null || (condition.Value is not null && value != condition.Value))
             {
