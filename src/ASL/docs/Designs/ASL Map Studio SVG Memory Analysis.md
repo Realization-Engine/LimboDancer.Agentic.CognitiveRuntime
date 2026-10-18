@@ -227,7 +227,7 @@ Turn on response compression for `/render` (or serve J's precompressed copies).
 
 ### M. Check compression on the Blazor connection
 
-Whether the circuit's WebSocket is compressed decides whether a 700,000-character unit layer crosses the wire at 1.4 MB or about 33 KB. I did not verify the setting in this .NET 10 Studio.
+Whether the circuit's WebSocket is compressed decides whether a 700,000-character unit layer crosses the wire at 1.4 MB or about 33 KB. Checked in task 2 of the plan (section 10): it is compressed.
 
 - Gain: network only, possibly large.
 - Cost: a check first; configuration if it is off.
@@ -443,3 +443,26 @@ The user's rulings of 2026-10-18. Ruling 1 is the user's choice; rulings 2 to 5 
 - The Play page under the same load; only Replay was stepped. Play builds the same overlay through `GameMaps.Layers`, so the counter layer findings apply.
 - The board viewer, Unit Lab, and card editor beyond the bd01 board figures.
 - A scenario larger than the Guards Counterattack.
+
+## 10. Results of the plan
+
+The measured result of each task of `src/ASL/docs/Plans/ASL Map Studio SVG Memory Plan.md`. Allocation is the measure to compare: it repeats to the byte from run to run. Times move with the machine's load (the same render took 108 ms in the morning and 54 ms in the afternoon), so they are indicative only, and compared within one run.
+
+### Task 1. Baseline (2026-10-18, after main was merged in)
+
+The benchmark, whole renders, product code as on `main`:
+
+| Workload | Output | Allocated per render |
+|---|---|---|
+| bd01 exact | 247,310 characters | 9,513,538 bytes |
+| bd01 hex facts | 107,705 characters | 5,636,964 bytes |
+| 80 counters with figures | 1,089,845 characters | 56,244,460 bytes |
+| 9 demo counters | 62,571 characters | 4,532,377 bytes |
+
+These match section 5.1 within a few hundred bytes.
+
+### Task 2. M: the connection is compressed
+
+A WebSocket opened to the Studio's `/_blazor` endpoint through the same negotiate step Blazor uses reports `extensions: permessage-deflate; client_max_window_bits=15`. Interactive server rendering in .NET 10 compresses the circuit by default, and the Studio does not turn it off (`AddInteractiveServerRenderMode()` with no options).
+
+So the counter layer crosses the wire compressed: about 33 KB for the 697,000 characters of step 13 (the gzip figure of section 2.2), not 1.4 MB. Option M needs no change, and no ruling is needed. The per-step cost that remains is on the server (building, comparing, and serializing the string) and in the browser (parsing and importing it), which options D and Q address.

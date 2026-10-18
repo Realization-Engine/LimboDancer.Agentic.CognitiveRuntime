@@ -3,7 +3,7 @@
 **Written:** 2026-10-18, at the user's word: "Write the short implementation plan for the first group (N2, M, G1, S1, J, K, L, G2, G3) in src/ASL/docs/Plans on svg-memory-analysis … Do not write code yet."
 **Source:** `src/ASL/docs/Designs/ASL Map Studio SVG Memory Analysis.md` (the analysis): its options, its measurements (sections 2 and 5.1), and its rulings (section 8).
 **Scope:** the first group of section 7 only. The counter-layer group (C, D, E, Q, F) needs a design before a plan and is not covered here.
-**Status:** written, not started. Building waits for the user's word.
+**Status:** approved by the user, 2026-10-18 ("All approved": the word to start, and V1, V2, V5); in progress.
 
 ## 1. Goal
 
@@ -19,11 +19,11 @@ Lower the Studio's memory and allocation without changing a byte of what it draw
 
 | | Decision |
 |---|---|
-| V1 | *Provisional.* **One branch, one pull request.** The work continues on `svg-memory-analysis` after `main` is merged into it (`unit-figure-art` is in `main` since b50fa2d8, so this is ruling 5's "branch from main"). The analysis, this plan, the benchmark, and the code reach `main` together. The branch adds files, so it needs a pull request and a green CI run in any case (`how_to_reach_main.sh`). |
-| V2 | *Provisional.* **No `gate.sh` proofs.** Nothing here changes Rules or Play behavior, so the replay digest and planner sweep have nothing to prove; the gate is the strict build, the tests below, and CI. The rule passes' gate stays as it is. |
+| V1 | **One branch, one pull request.** The work continues on `svg-memory-analysis` after `main` is merged into it (`unit-figure-art` is in `main` since b50fa2d8, so this is ruling 5's "branch from main"). The analysis, this plan, the benchmark, and the code reach `main` together. The branch adds files, so it needs a pull request and a green CI run in any case (`how_to_reach_main.sh`). |
+| V2 | **No `gate.sh` proofs.** Nothing here changes Rules or Play behavior, so the replay digest and planner sweep have nothing to prove; the gate is the strict build, the tests below, and CI. The rule passes' gate stays as it is. |
 | V3 | **Output identity is the main check.** Every task except N2, J, K, and L must leave every golden SVG unchanged by a byte, and the benchmark's replay must report `identical: True` everywhere. A golden that changes is a defect in the task, never a golden to update. |
 | V4 | **Measured, not assumed.** Each task's gain is read from the benchmark (`code-builders/diagnostics/svg-memory`) or the replay of section 2.2, and recorded in the analysis's new section 10. |
-| V5 | *Provisional.* **Studio check scope** (per the case-by-case rule): bd01 in the board viewer and the cd-guards-5 replay, stepped through, at one width, after the last code task; the card editor once after K. No five-width check, since nothing visual changes. |
+| V5 | **Studio check scope** (per the case-by-case rule): bd01 in the board viewer and the cd-guards-5 replay, stepped through, at one width, after the last code task; the card editor once after K. No five-width check, since nothing visual changes. |
 
 ## 3. Tasks
 
@@ -120,6 +120,6 @@ G3, a pooled buffer:
 ## 6. What needs the user
 
 - The word to start (this plan builds nothing until then).
-- V1, V2, and V5, which are provisional.
+- V1, V2, and V5: approved 2026-10-18.
 - After task 2, if the connection is uncompressed: whether to turn compression on.
 - After task 10, the word to push.

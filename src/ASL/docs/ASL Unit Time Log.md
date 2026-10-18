@@ -1547,3 +1547,12 @@ Branch `svg-memory-analysis`, analysis only. The start is the first measurement 
 |---|---|---|---|---|
 | bd01 measured; cd-guards-5 replayed with memory samples and heap dumps; the analysis written, templates (P to R) added | 09:14 | 09:29 | 0:15 | No code changed |
 | Option G in depth: the writer benchmark and its span prototypes; the cascade found (S); section 5.1 written | 09:31 | 09:58 | 0:27 | Benchmark kept in code-builders/diagnostics/svg-memory; no product code changed |
+
+### The SVG memory plan
+
+The ASL Map Studio SVG Memory Plan (`src/ASL/docs/Plans`), approved by the user 2026-10-18 ("All approved"). Times from the shell's clock.
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| 1. main merged in; the baseline benchmark | 13:56 | 13:58 | 0:02 | Allocations match section 5.1 |
+| 2. M: the connection's compression read | 13:58 | 13:59 | 0:01 | permessage-deflate on by default; my Studio rebuilt and restarted |
