@@ -97,18 +97,19 @@ public sealed class FigureArtLabTests : IDisposable
         Assert.Equal(FigureArtLab.Sides.Count, view.FindAll(".figure-art-row[data-side]").Count);
         Assert.Equal(FigureArtLab.Sides.Count * FigureArt.PoseNames.Count, view.FindAll(".figure-art-cell").Count);
         Assert.Equal(FigureArtLab.Sides.Count * FigureArt.PoseNames.Count, view.FindAll(".figure-art-cell svg").Count);
-        Assert.Contains("needs", view.Find(".figure-art-cell[data-side='british'][data-pose='standing']").TextContent, StringComparison.Ordinal);
+        // Every infantry pose and helmet was accepted on 2026-10-18: no catalog side's figure lacks anything.
+        Assert.Empty(view.FindAll(".figure-art-missing"));
     }
 
     [Fact]
-    public void ThePromptsTabOffersThePosesBriefsOneFigureAtATime()
+    public void ThePromptsTabAsksForOneFigureAtATimeAndWaitsOnNothingOnceEveryPoseIsDrawn()
     {
         context.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("units/lab?tab=art&art=prompts");
         var view = context.Render<FigureArtBench>();
-        Assert.Equal(FigureArt.PoseNames.Count, view.FindAll(".icon-bench-group li").Count);
+        // Every pose is traced and accepted, so no brief waits for a batch; the prompt itself is tested with the Icon Lab's bench.
+        Assert.Empty(view.FindAll(".icon-bench-group li"));
+        Assert.NotNull(view.Find("#icon-bench-queue-empty"));
         Assert.True(view.Find("#icon-bench-single").HasAttribute("checked"));
-        view.FindAll(".icon-bench-group li button")[0].Click();
-        Assert.Contains("a single solid black silhouette", view.Find("#icon-bench-prompt").TextContent, StringComparison.Ordinal);
     }
 
     private static string UnitsFolder()
