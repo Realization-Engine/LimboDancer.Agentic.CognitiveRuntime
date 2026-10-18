@@ -408,7 +408,8 @@ public sealed class UnitRenderer
             {
                 // The figures are ringed apart in the color behind them: the slot's own background, or the face's.
                 var ground = evaluator.Color(slotStyle["fill"]) ?? faceFill;
-                if (!Glyphs.Draw(svg, glyph.Name, glyph.Argument, box, color, subject.Document.Figures(Vocabulary) ?? 1, Figures, subject.Document.Side, ground))
+                var piping = evaluator.Color(slotStyle["figure-piping"]);
+                if (!Glyphs.Draw(svg, glyph.Name, glyph.Argument, box, color, subject.Document.Figures(Vocabulary) ?? 1, Figures, subject.Document.Side, ground, piping))
                 {
                     warnings.Add(new(subject.Document.Id, $"Slot '{region.Name}': '{glyph.Name}' is not a glyph."));
                 }

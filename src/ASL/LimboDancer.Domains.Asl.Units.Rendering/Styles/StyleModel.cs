@@ -119,6 +119,9 @@ public static class StyleProperties
         // Decoration.
         "badge", "badges", "badge-fill", "badge-color", "badge-shape", "glyph", "face",
 
+        // Figures (ASL Unit Figure Art Plan): a thin line in this color around every figure and its helmet, for a dark face.
+        "figure-piping",
+
         // Direction: a unit that faces a hexspine (C3.2).
         "rotate", "direction-mark", "direction-color", "covered-arc", "covered-arc-length", "covered-arc-color",
 

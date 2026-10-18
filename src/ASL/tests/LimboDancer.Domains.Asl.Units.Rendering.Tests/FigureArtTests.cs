@@ -58,6 +58,22 @@ public sealed class FigureArtTests
     }
 
     [Fact]
+    public void TheClassicSheetPipesEveryFigureAndHelmetInALightLine()
+    {
+        var renderer = new UnitRenderer(RenderingTestData.Vocabulary.Value, RenderingTestData.Renderer(UnitStyles.Classic).Sheet,
+            RenderingTestData.Renderer(UnitStyles.Classic).Palette)
+        {
+            Figures = FigureArt.Read(Fixture)
+        };
+        var svg = RenderingTestData.Render(renderer, RenderingTestData.Catalog.Value["example-squad"], DetailTier.Far);
+        var figures = svg.Descendants().Where(element => element.Name.LocalName == "g" && element.Attribute("transform")?.Value.Contains("scale(", StringComparison.Ordinal) == true
+            && element.Attribute("fill") is not null).ToList();
+        Assert.Equal(3, figures.Count);
+        Assert.All(figures, figure => Assert.Equal("piping", figure.Elements().First().Attribute("data-figure-ring")?.Value));
+        Assert.All(figures, figure => Assert.Equal("#ece6d6", figure.Elements().Single(element => element.Attribute("data-helmet-ring") is not null).Attribute("stroke")!.Value));
+    }
+
+    [Fact]
     public void AStandInIsDrawnOnlyWhenAskedFor()
     {
         var art = FigureArt.Read(Fixture);

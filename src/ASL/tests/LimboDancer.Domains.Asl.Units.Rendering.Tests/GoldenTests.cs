@@ -98,7 +98,7 @@ public sealed class GoldenTests
     }
 
     [Fact]
-    public void EveryTierIsWrittenOnceAndFarShowsOnlyTheShapeAndGlyph()
+    public void EveryTierIsWrittenOnceAndFarShowsTheGlyphAndTheMajorNumbers()
     {
         var renderer = RenderingTestData.Renderer(UnitStyles.Digital);
         var squad = Documents()["state-pinned"];
@@ -106,7 +106,8 @@ public sealed class GoldenTests
         renderer.WriteUnit(svg, squad, 50, 50, UnitPreview.HexHeight, Tiers, null, null, []);
         var tiers = XElement.Parse(svg.ToString()).Elements("g").ToArray();
         Assert.Equal(["far", "mid", "near"], tiers.Select(tier => tier.Attribute("data-tier")!.Value));
-        Assert.Equal(["glyph"], SlotsOf(tiers[0]));
+        // Far keeps a personnel unit's Firepower, range, and Morale under its figures (the user, 2026-10-17), and nothing else.
+        Assert.Equal(["glyph", "fp", "range", "morale"], SlotsOf(tiers[0]));
         Assert.DoesNotContain(tiers[0].Descendants(), element => element.Attribute("data-badge") is not null);
         Assert.DoesNotContain(tiers[0].Descendants(), element => element.Attribute("data-attached-id") is not null && element.HasElements);
         Assert.Contains("fp", SlotsOf(tiers[1]));

@@ -418,6 +418,11 @@ asl|dummy::slot(label) { content: "DUMMY"; font-weight: bold; font-size: 0.24; }
   asl|personnel:asl\:pinned::slot(glyph)  { content: glyph(size-figures, pinned); }
   asl|personnel:asl\:berserk::slot(glyph) { content: glyph(size-figures, berserk); }
   asl|personnel:asl\:captured::slot(glyph) { content: glyph(size-figures, prisoner); }
+  /* The major numbers stay at far (the user, 2026-10-17): Firepower, range, and Morale; a broken unit's Broken Morale; a leader's
+     modifier and Morale. */
+  asl|personnel { face-template: "glyph glyph glyph" "fp range morale"; }
+  asl|personnel:face(broken) { face-template: "glyph" "bmorale"; }
+  asl|leader { face-template: "glyph glyph" "drm morale"; }
   asl|mg::slot(glyph) { content: glyph(mg); }
   asl|ft::slot(glyph) { content: glyph(ft); }
   asl|dc::slot(glyph) { content: glyph(dc); }

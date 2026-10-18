@@ -38,6 +38,8 @@ asl|personnel {
                  "fp  d1    range d2    morale ident";
 }
 asl|personnel::slot(fig)    { content: glyph(size-figures); }
+/* A thin light line around each figure, so dark figures stand out on the darker faces (the user, 2026-10-17). */
+asl|personnel::slot(fig)    { figure-piping: #ece6d6; }
 /* The figure's pose (ASL Unit Figure Art Plan): each falls back to the drawn figure until its art is accepted, standing but for the
    broken pose, which lies prone. */
 asl|crew::slot(fig)   { content: glyph(size-figures, crew); }
@@ -411,6 +413,12 @@ asl|dummy::slot(label) { content: "Dummy"; font-weight: bold; font-size: 0.24; }
   asl|personnel:asl\:pinned::slot(fig)  { content: glyph(size-figures, pinned); }
   asl|personnel:asl\:berserk::slot(fig) { content: glyph(size-figures, berserk); }
   asl|personnel:asl\:captured::slot(fig) { content: glyph(size-figures, prisoner); }
+  /* The major numbers stay at far (the user, 2026-10-17): Firepower, range, and Morale; a broken unit's Broken Morale; a leader's
+     modifier and Morale. */
+  asl|personnel { face-template: "fig fig fig fig fig" "fp d1 range d2 morale"; }
+  asl|personnel:face(broken) { face-template: "fig" "bmorale"; }
+  asl|leader { face-template: "fig fig" "drm morale"; }
+  asl|personnel::slot(fp), asl|personnel::slot(range), asl|personnel::slot(morale), asl|personnel::slot(bmorale) { mark: none; superscript: none; }
   asl|mg::slot(fig) { content: glyph(mg); }
   asl|ft::slot(fig) { content: glyph(ft); }
   asl|dc::slot(fig) { content: glyph(dc); }
