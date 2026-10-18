@@ -1758,21 +1758,31 @@ textarea.placements-text {
     color: var(--muted);
 }
 
-.figure-art-state[data-state="traced"] {
+.figure-art-state[data-state="accepted"] {
     color: var(--pass);
 }
 
 .figure-art-side {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 0.25rem;
     font-weight: 600;
 }
 
+/* The side's helmet, as large as the column allows and centered in it. */
 .figure-art-kit {
     display: flex;
-    gap: 0.25rem;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
     color: var(--ink);
+}
+
+.figure-art-kit svg {
+    width: 100%;
+    max-width: 8rem;
+    height: auto;
 }
 
 .figure-art-cell {

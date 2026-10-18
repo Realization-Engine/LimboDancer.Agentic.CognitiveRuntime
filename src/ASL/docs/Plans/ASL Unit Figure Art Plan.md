@@ -172,6 +172,7 @@ The poses came from ChatGPT, not Midjourney: Midjourney refused the military pro
 - F12: the classic sheet pipes every figure and helmet in a thin light line (`figure-piping: #ece6d6`), for its darker faces.
 - F13: the far level keeps the major numbers: Firepower, range, and Morale; Broken Morale; a leader's modifier and Morale.
 - F14: a leader shows its figure at mid, as at far and near.
+- F16: asl-digital takes the classic sheet's figure layout at mid and near (the user, 2026-10-18), so a figure keeps one size at every level; its numbers, badges, and colors stay its own. The leader's circled modifier gets two columns of five so the circle stays on the counter.
 - F15: on the classic sheet, the broken face's figures take four columns of six, as on the front face.
 - The pose format gained, as the picks needed them: a version per side, a head tilt, an own helmet, and a body extent.
 

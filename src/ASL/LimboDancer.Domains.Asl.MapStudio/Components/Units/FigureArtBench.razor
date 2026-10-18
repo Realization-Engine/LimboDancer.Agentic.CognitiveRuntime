@@ -18,9 +18,9 @@
         default:
             <section id="figure-art-coverage" aria-label="Figure coverage">
                 <p class="muted">
-                    Every side in every pose, drawn as the counter it will be. Poses come from the user's Midjourney picks, traced; until then a
-                    geometric stand-in holds the place, shown here and nowhere else. Helmets and weapons are drawn from each side's documented
-                    issue. Sources: <code>src/ASL/units/figures</code>.
+                    Every side in every pose, drawn as the counter it will be. Poses are traced from the user's picks and carry their own
+                    weapons; each side's helmet is drawn from its documented issue and set on the head. A pose shows here until it is accepted,
+                    and only then on the counters in play. Sources: <code>src/ASL/units/figures</code>.
                 </p>
                 <div class="toolbar figure-art-controls">
                     <label>
@@ -59,12 +59,10 @@
                         <div role="row" class="figure-art-row" data-side="@side">
                             <span role="rowheader" class="figure-art-side">
                                 @DisplayText.Side(side)
-                                <span class="figure-art-kit">
-                                    @foreach (var part in KitParts(side))
-                                    {
-                                        <span title="@part.Label">@((MarkupString)part.Markup)</span>
-                                    }
-                                </span>
+                                @if (Lab.Thumbnail($"{side}-helmet", 120) is { } helmet)
+                                {
+                                    <span class="figure-art-kit" title="@($"{DisplayText.Side(side)} helmet")">@((MarkupString)helmet)</span>
+                                }
                             </span>
                             @foreach (var pose in FigureArt.PoseNames)
                             {
@@ -110,7 +108,7 @@
 
     private IReadOnlyList<InspectorTabs.Tab> Tabs =>
     [
-        new("coverage", "Coverage", FigureArt.PoseNames.Count(pose => Lab.PoseState(pose) != "traced")),
+        new("coverage", "Coverage", FigureArt.PoseNames.Count(pose => Lab.PoseState(pose) != "accepted")),
         new("prompts", "Prompts", plan.Briefs.Count(brief => IconStages.Of(brief.Key, plan, Lab, null) == IconStage.Briefed)),
         new("batches", "Batches", plan.Batches.Count),
     ];
@@ -149,12 +147,6 @@
             }
         }
     }
-
-    private IEnumerable<(string Label, string Markup)> KitParts(string side) =>
-        new[] { ("helmet", "helmet"), ("rifle", "rifle"), ("smg", "SMG") }
-            .Select(part => (Label: $"{DisplayText.Side(side)} {part.Item2}", Markup: Lab.Thumbnail($"{side}-{part.Item1}", 22)))
-            .Where(part => part.Markup is not null)
-            .Select(part => (part.Label, part.Markup!));
 
     /// <summary>Where a pose is seen: its meaning, and the German and Russian counters it will draw, stand-in or traced.</summary>
     private RenderFragment<string> Where => key => @<span class="icon-bench-where">

@@ -69,7 +69,7 @@ public sealed class FigureArtLabTests : IDisposable
             Assert.Contains(lab.Art.Pose(armed)!.Weapon == "smg" ? "SMG" : "rifle", lab.Missing(armed, "japanese"));
         }
         Assert.DoesNotContain("helmet", lab.Missing("standing", "german"));
-        Assert.Contains("pose (stand-in)", lab.Missing("standing", "german"));
+        Assert.Contains("acceptance", lab.Missing("standing", "german"));
         // Any pose with no art yet lacks its pose; which one changes as the picks are traced.
         if (FigureArt.PoseNames.FirstOrDefault(pose => lab.PoseState(pose) == "none") is { } bare)
         {

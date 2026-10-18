@@ -32,8 +32,8 @@ public sealed class FigureArtLab(string folder) : IArtShelf
 
     public static string PoseKey(string pose) => "pose-" + pose;
 
-    /// <summary>How far a pose has come: traced and accepted, a stand-in, or nothing yet.</summary>
-    public string PoseState(string pose) => FigureArt.BuiltIn.Pose(pose) is not null ? "traced" : Art.Pose(pose) is not null ? "stand-in" : "none";
+    /// <summary>How far a pose has come: accepted (the counters in play draw it), traced and awaiting the user's acceptance, or nothing yet.</summary>
+    public string PoseState(string pose) => FigureArt.BuiltIn.Pose(pose) is not null ? "accepted" : Art.Pose(pose) is not null ? "awaiting acceptance" : "none";
 
     /// <summary>What a side's figure in a pose still lacks: its pose, its helmet, or the weapon the pose holds.</summary>
     public IReadOnlyList<string> Missing(string pose, string side)
@@ -42,7 +42,7 @@ public sealed class FigureArtLab(string folder) : IArtShelf
         var drawn = Art.Pose(pose, side);
         if (FigureArt.BuiltIn.Pose(pose, side) is null)
         {
-            missing.Add(drawn is null ? "pose" : "pose (stand-in)");
+            missing.Add(drawn is null ? "pose" : "acceptance");
         }
 
         if (Art.Helmet(side) is null)
@@ -127,6 +127,8 @@ public sealed class FigureArtLab(string folder) : IArtShelf
         }
 
         var (owner, part) = (key[..dash], key[(dash + 1)..]);
-        return part == "helmet" ? (Art.Helmet(owner)?.Path, "-200 -200 400 400") : (Art.WeaponOf(owner, part)?.Path, "-320 -500 1000 1000");
+        // A helmet's box is cropped to the helmets: the widest brim reaches about 205 either side of the head's center, the tallest dome
+        // about 150 above it, the deepest skirt about 125 below.
+        return part == "helmet" ? (Art.Helmet(owner)?.Path, "-212 -158 424 290") : (Art.WeaponOf(owner, part)?.Path, "-320 -500 1000 1000");
     }
 }

@@ -31,10 +31,12 @@ unit::slot(glyph) { content: glyph(size-figures); }
 unit:concealed { face-template: "q"; stroke-style: dashed; stroke-width: 0.06; }
 unit:concealed::slot(q) { content: "?"; font-weight: bold; font-size: 0.62; }
 
-/* Personnel, front face. */
+/* Personnel, front face. The figures take four columns of six over two rows of three, as on asl-classic (the user, 2026-10-18), so
+   they keep one size at every detail level; the numbers, badges, and colors stay this sheet's own. */
 asl|personnel {
-  face-template: "glyph ident class"
-                 "fp    range morale";
+  face-template: "glyph glyph glyph glyph class  class"
+                 "glyph glyph glyph glyph ident  ident"
+                 "fp    fp    range range morale morale";
 }
 asl|personnel::slot(glyph)  { content: glyph(size-figures); }
 /* The figure's pose (ASL Unit Figure Art Plan): each falls back to the drawn figure until its art is accepted, standing but for the
@@ -63,8 +65,9 @@ asl|personnel.asl\:assault-engineer { badge: "AE" bottom-right; }
 /* Personnel, broken face: prone figures, muted fill, the Broken Morale Level large, boxed when it can self-rally. */
 asl|personnel:face(broken) {
   fill: side(fill-muted);
-  face-template: "glyph   glyph   ident"
-                 "bmorale bmorale bmorale";
+  face-template: "glyph glyph glyph glyph ident   ident"
+                 "glyph glyph glyph glyph bmorale bmorale"
+                 "glyph glyph glyph glyph bmorale bmorale";
 }
 asl|personnel:face(broken)::slot(glyph)   { content: glyph(size-figures, broken); }
 asl|personnel:face(broken)::slot(bmorale) { content: attr(broken-morale); font-size: 0.34; font-weight: bold; }
@@ -73,8 +76,9 @@ asl|personnel:face(broken).asl\:self-rally::slot(bmorale) { mark: box; }
 
 /* Leaders: the leadership DRM as a circled value, morale below. */
 asl|leader {
-  face-template: "glyph drm"
-                 "ident morale";
+  face-template: "glyph glyph glyph drm    drm"
+                 "glyph glyph glyph drm    drm"
+                 "ident ident ident morale morale";
 }
 asl|leader::slot(drm)    { content: attr(leadership); font-size: 0.3; font-weight: bold; mark: circle; }
 asl|leader::slot(morale) { content: attr(morale); font-size: 0.34; font-weight: bold; }
@@ -385,7 +389,7 @@ asl|dummy::slot(label) { content: "DUMMY"; font-weight: bold; font-size: 0.24; }
 /* Mid tier: the Strength Factor or leader values, class, and state badges. */
 @detail mid {
   unit:concealed { face-template: "q"; }
-  asl|personnel { face-template: "glyph . class" "fp range morale"; }
+  asl|personnel { face-template: "glyph glyph glyph glyph class" "fp . range . morale"; }
   asl|personnel:face(broken) { face-template: "glyph" "bmorale"; }
   /* A leader keeps its figure at mid, as at far and near (the user, 2026-10-18). */
   asl|leader { face-template: "glyph glyph" "drm morale"; }
