@@ -105,6 +105,46 @@ G3, a pooled buffer:
 - The strict build of the solution, and the four test projects in full.
 - **Done when:** all of it passes and section 10 is complete.
 
+### Task 11. The replay measured by what the plan changes
+
+Added 2026-10-18 at the user's word ("Yes, do that. Let's come up with a plan so we know what our expectations should be"), after the replay of task 10 showed private memory no lower (section 10 of the analysis: not definitive, and private memory is the wrong measure).
+
+**What is compared.** The Studio as it was before the plan (`c3033048`: `main` with documents only) and as it is after it (this branch's head), built alike, each run on a freshly started process. The "before" build comes from a temporary git worktree in my scratchpad and runs on port 6671; the "after" build is my Studio on port 6670.
+
+**The run.** The cd-guards-5 replay, all 258 steps, driven by the Replay page's own "run forward" at one step a second. That control is paced on the server (`Task.Delay` in `Replay.razor`), so a hidden page cannot slow it, and every run takes the same time. A visibility log goes with each run. Three runs of each build, alternating (before, after, before, after, before, after), so a drift in the machine's load falls on both.
+
+**What is measured, per run:**
+
+| Measure | How | Why |
+|---|---|---|
+| Bytes allocated per step | The runtime's counter of total allocated bytes (`dotnet-counters`, every second), from the first step to the last, divided by 258 | What the plan changed |
+| Collections | The runtime's collection counts by generation, over the same span | Fewer allocations should mean fewer collections |
+| CPU time | The process's processor time over the same span | Less work per render |
+| Live heap after the run | A heap dump (`dotnet-gcdump`, which collects first), total and by type | What is held |
+| Private memory: start, peak, settled | The sampler, as before | Recorded for continuity; not judged |
+
+**Expectations, before running.** From the benchmark (section 10 of the analysis): a counter drawn at its three detail levels allocated about 0.70 MB before the plan and 0.14 MB after it. cd-guards-5 has 33 to 42 counters on the map, so one build of the counter layer should fall from about 23 to 29 MB to about 5 to 6 MB. Each step builds the layer at least once. If the Replay page also draws its unit table's previews each step (one detail level each), they add about 8 MB of saving.
+
+| Measure | Expected change, after against before |
+|---|---|
+| Bytes allocated per step | 18 to 32 MB less per step; 4.6 to 8.3 GB less over the run |
+| Gen 0 collections | Fewer, roughly in proportion to the allocation saved |
+| CPU time | 4 to 10 s less over the run (the benchmark's render times fell by 15 to 40 ms per build) |
+| Live heap after the run | The same within about 10 MB: the plan changes what is allocated, not what is kept |
+| Private memory | No expectation: set by the collector's budgets, and 47 MB apart between identical runs |
+
+**What the results would mean:**
+
+- Allocation per step falls by the expected 18 to 32 MB: the plan works in the Studio as in the benchmark, and private memory is the collector's choice, not the Studio's need.
+- It falls by much less than 18 MB: the counter layer is built less often than assumed, or other work dominates a step; the next step is an allocation trace of a few steps, by method.
+- The live heap after the run is more than 10 MB higher after the plan: something now holds memory it did not; the dump's types say what (the pooled writer buffers are the first suspect).
+
+**Needs.** `dotnet-counters` is not installed. It is Microsoft's tool, from nuget.org, installed into my scratchpad (`dotnet tool install dotnet-counters --tool-path <scratchpad>`), which is a download and needs the user's word. `dotnet-gcdump` is installed; `dotnet-trace` exists in an earlier session's scratchpad. A launch entry for port 6671 pointing at the worktree's build is added to `.claude/launch.json` (a local file the repository ignores) for the duration and removed after.
+
+**Time.** About 45 minutes: the worktree and its build, six runs of about six minutes, the dumps.
+
+- **Done when:** the six runs are in section 10 of the analysis, each measure against its expectation, with the visibility log of each run.
+
 ## 4. Route to main
 
 1. Task 10 passes on this machine.
@@ -124,3 +164,4 @@ G3, a pooled buffer:
 - V1, V2, and V5: approved 2026-10-18.
 - After task 2, if the connection is uncompressed: whether to turn compression on.
 - After task 10, the word to push.
+- For task 11, the word to install `dotnet-counters` into my scratchpad.

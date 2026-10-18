@@ -550,7 +550,27 @@ In my Studio, rebuilt with every task:
 
 The strict build of the solution (warnings as errors) first failed on the formatting of two `with` expressions in `RenderCacheTests`; fixed by hand, it passes with no warnings. The four test projects pass in full: `Maps.Tests` 253, `Maps.Rendering.Tests` 53 (with the two VASL board tests), `Units.Rendering.Tests` 367, `MapStudio.Tests` 490.
 
-Open: a replay of cd-guards-5 before and after the plan, measured the same way as section 2.2 but comparable, is not yet done (see the replay item above).
+### The replay after the plan: not definitive
+
+The cd-guards-5 replay was run again at 20:28 UTC, the same way as task 3's first run at 14:00 (before any code change): a freshly started Studio, the same stepping script, all 258 steps, the process sampled every second for 330 seconds. A visibility log confirms that the page stayed visible from the first step to the last, so the timers were not throttled.
+
+| | Before (14:00) | Before (14:20, repeat) | After (20:28) |
+|---|---|---|---|
+| Private memory at start | 81 MB | 182 MB (sampler started late) | 85 MB |
+| Peak | 286 MB | 333 MB | 347 MB |
+| Settled (last 30 s) | 205 MB | 272 MB | 319 MB |
+| Mean step, page timer | 330 ms | 459 ms (page partly hidden) | 564 ms |
+| Slowest step | 744 ms | 3,066 ms (page partly hidden) | 2,353 ms |
+
+**These figures are not definitive.** There is one run after the plan and two before, and two runs of the same code differed by 47 MB at the peak and by 130 ms in mean step time. The after-run's figures sit just above the range of the before-runs, which this measurement cannot tell apart from noise.
+
+A heap dump taken after the after-run shows why private memory is the wrong measure of the plan:
+
+- **Live objects: 70 MB** (69,950,351 bytes in 336,205 objects); the process held 318 MB of private memory at the same moment. The rest is not data the Studio keeps: it is memory the garbage collector committed during the replay and holds for reuse, plus the runtime itself. Server GC on 16 processors (with .NET's adaptive heap count) decides how much to keep, from its own budgets and timing, not from how much the code allocates.
+- **The pooled writer buffers are small:** the dump holds six `char[]` arrays in each of three size classes (over 10 KB, over 100 KB, over 1 MB), the shape `ArrayPool<char>.Shared` leaves as the writer's buffer grows through powers of two; about 10 MB at most. The dump's per-class byte figures are approximate, so this is an upper bound, not a measurement. This morning's dump, before the plan, held three larger `char[]` buffers (8.4 MB), probably the serializer's.
+- For reference, this morning's dump after the same replay (on a Studio that had run for 45 minutes before) held 92.5 MB of live objects.
+
+What the plan changes is how much the server allocates, not how much it holds. Fewer allocations mean fewer collections and less CPU per render; they need not lower the peak or the memory the collector keeps, because the collector sizes the heap from its budgets and collects less often when less is allocated. The measure that shows the plan's effect is the bytes allocated per step, with the number of collections; the measure of what is held is the live heap from a dump. Task 11 of the plan measures both.
 
 What the plan achieved, per render, from the benchmark (allocation repeats to the byte; every golden SVG unchanged throughout):
 

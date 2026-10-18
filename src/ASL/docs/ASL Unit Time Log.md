@@ -1564,3 +1564,4 @@ The ASL Map Studio SVG Memory Plan (`src/ASL/docs/Plans`), approved by the user 
 | 8. L: gzip from the render cache | 14:50 | 14:59 | 0:09 | Built and tested with K, in the same runs |
 | 9. G2 and G3: SvgValue, FixedPoint.TryFormat, the pooled writer | 14:59 | 15:10 | 0:11 | A one-line Python edit emptied three files (opened for writing before reading); restored from this session and git |
 | 10. Studio checks, strict build, the four test projects in full | 15:10 | 16:16 | 1:06 | Two strict builds of 14 min; a test's formatting fixed; the Bash guard refuses the emptying one-liner; the after-replay not comparable (hidden page) |
+| The replay again, visible; a heap dump; task 11 planned | 16:16 | 16:43 | 0:27 | Not definitive: private memory no lower, live heap 70 MB of 318 MB private |
