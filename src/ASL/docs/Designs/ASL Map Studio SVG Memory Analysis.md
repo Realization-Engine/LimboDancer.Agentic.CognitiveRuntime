@@ -570,6 +570,43 @@ A heap dump taken after the after-run shows why private memory is the wrong meas
 - **The pooled writer buffers are small:** the dump holds six `char[]` arrays in each of three size classes (over 10 KB, over 100 KB, over 1 MB), the shape `ArrayPool<char>.Shared` leaves as the writer's buffer grows through powers of two; about 10 MB at most. The dump's per-class byte figures are approximate, so this is an upper bound, not a measurement. This morning's dump, before the plan, held three larger `char[]` buffers (8.4 MB), probably the serializer's.
 - For reference, this morning's dump after the same replay (on a Studio that had run for 45 minutes before) held 92.5 MB of live objects.
 
+### Task 11. The replay measured by what the plan changed
+
+Six runs on 2026-10-18, alternating: the Studio before the plan (`c3033048`, built from a temporary worktree, port 6671) and after it (this branch, port 6670), each on a freshly started process with the same settings and game data. Each run: the cd-guards-5 replay, all 258 steps, driven by the Replay page's own server-paced "run forward" at one step a second (about 286 s), the runtime's counters read every second by `dotnet-counters`, the process sampled every second, a heap dump after. A script restarted the run if a key or a click stopped it (the page stops a run on either, by design); no run needed it. The page was visible throughout, apart from moments.
+
+| Run | Allocated per step | Over the run | Gen 0 / 1 / 2 | GC pause | CPU | Live heap after | Committed, peak | Private: start, peak, end |
+|---|---|---|---|---|---|---|---|---|
+| B1 | 21.69 MB | 5,595 MB | 134 / 121 / 35 | 1.01 s | 38.3 s | 71.6 MB | 274 MB | 172, 329, 199 MB |
+| A1 | 8.42 MB | 2,173 MB | 89 / 1 / 24 | 0.79 s | 40.4 s | 66.8 MB | 309 MB | 150, 390, 310 MB |
+| B2 | 21.27 MB | 5,489 MB | 130 / 112 / 33 | 1.06 s | 52.4 s | 58.7 MB | 257 MB | 88, 329, 245 MB |
+| A2 | 9.96 MB | 2,569 MB | 63 / 1 / 26 | 1.09 s | 47.8 s | 58.4 MB | 365 MB | 166, 432, 303 MB |
+| B3 | 19.90 MB | 5,135 MB | 124 / 141 / 30 | 1.24 s | 52.3 s | 67.2 MB | 256 MB | 81, 313, 224 MB |
+| A3 | 9.83 MB | 2,536 MB | 64 / 1 / 26 | 0.97 s | 48.5 s | 66.8 MB | 316 MB | 192, 383, 333 MB |
+
+Means, against what task 11 expected before running:
+
+| Measure | Before | After | Change | Expected |
+|---|---|---|---|---|
+| Allocated per step | 20.95 MB | 9.40 MB | -55% (-11.6 MB) | 18 to 32 MB less |
+| Allocated over the run | 5,406 MB | 2,426 MB | -2,980 MB | 4.6 to 8.3 GB less |
+| Gen 0 collections | 129 | 72 | -44% | fewer, with the allocation |
+| Gen 1 collections | 125 | 1 | almost none | not predicted |
+| Gen 2 collections | 33 | 25 | -23% | not predicted |
+| GC pause | 1.10 s | 0.95 s | -14% | not predicted |
+| CPU | 47.7 s | 45.6 s | -4%, within the runs' spread | 4 to 10 s less |
+| Live heap after | 65.8 MB | 64.0 MB | the same | the same within 10 MB |
+| GC committed, peak | 262 MB | 330 MB | +68 MB | no expectation |
+| Private memory, peak | 324 MB | 402 MB | +78 MB | no expectation |
+| Private memory, end | 223 MB | 315 MB | +92 MB | no expectation |
+
+What it shows:
+
+- **The plan works in the Studio as in the benchmark:** a replay step allocates 55% less, the same in all three pairs (the spread within each side is under 2 MB a step). Gen 1 collections all but disappear, gen 0 and gen 2 fall, and the collector pauses 14% less.
+- **The expectation was too high,** and the reason is now known: it assumed the counter layer was most of a step, but a whole step allocated 21 MB before the plan, so the layer and its previews were about 14 MB of it, not 23 to 37 MB (if the benchmark's ratio holds, a saving of 11.6 MB at 80% means about 14.5 MB before and 3 MB after). The rest of a step (projection, rules, render tree, serialization) the plan did not touch.
+- **CPU did not measurably change:** the runs' own spread (38 to 52 s before) is larger than the expected saving.
+- **What the Studio holds did not change:** the live heap after a run is 64 to 66 MB either way.
+- **Committed and private memory rose, in all three pairs,** by 68 to 92 MB on average. Three of three is not noise. The live heap shows it is not data the Studio keeps; it is memory the collector commits and keeps. A plausible cause, not yet tested: with far fewer collections (gen 1 almost none), the collector compacts and returns memory less often, so it keeps more of what it grew into. The pooled writer buffers account for about 10 MB at most (the dumps).
+
 What the plan changes is how much the server allocates, not how much it holds. Fewer allocations mean fewer collections and less CPU per render; they need not lower the peak or the memory the collector keeps, because the collector sizes the heap from its budgets and collects less often when less is allocated. The measure that shows the plan's effect is the bytes allocated per step, with the number of collections; the measure of what is held is the live heap from a dump. Task 11 of the plan measures both.
 
 What the plan achieved, per render, from the benchmark (allocation repeats to the byte; every golden SVG unchanged throughout):

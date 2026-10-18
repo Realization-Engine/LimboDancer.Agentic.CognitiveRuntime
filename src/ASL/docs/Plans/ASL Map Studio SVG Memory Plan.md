@@ -144,6 +144,7 @@ Added 2026-10-18 at the user's word ("Yes, do that. Let's come up with a plan so
 **Time.** About 45 minutes: the worktree and its build, six runs of about six minutes, the dumps.
 
 - **Done when:** the six runs are in section 10 of the analysis, each measure against its expectation, with the visibility log of each run.
+- **Outcome (2026-10-18):** done. Allocation per step fell 55% (20.95 to 9.40 MB), the same in all three pairs; gen 1 collections fell from 125 to 1, the collector's pauses by 14%; the live heap is unchanged. The expected saving (18 to 32 MB a step) was too high: the counter layer was about 14 MB of a 21 MB step. CPU did not measurably change. Committed and private memory rose by 68 to 92 MB in all three pairs: the collector keeps more, the Studio holds no more. One change from the procedure: the Replay page stops a run on a key or a click, so the script restarted a stopped run (none needed it after the first attempt at A1, which a click stopped at step 214 and which was discarded).
 
 ## 4. Route to main
 
