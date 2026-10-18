@@ -406,6 +406,8 @@ Each stage is checked by the golden SVGs, which must not change by a byte.
 
 Settled by the rulings of section 8 (2026-10-18).
 
+Update, 2026-10-18: `unit-figure-art` has merged into `main` (pull request 18, b50fa2d8; its CI run passed), so ruling 5's wait is over and both groups can start from `main`. The first group has its plan: `src/ASL/docs/Plans/ASL Map Studio SVG Memory Plan.md`. The second group still needs a design first.
+
 On a branch from `main`, since none of these files differ on `unit-figure-art` (ruling 5):
 
 1. N2: Server GC with memory conservation, its level chosen by measuring the cd-guards-5 replay at two or three settings against section 2.2. M: read the connection's compression setting.
