@@ -1579,3 +1579,15 @@ Branch `svg-memory-design-2`, from `main`. Design and plan only; no code changed
 |---|---|---|---|---|
 | The analysis and the counter code read; the design and plan written | 18:00 | 18:22 | 0:22 | Start approximate (the clock was first read at 18:15, after the reading); a worktree under the long scratchpad path failed to check out, so it sits at a short path |
 | The rulings U2, U5, and the order recorded; the plan revised with E first, alone (part 1, tasks E1 to E4); E's expectations stated | 21:14 | 21:23 | 0:09 | The builder read again to confirm a hex fragment reads only its own hex; `play-follow-profile` found unpushed, so part 1 starts from it unless it merges first |
+
+### Option E, part 1 of the counter layer plan
+
+Branch `counter-cache-e` from `play-follow-profile` (4b566767), in a worktree, while another session's build and tests ran in the main checkout. Approved by the user 2026-10-18 ("Approved. Execute."); the other rulings approved 2026-10-19. Times from the shell's clock.
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| The branch, its worktree, and the design commits brought in | 21:26 | 21:31 | 0:05 | One time log conflict, both sides kept |
+| E1. The layer hash manifest and the benchmark's layer workload | 21:31 | 21:50 | 0:19 | The full manifest (2,856 layers) took 4 min; thinned to 1,166, a strict subset; found that `UnitDocumentJson` leaves out `Uninspected` and `Dummy` |
+| E2. The builder writes the layer hex by hex | 21:50 | 21:57 | 0:07 | Manifest and goldens unchanged |
+| E3. UnitFragmentCache, its key, and its tests | 21:57 | 22:20 | 0:23 | Two test mistakes fixed (a property left off the list; warnings counted per tier); the slow manifest cases moved to one game |
+| E4. The Studio before and after: Replay and Play traced and counted, the layer compared, the results written | 22:20 | 22:47 | 0:27 | The allocation counter breaks when a trace runs at once, so allocation was counted alone; Play's allocation not measurable (a 1.3 GB step, before and after) |

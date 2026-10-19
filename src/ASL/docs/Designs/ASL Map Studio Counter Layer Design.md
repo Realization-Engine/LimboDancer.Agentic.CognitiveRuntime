@@ -3,7 +3,7 @@
 **Written:** 2026-10-18, for the second group of the SVG memory analysis: options C, D, E, and Q, with F decided after them.
 **Source:** `src/ASL/docs/Designs/ASL Map Studio SVG Memory Analysis.md` (the analysis; merged into `main` with PR 19, 029bf601; sections 12 to 14, the step profiles, are on branch `play-follow-profile`): its sections 5 (options C, D, E, F, Q), 7 (the order), 8 (the rulings), and 10 (the results of the first group).
 **Code read:** `Units.Rendering` (`UnitRenderer.WriteUnit` and `WriteFace`, `Glyphs.ArtFigures` and `FigureId`, `UnitOverlayBuilder.Build`, `UnitPreview.Document`), `MapStudio` (`BoardWorkspace` and its `sent` record, `BoardViewport.SetUnits`, `GameMaps.Layers`, `GameMaps.Named` and `Led`, `UnitLibrary.Renderer` and `Overlay`), `wwwroot/js/boardViewport.js` (`setUnits`, `applyPatch`, `updateUnitTier`, `setVisible`, `applyComparison`), `site.css` (the counter rules), and the tests that read the layer.
-**Status:** proposed; not approved as a whole. Ruled by the user on 2026-10-18: U2 (the hex, all its levels), U5 (4 million characters, least recently used out), and the order (E first, alone; section 7.1). U1, U3, U4, and U6 are open; U7 is settled by PR 19's merge (029bf601). No code is changed. The implementation plan is `src/ASL/docs/Plans/ASL Map Studio Counter Layer Plan.md`.
+**Status:** approved. Ruled by the user on 2026-10-18: U2 (the hex, all its levels), U5 (4 million characters, least recently used out), and the order (E first, alone; section 7.1); on 2026-10-19 every other proposal of section 15 (U1, U3, U4, U6, and U7 as settled), "All Option E Ruling proposals approved. Execute". U7 is settled by PR 19's merge (029bf601). No code is changed. The implementation plan is `src/ASL/docs/Plans/ASL Map Studio Counter Layer Plan.md`.
 **Scope:** rendering only. Nothing here touches the Rules project, a projection, or what a counter shows; every ASL rule stays where it is.
 
 ## 1. Goal
@@ -135,6 +135,46 @@ The user ruled that E goes first, as a standalone slice, ahead of C1, the leads,
 | Hit rate over a recorded game, after its first step | none | 85% of hexes or more | from the 0 to 6 counters a step changes |
 
 The 53 and 46 ms are `UnitOverlayBuilder.Build` as sampled in sections 12 and 13 of the analysis. The first measure in the slice (the plan's task E1) times `Led`'s rewrite beside it, so the result separates what E removes from what the leads (L6) would remove. If `Led` turns out to be a large share, I will put L6 to the user as the next slice with that number; it is not part of E.
+
+### 7.2 E as built (2026-10-18 and 19)
+
+Branch `counter-cache-e`, cut from `play-follow-profile` (4b566767): E1 `33d20d38`, E2 `50665c83`, E3 `4dba694c`.
+
+Two changes from sections 7 and 7.1, both made to close a gap in the key:
+
+- **The renderer is keyed by its identity, not a fingerprint of its contents.** A `UnitRenderer` never changes once made (its vocabulary, sheet, palette, and figure art are fixed at construction), so `UnitRenderer.Identity`, a number given to each renderer in the process, stands for everything it draws with, including inputs a fingerprint could forget. The Studio makes one renderer per sheet and palette (`UnitLibrary.renderers`), so this loses no hits.
+- **The key does not use `UnitDocumentJson`.** It leaves out `Uninspected` and `Dummy`, which change how a "?" is named and drawn, so a key made from it would show a Dummy as a plain "?". `UnitFragmentKey` writes every property of a document, its faces, and its values, each text with its length; a test pins the list of the documents' properties, so a new one fails the test until the key writes it.
+
+The rest is as designed: hex fragments with no wrapper (the layer is byte-identical), `SvgWriter.Fragment` to append a kept hex, the bound of 4 million characters counting keys and markup, least recently used out, one lock never held while a hex is drawn, one cache in `UnitLibrary` used by `Overlay` and the Play setup map. `Led` is unchanged.
+
+**The proof of the same layer** is a manifest of 1,166 layer hashes recorded by the builder before E (`CounterLayers/layer-manifest.txt` in `MapStudio.Tests`): the two games played through Play (`guards-dl-01`, `p31c-tw`) at every step's end in the full view and the Digital sheet, every fourth step in the Classic sheet and each side's view, `a1-village` at every revision in every view, the example sets, and a crowded fixture (a count badge, upper levels, a cellar, facings, concealed, uninspected, a Dummy, a draft). With the cache, every layer matches it stepping forward, back, and by jumps, with a bound of 200,000 characters that keeps evicting, and on four threads at once. In the Studio, step 13 of cd-guards-5 gave the same layer from the Studio before E and the Studio after it (the inner markup's SHA-256 equal; only `data-active-tier`, the browser's zoom, differed).
+
+### 7.3 Results
+
+My Studio's Debug build, before (`4b566767`, port 6671) and after (this branch, port 6670), run one after the other with the same game data; the server traced with `dotnet-trace` (CPU samples only) and counted with `dotnet-counters`; Replay by its own server-paced Run forward, Play by the follower of cd-guards-5, both as the adjudicator, the page visible.
+
+| Measure | Expected (7.1) | Before | After | Change |
+|---|---|---|---|---|
+| Replay: building the counter layer, per step (steps 1 to about 90) | 53 to 8 to 15 ms | about 48 ms | about 8.5 ms | -82% |
+| Replay: the server's CPU per step, all work (the same steps) | | about 81 ms | about 46 ms | -43% |
+| Replay: allocated per step (steps 100 to 160) | layer share about 3 to 2 to 2.5 MB | 13.1 MB | 8.9 MB | -4.2 MB (-32%) |
+| Replay: process CPU per step (steps 100 to 160) | | 86 ms | 41 ms | -52% |
+| Replay: gen 0 collections over those 60 steps | | 20 | 3 | |
+| Play: building the counter layer, per step | 46 to 8 to 15 ms | about 55 ms | about 5 to 8 ms (two runs) | -86% to -91% |
+| Play: the follow loop's server work per step (inclusive) | | about 177 ms | about 103 to 138 ms (two runs) | -22% to -42% |
+| Play: process CPU per step | | 266 ms | 213 ms (both runs) | -20% |
+| `Led`'s rewrite per step | | about 1 ms | about 1 ms | unchanged, as planned |
+| Benchmark, 80 counters, two moved a step (Release, a fresh cache each run forward) | | 30.5 ms, 11.2 MB | 6.6 ms, 4.1 MB | -78%, -64% |
+| Benchmark, every hex a miss | | 30.5 ms, 11.2 MB | 31.0 ms, 13.5 MB | the same time, +21% allocation |
+
+What the numbers say:
+
+- **The build met its expectation in both pages:** 8.5 ms in Replay and 5 to 8 ms in Play, inside the 8 to 15 ms stated before building. What remains of it is the face sizes (each counter's near-tier face size for `data-face-size`, about a third of what is left), the keys, and joining the layer.
+- **Allocation fell more than expected,** 4.2 MB a Replay step against the 0.5 to 1 MB estimated: the estimate counted the layer's strings, but most of the layer's allocation was the drawing's own garbage (the cascade's styles, the writer's buffers), which a hit skips entirely. Gen 0 collections over the same steps fell from 20 to 3.
+- **`Led` is not worth a slice of its own for time:** about 1 ms a step. It still copies the layer (2.3 MB a step in the benchmark), which the leads in the builder (part 2, task 3) remove.
+- **Play's step is still mostly elsewhere:** its follow loop is 103 to 138 ms of server work a step after E, most of it the page's render and the panels' rules (backlog 62). The two "after" runs differ because the first was slowed by other work on the machine (it covered 49 steps in 86 s against 73 in the second).
+- **Play's allocation could not be measured per step:** one step near revision 137 of cd-guards-5 allocates 1.3 to 1.6 GB within a second, in the Studio before E and after it, and dwarfs every other step. It is not the counter layer; it is in the backlog (section 62) as a finding to look into.
+- **A step that redraws every hex costs what it did,** with 21% more allocation (the hexes drawn into their own writers, and the keys): the first step of a game, or a step after a board load. A Replay run forward pays it once.
 
 ## 8. Q: one definition per distinct face
 
@@ -272,11 +312,11 @@ Each with my proposal, and the user's ruling where one is made.
 
 | | Question | Proposal | Ruling |
 |---|---|---|---|
-| U1 | Where C2's sprite lives: ruling 2 says "the viewport's defs layer"; `layer-defs` is built by the board renderer, which does not know counters, and is replaced on every load | A viewport-held group `unit-figures` beside the board's layers, holding the whole built-in figure set (about 36 KB), sent once per board load (section 4) | Open; needed before C2 |
+| U1 | Where C2's sprite lives: ruling 2 says "the viewport's defs layer"; `layer-defs` is built by the board renderer, which does not know counters, and is replaced on every load | A viewport-held group `unit-figures` beside the board's layers, holding the whole built-in figure set (about 36 KB), sent once per board load (section 4) | **Approved** 2026-10-19 |
 | U2 | The unit of a patch: the analysis said hex and level | The hex, all levels (L2) | **Approved** 2026-10-18 |
-| U3 | Q's definitions as `<symbol>` (the analysis's word) or `<g>` | `<g>` in `<defs>`: no clipping, no size (section 8) | Open; needed before Q |
-| U4 | The focus ring under Q | CSS custom properties, the same gold edge (section 8) | Open; needed before Q |
+| U3 | Q's definitions as `<symbol>` (the analysis's word) or `<g>` | `<g>` in `<defs>`: no clipping, no size (section 8) | **Approved** 2026-10-19 |
+| U4 | The focus ring under Q | CSS custom properties, the same gold edge (section 8) | **Approved** 2026-10-19 |
 | U5 | The cache's bound | 4 million characters, about 8 MB, shared by all renderers | **Approved** 2026-10-18 |
-| U6 | Layer goldens | Add the four of section 11 | Open; needed before C1. E uses a manifest of layer hashes instead (section 11), which needs no ruling |
+| U6 | Layer goldens | Add the four of section 11 | **Approved** 2026-10-19; added with C1. E uses the manifest of layer hashes (section 11) |
 | U7 | When to start | After PR 19 merges into `main`: this work builds on its span writer (`SvgValue`, the pooled `SvgWriter`); one branch from `main` then, one pull request at the end | Settled: PR 19 merged (029bf601). Superseded in part by the order ruling: E is its own branch and pull request (plan, V1) |
 | | The order | (Not asked as a question; the plan put E seventh) | **Ruled** 2026-10-18: E first, alone, ahead of the rest of the plan; then D in the browser, C2, and Q later (section 7.1) |
