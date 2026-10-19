@@ -1187,3 +1187,11 @@ The ASL Map Studio Counter Layer Design (`src/ASL/docs/Designs`), 2026-10-18: th
 | The rest of a replay step measured and reduced: projection, rules, render tree, and the page's serialization, about 6 MB of a 9.4 MB step | Counter layer plan, section 3 | (performance) | The counter layer plan done, so the rest is measured on its own | Untouched; after the plan it is the larger part of a step. |
 | Play's panel rules per step: rout obligations and advice (about 41 ms) and upper-level encirclement (about 40 ms), asked again after each revision | Counter layer plan, section 4 (revision of 2026-10-18) | A10.5, A7.7 (performance only) | Nothing; measured with the Play follower (SVG memory analysis, section 14) | Untouched; the next Play candidate after E. |
 | A Play step that allocates 1.3 to 1.6 GB within a second: following cd-guards-5, the step near revision 137, in the Studio before option E and after it | Counter Layer Design, section 7.3 (option E's measurement, 2026-10-19) | (performance only) | Nothing; reproduce with the Play follower and `dotnet-counters`, then a `dotnet-trace` of that step alone | Untouched; not the counter layer. Found because it made Play's allocation per step unmeasurable. |
+
+## 63. Added by the replay re-enactment scope
+
+The ASL Replay Re-enactment Scope (`src/ASL/docs/Designs`), 2026-10-18: analysis kept for later at the user's word; no proposal approved.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Re-play mode on the Play page: a recorded game shown from its first event, a step at a time, until "Play on from here" switches it to live play (option R recommended, W the alternative; questions U1 to U3) | The user, 2026-10-18: "save this analysis for later" | (UI) | The user's ruling on option R and U1 to U3, then a design and a plan | Replay's "Play on from here" makes a live game at a step; the development-only follow control re-plays by copying steps into a new game. |

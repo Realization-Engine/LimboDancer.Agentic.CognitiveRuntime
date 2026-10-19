@@ -1611,3 +1611,13 @@ Branch `counter-layer-2`, stacked on `counter-cache-e` at the user's word; the r
 | The Studio after task 6: focus edge, numbers, F's tiers | 00:24 | 00:28 | 0:04 | |
 | 7. Results and F in the design; the gate; the pull request | 00:28 | 00:42 | 0:14 | Gate: strict build; Units.Rendering 424, Maps.Rendering 53 (2 skipped), MapStudio 509, Node 13; one pull request to main carries E and part 2, at the user's word |
 | **Part 2 in all** | 23:05 | 00:42 | 1:37 | |
+
+## The replay re-enactment scope, 2026-10-18
+
+Branch `claude/replay-reenact-scope-9c9f9a`, analysis only. Times from the shell's clock.
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| Records read (cd-guards-5, guards-06-dlandi); actions, gate, store, and dice traced; the scope written (`Designs/ASL Replay Re-enactment Scope.md`) | 19:33 | 19:41 | 0:08 | No product code; every rule package is newer than the records |
+| main merged in (the follow control, #20); section 6.1 added: what the follow control gives | 22:46 | 22:47 | 0:01 | One time log conflict, both sides kept |
+| The scope rewritten to the user's feature (re-play mode in Play until "Play on from here"); main's code checked at e6f407b6 | 22:57 | 22:59 | 0:02 | The first version scoped re-deciding steps under today's rules, which the user ruled out |
