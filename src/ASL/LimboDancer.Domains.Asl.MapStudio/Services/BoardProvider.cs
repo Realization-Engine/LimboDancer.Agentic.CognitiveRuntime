@@ -182,8 +182,11 @@ public sealed class VaslBoardProvider : IBoardProvider, ICatalogSource, IVaslMap
     public BoardLoadResult Load(BoardRef board)
     {
         ArgumentNullException.ThrowIfNull(board);
-        return cache.GetOrAdd(board.Value, _ => new Lazy<BoardLoadResult>(() => LoadUncached(board))).Value;
+        // The Play Step Plan, task 7 (A1): a hit reads the cache with no closure; only a miss makes the lambdas that load the board.
+        return cache.TryGetValue(board.Value, out var entry) ? entry.Value : LoadOnce(board);
     }
+
+    private BoardLoadResult LoadOnce(BoardRef board) => cache.GetOrAdd(board.Value, _ => new Lazy<BoardLoadResult>(() => LoadUncached(board))).Value;
 
     private BoardListing[] ListUncached()
     {

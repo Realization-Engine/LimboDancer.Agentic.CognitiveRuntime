@@ -15,9 +15,19 @@ public sealed class StudioBoardCatalog(IBoardProvider boards, CampaignPlayableFo
     // Pass 31c (design D18; play test P-24): one handle for a loaded board, for as long as the board is loaded. The planner keeps a board's LOS
     // map and every LOS it has read by the board's handle, so a handle made anew on each call threw that work away: a rout's search then built
     // the LOS map again for every LOS it read. The handle holds what the board holds and nothing else, so its reads are the same.
-    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<StudioBoard, BoardHandle> Handles = new();
+    // The Play Step Plan, task 7 (A1): each handle is kept with its read result, so a lookup that hits returns it as it is. The rules look a board
+    // up about a hundred thousand times in a Rout Phase step; a hit made a throwaway catalog, a dictionary, a result, and a closure every time.
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<StudioBoard, Kept> Handles = new();
 
-    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<StudioBoard, BoardHandle> restrictedHandles = new();
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<StudioBoard, Kept> restrictedHandles = new();
+
+    /// <summary>A board's handle and the result that returns it.</summary>
+    private sealed class Kept(BoardHandle handle)
+    {
+        public BoardHandle Handle { get; } = handle;
+
+        public BoardReadResult Result { get; } = new(handle, []);
+    }
 
     public BoardReadResult TryGetBoard(BoardRef board, string? version = null)
     {
@@ -31,10 +41,26 @@ public sealed class StudioBoardCatalog(IBoardProvider boards, CampaignPlayableFo
         }
 
         var footprint = footprints?.Read(loaded.Ref, loaded.Version, loaded.Facts.Geometry);
-        var handle = footprint is null ? Handles.GetValue(loaded, item => Handle(item))
-            : restrictedHandles.GetValue(loaded, item => Handle(item, footprint));
-        return new InMemoryBoardCatalog([handle]).TryGetBoard(board, version);
+        var kept = footprint is null ? Handles.GetValue(loaded, static item => new Kept(Handle(item))) : Restricted(loaded, footprint);
+
+        // What the one-board catalog this replaces said: the board asked for, at the version asked for.
+        if (kept.Handle.Ref != board)
+        {
+            return new BoardReadResult(null, [new MapDiagnostic("MAP-READ-001", MapDiagnosticSeverity.Error, $"{board} is not in the catalog.")]);
+        }
+
+        return version is not null && version != kept.Handle.Version
+            ? new BoardReadResult(null, [new MapDiagnostic("MAP-READ-001", MapDiagnosticSeverity.Error,
+                $"{board} is at version {kept.Handle.Version}, not the requested {version}.")])
+            : kept.Result;
     }
+
+    // The handle restricted to a footprint, made once for a loaded board as before; only a miss makes the closure (a captured parameter makes it
+    // as the method is entered, so the miss has a method of its own).
+    private Kept Restricted(StudioBoard loaded, IReadOnlySet<HexName> footprint) =>
+        restrictedHandles.TryGetValue(loaded, out var kept) ? kept : RestrictedOnce(loaded, footprint);
+
+    private Kept RestrictedOnce(StudioBoard loaded, IReadOnlySet<HexName> footprint) => restrictedHandles.GetValue(loaded, item => new Kept(Handle(item, footprint)));
 
     // LOS data (LOS Design, section 5): the board's grid and catalog, and a VASL board's hexside annotations.
     private static BoardHandle Handle(StudioBoard loaded, IReadOnlySet<HexName>? footprint = null) => new(loaded.Ref, loaded.Version, Status(loaded.Status), Provenance(loaded), loaded.Facts, VaslSource(loaded), footprint)
