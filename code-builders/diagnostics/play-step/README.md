@@ -33,7 +33,9 @@ Two Studios, the same game and revisions, side by side:
   `map-studio-p31b`, port 6670 (it was `bin/p31b` until 2026-10-19);
 - **before:** `main` built outside the repository, in a worktree of its own (`git worktree add --detach <path> main`, then build its MapStudio
   there) and started from that build on port 6671 with `--contentRoot` the worktree's MapStudio folder and `--AslMaps:BoardsRoot` this
-  repository's `src/ASL/boards`. Never build it into another folder under MapStudio's `bin`: the gate's build copies every such folder into
+  repository's `src/ASL/boards`. Register the worktree and both Studios' builds as they are made
+  (`bash code-builders/build-and-test/outside_outputs.sh register <path>`), so the gate's `ci` stage removes them once CI passes (the
+  standing rules, section 0, point 14). Never build it into another folder under MapStudio's `bin`: the gate's build copies every such folder into
   itself (the gate now refuses to start while one is there). On 2026-10-19 it was built into `bin/before`, which cost the next three builds
   20 to 35 minutes each.
 

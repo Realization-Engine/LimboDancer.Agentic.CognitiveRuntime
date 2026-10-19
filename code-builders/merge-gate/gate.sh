@@ -72,6 +72,8 @@ header() {
 
 # The gate's proof tool, rebuilt against bin/gate; stops unless its copies are the gate's build byte for byte.
 tool() {
+  # Registered as made, removed by the ci stage once CI passes (outside_outputs.sh; the standing rules, 2026-10-19).
+  for out in proof proof-gate; do bash "$TOOLS/build-and-test/outside_outputs.sh" register "$S/$out"; done
   mkdir -p "$S/proof"; cp "$TOOLS/proof-tool/Program.cs" "$TOOLS/proof-tool/Proof.csproj" "$S/proof/"
   dotnet build "$S/proof/Proof.csproj" "-p:StudioBin=$GATE/" "-p:OutDir=$S/proof-gate/" --disable-build-servers -m:1 -v:q > "$S/build-proof-gate-$PASS.log" 2>&1
   if ! grep -q "Build succeeded" "$S/build-proof-gate-$PASS.log"; then echo "STOP: the proof tool did not build against bin/gate"; grep -m3 "error" "$S/build-proof-gate-$PASS.log"; exit 1; fi
@@ -83,6 +85,7 @@ tool() {
 # The baseline's build and its proof tool: the build is kept while the base commit is the same; the tool is always compiled again, since
 # it must compile against both sides.
 main_tool() {
+  for out in main-src main.tar main-bin proof-main; do bash "$TOOLS/build-and-test/outside_outputs.sh" register "$S/$out"; done
   if [ "$(cat "$S/main-bin/BASE" 2>/dev/null)" != "$BASEFULL" ]; then
     rm -rf "$S/main-src" "$S/main-bin" "$S/main.tar"; mkdir -p "$S/main-src"
     git -C "$R" archive --format=tar -o "$S/main.tar" "$BASEFULL" && tar --force-local -xf "$S/main.tar" -C "$S/main-src" || stop "the archive failed"
@@ -208,6 +211,9 @@ ci)
   [ -n "$RUNS" ] || stop "no CI run for ${HEAD_SHA:0:8}: open the branch's pull request (the workflow runs on pull requests that touch src/ASL)"
   echo "$RUNS"
   if echo "$RUNS" | grep -q "^completed success "; then echo "CI passed for ${HEAD_SHA:0:8}"
+    # The earliest opportunity (the standing rules, 2026-10-19): the build outputs registered outside the repository go now. A stop of the
+    # clean (a Studio still running from its output) is said, and the stage still reports CI's verdict.
+    bash "$TOOLS/build-and-test/outside_outputs.sh" clean || echo "NOTE: the outside build outputs were not all removed; stop what holds them and run outside_outputs.sh clean"
   elif echo "$RUNS" | grep -qv "^completed "; then echo "CI is still running for ${HEAD_SHA:0:8}; ask again"; exit 3
   else stop "CI did not pass for ${HEAD_SHA:0:8}"; fi
   ;;

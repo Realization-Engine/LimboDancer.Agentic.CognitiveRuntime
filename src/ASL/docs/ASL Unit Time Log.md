@@ -1652,3 +1652,13 @@ Branch `play-step` from `main` at a997ca8d, one pull request (the plan's V1). Ru
 | 8. The whole Studio measurement | 11:19 | 11:37 | 0:18 | 0:30 | Run 1 (898 revisions, counters): a Rout Phase step's median 567 to 258 ms, any other 122 to 104; run 2 (traced to 621): the page's rout read 457 to 125 ms; run 3 is task 7's trace (315 to 101 MB). The behaviour pass as each side, 729 to 741, the same in both Studios. Written as the analysis's section 8; C2 and A3 not needed for the goal, A3 named as the next candidate; three backlog rows |
 | 9. The gate, the documents | 11:37 | 13:42 | 2:05 | 0:40 | The first strict build stalled (20 min): the cause of all three stalls found, MapStudio's `bin` holding old passes' output folders nested in each other (one held over 107,000 files), copied into every build with another `BaseOutputPath`. Deleting them took 50 min before they were moved out of the repository in seconds instead (`E:\Archive\GitHub\dlandi\asl-bin-trash`, to delete later); `gate.sh` now refuses to build while such a folder is there. Then `strict` (passed, 0 warnings, 16:40 on an emptied output), `baseline` (reused), `build`, `proofs`: text list 0, replay 20,864 lines and sweep 515,353 lines (every cut of p31c-tw) equal to the baseline. The gate's void-run stop given its code-move case (V9). My Studio's output moved outside the repository, at the user's word, and checked by a start |
 | **The plan in all** | 08:39 | 13:42 | 5:03 | 5:00 to 5:30 | About 1:50 of it lost to the stalled builds and the cleanup, against about 1:00 gained on the tasks' estimates |
+
+## The A3 plan and the outside build outputs rule, 2026-10-19
+
+After the Play Step Plan's merge (97666623). Branch `outside-outputs-and-a3-plan`, one pull request, at the user's word. Starts and ends
+before 15:06 are approximate: the clock was not read at those boundaries.
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| The A3 plan: the code map (a read-only agent), the placed-map games found (Gambit only, all short), the plan written with its expected gains first | about 14:05 | about 14:35 | about 0:30 | The code map changed two expectations: A3 alone does not remove `Resolve`'s 23 MB, and A1 had already taken the single-board lookup's allocation |
+| The outside build outputs rule: `outside_outputs.sh` (register, list, clean; a move into a trash folder, then a background delete), its self-test, `gate.sh` registering its outputs and cleaning at `ci`, the standing rules, the README, the A3 plan's section 5 | about 14:40 | 15:06 | about 0:25 | Reworked twice at the user's word: large trees are moved, not deleted in place; only outputs made from today on are touched |
