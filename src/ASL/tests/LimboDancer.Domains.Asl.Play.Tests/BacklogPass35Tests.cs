@@ -339,6 +339,47 @@ public sealed class BacklogPass35Tests : IDisposable
     }
 
     [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task TheRoutAnswersKeptForAStateAreTheOnesReadAfterTheSurrendersBeforeTheRouts(bool disrupted)
+    {
+        // The Play Step Plan, task 2 (V6), on the board of the test above (A19.12, A20.21, the example on p. 69). The planner keeps a state's rout
+        // answers once its surrenders before the routs are decided; while they are being decided, the enemy list holds no prisoner yet, and nothing
+        // read then is kept. The first question about gb starts that decision; the answers then are those of a planner that keeps nothing, with the
+        // Disrupted rx a prisoner to gb's routes (the woods of E5 beside it offered), and a second question looks no board up.
+        terrain["E5"] = "Woods";
+        string[] states = disrupted ? ["asl:broken", "asl:disrupted"] : ["asl:broken"];
+        await SetupAt(5, "german", Unit("g1", "attacker-squad", "E3", "german"), Unit("gb", "attacker-squad", "E6", "german", "asl:broken"),
+            Unit("rx", "defender-squad", "E4", "russian", states), Unit("r9", "defender-squad", "E10", "russian"));
+        var catalog = new CountingBoardCatalog(new InMemoryBoardCatalog([Board()]));
+        var planner = new GamePlanner(store, catalog, Vocabulary, [Catalog], fireLos: new ClearLos());
+        var state = planner.Replay(store.Read(Scope)!.Events).Current!;
+        Assert.Equal("rtph", state.Phase);
+        var gb = state.Unit("gb")!;
+        var rx = state.Unit("rx")!;
+
+        var advice = planner.RoutAdvice(state, gb);
+        var mustRout = planner.MustRout(state, gb);
+        var surrender = planner.RoutSurrenderAdvice(state, rx);
+        Assert.Equal(disrupted, advice.Targets.Contains(BoardLocation.Parse(L("E5"))));
+
+        var fresh = Planner();
+        var expected = fresh.RoutAdvice(state, gb);
+        Assert.Equal(expected.Targets, advice.Targets);
+        Assert.Equal(expected.CanRout, advice.CanRout);
+        Assert.Equal(expected.Routes.Keys.Order(), advice.Routes.Keys.Order());
+        Assert.Equal(fresh.MustRout(state, gb), mustRout);
+        Assert.Equal(fresh.RoutSurrenderAdvice(state, rx), surrender);
+
+        // Asked again, the same state answers from what it kept.
+        var before = catalog.Lookups;
+        Assert.Equal(advice, planner.RoutAdvice(state, gb));
+        Assert.Equal(mustRout, planner.MustRout(state, gb));
+        Assert.Equal(surrender, planner.RoutSurrenderAdvice(state, rx));
+        Assert.Equal(before, catalog.Lookups);
+    }
+
+    [Theory]
     [InlineData("Marsh", false)]
     [InlineData("Open Ground", true)]
     public async Task TwoMarshHexesAreNotAdjacentSinceNoAdvanceEntersAMarsh(string enemyTerrain, bool adjacent)

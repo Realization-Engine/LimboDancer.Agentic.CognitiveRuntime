@@ -514,21 +514,6 @@ public sealed class BacklogPass10Tests : IDisposable
         NoReplayErrors();
     }
 
-    /// <summary>A board catalog that counts its lookups: a planner's search of the map looks a board up at every step.</summary>
-    private sealed class CountingCatalog(IBoardCatalog inner) : IBoardCatalog
-    {
-        public int Lookups
-        {
-            get; private set;
-        }
-
-        public BoardReadResult TryGetBoard(BoardRef board, string? version = null)
-        {
-            Lookups++;
-            return inner.TryGetBoard(board, version);
-        }
-    }
-
     [Theory]
     [InlineData(null, true)]
     [InlineData("asl:broken", false)]
@@ -549,7 +534,7 @@ public sealed class BacklogPass10Tests : IDisposable
         board.Stairs.Add("D5");
         board.Side("D5", HexsideDirection.North, terrain: building);
         await Setup(Squad("g1", L("D5", 1), "german"), enemyState is null ? Squad("r1", L("D5"), "russian") : Squad("r1", L("D5"), "russian", enemyState));
-        var catalog = new CountingCatalog(new InMemoryBoardCatalog([board.Handle()]));
+        var catalog = new CountingBoardCatalog(new InMemoryBoardCatalog([board.Handle()]));
         var planner = new GamePlanner(store, catalog, Vocabulary, [Catalog], fireLos: los);
         var state = planner.Replay(store.Read(Scope)!.Events).Current!;
         var unit = state.Unit("g1")!;
