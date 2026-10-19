@@ -20,7 +20,15 @@ MODE="${1:-list}"
 REGISTER="$WORK/outside-outputs.txt"
 PARENT="$(dirname "$WORK")"
 
+# Whether a text names a path, case and slashes aside (Windows paths), compared in bash: this machine's grep aborts (exit 134) whenever -i
+# and -F are given together, so the running-program check and the worktree check that used them never matched (2026-10-19, after PR 25).
+mentions() { local text="${1,,}" path="${2,,}"; text="${text//\\//}"; path="${path//\\//}"; [[ "$text" == *"$path"* ]]; }
+
 case "$MODE" in
+_mentions)
+  # For the self-test: exit 0 when the text ($2) names the path ($3).
+  mentions "$2" "$3"; exit $?
+  ;;
 register)
   [ -n "$2" ] || { echo "STOP: register takes the path of the output"; exit 2; }
   path=$(cygpath -m "$(realpath -m "$2")")
@@ -42,7 +50,7 @@ for p in "${present[@]}"; do echo "registered: $p"; done
 
 # A running program holds its DLLs: stop it first rather than move half a folder.
 running=$(powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='dotnet.exe'\" | ForEach-Object { \$_.CommandLine }" 2>/dev/null \
-  | grep -iF -f <(printf '%s\n' "${present[@]}") | head -3)
+  | while IFS= read -r line; do for p in "${present[@]}"; do mentions "$line" "$p" && { echo "$line"; break; }; done; done | head -3)
 if [ -n "$running" ]; then echo "STOP: a program runs from a registered output; stop it first:"; echo "$running"; exit 1; fi
 
 TRASH="$PARENT/asl-trash"
@@ -52,7 +60,7 @@ failed=0
 worktree=0
 worktrees=$(git -C "$R" worktree list --porcelain)
 for p in "${present[@]}"; do
-  grep -qixF "worktree $p" <<< "$worktrees" && worktree=1
+  while IFS= read -r line; do [ "${line,,}" = "worktree ${p,,}" ] && worktree=1; done <<< "$worktrees"
   destination="$TRASH/$stamp-$(basename "$p")"
   if [ -f "$p" ]; then mv "$p" "$destination" && echo "moved out: $p" || { echo "NOT MOVED: $p"; failed=1; }; continue; fi
   if powershell -NoProfile -Command "[System.IO.Directory]::Move('$(cygpath -w "$p")', '$(cygpath -w "$destination")')" 2>/dev/null; then
