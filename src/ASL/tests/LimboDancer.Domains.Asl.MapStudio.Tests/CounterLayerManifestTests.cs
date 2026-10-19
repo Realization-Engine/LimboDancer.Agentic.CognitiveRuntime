@@ -6,6 +6,7 @@ using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.Rendering;
+using LimboDancer.Domains.Asl.Units.Rendering.Tests;
 using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Tests;
@@ -220,7 +221,7 @@ public sealed class CounterLayerCases : IDisposable
             cases.AddRange(Sheets.Select(sheet => Case($"set-{entry.Set.SetId}/{sheet}", entry.Set.SetId, entry.Set.Units, sheet)));
         }
 
-        var crowded = Crowded(Library.Examples);
+        var crowded = LayerFixtures.Crowded(Library.Examples);
         cases.AddRange(Sheets.Select(sheet => Case($"crowded/{sheet}", "crowded", crowded, sheet)));
         return cases;
     }
@@ -229,60 +230,6 @@ public sealed class CounterLayerCases : IDisposable
     {
         var renderer = Library.Renderer(sheet)!;
         return new CounterLayerCase(name, cache => UnitOverlayBuilder.Build(Bd01, setId, units, renderer, cache));
-    }
-
-    /// <summary>
-    /// Every example document on bd01: eight in E4 (a count badge), two upstairs and one in the cellar there, the rest one to a hex with a facing
-    /// each; and a concealed counter, an uninspected one, a Dummy, and a draft beside them.
-    /// </summary>
-    internal static IReadOnlyList<UnitDocument> Crowded(IReadOnlyList<UnitDocument> examples)
-    {
-        var units = new List<UnitDocument>();
-        for (var index = 0; index < examples.Count; index++)
-        {
-            var location = index switch
-            {
-                < 8 => "bd01:E4:0",
-                < 10 => "bd01:E4:1",
-                10 => "bd01:E4:-1",
-                _ => $"bd01:{(char)('A' + ((index - 11) % 10))}{((index - 11) / 10) + 6}:0",
-            };
-            units.Add(examples[index] with
-            {
-                Id = $"c{index.ToString(CultureInfo.InvariantCulture)}-{examples[index].Id}",
-                Location = location,
-                Facing = index > 10 ? (UnitFacing)(index % 6) : examples[index].Facing,
-                Attached = [.. examples[index].Attached.Select(attached => attached with { Location = location })],
-            });
-        }
-
-        var squad = examples.First(example => example.Kind == "asl:squad");
-        units.Add(squad with
-        {
-            Id = "concealed-1",
-            Location = "bd01:H2:0",
-            Concealed = true
-        });
-        units.Add(squad with
-        {
-            Id = "uninspected-1",
-            Location = "bd01:H2:0",
-            Concealed = true,
-            Uninspected = true
-        });
-        units.Add(squad with
-        {
-            Id = "dummy-1",
-            Location = "bd01:I2:0",
-            Concealed = true,
-            Dummy = true
-        });
-        units.Add(squad with
-        {
-            Id = "draft:german-1",
-            Location = "bd01:J2:0"
-        });
-        return units;
     }
 
     private static string RepositoryRoot()
