@@ -46,6 +46,7 @@
     @if (Scripted is { } scripted)
     {
         <ScriptedDicePanel Queued="@([.. scripted.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scripted.Clear())" Problem="@scriptedProblem" />
+        <FollowRecordPanel Games="@([.. Live.Games().Select(scope => scope.Game)])" Start="StartFollowing" Problem="@followProblem" />
     }
 }
 else
@@ -373,6 +374,9 @@ else if (state is not null)
                 @if (Scripted is { } scriptedDice)
                 {
                     <ScriptedDicePanel Queued="@([.. scriptedDice.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scriptedDice.Clear())" Problem="@scriptedProblem" />
+                    <FollowRecordPanel Games="@([.. Live.Games().Select(scope => scope.Game)])" Source="@(followGame == gameId ? followSource : null)"
+                                       Revision="@state.Revision" Of="@followOf" Running="@(followRun is not null)" Start="StartFollowing" Next="@(() => FollowNext())"
+                                       Run="FollowRun" Problem="@followProblem" />
                 }
             </text>;
             RenderFragment proposalBlock = @<div id="play-proposal-tab">
@@ -1154,6 +1158,77 @@ else if (state is not null)
 
     /// <summary>The scripted dice of a UI test run, when this run of the Studio has them.</summary>
     private ScriptedDice? Scripted => Services.GetService<ScriptedDice>();
+
+    // The SVG memory analysis, section 13: the game this page made to follow a record, the record, and its last revision.
+    private string? followGame;
+    private string? followSource;
+    private long followOf;
+    private string? followProblem;
+    private CancellationTokenSource? followRun;
+
+    /// <summary>Makes a game that follows a record, from the record's first step, and opens it.</summary>
+    private void StartFollowing(string source)
+    {
+        var taken = Live.Games().Select(scope => scope.Game).ToHashSet(StringComparer.Ordinal);
+        var name = Enumerable.Range(1, 999).Select(number => $"{source}-follow-{number}").First(candidate => !taken.Contains(candidate));
+        var made = Live.StartFollowing(source, name);
+        if (made.Status != AppendStatus.Committed)
+        {
+            followProblem = string.Join(" ", made.Diagnostics.Select(item => item.Message));
+            return;
+        }
+
+        (followGame, followSource, followOf, followProblem) = (name, source, Live.Store.Read(new GameScope(LivePlay.Tenant, source))?.Events.Count ?? 0, null);
+        ChangeGame(new ChangeEventArgs { Value = name });
+    }
+
+    /// <summary>Adds the record's next step to the open game, which the page then reads as it does after a confirm.</summary>
+    private bool FollowNext()
+    {
+        if (followSource is null || followGame != gameId)
+        {
+            return false;
+        }
+
+        var result = Live.FollowStep(followSource, gameId);
+        followProblem = result.Status == AppendStatus.Committed ? null : string.Join(" ", result.Diagnostics.Select(item => item.Message));
+        Refresh();
+        return followProblem is null && (state?.Revision ?? followOf) < followOf;
+    }
+
+    /// <summary>Adds a step a second until the record ends, a step is refused, or Stop is pressed; paced on the server, as Replay's run is.</summary>
+    private async Task FollowRun()
+    {
+        if (followRun is { } running)
+        {
+            await running.CancelAsync();
+            return;
+        }
+
+        var mine = followRun = new CancellationTokenSource();
+        try
+        {
+            while (!mine.IsCancellationRequested && FollowNext())
+            {
+                StateHasChanged();
+                await Task.Delay(TimeSpan.FromSeconds(1), mine.Token);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Stopped.
+        }
+        finally
+        {
+            if (ReferenceEquals(followRun, mine))
+            {
+                followRun = null;
+            }
+
+            mine.Dispose();
+            StateHasChanged();
+        }
+    }
 
     private void QueueDice()
     {
@@ -7715,6 +7790,11 @@ else if (state is not null)
 
     public async ValueTask DisposeAsync()
     {
+        if (followRun is { } following)
+        {
+            await following.CancelAsync();
+        }
+
         try
         {
             if (workspaceScript is not null)

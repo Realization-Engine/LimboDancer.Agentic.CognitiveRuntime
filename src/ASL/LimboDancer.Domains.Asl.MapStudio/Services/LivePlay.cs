@@ -123,6 +123,71 @@ public sealed class LivePlay
     }
 
     /// <summary>
+    /// A new game that follows a recorded one (the SVG memory analysis, section 13): it starts with the record's first step, as play on does, and
+    /// <see cref="FollowStep"/> adds the record's steps to it one at a time, so the Play page does on each exactly the work it does after a
+    /// confirm. A development aid, offered where scripted dice are; the record is only read.
+    /// </summary>
+    public AppendResult StartFollowing(string source, string name)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(name);
+        if (Store.Read(new GameScope(Tenant, source)) is not { Events.Count: > 0 } record)
+        {
+            return new AppendResult(AppendStatus.Invalid, 0, [UnitDiagnostic.Error("FOLLOW-001", $"There is no recorded game '{source}' to follow.")]);
+        }
+
+        return PlayOn(source, StepEnd(record.Events, 0), name, $"following {source}");
+    }
+
+    /// <summary>
+    /// Adds the record's next step to a game that follows it: the events from the follower's revision that share one attempt, which is one step of
+    /// the replay (<see cref="ReplaySteps.AttemptOf"/>). Refused when the follower is no longer the record's beginning (it was played on by hand) and
+    /// when the record has no step left.
+    /// </summary>
+    public AppendResult FollowStep(string source, string follower)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(follower);
+        var scope = new GameScope(Tenant, follower);
+        if (Store.Read(new GameScope(Tenant, source)) is not { } record || Store.Read(scope) is not { } copy)
+        {
+            return new AppendResult(AppendStatus.Invalid, 0, [UnitDiagnostic.Error("FOLLOW-001", $"There is no game '{source}' followed by '{follower}'.")]);
+        }
+
+        var (all, have) = (record.Events, copy.Events);
+        for (var index = 0; index < have.Count; index++)
+        {
+            if (index >= all.Count || have[index].EventId != all[index].EventId)
+            {
+                return new AppendResult(AppendStatus.Invalid, have.Count,
+                    [UnitDiagnostic.Error("FOLLOW-002", $"'{follower}' left the record of '{source}' at revision {index + 1}: it is played on by hand now.")]);
+            }
+        }
+
+        if (have.Count >= all.Count)
+        {
+            return new AppendResult(AppendStatus.Invalid, have.Count, [UnitDiagnostic.Error("FOLLOW-003", $"'{follower}' has every step of '{source}'.")]);
+        }
+
+        GameEvent[] events = [.. all.Skip(have.Count).Take(StepEnd(all, have.Count) - have.Count).Select(item => new GameEvent(scope, item.EventId,
+            item.Revision, item.Time, item.Source, item.Type, item.Payload, item.RulePackage, item.Causes, item.Visibility))];
+        return Store.Append(scope, copy.Label, have.Count, events, Planner.Replay);
+    }
+
+    /// <summary>The revision that ends the step starting at an index: the events from it that share its attempt.</summary>
+    private static int StepEnd(IReadOnlyList<GameEvent> events, int from)
+    {
+        var attempt = ReplaySteps.AttemptOf(events[from].EventId);
+        var end = from + 1;
+        while (end < events.Count && ReplaySteps.AttemptOf(events[end].EventId) == attempt)
+        {
+            end++;
+        }
+
+        return end;
+    }
+
+    /// <summary>
     /// The names a view reads for a game's units (pass 31c, design D11), with the planner's reading of who sets up out of sight (ruling R23.3).
     /// </summary>
     public UnitNames NamesOf(GameHistory history, Perspective viewer)

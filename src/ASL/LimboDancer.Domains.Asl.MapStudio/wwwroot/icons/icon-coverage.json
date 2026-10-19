@@ -1990,6 +1990,42 @@
       ]
     },
     {
+      "name": "FollowRecordPanel",
+      "path": "Components/Play/FollowRecordPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Start following",
+          "dynamic": false,
+          "id": "follow-record-start",
+          "status": "needed",
+          "strip": "FollowRecordPanel follow-record"
+        },
+        {
+          "kind": "button",
+          "label": "Next step",
+          "dynamic": false,
+          "id": "follow-record-next",
+          "status": "needed",
+          "strip": "FollowRecordPanel follow-record"
+        },
+        {
+          "kind": "button",
+          "label": "@(Running ? \u0022Stop\u0022 : \u0022Run, a step a second\u0022)",
+          "dynamic": true,
+          "id": "follow-record-run",
+          "status": "needed",
+          "strip": "FollowRecordPanel follow-record"
+        }
+      ]
+    },
+    {
       "name": "GunArcAction",
       "path": "Components/Play/GunArcAction.razor",
       "pages": [
