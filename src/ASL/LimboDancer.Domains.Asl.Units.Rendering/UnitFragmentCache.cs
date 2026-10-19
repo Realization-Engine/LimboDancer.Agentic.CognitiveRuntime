@@ -131,6 +131,13 @@ internal static class UnitFragmentKey
 
     public static void Level(StringBuilder key, int level, int members) => key.Append("|L").Append(level).Append('#').Append(members);
 
+    /// <summary>The text before a counter's name (decision L6), which its accessible name and title begin with.</summary>
+    public static void Lead(StringBuilder key, string? lead)
+    {
+        key.Append('l');
+        Text(key, lead);
+    }
+
     public static void Document(StringBuilder key, UnitDocument document)
     {
         key.Append('{');

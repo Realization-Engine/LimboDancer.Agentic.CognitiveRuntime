@@ -149,11 +149,12 @@ public sealed class UnitLibrary(StudioOptions options)
             : UnitMapTarget.ForBoard(board.Ref, board.Render.Grid.Geometry);
     }
 
-    public UnitOverlay Overlay(StudioBoard board, UnitPlacementSet set, UnitRenderer renderer)
+    /// <summary>The set's counter layer on a board or map; <paramref name="lead"/> gives the text before each counter's name, such as its hex.</summary>
+    public UnitOverlay Overlay(StudioBoard board, UnitPlacementSet set, UnitRenderer renderer, Func<PlacedUnit, string>? lead = null)
     {
         ArgumentNullException.ThrowIfNull(board);
         ArgumentNullException.ThrowIfNull(set);
-        return UnitOverlayBuilder.Build(TargetFor(board), set.SetId, set.Units, renderer, Fragments);
+        return UnitOverlayBuilder.Build(TargetFor(board), set.SetId, set.Units, renderer, Fragments, lead);
     }
 
     /// <summary>Saves a style sheet; built-in names are kept read-only.</summary>

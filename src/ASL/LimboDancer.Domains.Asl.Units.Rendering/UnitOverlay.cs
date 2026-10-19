@@ -91,16 +91,18 @@ public static class UnitOverlayBuilder
     /// <summary>
     /// The layer of the units. With a <paramref name="cache"/>, a hex drawn before with the same inputs is taken from it rather than drawn again
     /// (option E); the layer is the same either way. The counters share their figure outlines, which the layer writes once at its end (C1).
+    /// <paramref name="lead"/> gives the text before each counter's name and title, such as its hex and the unit's own name (decision L6).
     /// </summary>
-    public static UnitOverlay Build(UnitMapTarget target, string setId, IEnumerable<UnitDocument> units, UnitRenderer renderer, UnitFragmentCache? cache = null) =>
-        Build(target, setId, units, renderer, cache, shared: true);
+    public static UnitOverlay Build(UnitMapTarget target, string setId, IEnumerable<UnitDocument> units, UnitRenderer renderer, UnitFragmentCache? cache = null,
+        Func<PlacedUnit, string>? lead = null) =>
+        Build(target, setId, units, renderer, cache, shared: true, lead);
 
     /// <summary>
     /// The layer, with the counters sharing their definitions (<paramref name="shared"/>) or each drawn whole as a standalone counter is; the
     /// equivalence oracle compares the two (the Counter Layer Design, decision L1 and section 11).
     /// </summary>
     internal static UnitOverlay Build(UnitMapTarget target, string setId, IEnumerable<UnitDocument> units, UnitRenderer renderer, UnitFragmentCache? cache,
-        bool shared)
+        bool shared, Func<PlacedUnit, string>? lead = null)
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(setId);
@@ -146,15 +148,19 @@ public static class UnitOverlayBuilder
             // A hex is a fragment of the layer (the Counter Layer Design, section 7.1): what it draws depends on its own hex and members alone.
             var levels = hexGroup.GroupBy(unit => unit.Location.Level).OrderBy(group => group.Key)
                 .Select(group => new StackLevel(group.Key, [.. group.OrderBy(unit => unit.Document.StackOrder).ThenBy(unit => unit.Document.Id, StringComparer.Ordinal)
-                    .Select(unit => (unit.Document, unit.Location))]))
+                    .Select(unit => new StackMember(unit.Document, unit.Location, null))]))
                 .ToArray();
             foreach (var level in levels)
             {
                 var suffix = LevelSuffix(level.Level);
                 for (var index = 0; index < level.Members.Length; index++)
                 {
-                    var (document, location) = level.Members[index];
-                    placed.Add(new PlacedUnit(document, location, hexGroup.Key, index < MaxShown, UnitLabels.AccessibleName(document, renderer.Vocabulary) + suffix));
+                    var member = level.Members[index];
+                    var bare = new PlacedUnit(member.Document, member.Location, hexGroup.Key, index < MaxShown,
+                        UnitLabels.AccessibleName(member.Document, renderer.Vocabulary) + suffix);
+                    var said = lead?.Invoke(bare);
+                    placed.Add(said is null ? bare : bare with { Name = said + bare.Name });
+                    level.Members[index] = member with { Lead = said };
                 }
             }
 
@@ -201,7 +207,10 @@ public static class UnitOverlayBuilder
     }
 
     /// <summary>One level of a hex's stack, its members in drawing order.</summary>
-    private sealed record StackLevel(int Level, (UnitDocument Document, BoardLocation Location)[] Members);
+    private sealed record StackLevel(int Level, StackMember[] Members);
+
+    /// <summary>A member of a stack: its document, its location, and the text before its name (decision L6).</summary>
+    private readonly record struct StackMember(UnitDocument Document, BoardLocation Location, string? Lead);
 
     private static void Hold(List<(string Id, string Path)> outlines, HashSet<string> held, IEnumerable<(string Id, string Path)> more)
     {
@@ -223,9 +232,10 @@ public static class UnitOverlayBuilder
         foreach (var level in levels)
         {
             UnitFragmentKey.Level(key, level.Level, level.Members.Length);
-            foreach (var (document, _) in level.Members)
+            foreach (var member in level.Members)
             {
-                UnitFragmentKey.Document(key, document);
+                UnitFragmentKey.Lead(key, member.Lead);
+                UnitFragmentKey.Document(key, member.Document);
             }
         }
 
@@ -254,7 +264,7 @@ public static class UnitOverlayBuilder
                 var y = center.Y + offsetY + dy;
                 top = Math.Min(top, y - (face / 2));
                 left = Math.Min(left, x - (face / 2));
-                renderer.WriteUnit(svg, members[index].Document, x, y, hexHeight, Tiers, null, suffix, warnings, layer);
+                renderer.WriteUnit(svg, members[index].Document, x, y, hexHeight, Tiers, null, suffix, warnings, layer, members[index].Lead);
             }
 
             if (members.Length > MaxShown)

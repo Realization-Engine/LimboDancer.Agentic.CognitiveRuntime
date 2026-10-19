@@ -84,17 +84,20 @@ public sealed class UnitRenderer
     /// </summary>
     public void WriteUnit(SvgWriter svg, UnitDocument document, double centerX, double centerY, double hexHeight, IReadOnlyList<DetailTier> tiers,
         string? face, string? nameSuffix, List<RenderWarning> warnings) =>
-        WriteUnit(svg, document, centerX, centerY, hexHeight, tiers, face, nameSuffix, warnings, null);
+        WriteUnit(svg, document, centerX, centerY, hexHeight, tiers, face, nameSuffix, warnings, null, null);
 
-    /// <summary>As the public <c>WriteUnit</c>; in a counter layer, <paramref name="layer"/> holds what the layer's counters share (decision L1).</summary>
+    /// <summary>
+    /// As the public <c>WriteUnit</c>; in a counter layer, <paramref name="layer"/> holds what the layer's counters share (decision L1), and
+    /// <paramref name="lead"/> is the text before the counter's name, such as its hex (decision L6).
+    /// </summary>
     internal void WriteUnit(SvgWriter svg, UnitDocument document, double centerX, double centerY, double hexHeight, IReadOnlyList<DetailTier> tiers,
-        string? face, string? nameSuffix, List<RenderWarning> warnings, UnitLayerContext? layer)
+        string? face, string? nameSuffix, List<RenderWarning> warnings, UnitLayerContext? layer, string? lead)
     {
         ArgumentNullException.ThrowIfNull(svg);
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(tiers);
         ArgumentNullException.ThrowIfNull(warnings);
-        var name = UnitLabels.AccessibleName(document, Vocabulary, face) + nameSuffix;
+        var name = lead + UnitLabels.AccessibleName(document, Vocabulary, face) + nameSuffix;
         svg.Start("g", ("data-unit-id", document.Id), ("role", "button"), ("tabindex", "0"), ("aria-label", name));
         svg.Start("title");
         svg.Text(name);
