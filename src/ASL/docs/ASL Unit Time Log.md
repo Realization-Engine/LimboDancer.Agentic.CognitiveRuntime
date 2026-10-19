@@ -1621,3 +1621,12 @@ Branch `claude/replay-reenact-scope-9c9f9a`, analysis only. Times from the shell
 | Records read (cd-guards-5, guards-06-dlandi); actions, gate, store, and dice traced; the scope written (`Designs/ASL Replay Re-enactment Scope.md`) | 19:33 | 19:41 | 0:08 | No product code; every rule package is newer than the records |
 | main merged in (the follow control, #20); section 6.1 added: what the follow control gives | 22:46 | 22:47 | 0:01 | One time log conflict, both sides kept |
 | The scope rewritten to the user's feature (re-play mode in Play until "Play on from here"); main's code checked at e6f407b6 | 22:57 | 22:59 | 0:02 | The first version scoped re-deciding steps under today's rules, which the user ruled out |
+
+## The Play step analysis, 2026-10-19
+
+On `main`, analysis only; no product code changed. Times from the shell's clock and the commits.
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| The four memory documents brought up to date; the open Play costs traced in the code (two searches in parallel), checked, and the analysis written | 07:13 | 07:22 | 0:09 | Start approximate (the backlog commit before it) |
+| P1: my Studio built; run 1 (counters, 898 revisions), run 2 (traced to 621), run 3 (the allocation trace of the step to 622); the clock benchmark; results and section 65 written | 07:25 | 07:50 | 0:25 | The 1.3 GB step is a counter artifact; the follower games deleted after |

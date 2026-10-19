@@ -2,7 +2,7 @@
 
 **Written:** 2026-10-19, at the user's word: a full analysis of the design and implementation of the fixes for what the SVG Memory Analysis left open (its section 14, "What is left"), and their cost.
 **Source:** the SVG Memory Analysis, sections 13 and 14; the Counter Layer Design, sections 7.3 and 16; the backlog, section 62. Code read on `main` at 9ff197dd: `MapStudio` (`Play.razor`, `StudioBoardCatalog`, `CampaignPlayableFootprints`, `BoardProvider`, `LivePlay`), `Play` (`GamePlanner` and its `Rout`, `Encirclement`, `Map`, `Terrain`, `CloseCombat` parts), `Rules` (`ScenarioA1RoutCalculator`, `ScenarioA1UpperLevelEncirclement`), `Units` (`GameState`), `Maps` (`InMemoryBoardCatalog`, `BoardRef`).
-**Status:** analysis only; no code is changed. Every figure below that predates option E is marked so; section 2 proposes measuring again first.
+**Status:** analysis only; no code is changed. P1 approved by the user 2026-10-19 ("re-measure Play in your Studio now, split by phase, and look at the 1.3 GB step in the same run"); measured the same morning, section 7. Sections 3 to 5 were written before it; where section 7 changes them, it says so, and section 8 revises the proposals.
 **Scope:** the server's work on a Play step. Every ASL rule stays in the Rules project (the ruling of 2026-10-05); what changes here is how often the planner and the page ask Rules the same question, and what a board lookup allocates.
 
 ## 1. What is open
@@ -175,3 +175,112 @@ Estimates only, to be replaced by task 1's baseline:
 | P2 | Which fixes | A1, B1, D, then the per-state context (A3, B2, C1, C2); not A2; not lazy hidden tabs |
 | P3 | Branches | One branch, one pull request; tasks 2 and 3 may go first as their own if the user wants an early gain |
 | P4 | Where `GameState`'s index lives (C2) | In the planner's per-state context, not in `GameState` |
+
+P1 was approved and done (section 7). P2 to P4 are restated in section 8.
+
+## 7. Measured again (2026-10-19, after PR 22)
+
+### 7.1 How
+
+My Studio (port 6670, Debug, built from `main` at 645f18c3), the Play page's follower of cd-guards-5 as the adjudicator, the page visible, a step a second paced on the server. No product code was changed for the measurement.
+
+- **Run 1, untraced:** all 898 revisions, 258 steps, with `dotnet-counters` (System.Runtime, every second). In the page, a `MutationObserver` noted the time of each change of the follower's "revision N of 898"; a step's interval less the follow loop's one-second pause is **the step's work**: the server's work after the step (the store's append, the page's refresh and render) and the page's update, together. Each step is given the phase of the revision it ends at, read from the record's `phase-changed` events.
+- **Run 2, traced:** a second follower, revisions 1 to 621, under `dotnet-trace` (`dotnet-sampled-thread-time`), split into steps by the opens of the page's `FollowNext` frame; inclusive time of named frames per step, all threads.
+- **Run 3, the allocation trace:** the second follower held at revision 621, then two steps by hand (621 to 622, 622 to 623) under `dotnet-trace` with `gc-verbose` and sampled thread time; the allocation ticks read with TraceEvent by type and by the nearest Studio frames.
+
+Scripts in my scratchpad (`split.py`, `trace_split.py`, `trace_children.py`, `allocread.cs`); the two follower games deleted after.
+
+### 7.2 A step, by phase (run 1)
+
+| Phase | Steps | Work a step: median | mean | 90th percentile | most | Process CPU a step, mean |
+|---|---|---|---|---|---|---|
+| All play | 256 | 129 ms | 185 ms | 300 ms | 1,206 ms | 207 ms |
+| **Rout Phase (rtph)** | **33** | **567 ms** | **567 ms** | **907 ms** | **1,206 ms** | **597 ms** |
+| Every other phase | 223 | 122 ms | 129 ms | 163 ms | 485 ms | 149 ms |
+| of which: Rally; Prep Fire; Movement; Defensive Fire; Advancing Fire; Advance; Close Combat | 24; 47; 19; 58; 23; 39; 13 | 116; 123; 116; 124; 127; 113; 138 ms | | | | |
+
+- **The Rout Phase is the cost.** Its steps are 13% of the game's steps and about 40% of its server time (33 x 567 ms against 223 x 129 ms). A Rout Phase step costs about 4.6 times any other; outside it, the phases differ little.
+- **Every other step is about 120 ms,** against 103 to 138 ms measured after E (Counter Layer Design, 7.3) over a mix of phases: E's figure stands.
+- **The step that closes setup** (revision 1 to 27) took 13.1 s in run 1 and 10.2 s in run 2, while the server's `FollowNext` spent about 0.35 s and the process about 0.44 s of CPU: the rest is the browser's first draw after setup closes, not the server. Outside this analysis; in the backlog (section 9).
+
+### 7.3 Where a step's time goes (run 2, inclusive, mean a step)
+
+| Frame | Rout Phase (13 steps) | Other phases (155 steps) |
+|---|---|---|
+| The page's rout obligations (`RoutObligations`) | 366 ms | (not read) |
+| The page's rout choices (`RoutChoices`) | 91 ms | (not read) |
+| of these, overlapping: the enemy list (`RoutScan.Enemies`) | 293 ms | |
+| `MustRout` | 248 ms | |
+| `UpperLevelEncircled` (all callers) | 230 ms | 13 ms |
+| `RoutAdvice` | 202 ms | |
+| `InfantryStep` | 182 ms | 4 ms |
+| `GameState.At`; `GameState.Location` | 138; 108 ms | 6; 5 ms |
+| The board lookup (`TryGetBoard`) | 262 ms (see below) | 7 ms |
+| `FollowNext` (the store's append and read, then `Refresh`) | 51 ms | 51 ms |
+| of which: `LivePlay.FollowStep` (`FileGameStore.Append` and `Read`) | 48 ms | 48 ms |
+| The Play page's render (`BuildRenderTree`) | 17 ms | 17 ms |
+| The counter layer (`UnitOverlayBuilder.Build`) | 14 ms | 14 ms |
+| The unit table's rows (`UnitRows`), with `CutOffUpstairs` inside | 14 ms | 13 ms |
+
+What it shows:
+
+- **The rout read is about 450 ms of a Rout Phase step** (366 + 91), which is the difference between a Rout Phase step and any other (567 against 122 ms).
+- **Two thirds of it is the enemy list, read again in every scan** (293 ms), and most of that is the encirclement search run for each enemy (`Encircled` inside `Enemies`, about 220 ms). Section 3.2's reading of the code holds: the multiplier is the scans, and inside each scan the A7.72 search per enemy.
+- **Outside the Rout Phase, encirclement costs 13 ms a step** (the page's `CutOffUpstairs`, once per revision), not section 14's 40 ms: that figure was mostly the rout's work, averaged over all steps.
+- **The board lookup's figure is not to be trusted at this depth.** In the trace, 260 of its 262 ms sit under `TimeProvider.GetUtcNow`; a benchmark on this machine puts that call at 32 ns (`GetTimestamp` 19 ns, `Environment.TickCount64` 4 ns), so the trace would need about 140 million calls. The sampler stops a thread at its next safe point, and a P/Invoke such as the clock's is one, so the time of the rules' own loops before the call is charged to it. The outer frames (the rout read, the enemy list, encirclement) are sound at the scale of milliseconds; the lookup's share, here and in section 14 (where `File.Exists` drew the samples the same way), is an upper bound. Its real cost is to be measured by count and stopwatch, not by this sampler.
+- **The store's append is the largest item outside the Rout Phase: 48 ms a step.** `FileGameStore.Commit` reads the game's file (`File.ReadAllBytes`, `GameStore.cs:93`), writes all of it again with the new events to a temporary file, and moves it into place (`GameStore.cs:193-194`). cd-guards-5's file is 1.2 MB at its end, so the cost grows with the game. A confirm in Play pays the same; the follower only makes it visible.
+
+### 7.4 The "1.3 GB step": a counter artifact
+
+Run 1's counters showed the same thing as the design's 7.3, at another step: the second ending at the step from 621 to 622 (entering the German Rout Phase of turn 4) gave **4,267 MB** allocated, after four seconds of 0 MB while 10 gen 0 collections ran. In that same second:
+
+- the process's working set fell from 269 to 257 MB and the GC's committed memory from 135 to 123 MB, which a 4 GB burst could not do;
+- the allocation trace of the same step (run 3, the allocation ticks, about one a 100 KB, all counted) gives **about 315 MB** for the step and its render, and 42 MB for the next step, as the counters give for an ordinary step (median about 30 MB).
+
+So the counter's total (`dotnet.gc.heap.total_allocated`, a running total the counter differences each second) is not credible at those seconds: it stalls and then jumps. The cause is not established (the Server GC's changing heap count is a candidate); the backlog entry is corrected (section 9). **What is real:** the Rout Phase steps allocate several times what others do (run 1, a mean of 238 MB against 28 MB, with the caveat above), and the step from 621 to 622 is the heaviest seen, about 315 MB and 702 ms of work.
+
+What run 3 found in those 315 MB, by the nearest Studio frames:
+
+| Source | MB | What it is |
+|---|---|---|
+| `ScenarioCards.EmbeddedText` from `GamePlanner.CardOf` | 87 | `ScenarioCardLibrary.Current` (`ScenarioCardLibrary.cs:59-65`) reads a built-in card's text from the assembly's resource on **every** call (`ScenarioCards.cs:211-222`: a stream, `ReadToEnd`, `ReplaceLineEndings`, two strings), though its comment says "a built-in card's once": the planner's card cache (`CachedCard`, `GamePlanner.CardSetup.cs:35`) is keyed after the read. Only the SHA-256 is kept (`EmbeddedSha256`) |
+| `GameState.Find`, `Objects`, `Location`, `At` | about 60 | the linear scans of section 3.5: a `Concat` iterator and a predicate closure per `Find` |
+| `FileAuditSink.Tail` from the Play page's render | 23 | the adjudicator's audit panel (`Play.razor:1143`) reads the whole audit log (`File.ReadLines(path).TakeLast(12)`, `LivePlay.cs:244-250`) on every render; the file is 5.5 MB and only grows |
+| The board lookup and `BoardHandle.Resolve` | about 40 | section 3.1's per-call allocations, and the location reads |
+| The store's write and read | about 17 | section 7.3 |
+
+## 8. The proposals, revised by the measurement
+
+Section 7 changes the order. The rout read is most of what a player waits for; two cheap finds (the card text, the audit tail) join; the board lookup and the 1.3 GB step drop in rank.
+
+| Fix | What | Expected gain | Cost to build |
+|---|---|---|---|
+| **B2 + C1** | The per-state rout and encirclement memo (section 4, B and C): the enemy list once per side per state, `MustRout`, the surrender and the advice once per unit, `Encircled` once per unit | Most of the 450 ms of a Rout Phase step: estimate a Rout Phase step from about 570 to 150 to 250 ms | About 1 h 30 with tests (the surrender window, section 4 B, is the design point) |
+| **B1** | The page asks each rout question once (section 4, B1) | Part of the same 450 ms; with B2 it is the part B2 does not reach (the page's own repeats) | About 20 min |
+| **H** (new) | Cache a built-in card's text, as its SHA-256 already is (`ScenarioCards.EmbeddedText`) | About 87 MB of a heavy Rout Phase step's 315 MB, and the time to read and copy it; also every other `CardOf` caller | About 10 min, one test |
+| **I** (new) | The audit panel's tail without reading the whole log: kept in memory as lines are written, or read back from the file's end | About 11 MB and a 5.5 MB file read per render of the adjudicator's view, growing with the log | About 20 min |
+| **D** | The unit table's rows once per revision and view (section 4, D) | About 13 ms a render | About 15 min |
+| **A1** | The allocation-free board lookup (section 4, A) | Unknown: the sampler cannot say (section 7.3); the allocation trace puts it near 40 MB in a heavy step | About 20 min, with a count of calls and a stopwatch to measure it first |
+| C2, A3 | The per-state index of objects and the map context | Inside the rout's work; measured after B2 and C1 | Held until then |
+| E | The 1.3 GB step | Dropped: a counter artifact (section 7.4) | None |
+| J (backlog) | The store rewriting the whole game file at each append (48 ms a step, growing) | Every confirm and every step of a long game | A storage design decision: section 9 |
+
+**In all:** B2, C1, B1, H, I, D, and A1 with its measurement, then the after-measurement (the same three runs) and the gate: **about 4 to 5 hours**, one branch and one pull request.
+
+**What it should buy** (estimate, against section 7's figures): a Rout Phase step from about 570 to about 200 ms; other steps from about 120 to about 100 ms (D, I, and H where `CardOf` is read); the heaviest step's allocation from about 315 MB to under 150 MB.
+
+| # | Question | Proposal |
+|---|---|---|
+| P2' | Which fixes | B2 and C1, B1, H, I, D, A1 with its measurement first; C2 and A3 only if the after-measurement asks; not A2; not lazy hidden tabs |
+| P3 | Branches | One branch, one pull request |
+| P4 | Where `GameState`'s index lives (C2, if built) | In the planner's per-state context |
+| P5 | The store's whole-file rewrite (J) | To the backlog now, for its own design; not in this pass |
+
+## 9. To the backlog
+
+Section 65 of the backlog, added with this section:
+
+- The step that closes setup takes 10 to 13 s in the browser (section 7.2).
+- The store rewrites the whole game file at every append (section 7.3, J).
+- The 1.3 GB step of section 62 is a counter artifact (section 7.4); that entry is corrected.
+- `dotnet-counters`' allocation total stalls and jumps on this Studio: allocation per step is read from allocation ticks, not from that counter, until the cause is known.
