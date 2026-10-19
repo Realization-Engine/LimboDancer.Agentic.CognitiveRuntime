@@ -753,3 +753,82 @@ The trace shows the finalizer thread spending long stretches in `SharedArrayPool
 - The plan targets the largest measured costs on both sides: the counter layer's build (73 of 87 ms on the server) and its parse, import, and layout in the browser.
 - Restated in milliseconds, as estimates to be measured in the plan's last task: E (the fragment cache) should take the server's counter work on a typical step from about 73 ms to about 10 ms; D and Q should take the browser's counter work from a whole layer of about 3,900 elements to a few hexes, which, with the rest of the page's batch unchanged, may bring a step's blocked main thread from about 285 ms to about 100 to 150 ms.
 - The rest of a step (the page's other render work, Blazor's batch, the layout of the board) is outside the plan and becomes the larger part.
+
+## 13. Where a Play step's time goes
+
+2026-10-18, at the user's word that the refactor must benefit Play as well as Replay, and that Play should follow exactly the same steps as the recorded game.
+
+### How Play was made to follow the record
+
+A recorded game holds outcomes (events), not the proposals that made them, and the Play page changes only through its own actions, so a recorded game cannot be played through Play's buttons without building something that turns each step back into clicks (scoped separately: `ASL Replay Re-enactment Scope.md`, on its own branch). For measuring, a development aid was built instead (branch `play-follow-profile`): where scripted dice are, the Play page can make a new game that follows a record. It starts with the record's first step, as Replay's "play on" does (`LivePlay.StartFollowing`), and adds the record's steps one at a time (`LivePlay.FollowStep`: the events of the next attempt, appended through the store as a confirm's are), at a step a second paced on the server. After each step the page reads the game as it does after a confirm (`Refresh`), so the work measured is Play's work after a confirm, on exactly the recorded steps. What it leaves out is the proposal and its planning before a confirm.
+
+### Measured
+
+The same tools as section 12: `dotnet-trace` (sampled thread time) on my Studio (Debug), and the page's Long Animation Frame timing. Two samples:
+
+- **A turn's steps:** a follower of cd-guards-5, viewed as the adjudicator, 51 steps in 90 s (revisions 52 to 218, the steps after setup). The follow loop ran at about one step in 1.9 s rather than one a second, because each step took about half a second of server time before its one-second pause.
+- **Setup:** a second follower held at revision 1 (the game started, nobody set up), viewed as the Russian side, ten draft squads placed by the page's own setup form.
+
+| Where | Per step | What |
+|---|---|---|
+| Server: the Play page's work after a step | about 480 ms | 24.7 s over 51 steps (the follow loop, inclusive) |
+| of which, inside the rules the page's panels ask: the board lookup's footprint check | about 320 ms (about two thirds) | `StudioBoardCatalog.TryGetBoard` calls `CampaignPlayableFootprints.Read`, which checks the disk (`File.Exists`) for a campaign footprint file each time a board is looked up; 16.4 s |
+| the panels' rules themselves, overlapping the line above | | rout obligations and advice (`RoutObligations`, `GamePlanner.RoutAdvice`) 9.1 s; units cut off upstairs (`CutOffUpstairs`, `UpperLevelEncircled`) 7.6 s; the unit table's rows (`UnitRows`) 7.7 s; each computed once per revision, for every unit |
+| of which: the counter layer | about 67 ms (14%) | `UnitOverlayBuilder.Build` through `MapLayers`, 3.4 s |
+| of which: the store's append and the game read again | about 30 ms | appending with its replay, then `Live.History` |
+| Browser: blocked main thread | about 170 ms | 48 long frames, 8.7 s over 51 steps: script 128 ms (forced layout 62 ms inside it), style and layout after 29 ms |
+| Setup: one draft placed | 37 to 83 ms, click to the redrawn counters | server about 50 ms a draft, mostly Blazor's render and the send; the counter layer about 8 ms; no frame over 50 ms; the layer grows by about 17,500 characters a squad |
+
+### What it shows
+
+- **Play is not Replay.** In Replay, the counter layer is most of a step's server work (73 of 87 ms, section 12). In Play it is 14%: a step costs about 480 ms on the server, and most of it is the rules the page's panels ask after each revision.
+- **The largest single cost is a file check.** `CampaignPlayableFootprints.Read` caches a board's footprint when its file exists, and checks the disk again on every call when it does not, which is the case for every game that is not a campaign's. The page's rules look boards up many times per revision (each hex step, adjacency, encirclement), so about two thirds of a Play step's server time is spent asking the disk for a file that is not there. Caching the absence (cleared when `Publish` writes a footprint) is a few lines.
+- **Next, the panels' rules.** Rout obligations and advice, units cut off upstairs, and the unit table are each computed for every unit at every revision, whether or not the panel that shows them is open. Computing a panel's rules only when it is shown, or once per revision in the planner instead of in the page, would take most of the rest. Some of their cost is the file check, so how much is left after the first fix is to be measured.
+- **The counter layer matters in Play too, but less:** about 67 ms of the server's 480, and part of the browser's 170 ms. The counter-layer plan stands; for Play it is not the first fix.
+- **Setup is fine at this size.** A draft costs tens of milliseconds; it grows with the drafts on the map, so a whole side's setup (30 to 50 counters) would be measured again after D.
+- **Not covered:** a proposal (planning an action before confirming it) was not measured; the planner looks boards up too, so the file check probably costs there as well.
+
+### What this means for the order of work
+
+1. The footprint check (cache the absence): Play's largest cost, a few lines, measured again with the follower.
+2. The resent layer (section 12: the set id carries the revision): Replay's whole-layer resend on unchanged steps, a few lines.
+3. The panels' rules: measured again after 1; then computed only when shown, or cached per revision in the planner.
+4. The counter-layer plan (C, D, E, Q), with its expectations in milliseconds for both pages.
+
+## 14. The first two fixes, measured
+
+2026-10-18, at the user's word: "Fix the footprint file check first: cache the absence of a footprint file (cleared when Publish writes one), with a test, then measure Play again with the follower and the set-id fix after it." Both on branch `play-follow-profile`.
+
+### The fixes
+
+- **The footprint check** (`b589e422`): `CampaignPlayableFootprints` remembers that a board has no footprint, answering from memory for five seconds before asking the disk again, and `Publish` forgets the absence at once. The five seconds were added to the user's words on purpose: my Studio and the user's share the boards folder, so a footprint published by one would otherwise stay unseen by the other until a restart. The clock is injectable; one new test (within the window an absence is answered from memory, after it the other Studio's footprint is read, and the Studio's own `Publish` is seen at once). The existing footprint, board catalog, and campaign tests pass (38).
+- **The set id** (`eff6df9f`): a game's placement set id is `game-{name}-{view}`, without `-r{revision}`; the set's label still names the revision. One new test: the later steps of a recorded game, which change no counter, give the same counter layer text. The follow, game state, Replay page, and unit studio tests pass (37).
+
+### Play, the follower of cd-guards-5 (as section 13)
+
+| | Before | After the footprint fix | Change |
+|---|---|---|---|
+| Steps in 90 s at a step a second | 51 | 70 | the server's work no longer stretches the pace as much |
+| Server: the page's work per step | about 484 ms | about 157 ms | -68% |
+| of which: the footprint lookup | about 320 ms | about 31 ms | |
+| of which: the counter layer | about 67 ms | about 46 ms | |
+| of which: rout obligations; upper-level encirclement | (inside the lookup's time) | about 41 ms; about 40 ms | now visible on their own |
+| Browser: blocked main thread per step | about 170 ms | about 114 ms | |
+
+The two runs covered different stretches of the game (revisions 52 to 218, and 52 to 295), so the per-step figures are averages over different steps; the direction and size are clear.
+
+### Replay, cd-guards-5 (as section 12), after both fixes
+
+| | Before (section 12) | After both fixes | Change |
+|---|---|---|---|
+| Counter layer swaps in the page | 39 of 40 steps | 65 of 84 steps | 19 steps (23%) changed no counter and sent nothing |
+| Browser: blocked main thread per step | about 285 ms | about 147 ms | -48% |
+| of which: script; forced layout inside it; style and layout after | 187; 102; 79 ms | 100; 50; 37 ms | |
+| Server: rendering the Replay page per step | about 87 ms | about 63 ms | -28% |
+| of which: building the counter layer | about 73 ms | about 53 ms | still built every step: the fix stops the send, not the build |
+
+### What is left
+
+- **Play:** about 157 ms of server work a step, most of it the page's render: the counter layer (about 46 ms), rout obligations and advice (about 41 ms), upper-level encirclement (about 40 ms), and the footprint lookup's remaining dictionary work (about 31 ms). The panels' rules are the next candidate (section 13, step 3).
+- **Replay:** the counter layer is still built on every step (about 53 ms) and, when any counter changed, sent and redrawn whole: the counter-layer plan (E for the build, D and Q for the send and the browser).
+- These measurements are of my Studio's Debug build, with the page visible but often not in front; the browser figures are long frames only (over 50 ms).

@@ -117,7 +117,10 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
         ArgumentNullException.ThrowIfNull(perspective);
         var history = entry.History ?? throw new InvalidOperationException($"{entry.Name} did not replay.");
         var view = ViewOf(history, revision, perspective);
-        var set = GameDocuments.PlacementSet(view, $"game-{entry.Name.Replace('.', '-')}-{perspective.Name}-r{revision}",
+
+        // The id names the game and the view, not the revision (the label says that): it is written on the counter layer, and with the revision in
+        // it the layer's text changed at every step, so the map resent the whole layer when no counter had changed (the SVG memory analysis, 12).
+        var set = GameDocuments.PlacementSet(view, $"game-{entry.Name.Replace('.', '-')}-{perspective.Name}",
             $"{entry.Label}: {perspective.Name}, revision {revision}", units.Vocabulary, Catalogs);
         return new GameProjection(entry, view, set);
     }

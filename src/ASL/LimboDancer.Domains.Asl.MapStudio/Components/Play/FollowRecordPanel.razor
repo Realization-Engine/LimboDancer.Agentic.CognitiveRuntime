@@ -1,0 +1,68 @@
+@* The SVG memory analysis, section 13: a development aid beside the scripted dice. A new game follows a recorded one a step at a time, so the
+   Play page does on each step the work it does after a confirm, and Play's cost can be measured on exactly the recorded steps. *@
+<div class="toolbar" id="follow-record">
+    <span class="toolbar-note">
+        <strong>Follow a recorded game (development only).</strong>
+        <span class="muted">A new game repeats the record's steps, one at a time; play on by hand at any step to leave it.</span>
+    </span>
+    @if (Source is null)
+    {
+        <label>Record
+            <select id="follow-record-source" value="@chosen" @onchange="@(args => chosen = args.Value as string ?? string.Empty)">
+                <option value="">choose a game</option>
+                @foreach (var game in Games)
+                {
+                    <option value="@game">@game</option>
+                }
+            </select>
+        </label>
+        <button id="follow-record-start" disabled="@(chosen.Length == 0)" @onclick="@(() => Start.InvokeAsync(chosen))">Start following</button>
+    }
+    else
+    {
+        <span id="follow-record-progress">Following @Source: revision @Revision of @Of.</span>
+        <button id="follow-record-next" disabled="@(Running || Revision >= Of)" @onclick="Next">Next step</button>
+        <button id="follow-record-run" disabled="@(!Running && Revision >= Of)" @onclick="Run">@(Running ? "Stop" : "Run, a step a second")</button>
+    }
+    @if (Problem is { } problem)
+    {
+        <span class="warning" id="follow-record-problem">@problem</span>
+    }
+</div>
+
+@code {
+    private string chosen = string.Empty;
+
+    /// <summary>The recorded games that may be followed.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Games { get; set; } = [];
+
+    /// <summary>The record the open game follows; null when it follows none.</summary>
+    [Parameter]
+    public string? Source { get; set; }
+
+    /// <summary>The open game's revision.</summary>
+    [Parameter]
+    public long Revision { get; set; }
+
+    /// <summary>The record's last revision.</summary>
+    [Parameter]
+    public long Of { get; set; }
+
+    /// <summary>Whether the steps are being added at a pace.</summary>
+    [Parameter]
+    public bool Running { get; set; }
+
+    [Parameter]
+    public EventCallback<string> Start { get; set; }
+
+    [Parameter]
+    public EventCallback Next { get; set; }
+
+    [Parameter]
+    public EventCallback Run { get; set; }
+
+    /// <summary>Why the last request was refused; null when it was not.</summary>
+    [Parameter]
+    public string? Problem { get; set; }
+}
