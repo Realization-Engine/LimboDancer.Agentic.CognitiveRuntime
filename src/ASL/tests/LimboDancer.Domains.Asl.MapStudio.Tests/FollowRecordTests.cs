@@ -126,6 +126,25 @@ public sealed class FollowRecordTests : IDisposable
         Assert.Equal("FOLLOW-001", Assert.Single(live.FollowStep("village", "nowhere").Diagnostics).Code);
     }
 
+    // The SVG memory analysis, section 12: the counter layer's set id named the revision, so its text changed at every step and the map resent
+    // the whole layer although no counter had changed. Steps that change no counter now give the same layer, which the map does not send again.
+    [Fact]
+    public void AStepThatChangesNoCounterGivesTheSameCounterLayer()
+    {
+        Record();
+        var maps = context.Services.GetRequiredService<GameMaps>();
+        var history = live.History("village")!;
+        var ends = Events("village").Select((item, index) => (Attempt: ReplaySteps.AttemptOf(item.EventId), Revision: (long)index + 1))
+            .GroupBy(item => item.Attempt).Select(group => group.Max(item => item.Revision)).ToArray();
+        string? Layer(long revision) => maps.Layers("village", history.At(revision)!.Map, Perspective.Adjudicator, revision).Units;
+
+        // The phase ends after setup move no counter.
+        var layers = ends.Skip(1).Select(Layer).ToArray();
+        Assert.True(layers.Length >= 3);
+        Assert.All(layers, layer => Assert.Equal(layers[0], layer));
+        Assert.DoesNotContain("-r" + ends[^1].ToString(System.Globalization.CultureInfo.InvariantCulture) + "\"", layers[^1], StringComparison.Ordinal);
+    }
+
     [Fact]
     public void ThePlayPageFollowsARecordWhereScriptedDiceAre()
     {
