@@ -90,9 +90,17 @@ public static class UnitOverlayBuilder
 
     /// <summary>
     /// The layer of the units. With a <paramref name="cache"/>, a hex drawn before with the same inputs is taken from it rather than drawn again
-    /// (option E); the layer is the same either way.
+    /// (option E); the layer is the same either way. The counters share their figure outlines, which the layer writes once at its end (C1).
     /// </summary>
-    public static UnitOverlay Build(UnitMapTarget target, string setId, IEnumerable<UnitDocument> units, UnitRenderer renderer, UnitFragmentCache? cache = null)
+    public static UnitOverlay Build(UnitMapTarget target, string setId, IEnumerable<UnitDocument> units, UnitRenderer renderer, UnitFragmentCache? cache = null) =>
+        Build(target, setId, units, renderer, cache, shared: true);
+
+    /// <summary>
+    /// The layer, with the counters sharing their definitions (<paramref name="shared"/>) or each drawn whole as a standalone counter is; the
+    /// equivalence oracle compares the two (the Counter Layer Design, decision L1 and section 11).
+    /// </summary>
+    internal static UnitOverlay Build(UnitMapTarget target, string setId, IEnumerable<UnitDocument> units, UnitRenderer renderer, UnitFragmentCache? cache,
+        bool shared)
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(setId);
@@ -131,6 +139,8 @@ public static class UnitOverlayBuilder
         var svg = new SvgWriter();
         svg.Start("g", ("id", "layer-units"), ("data-face-size", SvgValue.Number(reference)), ("data-unit-set", setId));
         var placed = new List<PlacedUnit>();
+        var outlines = new List<(string Id, string Path)>();
+        var held = new HashSet<string>(StringComparer.Ordinal);
         foreach (var hexGroup in located.GroupBy(unit => unit.Hex).OrderBy(group => group.Key.Column).ThenBy(group => group.Key.Row))
         {
             // A hex is a fragment of the layer (the Counter Layer Design, section 7.1): what it draws depends on its own hex and members alone.
@@ -151,22 +161,39 @@ public static class UnitOverlayBuilder
             var center = target.Geometry.CenterDot(hexGroup.Key);
             if (cache is null)
             {
-                WriteHex(svg, hexGroup.Key, center, hexHeight, levels, renderer, warnings);
+                var context = shared ? new UnitLayerContext() : null;
+                WriteHex(svg, hexGroup.Key, center, hexHeight, levels, renderer, warnings, context);
+                Hold(outlines, held, context?.Outlines ?? []);
                 continue;
             }
 
-            var key = Key(hexGroup.Key, center, hexHeight, levels, renderer);
+            var key = Key(hexGroup.Key, center, hexHeight, levels, renderer, shared);
             if (!cache.TryGet(key, out var fragment))
             {
                 var hexSvg = new SvgWriter();
                 var hexWarnings = new List<RenderWarning>();
-                WriteHex(hexSvg, hexGroup.Key, center, hexHeight, levels, renderer, hexWarnings);
-                fragment = new UnitFragmentCache.Fragment(hexSvg.ToString(), [.. hexWarnings]);
+                var context = shared ? new UnitLayerContext() : null;
+                WriteHex(hexSvg, hexGroup.Key, center, hexHeight, levels, renderer, hexWarnings, context);
+                fragment = new UnitFragmentCache.Fragment(hexSvg.ToString(), [.. hexWarnings], [.. context?.Outlines ?? []]);
                 cache.Add(key, fragment);
             }
 
             svg.Fragment(fragment.Markup);
             warnings.AddRange(fragment.Warnings);
+            Hold(outlines, held, fragment.Outlines);
+        }
+
+        // The figure outlines the counters refer to, each once (option C1). A reference may find an element later in the document, so the
+        // definitions come after the counters, and a hex drawn earlier contributes its outlines as a hex drawn now does.
+        if (outlines.Count > 0)
+        {
+            svg.Start("defs", ("data-figures", "true"));
+            foreach (var (id, path) in outlines)
+            {
+                svg.Empty("path", ("id", id), ("d", SvgValue.Trusted(path)));
+            }
+
+            svg.End();
         }
 
         svg.End();
@@ -176,10 +203,22 @@ public static class UnitOverlayBuilder
     /// <summary>One level of a hex's stack, its members in drawing order.</summary>
     private sealed record StackLevel(int Level, (UnitDocument Document, BoardLocation Location)[] Members);
 
+    private static void Hold(List<(string Id, string Path)> outlines, HashSet<string> held, IEnumerable<(string Id, string Path)> more)
+    {
+        foreach (var outline in more)
+        {
+            if (held.Add(outline.Id))
+            {
+                outlines.Add(outline);
+            }
+        }
+    }
+
     /// <summary>Everything <see cref="WriteHex"/> reads for a hex, as the fragment cache's key.</summary>
-    private static string Key(HexIndex hex, PixelPoint center, double hexHeight, StackLevel[] levels, UnitRenderer renderer)
+    private static string Key(HexIndex hex, PixelPoint center, double hexHeight, StackLevel[] levels, UnitRenderer renderer, bool shared)
     {
         var key = new System.Text.StringBuilder(256 * levels.Sum(level => level.Members.Length));
+        key.Append(shared ? 'S' : 'W');
         UnitFragmentKey.Hex(key, renderer, hex.Column, hex.Row, center.X, center.Y, hexHeight);
         foreach (var level in levels)
         {
@@ -197,7 +236,7 @@ public static class UnitOverlayBuilder
 
     /// <summary>A hex's stacks, every level with its count badge and level tab: one fragment of the layer.</summary>
     private static void WriteHex(SvgWriter svg, HexIndex hex, PixelPoint center, double hexHeight, StackLevel[] levels, UnitRenderer renderer,
-        List<RenderWarning> warnings)
+        List<RenderWarning> warnings, UnitLayerContext? layer)
     {
         for (var levelIndex = 0; levelIndex < levels.Length; levelIndex++)
         {
@@ -215,7 +254,7 @@ public static class UnitOverlayBuilder
                 var y = center.Y + offsetY + dy;
                 top = Math.Min(top, y - (face / 2));
                 left = Math.Min(left, x - (face / 2));
-                renderer.WriteUnit(svg, members[index].Document, x, y, hexHeight, Tiers, null, suffix, warnings);
+                renderer.WriteUnit(svg, members[index].Document, x, y, hexHeight, Tiers, null, suffix, warnings, layer);
             }
 
             if (members.Length > MaxShown)

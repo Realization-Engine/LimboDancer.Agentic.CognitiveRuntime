@@ -8,4 +8,9 @@
     <EmbeddedResource Include="..\units\palettes\*.palette.json" LogicalName="Palettes.%(Filename)%(Extension)" Link="Palettes\%(Filename)%(Extension)" WithCulture="false" />
     <EmbeddedResource Include="..\units\figures\figures.json" LogicalName="Figures.figures.json" Link="Figures\figures.json" WithCulture="false" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- The counter layer's equivalence oracle builds the layer both ways (Counter Layer Design, section 11). -->
+    <InternalsVisibleTo Include="LimboDancer.Domains.Asl.Units.Rendering.Tests" />
+    <InternalsVisibleTo Include="LimboDancer.Domains.Asl.MapStudio.Tests" />
+  </ItemGroup>
 </Project>

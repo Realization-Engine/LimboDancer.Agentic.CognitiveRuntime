@@ -83,7 +83,12 @@ public sealed class UnitRenderer
     /// accessible name, and one <c>data-tier</c> group per requested tier, centered on the point.
     /// </summary>
     public void WriteUnit(SvgWriter svg, UnitDocument document, double centerX, double centerY, double hexHeight, IReadOnlyList<DetailTier> tiers,
-        string? face, string? nameSuffix, List<RenderWarning> warnings)
+        string? face, string? nameSuffix, List<RenderWarning> warnings) =>
+        WriteUnit(svg, document, centerX, centerY, hexHeight, tiers, face, nameSuffix, warnings, null);
+
+    /// <summary>As the public <c>WriteUnit</c>; in a counter layer, <paramref name="layer"/> holds what the layer's counters share (decision L1).</summary>
+    internal void WriteUnit(SvgWriter svg, UnitDocument document, double centerX, double centerY, double hexHeight, IReadOnlyList<DetailTier> tiers,
+        string? face, string? nameSuffix, List<RenderWarning> warnings, UnitLayerContext? layer)
     {
         ArgumentNullException.ThrowIfNull(svg);
         ArgumentNullException.ThrowIfNull(document);
@@ -97,7 +102,7 @@ public sealed class UnitRenderer
         foreach (var tier in tiers)
         {
             svg.Start("g", ("data-tier", TierName(tier)));
-            WriteFace(svg, document, null, centerX, centerY, FaceSize(document, tier, hexHeight), tier, face, warnings);
+            WriteFace(svg, document, null, centerX, centerY, FaceSize(document, tier, hexHeight), tier, face, warnings, layer);
             svg.End();
         }
 
@@ -127,7 +132,7 @@ public sealed class UnitRenderer
     }
 
     private void WriteFace(SvgWriter svg, UnitDocument document, StyleSubject? owner, double centerX, double centerY, double size, DetailTier tier,
-        string? forcedFace, List<RenderWarning> warnings)
+        string? forcedFace, List<RenderWarning> warnings, UnitLayerContext? layer)
     {
         var (subject, style) = FaceStyle(document, owner, tier, forcedFace);
         var side = document.Side ?? owner?.Document.Side;
@@ -164,7 +169,7 @@ public sealed class UnitRenderer
                 var x = centerX + (size * 0.18) + ((index - ((count - 1) / 2.0)) * attachedSize * 0.92);
                 var y = centerY + (size / 2) + (attachedSize * 0.18);
                 svg.Start("g", ("data-attached-id", attached.Id));
-                WriteFace(svg, attached, subject, x, y, attachedSize, tier, null, warnings);
+                WriteFace(svg, attached, subject, x, y, attachedSize, tier, null, warnings, layer);
                 svg.End();
             }
         }
@@ -223,11 +228,12 @@ public sealed class UnitRenderer
         if (style["glyph"] is { } watermark && evaluator.Glyph(watermark) is { } mark)
         {
             svg.Start("g", ("opacity", "0.25"));
-            Glyphs.Draw(svg, mark.Name, mark.Argument, inner, textColor, document.Figures(Vocabulary) ?? 1, Figures, document.Side, fill, key: document.Id + "-mark");
+            Glyphs.Draw(svg, mark.Name, mark.Argument, inner, textColor, document.Figures(Vocabulary) ?? 1, Figures, document.Side, fill, null,
+                document.Id + "-mark", layer);
             svg.End();
         }
 
-        WriteSlots(svg, subject, owner, style, evaluator, inner, size, tier, textColor, side, fill, warnings);
+        WriteSlots(svg, subject, owner, style, evaluator, inner, size, tier, textColor, side, fill, warnings, layer);
         if (document.Facing is { } markFacing && evaluator.Ident(style["direction-mark"]) == "arrow")
         {
             DirectionArrow(svg, markFacing, centerX, centerY, size, evaluator.Color(style["direction-color"]) ?? stroke, filled: true);
@@ -325,7 +331,7 @@ public sealed class UnitRenderer
     }
 
     private void WriteSlots(SvgWriter svg, StyleSubject subject, StyleSubject? owner, ComputedStyle face, Evaluator faceEvaluator, Box inner, double size,
-        DetailTier tier, string textColor, string? side, string faceFill, List<RenderWarning> warnings)
+        DetailTier tier, string textColor, string? side, string faceFill, List<RenderWarning> warnings, UnitLayerContext? layer)
     {
         if (face["face-template"] is not { Count: > 0 } template)
         {
@@ -420,7 +426,7 @@ public sealed class UnitRenderer
                 var ground = evaluator.Color(slotStyle["fill"]) ?? faceFill;
                 var piping = evaluator.Color(slotStyle["figure-piping"]);
                 if (!Glyphs.Draw(svg, glyph.Name, glyph.Argument, box, color, subject.Document.Figures(Vocabulary) ?? 1, Figures, subject.Document.Side, ground, piping,
-                    subject.Document.Id))
+                    subject.Document.Id, layer))
                 {
                     warnings.Add(new(subject.Document.Id, $"Slot '{region.Name}': '{glyph.Name}' is not a glyph."));
                 }

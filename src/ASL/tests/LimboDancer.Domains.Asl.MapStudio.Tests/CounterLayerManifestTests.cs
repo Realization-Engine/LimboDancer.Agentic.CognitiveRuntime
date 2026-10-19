@@ -89,6 +89,18 @@ public sealed class CounterLayerManifestTests(CounterLayerCases cases) : IClassF
         }
     }
 
+    /// <summary>
+    /// The equivalence oracle over the games (the Counter Layer Design, section 11): every fourth layer of the manifest, expanded, is the layer
+    /// with every counter drawn whole. The shared definitions change how the layer is written, never what it draws.
+    /// </summary>
+    [Fact]
+    public void TheSharedLayerDrawsWhatTheWholeCountersDraw()
+    {
+        var wrong = cases.All.Where((_, index) => index % 4 == 0)
+            .Where(item => LayerOracle.Expanded(item.Build(null).Svg) != LayerOracle.Expanded(item.Whole().Svg)).Select(item => item.Name).ToArray();
+        Assert.True(wrong.Length == 0, $"{wrong.Length} layers draw otherwise than their whole counters, the first: {string.Join(", ", wrong.Take(5))}");
+    }
+
     /// <summary>The Studio's one cache, used by several circuits at once: two games stepped on four threads, each layer the manifest's.</summary>
     [Fact]
     public void ManyCallersAtOnceGetTheManifestsLayers()
@@ -229,7 +241,8 @@ public sealed class CounterLayerCases : IDisposable
     private CounterLayerCase Case(string name, string setId, IReadOnlyList<UnitDocument> units, string sheet)
     {
         var renderer = Library.Renderer(sheet)!;
-        return new CounterLayerCase(name, cache => UnitOverlayBuilder.Build(Bd01, setId, units, renderer, cache));
+        return new CounterLayerCase(name, cache => UnitOverlayBuilder.Build(Bd01, setId, units, renderer, cache),
+            () => UnitOverlayBuilder.Build(Bd01, setId, units, renderer, null, shared: false));
     }
 
     private static string RepositoryRoot()
@@ -246,5 +259,8 @@ public sealed class CounterLayerCases : IDisposable
     }
 }
 
-/// <summary>A manifest case: its name, and the overlay it builds, with a fragment cache or without one.</summary>
-public sealed record CounterLayerCase(string Name, Func<UnitFragmentCache?, UnitOverlay> Build);
+/// <summary>
+/// A manifest case: its name, the overlay it builds (with a fragment cache or without one), and the same layer with every counter drawn whole,
+/// as a standalone counter is, for the equivalence oracle.
+/// </summary>
+public sealed record CounterLayerCase(string Name, Func<UnitFragmentCache?, UnitOverlay> Build, Func<UnitOverlay> Whole);
