@@ -2,7 +2,7 @@
 
 **Written:** 2026-10-19, at the user's word: a full analysis of the design and implementation of the fixes for what the SVG Memory Analysis left open (its section 14, "What is left"), and their cost. Revised the same day after the measurement the user approved (P1), so that every section agrees with it.
 **Source:** the SVG Memory Analysis, sections 13 and 14; the Counter Layer Design, sections 7.3 and 16; the backlog, section 62; the measurement of section 2. Code read on `main` at 9ff197dd: `MapStudio` (`Play.razor`, `StudioBoardCatalog`, `CampaignPlayableFootprints`, `BoardProvider`, `LivePlay`), `Play` (`GamePlanner` and its `Rout`, `Encirclement`, `Map`, `Terrain`, `CloseCombat`, `CardSetup` parts, `ScenarioCards`, `ScenarioCardLibrary`, `GameStore`), `Rules` (`ScenarioA1RoutCalculator`, `ScenarioA1UpperLevelEncirclement`), `Units` (`GameState`), `Maps` (`InMemoryBoardCatalog`, `BoardRef`).
-**Status:** analysis and measurement; no product code is changed. P1 (measure again) approved and done 2026-10-19. The fixes (section 6) wait for the user's ruling.
+**Status:** analysis and measurement. P1 (measure again) approved and done 2026-10-19; P2 to P5 approved the same day. The fixes are built on branch `play-step` (the Play Step Plan, tasks 1 to 7) and measured again in section 8.
 **Scope:** the server's work on a Play step. Every ASL rule stays in the Rules project (the ruling of 2026-10-05); what changes here is how often the planner and the page ask Rules the same question, and what a step reads, writes, and allocates around them.
 
 ## 1. What is open
@@ -262,3 +262,66 @@ Section 65 of the backlog:
 - `dotnet-counters`' allocation total stalls and jumps on the Studio (section 2.5): allocation per step is read from allocation ticks until the cause is known.
 
 Section 62's 1.3 GB entry is corrected: a counter artifact.
+
+## 8. Measured after the fixes (2026-10-19, branch `play-step`)
+
+The Play Step Plan's tasks 1 to 7 (C1, B2, B1, H, I, D, A1), measured as section 2 was: my Studio on port 6670, Debug, built from `play-step` at f95674a6, the follower of cd-guards-5 as the adjudicator, the page in front. The scripts are in `code-builders/diagnostics/play-step/`. Each task's own Studio test is in the plan's time log; this section is the whole measurement of task 8.
+
+**Behaviour:** the last pass of the plan's task 8, through the German Rout Phase of turn 4 step by step (729 to 741) as the German side and as the Russian side, and each task's own pass as the adjudicator at 621, 622, and 729 to 744: the Rout panel's obligations, choices, and routes, and the unit table's rows, read the same in my Studio and in the "before" Studio built from `main` (port 6671), by a hash of each list's text.
+
+### 8.1 A step, by phase (run 1, all 898 revisions, 256 steps of play)
+
+| Phase | Steps | Work a step: median | mean | 90th percentile | most | Process CPU a step, mean |
+|---|---|---|---|---|---|---|
+| All play | 256 | 108 ms (129) | 128 ms (185) | 176 ms (300) | 646 ms (1,206) | 137 ms (207) |
+| **Rout Phase (rtph)** | **33** | **258 ms (567)** | **262 ms (567)** | **387 ms (907)** | **646 ms (1,206)** | **276 ms (597)** |
+| Every other phase | 223 | 104 ms (122) | 108 ms (129) | 139 ms (163) | 232 ms (485) | 117 ms (149) |
+
+Section 2.2's figures are in brackets. A Rout Phase step costs about 2.5 times any other, where it cost 4.6 times; the plan's estimate was 150 to 250 ms (section 5.3), so the median sits at the estimate's upper end. Every other step is about 18 ms cheaper, more than D and I were expected to give alone; the two short runs per task could not see the difference (their run-to-run noise was ±40 ms).
+
+### 8.2 Where a Rout Phase step's time goes (run 2, traced to 621; 13 Rout Phase steps, 155 others)
+
+| Frame, inclusive, mean a step | Rout Phase: before (section 2.3) | after |
+|---|---|---|
+| The page's rout read (`RoutObligations`, and `RoutChoices` folded into it by B1) | 366 + 91 ms | 125 ms |
+| the enemy lists (`RoutScan.Enemies`) | 293 ms | 3.6 ms |
+| `MustRout` | 248 ms | 6.6 ms |
+| `UpperLevelEncircled`, all callers | 230 ms | 11.7 ms (the page's `CutOffUpstairs`, once a revision) |
+| `RoutAdvice` | 202 ms | 117 ms |
+| `InfantryStep` | 182 ms | 82 ms |
+| `GameState.At` | 138 ms | 7.5 ms |
+| `FollowNext` (the store's append and read, then `Refresh`) | 51 ms | 47 ms |
+| The unit table's rows | 14 ms | 12 ms (once a revision now; before, once a render) |
+
+**What is left in the Rout Phase is `RoutAdvice`'s own searches:** about 117 ms a step, nearly all of the page's rout read, each a `RoutReach` over the map whose steps ask `InfantryStep`. The searches are not repeated any more (each runs once a unit and state); they are the work itself. The board lookup is charged 116 ms in this trace, all of it under `CampaignPlayableFootprints.Read`'s clock read, which section 2.4 showed the sampler cannot be trusted on; task 7's count (section 8.4) is the figure to use.
+
+**A stall outside this work:** in run 2 one step's `LivePlay.FollowStep` (the store's append, revision 420 to 426) took 23 s; every other step's took about 45 ms, and run 1's step there took 1.1 s in all. The cause is not established; a file the store reads or writes held by another process (the case of backlog 64, S2) is the likeliest. In the backlog (section 65).
+
+### 8.3 The heavy step's allocation (run 3, the step from 621 to 622)
+
+| | MB |
+|---|---|
+| Section 2.5, before the fixes | about 315 |
+| After tasks 1 to 5 (H and I) | 135 (no `EmbeddedText`, no `FileAuditSink.Tail`) |
+| After task 7 (A1) | **101** |
+
+The plan's estimate was under 150 MB. What is left, by the nearest Studio frames: `BoardHandle.Resolve` under `GamePlanner.Step` (23 MB), `InfantryStep`'s own facts and strings (about 20 MB), `MapInPlay.Board`'s capturing lambda at the call site in Units (about 7 MB), and the store's write and read (about 10 MB).
+
+### 8.4 The board lookup, counted (task 7)
+
+The harness the plan named (a Release console that builds the planner as the Studio does) did not build within its 30-minute box: its build on its own output path printed nothing for 35 minutes (as the first test run on a new output path did in task 3; backlog section 65). The plan's fallback was used: a counting, timing decorator around `StudioBoardCatalog.TryGetBoard` in my Studio's build only, never committed, read through the follower after tasks 1 to 6.
+
+| Step (the page's work at the state it reaches) | Lookups | Their time | Share of the step's work |
+|---|---|---|---|
+| 728 to 729 | 105,958 | 113 ms | about 10% |
+| 729 to 731 | 94,736 | 131 ms | about 17% |
+| 731 to 732 | 72,450 | 81 ms | about 15% |
+| 621 and 622 | 82,461 and 66,728 | 80 and 62 ms | about 13% |
+| 809 | 76,658 | 105 ms | about 13% |
+| Any step outside the Rout Phase | about 480 | under 1.5 ms | under 1% |
+
+About 1.1 µs a call, the decorator's two clock reads included. More than a few per cent, so A1 was built; its gain shows in allocation (section 8.3), not separately in time, since the short runs' noise is larger than the 10 to 20 ms it can save.
+
+### 8.5 C2 and A3 (the plan's task 8 question)
+
+The Rout Phase step is at the estimate's upper end, not well above it, so neither is needed for the plan's goal. If a later pass wants the Rout Phase cheaper still, the trace points at **A3** (the map context per state) before C2: what is left is `RoutAdvice`'s searches, whose cost per step is `InfantryStep` (82 ms), with `BoardHandle.Resolve` and the board lookup inside each step; `GameState.At`, which C2 would index, is down to 7.5 ms. Neither is built in this branch (ruling P2); A3 is proposed to the user in the pull request, not decided here.
