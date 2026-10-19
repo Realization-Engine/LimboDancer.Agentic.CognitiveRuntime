@@ -2,6 +2,8 @@
 
 Analysis only, 2026-10-18, rewritten the same day after the user's corrections. No product code. Branch `claude/replay-reenact-scope-9c9f9a`, up to date with main at e6f407b6 (#20).
 
+Status: kept for later at the user's word (2026-10-18); no proposal is approved. Followed up as backlog section 63 (`ASL Unit Backlog.md`).
+
 ## 1. The feature
 
 As the user stated it:

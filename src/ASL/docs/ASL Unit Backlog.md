@@ -1177,3 +1177,11 @@ The ASL Unit Figure Art Plan (`src/ASL/docs/Plans`), 2026-10-17: nationality fig
 | Early-war and late-war kit (the American M1917 against the M1, the Soviet SSh-36 against the SSh-40, the British Mk III) | Figure art plan, decision F6 | (display) | The scenario's date reaching the renderer | One helmet per side, the war's most common. |
 | Japanese and Chinese figures | Figure art plan, decision F5 | A25 | Japanese or Chinese units in the catalog | The vocabulary has a Japanese side; it draws the standing figure with no kit. |
 | Icons for the Unit Lab's Unit and Art tabs and the Art tab's Coverage, Prompts, and Batches | Figure art plan, stage 3 | (UI) | An Icon Lab batch | The Icon Lab's Coverage lists them as needing an icon; they keep their words. |
+
+## 63. Added by the replay re-enactment scope
+
+The ASL Replay Re-enactment Scope (`src/ASL/docs/Designs`), 2026-10-18: analysis kept for later at the user's word; no proposal approved.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Re-play mode on the Play page: a recorded game shown from its first event, a step at a time, until "Play on from here" switches it to live play (option R recommended, W the alternative; questions U1 to U3) | The user, 2026-10-18: "save this analysis for later" | (UI) | The user's ruling on option R and U1 to U3, then a design and a plan | Replay's "Play on from here" makes a live game at a step; the development-only follow control re-plays by copying steps into a new game. |
