@@ -294,7 +294,13 @@ public static class UnitOverlayBuilder
     private static string Key(HexIndex hex, PixelPoint center, double hexHeight, StackLevel[] levels, UnitRenderer renderer, UnitFaceMode? faces)
     {
         var key = new System.Text.StringBuilder(256 * levels.Sum(level => level.Members.Length));
-        key.Append(faces switch { null => 'W', UnitFaceMode.InPlace => 'S', UnitFaceMode.AtOrigin => 'O', _ => 'Q' });
+        key.Append(faces switch
+        {
+            null => 'W',
+            UnitFaceMode.InPlace => 'S',
+            UnitFaceMode.AtOrigin => 'O',
+            _ => 'Q',
+        });
         UnitFragmentKey.Hex(key, renderer, hex.Column, hex.Row, center.X, center.Y, hexHeight);
         foreach (var level in levels)
         {
