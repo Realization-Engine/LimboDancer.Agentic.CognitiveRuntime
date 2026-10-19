@@ -55,6 +55,8 @@ The Play Step Plan's rule, unchanged (the user, 2026-10-19): **implement, build,
 | The "before" Studio: a worktree of `main` and its build | `E:/Archive/GitHub/dlandi/before-main` | task 0, as the worktree is added | the same; the worktree is moved out and pruned |
 | The baseline's copy of `main` and the proof tools | `asl-gate-work/main-src`, `main.tar`, `main-bin`, `proof`, `proof-gate`, `proof-main` | `gate.sh`, as it builds them | the same |
 | The measurement decorator of task 2 | my Studio's build only (above) | (inside my Studio's build) | with it |
+| **As built:** my Studio's build, in a new folder, since the user keeps `studio-6670` as it stands | `asl-gate-work/studio-a3` | task 2, at its first build | the same |
+| **As built:** `main` built as my Studio is, for task 4's same-hour baseline | `asl-gate-work/studio-main-a3` | task 4, as it was built | the same |
 
 Nothing is built under MapStudio's `bin` but the gate's `bin/gate` and the user's `bin/Debug`.
 
@@ -240,3 +242,25 @@ About 35 ms a Rout Phase step saved by 3b, against a threshold of 15. Other step
 three views. **Tests:** task 3's test extended (steps read twice, and across the seam, answer as a planner that keeps nothing, with no
 lookup); Play's reached classes 179 of 179. Nothing public shows that a read is kept, so the test shows the answers; the probe's count
 (one `Resolve` per distinct Location) shows that it is kept.
+
+### 10.4 Task 4: the whole Studio measurement, against section 1 (2026-10-19)
+
+**How it was run.** Run 1 (cd-guards-5 followed whole, 898 revisions, 33 Rout Phase steps), each Studio's tab in front, nothing of this
+work building. My Studio from the branch's head (`asl-gate-work/studio-a3`); for a same-hour baseline, `main` built the same way
+(`asl-gate-work/studio-main-a3`, launch config `map-studio-main-a3` on 6671, the same arguments as mine). **The machine was loaded by
+other programs during the later runs** (Folding@home and other desktop programs at the top of the CPU list; stalls of 5 s to 3 min in
+both Studios' runs, at different steps): `main`'s step times doubled against the morning's baseline. So the table gives two
+comparisons: my first run against the analysis's morning baseline, and a pair run back to back under the same load. The "before"
+worktree Studio of task 0 measured the same as `main` built outside the repository (497 and 217 ms), so the method holds.
+
+| Figure | Baseline | After A3 and 3b | Threshold | Judged |
+|---|---|---|---|---|
+| A Rout Phase step's work, median, cd-guards-5 | 258 ms (morning); 485 ms (`main`, same load) | 229 ms (my first run); 365 ms (same load) | 15 ms saved | **Met:** 29 ms saved against the morning baseline, 120 ms against `main` under the same load; within the expected 210 to 240 ms in the quieter run |
+| Board lookups in a Rout Phase step | 27,990, median (task 2) | 1 a step (task 3b's probe) | (none) | **Met:** one per board per state |
+| Their time | 25 to 26 ms (task 2) | 0.03 ms | 15 ms | **Met** (the single-board part built) |
+| The heaviest step's allocation, 621 to 622 | 101 MB | 97 MB after task 3; **68 MB** after 3b | 5 MB saved | **Met** with 3b (33 MB saved); task 3 alone saved 4 MB, under its threshold |
+| A Rout Phase step on the placed map (Gambit) | 22.5 to 49.5 s (task 2) | about 0.05 to 0.7 s | 25% of the step | **Met:** the composed builds were 96 to 97% of the step |
+| Any other step's work, cd-guards-5 | 104 ms (morning); 207 ms (`main`, same load) | 114 ms; 216 ms (same load) | must not rise | **Not shown to rise:** +9 to +10 ms in both comparisons, inside the run-to-run noise (±40 ms on short runs; these runs had stalls); A3 changes about 2 ms of an ordinary step's map reads (task 2's probe), so a real rise of 10 ms is not expected from the code. Recorded as a figure to watch, not as met |
+
+What A3 did not buy, as section 1 said: `RoutAdvice`'s route searches, which are now most of what is left of a Rout Phase step. The
+known store-append stall (backlog 65) was seen once in my first run (441 to 446, 12.9 s) and not at that step in the others.
