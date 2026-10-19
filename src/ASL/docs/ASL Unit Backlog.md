@@ -1195,3 +1195,13 @@ The ASL Replay Re-enactment Scope (`src/ASL/docs/Designs`), 2026-10-18: analysis
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | Re-play mode on the Play page: a recorded game shown from its first event, a step at a time, until "Play on from here" switches it to live play (option R recommended, W the alternative; questions U1 to U3) | The user, 2026-10-18: "save this analysis for later" | (UI) | The user's ruling on option R and U1 to U3, then a design and a plan | Replay's "Play on from here" makes a live game at a step; the development-only follow control re-plays by copying steps into a new game. |
+
+## 64. Added by the Sysinternals analysis
+
+The Sysinternals Analysis (`E:\SysInternals`, outside the repository, with its companion tool list), 2026-10-19: written after `main`'s fast-forward to f2b613a3 failed with "Permission denied" on `ASL Unit Time Log.md` and the holder could not be named afterwards. Kept for later at the user's word; no decision made.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Install the Sysinternals tools (S1; proposal B: the Suite zip from Microsoft into `E:\SysInternals\Suite`, on `PATH`; A, C, and D the alternatives) | The user, 2026-10-19: "Put the SysInternals Follow-up on our backlog for later" | (tooling) | The user's word on S1; the download is from Microsoft only | Nothing installed; the Restart Manager check and an exclusive open stand in for Handle. |
+| Name the process that locks a file during git's rewrites (S2; Defender, VS Code's watcher, and the search indexer the candidates) | As above | (tooling) | S1, and an elevated session or the user starting Process Monitor, since this session is not elevated | If it recurs: push the commit by its id, then repair the checkout, as on 2026-10-19. A Defender exclusion of the repository stays the user's call. |
+| VMMap and ProcDump in the memory work (S3): the committed memory that rose 68 to 92 MB after PR 19 (SVG memory analysis, section 11), and the 1.3 to 1.6 GB Play step (section 62) | As above | (performance only) | S1 | `dotnet-counters` and `dotnet-trace` remain the tools for the managed side. |
