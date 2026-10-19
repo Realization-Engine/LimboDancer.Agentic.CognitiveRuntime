@@ -6566,56 +6566,59 @@ else if (state is not null)
     // panel; each reading runs the rout search for every broken unit.
     private (GameState? State, string Viewer, IReadOnlyList<RoutActionPanel.Obligation>? Obligations, IReadOnlyList<PlayChoice>? Choices) routCache;
 
-    private IReadOnlyList<RoutActionPanel.Obligation> RoutObligations
+    private IReadOnlyList<RoutActionPanel.Obligation> RoutObligations => ReadRout().Obligations;
+
+    private IReadOnlyList<PlayChoice> RoutChoices => ReadRout().Choices;
+
+    /// <summary>
+    /// Both of the Rout panel's lists, read once for a state and a view in one pass over the broken units (the Play Step Plan, task 3): each unit is
+    /// asked once whether it may rout, why it must, whether it surrenders instead, and where it may go. The obligations are in the units' id order,
+    /// the choices in the view's order, as before.
+    /// </summary>
+    private (IReadOnlyList<RoutActionPanel.Obligation> Obligations, IReadOnlyList<PlayChoice> Choices) ReadRout()
     {
-        get
+        if (ReferenceEquals(routCache.State, state) && routCache.Viewer == Viewer.Name && routCache is { Obligations: { } kept, Choices: { } choices })
         {
-            if (!ReferenceEquals(routCache.State, state) || routCache.Viewer != Viewer.Name)
-            {
-                routCache = (state, Viewer.Name, null, null);
-            }
-
-            return routCache.Obligations ??= ReadRoutObligations;
+            return (kept, choices);
         }
-    }
 
-    private IReadOnlyList<PlayChoice> RoutChoices
-    {
-        get
+        var obligations = new List<RoutActionPanel.Obligation>();
+        var choosable = new List<PlayChoice>();
+        if (state is not null)
         {
-            if (!ReferenceEquals(routCache.State, state) || routCache.Viewer != Viewer.Name)
+            foreach (var unit in ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True))
             {
-                routCache = (state, Viewer.Name, null, null);
-            }
-
-            return routCache.Choices ??= ReadRoutChoices;
-        }
-    }
-
-    private IReadOnlyList<RoutActionPanel.Obligation> ReadRoutObligations => state is null ? []
-        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True && Live.Planner.MayRout(state, unit))
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal)
-            .Select(unit =>
-            {
-                // Pass 35 (task 35.17; A20.21): a unit that surrenders instead of routing is said to, and is offered no route.
-                if (!state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.RoutSurrenderAdvice(state, unit) is { } surrenders)
+                if (!Live.Planner.MayRout(state, unit))
                 {
-                    return new RoutActionPanel.Obligation(unit.Id, surrenders);
+                    continue;
                 }
 
-                var owes = unit.Id + (Live.Planner.MustRout(state, unit) is { } why ? $" must rout: {why}" : " may rout, since it is under DM");
-                if (state.RoutedThisPhase.Contains(unit.Id))
+                var routed = state.RoutedThisPhase.Contains(unit.Id);
+                // Pass 35 (task 35.17; A20.21): a unit that surrenders instead of routing is said to, and is offered no route nor a choice.
+                if (!routed && Live.Planner.RoutSurrenderAdvice(state, unit) is { } surrenders)
                 {
-                    return new RoutActionPanel.Obligation(unit.Id, owes + ". It has routed.");
+                    obligations.Add(new RoutActionPanel.Obligation(unit.Id, surrenders));
+                    continue;
                 }
 
-                var (advice, routes) = RoutAdviceText(unit, Live.Planner.MustRout(state, unit) is not null);
-                return new RoutActionPanel.Obligation(unit.Id, owes + advice, routes);
-            })];
+                var why = Live.Planner.MustRout(state, unit);
+                var owes = unit.Id + (why is not null ? $" must rout: {why}" : " may rout, since it is under DM");
+                if (routed)
+                {
+                    obligations.Add(new RoutActionPanel.Obligation(unit.Id, owes + ". It has routed."));
+                    continue;
+                }
 
-    private IReadOnlyList<PlayChoice> ReadRoutChoices => state is null ? []
-        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
-            && !state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.MayRout(state, unit) && Live.Planner.RoutSurrenderAdvice(state, unit) is null).Select(Labelled)];
+                var (advice, routes) = RoutAdviceText(unit, why is not null);
+                obligations.Add(new RoutActionPanel.Obligation(unit.Id, owes + advice, routes));
+                choosable.Add(Labelled(unit));
+            }
+        }
+
+        IReadOnlyList<RoutActionPanel.Obligation> ordered = [.. obligations.OrderBy(item => item.Unit, StringComparer.Ordinal)];
+        routCache = (state, Viewer.Name, ordered, choosable);
+        return (ordered, choosable);
+    }
 
     private IReadOnlyList<PlayChoice> RallyChoices =>
         [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True).Select(Labelled)];
