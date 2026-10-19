@@ -5,6 +5,7 @@ The measurements behind `src/ASL/docs/Designs/ASL Map Studio SVG Memory Analysis
 | File | What it does |
 |---|---|
 | `SvgWriterBench/` | Renders bd01 (from the VASL checkout) and the example counter sets, reports time, allocation, and allocation by type per render, then replays each output through a copy of today's `SvgWriter` and three span-based prototypes and checks that every output is byte-identical. Writes `report.txt` beside the binary. |
+| `SvgWriterBench/LayerBench.cs` | `SvgWriterBench layer <repository root>`: the counter layer workload of the Counter Layer Design (80 counters on bd01, two moved a step), with and without the fragment cache, and a copy of `GameMaps.Led`'s rewrite. Needs no VASL checkout. Writes `layer-report.txt`. |
 | `profile_svg.py` | Splits an SVG file into numbers, attribute names, and attribute values, with its gzip size. |
 | `heap_by_type.py` | Totals a `dotnet-gcdump report` by type, folding the size buckets together. |
 
