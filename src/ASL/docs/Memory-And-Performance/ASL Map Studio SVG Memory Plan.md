@@ -1,7 +1,7 @@
 # ASL Map Studio SVG Memory Plan
 
 **Written:** 2026-10-18, at the user's word: "Write the short implementation plan for the first group (N2, M, G1, S1, J, K, L, G2, G3) in src/ASL/docs/Plans on svg-memory-analysis … Do not write code yet."
-**Source:** `src/ASL/docs/Designs/ASL Map Studio SVG Memory Analysis.md` (the analysis): its options, its measurements (sections 2 and 5.1), and its rulings (section 8).
+**Source:** `src/ASL/docs/Memory-And-Performance/ASL Map Studio SVG Memory Analysis.md` (the analysis): its options, its measurements (sections 2 and 5.1), and its rulings (section 8).
 **Scope:** the first group of section 7 only. The counter-layer group (C, D, E, Q, F) needs a design before a plan and is not covered here.
 **Status:** approved by the user, 2026-10-18 ("All approved": the word to start, and V1, V2, V5); in progress.
 

@@ -1550,7 +1550,7 @@ Branch `svg-memory-analysis`, analysis only. The start is the first measurement 
 
 ### The SVG memory plan
 
-The ASL Map Studio SVG Memory Plan (`src/ASL/docs/Plans`), approved by the user 2026-10-18 ("All approved"). Times from the shell's clock.
+The ASL Map Studio SVG Memory Plan (`src/ASL/docs/Memory-And-Performance`), approved by the user 2026-10-18 ("All approved"). Times from the shell's clock.
 
 | Task | Start | End | Duration | Note |
 |---|---|---|---|---|

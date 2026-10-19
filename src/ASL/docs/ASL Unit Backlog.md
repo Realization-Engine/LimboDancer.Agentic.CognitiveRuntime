@@ -1180,7 +1180,7 @@ The ASL Unit Figure Art Plan (`src/ASL/docs/Plans`), 2026-10-17: nationality fig
 
 ## 62. Added by the counter layer design
 
-The ASL Map Studio Counter Layer Design (`src/ASL/docs/Designs`), 2026-10-18: the second group of the SVG memory analysis.
+The ASL Map Studio Counter Layer Design (`src/ASL/docs/Memory-And-Performance`), 2026-10-18: the second group of the SVG memory analysis.
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|

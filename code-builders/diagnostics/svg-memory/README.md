@@ -1,6 +1,6 @@
 # svg-memory
 
-The measurements behind `src/ASL/docs/Designs/ASL Map Studio SVG Memory Analysis.md`.
+The measurements behind `src/ASL/docs/Memory-And-Performance/ASL Map Studio SVG Memory Analysis.md`.
 
 | File | What it does |
 |---|---|

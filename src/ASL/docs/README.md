@@ -30,6 +30,7 @@ Everything executed is sorted by kind:
 | [`Plans/`](Plans/) | Plans that have been carried out: the Rally and Fire Extensions Plan, and the Deviations, Ordnance, and Vehicles Plan (the Scenario Card Games Plan, passes 18 to 22, is now section 3 of the Backlog Passes Plan, and its file a pointer); and one deferred plan, the [Scenario Card Implementation Plan](<Plans/ASL Scenario Card Implementation Plan.md>), the legacy card track moved out of the Redesign Plan on 2026-10-16. |
 | [`Passes/`](Passes/) | The design and the review of each executed pass: `ASL Unit Deviations Pass N Design`, `ASL Unit Backlog Pass N Design`, and `Scenario A1 Backlog Pass N Review <date>`. A new pass writes its design and its review here. |
 | [`Prompts/`](Prompts/) | Working material, not executed work: the [Pass Standing Rules and Harness Lessons](<Prompts/Pass Standing Rules and Harness Lessons.md>), which every session prompt for a pass cites. It is kept current and is not deleted when a pass ends. |
+| [`Memory-And-Performance/`](Memory-And-Performance/) | The Map Studio's memory and performance work: the SVG Memory Analysis and its plan (PR 19), and the Counter Layer Design and its plan (PR 22). |
 | [`Media-Production/`](Media-Production/) | The Guards Counterattack media scripts and production records. |
 
 A document leaves this directory for its folder when its work is done: a review once its questions are answered, a plan once its passes are merged.

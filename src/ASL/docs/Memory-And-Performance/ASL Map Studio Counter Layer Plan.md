@@ -1,6 +1,6 @@
 # ASL Map Studio Counter Layer Plan
 
-**Written:** 2026-10-18, with its design: `src/ASL/docs/Designs/ASL Map Studio Counter Layer Design.md` (the design). Revised the same day for the user's rulings U2, U5, and the order.
+**Written:** 2026-10-18, with its design: `src/ASL/docs/Memory-And-Performance/ASL Map Studio Counter Layer Design.md` (the design). Revised the same day for the user's rulings U2, U5, and the order.
 **Source:** the design; the SVG memory analysis's rulings 2, 3, and 4 (C1 first, then C2 when D is built; all three tiers until D and Q are built; Q with G instead of P); the user's rulings of 2026-10-18 (U2: the hex, all its levels; U5: 4 million characters, least recently used out; the order: E first, alone).
 **Scope:** the second group of the analysis, in two parts. Part 1 is E alone (tasks E1 to E4), its own branch and pull request. Part 2 is the rest: C1, the leads in the builder, D with C2, Q, and the measurement that decides F (tasks 1 to 7), started only when the user says so.
 **Status:** part 1 approved 2026-10-18 and built on branch `counter-cache-e` (PR 21; results in the design, section 7.3). U1, U3, U4, and U6 approved 2026-10-19; part 2 built on `counter-layer-2`, stacked on part 1, at the user's word ("Start part 2 now on a branch stacked on counter-cache-e"); results and F in the design, section 16.

@@ -406,7 +406,7 @@ Each stage is checked by the golden SVGs, which must not change by a byte.
 
 Settled by the rulings of section 8 (2026-10-18).
 
-Update, 2026-10-18: `unit-figure-art` has merged into `main` (pull request 18, b50fa2d8; its CI run passed), so ruling 5's wait is over and both groups can start from `main`. The first group has its plan: `src/ASL/docs/Plans/ASL Map Studio SVG Memory Plan.md`. The second group still needs a design first.
+Update, 2026-10-18: `unit-figure-art` has merged into `main` (pull request 18, b50fa2d8; its CI run passed), so ruling 5's wait is over and both groups can start from `main`. The first group has its plan: `src/ASL/docs/Memory-And-Performance/ASL Map Studio SVG Memory Plan.md`. The second group still needs a design first.
 
 On a branch from `main`, since none of these files differ on `unit-figure-art` (ruling 5):
 
@@ -446,7 +446,7 @@ The user's rulings of 2026-10-18. Ruling 1 is the user's choice; rulings 2 to 5 
 
 ## 10. Results of the plan
 
-The measured result of each task of `src/ASL/docs/Plans/ASL Map Studio SVG Memory Plan.md`. Allocation is the measure to compare: it repeats to the byte from run to run. Times move with the machine's load (the same render took 108 ms in the morning and 54 ms in the afternoon), so they are indicative only, and compared within one run.
+The measured result of each task of `src/ASL/docs/Memory-And-Performance/ASL Map Studio SVG Memory Plan.md`. Allocation is the measure to compare: it repeats to the byte from run to run. Times move with the machine's load (the same render took 108 ms in the morning and 54 ms in the afternoon), so they are indicative only, and compared within one run.
 
 ### Task 1. Baseline (2026-10-18, after main was merged in)
 

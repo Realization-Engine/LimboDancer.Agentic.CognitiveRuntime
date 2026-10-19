@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- The SVG writer benchmark of the SVG memory analysis (src/ASL/docs/Designs/ASL Map Studio SVG Memory Analysis.md, section 5.1).
+  <!-- The SVG writer benchmark of the SVG memory analysis (src/ASL/docs/Memory-And-Performance/ASL Map Studio SVG Memory Analysis.md, section 5.1).
        Build it with its own output path, so a running Studio's binaries are never touched:
        dotnet build -c Release -p:BaseOutputPath=<scratch>/svg-bench-out/ -->
   <PropertyGroup>
