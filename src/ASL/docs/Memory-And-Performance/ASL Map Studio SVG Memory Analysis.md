@@ -2,6 +2,8 @@
 
 2026-10-18, branch `svg-memory-analysis` (cut from `unit-figure-art` at 84c39315, because the measured Studio draws that branch's figure art). Analysis only: no code is changed.
 
+**Status (2026-10-19):** all of it merged into `main`. Sections 1 to 11 with the first group's plan (PR 19, 029bf601); sections 12 to 14, the step profiles and the footprint and set-id fixes (PR 20, e6f407b6); the second group, C, D, E, and Q, by the Counter Layer Design and Plan (PR 22, 68447a05, with PR 21's option E); F ruled F3, all three tiers stay. What remains is listed at the end of section 14 and in the backlog, section 62.
+
 ## 1. The question
 
 The Studio's front end is SVG, and all of that SVG is strings built in the server's memory. Are those strings handled efficiently, and would turning them into constants, where practical, help?
@@ -605,7 +607,7 @@ What it shows:
 - **The expectation was too high,** and the reason is now known: it assumed the counter layer was most of a step, but a whole step allocated 21 MB before the plan, so the layer and its previews were about 14 MB of it, not 23 to 37 MB (if the benchmark's ratio holds, a saving of 11.6 MB at 80% means about 14.5 MB before and 3 MB after). The rest of a step (projection, rules, render tree, serialization) the plan did not touch.
 - **CPU did not measurably change:** the runs' own spread (38 to 52 s before) is larger than the expected saving.
 - **What the Studio holds did not change:** the live heap after a run is 64 to 66 MB either way.
-- **Committed and private memory rose, in all three pairs,** by 68 to 92 MB on average. Three of three is not noise. The live heap shows it is not data the Studio keeps; it is memory the collector commits and keeps. A plausible cause, not yet tested: with far fewer collections (gen 1 almost none), the collector compacts and returns memory less often, so it keeps more of what it grew into. The pooled writer buffers account for about 10 MB at most (the dumps).
+- **Committed and private memory rose, in all three pairs,** by 68 to 92 MB on average. Three of three is not noise. The live heap shows it is not data the Studio keeps; it is memory the collector commits and keeps. A plausible cause, tested in section 11 and rejected as stated (the extra memory is in the large object heap, held by a higher heap count): with far fewer collections (gen 1 almost none), the collector compacts and returns memory less often, so it keeps more of what it grew into. The pooled writer buffers account for about 10 MB at most (the dumps).
 
 What the plan changes is how much the server allocates, not how much it holds. Fewer allocations mean fewer collections and less CPU per render; they need not lower the peak or the memory the collector keeps, because the collector sizes the heap from its budgets and collects less often when less is allocated. The measure that shows the plan's effect is the bytes allocated per step, with the number of collections; the measure of what is held is the live heap from a dump. Task 11 of the plan measures both.
 
@@ -832,3 +834,10 @@ The two runs covered different stretches of the game (revisions 52 to 218, and 5
 - **Play:** about 157 ms of server work a step, most of it the page's render: the counter layer (about 46 ms), rout obligations and advice (about 41 ms), upper-level encirclement (about 40 ms), and the footprint lookup's remaining dictionary work (about 31 ms). The panels' rules are the next candidate (section 13, step 3).
 - **Replay:** the counter layer is still built on every step (about 53 ms) and, when any counter changed, sent and redrawn whole: the counter-layer plan (E for the build, D and Q for the send and the browser).
 - These measurements are of my Studio's Debug build, with the page visible but often not in front; the browser figures are long frames only (over 50 ms).
+
+### What is left, updated 2026-10-19 (after PR 22)
+
+The counter-layer plan is built and merged (PR 22, 68447a05); its results are in the Counter Layer Design, sections 7.3 and 16.
+
+- **Replay: done.** The layer's build fell from about 48 to 8.5 ms a step (E), a step sends only the changed hexes and any face the page lacks (D, Q), allocation fell from 13.1 to 4.3 MB a step, and the click to the step held from about 180 to 70 ms. What is left of a step is the rest of the page's work (projection, rules, render tree, serialization): backlog 62.
+- **Play: the counter layer is done, the rest is open.** The layer's build fell from about 55 to 5 to 8 ms, and the follow loop's server work from about 177 to 103 to 138 ms a step. Still open: rout obligations and advice (about 41 ms), upper-level encirclement (about 40 ms), and the footprint lookup's dictionary work (about 31 ms), measured before E and not measured again since; and one step near revision 137 that allocates 1.3 to 1.6 GB. All are in the backlog, section 62.
