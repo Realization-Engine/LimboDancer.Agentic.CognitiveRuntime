@@ -1578,3 +1578,4 @@ Branch `claude/replay-reenact-scope-9c9f9a`, analysis only. Times from the shell
 | Task | Start | End | Duration | Note |
 |---|---|---|---|---|
 | Records read (cd-guards-5, guards-06-dlandi); actions, gate, store, and dice traced; the scope written (`Designs/ASL Replay Re-enactment Scope.md`) | 19:33 | 19:41 | 0:08 | No product code; every rule package is newer than the records |
+| main merged in (the follow control, #20); section 6.1 added: what the follow control gives | 22:46 | 22:47 | 0:01 | One time log conflict, both sides kept |

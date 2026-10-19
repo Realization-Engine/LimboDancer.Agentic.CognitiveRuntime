@@ -144,6 +144,19 @@ Proposed:
 - The re-enactment runs in the adjudicator's view only, since the steps are both sides' and their outcomes may reveal concealed units.
 - The attachment (source game, next step) lives in the Studio session, not in the record; reopening the game later offers "Resume re-enacting cd-guards-5 from step 42" when the new game's events still match the source through that step, which is checkable from the two records alone.
 
+### 6.1 What the follow control gives
+
+The development-only "Follow a recorded game" control (merged into main with #20, e6f407b6; shown only with scripted dice) starts a new game from a record and then copies the record's next step's events into it, one step at a time. It proposes nothing and draws no dice, so its step is what re-enactment replaces. The rest is reusable:
+
+- `LivePlay.StepEnd` ([LivePlay.cs:178](../../LimboDancer.Domains.Asl.MapStudio/Services/LivePlay.cs)): where a step ends, by attempt. The re-enactor uses it to read a recorded step's events and dice.
+- The follower check in `LivePlay.FollowStep` ([LivePlay.cs:147](../../LimboDancer.Domains.Asl.MapStudio/Services/LivePlay.cs)): the follower's event ids must match the record through its revision, or it was "played on by hand" (`FOLLOW-002`). It is the "Resume re-enacting from step N" check of section 6, and the re-enactor's guard before each step. It should move out of `FollowStep` into one helper both use.
+- `LivePlay.StartFollowing` ([LivePlay.cs:130](../../LimboDancer.Domains.Asl.MapStudio/Services/LivePlay.cs)): a new game through `PlayOn` with a free name. Re-enactment starts the same way, copying through the end of setup instead of the first step.
+- The paced run in Play (`FollowRun`, [Play.razor:1200](../../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor)): a step at a time with a delay, a cancellation token, cancelled when the page is disposed. "Run to step N" is the same loop with a target and a stop at the first divergence.
+- `FollowRecordPanel.razor` (progress, Next step, Run and Stop, a problem line): the shape of section 6's Play panel, which adds the divergence report and "Stop and take over" and is shown outside Development.
+- `FollowRecordTests.cs`: its fixtures for a followed game are a start for the re-enactor's tests.
+
+The follow control stays as it is: it measures the page's cost on each recorded step without the planner's, which re-enactment cannot. The two controls share the helpers above, not one panel.
+
 ## 7. Options
 
 | Option | What | Effort | Risk |
@@ -156,14 +169,14 @@ Recommendation: A now; C as a follow-up decision after slice 1's results.
 
 ### 7.1 First slice (engine and evidence, no page)
 
-1. A recorded-dice roller (Studio services) and a re-enactor that, for one step, rebuilds the arguments, proposes and confirms through a `GamePlay` with that roller, and compares at the three levels.
+1. A recorded-dice roller (Studio services) and a re-enactor that, for one step, rebuilds the arguments, proposes and confirms through a `GamePlay` with that roller, and compares at the three levels. It reads steps with `StepEnd` and guards each with the follower check (section 6.1).
 2. Builders for the kinds in both recorded games: `advance-phase` (with `retainDm`), `fire` (firers, director(s), target, weapons, withoutInherent), `advance`, `rout`, `rally`, `move`, `take-prisoner` (capture and reject), `enter-building`, `close-combat`, `ambush`, `recover`, `massacre`, `guard-prisoners`, `choose`; plus `pass` and `end`.
 3. Setup copied, as `PlayOn` copies events ([LivePlay.cs:104](../../LimboDancer.Domains.Asl.MapStudio/Services/LivePlay.cs)), through the last setup step (including the non-OB "?" step): it draws no dice and its arguments are the bulkiest to rebuild.
 4. A headless run of cd-guards-5 and guards-06-dlandi from setup to the end, as a test or a code-builders tool, reporting the first divergence of each and every note. This is the evidence that decides what slice 2 must handle and whether option C is worth it.
 
 ### 7.2 Second slice (pages)
 
-The Replay section and the Play panel of section 6, with the five-width Studio check scoped to the two changed pages.
+The Replay section and the Play panel of section 6, built from the follow control's panel and paced run (section 6.1), with the five-width Studio check scoped to the two changed pages.
 
 ### 7.3 Deferred
 
