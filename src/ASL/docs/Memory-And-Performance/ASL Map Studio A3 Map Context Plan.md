@@ -3,7 +3,7 @@
 **Written:** 2026-10-19, at the user's word ("Write it"), after the Play Step Plan was merged (PR 23, 97666623).
 **Source:** the Play Step Analysis (`ASL Map Studio Play Step Analysis.md`): fix A3 (section 4, A), what is left of a Rout Phase step (section 8.5), the board lookup counted (section 8.4); backlog section 65; a read of the code on `main` at 97666623 (section 2 below).
 **Scope:** A3, the map context per state: each board's handle and a placed map's composed read, obtained once per game state and kept with it, and `MapInPlay.Board` without its per-call allocation. Not in scope unless the user rules otherwise (section 9): a cache of resolved Locations per state (A3b), and C2 (the index of a state's objects).
-**Status:** written; not started. It starts at the user's word.
+**Status:** started 2026-10-19 at the user's word, on branch `map-context`. Tasks 0 to 2 done; both parts of A3 pass their thresholds (section 10.1); W4 and Q2 wait for the user's ruling before task 3.
 
 ## 1. Expected gains, stated first
 
@@ -132,4 +132,51 @@ Task 2 may end the work early: if neither part reaches its threshold, the plan's
 
 ## 10. Results
 
-To be written by tasks 2 and 4.
+### 10.1 Task 2: measured first (2026-10-19)
+
+**Method.** A probe in my Studio's build only (`asl-gate-work/studio-a3`), never committed: a timing decorator around the catalog in
+`LivePlay`, and counters in `BoardHandle.Resolve` (with a timer and the set of distinct Locations), in the planner's `Composed` (builds
+and their time, their lookups included), and in `MapInPlay.Board`. The follower writes one line a step as it takes the next, so a line
+holds everything done to reach and show its revision: the commit, the page's reads, and the draw. The decorator's own two clock reads
+are subtracted from the lookups' time (calibrated at the start); the `Resolve` timer is not, a bias of about 0.02 µs a call. Each
+Studio's tab in front, nothing else running. `code-builders/pass-history/a3-map-context/probe_read.py` reads the lines by phase. The
+probe's own counting makes a step slower, so its step intervals are not compared with section 1's 258 ms; the lookups' and `Resolve`'s
+times are.
+
+**One board, cd-guards-5, revisions 714 to 760:** 9 Rout Phase steps (729 to 744) and 12 others, run twice (the second run with the
+`Resolve` timer).
+
+| Per step | Rout Phase: median (least to most) | Any other: median |
+|---|---|---|
+| Board lookups (`TryGetBoard`) | 27,990 (4,008 to 105,958) | 478 |
+| Their time | 25.0 ms, and 26.0 ms in the second run (3.8 to 109.4 ms) | 0.6 ms |
+| One lookup | about 1.0 µs (A1 took its allocation, not its time) | about 1.5 µs |
+| `BoardHandle.Resolve` calls | 34,472 (4,948 to 131,880) | 720 |
+| Their time (second run) | 36.0 ms (5.4 to 150.6 ms), about 1.1 µs a call | 1.0 ms |
+| Distinct Locations among them | 180 (109 to 223) | 99 |
+| Calls per distinct Location | 191 (591 at 729) | 7.3 |
+| `MapInPlay.Board` calls | 26,198 (3,820 to 98,998) | 478 |
+
+The Rout Phase steps at 621, 622, 809, and 810: 82,461, 66,728, 76,658, and 65,789 lookups, in 87.9, 49.7, 73.9, and 66.4 ms.
+
+**The placed map, `a3-gambit-rout` (task 1's record), followed whole:** five Rout Phase steps (24 is the phase's start with its four DM
+marks; 28, 32, 39, and 43 the four routs).
+
+| Step | Interval | `Composed` builds | Their time | Share of the step's work (interval less the 1 s pause) |
+|---|---|---|---|---|
+| 24 | 49.5 s | 18,281 | 46.7 s | 96% |
+| 28 | 36.1 s | 14,249 | 34.2 s | 97% |
+| 32 | 30.3 s | 11,398 | 28.5 s | 97% |
+| 39 | 22.5 s | 7,682 | 20.9 s | 97% |
+| 43 | 1.2 s | 65 | 0.1 s | 63% |
+
+A `Composed` build costs about 2.5 ms (two lookups, the dictionary, and `MapLayout.Create`); every lookup on the placed map is one of a
+build's (36,562 of 36,576 at step 24). `Resolve` repeats here too: 122 calls per distinct Location, median. The "before" Studio took 40
+to 80 s a commit while the record was made, beside the gate's `base` stage.
+
+**Decision, by section 1's thresholds:**
+
+- **The single-board part (W3's handles) is built:** the lookups take 25 to 26 ms a Rout Phase step, median, against a threshold of 15.
+- **The placed-map part (W3's composed read) is built:** the builds are 96 to 97% of a Rout Phase step on the Gambit game, against 25%.
+- **A3b (Q2):** `Resolve` takes 36 ms a Rout Phase step, median, and 151 ms at the heaviest, and a state resolves each Location 191
+  times, median. Proposed to the user as its own task; not built unasked.

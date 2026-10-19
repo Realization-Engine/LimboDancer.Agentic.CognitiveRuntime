@@ -1662,3 +1662,13 @@ before 15:06 are approximate: the clock was not read at those boundaries.
 |---|---|---|---|---|
 | The A3 plan: the code map (a read-only agent), the placed-map games found (Gambit only, all short), the plan written with its expected gains first | about 14:05 | about 14:35 | about 0:30 | The code map changed two expectations: A3 alone does not remove `Resolve`'s 23 MB, and A1 had already taken the single-board lookup's allocation |
 | The outside build outputs rule: `outside_outputs.sh` (register, list, clean; a move into a trash folder, then a background delete), its self-test, `gate.sh` registering its outputs and cleaning at `ci`, the standing rules, the README, the A3 plan's section 5 | about 14:40 | 15:06 | about 0:25 | Reworked twice at the user's word: large trees are moved, not deleted in place; only outputs made from today on are touched |
+
+## The A3 map context plan, 2026-10-19
+
+Branch `map-context` from `main` at d4ff1d53, one pull request (the plan's W1), at the user's word to carry on through task 5; W4 and Q2 wait for the user before task 3. Times from the shell's clock.
+
+| Task | Start | End | Duration | Estimate | Note |
+|---|---|---|---|---|---|
+| 0. The branch, `passa3.conf`, the gate's `base` (background), the "before" Studio | 15:36 | 16:07 | 0:31 | 0:20 | The store checked first (527 games). `base` ran 15:38 to 16:07 (replay 69 s, sweep 1,340 s); the "before" worktree built in 2:26 and started on 6671 at 15:44; the rest of the time went to task 1 beside it |
+| 1. The placed-map test game, recorded | 15:44 | 16:12 | 0:28 | 0:45 | `GameFile` takes a placed map; `a3-gambit-rout` written, recorded in the "before" Studio (48 revisions: four routs across the seam, two from bd04 to bd02 and back), checked to replay in my Studio. Recorded twice: the first version forced only the German routs, and a squad at bd04's [BB10], a hex the boards share, stopped the replay (backlog 66). Each commit took 40 to 80 s in the "before" Studio beside `base` |
+| 2. Measure first | 16:07 | 16:25 | 0:18 | 0:30 | The probe in my Studio's build only (`asl-gate-work/studio-a3`, not `studio-6670`, which the user keeps); two runs of cd-guards-5 714 to 760, 621, 809, and the Gambit record whole. Both parts of A3 pass their thresholds by far (section 10.1); `Resolve` measured for Q2 |
