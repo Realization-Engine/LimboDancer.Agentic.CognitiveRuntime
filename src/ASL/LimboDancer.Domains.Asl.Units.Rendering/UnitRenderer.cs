@@ -23,6 +23,7 @@ public sealed class UnitRenderer
     public const double DefaultAttachmentScale = 0.6;
 
     private static readonly string[] BadgePositions = ["top-left", "top-right", "bottom-left", "bottom-right"];
+    private static long instances;
 
     public UnitRenderer(UnitVocabulary vocabulary, StyleSheet sheet, PaletteSet palette)
     {
@@ -38,6 +39,15 @@ public sealed class UnitRenderer
     {
         get;
     }
+
+    /// <summary>
+    /// This renderer among those made in the process, for the fragment cache's key (the Counter Layer Design, section 7.1). A renderer never
+    /// changes once made (its vocabulary, sheet, palette, and figure art are fixed), so its identity stands for everything it draws with.
+    /// </summary>
+    internal long Identity
+    {
+        get;
+    } = Interlocked.Increment(ref instances);
 
     /// <summary>
     /// The figure parts personnel are drawn from (the ASL Unit Figure Art Plan): the embedded ones, accepted parts only, unless a caller

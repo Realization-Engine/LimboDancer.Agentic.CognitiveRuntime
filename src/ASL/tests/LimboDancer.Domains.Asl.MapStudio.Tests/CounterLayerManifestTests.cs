@@ -36,6 +36,82 @@ public sealed class CounterLayerManifestTests(CounterLayerCases cases) : IClassF
         var wrong = actual.Where(item => !expected.TryGetValue(item.Name, out var hash) || hash != item.Hash).Select(item => item.Name).ToArray();
         Assert.True(wrong.Length == 0, $"{wrong.Length} layers differ from the manifest, the first: {string.Join(", ", wrong.Take(5))}");
     }
+
+    /// <summary>
+    /// Option E: with the fragment cache, every layer is the manifest's, whether the games are stepped forward, back, or by jumps, and with the
+    /// cache's own bound or one so small that hexes leave it all the time.
+    /// </summary>
+    [Theory]
+    [InlineData("forward", UnitFragmentCache.DefaultBound)]
+    [InlineData("back", UnitFragmentCache.DefaultBound)]
+    [InlineData("jumps", UnitFragmentCache.DefaultBound)]
+    [InlineData("forward", 200_000L)]
+    public void WithTheCacheEveryLayerMatchesTheManifest(string order, long bound)
+    {
+        var expected = CounterLayerCases.Manifest();
+        var cache = new UnitFragmentCache(bound);
+        // The orders that miss most (jumps, and a bound that holds a fraction of a layer) take one played game's steps, which keeps the test short.
+        var steps = cases.Steps("guards-dl-01", Perspective.AdjudicatorName, UnitStyles.Digital);
+        IEnumerable<CounterLayerCase> sequence = order switch
+        {
+            "forward" when bound == UnitFragmentCache.DefaultBound => cases.All,
+            "forward" => steps,
+            "back" => cases.All.Reverse(),
+
+            // A fixed permutation: steps by a prime the step count does not divide, so every step comes once, far from its neighbours.
+            _ => Enumerable.Range(0, steps.Count).Select(index => steps[(int)(index * 7919L % steps.Count)]),
+        };
+        var wrong = sequence.Where(item => CounterLayerCases.Hash(item.Build(cache).Svg) != expected[item.Name]).Select(item => item.Name).ToArray();
+        Assert.True(wrong.Length == 0, $"{wrong.Length} layers differ from the manifest with the cache, the first: {string.Join(", ", wrong.Take(5))}");
+        Assert.True(cache.Characters <= bound);
+
+        // A Replay run forward redraws only what changed: most hexes of a played game's next step are hits.
+        if (order == "forward" && bound == UnitFragmentCache.DefaultBound)
+        {
+            Assert.True(cache.Hits > 3 * cache.Misses, $"{cache.Hits} hits, {cache.Misses} misses");
+        }
+    }
+
+    /// <summary>The placed units, their names, and the warnings are those of the layer drawn again: every tenth step of a played game, and the rest.</summary>
+    [Fact]
+    public void WithTheCacheThePlacedUnitsAndWarningsAreTheSame()
+    {
+        var cache = new UnitFragmentCache();
+        var played = cases.Steps("guards-dl-01", Perspective.AdjudicatorName, UnitStyles.Digital);
+        foreach (var item in played.Where((_, index) => index % 10 == 0).Concat(cases.All.Where(item => !CounterLayerCases.Played.Any(game =>
+            item.Name.StartsWith(game, StringComparison.Ordinal)))))
+        {
+            var (cached, drawn) = (item.Build(cache), item.Build(null));
+            Assert.Equal(drawn.Units.Select(unit => (unit.Document.Id, unit.Hex, unit.Shown, unit.Name)), cached.Units.Select(unit => (unit.Document.Id, unit.Hex, unit.Shown, unit.Name)));
+            Assert.Equal(drawn.Warnings, cached.Warnings);
+            Assert.Equal(drawn.Diagnostics, cached.Diagnostics);
+        }
+    }
+
+    /// <summary>The Studio's one cache, used by several circuits at once: two games stepped on four threads, each layer the manifest's.</summary>
+    [Fact]
+    public void ManyCallersAtOnceGetTheManifestsLayers()
+    {
+        var expected = CounterLayerCases.Manifest();
+        var cache = new UnitFragmentCache(1_000_000);
+        var runs = new[]
+        {
+            cases.Steps("guards-dl-01", Perspective.AdjudicatorName, UnitStyles.Digital),
+            [.. cases.Steps("guards-dl-01", Perspective.AdjudicatorName, UnitStyles.Digital).Reverse()],
+            cases.Steps("p31c-tw", Perspective.AdjudicatorName, UnitStyles.Digital),
+            [.. cases.Steps("p31c-tw", Perspective.AdjudicatorName, UnitStyles.Digital).Reverse()],
+        };
+        var wrong = new System.Collections.Concurrent.ConcurrentBag<string>();
+        Parallel.ForEach(runs, run =>
+        {
+            foreach (var item in run.Where(item => CounterLayerCases.Hash(item.Build(cache).Svg) != expected[item.Name]))
+            {
+                wrong.Add(item.Name);
+            }
+        });
+        Assert.Empty(wrong);
+        Assert.True(cache.Characters <= cache.Bound);
+    }
 }
 
 /// <summary>The cases of the counter layer manifest, made once for the test class: each a name and the overlay it builds.</summary>
@@ -146,7 +222,7 @@ public sealed class CounterLayerCases : IDisposable
     private CounterLayerCase Case(string name, string setId, IReadOnlyList<UnitDocument> units, string sheet)
     {
         var renderer = Library.Renderer(sheet)!;
-        return new CounterLayerCase(name, cache => UnitOverlayBuilder.Build(Bd01, setId, units, renderer));
+        return new CounterLayerCase(name, cache => UnitOverlayBuilder.Build(Bd01, setId, units, renderer, cache));
     }
 
     /// <summary>
@@ -197,4 +273,4 @@ public sealed class CounterLayerCases : IDisposable
 }
 
 /// <summary>A manifest case: its name, and the overlay it builds, with a fragment cache or without one.</summary>
-public sealed record CounterLayerCase(string Name, Func<object?, UnitOverlay> Build);
+public sealed record CounterLayerCase(string Name, Func<UnitFragmentCache?, UnitOverlay> Build);

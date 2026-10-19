@@ -30,15 +30,18 @@ internal static class LayerBench
         var sequence = Sequence(set.Units);
         var report = new StringBuilder();
         report.AppendLine($"## counter layer workload: {set.Units.Count} counters on bd01, {Steps} steps, two counters moved a step, {Rounds} rounds");
-        foreach (var (label, build) in Builders(target, set.SetId, renderer))
+        foreach (var (label, newRound) in Builders(target, set.SetId, renderer))
         {
-            // One warm round, then the measured ones; a round walks the whole sequence, as a Replay run forward does.
-            var layers = sequence.Select(units => build(units).Svg).ToArray();
+            // One warm round, then the measured ones; a round walks the whole sequence from the start, as a Replay run forward does, each with
+            // a builder of its own (a cache begins the round empty, so its first step draws every hex and the others the moved counters' hexes).
+            var warm = newRound();
+            var layers = sequence.Select(units => warm(units).Svg).ToArray();
             GC.Collect();
             var before = GC.GetAllocatedBytesForCurrentThread();
             var timer = Stopwatch.StartNew();
             for (var round = 0; round < Rounds; round++)
             {
+                var build = newRound();
                 foreach (var units in sequence)
                 {
                     build(units);
@@ -70,10 +73,18 @@ internal static class LayerBench
     }
 
     /// <summary>The ways of building the layer that the slice compares; option E adds the cache.</summary>
-    private static IEnumerable<(string Label, Func<IReadOnlyList<UnitDocument>, UnitOverlay> Build)> Builders(UnitMapTarget target, string setId,
+    private static IEnumerable<(string Label, Func<Func<IReadOnlyList<UnitDocument>, UnitOverlay>> NewRound)> Builders(UnitMapTarget target, string setId,
         UnitRenderer renderer)
     {
-        yield return ("without a cache", units => UnitOverlayBuilder.Build(target, setId, units, renderer));
+        yield return ("without a cache", () => units => UnitOverlayBuilder.Build(target, setId, units, renderer));
+        yield return ("with the fragment cache", () =>
+        {
+            var cache = new UnitFragmentCache();
+            return units => UnitOverlayBuilder.Build(target, setId, units, renderer, cache);
+        });
+
+        // Every hex a miss: what a step costs when everything on the map changed, such as the first step of a game.
+        yield return ("cache, every hex a miss", () => units => UnitOverlayBuilder.Build(target, setId, units, renderer, new UnitFragmentCache()));
     }
 
     /// <summary>Step 0 is the set as it is; each later step moves two more counters one hex down their column.</summary>

@@ -88,7 +88,11 @@ public static class UnitOverlayBuilder
 
     private static readonly DetailTier[] Tiers = [DetailTier.Far, DetailTier.Mid, DetailTier.Near];
 
-    public static UnitOverlay Build(UnitMapTarget target, string setId, IEnumerable<UnitDocument> units, UnitRenderer renderer)
+    /// <summary>
+    /// The layer of the units. With a <paramref name="cache"/>, a hex drawn before with the same inputs is taken from it rather than drawn again
+    /// (option E); the layer is the same either way.
+    /// </summary>
+    public static UnitOverlay Build(UnitMapTarget target, string setId, IEnumerable<UnitDocument> units, UnitRenderer renderer, UnitFragmentCache? cache = null)
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(setId);
@@ -144,7 +148,25 @@ public static class UnitOverlayBuilder
                 }
             }
 
-            WriteHex(svg, hexGroup.Key, target.Geometry.CenterDot(hexGroup.Key), hexHeight, levels, renderer, warnings);
+            var center = target.Geometry.CenterDot(hexGroup.Key);
+            if (cache is null)
+            {
+                WriteHex(svg, hexGroup.Key, center, hexHeight, levels, renderer, warnings);
+                continue;
+            }
+
+            var key = Key(hexGroup.Key, center, hexHeight, levels, renderer);
+            if (!cache.TryGet(key, out var fragment))
+            {
+                var hexSvg = new SvgWriter();
+                var hexWarnings = new List<RenderWarning>();
+                WriteHex(hexSvg, hexGroup.Key, center, hexHeight, levels, renderer, hexWarnings);
+                fragment = new UnitFragmentCache.Fragment(hexSvg.ToString(), [.. hexWarnings]);
+                cache.Add(key, fragment);
+            }
+
+            svg.Fragment(fragment.Markup);
+            warnings.AddRange(fragment.Warnings);
         }
 
         svg.End();
@@ -153,6 +175,23 @@ public static class UnitOverlayBuilder
 
     /// <summary>One level of a hex's stack, its members in drawing order.</summary>
     private sealed record StackLevel(int Level, (UnitDocument Document, BoardLocation Location)[] Members);
+
+    /// <summary>Everything <see cref="WriteHex"/> reads for a hex, as the fragment cache's key.</summary>
+    private static string Key(HexIndex hex, PixelPoint center, double hexHeight, StackLevel[] levels, UnitRenderer renderer)
+    {
+        var key = new System.Text.StringBuilder(256 * levels.Sum(level => level.Members.Length));
+        UnitFragmentKey.Hex(key, renderer, hex.Column, hex.Row, center.X, center.Y, hexHeight);
+        foreach (var level in levels)
+        {
+            UnitFragmentKey.Level(key, level.Level, level.Members.Length);
+            foreach (var (document, _) in level.Members)
+            {
+                UnitFragmentKey.Document(key, document);
+            }
+        }
+
+        return key.ToString();
+    }
 
     private static string? LevelSuffix(int level) => level == 0 ? null : $", level {level.ToString(CultureInfo.InvariantCulture)}";
 

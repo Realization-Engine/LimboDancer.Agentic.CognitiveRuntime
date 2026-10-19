@@ -2096,7 +2096,8 @@ else if (state is not null)
             // Pass 31d (design D12; ruling R31c.6): the overlay built again from the documents has lost the leads the game's own overlay had, so
             // each counter is led again by its hex, and by the unit's name where the view has one: a committed unit's as the records name it, and
             // a draft counter's as its counter reads ("[P7]: 4-4-7 squad"), since a draft has no tag until it is in the game.
-            var built = UnitOverlayBuilder.Build(UnitLibrary.TargetFor(board), committed.SetId, [.. committed.Units.Select(unit => unit.Document), .. drafts], renderer);
+            var built = UnitOverlayBuilder.Build(UnitLibrary.TargetFor(board), committed.SetId, [.. committed.Units.Select(unit => unit.Document), .. drafts], renderer,
+                Library.Fragments);
             var names = history is null ? null : Live.NamesOf(history, Viewer);
             var draftNames = rows.Where(row => row.Definition is not null && catalog.Definition(row.Definition!) is not null)
                 .ToDictionary(row => DraftPrefix + row.Id, row => UnitNames.Counter(catalog.Definition(row.Definition!)!), StringComparer.Ordinal);
