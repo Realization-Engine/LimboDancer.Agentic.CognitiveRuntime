@@ -44,4 +44,53 @@ public sealed class CampaignPlayableFootprintsTests
             }
         }
     }
+
+    // The SVG memory analysis, section 13: a board without a footprint is answered from memory for a few seconds instead of asking the disk each
+    // time; its own Publish is seen at once, and another Studio's within those seconds.
+    [Fact]
+    public void AnAbsentFootprintIsRememberedBrieflyAndForgottenOnPublish()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "asl-footprints-" + Guid.NewGuid().ToString("N"));
+        var board = BoardRef.Parse("ab-footprint-test");
+        var geometry = BoardGeometry.Standard(4, 3);
+        const string version = "accepted-terrain";
+        const string json = """
+            {"Version":"goodwood-map-ownership-1","Board":"ab-footprint-test","BoardVersion":"accepted-terrain","Parents":{"A/A-1":["B2"]}}
+            """;
+        try
+        {
+            var clock = new ManualClock();
+            var store = new CampaignPlayableFootprints(root, clock);
+            var other = new CampaignPlayableFootprints(root, clock);
+            Assert.Null(store.Read(board, version, geometry));
+
+            // Another Studio publishes: within the window this one still answers from memory, after it reads the file.
+            other.Publish(board, version, geometry, json);
+            Assert.Null(store.Read(board, version, geometry));
+            clock.Advance(CampaignPlayableFootprints.AbsenceKept);
+            Assert.Contains(HexName.Parse("B2"), store.Read(board, version, geometry)!);
+
+            // Its own Publish is seen at once, without waiting.
+            const string later = "later-terrain";
+            Assert.Null(store.Read(board, later, geometry));
+            store.Publish(board, later, geometry, json.Replace("accepted-terrain", later, StringComparison.Ordinal));
+            Assert.Contains(HexName.Parse("B2"), store.Read(board, later, geometry)!);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, true);
+            }
+        }
+    }
+
+    private sealed class ManualClock : TimeProvider
+    {
+        private DateTimeOffset now = new(2026, 10, 18, 12, 0, 0, TimeSpan.Zero);
+
+        public override DateTimeOffset GetUtcNow() => now;
+
+        public void Advance(TimeSpan by) => now += by;
+    }
 }
