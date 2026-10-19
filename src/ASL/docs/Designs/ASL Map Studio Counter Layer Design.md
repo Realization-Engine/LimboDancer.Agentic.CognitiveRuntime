@@ -320,7 +320,7 @@ Each with my proposal, and the user's ruling where one is made.
 | U6 | Layer goldens | Add the four of section 11 | **Approved** 2026-10-19; added with C1. E uses the manifest of layer hashes (section 11) |
 | U7 | When to start | After PR 19 merges into `main`: this work builds on its span writer (`SvgValue`, the pooled `SvgWriter`); one branch from `main` then, one pull request at the end | Settled: PR 19 merged (029bf601). Superseded in part by the order ruling: E is its own branch and pull request (plan, V1) |
 | | The order | (Not asked as a question; the plan put E seventh) | **Ruled** 2026-10-18: E first, alone, ahead of the rest of the plan; then D in the browser, C2, and Q later (section 7.1) |
-| F | The tiers, measured after D and Q (section 16.3) | F3: keep all three | Open: the user's on the numbers |
+| F | The tiers, measured after D and Q (section 16.3) | F3: keep all three | **Approved** 2026-10-19 ("Agreed."): all three tiers stay |
 
 ## 16. Part 2 as built and measured (2026-10-19)
 
@@ -362,3 +362,5 @@ At step 160 the layer is 163,131 characters: the near faces 55,021, the mid 49,5
 | F3: keep all three (today) | nothing | the unused tiers' definitions in the page; they are not drawn (the references of other tiers are hidden), so they cost memory, not drawing time |
 
 Proposal: **F3, keep all three tiers.** After D a whole send happens on a board load or a new view, not on a step, and a step's patch carries a face only when the page lacks it, so F1 would save little on the common path and add a round trip to every zoom across a tier. If the page's memory becomes the concern, F1 can be revisited with these numbers.
+
+**Ruled by the user on 2026-10-19: F3, all three tiers stay.** The plan is complete; part 1 and part 2 merged together as PR 22 (68447a05).
