@@ -131,14 +131,16 @@ public sealed class OverlayTests
         Assert.Equal(expected.Y, actual.Y, 0.02);
     }
 
-    /// <summary>The center of a unit's near-tier face, read back from the SVG.</summary>
+    /// <summary>
+    /// The center of a unit's near-tier face, read back from the SVG: in the layer, where its reference places the face, which is drawn about the
+    /// origin (option Q; the Counter Layer Design, section 8).
+    /// </summary>
     private static PixelPoint FaceCenter(string svg, string id)
     {
-        var unit = XElement.Parse(svg).Descendants().Single(element => element.Attribute("data-unit-id")?.Value == id);
-        var face = unit.Elements("g").Single(tier => tier.Attribute("data-tier")!.Value == "near").Elements()
-            .First(element => element.Attribute("data-face") is not null);
-        double Read(string name) => double.Parse(face.Attribute(name)!.Value, CultureInfo.InvariantCulture);
-        return new PixelPoint(Read("x") + (Read("width") / 2), Read("y") + (Read("height") / 2));
+        var unit = XElement.Parse(svg).Descendants().Single(element => element.Attribute("data-unit-id")?.Value == id && element.Attribute("role") is not null);
+        var near = unit.Elements().Single(tier => tier.Attribute("data-tier")?.Value == "near");
+        double Read(XElement element, string name) => double.Parse(element.Attribute(name)!.Value, CultureInfo.InvariantCulture);
+        return new PixelPoint(Read(near, "x"), Read(near, "y"));
     }
 
     private static PlacedBoard Place(BoardRef board, int column)

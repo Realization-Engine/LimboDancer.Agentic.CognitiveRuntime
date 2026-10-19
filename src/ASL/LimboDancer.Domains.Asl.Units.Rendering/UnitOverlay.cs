@@ -129,14 +129,14 @@ public static class UnitOverlayBuilder
     /// </summary>
     public static UnitOverlay Build(UnitMapTarget target, string setId, IEnumerable<UnitDocument> units, UnitRenderer renderer, UnitFragmentCache? cache = null,
         Func<PlacedUnit, string>? lead = null) =>
-        Build(target, setId, units, renderer, cache, shared: true, lead);
+        Build(target, setId, units, renderer, cache, shared: true, lead, UnitFaceMode.Shared);
 
     /// <summary>
     /// The layer, with the counters sharing their definitions (<paramref name="shared"/>) or each drawn whole as a standalone counter is; the
     /// equivalence oracle compares the two (the Counter Layer Design, decision L1 and section 11).
     /// </summary>
     internal static UnitOverlay Build(UnitMapTarget target, string setId, IEnumerable<UnitDocument> units, UnitRenderer renderer, UnitFragmentCache? cache,
-        bool shared, Func<PlacedUnit, string>? lead = null)
+        bool shared, Func<PlacedUnit, string>? lead = null, UnitFaceMode faces = UnitFaceMode.Shared)
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(setId);
@@ -180,6 +180,7 @@ public static class UnitOverlayBuilder
         var placed = new List<PlacedUnit>();
         var outlines = new List<(string Id, string Path)>();
         var held = new HashSet<string>(StringComparer.Ordinal);
+        var faceDefinitions = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (var hexGroup in located.GroupBy(unit => unit.Hex).OrderBy(group => group.Key.Column).ThenBy(group => group.Key.Row))
         {
             // A hex is a fragment of the layer (the Counter Layer Design, section 7.1): what it draws depends on its own hex and members alone.
@@ -208,15 +209,16 @@ public static class UnitOverlayBuilder
             }
 
             var center = target.Geometry.CenterDot(hexGroup.Key);
-            var key = cache is null ? null : Key(hexGroup.Key, center, hexHeight, levels, renderer, shared);
+            var key = cache is null ? null : Key(hexGroup.Key, center, hexHeight, levels, renderer, shared ? faces : null);
             if (key is null || !cache!.TryGet(key, out var fragment))
             {
                 var hexSvg = new SvgWriter();
                 var hexWarnings = new List<RenderWarning>();
-                var context = shared ? new UnitLayerContext() : null;
+                var context = shared ? new UnitLayerContext(faces) : null;
                 WriteHex(hexSvg, hexGroup.Key, center, hexHeight, levels, renderer, hexWarnings, context);
                 var markup = hexSvg.ToString();
-                fragment = new UnitFragmentCache.Fragment(markup, [.. hexWarnings], [.. context?.Outlines ?? []], UnitLayerContext.Hash96(markup));
+                fragment = new UnitFragmentCache.Fragment(markup, [.. hexWarnings], [.. context?.Outlines ?? []], UnitLayerContext.Hash96(markup),
+                    [.. context?.FaceDefinitions ?? []]);
                 if (key is not null)
                 {
                     cache!.Add(key, fragment);
@@ -226,7 +228,19 @@ public static class UnitOverlayBuilder
             fragments.Add(new UnitFragment(HexFragmentId(hexGroup.Key), fragment.Markup, fragment.Hash));
             warnings.AddRange(fragment.Warnings);
             Hold(outlines, held, fragment.Outlines);
+            foreach (var (id, definition) in fragment.Faces)
+            {
+                faceDefinitions.TryAdd(id, definition);
+            }
         }
+
+        // The face definitions (option Q), each a fragment of its own before the hexes, in the order of their ids: a patch adds a face a new
+        // hex needs and removes one no hex uses any longer, as it does hexes (the Counter Layer Design, section 8, "With D").
+        fragments.InsertRange(0, faceDefinitions.Select(face =>
+        {
+            var markup = $"<defs id=\"faces-{face.Key[5..]}\">{face.Value}</defs>";
+            return new UnitFragment("faces-" + face.Key[5..], markup, face.Key[5..]);
+        }));
 
         // The figure outlines the counters refer to are the viewport's sprite (option C2), which holds every outline of the renderer's figure art.
         // An outline it does not hold is written in the layer, each once (C1): a reference may find an element later in the document, so the
@@ -277,10 +291,10 @@ public static class UnitOverlayBuilder
     }
 
     /// <summary>Everything <see cref="WriteHex"/> reads for a hex, as the fragment cache's key.</summary>
-    private static string Key(HexIndex hex, PixelPoint center, double hexHeight, StackLevel[] levels, UnitRenderer renderer, bool shared)
+    private static string Key(HexIndex hex, PixelPoint center, double hexHeight, StackLevel[] levels, UnitRenderer renderer, UnitFaceMode? faces)
     {
         var key = new System.Text.StringBuilder(256 * levels.Sum(level => level.Members.Length));
-        key.Append(shared ? 'S' : 'W');
+        key.Append(faces switch { null => 'W', UnitFaceMode.InPlace => 'S', UnitFaceMode.AtOrigin => 'O', _ => 'Q' });
         UnitFragmentKey.Hex(key, renderer, hex.Column, hex.Row, center.X, center.Y, hexHeight);
         foreach (var level in levels)
         {

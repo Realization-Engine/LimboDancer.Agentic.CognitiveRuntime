@@ -104,8 +104,30 @@ public sealed class UnitRenderer
         svg.End();
         foreach (var tier in tiers)
         {
-            svg.Start("g", ("data-tier", TierName(tier)));
-            WriteFace(svg, document, null, centerX, centerY, FaceSize(document, tier, hexHeight), tier, face, warnings, layer);
+            var tierName = TierName(tier);
+            if (layer is not { Faces: not UnitFaceMode.InPlace })
+            {
+                svg.Start("g", ("data-tier", tierName));
+                WriteFace(svg, document, null, centerX, centerY, FaceSize(document, tier, hexHeight), tier, face, warnings, layer);
+                svg.End();
+                continue;
+            }
+
+            // Option Q (the Counter Layer Design, section 8): the face drawn at the origin, then defined once for the layer and placed by a
+            // reference, or, for the equivalence oracle, written in place and moved there.
+            var drawn = new SvgWriter();
+            WriteFace(drawn, document, null, 0, 0, FaceSize(document, tier, hexHeight), tier, face, warnings, layer);
+            var content = drawn.ToString();
+            if (layer.Faces == UnitFaceMode.Shared)
+            {
+                svg.Empty("use", ("data-tier", tierName), ("href", "#" + layer.Face(tierName, content)), ("x", N(centerX)), ("y", N(centerY)));
+                continue;
+            }
+
+            svg.Start("g", ("data-tier", tierName), ("transform", $"translate({SvgWriter.Number(centerX)} {SvgWriter.Number(centerY)})"));
+            svg.Start("g", ("data-face-def", tierName));
+            svg.Fragment(content);
+            svg.End();
             svg.End();
         }
 
@@ -171,7 +193,16 @@ public sealed class UnitRenderer
                 var attached = document.Attached[index];
                 var x = centerX + (size * 0.18) + ((index - ((count - 1) / 2.0)) * attachedSize * 0.92);
                 var y = centerY + (size / 2) + (attachedSize * 0.18);
-                svg.Start("g", ("data-attached-id", attached.Id));
+                // A face definition names no unit (option Q): an attachment is marked in a standalone counter only.
+                if (layer is { Faces: not UnitFaceMode.InPlace })
+                {
+                    svg.Start("g");
+                }
+                else
+                {
+                    svg.Start("g", ("data-attached-id", attached.Id));
+                }
+
                 WriteFace(svg, attached, subject, x, y, attachedSize, tier, null, warnings, layer);
                 svg.End();
             }
@@ -196,7 +227,17 @@ public sealed class UnitRenderer
             shapeAttributes.AddRange([("x", N(x0)), ("y", N(y0)), ("width", N(size)), ("height", N(size)), ("rx", N(radius))]);
         }
 
-        shapeAttributes.AddRange([("fill", fill), ("stroke", stroke), ("stroke-width", N(strokeWidth))]);
+        if (layer is { Faces: not UnitFaceMode.InPlace })
+        {
+            // Inside a referenced face no selector reaches one counter's copy, but inherited custom properties do: the focused counter sets
+            // them, and its faces' edges turn gold, as a standalone counter's do by the style sheet (section 8, the focus ring; ruling U4).
+            shapeAttributes.AddRange([("fill", fill),
+                ("style", $"stroke: var(--unit-focus-stroke, {stroke}); stroke-width: var(--unit-focus-width, {SvgWriter.Number(strokeWidth)})")]);
+        }
+        else
+        {
+            shapeAttributes.AddRange([("fill", fill), ("stroke", stroke), ("stroke-width", N(strokeWidth))]);
+        }
         if (evaluator.Ident(style["stroke-style"]) is "dashed")
         {
             shapeAttributes.Add(("stroke-dasharray", $"{N(strokeWidth * 2)} {N(strokeWidth * 1.2)}"));

@@ -96,9 +96,23 @@ public sealed class CounterLayerManifestTests(CounterLayerCases cases) : IClassF
     [Fact]
     public void TheSharedLayerDrawsWhatTheWholeCountersDraw()
     {
-        var wrong = cases.All.Where((_, index) => index % 4 == 0)
-            .Where(item => LayerOracle.Expanded(item.Build(null)) != LayerOracle.Expanded(item.Whole())).Select(item => item.Name).ToArray();
-        Assert.True(wrong.Length == 0, $"{wrong.Length} layers draw otherwise than their whole counters, the first: {string.Join(", ", wrong.Take(5))}");
+        // Two steps: the faces drawn at the origin and moved draw the whole counters, to 1/32 pixel; the shared definitions are exactly that.
+        var wrong = new List<string>();
+        foreach (var item in cases.All.Where((_, index) => index % 4 == 0))
+        {
+            var origin = item.AtOrigin();
+            var expanded = LayerOracle.Expand(origin.Svg, origin.Figures is { } sprite ? [System.Xml.Linq.XElement.Parse(sprite)] : null);
+            if (LayerOracle.Differs(LayerOracle.Expand(item.Whole().Svg), expanded) is { } difference)
+            {
+                wrong.Add($"{item.Name} ({difference})");
+            }
+            else if (LayerOracle.Expanded(item.Build(null)) != expanded.ToString(System.Xml.Linq.SaveOptions.DisableFormatting))
+            {
+                wrong.Add($"{item.Name} (the shared definitions)");
+            }
+        }
+
+        Assert.True(wrong.Count == 0, $"{wrong.Count} layers draw otherwise than their whole counters, the first: {string.Join("; ", wrong.Take(3))}");
     }
 
     /// <summary>The Studio's one cache, used by several circuits at once: two games stepped on four threads, each layer the manifest's.</summary>
@@ -242,7 +256,8 @@ public sealed class CounterLayerCases : IDisposable
     {
         var renderer = Library.Renderer(sheet)!;
         return new CounterLayerCase(name, cache => UnitOverlayBuilder.Build(Bd01, setId, units, renderer, cache),
-            () => UnitOverlayBuilder.Build(Bd01, setId, units, renderer, null, shared: false));
+            () => UnitOverlayBuilder.Build(Bd01, setId, units, renderer, null, shared: false),
+            () => UnitOverlayBuilder.Build(Bd01, setId, units, renderer, null, shared: true, null, UnitFaceMode.AtOrigin));
     }
 
     private static string RepositoryRoot()
@@ -263,4 +278,4 @@ public sealed class CounterLayerCases : IDisposable
 /// A manifest case: its name, the overlay it builds (with a fragment cache or without one), and the same layer with every counter drawn whole,
 /// as a standalone counter is, for the equivalence oracle.
 /// </summary>
-public sealed record CounterLayerCase(string Name, Func<UnitFragmentCache?, UnitOverlay> Build, Func<UnitOverlay> Whole);
+public sealed record CounterLayerCase(string Name, Func<UnitFragmentCache?, UnitOverlay> Build, Func<UnitOverlay> Whole, Func<UnitOverlay> AtOrigin);

@@ -81,7 +81,7 @@ public sealed class UnitFragmentCache
 
     internal void Add(string key, Fragment fragment)
     {
-        var size = (long)key.Length + fragment.Markup.Length;
+        var size = (long)key.Length + fragment.Markup.Length + fragment.Faces.Sum(face => (long)face.Markup.Length);
         if (size > Bound)
         {
             return;
@@ -112,7 +112,8 @@ public sealed class UnitFragmentCache
     /// A hex as drawn: its markup, the warnings its counters raised, the figure outlines it refers to, which the layer holds (C1), and the
     /// markup's hash, by which a host tells whether the browser holds it (D).
     /// </summary>
-    internal sealed record Fragment(string Markup, RenderWarning[] Warnings, (string Id, string Path)[] Outlines, string Hash);
+    internal sealed record Fragment(string Markup, RenderWarning[] Warnings, (string Id, string Path)[] Outlines, string Hash,
+        (string Id, string Markup)[] Faces);
 
     private sealed record Entry(string Key, Fragment Fragment, long Size);
 }
