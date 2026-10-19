@@ -246,10 +246,12 @@ Estimates against section 2's figures, to be replaced by task 5's measurement:
 | # | Question | Proposal |
 |---|---|---|
 | P1 | Measure again before any fix | **Approved and done** 2026-10-19 (section 2) |
-| P2 | Which fixes | B2 and C1, B1, H, I, D, and A1 with its measurement first; A3 and C2 only if the measurement after asks; not A2; not lazy hidden tabs |
-| P3 | Branches | One branch, one pull request |
-| P4 | Where the index of a state's objects lives (C2, if built) | In the planner's per-state context, not in `GameState` |
-| P5 | The store's whole-file rewrite (J) | To the backlog now, for its own design; not in this pass |
+| P2 | Which fixes | B2 and C1, B1, H, I, D, and A1 with its measurement first; A3 and C2 only if the measurement after asks; not A2; not lazy hidden tabs. **Approved** 2026-10-19 |
+| P3 | Branches | One branch, one pull request. **Approved** 2026-10-19 |
+| P4 | Where the index of a state's objects lives (C2, if built) | In the planner's per-state context, not in `GameState`. **Approved** 2026-10-19 |
+| P5 | The store's whole-file rewrite (J) | To the backlog now, for its own design; not in this pass. **Approved** 2026-10-19 |
+
+The user's word on 2026-10-19: "P2 to P5 approved, write the plan". The plan is `ASL Map Studio Play Step Plan.md`, beside this analysis.
 
 ## 7. To the backlog
 
