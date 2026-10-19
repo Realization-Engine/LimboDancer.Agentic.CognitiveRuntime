@@ -1633,3 +1633,11 @@ On `main`, analysis only; no product code changed. Times from the shell's clock 
 | The analysis revised so every section agrees with the measurement: the 1.3 GB step's cause (the counter's stalls and catch-up jumps) found, encirclement split by caller, run 1's allocation per step withdrawn; references in the backlog, the SVG analysis, the design, and E:\SysInternals corrected | 07:52 | 07:54 | 0:02 | At the user's word: no false statements; start approximate |
 | P2 to P5 recorded as approved; the Play Step Plan written (tasks 0 to 10) | about 08:00 | 08:29 | 0:29 at most | Start not read from the clock; the surrender window read first (`Rout.cs`, `BacklogPass35Tests`) |
 | The plan revised at the user's word: implement, then the Studio test, then only the tests reached, in every task (section 2) | about 08:31 | 08:37 | about 0:06 | Start not read from the clock |
+
+## The Play step plan, 2026-10-19
+
+Branch `play-step` from `main` at a997ca8d, one pull request (the plan's V1). Run without the user's intervention at the user's word ("Try to execute the plan without my intervention"); the merge waits for the user. Times from the shell's clock.
+
+| Task | Start | End | Duration | Estimate | Note |
+|---|---|---|---|---|---|
+| 0. The branch, the gate's `base` (background), the scripts committed, the "before" Studio | 08:39 | 08:46 | 0:07 | 0:20 | The `base` stage still running at the commit (started 08:40); the "before" Studio is `main` built into `bin/before`, launch config `map-studio-before-6671`; `follower_cut.py` added, so a follower reaches revision 714 at once instead of in 12 minutes |
