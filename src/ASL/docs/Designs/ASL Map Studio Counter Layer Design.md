@@ -1,9 +1,9 @@
 # ASL Map Studio Counter Layer Design
 
 **Written:** 2026-10-18, for the second group of the SVG memory analysis: options C, D, E, and Q, with F decided after them.
-**Source:** `src/ASL/docs/Designs/ASL Map Studio SVG Memory Analysis.md` (the analysis; on branch `svg-memory-analysis`, pull request 19, not yet on `main`): its sections 5 (options C, D, E, F, Q), 7 (the order), 8 (the rulings), and 10 (the results of the first group).
+**Source:** `src/ASL/docs/Designs/ASL Map Studio SVG Memory Analysis.md` (the analysis; merged into `main` with PR 19, 029bf601; sections 12 to 14, the step profiles, are on branch `play-follow-profile`): its sections 5 (options C, D, E, F, Q), 7 (the order), 8 (the rulings), and 10 (the results of the first group).
 **Code read:** `Units.Rendering` (`UnitRenderer.WriteUnit` and `WriteFace`, `Glyphs.ArtFigures` and `FigureId`, `UnitOverlayBuilder.Build`, `UnitPreview.Document`), `MapStudio` (`BoardWorkspace` and its `sent` record, `BoardViewport.SetUnits`, `GameMaps.Layers`, `GameMaps.Named` and `Led`, `UnitLibrary.Renderer` and `Overlay`), `wwwroot/js/boardViewport.js` (`setUnits`, `applyPatch`, `updateUnitTier`, `setVisible`, `applyComparison`), `site.css` (the counter rules), and the tests that read the layer.
-**Status:** proposed; not approved. No code is changed. The implementation plan is `src/ASL/docs/Plans/ASL Map Studio Counter Layer Plan.md`.
+**Status:** proposed; not approved as a whole. Ruled by the user on 2026-10-18: U2 (the hex, all its levels), U5 (4 million characters, least recently used out), and the order (E first, alone; section 7.1). U1, U3, U4, and U6 are open; U7 is settled by PR 19's merge (029bf601). No code is changed. The implementation plan is `src/ASL/docs/Plans/ASL Map Studio Counter Layer Plan.md`.
 **Scope:** rendering only. Nothing here touches the Rules project, a projection, or what a counter shows; every ASL rule stays where it is.
 
 ## 1. Goal
@@ -27,7 +27,7 @@ Two costs the analysis did not count, found while reading for this design:
 | | Decision | Why |
 |---|---|---|
 | L1 | **Two modes of drawing a counter.** Standalone (a counter in its own document: `UnitPreview`, the Unit Lab, the Art tab, the 138 counter goldens) stays exactly as today, byte for byte. Layer mode (the map's counter layer) shares definitions and is drawn in parts. `WriteUnit` takes an optional layer context; without one it writes what it writes today. | The goldens remain a complete check of the counter drawing, and the previews keep their own `<defs>` (analysis, option C, risk). |
-| L2 | **The unit of change is the hex.** A layer fragment holds every level's stack in one hex, with its count badges and level tabs. | A unit entering another level of a hex moves every level's stack in that hex (`offsetY` depends on the number of levels), so a hex-and-level fragment would change together with its siblings anyway. |
+| L2 | **The unit of change is the hex** (ruled U2, 2026-10-18). A layer fragment holds every level's stack in one hex, with its count badges and level tabs. | A unit entering another level of a hex moves every level's stack in that hex (`offsetY` depends on the number of levels), so a hex-and-level fragment would change together with its siblings anyway. |
 | L3 | **Shared definitions are named by their content.** A figure outline is `fig-{hash of its path}`; a face definition is `face-{hash of its markup}`. The hash is SHA-256 over the UTF-16 text, truncated to 96 bits (24 hex digits). | A content name never goes stale, needs no registry to stay unique across steps, and lets the browser keep a definition for as long as anything refers to it. 96 bits makes a collision not worth handling. |
 | L4 | **The layer is a list of fragments; the string is assembled only when asked.** `UnitOverlay` carries its fragments in paint order and the layer's own attributes; `Svg` stays, built lazily, for the hosts that send the whole layer and for the tests. | D needs the parts; the board viewer, the hand-over map, and the tests keep working from the whole. |
 | L5 | **A whole send stays the fallback.** Any doubt (nothing sent yet, a board load, another unit set, a patch the browser rejects, a patch larger than half the layer) sends the whole layer as today. | A patch that misses is never shown; the next step corrects nothing that a whole send would not. |
@@ -102,9 +102,39 @@ Today's `FigureId` (`fig-{32-bit FNV}-{unit}-{x}-{y}`) stays for standalone docu
 - `UnitFragmentCache`, in `Units.Rendering`, one per `UnitLibrary` (a singleton in the Studio), passed to `Build`. Without it, `Build` renders everything as today.
 - **The hex key** is one string: the renderer's fingerprint; the hex height; the hex center (as fixed-point text); the number of levels; and for each level and each member in order: the member's document as `UnitDocumentJson` writes it, whether it is shown, its lead, and its index in the stack. That is everything `Build` reads for a hex, so the fragment is a function of the key.
 - **The value** is the fragment's markup, its content hash, and the warnings its counters raised. A hit replays the warnings with the same unit ids; the diagnostics and the `PlacedUnit` list are not cached, since they cost nothing to make.
-- **The bound** is by characters: least recently used entries leave when the total passes 4 million characters (about 8 MB). One game view at step 13 needs about 0.4 million before Q and well under 0.1 million after it.
+- **The bound** is by characters (ruled U5, 2026-10-18): least recently used entries leave when the total passes 4 million characters (about 8 MB). One game view at step 13 needs about 0.4 million after C1 and well under 0.1 million after Q; with E first, before C1, it needs about 0.7 million (section 7.1).
 - **Cost of a key:** about 1 to 2 KB of JSON per counter per step, some 100 KB a step for 42 counters, against about 3 MB of rendering today.
 - **Risk** (analysis, option E): a key that misses an input draws a counter in an old state. The key is built from the whole document rather than chosen fields, so a new document property is covered without a change here; what the document does not hold (sheet, palette, vocabulary, figure art) is in the fingerprint. Section 11 has the tests that would catch a miss.
+
+### 7.1 E first, alone (the order ruling, 2026-10-18)
+
+The user ruled that E goes first, as a standalone slice, ahead of C1, the leads, D, C2, and Q. The slice has three parts, and changes nothing the browser receives.
+
+**The builder writes the layer as hex fragments.**
+
+- `UnitOverlayBuilder.Build` writes each hex's `data-stack` groups (every level, its count badges and level tabs) into a fragment of its own, then joins the fragments in today's paint order inside the layer's root group. No wrapper element is added: the `<g id="units-{c}-{r}">` of section 6 comes with D. The layer is therefore byte-identical to today's, at every revision of every fixture.
+- What a fragment reads is local to its hex, which the code confirms: the hex center, the hex height, the levels and their order, each level's largest face (`face`, from its members), the level suffix, and each shown member's document through `WriteUnit`. The one value that spans hexes, `data-face-size` (the smallest near face on the map), is a root attribute, written outside the fragments. `WriteUnit` keeps no state across counters; today's figure ids (`fig-{FNV}-{unit}-{x}-{y}`) are made from the unit id and the position, both in the key.
+- `UnitOverlay.Svg` stays a whole string, assembled at the end of `Build` as today. `Fragments` and `Attributes` (L4) come with D; nothing outside `Build` needs them before.
+
+**`UnitFragmentCache`,** with the key of section 7, the bound of U5, and the warnings replayed on a hit. Three differences from the full design, because the slice comes before the leads and before C1:
+
+- **The lead is not in the key.** `GameMaps.Named` and `Led` still rewrite the assembled layer after `Build`, so `Build` never reads a lead. The lead joins the key when the leads move into the builder (L6).
+- **A fragment still carries its counters' own figure `<defs>`.** That is why one view needs about 0.7 million characters, not 0.4 million: the 4 million bound holds about five whole views, enough for one game stepped forward and back in Replay and in Play at once. C1 shrinks every entry; nothing in the cache changes for it but its contents, since the renderer's fingerprint includes `UnitRenderer.Version`, which C1 raises.
+- **The cache is shared by every circuit** (one `UnitLibrary`), so it is safe under concurrent use: one lock around lookup, insertion, and eviction, held only for the dictionary and list work, never while a hex renders.
+
+**What stays per step,** hit or miss: the documents' located and grouped, each unit's near face size (for `face` and `data-face-size`), the keys (each member's `UnitDocumentJson`), the `PlacedUnit` list with its accessible names, the joined layer string, `Led`'s rewrite of it, and `BoardWorkspace`'s comparison and send when it changed.
+
+**Expectations, stated before building** (my Studio's Debug build; measured in the plan's last E task):
+
+| Measure | Today (analysis, section 14) | Expected with E | Why |
+|---|---|---|---|
+| Replay, counter build per step | about 53 ms | 8 to 15 ms | a typical step changes 0 to 6 of 42 counters, so most hexes hit; the rest is the keys (about 100 KB of JSON), the face sizes, and joining about 0.7 million characters |
+| Play, counter build per step (the follower) | about 46 ms | 8 to 15 ms | the same work on the same layer |
+| Allocation per step from the counter layer | about 3 MB of Replay's 9.4 MB | about 2 to 2.5 MB | E removes the rendering's own garbage (the cascade, the writer's numbers and buffers); the joined string (about 1.4 MB), `Led`'s copy of it (about 1.4 MB), and the send stay until the leads and D |
+| Characters sent per step | unchanged | unchanged | no browser change in the slice |
+| Hit rate over a recorded game, after its first step | none | 85% of hexes or more | from the 0 to 6 counters a step changes |
+
+The 53 and 46 ms are `UnitOverlayBuilder.Build` as sampled in sections 12 and 13 of the analysis. The first measure in the slice (the plan's task E1) times `Led`'s rewrite beside it, so the result separates what E removes from what the leads (L6) would remove. If `Led` turns out to be a large share, I will put L6 to the user as the next slice with that number; it is not part of E.
 
 ## 8. Q: one definition per distinct face
 
@@ -193,7 +223,8 @@ A test helper expands a layer: every `<use>` is replaced by a copy of what it re
 - **Leads:** for each fixture, the parsed names and titles from `Build` with a lead equal those from today's `Led` (kept in the test project as the oracle).
 - **D:** the fragments joined equal the whole `Svg`; for consecutive overlays A and B from the game fixtures, A's fragments with the patch from A to B applied equal B's fragments, in the same order (a C# model of `applyUnitPatch`); an unchanged overlay gives no patch; a set change or a face-size change is handled.
 - **D in the browser** (`boardViewport.pointer.test.mjs`, which CI runs and the gate runs by hand): upserts land before their `before`; removals remove; a wrong `base` returns `false` and changes nothing; focus is restored; the highlight stays last; `data-active-tier` survives and follows a new face size.
-- **E:** the layer with the cache equals the layer without it, at every revision of the game fixtures, stepping forward, back, and jumping; the key changes with each document state a counter can show (facing, turret facing, concealed, attachments, states, side, level, the lead) and with each fingerprint input (sheet, palette, figure art); the bound holds; warnings come back on a hit.
+- **E:** the layer with the cache equals the layer without it, at every revision of the game fixtures, stepping forward, back, and jumping; the key changes with each document state a counter can show (facing, turret facing, concealed, attachments, states, side, level, and, once L6 is built, the lead) and with each fingerprint input (sheet, palette, figure art); the bound holds; warnings come back on a hit.
+- **E first (section 7.1):** before the fragments, a manifest of the layer's SHA-256 at every revision of the game fixtures and for the two layer fixtures, both sheets, is recorded as test data; the fragment builder and the cache must reproduce it exactly. The manifest changes on purpose at C1, the leads, D, and Q, each change explained in its commit, as the layer goldens would (U6). A test runs the cache from several threads over two games at once and compares with cache-off.
 - **Q:** the equivalence oracle; one definition for two counters with the same face; three `<use>` per counter; no definition contains `data-unit-id`, `data-attached-id`, or `data-tier`; faces no longer used leave the page after a patch; the focus custom properties are written in layer mode only.
 - **Allocation:** the benchmark in `code-builders/diagnostics/svg-memory` gains a layer workload: a sequence of overlays of one map with two counters moved per step, built with and without the cache, reporting characters sent and bytes allocated per step.
 
@@ -208,6 +239,7 @@ Estimates from the analysis's measurements; each is measured in its task, and th
 | After | Layer at step 13 (whole send) | A typical step sends | Server work per step |
 |---|---|---|---|
 | PR 19 (today) | 696,691 characters | the whole layer on any change: 696,691 | the whole layer built, copied by the leads, compared, serialized: about 3 MB of the step's 9.4 MB allocation |
+| E first, alone (section 7.1) | the same | the same | only changed hexes rendered; the joined string, the leads' copy, and the send stay: about 2 to 2.5 MB; the build from about 53 ms to 8 to 15 ms |
 | C1 | about 376,000 (-46%) | the whole layer: about 376,000 | about 1.5 to 2 MB less: the built string, the leads' copy, and the interop copy each halve |
 | Leads in the builder | the same | the same | one copy of the layer and the regular expression's matches fewer |
 | D with C2 | about 367,000 | nothing on 4 of the 11 sampled steps; about 16,000 to 60,000 on the others (the changed counters' hexes, outlines gone); about 215,000 at setup | every hex still built and hashed; the interop copy falls to the patch |
@@ -236,14 +268,15 @@ Per ruling 3, all three tiers stay until D and Q are built. With them, a tier co
 
 ## 15. For the user to rule on
 
-Each with my proposal.
+Each with my proposal, and the user's ruling where one is made.
 
-| | Question | Proposal |
-|---|---|---|
-| U1 | Where C2's sprite lives: ruling 2 says "the viewport's defs layer"; `layer-defs` is built by the board renderer, which does not know counters, and is replaced on every load | A viewport-held group `unit-figures` beside the board's layers, holding the whole built-in figure set (about 36 KB), sent once per board load (section 4) |
-| U2 | The unit of a patch: the analysis said hex and level | The hex, all levels (L2) |
-| U3 | Q's definitions as `<symbol>` (the analysis's word) or `<g>` | `<g>` in `<defs>`: no clipping, no size (section 8) |
-| U4 | The focus ring under Q | CSS custom properties, the same gold edge (section 8) |
-| U5 | The cache's bound | 4 million characters, about 8 MB, shared by all renderers |
-| U6 | Layer goldens | Add the four of section 11 |
-| U7 | When to start | After PR 19 merges into `main`: this work builds on its span writer (`SvgValue`, the pooled `SvgWriter`); one branch from `main` then, one pull request at the end |
+| | Question | Proposal | Ruling |
+|---|---|---|---|
+| U1 | Where C2's sprite lives: ruling 2 says "the viewport's defs layer"; `layer-defs` is built by the board renderer, which does not know counters, and is replaced on every load | A viewport-held group `unit-figures` beside the board's layers, holding the whole built-in figure set (about 36 KB), sent once per board load (section 4) | Open; needed before C2 |
+| U2 | The unit of a patch: the analysis said hex and level | The hex, all levels (L2) | **Approved** 2026-10-18 |
+| U3 | Q's definitions as `<symbol>` (the analysis's word) or `<g>` | `<g>` in `<defs>`: no clipping, no size (section 8) | Open; needed before Q |
+| U4 | The focus ring under Q | CSS custom properties, the same gold edge (section 8) | Open; needed before Q |
+| U5 | The cache's bound | 4 million characters, about 8 MB, shared by all renderers | **Approved** 2026-10-18 |
+| U6 | Layer goldens | Add the four of section 11 | Open; needed before C1. E uses a manifest of layer hashes instead (section 11), which needs no ruling |
+| U7 | When to start | After PR 19 merges into `main`: this work builds on its span writer (`SvgValue`, the pooled `SvgWriter`); one branch from `main` then, one pull request at the end | Settled: PR 19 merged (029bf601). Superseded in part by the order ruling: E is its own branch and pull request (plan, V1) |
+| | The order | (Not asked as a question; the plan put E seventh) | **Ruled** 2026-10-18: E first, alone, ahead of the rest of the plan; then D in the browser, C2, and Q later (section 7.1) |

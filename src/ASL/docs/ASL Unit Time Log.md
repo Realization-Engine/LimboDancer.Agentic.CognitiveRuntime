@@ -1578,3 +1578,4 @@ Branch `svg-memory-design-2`, from `main`. Design and plan only; no code changed
 | Task | Start | End | Duration | Note |
 |---|---|---|---|---|
 | The analysis and the counter code read; the design and plan written | 18:00 | 18:22 | 0:22 | Start approximate (the clock was first read at 18:15, after the reading); a worktree under the long scratchpad path failed to check out, so it sits at a short path |
+| The rulings U2, U5, and the order recorded; the plan revised with E first, alone (part 1, tasks E1 to E4); E's expectations stated | 21:14 | 21:23 | 0:09 | The builder read again to confirm a hex fragment reads only its own hex; `play-follow-profile` found unpushed, so part 1 starts from it unless it merges first |
