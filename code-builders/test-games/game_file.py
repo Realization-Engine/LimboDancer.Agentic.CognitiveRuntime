@@ -1,4 +1,4 @@
-"""A small Studio test game written as a file: a few counters on one board, at the phase wanted.
+"""A small Studio test game written as a file: a few counters on one board or a placed map, at the phase wanted.
 
 A rule pass shows each thing it builds in a game of a few counters made for it (the standing rules). This is the library those games
 are written with; it replaces the three that passes 45, 50, and 55 each stacked on the last. A game is written under its own id into
@@ -38,22 +38,42 @@ def board_version(name):
     return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
 
 
+def placed_map(boards):
+    """A placed map, as the Gambit card's: boards is a list of (board, column, row, reversed), such as [("04", 0, 0, False),
+    ("02", 0, 1, True)] for bd04 with bd02 below it reversed. Each board's version is computed as for a single board."""
+    entries, references, versions = [], [], []
+    for board, column, row, reversed_ in boards:
+        blob = board_version(board)
+        entry = {"board": "bd" + board, "version": blob, "column": column, "row": row}
+        if reversed_:
+            entry["reversed"] = True
+        entries.append(entry)
+        references.append(f"bd{board}@{column},{row}" + ("/r" if reversed_ else ""))
+        versions.append(blob)
+    return {"reference": " ".join(references), "version": "+".join(versions), "boards": entries}
+
+
 def marks(defaults, conditions):
     return dict(defaults, **{"asl:" + key.replace("_", "-"): value for key, value in conditions.items()})
 
 
 class GameFile:
     """other: the nationality that takes the Russian side's place (its side id is the nationality). year, month: the scenario's date.
-    defender: the Scenario Defender, for a game that starts in setup. special: the game's special rules, such as "night:2"."""
+    defender: the Scenario Defender, for a game that starts in setup. special: the game's special rules, such as "night:2".
+    boards: a placed map in place of the single board, as placed_map takes it; a Location names its own board ("bd02:AA10:0")."""
 
-    def __init__(self, game, label, phasing="german", board="03", other="russian", year=1942, month=7, defender=None, special=None, catalog=CATALOG):
+    def __init__(self, game, label, phasing="german", board="03", other="russian", year=1942, month=7, defender=None, special=None, catalog=CATALOG,
+                 boards=None):
         self.game, self.label, self.phasing, self.other = game, label, phasing, other
         with open(LIVE + TEMPLATE, encoding="utf-8") as source:
             template = json.load(source)
         self.tenant = template["tenant"]
         started = dict(template["events"][0]["payload"])
-        blob = board_version(board)
-        started["map"] = {"reference": "bd" + board, "version": blob, "boards": [{"board": "bd" + board, "version": blob}]}
+        if boards:
+            started["map"] = placed_map(boards)
+        else:
+            blob = board_version(board)
+            started["map"] = {"reference": "bd" + board, "version": blob, "boards": [{"board": "bd" + board, "version": blob}]}
         started["phasingSide"] = phasing
         started["catalog"] = catalog
         started["scenarioYear"], started["scenarioMonth"] = year, month
