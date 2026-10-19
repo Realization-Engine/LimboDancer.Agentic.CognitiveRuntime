@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Maps.Read;
 using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.State;
 
@@ -54,5 +55,29 @@ public sealed partial class GamePlanner
 
         /// <summary><c>RoutAdvice</c>'s answer per unit.</summary>
         public ConcurrentDictionary<UnitInstance, (IReadOnlyList<BoardLocation> Targets, bool CanRout, IReadOnlyDictionary<BoardLocation, IReadOnlyList<BoardLocation>> Routes)> RoutAdvice { get; } = new(ReferenceEqualityComparer.Instance);
+
+        /// <summary>
+        /// The map context (the A3 plan, W3): each board's handle at the version the state pins, looked up once; null when the board is not on the
+        /// map or cannot be read. A footprint published while the state lives is read from the next state on (W4; the user, 2026-10-19).
+        /// </summary>
+        public ConcurrentDictionary<BoardRef, BoardHandle?> Handles { get; } = new();
+
+        // 1 once the placed map's composed read is kept; written after the read, read with a volatile read.
+        private int composedKept;
+        private ComposedMapRead? composed;
+
+        /// <summary>A placed map's composed read, built at its first use from the kept handles and then kept.</summary>
+        public ComposedMapRead? Composed(GamePlanner planner, GameState state)
+        {
+            if (Volatile.Read(ref composedKept) == 1)
+            {
+                return composed;
+            }
+
+            var made = planner.ComposedOf(state);
+            composed = made;
+            Volatile.Write(ref composedKept, 1);
+            return made;
+        }
     }
 }

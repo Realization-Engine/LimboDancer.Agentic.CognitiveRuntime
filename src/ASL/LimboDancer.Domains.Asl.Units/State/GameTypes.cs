@@ -121,7 +121,22 @@ public sealed record PlacedBoard(BoardRef Board, string Version, BoardSlot? Slot
 /// </summary>
 public sealed record MapInPlay(string Reference, string Version, IReadOnlyList<PlacedBoard> Boards)
 {
-    public PlacedBoard? Board(BoardRef board) => Boards.FirstOrDefault(placed => placed.Board == board);
+    /// <summary>
+    /// The placed board of a reference, or null. A plain loop (the A3 plan, W5): the rules ask it tens of thousands of times a Rout Phase step,
+    /// and the capturing lambda it used was an allocation each time.
+    /// </summary>
+    public PlacedBoard? Board(BoardRef board)
+    {
+        for (var index = 0; index < Boards.Count; index++)
+        {
+            if (Boards[index].Board == board)
+            {
+                return Boards[index];
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>Whether every board has a slot, so the map is laid out and reads cross its seams.</summary>
     public bool IsPlaced => Boards.Count > 0 && Boards.All(board => board.Slot is not null);

@@ -79,8 +79,7 @@ public sealed partial class GamePlanner
             return composed.Neighbor(at.Board, at.Hex, side) is { } other ? new BoardLocation(other.Board, other.Hex, 0) : null;
         }
 
-        return state.Map.Board(at.Board) is { } placed && boards.TryGetBoard(at.Board, placed.Version).Board is { } handle
-            && handle.Neighbor(at.Hex, side) is { } hex ? new BoardLocation(at.Board, hex, 0) : null;
+        return Handle(state, at.Board) is { } handle && handle.Neighbor(at.Hex, side) is { } hex ? new BoardLocation(at.Board, hex, 0) : null;
     }
 
     /// <summary>The hexside of a Location's hex facing an adjacent hex; null when they are not adjacent.</summary>

@@ -22,9 +22,7 @@ public sealed partial class GamePlanner
             return Composed(state)?.Resolve(location).Read;
         }
 
-        return state.Map.Board(location.Board) is { } placed && boards.TryGetBoard(location.Board, placed.Version).Board is { } handle
-            ? handle.Resolve(location).Read
-            : null;
+        return Handle(state, location.Board) is { } handle ? handle.Resolve(location).Read : null;
     }
 
     /// <summary>Whether a ground-level Location is a woods-road hex (B13.31): the map's facts handed to Rules.</summary>
@@ -42,7 +40,7 @@ public sealed partial class GamePlanner
             return fireLos.CrossesTerrainInTargetHex(state, from, target, enteredAcross);
         }
 
-        return !state.Map.IsPlaced && state.Map.Boards is [{ } placed] && boards.TryGetBoard(placed.Board, placed.Version).Board is { } handle
+        return !state.Map.IsPlaced && state.Map.Boards is [{ } placed] && Handle(state, placed.Board) is { } handle
             && BoardLosMaps.GetValue(handle, board => new LosMapHolder(LosMap.ForBoard(board).Map)).Map is { } map
             ? LosTargetPoints.CrossesTerrainInTargetHex(map, from, target, enteredAcross)
             : null;
@@ -77,7 +75,7 @@ public sealed partial class GamePlanner
             return (fromRead, toRead, adjacent, adjacent ? composed.Crossed(from.Board, from.Hex, to.Board, to.Hex)?.Agreed : null);
         }
 
-        if (from.Board != to.Board || state.Map.Board(to.Board) is not { } placed || boards.TryGetBoard(to.Board, placed.Version).Board is not { } handle)
+        if (from.Board != to.Board || Handle(state, to.Board) is not { } handle)
         {
             return (null, null, false, null);
         }
@@ -110,7 +108,7 @@ public sealed partial class GamePlanner
         }
         else
         {
-            map = state.Map.Boards is [{ } placed] && boards.TryGetBoard(placed.Board, placed.Version).Board is { } handle
+            map = state.Map.Boards is [{ } placed] && Handle(state, placed.Board) is { } handle
                 ? BoardLosMaps.GetValue(handle, board => new LosMapHolder(LosMap.ForBoard(board).Map)).Map : null;
         }
 
@@ -137,7 +135,7 @@ public sealed partial class GamePlanner
 
         LosMap? map = state.Map.IsPlaced
             ? Composed(state) is { } composed ? LosMap.ForPlacedMap(composed).Map : null
-            : state.Map.Boards is [{ } placed] && boards.TryGetBoard(placed.Board, placed.Version).Board is { } handle ? LosMap.ForBoard(handle).Map : null;
+            : state.Map.Boards is [{ } placed] && Handle(state, placed.Board) is { } handle ? LosMap.ForBoard(handle).Map : null;
         return map is null ? (null, null)
             : (LosCalculator.Check(map, from, LosAim.LosPoint, hexside, LosAim.LosPoint), LosCalculator.Check(map, from, LosAim.LosPoint, hexside, LosAim.AuxiliaryPoint));
     }

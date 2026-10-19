@@ -130,6 +130,18 @@ Task 2 may end the work early: if neither part reaches its threshold, the plan's
 | Q1 | W4: a footprint published while a state lives is read from the next state on | **Yes:** a state is a snapshot; the alternative keeps most of the lookup's cost |
 | Q2 | A3b: keep each resolved Location (`BoardHandle.Resolve`'s `LocationRead`) in the map context too, which A3 alone does not remove (about 23 MB of the heaviest step, and the time of two `Resolve` per step) | **Decide after task 2:** it reports how often a state resolves the same Location again; propose A3b then if the repeats are high, as its own task, not built unasked |
 
+**Rulings (the user, 2026-10-19, after task 2):** Q1: **W4 approved as written.** Q2: **A3b is built as task 3b on this branch, after
+task 3, and dropped if it saves under 15 ms a Rout Phase step** (task 2 measured `Resolve` at 36 ms a Rout Phase step, median, with 191
+calls per distinct Location).
+
+### Task 3b. A3b: the resolved Locations kept in the map context
+
+- **Implement:** each state's map context keeps each Location's resolved read (on one board the handle's, on a placed map the composed
+  read's), so `ReadLocation` and `Step` resolve a Location once a state.
+- **Studio:** as task 3's, and the probe's `Resolve` count and time on cd-guards-5, 714 to 760; under 15 ms saved a Rout Phase step,
+  the change is taken out and the figure recorded.
+- **Then the tests:** the planner test of task 3 extended (a Location read twice in a state resolved once), and the classes reached.
+
 ## 10. Results
 
 ### 10.1 Task 2: measured first (2026-10-19)
@@ -180,3 +192,29 @@ to 80 s a commit while the record was made, beside the gate's `base` stage.
 - **The placed-map part (W3's composed read) is built:** the builds are 96 to 97% of a Rout Phase step on the Gambit game, against 25%.
 - **A3b (Q2):** `Resolve` takes 36 ms a Rout Phase step, median, and 151 ms at the heaviest, and a state resolves each Location 191
   times, median. Proposed to the user as its own task; not built unasked.
+
+### 10.2 Task 3: the map context (2026-10-19)
+
+**As built.** `PlayStepMemo` holds each board's handle (`Handle(state, board)`, looked up once a state) and the placed map's composed read
+(`Composed(state)`, built once a state from the kept handles). The funnels of section 2 read through `Handle`: `ReadLocation`, `Step`,
+the one-board `Los` and `LosToHexside`, `CrossesTerrainInTargetHex`, `HexDistance`, `Neighbors`, `Across`, the sniper's `Next` and
+`Distance`, `EdgeSides`' read, `Bearing`, and `EntryFacts`' one-board read. Left as they were (section 2): the three proposal-time reads
+of an entry, setup's `EntryHexes`, the unversioned read of a board by name, and `BoardsOf` of a replay's first event.
+`MapInPlay.Board` is a plain loop (W5).
+
+**Studio** (my Studio on 6670 against `main` on 6671, the tabs in front):
+
+- **Behaviour, the same in both:** the Rout panel's text (obligations, choices, every route) and the unit table, as the adjudicator and
+  as each side, at cd-guards-5's 621, 622, and 729 to 744, and at each step of `a3-gambit-rout` (19, 24, 28, 32, 39, 43, 44, 45, 48).
+- **The short run, cd-guards-5, 714 to 760:** a Rout Phase step's median 528 ms before and 345 after (mean 481 and 432); any other step
+  230 and 225. Short runs vary by about ±40 ms; task 4's whole-game run is the comparison.
+- **The Gambit record:** the steps that took 22 to 49 s in the "before" Studio took about 1 to 2.5 s.
+- **The allocation trace of 621 to 622:** 97 MB, against 101 on `main`: 4 MB saved, under the 5 MB the part was expected to save
+  alone. `BoardHandle.Resolve` under `Step` is now the largest single source (21 MB), task 3b's target.
+
+**Tests:** in `SeamEntryTests`, a state looks each board up once and composes its placed map once (one board and placed), and W4 (a
+footprint published while a state lives is read from the next state on); the classes reached: Play 179 of 179 (`SeamEntryTests`,
+`BacklogPass10`, `15TablePlayer`, `16`, `20*`, `21*`, `25`, `26`, `35`, `TablePlayer22`), MapStudio 10 of 10
+(`StudioBoardCatalogTests`, `CampaignPlayableFootprintsTests`, `PlayPagePass26Tests`, `FollowRecordTests`), Units 8 of 8
+(`MapPlacementTests`). The W4 test failed once as first written: the planner keeps its replay, so replaying the same events gave the same
+state; it now commits one more step to reach the next state.

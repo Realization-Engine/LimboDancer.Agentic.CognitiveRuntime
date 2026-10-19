@@ -1667,7 +1667,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
         else
         {
-            var handle = state.Map.Board(target.Board) is { } placed ? boards.TryGetBoard(target.Board, placed.Version).Board : null;
+            var handle = Handle(state, target.Board);
             targetRead = handle?.Resolve(target).Read;
             fromRead = from is not null && handle is not null && from.Location.Board == target.Board ? handle.Resolve(from.Location).Read : null;
             adjacent = targetRead is { IsDefinitive: true } && fromRead is { IsDefinitive: true } && handle!.Distance(from!.Location.Hex, target.Hex) == 1;
@@ -2050,18 +2050,18 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         return node;
     }
 
-    /// <summary>The composed read of a placed map at the versions in play, or null when the map is not placed or a board cannot be read.</summary>
-    private ComposedMapRead? Composed(GameState state)
-    {
-        if (!state.Map.IsPlaced)
-        {
-            return null;
-        }
+    /// <summary>
+    /// The composed read of a placed map at the versions in play, or null when the map is not placed or a board cannot be read. Built once a state,
+    /// from the state's kept handles, and kept with the state (the A3 plan, W3): it was built anew on every map read.
+    /// </summary>
+    private ComposedMapRead? Composed(GameState state) => state.Map.IsPlaced ? MemoOf(state).Composed(this, state) : null;
 
+    private ComposedMapRead? ComposedOf(GameState state)
+    {
         var placed = new List<(BoardPlacement, BoardHandle)>();
         foreach (var placement in state.Map.Placements())
         {
-            if (boards.TryGetBoard(placement.Board, state.Map.Board(placement.Board)!.Version).Board is not { } handle)
+            if (Handle(state, placement.Board) is not { } handle)
             {
                 return null;
             }
@@ -2071,6 +2071,15 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         return ComposedMapRead.Create(placed).Read;
     }
+
+    /// <summary>
+    /// A board's handle at the version the state pins, or null when the board is not on the state's map or cannot be read: looked up once a state and
+    /// kept in its map context (the A3 plan, W3). The catalog returns the same handle object for a loaded board, so the LOS caches keyed by a handle
+    /// keep hitting.
+    /// </summary>
+    private BoardHandle? Handle(GameState state, BoardRef board) =>
+        MemoOf(state).Handles.GetOrAdd(board, static (key, read) => read.State.Map.Board(key) is { } placed ? read.Catalog.TryGetBoard(key, placed.Version).Board : null,
+            (State: state, Catalog: boards));
 
     private List<BoardHandle>? BoardsOf(IReadOnlyList<GameEvent> events)
     {
