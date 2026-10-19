@@ -145,9 +145,15 @@ public sealed class CounterLayerCases : IDisposable
 
     public static IReadOnlyList<string> Sheets { get; } = [UnitStyles.Digital, UnitStyles.Classic];
 
-    public UnitLibrary Library { get; }
+    public UnitLibrary Library
+    {
+        get;
+    }
 
-    public GameLibrary Games { get; }
+    public GameLibrary Games
+    {
+        get;
+    }
 
     public IReadOnlyList<CounterLayerCase> All => all.Value;
 
@@ -175,7 +181,7 @@ public sealed class CounterLayerCases : IDisposable
     public IReadOnlyList<CounterLayerCase> Steps(string played, string view, string sheet) => [.. All.Where(item =>
         item.Name.StartsWith($"{played}/{view}/{sheet}/", StringComparison.Ordinal))];
 
-    private IReadOnlyList<CounterLayerCase> Make()
+    private List<CounterLayerCase> Make()
     {
         var cases = new List<CounterLayerCase>();
         foreach (var played in Played)
@@ -251,10 +257,31 @@ public sealed class CounterLayerCases : IDisposable
         }
 
         var squad = examples.First(example => example.Kind == "asl:squad");
-        units.Add(squad with { Id = "concealed-1", Location = "bd01:H2:0", Concealed = true });
-        units.Add(squad with { Id = "uninspected-1", Location = "bd01:H2:0", Concealed = true, Uninspected = true });
-        units.Add(squad with { Id = "dummy-1", Location = "bd01:I2:0", Concealed = true, Dummy = true });
-        units.Add(squad with { Id = "draft:german-1", Location = "bd01:J2:0" });
+        units.Add(squad with
+        {
+            Id = "concealed-1",
+            Location = "bd01:H2:0",
+            Concealed = true
+        });
+        units.Add(squad with
+        {
+            Id = "uninspected-1",
+            Location = "bd01:H2:0",
+            Concealed = true,
+            Uninspected = true
+        });
+        units.Add(squad with
+        {
+            Id = "dummy-1",
+            Location = "bd01:I2:0",
+            Concealed = true,
+            Dummy = true
+        });
+        units.Add(squad with
+        {
+            Id = "draft:german-1",
+            Location = "bd01:J2:0"
+        });
         return units;
     }
 
