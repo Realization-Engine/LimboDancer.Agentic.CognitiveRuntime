@@ -206,6 +206,18 @@ public sealed class SeamEntryTests : IDisposable
         Assert.Equal(range, planner.Range(state, from, to));
         Assert.Equal(fresh.Adjacent(state, from, to), planner.Adjacent(state, from, to));
         Assert.Equal(before, catalog.Lookups);
+
+        // Task 3b: the state keeps each Location's read, so a step read twice, and across the seam on the placed map, answers as a planner
+        // that keeps nothing does, and looks no board up.
+        var near = BoardLocation.Parse("bd01:G1:0");
+        var across = BoardLocation.Parse(placed ? "bd02:G10:0" : "bd01:G2:0");
+        for (var pass = 0; pass < 2; pass++)
+        {
+            Assert.Equal(fresh.Adjacent(state, across, near), planner.Adjacent(state, across, near));
+            Assert.Equal(fresh.Range(state, across, near), planner.Range(state, across, near));
+        }
+
+        Assert.Equal(before, catalog.Lookups);
     }
 
     [Fact]

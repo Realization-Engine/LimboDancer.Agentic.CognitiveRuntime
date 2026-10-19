@@ -62,6 +62,12 @@ public sealed partial class GamePlanner
         /// </summary>
         public ConcurrentDictionary<BoardRef, BoardHandle?> Handles { get; } = new();
 
+        /// <summary>
+        /// Each Location's read, resolved once a state (the A3 plan, task 3b; the user's ruling on Q2): a Rout Phase step resolved each Location
+        /// about two hundred times. A read depends only on the board's handle, which the state keeps.
+        /// </summary>
+        public ConcurrentDictionary<BoardLocation, LocationRead?> Reads { get; } = new();
+
         // 1 once the placed map's composed read is kept; written after the read, read with a volatile read.
         private int composedKept;
         private ComposedMapRead? composed;

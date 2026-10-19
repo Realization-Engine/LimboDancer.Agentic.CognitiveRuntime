@@ -218,3 +218,25 @@ footprint published while a state lives is read from the next state on); the cla
 (`StudioBoardCatalogTests`, `CampaignPlayableFootprintsTests`, `PlayPagePass26Tests`, `FollowRecordTests`), Units 8 of 8
 (`MapPlacementTests`). The W4 test failed once as first written: the planner keeps its replay, so replaying the same events gave the same
 state; it now commits one more step to reach the next state.
+
+### 10.3 Task 3b: the resolved Locations kept (2026-10-19)
+
+**As built.** `PlayStepMemo.Reads` keeps each Location's `LocationRead` once a state; `ReadLocation` reads through it, and `Step` reads
+both ends through `ReadLocation` (a placed map whose composed read failed still resolves on the board's handle, as before).
+`EntryFacts`' two reads, made once a proposal, resolve as before.
+
+**Kept, by its threshold:** the probe on cd-guards-5, 714 to 760, against task 2's figures:
+
+| Per Rout Phase step, median | Task 2 (`main`'s code) | After 3b |
+|---|---|---|
+| Board lookups | 27,990 | 1 |
+| Their time | 25 to 26 ms | 0.03 ms |
+| `BoardHandle.Resolve` calls | 34,472 | 180 (one per distinct Location) |
+| Their time | 36.0 ms | 0.54 ms |
+
+About 35 ms a Rout Phase step saved by 3b, against a threshold of 15. Other steps: 99 `Resolve` calls (720 before) and one lookup.
+
+**Studio:** the same page as the "before" Studio at cd-guards-5's 621, 622, and 729 to 744, and at each step of the Gambit record, in
+three views. **Tests:** task 3's test extended (steps read twice, and across the seam, answer as a planner that keeps nothing, with no
+lookup); Play's reached classes 179 of 179. Nothing public shows that a read is kept, so the test shows the answers; the probe's count
+(one `Resolve` per distinct Location) shows that it is kept.
