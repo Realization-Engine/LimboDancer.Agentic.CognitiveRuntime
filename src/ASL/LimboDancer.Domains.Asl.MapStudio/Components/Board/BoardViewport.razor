@@ -9,6 +9,10 @@
     private ElementReference host;
     private IJSObjectReference? module;
     private IJSObjectReference? viewport;
+
+    // What the browser's counter layer holds, and the figure sprite sent since the last load (the Counter Layer Design, sections 4 and 6).
+    private readonly UnitLayerSync units = new();
+    private string? figuresSent;
     private DotNetObjectReference<BoardViewport>? self;
     private bool disposed;
 
@@ -93,8 +97,13 @@
         viewport is null ? ValueTask.CompletedTask : viewport.InvokeVoidAsync(command, arguments);
 
     /// <summary>Loads a view: the render URL base and query, its view box, its layers, and the layers shown.</summary>
-    public ValueTask Load(string baseUrl, string query, object viewBox, IReadOnlyList<string> layers, IReadOnlyList<string> visible) =>
-        Send("load", baseUrl, RenderQuery(query), viewBox, layers, visible);
+    public ValueTask Load(string baseUrl, string query, object viewBox, IReadOnlyList<string> layers, IReadOnlyList<string> visible)
+    {
+        // A load replaces every group of the map, the counter layer and the figure sprite with them.
+        units.Reset();
+        figuresSent = null;
+        return Send("load", baseUrl, RenderQuery(query), viewBox, layers, visible);
+    }
 
     public ValueTask ReloadLayers(string baseUrl, string query, IReadOnlyList<string> layers) => Send("reloadLayers", baseUrl, RenderQuery(query), layers);
 
@@ -104,7 +113,36 @@
 
     public ValueTask SetVisible(IReadOnlyList<string> visible) => Send("setVisible", visible);
 
-    public ValueTask SetUnits(string? svg) => Send("setUnits", svg);
+    /// <summary>
+    /// Shows a counter layer (the Counter Layer Design, section 6): the figure sprite first when the map does not hold it (C2), then nothing when the
+    /// map holds this layer already, a patch of the hexes that changed, or the layer whole (decision L5); a patch the browser refuses is followed
+    /// by the layer whole. Every host shows units through here, so none forgets the sprite or the versions.
+    /// </summary>
+    public async ValueTask ShowUnits(UnitOverlay? overlay)
+    {
+        if (viewport is null)
+        {
+            return;
+        }
+
+        if (overlay?.Figures is { } figures && !ReferenceEquals(figures, figuresSent))
+        {
+            await Send("setUnitFigures", figures);
+            figuresSent = figures;
+        }
+
+        var send = units.Next(overlay);
+        if (send.Kind == UnitLayerSendKind.Patch && !await viewport.InvokeAsync<bool>("applyUnitPatch", send.Patch))
+        {
+            units.Refused();
+            send = units.Next(overlay);
+        }
+
+        if (send.Kind == UnitLayerSendKind.Whole)
+        {
+            await Send("setUnits", send.Svg, send.Version);
+        }
+    }
 
     /// <summary>Turns the whole map a quarter clockwise, or back (pass 29); the browser remembers the choice.</summary>
     public ValueTask SetRotation(bool on) => Send("setRotation", on);

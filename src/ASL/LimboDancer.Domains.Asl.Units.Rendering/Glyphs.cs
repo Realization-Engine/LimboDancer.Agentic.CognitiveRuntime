@@ -25,14 +25,19 @@ internal static class Glyphs
     /// parts written once for its counter have ids no other counter shares.
     /// </summary>
     public static bool Draw(SvgWriter svg, string name, string? argument, Box box, string color, int figures, FigureArt? art = null, string? side = null,
-        string? ground = null, string? piping = null, string? key = null)
+        string? ground = null, string? piping = null, string? key = null) =>
+        Draw(svg, name, argument, box, color, figures, art, side, ground, piping, key, null);
+
+    /// <summary>As the public <c>Draw</c>; in a counter layer, <paramref name="layer"/> holds the figure outlines, which the layer writes once.</summary>
+    internal static bool Draw(SvgWriter svg, string name, string? argument, Box box, string color, int figures, FigureArt? art, string? side,
+        string? ground, string? piping, string? key, UnitLayerContext? layer)
     {
         switch (name)
         {
             case "size-figures":
                 if (art?.Pose(argument, side) is { } pose)
                 {
-                    ArtFigures(svg, art, pose, side, box, color, ground, piping, figures, key);
+                    ArtFigures(svg, art, pose, side, box, color, ground, piping, figures, key, layer);
                 }
                 else if (FigureArt.FallsBackProne(argument))
                 {
@@ -103,7 +108,7 @@ internal static class Glyphs
     /// the face meets the helmet. With piping, every figure, the rearmost too, and every helmet get a thin line of the piping's color instead.
     /// </summary>
     private static void ArtFigures(SvgWriter svg, FigureArt art, FigurePose pose, string? side, Box box, string color, string? ground, string? piping,
-        int count, string? key)
+        int count, string? key, UnitLayerContext? layer)
     {
         count = Math.Clamp(count, 1, 3);
         var width = pose.Width / 1000;
@@ -127,23 +132,34 @@ internal static class Glyphs
             : null;
 
         // Each outline is written once for the counter and drawn by reference for every man, his ring, and his piping; a traced outline is
-        // some thousands of characters, and a squad would otherwise carry it up to six times.
-        var id = FigureId(key, box, pose.Path + helmet?.Path + weapon?.Path);
-        svg.Start("defs");
-        svg.Empty("path", ("id", id + "-body"), ("d", SvgValue.Trusted(pose.Path)));
-        if (helmet is not null)
+        // some thousands of characters, and a squad would otherwise carry it up to six times. In a counter layer, once for the whole layer
+        // (option C1): the layer holds each outline by its content id, and the counter writes no definition of its own.
+        string bodyRef, helmetRef, weaponRef;
+        if (layer is not null)
         {
-            svg.Empty("path", ("id", id + "-helmet"), ("d", SvgValue.Trusted(helmet.Path)));
+            bodyRef = "#" + layer.Outline(pose.Path);
+            helmetRef = helmet is null ? string.Empty : "#" + layer.Outline(helmet.Path);
+            weaponRef = weapon is null ? string.Empty : "#" + layer.Outline(weapon.Path);
+        }
+        else
+        {
+            var id = FigureId(key, box, pose.Path + helmet?.Path + weapon?.Path);
+            svg.Start("defs");
+            svg.Empty("path", ("id", id + "-body"), ("d", SvgValue.Trusted(pose.Path)));
+            if (helmet is not null)
+            {
+                svg.Empty("path", ("id", id + "-helmet"), ("d", SvgValue.Trusted(helmet.Path)));
+            }
+
+            if (weapon is not null)
+            {
+                svg.Empty("path", ("id", id + "-weapon"), ("d", SvgValue.Trusted(weapon.Path)));
+            }
+
+            svg.End();
+            (bodyRef, helmetRef, weaponRef) = ($"#{id}-body", $"#{id}-helmet", $"#{id}-weapon");
         }
 
-        if (weapon is not null)
-        {
-            svg.Empty("path", ("id", id + "-weapon"), ("d", SvgValue.Trusted(weapon.Path)));
-        }
-
-        svg.End();
-        var bodyRef = $"#{id}-body";
-        var helmetRef = $"#{id}-helmet";
         for (var index = 0; index < count; index++)
         {
             var x = lying ? left : left + (index * body * Step * scale);
@@ -167,7 +183,7 @@ internal static class Glyphs
             if (weapon is not null && alongGrip is not null)
             {
                 // The weapon keeps its length in body units whatever the pose; the grip only places and turns it.
-                svg.Empty("use", ("href", $"#{id}-weapon"), ("transform", alongGrip));
+                svg.Empty("use", ("href", weaponRef), ("transform", alongGrip));
             }
 
             if (helmet is not null)

@@ -1178,6 +1178,16 @@ The ASL Unit Figure Art Plan (`src/ASL/docs/Plans`), 2026-10-17: nationality fig
 | Japanese and Chinese figures | Figure art plan, decision F5 | A25 | Japanese or Chinese units in the catalog | The vocabulary has a Japanese side; it draws the standing figure with no kit. |
 | Icons for the Unit Lab's Unit and Art tabs and the Art tab's Coverage, Prompts, and Batches | Figure art plan, stage 3 | (UI) | An Icon Lab batch | The Icon Lab's Coverage lists them as needing an icon; they keep their words. |
 
+## 62. Added by the counter layer design
+
+The ASL Map Studio Counter Layer Design (`src/ASL/docs/Designs`), 2026-10-18: the second group of the SVG memory analysis.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| The rest of a replay step measured and reduced: projection, rules, render tree, and the page's serialization, about 6 MB of a 9.4 MB step | Counter layer plan, section 3 | (performance) | The counter layer plan done, so the rest is measured on its own | Untouched; after the plan it is the larger part of a step. |
+| Play's panel rules per step: rout obligations and advice (about 41 ms) and upper-level encirclement (about 40 ms), asked again after each revision | Counter layer plan, section 4 (revision of 2026-10-18) | A10.5, A7.7 (performance only) | Nothing; measured with the Play follower (SVG memory analysis, section 14) | Untouched; the next Play candidate after E. |
+| A Play step that allocates 1.3 to 1.6 GB within a second: following cd-guards-5, the step near revision 137, in the Studio before option E and after it | Counter Layer Design, section 7.3 (option E's measurement, 2026-10-19) | (performance only) | Nothing; reproduce with the Play follower and `dotnet-counters`, then a `dotnet-trace` of that step alone | Untouched; not the counter layer. Found because it made Play's allocation per step unmeasurable. |
+
 ## 63. Added by the replay re-enactment scope
 
 The ASL Replay Re-enactment Scope (`src/ASL/docs/Designs`), 2026-10-18: analysis kept for later at the user's word; no proposal approved.

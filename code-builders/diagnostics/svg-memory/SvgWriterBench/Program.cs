@@ -16,6 +16,15 @@ using LimboDancer.Domains.Asl.Units.Vocabulary;
 // Measures the SVG writer layer (option G of the SVG memory analysis) without changing the product: real renders for the baseline and
 // the allocation profile, then a replay of their output through a copy of today's writer and through a span-based prototype.
 // Arguments: [repository root] [VASL checkout]; the VASL checkout falls back to AslMaps__VaslRoot, as the tests' does.
+// "layer [repository root]" runs only the counter layer workload of the Counter Layer Design (LayerBench), which needs no VASL checkout.
+if (args is ["layer", ..])
+{
+    var layerReport = LayerBench.Run(args.Length > 1 ? args[1] : @"E:\Archive\GitHub\dlandi\LimboDancer.MCP");
+    Console.Write(layerReport);
+    File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "layer-report.txt"), layerReport);
+    return;
+}
+
 var repo = args.Length > 0 ? args[0] : @"E:\Archive\GitHub\dlandi\LimboDancer.MCP";
 var vaslRoot = args.Length > 1 ? args[1] : Environment.GetEnvironmentVariable(VaslSource.EnvironmentVariable) ?? @"E:\Archive\GitHub\dlandi\vasl";
 

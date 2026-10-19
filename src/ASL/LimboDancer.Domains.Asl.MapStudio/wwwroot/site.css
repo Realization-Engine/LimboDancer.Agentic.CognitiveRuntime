@@ -719,9 +719,11 @@ dl.report dd {
     outline: none;
 }
 
-#layer-units [data-unit-id]:focus-visible [data-face] {
-    stroke: #f0b400;
-    stroke-width: 3px;
+/* The focused counter's faces are edged in gold. Its faces are references to shared definitions (Counter Layer Design, section 8), which no
+   selector reaches inside, so the counter sets custom properties that the faces' edges read; they inherit into the referenced copies. */
+#layer-units [data-unit-id]:focus-visible {
+    --unit-focus-stroke: #f0b400;
+    --unit-focus-width: 3px;
 }
 
 /* Every detail tier is drawn once; the viewport shows the one the zoom calls for (Unit Display Design, section 7.1). */

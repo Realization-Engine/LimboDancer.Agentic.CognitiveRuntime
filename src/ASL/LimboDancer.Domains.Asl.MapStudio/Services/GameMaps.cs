@@ -16,8 +16,14 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 /// <c>layer-units</c> group of the units the viewer may see, the <c>layer-marks</c> group, and why the map cannot be drawn. Pass 29: the overlay
 /// those units were drawn from and the view they were read for, which the board inspector reads; the workspace draws the picked hex and LOS itself.
 /// </summary>
-public sealed record GameMapLayers(StudioBoard? Board, string? Source, string? Units, string? Marks, IReadOnlyList<string> Problems)
+public sealed record GameMapLayers(StudioBoard? Board, string? Source, string? Marks, IReadOnlyList<string> Problems)
 {
+    /// <summary>
+    /// The <c>layer-units</c> group whole, made from <see cref="Overlay"/> when asked for: the viewport is sent only what changed (the Counter Layer
+    /// Design, decision L4), so a step makes the whole text only for a reader that wants it.
+    /// </summary>
+    public string? Units => Overlay?.Svg;
+
     /// <summary>The units the viewer may see, as placed on the map; null when they cannot be drawn.</summary>
     public UnitOverlay? Overlay
     {
@@ -78,7 +84,7 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary
     /// "?", and a hidden one not at all (A12.11, A12.3); before play starts a stack shows its top counter alone, and a side setting up now is not
     /// drawn (A2.9, A12.12; ruling R23.3). So the map shows nothing that either player could not already see on the board.
     /// </summary>
-    public (StudioBoard? Board, string? Units) Public(string gameId, MapInPlay map, long revision)
+    public (StudioBoard? Board, UnitOverlay? Units) Public(string gameId, MapInPlay map, long revision)
     {
         ArgumentNullException.ThrowIfNull(gameId);
         ArgumentNullException.ThrowIfNull(map);
@@ -124,12 +130,12 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary
         }
 
         // Pass 31d (design D12; ruling R31c.6): each counter of the hand-over screen's map is led by its hex, and by no name, since both sides read it.
-        return first is null ? (board, null) : (board, Led(units.Overlay(board, first with
+        return first is null ? (board, null) : (board, units.Overlay(board, first with
         {
             SetId = $"{first.SetId}-public",
             Units = seen,
             Hash = $"{first.Hash}-public-{revision}",
-        }, renderer), unit => DisplayText.Place(map.Boards.Count, unit.Location) + ": ").Svg);
+        }, renderer, unit => DisplayText.Place(map.Boards.Count, unit.Location) + ": "));
     }
 
     /// <summary>
@@ -155,21 +161,18 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary
         var loaded = Board(map);
         if (loaded.Board is not { } board)
         {
-            return new GameMapLayers(null, null, null, null, [.. loaded.Diagnostics.Select(item => $"{item.Code}: {item.Message}")]);
+            return new GameMapLayers(null, null, null, [.. loaded.Diagnostics.Select(item => $"{item.Code}: {item.Message}")]);
         }
 
         // The viewport requests layer fragments. Do not render an unused standalone document here.
         if (board.InputFor(BoardView.Exact) is null)
         {
-            return new GameMapLayers(null, board.Ref.Value, null, null, [$"{board.Ref} has nothing to draw in the Exact view."]);
+            return new GameMapLayers(null, board.Ref.Value, null, [$"{board.Ref} has nothing to draw in the Exact view."]);
         }
 
         var projection = entry.History is { HasErrors: false } ? games.Projection(entry, viewer, revision) : null;
-        var overlay = projection is not null && units.Renderer(UnitLibrary.DefaultSheet) is { } renderer ? units.Overlay(board, projection.Set, renderer) : null;
-        if (overlay is not null && entry.History is { HasErrors: false } named)
-        {
-            overlay = Named(overlay, games.NamesOf(named, viewer), revision, map.Boards.Count);
-        }
+        var lead = entry.History is { HasErrors: false } named ? Named(games.NamesOf(named, viewer), revision, map.Boards.Count) : null;
+        var overlay = projection is not null && units.Renderer(UnitLibrary.DefaultSheet) is { } renderer ? units.Overlay(board, projection.Set, renderer, lead) : null;
 
         // Residual FP is public (A8.2): every viewer sees each counter's value. Pass 31c (design D16; play test P-30): at the hex's upper
         // corner, small, and taking no click, so it never covers the counter in the hex or stands between a click and it.
@@ -206,7 +209,7 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary
             }
         }
 
-        return new GameMapLayers(board, board.Ref.Value, overlay?.Svg, $"<g id=\"layer-marks\">{string.Concat(marked)}</g>", [])
+        return new GameMapLayers(board, board.Ref.Value, $"<g id=\"layer-marks\">{string.Concat(marked)}</g>", [])
         {
             Overlay = overlay,
             View = projection?.View,
@@ -214,44 +217,15 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary
     }
 
     /// <summary>
-    /// The overlay with each counter's tooltip and name beginning with its hex and the unit's own name, such as "[H5], level 1: 4-6-7 squad G3.
-    /// German 1st Line squad, 4-6-7" (the user, 2026-10-04): the hex in brackets, as every hex is written, and the name the records use, so a
-    /// counter on the map is the unit a record names. A "?" has its hex alone.
+    /// The lead of each counter's tooltip and name: its hex and the unit's own name, such as "[H5], level 1: 4-6-7 squad G3. German 1st Line
+    /// squad, 4-6-7" (the user, 2026-10-04): the hex in brackets, as every hex is written, and the name the records use, so a counter on the map
+    /// is the unit a record names. A "?" has its hex alone. The layer writes it as it draws each counter (the Counter Layer Design, decision L6).
     /// </summary>
-    private static UnitOverlay Named(UnitOverlay overlay, UnitNames names, long revision, int boards) => Led(overlay, unit =>
+    private static Func<PlacedUnit, string> Named(UnitNames names, long revision, int boards) => unit =>
     {
         var name = names.Held(unit.Document.Id, revision);
         return DisplayText.Place(boards, unit.Location) + (name == unit.Document.Id || name == UnitNames.Unnamed ? ": " : $": {name}. ");
-    });
-
-    /// <summary>
-    /// An overlay with each counter's tooltip and accessible name led by a text of the caller's (pass 31d, design D12): the setup map, whose
-    /// overlay is built again from its documents, and the hand-over screen's map lead their counters as the game's own map does.
-    /// </summary>
-    public static UnitOverlay Led(UnitOverlay overlay, Func<PlacedUnit, string> leadOf)
-    {
-        ArgumentNullException.ThrowIfNull(overlay);
-        ArgumentNullException.ThrowIfNull(leadOf);
-        var lead = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var unit in overlay.Units)
-        {
-            lead[unit.Document.Id] = leadOf(unit);
-        }
-
-        // One pass over the layer: each counter's group carries its id, its accessible name, and then its title.
-        var svg = System.Text.RegularExpressions.Regex.Replace(overlay.Svg, "(<g data-unit-id=\"([^\"]+)\"[^>]*aria-label=\")([^\"]*\"[^>]*>\\s*<title>)",
-            match => lead.TryGetValue(match.Groups[2].Value, out var said)
-                ? match.Groups[1].Value + System.Net.WebUtility.HtmlEncode(said) + match.Groups[3].Value + System.Net.WebUtility.HtmlEncode(said)
-                : match.Value);
-        return overlay with
-        {
-            Svg = svg,
-            Units = [.. overlay.Units.Select(unit => unit with
-            {
-                Name = lead[unit.Document.Id] + unit.Name,
-            })],
-        };
-    }
+    };
 
     /// <summary>A point inside a hex near its top or its foot, where a small mark stands clear of the counters at its centre.</summary>
     private static (double X, double Y) Corner(StudioBoard board, HexIndex hex, bool upper)

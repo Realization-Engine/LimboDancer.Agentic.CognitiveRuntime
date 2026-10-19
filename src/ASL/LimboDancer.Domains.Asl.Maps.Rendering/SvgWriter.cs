@@ -44,6 +44,17 @@ public sealed class SvgWriter
         Escaped(text, TextSpecials);
     }
 
+    /// <summary>
+    /// Appends markup another <see cref="SvgWriter"/> made, unchanged: a fragment kept from an earlier document, such as a hex of the counter
+    /// layer (the Counter Layer Design, section 7). The caller vouches that it is whole elements, with every element it opens closed.
+    /// </summary>
+    public void Fragment(string markup)
+    {
+        ArgumentNullException.ThrowIfNull(markup);
+        Writable();
+        Append(markup);
+    }
+
     public void End()
     {
         Writable();

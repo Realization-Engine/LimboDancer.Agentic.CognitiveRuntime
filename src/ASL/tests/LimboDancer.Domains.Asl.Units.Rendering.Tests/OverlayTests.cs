@@ -84,7 +84,10 @@ public sealed class OverlayTests
         var overlay = Build(target, Unit("ground", "bd01:E4:0"), Unit("upstairs", "bd01:E4:1"), Unit("cellar", "bd01:E4:-1"));
         var layer = XElement.Parse(overlay.Svg);
         Assert.Equal(["-1", "1"], layer.Descendants().Select(element => element.Attribute("data-level")?.Value).OfType<string>());
-        Assert.Equal(3, layer.Elements("g").Count(element => element.Attribute("data-stack") is not null));
+        // One hex, its own group (option D), holding a stack for each level.
+        var hex = Assert.Single(layer.Elements("g"));
+        Assert.Equal("units-" + hex.Attribute("data-hex")!.Value.Replace(',', '-'), hex.Attribute("id")!.Value);
+        Assert.Equal(3, hex.Elements("g").Count(element => element.Attribute("data-stack") is not null));
         Assert.EndsWith(", level 1", overlay.Units.Single(unit => unit.Document.Id == "upstairs").Name, StringComparison.Ordinal);
         Assert.Contains("level 1", layer.Descendants().Single(element => element.Attribute("data-unit-id")?.Value == "upstairs").Attribute("aria-label")!.Value,
             StringComparison.Ordinal);
@@ -128,14 +131,16 @@ public sealed class OverlayTests
         Assert.Equal(expected.Y, actual.Y, 0.02);
     }
 
-    /// <summary>The center of a unit's near-tier face, read back from the SVG.</summary>
+    /// <summary>
+    /// The center of a unit's near-tier face, read back from the SVG: in the layer, where its reference places the face, which is drawn about the
+    /// origin (option Q; the Counter Layer Design, section 8).
+    /// </summary>
     private static PixelPoint FaceCenter(string svg, string id)
     {
-        var unit = XElement.Parse(svg).Descendants().Single(element => element.Attribute("data-unit-id")?.Value == id);
-        var face = unit.Elements("g").Single(tier => tier.Attribute("data-tier")!.Value == "near").Elements()
-            .First(element => element.Attribute("data-face") is not null);
-        double Read(string name) => double.Parse(face.Attribute(name)!.Value, CultureInfo.InvariantCulture);
-        return new PixelPoint(Read("x") + (Read("width") / 2), Read("y") + (Read("height") / 2));
+        var unit = XElement.Parse(svg).Descendants().Single(element => element.Attribute("data-unit-id")?.Value == id && element.Attribute("role") is not null);
+        var near = unit.Elements().Single(tier => tier.Attribute("data-tier")?.Value == "near");
+        double Read(XElement element, string name) => double.Parse(element.Attribute(name)!.Value, CultureInfo.InvariantCulture);
+        return new PixelPoint(Read(near, "x"), Read(near, "y"));
     }
 
     private static PlacedBoard Place(BoardRef board, int column)

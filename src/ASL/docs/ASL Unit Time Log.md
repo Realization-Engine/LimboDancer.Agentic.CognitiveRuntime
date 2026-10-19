@@ -1571,6 +1571,47 @@ The ASL Map Studio SVG Memory Plan (`src/ASL/docs/Plans`), approved by the user 
 | Where a Play step's time goes (analysis section 13): the follow control built and tested (branch play-follow-profile), Play followed and a setup sample profiled | 19:10 | 20:08 | 0:58 | Start approximate; the scoping of re-enactment ran in its own session; the board lookup's footprint check is two thirds of a Play step |
 | The footprint check and the set id fixed, tested, and measured (analysis section 14) | 20:08 | 20:34 | 0:26 | Play's server step -68%; Replay's browser step -48% |
 
+## The SVG memory counter layer design, 2026-10-18
+
+Branch `svg-memory-design-2`, from `main`. Design and plan only; no code changed. Times from the shell's clock; the start is the session's first read.
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| The analysis and the counter code read; the design and plan written | 18:00 | 18:22 | 0:22 | Start approximate (the clock was first read at 18:15, after the reading); a worktree under the long scratchpad path failed to check out, so it sits at a short path |
+| The rulings U2, U5, and the order recorded; the plan revised with E first, alone (part 1, tasks E1 to E4); E's expectations stated | 21:14 | 21:23 | 0:09 | The builder read again to confirm a hex fragment reads only its own hex; `play-follow-profile` found unpushed, so part 1 starts from it unless it merges first |
+
+### Option E, part 1 of the counter layer plan
+
+Branch `counter-cache-e` from `play-follow-profile` (4b566767), in a worktree, while another session's build and tests ran in the main checkout. Approved by the user 2026-10-18 ("Approved. Execute."); the other rulings approved 2026-10-19. Times from the shell's clock.
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| The branch, its worktree, and the design commits brought in | 21:26 | 21:31 | 0:05 | One time log conflict, both sides kept |
+| E1. The layer hash manifest and the benchmark's layer workload | 21:31 | 21:50 | 0:19 | The full manifest (2,856 layers) took 4 min; thinned to 1,166, a strict subset; found that `UnitDocumentJson` leaves out `Uninspected` and `Dummy` |
+| E2. The builder writes the layer hex by hex | 21:50 | 21:57 | 0:07 | Manifest and goldens unchanged |
+| E3. UnitFragmentCache, its key, and its tests | 21:57 | 22:20 | 0:23 | Two test mistakes fixed (a property left off the list; warnings counted per tier); the slow manifest cases moved to one game |
+| E4. The Studio before and after: Replay and Play traced and counted, the layer compared, the results written | 22:20 | 22:47 | 0:27 | The allocation counter breaks when a trace runs at once, so allocation was counted alone; Play's allocation not measurable (a 1.3 GB step, before and after) |
+| Main merged in (PR 20); the strict build, the three test projects in full, the Node viewport test; PR 21 opened | 22:47 | 23:00 | 0:13 | The strict build failed once on CA1859 in a test helper, fixed; then 393, 53 (2 skipped), 502, and 9 passed |
+| **Option E, part 1 in all** | 21:26 | 23:00 | 1:34 | |
+
+### The counter layer plan, part 2
+
+Branch `counter-layer-2`, stacked on `counter-cache-e` at the user's word; the rulings U1, U3, U4, and U6 approved 2026-10-19. Times from the shell's clock (the night of 18 to 19 October).
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| A demo of option E in the Studio and its remaining UI checks | 23:00 | 23:05 | 0:05 | Before part 2, at the user's asking |
+| 1. The equivalence oracle | 23:05 | 23:11 | 0:06 | |
+| 2. C1: each figure outline once per layer | 23:11 | 23:23 | 0:12 | Manifest recorded again (1,148 of 1,166 layers) |
+| 3. The leads in the builder | 23:23 | 23:31 | 0:08 | `Led` kept as the test's oracle |
+| 4. D on the server | 23:31 | 23:45 | 0:14 | |
+| 5. D in the browser and the hosts, with C2 | 23:45 | 00:08 | 0:23 | The whole MapStudio project run three times in tasks 3 to 5; the user: only the tests the change reaches, then the Studio (rule recorded) |
+| The Studio after task 5: patches, numbers before and after | 00:08 | 00:14 | 0:06 | The pane hidden: click-to-held timed without frames |
+| 6. Q: one definition per distinct face | 00:14 | 00:24 | 0:10 | The oracle in two steps (at the origin, within 1/32 pixel; then exact) |
+| The Studio after task 6: focus edge, numbers, F's tiers | 00:24 | 00:28 | 0:04 | |
+| 7. Results and F in the design; the gate; the pull request | 00:28 | 00:42 | 0:14 | Gate: strict build; Units.Rendering 424, Maps.Rendering 53 (2 skipped), MapStudio 509, Node 13; one pull request to main carries E and part 2, at the user's word |
+| **Part 2 in all** | 23:05 | 00:42 | 1:37 | |
+
 ## The replay re-enactment scope, 2026-10-18
 
 Branch `claude/replay-reenact-scope-9c9f9a`, analysis only. Times from the shell's clock.
