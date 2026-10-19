@@ -1591,3 +1591,5 @@ Branch `counter-cache-e` from `play-follow-profile` (4b566767), in a worktree, w
 | E2. The builder writes the layer hex by hex | 21:50 | 21:57 | 0:07 | Manifest and goldens unchanged |
 | E3. UnitFragmentCache, its key, and its tests | 21:57 | 22:20 | 0:23 | Two test mistakes fixed (a property left off the list; warnings counted per tier); the slow manifest cases moved to one game |
 | E4. The Studio before and after: Replay and Play traced and counted, the layer compared, the results written | 22:20 | 22:47 | 0:27 | The allocation counter breaks when a trace runs at once, so allocation was counted alone; Play's allocation not measurable (a 1.3 GB step, before and after) |
+| Main merged in (PR 20); the strict build, the three test projects in full, the Node viewport test; PR 21 opened | 22:47 | 23:00 | 0:13 | The strict build failed once on CA1859 in a test helper, fixed; then 393, 53 (2 skipped), 502, and 9 passed |
+| **Option E, part 1 in all** | 21:26 | 23:00 | 1:34 | |
