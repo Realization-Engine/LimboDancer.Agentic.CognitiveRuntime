@@ -309,7 +309,7 @@ The plan's estimate was under 150 MB. What is left, by the nearest Studio frames
 
 ### 8.4 The board lookup, counted (task 7)
 
-The harness the plan named (a Release console that builds the planner as the Studio does) did not build within its 30-minute box: its build on its own output path printed nothing for 35 minutes (as the first test run on a new output path did in task 3; backlog section 65). The plan's fallback was used: a counting, timing decorator around `StudioBoardCatalog.TryGetBoard` in my Studio's build only, never committed, read through the follower after tasks 1 to 6.
+The harness the plan named (a Release console that builds the planner as the Studio does) did not build within its 30-minute box: its build on its own output path printed nothing for 35 minutes (as the first test run on a new output path did in task 3). The cause was found in task 9: such a build copies every other output folder under MapStudio's `bin` into its own output, and old passes' folders had nested into each other there (backlog section 65; the standing rules' Studio lessons). The plan's fallback was used: a counting, timing decorator around `StudioBoardCatalog.TryGetBoard` in my Studio's build only, never committed, read through the follower after tasks 1 to 6.
 
 | Step (the page's work at the state it reaches) | Lookups | Their time | Share of the step's work |
 |---|---|---|---|

@@ -29,10 +29,18 @@ as the adjudicator, the page visible, a step a second paced on the server.
 
 Two Studios, the same game and revisions, side by side:
 
-- **after:** the branch built into `bin/p31b` (`-p:OutDir=bin/p31b/`), launch config `map-studio-p31b`, port 6670;
-- **before:** `main` built into `bin/before` (`-p:OutDir=bin/before/`), launch config `map-studio-before-6671`, port 6671.
+- **after:** the branch built outside the repository (`-p:OutDir=E:/Archive/GitHub/dlandi/asl-gate-work/studio-6670/`), launch config
+  `map-studio-p31b`, port 6670 (it was `bin/p31b` until 2026-10-19);
+- **before:** `main` built outside the repository, in a worktree of its own (`git worktree add --detach <path> main`, then build its MapStudio
+  there) and started from that build on port 6671 with `--contentRoot` the worktree's MapStudio folder and `--AslMaps:BoardsRoot` this
+  repository's `src/ASL/boards`. Never build it into another folder under MapStudio's `bin`: the gate's build copies every such folder into
+  itself (the gate now refuses to start while one is there). On 2026-10-19 it was built into `bin/before`, which cost the next three builds
+  20 to 35 minutes each.
 
 Both read `src/ASL/boards`, so each follower they make is a new game `cd-guards-5-follow-<n>`. Delete the followers after the work.
+
+Measure with each Studio's tab in front: a hidden tab measured lower on 2026-10-19, so a run in a hidden tab is not comparable with one in
+front. Runs of 9 Rout Phase steps vary by about ±40 ms from run to run; the whole-game run (run 1) is the one to compare.
 
 1. **Open the follower.** `/games/play`, `#play-perspective` = `adjudicator`, `#play-handover-confirm`; `#follow-record-source` =
    `cd-guards-5`, `#follow-record-start`. Then `follower_cut.py <live folder> cd-guards-5 <follower> <revision>` and `#follow-record-next`.
