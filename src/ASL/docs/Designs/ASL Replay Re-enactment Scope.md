@@ -1,191 +1,101 @@
 # ASL Replay Re-enactment Scope
 
-Analysis only, 2026-10-18. No product code. Branch `claude/replay-reenact-scope-9c9f9a`.
+Analysis only, 2026-10-18, rewritten the same day after the user's corrections. No product code. Branch `claude/replay-reenact-scope-9c9f9a`, up to date with main at e6f407b6 (#20).
 
-The feature: from the Replay page, start a new live game that is played forward on the Play page from a recorded game, one recorded step at a time, with the recorded actions and the recorded dice, so the new game takes the same steps. The user may stop at any step and take over. Where today's rules give a different outcome from the record, the page says where. It is meant as a permanent option on the Replay page.
+## 1. The feature
 
-This is not the development-only "follow a recorded game" control the parent session is building on the Play page: that control appends a recorded step's events to a live copy and re-enacts nothing. Nor is it "Play on from here" (`LivePlay.PlayOn`), which copies the events through a step and leaves the rest to the user with new dice; the user has said that one already covers diverging at a chosen point.
+As the user stated it:
 
-## 1. Summary and recommendation
+1. **Re-play mode on the Play page.** From the Replay page, the user opens a recorded game on Play from its first event. Each step applies the recorded events as they are, the recorded dice with them. Nothing is decided again, so nothing can come out differently.
+2. **"Play on from here"** switches the game from re-play mode to live play from that point on: the user's own proposals, and new dice drawn by the system.
+3. **Divergence** can occur only once the game has turned live: it is the live game departing from the record. The page says where, that is, the step at which play went on.
 
-Re-enactment is feasible without the Play page's UI state. The governed path takes a registered action and a JSON argument object, nothing else (`GamePlay.ProposeAsync` and `ConfirmAsync`, [GameGate.cs:378](../../LimboDancer.Domains.Asl.Play/GameGate.cs)). The record does not keep those arguments, but for every kind of step in the two recorded games they can be rebuilt from the step's own events, most of them directly, some with a read of the state before the step.
+Re-play starts at the beginning of the recorded game and goes on until, and only if, "Play on from here" is invoked.
 
-Two facts make the comparison clean:
+The first version of this document scoped something else: re-deciding each recorded step under today's rules with the recorded actions and dice, and reporting where the outcome differed. That is not the feature, and its sections (argument rebuilding, the recorded-dice roller, outcome comparison, questions U1 to U5) are removed. It is not proposed for the backlog unless the user asks.
 
-- An event's id is the attempt id plus an index (`EventId`, [GamePlanner.cs:2102](../../LimboDancer.Domains.Asl.Play/GamePlanner.cs)), and units a step creates take ids from the attempt too (`fire-0174e552453c-g-squad-7`). Proposing a re-enacted step with the recorded attempt id gives the same event ids and the same new unit ids, so later recorded steps still name the right units, and the two logs line up by id.
-- Each recorded step is exactly one attempt: the Replay page already groups steps that way (`ReplaySteps.AttemptOf`, [ReplaySteps.cs:108](../../LimboDancer.Domains.Asl.MapStudio/Services/ReplaySteps.cs)), and in both games no attempt's events are interleaved with another's.
+## 2. What main has today
 
-The record's dice are kept per attempt, in draw order, as `dice-rolled` events. A roller that serves those values in order, and fails when they run out, reproduces the draws exactly while the rules ask for the same rolls, and stops cleanly when they do not: the store draws inside its commit and writes nothing when the build throws ([GameStore.cs:131](../../LimboDancer.Domains.Asl.Play/GameStore.cs)).
+Checked on main at e6f407b6.
 
-**Recommendation: option A** (section 7): a re-enactor service in the Studio that rebuilds each step's arguments, proposes and confirms it through `GamePlay` with a recorded-dice roller, and compares the result with the record; a panel on the Play page drives it; the Replay page starts it. Build it in two slices: first the engine and a headless run of both recorded games to the end (it tells us, before any UI, where today's rules part from the record), then the Play and Replay pages. Setup is copied, not re-enacted. Kinds of step absent from the recorded games are deferred, and the re-enactment stops before one with "take over here".
+### 2.1 Replay page
 
-## 2. What a recorded game holds
+- **"Open on Play"** ([Replay.razor:43](../../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Replay.razor)): the game on Play as it stands now.
+- **"Play on from here"** ([Replay.razor:73](../../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Replay.razor), `PlayOn` at line 534): makes a new game holding the events through the step shown and opens it on Play. Its note says "The dice from there on are new. This game is not changed." It is offered only where the whole game may be known, an ended game or the adjudicator's view, and never from a step at which the game had ended (`MayPlayOn`, line 524; ruling R31b.1). The new game's label records its origin: "from cd-guards-5 at step 41, revision 160".
+- A step is one attempt with everything it caused (`ReplaySteps.AttemptOf`, [ReplaySteps.cs:108](../../LimboDancer.Domains.Asl.MapStudio/Services/ReplaySteps.cs)). cd-guards-5 has 898 events in 259 steps; guards-06-dlandi has 659 in 197.
 
-A record (`src/ASL/boards/units/live/5a7d1f000000400080000000000057d0/cd-guards-5.game.json` in the main checkout, untracked live data) is `{schemaVersion, tenant, game, label, synthetic, events}`; each event has `eventId, revision, time, source, type, visibility, payload`, and optionally `rulePackage` and `causes`. Outcomes only: no proposals, no refused attempts, no record of the view that proposed.
+### 2.2 `LivePlay.PlayOn`
 
-"Roots" (events without `causes`) are not steps: one fire attempt has two roots (`dice-rolled`, then `fire-resolved`), and a capture attempt (`cap-...`) has none, since all its events point back to the advance-phase event that left the surrender pending. The unit is the attempt:
+[LivePlay.cs:104](../../LimboDancer.Domains.Asl.MapStudio/Services/LivePlay.cs): copies the source's events through a revision into a new game, under a new name and a label naming the origin. The source is only read. The copied `dice-rolled` events are the source's own draws; every draw after that is the new game's. This is the switch from re-play to live, already built.
 
-| Game | Events | Roots | Steps (attempts) | Interleaved attempts |
-|---|---|---|---|---|
-| cd-guards-5 | 898 | 555 | 259 | 0 |
-| guards-06-dlandi | 659 | n/a | 197 | 0 |
+### 2.3 The follow control (merged with #20)
 
-The attempt id's prefix names the Play page control that made it (`Attempt(kind)`, [Play.razor:7061](../../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor)): a kind and 12 hex digits. Steps by prefix:
+A development aid for profiling, shown only with scripted dice (Development and `Play:ScriptedDice`):
 
-| Prefix | Action | cd-guards-5 | guards-06 | Dice per step |
-|---|---|---|---|---|
-| `fire` | `asl.game.fire` | 98 | 65 | 1 to 10 |
-| `advance` | `asl.game.advance-phase` | 82 | 63 | 0 to 3 |
-| `adv` | `asl.game.advance` | 29 | 25 | 0 |
-| `rout` | `asl.game.rout` | 16 | 7 | 0 or 1 |
-| `rally` | `asl.game.rally` | 15 | 15 | 1 |
-| `move` | `asl.game.move` | 6 | 6 | 0 |
-| `cap` | `asl.game.take-prisoner` | 4 | 2 | 0 |
-| `setup` | `asl.game.setup` | 3 | 3 | 0 |
-| `cc` | `asl.game.close-combat` | 2 | 4 | 0 or 1 |
-| `enter` | `asl.game.enter-building` | 2 | 0 | 0 |
-| `recover` | `asl.game.recover` | 1 | 0 | 1 |
-| `reject` | `asl.game.take-prisoner` (reject) | 1 | 0 | 0 |
-| `massacre` | `asl.game.massacre` | 0 | 3 | 0 |
-| `non-ob` | `asl.game.setup` (conceal) | 0 | 1 | 0 |
-| `grd` | `asl.game.guard-prisoners` | 0 | 1 | 0 |
-| `amb` | `asl.game.ambush` | 0 | 1 | 2 |
-| `choose` | `asl.game.choose` | 0 | 1 | 0 |
+- `LivePlay.StartFollowing` ([LivePlay.cs:130](../../LimboDancer.Domains.Asl.MapStudio/Services/LivePlay.cs)) makes a new game `<source>-follow-<n>` holding the record's first step, through `PlayOn`.
+- `LivePlay.FollowStep` ([LivePlay.cs:147](../../LimboDancer.Domains.Asl.MapStudio/Services/LivePlay.cs)) appends the record's next step, its events copied as they are. It refuses a follower whose events no longer match the record's (`FOLLOW-002`, "played on by hand now") and one that has every step (`FOLLOW-003`). `StepEnd` (line 178) finds where a step ends.
+- On Play: `StartFollowing`, `FollowNext`, and `FollowRun` ([Play.razor:1170 to 1230](../../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor)); a step a second, stopped by a cancellation token and on dispose. `FollowRecordPanel.razor` shows progress, Next step, Run and Stop, and a problem line.
+- Tests: [FollowRecordTests.cs](../../tests/LimboDancer.Domains.Asl.MapStudio.Tests/FollowRecordTests.cs) shows that a follower ends with the record's event ids and types in its order, one append per attempt, and that a follower that left the record is refused.
 
-Every recorded roll has source `system` (217 and 152 rolls). The rule packages stamped on the events (`scenario-a1-fire`, `-rally`, `-close-combat`, `-declared-first-case`) all name manifests older than today's (for example the fire package's recorded `6f53...` against today's `116f...`, [ScenarioA1FirePackage.cs:15](../../LimboDancer.Domains.Asl.Rules/ScenarioA1FirePackage.cs)). So the package stamp differs on every stamped event and cannot by itself count as a divergence.
+So the follow control is already a re-play mode of a kind, with three differences from the feature:
 
-## 3. Feasibility per kind of step
+1. It is development only.
+2. It writes the game as it goes: every step is a commit to a new game file, so a re-play leaves a game behind, and a step cannot be taken back.
+3. Going live is implicit: the proposal controls stay open while following, and the first confirmed proposal makes the follower leave the record. Nothing says where it left except the next `FOLLOW-002`. There is no "Play on from here" in Play.
 
-"Rebuild" says where each argument comes from. The schemas are in [GameActions.cs](../../LimboDancer.Domains.Asl.Play/GameActions.cs). Every action also takes `gameId` (the new game), `attemptId` (the recorded attempt id), and `expectedRevision` (the new game's event count), and the re-enactor proposes from the adjudicator's view (`proposedBy` = `adjudicator`, [GamePlanner.Proposer.cs:20](../../LimboDancer.Domains.Asl.Play/GamePlanner.Proposer.cs)).
+The source a follower follows is held only in the page's fields (`followGame`, `followSource`), so it is lost when the page is left.
 
-| Root kind | Action | Rebuild | Effort |
-|---|---|---|---|
-| `game-started`, `instance-created` | `setup` (start, placements) | `start` and `placements` are in the payloads (sides, map, catalog, card; each instance). Copy instead: see section 7, first slice | Copy: none. Rebuild: medium |
-| `setup-concealed` | `setup` with `conceal` | Unit ids per event; the `conceal` object's shape needs reading from `PlanNonObConcealment` | Copy with setup |
-| `phase-changed` (with `conditions-changed`, `concealment-gained`, `instance-eliminated`, `surrender-pending`, `dice-rolled` in the same step) | `advance-phase` | No arguments, except `retainDm` at the end of the RPh: the broken units under DM before the step that still have DM after it in the record (no `asl:dm: false` for them). The other events are the planner's own consequences | Easy; `retainDm` medium (reads the state before) |
-| `dice-rolled` + `fire-resolved` | `fire` | `firers` and `director` on the payload; `target` = `targetLocation`; `weapons` from `facts.firers[].weapons[].equipmentId`; `withoutInherent` from `facts.firers[].usesInherentFp: false`; `directors` (more than one) from the facts. `partners`, `snapShot`, `sprayTarget`, `mol`, `vehicle`, `fireLane` do not occur in either game; each must be found in the facts when built | Medium (98 + 65 steps; the largest group) |
-| `advanced` | `advance` | `unitIds` = `units`, `to`; an exit (`adv-exit`) names `exit` | Easy |
-| `rout-stepped` (+ `rout-interdicted`, `equipment-transferred`) | `rout` | `unitId` = `unit`; `route` = the `to` of each `rout-stepped` in order; `lowCrawl` on the payload. A dropped SW (`equipment-transferred` with a position) was a separate drop or part of the rout; to be checked against `PlanRout` | Easy |
-| `dice-rolled` + `rally-attempted` | `rally` | `unitId` = `unit`, `leader` | Easy |
-| `movement-step` (+ `concealment-lost`) | `move` | `unitIds` = `movers`, `to`, `minimumMove`. `assault`, `doubleTime` are not on the payload: read from the movers' conditions after the step (CX for Double Time) or the step's MF; to be confirmed against `PlanMoveOrEntryAsync` | Medium |
-| none (all caused by the advance-phase step) | `take-prisoner` | `unitId` = `instance-captured.id`, `captorId` = `custodian` | Easy |
-| `surrender-rejected` (caused) | `take-prisoner` with `reject` | `unitId` = `unit` | Easy |
-| `instance-moved` (rule package `declared-first-case`) | `enter-building` | `unitId` = `id`, `location` = `position.at` | Easy |
-| `dice-rolled` + `close-combat-resolved` | `close-combat` | `location`, `round`; `attacks` from `facts.attacks[]` (attackers, defenders, director, capture, yield, guard); `stacking`, `withdrawals`, `infiltrations`, `handToHand` to be found in the facts when built | Medium |
-| `dice-rolled` + `recovery-attempted` | `recover` | `unitId` = `unit`, `equipmentId` = `weapon` | Easy |
-| `prisoners-massacred` | `massacre` | `unitId` = `units[0]`, `prisonerId` = `prisoners[0]` | Easy |
-| `instance-captured` (root) | `guard-prisoners` | `guardId` = the old custodian (state before), `to` = the new `custodian`; `abandon` when the prisoners are freed instead | Easy (reads the state before) |
-| `dice-rolled` + `ambush-rolled` | `ambush` | `location` | Easy |
-| `choice-made` (caused) + `fire-resolved` | `choose` | `key`, `option` on `choice-made` | Easy |
-| `concealment-gained`, `conditions-changed`, `instance-eliminated`, `equipment-transferred`, `surrender-pending`, `concealment-lost` as roots | none of their own | Consequences inside an `advance-phase`, `adv`, `rout`, or `move` step | n/a |
-| `game-ended` | none | The last `advance-phase` (or an immediate victory) writes it | n/a |
+### 2.4 What makes a read-only re-play cheap
 
-Kinds with an action but no step in either game (vehicles, ordnance, DCs, starshells, smoke, OVR, deployment, transfers, mopping up, hidden placement, pass and end of a move) are listed in section 7 as deferred. Two are trivial and worth including early, since any game with movement may have them: `pass` (`asl.game.pass-fire`, no arguments) and `end` (`asl.game.end-move`, optional `unitIds`).
+`GameHistory` keeps the state after every event: `States[n]` is the state at revision n + 1, and `At(revision)` reads it ([GameState.cs:543](../../LimboDancer.Domains.Asl.Units/State/GameState.cs)). Replay's views at each step come from it (`GameLibrary.ViewOf`, [GameLibrary.cs:129](../../LimboDancer.Domains.Asl.MapStudio/Services/GameLibrary.cs)). The Play page takes its `history` and `state` from one place, `Refresh()` ([Play.razor:6149](../../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor)). A history cut at revision N is `new GameHistory(Events.Take(N), States.Take(N), [])`, built from the record's replay with no replay of its own. Given that, Play shows the game as it stood at N, exactly as if it had N events.
 
-Older games may carry prefixes no longer used; the re-enactor maps a prefix to an action through a table and, failing that, reads the step's first event type. A step it cannot map stops the re-enactment there (section 5).
+## 3. Options
 
-## 4. The engine path
+### Option R: re-play reads, "Play on from here" writes (recommended)
 
-### 4.1 How the Play page proposes and confirms
+- Re-play mode is a way of showing a recorded game on Play, at a step: `games/play?game=cd-guards-5&replay=41`. `Refresh()` cuts the history at the step's last revision. Nothing is written.
+- In re-play mode the page shows the game as Play shows it, in every view and panel, but proposes nothing: the proposal controls are hidden or disabled, and a panel at the head of the page says "Re-playing cd-guards-5: step 41 of 259, (step title)". Controls: Back, Next step, Run at a pace (as Replay's Play: stopped by a key or a click), and **Play on from here**.
+- **Play on from here** calls `LivePlay.PlayOn(source, revision, name, origin)`, exactly as Replay's does, and opens the new game on Play, live. Its label names the source and the step. The source game is unchanged.
+- **Divergence** is where the new game's events stop matching the source's: the step at which play went on. It is computable from the two records by event id, the same comparison as `FOLLOW-002`. Once live, the Play page says it in the game's context ("Played on from cd-guards-5 after step 41"), from the label's origin and that comparison. Replay of the new game marks the same step.
 
-`Propose(action, arguments)` ([Play.razor:6744](../../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor)) adds the view's `proposedBy` and calls `Live.Play.ProposeAsync(action, arguments, Live.Principal)`. `Confirm()` ([Play.razor:6823](../../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor)) checks the game is still at the proposal's revision and calls `ConfirmAsync` with the proposal's correlation id. `Refresh()` ([Play.razor:6074](../../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor)) reads the game again from the store.
+Strengths: nothing written until the user decides, so no leftover games; Back is free; going live is one explicit act; the switch is code that exists and is tested. Cost: the Play page must hold a "re-play at revision N" mode in which it proposes nothing, and every place that reads `history` or `state` must read the cut history (they all come from `Refresh()`, which keeps this contained).
 
-`GamePlay.RunAsync` ([GameGate.cs:392](../../LimboDancer.Domains.Asl.Play/GameGate.cs)) plans the action (`GamePlanner.PlanAsync`, [GamePlanner.cs:215](../../LimboDancer.Domains.Asl.Play/GamePlanner.cs)), runs the Execution Gate (the constraint evaluator plans it again), and, once confirmed, the executor plans a third time and appends (`GameActionExecutor`, [GameGate.cs:57](../../LimboDancer.Domains.Asl.Play/GameGate.cs)). A rolled plan is appended with `AppendRolled`, which draws inside the store's lock and builds the events from the draw.
+### Option W: promote the follow control
 
-### 4.2 An action without UI state
+- Remove the Development gate; re-play makes a new game at once and appends each recorded step to it (`FollowStep`).
+- Add an explicit "Play on from here" that ends following for that game; close the proposal controls while following, so going live happens only through it.
+- Keep the follow link (source, next step) somewhere durable: a side file next to the game, or a field in the record (a format change).
 
-Nothing in that path reads the page: the inputs are the descriptor, the argument JSON, and the principal. The page's state (pickers, selections, `retainDm`) only builds the argument object. So a service can propose and confirm a rebuilt argument object, then ask the Play page to `Refresh()`. One case needs care: a withheld entry returns `NeedsConfirmation` from Propose by design ([GameGate.cs:402](../../LimboDancer.Domains.Asl.Play/GameGate.cs)); the re-enactor confirms it like any other proposal.
+Strengths: the per-step work is the real commit path, which is what the profiling wanted. Costs: every re-play leaves a game file behind, Back is impossible (events are irreversible), and the follow link needs storage the feature otherwise does not.
 
-### 4.3 Dice
+### Recommendation
 
-- `DiceRoller` ([DiceRoller.cs](../../LimboDancer.Dice/DiceRoller.cs)) is sealed; its public constructor uses the cryptographic generator, and an internal one takes a per-die source `Func<int, int>` (the sides in, a zero-based value out). The Studio project can reach the internal one (`InternalsVisibleTo`, [LimboDancer.Dice.csproj](../../LimboDancer.Dice/LimboDancer.Dice.csproj)); the Play project cannot.
-- `ScriptedDice` ([ScriptedDice.cs](../../LimboDancer.Domains.Asl.MapStudio/Services/ScriptedDice.cs)) queues dice for UI tests, replaces the Studio's one roller for all games, falls back to random dice silently when the queue is empty, and exists only in Development with `Play:ScriptedDice`. It is not fit for a permanent feature.
-- The roller is fixed when `GamePlay` is built ([GameGate.cs:360](../../LimboDancer.Domains.Asl.Play/GameGate.cs)); `LivePlay` builds one for the Studio ([LivePlay.cs:40](../../LimboDancer.Domains.Asl.MapStudio/Services/LivePlay.cs)).
+Option R. It matches the feature: re-play is a reading of the record, and the game becomes a live game at one explicit moment. It reuses `PlayOn`, `ReplaySteps`, and the follow control's run loop and panel shape, and it needs no change to the record format. The follow control stays the development aid it is, for measuring the commit path, unless the user prefers to retire it once option R exists (section 6, U2).
 
-The proposal: a recorded-dice roller per re-enacted step, built from the step's recorded `dice-rolled` values in order, served die by die, with a check that each die's sides match the recorded roll's, and an exception when the values run out. The re-enactor runs the step through a second `GamePlay` built over the same planner, store, and audit with that roller (two `GamePlay` objects over one store are safe: the store locks per file). After the commit, values left unused are a divergence too.
+## 4. The user experience under option R
 
-### 4.4 Same state, action, and dice: same events?
+- **Replay**: a link beside "Open on Play", "Re-play on Play", under the same condition as "Play on from here" (an ended game, or the adjudicator's view; ruling R31b.1). It opens Play in re-play mode at step 1. The existing "Play on from here" on Replay stays: it is the same switch, made from Replay.
+- **Play, re-play mode**: the panel of section 3 at the head of the activity area; the map, the inspector, the step lists, and the dice history all at the step. The step lists' links to Replay go on working. The URL carries the step, so a reload or a shared link comes back to it.
+- **Play, at the last step of an ended record**: "Play on from here" is not offered, as on Replay; the panel says the game ended.
+- **Play on from here**: asks for the new game's name (default as Replay's, `<game>-r<revision>`), makes it, and opens it live. From then on it is an ordinary live game.
+- **After the switch**: the game's context says "Played on from cd-guards-5 after step 41 (revision 160)". The new game's Replay shows the same and marks the step.
+- **Views**: re-play is offered only where the whole game may be known, so a side's view never steps through the other side's hidden actions. A live game made by Play on opens behind Play's own hand-over, as Replay's Play on does today.
 
-- **Ids**: yes. Ids are `{attemptId}-{n}`, and new units' ids derive from the attempt id; with the recorded attempt id they match.
-- **Order**: the planner builds the events from the state, the arguments, and the draws, with no randomness other than the dice; projected collections iterate in insertion order. This is expected to be deterministic, and the headless run (section 7, slice 1) proves it on 456 steps.
-- **What differs even when nothing changed**: `time` (the planner's clock, [GamePlanner.cs:2044](../../LimboDancer.Domains.Asl.Play/GamePlanner.cs)), and the `rulePackage` stamp whenever a package has a new manifest, which today is all of them. The `facts` and `resolution` blobs on fire, rally, close combat, and ambush records also grow when Rules adds a fact or a DRM, without the outcome changing.
+## 5. Effort, risk, and a first slice
 
-## 5. Divergence
+| Piece | Effort | Risk |
+|---|---|---|
+| Re-play mode in Play: the `replay` query, the cut history in `Refresh()`, the proposal controls closed, the panel (Back, Next, Run, Play on) | About a day of sessions | A panel that reads the head of the game instead of the cut history would show the future. Tests at a step before a known later event in each panel's data catch it |
+| "Re-play on Play" on Replay | Small | None beyond R31b.1's condition |
+| The "played on from" line after the switch, on Play and on Replay | Small | Older Play-on games' labels: read the origin from the label when it has the "from <game> at step <n>" form, and from the event comparison otherwise |
+| Studio check (five widths on Play and Replay, side views) | Half a day | |
 
-### 5.1 What counts as the same
+**First slice**: re-play mode in Play with Next, Back, and Play on from here, reached by the URL, and its tests (a cut history shows no later event in any panel; Play on makes the game through `PlayOn` and opens it live; nothing is written before). **Second slice**: Run at a pace, the Replay link, the "played on from" line, and the Studio check.
 
-Three levels, compared after each step against the recorded game replayed to the same step (the record replays by its outcomes, with no rule deciding anything, so the recorded state at every step is always at hand):
+Nothing is deferred for rules: re-play applies recorded events, so every kind of step a record holds re-plays, vehicles and ordnance included.
 
-1. **Outcome** (a divergence): the dice asked for differ (more than recorded, fewer, or other sides), or the state after the step differs. State: each entity's position, status, conditions, holding, custodian, and definition; the turn, phase, and phasing side; any pending choice or surrender; the open movement window; the game's end and result. This is what decides whether the next recorded step can still follow.
-2. **Events** (a divergence, shown with the outcome): the step's events by id, type, causes, and visibility, and their payloads without `time`, `rulePackage`, `facts`, and `resolution`.
-3. **Detail** (a note, not a divergence): the `facts` and `resolution` blobs and the package stamp. Shown on request, as "recorded under an earlier version of the fire package" and a list of the fields that differ.
+## 6. Open questions, each with a proposal
 
-A step refused today (for example a rule now bars the recorded fire group) is an outcome divergence with the refusal's reasons. A step the re-enactor cannot rebuild is not a divergence: it says the kind of step is not re-enacted yet.
-
-A canonical state comparison does not exist today; it is new code in the Studio (a projection of `GameState` to the fields above, compared field by field). It decides nothing about the rules, so it does not belong in Rules.
-
-### 5.2 What happens at a divergence
-
-The re-enactment stops after the step that diverged (the new game keeps today's outcome; nothing is undone, since writes are irreversible). The page says:
-
-- "Step 87 of 259 (fire, [G4] at [F5]) came out differently from the record:" then the differences in words, for example "r-squad-21 is broken here, Good Order in the record", "the rules now ask for 2 dice; the record has 1".
-- With the choice: take over from here (the game is now an ordinary live game), or go on re-enacting where the next recorded step still applies (offered only when the state matches at level 1; otherwise it would follow a script that no longer fits).
-
-A run to a chosen step stops at the first divergence.
-
-## 6. The user experience
-
-What exists on Replay: "Open on Play" (the game as it stands now, [Replay.razor:43](../../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Replay.razor)) and the collapsed "Play on from here" ([Replay.razor:79](../../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Replay.razor)), offered only where the whole game may be known (an ended game, or the adjudicator's view; ruling R31b.1).
-
-Proposed:
-
-- **Replay**: a second collapsed section beside "Play on from here", "Re-enact on Play", under the same condition. It names the new game (default `<game>-re`), says that setup is copied and each step after it is played again with the recorded action and dice, and opens Play on the new game with the re-enactment panel. Its first step is the step after setup, not the step shown; the shown step is the default stopping point ("Re-enact to step 87"), editable.
-- **Play**: a panel at the head of the activity area while a re-enactment is attached to the game: "Re-enacting cd-guards-5: step 41 of 259 (rally, r-squad-3 by g-leader-9-1-1)". Controls: Next step (one step), Run to step N (with pace, stopping at a key or click, as Replay's Play does), and Stop and take over. Each step shows in the page's ordinary step list and dice history. A divergence shows as in section 5.2. Taking over removes the panel; the game is then an ordinary live game.
-- The re-enactment runs in the adjudicator's view only, since the steps are both sides' and their outcomes may reveal concealed units.
-- The attachment (source game, next step) lives in the Studio session, not in the record; reopening the game later offers "Resume re-enacting cd-guards-5 from step 42" when the new game's events still match the source through that step, which is checkable from the two records alone.
-
-### 6.1 What the follow control gives
-
-The development-only "Follow a recorded game" control (merged into main with #20, e6f407b6; shown only with scripted dice) starts a new game from a record and then copies the record's next step's events into it, one step at a time. It proposes nothing and draws no dice, so its step is what re-enactment replaces. The rest is reusable:
-
-- `LivePlay.StepEnd` ([LivePlay.cs:178](../../LimboDancer.Domains.Asl.MapStudio/Services/LivePlay.cs)): where a step ends, by attempt. The re-enactor uses it to read a recorded step's events and dice.
-- The follower check in `LivePlay.FollowStep` ([LivePlay.cs:147](../../LimboDancer.Domains.Asl.MapStudio/Services/LivePlay.cs)): the follower's event ids must match the record through its revision, or it was "played on by hand" (`FOLLOW-002`). It is the "Resume re-enacting from step N" check of section 6, and the re-enactor's guard before each step. It should move out of `FollowStep` into one helper both use.
-- `LivePlay.StartFollowing` ([LivePlay.cs:130](../../LimboDancer.Domains.Asl.MapStudio/Services/LivePlay.cs)): a new game through `PlayOn` with a free name. Re-enactment starts the same way, copying through the end of setup instead of the first step.
-- The paced run in Play (`FollowRun`, [Play.razor:1200](../../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor)): a step at a time with a delay, a cancellation token, cancelled when the page is disposed. "Run to step N" is the same loop with a target and a stop at the first divergence.
-- `FollowRecordPanel.razor` (progress, Next step, Run and Stop, a problem line): the shape of section 6's Play panel, which adds the divergence report and "Stop and take over" and is shown outside Development.
-- `FollowRecordTests.cs`: its fixtures for a followed game are a start for the re-enactor's tests.
-
-The follow control stays as it is: it measures the page's cost on each recorded step without the planner's, which re-enactment cannot. The two controls share the helpers above, not one panel.
-
-## 7. Options
-
-| Option | What | Effort | Risk |
-|---|---|---|---|
-| **A. Re-enactor service, recorded dice, Play panel** (recommended) | Section 3's builders, section 4.3's roller, section 5's comparison, section 6's panels | Engine and harness: about a day of sessions. Pages and Studio check: about a day. Remaining kinds: in groups, half a day each | Argument rebuilds that guess wrong on a field the record does not keep (Double Time, `retainDm`); the harness shows them as divergences on the very first run |
-| B. Drive the Play page's own controls with ScriptedDice | Script the pickers and Confirm, queue the dice | Larger: each control's state is different | Dev-only roller, silent random fallback, one queue for all games, brittle to every UI change. Not recommended |
-| C. Record each step's arguments from now on | Write the confirmed argument object beside the events (a field on the step's first event, or a side record), so later games re-enact exactly | Small in Play; a record format change in the Units reader and writer | Helps only games played after it; the existing games still need A. Recommended later, once A shows how often a rebuild is ambiguous |
-
-Recommendation: A now; C as a follow-up decision after slice 1's results.
-
-### 7.1 First slice (engine and evidence, no page)
-
-1. A recorded-dice roller (Studio services) and a re-enactor that, for one step, rebuilds the arguments, proposes and confirms through a `GamePlay` with that roller, and compares at the three levels. It reads steps with `StepEnd` and guards each with the follower check (section 6.1).
-2. Builders for the kinds in both recorded games: `advance-phase` (with `retainDm`), `fire` (firers, director(s), target, weapons, withoutInherent), `advance`, `rout`, `rally`, `move`, `take-prisoner` (capture and reject), `enter-building`, `close-combat`, `ambush`, `recover`, `massacre`, `guard-prisoners`, `choose`; plus `pass` and `end`.
-3. Setup copied, as `PlayOn` copies events ([LivePlay.cs:104](../../LimboDancer.Domains.Asl.MapStudio/Services/LivePlay.cs)), through the last setup step (including the non-OB "?" step): it draws no dice and its arguments are the bulkiest to rebuild.
-4. A headless run of cd-guards-5 and guards-06-dlandi from setup to the end, as a test or a code-builders tool, reporting the first divergence of each and every note. This is the evidence that decides what slice 2 must handle and whether option C is worth it.
-
-### 7.2 Second slice (pages)
-
-The Replay section and the Play panel of section 6, built from the follow control's panel and paced run (section 6.1), with the five-width Studio check scoped to the two changed pages.
-
-### 7.3 Deferred
-
-Kinds absent from the recorded games, each stopping the re-enactment with "this kind of step is not re-enacted yet; take over here" until built: vehicles (`move-vehicle`, `overrun`, `vehicle-close-combat`, `motion-attempt`, `button-up`, `hook-gun`), ordnance (`fire-ordnance`, `recover-shock`, `turn-gun`), DCs (`throw-dc`, `detonate-dc`, Placement through `move`), `fire-starshell`, SMOKE through `move`, Infantry OVR (`declare-overrun`, `infantry-overrun-ntc`, `overrun-evade`), `opportunity-fire`, `forfeit-rof`, `deploy`, `recombine`, `transfer`, `drop`, `dismantle`, `repair`, `ambush-withdraw`, `mop-up`, `place-hidden`, and setup re-enactment (as opposed to copying). Each goes to the backlog when the plan is approved.
-
-## 8. Open questions, each with a proposal
-
-- **U1. The dice's provenance in the new game.** Its `dice-rolled` events are the source game's draws, served again; they keep source `system`, as "Play on from here" keeps the copied rolls. Proposal: keep `system`, and say it in the game's label ("cd-guards-5 (re-enacted from step 1)"); no record format change in this feature.
-- **U2. After a divergence.** Proposal: stop; offer "go on re-enacting" only when the state still matches (section 5.2).
-- **U3. Where re-enactment starts.** Proposal: always at the first step after setup, with the shown Replay step as the default stopping point. "Play on from here" already covers starting the new game at a later step.
-- **U4. Recording arguments from now on (option C).** Proposal: decide after slice 1's headless run.
-- **U5. Pace and performance.** Each step plans three times (preview at Propose, the gate, the executor), as a played step does. A run of 259 steps has not been timed; the parent session's Play profiling bears on it. Proposal: time it in slice 1's headless run and set the default pace from that.
+- **U1. Where "Play on from here" lives in Play.** Proposal: in the re-play panel, next to Next step; and still on Replay as today.
+- **U2. The follow control.** Proposal: keep it as the development aid for the commit path's cost; retire it later if the user prefers one control.
+- **U3. The new game's name.** Proposal: Replay's default, `<game>-r<revision>`, editable before it is made.
