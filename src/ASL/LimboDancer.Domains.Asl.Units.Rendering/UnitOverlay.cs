@@ -67,11 +67,36 @@ public sealed class UnitMapTarget
 /// <summary>A unit on the overlay. <see cref="Shown"/> is false for stack members beyond the six drawn; the inspector lists them.</summary>
 public sealed record PlacedUnit(UnitDocument Document, BoardLocation Location, HexIndex Hex, bool Shown, string Name);
 
-/// <summary>The <c>layer-units</c> group, the units it placed, and why any were left out.</summary>
-public sealed record UnitOverlay(string Svg, string SetId, IReadOnlyList<PlacedUnit> Units, IReadOnlyList<string> Diagnostics,
-    IReadOnlyList<RenderWarning> Warnings, double FaceSize)
+/// <summary>A part of the counter layer: a hex, or the layer's figure outlines; its markup and a 96-bit hash of it (the Counter Layer Design, section 3).</summary>
+public sealed record UnitFragment(string Id, string Markup, string Hash);
+
+/// <summary>
+/// The <c>layer-units</c> group, the units it placed, and why any were left out. The layer is kept as its parts in paint order (decision L4):
+/// <see cref="Open"/>, the root's start tag with the layer's attributes, then <see cref="Fragments"/>. A host that sends only what changed reads
+/// the parts; <see cref="Svg"/>, the layer whole, is made from them the first time it is asked for.
+/// </summary>
+public sealed record UnitOverlay(string SetId, IReadOnlyList<PlacedUnit> Units, IReadOnlyList<string> Diagnostics,
+    IReadOnlyList<RenderWarning> Warnings, double FaceSize, string Open, IReadOnlyList<UnitFragment> Fragments)
 {
     public const string EmptySvg = "<g id=\"layer-units\"></g>";
+
+    // The layer whole, kept with the parts it was made from, so a copy made with other parts (`with`) makes its own.
+    private (string Open, IReadOnlyList<UnitFragment> Of, string Svg)? whole;
+
+    /// <summary>The layer whole, as one SVG group.</summary>
+    public string Svg
+    {
+        get
+        {
+            if (whole is not { } made || !ReferenceEquals(made.Of, Fragments) || !ReferenceEquals(made.Open, Open))
+            {
+                made = (Open, Fragments, string.Concat([Open, .. Fragments.Select(fragment => fragment.Markup), "</g>"]));
+                whole = made;
+            }
+
+            return made.Svg;
+        }
+    }
 
     public IEnumerable<PlacedUnit> At(HexIndex hex) => Units.Where(unit => unit.Hex == hex);
 }
@@ -138,8 +163,11 @@ public static class UnitOverlayBuilder
         var hexHeight = target.Geometry.HexHeight;
         var faceSizes = located.Select(unit => renderer.FaceSize(unit.Document, DetailTier.Near, hexHeight)).ToArray();
         var reference = faceSizes.Length == 0 ? hexHeight * UnitRenderer.DefaultFaceSize : faceSizes.Min();
-        var svg = new SvgWriter();
-        svg.Start("g", ("id", "layer-units"), ("data-face-size", SvgValue.Number(reference)), ("data-unit-set", setId));
+        var root = new SvgWriter();
+        root.Start("g", ("id", "layer-units"), ("data-face-size", SvgValue.Number(reference)), ("data-unit-set", setId));
+        root.End();
+        var open = root.ToString()[..^"</g>".Length];
+        var fragments = new List<UnitFragment>();
         var placed = new List<PlacedUnit>();
         var outlines = new List<(string Id, string Path)>();
         var held = new HashSet<string>(StringComparer.Ordinal);
@@ -165,26 +193,22 @@ public static class UnitOverlayBuilder
             }
 
             var center = target.Geometry.CenterDot(hexGroup.Key);
-            if (cache is null)
-            {
-                var context = shared ? new UnitLayerContext() : null;
-                WriteHex(svg, hexGroup.Key, center, hexHeight, levels, renderer, warnings, context);
-                Hold(outlines, held, context?.Outlines ?? []);
-                continue;
-            }
-
-            var key = Key(hexGroup.Key, center, hexHeight, levels, renderer, shared);
-            if (!cache.TryGet(key, out var fragment))
+            var key = cache is null ? null : Key(hexGroup.Key, center, hexHeight, levels, renderer, shared);
+            if (key is null || !cache!.TryGet(key, out var fragment))
             {
                 var hexSvg = new SvgWriter();
                 var hexWarnings = new List<RenderWarning>();
                 var context = shared ? new UnitLayerContext() : null;
                 WriteHex(hexSvg, hexGroup.Key, center, hexHeight, levels, renderer, hexWarnings, context);
-                fragment = new UnitFragmentCache.Fragment(hexSvg.ToString(), [.. hexWarnings], [.. context?.Outlines ?? []]);
-                cache.Add(key, fragment);
+                var markup = hexSvg.ToString();
+                fragment = new UnitFragmentCache.Fragment(markup, [.. hexWarnings], [.. context?.Outlines ?? []], UnitLayerContext.Hash96(markup));
+                if (key is not null)
+                {
+                    cache!.Add(key, fragment);
+                }
             }
 
-            svg.Fragment(fragment.Markup);
+            fragments.Add(new UnitFragment(HexFragmentId(hexGroup.Key), fragment.Markup, fragment.Hash));
             warnings.AddRange(fragment.Warnings);
             Hold(outlines, held, fragment.Outlines);
         }
@@ -193,18 +217,26 @@ public static class UnitOverlayBuilder
         // definitions come after the counters, and a hex drawn earlier contributes its outlines as a hex drawn now does.
         if (outlines.Count > 0)
         {
-            svg.Start("defs", ("data-figures", "true"));
+            var definitions = new SvgWriter();
+            definitions.Start("defs", ("id", FiguresFragmentId), ("data-figures", "true"));
             foreach (var (id, path) in outlines)
             {
-                svg.Empty("path", ("id", id), ("d", SvgValue.Trusted(path)));
+                definitions.Empty("path", ("id", id), ("d", SvgValue.Trusted(path)));
             }
 
-            svg.End();
+            definitions.End();
+            var markup = definitions.ToString();
+            fragments.Add(new UnitFragment(FiguresFragmentId, markup, UnitLayerContext.Hash96(markup)));
         }
 
-        svg.End();
-        return new UnitOverlay(svg.ToString(), setId, placed, diagnostics, warnings, reference);
+        return new UnitOverlay(setId, placed, diagnostics, warnings, reference, open, fragments);
     }
+
+    /// <summary>The id of the fragment that holds the layer's figure outlines (option C1), after the hexes.</summary>
+    public const string FiguresFragmentId = "units-figures";
+
+    /// <summary>The id of a hex's fragment: <c>units-{column}-{row}</c> of the composed map or board (the Counter Layer Design, section 3).</summary>
+    public static string HexFragmentId(HexIndex hex) => string.Create(CultureInfo.InvariantCulture, $"units-{hex.Column}-{hex.Row}");
 
     /// <summary>One level of a hex's stack, its members in drawing order.</summary>
     private sealed record StackLevel(int Level, StackMember[] Members);
@@ -248,6 +280,8 @@ public static class UnitOverlayBuilder
     private static void WriteHex(SvgWriter svg, HexIndex hex, PixelPoint center, double hexHeight, StackLevel[] levels, UnitRenderer renderer,
         List<RenderWarning> warnings, UnitLayerContext? layer)
     {
+        // The hex's own group, by which a patch replaces or removes it (option D; the Counter Layer Design, section 6).
+        svg.Start("g", ("id", HexFragmentId(hex)), ("data-hex", $"{hex.Column},{hex.Row}"));
         for (var levelIndex = 0; levelIndex < levels.Length; levelIndex++)
         {
             var (level, members) = (levels[levelIndex].Level, levels[levelIndex].Members);
@@ -292,6 +326,8 @@ public static class UnitOverlayBuilder
 
             svg.End();
         }
+
+        svg.End();
     }
 
     /// <summary>The offset of a stack member: overlapping columns of three, a second row below.</summary>

@@ -33,6 +33,8 @@ internal sealed class UnitLayerContext
     }
 
     /// <summary>A definition's name by its content (decision L3): SHA-256 over the UTF-16 text, 96 bits of it.</summary>
-    internal static string ContentId(string text) =>
-        "fig-" + Convert.ToHexStringLower(SHA256.HashData(MemoryMarshal.AsBytes(text.AsSpan())), 0, 12);
+    internal static string ContentId(string text) => "fig-" + Hash96(text);
+
+    /// <summary>SHA-256 over the UTF-16 text, its first 96 bits as 24 lowercase hex digits (decision L3).</summary>
+    internal static string Hash96(string text) => Convert.ToHexStringLower(SHA256.HashData(MemoryMarshal.AsBytes(text.AsSpan())), 0, 12);
 }

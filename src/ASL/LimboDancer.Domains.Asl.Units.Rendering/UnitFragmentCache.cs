@@ -108,8 +108,11 @@ public sealed class UnitFragmentCache
         }
     }
 
-    /// <summary>A hex as drawn: its markup, the warnings its counters raised, and the figure outlines it refers to, which the layer holds (C1).</summary>
-    internal sealed record Fragment(string Markup, RenderWarning[] Warnings, (string Id, string Path)[] Outlines);
+    /// <summary>
+    /// A hex as drawn: its markup, the warnings its counters raised, the figure outlines it refers to, which the layer holds (C1), and the
+    /// markup's hash, by which a host tells whether the browser holds it (D).
+    /// </summary>
+    internal sealed record Fragment(string Markup, RenderWarning[] Warnings, (string Id, string Path)[] Outlines, string Hash);
 
     private sealed record Entry(string Key, Fragment Fragment, long Size);
 }

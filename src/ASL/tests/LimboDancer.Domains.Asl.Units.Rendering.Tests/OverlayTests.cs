@@ -84,7 +84,10 @@ public sealed class OverlayTests
         var overlay = Build(target, Unit("ground", "bd01:E4:0"), Unit("upstairs", "bd01:E4:1"), Unit("cellar", "bd01:E4:-1"));
         var layer = XElement.Parse(overlay.Svg);
         Assert.Equal(["-1", "1"], layer.Descendants().Select(element => element.Attribute("data-level")?.Value).OfType<string>());
-        Assert.Equal(3, layer.Elements("g").Count(element => element.Attribute("data-stack") is not null));
+        // One hex, its own group (option D), holding a stack for each level.
+        var hex = Assert.Single(layer.Elements("g"));
+        Assert.Equal("units-" + hex.Attribute("data-hex")!.Value.Replace(',', '-'), hex.Attribute("id")!.Value);
+        Assert.Equal(3, hex.Elements("g").Count(element => element.Attribute("data-stack") is not null));
         Assert.EndsWith(", level 1", overlay.Units.Single(unit => unit.Document.Id == "upstairs").Name, StringComparison.Ordinal);
         Assert.Contains("level 1", layer.Descendants().Single(element => element.Attribute("data-unit-id")?.Value == "upstairs").Attribute("aria-label")!.Value,
             StringComparison.Ordinal);

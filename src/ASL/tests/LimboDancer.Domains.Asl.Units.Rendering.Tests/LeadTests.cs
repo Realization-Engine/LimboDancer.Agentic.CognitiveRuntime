@@ -55,17 +55,13 @@ public sealed class LeadTests
         .Select(element => (element.Attribute("data-unit-id")!.Value, element.Attribute("aria-label")!.Value, element.Element("title")!.Value))];
 
     /// <summary>A copy of the Studio's former rewrite of the layer (<c>GameMaps.Led</c>, pass 31d), the oracle of the leads.</summary>
-    private static UnitOverlay Led(UnitOverlay overlay, Func<PlacedUnit, string> leadOf)
+    private static (string Svg, IReadOnlyList<PlacedUnit> Units) Led(UnitOverlay overlay, Func<PlacedUnit, string> leadOf)
     {
         var lead = overlay.Units.ToDictionary(unit => unit.Document.Id, leadOf, StringComparer.Ordinal);
         var svg = Regex.Replace(overlay.Svg, "(<g data-unit-id=\"([^\"]+)\"[^>]*aria-label=\")([^\"]*\"[^>]*>\\s*<title>)",
             match => lead.TryGetValue(match.Groups[2].Value, out var said)
                 ? match.Groups[1].Value + System.Net.WebUtility.HtmlEncode(said) + match.Groups[3].Value + System.Net.WebUtility.HtmlEncode(said)
                 : match.Value);
-        return overlay with
-        {
-            Svg = svg,
-            Units = [.. overlay.Units.Select(unit => unit with { Name = lead[unit.Document.Id] + unit.Name })],
-        };
+        return (svg, [.. overlay.Units.Select(unit => unit with { Name = lead[unit.Document.Id] + unit.Name })]);
     }
 }
