@@ -240,12 +240,59 @@ public sealed class FileAuditSink(string path) : IAuditSink
         return ValueTask.CompletedTask;
     }
 
-    /// <summary>The last audit lines, newest last.</summary>
+    /// <summary>
+    /// The last audit lines, newest last. Read back from the file's end, a block at a time, until the lines asked for are in hand (the Play Step
+    /// Plan, task 5): the adjudicator's audit panel asks on every render, and the log only grows. Read from the file, not kept in memory, so the
+    /// lines another Studio writes to the shared folder are read too. The lines are split as <see cref="File.ReadLines(string)"/> splits them.
+    /// </summary>
     public IReadOnlyList<string> Tail(int count)
     {
         lock (gate)
         {
-            return File.Exists(path) ? [.. File.ReadLines(path).TakeLast(count)] : [];
+            if (count <= 0 || !File.Exists(path))
+            {
+                return [];
+            }
+
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var end = stream.Length;
+            var from = TailStart(stream, end, count);
+            stream.Position = from;
+            var bytes = new byte[end - from];
+            stream.ReadExactly(bytes);
+            using var reader = new StreamReader(new MemoryStream(bytes), Encoding.UTF8, detectEncodingFromByteOrderMarks: from == 0);
+            var lines = new List<string>();
+            while (reader.ReadLine() is { } line)
+            {
+                lines.Add(line);
+            }
+
+            return [.. lines.TakeLast(count)];
         }
+    }
+
+    // Where the last count lines begin: just after the newline that has count newlines after it, leaving out one that ends the file; or the
+    // file's start. A newline byte is never inside a UTF-8 sequence, so the text after it decodes on its own.
+    private static long TailStart(FileStream stream, long end, int count)
+    {
+        var buffer = new byte[8192];
+        var start = end;
+        var newlines = 0;
+        while (start > 0)
+        {
+            var size = (int)Math.Min(buffer.Length, start);
+            start -= size;
+            stream.Position = start;
+            stream.ReadExactly(buffer, 0, size);
+            for (var index = size - 1; index >= 0; index--)
+            {
+                if (buffer[index] == (byte)'\n' && start + index != end - 1 && ++newlines > count)
+                {
+                    return start + index + 1;
+                }
+            }
+        }
+
+        return 0;
     }
 }
