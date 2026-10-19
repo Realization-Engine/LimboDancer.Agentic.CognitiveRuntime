@@ -129,66 +129,81 @@ public static class UnitOverlayBuilder
         var placed = new List<PlacedUnit>();
         foreach (var hexGroup in located.GroupBy(unit => unit.Hex).OrderBy(group => group.Key.Column).ThenBy(group => group.Key.Row))
         {
-            var center = target.Geometry.CenterDot(hexGroup.Key);
-            var levels = hexGroup.GroupBy(unit => unit.Location.Level).OrderBy(group => group.Key).ToArray();
-            for (var levelIndex = 0; levelIndex < levels.Length; levelIndex++)
+            // A hex is a fragment of the layer (the Counter Layer Design, section 7.1): what it draws depends on its own hex and members alone.
+            var levels = hexGroup.GroupBy(unit => unit.Location.Level).OrderBy(group => group.Key)
+                .Select(group => new StackLevel(group.Key, [.. group.OrderBy(unit => unit.Document.StackOrder).ThenBy(unit => unit.Document.Id, StringComparer.Ordinal)
+                    .Select(unit => (unit.Document, unit.Location))]))
+                .ToArray();
+            foreach (var level in levels)
             {
-                var level = levels[levelIndex].Key;
-                var members = levels[levelIndex].OrderBy(unit => unit.Document.StackOrder).ThenBy(unit => unit.Document.Id, StringComparer.Ordinal).ToArray();
-                var face = members.Max(member => renderer.FaceSize(member.Document, DetailTier.Near, hexHeight));
-                var offsetY = (levelIndex - ((levels.Length - 1) / 2.0)) * face * 0.7;
-                var shown = Math.Min(members.Length, MaxShown);
-                var suffix = level == 0 ? null : $", level {level.ToString(CultureInfo.InvariantCulture)}";
-                svg.Start("g", ("data-stack", $"{hexGroup.Key.Column},{hexGroup.Key.Row},{level.ToString(CultureInfo.InvariantCulture)}"));
-                var (top, left) = (double.MaxValue, double.MaxValue);
-                for (var index = 0; index < members.Length; index++)
+                var suffix = LevelSuffix(level.Level);
+                for (var index = 0; index < level.Members.Length; index++)
                 {
-                    var member = members[index];
-                    var isShown = index < shown;
-                    placed.Add(new PlacedUnit(member.Document, member.Location, hexGroup.Key, isShown,
-                        UnitLabels.AccessibleName(member.Document, renderer.Vocabulary) + suffix));
-                    if (!isShown)
-                    {
-                        continue;
-                    }
-
-                    var (dx, dy) = Offset(index, shown, face);
-                    var x = center.X + dx;
-                    var y = center.Y + offsetY + dy;
-                    top = Math.Min(top, y - (face / 2));
-                    left = Math.Min(left, x - (face / 2));
-                    renderer.WriteUnit(svg, member.Document, x, y, hexHeight, Tiers, null, suffix, warnings);
+                    var (document, location) = level.Members[index];
+                    placed.Add(new PlacedUnit(document, location, hexGroup.Key, index < MaxShown, UnitLabels.AccessibleName(document, renderer.Vocabulary) + suffix));
                 }
-
-                if (members.Length > MaxShown)
-                {
-                    var more = "+" + (members.Length - MaxShown).ToString(CultureInfo.InvariantCulture);
-                    var size = face * 0.34;
-                    var right = center.X + Offset(Math.Min(2, shown - 1), shown, face).Dx + (face / 2);
-                    svg.Start("g", ("data-stack-count", more));
-                    svg.Empty("rect", ("x", SvgValue.Number(right - (size * 0.6))), ("y", SvgValue.Number(top - (size * 0.6))), ("width", SvgValue.Number(size * 1.4)),
-                        ("height", SvgValue.Number(size)), ("rx", SvgValue.Number(size * 0.3)), ("fill", "#17212b"));
-                    Text(svg, right + (size * 0.1), top - (size * 0.6) + (size * 0.72), size * 0.7, more, "#ffffff");
-                    svg.End();
-                }
-
-                if (level != 0)
-                {
-                    var tab = face * 0.3;
-                    var label = level < 0 ? "C" : "L" + level.ToString(CultureInfo.InvariantCulture);
-                    svg.Start("g", ("data-level", level.ToString(CultureInfo.InvariantCulture)));
-                    svg.Empty("rect", ("x", SvgValue.Number(left)), ("y", SvgValue.Number(top - tab)), ("width", SvgValue.Number(tab * 1.6)),
-                        ("height", SvgValue.Number(tab)), ("fill", "#17212b"));
-                    Text(svg, left + (tab * 0.8), top - (tab * 0.25), tab * 0.72, label, "#ffffff");
-                    svg.End();
-                }
-
-                svg.End();
             }
+
+            WriteHex(svg, hexGroup.Key, target.Geometry.CenterDot(hexGroup.Key), hexHeight, levels, renderer, warnings);
         }
 
         svg.End();
         return new UnitOverlay(svg.ToString(), setId, placed, diagnostics, warnings, reference);
+    }
+
+    /// <summary>One level of a hex's stack, its members in drawing order.</summary>
+    private sealed record StackLevel(int Level, (UnitDocument Document, BoardLocation Location)[] Members);
+
+    private static string? LevelSuffix(int level) => level == 0 ? null : $", level {level.ToString(CultureInfo.InvariantCulture)}";
+
+    /// <summary>A hex's stacks, every level with its count badge and level tab: one fragment of the layer.</summary>
+    private static void WriteHex(SvgWriter svg, HexIndex hex, PixelPoint center, double hexHeight, StackLevel[] levels, UnitRenderer renderer,
+        List<RenderWarning> warnings)
+    {
+        for (var levelIndex = 0; levelIndex < levels.Length; levelIndex++)
+        {
+            var (level, members) = (levels[levelIndex].Level, levels[levelIndex].Members);
+            var face = members.Max(member => renderer.FaceSize(member.Document, DetailTier.Near, hexHeight));
+            var offsetY = (levelIndex - ((levels.Length - 1) / 2.0)) * face * 0.7;
+            var shown = Math.Min(members.Length, MaxShown);
+            var suffix = LevelSuffix(level);
+            svg.Start("g", ("data-stack", $"{hex.Column},{hex.Row},{level.ToString(CultureInfo.InvariantCulture)}"));
+            var (top, left) = (double.MaxValue, double.MaxValue);
+            for (var index = 0; index < shown; index++)
+            {
+                var (dx, dy) = Offset(index, shown, face);
+                var x = center.X + dx;
+                var y = center.Y + offsetY + dy;
+                top = Math.Min(top, y - (face / 2));
+                left = Math.Min(left, x - (face / 2));
+                renderer.WriteUnit(svg, members[index].Document, x, y, hexHeight, Tiers, null, suffix, warnings);
+            }
+
+            if (members.Length > MaxShown)
+            {
+                var more = "+" + (members.Length - MaxShown).ToString(CultureInfo.InvariantCulture);
+                var size = face * 0.34;
+                var right = center.X + Offset(Math.Min(2, shown - 1), shown, face).Dx + (face / 2);
+                svg.Start("g", ("data-stack-count", more));
+                svg.Empty("rect", ("x", SvgValue.Number(right - (size * 0.6))), ("y", SvgValue.Number(top - (size * 0.6))), ("width", SvgValue.Number(size * 1.4)),
+                    ("height", SvgValue.Number(size)), ("rx", SvgValue.Number(size * 0.3)), ("fill", "#17212b"));
+                Text(svg, right + (size * 0.1), top - (size * 0.6) + (size * 0.72), size * 0.7, more, "#ffffff");
+                svg.End();
+            }
+
+            if (level != 0)
+            {
+                var tab = face * 0.3;
+                var label = level < 0 ? "C" : "L" + level.ToString(CultureInfo.InvariantCulture);
+                svg.Start("g", ("data-level", level.ToString(CultureInfo.InvariantCulture)));
+                svg.Empty("rect", ("x", SvgValue.Number(left)), ("y", SvgValue.Number(top - tab)), ("width", SvgValue.Number(tab * 1.6)),
+                    ("height", SvgValue.Number(tab)), ("fill", "#17212b"));
+                Text(svg, left + (tab * 0.8), top - (tab * 0.25), tab * 0.72, label, "#ffffff");
+                svg.End();
+            }
+
+            svg.End();
+        }
     }
 
     /// <summary>The offset of a stack member: overlapping columns of three, a second row below.</summary>
