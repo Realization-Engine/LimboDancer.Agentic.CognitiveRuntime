@@ -31,6 +31,8 @@ def phase_at(rev):
 
 
 log = json.load(open(steplog, encoding="utf-8"))
+# The run's first step follows the press of Run with no pause before it, so its interval is not work plus a second: it is left out.
+log = log[1:]
 steps = []
 for (t0, w0, r0), (t1, w1, r1) in zip(log, log[1:]):
     steps.append({"rev": r1, "from": r0, "phase": phase_at(r1), "work": t1 - t0 - 1000.0, "w0": w0, "w1": w1})

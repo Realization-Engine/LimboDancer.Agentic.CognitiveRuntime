@@ -20,11 +20,27 @@ public sealed partial class GamePlanner
         return state.Encircled(unit) || UpperLevelEncircled(state, unit);
     }
 
-    /// <summary>A7.72: an Infantry unit in an upper level of a building, cut off from ground level by enemy units.</summary>
+    /// <summary>
+    /// A7.72: an Infantry unit in an upper level of a building, cut off from ground level by enemy units. Searched once a state and unit, and kept
+    /// with the state (the Play Step Plan, task 1): the rout's enemy lists ask it for every Known enemy in every scan.
+    /// </summary>
     public bool UpperLevelEncircled(GameState state, UnitInstance unit)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
+        var kept = MemoOf(state).UpperLevelEncircled;
+        if (kept.TryGetValue(unit, out var known))
+        {
+            return known;
+        }
+
+        var found = SearchUpperLevelEncircled(state, unit);
+        kept.TryAdd(unit, found);
+        return found;
+    }
+
+    private bool SearchUpperLevelEncircled(GameState state, UnitInstance unit)
+    {
         if (unit.Side is not { } side || state.Location(unit.Id)?.Location is not { Level: > 0 } at)
         {
             return false;

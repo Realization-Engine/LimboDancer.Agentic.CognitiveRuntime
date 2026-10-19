@@ -29,14 +29,15 @@ target_path = os.path.join(folder, follower + ".game.json")
 target = json.load(open(target_path, encoding="utf-8"))
 events = source["events"]
 have = target["events"]
-if [e["eventId"] for e in have] != [e["eventId"] for e in events[: len(have)]]:
+if [e["eventId"] for e in have] != [e["eventId"] for e in events[: len(have)]] or not have:
     sys.exit(f"STOP: {follower} is not a prefix of {record}")
 
 end = min(revision, len(events))
 while 0 < end < len(events) and attempt(events[end - 1]["eventId"]) == attempt(events[end]["eventId"]):
     end -= 1
-if end <= len(have):
-    sys.exit(f"STOP: {follower} already holds {len(have)} events, at or past the cut {end}")
+if end < 1:
+    sys.exit("STOP: the cut holds no event")
+# A cut may also take a follower back: the next step reads the follower's events as they are then.
 
 target["events"] = events[:end]
 with open(target_path, "w", encoding="utf-8", newline="\n") as f:

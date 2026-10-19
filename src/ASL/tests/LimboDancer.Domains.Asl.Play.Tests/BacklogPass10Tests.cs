@@ -514,6 +514,58 @@ public sealed class BacklogPass10Tests : IDisposable
         NoReplayErrors();
     }
 
+    /// <summary>A board catalog that counts its lookups: a planner's search of the map looks a board up at every step.</summary>
+    private sealed class CountingCatalog(IBoardCatalog inner) : IBoardCatalog
+    {
+        public int Lookups
+        {
+            get; private set;
+        }
+
+        public BoardReadResult TryGetBoard(BoardRef board, string? version = null)
+        {
+            Lookups++;
+            return inner.TryGetBoard(board, version);
+        }
+    }
+
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("asl:broken", false)]
+    [InlineData("asl:concealed", false)]
+    public async Task AUnitUpstairsIsEncircledWhenAnEnemyHoldsItsOnlyWayDownAndTheStateAnswersOnce(string? enemyState, bool encircled)
+    {
+        // A7.72 (p. 58): a unit in an upper level that cannot trace a path free of an unbroken, armed, unconcealed enemy unit to ground level is
+        // Encircled. Level 1 of D5 reaches the ground only down D5's stairwell; level 2 and D4's level 1 (no stairwell) lead nowhere (B23.4, B23.421).
+        // A Russian squad on D5's ground floor cuts the German squad off; a broken or concealed one does not. The Play Step Plan (task 1): the
+        // planner searches once a state and unit, so a second question about the same state looks no board up.
+        const string building = "Stone Building, 2 Level";
+        foreach (var hex in new[] { "D5", "D4" })
+        {
+            board.Terrain[hex] = building;
+            board.Upper[hex] = [building, building];
+        }
+
+        board.Stairs.Add("D5");
+        board.Side("D5", HexsideDirection.North, terrain: building);
+        await Setup(Squad("g1", L("D5", 1), "german"), enemyState is null ? Squad("r1", L("D5"), "russian") : Squad("r1", L("D5"), "russian", enemyState));
+        var catalog = new CountingCatalog(new InMemoryBoardCatalog([board.Handle()]));
+        var planner = new GamePlanner(store, catalog, Vocabulary, [Catalog], fireLos: los);
+        var state = planner.Replay(store.Read(Scope)!.Events).Current!;
+        var unit = state.Unit("g1")!;
+
+        var before = catalog.Lookups;
+        Assert.Equal(encircled, planner.UpperLevelEncircled(state, unit));
+        Assert.True(catalog.Lookups > before);
+        before = catalog.Lookups;
+        Assert.Equal(encircled, planner.UpperLevelEncircled(state, unit));
+        Assert.Equal(encircled, planner.Encircled(state, unit));
+        Assert.Equal(before, catalog.Lookups);
+
+        // A planner of its own, with nothing kept, reads the same.
+        Assert.Equal(encircled, Planner().UpperLevelEncircled(state, unit));
+    }
+
     [Fact]
     public async Task ABrokenUnitUpstairsRoutsDownItsStairwell()
     {
