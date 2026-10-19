@@ -196,8 +196,14 @@ public static class UnitOverlayBuilder
                     var bare = new PlacedUnit(member.Document, member.Location, hexGroup.Key, index < MaxShown,
                         UnitLabels.AccessibleName(member.Document, renderer.Vocabulary) + suffix);
                     var said = lead?.Invoke(bare);
-                    placed.Add(said is null ? bare : bare with { Name = said + bare.Name });
-                    level.Members[index] = member with { Lead = said };
+                    placed.Add(said is null ? bare : bare with
+                    {
+                        Name = said + bare.Name
+                    });
+                    level.Members[index] = member with
+                    {
+                        Lead = said
+                    };
                 }
             }
 
