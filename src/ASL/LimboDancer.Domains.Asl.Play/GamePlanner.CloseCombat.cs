@@ -1189,7 +1189,7 @@ public sealed partial class GamePlanner
             yield break;
         }
 
-        if (state.Map.Board(at.Board) is not { } placed || boards.TryGetBoard(at.Board, placed.Version).Board is not { } handle)
+        if (Handle(state, at.Board) is not { } handle)
         {
             yield break;
         }
@@ -1211,9 +1211,7 @@ public sealed partial class GamePlanner
             return composed.Distance(one.Board, one.Hex, two.Board, two.Hex);
         }
 
-        return one.Board == two.Board && state.Map.Board(one.Board) is { } placed && boards.TryGetBoard(one.Board, placed.Version).Board is { } handle
-            ? handle.Distance(one.Hex, two.Hex)
-            : null;
+        return one.Board == two.Board && Handle(state, one.Board) is { } handle ? handle.Distance(one.Hex, two.Hex) : null;
     }
 
     /// <summary>

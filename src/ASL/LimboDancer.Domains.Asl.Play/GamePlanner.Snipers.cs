@@ -286,11 +286,11 @@ public sealed partial class GamePlanner
     /// <summary>The hex across a hexside, on one board or across a seam of a placed map; null at the edge of the map.</summary>
     private (BoardRef Board, HexName Hex)? Next(GameState state, BoardRef board, HexName hex, HexsideDirection side) =>
         Composed(state) is { } composed ? composed.Neighbor(board, hex, side)
-            : state.Map.Board(board) is { } placed && boards.TryGetBoard(board, placed.Version).Board is { } handle && handle.Neighbor(hex, side) is { } next
+            : Handle(state, board) is { } handle && handle.Neighbor(hex, side) is { } next
                 ? (board, next) : null;
 
     /// <summary>The distance in hexes between two hexes of the map; null when it cannot be read.</summary>
     private int? Distance(GameState state, BoardRef fromBoard, HexName from, BoardRef toBoard, HexName to) =>
         Composed(state) is { } composed ? composed.Distance(fromBoard, from, toBoard, to)
-            : fromBoard == toBoard && state.Map.Board(fromBoard) is { } placed && boards.TryGetBoard(fromBoard, placed.Version).Board is { } handle ? handle.Distance(from, to) : null;
+            : fromBoard == toBoard && Handle(state, fromBoard) is { } handle ? handle.Distance(from, to) : null;
 }

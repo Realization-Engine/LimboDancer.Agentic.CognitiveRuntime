@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LimboDancer.Abstractions.Audit;
+using LimboDancer.Domains.Asl.Maps;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Geometry;
@@ -175,6 +176,95 @@ public sealed class SeamEntryTests : IDisposable
         var proposed = await Play().ProposeAsync(GameActions.Setup, Setup(boardList, Placement("g1", "attacker-squad", "german", at)), Player);
         Assert.Equal(PlayOutcome.Denied, proposed.Outcome);
         Assert.Equal(0, Revision);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AStateLooksEachBoardUpOnceAndComposesItsPlacedMapOnce(bool placed)
+    {
+        // The A3 plan, task 3 (W3): a state's map context keeps each board's handle, and a placed map's composed read, from the first read on.
+        // Asked again in the same state, the planner looks no board up; a placed map's first read looks each of its boards up once, for the
+        // composed read, and a single board's once. The answers are those of a planner that keeps nothing.
+        await InMph(placed ? TwoBoards() : ["bd01"], Placement("g1", "attacker-squad", "german", "bd01:G2:0"),
+            Placement("r1", "defender-squad", "russian", "bd01:G5:0"));
+        var catalog = new CountingBoardCatalog(boards);
+        var planner = new GamePlanner(store, catalog, Vocabulary, [Catalog]);
+        var state = planner.Replay(store.Read(Scope)!.Events).Current!;
+        Assert.Equal(placed, state.Map.IsPlaced);
+        var from = BoardLocation.Parse("bd01:G2:0");
+        var to = BoardLocation.Parse("bd01:G5:0");
+        var fresh = Planner();
+
+        var before = catalog.Lookups;
+        var range = planner.Range(state, from, to);
+        Assert.Equal(placed ? 2 : 1, catalog.Lookups - before);
+        Assert.Equal(fresh.Range(state, from, to), range);
+        Assert.Equal(3, range);
+
+        before = catalog.Lookups;
+        Assert.Equal(range, planner.Range(state, from, to));
+        Assert.Equal(fresh.Adjacent(state, from, to), planner.Adjacent(state, from, to));
+        Assert.Equal(before, catalog.Lookups);
+
+        // Task 3b: the state keeps each Location's read, so a step read twice, and across the seam on the placed map, answers as a planner
+        // that keeps nothing does, and looks no board up.
+        var near = BoardLocation.Parse("bd01:G1:0");
+        var across = BoardLocation.Parse(placed ? "bd02:G10:0" : "bd01:G2:0");
+        for (var pass = 0; pass < 2; pass++)
+        {
+            Assert.Equal(fresh.Adjacent(state, across, near), planner.Adjacent(state, across, near));
+            Assert.Equal(fresh.Range(state, across, near), planner.Range(state, across, near));
+        }
+
+        Assert.Equal(before, catalog.Lookups);
+    }
+
+    [Fact]
+    public async Task AFootprintPublishedWhileAStateLivesIsReadFromTheNextStateOn()
+    {
+        // The A3 plan, W4 (approved by the user, 2026-10-19): a state is a snapshot, so a board's handle read in it stays its handle; a footprint
+        // published meanwhile (the catalog then answers with the handle restricted to it) is read by the next state the planner is asked about.
+        await InMph(["bd01"], Placement("g1", "attacker-squad", "german", "bd01:G2:0"), Placement("r1", "defender-squad", "russian", "bd01:G5:0"));
+        var whole = Board01Fixture.Handle();
+        var catalog = new FootprintLater(whole);
+        var planner = new GamePlanner(store, catalog, Vocabulary, [Catalog]);
+        var state = planner.Replay(store.Read(Scope)!.Events).Current!;
+        var from = BoardLocation.Parse("bd01:A1:0");
+        var to = BoardLocation.Parse("bd01:G5:0");
+        Assert.NotNull(planner.Range(state, from, to));
+
+        catalog.Published = true;
+        Assert.NotNull(planner.Range(state, from, to));
+
+        // The next state: the game goes on one step (the phase's end), and the planner reads the state that step makes.
+        Assert.Equal(PlayOutcome.Committed, (await Commit(Play(), GameActions.AdvancePhase,
+            Args(new
+            {
+                gameId = Scope.Game,
+                attemptId = "advance-after",
+                expectedRevision = Revision
+            }))).Outcome);
+        var next = planner.Replay(store.Read(Scope)!.Events).Current!;
+        Assert.NotSame(state, next);
+        Assert.Null(planner.Range(next, from, to));
+        Assert.Equal(0, planner.Range(next, to, to));
+    }
+
+    /// <summary>A catalog over board 01 that answers, once a footprint is published, with the handle restricted to it ([G5] and its row).</summary>
+    private sealed class FootprintLater(BoardHandle whole) : IBoardCatalog
+    {
+        private readonly BoardHandle restricted = new(whole.Ref, whole.Version, whole.Status, whole.Provenance, whole.Facts,
+            locationHexes: [HexName.Parse("G5"), HexName.Parse("G4"), HexName.Parse("G6")]);
+
+        public bool Published
+        {
+            get; set;
+        }
+
+        public BoardReadResult TryGetBoard(BoardRef board, string? version = null) =>
+            board == whole.Ref && (version is null || version == whole.Version) ? new BoardReadResult(Published ? restricted : whole, [])
+                : new BoardReadResult(null, [new MapDiagnostic("MAP-READ-001", MapDiagnosticSeverity.Error, $"{board} is not in the catalog.")]);
     }
 
     /// <summary>A verified synthetic board of open ground with a one-level wooden building at G10.</summary>

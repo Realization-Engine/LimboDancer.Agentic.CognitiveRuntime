@@ -15,16 +15,18 @@ namespace LimboDancer.Domains.Asl.Play;
 public sealed partial class GamePlanner
 {
     /// <summary>The read of one Location of the game's map, or null when it cannot be read.</summary>
-    private LocationRead? ReadLocation(GameState state, BoardLocation location)
+    private LocationRead? ReadLocation(GameState state, BoardLocation location) =>
+        MemoOf(state).Reads.GetOrAdd(location, static (key, read) => read.Planner.ResolveOnce(read.State, key), (Planner: this, State: state));
+
+    /// <summary>A Location's read from the state's map context, as <see cref="ReadLocation"/> keeps it once a state (task 3b).</summary>
+    private LocationRead? ResolveOnce(GameState state, BoardLocation location)
     {
         if (state.Map.IsPlaced)
         {
             return Composed(state)?.Resolve(location).Read;
         }
 
-        return state.Map.Board(location.Board) is { } placed && boards.TryGetBoard(location.Board, placed.Version).Board is { } handle
-            ? handle.Resolve(location).Read
-            : null;
+        return Handle(state, location.Board) is { } handle ? handle.Resolve(location).Read : null;
     }
 
     /// <summary>Whether a ground-level Location is a woods-road hex (B13.31): the map's facts handed to Rules.</summary>
@@ -42,7 +44,7 @@ public sealed partial class GamePlanner
             return fireLos.CrossesTerrainInTargetHex(state, from, target, enteredAcross);
         }
 
-        return !state.Map.IsPlaced && state.Map.Boards is [{ } placed] && boards.TryGetBoard(placed.Board, placed.Version).Board is { } handle
+        return !state.Map.IsPlaced && state.Map.Boards is [{ } placed] && Handle(state, placed.Board) is { } handle
             && BoardLosMaps.GetValue(handle, board => new LosMapHolder(LosMap.ForBoard(board).Map)).Map is { } map
             ? LosTargetPoints.CrossesTerrainInTargetHex(map, from, target, enteredAcross)
             : null;
@@ -71,19 +73,20 @@ public sealed partial class GamePlanner
     {
         if (Composed(state) is { } composed)
         {
-            var fromRead = composed.Resolve(from).Read;
-            var toRead = composed.Resolve(to).Read;
+            var fromRead = ReadLocation(state, from);
+            var toRead = ReadLocation(state, to);
             var adjacent = fromRead is not null && toRead is not null && composed.Distance(from.Board, from.Hex, to.Board, to.Hex) == 1;
             return (fromRead, toRead, adjacent, adjacent ? composed.Crossed(from.Board, from.Hex, to.Board, to.Hex)?.Agreed : null);
         }
 
-        if (from.Board != to.Board || state.Map.Board(to.Board) is not { } placed || boards.TryGetBoard(to.Board, placed.Version).Board is not { } handle)
+        if (from.Board != to.Board || Handle(state, to.Board) is not { } handle)
         {
             return (null, null, false, null);
         }
 
-        var one = handle.Resolve(from).Read;
-        var two = handle.Resolve(to).Read;
+        // On a placed map whose composed read failed, the board's own handle, as before; otherwise the reads the state keeps (task 3b).
+        var one = state.Map.IsPlaced ? handle.Resolve(from).Read : ReadLocation(state, from);
+        var two = state.Map.IsPlaced ? handle.Resolve(to).Read : ReadLocation(state, to);
         var near = one is not null && two is not null && handle.Distance(from.Hex, to.Hex) == 1;
         HexsideFacts? crossed = null;
         if (near)
@@ -110,7 +113,7 @@ public sealed partial class GamePlanner
         }
         else
         {
-            map = state.Map.Boards is [{ } placed] && boards.TryGetBoard(placed.Board, placed.Version).Board is { } handle
+            map = state.Map.Boards is [{ } placed] && Handle(state, placed.Board) is { } handle
                 ? BoardLosMaps.GetValue(handle, board => new LosMapHolder(LosMap.ForBoard(board).Map)).Map : null;
         }
 
@@ -137,7 +140,7 @@ public sealed partial class GamePlanner
 
         LosMap? map = state.Map.IsPlaced
             ? Composed(state) is { } composed ? LosMap.ForPlacedMap(composed).Map : null
-            : state.Map.Boards is [{ } placed] && boards.TryGetBoard(placed.Board, placed.Version).Board is { } handle ? LosMap.ForBoard(handle).Map : null;
+            : state.Map.Boards is [{ } placed] && Handle(state, placed.Board) is { } handle ? LosMap.ForBoard(handle).Map : null;
         return map is null ? (null, null)
             : (LosCalculator.Check(map, from, LosAim.LosPoint, hexside, LosAim.LosPoint), LosCalculator.Check(map, from, LosAim.LosPoint, hexside, LosAim.AuxiliaryPoint));
     }

@@ -793,7 +793,7 @@ public sealed partial class GamePlanner
     {
         Maps.Geometry.HexIndex one, two;
         if (from.Board == to.Board && state.Map.Board(from.Board) is { } placed && placed.Slot is not { Reversed: true }
-            && boards.TryGetBoard(from.Board, placed.Version).Board is { } handle
+            && Handle(state, from.Board) is { } handle
             && handle.Geometry.TryGetIndex(from.Hex, out var first) && handle.Geometry.TryGetIndex(to.Hex, out var second))
         {
             (one, two) = (first, second);

@@ -49,7 +49,7 @@ public sealed partial class GamePlanner
 
             (geometry, index) = (composed.Layout.Geometry, located);
         }
-        else if (state.Map.Board(at.Board) is { } placed && boards.TryGetBoard(at.Board, placed.Version).Board is { } handle && handle.Geometry.TryGetIndex(at.Hex, out var own))
+        else if (Handle(state, at.Board) is { } handle && handle.Geometry.TryGetIndex(at.Hex, out var own))
         {
             (geometry, index) = (handle.Geometry, own);
         }

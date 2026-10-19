@@ -1662,3 +1662,19 @@ before 15:06 are approximate: the clock was not read at those boundaries.
 |---|---|---|---|---|
 | The A3 plan: the code map (a read-only agent), the placed-map games found (Gambit only, all short), the plan written with its expected gains first | about 14:05 | about 14:35 | about 0:30 | The code map changed two expectations: A3 alone does not remove `Resolve`'s 23 MB, and A1 had already taken the single-board lookup's allocation |
 | The outside build outputs rule: `outside_outputs.sh` (register, list, clean; a move into a trash folder, then a background delete), its self-test, `gate.sh` registering its outputs and cleaning at `ci`, the standing rules, the README, the A3 plan's section 5 | about 14:40 | 15:06 | about 0:25 | Reworked twice at the user's word: large trees are moved, not deleted in place; only outputs made from today on are touched |
+
+## The A3 map context plan, 2026-10-19
+
+Branch `map-context` from `main` at d4ff1d53, one pull request (the plan's W1), at the user's word to carry on through task 5; W4 and Q2 wait for the user before task 3. Times from the shell's clock.
+
+| Task | Start | End | Duration | Estimate | Note |
+|---|---|---|---|---|---|
+| 0. The branch, `passa3.conf`, the gate's `base` (background), the "before" Studio | 15:36 | 16:07 | 0:31 | 0:20 | The store checked first (527 games). `base` ran 15:38 to 16:07 (replay 69 s, sweep 1,340 s); the "before" worktree built in 2:26 and started on 6671 at 15:44; the rest of the time went to task 1 beside it |
+| 1. The placed-map test game, recorded | 15:44 | 16:12 | 0:28 | 0:45 | `GameFile` takes a placed map; `a3-gambit-rout` written, recorded in the "before" Studio (48 revisions: four routs across the seam, two from bd04 to bd02 and back), checked to replay in my Studio. Recorded twice: the first version forced only the German routs, and a squad at bd04's [BB10], a hex the boards share, stopped the replay (backlog 66). Each commit took 40 to 80 s in the "before" Studio beside `base` |
+| 2. Measure first | 16:07 | 16:25 | 0:18 | 0:30 | The probe in my Studio's build only (`asl-gate-work/studio-a3`, not `studio-6670`, which the user keeps); two runs of cd-guards-5 714 to 760, 621, 809, and the Gambit record whole. Both parts of A3 pass their thresholds by far (section 10.1); `Resolve` measured for Q2 |
+| (The user's rulings on W4 and Q2) | 16:25 | 16:26 | | | W4 approved; A3b to be built as task 3b |
+| 3. The map context | 16:26 | 17:03 | 0:37 | 1:15 | Built in one pass; Studio: the same page in both Studios at 621, 622, 729 to 744, and each Gambit step, three views; the short run and the trace written in section 10.2. Tests: one new test corrected once (the planner keeps its replay) |
+| 3b. A3b: the resolved Locations kept | 17:03 | 17:19 | 0:16 | 0:45 | `Resolve` 36 to 0.5 ms a Rout Phase step (probe); the same page in both Studios; Play's reached classes 179 of 179 |
+| 4. The whole Studio measurement | 17:20 | 18:35 | 1:15 | 0:30 | Lost 0:20: my own loop that counted the follower's events held its file open, the store's move failed, and the run died at 735 (a lesson added to the standing rules). A further 0:25: the machine was loaded by other programs, `main`'s times doubled, so `main` was built outside the repository like mine and the pair run again under the same load (section 10.4) |
+| 5. The gate, the documents, the pull request | 18:36 | 19:08 | 0:32 | 0:40, and CI's 14 min | `strict`, `baseline`, `build`, `proofs` in one background chain (18:36 to 19:05): all equal, a code move. The documents written while it ran. CI to be read after the push |
+| **The plan in all** | 15:36 | 19:08 | 3:32 | about 4:00 | 0:45 lost in task 4 (a run killed by my own file reader; a second pair of runs under machine load); tasks 1 to 3b ran under their estimates |
