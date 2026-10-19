@@ -29,8 +29,24 @@ public sealed partial class GamePlanner
             return null;
         }
 
+        // The Play Step Plan, task 2: kept for a state whose surrender window is closed (V6), checked before the read. The read below asks for the
+        // surrenders first in any case (its enemy list does), so they are asked for here, and inside the window the set comes back unsettled.
+        _ = SurrenderedBeforeRouts(state);
+        var memo = MemoOf(state);
+        var settled = memo.RoutSettled;
+        if (settled && memo.MustRout.TryGetValue(unit, out var kept))
+        {
+            return kept;
+        }
+
         var scan = new RoutScan(this, state);
-        return ScenarioA1RoutCalculator.MustRout(scan, scan.Enemies(unit.Side), scan.Index(at), state.ScenarioMonth);
+        var why = ScenarioA1RoutCalculator.MustRout(scan, scan.Enemies(unit.Side), scan.Index(at), state.ScenarioMonth);
+        if (settled)
+        {
+            memo.MustRout.TryAdd(unit, why);
+        }
+
+        return why;
     }
 
     /// <summary>Whether a broken unit may rout (A10.5): it must, or it is under DM.</summary>
@@ -43,7 +59,27 @@ public sealed partial class GamePlanner
     /// ADJACENT to its captors, and Disrupted, Encircled, or able to get away only by Interdiction or Low Crawl. Rules decides; the captors and the
     /// trap are read here, the trap last.
     /// </summary>
-    private (string Cause, IReadOnlyList<string> Captors)? RoutSurrender(GameState state, UnitInstance unit, BoardLocation start) =>
+    private (string Cause, IReadOnlyList<string> Captors)? RoutSurrender(GameState state, UnitInstance unit, BoardLocation start)
+    {
+        // The Play Step Plan, task 2: kept for a state whose surrender window is closed (V6). The window's own read is this one, for each broken
+        // unit, so inside it nothing is kept.
+        var memo = MemoOf(state);
+        var settled = memo.RoutSettled;
+        if (settled && memo.RoutSurrender.TryGetValue(unit, out var kept) && kept.Start == start)
+        {
+            return kept.Surrender;
+        }
+
+        var surrender = ReadRoutSurrender(state, unit, start);
+        if (settled)
+        {
+            memo.RoutSurrender.TryAdd(unit, (start, surrender));
+        }
+
+        return surrender;
+    }
+
+    private (string Cause, IReadOnlyList<string> Captors)? ReadRoutSurrender(GameState state, UnitInstance unit, BoardLocation start) =>
         ScenarioA1RoutCalculator.SurrenderCandidate(state.Night, Is(unit, Conditions.Fanatic), state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal), IsCommissar(unit))
             && Captors(state, unit) is { Count: > 0 } captors
             && ScenarioA1RoutCalculator.SurrenderCause(Is(unit, Conditions.Disrupted), Encircled(state, unit), () => TrappedByInterdiction(state, unit, start), captors) is { } cause
@@ -67,6 +103,8 @@ public sealed partial class GamePlanner
         var found = surrenderedFirst.GetValue(state, static _ => new HashSet<string>(StringComparer.Ordinal));
         if (state.Phase != "rtph")
         {
+            // Outside the Rout Phase the set stays empty, so there is no window (the Play Step Plan, V6).
+            MemoOf(state).SettleRout();
             return found;
         }
 
@@ -74,6 +112,8 @@ public sealed partial class GamePlanner
             && ScenarioA1RoutCalculator.SurrenderedBeforeTheOtherSideRouts(Is(unit, Conditions.Disrupted), unit.Side == state.PhasingSide,
                 () => state.Location(unit.Id)?.Location is { } at && RoutSurrender(state, unit, at) is not null)).Select(unit => unit.Id)];
         found.UnionWith(units);
+        // The window closes once the set is complete: from here the rout's answers of this state may be kept.
+        MemoOf(state).SettleRout();
         return found;
     }
 
@@ -140,9 +180,22 @@ public sealed partial class GamePlanner
             {
                 // A19.12, A20.21 (the referee's review): a unit that has surrendered before this side routs is a prisoner to its routes.
                 var prisoners = planner.SurrenderedBeforeRouts(state);
-                enemies[side] = known = [.. KnownEnemies(state, side).Where(item => !prisoners.Contains(item.Unit.Id)).Select(item => new RoutEnemyFacts(item.Unit.Id, Index(item.At), Armed(item.Unit),
-                    Is(item.Unit, Conditions.Broken), Is(item.Unit, Conditions.Melee), LiveFire.IsVehicle(item.Unit), Is(item.Unit, Conditions.Cx),
-                    Is(item.Unit, Conditions.Pinned), planner.Encircled(state, item.Unit), NormalRange(state, item.Unit), planner.InterdictionRange(state, item.Unit, item.At)))];
+                // The Play Step Plan, task 2: the list is read once a side for a state whose surrender window is closed (V6), and each scan gives
+                // its Locations their indexes in its own table, in the list's order, as it did when it read the list itself.
+                var memo = planner.MemoOf(state);
+                var settled = memo.RoutSettled;
+                if (!settled || !memo.RoutEnemies.TryGetValue(side, out var read))
+                {
+                    read = [.. KnownEnemies(state, side).Where(item => !prisoners.Contains(item.Unit.Id)).Select(item => (item.At, new RoutEnemyFacts(item.Unit.Id, -1, Armed(item.Unit),
+                        Is(item.Unit, Conditions.Broken), Is(item.Unit, Conditions.Melee), LiveFire.IsVehicle(item.Unit), Is(item.Unit, Conditions.Cx),
+                        Is(item.Unit, Conditions.Pinned), planner.Encircled(state, item.Unit), NormalRange(state, item.Unit), planner.InterdictionRange(state, item.Unit, item.At))))];
+                    if (settled)
+                    {
+                        memo.RoutEnemies.TryAdd(side, read);
+                    }
+                }
+
+                enemies[side] = known = [.. read.Select(item => item.Facts with { Location = Index(item.At) })];
             }
 
             return known;
@@ -754,6 +807,27 @@ public sealed partial class GamePlanner
             return ([], false, new Dictionary<BoardLocation, IReadOnlyList<BoardLocation>>());
         }
 
+        // The Play Step Plan, task 2: kept for a state whose surrender window is closed (V6); asked for first, as the read's enemy list would.
+        _ = SurrenderedBeforeRouts(state);
+        var memo = MemoOf(state);
+        var settled = memo.RoutSettled;
+        if (settled && memo.RoutAdvice.TryGetValue(unit, out var kept))
+        {
+            return kept;
+        }
+
+        var advice = ReadRoutAdvice(state, unit, at);
+        if (settled)
+        {
+            memo.RoutAdvice.TryAdd(unit, advice);
+        }
+
+        return advice;
+    }
+
+    private (IReadOnlyList<BoardLocation> Targets, bool CanRout, IReadOnlyDictionary<BoardLocation, IReadOnlyList<BoardLocation>> Routes) ReadRoutAdvice(GameState state,
+        UnitInstance unit, BoardLocation at)
+    {
         // Pass 31d (design D3): one least-cost route to each place the rout may end, from the search's own steps. The search reads Known enemy
         // units alone (A10.533), so a route tells the routing side nothing it does not hold. Rules decides which places are offered (pass 32.f).
         var scan = new RoutScan(this, state);

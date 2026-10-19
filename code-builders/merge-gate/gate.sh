@@ -143,6 +143,17 @@ base() {
 # What says that the strict build passed for the tree as it stands: every tracked or new file under src/ASL outside docs and boards.
 tree_key() { (cd "$R" && git ls-files -z -c -o --exclude-standard -- src/ASL ':(exclude)src/ASL/docs' ':(exclude)src/ASL/boards' | xargs -0 sha256sum 2>/dev/null | sha256sum | cut -c1-16); }
 strict_build() {
+  # The Play Step Plan, task 9 (2026-10-19): with BaseOutputPath=bin/gate/ the Web SDK leaves out only bin/gate/** from MapStudio's content, so
+  # every other output folder under its bin (a "before" Studio, a test run's own path, an old pass's) is copied into the build, and the copies
+  # nest in each other: three builds stalled 20 to 35 minutes copying them. Only the folders the session's tools use may stand there. (The
+  # gate's own output gets a small bin of its own each build, the .json files of Debug and Release; it does not nest, since bin/gate/**
+  # is left out of the next build.)
+  local studio_bin="$R/src/ASL/LimboDancer.Domains.Asl.MapStudio/bin" extra
+  # Claude's Studio builds outside the repository since 2026-10-19 (asl-gate-work/studio-6670; the user agreed), so bin/p31b is no longer one.
+  extra=$(ls -1 "$studio_bin" 2>/dev/null | grep -vxE 'Debug|Release|gate' | tr '\n' ' ')
+  if [ -n "$extra" ]; then
+    stop "MapStudio's bin holds output folders a gate build would copy into itself: ${extra}(build other outputs outside the repository, and remove these)"
+  fi
   dotnet build "$R/src/ASL/LimboDancer.Domains.Asl.sln" -c Debug "-p:BaseOutputPath=bin/gate/" --warnaserror --disable-build-servers -m:1 -v:q > "$S/gate-build-$PASS.log" 2>&1
   tail -4 "$S/gate-build-$PASS.log"
   if ! grep -q "Build succeeded" "$S/gate-build-$PASS.log"; then rm -f "$S/strict-ok"; echo "STOP: the build failed"; grep -E "error|warning" "$S/gate-build-$PASS.log" | sed 's/\[.*//' | sort -u | head -40; exit 1; fi
@@ -226,7 +237,15 @@ proofs)
   python "$G/compare_sweeps.py" "$BEFORE/sweep.txt" "$AFTER/sweep.txt" < /dev/null > "$AFTER/sweep-pairs.txt" || stop "the sweep's comparison failed"
   echo "sweep groups that differ (all in $AFTER/sweep-pairs.txt); those not new on the gate's side:"
   grep -v "NEW AFTER" "$AFTER/sweep-pairs.txt"
-  if [ ! -s "$AFTER/replay-games.txt" ] && [ ! -s "$AFTER/sweep-pairs.txt" ]; then echo "VOID: the digest and the sweep differ in nothing after a rule pass"; exit 1; fi
+  if [ ! -s "$AFTER/replay-games.txt" ] && [ ! -s "$AFTER/sweep-pairs.txt" ]; then
+    if [ "$CODE_MOVE" != "1" ]; then echo "VOID: the digest and the sweep differ in nothing after a rule pass"; exit 1; fi
+    # A code move (the Play Step Plan, 2026-10-19) must differ in nothing: that is its proof (V3), and the run is void only if both sides ran
+    # the same build. The tool's copies are the gate's build byte for byte (tool()), so the gate's DLLs are compared with the baseline's.
+    same=0
+    for d in Play Rules MapStudio; do cmp -s "$GATE/LimboDancer.Domains.Asl.$d.dll" "$S/main-bin/LimboDancer.Domains.Asl.$d.dll" && same=$((same + 1)); done
+    if [ "$same" = "3" ]; then echo "VOID: the gate's build is the baseline's (Play, Rules, and MapStudio identical), so nothing could differ"; exit 1; fi
+    echo "a code move: the digest and the sweep differ in nothing, and the two sides ran different builds ($((3 - same)) of Play, Rules, MapStudio differ)"
+  fi
   echo "$SIGNATURE" > "$AFTER/DONE"
   ;;
 docker)

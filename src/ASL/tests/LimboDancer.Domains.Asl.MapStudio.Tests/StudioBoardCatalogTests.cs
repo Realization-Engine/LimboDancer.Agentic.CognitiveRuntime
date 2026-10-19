@@ -24,6 +24,21 @@ public sealed class StudioBoardCatalogTests
     }
 
     [Fact]
+    public void AHitReturnsTheKeptResultAndAMissStillSaysWhy()
+    {
+        // The Play Step Plan, task 7 (A1): a lookup that hits returns the handle's kept result, with no diagnostic; a version the Studio cannot
+        // load still says so.
+        var catalog = new StudioBoardCatalog(new VersionedBoards());
+        var first = catalog.TryGetBoard(FakeBoardProvider.Board.Ref, FakeBoardProvider.Version);
+        Assert.NotNull(first.Board);
+        Assert.Empty(first.Diagnostics);
+        Assert.Same(first, catalog.TryGetBoard(FakeBoardProvider.Board.Ref, FakeBoardProvider.Version));
+        var missing = catalog.TryGetBoard(FakeBoardProvider.Board.Ref, "unavailable-version");
+        Assert.Null(missing.Board);
+        Assert.Equal("MAP-READ-001", Assert.Single(missing.Diagnostics).Code);
+    }
+
+    [Fact]
     public void NewlyPublishedFootprintReplacesUnrestrictedCachedHandleAndSurvivesRestart()
     {
         var root = Path.Combine(Path.GetTempPath(), "asl-catalog-footprint-" + Guid.NewGuid().ToString("N"));

@@ -143,6 +143,20 @@ public sealed class BacklogPass22Tests : IDisposable
 
     // R22.3: a game from a minimal card takes its sides' ELR, SAN, edges, month, and SSR tokens, and its units set up by hand with no OB group.
     [Fact]
+    public void ABuiltInCardsTextIsReadOnceAndKept()
+    {
+        // The Play Step Plan, task 4: the planner asks for a game's card on every CardOf, so a built-in card's text is read from the assembly once
+        // a name, as its SHA-256 is; a second read, and the library's, give the same string; a name with no card stays null.
+        var first = ScenarioCards.EmbeddedText("gambit");
+        Assert.NotNull(first);
+        Assert.Same(first, ScenarioCards.EmbeddedText("gambit"));
+        Assert.Same(first, cards.Text("gambit"));
+        Assert.DoesNotContain('\r', first);
+        Assert.Null(ScenarioCards.EmbeddedText("no-such-card"));
+        Assert.Null(ScenarioCards.EmbeddedText("no-such-card"));
+    }
+
+    [Fact]
     public async Task AGameStartsFromAMinimalCard()
     {
         Assert.Empty(cards.Save(Minimal("village"), Catalog));

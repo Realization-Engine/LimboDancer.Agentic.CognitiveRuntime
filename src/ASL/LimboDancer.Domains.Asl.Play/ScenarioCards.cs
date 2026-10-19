@@ -207,10 +207,20 @@ public static class ScenarioCards
     public static string? Sha256(string name) => EmbeddedSha256.GetOrAdd(name, key =>
         EmbeddedText(key) is { } text ? Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))) : null);
 
-    /// <summary>An embedded card's text with LF line endings; null when none has that name.</summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string?> EmbeddedTexts = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// An embedded card's text with LF line endings; null when none has that name. Read from the assembly once a name and kept, as its SHA-256 is
+    /// (the Play Step Plan, task 4): the planner asks for a game's card on every <c>CardOf</c>, and the text is fixed within a build.
+    /// </summary>
     public static string? EmbeddedText(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
+        return EmbeddedTexts.GetOrAdd(name, ReadEmbeddedText);
+    }
+
+    private static string? ReadEmbeddedText(string name)
+    {
         using var stream = typeof(ScenarioCards).Assembly.GetManifestResourceStream(Prefix + name + Suffix);
         if (stream is null)
         {

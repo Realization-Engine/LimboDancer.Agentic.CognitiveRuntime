@@ -3,7 +3,7 @@
 **Written:** 2026-10-19, at the user's word: "P2 to P5 approved, write the plan". Revised the same day at the user's word on the order of work: "Write an implementation and THEN test in Studio", the Studio test before any unit test.
 **Source:** `src/ASL/docs/Memory-And-Performance/ASL Map Studio Play Step Analysis.md` (the analysis): its measurement (section 2), the code (section 3), the fixes (section 4), the cost (section 5), and the rulings P1 to P5 (section 6).
 **Scope:** the fixes of ruling P2, in one branch and one pull request (P3): C1, B2, B1, H, I, D, and A1 with its measurement first. Not in scope: A2 and lazy hidden tabs (P2), C2 and A3 unless task 8 asks for them (P2, P4), the store's whole-file rewrite (P5, backlog 65), the setup step's browser time and the counter's stalls (backlog 65).
-**Status:** written; not started. It starts at the user's word.
+**Status:** built on branch `play-step`, 2026-10-19, at the user's word to carry tasks 0 to 9 without intervention: tasks 0 to 8 committed one a task (504ac764 to 81b051a7), each tested in the Studio before its unit tests; A1 measured and built; C2 and A3 not needed for the goal (the analysis, section 8.5). Task 9: the gate and the pull request. The merge waits for a green CI run and the user's word.
 
 ## 1. Goal
 
@@ -40,6 +40,7 @@ The full three runs of the analysis are task 8's, once, at the end.
 | V6 | **The surrender window** (task 2): nothing that reads the enemy list is kept for a state while that state's `SurrenderedBeforeRouts` set is being filled. The set is marked settled when its fill ends; until then the memo neither reads nor writes the rout answers of that state |
 | V7 | **Measurement as in the analysis, section 2:** allocation from allocation ticks only (the counter stalls, analysis 2.5); time from the page's step intervals and the trace's outer frames, never from leaf frames (analysis 2.4). The scripts are committed under `code-builders/diagnostics/play-step/` (the ruling of 2026-10-13 on my tools) |
 | V8 | **Out-of-scope findings go to the backlog** (section 65 or a new section), never into the branch unasked |
+| V9 | **Decided in task 9 under the user's word to go on without intervention, open to a veto:** the gate's "void run" stop (a digest and a sweep that differ in nothing) holds for rule passes; for a code move (`CODE_MOVE=1`) no difference is the proof, and the run is void only when the gate's Play, Rules, and MapStudio DLLs are the baseline's byte for byte. And `gate.sh` refuses to build while MapStudio's `bin` holds any folder but `Debug`, `Release`, and `gate` (the stalled builds of tasks 3, 7, and 9); Claude's Studio builds outside the repository, in `asl-gate-work/studio-6670` (the user agreed, 2026-10-19) |
 
 ## 4. Tasks
 
