@@ -3,7 +3,7 @@
 **Written:** 2026-10-19, at the user's word ("Write it"), after the Play Step Plan was merged (PR 23, 97666623).
 **Source:** the Play Step Analysis (`ASL Map Studio Play Step Analysis.md`): fix A3 (section 4, A), what is left of a Rout Phase step (section 8.5), the board lookup counted (section 8.4); backlog section 65; a read of the code on `main` at 97666623 (section 2 below).
 **Scope:** A3, the map context per state: each board's handle and a placed map's composed read, obtained once per game state and kept with it, and `MapInPlay.Board` without its per-call allocation. Not in scope unless the user rules otherwise (section 9): a cache of resolved Locations per state (A3b), and C2 (the index of a state's objects).
-**Status:** started 2026-10-19 at the user's word, on branch `map-context`. Tasks 0 to 2 done; both parts of A3 pass their thresholds (section 10.1); W4 and Q2 wait for the user's ruling before task 3.
+**Status:** built 2026-10-19 at the user's word, on branch `map-context`: tasks 0 to 4 and 3b done (W4 approved, A3b ruled in; section 9), the results in section 10; task 5, the gate and the pull request, in progress. The merge waits for a green CI run and the user's word.
 
 ## 1. Expected gains, stated first
 
@@ -264,3 +264,11 @@ worktree Studio of task 0 measured the same as `main` built outside the reposito
 
 What A3 did not buy, as section 1 said: `RoutAdvice`'s route searches, which are now most of what is left of a Rout Phase step. The
 known store-append stall (backlog 65) was seen once in my first run (441 to 446, 12.9 s) and not at that step in the others.
+
+### 10.5 Task 5: the gate (2026-10-19)
+
+`gate.sh a3 d4ff1d53`, `origin/main` unmoved since the branch was cut: `strict` passed (6:31; the formatter changed nothing);
+`baseline` reused the base's cache and added `a3-gambit-rout` on `main`'s side (20,913 replay lines, 516,138 sweep lines); `build`
+passed; `proofs`: the early check equal (10,095 lines), the text list 0 lines differing, the replay digest and the sweep (every cut of
+p31c-tw, and the Gambit game) equal to the baseline in every line, with the two sides' Play, Rules, and MapStudio builds differing (a
+code move, not a void run). W2 holds: A3 asks the same map questions and gets the same answers.
