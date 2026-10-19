@@ -24,7 +24,8 @@ public sealed class LayerOracleTests
     [MemberData(nameof(Layers))]
     public void ALayerExpandsWithEveryReferenceFound(string sheet, string fixture)
     {
-        var layer = UnitOverlayBuilder.Build(Target, "test-set", Fixture(fixture), RenderingTestData.Renderer(sheet)).Svg;
+        // The layer as each counter draws it whole, its outlines in its own definitions, before C1 and C2 shared them.
+        var layer = UnitOverlayBuilder.Build(Target, "test-set", Fixture(fixture), RenderingTestData.Renderer(sheet), null, shared: false).Svg;
         var original = XElement.Parse(layer);
         var uses = original.Descendants().Count(element => element.Name.LocalName == "use");
         var drawn = original.Descendants().Count(element => element.Name.LocalName == "path" && element.Ancestors().All(ancestor => ancestor.Name.LocalName != "defs"));

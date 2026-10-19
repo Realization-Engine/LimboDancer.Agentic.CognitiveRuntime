@@ -97,7 +97,7 @@ public sealed class CounterLayerManifestTests(CounterLayerCases cases) : IClassF
     public void TheSharedLayerDrawsWhatTheWholeCountersDraw()
     {
         var wrong = cases.All.Where((_, index) => index % 4 == 0)
-            .Where(item => LayerOracle.Expanded(item.Build(null).Svg) != LayerOracle.Expanded(item.Whole().Svg)).Select(item => item.Name).ToArray();
+            .Where(item => LayerOracle.Expanded(item.Build(null)) != LayerOracle.Expanded(item.Whole())).Select(item => item.Name).ToArray();
         Assert.True(wrong.Length == 0, $"{wrong.Length} layers draw otherwise than their whole counters, the first: {string.Join(", ", wrong.Take(5))}");
     }
 

@@ -16,13 +16,13 @@
     [Parameter]
     public IReadOnlyList<BoardLocation> Outlined { get; set; } = [];
 
-    /// <summary>The units both sides know, as the unit layer's SVG; null for none.</summary>
+    /// <summary>The units both sides know, as their counter layer; null for none.</summary>
     [Parameter]
-    public string? Units { get; set; }
+    public UnitOverlay? Units { get; set; }
 
     private string Key => $"{Board.Ref.Value}/{Board.Version}/{string.Join('|', Outlined)}";
 
-    private string? drawnUnits;
+    private UnitOverlay? drawnUnits;
 
     private Task Ready() => Draw();
 
@@ -41,7 +41,7 @@
             IReadOnlyList<string> layers = [.. BoardRenderer.Layers(BoardView.Exact).Where(layer => layer != "defs")];
             await viewport.Load($"render/{Board.Ref.Value}/{Board.Version}/{BoardRenderer.ViewName(BoardView.Exact)}", string.Empty,
                 BoardRenderer.ViewBox(Board.Render, BoardView.Exact), BoardRenderer.Layers(BoardView.Exact), layers);
-            await viewport.SetUnits(Units);
+            await viewport.ShowUnits(Units);
             await viewport.SetMarks("<g id=\"layer-marks\">" + string.Concat(Outlined.Select(at =>
                 GameMaps.HexMark(Board, at, "handover-outline", "#fde68a", "#b45309", 4, dashed: false, label: null))) + "</g>");
         }

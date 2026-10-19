@@ -22,32 +22,62 @@ public sealed class LayerSharingTests
     [MemberData(nameof(Layers))]
     public void TheSharedLayerDrawsWhatTheWholeCountersDraw(string sheet, string fixture)
     {
-        var whole = LayerOracle.Expanded(Build(sheet, fixture, shared: false).Svg);
-        Assert.Equal(whole, LayerOracle.Expanded(Build(sheet, fixture, shared: true).Svg));
+        var whole = LayerOracle.Expanded(Build(sheet, fixture, shared: false));
+        Assert.Equal(whole, LayerOracle.Expanded(Build(sheet, fixture, shared: true)));
 
         // With the fragment cache too, a hex taken from it brings its outlines.
         var cache = new UnitFragmentCache();
         Build(sheet, fixture, shared: true, cache);
-        Assert.Equal(whole, LayerOracle.Expanded(Build(sheet, fixture, shared: true, cache).Svg));
+        Assert.Equal(whole, LayerOracle.Expanded(Build(sheet, fixture, shared: true, cache)));
         Assert.True(cache.Hits > 0);
     }
 
     [Theory]
     [MemberData(nameof(Layers))]
-    public void EachOutlineIsWrittenOnceAtTheLayersEnd(string sheet, string fixture)
+    public void TheLayerCarriesNoOutlineTheSpriteFinds(string sheet, string fixture)
     {
-        var layer = XElement.Parse(Build(sheet, fixture, shared: true).Svg);
-        var definitions = Assert.Single(layer.Descendants(), element => element.Name.LocalName == "defs");
-        Assert.Same(layer.Elements().Last(), definitions);
-        Assert.Equal("true", definitions.Attribute("data-figures")?.Value);
-        var ids = definitions.Elements().Select(path => path.Attribute("id")!.Value).ToArray();
-        Assert.Equal(ids.Length, ids.Distinct(StringComparer.Ordinal).Count());
-        Assert.All(ids, id => Assert.Matches("^fig-[0-9a-f]{24}$", id));
-        Assert.Equal(ids.Length, definitions.Elements().Select(path => path.Attribute("d")!.Value).Distinct(StringComparer.Ordinal).Count());
+        var overlay = Build(sheet, fixture, shared: true);
+        var layer = XElement.Parse(overlay.Svg);
+        Assert.DoesNotContain(layer.Descendants(), element => element.Name.LocalName == "defs");
+        Assert.DoesNotContain(overlay.Fragments, fragment => fragment.Id == UnitOverlayBuilder.FiguresFragmentId);
 
-        // Every reference finds one of them, and every one of them is referred to.
-        var hrefs = layer.Descendants().Where(element => element.Name.LocalName == "use").Select(use => use.Attribute("href")!.Value[1..]).ToHashSet(StringComparer.Ordinal);
-        Assert.Equal(ids.Order(StringComparer.Ordinal), hrefs.Order(StringComparer.Ordinal));
+        // Every reference finds an outline of the sprite.
+        var sprite = XElement.Parse(overlay.Figures!);
+        var ids = sprite.Descendants().Where(element => element.Name.LocalName == "path").Select(path => path.Attribute("id")!.Value).ToHashSet(StringComparer.Ordinal);
+        var hrefs = layer.Descendants().Where(element => element.Name.LocalName == "use").Select(use => use.Attribute("href")!.Value[1..]).ToArray();
+        Assert.NotEmpty(hrefs);
+        Assert.All(hrefs, href => Assert.Contains(href, ids));
+    }
+
+    [Fact]
+    public void TheSpriteHoldsEveryOutlineOnce()
+    {
+        var art = FigureArt.BuiltIn;
+        var sprite = XElement.Parse(UnitFigureSprite.Markup(art));
+        Assert.Equal(UnitFigureSprite.Id, sprite.Attribute("id")!.Value);
+        var paths = sprite.Descendants().Where(element => element.Name.LocalName == "path").ToArray();
+        Assert.Equal(art.Outlines.Count(), paths.Length);
+        Assert.Equal(paths.Length, paths.Select(path => path.Attribute("id")!.Value).Distinct(StringComparer.Ordinal).Count());
+        Assert.All(paths, path => Assert.Matches("^fig-[0-9a-f]{24}$", path.Attribute("id")!.Value));
+        Assert.Equal(art.Outlines.Order(StringComparer.Ordinal), paths.Select(path => path.Attribute("d")!.Value).Order(StringComparer.Ordinal));
+
+        // Made once for the art.
+        Assert.Same(UnitFigureSprite.Markup(art), UnitFigureSprite.Markup(art));
+    }
+
+    [Fact]
+    public void EachFigureArtHasItsOwnSprite()
+    {
+        // The sprite is the renderer's own figure art: with none, the counters draw the fallback figures and refer to nothing; with the stand-ins
+        // (the Unit Lab's Art tab), the sprite holds them too. Either way the layer, expanded with its sprite, draws what the whole counters draw.
+        var sheet = UnitStyles.Load(UnitStyles.Digital);
+        foreach (var art in new[] { FigureArt.None, FigureArt.BuiltIn.WithStandIns() })
+        {
+            var renderer = new UnitRenderer(RenderingTestData.Vocabulary.Value, sheet, Palettes.PaletteSetReader.Embedded(sheet.Palette!)) { Figures = art };
+            var overlay = UnitOverlayBuilder.Build(Target, "test-set", LayerOracleTests.Fixture("crowded"), renderer);
+            Assert.Equal(LayerOracle.Expanded(UnitOverlayBuilder.Build(Target, "test-set", LayerOracleTests.Fixture("crowded"), renderer, null, shared: false)),
+                LayerOracle.Expanded(overlay));
+        }
     }
 
     [Theory]

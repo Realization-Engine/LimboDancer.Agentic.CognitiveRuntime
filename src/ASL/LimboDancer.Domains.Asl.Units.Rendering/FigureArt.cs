@@ -88,6 +88,10 @@ public sealed partial class FigureArt
 
     public IEnumerable<(string Side, string Weapon)> WeaponKeys => weapons.SelectMany(side => side.Value.Keys.Select(weapon => (side.Key, weapon)));
 
+    /// <summary>Every outline the art holds, each once: the poses' bodies, the helmets, and the weapons (the viewport's figure sprite, option C2).</summary>
+    internal IEnumerable<string> Outlines => poses.Values.Select(pose => pose.Path).Concat(helmets.Values.Select(helmet => helmet.Path))
+        .Concat(weapons.Values.SelectMany(side => side.Values.Select(weapon => weapon.Path))).Distinct(StringComparer.Ordinal);
+
     /// <summary>
     /// A pose by its name or its older name, when it is drawn under this setting: the side's own version (<c>hero.german</c>, the hero
     /// with the side's grenade) when there is one, otherwise the general pose.

@@ -205,7 +205,9 @@ export function create(host, dotnet) {
         load: (baseUrl, query, viewBox, layers, visible) => load(state, baseUrl, query, viewBox, layers, visible),
         reloadLayers: (baseUrl, query, layers) => reloadLayers(state, baseUrl, query, layers),
         setVisible: visible => setVisible(state, visible),
-        setUnits: markup => setUnits(state, markup),
+        setUnits: (markup, version) => setUnits(state, markup, version),
+        applyUnitPatch: patch => applyUnitPatch(state, patch),
+        setUnitFigures: markup => setUnitFigures(state, markup),
         setLos: markup => setLos(state, markup),
         setMarks: markup => setMarks(state, markup),
         highlight: points => highlight(state, points),
@@ -566,7 +568,7 @@ function setMarks(state, markup) {
     state.svg.appendChild(document.importNode(group, true));
 }
 
-function setUnits(state, markup) {
+function setUnits(state, markup, version) {
     state.svg.querySelector("#layer-units")?.remove();
     if (!markup) {
         return;
@@ -581,6 +583,10 @@ function setUnits(state, markup) {
     if (group?.id !== "layer-units") {
         throw new Error("Invalid unit layer");
     }
+    // The version a patch must be made from (the Counter Layer Design, section 6): the server's record of what this layer holds.
+    if (version !== undefined && version !== null) {
+        group.setAttribute("data-units-version", String(version));
+    }
     state.svg.appendChild(document.importNode(group, true));
     if (state.highlight?.isConnected) {
         state.svg.appendChild(state.highlight);
@@ -588,6 +594,78 @@ function setUnits(state, markup) {
 
     updateUnitTier(state);
     reportMeasuredScene(state);
+}
+
+// Option D (the Counter Layer Design, section 6): applies the changes between the layer this page holds and the server's new one. Refused,
+// changing nothing, when the layer is not the version the patch was made from; the server then sends the layer whole.
+function applyUnitPatch(state, patch) {
+    const layer = state.svg.querySelector("#layer-units");
+    if (!layer || layer.getAttribute("data-units-version") !== String(patch.base)) {
+        return false;
+    }
+
+    let parsed = [];
+    if (patch.upserts.length > 0) {
+        // One parse for every upsert of the patch.
+        const upserted = new DOMParser().parseFromString(
+            `<svg xmlns="${svgNamespace}">${patch.upserts.map(upsert => upsert.markup).join("")}</svg>`, "image/svg+xml");
+        if (upserted.querySelector("parsererror")) {
+            return false;
+        }
+        parsed = [...upserted.documentElement.children];
+        if (parsed.length !== patch.upserts.length || parsed.some((node, index) => node.id !== patch.upserts[index].id)) {
+            return false;
+        }
+    }
+
+    // Keyboard focus is the one state of the browser inside a fragment: kept by unit id across the replacement (section 10).
+    const focused = layer.contains(globalThis.document.activeElement)
+        ? globalThis.document.activeElement.closest("[data-unit-id]")?.getAttribute("data-unit-id") : null;
+    for (const removal of patch.removals) {
+        layer.querySelector(`#${CSS.escape(removal)}`)?.remove();
+    }
+
+    patch.upserts.forEach((upsert, index) => {
+        const node = globalThis.document.importNode(parsed[index], true);
+        const existing = layer.querySelector(`:scope > #${CSS.escape(upsert.id)}`);
+        if (existing) {
+            existing.replaceWith(node);
+            return;
+        }
+
+        const before = upsert.before ? layer.querySelector(`:scope > #${CSS.escape(upsert.before)}`) : null;
+        layer.insertBefore(node, before);
+    });
+
+    layer.setAttribute("data-face-size", patch.faceSize);
+    layer.setAttribute("data-unit-set", patch.unitSet);
+    layer.setAttribute("data-units-version", String(patch.version));
+    if (focused && !layer.contains(globalThis.document.activeElement)) {
+        layer.querySelector(`[data-unit-id="${CSS.escape(focused)}"]`)?.focus({ preventScroll: true });
+    }
+
+    if (state.highlight?.isConnected) {
+        state.svg.appendChild(state.highlight);
+    }
+
+    updateUnitTier(state);
+    return true;
+}
+
+// Option C2 (the Counter Layer Design, section 4; ruling U1): the figure outlines every counter layer refers to, held beside the board's layers
+// from a board load on. Its id has no "layer-" prefix, so the layer choice and the comparison modes leave it alone.
+function setUnitFigures(state, markup) {
+    state.svg.querySelector("#unit-figures")?.remove();
+    if (!markup) {
+        return;
+    }
+
+    const fragment = new DOMParser().parseFromString(`<svg xmlns="${svgNamespace}">${markup}</svg>`, "image/svg+xml");
+    const group = fragment.documentElement.firstElementChild;
+    if (fragment.querySelector("parsererror") || group?.id !== "unit-figures") {
+        throw new Error("Invalid unit figures");
+    }
+    state.svg.insertBefore(document.importNode(group, true), state.svg.firstChild);
 }
 
 // Optional development diagnostics. The scene includes terrain and counters; two animation frames

@@ -80,6 +80,15 @@ public sealed record UnitOverlay(string SetId, IReadOnlyList<PlacedUnit> Units, 
 {
     public const string EmptySvg = "<g id=\"layer-units\"></g>";
 
+    /// <summary>
+    /// The figure sprite the layer's references find (option C2; <see cref="UnitFigureSprite"/>), which the viewport must hold before the layer;
+    /// null for a layer of whole counters.
+    /// </summary>
+    public string? Figures
+    {
+        get; init;
+    }
+
     // The layer whole, kept with the parts it was made from, so a copy made with other parts (`with`) makes its own.
     private (string Open, IReadOnlyList<UnitFragment> Of, string Svg)? whole;
 
@@ -213,13 +222,16 @@ public static class UnitOverlayBuilder
             Hold(outlines, held, fragment.Outlines);
         }
 
-        // The figure outlines the counters refer to, each once (option C1). A reference may find an element later in the document, so the
+        // The figure outlines the counters refer to are the viewport's sprite (option C2), which holds every outline of the renderer's figure art.
+        // An outline it does not hold is written in the layer, each once (C1): a reference may find an element later in the document, so the
         // definitions come after the counters, and a hex drawn earlier contributes its outlines as a hex drawn now does.
-        if (outlines.Count > 0)
+        var sprite = shared ? UnitFigureSprite.For(renderer.Figures) : null;
+        var missing = outlines.Where(outline => sprite?.Ids.Contains(outline.Id) != true).ToArray();
+        if (missing.Length > 0)
         {
             var definitions = new SvgWriter();
             definitions.Start("defs", ("id", FiguresFragmentId), ("data-figures", "true"));
-            foreach (var (id, path) in outlines)
+            foreach (var (id, path) in missing)
             {
                 definitions.Empty("path", ("id", id), ("d", SvgValue.Trusted(path)));
             }
@@ -229,7 +241,10 @@ public static class UnitOverlayBuilder
             fragments.Add(new UnitFragment(FiguresFragmentId, markup, UnitLayerContext.Hash96(markup)));
         }
 
-        return new UnitOverlay(setId, placed, diagnostics, warnings, reference, open, fragments);
+        return new UnitOverlay(setId, placed, diagnostics, warnings, reference, open, fragments)
+        {
+            Figures = sprite?.Markup,
+        };
     }
 
     /// <summary>The id of the fragment that holds the layer's figure outlines (option C1), after the hexes.</summary>

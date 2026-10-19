@@ -16,8 +16,14 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 /// <c>layer-units</c> group of the units the viewer may see, the <c>layer-marks</c> group, and why the map cannot be drawn. Pass 29: the overlay
 /// those units were drawn from and the view they were read for, which the board inspector reads; the workspace draws the picked hex and LOS itself.
 /// </summary>
-public sealed record GameMapLayers(StudioBoard? Board, string? Source, string? Units, string? Marks, IReadOnlyList<string> Problems)
+public sealed record GameMapLayers(StudioBoard? Board, string? Source, string? Marks, IReadOnlyList<string> Problems)
 {
+    /// <summary>
+    /// The <c>layer-units</c> group whole, made from <see cref="Overlay"/> when asked for: the viewport is sent only what changed (the Counter Layer
+    /// Design, decision L4), so a step makes the whole text only for a reader that wants it.
+    /// </summary>
+    public string? Units => Overlay?.Svg;
+
     /// <summary>The units the viewer may see, as placed on the map; null when they cannot be drawn.</summary>
     public UnitOverlay? Overlay
     {
@@ -78,7 +84,7 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary
     /// "?", and a hidden one not at all (A12.11, A12.3); before play starts a stack shows its top counter alone, and a side setting up now is not
     /// drawn (A2.9, A12.12; ruling R23.3). So the map shows nothing that either player could not already see on the board.
     /// </summary>
-    public (StudioBoard? Board, string? Units) Public(string gameId, MapInPlay map, long revision)
+    public (StudioBoard? Board, UnitOverlay? Units) Public(string gameId, MapInPlay map, long revision)
     {
         ArgumentNullException.ThrowIfNull(gameId);
         ArgumentNullException.ThrowIfNull(map);
@@ -129,7 +135,7 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary
             SetId = $"{first.SetId}-public",
             Units = seen,
             Hash = $"{first.Hash}-public-{revision}",
-        }, renderer, unit => DisplayText.Place(map.Boards.Count, unit.Location) + ": ").Svg);
+        }, renderer, unit => DisplayText.Place(map.Boards.Count, unit.Location) + ": "));
     }
 
     /// <summary>
@@ -155,13 +161,13 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary
         var loaded = Board(map);
         if (loaded.Board is not { } board)
         {
-            return new GameMapLayers(null, null, null, null, [.. loaded.Diagnostics.Select(item => $"{item.Code}: {item.Message}")]);
+            return new GameMapLayers(null, null, null, [.. loaded.Diagnostics.Select(item => $"{item.Code}: {item.Message}")]);
         }
 
         // The viewport requests layer fragments. Do not render an unused standalone document here.
         if (board.InputFor(BoardView.Exact) is null)
         {
-            return new GameMapLayers(null, board.Ref.Value, null, null, [$"{board.Ref} has nothing to draw in the Exact view."]);
+            return new GameMapLayers(null, board.Ref.Value, null, [$"{board.Ref} has nothing to draw in the Exact view."]);
         }
 
         var projection = entry.History is { HasErrors: false } ? games.Projection(entry, viewer, revision) : null;
@@ -203,7 +209,7 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary
             }
         }
 
-        return new GameMapLayers(board, board.Ref.Value, overlay?.Svg, $"<g id=\"layer-marks\">{string.Concat(marked)}</g>", [])
+        return new GameMapLayers(board, board.Ref.Value, $"<g id=\"layer-marks\">{string.Concat(marked)}</g>", [])
         {
             Overlay = overlay,
             View = projection?.View,

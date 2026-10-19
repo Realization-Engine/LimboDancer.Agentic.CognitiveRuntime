@@ -7514,10 +7514,10 @@ else if (state is not null)
     // Pass 31c (design D16): the Locations the lines of what happened name, for the outlines of the hand-over screen's map.
     private IReadOnlyList<BoardLocation> happenedAt = [];
 
-    private (string Game, long Revision, StudioBoard? Board, string? Units) handOverPublic;
+    private (string Game, long Revision, StudioBoard? Board, UnitOverlay? Units) handOverPublic;
 
     /// <summary>The game's map and the units both sides know, for the hand-over screen; read once for a game and a revision.</summary>
-    private (StudioBoard? Board, string? Units) HandOverPublic
+    private (StudioBoard? Board, UnitOverlay? Units) HandOverPublic
     {
         get
         {

@@ -208,3 +208,139 @@ test("hex label detail follows zoom without changing the user's hidden-layer cho
     assert.equal(labels.getAttribute("data-detail-visible"), "false");
     assert.equal(labels.getAttribute("data-layer-hidden"), "true");
 });
+
+// The counter layer's patches (the Counter Layer Design, sections 6 and 10): a small tree of fake nodes, enough for the layer, its fragments, and
+// the counters in them. Markup in these tests is <g id="..." data-units="a,b" data-face-size="..."> groups, one level deep, and a fragment's
+// counters are made from data-units.
+function node(id, attributes = {}, children = []) {
+    const values = new Map(Object.entries(attributes));
+    const self = {
+        id, children: [], parent: null,
+        get firstElementChild() { return this.children[0] ?? null; },
+        get firstChild() { return this.children[0] ?? null; },
+        getAttribute(name) { return values.has(name) ? values.get(name) : null; },
+        setAttribute(name, value) { values.set(name, String(value)); },
+        remove() { if (this.parent) { this.parent.children.splice(this.parent.children.indexOf(this), 1); this.parent = null; } },
+        replaceWith(other) { const at = this.parent.children.indexOf(this); other.parent = this.parent; this.parent.children[at] = other; this.parent = null; },
+        insertBefore(child, before) {
+            child.parent = this;
+            const at = before ? this.children.indexOf(before) : -1;
+            this.children.splice(at < 0 ? this.children.length : at, 0, child);
+            return child;
+        },
+        appendChild(child) { return this.insertBefore(child, null); },
+        contains(other) { for (let at = other; at; at = at.parent) if (at === this) return true; return false; },
+        closest(selector) { for (let at = this; at; at = at.parent) if (selector === "[data-unit-id]" && at.getAttribute("data-unit-id")) return at; return null; },
+        focus() { globalThis.document.activeElement = this; },
+        querySelector(selector) {
+            const direct = /^:scope > #(.+)$/.exec(selector);
+            if (direct) return this.children.find(child => child.id === direct[1]) ?? null;
+            const byId = /^#(.+)$/.exec(selector);
+            const unit = /^\[data-unit-id="(.+)"\]$/.exec(selector);
+            const all = []; const walk = at => at.children.forEach(child => { all.push(child); walk(child); }); walk(this);
+            return all.find(child => byId ? child.id === byId[1] : unit ? child.getAttribute("data-unit-id") === unit[1] : false) ?? null;
+        },
+    };
+    children.forEach(child => self.appendChild(child));
+    return self;
+}
+
+function parseGroups(markup) {
+    return [...markup.matchAll(/<g id="([^"]+)"([^>]*)>/g)].map(([, id, rest]) => {
+        const attributes = Object.fromEntries([...rest.matchAll(/([\w-]+)="([^"]*)"/g)].map(([, name, value]) => [name, value]));
+        const units = (attributes["data-units"] ?? "").split(",").filter(Boolean);
+        return node(id, attributes, units.map(unit => node(`unit-${unit}`, { "data-unit-id": unit })));
+    });
+}
+
+function patchFixture() {
+    const svg = node("svg");
+    Object.assign(svg, {
+        clientWidth: 1000,
+        addEventListener() {}, setPointerCapture() {},
+        replaceChildren(...groups) { svg.children = []; groups.forEach(group => svg.appendChild(group)); },
+        createSVGPoint() { return { matrixTransform() { return { x: 0, y: 0 }; } }; },
+        getScreenCTM() { return { inverse() { return {}; } }; },
+    });
+    const polygon = node("highlight");
+    globalThis.document = {
+        activeElement: null,
+        createElementNS(_, name) { return name === "polygon" ? polygon : svg; },
+        importNode(group) { return group; },
+    };
+    globalThis.CSS = { escape: text => text };
+    globalThis.DOMParser = class {
+        parseFromString(markup) {
+            const inner = markup.replace(/^<svg[^>]*>/, "").replace(/<\/svg>$/, "");
+            // A layer (setUnits) holds its fragments; a patch's upserts are siblings.
+            const groups = parseGroups(inner);
+            const layer = groups[0]?.id === "layer-units" ? node("layer-units", Object.fromEntries(["data-face-size", "data-unit-set"].map(name => [name, groups[0].getAttribute(name)])), groups.slice(1)) : null;
+            const root = node("svg", {}, layer ? [layer] : groups);
+            return { documentElement: root, querySelector() { return null; } };
+        }
+    };
+    globalThis.fetch = async () => ({ ok: true, async text() { return "<svg><g id=\"layer-grid\"/></svg>"; } });
+    const host = { replaceChildren() {}, addEventListener() {}, focus() {}, removeEventListener() {}, classList: { toggle() {} }, dataset: {} };
+    const viewport = create(host, { invokeMethodAsync() {} });
+    return { viewport, svg, polygon };
+}
+
+const layerOf = svg => svg.children.find(child => child.id === "layer-units");
+const ids = svg => layerOf(svg).children.map(child => child.id);
+const patch = (base, removals, upserts, faceSize = "35") => ({ base, version: base + 1, removals, upserts, faceSize, unitSet: "game-a" });
+
+async function patchedLayer() {
+    const fixture = patchFixture();
+    await fixture.viewport.load("render/board/v1/exact", "", "0 0 1000 1000", [], []);
+    fixture.viewport.setUnits('<g id="layer-units" data-face-size="35" data-unit-set="game-a"><g id="units-1-1" data-units="a"></g><g id="units-1-3" data-units="b,c"></g><g id="units-2-2" data-units="d"></g>', 7);
+    return fixture;
+}
+
+test("a unit patch removes, replaces in place, and inserts before the next fragment the page holds", async () => {
+    const { viewport, svg } = await patchedLayer();
+    assert.equal(layerOf(svg).getAttribute("data-units-version"), "7");
+    assert.equal(viewport.applyUnitPatch(patch(7, ["units-1-1"], [
+        { id: "units-1-2", markup: '<g id="units-1-2" data-units="a"></g>', before: "units-1-3" },
+        { id: "units-1-3", markup: '<g id="units-1-3" data-units="c"></g>', before: null },
+        { id: "units-3-1", markup: '<g id="units-3-1" data-units="e"></g>', before: null },
+    ])), true);
+    assert.deepEqual(ids(svg), ["units-1-2", "units-1-3", "units-2-2", "units-3-1"]);
+    assert.deepEqual(layerOf(svg).children[1].children.map(unit => unit.getAttribute("data-unit-id")), ["c"]);
+    assert.equal(layerOf(svg).getAttribute("data-units-version"), "8");
+});
+
+test("a unit patch made from another version is refused and changes nothing", async () => {
+    const { viewport, svg } = await patchedLayer();
+    assert.equal(viewport.applyUnitPatch(patch(6, ["units-1-1"], [])), false);
+    assert.deepEqual(ids(svg), ["units-1-1", "units-1-3", "units-2-2"]);
+    assert.equal(layerOf(svg).getAttribute("data-units-version"), "7");
+    // A page with no layer refuses too.
+    const empty = patchFixture();
+    assert.equal(empty.viewport.applyUnitPatch(patch(7, [], [])), false);
+});
+
+test("a unit patch keeps the focused counter focused, the highlight last, and the tier in view", async () => {
+    const { viewport, svg, polygon } = await patchedLayer();
+    viewport.highlight("0,0 1,1 2,2");
+    layerOf(svg).querySelector('[data-unit-id="b"]').focus();
+    const tier = layerOf(svg).getAttribute("data-active-tier");
+    assert.ok(tier);
+    // The fragment holding the focused counter is replaced, and the smallest face on the map grows tenfold.
+    assert.equal(viewport.applyUnitPatch(patch(7, [], [{ id: "units-1-3", markup: '<g id="units-1-3" data-units="b,c"></g>', before: null }], "350")), true);
+    assert.equal(globalThis.document.activeElement.getAttribute("data-unit-id"), "b");
+    assert.ok(layerOf(svg).contains(globalThis.document.activeElement));
+    assert.equal(svg.children.at(-1), polygon);
+    assert.equal(layerOf(svg).getAttribute("data-face-size"), "350");
+    assert.notEqual(layerOf(svg).getAttribute("data-active-tier"), tier);
+});
+
+test("the unit figures go first in the map and are replaced, not repeated", async () => {
+    const { viewport, svg } = await patchedLayer();
+    viewport.setUnitFigures('<g id="unit-figures"></g>');
+    viewport.setUnitFigures('<g id="unit-figures"></g>');
+    assert.equal(svg.children[0].id, "unit-figures");
+    assert.equal(svg.children.filter(child => child.id === "unit-figures").length, 1);
+    // The layer choice leaves it alone.
+    viewport.setVisible([]);
+    assert.equal(svg.children[0].getAttribute("data-layer-hidden"), null);
+});

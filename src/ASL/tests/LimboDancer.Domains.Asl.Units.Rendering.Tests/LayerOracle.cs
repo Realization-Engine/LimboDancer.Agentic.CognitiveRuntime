@@ -69,6 +69,9 @@ internal static class LayerOracle
     /// <summary>The expanded layer as text, for comparison.</summary>
     public static string Expanded(string svg, IEnumerable<XElement>? outside = null) => Expand(svg, outside).ToString(SaveOptions.DisableFormatting);
 
+    /// <summary>An overlay's layer expanded with the figure sprite it refers to (option C2), as the viewport holds them together.</summary>
+    public static string Expanded(UnitOverlay overlay) => Expanded(overlay.Svg, overlay.Figures is { } sprite ? [XElement.Parse(sprite)] : null);
+
     private static bool IsUse(XElement element) => element.Name.LocalName == "use";
 
     private static double Number(string? text) => text is null ? 0 : double.Parse(text, CultureInfo.InvariantCulture);

@@ -42,7 +42,7 @@
     private string? shown;
     private string? loadProblem;
     private string? loadedKey;
-    private (string? Units, string? Los, string? Marks, string? Highlight, string? Visible, string? Comparison) sent;
+    private (string? Los, string? Marks, string? Highlight, string? Visible, string? Comparison) sent;
     private BoardInspector? inspectorPane;
     private HexFacts? hovered;
     private PlacedUnit? selectedUnit;
@@ -351,11 +351,8 @@
             await viewport.SetComparison(View == BoardView.Comparison ? ComparisonMode : "none", ComparisonValue / 100.0);
         }
 
-        if (Units?.Svg != sent.Units)
-        {
-            sent.Units = Units?.Svg;
-            await viewport.SetUnits(Units?.Svg);
-        }
+        // The viewport sends what changed, by the layer's fragment hashes, or nothing (the Counter Layer Design, section 6).
+        await viewport.ShowUnits(Units);
 
         var los = losCheck is null && rangeCheck is null ? null
             : Los.Layer(Board, losCheck, rangeCheck, rangeRows.FirstOrDefault(row => row.Key == rangeChosen));
