@@ -1593,3 +1593,21 @@ Branch `counter-cache-e` from `play-follow-profile` (4b566767), in a worktree, w
 | E4. The Studio before and after: Replay and Play traced and counted, the layer compared, the results written | 22:20 | 22:47 | 0:27 | The allocation counter breaks when a trace runs at once, so allocation was counted alone; Play's allocation not measurable (a 1.3 GB step, before and after) |
 | Main merged in (PR 20); the strict build, the three test projects in full, the Node viewport test; PR 21 opened | 22:47 | 23:00 | 0:13 | The strict build failed once on CA1859 in a test helper, fixed; then 393, 53 (2 skipped), 502, and 9 passed |
 | **Option E, part 1 in all** | 21:26 | 23:00 | 1:34 | |
+
+### The counter layer plan, part 2
+
+Branch `counter-layer-2`, stacked on `counter-cache-e` at the user's word; the rulings U1, U3, U4, and U6 approved 2026-10-19. Times from the shell's clock (the night of 18 to 19 October).
+
+| Task | Start | End | Duration | Note |
+|---|---|---|---|---|
+| A demo of option E in the Studio and its remaining UI checks | 23:00 | 23:05 | 0:05 | Before part 2, at the user's asking |
+| 1. The equivalence oracle | 23:05 | 23:11 | 0:06 | |
+| 2. C1: each figure outline once per layer | 23:11 | 23:23 | 0:12 | Manifest recorded again (1,148 of 1,166 layers) |
+| 3. The leads in the builder | 23:23 | 23:31 | 0:08 | `Led` kept as the test's oracle |
+| 4. D on the server | 23:31 | 23:45 | 0:14 | |
+| 5. D in the browser and the hosts, with C2 | 23:45 | 00:08 | 0:23 | The whole MapStudio project run three times in tasks 3 to 5; the user: only the tests the change reaches, then the Studio (rule recorded) |
+| The Studio after task 5: patches, numbers before and after | 00:08 | 00:14 | 0:06 | The pane hidden: click-to-held timed without frames |
+| 6. Q: one definition per distinct face | 00:14 | 00:24 | 0:10 | The oracle in two steps (at the origin, within 1/32 pixel; then exact) |
+| The Studio after task 6: focus edge, numbers, F's tiers | 00:24 | 00:28 | 0:04 | |
+| 7. Results and F in the design; the gate; the pull request | 00:28 | 00:42 | 0:14 | Gate: strict build; Units.Rendering 424, Maps.Rendering 53 (2 skipped), MapStudio 509, Node 13; one pull request to main carries E and part 2, at the user's word |
+| **Part 2 in all** | 23:05 | 00:42 | 1:37 | |

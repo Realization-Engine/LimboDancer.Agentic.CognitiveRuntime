@@ -14,11 +14,17 @@ public sealed class UnitLayerSyncTests(CounterLayerCases cases) : IClassFixture<
     /// <summary>The browser's counter layer as <c>setUnits</c> and <c>applyUnitPatch</c> leave it.</summary>
     private sealed class BrowserLayer
     {
-        public int Version { get; private set; }
+        public int Version
+        {
+            get; private set;
+        }
 
         public List<(string Id, string Markup)> Fragments { get; private set; } = [];
 
-        public string? UnitSet { get; private set; }
+        public string? UnitSet
+        {
+            get; private set;
+        }
 
         public void Apply(UnitLayerSend send, UnitOverlay? overlay)
         {
@@ -136,7 +142,10 @@ public sealed class UnitLayerSyncTests(CounterLayerCases cases) : IClassFixture<
         Assert.Equal(UnitLayerSendKind.Whole, sync.Next(second).Kind);
 
         // Another set (another view or game) goes whole; no layer clears it once.
-        Assert.Equal(UnitLayerSendKind.Whole, sync.Next(second with { SetId = "another" }).Kind);
+        Assert.Equal(UnitLayerSendKind.Whole, sync.Next(second with
+        {
+            SetId = "another"
+        }).Kind);
         Assert.Equal(UnitLayerSendKind.Whole, sync.Next(null).Kind);
         Assert.Equal(UnitLayerSendKind.Nothing, sync.Next(null).Kind);
     }

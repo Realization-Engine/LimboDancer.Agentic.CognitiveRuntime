@@ -32,10 +32,31 @@ internal static class LayerFixtures
         }
 
         var squad = examples.First(example => example.Kind == "asl:squad");
-        units.Add(squad with { Id = "concealed-1", Location = "bd01:H2:0", Concealed = true });
-        units.Add(squad with { Id = "uninspected-1", Location = "bd01:H2:0", Concealed = true, Uninspected = true });
-        units.Add(squad with { Id = "dummy-1", Location = "bd01:I2:0", Concealed = true, Dummy = true });
-        units.Add(squad with { Id = "draft:german-1", Location = "bd01:J2:0" });
+        units.Add(squad with
+        {
+            Id = "concealed-1",
+            Location = "bd01:H2:0",
+            Concealed = true
+        });
+        units.Add(squad with
+        {
+            Id = "uninspected-1",
+            Location = "bd01:H2:0",
+            Concealed = true,
+            Uninspected = true
+        });
+        units.Add(squad with
+        {
+            Id = "dummy-1",
+            Location = "bd01:I2:0",
+            Concealed = true,
+            Dummy = true
+        });
+        units.Add(squad with
+        {
+            Id = "draft:german-1",
+            Location = "bd01:J2:0"
+        });
         return units;
     }
 }

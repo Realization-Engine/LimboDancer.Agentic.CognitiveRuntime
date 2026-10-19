@@ -320,3 +320,45 @@ Each with my proposal, and the user's ruling where one is made.
 | U6 | Layer goldens | Add the four of section 11 | **Approved** 2026-10-19; added with C1. E uses the manifest of layer hashes (section 11) |
 | U7 | When to start | After PR 19 merges into `main`: this work builds on its span writer (`SvgValue`, the pooled `SvgWriter`); one branch from `main` then, one pull request at the end | Settled: PR 19 merged (029bf601). Superseded in part by the order ruling: E is its own branch and pull request (plan, V1) |
 | | The order | (Not asked as a question; the plan put E seventh) | **Ruled** 2026-10-18: E first, alone, ahead of the rest of the plan; then D in the browser, C2, and Q later (section 7.1) |
+| F | The tiers, measured after D and Q (section 16.3) | F3: keep all three | Open: the user's on the numbers |
+
+## 16. Part 2 as built and measured (2026-10-19)
+
+Branch `counter-layer-2`, stacked on `counter-cache-e` (PR 21): task 1 `4559dcac` (the oracle), 2 `dbc50ac2` (C1), 3 `08a7a435` (the leads), 4 `4720269c` (D on the server), 5 `def7fc8b` (D in the browser, the hosts, C2), 6 `affad62e` (Q).
+
+### 16.1 What differs from the sections above
+
+- **Faces travel as fragments (section 8, "With D").** Each face definition is a fragment of its own, `<defs id="faces-{hash}">` around the `<g id="face-{hash}" data-face-def>`, sorted by id ahead of the hexes. The patch of section 6 adds and removes them as it does hexes, so `facesAdd` and `facesRemove` were not needed.
+- **No face cache (section 8, "With E").** A cached hex keeps the face definitions it needs, and a hit draws nothing; a miss draws its faces again. The Studio's misses are the changed hexes of a step, which the measurements below show cost little.
+- **The sprite is the renderer's figure art (section 4, C2).** `UnitFigureSprite` holds every outline of the art the layer is drawn with; the overlay carries it (`UnitOverlay.Figures`), and `BoardViewport.ShowUnits` sends it after each board load. The layer writes an outline only if the sprite lacks it, which for the built-in art never happens.
+- **The Q oracle has two steps (section 11).** A layer with each face drawn at the origin and moved into place (`UnitFaceMode.AtOrigin`, for tests) is compared with the whole counters, every number within 1/32 pixel once the move is added (`LayerOracle.Differs`); the layer of shared definitions, expanded, is compared with it exactly.
+- **`GameMapLayers.Units` reads through to the overlay**, so a step makes the whole layer text only for a reader that asks (decision L4); the hand-over map is given the overlay.
+
+### 16.2 Results
+
+My Studio's Debug build, cd-guards-5 as the adjudicator. Allocation and CPU by `dotnet-counters` alone (a trace at the same time spoils the allocation counter), over the same Replay steps (100 to 160, the page's own Run forward). From the click to the step held in the page, without waiting for a frame (the browser pane was hidden, which throttles frames).
+
+| Measure | Before E | E alone | After task 5 (C1, leads, D, C2) | After task 6 (Q) |
+|---|---|---|---|---|
+| Replay: allocated per step | 13.1 MB | 8.9 MB | 4.3 MB | 4.3 MB (-67%) |
+| Replay: process CPU per step | 86 ms | 41 ms | 32 ms | 39 ms |
+| Replay: gen 0 collections over the 60 steps | 20 | 3 | 3 | 3 |
+| Click to the step held, forward and back (median) | 187 and 165 ms | | 68 and 68 ms | 63 and 77 ms |
+| The layer at step 12, whole | 696,687 characters | the same | 353,353 | 125,652 (-82%) |
+| Its elements in the page | about 4,425 | the same | | 1,431 (-68%) |
+| What a step sends | the whole layer | the whole layer | the changed hexes | the changed hexes and any face the page lacks |
+
+- **Server:** E and C1 removed most of the counter layer's work; D removed the whole-layer text and its copies from the step (the leads' rewrite and the interop's copy), which is the drop from 8.9 to 4.3 MB. Q does not lower the server's allocation further: a hex miss now also writes its faces apart and hashes them.
+- **Browser:** D made a step a patch of a few hexes; the time from a click to the step held fell from about 180 to about 70 ms. Q made the layer a fifth of its size and a third of its elements, which a whole send (a board load, a new view) and the page's memory both gain from.
+- **In the Studio** (UI check, one width): Replay stepped forward, back, and by a jump, with every step after the first a patch (the layer node kept, its version counting up) and no console error; the far, mid, and near tiers each show one face per counter; a counter clicked opens the inspector; a counter focused by keyboard sets the gold edge's properties, and its face's edge resolves to them (`rgb(240, 180, 0)`, 3 px; unfocused, the face's own stroke). The Play setup map with draft counters and the board viewer were checked after task 3.
+
+### 16.3 F, the tiers
+
+At step 160 the layer is 163,131 characters: the near faces 55,021, the mid 49,572, the far 32,418 (84% together), and the 38 counters' groups 19,181.
+
+| Option | What it would save | What it would cost |
+|---|---|---|
+| F1: send only the tier in view | about 80,000 to 105,000 characters of a whole send, and two thirds of each new face's definitions in a patch | a round trip to the server whenever zoom crosses a tier, and the tier switch is no longer instant |
+| F3: keep all three (today) | nothing | the unused tiers' definitions in the page; they are not drawn (the references of other tiers are hidden), so they cost memory, not drawing time |
+
+Proposal: **F3, keep all three tiers.** After D a whole send happens on a board load or a new view, not on a step, and a step's patch carries a face only when the page lacks it, so F1 would save little on the common path and add a round trip to every zoom across a tier. If the page's memory becomes the concern, F1 can be revisited with these numbers.
