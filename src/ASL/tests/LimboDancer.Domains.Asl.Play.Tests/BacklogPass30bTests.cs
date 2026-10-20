@@ -232,6 +232,27 @@ public sealed class BacklogPass30bTests : IDisposable
         Assert.All(report.Groups.Where(group => plan.Placements.Any(item => item.Group == group.Id)), group => Assert.True(group.Complete, group.Id));
     }
 
+    // The Tractor Works' 295th sets up third, after both of the others (2026-10-19): the gate accepts each of its plans, for any setup, once the
+    // 308th and the Germans are in the game, and the group is then complete.
+    [Theory]
+    [InlineData("hidden-core", "three-sides", "north-hammer")]
+    [InlineData("dummy-west", "feint-west", "centre-punch")]
+    [InlineData("east-front", "three-sides", "two-prongs")]
+    public async Task TheGateAcceptsTheRemnantsPlansAfterBothOtherSetups(string first, string second, string third)
+    {
+        Assert.Equal(PlayOutcome.Committed, (await SetUp("tractor-works", Plan("tractor-works", first))).Outcome);
+        Assert.Equal(PlayOutcome.Committed, (await SetUp("tractor-works", Plan("tractor-works", second))).Outcome);
+        var plan = Plan("tractor-works", third);
+        Assert.Equal(3, ScenarioSetupPlans.OrderOf(Card("tractor-works"), plan));
+        Assert.Null(plan.Answers);
+
+        var result = await SetUp("tractor-works", plan);
+
+        Assert.True(result.Outcome == PlayOutcome.Committed, string.Join("; ", result.Reasons));
+        var report = Planner().CardSetup(Planner().Replay(store.Read(Scope())!.Events).Current!, new HashSet<string>())!;
+        Assert.True(report.Groups.Single(group => group.Id == "russian-2").Complete);
+    }
+
     // The comparison: the plan used matches the stacks the other side sees in full, and the card's other plans do not.
     [Theory]
     [InlineData("forward-line")]

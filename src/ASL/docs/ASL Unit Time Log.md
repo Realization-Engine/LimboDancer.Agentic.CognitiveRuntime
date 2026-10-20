@@ -1678,3 +1678,13 @@ Branch `map-context` from `main` at d4ff1d53, one pull request (the plan's W1), 
 | 4. The whole Studio measurement | 17:20 | 18:35 | 1:15 | 0:30 | Lost 0:20: my own loop that counted the follower's events held its file open, the store's move failed, and the run died at 735 (a lesson added to the standing rules). A further 0:25: the machine was loaded by other programs, `main`'s times doubled, so `main` was built outside the repository like mine and the pair run again under the same load (section 10.4) |
 | 5. The gate, the documents, the pull request | 18:36 | 19:08 | 0:32 | 0:40, and CI's 14 min | `strict`, `baseline`, `build`, `proofs` in one background chain (18:36 to 19:05): all equal, a code move. The documents written while it ran. CI to be read after the push |
 | **The plan in all** | 15:36 | 19:08 | 3:32 | about 4:00 | 0:45 lost in task 4 (a run killed by my own file reader; a second pair of runs under machine load); tasks 1 to 3b ran under their estimates |
+
+## The Tractor Works 295th setup plans, 2026-10-19
+
+In the main checkout, no branch yet, at the user's word ("Write all three ... Show me before committing"). Times from the shell's clock; the analysis before 22:18 was not clocked.
+
+| Task | Start | End | Duration | Estimate | Note |
+|---|---|---|---|---|---|
+| Why dl-tractor-works-01 waited; the card checked against The General Vol. 22 No. 6, p. 50 | about 21:58 | about 22:05 | about 0:07 | | Not a glitch: no plan existed for the 295th group, which sets up third |
+| The LOS survey and the three strategies | about 22:05 | 22:17 | about 0:12 | | The survey tool built outside the repository (1:23 for the first build); kept in code-builders at the user's word |
+| The three plans, their test, my Studio | 22:18 | 22:27 | 0:09 | 0:30 | Two test methods (7 cases, 2 s) after the user stopped a wider run; Studio: the three plans offered only at the 295th's turn, North hammer committed, [P3] and [P3] level 1 the only stacks offered the non-OB "?" |

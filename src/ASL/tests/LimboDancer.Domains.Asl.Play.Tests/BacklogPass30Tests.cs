@@ -180,7 +180,7 @@ public sealed class BacklogPass30Tests : IDisposable
     [InlineData("armor-test", "forward-screen", "west-trap", "back-stop", "loaded-column")]
     [InlineData("gambit", "farmhouse", "west-woods", "two-posts", "storm-the-farmhouse", "seal-the-west-road", "both-posts", "three-roads")]
     [InlineData("guards-counterattack", "forward-line", "out-of-sight", "tripwire-and-reserve", "fire-first", "cross-unseen", "break-the-tripwires", "two-up-two-back")]
-    [InlineData("tractor-works", "dummy-west", "east-front", "hidden-core", "three-sides", "feint-west")]
+    [InlineData("tractor-works", "dummy-west", "east-front", "hidden-core", "three-sides", "feint-west", "north-hammer", "centre-punch", "two-prongs")]
     public void EveryBuiltInCardKeepsItsPlansInAFileOfValidForm(string name, params string[] ids)
     {
         var card = Card(name);
