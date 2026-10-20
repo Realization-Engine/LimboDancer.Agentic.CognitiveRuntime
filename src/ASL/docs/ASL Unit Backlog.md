@@ -1226,3 +1226,11 @@ The ASL Map Studio A3 Map Context Plan (`src/ASL/docs/Memory-And-Performance`), 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | A unit placed by a game file in a hex two boards share, named by the board that does not own it (bd04's [BB10] on the Gambit map, bd04 with bd02 reversed below it, where the even columns' row 10 is the seam's half hex), makes the game stop replaying at its first phase change, and the Play page says only "The game does not replay: Turn 1, German Rally Phase", with no diagnostic. `ComposedMapRead.Resolve` refuses such a name (MAP-READ-003, "a hex shared with ..."), but the refusal does not reach the page | The A3 Map Context Plan, task 1 | (map reading, the page's message) | Nothing; setup and the page's own pickers name a shared hex by its owner, so only a hand-written file meets it | The test game places no unit in a shared hex. The page could show the replay's first diagnostic beside "does not replay". |
+
+## 67. Added by the Tractor Works' 295th setup plans
+
+The Tractor Works' plans for its second Russian group, 2026-10-19: the LOS survey written to make them, kept at the user's word ("Keep that tool around. Maybe we can incorporate some version of it into the app.").
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| An LOS survey of a card's setup areas in the Studio: for each Location a group may set up in, the enemy setup Locations it sees and their range, the Locations no enemy setup Location sees (sure non-OB "?"), and for each ground hex between the sides how many enemy setup Locations see it. It is what a setup plan's terrain facts rest on | The 295th setup plans, at the user's word | A6, A12.12; ruling R23.6 | `LosCalculator`, the card's setup areas | `code-builders/boards/los-survey/` (a console tool over the Studio's board loading and `LosCalculator`): modes `levels`, `setup`, `lanes`, and `pair`, with the card's areas written in its source. Its level probe counts one level too many and drops the top one. |
