@@ -5,10 +5,7 @@
         HS
         <select id="recombine-one" value="@One" @onchange="@(args => OnOne.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var unit in HalfSquads)
-            {
-                <option value="@unit.Id">@At(unit.Label)</option>
-            }
+            <UnitOptions Units="@HalfSquads" Text="@At" />
         </select>
     </label>
     <label>

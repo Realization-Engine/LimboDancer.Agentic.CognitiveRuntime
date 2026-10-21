@@ -37,10 +37,7 @@
             Spotter
             <select id="ordnance-spotter" value="@Spotter" @onchange="@(args => OnSpotter.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">none</option>
-                @foreach (var unit in Spotters)
-                {
-                    <option value="@unit.Id">@At(unit.Label)</option>
-                }
+                <UnitOptions Units="@Spotters" Text="@At" />
             </select>
         </label>
     }

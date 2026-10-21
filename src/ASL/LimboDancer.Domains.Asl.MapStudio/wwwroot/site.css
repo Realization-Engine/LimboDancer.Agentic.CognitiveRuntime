@@ -3104,6 +3104,19 @@ details.advanced > summary {
     min-height: 2rem;
 }
 
+/* The user, 2026-10-21: a hex's name over its units in a list of checkboxes. */
+.unit-group-hex {
+    display: block;
+    margin: 0.4rem 0 0.1rem;
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 0.8125rem;
+}
+
+.unit-group-hex:first-child {
+    margin-top: 0;
+}
+
 /* The Play streamlining plan, S8: the Movement Plan's stacks, one row each; the row being plotted is marked. */
 .movement-plan-rows {
     list-style: none;

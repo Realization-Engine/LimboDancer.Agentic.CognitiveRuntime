@@ -1,0 +1,37 @@
+@* The user, 2026-10-21: a dropdown's units grouped by hex, under the hex's name, each hex's leaders first; the caller writes the select and its
+   "choose" option, and gives the units and how each reads. *@
+@{
+    var groups = UnitGrouping.Groups(Units, unit => unit.Id, PlaceOfUnit);
+}
+@foreach (var group in groups)
+{
+    @if (groups.Count > 1)
+    {
+        <optgroup label="@(group.Hex ?? "Elsewhere")">
+            @foreach (var unit in group.Items)
+            {
+                <option value="@unit.Id">@Text(unit.Label)</option>
+            }
+        </optgroup>
+    }
+    else
+    {
+        @foreach (var unit in group.Items)
+        {
+            <option value="@unit.Id">@Text(unit.Label)</option>
+        }
+    }
+}
+
+@code {
+    /// <summary>The units offered: each id and the label the caller's words turn into text.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PlayChoice> Units { get; set; } = [];
+
+    /// <summary>How a label reads, such as the panel's own "At".</summary>
+    [Parameter, EditorRequired]
+    public Func<string, string> Text { get; set; } = label => label;
+
+    [CascadingParameter(Name = "PlaceOfUnit")]
+    public Func<string, UnitPlace?>? PlaceOfUnit { get; set; }
+}

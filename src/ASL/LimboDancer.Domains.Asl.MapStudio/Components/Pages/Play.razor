@@ -94,6 +94,7 @@ else
 @* Pass 31c (design D11): every panel reads a unit's name and a Location's words from the view's names, through one cascaded function. *@
 <CascadingValue Name="Say" Value="@Words">
 <CascadingValue Name="SayAt" Value="@WordsAt">
+<CascadingValue Name="PlaceOfUnit" Value="@PlaceOfUnitNow" IsFixed="true">
 
 @if (state?.Scenario is { } scenario)
 {
@@ -1251,6 +1252,7 @@ else if (state is not null)
     </div>
 }
 
+</CascadingValue>
 </CascadingValue>
 </CascadingValue>
 </ChildContent>
@@ -7779,7 +7781,9 @@ else if (state is not null)
             foreach (var group in candidates.Values.Where(unit => !placed.Contains(unit.Id)).GroupBy(unit => state.Location(unit.Id)!.Location.ToString())
                 .OrderBy(group => group.Key, StringComparer.Ordinal))
             {
-                planStacks.Add(new PlanStack($"stack-{++planStackCount}", [.. group.Select(unit => unit.Id).Order(StringComparer.Ordinal)]));
+                // The user, 2026-10-21: a stack's leader first.
+                planStacks.Add(new PlanStack($"stack-{++planStackCount}", [.. group.OrderBy(unit => unit.Kind == "asl:leader" ? 0 : 1).ThenBy(unit => unit.Id, StringComparer.Ordinal)
+                    .Select(unit => unit.Id)]));
             }
 
             return planStacks;
@@ -8729,6 +8733,26 @@ else if (state is not null)
 
     /// <summary>A Location as the game writes it (pass 31c, design D12): "G4, level 1" on a map of one board.</summary>
     private string PlaceOf(BoardLocation at) => DisplayText.Place(MapBoards, at);
+
+    // The user, 2026-10-21: the lists that offer units group them by hex, leaders first. One delegate for the page's life (a fixed cascade, so
+    // no list renders again for it); it reads the state at each call, a lookup of the unit and its Location.
+    private Func<string, UnitPlace?>? placeOfUnitField;
+
+    private Func<string, UnitPlace?> PlaceOfUnitNow => placeOfUnitField ??= UnitPlaceOf;
+
+    private UnitPlace? UnitPlaceOf(string id)
+    {
+        if (state?.Unit(id) is not { } unit || state.Location(id)?.Location is not { } at)
+        {
+            return null;
+        }
+
+        var hex = at.Hex.ToString();
+        var letters = hex.TakeWhile(char.IsLetter).Count();
+        _ = int.TryParse(hex.AsSpan(letters), out var row);
+        // Map order: the board, then the column (A before Z before AA), then the row.
+        return new UnitPlace(PlaceOf(at with { Level = 0 }), (0, $"{at.Board}|{letters:D2}|{hex[..letters]}", row), unit.Kind == "asl:leader");
+    }
 
     private string PlaceOf(string at) => DisplayText.Place(MapBoards, at);
 

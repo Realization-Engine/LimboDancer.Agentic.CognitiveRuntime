@@ -11,10 +11,7 @@
         Broken unit
         <select id="rally-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var unit in Units)
-            {
-                <option value="@unit.Id">@At(unit.Label)</option>
-            }
+            <UnitOptions Units="@Units" Text="@At" />
         </select>
     </label>
     <label>

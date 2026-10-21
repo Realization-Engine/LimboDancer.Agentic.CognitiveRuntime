@@ -34,10 +34,7 @@
         Broken unit
         <select id="rout-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var unit in Units)
-            {
-                <option value="@unit.Id">@At(unit.Label)</option>
-            }
+            <UnitOptions Units="@Units" Text="@At" />
         </select>
     </label>
     @* Pass 31d (design D2; A10.4): what a laden unit leaves and keeps, said only for a unit that carries more than its IPC. *@

@@ -23,10 +23,7 @@
         Recovering or receiving unit
         <select id="sw-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var unit in Units)
-            {
-                <option value="@unit.Id">@At(unit.Label)</option>
-            }
+            <UnitOptions Units="@Units" Text="@At" />
         </select>
     </label>
     @* The Play streamlining plan, S7 (ruling R-PS.3): only the actions whose phase the rules allow now. *@
