@@ -140,6 +140,10 @@
     [Parameter]
     public IReadOnlyList<BoardInspector.ExtraTab> Extras { get; set; } = [];
 
+    /// <summary>A line under the inspector's tabs, shown in every tab and kept in sight while it scrolls (Play's turn and phase); none by default.</summary>
+    [Parameter]
+    public RenderFragment? InspectorHeader { get; set; }
+
     /// <summary>
     /// Whether the open tab stays open when a hex or a counter is clicked, such as Play's Proposal tab while a proposal waits for Confirm (pass 29).
     /// Otherwise a click on the map shows the Selection tab, unless LOS is open.
@@ -200,7 +204,7 @@
     public bool Rotated => rotated;
 
     private RenderFragment InspectorPane => @<BoardInspector @ref="inspectorPane" Board="@Board" Panel="@Panel" PanelChanged="@PanelChanged" Label="@InspectorLabel" IdPrefix="@IdPrefix"
-        Extras="@Extras" Selected="@Selected" Units="@Units" SelectedUnit="@selectedUnit" SelectedUnitChanged="@PickUnit"
+        Extras="@Extras" Header="@InspectorHeader" Selected="@Selected" Units="@Units" SelectedUnit="@selectedUnit" SelectedUnitChanged="@PickUnit"
         Vocabulary="@Vocabulary" View="@UnitView" UnitNote="@UnitNote" OriginOf="@OriginOf" HexNotes="@HexNotes" Sample="@sample" StyledModel="@StyledModel" LosDraft="@losDraft"
         LosDraftChanged="@(draft => losDraft = draft)" LosResult="@losCheck" OnCheckLos="@CheckLos" OnClearLos="@ClearLos" OnCopy="@Copy"
         RangeResult="@rangeCheck" RangeRows="@rangeRows" RangeChosen="@rangeChosen" OnChooseRange="@(key => rangeChosen = key)" OnCheckRange="@CheckRange" OnClearRange="@ClearRange" />;

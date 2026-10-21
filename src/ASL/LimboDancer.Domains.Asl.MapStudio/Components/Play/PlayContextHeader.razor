@@ -10,34 +10,40 @@
         @* The one-line banner (the user, 2026-10-17): the game, the turn, the phase, and the card, with a proposal to review, a hand-over, and the
            gate's status at its end when there are any; the game and view pickers are in the Play tab. *@
         <div class="play-banner" id="play-banner">
-            @foreach (var part in parts)
-            {
-                <span class="play-banner-part">@part</span>
-            }
-            @if (HasCard)
-            {
-                <span class="play-banner-part"><a id="play-card-link" href="@CardHref" @onclick="@(() => OpenCard.InvokeAsync())" @onclick:preventDefault>Card and Victory Conditions</a></span>
-            }
-            @if (CardChanged)
-            {
-                <span id="play-card-changed-badge"><StatusBadge Tone="StatusBadge.BadgeTone.Warning" Label="Card changed"
-                    Explanation="The card has changed since this game started; the card panel shows its current text." /></span>
-            }
-            @if (Conditions is { Length: > 0 } conditions)
-            {
-                <span class="play-banner-part" id="play-conditions">@conditions</span>
-            }
-            <span class="play-banner-end">
-                @if (PendingTitle is { Length: > 0 } title)
+            <span class="play-banner-parts">
+                @foreach (var part in parts)
                 {
-                    <button type="button" id="play-review-jump" class="primary" @onclick="@(() => Review.InvokeAsync())">Review: @title</button>
+                    <span class="play-banner-part">@part</span>
                 }
+                @if (HasCard)
+                {
+                    <span class="play-banner-part"><a id="play-card-link" href="@CardHref" @onclick="@(() => OpenCard.InvokeAsync())" @onclick:preventDefault>Card and Victory Conditions</a></span>
+                }
+                @if (CardChanged)
+                {
+                    <span id="play-card-changed-badge"><StatusBadge Tone="StatusBadge.BadgeTone.Warning" Label="Card changed"
+                        Explanation="The card has changed since this game started; the card panel shows its current text." /></span>
+                }
+                @if (Conditions is { Length: > 0 } conditions)
+                {
+                    <span class="play-banner-part" id="play-conditions">@conditions</span>
+                }
+            </span>
+            @* The user, 2026-10-21: the hand-over starts at the right pane's left edge, over that pane; the status ("Working: ...") and then
+               "Review: ..." end it, the review the last. *@
+            @* The user, 2026-10-21: the explanations are tooltips: what the game waits for on the hand-over, the gate's status on the review. Both
+               stay in the page for assistive technology; "Working: ..." alone is seen, while the gate works. *@
+            <span class="play-banner-end">
                 @if (Awaiting is { Length: > 0 } awaiting)
                 {
-                    <span class="toolbar-note" id="play-awaiting">@AwaitingNote</span>
-                    <button type="button" id="play-hand-over" @onclick="@(() => HandOver.InvokeAsync())">Hand over to @awaiting</button>
+                    <span class="visually-hidden" id="play-awaiting">@AwaitingNote</span>
+                    <button type="button" id="play-hand-over" title="@AwaitingNote" aria-describedby="play-awaiting" @onclick="@(() => HandOver.InvokeAsync())">Hand over to @awaiting</button>
                 }
-                <span id="play-status" class="@(Busy ? "play-status busy" : "play-status")" role="status" aria-live="polite" title="@Status">@(Busy ? "Working: " : string.Empty)@Status</span>
+                <span id="play-status" class="@(Busy ? "play-status busy" : "play-status visually-hidden")" role="status" aria-live="polite" title="@Status">@(Busy ? "Working: " : string.Empty)@Status</span>
+                @if (PendingTitle is { Length: > 0 } title)
+                {
+                    <button type="button" id="play-review-jump" class="primary" title="@(Status is { Length: > 0 } ? Status : null)" @onclick="@(() => Review.InvokeAsync())">Review: @title</button>
+                }
             </span>
         </div>
         @if (Result is { Length: > 0 } ended)

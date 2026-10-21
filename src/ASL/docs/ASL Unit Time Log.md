@@ -1688,3 +1688,14 @@ In the main checkout, no branch yet, at the user's word ("Write all three ... Sh
 | Why dl-tractor-works-01 waited; the card checked against The General Vol. 22 No. 6, p. 50 | about 21:58 | about 22:05 | about 0:07 | | Not a glitch: no plan existed for the 295th group, which sets up third |
 | The LOS survey and the three strategies | about 22:05 | 22:17 | about 0:12 | | The survey tool built outside the repository (1:23 for the first build); kept in code-builders at the user's word |
 | The three plans, their test, my Studio | 22:18 | 22:27 | 0:09 | 0:30 | Two test methods (7 cases, 2 s) after the user stopped a wider run; Studio: the three plans offered only at the 295th's turn, North hammer committed, [P3] and [P3] level 1 the only stacks offered the non-OB "?" |
+
+## The Play streamlining analysis and S5, 2026-10-21
+
+In the main checkout, branch `play-streamlining` from 52a185c5, at the user's word ("streamlining the 'Play' UI"; S1 to S5 approved in general, Q6 to Q10 approved). Times from the shell's clock and file times; the morning's first tasks were not clocked.
+
+| Task | Start | End | Duration | Estimate | Note |
+|---|---|---|---|---|---|
+| The audit of dl-tractor-works-01 and the preliminary analysis | about 09:30 | about 10:20 | about 0:50 | | My Studio built outside the repository (1:31); 119 refusals and the time before each action read from the audit log |
+| S5: the banner's review and status, the turn and phase under the inspector's tabs | about 10:25 | about 10:55 | about 0:30 | | Four Studio builds (0:18 to 0:54 each); 9 test methods named by what they read (5 to 9 s) |
+| S5 refinements: the hand-over at the right pane's edge, the explanations as tooltips | about 10:55 | about 11:00 | about 0:05 | | Checked at full width and 1024 px; at 1024 the review wraps under the hand-over |
+| The rules on Defensive First Fire and the movement plan (section 7, Q6 to Q10) | about 11:00 | 11:07 | about 0:07 | | Whole-book search for the terms; A4.2, A8.1, A8.11, A8.3 read on their pages |

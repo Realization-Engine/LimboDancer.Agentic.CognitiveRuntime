@@ -1234,3 +1234,12 @@ The Tractor Works' plans for its second Russian group, 2026-10-19: the LOS surve
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | An LOS survey of a card's setup areas in the Studio: for each Location a group may set up in, the enemy setup Locations it sees and their range, the Locations no enemy setup Location sees (sure non-OB "?"), and for each ground hex between the sides how many enemy setup Locations see it. It is what a setup plan's terrain facts rest on | The 295th setup plans, at the user's word | A6, A12.12; ruling R23.6 | `LosCalculator`, the card's setup areas | `code-builders/boards/los-survey/` (a console tool over the Studio's board loading and `LosCalculator`): modes `levels`, `setup`, `lanes`, and `pair`, with the card's areas written in its source. Its level probe counts one level too many and drops the top one. |
+
+## 68. Added by the Play streamlining analysis
+
+The [ASL Map Studio Play Streamlining Analysis](<ASL Map Studio Play Streamlining Analysis.md>), 2026-10-21: what the user's rulings Q5 and Q10 leave out of the streamlining work.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| An overlay of the DEFENDER's possible fire while a move is plotted: the Locations of the route in LOS of Known enemy units | Ruling Q5 (the user, 2026-10-21) | A6, A8.1 | Map-first movement (S3); a ruling on what a moving side may be shown of an enemy unit's LOS when the enemy is concealed or hidden | The plotted route shows MF costs only |
+| Standing fire orders for the DEFENDER, such as "fire with this squad at anything entering open ground within three hexes", carried out by the engine without asking | Ruling Q10 (the user, 2026-10-21) | A8.1, A8.14, A8.3, A8.31 | The movement plan (S6); rulings on which firer and which target go first, and on Subsequent First Fire and FPF under an order | The DEFENDER decides at each step of a plan where one of his units could fire |

@@ -56,7 +56,11 @@ else
 
 @* The user, 2026-10-17: with a game open, the context is a one-line banner from 1024px; "How this works" is the lobby's alone, and the page
    no longer says what the shown view does now. *@
-<PlayContextHeader Summary="@ContextSummary" Banner="@(Compact ? BannerParts : null)" Revision="@(state is not null && history?.Current is not null && (Viewer.IsAdjudicator || state.Ended is not null) ? state.Revision : null)" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
+@{
+    // Read once a render: the turn's count reads the card, whose file a user card checks for changes; the right pane's turn line reuses it.
+    bannerNow = Compact ? BannerParts : null;
+}
+<PlayContextHeader Summary="@ContextSummary" Banner="@bannerNow" Revision="@(state is not null && history?.Current is not null && (Viewer.IsAdjudicator || state.Ended is not null) ? state.Revision : null)" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
                    Result="@ResultTitle" ResultReason="@ResultReason" ResultWhy="@ResultWhy"
                    Conditions="@(state is null ? null : NightAndWeather(state))" HasCard="@(state?.Scenario is not null && handOver is null)" CardChanged="@(state?.Scenario is { } changedCard && !Live.Cards.Matches(changedCard.Id, changedCard.Sha256))"
                    PendingTitle="@(handOver is null && pending is { Result.Outcome: PlayOutcome.NeedsConfirmation } waitingProposal ? DisplayText.Action(waitingProposal.Action.Name) : null)" Review="@FocusReview" Awaiting="@(AwaitingView is { } awaited ? ViewLabel(awaited) : null)"
@@ -965,7 +969,7 @@ else if (state is not null)
             <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" OriginOf="@CounterOrigin" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@MapMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => PickHex(mapBoard, facts))"
-                            Panel="@InspectorPanel" PanelChanged="@(tab => inspectorTab = tab)" Extras="@InspectorExtras(actionsBlock, proposalBlock, recordsBlock, unitsBlock, diceBlock)"
+                            Panel="@InspectorPanel" PanelChanged="@(tab => inspectorTab = tab)" Extras="@InspectorExtras(actionsBlock, proposalBlock, recordsBlock, unitsBlock, diceBlock)" InspectorHeader="@(bannerNow is not null ? inspectorTurn : null)"
                             HoldPanel="@(AwaitingConfirm || SetupMode || InspectorPanel == PlayTab)" OnKey="@MapKey" InspectorLabel="Play, review, and inspector" IdPrefix="play-inspector" MapLabel="The game's map" InspectorFirst="@(!narrow)"
                             InspectorClass="play-pane play-review inspector" InspectorAttributes="@ReviewAttributes"
                             StageClass="play-pane play-map-pane play-map" StageAttributes="@MapAttributes(layers.Source)" Between="@between">
@@ -7338,6 +7342,20 @@ else if (state is not null)
         $"{DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}",
         .. history?.Current is null ? ["The game does not replay"] : SetupOpen ? ["Setup is open"] : state.Ended is not null ? ["The game has ended"] : Array.Empty<string>(),
     ];
+
+    /// <summary>
+    /// The turn and the phase of the banner, repeated at the top of the right pane under its tabs, in every tab and in sight while the pane
+    /// scrolls (the user, 2026-10-21); the scenario's title stays in the banner alone. It reads the banner of this render, not the card again.
+    /// </summary>
+    private RenderFragment inspectorTurn => @<p id="play-inspector-turn" class="play-inspector-turn">
+        @for (var index = 1; index < Math.Min(3, bannerNow?.Count ?? 0); index++)
+        {
+            <span class="play-inspector-turn-part">@bannerNow![index]</span>
+        }
+    </p>;
+
+    /// <summary>The banner's parts as this render computed them; null when the page shows no banner.</summary>
+    private IReadOnlyList<string>? bannerNow;
 
     /// <summary>Pass 31 (play test P-08): the card's count of Game Turns beside the turn, and a word when the turn is the last (A3.9; ruling R20.1).</summary>
     private string TurnsText => state?.Scenario is { } scenario && CardRead(scenario.Id)?.Card?.Turns is { } turns

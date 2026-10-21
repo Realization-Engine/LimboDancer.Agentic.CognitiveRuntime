@@ -1,0 +1,105 @@
+# ASL Map Studio Play Streamlining Plan
+
+**Written:** 2026-10-21, from the [ASL Map Studio Play Streamlining Analysis](<ASL Map Studio Play Streamlining Analysis.md>) and the user's rulings of the same day: S1 to S5 approved in general, open to refinement; Q6 to Q10 approved as recommended.
+**Branch:** `play-streamlining`, cut from `main` at 52a185c5. S5 is built there, uncommitted.
+**Status:** proposed; nothing past S5 is built.
+**Scope:** the Play page and what it asks of Play and Rules. Every ASL rule stays in the Rules project (the ruling of 2026-10-05): a new rule fact goes into a calculator there, with Play gathering its facts. Vehicles' movement plans, the DEFENDER's LOS overlay (backlog 68), and standing fire orders (backlog 68) are out.
+
+## 1. Baseline, expected gains, method, and when to stop
+
+**Baseline.** From the user's game `dl-tractor-works-01` (analysis, section 1): 285 actions, each a Propose and a Confirm; 119 refusals; a Movement step 134 s, a DEFENDER pass 51 s; 51 passes, about 43 minutes. A step with a pass is about eight clicks and two hand-overs (analysis, section 2). Task P0 measures this again on a small game, so before and after compare like with like.
+
+**The measurement game.** The user's case: three German squads and three Russian squads on open ground, every unit in LOS of every enemy unit, the German Movement Phase with each German squad moving three hexes. It is made once in my Studio and copied before each measurement.
+
+**Expected, for that Movement Phase (9 steps, the Russian passing at all of them, then firing once):**
+
+| Measure | Now (expected, P0 measures it) | After |
+|---|---|---|
+| Hand-overs | about 18 (two per step) | 6 (two per stack), plus 2 for the fire |
+| Clicks by the moving side | about 4 a step: units, hex, Propose, Confirm (36) | about 1 a hex plus 1 to commit (12) |
+| Clicks by the DEFENDER | about 2 a step: Propose pass, Confirm (18) | 1 a step where a unit of his could fire (9 here, every hex in LOS), plus the fire |
+| Refusals for MF or a hex the stack may not enter | possible at each step | none: the route is checked as it is plotted |
+
+**Method.** The clicks and hand-overs counted in the Studio as the same Movement Phase is played, before and after, with scripted dice; the time of the phase read from the page as in the Play Step Analysis; the refusals read from the audit log.
+
+**When to stop.** If, after P5, the measurement game's Movement Phase takes more than half of P0's hand-overs or clicks, stop and report before P6.
+
+## 2. Design
+
+### 2.1 S2: routine actions commit on one click
+
+The page proposes, and when the result is `NeedsConfirmation` with no listed consequence and no dice, confirms at once with the proposal's correlation, as the tests' `Commit` helper does (`RallyAndFireStepsTests.cs`, lines 124 to 128). The gate is unchanged and still records the confirmation. Routine (ruling Q3): pass, end the move, advance the phase, and a Movement step whose review lists no consequence. A setting in the Play tab, on by default, turns it off (Q4). A refusal still shows as now.
+
+### 2.2 Rules facts the plan needs
+
+- **A stack's steps.** A public planner method, `InfantrySteps(state, movers, from)`, lists each Location the stack could enter from `from`: its MF cost, the MF the stack has left after it, and the refusal if any, from the planner's own `InfantryStep`, `EntryCost`, and `MfAllotment` (all private today). The cost of a route is the sum over its steps, each read from the Location before it. A route is checked against these as it is plotted; each step is still checked by the gate when it is committed, so a step the plot could not foresee is refused there and stops the plan.
+- **Whether a DEFENDER unit could fire at a step.** A calculator in Rules, `ScenarioA1DefensiveFireOpportunity`, given for each DEFENDER unit and weapon its facts (Good Order or not, pinned, marked First Fire or Final Fire, Normal Range, LOS to the Location and to the hexside crossed, range, whether a Known armed enemy is closer), answers whether any of them may fire at the moving stack there under A8.1, A8.15, A8.3, and A8.31. The planner gathers the facts (`DefensiveFireOpportunity(state)`) with its own LOS reading (`GamePlanner.Map.cs`, `Los`). **It errs one way only:** when a fact is not known, the answer is "may fire", so the DEFENDER is asked. A wrong "may fire" costs a click; a wrong "may not" would take his fire from him. Concealed and hidden DEFENDER units count; the answer is used only in the DEFENDER's own view (2.4).
+
+### 2.3 S3: plotting the route on the map
+
+In the Movement section, after the stack is chosen, the map shades the Locations of `InfantrySteps` from the stack's Location, each labelled with its MF cost; a click adds it to the route, and the shading moves to the new end with the MF left. The route is drawn on the map with each hex's running MF. Backspace or "Undo last hex" takes the last one off. Bypass is chosen per hex; Assault Movement and Double Time for the route; Dash and Minimum Move stay in the existing form behind a closed line. "Move along this route" commits the plan. A one-hex route is an ordinary step.
+
+### 2.4 S6: the plan runner and the DEFENDER's review
+
+- **Where the plan lives.** A singleton beside `LivePlay`, keyed by game, holding the route, the movers, the declarations, the next step, and the step attempt ids. It is not a game event and does not survive a restart of the Studio; a lost plan leaves the stack where it stands, its window open or its move ended as the game records it, and the moving side plots the rest again. The page reads it, so the page's own reset at a view change (`ResetForView`) does not lose it.
+- **The runner.** Each step is the ordinary `move` action, proposed for the moving side and confirmed at once (S2), with an attempt id made from the plan and the step, so a retried step replays rather than repeats. After each step the window is open, and the DEFENDER decides.
+- **The DEFENDER's review.** When the plan is committed, the screen is handed to the DEFENDER once. His view shows the step just made and nothing of the route ahead. At a step where `DefensiveFireOpportunity` says one of his units could fire, he chooses **Fire** (the fire panel opens on that Location), **Let it move on**, or **Let it move on to the end** (Q9). At a step where none could fire, the runner passes for him (Q8) and makes the next step; he sees the stack arrive and move on. A pass is proposed as the DEFENDER, as the gate requires (R31.6), and never while Mandatory Fire (A8.312) is owed: then he is asked.
+- **What stops the plan and hands the screen back to the moving side:** the DEFENDER fires (after his fire and his pass, the moving side sees the result and continues the plan, changes the rest of the route, or ends the move); a step's own attack (Residual FP, a Fire Lane) or a fire leaves the stack changed (a member broken, pinned, or eliminated); a step is refused at commit; a concealed or hidden unit is revealed; or the route ends, where the runner declares the end of the move after the DEFENDER's decision on the last step (A8.11).
+- **The hand-over to the DEFENDER is skipped** only when it is public that none of his units could fire at any step of the route: no DEFENDER unit concealed or hidden, and none of his Known units able to fire at any of its Locations. Then the runner passes for him, and the moving side learns nothing it did not know.
+- **Adjudicator view.** The adjudicator sees the route whole and decides for the DEFENDER, as he may pass for him today.
+
+### 2.5 S4: pickers that offer only what the rules allow
+
+The Fire form takes a unit or weapon once; the director list holds only leaders who may direct the group (the fire calculator's own test, asked of Rules); Self-Rally is offered only to a unit that may Self-Rally now; Recover only in the RPh and MPh; and in place of a refusable "end the Rout Phase", a line that the other side still owes a rout, with the hand-over. Each reads the fact from the calculator that refuses it today, so the offer and the refusal cannot disagree.
+
+### 2.6 S1 for the other windows
+
+The DEFENDER's windows outside a movement plan (a vehicle's step, a move that is not plotted) keep today's flow with S1's "Pass" button on the hand-over screen. Vehicles get plans later, on the same pattern.
+
+## 2.7 Memory and performance (the guidelines' design checklist)
+
+The user, 2026-10-21: every code change follows the [ASL Memory and Performance Guidelines](<Memory-And-Performance/ASL Memory and Performance Guidelines.md>) ("we must maintain memory and performance optimization for all code we write"). The answers below are requirements of the tasks, checked in each task's review.
+
+**Work added, and the path that does it.**
+
+| Work | How often | Path and bound |
+|---|---|---|
+| The banner's parts (S5) | Once a render | Computed once per render and reused by the right pane's turn line (`bannerNow`): the turn's count reads the card, whose file a user card checks for changes, so a second read would add a disk check per render. Fixed in S5 before commit. |
+| `InfantrySteps` | When a stack is chosen or a hex is added to the route, not per render | The planner's own `InfantryStep`, `EntryCost`, and the map helpers (`ReadLocation`, `Step`); memoized in `PlayStepMemo` for the state, keyed by the movers (sorted ids), the `from` Location, and the side. The page keeps the last answer for its state and route end and does not ask again on a render. |
+| `DefensiveFireOpportunity` | Once per plan step, by the runner, never per render or per plotted hex | For each DEFENDER unit, one LOS read to the step's Location (and the crossed hexside for a Snap Shot) through the planner's `Los`, which reuses map reads; memoized in `PlayStepMemo` keyed by the side, the Location, and the hexside. No full-state scan inside a per-unit loop: the DEFENDER's units are listed once for the call. |
+| A plan step | Once per step | The same propose and confirm as a step today, plus the pass the DEFENDER makes today by hand: no added planner work per step; fewer renders, since the hand-over screens per step are gone. |
+| The plotted route and the shaded Locations | When the route changes | Drawn through the map's marks (`MapMarks`), not the counter overlay: counters do not change while a route is plotted, so their hex fragments are reused and nothing forces the whole-layer SVG. P4 checks the marks path sends only the marks and records it. |
+
+**The plan store, as a new cache.** Owner: a `MovementPlans` singleton beside `LivePlay`. Key: the game id. Bound: one plan per game; removed when the plan ends, is stopped, the phase changes, or the game is closed or replaced. Lifetime: the process; not serialized into the game. Invalidation: each plan records the revision after its last step; if the game's revision differs when the runner resumes (another circuit or Studio acted), the plan stops and the moving side is told, rather than stepping on a state it did not see. Missing-result policy: no plan means today's flow. Concurrency: one runner per game under a per-game lock; the runner commits events, so it never runs inside a `GetOrAdd` factory.
+
+**Disclosure.** `InfantrySteps` answers for the moving side's view: a refusal that would reveal a concealed or hidden enemy (an occupied Location, for one) is not shown while plotting; the gate meets it at commit, and the plan stops there as the rules would at the table. `DefensiveFireOpportunity` counts the DEFENDER's concealed and hidden units and is used only in the DEFENDER's view and to pass for him; the hand-over is skipped only on public facts (section 2.4). Memo keys carry the side wherever the answer depends on it.
+
+**Evidence.** Making the planner's step cost public is a planner refactor with no rule change: the gate's text-list, replay-digest, and sweep equivalence, with `cd-guards-5`. The new calculator is a fact the rules already imply; its tests cover each rule case. The runner's passes are the same events a DEFENDER's pass writes today.
+
+**Regression measurement.** Before P2 and after P5, in Studios built the same way (Debug, outside the repository), with the measured tab in front: the Play follower on `cd-guards-5`, its ordinary phases and Rout Phase reported apart (counts, medians, 90th percentile, stalls), because S5 to S6 change what every Play render does; and the measurement game's Movement Phase, server time per step and allocation per step (allocation ticks and `allocread.cs`). Acceptance: no ordinary-step or Rout median worse by more than the noise of a repeated pair; the measurement game's per-step server time no worse than a manual step's propose, confirm, and pass today.
+
+## 3. Tasks
+
+Each task: change, build, my Studio (the page as the user would play it, at the widths it touches, in both sides' views where disclosure applies), rework until right, then the test methods that read the changed code, named by method.
+
+| Task | What | Done when |
+|---|---|---|
+| P0 | The measurement game in my Studio; the baseline counted on it; the regression baseline of section 2.7 (follower on `cd-guards-5`, the measurement game's per-step server time and allocation) | The table of section 1 and the baseline of section 2.7 filled with measured values |
+| P1 | S5 committed with its tests (built) | Committed on the branch |
+| P2 | S2: one-click routine actions and the setting | A pass, an end of move, a phase end, and a plain step take one click; the setting restores Confirm; the user's refusal paths unchanged |
+| P3 | Rules and Play facts: `InfantrySteps`, `ScenarioA1DefensiveFireOpportunity` and its gatherer | Unit tests on the calculator for each case of A8.1, A8.15, A8.3, A8.31 and each unknown fact; the planner's steps agree with the gate's refusals on the measurement game and on the user's game |
+| P4 | S3: plotting on the map | A route plotted, undone, and committed in my Studio at full width and 1024 px; no refusal for MF |
+| P5 | S6: the plan store, the runner, the DEFENDER's review, the stops, the skipped hand-over | The measurement game's Movement Phase played through; section 1's "After" column measured; the stop rule applied; section 2.7's regression measurement repeated and within its acceptance |
+| P6 | S4: the pickers | Each of the analysis's refusal groups offered no longer, in the Studio |
+| P7 | S1 for the other windows | A vehicle step's window passes from the hand-over screen |
+| P8 | The analysis and the plan closed; the time log; backlog rows for what is left; the gate (`gate.sh ps <base> ...`, a config for this work); a pull request; CI read | CI green on the pull request; the merge is the user's word |
+
+## 4. Build outputs outside the repository
+
+My Studio builds into `E:/Archive/GitHub/dlandi/asl-gate-work/studio-6670`, the folder the user keeps (not registered). The gate registers its own outputs. Any other output made for this work is registered with `outside_outputs.sh register` as it is made, and P8 ends with `outside_outputs.sh list` empty.
+
+## 5. Risks
+
+- **The runner and the gate disagree** on a step the plot allowed: the step is refused, the plan stops, and the moving side sees why. Nothing is committed that the gate refuses.
+- **`DefensiveFireOpportunity` says "may not fire" wrongly:** the DEFENDER loses a shot. The calculator errs to "may fire", and P3's tests cover each rule's case; the adjudicator's view lists, for each auto-passed step, why no unit could fire, so a wrong answer is visible.
+- **A plan lost on restart:** the game stays as recorded; only the plan is plotted again.

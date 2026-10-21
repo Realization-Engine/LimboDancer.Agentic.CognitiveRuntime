@@ -134,6 +134,10 @@ public sealed class PlayPagePass31Tests : IDisposable
         Commit(page, "#propose-setup");
         Assert.Matches("^Turn 1 of [0-9]+$", page.FindAll("#play-banner .play-banner-part")[1].TextContent.Trim());
 
+        // The user, 2026-10-21: the turn and the phase stand again under the right pane's tabs, without the scenario's title.
+        Assert.Equal(page.FindAll("#play-banner .play-banner-part").Skip(1).Take(2).Select(part => part.TextContent.Trim()),
+            page.FindAll("#play-inspector-turn .play-inspector-turn-part").Select(part => part.TextContent.Trim()));
+
         // The first phase end closes setup; the German side then acts in its Prep Fire Phase, and the game does not wait on the Russian side.
         page.EndPhase(Commit);
         Assert.Equal("pfph", Current.Phase);

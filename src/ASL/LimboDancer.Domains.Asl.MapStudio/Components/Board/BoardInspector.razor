@@ -4,7 +4,7 @@
    hex, and the hex's facts), LOS, and Evidence (the pixel clicked, the hex's grid samples, and the board's provenance), with any tabs the host adds
    before them. It shows only what it is given: the units come already read for the view, and the host keeps the selection, the LOS check, and
    the open tab. *@
-<InspectorTabs Tabs="@TabList" Selected="@Panel" SelectedChanged="@PanelChanged" Label="@Label" IdPrefix="@IdPrefix">
+<InspectorTabs Tabs="@TabList" Selected="@Panel" SelectedChanged="@PanelChanged" Label="@Label" IdPrefix="@IdPrefix" Header="@Header">
     @* A tab kept mounted (Play's actions) stays rendered, hidden while another tab is open, so what is typed in it is not lost. *@
     @foreach (var kept in Extras.Where(extra => extra.KeepMounted))
     {
@@ -119,6 +119,10 @@
     /// <summary>Tabs the host shows before Selection, LOS, and Evidence.</summary>
     [Parameter]
     public IReadOnlyList<ExtraTab> Extras { get; set; } = [];
+
+    /// <summary>A line under the tabs, shown in every tab and kept in sight while the panel scrolls; none by default.</summary>
+    [Parameter]
+    public RenderFragment? Header { get; set; }
 
     /// <summary>The hex clicked and kept; null when none is.</summary>
     [Parameter]

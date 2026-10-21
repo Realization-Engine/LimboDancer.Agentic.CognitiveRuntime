@@ -2875,12 +2875,37 @@ details.advanced > summary {
     padding: 0.35rem 0.75rem;
 }
 
+/* The user, 2026-10-21: the banner has the workspace's two columns, so its right-hand end starts at the right pane's left edge; the end is
+   moved right by the context's own padding and border, which narrow the banner's columns and which the workspace below does not have. The columns repeat the workspace's at each width. */
 .play-banner {
+    --play-banner-side: minmax(24rem, 30rem);
+    display: grid;
+    flex: 1 1 100%;
+    grid-template-columns: minmax(0, 1fr) var(--play-banner-side);
+    column-gap: 0.75rem;
+    align-items: center;
+    min-height: 2.1rem;
+}
+
+.play-context.banner:has(~ .play-workspace.setup) .play-banner {
+    --play-banner-side: minmax(26rem, 34rem);
+}
+
+@media (max-width: 1439.98px) {
+    .play-banner {
+        --play-banner-side: minmax(20rem, 26rem);
+    }
+
+    .play-context.banner:has(~ .play-workspace.setup) .play-banner {
+        --play-banner-side: minmax(22rem, 28rem);
+    }
+}
+
+.play-banner-parts {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.25rem 0;
-    min-height: 2.1rem;
 }
 
 /* The banner is the page's main information (the user, 2026-10-17): its parts are twice the context's size; its buttons and status are not. */
@@ -2902,10 +2927,22 @@ details.advanced > summary {
 }
 
 .play-banner-end {
-    display: inline-flex;
+    display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
+    margin-left: calc(0.75rem + 1px);
+}
+
+/* The status and the review keep the end's right-hand side: "Working: ..." just left of "Review: ...". The status takes the room left beside
+   the hand-over and is cut short there, so the end does not grow a line for it; its title holds the whole text. */
+.play-banner-end > .play-status {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: right;
+}
+
+.play-banner-end > #play-review-jump {
     margin-left: auto;
 }
 
@@ -2915,6 +2952,33 @@ details.advanced > summary {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+/* A line under an inspector's tabs, in sight while the inspector scrolls: Play's turn and phase (the user, 2026-10-21). It sticks below the
+   inspector's top padding; its shadow, in the inspector's colour, covers that padding so nothing shows above it. */
+.tabs-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin-bottom: 0.5rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    box-shadow: 0 -1.1rem 0 var(--surface);
+}
+
+.play-inspector-turn {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+    font-size: 1.15rem;
+    line-height: 1.3;
+}
+
+.play-inspector-turn-part + .play-inspector-turn-part {
+    margin-left: 0.6rem;
+    padding-left: 0.6rem;
+    border-left: 1px solid var(--line);
 }
 
 /* The game and view pickers at the top of the Play tab. */
