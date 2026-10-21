@@ -27,6 +27,8 @@ Added on 2026-10-12 at the user's word, after two passes in which lessons alread
 
 **The hook.** In this repository a PreToolUse hook (`.claude/settings.local.json`, script `C:/Users/dland/.claude/hooks/asl_bash_guard.py`, with its test beside it) refuses a Bash call that holds a heredoc, `sed -i`, a multi-line `python -c`, a bare `python -`, a `cd` into a folder of the repository, a `git add` of everything, or a force push. It cannot see point 5. When a slip of a new kind costs time, add a rule and a test case to it.
 
+**Memory and performance in future work.** Read the [ASL Memory and Performance Guidelines](<../Memory-And-Performance/ASL Memory and Performance Guidelines.md>) when designing a pass and check its applicable contracts before completing each implementation task. Preserve state-scoped reads, bounded caches, incremental rendering, and the established measurement and equivalence checks. The guidelines include the completed A3 results and a design and review checklist.
+
 ## 0.1 What a session prompt holds
 
 A prompt written for the next session (the user, 2026-10-12) holds what only that session needs: the state (branch, head, what is committed and pushed), the user's word and where it ends, what is open to a veto, what the last session knows will fail or was not run, and where to start. It names this file and the gate script and does not restate them. It gives no command, no skip list, and no step of a procedure: pass 50's second prompt carried pass 45's skip list as an instruction, the list was wrong for that gate's baseline, and the sweep was run twice. If a procedure is missing or wrong, correct it here or in the script, and say in the prompt that it changed.
