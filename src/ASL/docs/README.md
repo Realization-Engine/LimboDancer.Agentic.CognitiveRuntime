@@ -33,6 +33,10 @@ Everything executed is sorted by kind:
 | [`Memory-And-Performance/`](Memory-And-Performance/) | The standing [ASL Memory and Performance Guidelines](<Memory-And-Performance/ASL Memory and Performance Guidelines.md>) for future work; the completed SVG work (PR 19), Counter Layer work (PR 22), Play Step work (PR 23), and A3 map context work (PR 25), with their analyses, plans, and measurements. |
 | [`Media-Production/`](Media-Production/) | The Guards Counterattack media scripts and production records. |
 
+[ASL CBOR Architecture and Storage Analysis](<Memory-And-Performance/ASL CBOR Architecture and Storage Analysis.md>) evaluates CBOR for map caches and the storage backlog, including whole-game writes, retained scenario cards, and game-to-card indexing. Status: analysis and proposed experiments, 2026-10-21.
+
+[ASL Game Storage Design](<Designs/ASL Game Storage Design.md>) proposes a transactional game store with retained scenario cards, indexed card-to-game lookup, migration rules, and an optional CBOR event encoding. Status: proposed, 2026-10-21.
+
 A document leaves this directory for its folder when its work is done: a review once its questions are answered, a plan once its passes are merged.
 
 ## Current implementation sequence
