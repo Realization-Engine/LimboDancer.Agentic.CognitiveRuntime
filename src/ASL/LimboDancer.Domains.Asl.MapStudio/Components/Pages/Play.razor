@@ -36,6 +36,14 @@
         {
             <CampaignContextPanel GameId="@gameId" />
         }
+        @if (state is not null && handOver is null)
+        {
+            @* The Play streamlining plan, S2 (ruling Q4): routine actions commit on one click unless the player turns it off. *@
+            <label class="play-one-click" title="A pass, the end of a move or a phase, and a plain step commit when proposed; anything with dice or consequences still asks for Confirm.">
+                <input type="checkbox" id="play-one-click" checked="@oneClick" @onchange="@(args => oneClick = args.Value is true)" />
+                Commit routine actions on one click
+            </label>
+        }
     </text>;
 }
 @if (history is null)
@@ -5960,6 +5968,7 @@ else if (state is not null)
 
     protected override void OnInitialized()
     {
+        oneClick = Services.GetService<ConfirmEveryAction>() is null;
         placeDefinition = Definitions.FirstOrDefault()?.Id ?? string.Empty;
         gameId = GameQuery ?? string.Empty;
         Refresh();
@@ -6880,10 +6889,32 @@ else if (state is not null)
         }
 
         pending = proposed;
+
+        // The Play streamlining plan, S2 (rulings Q3, Q4): a routine action the gate accepts is confirmed at once; the gate still asks for and
+        // records the confirmation, and the review opens only for what is not routine or is refused.
+        if (oneClick && Routine(proposed))
+        {
+            await Confirm();
+            return;
+        }
+
         status = $"{action.Name}: {(ConsequencesOf(proposed).Count > 0 ? ConsequencesOutcome : OutcomeText(proposed.Result.Outcome, Withheld(proposed)))}";
         ShowProposal();
         Refresh();
     }
+
+    /// <summary>Whether routine actions commit on one click (the plan's S2, ruling Q4): on by default, the Play tab's setting turns it off.</summary>
+    private bool oneClick = true;
+
+    /// <summary>
+    /// A routine proposal (ruling Q3): a pass, the end of a move, the end of a phase, or a Movement step, accepted by the gate and waiting for
+    /// Confirm, with no consequence among its reasons, no roll, no fire, and no entry whose outcome the view may not see.
+    /// </summary>
+    private bool Routine(Proposal proposal) =>
+        proposal.Result.Outcome == PlayOutcome.NeedsConfirmation
+        && (proposal.Action == GameActions.PassFire || proposal.Action == GameActions.EndMove || proposal.Action == GameActions.AdvancePhase || proposal.Action == GameActions.Move)
+        && proposal.Result.Plan is { Roll: null, Fire: null, Disclosure: null }
+        && ConsequencesOf(proposal).Count == 0;
 
     /// <summary>Pass 31 (ruling R31.6): a proposal names the view it comes from, so the planner refuses what that side may not do.</summary>
     private JsonElement FromView(JsonElement arguments)

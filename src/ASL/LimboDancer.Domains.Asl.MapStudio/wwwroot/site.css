@@ -2981,6 +2981,15 @@ details.advanced > summary {
     border-left: 1px solid var(--line);
 }
 
+/* The one-click setting under the pickers (the Play streamlining plan, S2). */
+.play-one-click {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+}
+
 /* The game and view pickers at the top of the Play tab. */
 .play-tab-context {
     margin-bottom: 0.5rem;

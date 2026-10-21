@@ -113,7 +113,7 @@ Each task: change, build, my Studio (the page as the user would play it, at the 
 |---|---|---|
 | P0 | The measurement game in my Studio; the baseline counted on it | Done 2026-10-21: section 1's "Now" column measured; the regression pair moved to P5 (section 1) |
 | P1 | S5 committed with its tests (built) | Committed on the branch |
-| P2 | S2: one-click routine actions and the setting | A pass, an end of move, a phase end, and a plain step take one click; the setting restores Confirm; the user's refusal paths unchanged |
+| P2 | S2: one-click routine actions and the setting | Done 2026-10-21: a step and a pass commit on one click in my Studio (`ps-3v3-p2`), 9 actions a step for 11; a refused step still opens its review; the setting off asks for Confirm. Component tests register `ConfirmEveryAction`, so the tests written for two clicks keep them; `RoutineActionsCommitOnOneClick` tests the setting |
 | P3 | Rules and Play facts: `InfantrySteps`, `ScenarioA1DefensiveFireOpportunity` and its gatherer | Unit tests on the calculator for each case of A8.1, A8.15, A8.3, A8.31 and each unknown fact; the planner's steps agree with the gate's refusals on the measurement game and on the user's game |
 | P4 | S3: plotting on the map | A route plotted, undone, and committed in my Studio at full width and 1024 px; no refusal for MF |
 | P5 | S6: the plan store, the runner, the DEFENDER's review, the stops, the skipped hand-over | The measurement game's Movement Phase played through; section 1's "After" column measured; the stop rule applied; section 2.7's regression measurement repeated and within its acceptance |

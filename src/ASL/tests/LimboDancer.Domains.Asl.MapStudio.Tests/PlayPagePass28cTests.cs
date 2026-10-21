@@ -187,6 +187,42 @@ public sealed class PlayPagePass28cTests : IDisposable
         page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: false }));
     }
 
+    // The Play streamlining plan, S2 (rulings Q3, Q4): with the setting on, a step and a pass commit on one click and no Confirm is asked; a
+    // refused step still opens its review; with the setting off, Confirm is asked again.
+    [Fact]
+    public void RoutineActionsCommitOnOneClick()
+    {
+        var hexes = Hexes();
+        var page = Started();
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
+        Assert.Equal("mph", Current.Phase);
+        page.Find("#play-one-click").Change(true);
+
+        page.Find(".move-unit[data-unit='g1']").Change(true);
+        page.Find("#move-to").Change(hexes.Three);
+        page.Find("#propose-move").Click();
+        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: true }));
+        Assert.Empty(page.FindAll("#play-confirm"));
+
+        // A8.1: the next step waits for the DEFENDER, so it is refused, and the refusal opens its review.
+        page.Find("#move-to").Change(hexes.One);
+        page.Find("#propose-move").Click();
+        page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        page.Find("#propose-pass").Click();
+        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: false }));
+        Assert.Empty(page.FindAll("#play-confirm"));
+
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        page.Find("#play-one-click").Change(false);
+        page.Find("#propose-end-move").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+    }
+
     // Backlog section 43: the records sit under their turn and phase, and the strip shows the latest one.
     [Fact]
     public void RecordsAreGroupedByTurnAndPhase()
