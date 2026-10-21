@@ -7754,6 +7754,20 @@ else if (state is not null)
             }
 
             planStacksState = state;
+
+            // A4.2: while a stack moves, no other may, so the units that may move are only its own; the plan keeps its other stacks as drafted
+            // and lets go only of the units whose move has ended.
+            if (state.Movement is not null)
+            {
+                foreach (var stack in planStacks)
+                {
+                    stack.Movers.RemoveAll(id => state.Unit(id) is not { Status: InstanceStatus.Active, MovementEnded: false });
+                }
+
+                planStacks.RemoveAll(stack => stack.Movers.Count == 0);
+                return planStacks;
+            }
+
             var candidates = MoveCandidates.Where(unit => state.Location(unit.Id) is not null).ToDictionary(unit => unit.Id, StringComparer.Ordinal);
             foreach (var stack in planStacks)
             {
@@ -7777,8 +7791,9 @@ else if (state is not null)
         var plotting = stack.Key == planPlotting;
         var route = plotting ? plotRoute : stack.Route;
         var left = plotting && plot?.Route is [.., var last] ? $"; {Mf(last.HalfMfLeft)} MF left" : string.Empty;
+        var words = route.Count == 0 ? "No route: it does not move." : string.Join(", ", route.Select(at => PlaceOf(at.ToString()))) + left;
         return new MovementPlanPanel.Row(stack.Key, [.. stack.Movers.Select(id => new PlayChoice(id, WordsAt(id)))],
-            route.Count == 0 ? "No route: it does not move." : string.Join(", ", route.Select(at => PlaceOf(at.ToString()))) + left, route.Count > 0, plotting);
+            Moving(stack) ? $"Moving: {words}" : words, route.Count > 0, plotting);
     })];
 
     private string? PlannerClosed => PlannerOpen ? null
@@ -7858,15 +7873,14 @@ else if (state is not null)
             return;
         }
 
-        Live.Plans.SetQueue(gameId, state, [.. PlanStacks.Where(stack => stack.Route.Count > 0).Select(stack => new QueuedRoute([.. stack.Movers], [.. stack.Route]))]);
-        foreach (var stack in planStacks)
-        {
-            stack.Route.Clear();
-        }
-
+        // The draft keeps its routes: a stack leaves it when its move ends, and a plan that stops leaves the rest of the routes here to make again.
+        Live.Plans.SetQueue(gameId, state, [.. PlanStacks.Where(stack => stack.Route.Count > 0 && !Moving(stack)).Select(stack => new QueuedRoute([.. stack.Movers], [.. stack.Route]))]);
         planVersion++;
         await RunPlan(() => Live.Plans.RunQueue(gameId, mover, DefenderSide));
     }
+
+    /// <summary>Whether the stack's units are the stack moving now.</summary>
+    private bool Moving(PlanStack stack) => state?.Movement is { } movement && stack.Movers.Any(id => movement.Members.Contains(id, StringComparer.Ordinal));
 
     /// <summary>The routes of the plan's other stacks, drawn faintly while the Movement Plan is open (the plot draws the one being plotted).</summary>
     private string? PlannerMarks()
@@ -7894,7 +7908,8 @@ else if (state is not null)
     }
 
     private RenderFragment PlannerBlock => @<MovementPlanPanel Rows="@PlannerRows" Closed="@PlannerClosed" Note="@planQueueNote" Stop="@(planPlotting is null ? null : PlotStop ?? plotNote)"
-        Planned="@PlanStacks.Count(stack => stack.Route.Count > 0 || stack.Key == planPlotting && plotRoute.Count > 0)" Busy="@busy" Running="@(PlanNow is not null)"
+        Planned="@PlanStacks.Count(stack => !Moving(stack) && (stack.Route.Count > 0 || stack.Key == planPlotting && plotRoute.Count > 0))" Busy="@busy"
+        Running="@(PlanNow is not null || state?.Movement is not null)"
         Finished="@(planFinished && MayEndPhase)" OnEndPhase="@ProposeAdvance"
         OnPlot="@PlanPlot" OnUndo="@UndoPlot" OnClear="@PlanClear" OnMove="@PlanReorder" OnSplit="@PlanSplit" OnRun="@PlanRun" />;
 
