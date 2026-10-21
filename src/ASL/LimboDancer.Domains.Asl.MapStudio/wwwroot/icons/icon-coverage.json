@@ -1402,6 +1402,22 @@
         },
         {
           "kind": "button",
+          "label": "Let it move on",
+          "dynamic": false,
+          "id": "plan-move-on",
+          "status": "needed",
+          "strip": "Play dff-window"
+        },
+        {
+          "kind": "button",
+          "label": "Let it move on to the end",
+          "dynamic": false,
+          "id": "plan-move-on-end",
+          "status": "needed",
+          "strip": "Play dff-window"
+        },
+        {
+          "kind": "button",
           "label": "Propose: the DEFENDER passes",
           "dynamic": false,
           "id": "propose-pass",
@@ -1876,26 +1892,6 @@
       ]
     },
     {
-      "name": "BuildingEntryAction",
-      "path": "Components/Play/BuildingEntryAction.razor",
-      "pages": [
-        "/games/play"
-      ],
-      "usedBy": [
-        "Play"
-      ],
-      "controls": [
-        {
-          "kind": "button",
-          "label": "Propose: enter a building",
-          "dynamic": false,
-          "id": "propose-enter",
-          "status": "needed",
-          "strip": "BuildingEntryAction toolbar"
-        }
-      ]
-    },
-    {
       "name": "CloseCombatAttackBuilder",
       "path": "Components/Play/CloseCombatAttackBuilder.razor",
       "pages": [
@@ -2064,6 +2060,14 @@
           "id": "play-handover-confirm",
           "status": "needed",
           "strip": "HandOverScreen"
+        },
+        {
+          "kind": "button",
+          "label": "@pass",
+          "dynamic": true,
+          "id": "play-handover-pass",
+          "status": "needed",
+          "strip": "HandOverScreen"
         }
       ]
     },
@@ -2102,7 +2106,6 @@
         "/games/play"
       ],
       "usedBy": [
-        "BuildingEntryAction",
         "InfantryMovementAction",
         "PlaceDemolitionChargeAction",
         "RoutActionPanel",
@@ -2179,6 +2182,74 @@
           "id": "propose-mop-up",
           "status": "needed",
           "strip": "MoppingUpAction mop-up"
+        }
+      ]
+    },
+    {
+      "name": "MovementRoutePanel",
+      "path": "Components/Play/MovementRoutePanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Continue along the route (@Remaining left)",
+          "dynamic": true,
+          "id": "move-route-continue",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Plot another route from here",
+          "dynamic": false,
+          "id": "move-route-change",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "End the move here",
+          "dynamic": false,
+          "id": "move-route-end",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "@(Plotting ? \u0022Stop plotting\u0022 : \u0022Plot a route on the map\u0022)",
+          "dynamic": true,
+          "id": "move-route-plot",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Move along this route",
+          "dynamic": false,
+          "id": "move-route-go",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Undo the last hex",
+          "dynamic": false,
+          "id": "move-route-undo",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Clear the route",
+          "dynamic": false,
+          "id": "move-route-clear",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
         }
       ]
     },
@@ -2433,17 +2504,17 @@
       "controls": [
         {
           "kind": "button",
-          "label": "Review: @title",
+          "label": "Hand over to @awaiting",
           "dynamic": true,
-          "id": "play-review-jump",
+          "id": "play-hand-over",
           "status": "needed",
           "strip": "PlayContextHeader"
         },
         {
           "kind": "button",
-          "label": "Hand over to @awaiting",
+          "label": "Review: @title",
           "dynamic": true,
-          "id": "play-hand-over",
+          "id": "play-review-jump",
           "status": "needed",
           "strip": "PlayContextHeader"
         },

@@ -78,23 +78,12 @@ public sealed class PlayPageTests : IDisposable
         context.Services.AddSingleton(new GameMaps(boards, maps, library, games));
         context.UseViewport();
         context.Services.AddSingleton(new StudioLos(boards, maps, options));
+
+        // The Play streamlining plan, S2: these tests were written for propose, then confirm.
+        context.Services.AddSingleton(new ConfirmEveryAction());
     }
 
     private static string Board => FakeBoardProvider.Board.Ref.Value;
-
-    /// <summary>An open hex and the adjacent ground-level building an attacker there may enter.</summary>
-    private (string From, string Building) EntryPair()
-    {
-        var handle = new StudioBoardCatalog(boards).TryGetBoard(FakeBoardProvider.Board.Ref).Board!;
-        return (from index in handle.Geometry.Hexes()
-                let building = handle.Geometry.NameOf(index)
-                where handle.HexFacts(building)!.Locations.Any(location => location.Level == 0 && location.Terrain?.Name.Contains("Building", StringComparison.Ordinal) == true)
-                from side in Enum.GetValues<HexsideDirection>()
-                let open = handle.Neighbor(building, side)
-                where open is not null && handle.HexFacts(open.Value) is { Center.Terrain.Name: "Open Ground" } facts
-                    && facts.BaseLevel == handle.HexFacts(building)!.BaseLevel
-                select ($"{Board}:{open}:0", $"{Board}:{building}:0")).First();
-    }
 
     private IRenderedComponent<PlayPage> StartGame(string at)
     {
@@ -162,7 +151,8 @@ public sealed class PlayPageTests : IDisposable
         Assert.NotEmpty(page.FindAll(".move-unit"));
         page.ViewAs("russian");
         Assert.Empty(page.FindAll(".move-unit"));
-        Assert.Contains("German side moves now", page.Find("#move-elsewhere").TextContent, StringComparison.Ordinal);
+        // The Play streamlining plan, S7: the other side's view is shown no Movement section; the banner says who moves.
+        Assert.Empty(page.FindAll("#move-elsewhere"));
     }
 
     private static void Commit(IRenderedComponent<PlayPage> page, string propose)
@@ -196,65 +186,22 @@ public sealed class PlayPageTests : IDisposable
     }
 
     [Fact]
-    public void TheReviewedEntryShowsItsFactsAndCommits()
-    {
-        var (from, building) = EntryPair();
-        var page = StartGame(from);
-        page.EndPhase(Commit);
-        page.EndPhase(Commit);
-        Assert.Contains("Movement Phase", page.Find("#play-context").TextContent, StringComparison.Ordinal);
-
-        page.ViewAs(Perspective.AdjudicatorName);
-        page.Find("#enter-location").Change(building);
-        page.Find("#propose-enter").Click();
-        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("#play-facts")));
-        Assert.Contains("Definitive", page.Find("#play-conclusion").TextContent, StringComparison.Ordinal);
-        Assert.Equal(9, page.FindAll("#play-facts tbody tr").Count);
-        page.Find("#play-confirm").Click();
-        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        var row = page.Find("#play-units tr[data-unit='g1']").TextContent;
-        Assert.Contains(DisplayText.Place(1, building), row, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void TheMovingSideSeesAnEntryOnlyAsDeclaredUntilItIsConfirmed()
-    {
-        // Occupied and Concealed Entry Design, section 7: the side cannot tell from the proposal whether the building is empty.
-        var (from, building) = EntryPair();
-        var page = StartGame(from);
-        page.EndPhase(Commit);
-        page.EndPhase(Commit);
-        page.Find("#enter-location").Change(building);
-        page.Find("#propose-enter").Click();
-        page.WaitForAssertion(() => Assert.Contains("The entry is declared", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.Empty(page.FindAll("#play-facts"));
-
-        // Pass 31c (design D11): a reason reads without its code, which stays in data-code.
-        var reason = Assert.Single(page.FindAll("#play-reasons li"));
-        Assert.Equal("The entry is declared, and its outcome is resolved when it is confirmed", reason.TextContent);
-        Assert.StartsWith(reason.GetAttribute("data-code") + ": ", EntryDisclosure.ResolvedOnConfirmation, StringComparison.Ordinal);
-
-        page.Find("#play-confirm").Click();
-        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.Contains(DisplayText.Place(1, building), page.Find("#play-units tr[data-unit='g1']").TextContent, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void ARefusedEntryShowsWhyAndChangesNothing()
     {
         var page = StartGame($"{Board}:A1:0");
         page.EndPhase(Commit);
         page.EndPhase(Commit);
-        page.Find("#enter-location").Change($"{Board}:A1:0");
-        page.Find("#propose-enter").Click();
+        page.Find(".move-unit[data-unit='g1']").Change(true);
+        page.Find("#move-to").Change($"{Board}:A1:0");
+        page.Find("#propose-move").Click();
         page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.Empty(page.FindAll("#play-confirm"));
         var reasons = page.FindAll("#play-reasons li").Select(item => (Code: item.GetAttribute("data-code") ?? string.Empty, Text: item.TextContent)).ToList();
         Assert.Equal(reasons.Count, reasons.Distinct().Count());
 
-        // The refusal depends only on the mover and the terrain, so the side is told why at once. Pass 31c: the reason reads without its code,
-        // which stays in data-code, and the side is shown no revision; the game is where it was.
-        Assert.Contains(("play.fact-false", "IsAdjacentGroundLevelOrdinaryBuilding"), reasons);
+        // The refusal depends only on the mover and the terrain, so the side is told why at once. Pass 31c: the side is shown no revision; the
+        // game is where it was. (Since S7 the step is the Movement form's; the entry plan's own refusals are tested in ConcealedEntryTests.)
+        Assert.NotEmpty(reasons);
         Assert.Empty(page.FindAll("#play-revision"));
         Assert.Equal(4, live.History("village")!.Events.Count);
     }

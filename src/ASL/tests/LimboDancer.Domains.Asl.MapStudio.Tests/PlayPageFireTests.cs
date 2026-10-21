@@ -306,16 +306,15 @@ public sealed class PlayPageFireTests : IDisposable
         page.Find("#fire-from").Change(hexes.From);
         Assert.Equal(["r3"], page.FindAll(".fire-firer").Select(item => item.GetAttribute("data-unit")));
 
-        // In the MPh fire is the DEFENDER's (A8.1), offered from its side's Locations; with no stack moving, the planner
-        // refuses it (FireTests).
+        // In the MPh fire is the DEFENDER's (A8.1). The Play streamlining plan, S7 (ruling R-PS.7): the moving side's view shows no Fire section,
+        // and the DEFENDER's view shows the Fire form only while his window on a moving stack is open; with no stack moving there is none.
         page.EndPhase(Commit);
         Assert.Contains("Movement", page.Find("#play-context").TextContent, StringComparison.Ordinal);
-        Assert.Contains("The German side may fire now", page.Find("#fire-elsewhere").TextContent, StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#fire-elsewhere"));
+        Assert.Empty(page.FindAll("#fire-side"));
         Assert.NotNull(page.Find("#propose-move"));
-
-        // Ruling R23.1: the DEFENDER's fire panel is its own.
         page.ViewAs("german");
-        Assert.Contains("The German side may fire", page.Find("#fire-side").TextContent, StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#fire-side"));
     }
 
     [Fact]

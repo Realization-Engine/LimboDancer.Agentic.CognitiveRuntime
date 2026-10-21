@@ -240,6 +240,7 @@ public sealed class PlayPagePass28bTests : IDisposable
         // Pass 31 (ruling R31.6): the Russian view lists the Russian side's SW only, and it has none here, so the panel may be gone.
         Assert.All(page.FindAll("#sw-weapon"), select => Assert.Equal(string.Empty, select.GetAttribute("value")));
         Assert.All(page.FindAll("#sw-unit"), select => Assert.Equal(string.Empty, select.GetAttribute("value")));
-        Assert.Equal(string.Empty, page.Find("#deploy-squad").GetAttribute("value"));
+        // The Play streamlining plan, S7: Russian squads may not Deploy (A25.2), so the Russian view may show no Deploy form.
+        Assert.All(page.FindAll("#deploy-squad"), select => Assert.Equal(string.Empty, select.GetAttribute("value")));
     }
 }

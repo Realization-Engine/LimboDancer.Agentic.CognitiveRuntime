@@ -174,7 +174,7 @@ public sealed class PlayPageStepsTests : IDisposable
         page.Find("#move-to").Change(hexes.Building);
         Commit(page, "#propose-move");
         Assert.Equal("open", page.Find("#move-state").GetAttribute("data-window"));
-        Assert.True(page.Find("#propose-end-move").HasAttribute("disabled"));
+        Assert.Empty(page.FindAll("#propose-end-move"));
 
         // The Russians fire at the building, typed in: 6+5 with -1 FFNAM and +3 for the stone building is no effect, and the
         // attack leaves Residual FP in the building, drawn on the map for every viewer. The screen is handed to them first (ruling R23.1).

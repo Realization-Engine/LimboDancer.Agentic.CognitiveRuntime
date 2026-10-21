@@ -228,10 +228,10 @@ public sealed class PlayPagePass28cTests : IDisposable
         page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: true }));
         Assert.Empty(page.FindAll("#play-confirm"));
 
-        // A8.1: the next step waits for the DEFENDER, so it is refused, and the refusal opens its review.
-        page.Find("#move-to").Change(hexes.One);
-        page.Find("#propose-move").Click();
-        page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        // A8.1: the next step waits for the DEFENDER; the Play streamlining plan, S7 (ruling R-PS.4): so the moving side is shown no form, only
+        // that it waits.
+        Assert.Empty(page.FindAll("#move-to"));
+        Assert.NotEmpty(page.FindAll("#move-waiting"));
 
         page.Find("#play-hand-over").Click();
         page.Find("#play-handover-confirm").Click();

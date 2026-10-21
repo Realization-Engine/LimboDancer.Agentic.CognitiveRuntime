@@ -75,6 +75,9 @@ public sealed partial class GamePlanner
         /// </summary>
         public ConcurrentDictionary<(BoardLocation At, BoardLocation? From), bool> DefenderMayFire { get; } = new();
 
+        /// <summary>The map edges a Location lies on (the Play streamlining plan, S7): the map's geometry, read once a state and Location.</summary>
+        public ConcurrentDictionary<BoardLocation, string[]> ExitEdges { get; } = new();
+
         // 1 once the placed map's composed read is kept; written after the read, read with a volatile read.
         private int composedKept;
         private ComposedMapRead? composed;

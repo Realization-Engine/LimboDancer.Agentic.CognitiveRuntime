@@ -134,6 +134,30 @@ The user, 2026-10-21: every code change follows the [ASL Memory and Performance 
 
 **Regression measurement.** Before P2 and after P5, in Studios built the same way (Debug, outside the repository), with the measured tab in front: the Play follower on `cd-guards-5`, its ordinary phases and Rout Phase reported apart (counts, medians, 90th percentile, stalls), because S5 to S6 change what every Play render does; and the measurement game's Movement Phase, server time per step and allocation per step (allocation ticks and `allocread.cs`). Acceptance: no ordinary-step or Rout median worse by more than the noise of a repeated pair; the measurement game's per-step server time no worse than a manual step's propose, confirm, and pass today.
 
+### 2.8 S7: a form shows only when it is of use now
+
+The user, 2026-10-21: "No UI workflow should be visible in the UI unless it is immediately useful to the player", naming the building-entry form, the Movement form, the Fire form, and the Support Weapons form ("the player needs to be able to see that in the appropriate phases"). The Play tab, read in my Studio (`ps-3v3-ui`, the German MPh, the mover's view), showed the entry form, the map-exit form for a stack nowhere near an edge, the SMOKE form, and a Fire section telling the mover the Russian side may fire. Each form now shows only for the view, phase, and step where an action in it could be taken; where the reason is a rule, the page asks Rules or the planner, not its own test.
+
+| Form | Shown when (rulings R-PS.1 to R-PS.9, open to the user's veto) |
+|---|---|
+| Propose: enter a building | Never: a one-unit step into a building that holds an enemy unit goes to the same entry plan (`GamePlanner`, the move's own routing to `PlanEnterBuildingAsync` under `ScenarioA1EntryRules.ReviewedEntry`), and a step into an empty building is an ordinary move, so the form duplicated the Movement form. The action stays for MCP callers; its plan's tests stay in Play (R-PS.1) |
+| Hidden units: place beneath "?" | The owner's view, in its own MPh and APh, the phases in which the rule says it must be placed before it moves or advances (A12.32). Placing it at another time is the owner's free choice but never needed there (R-PS.2) |
+| Rout | The Rout Phase, when the view has a unit that may rout or owes one |
+| Support weapons | Only the actions whose phase the rules allow to the view's side, each shown only when it has a weapon to act on: transfer in the RPh and the ATTACKER's APh (A4.431); drop in the moving side's MPh and APh, and at the start of the CCPh for a holder in a Location with an enemy unit (A4.43); recover in the RPh and the moving side's MPh, when an unpossessed SW lies on the map (A4.44); dismantle or assemble in the side's PFPh or DFPh, for a weapon that can be (A9.8). In the Rout Phase the Rout form's "keep" chooses what a broken unit leaves, so the SW form is not shown (R-PS.3). The phase windows are Rules facts (`ScenarioA1SupportWeaponRules`). Improving the SW workflow itself is backlog |
+| Rally, Repair, Deploy and Recombine, DM retention, Shock recovery | The RPh, each only when it has a unit or weapon to offer; Deploy and Recombine for the side whose RPh it is (A1.31, A1.32) |
+| Movement | The moving side's view. While the DEFENDER's window is open the mover's view shows the stack's status and a waiting line, not the form (R-PS.4). The DEFENDER's view no longer shows a line saying the other side moves (the banner says so) |
+| Leave the map | A stack chosen whose Location lies on an edge its side may leave by; only those edges are offered (R-PS.5) |
+| SMOKE grenades, Place a DC | Behind a closed line under the Movement form, opened by a click: a choice the player makes now and then, not a step of every move (R-PS.6) |
+| Fire | The firing side's view, with a unit that may fire; in the MPh only while the DEFENDER's window is open. The other side's view no longer shows a section saying who may fire (R-PS.7) |
+| Advance | The ATTACKER's view; the DEFENDER's view no longer shows a waiting section (R-PS.8) |
+| Fire Lanes and encirclements | Unchanged: they are the state of the map, not a workflow (R-PS.9) |
+
+**Memory and performance.** Each test is a fact the page already holds for the render, or one planner call per render for the state, memoized where it reads the map (the exit edges of one Location, in `PlayStepMemo`). Fewer forms are rendered, so the change removes work.
+
+### 2.9 S8: the Unit Planner tab
+
+The user, 2026-10-21: a new "Unit Planner" icon in the inspector's tab strip; under it a second row of icons holding LOS, Range (moved there), and a new Movement Plan, which plans the routes of every eligible stack and unit and makes the Movement Phase's moves as far as is practical. Designed after S7 is built; its design goes here before it is built.
+
 ## 3. Tasks
 
 Each task: change, build, my Studio (the page as the user would play it, at the widths it touches, in both sides' views where disclosure applies), rework until right, then the test methods that read the changed code, named by method.
@@ -148,6 +172,8 @@ Each task: change, build, my Studio (the page as the user would play it, at the 
 | P5 | S6: the plan store, the runner, the DEFENDER's review, the stops, the skipped hand-over | The measurement game's Movement Phase played through; section 1's "After" column measured; the stop rule applied; section 2.7's regression measurement repeated and within its acceptance |
 | P6 | S4: the pickers | Done 2026-10-21, each offer asked of the code that refuses it: the planner's `RallyBar` (the attempt's own plan, no roll) holds Propose: rally back with the gate's reason, checked in the Studio (`ps-s4-check`: the British side's second MMC Self-Rally of the RPh held back); `RecoverPhaseBar` (the Recovery plan's phase check, moved out of it) holds Recover back outside the RPh and the unit's own MPh; `PhaseEndBar` (the gate's proposer check) replaces "end the Rout Phase" with the reason while the other side owes a rout, asked once a state and view; a leader ticked as a firer is not offered as director. Not done: a director who has already directed (the fire calculator's fact is not exposed; backlog), Spraying Fire targets, and the fire refusals that need the attack's own facts |
 | P7 | S1 for the other windows | A vehicle step's window passes from the hand-over screen |
+| P9 | S7: each Play form only when it is of use now (section 2.8) | Done 2026-10-21: walked in my Studio in all three views of the MPh (`ps-3v3-ui`: an interior stack offers no exit, an edge stack only its edge; the mover waits while the window is open; the DEFENDER's Fire target is the moving stack's Location only), RPh (`p31-rph`), PFPh (`p31-pf`, `p31-aph`), RtPh (`p31-rtph`), CCPh (`p31-cc`, drop only for a holder in a Location with an enemy unit), and the DFF window (`p31-dff`). The planner's `SupportWeaponActions`, `MayOfferDeploy`, and `EdgesAt` (memoized per state and Location). 25 test methods that assert the changed behavior; 7 updated to it, and the two that tested the entry plan's review on an empty building through the removed form deleted (the plan's own tests stay in Play) |
+| P10 | S8: the Unit Planner tab (section 2.9) | Designed, then built and walked in my Studio |
 | P8 | The analysis and the plan closed; the time log; backlog rows for what is left; the gate (`gate.sh ps <base> ...`, a config for this work); a pull request; CI read | CI green on the pull request; the merge is the user's word |
 
 ## 4. Build outputs outside the repository

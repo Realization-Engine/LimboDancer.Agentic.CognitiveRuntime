@@ -487,8 +487,10 @@ else if (state is not null)
                         <span id="advance-other" class="toolbar-note">The @DisplayText.Side(GamePlanner.PhaseEndedBy(state, viewAs)) side ends the @Games.PhaseLabel(state.Phase).</span>
                     }
                 </div>
-                @if (!SetupOpen && VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Hidden) == ConditionState.True
-                    && state.Location(unit.Id) is not null && (Viewer.IsAdjudicator || unit.Side == viewAs)).ToArray() is { Length: > 0 } hiddenUnits)
+                @* The Play streamlining plan, S7 (ruling R-PS.2): a hidden unit is placed beneath "?" before it moves or advances (A12.32), so the
+                   offer is its side's, in that side's own MPh and APh. *@
+                @if (!SetupOpen && state.Phase is "mph" or "aph" && VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Hidden) == ConditionState.True
+                    && state.Location(unit.Id) is not null && unit.Side == state.PhasingSide && (Viewer.IsAdjudicator || unit.Side == viewAs)).ToArray() is { Length: > 0 } hiddenUnits)
                 {
                     <div class="toolbar" id="play-hidden">
                         <span class="toolbar-note">Hidden units (HIP): each is placed beneath a "?" before it moves or advances, or whenever its side chooses (A12.32; ruling R23.5).</span>
@@ -498,23 +500,21 @@ else if (state is not null)
                         }
                     </div>
                 }
-                @* The user, 2026-10-04 (pass 31c): an entry into a building is the moving side's, in its Movement Phase; it is offered only then,
-                   and its explanation is a closed line, not a paragraph on every screen. *@
-                @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide))
-                {
-                    <BuildingEntryAction Units="@EnterRows" Unit="@enterUnit" Location="@enterLocation" OnUnit="@(id => enterUnit = id)"
-                        OnLocation="@(at => enterLocation = at)" OnPropose="@ProposeEntry" />
-                }
-                @if (state.Phase == "rtph")
+                @* The Play streamlining plan, S7 (ruling R-PS.1): no separate building-entry form; a one-unit step into a building goes to the same
+                   entry plan through the Movement form. *@
+                @if (state.Phase == "rtph" && (RoutObligations.Count > 0 || RoutChoices.Count > 0))
                 {
                     <RoutActionPanel Obligations="@RoutObligations" Units="@RoutChoices" Unit="@routUnit" Route="@routRoute" LowCrawl="@routLowCrawl"
                         Load="@RoutLoadText" Loads="@RoutLoads" Keep="@string.Join(",", RoutKept)" OnKeep="@(keep => routKeep = keep)"
                         OnUseRoute="@(way => (routUnit, routRoute, routKeep, routLowCrawl) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty, routLowCrawl && !way.Route.Contains(',')))"
                         OnUnit="@(id => (routUnit, routKeep, routRoute) = (id, string.Empty, id == routUnit ? routRoute : string.Empty))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout" />
                 }
-                @if (state.Phase is "rph" or "pfph" or "mph" or "dfph" or "aph" or "ccph" or "rtph" && SupportWeapons.Any())
+                @* The Play streamlining plan, S7 (ruling R-PS.3): the panel and each of its actions only when the phase allows it to the view; in the RtPh
+                   the Rout form chooses what a broken unit keeps. *@
+                @if (state.Phase != "rtph" && !MoverWaits && SupportWeapons.ToList() is { Count: > 0 } swShown
+                    && Live.Planner.SupportWeaponActions(state, swShown, Viewer.IsAdjudicator ? null : viewAs) is { Any: true } swOffers)
                 {
-                    <SupportWeaponActionPanel Weapons="@([.. SupportWeapons.Select(weapon => new PlayChoice(weapon.Id, SupportWeaponText(weapon)))])"
+                    <SupportWeaponActionPanel Weapons="@([.. swShown.Select(weapon => new PlayChoice(weapon.Id, SupportWeaponText(weapon)))])" Offers="@swOffers"
                         Units="@([.. SupportWeaponUnits.Select(Labelled)])" Weapon="@swWeapon" Unit="@swUnit" Held="@(SupportWeaponHolder is not null)" Dismantles="@(swWeapon.Length > 0 && Live.Planner.MayDismantle(state, swWeapon))"
                         RecoverBar="@(state.Unit(swUnit) is { } recovering && Live.Planner.RecoverPhaseBar(state, recovering) is { } recoverBar ? PlainReason(recoverBar) : null)"
                         OnWeapon="@(id => { swWeapon = id; swUnit = string.Empty; })" OnUnit="@(id => swUnit = id)" OnPropose="@ProposeSupportWeaponKind" />
@@ -532,15 +532,22 @@ else if (state is not null)
                     </div>
                     </ActionSection>
                 }
-                @if (state.Phase == "rph")
+                @* The Play streamlining plan, S7: each RPh form only when it has a unit or weapon to offer the view. *@
+                @if (state.Phase == "rph" && RallyChoices is { Count: > 0 } rallyShown)
                 {
                     <ActionSection Title="Rally" Key="rally">
-                    <RallyActionPanel Units="@RallyChoices" Leaders="@([.. RallyLeaders.Select(leader => leader.Id)])" Unit="@rallyUnit" Leader="@rallyLeader" Barred="@RallyBarNow"
+                    <RallyActionPanel Units="@rallyShown" Leaders="@([.. RallyLeaders.Select(leader => leader.Id)])" Unit="@rallyUnit" Leader="@rallyLeader" Barred="@RallyBarNow"
                         OnUnit="@(id => { rallyUnit = id; rallyLeader = string.Empty; })" OnLeader="@(id => rallyLeader = id)" OnPropose="@ProposeRally" />
                     </ActionSection>
+                }
+                @if (state.Phase == "rph" && RepairChoices is { Count: > 0 } repairShown)
+                {
                     <ActionSection Title="Repair" Key="repair">
-                <RepairActionPanel Weapons="@RepairChoices" Weapon="@repairWeapon" OnWeapon="@(id => repairWeapon = id)" OnPropose="@ProposeRepair" />
+                <RepairActionPanel Weapons="@repairShown" Weapon="@repairWeapon" OnWeapon="@(id => repairWeapon = id)" OnPropose="@ProposeRepair" />
                     </ActionSection>
+                }
+                @if (state.Phase == "rph" && (DeployChoices.Count > 0 || RecombineChoices.Count > 0))
+                {
                     <ActionSection Title="Deploy and Recombine" Key="deploy-and-recombine">
                 <DeployActionPanel Squads="@DeployChoices" Leaders="@([.. LeadersWith(deploySquad).Select(leader => leader.Id)])" Weapons="@DeployWeapons"
                         Squad="@deploySquad" Leader="@deployLeader" Second="@deployWeapons"
@@ -551,10 +558,14 @@ else if (state is not null)
                         OnOne="@(id => { recombineOne = id; recombineTwo = string.Empty; recombineLeader = string.Empty; })" OnTwo="@(id => recombineTwo = id)"
                         OnLeader="@(id => recombineLeader = id)" OnPropose="@ProposeRecombine" />
                     </ActionSection>
+                }
+                @if (state.Phase == "rph")
+                {
                     <DmRetentionChoices Units="@DmRetainers" Selected="@retainDm" OnToggle="@(pick => Toggle(retainDm, pick.Id, pick.On))" />
                     <ShockRecoveryAction Vehicles="@ShockChoices" Vehicle="@shockVehicle" OnVehicle="@(id => shockVehicle = id)" OnPropose="@ProposeShockRecovery" />
                 }
-                @if (state.Phase == "mph")
+                @* The Play streamlining plan, S7: the Movement form is the moving side's; the other view sees it only for an OVR's CC (pass 27). *@
+                @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide || OverrunCloseCombat is not null))
                 {
                     <ActionSection Title="Movement" Key="movement">
                     <RuleHelp Id="move-help" Summary="@($"The {DisplayText.Side(state.PhasingSide)} side moves one stack at a time, one Location per step; after each step the DEFENDER may fire or pass (A4.1, A8.1).")">
@@ -612,6 +623,14 @@ else if (state is not null)
                                 </p>
                             }
                         }
+                        @* The Play streamlining plan, S7 (ruling R-PS.4): while the DEFENDER's window is open the moving side has nothing to do but wait,
+                           outside a movement plan, whose own panel says what waits. *@
+                        @if (MoverWaits)
+                        {
+                            <p class="toolbar-note" id="move-waiting">The DEFENDER fires at the stack or passes; then it moves on or ends its move.</p>
+                        }
+                        else
+                        {
                         <div class="toolbar">
                             <InfantryMovementAction Movers="@MoveRows" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id"
                                 OnToggle="@ToggleMover" OnDraftChanged="@SetMoveDraft" OnPropose="@ProposeMove" OnOverrunNtc="@ProposeOverrunNtc">
@@ -634,17 +653,28 @@ else if (state is not null)
                                     }
                                 </Route>
                             </InfantryMovementAction>
-                            <MapExitAction SelectId="move-exit" ButtonId="propose-exit" Edges="@ExitEdges" Edge="@moveExit" Ready="@(moveUnits.Count > 0)"
-                                OnEdge="@(edge => moveExit = edge)" OnPropose="@ProposeExit" />
-                            @if (SmokePlacers.Any())
+                            @* The Play streamlining plan, S7 (rulings R-PS.5, R-PS.6): the exit only from a Location on a map edge, by that edge; SMOKE and a
+                               DC behind a closed line, a choice made now and then. *@
+                            @if (ExitEdgesHere is { Count: > 0 } exitEdges)
                             {
-                                <SmokeGrenadeAction Placers="@SmokeChoices" Places="@SmokePlaces" By="@smokeBy" At="@smokeAt" Ready="@(moveUnits.Count > 0)"
-                                    OnBy="@(id => smokeBy = id)" OnAt="@(at => smokeAt = at)" OnPropose="@ProposeSmoke" />
+                                <MapExitAction SelectId="move-exit" ButtonId="propose-exit" Edges="@exitEdges" Edge="@moveExit" Ready="@(moveUnits.Count > 0)"
+                                    OnEdge="@(edge => moveExit = edge)" OnPropose="@ProposeExit" />
                             }
-                            @if (MoverCharges.Any())
+                            @if (SmokePlacers.Any() || MoverCharges.Any())
                             {
-                                <PlaceDemolitionChargeAction Charges="@ChargeChoices" Charge="@placeDc" At="@placeDcAt" Ready="@(moveUnits.Count > 0)"
-                                    OnCharge="@(id => placeDc = id)" OnAt="@(at => placeDcAt = at)" OnPropose="@ProposePlaceDc" />
+                                <details class="rule-help-detail" id="move-more">
+                                    <summary>@(SmokePlacers.Any() && MoverCharges.Any() ? "SMOKE grenades, a Demolition Charge" : SmokePlacers.Any() ? "SMOKE grenades" : "A Demolition Charge")</summary>
+                                    @if (SmokePlacers.Any())
+                                    {
+                                        <SmokeGrenadeAction Placers="@SmokeChoices" Places="@SmokePlaces" By="@smokeBy" At="@smokeAt" Ready="@(moveUnits.Count > 0)"
+                                            OnBy="@(id => smokeBy = id)" OnAt="@(at => smokeAt = at)" OnPropose="@ProposeSmoke" />
+                                    }
+                                    @if (MoverCharges.Any())
+                                    {
+                                        <PlaceDemolitionChargeAction Charges="@ChargeChoices" Charge="@placeDc" At="@placeDcAt" Ready="@(moveUnits.Count > 0)"
+                                            OnCharge="@(id => placeDc = id)" OnAt="@(at => placeDcAt = at)" OnPropose="@ProposePlaceDc" />
+                                    }
+                                </details>
                             }
                             @if (moveUnits.Any(id => state.Unit(id) is { } mover && GameState.Condition(mover, Conditions.Berserk) == ConditionState.True))
                             {
@@ -653,10 +683,7 @@ else if (state is not null)
                             <MovementWindowActions WindowOpen="@state.Movement?.WindowOpen" EndingSome="@EndingSome" MayPass="@(Viewer.IsAdjudicator && MandatoryNow is null)"
                                 OnPass='@(() => ProposeSimple(GameActions.PassFire, "pass"))' OnEnd="@ProposeEndMove" />
                         </div>
-                    }
-                    else
-                    {
-                        <p class="muted" id="move-elsewhere">The @DisplayText.Side(state.PhasingSide) side moves now; its movers and their route are its own (choose its view to move; ruling R23.1).</p>
+                        }
                     }
                     </ActionSection>
                     @if (state.Movement is { Vehicle: true, WindowOpen: true, Members: [{ } reacting] } && state.Location(reacting)?.Location is { } reactionAt
@@ -721,13 +748,8 @@ else if (state is not null)
                     <CrewExposureActions Vehicles="@([.. ButtonUpCandidates.Select(afv => new CrewExposureActions.Exposure(afv.Id, GameState.Condition(afv, Conditions.ButtonedUp) == ConditionState.True))])"
                         OnToggle="@(afv => ProposeButtonUp(afv.Id, !afv.ButtonedUp))" />
                 }
-                @if (state.Phase == "aph" && !Viewer.IsAdjudicator && viewAs != state.PhasingSide)
-                {
-                    <ActionSection Title="Advance" Key="advance">
-                    <p class="muted" id="advance-elsewhere">The @DisplayText.Side(state.PhasingSide) side advances now; its units and their Locations are its own (choose its view to advance; ruling R23.1).</p>
-                    </ActionSection>
-                }
-                else if (state.Phase == "aph")
+                @* The Play streamlining plan, S7 (ruling R-PS.8): the Advance form is the ATTACKER's; the other view is shown no section for it. *@
+                @if (state.Phase == "aph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide))
                 {
                     <AdvanceActionPanel Side="@(state.PhasingSide ?? string.Empty)" Units="@AdvanceRows" Selected="@advanceUnits" Destinations="@AdvanceDestinations" Waiting="@AdvanceWaiting"
                         Edges="@ExitEdges" To="@advanceTo" Edge="@advanceExit" OnToggle="@ToggleAdvancer"
@@ -787,13 +809,8 @@ else if (state is not null)
                     <OpportunityFireAction Units="@([.. OpportunityCandidates.Select(unit => unit.Id)])" Selected="@opportunityUnits"
                         OnToggle="@(pick => Toggle(opportunityUnits, pick.Id, pick.On))" OnPropose="@ProposeOpportunity" />
                 }
-                @if (FiringSide is { } waiting && !Viewer.IsAdjudicator && viewAs != waiting)
-                {
-                    <ActionSection Title="Fire" Key="fire">
-                    <p class="muted" id="fire-elsewhere">The @DisplayText.Side(waiting) side may fire now; its fire groups are its own (choose its view to fire; ruling R23.1).</p>
-                    </ActionSection>
-                }
-                else if (FiringSide is { } firing)
+                @* The Play streamlining plan, S7 (ruling R-PS.7): the Fire forms are the firing side's; the other view is shown no section for them. *@
+                @if (FiringSide is { } firing && (Viewer.IsAdjudicator || viewAs == firing))
                 {
                     @* Pass 40 (A4.151): the SMC an Infantry OVR has just entered upon may move away before any fire; the DEFENDER's to declare. *@
                     @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && Live.Planner.OverrunEvader(state, history!.Events) is { } evader)
@@ -923,9 +940,13 @@ else if (state is not null)
                         </div>
                         </ActionSection>
                     }
+                    @* The Play streamlining plan, S7 (ruling R-PS.7): in the MPh the DEFENDER fires only while his window on the moving stack is open
+                       (A8.1); in any phase, only with a Location to fire from. *@
+                    @if ((state.Phase != "mph" || state.Movement is { WindowOpen: true }) && FireLocations(firing).ToList() is { Count: > 0 } fireLocations)
+                    {
                     var byRange = FireTargetsByRange(firing);
                     var ofTarget = FireRangeOfTarget();
-                    <SmallArmsFirePanel Side="@firing" Phase="@state.Phase" PhaseLabel="@Games.PhaseLabel(state.Phase)" Locations="@([.. FireLocations(firing)])" From="@fireFrom"
+                    <SmallArmsFirePanel Side="@firing" Phase="@state.Phase" PhaseLabel="@Games.PhaseLabel(state.Phase)" Locations="@fireLocations" From="@fireFrom"
                         TargetNotes="@byRange.Notes" TargetsOut="@byRange.Out" RangeSummary="@ofTarget.Summary" RangeRows="@ofTarget.Rows" OnShowRange="@ShowFireRange"
                         Also="@fireAlso" AlsoChoices="@FireAlsoChoices(firing)" OnAlso="@(pick => ToggleFireAlso(pick.Id, pick.On))" Places="@FirerPlaces(firing)" AloneCandidates="@FireAloneCandidates(firing)"
                         Firers="@FirerChoices(firing)" SelectedFirers="@fireFirers" Weapons="@([.. FireWeapons.Select(weapon => new SmallArmsFirePanel.Weapon(weapon.Id, weapon.Holding!.Holder, LiveFire.WeaponBar(weapon), weapon.Kind == "asl:ft")), .. FireVehicleMgs])"
@@ -939,6 +960,7 @@ else if (state is not null)
                         OnMol="@(id => fireMol = id)" OnTarget="@(at => fireTarget = at)" OnFreeTarget="@(at => fireFreeTarget = at)" OnSnapShot="@(on => fireSnapShot = on)"
                         OnSpray="@(at => fireSpray = at)" OnLaneWeapon="@(id => fireLaneWeapon = id)" OnLaneTo="@(at => fireLaneTo = at)" OnPartner="@(id => firePartner = id)"
                         OnPropose="@ProposeFire" OnClear="@ClearFire" />
+                    }
                     @if (state.Phase == "pfph" && MopUpChoices(firing) is { Count: > 0 } mopUp)
                     {
                         <MoppingUpAction Buildings="@mopUp" OnPropose="@ProposeMopUp" />
@@ -3541,8 +3563,6 @@ else if (state is not null)
     private string placeHolder = string.Empty;
     private bool placeBroken;
     private bool placeOffBoard;
-    private string enterUnit = string.Empty;
-    private string enterLocation = "bd01:E4:0";
     private Proposal? pending;
     private string viewAs = string.Empty;
     private string firstElr = string.Empty;
@@ -4659,7 +4679,6 @@ else if (state is not null)
             }
 
             (highlight, openingHex) = (openingHex, null);
-            enterUnit = VisibleUnits.FirstOrDefault()?.Id ?? string.Empty;
             ShowActions();
         }
     }
@@ -5212,7 +5231,9 @@ else if (state is not null)
     /// </summary>
     private (IReadOnlyList<string> Targets, IReadOnlyDictionary<string, string> Notes, IReadOnlySet<string> Out) FireTargetsByRange(string side)
     {
-        var targets = FireTargets(side).ToArray();
+        // The Play streamlining plan, S7: in the MPh the DEFENDER fires only at the moving stack, in its Location (A8.1), which the gate's
+        // window check (ScenarioA1FireEligibility.MphWindow) refuses otherwise; so that Location is the only target offered.
+        var targets = state is { Phase: "mph", Movement: { WindowOpen: true } window } ? [window.Location.ToString()] : FireTargets(side).ToArray();
         var notes = new Dictionary<string, string>(StringComparer.Ordinal);
         var beyond = new HashSet<string>(StringComparer.Ordinal);
         if (state is null || fireFirers.Count == 0 || !BoardLocation.TryParse(fireFrom, out var from))
@@ -5676,14 +5697,25 @@ else if (state is not null)
             : $" Every hex open to {named.Id} is held by a Known enemy unit, so it enters a Game Turn later within four more hexes (A2.5; ruling R25.2).";
 
     /// <summary>The map edges to leave by, each with its compass direction from the card's North (table player, pass 25).</summary>
+    /// <summary>
+    /// Whether the moving side's view waits on the DEFENDER (the Play streamlining plan, S7; ruling R-PS.4): his window on the moving stack is open,
+    /// outside a movement plan, whose own panel says what waits; the moving side's forms are not shown until he fires or passes.
+    /// </summary>
+    private bool MoverWaits => state is { Phase: "mph", Movement.WindowOpen: true } && !Viewer.IsAdjudicator && viewAs == state.PhasingSide && PlanNow is null;
+
+    /// <summary>
+    /// The edges the checked stack may leave the map by (the Play streamlining plan, S7; ruling R-PS.5): those its one Location lies on, read once a
+    /// state and Location by the planner; none when the stack is not in one Location on the map.
+    /// </summary>
+    private IReadOnlyList<MapExitAction.EdgeChoice> ExitEdgesHere => state is null || moveUnits.Count == 0 ? []
+        : moveUnits.Select(id => state.Location(id)?.Location).Distinct().ToArray() is [{ } exitFrom] && Live.Planner.EdgesAt(state, exitFrom) is { Count: > 0 } edges
+            ? [.. ExitEdges.Where(choice => edges.Contains(choice.Edge, StringComparer.Ordinal))] : [];
+
     private IReadOnlyList<MapExitAction.EdgeChoice> ExitEdges => [.. SideState.Edges.Select(edge => new MapExitAction.EdgeChoice(edge,
         state?.Scenario is { } scenario && CardRead(scenario.Id)?.Card is { } card ? $"{edge} ({ScenarioCards.Compass(card, edge)})" : edge))];
 
     /// <summary>The movers the move panel offers that wait off board (ruling R25.1).</summary>
     private IReadOnlyList<string> EntryWaiting => [.. MoveCandidates.Where(unit => state!.Location(unit.Id) is null).Select(unit => unit.Id)];
-
-    /// <summary>The units the building entry offers (plan A01): those the view sees.</summary>
-    private IReadOnlyList<BuildingEntryAction.Choice> EnterRows => [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit)).Select(unit => new BuildingEntryAction.Choice(unit.Id, unit.Id))];
 
     /// <summary>
     /// Pass 25 (UI review; plan section 15.3): a SMOKE squad or place, a DC, or an advance destination the panels no longer offer is dropped, so no select
@@ -6362,11 +6394,6 @@ else if (state is not null)
 
         PruneFire();
         PruneMoveDrafts();
-        if (state is not null && !VisibleUnits.Any(unit => unit.Id == enterUnit))
-        {
-            enterUnit = VisibleUnits.FirstOrDefault()?.Id ?? string.Empty;
-        }
-
         if (state is not null && !state.Perspectives.Any(perspective => perspective.Name == viewAs))
         {
             viewAs = state.PhasingSide;
@@ -6823,7 +6850,7 @@ else if (state is not null)
 
     private IReadOnlyList<PlayChoice> DeployChoices => state is null ? []
         : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:squad" && (state.Location(unit.Id) is not null || WaitsToEnter(unit))
-                && (Viewer.IsAdjudicator || unit.Side == viewAs) && GameState.Condition(unit, Conditions.Broken) != ConditionState.True)
+                && (Viewer.IsAdjudicator || unit.Side == viewAs) && Live.Planner.MayOfferDeploy(state, unit))
             .Select(unit => new PlayChoice(unit.Id, $"{unit.Id} ({unit.Side}{(state.Location(unit.Id) is null ? ", off board" : "")})"))];
 
     /// <summary>The SW the chosen squad possesses, any of which its second HS may take (A1.31; backlog section 23, built in pass 28b).</summary>
@@ -6985,11 +7012,6 @@ else if (state is not null)
 
         return Propose(GameActions.Recombine, JsonSerializer.SerializeToElement(arguments));
     }
-
-    private Task ProposeEntry() => Propose(GameActions.EnterBuilding, JsonSerializer.SerializeToElement(new
-    {
-        gameId, attemptId = Attempt("enter"), expectedRevision = (long)history!.Events.Count, unitId = enterUnit, location = enterLocation.Trim(),
-    }));
 
     /// <summary>The attacker's OVR choice for a pending attempt; an election is refused until step 10.</summary>
     private Task ProposeDeclaration(string unit, string choice) => Propose(GameActions.DeclareOverrun, JsonSerializer.SerializeToElement(new

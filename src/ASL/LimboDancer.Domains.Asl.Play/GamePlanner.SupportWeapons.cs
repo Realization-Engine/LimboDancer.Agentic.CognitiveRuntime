@@ -13,6 +13,38 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
+    /// <summary>
+    /// The SW actions whose phase the rules allow now to a view's weapons (the Play streamlining plan, S7; ruling R-PS.3), so the page shows only
+    /// those: transfer, drop, and dismantle for a weapon a unit possesses, each in its own phase for the holder's side (A4.431, A4.43, A9.8); recover
+    /// for a weapon lying unpossessed in a Location that holds a unit of the side, in the RPh or that side's MPh (A4.44). <paramref name="side"/> is
+    /// the view's side, or null for the adjudicator, who acts for either. Each action's own plan still decides the unit and the weapon.
+    /// </summary>
+    public SupportWeaponOffers SupportWeaponActions(GameState state, IEnumerable<EquipmentInstance> weapons, string? side)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(weapons);
+        bool transfer = false, drop = false, recover = false, dismantle = false;
+        foreach (var weapon in weapons)
+        {
+            if (weapon.Holding is { Role: HoldingRole.Possessed } holding && state.Unit(holding.Holder) is { } holder)
+            {
+                var phasing = holder.Side == state.PhasingSide;
+                transfer |= ScenarioA1SupportWeaponRules.TransferPhase(state.Phase, phasing);
+                // At the start of the CCPh a drop matters only to a holder in a Location with an enemy unit, where the Close Combat is.
+                drop |= ScenarioA1SupportWeaponRules.DropPhase(state.Phase, phasing) && (state.Phase != "ccph" || (state.Location(holder.Id)?.Location is { } held
+                    && state.At(held).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != holder.Side)));
+                dismantle |= Dismantlable(weapon) && ScenarioA1SupportWeaponRules.DismantlePhase(state.Phase, phasing);
+            }
+            else if (weapon.Holding is null && !recover && state.Location(weapon.Id)?.Location is { } at)
+            {
+                recover = state.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && (side is null || unit.Side == side)
+                    && ScenarioA1SupportWeaponRules.RecoverPhase(state.Phase, unit.Side == state.PhasingSide));
+            }
+        }
+
+        return new SupportWeaponOffers(transfer, drop, recover, dismantle);
+    }
+
     /// <summary>A.7 (pass 35, task 35.3): a Good Order unit: not broken, berserk, captured, stunned, shocked, or held in Melee. A TI unit is in Good Order.</summary>
     private static bool GoodOrder(UnitInstance unit) => ScenarioA1Definitions.GoodOrderOf(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
         Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, Conditions.Stunned), Is(unit, Conditions.Shocked));
@@ -126,6 +158,18 @@ public sealed partial class GamePlanner
         ArgumentNullException.ThrowIfNull(state);
         return [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && (side is null || unit.Side == side) && state.Location(unit.Id) is not null
             && ScenarioA1SupportWeaponRules.GuardDeploysAtWill(vocabulary.IsA(unit.Kind, "asl:squad"), IsGuard(state, unit), Is(unit, Conditions.Broken))).Select(unit => unit.Id)];
+    }
+
+    /// <summary>
+    /// Whether the Deploy form offers a squad now (the Play streamlining plan, S7): a Guard at will (A20.5), or in its own side's RPh a Good Order
+    /// squad that may Deploy (not Russian, A25.2) and has taken no other RPh action (A1.31). The leader and the entry turn are the plan's to check.
+    /// </summary>
+    public bool MayOfferDeploy(GameState state, UnitInstance squad)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(squad);
+        return ScenarioA1SupportWeaponRules.GuardDeploysAtWill(vocabulary.IsA(squad.Kind, "asl:squad"), IsGuard(state, squad), Is(squad, Conditions.Broken))
+            || (state.Phase == "rph" && squad.Side == state.PhasingSide && FreeToAct(squad) && !MayNotDeploy(squad) && RallyPhaseActionBar(state, squad.Id) is null);
     }
 
     /// <summary>The SW a unit possesses, in id order.</summary>
@@ -662,4 +706,11 @@ public sealed partial class GamePlanner
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
             [$"play.dismantle: {unit.Id} {(dismantled ? "dismantles" : "assembles")} {weapon.Id}, which counts as its use this phase (A9.8)"]);
     }
+}
+
+/// <summary>The SW actions a view may be offered now (the Play streamlining plan, S7).</summary>
+public readonly record struct SupportWeaponOffers(bool Transfer, bool Drop, bool Recover, bool Dismantle)
+{
+    /// <summary>Whether any action is offered, so the panel is shown.</summary>
+    public bool Any => Transfer || Drop || Recover || Dismantle;
 }

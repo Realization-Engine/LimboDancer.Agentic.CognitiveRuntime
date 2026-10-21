@@ -157,6 +157,17 @@ public sealed partial class GamePlanner
     /// hexside lies on the edge. A Guard takes its prisoners, only off its side's Friendly Board Edge or the edge of its exit condition (A20.53, A26.23).
     /// The units are Exited and may not return.
     /// </summary>
+    /// <summary>
+    /// The map edges a ground-level Location lies on, which a stack there may cross to leave the map (the Play streamlining plan, S7): the page
+    /// offers the exit only from such a Location. Empty above ground level or away from the edge; the exit's own plan still decides the rest.
+    /// </summary>
+    public IReadOnlyList<string> EdgesAt(GameState state, BoardLocation at)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(at);
+        return at.Level != 0 ? [] : MemoOf(state).ExitEdges.GetOrAdd(at, location => [.. EdgeSides(state, location).Select(item => item.Edge).Distinct(StringComparer.Ordinal)]);
+    }
+
     private GamePlan PlanExit(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string edge, string actor)
     {
         if (Replay(existing).Current is not { } state)

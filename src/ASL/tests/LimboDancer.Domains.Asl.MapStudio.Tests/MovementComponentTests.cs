@@ -107,12 +107,16 @@ public sealed class MovementComponentTests : IDisposable
         Assert.Equal("open", status.Find("#move-state").GetAttribute("data-window"));
         Assert.Contains("In Bypass along northeast", status.Find("#move-bypass-state").TextContent, StringComparison.Ordinal);
 
+        // The Play streamlining plan, S7: each button only while it may be used.
         var window = context.Render<MovementWindowActions>(parameters => parameters.Add(item => item.WindowOpen, true));
-        Assert.False(window.Find("#propose-pass").HasAttribute("disabled"));
-        Assert.True(window.Find("#propose-end-move").HasAttribute("disabled"));
+        Assert.NotEmpty(window.FindAll("#propose-pass"));
+        Assert.Empty(window.FindAll("#propose-end-move"));
+        window.Render(parameters => parameters.Add(item => item.WindowOpen, false));
+        Assert.Empty(window.FindAll("#propose-pass"));
+        Assert.NotEmpty(window.FindAll("#propose-end-move"));
         window.Render(parameters => parameters.Add(item => item.WindowOpen, (bool?)null));
-        Assert.True(window.Find("#propose-pass").HasAttribute("disabled"));
-        Assert.True(window.Find("#propose-end-move").HasAttribute("disabled"));
+        Assert.Empty(window.FindAll("#propose-pass"));
+        Assert.Empty(window.FindAll("#propose-end-move"));
     }
 
     // A23 (rulings R25.1, R25.5): units waiting off board are named, and the advance panel carries its own exit.
@@ -129,17 +133,11 @@ public sealed class MovementComponentTests : IDisposable
             .Add(item => item.Selected, new HashSet<string>()).Add(item => item.Destinations, []).Add(item => item.Edges, [new MapExitAction.EdgeChoice("top", "top (north)")])).FindAll("#advance-entry"));
     }
 
-    // A01, A16, C19, N03, N04 (UI review, pass 25): each keeps its ids, gates its button, and raises what the player chose.
+    // A16, C19, N03, N04 (UI review, pass 25): each keeps its ids, gates its button, and raises what the player chose. A01, the building entry, left
+    // the page with the Play streamlining plan's S7: a step into a building through the Movement form is the same entry.
     [Fact]
     public void TheSmallActionsKeepTheirIdsAndRaiseTheirChoices()
     {
-        string? unit = null;
-        var entry = context.Render<BuildingEntryAction>(parameters => parameters.Add(item => item.Units, [new BuildingEntryAction.Choice("g1", "g1 (german)")])
-            .Add(item => item.Location, "bd01:E4:0").Add(item => item.OnUnit, value => unit = value));
-        entry.Find("#enter-unit").Change("g1");
-        Assert.Equal("g1", unit);
-        Assert.Equal("[E4] on board 01", entry.Find("#enter-location").GetAttribute("value"));
-
         var reaction = context.Render<ReactionFireAction>(parameters => parameters.Add(item => item.Vehicle, "t34").Add(item => item.Attackers, ["g1", "gl1"])
             .Add(item => item.Leaders, ["gl1"]));
         Assert.True(reaction.Find("#propose-reaction").HasAttribute("disabled"));
