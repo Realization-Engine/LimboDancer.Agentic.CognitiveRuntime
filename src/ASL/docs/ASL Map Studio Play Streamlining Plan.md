@@ -45,6 +45,24 @@ The units list is emptied by each hand-over, so every step costs the same. The p
 
 Each fire adds two hand-overs and the fire's own actions in both columns.
 
+**Measured after P5 (2026-10-21, my Studio at db092393, game `ps-3v3-p5b`).** The whole German Movement Phase, the Russian side letting every stack move on: g1 by hand, the other ten stacks by a driver in the page that clicks what a player clicks (the map's clicks dispatched as pointer events on the board) and counts each action.
+
+| Measure | Before (P0) | Expected | Measured |
+|---|---|---|---|
+| Actions | 343 | about 97 | 148 |
+| Hand-overs | 58 | 24 | 22 |
+| Steps where the DEFENDER was asked | 29 | 20 | 24 |
+| Refusals for MF or a hex the stack may not enter | possible | none | none |
+
+The stop rule holds (148 of at most 171 actions, 22 of at most 29 hand-overs). Actions came in above the estimate because each hand-over is two actions (the button and the view's confirmation) and the estimate counted one, and because of the next finding. Steps made: 28 of 29; [A10], on the board's left edge half outside the map, took no click, as a player would pan first.
+
+Findings of the run, for the next tasks:
+
+- **"Since you last looked" covers the map after each hand-over.** It opens over the bottom of the map (rows 9 and 10 at this size) every time the moving side's view comes back, which with a plan is once a stack; it cost ten clicks to close and hid hexes being plotted. Proposed: after a hand-over that ends a plan, leave it closed and say in the header what happened.
+- **The DEFENDER was asked at 24 steps, not 20.** The rule asks wherever a Snap Shot could be taken (LOS to the Location left, A8.15), which the LOS survey did not count; it errs the way it should.
+- **Once, in a long session, the map stopped answering clicks** (real clicks too) until the page was reloaded; not seen again in the rest of the run. To be reproduced before the gate.
+- **g10's step into [N9] met the concealed r7** (A12.15): r7 was revealed, g10 forced back, and the engine ended its move; the plan said "no member of it may move on". Correct by the rules; the words could say what happened.
+
 **Method.** The clicks and hand-overs counted in the Studio as the same Movement Phase is played, before and after, with scripted dice; the time of the phase read from the page as in the Play Step Analysis; the refusals read from the audit log.
 
 **When to stop.** If, after P5, the measurement game's Movement Phase takes more than half of P0's hand-overs or actions (29 and 171), stop and report before P6.
