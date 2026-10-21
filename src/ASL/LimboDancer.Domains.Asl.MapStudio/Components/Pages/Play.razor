@@ -581,18 +581,6 @@ else if (state is not null)
                         {
                             <MovementStatus Movement="@movement" />
                         }
-                        @* The Play streamlining plan, S3 and S6: the route plotted on the map and made step by step; a plan that waits for the DEFENDER leaves
-                           nothing to do here but hand the screen over. *@
-                        @if (PlanNow is { Paused: null } running)
-                        {
-                            <p class="toolbar-note" id="move-route-running">The stack is moving along its route: @(running.Next) of @running.Route.Count steps made. The DEFENDER decides at the steps where he could fire.</p>
-                        }
-                        else if (!Viewer.IsAdjudicator)
-                        {
-                            <MovementRoutePanel Ready="@(moveUnits.Count > 0)" Plotting="@plotOn" Steps="@PlotSteps" Stop="@PlotStop" Note="@plotNote" CanMove="@PlotCanMove" Busy="@busy"
-                                Paused="@PlanNow?.Paused" Remaining="@(PlanNow is { } paused ? paused.Route.Count - paused.Next : 0)"
-                                OnToggle="@TogglePlot" OnUndo="@UndoPlot" OnClear="@ClearPlot" OnMove="@MoveAlongRoute" OnContinue="@PlanContinue" OnChange="@PlanChange" OnEnd="@PlanEnd" />
-                        }
                         @if (MoveStopped)
                         {
                             <p class="fail" id="move-stopped">
@@ -620,7 +608,26 @@ else if (state is not null)
                         }
                         <div class="toolbar">
                             <InfantryMovementAction Movers="@MoveRows" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id"
-                                OnToggle="@ToggleMover" OnDraftChanged="@SetMoveDraft" OnPropose="@ProposeMove" OnOverrunNtc="@ProposeOverrunNtc" />
+                                OnToggle="@ToggleMover" OnDraftChanged="@SetMoveDraft" OnPropose="@ProposeMove" OnOverrunNtc="@ProposeOverrunNtc">
+                                <Route>
+                                    @* The Play streamlining plan, S3 and S6: the route plotted on the map and made step by step; a plan that waits for the
+                                       DEFENDER leaves nothing to do here but hand the screen over. *@
+                                    @if (PlanNow is { Paused: null } running)
+                                    {
+                                        <p class="toolbar-note" id="move-route-running">The stack is moving along its route: @(running.Next) of @running.Route.Count steps made. The DEFENDER decides at the steps where he could fire.</p>
+                                    }
+                                    else if (!Viewer.IsAdjudicator)
+                                    {
+                                        @if (planNote is { } lastPlan && PlanNow is null)
+                                        {
+                                            <p class="toolbar-note" id="move-route-last">@lastPlan</p>
+                                        }
+                                        <MovementRoutePanel Ready="@(moveUnits.Count > 0)" Plotting="@plotOn" Steps="@PlotSteps" Stop="@PlotStop" Note="@plotNote" CanMove="@PlotCanMove" Busy="@busy"
+                                            Paused="@PlanNow?.Paused" Remaining="@(PlanNow is { } paused ? paused.Route.Count - paused.Next : 0)"
+                                            OnToggle="@TogglePlot" OnUndo="@UndoPlot" OnClear="@ClearPlot" OnMove="@MoveAlongRoute" OnContinue="@PlanContinue" OnChange="@PlanChange" OnEnd="@PlanEnd" />
+                                    }
+                                </Route>
+                            </InfantryMovementAction>
                             <MapExitAction SelectId="move-exit" ButtonId="propose-exit" Edges="@ExitEdges" Edge="@moveExit" Ready="@(moveUnits.Count > 0)"
                                 OnEdge="@(edge => moveExit = edge)" OnPropose="@ProposeExit" />
                             @if (SmokePlacers.Any())
@@ -869,6 +876,10 @@ else if (state is not null)
                             {
                                 <span class="toolbar-note" id="dff-note">No member of the moving stack at @PlaceOf(movingAt) can move on: each is broken, pinned, or eliminated. Fire at it again below, or pass, which ends its move (A8.1, A4.2).</span>
                             }
+                            else if (PlanNow is not null && !Viewer.IsAdjudicator && state.Movement is not { WindowOpen: true })
+                            {
+                                <span class="toolbar-note" id="dff-note">The moving stack is at @PlaceOf(movingAt) and waits for the moving side to go on along its route, change it, or end its move.</span>
+                            }
                             else if (PlanNow is { } defending && !Viewer.IsAdjudicator)
                             {
                                 <span class="toolbar-note" id="dff-note">The moving stack is at @PlaceOf(movingAt), step @defending.Next of its route: fire at it below, or let it move on (A8.1).</span>
@@ -888,6 +899,10 @@ else if (state is not null)
                                 {
                                     <button class="propose-mandatory-fire-one" data-unit="@owing" @onclick="@(() => ProposeMandatoryFire(mandatory, owing))">Propose: @Words(owing) attacks</button>
                                 }
+                            }
+                            else if (!Viewer.IsAdjudicator && PlanNow is not null && state.Movement is not { WindowOpen: true })
+                            {
+                                @* A plan that waits for the moving side: its window is closed, so nothing for the DEFENDER to pass. *@
                             }
                             else if (!Viewer.IsAdjudicator && PlanNow is not null)
                             {
@@ -4575,7 +4590,18 @@ else if (state is not null)
             handOver = null;
             unconfirmed = false;
             ResetForView();
-            activityTab = SinceLooked.Count > 0 ? "since" : null;
+
+            // The Play streamlining plan, P5's finding: after a plan hands the stack back, the moving side reads how it ended in the header, and the
+            // map is left clear for its next route; "Since you last looked" stays a click away.
+            if (planHandedBack is { } ended && next == ended.Side)
+            {
+                (activityTab, planNote, planHandedBack) = (null, ended.Note, null);
+            }
+            else
+            {
+                (activityTab, planNote) = (SinceLooked.Count > 0 ? "since" : null, null);
+            }
+
             (highlight, openingHex) = (openingHex, null);
             enterUnit = VisibleUnits.FirstOrDefault()?.Id ?? string.Empty;
             ShowActions();
@@ -7332,6 +7358,7 @@ else if (state is not null)
     private void TogglePlot()
     {
         plotOn = !plotOn;
+        planNote = null;
         plotRoute.Clear();
         (plotVersion, plotNote) = (plotVersion + 1, null);
         RefreshPlot();
@@ -7430,8 +7457,18 @@ else if (state is not null)
         }
 
         status = run.Refusal.Count > 0 ? $"{run.Note} {PlainReason(run.Refusal[0])}" : run.Note;
+
+        // A plan that ended or waits for the moving side: its view, when it comes back, is told so in the header.
+        planHandedBack = run.Turn != MovementPlanTurn.Defender && state?.PhasingSide is { } moving && viewAs != moving ? (moving, status) : null;
+        planNote = run.Turn != MovementPlanTurn.Defender && viewAs == state?.PhasingSide ? status : null;
         Refresh();
     }
+
+    /// <summary>A plan's end, or its pause, to tell the moving side's view when the screen comes back to it; null when there is none.</summary>
+    private (string Side, string Note)? planHandedBack;
+
+    /// <summary>How the moving side's last plan ended, shown over the route panel until the next route is plotted.</summary>
+    private string? planNote;
 
     /// <summary>The DEFENDER's view opened on a plan: the steps none of his units could fire at pass for him, up to one where he decides.</summary>
     private async Task ReviewPlan()

@@ -365,6 +365,51 @@ public sealed class PlayPagePass31cTests : IDisposable
         Assert.Null(live.Plans.Of("village"));
     }
 
+    // The Play streamlining plan, S6 (A8.11): the DEFENDER's fire at a step of the route hands it back to the moving side once he lets the stack
+    // move on; while it waits he has nothing to pass; the moving side continues along the rest of the route.
+    [Fact]
+    public void TheDefendersFireHandsTheRouteBackToTheMovingSide()
+    {
+        var hexes = Hexes();
+        var page = NewGame("german", "russian");
+        Place(page, "g1", "attacker-squad", hexes.From);
+        Place(page, "r1", "defender-squad", hexes.Building);
+        Commit(page, "#propose-setup");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
+
+        page.Find(".move-unit[data-unit='g1']").Change(true);
+        page.Find("#move-route-plot").Click();
+        ClickHex(page, hexes.Open);
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("#move-route-steps li")));
+        ClickHex(page, hexes.From);
+        page.WaitForAssertion(() => Assert.Equal(2, page.FindAll("#move-route-steps li").Count));
+        page.Find("#move-route-go").Click();
+        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: true } window && window.Location.ToString() == hexes.Open));
+
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("#plan-move-on")));
+        page.Find("#fire-from").Change(hexes.Building);
+        page.Find(".fire-firer[data-unit='r1']").Change(true);
+        page.Find("#fire-target").Change(hexes.Open);
+        page.Find("#propose-fire").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.True(dice.Enqueue([6, 6]));
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+
+        page.Find("#plan-move-on").Click();
+        page.WaitForAssertion(() => Assert.Equal("The DEFENDER fired at the stack.", live.Plans.Of("village")?.Paused));
+        Assert.Empty(page.FindAll("#plan-move-on"));
+
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("1 left", page.Find("#move-route-continue").TextContent, StringComparison.Ordinal));
+        page.Find("#move-route-continue").Click();
+        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: true } window && window.Location.ToString() == hexes.From));
+    }
+
     // Design D13: a typed Location is armed, the header says what the next click does, the next hex clicked fills it and disarms it; an armed
     // field is the view's draft, so a hand-over drops it.
     [Fact]
