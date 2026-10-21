@@ -49,6 +49,11 @@ else
             <p id="play-handover-score" class="handover-score">@Score</p>
         }
         <button id="play-handover-confirm" class="primary" @onclick="Confirmed">I am @Label: show my view</button>
+        @if (PassLabel is { Length: > 0 } pass)
+        {
+            @* The Play streamlining plan, S1: the DEFENDER passes from here, without opening his view; the screen then goes back to the moving side. *@
+            <button type="button" id="play-handover-pass" @onclick="OnPass">@pass</button>
+        }
         @* The user, 2026-10-04: the note says what holds at this moment, not everything the screen ever keeps back. *@
         <p class="handover-note" id="play-handover-note">
             @if (Setup)
@@ -113,6 +118,13 @@ else
 
     [Parameter]
     public EventCallback Confirmed { get; set; }
+
+    /// <summary>The words of a pass the arriving DEFENDER may make from this screen (the Play streamlining plan, S1); none when there is none to make.</summary>
+    [Parameter]
+    public string? PassLabel { get; set; }
+
+    [Parameter]
+    public EventCallback OnPass { get; set; }
 
     [Parameter]
     public RenderFragment? ChildContent { get; set; }

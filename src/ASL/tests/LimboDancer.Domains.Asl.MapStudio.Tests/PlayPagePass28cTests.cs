@@ -187,6 +187,29 @@ public sealed class PlayPagePass28cTests : IDisposable
         page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: false }));
     }
 
+    // The Play streamlining plan, S1: the DEFENDER passes from the hand-over screen without opening his view; the screen then goes back to the moving
+    // side, whose own view opens only when it confirms.
+    [Fact]
+    public void TheDefenderPassesFromTheHandOverScreen()
+    {
+        var hexes = Hexes();
+        var page = Started();
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
+        page.Find(".move-unit[data-unit='g1']").Change(true);
+        page.Find("#move-to").Change(hexes.Three);
+        Commit(page, "#propose-move");
+
+        page.Find("#play-hand-over").Click();
+        Assert.Contains("Russian side", page.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
+        page.Find("#play-handover-pass").Click();
+        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: false }));
+        Assert.Contains("German side", page.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#play-handover-pass"));
+        page.Find("#play-handover-confirm").Click();
+        Assert.NotEmpty(page.FindAll("#propose-end-move"));
+    }
+
     // The Play streamlining plan, S2 (rulings Q3, Q4): with the setting on, a step and a pass commit on one click and no Confirm is asked; a
     // refused step still opens its review; with the setting off, Confirm is asked again.
     [Fact]

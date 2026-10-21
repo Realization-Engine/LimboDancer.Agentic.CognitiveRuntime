@@ -79,7 +79,7 @@ else
     }
 </PlayContextHeader>
 
-<HandOverScreen Next="@handOver" Label="@ViewLabel(handOver)" Confirmed="ConfirmView" When="@HandOverWhen" Why="@HandOverWhy" Tasks="@HandOverTasks"
+<HandOverScreen Next="@handOver" Label="@ViewLabel(handOver)" Confirmed="ConfirmView" PassLabel="@HandOverPassLabel" OnPass="@PassFromHandOver" When="@HandOverWhen" Why="@HandOverWhy" Tasks="@HandOverTasks"
                 HappenedTitle="@HandOverHappenedTitle" Happened="@HandOverHappened" Score="@HandOverScore" Setup="@SetupOpen">
 <Map>
     @* Pass 31c (design D16; the user, 2026-10-04; ruling R31c.3): the map as both sides know it, with the Locations the screen's lines name
@@ -4573,6 +4573,56 @@ else if (state is not null)
         retainDm.Clear();
         moveUnits.Clear();
         ResetDrafts(keepCloseCombat: true);
+    }
+
+    /// <summary>
+    /// The Play streamlining plan, S1: the hand-over screen's pass, for the DEFENDER the screen goes to while his window on a step is open and no
+    /// plan is being made (a plan has its own); null otherwise. It is offered whatever the DEFENDER's units are, so the screen tells the moving side
+    /// nothing.
+    /// </summary>
+    private string? HandOverPassLabel => handOver is { } arriving && state is { Phase: "mph", Movement.WindowOpen: true } && arriving == DefenderSide && PlanNow is null
+        ? "Let the stack move on: pass, without opening my view" : null;
+
+    /// <summary>
+    /// The DEFENDER passes from the hand-over screen; the screen then goes back to the moving side, since the DEFENDER is the one at it. A pass the
+    /// gate refuses (Mandatory Fire owed) opens the DEFENDER's own view instead, where he reads why: the reason is not shown on a screen both read.
+    /// </summary>
+    private async Task PassFromHandOver()
+    {
+        if (busy || handOver is not { } defender || state?.PhasingSide is not { } mover || history is null)
+        {
+            return;
+        }
+
+        var node = new System.Text.Json.Nodes.JsonObject
+        {
+            ["gameId"] = gameId,
+            ["attemptId"] = Attempt("pass"),
+            ["expectedRevision"] = history.Events.Count,
+            [GamePlanner.ProposedByArgument] = defender,
+        };
+        var arguments = JsonSerializer.SerializeToElement(node);
+        busy = true;
+        PlayResult result;
+        try
+        {
+            var proposed = await Run(() => Live.Play.ProposeAsync(GameActions.PassFire, arguments, Live.Principal));
+            result = proposed.Outcome == PlayOutcome.NeedsConfirmation
+                ? await Run(() => Live.Play.ConfirmAsync(GameActions.PassFire, arguments, Live.Principal, proposed.Correlation)) : proposed;
+        }
+        finally
+        {
+            busy = false;
+        }
+
+        if (result.Outcome is PlayOutcome.Committed or PlayOutcome.Replay)
+        {
+            Refresh();
+            (handOver, unconfirmed) = (mover, true);
+            return;
+        }
+
+        await ConfirmView();
     }
 
     private async Task ConfirmView()
