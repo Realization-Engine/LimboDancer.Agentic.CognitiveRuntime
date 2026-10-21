@@ -38,6 +38,13 @@ public sealed class LivePlay
         Planner = new GamePlanner(Store, new StudioBoardCatalog(boards, Footprints), units.Vocabulary, Catalogs, cardLibrary: Cards);
         Audit = new FileAuditSink(Path.Combine(Root, "audit.jsonl"));
         Play = new GamePlay(Planner, Store, Audit, roller: roller);
+        Plans = new MovementPlans(this);
+    }
+
+    /// <summary>The movement plans being made, one per game (the Play streamlining plan, S6); kept as long as this service, never in a game.</summary>
+    public MovementPlans Plans
+    {
+        get;
     }
 
     public CampaignPlayableFootprints Footprints

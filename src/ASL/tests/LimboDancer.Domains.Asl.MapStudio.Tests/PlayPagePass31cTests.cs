@@ -330,6 +330,41 @@ public sealed class PlayPagePass31cTests : IDisposable
         Assert.Empty(page.FindAll("#range-result"));
     }
 
+    // The Play streamlining plan, S3 and S6: a route is plotted on the map, a hex a click, a hex the stack may not enter saying why; the route is
+    // made step by step, the DEFENDER deciding from his own view where he could fire; at the route's end the move ends and the plan is gone.
+    [Fact]
+    public void ARouteIsPlottedOnTheMapAndMadeStepByStep()
+    {
+        var hexes = Hexes();
+        var page = NewGame("german", "russian");
+        Place(page, "g1", "attacker-squad", hexes.From);
+        Place(page, "r1", "defender-squad", hexes.Building);
+        Commit(page, "#propose-setup");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
+        Assert.Equal("mph", Current.Phase);
+
+        page.Find(".move-unit[data-unit='g1']").Change(true);
+        page.Find("#move-route-plot").Click();
+        ClickHex(page, hexes.Building);
+        page.WaitForAssertion(() => Assert.Contains("Known enemy", page.Find("#move-route-note").TextContent, StringComparison.Ordinal));
+        Assert.Empty(page.FindAll("#move-route-steps li"));
+
+        ClickHex(page, hexes.Open);
+        page.WaitForAssertion(() => Assert.Contains(Said(hexes.Open), page.Find("#move-route-steps").TextContent, StringComparison.Ordinal));
+        page.Find("#move-route-go").Click();
+        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: true } window && window.Location.ToString() == hexes.Open));
+        Assert.Equal(1, live.Plans.Of("village")?.Next);
+
+        // A8.1: r1 sees the step, so the DEFENDER decides there, from his own view, and lets the stack move on; the route ends, and so does the move.
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("#plan-move-on")));
+        page.Find("#plan-move-on").Click();
+        page.WaitForAssertion(() => Assert.True(Current.Unit("g1")!.MovementEnded));
+        Assert.Null(live.Plans.Of("village"));
+    }
+
     // Design D13: a typed Location is armed, the header says what the next click does, the next hex clicked fills it and disarms it; an armed
     // field is the view's draft, so a hand-over drops it.
     [Fact]

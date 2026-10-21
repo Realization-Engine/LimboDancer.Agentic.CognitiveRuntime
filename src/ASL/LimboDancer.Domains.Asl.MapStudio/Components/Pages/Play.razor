@@ -581,6 +581,18 @@ else if (state is not null)
                         {
                             <MovementStatus Movement="@movement" />
                         }
+                        @* The Play streamlining plan, S3 and S6: the route plotted on the map and made step by step; a plan that waits for the DEFENDER leaves
+                           nothing to do here but hand the screen over. *@
+                        @if (PlanNow is { Paused: null } running)
+                        {
+                            <p class="toolbar-note" id="move-route-running">The stack is moving along its route: @(running.Next) of @running.Route.Count steps made. The DEFENDER decides at the steps where he could fire.</p>
+                        }
+                        else if (!Viewer.IsAdjudicator)
+                        {
+                            <MovementRoutePanel Ready="@(moveUnits.Count > 0)" Plotting="@plotOn" Steps="@PlotSteps" Stop="@PlotStop" Note="@plotNote" CanMove="@PlotCanMove" Busy="@busy"
+                                Paused="@PlanNow?.Paused" Remaining="@(PlanNow is { } paused ? paused.Route.Count - paused.Next : 0)"
+                                OnToggle="@TogglePlot" OnUndo="@UndoPlot" OnClear="@ClearPlot" OnMove="@MoveAlongRoute" OnContinue="@PlanContinue" OnChange="@PlanChange" OnEnd="@PlanEnd" />
+                        }
                         @if (MoveStopped)
                         {
                             <p class="fail" id="move-stopped">
@@ -857,6 +869,10 @@ else if (state is not null)
                             {
                                 <span class="toolbar-note" id="dff-note">No member of the moving stack at @PlaceOf(movingAt) can move on: each is broken, pinned, or eliminated. Fire at it again below, or pass, which ends its move (A8.1, A4.2).</span>
                             }
+                            else if (PlanNow is { } defending && !Viewer.IsAdjudicator)
+                            {
+                                <span class="toolbar-note" id="dff-note">The moving stack is at @PlaceOf(movingAt), step @defending.Next of its route: fire at it below, or let it move on (A8.1).</span>
+                            }
                             else
                             {
                                 <span class="toolbar-note" id="dff-note">The moving stack is at @PlaceOf(movingAt): fire at it below, or pass (A8.1).</span>
@@ -872,6 +888,12 @@ else if (state is not null)
                                 {
                                     <button class="propose-mandatory-fire-one" data-unit="@owing" @onclick="@(() => ProposeMandatoryFire(mandatory, owing))">Propose: @Words(owing) attacks</button>
                                 }
+                            }
+                            else if (!Viewer.IsAdjudicator && PlanNow is not null)
+                            {
+                                @* The Play streamlining plan, S6 (rulings Q8, Q9): the DEFENDER lets the stack move on, at this step or to the end of its route. *@
+                                <button type="button" id="plan-move-on" class="primary" disabled="@busy" @onclick="@(() => PlanMoveOn(false))">Let it move on</button>
+                                <button type="button" id="plan-move-on-end" disabled="@busy" title="Pass at every later step of this route without being asked; Mandatory Fire still stops it." @onclick="@(() => PlanMoveOn(true))">Let it move on to the end</button>
                             }
                             else if (!Viewer.IsAdjudicator)
                             {
@@ -2725,6 +2747,14 @@ else if (state is not null)
     {
         highlight = facts is null ? null : GameMaps.LocationOf(board, facts.Index);
         (Picking.Picked, Picking.Serial) = (highlight?.ToString(), Picking.Serial + 1);
+
+        // The Play streamlining plan, S3: while a route is plotted, a click adds the hex to it.
+        if (plotOn && highlight is { } plotted && state is not null && handOver is null && !SetupOpen)
+        {
+            AddToRoute(plotted);
+            return;
+        }
+
         if (highlight is not { } at || state is null || !SetupOpen || handOver is not null)
         {
             return;
@@ -3457,6 +3487,13 @@ else if (state is not null)
     private string? MapMarks(StudioBoard board, string? marks)
     {
         var setup = SetupMarks(board, marks);
+
+        // The Play streamlining plan, S3: the plotted route and its next Locations, built when the plot changes and kept.
+        if (plotOn && handOver is null && plotMarks is { Length: > 0 } route)
+        {
+            setup = setup is { Length: > 4 } && setup.EndsWith("</g>", StringComparison.Ordinal) ? $"{setup[..^4]}{route}</g>" : $"<g id=\"layer-marks\">{route}</g>";
+        }
+
         if (!showParentBoundaries || handOver is not null || OwnershipFor(board) is not { } ownership)
         {
             return setup;
@@ -4517,7 +4554,15 @@ else if (state is not null)
         ResetDrafts(keepCloseCombat: true);
     }
 
-    private void ConfirmView()
+    private async Task ConfirmView()
+    {
+        ConfirmViewNow();
+
+        // The Play streamlining plan, S6: the DEFENDER's view opened on a plan passes the steps none of his units could fire at.
+        await ReviewPlan();
+    }
+
+    private void ConfirmViewNow()
     {
         if (handOver is { } next)
         {
@@ -5591,6 +5636,14 @@ else if (state is not null)
         }
 
         PruneMoveDrafts();
+
+        // A route plotted for one stack is not another's.
+        if (plotOn)
+        {
+            plotRoute.Clear();
+            (plotVersion, plotNote) = (plotVersion + 1, null);
+            RefreshPlot();
+        }
     }
 
     private void ToggleAdvancer(UnitSelectionList.Toggle toggle)
@@ -6233,6 +6286,9 @@ else if (state is not null)
         {
             viewAs = state.PhasingSide;
         }
+
+        // The Play streamlining plan, S3: the route is plotted again only when the state or the stack has changed.
+        RefreshPlot();
     }
 
     private void AddPlacement()
@@ -7196,6 +7252,195 @@ else if (state is not null)
     }
 
     private static string Attempt(string kind) => $"{kind}-{Guid.NewGuid():N}"[..(kind.Length + 13)];
+
+    // The Play streamlining plan, S3 and S6: the route the moving side plots on the map, read again only when the state, the stack, or the route
+    // changes (the plot and its marks are kept between renders), and the plan that makes it.
+    private bool plotOn;
+    private readonly List<BoardLocation> plotRoute = [];
+    private int plotVersion;
+    private MovementPlot? plot;
+    private (GameState? State, string Movers, int Version) plotFor;
+    private string? plotMarks;
+    private string? plotNote;
+
+    /// <summary>The plan being made in this game, or null.</summary>
+    private MovementPlan? PlanNow => gameId.Length > 0 ? Live.Plans.Of(gameId) : null;
+
+    /// <summary>The DEFENDER of the moving side's MPh: the other side.</summary>
+    private string DefenderSide => state?.Sides.Select(side => side.Id).FirstOrDefault(id => id != state.PhasingSide) ?? string.Empty;
+
+    /// <summary>Plots the route again when the state, the stack, or the route has changed since the last plot; otherwise keeps it.</summary>
+    private void RefreshPlot()
+    {
+        if (!plotOn || state is null || history is null || moveUnits.Count == 0 || handOver is not null || state.PhasingSide is not { } mover)
+        {
+            (plot, plotMarks) = (null, null);
+            return;
+        }
+
+        var movers = moveUnits.Order(StringComparer.Ordinal).ToArray();
+        var key = (state, string.Join(",", movers), plotVersion);
+        if (plot is not null && ReferenceEquals(plotFor.State, state) && plotFor.Movers == key.Item2 && plotFor.Version == plotVersion)
+        {
+            return;
+        }
+
+        plotFor = key;
+        plot = Live.Planner.Plot(new GameScope(LivePlay.Tenant, gameId), history.Events, movers, plotRoute, mover);
+        plotMarks = PlotMarks();
+    }
+
+    /// <summary>The route and the Locations its end may enter, drawn as marks: the counters are not drawn again for a route.</summary>
+    private string? PlotMarks()
+    {
+        if (plot is null || MapLayers is not { Board: { } board })
+        {
+            return null;
+        }
+
+        var marks = new System.Text.StringBuilder();
+        foreach (var step in plot.Route)
+        {
+            marks.Append(GameMaps.HexMark(board, step.To, "plot-route", "#244f7740", "#244f77", 4, false, $"{Mf(step.HalfMfLeft)} left"));
+        }
+
+        foreach (var option in plot.Next)
+        {
+            if (option.Refusal is null)
+            {
+                marks.Append(GameMaps.HexMark(board, option.To, "plot-option", "#3f5a2230", "#3f5a22", 2, true, $"{Mf(option.HalfMf)} MF"));
+            }
+        }
+
+        return marks.ToString();
+    }
+
+    /// <summary>Half MF in words, such as "1½"; "?" when not known.</summary>
+    private static string Mf(int? halfMf) => halfMf is not { } half ? "?" : $"{half / 2}{(half % 2 == 1 ? "½" : string.Empty)}";
+
+    /// <summary>A refusal's words without its code, as the route panel says it.</summary>
+    private static string PlainReason(string reason) => reason.IndexOf(": ", StringComparison.Ordinal) is var at and > 0 && !reason[..at].Contains(' ', StringComparison.Ordinal)
+        ? reason[(at + 2)..] : reason;
+
+    private IReadOnlyList<string> PlotSteps => plot is null ? [] : [.. plot.Route.Select(step => $"{PlaceOf(step.To.ToString())}: {Mf(step.HalfMf)} MF, {Mf(step.HalfMfLeft)} left")];
+
+    private string? PlotStop => plot?.Stop is not { } stop ? null
+        : plot.Route.Count < plotRoute.Count ? $"The route stops before {PlaceOf(plotRoute[plot.Route.Count].ToString())}: {PlainReason(stop)}" : PlainReason(stop);
+
+    private bool PlotCanMove => plot is not null && plotRoute.Count > 0 && plot.Route.Count == plotRoute.Count;
+
+    private void TogglePlot()
+    {
+        plotOn = !plotOn;
+        plotRoute.Clear();
+        (plotVersion, plotNote) = (plotVersion + 1, null);
+        RefreshPlot();
+    }
+
+    private void UndoPlot()
+    {
+        if (plotRoute.Count > 0)
+        {
+            plotRoute.RemoveAt(plotRoute.Count - 1);
+            (plotVersion, plotNote) = (plotVersion + 1, null);
+            RefreshPlot();
+        }
+    }
+
+    private void ClearPlot()
+    {
+        plotRoute.Clear();
+        (plotVersion, plotNote) = (plotVersion + 1, null);
+        RefreshPlot();
+    }
+
+    /// <summary>A hex clicked while plotting: the Location of it the route's end may enter is added, or the panel says why it may not be.</summary>
+    private void AddToRoute(BoardLocation at)
+    {
+        RefreshPlot();
+        if (plot is null)
+        {
+            return;
+        }
+
+        var sameHex = plot.Next.Where(option => option.To.Board == at.Board && option.To.Hex == at.Hex).ToArray();
+        if ((sameHex.FirstOrDefault(option => option.Refusal is null && option.To.Level == 0) ?? sameHex.FirstOrDefault(option => option.Refusal is null)) is { } chosen)
+        {
+            plotRoute.Add(chosen.To);
+            (plotVersion, plotNote) = (plotVersion + 1, null);
+            RefreshPlot();
+            return;
+        }
+
+        plotNote = sameHex.Length > 0 ? $"{PlaceOf(at.ToString())}: {PlainReason(sameHex[0].Refusal!)}" : $"{PlaceOf(at.ToString())} is not next to the route's end.";
+    }
+
+    /// <summary>The plotted route is made: its first step now, then the DEFENDER decides where he could fire (the plan's S6).</summary>
+    private async Task MoveAlongRoute()
+    {
+        if (busy || !PlotCanMove || state?.PhasingSide is not { } mover)
+        {
+            return;
+        }
+
+        var plan = new MovementPlan(gameId, [.. moveUnits.Order(StringComparer.Ordinal)], [.. plotRoute], moveAssault, moveDoubleTime, mover, DefenderSide, Attempt("plan"));
+        await RunPlan(() => Live.Plans.Start(plan));
+        (plotOn, plot, plotMarks, plotNote) = (false, null, null, null);
+        plotRoute.Clear();
+    }
+
+    private Task PlanMoveOn(bool toEnd) => RunPlan(() => Live.Plans.MoveOn(gameId, toEnd));
+
+    private Task PlanContinue() => RunPlan(() => Live.Plans.Continue(gameId));
+
+    private void PlanChange()
+    {
+        Live.Plans.Drop(gameId);
+        plotOn = true;
+        plotRoute.Clear();
+        (plotVersion, plotNote) = (plotVersion + 1, null);
+        RefreshPlot();
+    }
+
+    private Task PlanEnd()
+    {
+        Live.Plans.Drop(gameId);
+        return ProposeEndMove();
+    }
+
+    /// <summary>Runs a step of the plan with the page busy, then reads the game again and says what happened.</summary>
+    private async Task RunPlan(Func<Task<MovementPlanRun>> work)
+    {
+        if (busy)
+        {
+            return;
+        }
+
+        (busy, status) = (true, "Moving along the route.");
+        MovementPlanRun run;
+        try
+        {
+            StateHasChanged();
+            await DrawBusy();
+            run = await work();
+        }
+        finally
+        {
+            busy = false;
+        }
+
+        status = run.Refusal.Count > 0 ? $"{run.Note} {PlainReason(run.Refusal[0])}" : run.Note;
+        Refresh();
+    }
+
+    /// <summary>The DEFENDER's view opened on a plan: the steps none of his units could fire at pass for him, up to one where he decides.</summary>
+    private async Task ReviewPlan()
+    {
+        if (PlanNow is { } plan && viewAs == plan.Defender && !Viewer.IsAdjudicator && state?.Movement is { WindowOpen: true })
+        {
+            await RunPlan(() => Live.Plans.Review(gameId));
+        }
+    }
 
     /// <summary>
     /// Pass 31 (play test P-06, P-12, P-13): the consequences among the reasons the view may read, while the proposal waits for Confirm. They are
