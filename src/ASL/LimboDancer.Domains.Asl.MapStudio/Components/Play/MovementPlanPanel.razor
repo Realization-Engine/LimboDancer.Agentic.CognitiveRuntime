@@ -1,0 +1,125 @@
+@* The Play streamlining plan, S8: the moving side's Movement Plan for the whole Movement Phase, under the Unit Planner. A row per stack that may
+   still move (ruling Q14: one Location's units, split by unticking one); each row's route is plotted on the map as the Movement form's route is,
+   and "Move every planned stack" makes them in the rows' order, each as a plotted route is made (rulings Q12, Q13). *@
+<div class="movement-plan" id="movement-plan">
+    @if (Closed is { } closed)
+    {
+        <p class="toolbar-note" id="movement-plan-closed">@closed</p>
+    }
+    else
+    {
+        @if (Note is { } note)
+        {
+            <p class="toolbar-note" id="movement-plan-note">@note</p>
+        }
+        @if (Rows.Count == 0)
+        {
+            <p class="toolbar-note" id="movement-plan-none">No stack may move now.</p>
+        }
+        <ol class="movement-plan-rows" id="movement-plan-rows">
+            @foreach (var (row, index) in Rows.Select((row, index) => (row, index)))
+            {
+                <li @key="row.Key" class="movement-plan-row@(row.Plotting ? " plotting" : string.Empty)" data-row="@row.Key">
+                    <div class="movement-plan-units">
+                        @foreach (var unit in row.Units)
+                        {
+                            <label title="@(row.Units.Count > 1 ? "Untick to plan this unit as a stack of its own" : null)">
+                                <input type="checkbox" class="movement-plan-unit" data-unit="@unit.Id" checked disabled="@(row.Units.Count == 1 || Busy)"
+                                       @onchange="@(() => OnSplit.InvokeAsync((row.Key, unit.Id)))" />
+                                @unit.Label
+                            </label>
+                        }
+                    </div>
+                    <p class="toolbar-note movement-plan-route">@row.Route</p>
+                    <div class="toolbar">
+                        @if (row.Plotting)
+                        {
+                            <button type="button" class="primary movement-plan-done" disabled="@Busy" @onclick="@(() => OnPlot.InvokeAsync(null))">Done</button>
+                            <button type="button" class="link movement-plan-undo" disabled="@(!row.HasRoute || Busy)" @onclick="OnUndo">Undo the last hex</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="movement-plan-plot" disabled="@(Busy || Running)" @onclick="@(() => OnPlot.InvokeAsync(row.Key))">@(row.HasRoute ? "Change" : "Plot")</button>
+                        }
+                        <button type="button" class="link movement-plan-clear" disabled="@(!row.HasRoute || Busy || Running)" @onclick="@(() => OnClear.InvokeAsync(row.Key))">Clear</button>
+                        <button type="button" class="link movement-plan-up" disabled="@(index == 0 || Busy || Running)" title="Move earlier" @onclick="@(() => OnMove.InvokeAsync((row.Key, -1)))">Up</button>
+                        <button type="button" class="link movement-plan-down" disabled="@(index == Rows.Count - 1 || Busy || Running)" title="Move later" @onclick="@(() => OnMove.InvokeAsync((row.Key, 1)))">Down</button>
+                    </div>
+                    @if (row.Plotting && Stop is { } stop)
+                    {
+                        <p class="fail movement-plan-stop">@stop</p>
+                    }
+                </li>
+            }
+        </ol>
+        <div class="toolbar">
+            <button type="button" class="primary" id="movement-plan-run" disabled="@(Planned == 0 || Busy || Running)" @onclick="OnRun"
+                    title="Makes the planned routes in this order; a stack without a route does not move. The DEFENDER is asked where he could fire.">
+                Move every planned stack (@Planned)
+            </button>
+            @if (Finished)
+            {
+                <button type="button" id="movement-plan-end-phase" disabled="@Busy" @onclick="OnEndPhase">End the Movement Phase</button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>One stack of the plan: its units, its route in words, and whether its route is being plotted now.</summary>
+    public sealed record Row(string Key, IReadOnlyList<PlayChoice> Units, string Route, bool HasRoute, bool Plotting);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Row> Rows { get; set; } = [];
+
+    /// <summary>Why the plan is not made now (another side's view, another phase); the panel says only that.</summary>
+    [Parameter]
+    public string? Closed { get; set; }
+
+    /// <summary>What the plan's last run left, or why a hex was not added.</summary>
+    [Parameter]
+    public string? Note { get; set; }
+
+    /// <summary>Where the row being plotted stops, and why.</summary>
+    [Parameter]
+    public string? Stop { get; set; }
+
+    /// <summary>The rows with a route.</summary>
+    [Parameter]
+    public int Planned { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    /// <summary>Whether a route of the plan is being made, so the plan is not changed under it.</summary>
+    [Parameter]
+    public bool Running { get; set; }
+
+    /// <summary>A row to plot, or null when its plotting is done.</summary>
+    [Parameter]
+    public EventCallback<string?> OnPlot { get; set; }
+
+    [Parameter]
+    public EventCallback OnUndo { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnClear { get; set; }
+
+    /// <summary>A row moved earlier (-1) or later (1).</summary>
+    [Parameter]
+    public EventCallback<(string Row, int By)> OnMove { get; set; }
+
+    /// <summary>A unit taken out of its row into a stack of its own.</summary>
+    [Parameter]
+    public EventCallback<(string Row, string Unit)> OnSplit { get; set; }
+
+    [Parameter]
+    public EventCallback OnRun { get; set; }
+
+    /// <summary>Whether every planned stack has moved, so the end of the phase is offered here; the plan never ends the phase itself.</summary>
+    [Parameter]
+    public bool Finished { get; set; }
+
+    [Parameter]
+    public EventCallback OnEndPhase { get; set; }
+}

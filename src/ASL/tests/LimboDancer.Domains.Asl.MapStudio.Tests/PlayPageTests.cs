@@ -307,7 +307,8 @@ public sealed class PlayPageTests : IDisposable
     {
         // The synthetic board's terrain includes a depression, which the read now answers.
         var page = GameWithDefenders(("r1", "defender-squad"));
-        page.Find("#play-inspector-tab-los").Click();
+        page.Find("#play-inspector-tab-planner").Click();
+        page.Find("#play-inspector-planner-tab-los").Click();
         page.Find("#los-source").Change("A1");
         page.Find("#los-target").Change("C1");
         page.Find("#los-check").Click();
@@ -326,7 +327,8 @@ public sealed class PlayPageTests : IDisposable
         var page = GameWithDefenders(("r1", "defender-squad"));
         page.ViewAs("german");
         page.Find("#play-units tr[data-unit='g1'] .play-locate").Click();
-        page.Find("#play-inspector-tab-los").Click();
+        page.Find("#play-inspector-tab-planner").Click();
+        page.Find("#play-inspector-planner-tab-los").Click();
         Assert.Contains("A1", page.Find("#los-source").GetAttribute("value"), StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#los-panel select"));
     }

@@ -12,7 +12,7 @@ public sealed class IconLabTests(StudioFactory factory) : IClassFixture<StudioFa
     {
         var icons = factory.Services.GetRequiredService<IconLibrary>();
         Assert.Null(icons.Problem);
-        Assert.Equal(["zoom-in", "zoom-out", "fit", "rotate", "play", "proposal", "records", "units", "scripted-dice", "standing", "step", "selection", "los", "range", "evidence", "layers"], icons.Icons.Select(icon => icon.Key));
+        Assert.Equal(["zoom-in", "zoom-out", "fit", "rotate", "play", "proposal", "records", "units", "scripted-dice", "standing", "step", "planner", "movement-plan", "selection", "los", "range", "evidence", "layers"], icons.Icons.Select(icon => icon.Key));
         Assert.Equal(["Map toolbar", "Inspector tab"], icons.Groups);
         Assert.All(icons.Icons, icon =>
         {

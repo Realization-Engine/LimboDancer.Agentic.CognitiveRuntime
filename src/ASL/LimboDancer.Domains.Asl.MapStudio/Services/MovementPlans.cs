@@ -66,6 +66,19 @@ public enum MovementPlanTurn
 public sealed record MovementPlanRun(MovementPlanTurn Turn, string Note, IReadOnlyList<string> Refusal);
 
 /// <summary>
+/// The DEFENDER's pass for the rest of a Movement Phase (the Play streamlining plan, S8; rulings Q15, Q15a): every window of the phase is passed for
+/// him, except where Mandatory Fire is owed (the gate refuses that pass) and, when <paramref name="AskWhenAdjacent"/>, where the moving stack is in or
+/// ADJACENT to a Location of one of his units the moving side knows of (Known units only, so the stop tells the mover nothing hidden).
+/// </summary>
+public sealed record PhasePass(int Turn, string Phasing, bool AskWhenAdjacent);
+
+/// <summary>A stack's route in the Movement Plan, made in its turn (the Play streamlining plan, S8).</summary>
+public sealed record QueuedRoute(IReadOnlyList<string> Movers, IReadOnlyList<BoardLocation> Route);
+
+/// <summary>The moving side's Movement Plan for one Movement Phase: the routes in the order they are made (ruling Q13).</summary>
+public sealed record PhaseMovementPlan(int Turn, string Phasing, IReadOnlyList<QueuedRoute> Rows);
+
+/// <summary>
 /// The Play streamlining plan, S6: the movement plans being made, one per game. Each step is the ordinary move, proposed for the moving side and
 /// confirmed at once; after it, the DEFENDER's window is open. A step where none of his units could fire is passed for him (ruling Q8); at any
 /// other he decides, and "to the end" passes every later one (Q9). Fire, a step the gate refuses, or a stack that a step's own attack changed hands
@@ -81,6 +94,166 @@ public sealed class MovementPlans(LivePlay live)
 
     /// <summary>Forgets a game's plan; the stack stays as the game records it.</summary>
     public void Drop(string game) => plans.TryRemove(game, out _);
+
+    // The Play streamlining plan, S8: one phase pass and one Movement Plan per game, each for one Movement Phase; a stale one (another phase or
+    // turn) is removed when it is next read. Neither is a game event: lost, the DEFENDER is asked again and the stacks wait for the moving side.
+    private readonly ConcurrentDictionary<string, PhasePass> phasePasses = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, PhaseMovementPlan> queues = new(StringComparer.Ordinal);
+
+    private static bool SamePhase(GameState state, int turn, string phasing) => state.Phase == "mph" && state.Turn == turn && state.PhasingSide == phasing;
+
+    /// <summary>The DEFENDER's pass for the rest of this Movement Phase, or null.</summary>
+    public PhasePass? PhasePassOf(string game, GameState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (!phasePasses.TryGetValue(game, out var pass))
+        {
+            return null;
+        }
+
+        if (SamePhase(state, pass.Turn, pass.Phasing))
+        {
+            return pass;
+        }
+
+        phasePasses.TryRemove(game, out _);
+        return null;
+    }
+
+    /// <summary>The DEFENDER passes for the rest of this Movement Phase (ruling Q15).</summary>
+    public void DeclarePhasePass(string game, GameState state, bool askWhenAdjacent)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (state is { Phase: "mph", PhasingSide: { } phasing })
+        {
+            phasePasses[game] = new PhasePass(state.Turn, phasing, askWhenAdjacent);
+        }
+    }
+
+    /// <summary>The DEFENDER is asked again at each window.</summary>
+    public void WithdrawPhasePass(string game) => phasePasses.TryRemove(game, out _);
+
+    /// <summary>The Movement Plan for this Movement Phase, or null.</summary>
+    public PhaseMovementPlan? QueueOf(string game, GameState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (!queues.TryGetValue(game, out var queue))
+        {
+            return null;
+        }
+
+        if (SamePhase(state, queue.Turn, queue.Phasing))
+        {
+            return queue;
+        }
+
+        queues.TryRemove(game, out _);
+        return null;
+    }
+
+    /// <summary>Whether a Movement Plan is kept for the game (it may be stale; reading it with the state removes a stale one).</summary>
+    public bool HasQueue(string game) => queues.ContainsKey(game);
+
+    /// <summary>Keeps the moving side's Movement Plan for this phase; an empty one is forgotten.</summary>
+    public void SetQueue(string game, GameState state, IReadOnlyList<QueuedRoute> rows)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(rows);
+        if (rows.Count == 0 || state is not { Phase: "mph", PhasingSide: { } phasing })
+        {
+            queues.TryRemove(game, out _);
+            return;
+        }
+
+        queues[game] = new PhaseMovementPlan(state.Turn, phasing, rows);
+    }
+
+    /// <summary>
+    /// Makes the Movement Plan's routes in order (rulings Q12, Q13): each route is plotted again on the game as it is now, and, if it still holds,
+    /// made as any plotted route is; when its move ends the next starts at once. It stops where a route no longer holds (the row stays first, for
+    /// the moving side to plot again), and where any route stops for the DEFENDER or the moving side; the rest wait, and are made when that route ends.
+    /// </summary>
+    public async Task<MovementPlanRun> RunQueue(string game, string mover, string defender)
+    {
+        while (true)
+        {
+            var events = Events(game);
+            if (Of(game) is not null || live.Planner.Replay(events).Current is not { } state)
+            {
+                return new MovementPlanRun(MovementPlanTurn.Mover, "A route is being moved; the plan goes on when it ends.", []);
+            }
+
+            if (QueueOf(game, state) is not { Rows.Count: > 0 } queue)
+            {
+                queues.TryRemove(game, out _);
+                return new MovementPlanRun(MovementPlanTurn.Done, "Every planned stack has moved.", []);
+            }
+
+            var row = queue.Rows[0];
+            IReadOnlyList<QueuedRoute> rest = [.. queue.Rows.Skip(1)];
+
+            var plot = live.Planner.Plot(new GameScope(LivePlay.Tenant, game), events, row.Movers, row.Route, mover);
+            if (plot.Route.Count < row.Route.Count)
+            {
+                return new MovementPlanRun(MovementPlanTurn.Mover, $"The planned route into {Say(row.Route[plot.Route.Count])} no longer holds: plot it again.",
+                    plot.Stop is { } stop ? [stop] : []);
+            }
+
+            // The queue stays, though empty, until the route started last ends, so its end is told as the plan's.
+            queues[game] = queue with
+            {
+                Rows = rest
+            };
+            var run = await Start(new MovementPlan(game, row.Movers, row.Route, false, false, mover, defender, $"queue-{Guid.NewGuid():N}"[..19]));
+            if (run.Turn != MovementPlanTurn.Done)
+            {
+                return run;
+            }
+        }
+    }
+
+    /// <summary>
+    /// A move made outside a plan (the one-step form, a vehicle's step) opened the DEFENDER's window: his phase pass, where it applies, passes for him
+    /// at once (ruling Q15). True when it did.
+    /// </summary>
+    public async Task<bool> PassDeclared(string game)
+    {
+        var gate = locks.GetOrAdd(game, _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync();
+        try
+        {
+            var events = Events(game);
+            if (Of(game) is not null || live.Planner.Replay(events).Current is not { } state || !PassesForDefender(game, state)
+                || state.Sides.Select(side => side.Id).FirstOrDefault(id => id != state.PhasingSide) is not { } defender)
+            {
+                return false;
+            }
+
+            var passed = await Commit(game, GameActions.PassFire, defender, $"phase-pass-{events.Count}", null);
+            return passed.Outcome is PlayOutcome.Committed or PlayOutcome.Replay;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Whether the DEFENDER's phase pass covers the open window: it is declared for this phase, and, when he asked, the moving stack is not in or
+    /// ADJACENT to a Location of his Known units. ADJACENT is read as a range of one hex or less, which may ask him where the rules' ADJACENT would
+    /// not (across a cliff), never the other way. Mandatory Fire is the gate's: it refuses the pass.
+    /// </summary>
+    private bool PassesForDefender(string game, GameState state)
+    {
+        if (state.Movement is not { WindowOpen: true } window || PhasePassOf(game, state) is not { } pass)
+        {
+            return false;
+        }
+
+        return !pass.AskWhenAdjacent || !state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide && unit.Kind != UnitKinds.Dummy
+            && GameState.Condition(unit, Conditions.Concealed) != ConditionState.True && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True
+            && state.Location(unit.Id)?.Location is { } at && (at == window.Location || live.Planner.Range(state, at, window.Location) is <= 1));
+    }
 
     /// <summary>
     /// Starts a plan: its first step is made, and the DEFENDER decides there, or, when it is public that none of his units could fire at the
@@ -253,7 +426,22 @@ public sealed class MovementPlans(LivePlay live)
                 {
                     Paused = "The step changed the stack or revealed a unit."
                 };
+
+                // Ruling Q15: a DEFENDER who passes for the phase passes here too; the moving side then decides.
+                if (after is not null && PassesForDefender(game, after))
+                {
+                    pass = true;
+                    continue;
+                }
+
                 return new MovementPlanRun(MovementPlanTurn.Defender, StepNote(plan), []);
+            }
+
+            // Ruling Q15: the DEFENDER's pass for the phase answers this window; Mandatory Fire, which the gate will not let him pass, stops it.
+            if (PassesForDefender(game, after))
+            {
+                pass = true;
+                continue;
             }
 
             if (!defenderView && !Public(after, plan.Defender))

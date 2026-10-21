@@ -294,7 +294,8 @@ public sealed class PlayPagePass31cTests : IDisposable
 
         // "Show the range on the map" opens the Range tab with the group's ends read.
         page.Find("#fire-range-show").Click();
-        Assert.Equal("true", page.Find("#play-inspector-tab-range").GetAttribute("aria-selected"));
+        Assert.Equal("true", page.Find("#play-inspector-tab-planner").GetAttribute("aria-selected"));
+        Assert.Equal("true", page.Find("#play-inspector-planner-tab-range").GetAttribute("aria-selected"));
         Assert.Equal("[C1] to [B0]: 1 hex.", page.Find("#range-result").TextContent);
     }
 
@@ -305,8 +306,11 @@ public sealed class PlayPagePass31cTests : IDisposable
     {
         var hexes = Hexes();
         var page = FireGame(hexes, concealed: true);
-        Assert.Equal(["Play", "Proposal", "Selection", "LOS", "Range", "Evidence", "Records", "Units", "Scripted dice"], Texts(page, "[role=tablist][aria-label='Play, review, and inspector'] [role=tab]"));
-        page.Find("#play-inspector-tab-range").Click();
+        // The Play streamlining plan, S8 (ruling Q11): on Play, LOS and Range sit under the Unit Planner.
+        Assert.Equal(["Play", "Proposal", "Unit Planner", "Selection", "Evidence", "Records", "Units", "Scripted dice"], Texts(page, "[role=tablist][aria-label='Play, review, and inspector'] [role=tab]"));
+        page.Find("#play-inspector-tab-planner").Click();
+        Assert.Equal(["LOS", "Range", "Movement Plan"], Texts(page, "[role=tablist][aria-label='Unit Planner'] [role=tab]"));
+        page.Find("#play-inspector-planner-tab-range").Click();
         Assert.Empty(page.FindAll("#range-result"));
         page.Find("#range-source").Change(hexes.From);
         page.Find("#range-target").Change(hexes.Building);
@@ -393,6 +397,83 @@ public sealed class PlayPagePass31cTests : IDisposable
         Assert.Null(live.Plans.Of("village"));
         Assert.Empty(page.FindAll("#play-hand-over"));
         Assert.Contains("ends its move", page.Find("#move-route-last").TextContent, StringComparison.Ordinal);
+    }
+
+    // The Play streamlining plan, S8 (rulings Q12 to Q14): the Movement Plan lists a stack per Location, takes a route for each, and makes them
+    // in the rows' order, the next starting when one ends; here no Known unit of the DEFENDER may fire (broken), so neither asks him.
+    [Fact]
+    public void AMovementPlanMovesEveryPlannedStackInTurn()
+    {
+        var hexes = Hexes();
+        var page = NewGame("german", "russian");
+        Place(page, "g1", "attacker-squad", hexes.Open);
+        Place(page, "g2", "attacker-squad", hexes.From);
+        page.Find("#place-broken").Change(true);
+        Place(page, "r1", "defender-squad", hexes.Building);
+        Commit(page, "#propose-setup");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
+        Assert.Equal("mph", Current.Phase);
+
+        page.Find("#play-inspector-tab-planner").Click();
+        Assert.Equal("true", page.Find("#play-inspector-planner-tab-movement-plan").GetAttribute("aria-selected"));
+        Assert.Equal(2, page.FindAll(".movement-plan-row").Count);
+        PlanRoute(page, "g1", hexes.From);
+        PlanRoute(page, "g2", hexes.Open);
+        Assert.Contains("(2)", page.Find("#movement-plan-run").TextContent, StringComparison.Ordinal);
+
+        page.Find("#movement-plan-run").Click();
+        page.WaitForAssertion(() => Assert.True(Current.Unit("g1")!.MovementEnded && Current.Unit("g2")!.MovementEnded));
+        Assert.Equal((hexes.From, hexes.Open), (Current.Location("g1")?.Location.ToString(), Current.Location("g2")?.Location.ToString()));
+        Assert.Empty(page.FindAll("#play-hand-over"));
+        Assert.Contains("Every planned stack has moved", page.Find("#movement-plan-note").TextContent, StringComparison.Ordinal);
+        Assert.NotEmpty(page.FindAll("#movement-plan-end-phase"));
+    }
+
+    // Rulings Q15, Q15a: the DEFENDER's pass for the rest of the phase answers a later window at once, here a step made outside a plan; unticked,
+    // the exception does not ask him though the step is ADJACENT to his Known unit. The moving side is told that the pass stands.
+    [Fact]
+    public void TheDefendersPassForThePhaseAnswersALaterWindow()
+    {
+        var hexes = Hexes();
+        var page = NewGame("german", "russian");
+        Place(page, "g1", "attacker-squad", hexes.Open);
+        Place(page, "g2", "attacker-squad", hexes.Open);
+        Place(page, "r1", "defender-squad", hexes.Building);
+        Commit(page, "#propose-setup");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
+
+        page.Find(".move-unit[data-unit='g1']").Change(true);
+        page.Find("#move-to").Change(hexes.From);
+        Commit(page, "#propose-move");
+        Assert.True(Current.Movement is { WindowOpen: true });
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        page.Find("#phase-pass-adjacent").Change(false);
+        Commit(page, "#phase-pass");
+        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: false }));
+        Assert.NotEmpty(page.FindAll("#phase-pass-withdraw"));
+
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        Commit(page, "#propose-end-move");
+        Assert.Contains("passes for the rest of this phase", page.Find("#phase-pass-mover").TextContent, StringComparison.Ordinal);
+        page.Find(".move-unit[data-unit='g2']").Change(true);
+        page.Find("#move-to").Change(hexes.From);
+        Commit(page, "#propose-move");
+        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: false, Members: ["g2"] }));
+        Assert.Empty(page.FindAll("#play-hand-over"));
+    }
+
+    /// <summary>Plots a one-hex route for the Movement Plan's row that holds the unit, and keeps it.</summary>
+    private static void PlanRoute(IRenderedComponent<PlayPage> page, string unit, string to)
+    {
+        string Row() => page.FindAll(".movement-plan-row").First(row => row.QuerySelector($".movement-plan-unit[data-unit='{unit}']") is not null).GetAttribute("data-row")!;
+        page.Find($".movement-plan-row[data-row='{Row()}'] .movement-plan-plot").Click();
+        ClickHex(page, to);
+        page.WaitForAssertion(() => Assert.Contains(DisplayText.Place(1, to), page.Find($".movement-plan-row[data-row='{Row()}'] .movement-plan-route").TextContent, StringComparison.Ordinal));
+        page.Find($".movement-plan-row[data-row='{Row()}'] .movement-plan-done").Click();
     }
 
     // The Play streamlining plan, S6 (A8.22): a step into Residual FP is attacked inside the step; a stack the attack changed stops the plan, the

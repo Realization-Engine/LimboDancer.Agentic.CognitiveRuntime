@@ -79,7 +79,7 @@ else
     }
 </PlayContextHeader>
 
-<HandOverScreen Next="@handOver" Label="@ViewLabel(handOver)" Confirmed="ConfirmView" PassLabel="@HandOverPassLabel" OnPass="@PassFromHandOver" When="@HandOverWhen" Why="@HandOverWhy" Tasks="@HandOverTasks"
+<HandOverScreen Next="@handOver" Label="@ViewLabel(handOver)" Confirmed="ConfirmView" PassLabel="@HandOverPassLabel" OnPass="@PassFromHandOver" PhasePassLabel="@HandOverPhasePassLabel" OnPhasePass="@PhasePassFromHandOver" When="@HandOverWhen" Why="@HandOverWhy" Tasks="@HandOverTasks"
                 HappenedTitle="@HandOverHappenedTitle" Happened="@HandOverHappened" Score="@HandOverScore" Setup="@SetupOpen">
 <Map>
     @* Pass 31c (design D16; the user, 2026-10-04; ruling R31c.3): the map as both sides know it, with the Locations the screen's lines name
@@ -565,6 +565,22 @@ else if (state is not null)
                     <ShockRecoveryAction Vehicles="@ShockChoices" Vehicle="@shockVehicle" OnVehicle="@(id => shockVehicle = id)" OnPropose="@ProposeShockRecovery" />
                 }
                 @* The Play streamlining plan, S7: the Movement form is the moving side's; the other view sees it only for an OVR's CC (pass 27). *@
+                @* The Play streamlining plan, S8 (ruling Q15): the DEFENDER's pass for the rest of the phase, which he withdraws whenever he has the
+                   screen; the moving side is told it stands. *@
+                @if (state.Phase == "mph" && PhasePassNow is { } phasePass && !Viewer.IsAdjudicator)
+                {
+                    @if (viewAs == state.PhasingSide)
+                    {
+                        <p class="toolbar-note" id="phase-pass-mover">The DEFENDER passes for the rest of this phase@(phasePass.AskWhenAdjacent ? ", except where a stack comes ADJACENT to one of his Known units" : string.Empty).</p>
+                    }
+                    else
+                    {
+                        <div class="toolbar" id="phase-pass-standing">
+                            <span class="toolbar-note">You pass for the rest of this phase@(phasePass.AskWhenAdjacent ? ", except where a stack comes ADJACENT to one of your units the moving side knows of" : string.Empty); Mandatory Fire still stops a stack.</span>
+                            <button type="button" id="phase-pass-withdraw" @onclick="@(() => Live.Plans.WithdrawPhasePass(gameId))">Ask me again</button>
+                        </div>
+                    }
+                }
                 @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide || OverrunCloseCombat is not null))
                 {
                     <ActionSection Title="Movement" Key="movement">
@@ -936,6 +952,15 @@ else if (state is not null)
                             {
                                 <button id="propose-pass" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
                             }
+                            @* The Play streamlining plan, S8 (rulings Q15, Q15a): a pass here and at every later window of this phase. *@
+                            @if (mandatory is null && !Viewer.IsAdjudicator && PhasePassNow is null)
+                            {
+                                <button type="button" id="phase-pass" disabled="@busy" title="Passes here and at every later window of this Movement Phase; Mandatory Fire still stops a stack." @onclick="PassForPhase">Pass for the rest of this phase</button>
+                                <label title="Counts only your units the moving side knows of: a stop at a concealed or hidden unit would tell it something is there.">
+                                    <input type="checkbox" id="phase-pass-adjacent" checked="@phasePassAdjacent" @onchange="@(args => phasePassAdjacent = args.Value is true)" />
+                                    still ask me when a stack comes ADJACENT to one of my units
+                                </label>
+                            }
                         </div>
                         </ActionSection>
                     }
@@ -1041,7 +1066,7 @@ else if (state is not null)
             <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" OriginOf="@CounterOrigin" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@MapMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => PickHex(mapBoard, facts))"
-                            Panel="@InspectorPanel" PanelChanged="@(tab => inspectorTab = tab)" Extras="@InspectorExtras(actionsBlock, proposalBlock, recordsBlock, unitsBlock, diceBlock)" InspectorHeader="@(bannerNow is not null ? inspectorTurn : null)"
+                            Panel="@InspectorPanel" PanelChanged="@(tab => inspectorTab = tab)" Extras="@InspectorExtras(actionsBlock, proposalBlock, recordsBlock, unitsBlock, diceBlock)" InspectorHeader="@(bannerNow is not null ? inspectorTurn : null)" InspectorPlanner="@PlannerBlock"
                             HoldPanel="@(AwaitingConfirm || SetupMode || InspectorPanel == PlayTab)" OnKey="@MapKey" InspectorLabel="Play, review, and inspector" IdPrefix="play-inspector" MapLabel="The game's map" InspectorFirst="@(!narrow)"
                             InspectorClass="play-pane play-review inspector" InspectorAttributes="@ReviewAttributes"
                             StageClass="play-pane play-map-pane play-map" StageAttributes="@MapAttributes(layers.Source)" Between="@between">
@@ -3533,8 +3558,9 @@ else if (state is not null)
     {
         var setup = SetupMarks(board, marks);
 
-        // The Play streamlining plan, S3: the plotted route and its next Locations, built when the plot changes and kept.
-        if (plotOn && handOver is null && plotMarks is { Length: > 0 } route)
+        // The Play streamlining plan, S3: the plotted route and its next Locations, built when the plot changes and kept; S8: with the Movement
+        // Plan open, the other planned routes beside it.
+        if ((plotOn && handOver is null ? plotMarks : null) + PlannerMarks() is { Length: > 0 } route)
         {
             setup = setup is { Length: > 4 } && setup.EndsWith("</g>", StringComparison.Ordinal) ? $"{setup[..^4]}{route}</g>" : $"<g id=\"layer-marks\">{route}</g>";
         }
@@ -4645,6 +4671,71 @@ else if (state is not null)
         }
 
         await ConfirmView();
+    }
+
+    /// <summary>The DEFENDER's pass for the rest of the phase, offered on the hand-over screen whenever his window is open (ruling Q15).</summary>
+    private string? HandOverPhasePassLabel => handOver is { } arriving && state is { Phase: "mph", Movement.WindowOpen: true } && arriving == DefenderSide
+        ? "Pass for the rest of this phase" : null;
+
+    /// <summary>
+    /// The DEFENDER passes here and for the rest of the phase from the hand-over screen (rulings Q15, Q15a; the exception kept, as its default): a
+    /// plotted route then runs on, and the screen goes back to the moving side unless he is asked after all, when his own view opens.
+    /// </summary>
+    private async Task PhasePassFromHandOver()
+    {
+        if (busy || state is null || handOver is null || state.PhasingSide is not { } mover)
+        {
+            return;
+        }
+
+        Live.Plans.DeclarePhasePass(gameId, state, askWhenAdjacent: true);
+        if (PlanNow is null)
+        {
+            await PassFromHandOver();
+            return;
+        }
+
+        busy = true;
+        MovementPlanRun run;
+        try
+        {
+            run = await Live.Plans.MoveOn(gameId, toEnd: false);
+            if (run.Turn == MovementPlanTurn.Done && Live.Plans.HasQueue(gameId))
+            {
+                run = await Live.Plans.RunQueue(gameId, mover, DefenderSide);
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+
+        Refresh();
+        if (run.Turn == MovementPlanTurn.Defender)
+        {
+            await ConfirmView();
+            return;
+        }
+
+        (planHandedBack, handOver, unconfirmed) = ((mover, run.Note), mover, true);
+    }
+
+    /// <summary>Whether the DEFENDER's pass for the rest of this phase stands (ruling Q15).</summary>
+    private PhasePass? PhasePassNow => state is null || gameId.Length == 0 ? null : Live.Plans.PhasePassOf(gameId, state);
+
+    // Ruling Q15a: the exception is ticked by default.
+    private bool phasePassAdjacent = true;
+
+    /// <summary>The DEFENDER passes at this window and declares the pass for the rest of the phase.</summary>
+    private async Task PassForPhase()
+    {
+        if (state is null)
+        {
+            return;
+        }
+
+        Live.Plans.DeclarePhasePass(gameId, state, phasePassAdjacent);
+        await (PlanNow is not null ? PlanMoveOn(false) : ProposeSimple(GameActions.PassFire, "pass"));
     }
 
     private async Task ConfirmView()
@@ -7203,6 +7294,13 @@ else if (state is not null)
         pending = proposal with { Result = result };
         if (result.Outcome is PlayOutcome.Committed or PlayOutcome.Replay)
         {
+            // The Play streamlining plan, S8 (ruling Q15): a step made outside a plan that opened the DEFENDER's window is passed for him when his pass
+            // for the phase covers it.
+            if (proposal.Action == GameActions.Move || proposal.Action == GameActions.MoveVehicle)
+            {
+                await Live.Plans.PassDeclared(gameId);
+            }
+
             // A committed action's choices are spent: the next one starts from nothing.
             // D3.12 (review of pass 50): the turret choice is spent with the step that carried it, and kept through a refusal or a cancel.
             if (proposal.Action == GameActions.MoveVehicle)
@@ -7571,12 +7669,20 @@ else if (state is not null)
         }
 
         (busy, status) = (true, "Moving along the route.");
+        var fromQueue = Live.Plans.HasQueue(gameId);
         MovementPlanRun run;
         try
         {
             StateHasChanged();
             await DrawBusy();
             run = await work();
+
+            // The Play streamlining plan, S8 (ruling Q13): a route that ends with Movement Plan stacks still to move starts the next at once.
+            if (run.Turn == MovementPlanTurn.Done && Live.Plans.HasQueue(gameId) && state?.PhasingSide is { } planMover)
+            {
+                var queued = await Live.Plans.RunQueue(gameId, planMover, DefenderSide);
+                run = queued.Turn == MovementPlanTurn.Done ? queued with { Note = $"{run.Note} {queued.Note}" } : queued;
+            }
         }
         finally
         {
@@ -7584,6 +7690,8 @@ else if (state is not null)
         }
 
         status = run.Refusal.Count > 0 ? $"{run.Note} {PlainReason(run.Refusal[0])}" : run.Note;
+        planQueueNote = fromQueue ? status : planQueueNote;
+        planFinished = fromQueue && run.Turn == MovementPlanTurn.Done && !Live.Plans.HasQueue(gameId);
 
         // A plan that ended or waits for the moving side: its view, when it comes back, is told so in the header.
         planHandedBack = run.Turn != MovementPlanTurn.Defender && state?.PhasingSide is { } moving && viewAs != moving ? (moving, status) : null;
@@ -7596,6 +7704,199 @@ else if (state is not null)
 
     /// <summary>How the moving side's last plan ended, shown over the route panel until the next route is plotted.</summary>
     private string? planNote;
+
+    // The Play streamlining plan, S8: the Movement Plan's stacks and routes as the moving side drafts them, for one Movement Phase. The draft is the
+    // page's; "Move every planned stack" hands its routes to the plan store's queue, which makes them.
+    private sealed class PlanStack(string key, List<string> movers)
+    {
+        public string Key { get; } = key;
+
+        public List<string> Movers { get; } = movers;
+
+        public List<BoardLocation> Route { get; } = [];
+    }
+
+    private readonly List<PlanStack> planStacks = [];
+    private (int Turn, string? Phasing) planStacksFor;
+    private GameState? planStacksState;
+    private int planStackCount;
+    private string? planPlotting;
+    private string? planQueueNote;
+    private bool planFinished;
+    private int planVersion;
+    private (GameState? State, int Version, string? Marks) plannerMarks;
+
+    /// <summary>Whether the view may draft the Movement Plan now: the moving side's own view (not the adjudicator's), in its MPh, with no hand-over.</summary>
+    private bool PlannerOpen => state is { Phase: "mph" } && !Viewer.IsAdjudicator && viewAs == state.PhasingSide && handOver is null;
+
+    /// <summary>
+    /// The stacks of the plan, kept in step with the units that may still move (ruling Q14): a unit that has moved leaves its stack, an empty stack
+    /// goes, and a unit not yet in one joins a new stack with the others of its Location. Read once a state.
+    /// </summary>
+    private IReadOnlyList<PlanStack> PlanStacks
+    {
+        get
+        {
+            if (!PlannerOpen)
+            {
+                return [];
+            }
+
+            if (planStacksFor != (state!.Turn, state.PhasingSide))
+            {
+                (planStacksFor, planStacksState, planPlotting, planQueueNote) = ((state.Turn, state.PhasingSide), null, null, null);
+                planStacks.Clear();
+            }
+
+            if (ReferenceEquals(planStacksState, state))
+            {
+                return planStacks;
+            }
+
+            planStacksState = state;
+            var candidates = MoveCandidates.Where(unit => state.Location(unit.Id) is not null).ToDictionary(unit => unit.Id, StringComparer.Ordinal);
+            foreach (var stack in planStacks)
+            {
+                stack.Movers.RemoveAll(id => !candidates.ContainsKey(id));
+            }
+
+            planStacks.RemoveAll(stack => stack.Movers.Count == 0);
+            var placed = planStacks.SelectMany(stack => stack.Movers).ToHashSet(StringComparer.Ordinal);
+            foreach (var group in candidates.Values.Where(unit => !placed.Contains(unit.Id)).GroupBy(unit => state.Location(unit.Id)!.Location.ToString())
+                .OrderBy(group => group.Key, StringComparer.Ordinal))
+            {
+                planStacks.Add(new PlanStack($"stack-{++planStackCount}", [.. group.Select(unit => unit.Id).Order(StringComparer.Ordinal)]));
+            }
+
+            return planStacks;
+        }
+    }
+
+    private IReadOnlyList<MovementPlanPanel.Row> PlannerRows => [.. PlanStacks.Select(stack =>
+    {
+        var plotting = stack.Key == planPlotting;
+        var route = plotting ? plotRoute : stack.Route;
+        var left = plotting && plot?.Route is [.., var last] ? $"; {Mf(last.HalfMfLeft)} MF left" : string.Empty;
+        return new MovementPlanPanel.Row(stack.Key, [.. stack.Movers.Select(id => new PlayChoice(id, WordsAt(id)))],
+            route.Count == 0 ? "No route: it does not move." : string.Join(", ", route.Select(at => PlaceOf(at.ToString()))) + left, route.Count > 0, plotting);
+    })];
+
+    private string? PlannerClosed => PlannerOpen ? null
+        : state?.Phase != "mph" ? "The Movement Plan is made in your side's Movement Phase."
+        : Viewer.IsAdjudicator ? "The Movement Plan is the moving side's: choose its view."
+        : handOver is not null ? "Hand the screen over first." : "The Movement Plan is the moving side's.";
+
+    /// <summary>Starts plotting a stack's route on the map, or, with null, keeps the route plotted and stops.</summary>
+    private void PlanPlot(string? key)
+    {
+        if (planPlotting is { } current && PlanStacks.FirstOrDefault(stack => stack.Key == current) is { } plotted)
+        {
+            plotted.Route.Clear();
+            plotted.Route.AddRange(plotRoute.Take(plot?.Route.Count ?? 0));
+        }
+
+        (planPlotting, planQueueNote, plotNote) = (null, null, null);
+        plotOn = false;
+        plotRoute.Clear();
+        if (key is not null && PlanStacks.FirstOrDefault(stack => stack.Key == key) is { } chosen)
+        {
+            planPlotting = key;
+            moveUnits.Clear();
+            moveUnits.UnionWith(chosen.Movers);
+            plotRoute.AddRange(chosen.Route);
+            plotOn = true;
+        }
+
+        (plotVersion, planVersion) = (plotVersion + 1, planVersion + 1);
+        RefreshPlot();
+    }
+
+    private void PlanClear(string key)
+    {
+        if (PlanStacks.FirstOrDefault(stack => stack.Key == key) is { } stack)
+        {
+            stack.Route.Clear();
+            planVersion++;
+        }
+    }
+
+    private void PlanReorder((string Row, int By) move)
+    {
+        var index = planStacks.FindIndex(stack => stack.Key == move.Row);
+        var to = index + move.By;
+        if (index >= 0 && to >= 0 && to < planStacks.Count)
+        {
+            (planStacks[index], planStacks[to]) = (planStacks[to], planStacks[index]);
+        }
+    }
+
+    /// <summary>A unit unticked leaves its stack for a stack of its own in the same Location (ruling Q14); the routes are plotted again.</summary>
+    private void PlanSplit((string Row, string Unit) split)
+    {
+        var index = planStacks.FindIndex(stack => stack.Key == split.Row);
+        if (index < 0 || planStacks[index].Movers.Count < 2 || !planStacks[index].Movers.Remove(split.Unit))
+        {
+            return;
+        }
+
+        if (planPlotting == split.Row)
+        {
+            PlanPlot(null);
+        }
+
+        planStacks[index].Route.Clear();
+        planStacks.Insert(index + 1, new PlanStack($"stack-{++planStackCount}", [split.Unit]));
+        planVersion++;
+    }
+
+    /// <summary>The planned routes go to the plan store's queue, in the rows' order, and are made (rulings Q12, Q13).</summary>
+    private async Task PlanRun()
+    {
+        PlanPlot(null);
+        if (state?.PhasingSide is not { } mover)
+        {
+            return;
+        }
+
+        Live.Plans.SetQueue(gameId, state, [.. PlanStacks.Where(stack => stack.Route.Count > 0).Select(stack => new QueuedRoute([.. stack.Movers], [.. stack.Route]))]);
+        foreach (var stack in planStacks)
+        {
+            stack.Route.Clear();
+        }
+
+        planVersion++;
+        await RunPlan(() => Live.Plans.RunQueue(gameId, mover, DefenderSide));
+    }
+
+    /// <summary>The routes of the plan's other stacks, drawn faintly while the Movement Plan is open (the plot draws the one being plotted).</summary>
+    private string? PlannerMarks()
+    {
+        if (!PlannerOpen || InspectorPanel != BoardInspector.MovementPlanPanel || MapLayers is not { Board: { } board })
+        {
+            return null;
+        }
+
+        if (!ReferenceEquals(plannerMarks.State, state) || plannerMarks.Version != planVersion)
+        {
+            var marks = new System.Text.StringBuilder();
+            foreach (var stack in PlanStacks.Where(stack => stack.Key != planPlotting))
+            {
+                foreach (var at in stack.Route)
+                {
+                    marks.Append(GameMaps.HexMark(board, at, "plan-route", "#244f7733", "#244f77", 3, true, null));
+                }
+            }
+
+            plannerMarks = (state, planVersion, marks.ToString());
+        }
+
+        return plannerMarks.Marks;
+    }
+
+    private RenderFragment PlannerBlock => @<MovementPlanPanel Rows="@PlannerRows" Closed="@PlannerClosed" Note="@planQueueNote" Stop="@(planPlotting is null ? null : PlotStop ?? plotNote)"
+        Planned="@PlanStacks.Count(stack => stack.Route.Count > 0 || stack.Key == planPlotting && plotRoute.Count > 0)" Busy="@busy" Running="@(PlanNow is not null)"
+        Finished="@(planFinished && MayEndPhase)" OnEndPhase="@ProposeAdvance"
+        OnPlot="@PlanPlot" OnUndo="@UndoPlot" OnClear="@PlanClear" OnMove="@PlanReorder" OnSplit="@PlanSplit" OnRun="@PlanRun" />;
 
     /// <summary>The DEFENDER's view opened on a plan: the steps none of his units could fire at pass for him, up to one where he decides.</summary>
     private async Task ReviewPlan()

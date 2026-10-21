@@ -3104,6 +3104,36 @@ details.advanced > summary {
     min-height: 2rem;
 }
 
+/* The Play streamlining plan, S8: the Movement Plan's stacks, one row each; the row being plotted is marked. */
+.movement-plan-rows {
+    list-style: none;
+    margin: 0.5rem 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.movement-plan-row {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0.4rem 0.6rem;
+}
+
+.movement-plan-row.plotting {
+    border-color: var(--accent);
+    background: var(--accent-tint);
+}
+
+.movement-plan-units {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+}
+
+.movement-plan-route {
+    margin: 0.25rem 0;
+}
+
 /* The user, 2026-10-21: the view in force, at the right end of the map toolbar, large enough to catch the eye after a hand-over. */
 .play-view-label {
     margin-left: auto;
