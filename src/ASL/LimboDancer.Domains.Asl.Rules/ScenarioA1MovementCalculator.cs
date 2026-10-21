@@ -612,37 +612,49 @@ public static class ScenarioA1MovementCalculator
     /// 16, ruling R16.5): no road bonus with an NVR of 0. Null when every mover has the MF.
     /// </summary>
     public static string? MfLeft(IReadOnlyList<MfLeftMoverFacts> movers, bool minimumMove, bool allMf, bool doubleTime, bool roadRate, bool pushed, int? nvr, bool assault, int halfMf,
-        (string? Recipient, string? Leader) leaderIpc, MfAllotmentRead allotment)
+        (string? Recipient, string? Leader) leaderIpc, MfAllotmentRead allotment) =>
+        MfCheck(movers, minimumMove, allMf, doubleTime, roadRate, pushed, nvr, assault, halfMf, leaderIpc, allotment).Refusal;
+
+    /// <summary>
+    /// <see cref="MfLeft"/>'s refusal and, when there is none, the half MF the stack has left after the entry: the least any mover has (the Play
+    /// streamlining plan, S3, shows it as a route is plotted). Each mover's allotment is read once for both. A Minimum Move and an entry that takes
+    /// all the MF leave none; the half MF left is null with a refusal.
+    /// </summary>
+    public static (string? Refusal, int? HalfMfLeft) MfCheck(IReadOnlyList<MfLeftMoverFacts> movers, bool minimumMove, bool allMf, bool doubleTime, bool roadRate, bool pushed,
+        int? nvr, bool assault, int halfMf, (string? Recipient, string? Leader) leaderIpc, MfAllotmentRead allotment)
     {
         ArgumentNullException.ThrowIfNull(movers);
         ArgumentNullException.ThrowIfNull(allotment);
+        if (minimumMove || allMf)
+        {
+            return (null, 0);
+        }
+
+        var least = int.MaxValue;
         for (var index = 0; index < movers.Count; index++)
         {
             var unit = movers[index];
-            if (minimumMove || allMf)
-            {
-                continue;
-            }
-
             var extra = doubleTime ? (unit.FirstStep ? 2 : 1) : unit.DoubleTimeMf;
             var exhausted = doubleTime || unit.Cx;
             var bonus = (roadRate && !unit.OffRoad && !pushed && nvr != 0 ? 1 : 0) + (unit.LeaderBonus ? 2 : 0);
             var ipc = unit.Id == leaderIpc.Recipient ? 1 : unit.Id == leaderIpc.Leader ? -1 : 0;
             if (allotment(index, extra, exhausted, bonus, ipc) is not { } allowance || allotment(index, 0, exhausted, bonus, ipc) is not { } plain)
             {
-                return $"play.move-mf: {unit.Id} has no MF allowance the catalog decides";
+                return ($"play.move-mf: {unit.Id} has no MF allowance the catalog decides", null);
             }
 
             var spent = unit.HalfMfSpent;
             var left = (allowance * 2) - spent;
             if (left < halfMf || (assault && (plain * 2) - spent <= halfMf))
             {
-                return $"play.move-mf: {unit.Id} has {left / 2m} MF left, and the entry costs {halfMf / 2m}"
-                    + (assault && left >= halfMf ? "; Assault Movement may not use all of a unit's MF (A4.61)" : " (A4.11, A4.42, A4.61; Minimum Move, A4.134)");
+                return ($"play.move-mf: {unit.Id} has {left / 2m} MF left, and the entry costs {halfMf / 2m}"
+                    + (assault && left >= halfMf ? "; Assault Movement may not use all of a unit's MF (A4.61)" : " (A4.11, A4.42, A4.61; Minimum Move, A4.134)"), null);
             }
+
+            least = Math.Min(least, left - halfMf);
         }
 
-        return null;
+        return (null, movers.Count == 0 ? null : least);
     }
 
     /// <summary>

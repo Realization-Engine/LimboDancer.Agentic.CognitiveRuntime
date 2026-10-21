@@ -161,7 +161,7 @@ public sealed partial class GamePlanner
             current?.Members ?? [],
             current?.Movers ?? [],
             current is { WindowOpen: true },
-            EnemyVehicleAt(state, state.PhasingSide!, to)?.Id,
+            EnemyVehicleAt(state, state.PhasingSide!, to) is { } enemyVehicle && (plotting == 0 || KnownEnemy(enemyVehicle)) ? enemyVehicle.Id : null,
             doubleTime,
             to.ToString());
         if (ScenarioA1MovementCalculator.MoveBars(bars) is { } barredMove)
@@ -339,7 +339,8 @@ public sealed partial class GamePlanner
         }
 
         // A4.14, A12.15 (rulings R10.11, R10.15): the units of the target Location are read here, and Rules decides who is revealed and who is barred.
-        var there = state.At(to).OfType<UnitInstance>().ToArray();
+        // The Play streamlining plan, S3: a plotted route reads the Location as the moving side knows it, its own units and the Known enemy's.
+        var there = state.At(to).OfType<UnitInstance>().Where(unit => plotting == 0 || unit.Side == movers[0].Side || KnownEnemy(unit)).ToArray();
         var enemies = ScenarioA1MovementCalculator.EnemiesAtTarget(
             [.. there.Select(unit => new UnitAtTargetFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, Is(unit, Conditions.Captured), KnownEnemy(unit), unit.Kind == UnitKinds.Dummy))],
             state.PhasingSide, charge is not null, occupy, bypassing is not null, movers.All(unit => unit.Kind == UnitKinds.Dummy), minimumMove, string.Join(", ", ids), to.ToString(),
@@ -369,11 +370,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, ipcBar);
         }
 
-        if (ScenarioA1MovementCalculator.MfLeft(
-            [.. movers.Select(unit => new MfLeftMoverFacts(unit.Id, unit.MfSpent == 0 && !unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx), unit.OffRoad, LeaderBonus(state, unit, movers),
-                (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0)))],
-            minimumMove, entry.AllMf, doubleTime, entry.RoadRate, pushed is not null, state.Nvr, assault, halfMf + dashHalfMf, leaderIpcTo,
-            (index, doubleTimeMf, cx, bonusMf, ipcBonus) => MfAllotment(state, movers[index], doubleTimeMf, cx, bonusMf, ipcBonus)) is { } noMf)
+        MfLeftMoverFacts[] mfMovers = [.. movers.Select(unit => new MfLeftMoverFacts(unit.Id, unit.MfSpent == 0 && !unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx), unit.OffRoad,
+            LeaderBonus(state, unit, movers), (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0)))];
+        // The Play streamlining plan, S3: the same check gives what the stack has left after the step, shown as a route is plotted.
+        var (noMf, halfMfLeft) = ScenarioA1MovementCalculator.MfCheck(mfMovers, minimumMove, entry.AllMf, doubleTime, entry.RoadRate, pushed is not null, state.Nvr, assault,
+            halfMf + dashHalfMf, leaderIpcTo, (index, doubleTimeMf, cx, bonusMf, ipcBonus) => MfAllotment(state, movers[index], doubleTimeMf, cx, bonusMf, ipcBonus));
+        if (noMf is not null)
         {
             return Refused(scope, label, expected, noMf);
         }
@@ -444,6 +446,12 @@ public sealed partial class GamePlanner
         // A12.14, A12.15, E1.31 (rulings R10.10, R16.4): the movers that lose their "?" are decided by Rules; the LOS scan and the illumination are read when it asks.
         void Unmask(List<GameEvent> events)
         {
+            // The Play streamlining plan, S3: whether the movers lose their "?" reads the enemy's LOS, which a plotted route may not know.
+            if (plotting > 0)
+            {
+                return;
+            }
+
             foreach (var unit in ScenarioA1MovementCalculator.Unmasked([.. movers.Select(mover => new MoverConcealmentFacts(mover.Id, mover.Kind == UnitKinds.Dummy, Is(mover, Conditions.Concealed)))],
                 forcedBack, assault, state.Night, terrain, () => EnemyGoodOrderInLosWithin16(state, state.PhasingSide!, landed), () => Illuminated(state, landed)))
             {
@@ -484,13 +492,13 @@ public sealed partial class GamePlanner
             var events = Stepped(null, null);
 
             // A12.2 Case H (ruling R6.7): the step may bring a concealed vehicle out of Concealment Terrain into the movers' LOS.
-            if (!offMap && Replay([.. existing, .. events]).Current is { } stepped && VehicleConcealmentLost(stepped, null, false) is { Count: > 0 } lost)
+            if (!offMap && plotting == 0 && Replay([.. existing, .. events]).Current is { } stepped && VehicleConcealmentLost(stepped, null, false) is { Count: > 0 } lost)
             {
                 events = [.. events, .. RevealEvents(scope, attemptId, expected, events.Count + 1, lost)];
                 summary += $"; {string.Join(", ", lost)} loses its \"?\" (A12.2)";
             }
 
-            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary, .. dummyWarning]);
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary, .. dummyWarning]) { HalfMf = halfMf + dashHalfMf, HalfMfLeft = halfMfLeft };
         }
 
         // A8.22, A12.15: Residual FP attacks a unit entering its Location, or returned to it, first, alone, with any FFNAM and FFMO.
@@ -541,6 +549,8 @@ public sealed partial class GamePlanner
         {
             Roll = new PlannedRoll(verdict.RollPurpose, Build),
             FirstEventId = EventId(attemptId, 1),
+            HalfMf = halfMf + dashHalfMf,
+            HalfMfLeft = halfMfLeft,
         };
     }
 
