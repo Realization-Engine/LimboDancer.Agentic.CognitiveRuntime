@@ -175,10 +175,10 @@ public sealed class PlayPagePass31Tests : IDisposable
         }
 
         Assert.Equal("rtph", Current.Phase);
+        // The Play streamlining plan, S4: the end the gate would refuse is not offered; the German view reads why in its place.
         page.ViewAs("german");
-        page.Find("#propose-advance").Click();
-        page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.Contains("still has a unit that must rout", page.Find("#play-reasons").TextContent, StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#propose-advance"));
+        Assert.Contains("still has a unit that must rout", page.Find("#advance-owed").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#play-consequences"));
 
         page.ViewAs("russian");

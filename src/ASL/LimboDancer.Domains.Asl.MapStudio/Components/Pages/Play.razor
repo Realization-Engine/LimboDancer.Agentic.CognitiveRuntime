@@ -473,7 +473,12 @@ else if (state is not null)
                 <fieldset class="plain" id="play-actions" disabled="@WaitsOnAnswer">
                 <div class="toolbar">
                     @* Pass 31 (ruling R31.6; play test P-07): the phase is ended by the side that acts in it. *@
-                    @if (MayEndPhase)
+                    @if (MayEndPhase && PhaseEndBarNow is { } phaseEndBar)
+                    {
+                        @* The Play streamlining plan, S4 (A10.5; ruling R31.6): the end of the phase is not offered while the gate would refuse it. *@
+                        <span id="advance-owed" class="toolbar-note">@phaseEndBar</span>
+                    }
+                    else if (MayEndPhase)
                     {
                         <button id="propose-advance" @onclick="ProposeAdvance">Propose: end the @Games.PhaseLabel(state.Phase)</button>
                     }
@@ -511,6 +516,7 @@ else if (state is not null)
                 {
                     <SupportWeaponActionPanel Weapons="@([.. SupportWeapons.Select(weapon => new PlayChoice(weapon.Id, SupportWeaponText(weapon)))])"
                         Units="@([.. SupportWeaponUnits.Select(Labelled)])" Weapon="@swWeapon" Unit="@swUnit" Held="@(SupportWeaponHolder is not null)" Dismantles="@(swWeapon.Length > 0 && Live.Planner.MayDismantle(state, swWeapon))"
+                        RecoverBar="@(state.Unit(swUnit) is { } recovering && Live.Planner.RecoverPhaseBar(state, recovering) is { } recoverBar ? PlainReason(recoverBar) : null)"
                         OnWeapon="@(id => { swWeapon = id; swUnit = string.Empty; })" OnUnit="@(id => swUnit = id)" OnPropose="@ProposeSupportWeaponKind" />
                 }
                 @* Pass 40 (A20.5, p. 88): an unbroken Guard squad Deploys at will, in any phase; in the RPh the Deploy panel takes it. *@
@@ -529,7 +535,7 @@ else if (state is not null)
                 @if (state.Phase == "rph")
                 {
                     <ActionSection Title="Rally" Key="rally">
-                    <RallyActionPanel Units="@RallyChoices" Leaders="@([.. RallyLeaders.Select(leader => leader.Id)])" Unit="@rallyUnit" Leader="@rallyLeader"
+                    <RallyActionPanel Units="@RallyChoices" Leaders="@([.. RallyLeaders.Select(leader => leader.Id)])" Unit="@rallyUnit" Leader="@rallyLeader" Barred="@RallyBarNow"
                         OnUnit="@(id => { rallyUnit = id; rallyLeader = string.Empty; })" OnLeader="@(id => rallyLeader = id)" OnPropose="@ProposeRally" />
                     </ActionSection>
                     <ActionSection Title="Repair" Key="repair">
@@ -5018,6 +5024,9 @@ else if (state is not null)
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && unit.Kind == "asl:leader"
             && GameState.GoodOrder(unit, Library.Vocabulary) == ConditionState.True && GameState.Condition(unit, Conditions.Pinned) != ConditionState.True
             && GamePlanner.FireBar(state, unit) is null
+            // The Play streamlining plan, S4: a leader ticked as a firer is not offered as the director too, which the attack would refuse as a unit
+            // named twice.
+            && !fireFirers.Contains(unit.Id)
             && state.Aboard(unit.Id) is null && fireFirers.Any(id => state.Location(id)?.Location is { } at && state.Location(unit.Id)?.Location == at))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
@@ -7015,6 +7024,29 @@ else if (state is not null)
     /// <summary>Pass 31 (ruling R31.6): whether the view shown may end the present phase.</summary>
     private bool MayEndPhase => state is not null && (Viewer.IsAdjudicator || GamePlanner.PhaseEndedBy(state, viewAs) == viewAs);
 
+    // The Play streamlining plan, S4: why this view may not end the phase yet, asked of the planner once a state and view (in the RtPh it reads
+    // the routs still owed). The adjudicator may end any phase.
+    private (GameState? State, string View, string? Bar) phaseEndMemo;
+
+    private string? PhaseEndBarNow
+    {
+        get
+        {
+            if (state is null || history is null || Viewer.IsAdjudicator || state.Phase != "rtph")
+            {
+                return null;
+            }
+
+            if (!ReferenceEquals(phaseEndMemo.State, state) || phaseEndMemo.View != viewAs)
+            {
+                var bar = Live.Planner.PhaseEndBar(state, history.Events, viewAs);
+                phaseEndMemo = (state, viewAs, bar is null ? null : PlainReason(bar));
+            }
+
+            return phaseEndMemo.Bar;
+        }
+    }
+
     /// <summary>Pass 31 (ruling R5.8): a choice or a surrender waits for its answer, and nothing else is proposed until it has one.</summary>
     private bool WaitsOnAnswer => state is { } waiting && (waiting.Choice is not null || waiting.PendingSurrenders.Count > 0);
 
@@ -7344,9 +7376,30 @@ else if (state is not null)
     /// <summary>Half MF in words, such as "1½"; "?" when not known.</summary>
     private static string Mf(int? halfMf) => halfMf is not { } half ? "?" : $"{half / 2}{(half % 2 == 1 ? "½" : string.Empty)}";
 
-    /// <summary>A refusal's words without its code, as the route panel says it.</summary>
-    private static string PlainReason(string reason) => reason.IndexOf(": ", StringComparison.Ordinal) is var at and > 0 && !reason[..at].Contains(' ', StringComparison.Ordinal)
-        ? reason[(at + 2)..] : reason;
+    /// <summary>A refusal in the page's words, without its code and with the units' names for their ids, as the route and rally panels say it.</summary>
+    private string PlainReason(string reason) => Said(reason) ?? reason;
+
+    // The Play streamlining plan, S4: why the Rally attempt chosen would be refused, asked of the planner once a state, unit, and leader.
+    private (GameState? State, string Unit, string Leader, string? Bar) rallyBarMemo;
+
+    private string? RallyBarNow
+    {
+        get
+        {
+            if (state is null || history is null || rallyUnit.Length == 0 || !RallyChoices.Any(choice => choice.Id == rallyUnit))
+            {
+                return null;
+            }
+
+            if (!ReferenceEquals(rallyBarMemo.State, state) || rallyBarMemo.Unit != rallyUnit || rallyBarMemo.Leader != rallyLeader)
+            {
+                var bar = Live.Planner.RallyBar(new GameScope(LivePlay.Tenant, gameId), history.Events, rallyUnit, rallyLeader.Length > 0 ? rallyLeader : null);
+                rallyBarMemo = (state, rallyUnit, rallyLeader, bar is null ? null : PlainReason(bar));
+            }
+
+            return rallyBarMemo.Bar;
+        }
+    }
 
     private IReadOnlyList<string> PlotSteps => plot is null ? [] : [.. plot.Route.Select(step => $"{PlaceOf(step.To.ToString())}: {Mf(step.HalfMf)} MF, {Mf(step.HalfMfLeft)} left")];
 

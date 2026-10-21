@@ -60,6 +60,31 @@ public sealed class RallyAndRecordComponentTests : IDisposable
         Assert.Equal(SupportWeaponActionPanel.Recover, proposed);
     }
 
+    // The Play streamlining plan, S4: a Recovery the phase does not allow is held back, with the planner's reason as its tooltip.
+    [Fact]
+    public void TheSupportWeaponPanelHoldsBackARecoveryThePhaseDoesNotAllow()
+    {
+        var panel = context.Render<SupportWeaponActionPanel>(parameters => parameters
+            .Add(item => item.Weapons, [new PlayChoice("gm", "gm (left in bd01:E5:0)")]).Add(item => item.Units, [new PlayChoice("g2", "g2 (german)")])
+            .Add(item => item.Weapon, "gm").Add(item => item.Unit, "g2").Add(item => item.Held, false)
+            .Add(item => item.RecoverBar, "A SW is Recovered in the RPh or the MPh (A4.44)."));
+        Assert.True(panel.Find("#propose-recover").HasAttribute("disabled"));
+        Assert.Equal("A SW is Recovered in the RPh or the MPh (A4.44).", panel.Find("#propose-recover").GetAttribute("title"));
+    }
+
+    // The Play streamlining plan, S4: a Rally attempt the gate would refuse, such as a Self-Rally the unit may not make, is held back with the reason.
+    [Fact]
+    public void TheRallyPanelHoldsBackAnAttemptTheGateWouldRefuse()
+    {
+        var panel = context.Render<RallyActionPanel>(parameters => parameters.Add(item => item.Units, [new PlayChoice("r1", "r1 (russian)")])
+            .Add(item => item.Leaders, []).Add(item => item.Unit, "r1").Add(item => item.Barred, "R1 has no Self-Rally capability; it needs an unbroken leader in its Location."));
+        Assert.True(panel.Find("#propose-rally").HasAttribute("disabled"));
+        Assert.Contains("needs an unbroken leader", panel.Find("#propose-rally-ready").TextContent, StringComparison.Ordinal);
+
+        panel.Render(parameters => parameters.Add(item => item.Barred, (string?)null));
+        Assert.False(panel.Find("#propose-rally").HasAttribute("disabled"));
+    }
+
     // A09 and A10: with nothing to choose, neither renders anything.
     [Fact]
     public void DmRetentionAndShockRecoveryRenderNothingWhenEmpty()

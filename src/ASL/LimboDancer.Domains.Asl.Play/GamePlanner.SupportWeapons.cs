@@ -483,6 +483,26 @@ public sealed partial class GamePlanner
 
 
     /// <summary>
+    /// Why a unit may not attempt Recovery in the present phase (A4.44; ruling R13.5): only in the RPh, as its sole action, or in its own MPh with a
+    /// MF left; null when the phase allows it. The Recovery plan reads it, and the page asks it (the Play streamlining plan, S4) so it offers Recover
+    /// only when the phase allows it.
+    /// </summary>
+    public string? RecoverPhaseBar(GameState state, UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        return state.Phase switch
+        {
+            "rph" => RallyPhaseActionBar(state, unit.Id) is { } bar ? $"play.rph-action: {bar} (A4.44)" : null,
+            "mph" => unit.Side != state.PhasingSide || unit.MovementEnded
+                ? "play.recover-phase: in the MPh a unit Recovers a SW during its own move (A4.44; ruling R13.5)"
+                : MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)) is { } allotment && ScenarioA1SupportWeaponRules.RecoveryMfShort(allotment, unit.MfSpent, unit.HalfMfSpent)
+                    ? $"play.recover-mf: {unit.Id} has no MF left for a Recovery attempt (A4.44)" : null,
+            _ => "play.recover-phase: a SW is Recovered in the RPh or the MPh (A4.44)",
+        };
+    }
+
+    /// <summary>
     /// Recovery (A4.44; ruling R13.5): an unpinned Good Order unit Recovers an unpossessed SW in its Location, friendly or enemy, on a Final dr below 6
     /// (+1 CX), as its sole RPh action or in its MPh for one extra MF before it moves, with no armed Known enemy unit in the Location; a SMC Recovers a
     /// SW its friendly broken unit there possesses the same way, with no MF.
@@ -519,16 +539,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.recover-unarmed: {unit.Id} is Unarmed and uses no SW (A20.5)");
         }
 
-        string? phaseBar = state.Phase switch
-        {
-            "rph" => RallyPhaseActionBar(state, unit.Id) is { } bar ? $"play.rph-action: {bar} (A4.44)" : null,
-            "mph" => unit.Side != state.PhasingSide || unit.MovementEnded
-                ? "play.recover-phase: in the MPh a unit Recovers a SW during its own move (A4.44; ruling R13.5)"
-                : MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)) is { } allotment && ScenarioA1SupportWeaponRules.RecoveryMfShort(allotment, unit.MfSpent, unit.HalfMfSpent)
-                    ? $"play.recover-mf: {unit.Id} has no MF left for a Recovery attempt (A4.44)" : null,
-            _ => "play.recover-phase: a SW is Recovered in the RPh or the MPh (A4.44)",
-        };
-        if (phaseBar is not null)
+        if (RecoverPhaseBar(state, unit) is { } phaseBar)
         {
             return Refused(scope, label, expected, phaseBar);
         }

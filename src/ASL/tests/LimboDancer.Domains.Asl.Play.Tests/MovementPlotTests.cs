@@ -219,6 +219,31 @@ public sealed class MovementPlotTests : IDisposable
         Assert.False(Planner().DefenderMayFire(state, Events, At("FF10")));
     }
 
+    // The Play streamlining plan, S4 (A10.63, A18.11): the planner says why a Rally attempt would be refused, from the attempt's own plan, so the page
+    // offers only what the gate takes: in the German RPh a broken Russian squad with no leader has no Self-Rally, and nothing is stored.
+    [Fact]
+    public async Task TheRallyBarIsTheGatesOwnRefusal()
+    {
+        var setup = await Commit(GameActions.Setup, new
+        {
+            start = new
+            {
+                label = "Rally",
+                catalog = "asl-scenario-a1@1.13.0",
+                boards = Bd01,
+                firstSide = "german",
+                scenarioMonth = 7,
+                sides = new object[] { new { id = "german", nationality = "german", elr = 3 }, new { id = "russian", nationality = "russian", elr = 3 } },
+            },
+            placements = new[] { Unit("g1", "attacker-squad", "bd01:FF10:0", "german"), Unit("r1", "defender-squad", "bd01:AA10:0", "russian", "asl:broken") },
+        });
+        Assert.True(setup.Outcome == PlayOutcome.Committed, string.Join("; ", setup.Reasons));
+        var before = Events.Count;
+
+        Assert.StartsWith("play.rally-self", Planner().RallyBar(Scope, Events, "r1", null), StringComparison.Ordinal);
+        Assert.Equal(before, Events.Count);
+    }
+
     private sealed class NullAudit : IAuditSink
     {
         public ValueTask WriteAsync(RuntimeAuditEvent auditEvent, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;

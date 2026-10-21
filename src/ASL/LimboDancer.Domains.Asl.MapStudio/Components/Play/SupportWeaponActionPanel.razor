@@ -31,13 +31,20 @@
     </label>
     <button id="propose-transfer" disabled="@(!Held || Unit.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync(Transfer))">Propose: transfer</button>
     <button id="propose-drop" disabled="@(!Held)" @onclick="@(() => OnPropose.InvokeAsync(Drop))">Propose: drop</button>
-    <button id="propose-recover" disabled="@(Held || Weapon.Length == 0 || Unit.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync(Recover))">Propose: recover</button>
+    <button id="propose-recover" disabled="@(Held || Weapon.Length == 0 || Unit.Length == 0 || RecoverBar is not null)" title="@RecoverBar" @onclick="@(() => OnPropose.InvokeAsync(Recover))">Propose: recover</button>
     <button id="propose-dismantle" disabled="@(!Held || !Dismantles)" @onclick="@(() => OnPropose.InvokeAsync(Dismantle))">Propose: dismantle or assemble</button>
     <span id="sw-ready" class="toolbar-note">Transfer and drop take a SW a unit holds; recover takes a SW lying in the Location and the unit that recovers it; the game dismantles and assembles only the German MMG, in its side's Prep Fire or Defensive Fire Phase (A9.8).</span>
 </div>
 </ActionSection>
 
 @code {
+    /// <summary>
+    /// Why the chosen unit may not attempt Recovery now, in words (the Play streamlining plan, S4): the planner's own phase check; the button is
+    /// held back with it as its tooltip. Null when the phase allows it.
+    /// </summary>
+    [Parameter]
+    public string? RecoverBar { get; set; }
+
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }
