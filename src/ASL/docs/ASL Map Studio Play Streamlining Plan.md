@@ -2,7 +2,7 @@
 
 **Written:** 2026-10-21, from the [ASL Map Studio Play Streamlining Analysis](<ASL Map Studio Play Streamlining Analysis.md>) and the user's rulings of the same day: S1 to S5 approved in general, open to refinement; Q6 to Q10 approved as recommended.
 **Branch:** `play-streamlining`, cut from `main` at 52a185c5. S5 is built there, uncommitted.
-**Status:** proposed; nothing past S5 is built.
+**Status:** approved by the user 2026-10-21 ("Proceed"); P0 to P7 built on branch `play-streamlining` (S1 to S6), each checked in my Studio; P8 (the gate and the pull request) in progress. What is left is in the backlog, section 68.
 **Scope:** the Play page and what it asks of Play and Rules. Every ASL rule stays in the Rules project (the ruling of 2026-10-05): a new rule fact goes into a calculator there, with Play gathering its facts. Vehicles' movement plans, the DEFENDER's LOS overlay (backlog 68), and standing fire orders (backlog 68) are out.
 
 ## 1. Baseline, expected gains, method, and when to stop

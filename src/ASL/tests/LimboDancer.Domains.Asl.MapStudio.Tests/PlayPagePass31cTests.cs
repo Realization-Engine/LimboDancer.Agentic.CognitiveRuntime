@@ -365,6 +365,83 @@ public sealed class PlayPagePass31cTests : IDisposable
         Assert.Null(live.Plans.Of("village"));
     }
 
+    // The Play streamlining plan, S6 (ruling Q8): when every DEFENDER unit is Known and none could fire, the route runs to its end in the moving side's
+    // view, the steps passed for him, with no hand-over: it tells the moving side nothing it does not see for itself.
+    [Fact]
+    public void ARouteNoKnownDefenderCanFireAtRunsWithNoHandOver()
+    {
+        var hexes = Hexes();
+        var page = NewGame("german", "russian");
+        Place(page, "g1", "attacker-squad", hexes.From);
+        page.Find("#place-broken").Change(true);
+        Place(page, "r1", "defender-squad", hexes.Building);
+        Commit(page, "#propose-setup");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
+        Assert.Equal("mph", Current.Phase);
+
+        page.Find(".move-unit[data-unit='g1']").Change(true);
+        page.Find("#move-route-plot").Click();
+        ClickHex(page, hexes.Open);
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("#move-route-steps li")));
+        ClickHex(page, hexes.From);
+        page.WaitForAssertion(() => Assert.Equal(2, page.FindAll("#move-route-steps li").Count));
+        page.Find("#move-route-go").Click();
+
+        page.WaitForAssertion(() => Assert.True(Current.Unit("g1")!.MovementEnded));
+        Assert.Equal(hexes.From, Current.Location("g1")?.Location.ToString());
+        Assert.Null(live.Plans.Of("village"));
+        Assert.Empty(page.FindAll("#play-hand-over"));
+        Assert.Contains("ends its move", page.Find("#move-route-last").TextContent, StringComparison.Ordinal);
+    }
+
+    // The Play streamlining plan, S6 (A8.22): a step into Residual FP is attacked inside the step; a stack the attack changed stops the plan, the
+    // DEFENDER decides at that step, and the moving side then decides again.
+    [Fact]
+    public void AStepIntoResidualFpThatChangesTheStackStopsThePlan()
+    {
+        var hexes = Hexes();
+        var page = NewGame("german", "russian");
+        Place(page, "g1", "attacker-squad", hexes.From);
+        Place(page, "g2", "attacker-squad", hexes.From);
+        Place(page, "r1", "defender-squad", hexes.Building);
+        Commit(page, "#propose-setup");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
+
+        // g1 steps into the open hex, and r1 fires at it there with no effect, which leaves Residual FP in that hex (A8.2); the pass ends nothing,
+        // and g1 ends its move.
+        page.Find(".move-unit[data-unit='g1']").Change(true);
+        page.Find("#move-to").Change(hexes.Open);
+        Commit(page, "#propose-move");
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        page.Find("#fire-from").Change(hexes.Building);
+        page.Find(".fire-firer[data-unit='r1']").Change(true);
+        page.Find("#fire-target").Change(hexes.Open);
+        page.Find("#propose-fire").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.True(dice.Enqueue([6, 6]));
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.NotEmpty(Current.ResidualFire));
+        Commit(page, "#propose-pass");
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        Commit(page, "#propose-end-move");
+
+        // g2's route goes through the open hex: its Residual FP attacks g2 there, with dice that break it.
+        page.Find(".move-unit[data-unit='g2']").Change(true);
+        page.Find("#move-route-plot").Click();
+        ClickHex(page, hexes.Open);
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("#move-route-steps li")));
+        Assert.True(dice.Enqueue([1, 1, 6, 6, 6, 6]));
+        page.Find("#move-route-go").Click();
+        page.WaitForAssertion(() => Assert.NotNull(live.Plans.Of("village")?.Paused));
+
+        // The attack left g2 unable to move on (broken, pinned, or eliminated), which is what stopped the plan.
+        Assert.DoesNotContain("g2", Current.Movement?.Members ?? []);
+    }
+
     // The Play streamlining plan, S6 (A8.11): the DEFENDER's fire at a step of the route hands it back to the moving side once he lets the stack
     // move on; while it waits he has nothing to pass; the moving side continues along the rest of the route.
     [Fact]

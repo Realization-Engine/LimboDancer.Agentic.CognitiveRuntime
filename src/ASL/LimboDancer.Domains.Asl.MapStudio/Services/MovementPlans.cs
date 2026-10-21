@@ -111,6 +111,13 @@ public sealed class MovementPlans(LivePlay live)
     {
         if (Of(game) is { } plan)
         {
+            // The plan's section 2.7: a game that has moved on since the pause (another view or Studio acted) is not stepped on blind.
+            if (Events(game).Count != plan.Revision)
+            {
+                Drop(game);
+                return Task.FromResult(new MovementPlanRun(MovementPlanTurn.Mover, "The game has moved on since the route was paused: plot the rest again.", []));
+            }
+
             plans[game] = plan with
             {
                 Paused = null
