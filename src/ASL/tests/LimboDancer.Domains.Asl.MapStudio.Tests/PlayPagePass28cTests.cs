@@ -168,6 +168,7 @@ public sealed class PlayPagePass28cTests : IDisposable
         // A8.1, A8.11 (referee, pass 28c): only the DEFENDER passes; the moving side's view has no pass.
         Assert.Empty(page.FindAll("#propose-pass"));
         Assert.NotEmpty(page.Find("#play-status").TextContent);
+        Assert.Equal("View: German", page.Find("#play-view-label").TextContent);
 
         page.Find("#play-hand-over").Click();
         Assert.Contains("Russian side", page.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
@@ -185,6 +186,10 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.DoesNotContain("squad G1", page.Find("#play-reasons").TextContent, StringComparison.Ordinal);
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: false }));
+
+        // The Play streamlining plan, S7: once the window closes the DEFENDER's section is gone; the map's toolbar names the view in force.
+        Assert.Empty(page.FindAll("#dff-window"));
+        Assert.Equal("View: Russian", page.Find("#play-view-label").TextContent);
     }
 
     // The Play streamlining plan, S1: the DEFENDER passes from the hand-over screen without opening his view; the screen then goes back to the moving

@@ -623,9 +623,13 @@ else if (state is not null)
                                 </p>
                             }
                         }
-                        @* The Play streamlining plan, S7 (ruling R-PS.4): while the DEFENDER's window is open the moving side has nothing to do but wait,
-                           outside a movement plan, whose own panel says what waits. *@
-                        @if (MoverWaits)
+                        @* The Play streamlining plan, S7 (ruling R-PS.4): while the DEFENDER's window is open the moving side has nothing to do but wait;
+                           a route under way says how far it has come. *@
+                        @if (MoverWaits && PlanNow is { } waitingPlan)
+                        {
+                            <p class="toolbar-note" id="move-route-running">The stack is moving along its route: @(waitingPlan.Next) of @waitingPlan.Route.Count steps made. The DEFENDER decides at the steps where he could fire.</p>
+                        }
+                        else if (MoverWaits)
                         {
                             <p class="toolbar-note" id="move-waiting">The DEFENDER fires at the stack or passes; then it moves on or ends its move.</p>
                         }
@@ -886,7 +890,10 @@ else if (state is not null)
                     }
                     @* Pass 28c (A8.1, A8.11): after each step the DEFENDER, from its own view, sees where the stack is and fires at it or passes.
                        Pass 40 (A8.312): the attack owed in the DEFENDER's own Location comes before a pass; the adjudicator has the same block. *@
-                    @if (state.Phase == "mph" && MovingAt is { } movingAt && (Viewer.IsAdjudicator ? MandatoryNow is not null : viewAs != state.PhasingSide))
+                    @* The Play streamlining plan, S7: only while the DEFENDER may fire or pass, or owes Mandatory Fire; once his window closes the
+                       section has nothing to offer him. *@
+                    @if (state.Phase == "mph" && MovingAt is { } movingAt && (Viewer.IsAdjudicator ? MandatoryNow is not null
+                        : viewAs != state.PhasingSide && (state.Movement is { WindowOpen: true } || MandatoryNow is not null)))
                     {
                         var mandatory = MandatoryNow;
                         <ActionSection Title="Defensive First Fire" Key="defensive-first-fire">
@@ -898,10 +905,6 @@ else if (state is not null)
                             else if (MoveStopped)
                             {
                                 <span class="toolbar-note" id="dff-note">No member of the moving stack at @PlaceOf(movingAt) can move on: each is broken, pinned, or eliminated. Fire at it again below, or pass, which ends its move (A8.1, A4.2).</span>
-                            }
-                            else if (PlanNow is not null && !Viewer.IsAdjudicator && state.Movement is not { WindowOpen: true })
-                            {
-                                <span class="toolbar-note" id="dff-note">The moving stack is at @PlaceOf(movingAt) and waits for the moving side to go on along its route, change it, or end its move.</span>
                             }
                             else if (PlanNow is { } defending && !Viewer.IsAdjudicator)
                             {
@@ -922,10 +925,6 @@ else if (state is not null)
                                 {
                                     <button class="propose-mandatory-fire-one" data-unit="@owing" @onclick="@(() => ProposeMandatoryFire(mandatory, owing))">Propose: @Words(owing) attacks</button>
                                 }
-                            }
-                            else if (!Viewer.IsAdjudicator && PlanNow is not null && state.Movement is not { WindowOpen: true })
-                            {
-                                @* A plan that waits for the moving side: its window is closed, so nothing for the DEFENDER to pass. *@
                             }
                             else if (!Viewer.IsAdjudicator && PlanNow is not null)
                             {
@@ -1066,6 +1065,9 @@ else if (state is not null)
                                     @onclick="@(() => showParentBoundaries = !showParentBoundaries)">Formation boundaries</button>
                         }
                         <span class="muted" id="play-map-keys">Drag to pan. With the map focused, + and - zoom and 0 fits. Click a hex or a counter to inspect it.</span>
+                        @* The user, 2026-10-21: the view in force, where the eye already is; the "View as" list alone was too easy to miss when the
+                           DEFENDER takes the screen in the MPh. *@
+                        <span class="play-view-label" id="play-view-label" aria-live="polite">View: @(Viewer.IsAdjudicator ? "the adjudicator" : DisplayText.Side(viewAs))</span>
                     </div>
                     @if (SetupMode && PlansOffered is { Plans.Count: > 0 } switchable)
                     {
@@ -5699,9 +5701,9 @@ else if (state is not null)
     /// <summary>The map edges to leave by, each with its compass direction from the card's North (table player, pass 25).</summary>
     /// <summary>
     /// Whether the moving side's view waits on the DEFENDER (the Play streamlining plan, S7; ruling R-PS.4): his window on the moving stack is open,
-    /// outside a movement plan, whose own panel says what waits; the moving side's forms are not shown until he fires or passes.
+    /// with or without a route under way; the moving side's forms are not shown until he fires or passes.
     /// </summary>
-    private bool MoverWaits => state is { Phase: "mph", Movement.WindowOpen: true } && !Viewer.IsAdjudicator && viewAs == state.PhasingSide && PlanNow is null;
+    private bool MoverWaits => state is { Phase: "mph", Movement.WindowOpen: true } && !Viewer.IsAdjudicator && viewAs == state.PhasingSide;
 
     /// <summary>
     /// The edges the checked stack may leave the map by (the Play streamlining plan, S7; ruling R-PS.5): those its one Location lies on, read once a

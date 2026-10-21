@@ -3104,6 +3104,15 @@ details.advanced > summary {
     min-height: 2rem;
 }
 
+/* The user, 2026-10-21: the view in force, at the right end of the map toolbar, large enough to catch the eye after a hand-over. */
+.play-view-label {
+    margin-left: auto;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--fail);
+    white-space: nowrap;
+}
+
 .play-map-pane #play-residual {
     margin: 0 0 0.4rem;
 }
