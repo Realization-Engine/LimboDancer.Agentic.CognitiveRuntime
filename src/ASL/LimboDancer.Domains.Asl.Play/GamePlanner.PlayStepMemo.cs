@@ -68,6 +68,13 @@ public sealed partial class GamePlanner
         /// </summary>
         public ConcurrentDictionary<BoardLocation, LocationRead?> Reads { get; } = new();
 
+        /// <summary>
+        /// Whether the DEFENDER could fire at the moving stack's step (the Play streamlining plan, S6), keyed by the step's Location and the Location
+        /// the stack came from; the state fixes the sides, the units, and the markers. It counts the DEFENDER's concealed and hidden units, so it is
+        /// read only for his view and for passing for him, never shown to the moving side.
+        /// </summary>
+        public ConcurrentDictionary<(BoardLocation At, BoardLocation? From), bool> DefenderMayFire { get; } = new();
+
         // 1 once the placed map's composed read is kept; written after the read, read with a volatile read.
         private int composedKept;
         private ComposedMapRead? composed;

@@ -193,6 +193,32 @@ public sealed class MovementPlotTests : IDisposable
         Assert.StartsWith("play.move-occupied", ff9.Refusal, StringComparison.Ordinal);
     }
 
+    // The Play streamlining plan, S6 (ruling Q8): after a step the planner says whether the DEFENDER could fire at it; a squad within Long Range
+    // could, and one beyond it could not. The test's LOS is clear everywhere, so the range decides.
+    [Fact]
+    public async Task TheDefenderMayFireOnlyAtAStepWithinItsReach()
+    {
+        await GermanMph(Unit("r1", "defender-squad", "bd01:FF2:0", "russian"));
+        Assert.Equal(PlayOutcome.Committed, (await Commit(GameActions.Move, new
+        {
+            unitIds = G1,
+            to = "bd01:FF9:0"
+        })).Outcome);
+        var state = Planner().Replay(Events).Current!;
+        Assert.True(Planner().DefenderMayFire(state, Events, At("FF10")));
+
+        // Beyond Long Range: the same step with the Russian squad far away.
+        Dispose();
+        await GermanMph(Unit("r1", "defender-squad", "bd01:A1:0", "russian"));
+        Assert.Equal(PlayOutcome.Committed, (await Commit(GameActions.Move, new
+        {
+            unitIds = G1,
+            to = "bd01:FF9:0"
+        })).Outcome);
+        state = Planner().Replay(Events).Current!;
+        Assert.False(Planner().DefenderMayFire(state, Events, At("FF10")));
+    }
+
     private sealed class NullAudit : IAuditSink
     {
         public ValueTask WriteAsync(RuntimeAuditEvent auditEvent, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
