@@ -508,7 +508,8 @@ else if (state is not null)
                     <RoutActionPanel Obligations="@RoutObligations" Units="@RoutChoices" Unit="@routUnit" Route="@routRoute" LowCrawl="@routLowCrawl"
                         Load="@RoutLoadText" Loads="@RoutLoads" Keep="@string.Join(",", RoutKept)" OnKeep="@(keep => routKeep = keep)"
                         OnUseRoute="@(way => (routUnit, routRoute, routKeep, routLowCrawl) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty, routLowCrawl && !way.Route.Contains(',')))"
-                        OnUnit="@(id => (routUnit, routKeep, routRoute) = (id, string.Empty, id == routUnit ? routRoute : string.Empty))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout" />
+                        OnUnit="@(id => (routUnit, routKeep, routRoute) = (id, string.Empty, id == routUnit ? routRoute : string.Empty))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout"
+                        OnRoutGroup="@ProposeRoutGroup" Busy="@busy" />
                 }
                 @* The Play streamlining plan, S7 (ruling R-PS.3): the panel and each of its actions only when the phase allows it to the view; in the RtPh
                    the Rout form chooses what a broken unit keeps. *@
@@ -582,8 +583,11 @@ else if (state is not null)
                         </div>
                     }
                 }
-                @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide || OverrunCloseCombat is not null))
+                @if (state.Phase == "mph")
                 {
+                    @* The DEFENDER's own forms of the MPh (CC Reaction Fire) stay in his view; the Movement section is the moving side's (S7). *@
+                    @if (Viewer.IsAdjudicator || viewAs == state.PhasingSide || OverrunCloseCombat is not null)
+                    {
                     <ActionSection Title="Movement" Key="movement">
                     <RuleHelp Id="move-help" Summary="@($"The {DisplayText.Side(state.PhasingSide)} side moves one stack at a time, one Location per step; after each step the DEFENDER may fire or pass (A4.1, A8.1).")">
                         The @DisplayText.Side(state.PhasingSide) side moves one stack at a time, one Location per step (A4.1). After each step the DEFENDER may fire at the stack
@@ -707,6 +711,7 @@ else if (state is not null)
                         }
                     }
                     </ActionSection>
+                    }
                     @if (state.Movement is { Vehicle: true, WindowOpen: true, Members: [{ } reacting] } && state.Location(reacting)?.Location is { } reactionAt
                         && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && SeenOnly(ReactionUnits(reactionAt, reacting)).ToArray() is { Length: > 0 } reactors)
                     {
@@ -864,7 +869,7 @@ else if (state is not null)
                                 <select id="motion-vehicle" value="@(motionChosen?.Vehicle ?? string.Empty)" @onchange="@(args => (motionVehicle, motionFacing, motionTurret) = (args.Value as string ?? string.Empty, string.Empty, string.Empty))">
                                     @foreach (var option in motionOptions)
                                     {
-                                        <option value="@option.Vehicle" disabled="@(option.Bar is not null)" title="@(option.Bar is null ? null : Said(option.Bar))">@Words(option.Vehicle): @(option.Bar is null ? ScenarioA1MotionAttempts.Chance(option.HalfPoints, option.VehicleMover) : option.BarShort is { } brief ? Words(brief) : Said(option.Bar))</option>
+                                        <option value="@option.Vehicle" disabled="@(option.Bar is not null)" title="@(option.Bar is null ? null : Said(option.Bar))">@UnitAt(option.Vehicle): @(option.Bar is null ? ScenarioA1MotionAttempts.Chance(option.HalfPoints, option.VehicleMover) : option.BarShort is { } brief ? Words(brief) : Said(option.Bar))</option>
                                     }
                                 </select>
                             </label>
@@ -896,7 +901,7 @@ else if (state is not null)
                                         </label>
                                     }
                                 }
-                                <button id="propose-motion-attempt" aria-describedby="motion-note" @onclick="@(() => ProposeMotionAttempt(motionChosen))">Propose: @Words(motionChosen.Vehicle) attempts Motion</button>
+                                <button id="propose-motion-attempt" aria-describedby="motion-note" @onclick="@(() => ProposeMotionAttempt(motionChosen))">Propose: @UnitAt(motionChosen.Vehicle) attempts Motion</button>
                             }
                             else
                             {
@@ -940,7 +945,7 @@ else if (state is not null)
                             {
                                 @foreach (var owing in mandatory.Firers)
                                 {
-                                    <button class="propose-mandatory-fire-one" data-unit="@owing" @onclick="@(() => ProposeMandatoryFire(mandatory, owing))">Propose: @Words(owing) attacks</button>
+                                    <button class="propose-mandatory-fire-one" data-unit="@owing" @onclick="@(() => ProposeMandatoryFire(mandatory, owing))">Propose: @UnitAt(owing) attacks</button>
                                 }
                             }
                             else if (!Viewer.IsAdjudicator && PlanNow is not null)
@@ -6821,6 +6826,74 @@ else if (state is not null)
             .Select(hex => hex.Contains(':', StringComparison.Ordinal) ? hex : $"{at.Board}:{hex}:0")]
         : [];
 
+    /// <summary>
+    /// Every unit of a hex routs in turn along one route (the user, 2026-10-21): each rout is its own, one at a time (A10.5), proposed and confirmed
+    /// as the player would, each with its own Interdiction. The first one refused opens its review; a unit that carries more than it may rout with
+    /// and has a choice of what it keeps is chosen in the form, its route filled, for the player to choose; either stops the rest.
+    /// </summary>
+    private async Task ProposeRoutGroup((IReadOnlyList<string> Units, string Route) group)
+    {
+        if (busy || state is null || history is null)
+        {
+            return;
+        }
+
+        var routed = 0;
+        foreach (var unitId in group.Units)
+        {
+            if (state?.Unit(unitId) is not { } unit || history is null)
+            {
+                break;
+            }
+
+            if (Live.Planner.RoutLoadOf(state, unit) is { Laden: true } load && load.Choices.Count > 1)
+            {
+                (routUnit, routRoute, routKeep, routLowCrawl) = (unitId, group.Route, string.Empty, false);
+                status = $"{(routed > 0 ? $"{routed} routed. " : string.Empty)}{UnitAt(unitId)} carries more than it may rout with: choose what it keeps, then propose its rout.";
+                Refresh();
+                return;
+            }
+
+            // The route's hexes are read on the routing unit's board.
+            routUnit = unitId;
+            var arguments = FromView(JsonSerializer.SerializeToElement(new
+            {
+                gameId, attemptId = Attempt("rout"), expectedRevision = (long)history.Events.Count, unitId, route = RouteLocations(group.Route), lowCrawl = false,
+                keep = Live.Planner.RoutLoadOf(state, unit) is { Laden: true } only ? only.Choices[0] : null,
+            }));
+            busy = true;
+            PlayResult result;
+            try
+            {
+                var proposed = await Run(() => Live.Play.ProposeAsync(GameActions.Rout, arguments, Live.Principal));
+                result = proposed.Outcome == PlayOutcome.NeedsConfirmation
+                    ? await Run(() => Live.Play.ConfirmAsync(GameActions.Rout, arguments, Live.Principal, proposed.Correlation)) : proposed;
+            }
+            finally
+            {
+                busy = false;
+            }
+
+            Refresh();
+            if (result.Outcome is not (PlayOutcome.Committed or PlayOutcome.Replay))
+            {
+                (routUnit, routRoute) = (unitId, group.Route);
+                await Propose(GameActions.Rout, JsonSerializer.SerializeToElement(new
+                {
+                    gameId, attemptId = Attempt("rout"), expectedRevision = (long)history!.Events.Count, unitId, route = RouteLocations(group.Route), lowCrawl = false,
+                }));
+                return;
+            }
+
+            routed++;
+        }
+
+        var end = RouteLocations(group.Route).LastOrDefault();
+        (routUnit, routRoute) = (string.Empty, string.Empty);
+        status = $"{routed} {(routed == 1 ? "unit routs" : "units rout")}{(end is null ? string.Empty : $" along the route to {PlaceOf(end)}")}.";
+        Refresh();
+    }
+
     private Task ProposeRout() => Propose(GameActions.Rout, JsonSerializer.SerializeToElement(new
     {
         gameId, attemptId = Attempt("rout"), expectedRevision = (long)history!.Events.Count, unitId = routUnit, route = RouteLocations(routRoute), lowCrawl = routLowCrawl,
@@ -8740,9 +8813,14 @@ else if (state is not null)
 
     private Func<string, UnitPlace?> PlaceOfUnitNow => placeOfUnitField ??= UnitPlaceOf;
 
+    /// <summary>A unit offered as a choice, named after its Location ("[AA6]: 5-2-7 squad R13"; the user, 2026-10-21); its name alone off the map.</summary>
+    private string UnitAt(string id) => UnitPlaceOf(id) is { } place ? $"{place.Where}: {Words(id)}" : Words(id);
+
     private UnitPlace? UnitPlaceOf(string id)
     {
-        if (state?.Unit(id) is not { } unit || state.Location(id)?.Location is not { } at)
+        // A unit or a weapon: each stands in a Location (a weapon held, in its holder's). An id that joins a unit and its weapon ("g1|pf", a
+        // tank's "t1|ma" or "t1:bmg") stands where the unit does.
+        if (state is null || (state.Location(id)?.Location ?? (id.IndexOfAny(['|', ':']) is > 0 and var cut ? state.Location(id[..cut])?.Location : null)) is not { } at)
         {
             return null;
         }
@@ -8751,7 +8829,7 @@ else if (state is not null)
         var letters = hex.TakeWhile(char.IsLetter).Count();
         _ = int.TryParse(hex.AsSpan(letters), out var row);
         // Map order: the board, then the column (A before Z before AA), then the row.
-        return new UnitPlace(PlaceOf(at with { Level = 0 }), (0, $"{at.Board}|{letters:D2}|{hex[..letters]}", row), unit.Kind == "asl:leader");
+        return new UnitPlace(PlaceOf(at with { Level = 0 }), PlaceOf(at), (0, $"{at.Board}|{letters:D2}|{hex[..letters]}", row), state.Unit(id)?.Kind == "asl:leader");
     }
 
     private string PlaceOf(string at) => DisplayText.Place(MapBoards, at);

@@ -12,20 +12,14 @@
         with
         <select id="recombine-two" value="@Two" @onchange="@(args => OnTwo.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var unit in Partners)
-            {
-                <option value="@unit">@Say(unit)</option>
-            }
+            <UnitOptions Units="@([.. Partners.Select(unit => new PlayChoice(unit, unit))])" Text="@Say" />
         </select>
     </label>
     <label>
         Leader
         <select id="recombine-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var leader in Leaders)
-            {
-                <option value="@leader">@Say(leader)</option>
-            }
+            <UnitOptions Units="@([.. Leaders.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
         </select>
     </label>
     <button id="propose-recombine" disabled="@(!HalfSquads.Any(unit => unit.Id == One) || !Partners.Contains(Two))" aria-describedby="propose-recombine-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: recombine</button>

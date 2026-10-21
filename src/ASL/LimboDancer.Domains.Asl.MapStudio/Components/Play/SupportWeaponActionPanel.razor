@@ -13,10 +13,7 @@
         SW
         <select id="sw-weapon" value="@Weapon" @onchange="@(args => OnWeapon.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var weapon in Weapons)
-            {
-                <option value="@weapon.Id">@Say(weapon.Label)</option>
-            }
+            <UnitOptions Units="@([.. Weapons.Select(weapon => new PlayChoice(weapon.Id, weapon.Label))])" Text="@Say" />
         </select>
     </label>
     <label>

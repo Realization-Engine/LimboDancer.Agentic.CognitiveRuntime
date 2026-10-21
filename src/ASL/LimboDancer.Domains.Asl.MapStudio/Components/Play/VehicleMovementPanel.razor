@@ -18,10 +18,7 @@
         Vehicle
         <select id="vehicle-unit" value="@Selected" @onchange="@(args => OnSelect.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var vehicle in Vehicles)
-            {
-                <option value="@vehicle.Value">@vehicle.Label</option>
-            }
+            <UnitOptions Units="@([.. Vehicles.Select(vehicle => new PlayChoice(vehicle.Value, vehicle.Label))])" Text="@(label => label)" />
         </select>
     </label>
     @ChildContent

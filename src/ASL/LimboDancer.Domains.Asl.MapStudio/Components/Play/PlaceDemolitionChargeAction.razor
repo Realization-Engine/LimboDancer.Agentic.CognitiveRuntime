@@ -4,10 +4,7 @@
     Place DC
     <select id="place-dc" value="@Charge" @onchange="@(args => OnCharge.InvokeAsync(args.Value as string ?? string.Empty))">
         <option value="">choose</option>
-        @foreach (var charge in Charges)
-        {
-            <option value="@charge.Id">@Say(charge.Label)</option>
-        }
+        <UnitOptions Units="@([.. Charges.Select(charge => new PlayChoice(charge.Id, charge.Label))])" Text="@Say" />
     </select>
 </label>
 <LocationField Id="place-dc-at" Label="in" Value="@At" OnChange="@OnAt" />

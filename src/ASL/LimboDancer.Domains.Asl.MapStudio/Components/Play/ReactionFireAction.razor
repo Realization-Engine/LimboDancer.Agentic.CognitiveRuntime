@@ -12,20 +12,14 @@
         Attacker
         <select id="reaction-attacker" value="@Attacker" @onchange="@(args => OnAttacker.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var unit in Attackers)
-            {
-                <option value="@unit">@At(unit)</option>
-            }
+            <UnitOptions Units="@([.. Attackers.Select(unit => new PlayChoice(unit, unit))])" Text="@At" />
         </select>
     </label>
     <label>
         With SMC
         <select id="reaction-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">none</option>
-            @foreach (var unit in Leaders)
-            {
-                <option value="@unit">@At(unit)</option>
-            }
+            <UnitOptions Units="@([.. Leaders.Select(unit => new PlayChoice(unit, unit))])" Text="@At" />
         </select>
     </label>
     <button id="propose-reaction" disabled="@(Attacker.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: CC Reaction Fire at @Vehicle</button>

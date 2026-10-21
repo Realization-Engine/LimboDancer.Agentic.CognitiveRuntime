@@ -18,10 +18,7 @@
         Rallied by
         <select id="rally-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">Self-Rally</option>
-            @foreach (var leader in Leaders)
-            {
-                <option value="@leader">@Say(leader)</option>
-            }
+            <UnitOptions Units="@([.. Leaders.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
         </select>
     </label>
     <button id="propose-rally" disabled="@(!Units.Any(unit => unit.Id == Unit) || Barred is not null)" aria-describedby="propose-rally-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rally</button>

@@ -65,14 +65,14 @@ else
     [CascadingParameter(Name = "PlaceOfUnit")]
     public Func<string, UnitPlace?>? PlaceOfUnit { get; set; }
 
-    // The user, 2026-10-21: the units by hex, each hex's leaders first, under the hex's name when there is more than one hex.
+    // The user, 2026-10-21: the units by hex, each hex's leaders first, always under the hex's name, so no counter is offered without its hex.
     private RenderFragment Boxes => @<text>
         @{
             var groups = UnitGrouping.Groups(Rows, row => row.Id, PlaceOfUnit);
         }
         @foreach (var group in groups)
         {
-            @if (groups.Count > 1)
+            @if (group.Hex is not null || groups.Count > 1)
             {
                 <span class="unit-group-hex" data-hex="@group.Hex">@(group.Hex ?? "Elsewhere")</span>
             }

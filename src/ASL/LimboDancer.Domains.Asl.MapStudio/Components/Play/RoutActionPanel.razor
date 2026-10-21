@@ -9,26 +9,65 @@
     is one Location using all its MF and is never Interdicted (A10.52, A10.53). As the RtPh ends a broken unit ADJACENT to its enemy, or one that did
     not rout from the open, is eliminated, or surrenders to an ADJACENT Good Order enemy (A20.21).
 </RuleHelp>
+@* The user, 2026-10-21: the broken units by hex, each hex first offered the routes open to all its units, each unit's own routes behind a
+   checkbox; every unit named after its hex. Each rout is still its own, one at a time (A10.5). *@
+@{
+    var hexGroups = UnitGrouping.Groups(Obligations, item => item.Unit, PlaceOfUnit);
+}
 <ul id="rout-obligations">
-    @foreach (var item in Obligations)
+    @foreach (var group in hexGroups)
     {
-        <li @key="item.Unit" class="rout-obligation" data-unit="@item.Unit">
-            @DisplayText.Sentence(Say(item.Text))
-            @* Pass 31d (design D3): a way to each place the rout may end, each on a line of its own (the table player); the button fills the
-               route, which stays the player's to change. *@
-            @if (item.Routes is { Count: > 0 } ways)
+        var routing = group.Items.Where(item => Units.Any(unit => unit.Id == item.Unit)).ToArray();
+        var shared = Shared(routing);
+        <li class="rout-hex" data-hex="@group.Hex">
+            @if (group.Hex is { } hex)
             {
-                <ul class="rout-ways">
-                    @foreach (var way in ways)
+                <strong>@hex</strong>
+            }
+            <ul>
+                @foreach (var item in group.Items)
+                {
+                    <li @key="item.Unit" class="rout-obligation" data-unit="@item.Unit">
+                        @Prefix(item.Unit)@DisplayText.Sentence(Say(item.Text))
+                        @* Pass 31d (design D3): a way to each place the rout may end, each on a line of its own (the table player); the button fills
+                           the route, which stays the player's to change. *@
+                        @if (EachUnit && item.Routes is { Count: > 0 } ways)
+                        {
+                            <ul class="rout-ways">
+                                @foreach (var way in ways)
+                                {
+                                    <li><button type="button" class="link use-route" data-unit="@item.Unit" data-route="@way.Route" title="Chooses this unit and fills its route; you may still change it."
+                                                @onclick="@(() => OnUseRoute.InvokeAsync((item.Unit, way.Route)))">@Prefix(item.Unit)@Say(item.Unit): use the route to @Say(way.Target)</button></li>
+                                }
+                            </ul>
+                        }
+                    </li>
+                }
+            </ul>
+            @if (shared.Count > 0)
+            {
+                <div class="toolbar rout-group-ways">
+                    @foreach (var way in shared)
                     {
-                        <li><button type="button" class="link use-route" data-unit="@item.Unit" data-route="@way.Route" title="Chooses this unit and fills its route; you may still change it."
-                                    @onclick="@(() => OnUseRoute.InvokeAsync((item.Unit, way.Route)))">Use the route to @Say(way.Target)</button></li>
+                        <button type="button" class="rout-group" data-hex="@group.Hex" data-route="@way.Route" disabled="@Busy"
+                                title="Each unit routs in turn along this route, with its own Interdiction (A10.5); the first one refused stops the rest."
+                                @onclick="@(() => OnRoutGroup.InvokeAsync(([.. routing.Select(item => item.Unit)], way.Route)))">
+                            @(routing.Length == 1 ? $"Rout {Prefix(routing[0].Unit)}{Say(routing[0].Unit)} to {Say(way.Target)}" : $"Rout the {routing.Length} units in {group.Hex} to {Say(way.Target)}")
+                        </button>
                     }
-                </ul>
+                </div>
+            }
+            else if (routing.Length > 1 && routing.All(item => item.Routes is { Count: > 0 }))
+            {
+                <p class="toolbar-note">No route is open to all of them: tick "each unit's own routes" below.</p>
             }
         </li>
     }
 </ul>
+@if (Obligations.Any(item => item.Routes is { Count: > 0 }))
+{
+    <label class="rout-each"><input type="checkbox" id="rout-each" checked="@EachUnit" @onchange="@(args => EachUnit = args.Value is true)" /> Show each unit's own routes</label>
+}
 <div class="toolbar">
     <label>
         Broken unit
@@ -76,6 +115,28 @@
     public Func<string, string>? WordsAt { get; set; }
 
     private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Say(text);
+
+    /// <summary>A unit's Location, which names it and groups the broken units (the user, 2026-10-21).</summary>
+    [CascadingParameter(Name = "PlaceOfUnit")]
+    public Func<string, UnitPlace?>? PlaceOfUnit { get; set; }
+
+    /// <summary>Whether each unit's own routes are shown; the routes open to a whole hex come first (the user, 2026-10-21).</summary>
+    private bool EachUnit { get; set; }
+
+    /// <summary>Every unit of a hex routs in turn along one route (A10.5: one at a time; the user, 2026-10-21).</summary>
+    [Parameter]
+    public EventCallback<(IReadOnlyList<string> Units, string Route)> OnRoutGroup { get; set; }
+
+    /// <summary>Whether the page is making a rout, so a second is not asked for meanwhile.</summary>
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private string Prefix(string unit) => PlaceOfUnit?.Invoke(unit) is { } place ? $"{place.Where}: " : string.Empty;
+
+    /// <summary>The routes offered to every unit of the hex that may still rout, in the first unit's order.</summary>
+    private static IReadOnlyList<Way> Shared(IReadOnlyList<Obligation> routing) =>
+        routing.Count == 0 || routing.Any(item => item.Routes is not { Count: > 0 }) ? []
+            : [.. routing[0].Routes!.Where(way => routing.All(item => item.Routes!.Any(other => other.Route == way.Route)))];
 
     /// <summary>A broken unit that may rout and what it owes, such as "r1 (russian): must rout: ...; has routed", with a way to each place it may end.</summary>
     public sealed record Obligation(string Unit, string Text, IReadOnlyList<Way>? Routes = null);

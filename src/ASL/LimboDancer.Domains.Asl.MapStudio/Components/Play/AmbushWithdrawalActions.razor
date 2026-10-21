@@ -4,12 +4,16 @@
     <span class="muted">Ambush Withdrawal (A11.41):</span>
     @foreach (var withdrawal in Withdrawals)
     {
-        <button class="ambush-withdraw" data-unit="@withdrawal.Unit" data-to="@withdrawal.To" @onclick="@(() => OnPropose.InvokeAsync(withdrawal))">Propose: @Say(withdrawal.Unit) withdraws to @Say(withdrawal.To)</button>
+        <button class="ambush-withdraw" data-unit="@withdrawal.Unit" data-to="@withdrawal.To" @onclick="@(() => OnPropose.InvokeAsync(withdrawal))">Propose: @(PlaceOfUnit?.Invoke(withdrawal.Unit) is { } place ? $"{place.Where}: " : string.Empty)@Say(withdrawal.Unit) withdraws to @Say(withdrawal.To)</button>
     }
 </div>
 
 @code {
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    /// <summary>A unit's Location, which names it in each button (the user, 2026-10-21).</summary>
+    [CascadingParameter(Name = "PlaceOfUnit")]
+    public Func<string, UnitPlace?>? PlaceOfUnit { get; set; }
+
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }
 

@@ -22,10 +22,7 @@
             MA at the vehicle
             <select id="vehicle-bff-vehicle" value="@Vehicle" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">none: the Location's Infantry</option>
-                @foreach (var vehicle in Vehicles)
-                {
-                    <option value="@vehicle.Id">@Say(vehicle.Label)</option>
-                }
+                <UnitOptions Units="@([.. Vehicles.Select(vehicle => new PlayChoice(vehicle.Id, vehicle.Label))])" Text="@Say" />
             </select>
         </label>
     }

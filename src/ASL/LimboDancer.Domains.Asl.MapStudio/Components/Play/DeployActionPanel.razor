@@ -19,10 +19,7 @@
         Leader
         <select id="deploy-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var leader in Leaders)
-            {
-                <option value="@leader">@Say(leader)</option>
-            }
+            <UnitOptions Units="@([.. Leaders.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
         </select>
     </label>
     @if (Weapons.Count > 0)

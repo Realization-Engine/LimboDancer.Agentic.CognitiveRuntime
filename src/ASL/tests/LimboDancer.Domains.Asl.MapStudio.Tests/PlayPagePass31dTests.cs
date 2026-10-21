@@ -255,8 +255,12 @@ public sealed class PlayPagePass31dTests : IDisposable
 
         // The status gives the place the rout must end in with the hex on the way, and offers the way as a route.
         var woods = WideBoards.At(7);
+        // The user, 2026-10-21: a hex's routes come first; a unit's own routes, each naming the unit after its hex, are behind a checkbox.
+        Assert.NotEmpty(page.FindAll(".rout-group"));
+        page.Find("#rout-each").Change(true);
         var way = page.Find(".use-route");
-        Assert.Equal($"Use the route to {Said(woods)}", way.TextContent.Trim());
+        Assert.EndsWith($": use the route to {Said(woods)}", way.TextContent.Trim(), StringComparison.Ordinal);
+        Assert.StartsWith("[", way.TextContent.Trim(), StringComparison.Ordinal);
         var route = way.GetAttribute("data-route")!.Split(", ");
         Assert.Equal(2, route.Length);
         Assert.Equal(woods, route[1]);

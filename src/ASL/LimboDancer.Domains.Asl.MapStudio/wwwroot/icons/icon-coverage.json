@@ -1379,7 +1379,7 @@
         },
         {
           "kind": "button",
-          "label": "Propose: @Words(motionChosen.Vehicle) attempts Motion",
+          "label": "Propose: @UnitAt(motionChosen.Vehicle) attempts Motion",
           "dynamic": true,
           "id": "propose-motion-attempt",
           "status": "needed",
@@ -1403,7 +1403,7 @@
         },
         {
           "kind": "button",
-          "label": "Propose: @Words(owing) attacks",
+          "label": "Propose: @UnitAt(owing) attacks",
           "dynamic": true,
           "status": "needed",
           "strip": "Play dff-window"
@@ -1852,7 +1852,7 @@
       "controls": [
         {
           "kind": "button",
-          "label": "Propose: @Say(withdrawal.Unit) withdraws to @Say(withdrawal.To)",
+          "label": "Propose: @(PlaceOfUnit?.Invoke(withdrawal.Unit) is { } place ? $\u0022{place.Where...",
           "dynamic": true,
           "status": "needed",
           "strip": "AmbushWithdrawalActions cc-ambush-withdrawal"
@@ -2795,10 +2795,17 @@
       "controls": [
         {
           "kind": "button",
-          "label": "Use the route to @Say(way.Target)",
+          "label": "@Prefix(item.Unit)@Say(item.Unit): use the route to @Say(way.Target)",
           "dynamic": true,
           "status": "needed",
           "strip": "RoutActionPanel"
+        },
+        {
+          "kind": "button",
+          "label": "@(routing.Length == 1 ? $\u0022Rout {Prefix(routing[0].Unit)}{Say(routing[0].Unit)...",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "RoutActionPanel rout-group-ways"
         },
         {
           "kind": "button",

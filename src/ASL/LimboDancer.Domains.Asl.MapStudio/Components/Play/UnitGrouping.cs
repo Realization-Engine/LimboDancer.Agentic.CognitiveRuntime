@@ -1,7 +1,10 @@
 namespace LimboDancer.Domains.Asl.MapStudio.Components.Play;
 
-/// <summary>Where a unit offered in a list stands, for grouping: its hex in words ("[AA6]"), its hex's sort key, and whether it is a leader.</summary>
-public sealed record UnitPlace(string Hex, (int Width, string Column, int Row) Order, bool Leader);
+/// <summary>
+/// Where a unit or weapon offered in a list stands: its hex in words ("[AA6]"), its Location in words with any level ("[F5], level 1"), which
+/// prefixes its name wherever it is offered (the user, 2026-10-21), its hex's sort key, and whether it is a leader.
+/// </summary>
+public sealed record UnitPlace(string Hex, string Where, (int Width, string Column, int Row) Order, bool Leader);
 
 /// <summary>
 /// The user, 2026-10-21: every list that offers units groups them by hex, a leader first in his hex's group. The page cascades

@@ -59,10 +59,7 @@
         Director
         <select id="fire-director" value="@Director" @onchange="@(args => OnDirector.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">none</option>
-            @foreach (var leader in Leaders)
-            {
-                <option value="@leader">@Say(leader)</option>
-            }
+            <UnitOptions Units="@([.. Leaders.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
         </select>
     </label>
     @if (MolAllowed)
@@ -70,10 +67,7 @@
         <label title="A22.611: with a PBF or TPBF attack, one firer's MOL Check dr of 3 or less after its drm (+1 HS or crew, +2 SMC, +1 CX, +1 against a non-AFV) adds 4 FP; a colored 6 on the IFT DR breaks it.">MOL by
             <select id="fire-mol" value="@Mol" @onchange="@(args => OnMol.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">none</option>
-                @foreach (var id in SelectedFirers.Order(StringComparer.Ordinal))
-                {
-                    <option value="@id">@Say(id)</option>
-                }
+                <UnitOptions Units="@([.. SelectedFirers.Order(StringComparer.Ordinal).Select(id => new PlayChoice(id, id))])" Text="@Say" />
             </select>
         </label>
     }
@@ -97,10 +91,7 @@
         <label title="A22.34, A22.612: a FT or MOL names the AFV as its target; it then makes a To Kill DR on the C7.34 FT or MOL column, and the AFV's CE crew takes a Specific Collateral Attack if it stands.">At the AFV
             <select id="fire-vehicle" value="@Vehicle" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">none: fire at the Location</option>
-                @foreach (var vehicle in VehicleChoices)
-                {
-                    <option value="@vehicle.Id">@Say(vehicle.Label)</option>
-                }
+                <UnitOptions Units="@([.. VehicleChoices.Select(vehicle => new PlayChoice(vehicle.Id, vehicle.Label))])" Text="@Say" />
             </select>
         </label>
     }
@@ -131,10 +122,7 @@
         <label title="A9.22: with Defensive First Fire by an unpinned squad's MG at a same-level target within Normal Range, a Fire Lane along the Hex Grain to this Location.">Fire Lane of
             <select id="fire-lane-weapon" value="@LaneWeapon" @onchange="@(args => OnLaneWeapon.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">none</option>
-                @foreach (var weapon in Weapons.Where(item => SelectedWeapons.Contains(item.Id)))
-                {
-                    <option value="@weapon.Id">@Say(weapon.Id)</option>
-                }
+                <UnitOptions Units="@([.. Weapons.Where(item => SelectedWeapons.Contains(item.Id)).Select(weapon => new PlayChoice(weapon.Id, weapon.Id))])" Text="@Say" />
             </select>
             <LocationField Id="fire-lane-to" Label="to" Name="the Fire Lane's end" Value="@LaneTo" OnChange="@OnLaneTo" />
         </label>
@@ -144,10 +132,7 @@
         <label title="A9.12: a leader fires a MG alone as Area Fire; with another SMC stacked with him, at full FP.">Partner SMC
             <select id="fire-partner" value="@Partner" @onchange="@(args => OnPartner.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">none</option>
-                @foreach (var smc in partners)
-                {
-                    <option value="@smc">@Say(smc)</option>
-                }
+                <UnitOptions Units="@([.. partners.Select(smc => new PlayChoice(smc, smc))])" Text="@Say" />
             </select>
         </label>
     }

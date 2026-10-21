@@ -11,10 +11,7 @@
     <label>Fired by
         <select id="starshell-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var id in Firers)
-            {
-                <option value="@id">@NameAt(id)</option>
-            }
+            <UnitOptions Units="@([.. Firers.Select(id => new PlayChoice(id, id))])" Text="@NameAt" />
         </select>
     </label>
     <label>method
