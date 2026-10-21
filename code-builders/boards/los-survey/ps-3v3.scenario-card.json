@@ -1,0 +1,73 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "ps-3v3",
+  "title": "Play streamlining 3 v 3",
+  "catalog": "asl-scenario-a1@1.17.0",
+  "source": {
+    "basis": "A measurement card for the Play Streamlining Plan (section 1): three German and three Russian squads, set up by hand.",
+    "legacy": "none",
+    "adaptation": [
+      "Copied from the user's card p28b-minimal, with the Germans moving first and the whole board playable."
+    ]
+  },
+  "place": "Stalingrad, Russia",
+  "date": {
+    "day": 6,
+    "month": 10,
+    "year": 1942
+  },
+  "introduction": "A measurement game, not a scenario.",
+  "boards": [
+    {
+      "board": "bd01",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "playableArea": null,
+  "turns": {
+    "count": 3,
+    "halfTurn": false,
+    "setsUpFirst": "russian",
+    "movesFirst": "german"
+  },
+  "scenarioDefender": null,
+  "sides": [
+    {
+      "side": "german",
+      "san": 6,
+      "integrityBpv": null,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "setup",
+        "note": "A20.53: in every hex column of board 1, the hexes of the German setup buildings lie south of those of the Russian ones, so the south edge is one of the German Friendly Board Edges; the game names one edge per side (R5.16)."
+      },
+      "balance": "",
+      "balanceUnits": [],
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "russian",
+      "san": 6,
+      "integrityBpv": null,
+      "friendlyEdge": {
+        "edge": "top",
+        "basis": "setup",
+        "note": "A20.53: in every hex column of board 1, the hexes of the Russian setup buildings lie north of those of the German ones, so the north edge is one of the Russian Friendly Board Edges; the game names one edge per side (R5.16)."
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3,
+      "balanceUnits": []
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "The players judge the result.",
+    "rules": []
+  }
+}

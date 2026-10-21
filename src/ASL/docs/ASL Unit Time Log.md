@@ -1699,3 +1699,6 @@ In the main checkout, branch `play-streamlining` from 52a185c5, at the user's wo
 | S5: the banner's review and status, the turn and phase under the inspector's tabs | about 10:25 | about 10:55 | about 0:30 | | Four Studio builds (0:18 to 0:54 each); 9 test methods named by what they read (5 to 9 s) |
 | S5 refinements: the hand-over at the right pane's edge, the explanations as tooltips | about 10:55 | about 11:00 | about 0:05 | | Checked at full width and 1024 px; at 1024 the review wraps under the hand-over |
 | The rules on Defensive First Fire and the movement plan (section 7, Q6 to Q10) | about 11:00 | 11:07 | about 0:07 | | Whole-book search for the terms; A4.2, A8.1, A8.11, A8.3 read on their pages |
+| The plan, its memory and performance section (the guidelines), S5's banner read once a render | 11:07 | about 11:20 | about 0:13 | | S5 rebuilt and its 9 test methods passed again (5 s) |
+| P1: S5 committed (a0165947) | about 11:20 | about 11:22 | about 0:02 | | |
+| P0: the measurement game (eight clusters) and its baseline | about 11:22 | 11:42 | about 0:20 | | The LOS survey tool's `three`, `terrain`, and `routes` modes (builds 0:20 to 0:50); the card refused three times (catalog, integrity, victory) before the editor showed why; 11 actions and 2 hand-overs a step measured |

@@ -9,20 +9,47 @@
 
 **Baseline.** From the user's game `dl-tractor-works-01` (analysis, section 1): 285 actions, each a Propose and a Confirm; 119 refusals; a Movement step 134 s, a DEFENDER pass 51 s; 51 passes, about 43 minutes. A step with a pass is about eight clicks and two hand-overs (analysis, section 2). Task P0 measures this again on a small game, so before and after compare like with like.
 
-**The measurement game.** The user's case: three German squads and three Russian squads on open ground, every unit in LOS of every enemy unit, the German Movement Phase with each German squad moving three hexes. It is made once in my Studio and copied before each measurement.
+**The measurement game** (the user, 2026-10-21: "sets or 'clusters' of those units exercising different movement scenarios"). Card `ps-3v3` (a user card: board 1, no OB, the Germans moving first), game `ps-3v3-base`, its German Movement Phase saved as `ps-3v3-mph-template` (revision 22) and copied before each measurement. The layout is `code-builders/boards/los-survey/ps-3v3-layout.txt`; the survey tool's `routes` mode checks that every step is ADJACENT and lists which Russians see it. Seven Russian squads (r5 and r7 concealed), eleven German squads and a leader, twelve stacks, 29 steps:
 
-**Expected, for that Movement Phase (9 steps, the Russian passing at all of them, then firing once):**
+| Cluster | Germans and route | Russians | What it exercises | Steps seen / unseen |
+|---|---|---|---|---|
+| C1 | g1 EE10-EE7, g2 FF10-FF7, g3 GG10-GG7 (Open Ground, then woods) | r1 AA10, r2 BB10, r3 BB9 | Mutual LOS: the DEFENDER asked at most hexes; "Let it move on" and "to the end" | 6 / 3 |
+| C2 | g4 R4-R2 (road between buildings) | none sees it | Every step passed for the DEFENDER | 0 / 2 |
+| C3 | g5 M4 (building), L4 (street), K5 (building) | r4 L1 | Asked only at the exposed street | 1 / 1 |
+| C4 | g6 U7-U4 | r5 W6, concealed | A concealed DEFENDER with LOS: the hand-over is not skipped | 1 / 2 |
+| C5 | g7 with leader l1, B10, B9, C9 (woods), D8 (building) | r6 A9 | MF costs, the leader's bonus, a route longer than a squad's MF refused while plotted | 2 / 1 |
+| C6 | g8 G10-D10, then g9 G10-E10 behind it | r6 A9 | Fire mid-route stops the plan; Residual FP met inside the next stack's step | 5 / 0 |
+| C7 | g10 N6-N9, into the concealed r7's hex | r7 N9, concealed | The plan stops at the reveal | 3 / 0 |
+| C8 | g11 C10, B10, A10, ADJACENT to r6 after it has fired | r6 A9 | Subsequent First Fire and FPF still ask; a spent unit does not | 2 / 0 |
 
-| Measure | Now (expected, P0 measures it) | After |
+**Measured today (P0, 2026-10-21, my Studio at a0165947).** One step played as the user plays it (g1 EE10 to EE9), each action and each response timed in the page:
+
+| Part of a step | Actions | Hand-overs | Responses |
+|---|---|---|---|
+| The moving side: open the units list, tick the stack, the hex (typed; picked on the map is two), Propose, Confirm | 5 (6 picked) | | propose 257 ms, confirm 211 ms |
+| The DEFENDER: hand over, "I am the Russian side", Propose pass, Confirm, hand over, "I am the German side" | 6 | 2 | 86, 125, 98, 185, 73, 163 ms |
+| End of a stack's move: Propose, Confirm | 2 | 0 | 104, 156 ms |
+
+The units list is emptied by each hand-over, so every step costs the same. The page's flow does not depend on LOS or terrain (the window opens after every step), so for the whole measurement phase: **29 steps × 11 + 12 stacks × 2 = 343 actions and 58 hand-overs**, about 1.2 s of the page's responses a step; the rest of a step's 134 s in the user's game was the player's.
+
+**Expected after S6, for the same phase, with the DEFENDER firing nowhere:**
+
+| Measure | Now (measured) | After (expected) |
 |---|---|---|
-| Hand-overs | about 18 (two per step) | 6 (two per stack), plus 2 for the fire |
-| Clicks by the moving side | about 4 a step: units, hex, Propose, Confirm (36) | about 1 a hex plus 1 to commit (12) |
-| Clicks by the DEFENDER | about 2 a step: Propose pass, Confirm (18) | 1 a step where a unit of his could fire (9 here, every hex in LOS), plus the fire |
-| Refusals for MF or a hex the stack may not enter | possible at each step | none: the route is checked as it is plotted |
+| Hand-overs | 58 | 24 (two per stack; none skipped, since r5 and r7 are concealed) |
+| Actions by the moving side | 29 × 5 + 12 × 2 = 169 | 12 stacks × 2 (choose, commit) + 29 hex clicks = 53 |
+| Actions by the DEFENDER | 29 × 6 = 174 | 20 decisions at the steps a Russian sees, and 24 view confirmations = 44 |
+| Steps where the DEFENDER is asked | 29 | 20 (the 9 unseen steps pass for him) |
+| Refusals for MF or a hex the stack may not enter | possible at each step | none: refused while plotting (C5's over-long route) |
+| Total actions | 343 | about 97 |
+
+Each fire adds two hand-overs and the fire's own actions in both columns.
 
 **Method.** The clicks and hand-overs counted in the Studio as the same Movement Phase is played, before and after, with scripted dice; the time of the phase read from the page as in the Play Step Analysis; the refusals read from the audit log.
 
-**When to stop.** If, after P5, the measurement game's Movement Phase takes more than half of P0's hand-overs or clicks, stop and report before P6.
+**When to stop.** If, after P5, the measurement game's Movement Phase takes more than half of P0's hand-overs or actions (29 and 171), stop and report before P6.
+
+**The regression pair is measured at P5, not P0.** The guidelines ask for before and after Studios built the same way under comparable load; a baseline taken hours before the "after" is not that. At P5, `main` (52a185c5) and the branch are built outside the repository and run side by side (6671 and 6670), and the follower on `cd-guards-5` is measured in both.
 
 ## 2. Design
 
@@ -84,7 +111,7 @@ Each task: change, build, my Studio (the page as the user would play it, at the 
 
 | Task | What | Done when |
 |---|---|---|
-| P0 | The measurement game in my Studio; the baseline counted on it; the regression baseline of section 2.7 (follower on `cd-guards-5`, the measurement game's per-step server time and allocation) | The table of section 1 and the baseline of section 2.7 filled with measured values |
+| P0 | The measurement game in my Studio; the baseline counted on it | Done 2026-10-21: section 1's "Now" column measured; the regression pair moved to P5 (section 1) |
 | P1 | S5 committed with its tests (built) | Committed on the branch |
 | P2 | S2: one-click routine actions and the setting | A pass, an end of move, a phase end, and a plain step take one click; the setting restores Confirm; the user's refusal paths unchanged |
 | P3 | Rules and Play facts: `InfantrySteps`, `ScenarioA1DefensiveFireOpportunity` and its gatherer | Unit tests on the calculator for each case of A8.1, A8.15, A8.3, A8.31 and each unknown fact; the planner's steps agree with the gate's refusals on the measurement game and on the user's game |
