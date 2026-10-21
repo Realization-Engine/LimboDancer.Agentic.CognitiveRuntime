@@ -249,6 +249,14 @@ public sealed class PlayPagePass28cTests : IDisposable
         page.Find("#play-one-click").Change(false);
         page.Find("#propose-end-move").Click();
         page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+
+        // The user, 2026-10-21: the end of a phase cannot be taken back, so it is never routine: with one click on, it still waits for Confirm.
+        page.Find("#play-one-click").Change(true);
+        page.Find("#propose-advance").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.Equal("mph", Current.Phase);
     }
 
     // Backlog section 43: the records sit under their turn and phase, and the strip shows the latest one.

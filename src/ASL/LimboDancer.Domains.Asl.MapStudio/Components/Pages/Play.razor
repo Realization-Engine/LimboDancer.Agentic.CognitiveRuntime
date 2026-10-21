@@ -7238,12 +7238,13 @@ else if (state is not null)
     private bool oneClick = true;
 
     /// <summary>
-    /// A routine proposal (ruling Q3): a pass, the end of a move, the end of a phase, or a Movement step, accepted by the gate and waiting for
-    /// Confirm, with no consequence among its reasons, no roll, no fire, and no entry whose outcome the view may not see.
+    /// A routine proposal (ruling Q3): a pass, the end of a move, or a Movement step, accepted by the gate and waiting for Confirm, with no
+    /// consequence among its reasons, no roll, no fire, and no entry whose outcome the view may not see. The end of a phase is not routine (the
+    /// user, 2026-10-21, after a Movement Phase ended by a misclick): it cannot be taken back, so it goes through the review and its Confirm.
     /// </summary>
     private bool Routine(Proposal proposal) =>
         proposal.Result.Outcome == PlayOutcome.NeedsConfirmation
-        && (proposal.Action == GameActions.PassFire || proposal.Action == GameActions.EndMove || proposal.Action == GameActions.AdvancePhase || proposal.Action == GameActions.Move)
+        && (proposal.Action == GameActions.PassFire || proposal.Action == GameActions.EndMove || proposal.Action == GameActions.Move)
         && proposal.Result.Plan is { Roll: null, Fire: null, Disclosure: null }
         && ConsequencesOf(proposal).Count == 0;
 
