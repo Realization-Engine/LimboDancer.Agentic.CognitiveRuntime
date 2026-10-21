@@ -67,6 +67,17 @@ Findings of the run, for the next tasks:
 
 **When to stop.** If, after P5, the measurement game's Movement Phase takes more than half of P0's hand-overs or actions (29 and 171), stop and report before P6.
 
+**The regression pair, measured 2026-10-21 after P5.** `main` at f6acba66 (whose code is the branch's base, 52a185c5: it adds only the guidelines and two documents) in a worktree outside the repository, Studio on 6671; the branch at 51eea80a on 6670; both Debug, both the Play follower on `cd-guards-5` as the adjudicator, cut to 714 and run a step a second to 760, each tab in front while it ran and the other Studio idle; `split.py` read each step's work.
+
+| Run | Rout Phase median (9 steps) | Other phases median (11 steps) |
+|---|---|---|
+| `main`, first (cold) | 469 ms | 304 ms |
+| branch, first (cold) | 363 ms | 256 ms |
+| `main`, second | 321 ms | 191 ms |
+| branch, second | 270 ms | 174 ms |
+
+No regression: the branch is as fast or faster in both pairs, within the noise the runs show between first and second. Allocation per step was not traced (`allocread.cs`); the branch adds no work to a follower's step, and the measurement game's steps were not traced either.
+
 **The regression pair is measured at P5, not P0.** The guidelines ask for before and after Studios built the same way under comparable load; a baseline taken hours before the "after" is not that. At P5, `main` (52a185c5) and the branch are built outside the repository and run side by side (6671 and 6670), and the follower on `cd-guards-5` is measured in both.
 
 ## 2. Design
