@@ -1326,6 +1326,14 @@
         },
         {
           "kind": "button",
+          "label": "Hand the screen to the @DisplayText.Side(awaitedSide) side",
+          "dynamic": true,
+          "id": "play-waiting-hand-over",
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
           "label": "Propose: end the @Games.PhaseLabel(state.Phase)",
           "dynamic": true,
           "id": "propose-advance",
