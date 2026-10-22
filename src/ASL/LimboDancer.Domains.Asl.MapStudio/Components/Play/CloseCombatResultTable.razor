@@ -1,0 +1,65 @@
+@* The user, 2026-10-21: a CC round's result as a table in place of its record's text, which no player could read; the table sits in a box that
+   scrolls, so it takes no more height than the text did. Per attack: a line with the outcome, then the arithmetic, then a row per defender, the
+   exceptions to the common result first. *@
+<div class="cc-result" data-location="@Table.Location">
+    @foreach (var (attack, index) in Table.Attacks.Select((attack, index) => (attack, index)))
+    {
+        <p class="cc-result-summary">@Summary(attack)</p>
+        <div class="cc-result-scroll" tabindex="0" role="region" aria-label="@($"CC in {Table.Location}, attack {index + 1}")">
+            <table class="cc-result-attack">
+                <tbody>
+                    <tr><th scope="row">Attackers</th><td>@attack.Side, @attack.AttackFirepower: @string.Join(", ", attack.Attackers)</td></tr>
+                    <tr><th scope="row">Defenders</th><td>@attack.DefenseFirepower: @string.Join(", ", attack.Defenders)</td></tr>
+                    <tr><th scope="row">Odds, Kill Number</th><td>@attack.Odds, @attack.KillNumber</td></tr>
+                    <tr><th scope="row">Dice</th><td>@attack.Dice</td></tr>
+                    <tr><th scope="row">Attack DRM</th><td>@(attack.Drm.Count == 0 ? "none" : string.Join("; ", attack.Drm))</td></tr>
+                    <tr><th scope="row">Modified DR</th><td>@Number(attack.ModifiedDr)</td></tr>
+                    @if (attack.SharedDrm.Count > 0)
+                    {
+                        <tr><th scope="row">Against every defender</th><td>@string.Join("; ", attack.SharedDrm)</td></tr>
+                    }
+                    @if (attack.LeaderCreation is { } created)
+                    {
+                        <tr><th scope="row">Leader Creation</th><td>@created</td></tr>
+                    }
+                </tbody>
+            </table>
+            <table class="cc-result-defenders">
+                <thead>
+                    <tr><th scope="col">@Table.Location: defender</th><th scope="col">Its own DRM</th><th scope="col">Final DR</th><th scope="col">Result</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in attack.Rows)
+                    {
+                        <tr class="@(row.Eliminated ? "cc-eliminated" : "cc-survived")">
+                            <td>@row.Unit</td>
+                            <td>@(row.Drm.Count == 0 ? "none" : string.Join("; ", row.Drm))</td>
+                            <td class="cc-final">@row.FinalDr</td>
+                            <td>@row.Result</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    @if (Table.Attacks.Count == 0)
+    {
+        <p class="cc-result-summary">CC in @Table.Location, @Table.Round: no attacks.</p>
+    }
+    @foreach (var note in Table.Notes)
+    {
+        <p class="cc-result-note">@DisplayText.Sentence(note)</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public CloseCombatTable Table { get; set; } = null!;
+
+    private static string Number(decimal value) => FireText.Number(value);
+
+    /// <summary>An attack's outcome in one line: its side, FP, odds, Kill Number, dice, modified DR, and what it did.</summary>
+    private string Summary(CloseCombatTableAttack attack) =>
+        $"CC in {Table.Location}, {Table.Round}: the {attack.Side} attack ({attack.AttackFirepower} against {attack.DefenseFirepower}, {attack.Odds}, Kill Number {attack.KillNumber}; "
+        + $"DR {attack.Dice}, modified {Number(attack.ModifiedDr)}): {attack.Outcome}.";
+}

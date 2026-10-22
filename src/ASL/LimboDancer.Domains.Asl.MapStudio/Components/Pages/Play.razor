@@ -1203,7 +1203,26 @@ else if (state is not null)
             </section>
         }
         <section id="play-panel-activity" class="play-pane play-activity" @attributes="@Pane("activity", "Activity")">
-            <p id="play-latest">@(LatestRecord ?? "No record yet.")</p>
+            @* The user, 2026-10-21: a CC round reads as its table, in a box that scrolls within the strip's height; the attempt's other lines as text.
+               The panel collapses to one line per item (the latest text, or each attack's outcome), and stays as the player left it. *@
+            <div id="play-latest-panel" class="@(latestCollapsed ? "play-latest-panel collapsed" : "play-latest-panel")">
+                <button type="button" id="play-latest-toggle" class="link play-latest-toggle" aria-expanded="@(latestCollapsed ? "false" : "true")" aria-controls="play-latest-panel"
+                        title="@(latestCollapsed ? "Show the latest record in full" : "Show only its outcome")" @onclick="@(() => latestCollapsed = !latestCollapsed)">@(latestCollapsed ? "▸" : "▾")</button>
+                @if (Records is { LatestTables: { Count: > 0 } latestTables } latestRecords)
+                {
+                    <p id="play-latest">Latest: @latestRecords.LatestWhen:@(latestRecords.LatestOthers.Count > 0 ? $" {string.Join(" ", latestRecords.LatestOthers)}" : string.Empty)</p>
+                    <div id="play-latest-tables">
+                        @foreach (var table in latestTables)
+                        {
+                            <CloseCombatResultTable Table="@table" />
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p id="play-latest">@(LatestRecord ?? "No record yet.")</p>
+                }
+            </div>
             @* Pass 31c (designs D15 and D17): the records, the units, the scripted dice, and the audit open over the strip, each with its own
                scroll, and take no height from the map. Every panel stays in the page; only the one chosen shows. *@
             <div class="toolbar play-activity-tabs" role="group" aria-label="More of the game" @onkeydown="@(args => { if (args.Key == "Escape") { activityTab = null; } })">
@@ -8889,6 +8908,9 @@ else if (state is not null)
 
     /// <summary>The latest record the view may read, with its turn and phase, for the activity strip.</summary>
     private string? LatestRecord => Records?.Latest;
+
+    // The user, 2026-10-21: whether the Latest panel shows only one line per item; kept across records for the page's life.
+    private bool latestCollapsed;
 
     /// <summary>
     /// The Replay page's address for this game in the view shown (pass 31b): at the step that holds an event, or where the Replay page opens. In a

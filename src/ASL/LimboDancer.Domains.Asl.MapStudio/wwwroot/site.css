@@ -3104,6 +3104,90 @@ details.advanced > summary {
     min-height: 2rem;
 }
 
+/* The user, 2026-10-21: the Latest panel collapses to one line per item: the latest text cut to a line, or each attack's outcome. */
+.play-latest-panel {
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.play-latest-toggle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1.25rem;
+    min-height: 1.25rem;
+    padding: 0;
+    text-decoration: none;
+    font-size: 1rem;
+    line-height: 1.25rem;
+}
+
+.play-latest-panel.collapsed #play-latest,
+.play-latest-panel.collapsed .cc-result-summary {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.play-latest-panel.collapsed .cc-result-scroll,
+.play-latest-panel.collapsed .cc-result-note {
+    display: none;
+}
+
+/* The user, 2026-10-21: a CC round's result as a table, its arithmetic and defenders in a box that scrolls within the activity strip. */
+.cc-result-summary {
+    margin: 0.25rem 0;
+    font-weight: 600;
+}
+
+.cc-result-scroll {
+    max-height: 12rem;
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    margin-bottom: 0.5rem;
+}
+
+.cc-result-scroll table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.cc-result-scroll th,
+.cc-result-scroll td {
+    padding: 0.2rem 0.5rem;
+    border-bottom: 1px solid var(--line-soft);
+    text-align: left;
+    vertical-align: top;
+}
+
+.cc-result-attack th {
+    width: 11rem;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.cc-result-defenders thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-2);
+}
+
+.cc-result-defenders .cc-final {
+    text-align: right;
+    width: 5rem;
+}
+
+.cc-result-defenders tr.cc-survived td {
+    font-weight: 600;
+}
+
+.cc-result-note {
+    margin: 0.2rem 0;
+}
+
 /* The user, 2026-10-21: a hex's name over its units in a list of checkboxes. */
 .unit-group-hex {
     display: block;

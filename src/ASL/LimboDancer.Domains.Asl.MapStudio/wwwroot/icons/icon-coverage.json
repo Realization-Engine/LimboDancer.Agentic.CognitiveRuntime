@@ -1573,6 +1573,14 @@
         },
         {
           "kind": "button",
+          "label": "@(latestCollapsed ? \u0022\u25B8\u0022 : \u0022\u25BE\u0022)",
+          "dynamic": true,
+          "id": "play-latest-toggle",
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
           "label": "@label",
           "dynamic": true,
           "status": "needed",
