@@ -9,10 +9,11 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
 /// <summary>
 /// The names a view reads for a game's units (pass 31c, design D11): a unit's printed values, its kind, and a tag that never changes, such as
-/// "4-6-7 squad G4" and "9-2 leader G2". A side's own units are numbered in the order they entered the game; the other side's units are numbered
-/// in the order this view could first name them, so a tag counts only what the view has seen and never what the other side has. A unit that takes
-/// another's place keeps its tag; a Deployed HS adds "a" or "b". A unit the view does not hold reads "a concealed unit". Play, Replay, and the
-/// records read the one instance kept for a game and a view; it grows with the game and what it has given is never changed.
+/// "4-6-7 squad G4" and "9-2 leader G2". A side's own units are numbered in the order they entered the game, and the adjudicator reads every unit by
+/// its owner's tag. A unit that takes another's place keeps its tag; a Deployed HS adds "a" or "b". The user's ruling of 2026-10-22 (option 2): the
+/// other side's units carry no tag in a side's view; one the view holds reads by its counter and its Location at that moment ("4-4-7 squad in
+/// [W4]"), so a unit has one name in every view and nothing follows it through concealment. A unit the view does not hold reads "a concealed unit".
+/// Play, Replay, and the records read the one instance kept for a game and a view; it grows with the game and what it has given is never changed.
 /// </summary>
 public sealed partial class UnitNames
 {
@@ -34,11 +35,10 @@ public sealed partial class UnitNames
     private readonly Dictionary<string, long> born = new(StringComparer.Ordinal);
     private readonly Dictionary<string, (LineageAction Action, IReadOnlyList<string> From, int Index)> lineage = new(StringComparer.Ordinal);
 
-    // The tags by entry, which a unit's own side and the adjudicator read, and the tags this view gave the other side's units.
+    // The tags by entry, which a unit's own side and the adjudicator read; and the other side's units and weapons this view has held by name.
     private readonly Dictionary<string, string> entered = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, string> seen = new(StringComparer.Ordinal);
+    private readonly HashSet<string> seen = new(StringComparer.Ordinal);
     private readonly Dictionary<(string Side, string Group), int> enteredCount = [];
-    private readonly Dictionary<(string Side, string Group), int> seenCount = [];
 
     // The other side's units and weapons this view held at each revision.
     private readonly List<HashSet<string>> held = [];
@@ -112,7 +112,7 @@ public sealed partial class UnitNames
 
     public Perspective Viewer => viewer;
 
-    /// <summary>The tag this view reads for a unit, such as "G4"; null for a unit it has never held by name.</summary>
+    /// <summary>The tag this view reads for a unit, such as "G4": its own side's units, or any unit for the adjudicator; null for the other side's.</summary>
     public string? Tag(string id)
     {
         ArgumentNullException.ThrowIfNull(id);
@@ -141,7 +141,7 @@ public sealed partial class UnitNames
         ArgumentNullException.ThrowIfNull(unit);
         lock (gate)
         {
-            return Name(unit);
+            return Name(unit, through);
         }
     }
 
@@ -205,6 +205,14 @@ public sealed partial class UnitNames
             var boards = history.States.Count > 0 ? history.States[0].Map.Boards.Count : 1;
             named = LocationPattern().Replace(named, match => DisplayText.Place(boards, match.Value));
 
+            // The other side's unit is named by where it stands (the user's ruling of 2026-10-22); a text that says that hex again in the same clause
+            // says it once: "4-4-7 squad moves from [B3] to [B4]", "4-4-7 squad, 4-4-7 squad in [B3] fire at [B4]".
+            if (named.Contains(" in [", StringComparison.Ordinal))
+            {
+                named = PlaceSaidTwice().Replace(named, " ${verb} from ${at}");
+                named = PlaceSaidAgain().Replace(named, string.Empty);
+            }
+
             // The second play test: a side reads as its counters name it ("the russian side" is "the Russian side").
             if (history.States.Count > 0)
             {
@@ -249,6 +257,15 @@ public sealed partial class UnitNames
     [GeneratedRegex(@"\bcreated-leader:\d+")]
     private static partial Regex CreatedLeader();
 
+    // " in [B3] moves from [B3]": a unit named by its hex, then said to leave that same hex.
+    [GeneratedRegex(@" in (?<at>\[[A-Z]{1,2}\d{1,2}\](?:, level -?\d+)?) (?<verb>moves|routs|advances|withdraws) from \k<at>(?!\d|, level)")]
+    private static partial Regex PlaceSaidTwice();
+
+    // " in [B3]" that the same clause (up to a ";", ":", or ".") says again: "4-4-7 squad in [B3], 4-4-7 squad in [B3] in [B3] fire at".
+    // The same Location only: "[B3]" is not "[B3], level 1", and "level 1" is not "level 10".
+    [GeneratedRegex(@" in (?<at>\[[A-Z]{1,2}\d{1,2}\](?:, level -?\d+)?)(?=[^;:.]*? in \k<at>(?!\d|, level))")]
+    private static partial Regex PlaceSaidAgain();
+
     private const string UnnamedPair = Unnamed + ", " + Unnamed;
 
     // Two or more "a concealed unit" in a row, separated by commas.
@@ -290,7 +307,7 @@ public sealed partial class UnitNames
                 foreach (var unit in view.Units.Where(unit => unit.Side != viewer.Name))
                 {
                     now.Add(unit.Id);
-                    See(unit.Id, revision);
+                    See(unit.Id);
                 }
 
                 foreach (var weapon in view.Equipment)
@@ -298,7 +315,7 @@ public sealed partial class UnitNames
                     now.Add(weapon.Id);
                     if (known.TryGetValue(weapon.Id, out var what) && what.Side != viewer.Name)
                     {
-                        See(weapon.Id, revision);
+                        See(weapon.Id);
                     }
                 }
             }
@@ -323,17 +340,8 @@ public sealed partial class UnitNames
         }
     }
 
-    private void See(string id, long revision)
-    {
-        if (!seen.ContainsKey(id) && known.TryGetValue(id, out var what) && GroupOf(what.Kind, what.Unit) is { } group)
-        {
-            // The referee, pass 31c: the other side's unit takes its parent's tag only when this view held the parent by name just before the
-            // unit was made, so a tag never tells of a Deployment, a Recombination, or a Replacement that happened under "?".
-            var before = born.TryGetValue(id, out var made) ? made - 1 : revision - 1;
-            bool Held(string parent) => before >= 1 && before <= held.Count && held[(int)before - 1].Contains(parent);
-            seen[id] = Inherited(id, seen, Held) ?? Next(seenCount, what.Side, group);
-        }
-    }
+    // The other side's unit or weapon, held by name at least once: it is named, by counter and Location, from then on where it is not checked.
+    private void See(string id) => seen.Add(id);
 
     /// <summary>
     /// The tag a unit takes from the unit it came from, when that unit has one among <paramref name="tags"/> and <paramref name="mayInherit"/>
@@ -377,7 +385,22 @@ public sealed partial class UnitNames
         _ => unit ? kind : null,
     };
 
-    private string? TagOf(string id) => known.TryGetValue(id, out var what) && (viewer.IsAdjudicator || what.Side == viewer.Name) ? entered.GetValueOrDefault(id) : seen.GetValueOrDefault(id);
+    // A tag is read only for the view's own units, or by the adjudicator (the user's ruling of 2026-10-22).
+    private string? TagOf(string id) => known.TryGetValue(id, out var what) && Mine(what.Side) ? entered.GetValueOrDefault(id) : null;
+
+    private bool Mine(string? side) => viewer.IsAdjudicator || side == viewer.Name;
+
+    /// <summary>Where a unit or weapon stands at a revision, in words ("[W4]", "[F5], level 1"); null off board, aboard, or not in that state.</summary>
+    private string? PlaceAt(string id, long revision)
+    {
+        if (revision < 1 || revision > history.States.Count)
+        {
+            return null;
+        }
+
+        var state = history.States[(int)revision - 1];
+        return state.Location(id)?.Location is { } at ? DisplayText.Place(state, at) : null;
+    }
 
     private string Named(string id, long before, bool check)
     {
@@ -388,11 +411,11 @@ public sealed partial class UnitNames
 
         // A unit the event itself made is read in the state that first holds it.
         var revision = Math.Clamp(Math.Max(before, born[id]), 1, Math.Max(through, 1));
-        var mine = viewer.IsAdjudicator || what.Side == viewer.Name;
-        var inView = mine || !check || (revision <= held.Count && held[(int)revision - 1].Contains(id));
+        var mine = Mine(what.Side);
+        var inView = mine || (check ? revision <= held.Count && held[(int)revision - 1].Contains(id) : seen.Contains(id));
         if (what.Unit)
         {
-            return inView && Instance(id, revision) is { } unit ? Name(unit) : Unnamed;
+            return inView && Instance(id, revision) is { } found ? Name(found.Unit, found.Revision) : Unnamed;
         }
 
         if (!inView)
@@ -403,24 +426,41 @@ public sealed partial class UnitNames
         var weapon = history.States[(int)revision - 1].Equipment.FirstOrDefault(item => item.Id == id);
         var word = weapon?.Definition is { } reference && definitions.TryGetValue(reference.Definition, out var definition) ? Counter(definition)
             : what.Kind == "asl:gun" ? "Gun" : DisplayText.Kind(what.Kind).ToUpperInvariant();
-        return TagOf(id) is { } tag ? $"{word} {tag}" : $"the {word}";
+
+        // The other side's Gun is told by its Location, as its units are; a SW reads with its holder or its Location in the text around it.
+        return TagOf(id) is { } tag ? $"{word} {tag}"
+            : what.Kind == "asl:gun" && PlaceAt(id, revision) is { } gunAt ? $"the {word} in {gunAt}"
+            : $"the {word}";
     }
 
-    // A unit the state at the revision no longer lists is read as it was when it entered.
-    private UnitInstance? Instance(string id, long revision) =>
-        (revision >= 1 && revision <= history.States.Count ? history.States[(int)revision - 1].Units.FirstOrDefault(unit => unit.Id == id) : null)
-            ?? (born.TryGetValue(id, out var first) && first != revision && first <= history.States.Count ? history.States[(int)first - 1].Units.FirstOrDefault(unit => unit.Id == id) : null);
-
-    private string Name(UnitInstance unit)
+    // A unit the state at the revision no longer lists is read as it was when it entered, with the revision it is read at.
+    private (UnitInstance Unit, long Revision)? Instance(string id, long revision)
     {
-        if (TagOf(unit.Id) is not { } tag)
+        if (revision >= 1 && revision <= history.States.Count && history.States[(int)revision - 1].Units.FirstOrDefault(unit => unit.Id == id) is { } now)
         {
-            return Unnamed;
+            return (now, revision);
         }
 
+        return born.TryGetValue(id, out var first) && first != revision && first >= 1 && first <= history.States.Count
+            && history.States[(int)first - 1].Units.FirstOrDefault(unit => unit.Id == id) is { } then ? (then, first) : null;
+    }
+
+    private string Name(UnitInstance unit, long revision)
+    {
         var counter = unit.Kind == UnitKinds.Dummy ? "Dummy"
             : unit.Definition is { } reference && definitions.TryGetValue(reference.Definition, out var definition) ? Counter(definition)
             : DisplayText.Kind(unit.Kind);
-        return $"{counter} {tag}";
+        if (TagOf(unit.Id) is { } tag)
+        {
+            return $"{counter} {tag}";
+        }
+
+        // The user's ruling of 2026-10-22: the other side's unit by its counter and where it stood.
+        if (!Mine(unit.Side) && seen.Contains(unit.Id))
+        {
+            return PlaceAt(unit.Id, revision) is { } at ? $"{counter} in {at}" : counter;
+        }
+
+        return Unnamed;
     }
 }

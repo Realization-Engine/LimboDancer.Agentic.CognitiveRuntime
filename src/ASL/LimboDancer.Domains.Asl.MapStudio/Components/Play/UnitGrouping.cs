@@ -20,6 +20,13 @@ public static class UnitGrouping
     /// </summary>
     public static bool KnownLeader(bool leader, bool adjudicator, bool ownSide, bool concealedOrHidden) => leader && (adjudicator || ownSide || !concealedOrHidden);
 
+    /// <summary>
+    /// A unit's name under its hex in a list: the other side's unit reads "4-4-7 squad in [W4]" (the user's ruling of 2026-10-22), and a list that
+    /// already says "[W4]" does not say it twice.
+    /// </summary>
+    public static string WithoutPlace(string name, string? where) =>
+        where is { Length: > 0 } && name.EndsWith($" in {where}", StringComparison.Ordinal) ? name[..^(where.Length + 4)] : name;
+
     /// <summary>One hex's units, or, with no hex, the items that stand on none, after the hexes.</summary>
     public sealed record Group<T>(string? Hex, IReadOnlyList<T> Items);
 

@@ -19,7 +19,7 @@ In `dl-tractor-works-02`, Turn 3, the Russian Rout Phase, the German unit in [Y4
 
 Ruling (the user, 2026-10-22, option 2): no tag on the other side's units. A view's own units keep their tags by entry ("4-4-7 squad R4"); the adjudicator reads every unit by its owner's tag; a unit of the other side that the view holds by name reads by its counter and its Location at that moment ("4-4-7 squad in [W4]"). A record keeps the Location of the unit at its event. A unit the view does not hold still reads "a concealed unit".
 
-- **Why.** One unit has one name in every view: a message, a record, or a refusal read in either view points at the same counter, and only the hex, which both sides know, says which. Nothing follows a unit through concealment, which a shared number would.
+- **Why.** No name points at one counter in one view and another in the other: a tag is only ever the owner's ("R4" is the same squad wherever it is read), and the other side says which counter by its hex, which both sides know. A message, a record, or a refusal read in either view points at the counter it means. Nothing follows a unit through concealment, which a shared number would.
 - **Lists.** The unit lists already head each group with its hex ("[W4]: ..."); an enemy unit's name there drops its own " in [W4]", so the hex is not said twice.
 - **What goes.** The per-view numbering of the other side's units (`seen`, `seenCount`, `See`), and the parent-tag rules that served it.
 

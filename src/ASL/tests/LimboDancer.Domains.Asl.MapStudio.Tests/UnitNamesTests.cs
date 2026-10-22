@@ -8,9 +8,9 @@ namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 /// <summary>
 /// Pass 31c (design D11; design section 9, "Names"): the names a view reads for a game's units (<see cref="UnitNames"/>), on the game of The Guards
 /// Counterattack played to its end through the Play page (613 revisions, the fixture <c>guards-dl-01.game.json</c>). A side's own tags go by entry
-/// and kind and are kept through a Replacement, a Reduction, and a Battle Hardening; the other side's tags are numbered in the order the view could
-/// first name each unit; a unit the view may not name reads "a concealed unit"; the adjudicator reads each unit's own-side tag; and no text a view
-/// reads of the game holds a unit's id or a Location's identifier.
+/// and kind and are kept through a Replacement, a Reduction, and a Battle Hardening; the other side's units carry no tag and read by counter and
+/// Location (the user's ruling of 2026-10-22); a unit the view may not name reads "a concealed unit"; the adjudicator reads each unit's own-side tag;
+/// and no text a view reads of the game holds a unit's id or a Location's identifier.
 /// </summary>
 public sealed partial class UnitNamesTests : IDisposable
 {
@@ -67,8 +67,6 @@ public sealed partial class UnitNamesTests : IDisposable
             .ToDictionary(item => item.Id, item => (item.Action, item.From), StringComparer.Ordinal);
 
     private static string Group(UnitInstance unit) => unit.Kind is "asl:leader" or "asl:hero" ? "smc" : "mmc";
-
-    private static int Number(string tag) => int.Parse(TagNumber().Match(tag).Value, CultureInfo.InvariantCulture);
 
     [Fact]
     public void ASidesOwnUnitsAreTaggedByEntryWithinTheirKind()
@@ -134,46 +132,64 @@ public sealed partial class UnitNamesTests : IDisposable
         Assert.Equal("8-1 leader G6", german.Of("cc-473ba669b5ed-leader-0"));
     }
 
-    [Fact]
-    public void TheOtherSidesTagsAreNumberedInTheOrderTheViewCouldFirstNameThem()
+    /// <summary>Where a unit stood at a revision, in the page's words.</summary>
+    private string At(string id, int revision)
     {
-        var parents = Parents();
+        var state = History.States[revision - 1];
+        return DisplayText.Place(state, state.Location(id)!.Location);
+    }
+
+    [Fact]
+    public void TheOtherSidesUnitsCarryNoTagAndReadByCounterAndLocation()
+    {
+        // The user's ruling of 2026-10-22 (option 2): no unit is numbered by the other side's view, so no tag names one counter in one view and
+        // another in the other; a unit the view holds reads by its counter and where it stood, and one it never held reads as a concealed unit.
         foreach (var side in Sides)
         {
             var perspective = new Perspective(side);
             var names = Names(side);
-            var enemy = Entries().Where(entry => entry.Unit.Side != side && !parents.ContainsKey(entry.Unit.Id)).Select(entry => entry.Unit).ToArray();
-            var firstNamed = enemy.ToDictionary(unit => unit.Id, _ => 0, StringComparer.Ordinal);
-            for (var revision = 1; revision <= History.States.Count; revision++)
+            var enemy = Entries().Where(entry => entry.Unit.Side != side).Select(entry => entry.Unit).ToArray();
+            Assert.All(enemy, unit => Assert.Null(names.Tag(unit.Id)));
+
+            var everHeld = new HashSet<string>(StringComparer.Ordinal);
+            var named = 0;
+            for (var revision = 1; revision <= History.States.Count; revision += 7)
             {
-                foreach (var unit in games.ViewOf(History, revision, perspective).Units.Where(unit => firstNamed.GetValueOrDefault(unit.Id, -1) == 0))
+                foreach (var unit in games.ViewOf(History, revision, perspective).Units.Where(unit => unit.Side != side))
                 {
-                    firstNamed[unit.Id] = revision;
+                    everHeld.Add(unit.Id);
+                    if (History.States[revision - 1].Location(unit.Id) is not null && History.States[revision - 1].Unit(unit.Id) is { Kind: not UnitKinds.Dummy })
+                    {
+                        Assert.EndsWith($" in {At(unit.Id, revision)}", names.Of(unit.Id, revision), StringComparison.Ordinal);
+                        named++;
+                    }
                 }
             }
 
-            foreach (var group in enemy.Where(unit => firstNamed[unit.Id] > 0).GroupBy(Group))
-            {
-                // The tags count only what the view has named: 1 to the number of units named, with none left out.
-                var tagged = group.Select(unit => (unit.Id, Number(names.Tag(unit.Id)!), firstNamed[unit.Id])).ToArray();
-                Assert.Equal(Enumerable.Range(1, tagged.Length), tagged.Select(item => item.Item2).Order());
-
-                // A unit named at an earlier revision has the lower number.
-                Assert.All(tagged, earlier => Assert.All(tagged.Where(later => later.Item3 > earlier.Item3), later => Assert.True(earlier.Item2 < later.Item2, $"{earlier.Id} before {later.Id}")));
-            }
-
-            // A unit the view never held by name has no tag, and reads as a concealed unit.
-            Assert.All(enemy.Where(unit => firstNamed[unit.Id] == 0), unit =>
-            {
-                Assert.Null(names.Tag(unit.Id));
-                Assert.Equal(UnitNames.Unnamed, names.Of(unit.Id));
-            });
+            Assert.True(named > 50);
+            Assert.All(enemy.Where(unit => !everHeld.Contains(unit.Id) && !games.ViewOf(History, History.States.Count, perspective).Units.Any(seen => seen.Id == unit.Id)),
+                unit => Assert.Equal(UnitNames.Unnamed, names.Of(unit.Id, 1)));
         }
 
-        // The German side could name r-squad-3 before r-squad-2, so its numbers are not the Russian side's own.
+        // The German view names r-squad-2 by where it stands; the Russian view by its own tag.
         var german = Names("german");
-        Assert.Equal(("R1", "R2", "R12"), (german.Tag("r-squad-1"), german.Tag("r-squad-3"), german.Tag("r-squad-2")));
-        Assert.Equal(("R1", "R3", "R2"), (Names("russian").Tag("r-squad-1"), Names("russian").Tag("r-squad-3"), Names("russian").Tag("r-squad-2")));
+        Assert.Equal($"4-4-7 squad in {At("r-squad-2", 57)}", german.Of("r-squad-2", 57));
+        Assert.Equal("4-4-7 squad R2", Names("russian").Of("r-squad-2"));
+    }
+
+    [Fact]
+    public void AHexAUnitIsNamedByIsSaidOnceInItsClause()
+    {
+        // The user's ruling of 2026-10-22: a text that says the hex again does not repeat it after each unit's name.
+        var german = Names("german");
+        var at = History.States[56].Location("r-squad-2")!.Location.ToString();
+        var place = At("r-squad-2", 57);
+        Assert.Equal($"4-4-7 squad moves from {place} to [K4], level 1", german.InText($"r-squad-2 moves from {at} to bd01:K4:1", 57));
+        Assert.Equal($"4-4-7 squad, 4-4-7 squad in {place} fire at [K4]", german.InText($"r-squad-2, r-squad-2 in {at} fire at bd01:K4:0", 57));
+
+        // Another clause, or another Location, keeps it.
+        Assert.Equal($"4-4-7 squad in {place} fires; then 4-4-7 squad in {place} is pinned", german.InText("r-squad-2 fires; then r-squad-2 is pinned", 57));
+        Assert.Equal($"4-4-7 squad in {place} fires at [K4], level 1", german.InText("r-squad-2 fires at bd01:K4:1", 57));
     }
 
     [Fact]
@@ -195,7 +211,7 @@ public sealed partial class UnitNamesTests : IDisposable
                     if (held.Contains(unit.Id))
                     {
                         Assert.NotEqual(UnitNames.Unnamed, said);
-                        Assert.EndsWith(" " + names.Tag(unit.Id), said, StringComparison.Ordinal);
+                        Assert.Null(names.Tag(unit.Id));
                         named++;
                     }
                     else
@@ -215,9 +231,9 @@ public sealed partial class UnitNamesTests : IDisposable
         // r-squad-2 sets up under "?": the German side reads a concealed unit until the revision at which it first holds the squad by name.
         var german = Names("german");
         Assert.Equal(UnitNames.Unnamed, german.Of("r-squad-2", 56));
-        Assert.Equal("4-4-7 squad R12", german.Of("r-squad-2", 57));
+        Assert.Equal($"4-4-7 squad in {At("r-squad-2", 57)}", german.Of("r-squad-2", 57));
         Assert.Equal("a concealed unit moves, and 4-6-7 squad G4 fires", german.InText("r-squad-2 moves, and g-squad-4 fires", 56));
-        Assert.Equal("4-4-7 squad R12 moves to [K4], level 1", german.InText("r-squad-2 moves to bd01:K4:1", 57));
+        Assert.Equal($"4-4-7 squad in {At("r-squad-2", 57)} moves to [K4], level 1", german.InText("r-squad-2 moves to bd01:K4:1", 57));
 
         // A weapon reads beside its holder and alone, and one the view does not hold is not counted.
         Assert.Equal("the MMG", Names("russian").Of("r-mmg-1"));
@@ -232,7 +248,7 @@ public sealed partial class UnitNamesTests : IDisposable
         Assert.Equal("3 concealed units fire at 4-6-7 squad G4", german.InText("r-squad-2, r-squad-2, r-squad-2 fire at g-squad-4", 56));
         Assert.Equal("2 concealed units and 4-6-7 squad G4", german.InText("r-squad-2, r-squad-2 and g-squad-4", 56));
         Assert.Equal("a concealed unit and a concealed unit", german.InText("r-squad-2 and r-squad-2", 56));
-        Assert.Equal("4-4-7 squad R12, 4-4-7 squad R12", german.InText("r-squad-2, r-squad-2", 57));
+        Assert.Equal($"4-4-7 squad, 4-4-7 squad in {At("r-squad-2", 57)}", german.InText("r-squad-2, r-squad-2", 57));
     }
 
     [Fact]
@@ -306,9 +322,6 @@ public sealed partial class UnitNamesTests : IDisposable
 
         return false;
     }
-
-    [GeneratedRegex(@"\d+")]
-    private static partial Regex TagNumber();
 
     [GeneratedRegex(@"\b(?:bd\w+|ab-[a-z0-9-]+):[A-Z]{1,2}\d{1,2}\b")]
     private static partial Regex LocationId();

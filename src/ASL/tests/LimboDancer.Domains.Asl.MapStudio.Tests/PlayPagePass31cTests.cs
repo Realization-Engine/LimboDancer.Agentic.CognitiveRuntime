@@ -177,7 +177,7 @@ public sealed class PlayPagePass31cTests : IDisposable
 
         var group = $"4-4-7 squad R1, 4-4-7 squad R2 in {Said(hexes.From)}, directed by 8-0 leader R1 fire at {Said(hexes.Building)}";
         Assert.Equal(group, record.QuerySelector(".fire-group")!.TextContent.Trim());
-        Assert.Equal($"Latest: Turn 1, Russian Prep Fire Phase: {group}: NMC; 4-6-7 squad G1: pinned.", page.Find("#play-latest").TextContent);
+        Assert.Equal($"Latest: Turn 1, Russian Prep Fire Phase: {group}: NMC; 4-6-7 squad in {Said(hexes.Building)}: pinned.", page.Find("#play-latest").TextContent);
 
         // The user, 2026-10-21: under the line, the fire's card (the Records tab's), its arithmetic and effects, in a box that scrolls.
         var card = page.Find("#play-latest-tables .fire-latest-card .fire-record");
@@ -740,7 +740,8 @@ public sealed class PlayPagePass31cTests : IDisposable
 
         page.ViewAs("german");
         Assert.Equal("Since you last looked (1)", page.Find("#play-activity-since").TextContent);
-        Assert.Equal([$"Turn 1, Russian Prep Fire Phase: 4-4-7 squad R1, 4-4-7 squad R2 in {Said(hexes.From)} fire at {Said(hexes.Building)}: NMC; 4-6-7 squad G1: pinned"],
+        // In the German view the Russian firers read by their hex, said once (the user's ruling of 2026-10-22).
+        Assert.Equal([$"Turn 1, Russian Prep Fire Phase: 4-4-7 squad, 4-4-7 squad in {Said(hexes.From)} fire at {Said(hexes.Building)}: NMC; 4-6-7 squad G1: pinned"],
             Texts(page, "#play-since li"));
         Assert.False(page.Find("#play-since-panel").HasAttribute("hidden"));
 

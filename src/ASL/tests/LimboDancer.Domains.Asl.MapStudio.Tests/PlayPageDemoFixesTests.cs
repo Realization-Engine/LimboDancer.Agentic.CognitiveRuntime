@@ -215,7 +215,8 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         Commit(page, ".take-prisoner[data-captor='r4']");
 
         Assert.Contains("guarded by 4-4-7 squad R1", page.Find("#play-units tr[data-unit='g2']").TextContent, StringComparison.Ordinal);
-        Assert.Contains("guards 4-6-7 squad G1", page.Find("#play-units tr[data-unit='r4']").TextContent, StringComparison.Ordinal);
+        // The Russian view names its German prisoner by the hex it is held in (the user's ruling of 2026-10-22).
+        Assert.Contains("guards 4-6-7 squad in [", page.Find("#play-units tr[data-unit='r4']").TextContent, StringComparison.Ordinal);
     }
 
     [Fact]

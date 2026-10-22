@@ -241,7 +241,7 @@ public sealed class BoardRendererTests
     /// </summary>
     internal static string GoldenDirectory()
     {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+        for (var directory = new DirectoryInfo(Environment.GetEnvironmentVariable("ASL_REPO") is { Length: > 0 } repo ? repo : AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
         {
             if (File.Exists(Path.Combine(directory.FullName, "src", "ASL", "LimboDancer.Domains.Asl.sln")))
             {

@@ -40,6 +40,17 @@ public sealed class UnitGroupingTests
         Assert.Null(Assert.Single(UnitGrouping.Groups(["a"], id => id, _ => Place("A", 1))).Hex);
     }
 
+    [Fact]
+    public void AListThatSaysTheHexDoesNotSayItAgainInTheName()
+    {
+        // The user's ruling of 2026-10-22: the other side's unit reads "4-4-7 squad in [W4]"; under "[W4]" it reads "4-4-7 squad".
+        Assert.Equal("4-4-7 squad", UnitGrouping.WithoutPlace("4-4-7 squad in [W4]", "[W4]"));
+        Assert.Equal("4-4-7 squad", UnitGrouping.WithoutPlace("4-4-7 squad in [F5], level 1", "[F5], level 1"));
+        Assert.Equal("4-4-7 squad in [W4]", UnitGrouping.WithoutPlace("4-4-7 squad in [W4]", "[W5]"));
+        Assert.Equal("4-4-7 squad R4", UnitGrouping.WithoutPlace("4-4-7 squad R4", "[W4]"));
+        Assert.Equal("4-4-7 squad in [W4]", UnitGrouping.WithoutPlace("4-4-7 squad in [W4]", null));
+    }
+
     [Theory]
     [InlineData(true, false, true, false, true)]
     [InlineData(true, false, false, false, true)]

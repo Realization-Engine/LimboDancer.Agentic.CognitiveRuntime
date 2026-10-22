@@ -40,5 +40,5 @@
     public Func<string, string>? Words { get; set; }
 
     private string Named(PlayChoice unit) => PlaceOfUnit?.Invoke(unit.Id) is { } place
-        ? $"{place.Where}: {Words?.Invoke(unit.Label) ?? unit.Label}" : Text(unit.Label);
+        ? $"{place.Where}: {UnitGrouping.WithoutPlace(Words?.Invoke(unit.Label) ?? unit.Label, place.Where)}" : Text(unit.Label);
 }
