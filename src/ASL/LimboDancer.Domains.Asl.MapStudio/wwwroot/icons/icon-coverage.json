@@ -194,7 +194,7 @@
       "controls": [
         {
           "kind": "button",
-          "label": "@member.Name",
+          "label": "@LimboDancer.Domains.Asl.MapStudio.Components.Play.UnitGrouping.WithoutPlace(...",
           "dynamic": true,
           "status": "needed",
           "strip": "HexUnitStackList"
