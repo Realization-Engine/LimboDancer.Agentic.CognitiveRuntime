@@ -95,6 +95,31 @@ public sealed class MovementPlans(LivePlay live)
     /// <summary>Forgets a game's plan; the stack stays as the game records it.</summary>
     public void Drop(string game) => plans.TryRemove(game, out _);
 
+    /// <summary>
+    /// The plan being made in a game as it stands: only while its stack is the stack moving in a Movement Phase. A plan left over (its phase was
+    /// ended while it waited, or its stack's move ended outside it) is forgotten when it is read, so it never holds a later phase's forms back
+    /// (found in dl-tractor-works-01, 2026-10-21: a Russian plan stood into the German MPh of the next turn).
+    /// </summary>
+    public MovementPlan? Of(string game, GameState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (Of(game) is not { } plan)
+        {
+            return null;
+        }
+
+        // Its stack still moves: a member of it is moving, or the move stands where its latest step put it (an attack there may have left no
+        // member able to go on, and the DEFENDER and then the moving side still decide there).
+        if (state is { Phase: "mph", Movement: { } moving }
+            && (plan.Movers.Any(id => moving.Members.Contains(id, StringComparer.Ordinal)) || (plan.At is { } at && moving.Location == at)))
+        {
+            return plan;
+        }
+
+        Drop(game);
+        return null;
+    }
+
     // The Play streamlining plan, S8: one phase pass and one Movement Plan per game, each for one Movement Phase; a stale one (another phase or
     // turn) is removed when it is next read. Neither is a game event: lost, the DEFENDER is asked again and the stacks wait for the moving side.
     private readonly ConcurrentDictionary<string, PhasePass> phasePasses = new(StringComparer.Ordinal);
@@ -178,7 +203,7 @@ public sealed class MovementPlans(LivePlay live)
         while (true)
         {
             var events = Events(game);
-            if (Of(game) is not null || live.Planner.Replay(events).Current is not { } state)
+            if (live.Planner.Replay(events).Current is not { } state || Of(game, state) is not null)
             {
                 return new MovementPlanRun(MovementPlanTurn.Mover, "A route is being moved; the plan goes on when it ends.", []);
             }
@@ -223,7 +248,7 @@ public sealed class MovementPlans(LivePlay live)
         try
         {
             var events = Events(game);
-            if (Of(game) is not null || live.Planner.Replay(events).Current is not { } state || !PassesForDefender(game, state)
+            if (live.Planner.Replay(events).Current is not { } state || Of(game, state) is not null || !PassesForDefender(game, state)
                 || state.Sides.Select(side => side.Id).FirstOrDefault(id => id != state.PhasingSide) is not { } defender)
             {
                 return false;

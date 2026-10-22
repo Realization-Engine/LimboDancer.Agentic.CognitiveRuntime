@@ -7570,7 +7570,9 @@ else if (state is not null)
     private string? plotNote;
 
     /// <summary>The plan being made in this game, or null.</summary>
-    private MovementPlan? PlanNow => gameId.Length > 0 ? Live.Plans.Of(gameId) : null;
+    // A plan left over from an ended move or phase is let go when read against the game as it stands; never while the page is making a step,
+    // when the state it holds is the one from before the step.
+    private MovementPlan? PlanNow => gameId.Length == 0 ? null : busy || state is null ? Live.Plans.Of(gameId) : Live.Plans.Of(gameId, state);
 
     /// <summary>The DEFENDER of the moving side's MPh: the other side.</summary>
     private string DefenderSide => state?.Sides.Select(side => side.Id).FirstOrDefault(id => id != state.PhasingSide) ?? string.Empty;
@@ -7869,7 +7871,7 @@ else if (state is not null)
         var plotting = stack.Key == planPlotting;
         var route = plotting ? plotRoute : stack.Route;
         var left = plotting && plot?.Route is [.., var last] ? $"; {Mf(last.HalfMfLeft)} MF left" : string.Empty;
-        var words = route.Count == 0 ? "No route: it does not move." : string.Join(", ", route.Select(at => PlaceOf(at.ToString()))) + left;
+        var words = route.Count == 0 ? "No route planned: plot one, or it stays where it is." : string.Join(", ", route.Select(at => PlaceOf(at.ToString()))) + left;
         return new MovementPlanPanel.Row(stack.Key, [.. stack.Movers.Select(id => new PlayChoice(id, WordsAt(id)))],
             Moving(stack) ? $"Moving: {words}" : words, route.Count > 0, plotting);
     })];
