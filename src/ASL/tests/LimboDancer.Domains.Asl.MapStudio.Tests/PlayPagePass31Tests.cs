@@ -181,7 +181,12 @@ public sealed class PlayPagePass31Tests : IDisposable
         Assert.Contains("still has a unit that must rout", page.Find("#advance-owed").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#play-consequences"));
 
+        // The user, 2026-10-22: the ATTACKER owes no rout, so play waits on the DEFENDER's: the German view says so, and the Russian view routs.
+        Assert.Contains("Waiting for the Russian side", page.Find("#play-waiting").TextContent, StringComparison.Ordinal);
+
         page.ViewAs("russian");
+        Assert.Empty(page.FindAll("#play-waiting"));
+        Assert.NotEmpty(page.FindAll("#rout-obligations"));
         page.Find("#propose-advance").Click();
         page.WaitForAssertion(() => Assert.Contains("with consequences", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.Contains("4-4-7 squad R1 is eliminated for Failure to Rout", page.Find("#play-consequences").TextContent, StringComparison.Ordinal);

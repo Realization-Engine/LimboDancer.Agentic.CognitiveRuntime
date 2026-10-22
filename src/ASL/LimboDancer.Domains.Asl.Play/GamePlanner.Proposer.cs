@@ -58,8 +58,10 @@ public sealed partial class GamePlanner
             return notYours;
         }
 
+        // The user, 2026-10-22: an ATTACKER that still owes a rout itself is told to rout first, not to hand over (A10.5).
         if (ScenarioA1SequenceCalculator.RoutPhaseEndBar(action, state.Phase,
-            () => FailureToRout(state, existing).Select(item => item.Unit).FirstOrDefault(unit => unit.Side != proposer && RoutStillOwed(state, unit))?.Side) is { } owed)
+            () => FailureToRout(state, existing).Select(item => item.Unit).FirstOrDefault(unit => unit.Side != proposer && RoutStillOwed(state, unit))?.Side,
+            () => proposer == state.PhasingSide && AttackerRoutOwed(state) is not null ? proposer : null) is { } owed)
         {
             return owed;
         }

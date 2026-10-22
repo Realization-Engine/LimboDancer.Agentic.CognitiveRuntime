@@ -86,6 +86,27 @@ public sealed partial class GamePlanner
             ?? (custodians = state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian is not null)
                 .Select(prisoner => prisoner.Custodian!).ToHashSet(StringComparer.Ordinal));
 
+        // 1 once the ATTACKER's first unit owing a rout is kept (null kept too); written after the answer, read with a volatile read.
+        private int attackerRoutKept;
+        private UnitInstance? attackerRout;
+
+        /// <summary>
+        /// The ATTACKER's first unit that still owes a rout (A10.5), read once for a settled state: the gate asks it for each DEFENDER's rout and the page
+        /// for each render of the RtPh. Two circuits may each read it; they read the same answer.
+        /// </summary>
+        public UnitInstance? AttackerRoutOwed(Func<UnitInstance?> read)
+        {
+            if (Volatile.Read(ref attackerRoutKept) == 1)
+            {
+                return attackerRout;
+            }
+
+            var found = read();
+            attackerRout = found;
+            Volatile.Write(ref attackerRoutKept, 1);
+            return found;
+        }
+
         // 1 once the placed map's composed read is kept; written after the read, read with a volatile read.
         private int composedKept;
         private ComposedMapRead? composed;

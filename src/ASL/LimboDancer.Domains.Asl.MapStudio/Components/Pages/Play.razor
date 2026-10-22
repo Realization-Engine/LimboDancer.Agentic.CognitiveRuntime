@@ -513,7 +513,9 @@ else if (state is not null)
                 }
                 @* The Play streamlining plan, S7 (ruling R-PS.1): no separate building-entry form; a one-unit step into a building goes to the same
                    entry plan through the Movement form. *@
-                @if (state.Phase == "rtph" && (RoutObligations.Count > 0 || RoutChoices.Count > 0))
+                @* A10.5 (the user, 2026-10-22): the DEFENDER's routs wait for the ATTACKER's, so his Rout panel is not offered meanwhile; the waiting
+                   callout above says why. *@
+                @if (state.Phase == "rtph" && !DefenderRoutsWait && (RoutObligations.Count > 0 || RoutChoices.Count > 0))
                 {
                     <RoutActionPanel Obligations="@RoutObligations" Units="@RoutChoices" Unit="@routUnit" Route="@routRoute" LowCrawl="@routLowCrawl"
                         Load="@RoutLoadText" Loads="@RoutLoads" Keep="@string.Join(",", RoutKept)" OnKeep="@(keep => routKeep = keep)"
@@ -8343,20 +8345,56 @@ else if (state is not null)
     /// Whether the side the view waits on holds play up (the user, 2026-10-22): a choice or a surrender it answers, or the DEFENDER's window after a
     /// step. In other phases the other side merely acts next, and the banner's hand-over says so.
     /// </summary>
-    private bool AwaitingBlocks => AwaitingView is not null && state is { } shown && Holds(shown);
+    private bool AwaitingBlocks => AwaitingView is { } awaited && HoldSide == awaited;
 
     /// <summary>The side whose decision holds play up in the game as it stands, which a page opened on it hands the screen to; null when none.</summary>
-    private string? HoldingSide => state is { Ended: null } shown && history?.Current is not null && !SetupOpen && Holds(shown)
-        && Awaiting(shown).Side is { Length: > 0 } side && shown.Perspectives.Any(perspective => perspective.Name == side) ? side : null;
+    private string? HoldingSide => state is { Ended: null } shown && history?.Current is not null && !SetupOpen
+        && HoldSide is { Length: > 0 } side && shown.Perspectives.Any(perspective => perspective.Name == side) ? side : null;
 
-    private static bool Holds(GameState shown) =>
-        shown.Choice is not null || shown.PendingSurrenders.Count > 0 || shown is { Phase: "mph", Movement.WindowOpen: true };
+    /// <summary>
+    /// The side whose decision holds play up now, whichever view is shown: a choice's or a surrender's, the DEFENDER in his window after a step, and in
+    /// the RtPh the side whose broken units still owe a rout, the ATTACKER first (A10.5; the user, 2026-10-22). Null when play waits on no one.
+    /// </summary>
+    private string? HoldSide => state is not { } shown ? null
+        : shown.Choice is not null || shown.PendingSurrenders.Count > 0 || shown is { Phase: "mph", Movement.WindowOpen: true } ? Awaiting(shown).Side
+        : shown.Phase == "rtph" ? RoutHolderNow
+        : null;
+
+    // The side holding the RtPh up, asked of the planner once a state (the Memory and Performance Guidelines): it runs the rout's searches.
+    private (GameState? State, string? Holder) routHolderMemo;
+
+    private string? RoutHolderNow
+    {
+        get
+        {
+            if (state is not { Phase: "rtph" } || history is null)
+            {
+                return null;
+            }
+
+            if (!ReferenceEquals(routHolderMemo.State, state))
+            {
+                routHolderMemo = (state, Live.Planner.RoutPhaseHolder(state, history.Events));
+            }
+
+            return routHolderMemo.Holder;
+        }
+    }
+
+    /// <summary>Whether the view is the DEFENDER's while the ATTACKER's broken units still owe a rout, so its own routs wait (A10.5).</summary>
+    private bool DefenderRoutsWait => state is { Phase: "rtph" } shown && !Viewer.IsAdjudicator && viewAs != shown.PhasingSide && RoutHolderNow == shown.PhasingSide;
 
     /// <summary>What the awaited side decides, in the view's words: for the DEFENDER's window, the Location of the stack he may fire at.</summary>
-    private string WaitingWhy => state is { Phase: "mph", Movement.WindowOpen: true } && MovingAt is { } at
-        ? $"The {DisplayText.Side(state.PhasingSide)} stack in {PlaceOf(at.ToString())} has made its step; the {DisplayText.Side(AwaitingView)} side may fire at it "
-            + "(Defensive First Fire) or pass before it goes on (A8.1)."
-        : AwaitingNote;
+    private string WaitingWhy => state switch
+    {
+        { Phase: "mph", Movement.WindowOpen: true } when MovingAt is { } at =>
+            $"The {DisplayText.Side(state.PhasingSide)} stack in {PlaceOf(at.ToString())} has made its step; the {DisplayText.Side(AwaitingView)} side may fire at it "
+                + "(Defensive First Fire) or pass before it goes on (A8.1).",
+        { Phase: "rtph" } when AwaitingView == state.PhasingSide =>
+            $"The {DisplayText.Side(state.PhasingSide)} side routs first: its broken units that must rout go before yours (A10.5). Your routs come once it has made them.",
+        { Phase: "rtph" } => $"The {DisplayText.Side(AwaitingView)} side still has broken units that must rout (A10.5); the Rout Phase ends after them.",
+        _ => AwaitingNote,
+    };
 
     /// <summary>Where the moving stack is, which the DEFENDER sees as units or a "?" (A8.1); null when no stack moves.</summary>
     private BoardLocation? MovingAt => state?.Movement switch

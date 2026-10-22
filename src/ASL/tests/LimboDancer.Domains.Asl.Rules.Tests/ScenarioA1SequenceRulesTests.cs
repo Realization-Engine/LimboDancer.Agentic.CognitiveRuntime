@@ -159,6 +159,27 @@ public sealed class ScenarioA1SequenceRulesTests
     }
 
     [Fact]
+    public void AnAttackerThatOwesARoutIsToldToRoutFirstNotToHandOver()
+    {
+        // A10.5, "ATTACKER first" (the user, 2026-10-22): the proposer's own debt is read only when the other side owes one.
+        Assert.Equal("play.rout-order: the russian side routs first: its broken units that must rout go before the german side's; rout them, then hand over to the german side (A10.5)",
+            ScenarioA1SequenceCalculator.RoutPhaseEndBar("asl.game.advance-phase", "rtph", () => "german", () => "russian"));
+        Assert.StartsWith("play.not-your-action: the german side still has a unit that must rout",
+            ScenarioA1SequenceCalculator.RoutPhaseEndBar("asl.game.advance-phase", "rtph", () => "german", () => null), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1SequenceCalculator.RoutPhaseEndBar("asl.game.advance-phase", "rtph", () => null, () => throw new InvalidOperationException()));
+    }
+
+    [Fact]
+    public void TheRoutPhaseIsHeldByTheAttackerFirstThenTheDefender()
+    {
+        // A10.5 (the user, 2026-10-22): the DEFENDER's units are read only when the ATTACKER owes no rout.
+        Assert.Equal("russian", ScenarioA1RoutCalculator.RoutPhaseHolder("russian", "german", () => true, () => throw new InvalidOperationException()));
+        Assert.Equal("german", ScenarioA1RoutCalculator.RoutPhaseHolder("russian", "german", () => false, () => true));
+        Assert.Null(ScenarioA1RoutCalculator.RoutPhaseHolder("russian", "german", () => false, () => false));
+        Assert.Null(ScenarioA1RoutCalculator.RoutPhaseHolder("russian", null, () => false, () => throw new InvalidOperationException()));
+    }
+
+    [Fact]
     public void TheRequestBarsReadOnlyWhenChecked()
     {
         var read = false;
