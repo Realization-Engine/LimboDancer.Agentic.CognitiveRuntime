@@ -13,6 +13,13 @@ public sealed record UnitPlace(string Hex, string Where, (int Width, string Colu
 /// </summary>
 public static class UnitGrouping
 {
+    /// <summary>
+    /// Whether a list may put a unit first as a leader (the Memory and Performance Guidelines: share a fact only when the view may know it): a
+    /// leader the view may know, its own side's or one neither concealed nor hidden; the adjudicator knows all. A concealed enemy leader sorted
+    /// first would tell the view what the "?" hides.
+    /// </summary>
+    public static bool KnownLeader(bool leader, bool adjudicator, bool ownSide, bool concealedOrHidden) => leader && (adjudicator || ownSide || !concealedOrHidden);
+
     /// <summary>One hex's units, or, with no hex, the items that stand on none, after the hexes.</summary>
     public sealed record Group<T>(string? Hex, IReadOnlyList<T> Items);
 

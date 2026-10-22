@@ -470,6 +470,46 @@ public sealed class PlayPagePass31cTests : IDisposable
         Assert.Empty(page.FindAll("#play-hand-over"));
     }
 
+    /// <summary>
+    /// The German MPh: g1 sets out on a two-hex route (the open hex, then back); at its first step r1 fires with no effect, and the DEFENDER lets
+    /// the stack move on, which hands the route back to the moving side paused. The page is left in the DEFENDER's view.
+    /// </summary>
+    private (IRenderedComponent<PlayPage> Page, (string From, string Building, string Open) Hexes) ARouteTheDefenderFiresAt()
+    {
+        var hexes = Hexes();
+        var page = NewGame("german", "russian");
+        Place(page, "g1", "attacker-squad", hexes.From);
+        Place(page, "r1", "defender-squad", hexes.Building);
+        Commit(page, "#propose-setup");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
+
+        page.Find(".move-unit[data-unit='g1']").Change(true);
+        page.Find("#move-route-plot").Click();
+        ClickHex(page, hexes.Open);
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("#move-route-steps li")));
+        ClickHex(page, hexes.From);
+        page.WaitForAssertion(() => Assert.Equal(2, page.FindAll("#move-route-steps li").Count));
+        page.Find("#move-route-go").Click();
+        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: true } window && window.Location.ToString() == hexes.Open));
+
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("#plan-move-on")));
+        page.Find("#fire-from").Change(hexes.Building);
+        page.Find(".fire-firer[data-unit='r1']").Change(true);
+        page.Find("#fire-target").Change(hexes.Open);
+        page.Find("#propose-fire").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.True(dice.Enqueue([6, 6]));
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+
+        page.Find("#plan-move-on").Click();
+        page.WaitForAssertion(() => Assert.NotNull(live.Plans.Of("village")?.Paused));
+        return (page, hexes);
+    }
+
     /// <summary>Plots a one-hex route for the Movement Plan's row that holds the unit, and keeps it.</summary>
     private static void PlanRoute(IRenderedComponent<PlayPage> page, string unit, string to)
     {
@@ -532,37 +572,8 @@ public sealed class PlayPagePass31cTests : IDisposable
     [Fact]
     public void TheDefendersFireHandsTheRouteBackToTheMovingSide()
     {
-        var hexes = Hexes();
-        var page = NewGame("german", "russian");
-        Place(page, "g1", "attacker-squad", hexes.From);
-        Place(page, "r1", "defender-squad", hexes.Building);
-        Commit(page, "#propose-setup");
-        page.EndPhase(Commit);
-        page.EndPhase(Commit);
-
-        page.Find(".move-unit[data-unit='g1']").Change(true);
-        page.Find("#move-route-plot").Click();
-        ClickHex(page, hexes.Open);
-        page.WaitForAssertion(() => Assert.Single(page.FindAll("#move-route-steps li")));
-        ClickHex(page, hexes.From);
-        page.WaitForAssertion(() => Assert.Equal(2, page.FindAll("#move-route-steps li").Count));
-        page.Find("#move-route-go").Click();
-        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: true } window && window.Location.ToString() == hexes.Open));
-
-        page.Find("#play-hand-over").Click();
-        page.Find("#play-handover-confirm").Click();
-        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("#plan-move-on")));
-        page.Find("#fire-from").Change(hexes.Building);
-        page.Find(".fire-firer[data-unit='r1']").Change(true);
-        page.Find("#fire-target").Change(hexes.Open);
-        page.Find("#propose-fire").Click();
-        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.True(dice.Enqueue([6, 6]));
-        page.Find("#play-confirm").Click();
-        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-
-        page.Find("#plan-move-on").Click();
-        page.WaitForAssertion(() => Assert.Equal("The DEFENDER fired at the stack.", live.Plans.Of("village")?.Paused));
+        var (page, hexes) = ARouteTheDefenderFiresAt();
+        Assert.Equal("The DEFENDER fired at the stack.", live.Plans.Of("village")?.Paused);
         Assert.Empty(page.FindAll("#plan-move-on"));
 
         page.Find("#play-hand-over").Click();
@@ -570,6 +581,27 @@ public sealed class PlayPagePass31cTests : IDisposable
         page.WaitForAssertion(() => Assert.Contains("1 left", page.Find("#move-route-continue").TextContent, StringComparison.Ordinal));
         page.Find("#move-route-continue").Click();
         page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: true } window && window.Location.ToString() == hexes.From));
+    }
+
+    // Found in dl-tractor-works-01 (2026-10-21), and the compliance scan's fix 6: a plan left waiting when its phase ends no longer holds. Read with
+    // the game it is absent, and reading it changes nothing; the next write on the game (here the queue's) lets it go, under the game's lock.
+    [Fact]
+    public async Task APlanLeftWaitingWhenItsPhaseEndsIsReadAsAbsentAndTheNextWriteDropsIt()
+    {
+        // The route is handed back paused, and the moving side ends the move and the phase instead: the plan waits on.
+        var (page, _) = ARouteTheDefenderFiresAt();
+        Assert.NotNull(live.Plans.Of("village", Current));
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        Commit(page, "#propose-end-move");
+        page.EndPhase(Commit);
+        Assert.Equal("dfph", Current.Phase);
+
+        Assert.Null(live.Plans.Of("village", Current));
+        Assert.Null(live.Plans.Of("village", Current));
+        var run = await live.Plans.RunQueue("village", "german", "russian");
+        Assert.Equal(MovementPlanTurn.Done, run.Turn);
+        Assert.Null(live.Plans.Of("village"));
     }
 
     // Design D13: a typed Location is armed, the header says what the next click does, the next hex clicked fills it and disarms it; an armed

@@ -397,6 +397,15 @@ public sealed class BacklogPass21Tests : IDisposable
         Committed(await Advance());
         Committed(await Advance());
         Assert.Equal(("german", "mph"), (Current.PhasingSide, Current.Phase));
+
+        // The Play streamlining plan, S7 (R-PS.5): the page offers the exit only from a Location on an edge, and only that edge; never above ground level.
+        var planner = Planner();
+        var now = Current;
+        Assert.Contains("left", planner.EdgesAt(now, BoardLocation.Parse("bd04:A9:0")));
+        Assert.DoesNotContain("right", planner.EdgesAt(now, BoardLocation.Parse("bd04:A9:0")));
+        Assert.Empty(planner.EdgesAt(now, BoardLocation.Parse("bd04:E5:0")));
+        Assert.Empty(planner.EdgesAt(now, BoardLocation.Parse("bd04:A9:1")));
+        Assert.Same(planner.EdgesAt(now, BoardLocation.Parse("bd04:A9:0")), planner.EdgesAt(now, BoardLocation.Parse("bd04:A9:0")));
         Refused(await Act(GameActions.Move, new
         {
             unitIds = Squad,

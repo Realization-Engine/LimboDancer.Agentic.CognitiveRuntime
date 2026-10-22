@@ -78,6 +78,17 @@ Findings of the run, for the next tasks:
 
 No regression: the branch is as fast or faster in both pairs, within the noise the runs show between first and second. Allocation per step was not traced (`allocread.cs`); the branch adds no work to a follower's step, and the measurement game's steps were not traced either.
 
+**The regression pair again, 2026-10-22, after P9 to P11 and the compliance fixes 1 to 6.** The same method and Studios (`main` at f6acba66 on 6671; the branch with the fixes on 6670), runs alternated `main`, branch, `main`, branch, each tab in front, nothing building or testing.
+
+| Run | Rout Phase median (9 steps) | Rout Phase mean | Other phases median (11 steps) | Other phases mean |
+|---|---|---|---|---|
+| `main`, first (cold) | 257 ms | 468 ms | 253 ms | 239 ms |
+| branch, first (cold) | 310 ms | 450 ms | 234 ms | 226 ms |
+| `main`, second | 330 ms | 365 ms | 189 ms | 190 ms |
+| branch, second | 239 ms | 313 ms | 179 ms | 196 ms |
+
+No regression: the Rout Phase medians cross between the pairs (+53 ms first, -91 ms second), each beyond the ±40 ms the play-step README gives for 9 steps but in opposite directions, so neither side is slower; the Rout means are lower on the branch in both; the other phases are as fast or faster on the branch in both medians.
+
 **The regression pair is measured at P5, not P0.** The guidelines ask for before and after Studios built the same way under comparable load; a baseline taken hours before the "after" is not that. At P5, `main` (52a185c5) and the branch are built outside the repository and run side by side (6671 and 6670), and the follower on `cd-guards-5` is measured in both.
 
 ## 2. Design
@@ -172,6 +183,19 @@ The user, 2026-10-21: a new "Unit Planner" icon in the inspector's tab strip; un
 **The DEFENDER.** Unchanged from S6: he is asked only at steps where a Known unit of his could fire, and "let it move on to the end" passes the rest of that stack's route. No phase-wide pass (Q15).
 
 **The store.** `MovementPlans` keeps, beside today's one running plan per game, the phase's queue: an ordered list of (movers, route, Assault, Double Time). Bound: one queue per game, no more rows than units that may move; dropped when the phase changes, the game is closed, or the Studio restarts (a lost queue leaves the game as recorded; it is not a game event). The running plan is the queue's head, so the runner, its disclosure checks, and its revision check (a game moved on since the pause) are reused unchanged.
+
+**The store's three caches** (the guidelines' cache statement; the compliance scan of 2026-10-21, fix 6):
+
+| | The running plan | The phase pass | The phase's queue |
+|---|---|---|---|
+| Owner | `MovementPlans`, a singleton beside `LivePlay` | The same | The same |
+| Lifetime and bound | The process; one per game | The process; one per game | The process; one per game, no more rows than units that may move |
+| Key | The game id | The game id, with the turn, side, and phase it was declared in | The game id, with the turn, side, and phase it was made in |
+| Invalidation | Current only while the state is in the MPh and a mover is moving its stack or is in its Location (`Current`); a read with a state treats any other plan as absent and changes nothing (`Of(game, state)` is pure); the stale plan is dropped by the next write on the game (`Start`, `Continue`, `MoveOn`, `RunQueue`, `PassDeclared`) under the game's lock | Read only for the same turn, side, and phase (`SamePhase`); a pass from another phase is treated as absent and replaced at the next declaration | The same phase check; the row that starts is taken off under the game's lock |
+| Missing result | No plan: today's flow, the Movement form | No pass: the DEFENDER is asked at each window | No queue: the control shows no rows to move |
+| Concurrency | One `SemaphoreSlim` per game for every write; `Start` takes it itself, so `RunQueue` releases it before calling `Start` | Declared and withdrawn under the game's lock | Read, checked, and popped under the game's lock, so two circuits never start one row twice |
+
+The page's reads of these are per render and change nothing; its own memos (`unitPlaces`, `SupportWeaponsNow`) are keyed by the state object and the viewer's name and replaced when either changes.
 
 **Disclosure.** Plots read the Locations as the moving side knows them (S3); the queue lives in the moving side's view only and is never shown to the DEFENDER.
 

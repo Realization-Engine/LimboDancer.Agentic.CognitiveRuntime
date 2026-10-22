@@ -1138,14 +1138,16 @@ public sealed class PlayRecords
                         .Concat(resolution.Effects.Where(effect => effect.ConcealmentLost == true).Select(effect => $"{effect.UnitId} loses its concealment (A11.19)"));
                     var left = UnpossessedAfter(item, resolution).Select(weapon => $"{weapon} is left unpossessed in {combat.Location} (A11.13)");
 
-                    // The user, 2026-10-21: the same round as a table, for the activity strip, which reads the record as text no player could follow.
-                    combatTables[item.EventId] = CombatTableOf(item.EventId, combat, resolution, [.. lost.Concat(ended).Concat(withdrew).Concat(left)]);
+                    // The user, 2026-10-21: the same round as a table, for the activity strip, which reads the record as text no player could follow. Its
+                    // inputs are kept and the table is built only when it is asked for (the latest round), not for every round at each revision.
+                    string[] notes = [.. lost.Concat(ended).Concat(withdrew).Concat(left)];
+                    combatInputs[item.EventId] = (combat, resolution, notes);
                     var text = resolution.Attacks.Count == 0 ? "no attacks" : string.Join(" | ", attacks);
                     var hand = combat.Facts.TryGetProperty("handToHand", out var handToHand) && handToHand.ValueKind == JsonValueKind.True ? ", Hand-to-Hand (red Kill Numbers)" : "";
                     // Shown with the first CC record after the leader went berserk (UI review, pass 27).
                     var companions = combat.Attackers.Concat(combat.Defenders).Distinct(StringComparer.Ordinal)
                         .Select(unit => companionChecks.Remove(unit, out var checks) ? checks : null).OfType<string>().ToArray();
-                    records.Add((item.EventId, $"CC in {combat.Location}, {combat.Round} round{hand}: {string.Join("; ", new[] { text }.Concat(lost).Concat(ended).Concat(withdrew).Concat(left).Concat(companions))}"));
+                    records.Add((item.EventId, $"CC in {combat.Location}, {combat.Round} round{hand}: {string.Join("; ", new[] { text }.Concat(notes).Concat(companions))}"));
                 }
             }
 
@@ -1154,7 +1156,9 @@ public sealed class PlayRecords
         }
     }
 
-    // The CC rounds as tables, by event, filled with the CC records.
+    // The CC rounds the view may read, by event, with what their tables are built from; a table is built when first asked for and then kept, for
+    // this record set's life (one revision and view).
+    private readonly Dictionary<string, (CloseCombatResolved Combat, CloseCombatResolution Resolution, string[] Notes)> combatInputs = new(StringComparer.Ordinal);
     private readonly Dictionary<string, CloseCombatTable> combatTables = new(StringComparer.Ordinal);
 
     /// <summary>A CC round as a table (the user, 2026-10-21), in the view's words as of the round; null for an event that is no CC round the view may read.</summary>
@@ -1162,7 +1166,19 @@ public sealed class PlayRecords
     {
         ArgumentNullException.ThrowIfNull(eventId);
         _ = CloseCombat;
-        return combatTables.GetValueOrDefault(eventId);
+        if (combatTables.TryGetValue(eventId, out var table))
+        {
+            return table;
+        }
+
+        if (!combatInputs.TryGetValue(eventId, out var inputs))
+        {
+            return null;
+        }
+
+        table = CombatTableOf(eventId, inputs.Combat, inputs.Resolution, inputs.Notes);
+        combatTables[eventId] = table;
+        return table;
     }
 
     /// <summary>

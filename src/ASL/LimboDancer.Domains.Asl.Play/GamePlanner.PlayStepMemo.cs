@@ -78,6 +78,14 @@ public sealed partial class GamePlanner
         /// <summary>The map edges a Location lies on (the Play streamlining plan, S7): the map's geometry, read once a state and Location.</summary>
         public ConcurrentDictionary<BoardLocation, string[]> ExitEdges { get; } = new();
 
+        // The ids of the units that guard an active prisoner, read once for the state; two circuits may each build it, and either is kept.
+        private IReadOnlySet<string>? custodians;
+
+        /// <summary>The units guarding an active prisoner (A20.5): the Deploy form asks it for each squad it offers. View-independent.</summary>
+        public IReadOnlySet<string> Custodians(GameState state) => Volatile.Read(ref custodians)
+            ?? (custodians = state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian is not null)
+                .Select(prisoner => prisoner.Custodian!).ToHashSet(StringComparer.Ordinal));
+
         // 1 once the placed map's composed read is kept; written after the read, read with a volatile read.
         private int composedKept;
         private ComposedMapRead? composed;

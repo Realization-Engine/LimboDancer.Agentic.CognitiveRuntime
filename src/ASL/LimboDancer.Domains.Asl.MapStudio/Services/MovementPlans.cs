@@ -97,27 +97,29 @@ public sealed class MovementPlans(LivePlay live)
 
     /// <summary>
     /// The plan being made in a game as it stands: only while its stack is the stack moving in a Movement Phase. A plan left over (its phase was
-    /// ended while it waited, or its stack's move ended outside it) is forgotten when it is read, so it never holds a later phase's forms back
-    /// (found in dl-tractor-works-01, 2026-10-21: a Russian plan stood into the German MPh of the next turn).
+    /// ended while it waited, or its stack's move ended outside it) reads as none, so it never holds a later phase's forms back (found in
+    /// dl-tractor-works-01, 2026-10-21). A pure read: the page asks it at each render, and a render changes no store (the Memory and Performance
+    /// Guidelines); the stale plan is let go by the next action on the game, under its lock (<see cref="DropStale"/>).
     /// </summary>
     public MovementPlan? Of(string game, GameState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        if (Of(game) is not { } plan)
-        {
-            return null;
-        }
+        return Of(game) is { } plan && Current(plan, state) ? plan : null;
+    }
 
-        // Its stack still moves: a member of it is moving, or the move stands where its latest step put it (an attack there may have left no
-        // member able to go on, and the DEFENDER and then the moving side still decide there).
-        if (state is { Phase: "mph", Movement: { } moving }
-            && (plan.Movers.Any(id => moving.Members.Contains(id, StringComparer.Ordinal)) || (plan.At is { } at && moving.Location == at)))
-        {
-            return plan;
-        }
+    // Its stack still moves: a member of it is moving, or the move stands where its latest step put it (an attack there may have left no member
+    // able to go on, and the DEFENDER and then the moving side still decide there).
+    private static bool Current(MovementPlan plan, GameState state) =>
+        state is { Phase: "mph", Movement: { } moving }
+        && (plan.Movers.Any(id => moving.Members.Contains(id, StringComparer.Ordinal)) || (plan.At is { } at && moving.Location == at));
 
-        Drop(game);
-        return null;
+    /// <summary>Lets go of a plan the game has left behind; called by an action on the game, under its lock.</summary>
+    private void DropStale(string game, GameState state)
+    {
+        if (Of(game) is { } plan && !Current(plan, state))
+        {
+            Drop(game);
+        }
     }
 
     // The Play streamlining plan, S8: one phase pass and one Movement Plan per game, each for one Movement Phase; a stale one (another phase or
@@ -200,35 +202,52 @@ public sealed class MovementPlans(LivePlay live)
     /// </summary>
     public async Task<MovementPlanRun> RunQueue(string game, string mover, string defender)
     {
+        var gate = locks.GetOrAdd(game, _ => new SemaphoreSlim(1, 1));
         while (true)
         {
-            var events = Events(game);
-            if (live.Planner.Replay(events).Current is not { } state || Of(game, state) is not null)
+            // The queue is read and its first row taken under the game's lock, so two circuits never start one row twice; the row is then made by
+            // Start, which takes the lock itself.
+            QueuedRoute row;
+            await gate.WaitAsync();
+            try
             {
-                return new MovementPlanRun(MovementPlanTurn.Mover, "A route is being moved; the plan goes on when it ends.", []);
+                var events = Events(game);
+                if (live.Planner.Replay(events).Current is not { } state)
+                {
+                    return new MovementPlanRun(MovementPlanTurn.Mover, "The game has no state.", []);
+                }
+
+                DropStale(game, state);
+                if (Of(game) is not null)
+                {
+                    return new MovementPlanRun(MovementPlanTurn.Mover, "A route is being moved; the plan goes on when it ends.", []);
+                }
+
+                if (QueueOf(game, state) is not { Rows.Count: > 0 } queue)
+                {
+                    queues.TryRemove(game, out _);
+                    return new MovementPlanRun(MovementPlanTurn.Done, "Every planned stack has moved.", []);
+                }
+
+                row = queue.Rows[0];
+                var plot = live.Planner.Plot(new GameScope(LivePlay.Tenant, game), events, row.Movers, row.Route, mover);
+                if (plot.Route.Count < row.Route.Count)
+                {
+                    return new MovementPlanRun(MovementPlanTurn.Mover, $"The planned route into {Say(row.Route[plot.Route.Count])} no longer holds: plot it again.",
+                        plot.Stop is { } stop ? [stop] : []);
+                }
+
+                // The queue stays, though empty, until the route started last ends, so its end is told as the plan's.
+                queues[game] = queue with
+                {
+                    Rows = [.. queue.Rows.Skip(1)]
+                };
+            }
+            finally
+            {
+                gate.Release();
             }
 
-            if (QueueOf(game, state) is not { Rows.Count: > 0 } queue)
-            {
-                queues.TryRemove(game, out _);
-                return new MovementPlanRun(MovementPlanTurn.Done, "Every planned stack has moved.", []);
-            }
-
-            var row = queue.Rows[0];
-            IReadOnlyList<QueuedRoute> rest = [.. queue.Rows.Skip(1)];
-
-            var plot = live.Planner.Plot(new GameScope(LivePlay.Tenant, game), events, row.Movers, row.Route, mover);
-            if (plot.Route.Count < row.Route.Count)
-            {
-                return new MovementPlanRun(MovementPlanTurn.Mover, $"The planned route into {Say(row.Route[plot.Route.Count])} no longer holds: plot it again.",
-                    plot.Stop is { } stop ? [stop] : []);
-            }
-
-            // The queue stays, though empty, until the route started last ends, so its end is told as the plan's.
-            queues[game] = queue with
-            {
-                Rows = rest
-            };
             var run = await Start(new MovementPlan(game, row.Movers, row.Route, false, false, mover, defender, $"queue-{Guid.NewGuid():N}"[..19]));
             if (run.Turn != MovementPlanTurn.Done)
             {
@@ -248,7 +267,13 @@ public sealed class MovementPlans(LivePlay live)
         try
         {
             var events = Events(game);
-            if (live.Planner.Replay(events).Current is not { } state || Of(game, state) is not null || !PassesForDefender(game, state)
+            if (live.Planner.Replay(events).Current is not { } state)
+            {
+                return false;
+            }
+
+            DropStale(game, state);
+            if (Of(game) is not null || !PassesForDefender(game, state)
                 || state.Sides.Select(side => side.Id).FirstOrDefault(id => id != state.PhasingSide) is not { } defender)
             {
                 return false;

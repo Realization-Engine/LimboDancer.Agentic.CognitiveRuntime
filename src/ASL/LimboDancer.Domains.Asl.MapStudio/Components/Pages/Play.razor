@@ -513,8 +513,7 @@ else if (state is not null)
                 }
                 @* The Play streamlining plan, S7 (ruling R-PS.3): the panel and each of its actions only when the phase allows it to the view; in the RtPh
                    the Rout form chooses what a broken unit keeps. *@
-                @if (state.Phase != "rtph" && !MoverWaits && SupportWeapons.ToList() is { Count: > 0 } swShown
-                    && Live.Planner.SupportWeaponActions(state, swShown, Viewer.IsAdjudicator ? null : viewAs) is { Any: true } swOffers)
+                @if (state.Phase != "rtph" && !MoverWaits && SupportWeaponsNow is ({ Count: > 0 } swShown, { Any: true } swOffers))
                 {
                     <SupportWeaponActionPanel Weapons="@([.. swShown.Select(weapon => new PlayChoice(weapon.Id, SupportWeaponText(weapon)))])" Offers="@swOffers"
                         Units="@([.. SupportWeaponUnits.Select(Labelled)])" Weapon="@swWeapon" Unit="@swUnit" Held="@(SupportWeaponHolder is not null)" Dismantles="@(swWeapon.Length > 0 && Live.Planner.MayDismantle(state, swWeapon))"
@@ -548,14 +547,14 @@ else if (state is not null)
                 <RepairActionPanel Weapons="@repairShown" Weapon="@repairWeapon" OnWeapon="@(id => repairWeapon = id)" OnPropose="@ProposeRepair" />
                     </ActionSection>
                 }
-                @if (state.Phase == "rph" && (DeployChoices.Count > 0 || RecombineChoices.Count > 0))
+                @if (state.Phase == "rph" && DeployChoices is var deployShown && RecombineChoices is var recombineShown && (deployShown.Count > 0 || recombineShown.Count > 0))
                 {
                     <ActionSection Title="Deploy and Recombine" Key="deploy-and-recombine">
-                <DeployActionPanel Squads="@DeployChoices" Leaders="@([.. LeadersWith(deploySquad).Select(leader => leader.Id)])" Weapons="@DeployWeapons"
+                <DeployActionPanel Squads="@deployShown" Leaders="@([.. LeadersWith(deploySquad).Select(leader => leader.Id)])" Weapons="@DeployWeapons"
                         Squad="@deploySquad" Leader="@deployLeader" Second="@deployWeapons"
                         OnSquad="@(id => { deploySquad = id; deployLeader = string.Empty; deployWeapons.Clear(); })" OnLeader="@(id => deployLeader = id)"
                         OnWeapon="@(pick => Toggle(deployWeapons, pick.Id, pick.On))" OnPropose="@ProposeDeploy" />
-                    <RecombineActionPanel HalfSquads="@RecombineChoices" Partners="@([.. RecombinePartners.Select(unit => unit.Id)])"
+                    <RecombineActionPanel HalfSquads="@recombineShown" Partners="@([.. RecombinePartners.Select(unit => unit.Id)])"
                         Leaders="@([.. LeadersWith(recombineOne).Select(leader => leader.Id)])" One="@recombineOne" Two="@recombineTwo" Leader="@recombineLeader"
                         OnOne="@(id => { recombineOne = id; recombineTwo = string.Empty; recombineLeader = string.Empty; })" OnTwo="@(id => recombineTwo = id)"
                         OnLeader="@(id => recombineLeader = id)" OnPropose="@ProposeRecombine" />
@@ -6951,6 +6950,29 @@ else if (state is not null)
         keep = RoutLoadNow is null ? null : RoutKept,
     }));
 
+    // The Memory and Performance Guidelines (page projections by state and viewer): the SW panel's weapons and the actions the phase allows them,
+    // read once a state and view, not at each render.
+    private (GameState? State, string View, IReadOnlyList<EquipmentInstance> Weapons, SupportWeaponOffers Offers) supportWeaponsMemo;
+
+    private (IReadOnlyList<EquipmentInstance> Weapons, SupportWeaponOffers Offers) SupportWeaponsNow
+    {
+        get
+        {
+            if (state is null)
+            {
+                return ([], default);
+            }
+
+            if (!ReferenceEquals(supportWeaponsMemo.State, state) || supportWeaponsMemo.View != Viewer.Name)
+            {
+                IReadOnlyList<EquipmentInstance> weapons = [.. SupportWeapons];
+                supportWeaponsMemo = (state, Viewer.Name, weapons, weapons.Count == 0 ? default : Live.Planner.SupportWeaponActions(state, weapons, Viewer.IsAdjudicator ? null : viewAs));
+            }
+
+            return (supportWeaponsMemo.Weapons, supportWeaponsMemo.Offers);
+        }
+    }
+
     /// <summary>The SW on the map, possessed or not, other than Guns.</summary>
     private IEnumerable<EquipmentInstance> SupportWeapons => state is null ? [] : VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && Mine(item)
         && item.Holding?.Role != HoldingRole.Manned && item.Holding?.Role != HoldingRole.Towed && item.Kind != "asl:gun" && state.Location(item.Id) is not null)
@@ -8870,11 +8892,36 @@ else if (state is not null)
     /// <summary>A unit offered as a choice, named after its Location ("[AA6]: 5-2-7 squad R13"; the user, 2026-10-21); its name alone off the map.</summary>
     private string UnitAt(string id) => UnitPlaceOf(id) is { } place ? $"{place.Where}: {Words(id)}" : Words(id);
 
+    // The Memory and Performance Guidelines (page projections by state and viewer): each id's place is read once a state and view, not at each
+    // render of each list that offers it.
+    private (GameState? State, string View, Dictionary<string, UnitPlace?> Places) unitPlaces = (null, string.Empty, new(StringComparer.Ordinal));
+
     private UnitPlace? UnitPlaceOf(string id)
+    {
+        if (state is null)
+        {
+            return null;
+        }
+
+        if (!ReferenceEquals(unitPlaces.State, state) || unitPlaces.View != Viewer.Name)
+        {
+            unitPlaces = (state, Viewer.Name, new(StringComparer.Ordinal));
+        }
+
+        if (!unitPlaces.Places.TryGetValue(id, out var place))
+        {
+            place = ReadUnitPlace(state, id);
+            unitPlaces.Places[id] = place;
+        }
+
+        return place;
+    }
+
+    private UnitPlace? ReadUnitPlace(GameState current, string id)
     {
         // A unit or a weapon: each stands in a Location (a weapon held, in its holder's). An id that joins a unit and its weapon ("g1|pf", a
         // tank's "t1|ma" or "t1:bmg") stands where the unit does.
-        if (state is null || (state.Location(id)?.Location ?? (id.IndexOfAny(['|', ':']) is > 0 and var cut ? state.Location(id[..cut])?.Location : null)) is not { } at)
+        if ((current.Location(id)?.Location ?? (id.IndexOfAny(['|', ':']) is > 0 and var cut ? current.Location(id[..cut])?.Location : null)) is not { } at)
         {
             return null;
         }
@@ -8882,8 +8929,11 @@ else if (state is not null)
         var hex = at.Hex.ToString();
         var letters = hex.TakeWhile(char.IsLetter).Count();
         _ = int.TryParse(hex.AsSpan(letters), out var row);
+        // A leader is put first only where the view may know it is one: a concealed enemy leader stays where any "?" would.
+        var leader = current.Unit(id) is { } unit && UnitGrouping.KnownLeader(unit.Kind == "asl:leader", Viewer.IsAdjudicator, unit.Side == viewAs,
+            GameState.Condition(unit, Conditions.Concealed) == ConditionState.True || GameState.Condition(unit, Conditions.Hidden) == ConditionState.True);
         // Map order: the board, then the column (A before Z before AA), then the row.
-        return new UnitPlace(PlaceOf(at with { Level = 0 }), PlaceOf(at), (0, $"{at.Board}|{letters:D2}|{hex[..letters]}", row), state.Unit(id)?.Kind == "asl:leader");
+        return new UnitPlace(PlaceOf(at with { Level = 0 }), PlaceOf(at), (0, $"{at.Board}|{letters:D2}|{hex[..letters]}", row), leader);
     }
 
     private string PlaceOf(string at) => DisplayText.Place(MapBoards, at);

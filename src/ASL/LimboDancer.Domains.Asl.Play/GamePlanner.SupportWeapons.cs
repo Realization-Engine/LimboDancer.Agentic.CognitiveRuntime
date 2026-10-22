@@ -24,6 +24,32 @@ public sealed partial class GamePlanner
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(weapons);
         bool transfer = false, drop = false, recover = false, dismantle = false;
+
+        // The sides of the active units in each Location (as GameState.At reads a Location: no Passenger or Rider), read once for the call and only
+        // when a weapon needs it, not by a scan of the whole state for each weapon (the Memory and Performance Guidelines).
+        Dictionary<BoardLocation, List<string>>? sidesAt = null;
+        List<string> SidesAt(BoardLocation at)
+        {
+            if (sidesAt is null)
+            {
+                sidesAt = [];
+                foreach (var unit in state.Units)
+                {
+                    if (unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location is { } where && state.Aboard(unit.Id) is null)
+                    {
+                        if (!sidesAt.TryGetValue(where, out var sides))
+                        {
+                            sidesAt[where] = sides = [];
+                        }
+
+                        sides.Add(unit.Side);
+                    }
+                }
+            }
+
+            return sidesAt.TryGetValue(at, out var found) ? found : [];
+        }
+
         foreach (var weapon in weapons)
         {
             if (weapon.Holding is { Role: HoldingRole.Possessed } holding && state.Unit(holding.Holder) is { } holder)
@@ -32,13 +58,12 @@ public sealed partial class GamePlanner
                 transfer |= ScenarioA1SupportWeaponRules.TransferPhase(state.Phase, phasing);
                 // At the start of the CCPh a drop matters only to a holder in a Location with an enemy unit, where the Close Combat is.
                 drop |= ScenarioA1SupportWeaponRules.DropPhase(state.Phase, phasing) && (state.Phase != "ccph" || (state.Location(holder.Id)?.Location is { } held
-                    && state.At(held).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != holder.Side)));
+                    && SidesAt(held).Any(other => other != holder.Side)));
                 dismantle |= Dismantlable(weapon) && ScenarioA1SupportWeaponRules.DismantlePhase(state.Phase, phasing);
             }
             else if (weapon.Holding is null && !recover && state.Location(weapon.Id)?.Location is { } at)
             {
-                recover = state.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && (side is null || unit.Side == side)
-                    && ScenarioA1SupportWeaponRules.RecoverPhase(state.Phase, unit.Side == state.PhasingSide));
+                recover = SidesAt(at).Any(present => (side is null || present == side) && ScenarioA1SupportWeaponRules.RecoverPhase(state.Phase, present == state.PhasingSide));
             }
         }
 
@@ -168,7 +193,8 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(squad);
-        return ScenarioA1SupportWeaponRules.GuardDeploysAtWill(vocabulary.IsA(squad.Kind, "asl:squad"), IsGuard(state, squad), Is(squad, Conditions.Broken))
+        // The Guards are read once a state (the Memory and Performance Guidelines), not by a scan of every unit for each squad offered.
+        return ScenarioA1SupportWeaponRules.GuardDeploysAtWill(vocabulary.IsA(squad.Kind, "asl:squad"), MemoOf(state).Custodians(state).Contains(squad.Id), Is(squad, Conditions.Broken))
             || (state.Phase == "rph" && squad.Side == state.PhasingSide && FreeToAct(squad) && !MayNotDeploy(squad) && RallyPhaseActionBar(state, squad.Id) is null);
     }
 
