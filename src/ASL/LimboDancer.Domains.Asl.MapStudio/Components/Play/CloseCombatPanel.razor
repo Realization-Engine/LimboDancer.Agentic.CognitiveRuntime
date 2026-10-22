@@ -204,7 +204,7 @@
     public EventCallback OnProposeAmbush { get; set; }
 
     [Parameter]
-    public EventCallback<AmbushWithdrawalActions.Withdrawal> OnAmbushWithdraw { get; set; }
+    public EventCallback<(IReadOnlyList<string> Units, string To)> OnAmbushWithdraw { get; set; }
 
     [Parameter]
     public EventCallback<CloseCombatStacking.Choice> OnStacking { get; set; }

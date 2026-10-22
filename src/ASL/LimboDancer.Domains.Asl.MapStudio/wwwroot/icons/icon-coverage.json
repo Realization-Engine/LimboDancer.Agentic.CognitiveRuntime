@@ -1852,10 +1852,11 @@
       "controls": [
         {
           "kind": "button",
-          "label": "Propose: @(PlaceOfUnit?.Invoke(withdrawal.Unit) is { } place ? $\u0022{place.Where...",
+          "label": "Propose: withdraw @(ticked switch { 0 =\u003E \u0022the units chosen\u0022, 1 =\u003E \u0022the chosen...",
           "dynamic": true,
+          "id": "propose-ambush-withdraw",
           "status": "needed",
-          "strip": "AmbushWithdrawalActions cc-ambush-withdrawal"
+          "strip": "AmbushWithdrawalActions toolbar"
         }
       ]
     },

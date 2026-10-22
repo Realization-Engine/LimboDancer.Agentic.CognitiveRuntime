@@ -1,29 +1,93 @@
-@* Plan N06 (pass 27): the ambusher's units withdraw before the round or after it closes (A11.41), each a proposal of its own. The page shows it to
-   the ambusher's view and the adjudicator only and reads the destinations from the planner. *@
-<div class="toolbar" id="cc-ambush-withdrawal">
-    <span class="muted">Ambush Withdrawal (A11.41):</span>
-    @foreach (var withdrawal in Withdrawals)
-    {
-        <button class="ambush-withdraw" data-unit="@withdrawal.Unit" data-to="@withdrawal.To" @onclick="@(() => OnPropose.InvokeAsync(withdrawal))">Propose: @(PlaceOfUnit?.Invoke(withdrawal.Unit) is { } place ? $"{place.Where}: " : string.Empty)@Say(withdrawal.Unit) withdraws to @Say(withdrawal.To)</button>
-    }
+@* Plan N06 (pass 27): the ambusher's units withdraw before the round or after it closes (A11.41). The page shows it to the ambusher's view and the
+   adjudicator only and reads each unit's destinations from the planner. The user, 2026-10-21 (sixty buttons, one per unit and Location): one form,
+   the units ticked and one destination open to all of them; each unit still withdraws by a proposal of its own, made in turn. *@
+<div id="cc-ambush-withdrawal">
+    <p class="toolbar-note">Ambush Withdrawal (A11.41): each of your units may withdraw now, declining Close Combat, or after its attacks before Melee, or stay and fight.</p>
+    <UnitSelectionList Rows="@Units" Selected="@ChosenSet" CssClass="ambush-withdraw-unit" Legend="Units withdrawing" Empty="none may withdraw."
+                       OnToggle="@Toggle" />
+    <div class="toolbar">
+        <label>
+            To
+            <select id="ambush-withdraw-to" value="@To" @onchange="@(args => to = args.Value as string ?? string.Empty)">
+                <option value="">choose</option>
+                @foreach (var at in Destinations)
+                {
+                    <option value="@at">@Say(at)</option>
+                }
+            </select>
+        </label>
+        @{
+            var ticked = Chosen.Count();
+        }
+        <button type="button" id="propose-ambush-withdraw" disabled="@(ticked == 0 || To.Length == 0 || Busy)"
+                @onclick="@(() => OnPropose.InvokeAsync(([.. Chosen], To)))">
+            Propose: withdraw @(ticked switch { 0 => "the units chosen", 1 => "the chosen unit", _ => $"the {ticked} chosen units" }) @(To.Length > 0 ? $"to {Say(To)}" : string.Empty)
+        </button>
+        @if (ticked > 0 && Destinations.Count == 0)
+        {
+            <span class="toolbar-note">No Location is open to all the units chosen: choose fewer.</span>
+        }
+    </div>
 </div>
 
 @code {
-    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
-    /// <summary>A unit's Location, which names it in each button (the user, 2026-10-21).</summary>
+    /// <summary>A unit's Location, which heads its group in the list (the user, 2026-10-21).</summary>
     [CascadingParameter(Name = "PlaceOfUnit")]
     public Func<string, UnitPlace?>? PlaceOfUnit { get; set; }
 
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }
 
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>An ambusher's unit and a Location it may withdraw to.</summary>
     public sealed record Withdrawal(string Unit, string To);
 
     [Parameter, EditorRequired]
     public IReadOnlyList<Withdrawal> Withdrawals { get; set; } = [];
 
+    /// <summary>The units ticked and the Location they withdraw to; the page proposes each unit's withdrawal in turn.</summary>
     [Parameter]
-    public EventCallback<Withdrawal> OnPropose { get; set; }
+    public EventCallback<(IReadOnlyList<string> Units, string To)> OnPropose { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private readonly HashSet<string> chosen = new(StringComparer.Ordinal);
+    private string to = string.Empty;
+
+    private IReadOnlyList<UnitSelectionList.Row> Units => [.. Withdrawals.Select(item => item.Unit).Distinct(StringComparer.Ordinal).Select(id => new UnitSelectionList.Row(id, id))];
+
+    // The units still offered among those ticked: one withdrawn is no longer offered.
+    private IEnumerable<string> Chosen => chosen.Where(id => Withdrawals.Any(item => item.Unit == id));
+
+    private IReadOnlySet<string> ChosenSet => Chosen.ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>The Locations open to every unit ticked, in the first one's order; with none ticked, every Location offered.</summary>
+    private IReadOnlyList<string> Destinations
+    {
+        get
+        {
+            var ticked = Chosen.ToArray();
+            var all = Withdrawals.Select(item => item.To).Distinct(StringComparer.Ordinal);
+            return ticked.Length == 0 ? [.. all]
+                : [.. all.Where(at => ticked.All(unit => Withdrawals.Any(item => item.Unit == unit && item.To == at)))];
+        }
+    }
+
+    // The destination chosen while it is open to the units ticked.
+    private string To => Destinations.Contains(to, StringComparer.Ordinal) ? to : string.Empty;
+
+    private void Toggle(UnitSelectionList.Toggle toggle)
+    {
+        if (toggle.On)
+        {
+            chosen.Add(toggle.Id);
+        }
+        else
+        {
+            chosen.Remove(toggle.Id);
+        }
+    }
 }

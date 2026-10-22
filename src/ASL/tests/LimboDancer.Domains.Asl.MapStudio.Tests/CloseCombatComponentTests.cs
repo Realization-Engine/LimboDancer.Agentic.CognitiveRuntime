@@ -100,7 +100,7 @@ public sealed class CloseCombatComponentTests : IDisposable
     public void TheCloseCombatPanelListsItsAttacksAndChoices()
     {
         CloseCombatPanel.DeclaredAttack? removed = null;
-        AmbushWithdrawalActions.Withdrawal? withdrawn = null;
+        (IReadOnlyList<string> Units, string To)? withdrawn = null;
         CloseCombatInfiltrationChoices.Choice? infiltrated = null;
         var proposed = false;
         var attack = new CloseCombatPanel.DeclaredAttack(["r1", "r2"], ["g1"], "rl", true, ["g1"], "r2");
@@ -113,8 +113,13 @@ public sealed class CloseCombatComponentTests : IDisposable
         Assert.Equal("Propose: resolve CC", panel.Find("#propose-cc").TextContent);
         panel.Find("#cc-attacks button").Click();
         Assert.Same(attack, removed);
-        panel.Find(".ambush-withdraw[data-unit='r1'][data-to='bd04:E6:0']").Click();
-        Assert.Equal(new AmbushWithdrawalActions.Withdrawal("r1", "bd04:E6:0"), withdrawn);
+        // The user, 2026-10-21: one form, the units ticked and a Location open to all of them, in place of a button per unit and Location.
+        Assert.True(panel.Find("#propose-ambush-withdraw").HasAttribute("disabled"));
+        panel.Find(".ambush-withdraw-unit[data-unit='r1']").Change(true);
+        panel.Find("#ambush-withdraw-to").Change("bd04:E6:0");
+        panel.Find("#propose-ambush-withdraw").Click();
+        Assert.Equal(["r1"], withdrawn?.Units);
+        Assert.Equal("bd04:E6:0", withdrawn?.To);
         Assert.Equal("to bd04:F5:0", panel.FindAll(".cc-infiltrate[data-unit='r2'] option")[1].TextContent);
         panel.Find(".cc-infiltrate[data-unit='r2']").Change("bd04:F5:0");
         Assert.Equal(new CloseCombatInfiltrationChoices.Choice("r2", "bd04:F5:0"), infiltrated);

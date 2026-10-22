@@ -796,7 +796,7 @@ else if (state is not null)
                         Smcs="@StackingChoices" Stacking="@ccStacking" Withdrawers="@Withdrawers" Withdrawals="@ccWithdrawals" Sides="@DeclaringSides" Attackers="@ccAttackers"
                         Defenders="@ccDefenders" Directors="@([.. CloseCombatDirectors.Select(unit => unit.Id)])" Director="@ccDirector" Capture="@ccCapture" Guard="@ccGuard" Yield="@ccYield"
                         Infiltrators="@Infiltrators" Infiltrations="@ccInfiltrations" Attacks="@ccAttacks" OnLocation="@ChooseCloseCombatLocation" OnRound="@ChooseRound"
-                        OnHandToHand="@(on => ccHandToHand = on)" OnProposeAmbush="@ProposeAmbush" OnAmbushWithdraw="@(item => ProposeAmbushWithdrawal(item.Unit, item.To))"
+                        OnHandToHand="@(on => ccHandToHand = on)" OnProposeAmbush="@ProposeAmbush" OnAmbushWithdraw="@(item => ProposeAmbushWithdrawal(item.Units, item.To))"
                         OnStacking="@(pick => SetStacking(pick.Unit, pick.Value))" OnWithdrawal="@(pick => SetWithdrawal(pick.Unit, pick.To))"
                         OnAttacker="@(pick => ToggleAttacker(pick.Id, pick.On))" OnDefender="@(pick => ToggleDefender(pick.Id, pick.On))" MayRemove="@MayRemoveAttack" OnDirector="@(id => ccDirector = id)"
                         OnCapture="@(on => ccCapture = on)" OnGuard="@(id => ccGuard = id)" OnYield="@(text => ccYield = text)" OnAddAttack="@AddAttack"
@@ -4159,9 +4159,10 @@ else if (state is not null)
                 && GameState.Condition(unit, Conditions.Unarmed) != ConditionState.True && (Library.Vocabulary.IsA(unit.Kind, "asl:mmc") || Library.Vocabulary.IsA(unit.Kind, "asl:smc"))))
                 .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => unit.Id)]))];
 
-    private Task ProposeAmbushWithdrawal(string unit, string to) => Propose(GameActions.AmbushWithdraw, JsonSerializer.SerializeToElement(new
+    // The user, 2026-10-21: the units ticked withdraw together, in one proposal the gate checks unit by unit (A11.41).
+    private Task ProposeAmbushWithdrawal(IReadOnlyList<string> units, string to) => Propose(GameActions.AmbushWithdraw, JsonSerializer.SerializeToElement(new
     {
-        gameId, attemptId = Attempt("awd"), expectedRevision = (long)history!.Events.Count, location = ccLocation, unitIds = new[] { unit }, to,
+        gameId, attemptId = Attempt("awd"), expectedRevision = (long)history!.Events.Count, location = ccLocation, unitIds = units.Order(StringComparer.Ordinal).ToArray(), to,
     }));
 
     private Task ProposeGuardPrisoners(string guard, string? to) => Propose(GameActions.GuardPrisoners, to is null
