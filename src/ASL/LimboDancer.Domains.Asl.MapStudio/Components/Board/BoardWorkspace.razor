@@ -148,6 +148,10 @@
     [Parameter]
     public RenderFragment? InspectorPlanner { get; set; }
 
+    /// <summary>The ATTACKER, whose units the Selection tab lists first in a hex (the user, 2026-10-21); null where there is no phase.</summary>
+    [Parameter]
+    public string? InspectorAttacker { get; set; }
+
     /// <summary>
     /// Whether the open tab stays open when a hex or a counter is clicked, such as Play's Proposal tab while a proposal waits for Confirm (pass 29).
     /// Otherwise a click on the map shows the Selection tab, unless LOS is open.
@@ -208,7 +212,7 @@
     public bool Rotated => rotated;
 
     private RenderFragment InspectorPane => @<BoardInspector @ref="inspectorPane" Board="@Board" Panel="@Panel" PanelChanged="@PanelChanged" Label="@InspectorLabel" IdPrefix="@IdPrefix"
-        Extras="@Extras" Header="@InspectorHeader" Planner="@InspectorPlanner" Selected="@Selected" Units="@Units" SelectedUnit="@selectedUnit" SelectedUnitChanged="@PickUnit"
+        Extras="@Extras" Header="@InspectorHeader" Planner="@InspectorPlanner" Attacker="@InspectorAttacker" Selected="@Selected" Units="@Units" SelectedUnit="@selectedUnit" SelectedUnitChanged="@PickUnit"
         Vocabulary="@Vocabulary" View="@UnitView" UnitNote="@UnitNote" OriginOf="@OriginOf" HexNotes="@HexNotes" Sample="@sample" StyledModel="@StyledModel" LosDraft="@losDraft"
         LosDraftChanged="@(draft => losDraft = draft)" LosResult="@losCheck" OnCheckLos="@CheckLos" OnClearLos="@ClearLos" OnCopy="@Copy"
         RangeResult="@rangeCheck" RangeRows="@rangeRows" RangeChosen="@rangeChosen" OnChooseRange="@(key => rangeChosen = key)" OnCheckRange="@CheckRange" OnClearRange="@ClearRange" />;

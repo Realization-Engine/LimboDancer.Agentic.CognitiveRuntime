@@ -69,6 +69,22 @@ public sealed class SelectedUnitInspectorTests
         Assert.DoesNotContain("de-mortar-01", hidden.Markup, StringComparison.Ordinal);
     }
 
+    // The user, 2026-10-21: the units in a hex by side, the ATTACKER's first, each side's leaders at the top of its group.
+    [Fact]
+    public void TheHexsUnitsAreListedBySideTheAttackersFirstLeadersOnTop()
+    {
+        using var context = new BunitContext();
+        PlacedUnit Placed(string id, string kind, string side) => new(Assert.Single(UnitDocumentReader.Read($$"""
+            {"vocabulary":["asl@1.0.0"],"id":"{{id}}","kind":"asl:{{kind}}","side":"{{side}}","faces": { "front": {} } }
+            """, Vocabulary).Documents), Location, new HexIndex(1, 0), true, id);
+        var list = context.Render<HexUnitStackList>(parameters => parameters
+            .Add(component => component.Hex, "B1")
+            .Add(component => component.Members, [Placed("g1", "squad", "german"), Placed("r1", "squad", "russian"), Placed("g9", "leader", "german")])
+            .Add(component => component.Attacker, "russian"));
+        Assert.Equal(["Russian (ATTACKER) (1)", "German (DEFENDER) (2)"], list.FindAll("h4.unit-list-side").Select(item => item.TextContent));
+        Assert.Equal(["r1", "g9", "g1"], list.FindAll("#hex-units li > button").Select(item => item.TextContent));
+    }
+
     private static EquipmentInstance Equipment(HoldingRole role) => new("gun-1", "asl:gun", "allied",
         new MapPosition(Location), new Holding("crew-1", role), new Dictionary<string, ConditionState>(), InstanceStatus.Active);
 

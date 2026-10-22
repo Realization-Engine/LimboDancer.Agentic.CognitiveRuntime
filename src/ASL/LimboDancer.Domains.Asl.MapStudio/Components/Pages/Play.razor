@@ -1072,7 +1072,7 @@ else if (state is not null)
             <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" OriginOf="@CounterOrigin" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@MapMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => PickHex(mapBoard, facts))"
-                            Panel="@InspectorPanel" PanelChanged="@(tab => inspectorTab = tab)" Extras="@InspectorExtras(actionsBlock, proposalBlock, recordsBlock, unitsBlock, diceBlock)" InspectorHeader="@(bannerNow is not null ? inspectorTurn : null)" InspectorPlanner="@PlannerBlock"
+                            Panel="@InspectorPanel" PanelChanged="@(tab => inspectorTab = tab)" Extras="@InspectorExtras(actionsBlock, proposalBlock, recordsBlock, unitsBlock, diceBlock)" InspectorHeader="@(bannerNow is not null ? inspectorTurn : null)" InspectorPlanner="@PlannerBlock" InspectorAttacker="@state?.PhasingSide"
                             HoldPanel="@(AwaitingConfirm || SetupMode || InspectorPanel == PlayTab)" OnKey="@MapKey" InspectorLabel="Play, review, and inspector" IdPrefix="play-inspector" MapLabel="The game's map" InspectorFirst="@(!narrow)"
                             InspectorClass="play-pane play-review inspector" InspectorAttributes="@ReviewAttributes"
                             StageClass="play-pane play-map-pane play-map" StageAttributes="@MapAttributes(layers.Source)" Between="@between">

@@ -67,7 +67,7 @@
                     }
                     @if (Selected is { } selectedHex && units.At(selectedHex.Index).ToArray() is { Length: > 0 } members)
                     {
-                        <HexUnitStackList Hex="@selectedHex.Hex.ToString()" Members="@members" Selected="@SelectedUnit?.Document.Id" OnSelect="@SelectedUnitChanged" />
+                        <HexUnitStackList Hex="@selectedHex.Hex.ToString()" Members="@members" Selected="@SelectedUnit?.Document.Id" Attacker="@Attacker" OnSelect="@SelectedUnitChanged" />
                     }
                 }
                 @if (Selected is { } notedHex && HexNotes?.Invoke(notedHex) is { Count: > 0 } notes)
@@ -140,6 +140,10 @@
     /// </summary>
     [Parameter]
     public RenderFragment? Planner { get; set; }
+
+    /// <summary>The ATTACKER, whose units the hex's list shows first (the user, 2026-10-21); null where the host has no phase.</summary>
+    [Parameter]
+    public string? Attacker { get; set; }
 
     /// <summary>The hex clicked and kept; null when none is.</summary>
     [Parameter]

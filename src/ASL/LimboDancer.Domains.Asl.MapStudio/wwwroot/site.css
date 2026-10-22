@@ -3188,6 +3188,12 @@ details.advanced > summary {
     margin: 0.2rem 0;
 }
 
+/* The user, 2026-10-21: the Selection tab's units in a hex, by side, the ATTACKER's first. */
+.unit-list-side {
+    margin: 0.5rem 0 0.2rem;
+    font-size: 0.875rem;
+}
+
 /* The user, 2026-10-21: a hex's name over its units in a list of checkboxes. */
 .unit-group-hex {
     display: block;
