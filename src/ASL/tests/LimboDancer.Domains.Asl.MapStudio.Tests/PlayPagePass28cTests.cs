@@ -170,7 +170,19 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.NotEmpty(page.Find("#play-status").TextContent);
         Assert.Equal("View: German", page.Find("#play-view-label").TextContent);
 
-        page.Find("#play-hand-over").Click();
+        // The user, 2026-10-22: the wait is said first, the hand-over is the view's main action, the banner tags it, and the stack's hex is outlined.
+        Assert.Contains("Waiting for the Russian side", page.Find("#play-waiting").TextContent, StringComparison.Ordinal);
+        Assert.Contains($"stack in {DisplayText.Place(1, hexes.Three)}", page.Find("#play-waiting-why").TextContent, StringComparison.Ordinal);
+        Assert.Equal("Waiting", page.Find("#play-awaiting-due").TextContent);
+        Assert.Contains("primary", page.Find("#play-hand-over").ClassList);
+        page.WaitForAssertion(() => Assert.NotNull(context.MapQuery($".move-waiting-mark[data-location='{hexes.Three}']")));
+
+        // A page opened now opens behind the side whose decision holds play up, not the side whose phase it is.
+        context.Services.GetRequiredService<NavigationManager>().NavigateTo("games/play?game=village");
+        var opened = context.Render<PlayPage>();
+        Assert.Contains("Russian side", opened.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
+
+        page.Find("#play-waiting-hand-over").Click();
         Assert.Contains("Russian side", page.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
 
         // Ruling R23.2: the last view's announcement does not stay for the next viewer.
@@ -190,6 +202,10 @@ public sealed class PlayPagePass28cTests : IDisposable
         // The Play streamlining plan, S7: once the window closes the DEFENDER's section is gone; the map's toolbar names the view in force.
         Assert.Empty(page.FindAll("#dff-window"));
         Assert.Equal("View: Russian", page.Find("#play-view-label").TextContent);
+
+        // Nothing holds play up now: no waiting signal, whichever view is shown.
+        Assert.Empty(page.FindAll("#play-waiting"));
+        Assert.Empty(page.FindAll("#play-awaiting-due"));
     }
 
     // The Play streamlining plan, S1: the DEFENDER passes from the hand-over screen without opening his view; the screen then goes back to the moving

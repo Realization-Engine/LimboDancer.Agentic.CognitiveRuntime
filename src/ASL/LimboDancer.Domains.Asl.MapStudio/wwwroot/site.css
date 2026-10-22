@@ -3246,6 +3246,35 @@ details.advanced > summary {
     white-space: nowrap;
 }
 
+/* The user, 2026-10-22: the other side's decision holds play up (the DEFENDER's window, a choice, a surrender): the view says so first. */
+.play-waiting {
+    margin: 0 0 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border: 2px solid var(--warn);
+    border-left-width: 6px;
+    border-radius: var(--radius);
+    background: var(--warn-bg);
+    color: var(--warn);
+}
+
+.play-waiting p {
+    margin: 0 0 0.5rem;
+}
+
+.play-waiting .play-waiting-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.play-awaiting-due {
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius);
+    background: var(--warn);
+    color: #ffffff;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
 .play-map-pane #play-residual {
     margin: 0 0 0.4rem;
 }

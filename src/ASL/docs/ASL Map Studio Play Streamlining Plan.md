@@ -165,6 +165,13 @@ The user, 2026-10-21: "No UI workflow should be visible in the UI unless it is i
 
 **Memory and performance.** Each test is a fact the page already holds for the render, or one planner call per render for the state, memoized where it reads the map (the exit edges of one Location, in `PlayStepMemo`). Fewer forms are rendered, so the change removes work.
 
+**The waiting signal (the user, 2026-10-22).** In `dl-tractor-works-02` the Russian MPh looked stuck: a stack's step had opened the DEFENDER's window, and the only cue was a line in the Movement section and the banner's hand-over, which is there in every phase ("it is not obvious that I needed to do that. I need some better signal in the UI"). While the other side's decision holds play up (the DEFENDER's window, a choice, a surrender), the view now says so:
+- a callout first in the Play tab, "Waiting for the German side", what he decides and where ("the Russian stack in [Y4] ... may fire at it (Defensive First Fire) or pass"), with "Hand the screen to the German side" as its main button;
+- a "Waiting" tag beside the banner's hand-over, which becomes the primary button;
+- the waiting stack's hex outlined in brick red on the map;
+- a page opened on such a game opens behind that side's hand-over screen, not the phasing side's.
+Each reads facts the page already holds (the open window, its Location, the awaited side); the outline is one mark kept for its state.
+
 ### 2.9 S8: the Unit Planner tab
 
 The user, 2026-10-21: a new "Unit Planner" icon in the inspector's tab strip; under it a second row of icons holding LOS, Range (moved there), and a new Movement Plan, which plans the routes of every eligible stack and unit and makes the Movement Phase's moves as far as is practical.

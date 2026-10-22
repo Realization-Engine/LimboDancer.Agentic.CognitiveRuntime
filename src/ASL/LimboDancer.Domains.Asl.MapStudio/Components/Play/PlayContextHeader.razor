@@ -37,7 +37,11 @@
                 @if (Awaiting is { Length: > 0 } awaiting)
                 {
                     <span class="visually-hidden" id="play-awaiting">@AwaitingNote</span>
-                    <button type="button" id="play-hand-over" title="@AwaitingNote" aria-describedby="play-awaiting" @onclick="@(() => HandOver.InvokeAsync())">Hand over to @awaiting</button>
+                    @if (AwaitingDue)
+                    {
+                        <span class="play-awaiting-due" id="play-awaiting-due">Waiting</span>
+                    }
+                    <button type="button" id="play-hand-over" class="@(AwaitingDue ? "primary" : null)" title="@AwaitingNote" aria-describedby="play-awaiting" @onclick="@(() => HandOver.InvokeAsync())">Hand over to @awaiting</button>
                 }
                 <span id="play-status" class="@(Busy ? "play-status busy" : "play-status visually-hidden")" role="status" aria-live="polite" title="@Status">@(Busy ? "Working: " : string.Empty)@Status</span>
                 @if (PendingTitle is { Length: > 0 } title)
@@ -124,8 +128,12 @@
             }
             @if (Awaiting is { Length: > 0 } awaiting)
             {
+                @if (AwaitingDue)
+                {
+                    <span class="play-awaiting-due" id="play-awaiting-due">Waiting</span>
+                }
                 <span class="toolbar-note" id="play-awaiting">@AwaitingNote</span>
-                <button type="button" id="play-hand-over" @onclick="@(() => HandOver.InvokeAsync())">Hand over to @awaiting</button>
+                <button type="button" id="play-hand-over" class="@(AwaitingDue ? "primary" : null)" @onclick="@(() => HandOver.InvokeAsync())">Hand over to @awaiting</button>
             }
         </div>
     }
@@ -224,6 +232,13 @@
     /// <summary>What the game waits for, such as "The DEFENDER may fire or pass."</summary>
     [Parameter]
     public string AwaitingNote { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Whether the awaited side holds play up (the user, 2026-10-22: a choice, a surrender, or the DEFENDER's window), so the hand-over is the view's
+    /// main action and a "Waiting" tag says so; otherwise the other side merely acts next.
+    /// </summary>
+    [Parameter]
+    public bool AwaitingDue { get; set; }
 
     [Parameter]
     public EventCallback HandOver { get; set; }

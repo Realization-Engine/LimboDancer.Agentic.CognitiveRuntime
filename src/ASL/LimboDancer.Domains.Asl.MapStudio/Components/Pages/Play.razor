@@ -72,7 +72,7 @@ else
                    Result="@ResultTitle" ResultReason="@ResultReason" ResultWhy="@ResultWhy"
                    Conditions="@(state is null ? null : NightAndWeather(state))" HasCard="@(state?.Scenario is not null && handOver is null)" CardChanged="@(state?.Scenario is { } changedCard && !Live.Cards.Matches(changedCard.Id, changedCard.Sha256))"
                    PendingTitle="@(handOver is null && pending is { Result.Outcome: PlayOutcome.NeedsConfirmation } waitingProposal ? DisplayText.Action(waitingProposal.Action.Name) : null)" Review="@FocusReview" Awaiting="@(AwaitingView is { } awaited ? ViewLabel(awaited) : null)"
-                   AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@Said(status)" OpenCard="@OpenCard" Reserve="@(!Compact)">
+                   AwaitingNote="@AwaitingNote" AwaitingDue="@AwaitingBlocks" HandOver="@HandOverToAwaiting" Status="@Said(status)" OpenCard="@OpenCard" Reserve="@(!Compact)">
     @if (!Compact)
     {
         @pickers
@@ -448,6 +448,16 @@ else if (state is not null)
             else if (state is not null && history?.Current is not null && !(SetupOpen && SetupView is not null && SetupIncomplete))
             {
                 <h3 class="@PlayHeadingClass">Play</h3>
+                @* The user, 2026-10-22: while the other side's decision holds play up, the view says so first and offers the hand-over as its main
+                   action; the banner's hand-over alone, there in every phase, was no signal. *@
+                @if (AwaitingBlocks && AwaitingView is { } awaitedSide)
+                {
+                    <div class="play-waiting" id="play-waiting" role="status">
+                        <p class="play-waiting-title">Waiting for the @DisplayText.Side(awaitedSide) side</p>
+                        <p id="play-waiting-why">@WaitingWhy</p>
+                        <button type="button" class="primary" id="play-waiting-hand-over" @onclick="HandOverToAwaiting">Hand the screen to the @DisplayText.Side(awaitedSide) side</button>
+                    </div>
+                }
                 @* Table player, pass 28c: what play waits on comes first. *@
                 @if (state.Choice is { } choice)
                 {
@@ -3605,7 +3615,7 @@ else if (state is not null)
 
         // The Play streamlining plan, S3: the plotted route and its next Locations, built when the plot changes and kept; S8: with the Movement
         // Plan open, the other planned routes beside it.
-        if ((plotOn && handOver is null ? plotMarks : null) + PlannerMarks() is { Length: > 0 } route)
+        if ((plotOn && handOver is null ? plotMarks : null) + PlannerMarks() + WaitingMark(board) is { Length: > 0 } route)
         {
             setup = setup is { Length: > 4 } && setup.EndsWith("</g>", StringComparison.Ordinal) ? $"{setup[..^4]}{route}</g>" : $"<g id=\"layer-marks\">{route}</g>";
         }
@@ -6300,8 +6310,9 @@ else if (state is not null)
         }
 
         // Backlog section 37, built in pass 28c: a page opened or reloaded on a game waits behind the hand-over screen, since whoever is at the screen
-        // has not said which side they are. Pass 30: during setup that is the side setting up now, not the side that moves first.
-        viewAs = SettingUpSide ?? viewAs;
+        // has not said which side they are. Pass 30: during setup that is the side setting up now, not the side that moves first. The user,
+        // 2026-10-22: while a side's decision holds play up (the DEFENDER's window, a choice, a surrender), that side.
+        viewAs = SettingUpSide ?? HoldingSide ?? viewAs;
         if (state is not null && history?.Current is not null && viewAs.Length > 0)
         {
             (handOver, unconfirmed) = (viewAs, true);
@@ -6363,7 +6374,7 @@ else if (state is not null)
         Refresh();
 
         // Referee, pass 28c: another game is opened as the page is, behind the hand-over (backlog section 37).
-        viewAs = SettingUpSide ?? viewAs;
+        viewAs = SettingUpSide ?? HoldingSide ?? viewAs;
         unconfirmed = false;
         if (state is not null && history?.Current is not null && viewAs.Length > 0)
         {
@@ -8036,6 +8047,25 @@ else if (state is not null)
     private bool Moving(PlanStack stack) => state?.Movement is { } movement && stack.Movers.Any(id => movement.Members.Contains(id, StringComparer.Ordinal));
 
     /// <summary>The routes of the plan's other stacks, drawn faintly while the Movement Plan is open (the plot draws the one being plotted).</summary>
+    // The user, 2026-10-22: the stack the DEFENDER's window waits on, outlined while the moving side waits; one mark, kept for its state.
+    private (GameState? State, string? Mark) waitingMark;
+
+    private string? WaitingMark(StudioBoard board)
+    {
+        if (!MoverWaits || handOver is not null || MovingAt is not { } at)
+        {
+            return null;
+        }
+
+        if (!ReferenceEquals(waitingMark.State, state))
+        {
+            // An outline only: a label or a fill at the hex's centre would cover the stack it points at.
+            waitingMark = (state, GameMaps.HexMark(board, at, "move-waiting-mark", "none", "#a04030", 5, false, null));
+        }
+
+        return waitingMark.Mark;
+    }
+
     private string? PlannerMarks()
     {
         if (!PlannerOpen || InspectorPanel != BoardInspector.MovementPlanPanel || MapLayers is not { Board: { } board })
@@ -8308,6 +8338,25 @@ else if (state is not null)
     }
 
     private string AwaitingNote => state is null ? string.Empty : Awaiting(state).Note;
+
+    /// <summary>
+    /// Whether the side the view waits on holds play up (the user, 2026-10-22): a choice or a surrender it answers, or the DEFENDER's window after a
+    /// step. In other phases the other side merely acts next, and the banner's hand-over says so.
+    /// </summary>
+    private bool AwaitingBlocks => AwaitingView is not null && state is { } shown && Holds(shown);
+
+    /// <summary>The side whose decision holds play up in the game as it stands, which a page opened on it hands the screen to; null when none.</summary>
+    private string? HoldingSide => state is { Ended: null } shown && history?.Current is not null && !SetupOpen && Holds(shown)
+        && Awaiting(shown).Side is { Length: > 0 } side && shown.Perspectives.Any(perspective => perspective.Name == side) ? side : null;
+
+    private static bool Holds(GameState shown) =>
+        shown.Choice is not null || shown.PendingSurrenders.Count > 0 || shown is { Phase: "mph", Movement.WindowOpen: true };
+
+    /// <summary>What the awaited side decides, in the view's words: for the DEFENDER's window, the Location of the stack he may fire at.</summary>
+    private string WaitingWhy => state is { Phase: "mph", Movement.WindowOpen: true } && MovingAt is { } at
+        ? $"The {DisplayText.Side(state.PhasingSide)} stack in {PlaceOf(at.ToString())} has made its step; the {DisplayText.Side(AwaitingView)} side may fire at it "
+            + "(Defensive First Fire) or pass before it goes on (A8.1)."
+        : AwaitingNote;
 
     /// <summary>Where the moving stack is, which the DEFENDER sees as units or a "?" (A8.1); null when no stack moves.</summary>
     private BoardLocation? MovingAt => state?.Movement switch
