@@ -55,6 +55,16 @@
     "group": "Inspector tab"
   },
   {
+    "key": "planner",
+    "label": "Unit Planner",
+    "group": "Inspector tab"
+  },
+  {
+    "key": "movement-plan",
+    "label": "Movement Plan",
+    "group": "Inspector tab"
+  },
+  {
     "key": "selection",
     "label": "Selection",
     "group": "Inspector tab"

@@ -25,10 +25,7 @@
         Weapon
         <select id="ordnance-gun" value="@Gun" @onchange="@(args => OnGun.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var gun in Guns)
-            {
-                <option value="@gun.Id">@Say(gun.Label)</option>
-            }
+            <UnitOptions Units="@([.. Guns.Select(gun => new PlayChoice(gun.Id, gun.Label))])" Text="@Say" />
         </select>
     </label>
     @if (Spotters is not null)
@@ -37,10 +34,7 @@
             Spotter
             <select id="ordnance-spotter" value="@Spotter" @onchange="@(args => OnSpotter.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">none</option>
-                @foreach (var unit in Spotters)
-                {
-                    <option value="@unit.Id">@At(unit.Label)</option>
-                }
+                <UnitOptions Units="@Spotters" Text="@At" />
             </select>
         </label>
     }
@@ -50,10 +44,7 @@
             Leader
             <select id="ordnance-director" value="@Director" @onchange="@(args => OnDirector.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">none</option>
-                @foreach (var leader in Directors)
-                {
-                    <option value="@leader.Id">@Say(leader.Label)</option>
-                }
+                <UnitOptions Units="@([.. Directors.Select(leader => new PlayChoice(leader.Id, leader.Label))])" Text="@Say" />
             </select>
         </label>
     }

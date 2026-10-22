@@ -134,6 +134,10 @@ public sealed class PlayPagePass31Tests : IDisposable
         Commit(page, "#propose-setup");
         Assert.Matches("^Turn 1 of [0-9]+$", page.FindAll("#play-banner .play-banner-part")[1].TextContent.Trim());
 
+        // The user, 2026-10-21: the turn and the phase stand again under the right pane's tabs, without the scenario's title.
+        Assert.Equal(page.FindAll("#play-banner .play-banner-part").Skip(1).Take(2).Select(part => part.TextContent.Trim()),
+            page.FindAll("#play-inspector-turn .play-inspector-turn-part").Select(part => part.TextContent.Trim()));
+
         // The first phase end closes setup; the German side then acts in its Prep Fire Phase, and the game does not wait on the Russian side.
         page.EndPhase(Commit);
         Assert.Equal("pfph", Current.Phase);
@@ -171,10 +175,10 @@ public sealed class PlayPagePass31Tests : IDisposable
         }
 
         Assert.Equal("rtph", Current.Phase);
+        // The Play streamlining plan, S4: the end the gate would refuse is not offered; the German view reads why in its place.
         page.ViewAs("german");
-        page.Find("#propose-advance").Click();
-        page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.Contains("still has a unit that must rout", page.Find("#play-reasons").TextContent, StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#propose-advance"));
+        Assert.Contains("still has a unit that must rout", page.Find("#advance-owed").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#play-consequences"));
 
         page.ViewAs("russian");

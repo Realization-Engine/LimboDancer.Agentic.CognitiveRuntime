@@ -5,10 +5,7 @@
         Malfunctioned SW or vehicle weapon
         <select id="repair-weapon" value="@Weapon" @onchange="@(args => OnWeapon.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var weapon in Weapons)
-            {
-                <option value="@weapon.Id">@Say(weapon.Label)</option>
-            }
+            <UnitOptions Units="@([.. Weapons.Select(weapon => new PlayChoice(weapon.Id, weapon.Label))])" Text="@Say" />
         </select>
     </label>
     <button id="propose-repair" disabled="@(!Weapons.Any(weapon => weapon.Id == Weapon))" aria-describedby="propose-repair-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: repair</button>

@@ -4,10 +4,7 @@
     SMOKE by
     <select id="smoke-by" value="@By" @onchange="@(args => OnBy.InvokeAsync(args.Value as string ?? string.Empty))">
         <option value="">choose</option>
-        @foreach (var placer in Placers)
-        {
-            <option value="@placer.Id">@Say(placer.Label)</option>
-        }
+        <UnitOptions Units="@([.. Placers.Select(placer => new PlayChoice(placer.Id, placer.Label))])" Text="@Say" />
     </select>
 </label>
 <label>

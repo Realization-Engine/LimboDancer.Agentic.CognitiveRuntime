@@ -71,6 +71,26 @@ public sealed class PlayWorkspaceComponentTests : IDisposable
         Assert.Equal(3, list.FindAll("ul#play-rallies > li").Count);
     }
 
+    // The user, 2026-10-21: the banner ends with the hand-over, the status ("Working: ..."), and the review last, at the right-hand end.
+    [Fact]
+    public void TheBannerEndsWithTheStatusAndThenTheReview()
+    {
+        var header = context.Render<PlayContextHeader>(parameters => parameters
+            .Add(item => item.Banner, ["The Tractor Works", "Turn 3 of 8", "Russian Movement Phase"]).Add(item => item.Busy, true)
+            .Add(item => item.PendingTitle, "Move").Add(item => item.Awaiting, "the german side").Add(item => item.Status, "Confirming."));
+        Assert.Equal(["play-awaiting", "play-hand-over", "play-status", "play-review-jump"], header.FindAll(".play-banner-end > *").Select(item => item.Id));
+        Assert.Equal("Working: Confirming.", header.Find("#play-status").TextContent);
+
+        // The explanations are tooltips (the user, 2026-10-21): the status is seen only while the gate works, and stays for assistive technology.
+        header.Render(parameters => parameters.Add(item => item.Busy, false).Add(item => item.AwaitingNote, "The DEFENDER may fire or pass.")
+            .Add(item => item.Status, "Move: Every check passed. Confirm to commit."));
+        Assert.Equal("The DEFENDER may fire or pass.", header.Find("#play-hand-over").GetAttribute("title"));
+        Assert.Contains("visually-hidden", header.Find("#play-awaiting").ClassList);
+        Assert.Equal("Move: Every check passed. Confirm to commit.", header.Find("#play-review-jump").GetAttribute("title"));
+        Assert.Contains("visually-hidden", header.Find("#play-status").ClassList);
+        Assert.Equal("status", header.Find("#play-status").GetAttribute("role"));
+    }
+
     [Fact]
     public void TabsLeaveTheirPanelsToTheCaller()
     {
@@ -78,6 +98,13 @@ public sealed class PlayWorkspaceComponentTests : IDisposable
             .Add(item => item.Selected, "map").Add(item => item.IdPrefix, "play").Add(item => item.SeparatePanels, true));
         Assert.Equal("play-panel-actions", tabs.Find("#play-tab-actions").GetAttribute("aria-controls"));
         Assert.Empty(tabs.FindAll("[role=tabpanel]"));
+        Assert.Empty(tabs.FindAll(".tabs-header"));
+
+        // A header stands between the tabs and the panels, whichever tab is open.
+        tabs.Render(parameters => parameters.Add(item => item.Header, (RenderFragment)(builder => builder.AddContent(0, "Turn 1"))));
+        Assert.Equal("Turn 1", tabs.Find("[role=tablist] + .tabs-header").TextContent);
+        tabs.Render(parameters => parameters.Add(item => item.Selected, "actions"));
+        Assert.Equal("Turn 1", tabs.Find(".tabs-header").TextContent);
     }
 
     // Backlog section 43: a disabled Propose button says what is still to choose.

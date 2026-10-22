@@ -12,20 +12,14 @@
         Squad
         <select id="deploy-squad" value="@Squad" @onchange="@(args => OnSquad.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var squad in Squads)
-            {
-                <option value="@squad.Id">@At(squad.Label)</option>
-            }
+            <UnitOptions Units="@Squads" Text="@At" />
         </select>
     </label>
     <label>
         Leader
         <select id="deploy-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var leader in Leaders)
-            {
-                <option value="@leader">@Say(leader)</option>
-            }
+            <UnitOptions Units="@([.. Leaders.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
         </select>
     </label>
     @if (Weapons.Count > 0)

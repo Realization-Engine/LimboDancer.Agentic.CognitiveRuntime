@@ -195,6 +195,13 @@ public sealed partial class UnitNames
 
             // A leader a Close Combat attack creates joins it before it has an id of its own (A18.12).
             named = CreatedLeader().Replace(named, "the leader created");
+
+            // The user, 2026-10-21: "a concealed unit, a concealed unit, ..." reads as their count, "9 concealed units"; the pattern runs only on a
+            // text that holds such a run, since every text the page says passes here.
+            if (named.Contains(UnnamedPair, StringComparison.Ordinal))
+            {
+                named = UnnamedRun().Replace(named, match => $"{match.Value.Split(", ").Length} concealed units");
+            }
             var boards = history.States.Count > 0 ? history.States[0].Map.Boards.Count : 1;
             named = LocationPattern().Replace(named, match => DisplayText.Place(boards, match.Value));
 
@@ -241,6 +248,12 @@ public sealed partial class UnitNames
 
     [GeneratedRegex(@"\bcreated-leader:\d+")]
     private static partial Regex CreatedLeader();
+
+    private const string UnnamedPair = Unnamed + ", " + Unnamed;
+
+    // Two or more "a concealed unit" in a row, separated by commas.
+    [GeneratedRegex(@"\ba concealed unit(?:, a concealed unit)+\b")]
+    private static partial Regex UnnamedRun();
 
     private void Advance(GameHistory longer)
     {

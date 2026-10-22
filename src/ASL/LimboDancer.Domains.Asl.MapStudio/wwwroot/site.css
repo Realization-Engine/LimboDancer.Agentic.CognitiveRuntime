@@ -2875,12 +2875,37 @@ details.advanced > summary {
     padding: 0.35rem 0.75rem;
 }
 
+/* The user, 2026-10-21: the banner has the workspace's two columns, so its right-hand end starts at the right pane's left edge; the end is
+   moved right by the context's own padding and border, which narrow the banner's columns and which the workspace below does not have. The columns repeat the workspace's at each width. */
 .play-banner {
+    --play-banner-side: minmax(24rem, 30rem);
+    display: grid;
+    flex: 1 1 100%;
+    grid-template-columns: minmax(0, 1fr) var(--play-banner-side);
+    column-gap: 0.75rem;
+    align-items: center;
+    min-height: 2.1rem;
+}
+
+.play-context.banner:has(~ .play-workspace.setup) .play-banner {
+    --play-banner-side: minmax(26rem, 34rem);
+}
+
+@media (max-width: 1439.98px) {
+    .play-banner {
+        --play-banner-side: minmax(20rem, 26rem);
+    }
+
+    .play-context.banner:has(~ .play-workspace.setup) .play-banner {
+        --play-banner-side: minmax(22rem, 28rem);
+    }
+}
+
+.play-banner-parts {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.25rem 0;
-    min-height: 2.1rem;
 }
 
 /* The banner is the page's main information (the user, 2026-10-17): its parts are twice the context's size; its buttons and status are not. */
@@ -2902,10 +2927,22 @@ details.advanced > summary {
 }
 
 .play-banner-end {
-    display: inline-flex;
+    display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
+    margin-left: calc(0.75rem + 1px);
+}
+
+/* The status and the review keep the end's right-hand side: "Working: ..." just left of "Review: ...". The status takes the room left beside
+   the hand-over and is cut short there, so the end does not grow a line for it; its title holds the whole text. */
+.play-banner-end > .play-status {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: right;
+}
+
+.play-banner-end > #play-review-jump {
     margin-left: auto;
 }
 
@@ -2915,6 +2952,42 @@ details.advanced > summary {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+/* A line under an inspector's tabs, in sight while the inspector scrolls: Play's turn and phase (the user, 2026-10-21). It sticks below the
+   inspector's top padding; its shadow, in the inspector's colour, covers that padding so nothing shows above it. */
+.tabs-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin-bottom: 0.5rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    box-shadow: 0 -1.1rem 0 var(--surface);
+}
+
+.play-inspector-turn {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+    font-size: 1.15rem;
+    line-height: 1.3;
+}
+
+.play-inspector-turn-part + .play-inspector-turn-part {
+    margin-left: 0.6rem;
+    padding-left: 0.6rem;
+    border-left: 1px solid var(--line);
+}
+
+/* The one-click setting under the pickers (the Play streamlining plan, S2). */
+.play-one-click {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
 }
 
 /* The game and view pickers at the top of the Play tab. */
@@ -3029,6 +3102,177 @@ details.advanced > summary {
 .play-map-tools button {
     min-width: 2.25rem;
     min-height: 2rem;
+}
+
+/* The user, 2026-10-21: the Latest panel collapses to one line per item: the latest text cut to a line, or each attack's outcome. */
+.play-latest-panel {
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.play-latest-toggle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1.25rem;
+    min-height: 1.25rem;
+    padding: 0;
+    text-decoration: none;
+    font-size: 1rem;
+    line-height: 1.25rem;
+}
+
+.play-latest-panel.collapsed #play-latest,
+.play-latest-panel.collapsed .cc-result-summary {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.play-latest-panel.collapsed .cc-result-scroll,
+.play-latest-panel.collapsed .cc-result-note {
+    display: none;
+}
+
+/* The user, 2026-10-21: a CC round's result as a table, its arithmetic and defenders in a box that scrolls within the activity strip. */
+.cc-result-summary {
+    margin: 0.25rem 0;
+    font-weight: 600;
+}
+
+.cc-result-scroll {
+    max-height: 12rem;
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    margin-bottom: 0.5rem;
+}
+
+.cc-result-scroll table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.cc-result-scroll th,
+.cc-result-scroll td {
+    padding: 0.2rem 0.5rem;
+    border-bottom: 1px solid var(--line-soft);
+    text-align: left;
+    vertical-align: top;
+}
+
+.cc-result-attack th {
+    width: 11rem;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.cc-result-defenders thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-2);
+}
+
+.cc-result-defenders .cc-final {
+    text-align: right;
+    width: 5rem;
+}
+
+.cc-result-defenders tr.cc-survived td {
+    font-weight: 600;
+}
+
+.cc-result-note {
+    margin: 0.2rem 0;
+}
+
+/* The user, 2026-10-21: the Selection tab's units in a hex, by side, the ATTACKER's first. */
+.unit-list-side {
+    margin: 0.5rem 0 0.2rem;
+    font-size: 0.875rem;
+}
+
+/* The user, 2026-10-21: a hex's name over its units in a list of checkboxes. */
+.unit-group-hex {
+    display: block;
+    margin: 0.4rem 0 0.1rem;
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 0.8125rem;
+}
+
+.unit-group-hex:first-child {
+    margin-top: 0;
+}
+
+/* The Play streamlining plan, S8: the Movement Plan's stacks, one row each; the row being plotted is marked. */
+.movement-plan-rows {
+    list-style: none;
+    margin: 0.5rem 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.movement-plan-row {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0.4rem 0.6rem;
+}
+
+.movement-plan-row.plotting {
+    border-color: var(--accent);
+    background: var(--accent-tint);
+}
+
+.movement-plan-units {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+}
+
+.movement-plan-route {
+    margin: 0.25rem 0;
+}
+
+/* The user, 2026-10-21: the view in force, at the right end of the map toolbar, large enough to catch the eye after a hand-over. */
+.play-view-label {
+    margin-left: auto;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--fail);
+    white-space: nowrap;
+}
+
+/* The user, 2026-10-22: the other side's decision holds play up (the DEFENDER's window, a choice, a surrender): the view says so first. */
+.play-waiting {
+    margin: 0 0 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border: 2px solid var(--warn);
+    border-left-width: 6px;
+    border-radius: var(--radius);
+    background: var(--warn-bg);
+    color: var(--warn);
+}
+
+.play-waiting p {
+    margin: 0 0 0.5rem;
+}
+
+.play-waiting .play-waiting-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.play-awaiting-due {
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius);
+    background: var(--warn);
+    color: #ffffff;
+    font-weight: 700;
+    white-space: nowrap;
 }
 
 .play-map-pane #play-residual {

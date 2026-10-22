@@ -19,20 +19,14 @@
             Attacker
             <select class="vehicle-cc-attacker" value="@attacker" @onchange="@(args => OnAttacker.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">choose</option>
-                @foreach (var unit in location.Attackers)
-                {
-                    <option value="@unit">@Say(unit)</option>
-                }
+                <UnitOptions Units="@([.. location.Attackers.Select(unit => new PlayChoice(unit, unit))])" Text="@Say" />
             </select>
         </label>
         <label>
             With SMC
             <select class="vehicle-cc-leader" value="@leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">none</option>
-                @foreach (var unit in location.Leaders)
-                {
-                    <option value="@unit">@Say(unit)</option>
-                }
+                <UnitOptions Units="@([.. location.Leaders.Select(unit => new PlayChoice(unit, unit))])" Text="@Say" />
             </select>
         </label>
         <label>

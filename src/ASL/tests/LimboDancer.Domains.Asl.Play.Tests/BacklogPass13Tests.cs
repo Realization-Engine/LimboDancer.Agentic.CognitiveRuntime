@@ -497,6 +497,75 @@ public sealed class BacklogPass13Tests : IDisposable
     }
 
     [Fact]
+    public async Task TheSwFormOffersEachActionOnlyInThePhaseTheRulesAllowIt()
+    {
+        // The Play streamlining plan, S7 (R-PS.3): A4.431, A4.43, A4.44, A9.8. The German RPh, g1 holding a LMG and g2 a MMG in C3; r1 in H3.
+        await SetupAt(0, "german", Unit("g1", "attacker-squad", "C3", "german"), Unit("g2", "attacker-squad", "C3", "german"), Mg("gl", "attacker-lmg", "g1", "german"),
+            Mg("gm", "attacker-mmg", "g2", "german"), Unit("r1", "defender-squad", "H3", "russian"));
+        var planner = Planner();
+        SupportWeaponOffers Offers(string? side) => planner.SupportWeaponActions(Current, [.. Current.Equipment], side);
+
+        // RPh: transfer only; nothing lies unpossessed to recover.
+        Assert.Equal(new SupportWeaponOffers(true, false, false, false), Offers("german"));
+
+        // PFPh: the German MMG is dismantled (A9.8), and nothing else is offered; the LMG alone would offer nothing.
+        await Advance();
+        Assert.Equal(new SupportWeaponOffers(false, false, false, true), Offers("german"));
+        Assert.False(planner.SupportWeaponActions(Current, [(EquipmentInstance)Current.Find("gl")!], "german").Any);
+
+        // MPh: drop; once the LMG lies in C3, the Germans there may recover it and the Russians, with no unit in C3, may not.
+        await Advance();
+        Assert.Equal(new SupportWeaponOffers(false, true, false, false), Offers("german"));
+        Committed(await Do(GameActions.Drop, NoRoll(), new
+        {
+            unitId = "g1",
+            equipmentId = "gl"
+        }));
+        Assert.Equal(new SupportWeaponOffers(false, true, true, false), Offers("german"));
+        Assert.False(Offers("russian").Recover);
+        Assert.True(Offers(null).Recover);
+
+        // DFPh: the German side is the ATTACKER, so its MMG is not dismantled, and nothing lying is recovered.
+        await Advance();
+        Assert.False(Offers("german").Any);
+
+        // CCPh: a drop only for a holder in a Location with an enemy unit, and C3 holds none.
+        await Advance(4);
+        Assert.Equal("ccph", Current.Phase);
+        Assert.False(Offers("german").Drop);
+    }
+
+    [Fact]
+    public async Task TheDeployFormOffersASquadOnlyInItsOwnRphOrAsAGuard()
+    {
+        // The Play streamlining plan, S7: A1.31 (own RPh, Good Order), A25.2 (no Russian squad), A20.5 (a Guard of prisoners at will).
+        await SetupAt(0, "german", Unit("g1", "attacker-squad", "C3", "german"), Unit("g2", "attacker-squad", "C4", "german", "asl:broken"),
+            Unit("r1", "defender-squad", "H3", "russian"), Unit("r2", "defender-squad", "H4", "russian"));
+        var planner = Planner();
+        var german = Current;
+        Assert.True(planner.MayOfferDeploy(german, german.Unit("g1")!));
+        Assert.False(planner.MayOfferDeploy(german, german.Unit("g2")!));
+        Assert.False(planner.MayOfferDeploy(german, german.Unit("r1")!));
+
+        // Out of the RPh no squad is offered, but a Guard of prisoners (A20.5).
+        await Advance();
+        var prepFire = Current;
+        Assert.False(planner.MayOfferDeploy(prepFire, prepFire.Unit("g1")!));
+        var guarded = prepFire with
+        {
+            Units = [.. prepFire.Units.Select(unit => unit.Id == "r2" ? unit with { Custodian = "g1" } : unit)]
+        };
+        Assert.True(planner.MayOfferDeploy(guarded, guarded.Unit("g1")!));
+
+        // The Russian RPh: Russian squads may not Deploy (A25.2), and the German squad is not in its own RPh.
+        await Advance(7);
+        var russian = Current;
+        Assert.Equal(("russian", "rph"), (russian.PhasingSide, russian.Phase));
+        Assert.False(planner.MayOfferDeploy(russian, russian.Unit("r1")!));
+        Assert.False(planner.MayOfferDeploy(russian, russian.Unit("g1")!));
+    }
+
+    [Fact]
     public async Task AGermanMmgIsDismantledInAFirePhaseAndThenIsNotFired()
     {
         await SetupAt(1, "german", Unit("g1", "attacker-squad", "C3", "german"), Mg("gm", "attacker-mmg", "g1", "german"), Mg("gl", "attacker-lmg", "g1", "german"),

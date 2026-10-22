@@ -140,6 +140,14 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         Assert.Contains("at 1-1, Kill Number 5: DR 6 (colored), 6 = 12 - 1 (leadership, 8-1 leader G1, A11.141); 4-4-7 squad R1: 11 = Final DR 11: no effect", record, StringComparison.Ordinal);
         Assert.Contains("at 1-2, Kill Number 4", record, StringComparison.Ordinal);
 
+        // The user, 2026-10-21: the activity strip shows the round as a table, an outcome line per attack and a row per defender.
+        var summaries = page.FindAll("#play-latest-tables .cc-result-summary").Select(item => item.TextContent.Trim()).ToArray();
+        Assert.Equal(2, summaries.Length);
+        Assert.True(summaries[0].Contains("1-1, Kill Number 5; DR 6 (colored) + 6 = 12, modified 11): no effect", StringComparison.Ordinal), summaries[0]);
+        var row = page.FindAll("#play-latest-tables .cc-result-defenders tbody tr")[0].TextContent;
+        Assert.Contains("4-4-7 squad R1", row, StringComparison.Ordinal);
+        Assert.Contains("no effect", row, StringComparison.Ordinal);
+
         // A11.15: at the end of the CCPh the units are held in Melee.
         page.EndPhase(Commit);
         Assert.All(Held, id => Assert.Contains("melee", Row(page, id), StringComparison.Ordinal));

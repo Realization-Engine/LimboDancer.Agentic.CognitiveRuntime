@@ -11,7 +11,8 @@
             <option value="">choose</option>
             @foreach (var held in Charges)
             {
-                <option value="@held.Value">@held.Charge (@held.Holder)</option>
+                @* The user, 2026-10-21: the charge named after its holder's Location. *@
+                <option value="@held.Value">@(PlaceOfUnit?.Invoke(held.Holder) is { } place ? $"{place.Where}: " : string.Empty)@Say(held.Charge) (@Say(held.Holder))</option>
             }
         </select>
     </label>
@@ -22,10 +23,7 @@
         <label title="A23.5, C7.346: a DC named against the AFV makes a Position DR, then a To Kill DR on the C7.34 DC column.">At the AFV
             <select id="throw-dc-vehicle" value="@Vehicle" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">none: the Location</option>
-                @foreach (var vehicle in Vehicles)
-                {
-                    <option value="@vehicle.Id">@Say(vehicle.Label)</option>
-                }
+                <UnitOptions Units="@([.. Vehicles.Select(vehicle => new PlayChoice(vehicle.Id, vehicle.Label))])" Text="@Say" />
             </select>
         </label>
     }
@@ -39,6 +37,9 @@
     public Func<string, string>? Words { get; set; }
 
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    [CascadingParameter(Name = "PlaceOfUnit")]
+    public Func<string, UnitPlace?>? PlaceOfUnit { get; set; }
 
     /// <summary>A DC and the unit that possesses it.</summary>
     public sealed record HeldCharge(string Holder, string Charge)

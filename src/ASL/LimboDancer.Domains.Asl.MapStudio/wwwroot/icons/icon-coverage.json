@@ -1326,6 +1326,14 @@
         },
         {
           "kind": "button",
+          "label": "Hand the screen to the @DisplayText.Side(awaitedSide) side",
+          "dynamic": true,
+          "id": "play-waiting-hand-over",
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
           "label": "Propose: end the @Games.PhaseLabel(state.Phase)",
           "dynamic": true,
           "id": "propose-advance",
@@ -1345,6 +1353,14 @@
           "dynamic": true,
           "status": "needed",
           "strip": "Play guard-deploy"
+        },
+        {
+          "kind": "button",
+          "label": "Ask me again",
+          "dynamic": false,
+          "id": "phase-pass-withdraw",
+          "status": "needed",
+          "strip": "Play phase-pass-standing"
         },
         {
           "kind": "button",
@@ -1371,7 +1387,7 @@
         },
         {
           "kind": "button",
-          "label": "Propose: @Words(motionChosen.Vehicle) attempts Motion",
+          "label": "Propose: @UnitAt(motionChosen.Vehicle) attempts Motion",
           "dynamic": true,
           "id": "propose-motion-attempt",
           "status": "needed",
@@ -1395,8 +1411,24 @@
         },
         {
           "kind": "button",
-          "label": "Propose: @Words(owing) attacks",
+          "label": "Propose: @UnitAt(owing) attacks",
           "dynamic": true,
+          "status": "needed",
+          "strip": "Play dff-window"
+        },
+        {
+          "kind": "button",
+          "label": "Let it move on",
+          "dynamic": false,
+          "id": "plan-move-on",
+          "status": "needed",
+          "strip": "Play dff-window"
+        },
+        {
+          "kind": "button",
+          "label": "Let it move on to the end",
+          "dynamic": false,
+          "id": "plan-move-on-end",
           "status": "needed",
           "strip": "Play dff-window"
         },
@@ -1405,6 +1437,14 @@
           "label": "Propose: the DEFENDER passes",
           "dynamic": false,
           "id": "propose-pass",
+          "status": "needed",
+          "strip": "Play dff-window"
+        },
+        {
+          "kind": "button",
+          "label": "Pass for the rest of this phase",
+          "dynamic": false,
+          "id": "phase-pass",
           "status": "needed",
           "strip": "Play dff-window"
         },
@@ -1536,6 +1576,14 @@
           "label": "Cancel",
           "dynamic": false,
           "id": "setup-swap-cancel",
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
+          "label": "@(latestCollapsed ? \u0022\u25B8\u0022 : \u0022\u25BE\u0022)",
+          "dynamic": true,
+          "id": "play-latest-toggle",
           "status": "needed",
           "strip": "Play"
         },
@@ -1820,10 +1868,11 @@
       "controls": [
         {
           "kind": "button",
-          "label": "Propose: @Say(withdrawal.Unit) withdraws to @Say(withdrawal.To)",
+          "label": "Propose: withdraw @(ticked switch { 0 =\u003E \u0022the units chosen\u0022, 1 =\u003E \u0022the chosen...",
           "dynamic": true,
+          "id": "propose-ambush-withdraw",
           "status": "needed",
-          "strip": "AmbushWithdrawalActions cc-ambush-withdrawal"
+          "strip": "AmbushWithdrawalActions toolbar"
         }
       ]
     },
@@ -1872,26 +1921,6 @@
           "id": "vehicle-bff",
           "status": "needed",
           "strip": "BoundingFireAction"
-        }
-      ]
-    },
-    {
-      "name": "BuildingEntryAction",
-      "path": "Components/Play/BuildingEntryAction.razor",
-      "pages": [
-        "/games/play"
-      ],
-      "usedBy": [
-        "Play"
-      ],
-      "controls": [
-        {
-          "kind": "button",
-          "label": "Propose: enter a building",
-          "dynamic": false,
-          "id": "propose-enter",
-          "status": "needed",
-          "strip": "BuildingEntryAction toolbar"
         }
       ]
     },
@@ -2064,6 +2093,22 @@
           "id": "play-handover-confirm",
           "status": "needed",
           "strip": "HandOverScreen"
+        },
+        {
+          "kind": "button",
+          "label": "@pass",
+          "dynamic": true,
+          "id": "play-handover-pass",
+          "status": "needed",
+          "strip": "HandOverScreen"
+        },
+        {
+          "kind": "button",
+          "label": "@phasePass",
+          "dynamic": true,
+          "id": "play-handover-phase-pass",
+          "status": "needed",
+          "strip": "HandOverScreen"
         }
       ]
     },
@@ -2102,7 +2147,6 @@
         "/games/play"
       ],
       "usedBy": [
-        "BuildingEntryAction",
         "InfantryMovementAction",
         "PlaceDemolitionChargeAction",
         "RoutActionPanel",
@@ -2179,6 +2223,144 @@
           "id": "propose-mop-up",
           "status": "needed",
           "strip": "MoppingUpAction mop-up"
+        }
+      ]
+    },
+    {
+      "name": "MovementPlanPanel",
+      "path": "Components/Play/MovementPlanPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Done",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "MovementPlanPanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Undo the last hex",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "MovementPlanPanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "@(row.HasRoute ? \u0022Change\u0022 : \u0022Plot\u0022)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "MovementPlanPanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Clear",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "MovementPlanPanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Up",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "MovementPlanPanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Down",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "MovementPlanPanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Move every planned stack (@Planned)",
+          "dynamic": true,
+          "id": "movement-plan-run",
+          "status": "needed",
+          "strip": "MovementPlanPanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "End the Movement Phase",
+          "dynamic": false,
+          "id": "movement-plan-end-phase",
+          "status": "needed",
+          "strip": "MovementPlanPanel toolbar"
+        }
+      ]
+    },
+    {
+      "name": "MovementRoutePanel",
+      "path": "Components/Play/MovementRoutePanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Continue along the route (@Remaining left)",
+          "dynamic": true,
+          "id": "move-route-continue",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Plot another route from here",
+          "dynamic": false,
+          "id": "move-route-change",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "End the move here",
+          "dynamic": false,
+          "id": "move-route-end",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "@(Plotting ? \u0022Stop plotting\u0022 : \u0022Plot a route on the map\u0022)",
+          "dynamic": true,
+          "id": "move-route-plot",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Move along this route",
+          "dynamic": false,
+          "id": "move-route-go",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Undo the last hex",
+          "dynamic": false,
+          "id": "move-route-undo",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Clear the route",
+          "dynamic": false,
+          "id": "move-route-clear",
+          "status": "needed",
+          "strip": "MovementRoutePanel toolbar"
         }
       ]
     },
@@ -2433,17 +2615,17 @@
       "controls": [
         {
           "kind": "button",
-          "label": "Review: @title",
+          "label": "Hand over to @awaiting",
           "dynamic": true,
-          "id": "play-review-jump",
+          "id": "play-hand-over",
           "status": "needed",
           "strip": "PlayContextHeader"
         },
         {
           "kind": "button",
-          "label": "Hand over to @awaiting",
+          "label": "Review: @title",
           "dynamic": true,
-          "id": "play-hand-over",
+          "id": "play-review-jump",
           "status": "needed",
           "strip": "PlayContextHeader"
         },
@@ -2630,10 +2812,17 @@
       "controls": [
         {
           "kind": "button",
-          "label": "Use the route to @Say(way.Target)",
+          "label": "@Prefix(item.Unit)@Say(item.Unit): use the route to @Say(way.Target)",
           "dynamic": true,
           "status": "needed",
           "strip": "RoutActionPanel"
+        },
+        {
+          "kind": "button",
+          "label": "@(routing.Length == 1 ? $\u0022Rout {Prefix(routing[0].Unit)}{Say(routing[0].Unit)...",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "RoutActionPanel rout-group-ways"
         },
         {
           "kind": "button",

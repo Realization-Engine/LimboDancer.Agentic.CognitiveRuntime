@@ -11,26 +11,25 @@
         Broken unit
         <select id="rally-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var unit in Units)
-            {
-                <option value="@unit.Id">@At(unit.Label)</option>
-            }
+            <UnitOptions Units="@Units" Text="@At" />
         </select>
     </label>
     <label>
         Rallied by
         <select id="rally-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">Self-Rally</option>
-            @foreach (var leader in Leaders)
-            {
-                <option value="@leader">@Say(leader)</option>
-            }
+            <UnitOptions Units="@([.. Leaders.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
         </select>
     </label>
-    <button id="propose-rally" disabled="@(!Units.Any(unit => unit.Id == Unit))" aria-describedby="propose-rally-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rally</button>
+    <button id="propose-rally" disabled="@(!Units.Any(unit => unit.Id == Unit) || Barred is not null)" aria-describedby="propose-rally-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rally</button>
     @if (!Units.Any(unit => unit.Id == Unit))
     {
         <span id="propose-rally-ready" class="toolbar-note">Choose the broken unit that tries to rally.</span>
+    }
+    else if (Barred is { } barred)
+    {
+        @* The Play streamlining plan, S4: an attempt the gate would refuse is not offered; the reason is the gate's own. *@
+        <span id="propose-rally-ready" class="toolbar-note">@barred</span>
     }
 </div>
 
@@ -68,4 +67,8 @@
 
     [Parameter]
     public EventCallback OnPropose { get; set; }
+
+    /// <summary>Why the attempt chosen would be refused, in words; null when it may be proposed.</summary>
+    [Parameter]
+    public string? Barred { get; set; }
 }

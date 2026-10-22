@@ -14,7 +14,8 @@
             <option value="">choose</option>
             @foreach (var item in Buildings)
             {
-                <option value="@item.Id">@At(item.Id)</option>
+                @* A hex is written in brackets (the standing rule): the building's hex name, as the map and the records write it. *@
+                <option value="@item.Id">@(item.Id.Contains(':', StringComparison.Ordinal) ? At(item.Id) : $"[{item.Id}]")</option>
             }
         </select>
     </label>

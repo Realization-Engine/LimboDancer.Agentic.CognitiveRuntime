@@ -20,10 +20,7 @@
         Aim
         <select id="ordnance-canister-aim" value="@CanisterAim" @onchange="@(args => OnCanisterAim.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var aim in CanisterAims)
-            {
-                <option value="@aim.Id">@Say(aim.Label)</option>
-            }
+            <UnitOptions Units="@([.. CanisterAims.Select(aim => new PlayChoice(aim.Id, aim.Label))])" Text="@Say" />
         </select>
     </label>
 }
@@ -47,10 +44,7 @@ else
         Vehicle
         <select id="ordnance-vehicle" value="@Vehicle" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var vehicle in Vehicles)
-            {
-                <option value="@vehicle.Id">@Say(vehicle.Label)</option>
-            }
+            <UnitOptions Units="@([.. Vehicles.Select(vehicle => new PlayChoice(vehicle.Id, vehicle.Label))])" Text="@Say" />
         </select>
     </label>
     @if (Ammunition == AmmunitionKind.Fixed)

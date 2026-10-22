@@ -96,7 +96,8 @@ public sealed class PlayPagePass25Tests : IDisposable
         page.EndPhase(Commit);
         page.EndPhase(Commit);
 
-        Assert.True(page.Find("#propose-exit").HasAttribute("disabled"));
+        // The Play streamlining plan, S7 (ruling R-PS.5): the exit is offered once a stack on a map edge is chosen.
+        Assert.Empty(page.FindAll("#propose-exit"));
         page.Find(".move-unit[data-unit='g1']").Change(true);
         Assert.True(page.Find("#propose-exit").HasAttribute("disabled"));
         page.Find("#move-exit").Change("top");

@@ -31,6 +31,18 @@ public sealed partial class GamePlanner
         return ScenarioA1SequenceCalculator.PhaseEndedBy(state.Phase, proposer, state.Sides.FirstOrDefault(side => side.Id != state.PhasingSide)?.Id, state.PhasingSide);
     }
 
+    /// <summary>
+    /// Why the <paramref name="proposer"/> side's view may not end the present phase now, or null when it may (ruling R31.6, A10.5; the Play
+    /// streamlining plan, S4): the proposer check the gate makes, asked by the page so it offers the end of the phase only when the gate would take it.
+    /// In the RtPh it reads the units that must still rout, so the page asks it once a state and view.
+    /// </summary>
+    public string? PhaseEndBar(GameState state, IReadOnlyList<GameEvent> existing, string proposer)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(existing);
+        return ProposerBar(state, GameActions.AdvancePhase.Id.Value, JsonSerializer.SerializeToElement(new Dictionary<string, object>()), proposer, existing);
+    }
+
     /// <summary>Why the <paramref name="proposer"/> side's view may not propose this action (ruling R31.6), or null when it may; Rules decides, over the state's reads (pass 32.i).</summary>
     private string? ProposerBar(GameState state, string action, JsonElement arguments, string proposer, IReadOnlyList<GameEvent> existing)
     {

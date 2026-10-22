@@ -162,12 +162,68 @@ public sealed class PlayRecords
                 var from = told.Length > 0 ? told : [.. Lines];
                 var last = from.Length == 0 ? null : AttemptOf(from[^1].EventId);
                 var ofLast = last is null ? [] : Lines.Where(line => AttemptOf(line.EventId) == last).ToArray();
-                string[] said = [.. (ofLast.Any(line => !line.Minor) ? ofLast.Where(line => !line.Minor) : ofLast).Select(line => Sentence(line.Text))];
+                var shown = (ofLast.Any(line => !line.Minor) ? ofLast.Where(line => !line.Minor) : ofLast).ToArray();
+                string[] said = [.. shown.Select(line => Sentence(line.Text))];
                 // The result of the attempt first, then what followed from it; a long attempt is cut, and the records have the rest.
                 latest = (true, said.Length == 0 ? null : $"Latest: {WhenOf(from[^1].EventId)}: {string.Join(" ", said.Take(4))}{(said.Length > 4 ? " More is in the records." : string.Empty)}");
+
+                // The user, 2026-10-21: a CC round in the latest attempt is shown as its table, the other lines of the attempt as text.
+                latestTables = [.. shown.Select(line => CombatTable(line.EventId)).OfType<CloseCombatTable>()];
+
+                // A fire in the latest attempt is shown as its card (the Records tab's), under its line (the user, 2026-10-21).
+                var fires = Fire.ToDictionary(view => view.EventId, StringComparer.Ordinal);
+                latestFires = [.. shown.Where(line => fires.ContainsKey(line.EventId)).Select(line => (fires[line.EventId], Sentence(line.Text)))];
+                latestOthers = [.. shown.Where(line => CombatTable(line.EventId) is null && !fires.ContainsKey(line.EventId)).Select(line => Sentence(line.Text))];
+                latestWhen = from.Length == 0 ? null : WhenOf(from[^1].EventId);
             }
 
             return latest.Text;
+        }
+    }
+
+    private IReadOnlyList<(FireView View, string Line)> latestFires = [];
+
+    /// <summary>The fire attacks of the latest attempt, each with its line, to show as their cards (the user, 2026-10-21); empty when it holds none.</summary>
+    public IReadOnlyList<(FireView View, string Line)> LatestFires
+    {
+        get
+        {
+            _ = Latest;
+            return latestFires;
+        }
+    }
+
+    private IReadOnlyList<CloseCombatTable> latestTables = [];
+    private IReadOnlyList<string> latestOthers = [];
+    private string? latestWhen;
+
+    /// <summary>The CC rounds of the latest attempt as tables (the user, 2026-10-21); empty when it holds none.</summary>
+    public IReadOnlyList<CloseCombatTable> LatestTables
+    {
+        get
+        {
+            _ = Latest;
+            return latestTables;
+        }
+    }
+
+    /// <summary>The latest attempt's lines that are no CC round, beside its tables.</summary>
+    public IReadOnlyList<string> LatestOthers
+    {
+        get
+        {
+            _ = Latest;
+            return latestOthers;
+        }
+    }
+
+    /// <summary>The turn and phase of the latest attempt.</summary>
+    public string? LatestWhen
+    {
+        get
+        {
+            _ = Latest;
+            return latestWhen;
         }
     }
 
@@ -1081,18 +1137,101 @@ public sealed class PlayRecords
                         .Concat(resolution.Effects.Where(effect => effect.RearmedAs is not null).Select(effect => $"{effect.UnitId} is rearmed as {effect.RearmedAs} (A20.551)"))
                         .Concat(resolution.Effects.Where(effect => effect.ConcealmentLost == true).Select(effect => $"{effect.UnitId} loses its concealment (A11.19)"));
                     var left = UnpossessedAfter(item, resolution).Select(weapon => $"{weapon} is left unpossessed in {combat.Location} (A11.13)");
+
+                    // The user, 2026-10-21: the same round as a table, for the activity strip, which reads the record as text no player could follow. Its
+                    // inputs are kept and the table is built only when it is asked for (the latest round), not for every round at each revision.
+                    string[] notes = [.. lost.Concat(ended).Concat(withdrew).Concat(left)];
+                    combatInputs[item.EventId] = (combat, resolution, notes);
                     var text = resolution.Attacks.Count == 0 ? "no attacks" : string.Join(" | ", attacks);
                     var hand = combat.Facts.TryGetProperty("handToHand", out var handToHand) && handToHand.ValueKind == JsonValueKind.True ? ", Hand-to-Hand (red Kill Numbers)" : "";
                     // Shown with the first CC record after the leader went berserk (UI review, pass 27).
                     var companions = combat.Attackers.Concat(combat.Defenders).Distinct(StringComparer.Ordinal)
                         .Select(unit => companionChecks.Remove(unit, out var checks) ? checks : null).OfType<string>().ToArray();
-                    records.Add((item.EventId, $"CC in {combat.Location}, {combat.Round} round{hand}: {string.Join("; ", new[] { text }.Concat(lost).Concat(ended).Concat(withdrew).Concat(left).Concat(companions))}"));
+                    records.Add((item.EventId, $"CC in {combat.Location}, {combat.Round} round{hand}: {string.Join("; ", new[] { text }.Concat(notes).Concat(companions))}"));
                 }
             }
 
             records.Reverse();
             return records;
         }
+    }
+
+    // The CC rounds the view may read, by event, with what their tables are built from; a table is built when first asked for and then kept, for
+    // this record set's life (one revision and view).
+    private readonly Dictionary<string, (CloseCombatResolved Combat, CloseCombatResolution Resolution, string[] Notes)> combatInputs = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, CloseCombatTable> combatTables = new(StringComparer.Ordinal);
+
+    /// <summary>A CC round as a table (the user, 2026-10-21), in the view's words as of the round; null for an event that is no CC round the view may read.</summary>
+    public CloseCombatTable? CombatTable(string eventId)
+    {
+        ArgumentNullException.ThrowIfNull(eventId);
+        _ = CloseCombat;
+        if (combatTables.TryGetValue(eventId, out var table))
+        {
+            return table;
+        }
+
+        if (!combatInputs.TryGetValue(eventId, out var inputs))
+        {
+            return null;
+        }
+
+        table = CombatTableOf(eventId, inputs.Combat, inputs.Resolution, inputs.Notes);
+        combatTables[eventId] = table;
+        return table;
+    }
+
+    /// <summary>
+    /// One CC round as a table (the user, 2026-10-21): per attack its sides, FP, odds, Kill Number, dice, and DRM, the DRM every defender shares said
+    /// once, and a row per defender with its own DRM, Final DR, and result, the exceptions first; the round's other effects as notes.
+    /// </summary>
+    private CloseCombatTable CombatTableOf(string eventId, CloseCombatResolved combat, CloseCombatResolution resolution, IReadOnlyList<string> notes)
+    {
+        string Said(string text) => Say(eventId, text);
+        string Modifier(FireModifier item) => Said(ModifierText([item]).Trim());
+        var attacks = resolution.Attacks.Select(attack =>
+        {
+            // A DRM every defender has (same name and value) is said once for the attack.
+            var shared = attack.Defending.Count == 0 ? []
+                : attack.Defending[0].Drm.Where(item => attack.Defending.All(defender => defender.Drm.Any(other => other.Name == item.Name && other.Value == item.Value))).ToArray();
+            var modified = attack.OriginalDr + attack.Drm.Sum(item => item.Value);
+            var rows = attack.Defending.Select(defender => new CloseCombatTableRow(
+                    Said(defender.UnitId),
+                    [.. defender.Drm.Where(item => !shared.Any(other => other.Name == item.Name && other.Value == item.Value)).Select(Modifier)],
+                    defender.FinalDr,
+                    DefenderText(defender),
+                    defender.Result == CloseCombatDefenderResult.Eliminated))
+                .OrderBy(row => row.Eliminated ? 1 : 0).ToArray();
+            var eliminated = rows.Count(row => row.Eliminated);
+            var outcome = string.Join(", ", new[]
+            {
+                eliminated > 0 ? $"eliminated {eliminated}" : null,
+                rows.Count(row => row.Result.StartsWith("Casualty", StringComparison.Ordinal)) is > 0 and var reduced ? $"reduced {reduced}" : null,
+                rows.Count(row => row.Result.StartsWith("spared", StringComparison.Ordinal)) is > 0 and var spared ? $"spared {spared}" : null,
+                rows.Count(row => row.Result == "captured") is > 0 and var captured ? $"captured {captured}" : null,
+                rows.Count(row => row.Result == "no effect") is > 0 and var untouched && untouched < rows.Length ? $"no effect on {untouched}" : null,
+            }.OfType<string>());
+            return new CloseCombatTableAttack(
+                DisplayText.Side(attack.Side),
+                [.. attack.Attackers.Select(Said)],
+                [.. attack.Defenders.Select(Said)],
+                $"{Number(attack.AttackFirepower)} FP"
+                    + (attack.FirepowerModifiers.Count == 0 ? string.Empty : $" ({string.Join(", ", attack.FirepowerModifiers.Select(item => $"{DisplayText.Modifier(item.Name)} x{Number(item.Value)}, {item.Rule}"))})"),
+                $"{Number(attack.DefenseFirepower)} FP",
+                attack.Odds,
+                attack.KillNumber,
+                string.Join(" + ", attack.Dice.Select((die, index) => index == 0 ? $"{die} (colored)" : $"{die}")) + $" = {attack.OriginalDr}",
+                [.. attack.Drm.Select(Modifier)],
+                modified,
+                [.. shared.Select(Modifier)],
+                rows,
+                outcome.Length == 0 ? "no effect" : outcome,
+                attack.LeaderCreation is { } created
+                    ? Said($"Leader Creation dr {created.Dr}{ModifierText(created.Drm)} = {created.FinalDr}: {(created.LeaderDefinitionId is { } leader ? $"creates {leader}" : "no leader")} (A18.12)")
+                    : null);
+        }).ToArray();
+        var hand = combat.Facts.TryGetProperty("handToHand", out var handToHand) && handToHand.ValueKind == JsonValueKind.True ? ", Hand-to-Hand (red Kill Numbers)" : "";
+        return new CloseCombatTable(Said(combat.Location.ToString()), $"{combat.Round} round{hand}", attacks, [.. notes.Select(Said)]);
     }
 
     /// <summary>The roll key of a berserk leader's companion's TC in fire and Rally records (A15.41).</summary>

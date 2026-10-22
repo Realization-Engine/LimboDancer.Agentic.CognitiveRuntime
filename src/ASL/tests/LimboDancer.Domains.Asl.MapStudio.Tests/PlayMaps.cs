@@ -19,6 +19,9 @@ internal static class PlayMaps
         // Pass 29: the page draws its busy state before the gate is asked, which in a component test moves the rest of a proposal to another
         // thread; the marker keeps it on the test's own. The longer wait covers a full run on a slow machine.
         context.Services.AddSingleton(new ImmediateProposals());
+
+        // The Play streamlining plan, S2: the tests confirm what they propose; a test of one-click commits turns the page's setting on.
+        context.Services.AddSingleton(new ConfirmEveryAction());
         BunitContext.DefaultWaitTimeout = TimeSpan.FromSeconds(15);
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         var module = context.JSInterop.SetupModule("./js/boardViewport.js");

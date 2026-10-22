@@ -225,6 +225,17 @@ public sealed partial class UnitNamesTests : IDisposable
     }
 
     [Fact]
+    public void ARunOfConcealedUnitsReadsAsTheirCount()
+    {
+        // The user, 2026-10-21: "a concealed unit, a concealed unit, ..." reads as "3 concealed units"; one alone, or two apart, read as before.
+        var german = Names("german");
+        Assert.Equal("3 concealed units fire at 4-6-7 squad G4", german.InText("r-squad-2, r-squad-2, r-squad-2 fire at g-squad-4", 56));
+        Assert.Equal("2 concealed units and 4-6-7 squad G4", german.InText("r-squad-2, r-squad-2 and g-squad-4", 56));
+        Assert.Equal("a concealed unit and a concealed unit", german.InText("r-squad-2 and r-squad-2", 56));
+        Assert.Equal("4-4-7 squad R12, 4-4-7 squad R12", german.InText("r-squad-2, r-squad-2", 57));
+    }
+
+    [Fact]
     public void TheAdjudicatorReadsEachUnitsOwnSideTag()
     {
         var adjudicator = Names(Perspective.AdjudicatorName);

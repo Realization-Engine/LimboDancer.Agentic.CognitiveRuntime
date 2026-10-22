@@ -25,10 +25,7 @@
             Director
             <select id="cc-director" value="@Director" @onchange="@(args => OnDirector.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">none</option>
-                @foreach (var leader in Directors)
-                {
-                    <option value="@leader">@Say(leader)</option>
-                }
+                <UnitOptions Units="@([.. Directors.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
             </select>
         </label>
         <label><input id="cc-capture" type="checkbox" checked="@Capture" @onchange="@(args => OnCapture.InvokeAsync(args.Value is true))" /> capture attempt</label>
@@ -38,10 +35,7 @@
                 Guard
                 <select id="cc-guard" value="@Guard" @onchange="@(args => OnGuard.InvokeAsync(args.Value as string ?? string.Empty))">
                     <option value="">the first attacker</option>
-                    @foreach (var id in Attackers.Order(StringComparer.Ordinal))
-                    {
-                        <option value="@id">@Say(id)</option>
-                    }
+                    <UnitOptions Units="@([.. Attackers.Order(StringComparer.Ordinal).Select(id => new PlayChoice(id, id))])" Text="@Say" />
                 </select>
             </label>
             @* Pass 31 (play test P-10; A20.22): at the Kill Number one defender is captured, of the defender's choice; left empty, the order is the targets' as listed. *@

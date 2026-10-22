@@ -1,0 +1,108 @@
+@* The Play streamlining plan, S3 and S6: the moving side plots its stack's route on the map, a hex a click, and the route is made step by step,
+   the DEFENDER deciding where he could fire. While a plan waits for the moving side, its choices are here instead. *@
+<div class="move-route" id="move-route">
+    @if (Paused is { } paused)
+    {
+        <p class="toolbar-note" id="move-route-paused">@paused</p>
+        <div class="toolbar">
+            <button type="button" id="move-route-continue" disabled="@Busy" @onclick="OnContinue">Continue along the route (@Remaining left)</button>
+            <button type="button" id="move-route-change" class="link" disabled="@Busy" @onclick="OnChange">Plot another route from here</button>
+            <button type="button" id="move-route-end" class="link" disabled="@Busy" @onclick="OnEnd">End the move here</button>
+        </div>
+    }
+    else
+    {
+        <div class="toolbar">
+            <button type="button" id="move-route-plot" aria-pressed="@(Plotting ? "true" : "false")" disabled="@(!Ready)" @onclick="OnToggle">
+                @(Plotting ? "Stop plotting" : "Plot a route on the map")
+            </button>
+            @if (!Ready)
+            {
+                <span class="toolbar-note">Choose the stack that moves first.</span>
+            }
+        </div>
+        @if (Plotting)
+        {
+            <p class="toolbar-note" id="move-route-help">Click the shaded hexes in turn; each shows its MF. The route is checked as it is plotted.</p>
+            @if (Steps.Count > 0)
+            {
+                <ol id="move-route-steps">
+                    @foreach (var step in Steps)
+                    {
+                        <li>@step</li>
+                    }
+                </ol>
+            }
+            @if (Stop is { } stop)
+            {
+                <p class="fail" id="move-route-stop">@stop</p>
+            }
+            @if (Note is { } note)
+            {
+                <p class="toolbar-note" id="move-route-note">@note</p>
+            }
+            <div class="toolbar">
+                <button type="button" id="move-route-go" class="primary" disabled="@(!CanMove || Busy)" @onclick="OnMove">Move along this route</button>
+                <button type="button" id="move-route-undo" class="link" disabled="@(Steps.Count == 0)" @onclick="OnUndo">Undo the last hex</button>
+                <button type="button" id="move-route-clear" class="link" disabled="@(Steps.Count == 0)" @onclick="OnClear">Clear the route</button>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>Whether a stack is chosen, so a route may be plotted for it.</summary>
+    [Parameter]
+    public bool Ready { get; set; }
+
+    /// <summary>Whether the map's clicks add hexes to the route.</summary>
+    [Parameter]
+    public bool Plotting { get; set; }
+
+    /// <summary>The route's steps in words: the hex, its MF, and what is left.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Steps { get; set; } = [];
+
+    /// <summary>Why the route stops where it does, in words; null when every step may be made.</summary>
+    [Parameter]
+    public string? Stop { get; set; }
+
+    /// <summary>What the last click did, such as a hex that is not next to the route's end.</summary>
+    [Parameter]
+    public string? Note { get; set; }
+
+    [Parameter]
+    public bool CanMove { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    /// <summary>Why a plan being made waits for the moving side; null when none waits.</summary>
+    [Parameter]
+    public string? Paused { get; set; }
+
+    /// <summary>The steps of a paused plan not made yet.</summary>
+    [Parameter]
+    public int Remaining { get; set; }
+
+    [Parameter]
+    public EventCallback OnToggle { get; set; }
+
+    [Parameter]
+    public EventCallback OnUndo { get; set; }
+
+    [Parameter]
+    public EventCallback OnClear { get; set; }
+
+    [Parameter]
+    public EventCallback OnMove { get; set; }
+
+    [Parameter]
+    public EventCallback OnContinue { get; set; }
+
+    [Parameter]
+    public EventCallback OnChange { get; set; }
+
+    [Parameter]
+    public EventCallback OnEnd { get; set; }
+}

@@ -13,31 +13,45 @@
         SW
         <select id="sw-weapon" value="@Weapon" @onchange="@(args => OnWeapon.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var weapon in Weapons)
-            {
-                <option value="@weapon.Id">@Say(weapon.Label)</option>
-            }
+            <UnitOptions Units="@([.. Weapons.Select(weapon => new PlayChoice(weapon.Id, weapon.Label))])" Text="@Say" />
         </select>
     </label>
     <label>
         Recovering or receiving unit
         <select id="sw-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            @foreach (var unit in Units)
-            {
-                <option value="@unit.Id">@At(unit.Label)</option>
-            }
+            <UnitOptions Units="@Units" Text="@At" />
         </select>
     </label>
-    <button id="propose-transfer" disabled="@(!Held || Unit.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync(Transfer))">Propose: transfer</button>
-    <button id="propose-drop" disabled="@(!Held)" @onclick="@(() => OnPropose.InvokeAsync(Drop))">Propose: drop</button>
-    <button id="propose-recover" disabled="@(Held || Weapon.Length == 0 || Unit.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync(Recover))">Propose: recover</button>
-    <button id="propose-dismantle" disabled="@(!Held || !Dismantles)" @onclick="@(() => OnPropose.InvokeAsync(Dismantle))">Propose: dismantle or assemble</button>
+    @* The Play streamlining plan, S7 (ruling R-PS.3): only the actions whose phase the rules allow now. *@
+    @if (Offers.Transfer)
+    {
+        <button id="propose-transfer" disabled="@(!Held || Unit.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync(Transfer))">Propose: transfer</button>
+    }
+    @if (Offers.Drop)
+    {
+        <button id="propose-drop" disabled="@(!Held)" @onclick="@(() => OnPropose.InvokeAsync(Drop))">Propose: drop</button>
+    }
+    @if (Offers.Recover)
+    {
+        <button id="propose-recover" disabled="@(Held || Weapon.Length == 0 || Unit.Length == 0 || RecoverBar is not null)" title="@RecoverBar" @onclick="@(() => OnPropose.InvokeAsync(Recover))">Propose: recover</button>
+    }
+    @if (Offers.Dismantle)
+    {
+        <button id="propose-dismantle" disabled="@(!Held || !Dismantles)" @onclick="@(() => OnPropose.InvokeAsync(Dismantle))">Propose: dismantle or assemble</button>
+    }
     <span id="sw-ready" class="toolbar-note">Transfer and drop take a SW a unit holds; recover takes a SW lying in the Location and the unit that recovers it; the game dismantles and assembles only the German MMG, in its side's Prep Fire or Defensive Fire Phase (A9.8).</span>
 </div>
 </ActionSection>
 
 @code {
+    /// <summary>
+    /// Why the chosen unit may not attempt Recovery now, in words (the Play streamlining plan, S4): the planner's own phase check; the button is
+    /// held back with it as its tooltip. Null when the phase allows it.
+    /// </summary>
+    [Parameter]
+    public string? RecoverBar { get; set; }
+
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }
@@ -76,6 +90,10 @@
     /// <summary>Whether the game dismantles or assembles the chosen SW now (pass 31, play test P-19; A9.8; ruling R13.6).</summary>
     [Parameter]
     public bool Dismantles { get; set; }
+
+    /// <summary>The actions the phase allows the view (the Play streamlining plan, S7); each button is shown only when offered.</summary>
+    [Parameter]
+    public LimboDancer.Domains.Asl.Play.SupportWeaponOffers Offers { get; set; } = new(true, true, true, true);
 
     [Parameter]
     public EventCallback<string> OnWeapon { get; set; }

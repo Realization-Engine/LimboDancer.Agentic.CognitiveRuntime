@@ -151,6 +151,17 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// The map edges a ground-level Location lies on, which a stack there may cross to leave the map (the Play streamlining plan, S7): the page
+    /// offers the exit only from such a Location. Empty above ground level or away from the edge; the exit's own plan still decides the rest.
+    /// </summary>
+    public IReadOnlyList<string> EdgesAt(GameState state, BoardLocation at)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(at);
+        return at.Level != 0 ? [] : MemoOf(state).ExitEdges.GetOrAdd(at, location => [.. EdgeSides(state, location).Select(item => item.Edge).Distinct(StringComparer.Ordinal)]);
+    }
+
+    /// <summary>
     /// Infantry leaving the map (A2.6; rulings R21.5, R25.5): a Good Order stack of the phasing side, in its MPh (the whole moving stack when one moves) or
     /// by advance in its APh, from a ground-level edge hex within the playable area, across that edge, as if entering the mirror-image hex beyond: its own
     /// hex's cost across the edge hexside, at the road rate across a road hexside; from Bypass, one MF of Open Ground when the far vertex of its last

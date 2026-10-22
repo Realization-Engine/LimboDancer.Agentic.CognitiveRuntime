@@ -168,8 +168,21 @@ public sealed class PlayPagePass28cTests : IDisposable
         // A8.1, A8.11 (referee, pass 28c): only the DEFENDER passes; the moving side's view has no pass.
         Assert.Empty(page.FindAll("#propose-pass"));
         Assert.NotEmpty(page.Find("#play-status").TextContent);
+        Assert.Equal("View: German", page.Find("#play-view-label").TextContent);
 
-        page.Find("#play-hand-over").Click();
+        // The user, 2026-10-22: the wait is said first, the hand-over is the view's main action, the banner tags it, and the stack's hex is outlined.
+        Assert.Contains("Waiting for the Russian side", page.Find("#play-waiting").TextContent, StringComparison.Ordinal);
+        Assert.Contains($"stack in {DisplayText.Place(1, hexes.Three)}", page.Find("#play-waiting-why").TextContent, StringComparison.Ordinal);
+        Assert.Equal("Waiting", page.Find("#play-awaiting-due").TextContent);
+        Assert.Contains("primary", page.Find("#play-hand-over").ClassList);
+        page.WaitForAssertion(() => Assert.NotNull(context.MapQuery($".move-waiting-mark[data-location='{hexes.Three}']")));
+
+        // A page opened now opens behind the side whose decision holds play up, not the side whose phase it is.
+        context.Services.GetRequiredService<NavigationManager>().NavigateTo("games/play?game=village");
+        var opened = context.Render<PlayPage>();
+        Assert.Contains("Russian side", opened.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
+
+        page.Find("#play-waiting-hand-over").Click();
         Assert.Contains("Russian side", page.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
 
         // Ruling R23.2: the last view's announcement does not stay for the next viewer.
@@ -185,6 +198,81 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.DoesNotContain("squad G1", page.Find("#play-reasons").TextContent, StringComparison.Ordinal);
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: false }));
+
+        // The Play streamlining plan, S7: once the window closes the DEFENDER's section is gone; the map's toolbar names the view in force.
+        Assert.Empty(page.FindAll("#dff-window"));
+        Assert.Equal("View: Russian", page.Find("#play-view-label").TextContent);
+
+        // Nothing holds play up now: no waiting signal, whichever view is shown.
+        Assert.Empty(page.FindAll("#play-waiting"));
+        Assert.Empty(page.FindAll("#play-awaiting-due"));
+    }
+
+    // The Play streamlining plan, S1: the DEFENDER passes from the hand-over screen without opening his view; the screen then goes back to the moving
+    // side, whose own view opens only when it confirms.
+    [Fact]
+    public void TheDefenderPassesFromTheHandOverScreen()
+    {
+        var hexes = Hexes();
+        var page = Started();
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
+        page.Find(".move-unit[data-unit='g1']").Change(true);
+        page.Find("#move-to").Change(hexes.Three);
+        Commit(page, "#propose-move");
+
+        page.Find("#play-hand-over").Click();
+        Assert.Contains("Russian side", page.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
+        page.Find("#play-handover-pass").Click();
+        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: false }));
+        Assert.Contains("German side", page.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#play-handover-pass"));
+        page.Find("#play-handover-confirm").Click();
+        Assert.NotEmpty(page.FindAll("#propose-end-move"));
+    }
+
+    // The Play streamlining plan, S2 (rulings Q3, Q4): with the setting on, a step and a pass commit on one click and no Confirm is asked; a
+    // refused step still opens its review; with the setting off, Confirm is asked again.
+    [Fact]
+    public void RoutineActionsCommitOnOneClick()
+    {
+        var hexes = Hexes();
+        var page = Started();
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
+        Assert.Equal("mph", Current.Phase);
+        page.Find("#play-one-click").Change(true);
+
+        page.Find(".move-unit[data-unit='g1']").Change(true);
+        page.Find("#move-to").Change(hexes.Three);
+        page.Find("#propose-move").Click();
+        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: true }));
+        Assert.Empty(page.FindAll("#play-confirm"));
+
+        // A8.1: the next step waits for the DEFENDER; the Play streamlining plan, S7 (ruling R-PS.4): so the moving side is shown no form, only
+        // that it waits.
+        Assert.Empty(page.FindAll("#move-to"));
+        Assert.NotEmpty(page.FindAll("#move-waiting"));
+
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        page.Find("#propose-pass").Click();
+        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: false }));
+        Assert.Empty(page.FindAll("#play-confirm"));
+
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        page.Find("#play-one-click").Change(false);
+        page.Find("#propose-end-move").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+
+        // The user, 2026-10-21: the end of a phase cannot be taken back, so it is never routine: with one click on, it still waits for Confirm.
+        page.Find("#play-one-click").Change(true);
+        page.Find("#propose-advance").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.Equal("mph", Current.Phase);
     }
 
     // Backlog section 43: the records sit under their turn and phase, and the strip shows the latest one.

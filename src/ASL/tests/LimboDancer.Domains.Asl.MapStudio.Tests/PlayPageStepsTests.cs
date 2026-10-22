@@ -174,7 +174,7 @@ public sealed class PlayPageStepsTests : IDisposable
         page.Find("#move-to").Change(hexes.Building);
         Commit(page, "#propose-move");
         Assert.Equal("open", page.Find("#move-state").GetAttribute("data-window"));
-        Assert.True(page.Find("#propose-end-move").HasAttribute("disabled"));
+        Assert.Empty(page.FindAll("#propose-end-move"));
 
         // The Russians fire at the building, typed in: 6+5 with -1 FFNAM and +3 for the stone building is no effect, and the
         // attack leaves Residual FP in the building, drawn on the map for every viewer. The screen is handed to them first (ruling R23.1).
@@ -229,8 +229,10 @@ public sealed class PlayPageStepsTests : IDisposable
         Commit(page, "#propose-setup");
         page.EndPhase(Commit);
         page.EndPhase(Commit);
+        page.EndPhase(Commit);
 
-        // In the Russian MPh the Germans are the DEFENDER: g1's Location is offered, the Dummy's is not (A12.1).
+        // In the Russian DFPh the Germans are the DEFENDER: g1's Location is offered, the Dummy's is not (A12.1). (In the MPh their Fire panel
+        // shows only while a window is open, R-PS.7.)
         page.ViewAs("german");
         Assert.Equal(["", hexes.Open], page.FindAll("#fire-from option").Select(option => option.GetAttribute("value") ?? string.Empty));
     }

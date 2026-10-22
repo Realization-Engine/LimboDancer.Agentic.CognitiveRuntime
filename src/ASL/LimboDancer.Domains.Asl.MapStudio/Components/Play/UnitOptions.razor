@@ -1,0 +1,44 @@
+@* The user, 2026-10-21: a dropdown's units (or weapons) grouped by hex, under the hex's name, each hex's leaders first, and each named after its
+   Location ("[AA6]: 5-2-7 squad R13"), so no counter is offered without the hex to find it by. The caller writes the select and its "choose"
+   option, and gives the items and how a label reads where the item stands on no Location. *@
+@{
+    var groups = UnitGrouping.Groups(Units, unit => unit.Id, PlaceOfUnit);
+}
+@foreach (var group in groups)
+{
+    @if (groups.Count > 1)
+    {
+        <optgroup label="@(group.Hex ?? "Elsewhere")">
+            @foreach (var unit in group.Items)
+            {
+                <option value="@unit.Id">@Named(unit)</option>
+            }
+        </optgroup>
+    }
+    else
+    {
+        @foreach (var unit in group.Items)
+        {
+            <option value="@unit.Id">@Named(unit)</option>
+        }
+    }
+}
+
+@code {
+    /// <summary>The items offered: each id and the label the page's words turn into text.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PlayChoice> Units { get; set; } = [];
+
+    /// <summary>How a label reads for an item that stands on no Location (off board), such as the panel's own "At".</summary>
+    [Parameter, EditorRequired]
+    public Func<string, string> Text { get; set; } = label => label;
+
+    [CascadingParameter(Name = "PlaceOfUnit")]
+    public Func<string, UnitPlace?>? PlaceOfUnit { get; set; }
+
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Named(PlayChoice unit) => PlaceOfUnit?.Invoke(unit.Id) is { } place
+        ? $"{place.Where}: {Words?.Invoke(unit.Label) ?? unit.Label}" : Text(unit.Label);
+}

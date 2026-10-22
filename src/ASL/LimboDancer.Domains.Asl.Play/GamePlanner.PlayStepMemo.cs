@@ -68,6 +68,24 @@ public sealed partial class GamePlanner
         /// </summary>
         public ConcurrentDictionary<BoardLocation, LocationRead?> Reads { get; } = new();
 
+        /// <summary>
+        /// Whether the DEFENDER could fire at the moving stack's step (the Play streamlining plan, S6), keyed by the step's Location and the Location
+        /// the stack came from; the state fixes the sides, the units, and the markers. It counts the DEFENDER's concealed and hidden units, so it is
+        /// read only for his view and for passing for him, never shown to the moving side.
+        /// </summary>
+        public ConcurrentDictionary<(BoardLocation At, BoardLocation? From), bool> DefenderMayFire { get; } = new();
+
+        /// <summary>The map edges a Location lies on (the Play streamlining plan, S7): the map's geometry, read once a state and Location.</summary>
+        public ConcurrentDictionary<BoardLocation, string[]> ExitEdges { get; } = new();
+
+        // The ids of the units that guard an active prisoner, read once for the state; two circuits may each build it, and either is kept.
+        private IReadOnlySet<string>? custodians;
+
+        /// <summary>The units guarding an active prisoner (A20.5): the Deploy form asks it for each squad it offers. View-independent.</summary>
+        public IReadOnlySet<string> Custodians(GameState state) => Volatile.Read(ref custodians)
+            ?? (custodians = state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian is not null)
+                .Select(prisoner => prisoner.Custodian!).ToHashSet(StringComparer.Ordinal));
+
         // 1 once the placed map's composed read is kept; written after the read, read with a volatile read.
         private int composedKept;
         private ComposedMapRead? composed;

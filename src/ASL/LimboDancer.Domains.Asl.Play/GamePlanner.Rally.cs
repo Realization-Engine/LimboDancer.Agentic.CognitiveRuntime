@@ -21,6 +21,25 @@ public sealed partial class GamePlanner
 
     private static readonly Lazy<ScenarioA1RallyReference> RallyReference = new(() => new ScenarioA1RallyPackage().Reference);
 
+    /// <summary>
+    /// Why a Rally attempt would be refused, read from the attempt's own plan with no roll and nothing stored (the Play streamlining plan, S4): the
+    /// Self-Rally rule that bars it when one does (A10.63, A18.11, A10.71), or else the first reason; null when it may be attempted. The page asks it
+    /// for the unit and leader chosen, so it offers only an attempt the gate would take.
+    /// </summary>
+    public string? RallyBar(GameScope scope, IReadOnlyList<GameEvent> existing, string unitId, string? leaderId)
+    {
+        ArgumentNullException.ThrowIfNull(existing);
+        var arguments = new Dictionary<string, object> { ["unitId"] = unitId };
+        if (leaderId is { Length: > 0 })
+        {
+            arguments["leader"] = leaderId;
+        }
+
+        var plan = PlanRally(scope, JsonSerializer.SerializeToElement(arguments), existing, "rally-read", existing.Count, scope.Game, string.Empty);
+        return plan.Status is GamePlanStatus.Ready ? null
+            : plan.Reasons.FirstOrDefault(reason => reason.StartsWith("play.rally-self", StringComparison.Ordinal)) ?? (plan.Reasons.Count > 0 ? plan.Reasons[0] : "play.rally: the attempt may not be made");
+    }
+
     private GamePlan PlanRally(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
         string actor)
     {

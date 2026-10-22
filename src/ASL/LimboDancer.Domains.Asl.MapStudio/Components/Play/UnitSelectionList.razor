@@ -61,10 +61,25 @@ else
     [Parameter]
     public EventCallback<Toggle> OnToggle { get; set; }
 
+    /// <summary>A unit's hex and whether it is a leader, for grouping (the user, 2026-10-21); none keeps the caller's order.</summary>
+    [CascadingParameter(Name = "PlaceOfUnit")]
+    public Func<string, UnitPlace?>? PlaceOfUnit { get; set; }
+
+    // The user, 2026-10-21: the units by hex, each hex's leaders first, always under the hex's name, so no counter is offered without its hex.
     private RenderFragment Boxes => @<text>
-        @foreach (var row in Rows)
+        @{
+            var groups = UnitGrouping.Groups(Rows, row => row.Id, PlaceOfUnit);
+        }
+        @foreach (var group in groups)
         {
-            <label><input class="@CssClass" type="checkbox" data-unit="@row.Id" checked="@Selected.Contains(row.Id)" @onchange="@(args => OnToggle.InvokeAsync(new Toggle(row.Id, args.Value is true)))" /> @Say(row.Label)</label>
+            @if (group.Hex is not null || groups.Count > 1)
+            {
+                <span class="unit-group-hex" data-hex="@group.Hex">@(group.Hex ?? "Elsewhere")</span>
+            }
+            @foreach (var row in group.Items)
+            {
+                <label><input class="@CssClass" type="checkbox" data-unit="@row.Id" checked="@Selected.Contains(row.Id)" @onchange="@(args => OnToggle.InvokeAsync(new Toggle(row.Id, args.Value is true)))" /> @Say(row.Label)</label>
+            }
         }
     </text>;
 }

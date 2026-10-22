@@ -50,6 +50,14 @@ public static class ScenarioA1CloseCombatRules
     public static string? RoundPhaseBar(string? phase, bool overrun) =>
         phase != "ccph" && !overrun ? "play.cc-phase: CC is resolved in the CCPh, or in the MPh after a berserk Infantry OVR onto a lone SMC (A3.8, A11.1, A4.152)" : null;
 
+    /// <summary>
+    /// A11.12 (UNIT-STATE-030, the record's own test): CC is resolved one Location at a time, so while another Location's CC is open (an Ambush
+    /// round made and the other side's round still to come) no other Location's CC is resolved. Found in dl-tractor-works-01 (the user,
+    /// 2026-10-21): the plan let it through and the record refused it at Confirm.
+    /// </summary>
+    public static string? OpenElsewhereBar(string? openLocationText) =>
+        openLocationText is { } open ? $"play.cc-order: CC is resolved one Location at a time: finish the CC in {open} first (A11.12)" : null;
+
     /// <summary>A11.31 (ruling R11.16): CC in a Location holding a vehicle is sequential, one attack at a time, with the vehicle CC action.</summary>
     public static string? VehiclePresentBar(string? vehicleId, string locationText) =>
         vehicleId is { } present ? $"play.cc-vehicle: {present} is in {locationText}, so its CC is sequential, one attack at a time (asl.game.vehicle-close-combat; A11.31)" : null;

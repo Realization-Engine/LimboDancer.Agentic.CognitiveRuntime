@@ -119,6 +119,18 @@ public sealed record GamePlan(
     {
         get; init;
     }
+
+    /// <summary>For an Infantry step: the half MF it costs, with a Dash's onward hex; null for any other plan.</summary>
+    public int? HalfMf
+    {
+        get; init;
+    }
+
+    /// <summary>For an Infantry step: the half MF the stack has left after it, as Rules reads it; null for any other plan or when undecided.</summary>
+    public int? HalfMfLeft
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -184,7 +196,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         {
             Keep(kept);
             var continued = kept.Continue(events);
-            Keep(continued);
+
+            // The Play streamlining plan, S3: a route's steps are planned on events never committed; they are applied to the kept projection and
+            // not kept themselves, so the bounded list keeps the games' own projections.
+            if (plotting == 0)
+            {
+                Keep(continued);
+            }
+
             return continued.History;
         }
 
@@ -192,13 +211,21 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var chains = Chains(events);
         var projection = GameProjector.Begin(events, vocabulary, catalogs, chains, LiveGames.Sources, FireRecordVerifier.Shared, RallyRecordVerifier.Shared,
             CloseCombatRecordVerifier.Shared, OrdnanceRecordVerifier.Shared);
-        if (chains is not null && events.Count > 0)
+        if (chains is not null && events.Count > 0 && plotting == 0)
         {
             Keep(projection);
         }
 
         return projection.History;
     }
+
+    /// <summary>
+    /// Above zero while <see cref="Plot"/> plans a route on this thread (the Play streamlining plan, S3): the move's plan then reads the target
+    /// Location's enemy units as the moving side knows them, makes no concealment loss that reads the enemy's LOS, and its projections are not
+    /// kept. Plot is synchronous, so the count is the thread's own.
+    /// </summary>
+    [ThreadStatic]
+    private static int plotting;
 
     private void Keep(ReplayedGame projection)
     {

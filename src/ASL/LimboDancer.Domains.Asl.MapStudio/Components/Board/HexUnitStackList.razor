@@ -1,14 +1,23 @@
 @* B09 (plan section 16.6): the units in the selected hex, each selectable, with its id; the unit shown above is marked (pass 29). A unit beyond
-   the six a stack draws says so. *@
+   the six a stack draws says so. The user, 2026-10-21: grouped by side, the ATTACKER's first, each side's leaders at the top of its group. *@
 <h3>Units in @Hex (@Members.Count)</h3>
-<ul class="unit-list" id="hex-units">
-    @foreach (var member in Members)
+<div id="hex-units">
+@foreach (var group in Groups)
+{
+    @if (Groups.Count > 1 || group.Side is not null)
     {
-        var current = member.Document.Id == Selected;
-        <li @key="member.Document.Id" class="@(current ? "current" : null)"><button class="link" aria-current="@(current ? "true" : null)" @onclick="() => OnSelect.InvokeAsync(member)">@member.Name</button>
-            <span class="muted">@member.Document.Id@(current ? ", shown above" : string.Empty)</span>@(member.Shown ? "" : " (not drawn; stack beyond six)")</li>
+        <h4 class="unit-list-side" data-side="@group.Side">@group.Heading</h4>
     }
-</ul>
+    <ul class="unit-list hex-units" data-side="@group.Side">
+        @foreach (var member in group.Members)
+        {
+            var current = member.Document.Id == Selected;
+            <li @key="member.Document.Id" class="@(current ? "current" : null)"><button class="link" aria-current="@(current ? "true" : null)" @onclick="() => OnSelect.InvokeAsync(member)">@member.Name</button>
+                <span class="muted">@member.Document.Id@(current ? ", shown above" : string.Empty)</span>@(member.Shown ? "" : " (not drawn; stack beyond six)")</li>
+        }
+    </ul>
+}
+</div>
 
 @code {
     [Parameter, EditorRequired]
@@ -21,6 +30,27 @@
     [Parameter]
     public string? Selected { get; set; }
 
+    /// <summary>The ATTACKER, whose units come first (the phasing side in Play); null where there is no phase, and the sides go by name.</summary>
+    [Parameter]
+    public string? Attacker { get; set; }
+
     [Parameter]
     public EventCallback<PlacedUnit> OnSelect { get; set; }
+
+    private sealed record SideGroup(string? Side, string Heading, IReadOnlyList<PlacedUnit> Members);
+
+    private IReadOnlyList<SideGroup> groups = [];
+
+    private IReadOnlyList<SideGroup> Groups => groups;
+
+    // Read when the members change, not at each render: the ATTACKER's side first, then the others by name, units of no side last; in each,
+    // the leaders first, then the stack's own order.
+    protected override void OnParametersSet() =>
+        groups = [.. Members.GroupBy(member => member.Document.Side, StringComparer.Ordinal)
+            .OrderBy(group => group.Key is null ? 2 : group.Key == Attacker ? 0 : 1).ThenBy(group => group.Key, StringComparer.Ordinal)
+            .Select(group => new SideGroup(group.Key, Heading(group.Key, group.Count()),
+                [.. group.OrderBy(member => member.Document.Kind == "asl:leader" ? 0 : 1)]))];
+
+    private string Heading(string? side, int count) =>
+        (side is null ? "Other" : DisplayText.Side(side)) + (Attacker is null || side is null ? string.Empty : side == Attacker ? " (ATTACKER)" : " (DEFENDER)") + $" ({count})";
 }

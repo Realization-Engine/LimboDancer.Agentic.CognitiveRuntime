@@ -526,6 +526,30 @@ public sealed class ScenarioA1Pass40RulesTests
         Assert.StartsWith("play.recombine-start:", ScenarioA1SupportWeaponRules.RecombineStartBar(true), StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("rph", true, true, false, true, false)]
+    [InlineData("rph", false, true, false, true, false)]
+    [InlineData("pfph", true, false, false, false, true)]
+    [InlineData("pfph", false, false, false, false, false)]
+    [InlineData("mph", true, false, true, true, false)]
+    [InlineData("mph", false, false, false, false, false)]
+    [InlineData("dfph", false, false, false, false, true)]
+    [InlineData("dfph", true, false, false, false, false)]
+    [InlineData("aph", true, true, true, false, false)]
+    [InlineData("aph", false, false, false, false, false)]
+    [InlineData("rtph", true, false, false, false, false)]
+    [InlineData("ccph", true, false, true, false, false)]
+    [InlineData("ccph", false, false, true, false, false)]
+    [InlineData(null, true, false, false, false, false)]
+    public void ASupportWeaponActsOnlyInThePhasesTheRulesAllow(string? phase, bool phasing, bool transfer, bool drop, bool recover, bool dismantle)
+    {
+        // A4.431 (transfer), A4.43 (drop), A4.44 (recover) (p. 50); A9.8 (dismantle or assemble, p. 67): the Play streamlining plan, S7 (R-PS.3).
+        Assert.Equal(transfer, ScenarioA1SupportWeaponRules.TransferPhase(phase, phasing));
+        Assert.Equal(drop, ScenarioA1SupportWeaponRules.DropPhase(phase, phasing));
+        Assert.Equal(recover, ScenarioA1SupportWeaponRules.RecoverPhase(phase, phasing));
+        Assert.Equal(dismantle, ScenarioA1SupportWeaponRules.DismantlePhase(phase, phasing));
+    }
+
     [Fact]
     public void TheUnitSizeNumberIsOneMemberWithItsFourAndItsFive()
     {

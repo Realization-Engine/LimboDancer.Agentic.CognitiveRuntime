@@ -7,10 +7,7 @@
             @Say(smc.Id) stacked with
             <select class="cc-stack" data-unit="@smc.Id" value="@(Stacking.GetValueOrDefault(smc.Id) ?? string.Empty)" @onchange="@(args => OnStacking.InvokeAsync(new Choice(smc.Id, args.Value as string)))">
                 <option value="">alone</option>
-                @foreach (var mmc in smc.Mmcs)
-                {
-                    <option value="@mmc">@Say(mmc)</option>
-                }
+                <UnitOptions Units="@([.. smc.Mmcs.Select(mmc => new PlayChoice(mmc, mmc))])" Text="@Say" />
             </select>
         </label>
     }

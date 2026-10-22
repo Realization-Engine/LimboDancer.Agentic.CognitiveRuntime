@@ -12,10 +12,7 @@
             Shocked AFV
             <select id="shock-vehicle" value="@Vehicle" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">choose</option>
-                @foreach (var vehicle in Vehicles)
-                {
-                    <option value="@vehicle.Id">@Say(vehicle.Label)</option>
-                }
+                <UnitOptions Units="@([.. Vehicles.Select(vehicle => new PlayChoice(vehicle.Id, vehicle.Label))])" Text="@Say" />
             </select>
         </label>
         <button id="propose-shock" disabled="@(!Vehicles.Any(vehicle => vehicle.Id == Vehicle))" aria-describedby="propose-shock-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: roll for it</button>

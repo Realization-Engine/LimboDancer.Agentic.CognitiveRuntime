@@ -153,10 +153,11 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         page.Find("#fire-from").Change(hexes.One);
         Assert.Equal(["g2"], Checked(page, ".fire-firer"));
 
-        // A choice made in the PFPh does not survive into the MPh, where the other side fires (backlog, section 13).
+        // A choice made in the PFPh does not survive into the next phase in which the other side fires (backlog, section 13). That is the DFPh:
+        // in the MPh the DEFENDER's Fire panel shows only while a window is open (R-PS.7).
         page.Find(".fire-firer[data-unit='g2']").Change(true);
         page.Find("#fire-target").Change(hexes.Two);
-        Advance(page, 1);
+        Advance(page, 2);
         page.ViewAs("russian");
         Assert.Equal(string.Empty, page.Find("#fire-from").GetAttribute("value"));
         Assert.Equal(string.Empty, page.Find("#fire-target").GetAttribute("value"));

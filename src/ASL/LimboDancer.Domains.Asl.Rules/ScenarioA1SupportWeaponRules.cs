@@ -9,6 +9,18 @@ public static class ScenarioA1SupportWeaponRules
     /// <summary>A9.8 (ruling R13.6): a MG is dismantled or assembled in its side's PFPh or DFPh.</summary>
     public static bool DismantlePhase(string? phase, bool phasing) => (phase == "pfph" && phasing) || (phase == "dfph" && !phasing);
 
+    /// <summary>A4.431: a SW passes between units in the RPh, or in the ATTACKER's APh before either advances.</summary>
+    public static bool TransferPhase(string? phase, bool phasing) => phase == "rph" || (phase == "aph" && phasing);
+
+    /// <summary>
+    /// A4.43 (ruling R13.5): an unbroken unit drops a SW in its own MPh during its move, its own APh before it advances, or at the start of the CCPh.
+    /// A broken unit's drop before it routs (A10.4) is the rout's own choice of what it keeps.
+    /// </summary>
+    public static bool DropPhase(string? phase, bool phasing) => phase == "ccph" || (phase is "mph" or "aph" && phasing);
+
+    /// <summary>A4.44 (ruling R13.5): a SW is Recovered in the RPh, as the unit's sole action, or during the unit's own move in its MPh.</summary>
+    public static bool RecoverPhase(string? phase, bool phasing) => phase == "rph" || (phase == "mph" && phasing);
+
     /// <summary>A1.31, A10.7: the directing leader's modifier, one worse when wounded (A17.3).</summary>
     public static int LeaderDrm(int? leadership, bool wounded) => (leadership ?? 0) + (wounded ? 1 : 0);
 

@@ -272,8 +272,14 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary
         var points = string.Join(' ', vertices.Select(vertex => string.Create(CultureInfo.InvariantCulture, $"{vertex.X:0.##},{vertex.Y:0.##}")));
         var x = vertices.Average(point => point.X);
         var y = vertices.Average(point => point.Y);
-        var text = label is null ? string.Empty : string.Create(CultureInfo.InvariantCulture,
-            $"<circle cx=\"{x:0.##}\" cy=\"{y:0.##}\" r=\"11\" fill=\"#ffffff\" stroke=\"{stroke}\" stroke-width=\"2\"/><text x=\"{x:0.##}\" y=\"{y + 5:0.##}\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"{stroke}\">{label}</text>");
+        // A count of one or two characters sits in a circle; a longer label, such as a plotted route's "1 MF" or "3 left" (the Play streamlining
+        // plan, S3; the user, 2026-10-21: the circle was too small), in a rounded box as wide as its text.
+        var halfWidth = label is { Length: > 2 } ? (label.Length * 4.3) + 6 : 0;
+        var frame = halfWidth == 0
+            ? string.Create(CultureInfo.InvariantCulture, $"<circle cx=\"{x:0.##}\" cy=\"{y:0.##}\" r=\"11\" fill=\"#ffffff\" stroke=\"{stroke}\" stroke-width=\"2\"/>")
+            : string.Create(CultureInfo.InvariantCulture, $"<rect x=\"{x - halfWidth:0.##}\" y=\"{y - 11:0.##}\" width=\"{halfWidth * 2:0.##}\" height=\"22\" rx=\"11\" fill=\"#ffffff\" stroke=\"{stroke}\" stroke-width=\"2\"/>");
+        var text = label is null ? string.Empty : frame + string.Create(CultureInfo.InvariantCulture,
+            $"<text x=\"{x:0.##}\" y=\"{y + 5:0.##}\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"{stroke}\">{label}</text>");
         return $"<g class=\"{css}\" data-location=\"{at with { Level = 0 }}\" pointer-events=\"none\"><polygon points=\"{points}\" fill=\"{fill}\" fill-opacity=\"0.3\" stroke=\"{stroke}\" stroke-width=\"{width}\""
             + (dashed ? " stroke-dasharray=\"8 5\"" : string.Empty) + $"/>{text}</g>";
     }
