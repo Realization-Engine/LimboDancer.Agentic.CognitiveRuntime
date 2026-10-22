@@ -4212,7 +4212,18 @@ else if (state is not null)
 
     /// <summary>The Locations holding units of both sides, none of them a prisoner: where CC can occur (A11.1).</summary>
     // Ruling R23.1: a side finds a CC Location by the units it may see and the "?" it knows of, never by a hidden unit.
-    private IEnumerable<string> CloseCombatLocations => state is null ? []
+    // A11.12 (the user, 2026-10-21): while a Location's CC is open, it alone is offered, since no other Location's CC may be resolved until it is
+    // finished; the planner refuses the others with the same reason.
+    private IEnumerable<string> CloseCombatLocations
+    {
+        get
+        {
+            var all = AllCloseCombatLocations.ToArray();
+            return state?.CloseCombats.FirstOrDefault(item => !item.Closed)?.Location.ToString() is { } open && all.Contains(open, StringComparer.Ordinal) ? [open] : all;
+        }
+    }
+
+    private IEnumerable<string> AllCloseCombatLocations => state is null ? []
         : VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && state.Location(unit.Id) is not null)
             .Select(unit => (Location: state.Location(unit.Id)!.Location.ToString(), unit.Side))
             .Concat(SealedPresences.Where(presence => !presence.Uninspected).Select(presence => (Location: presence.Location.ToString(), presence.Side)))

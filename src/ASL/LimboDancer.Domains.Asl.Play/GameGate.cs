@@ -5,6 +5,7 @@ using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Abstractions.Execution;
 using LimboDancer.Abstractions.Runtime;
+using LimboDancer.Domains.Asl.Units;
 using LimboDancer.Domains.Asl.Units.State;
 using LimboDancer.Runtime.Actions;
 using LimboDancer.Runtime.Diagnostics;
@@ -90,7 +91,11 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
 
         if (appended.Status != AppendStatus.Committed)
         {
-            return Failed(appended.Status == AppendStatus.Stale ? "play.gate-state-stale" : "play.commit-refused");
+            // The user, 2026-10-21 (a CC in [Z6] refused at Confirm with no reason): a refused write says what the replay of the new events found.
+            return Failed(appended.Status == AppendStatus.Stale ? "play.gate-state-stale"
+                : appended.Diagnostics.Where(item => item.Severity == UnitDiagnosticSeverity.Error).Select(item => item.ToString()).ToArray() is { Length: > 0 } why
+                    ? $"play.commit-refused: the game would not replay with these events: {string.Join("; ", why)}"
+                    : "play.commit-refused");
         }
 
         // Verified effect: the stored log replays, ends with exactly these events, and shows their effect. A rolled batch is

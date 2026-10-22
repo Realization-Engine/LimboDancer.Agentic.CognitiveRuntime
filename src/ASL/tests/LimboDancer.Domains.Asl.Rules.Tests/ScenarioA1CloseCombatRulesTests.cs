@@ -377,4 +377,13 @@ public sealed class ScenarioA1CloseCombatRulesTests
         Assert.True(ScenarioA1CloseCombatProjection.GuardLeft(true, true));
         Assert.False(ScenarioA1CloseCombatProjection.GuardLeft(true, false));
     }
+
+    // A11.12 (found in dl-tractor-works-01, 2026-10-21): while another Location's CC is open, the plan refuses this one, as the record does.
+    [Fact]
+    public void AnotherLocationsOpenCcIsFinishedFirst()
+    {
+        Assert.Null(ScenarioA1CloseCombatRules.OpenElsewhereBar(null));
+        Assert.Equal("play.cc-order: CC is resolved one Location at a time: finish the CC in bd01:X4:0 first (A11.12)",
+            ScenarioA1CloseCombatRules.OpenElsewhereBar("bd01:X4:0"));
+    }
 }

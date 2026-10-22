@@ -415,6 +415,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, phaseBar);
         }
 
+        // A11.12: one Location at a time, as the record holds it (UNIT-STATE-030): another Location's open CC is finished first.
+        if (ScenarioA1CloseCombatRules.OpenElsewhereBar(state.CloseCombats.FirstOrDefault(item => !item.Closed && item.Location != location)?.Location.ToString()) is { } orderBar)
+        {
+            return Refused(scope, label, expected, orderBar);
+        }
+
         // A11.31 (ruling R11.16): CC in a Location holding a vehicle is sequential, one attack at a time, with the vehicle CC action.
         if (ScenarioA1CloseCombatRules.VehiclePresentBar(state.At(location).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit))?.Id, location.ToString()) is { } vehicleBar)
         {
