@@ -33,8 +33,9 @@ public sealed class IconLabTests(StudioFactory factory) : IClassFixture<StudioFa
         Assert.Contains("class=\"icon-lab icon-palette-mj\"", html, StringComparison.Ordinal);
         Assert.Contains("aria-label=\"Rotate map\"", html, StringComparison.Ordinal);
         Assert.Contains("aria-label=\"Evidence\"", html, StringComparison.Ordinal);
-        Assert.Equal(16, CountOf(html, "<figure>"));
-        Assert.Equal(16, CountOf(html, "width=\"144\" height=\"144\""));
+        // One figure per icon: 18 since the Unit Planner's two (the Play streamlining plan, S8).
+        Assert.Equal(18, CountOf(html, "<figure>"));
+        Assert.Equal(18, CountOf(html, "width=\"144\" height=\"144\""));
         Assert.DoesNotContain("<canvas", html, StringComparison.Ordinal);
         Assert.Contains(">Lab</span>", html, StringComparison.Ordinal);
         Assert.Contains("href=\"lab/icons\"", html, StringComparison.Ordinal);

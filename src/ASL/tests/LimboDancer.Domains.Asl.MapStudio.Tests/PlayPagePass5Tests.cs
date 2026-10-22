@@ -156,6 +156,15 @@ public sealed class PlayPagePass5Tests : IDisposable
         page.Find("#move-double-time").Change(true);
         Commit(page, "#propose-move");
         Assert.Contains("cx", Row(page, "g1"), StringComparison.Ordinal);
+
+        // r1 sees the step, so the moving side waits on the DEFENDER's window with no Movement form (R-PS.4); once he passes, the form is back
+        // with Double Time unticked.
+        Assert.Empty(page.FindAll("#move-double-time"));
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
+        Commit(page, "#propose-pass");
+        page.Find("#play-hand-over").Click();
+        page.Find("#play-handover-confirm").Click();
         Assert.False(page.Find("#move-double-time").HasAttribute("checked"));
     }
 

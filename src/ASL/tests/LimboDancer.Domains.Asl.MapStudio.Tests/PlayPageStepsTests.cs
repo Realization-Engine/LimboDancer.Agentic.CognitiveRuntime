@@ -229,8 +229,10 @@ public sealed class PlayPageStepsTests : IDisposable
         Commit(page, "#propose-setup");
         page.EndPhase(Commit);
         page.EndPhase(Commit);
+        page.EndPhase(Commit);
 
-        // In the Russian MPh the Germans are the DEFENDER: g1's Location is offered, the Dummy's is not (A12.1).
+        // In the Russian DFPh the Germans are the DEFENDER: g1's Location is offered, the Dummy's is not (A12.1). (In the MPh their Fire panel
+        // shows only while a window is open, R-PS.7.)
         page.ViewAs("german");
         Assert.Equal(["", hexes.Open], page.FindAll("#fire-from option").Select(option => option.GetAttribute("value") ?? string.Empty));
     }

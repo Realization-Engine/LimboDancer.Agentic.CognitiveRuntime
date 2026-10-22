@@ -56,6 +56,20 @@
       "reference": "Set Two, final round, top row 3rd"
     },
     {
+      "key": "planner",
+      "label": "Unit Planner",
+      "brief": "a cream clipboard with a bold slate-navy outline and a solid slate-navy clip at the top, three short horizontal bars on the sheet, one small olive hexagon with a brick red dot overlapping the lower right corner, unit planner",
+      "meaning": "The tab that holds LOS, Range, and the Movement Plan: the player's plans for his units, not a game action.",
+      "reference": "Drawn in the Studio, 2026-10-21 (the Play streamlining plan, S8); no Midjourney set yet"
+    },
+    {
+      "key": "movement-plan",
+      "label": "Movement Plan",
+      "brief": "one small solid olive hexagon in the lower left corner, a thick dashed slate-navy line running diagonally up through one outlined hexagon in the middle to a brick red arrowhead in the upper right corner, a planned route",
+      "meaning": "A route for each stack, made one stack after another (A4.2): the hexes it will enter, not a straight line of sight.",
+      "reference": "Drawn in the Studio, 2026-10-21 (the Play streamlining plan, S8); no Midjourney set yet"
+    },
+    {
       "key": "evidence",
       "label": "Evidence",
       "brief": "an open book with cream pages and a bold slate-navy outline, three thick horizontal bars on each page, one brick red bookmark ribbon hanging from the bottom center, evidence",
