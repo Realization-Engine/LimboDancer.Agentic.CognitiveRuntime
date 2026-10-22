@@ -1208,19 +1208,39 @@ else if (state is not null)
             <div id="play-latest-panel" class="@(latestCollapsed ? "play-latest-panel collapsed" : "play-latest-panel")">
                 <button type="button" id="play-latest-toggle" class="link play-latest-toggle" aria-expanded="@(latestCollapsed ? "false" : "true")" aria-controls="play-latest-panel"
                         title="@(latestCollapsed ? "Show the latest record in full" : "Show only its outcome")" @onclick="@(() => latestCollapsed = !latestCollapsed)">@(latestCollapsed ? "▸" : "▾")</button>
-                @if (Records is { LatestTables: { Count: > 0 } latestTables } latestRecords)
+                @if (Records is { } latestRecords && latestRecords.LatestTables.Count > 0)
                 {
                     <p id="play-latest">Latest: @latestRecords.LatestWhen:@(latestRecords.LatestOthers.Count > 0 ? $" {string.Join(" ", latestRecords.LatestOthers)}" : string.Empty)</p>
                     <div id="play-latest-tables">
-                        @foreach (var table in latestTables)
+                        @foreach (var table in latestRecords.LatestTables)
                         {
                             <CloseCombatResultTable Table="@table" />
+                        }
+                        @* The user, 2026-10-21: a fire reads as its line and, below it, the card the Records tab shows, in the same box that scrolls. *@
+                        @foreach (var (view, line) in latestRecords.LatestFires)
+                        {
+                            <p class="cc-result-summary fire-latest-line">@line</p>
+                            <div class="cc-result-scroll fire-latest-card" tabindex="0" role="region" aria-label="The fire attack's arithmetic and effects">
+                                <FireResolutionCard Record="@view" />
+                            </div>
                         }
                     </div>
                 }
                 else
                 {
                     <p id="play-latest">@(LatestRecord ?? "No record yet.")</p>
+                    @* The user, 2026-10-21: a fire's line stays as it reads, and its card (the Records tab's) follows in a box that scrolls. *@
+                    @if (Records?.LatestFires is { Count: > 0 } latestFires)
+                    {
+                        <div id="play-latest-tables">
+                            @foreach (var (view, _) in latestFires)
+                            {
+                                <div class="cc-result-scroll fire-latest-card" tabindex="0" role="region" aria-label="The fire attack's arithmetic and effects">
+                                    <FireResolutionCard Record="@view" />
+                                </div>
+                            }
+                        </div>
+                    }
                 }
             </div>
             @* Pass 31c (designs D15 and D17): the records, the units, the scripted dice, and the audit open over the strip, each with its own

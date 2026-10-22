@@ -1720,3 +1720,4 @@ In the main checkout, branch `play-streamlining` from 52a185c5, at the user's wo
 | The CC in [Z6] refused at Confirm: one Location at a time (A11.12), the refusal's reason shown | 21:33 | 22:15 | 0:42 | | Reproduced on copies of dl-tractor-works-01; two Studio builds; the German round at [X4] then [Z6] resolved on a copy; 27 test methods (1 new) |
 | A CC round's result as a table in the Latest panel, the panel collapsible, concealed units counted | 22:15 | 22:59 | 0:44 | | Rules check of the -8 and +4 (A11.501, A5.12, A5.131: correct); two Studio builds; checked on the user's game (read only); 13 test methods |
 | The Selection tab's units in a hex by side, the ATTACKER's first, leaders on top | 22:59 | 23:20 | 0:21 | | One Studio build; checked on the user's [X4] (read only); 2 test methods (1 new) |
+| The fire record's card in the Latest panel | 23:20 | 23:28 | 0:08 | | One Studio build; checked in p31-pf (a 2KIA with an LLMC); 8 test methods |

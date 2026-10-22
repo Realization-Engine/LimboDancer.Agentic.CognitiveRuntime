@@ -169,11 +169,27 @@ public sealed class PlayRecords
 
                 // The user, 2026-10-21: a CC round in the latest attempt is shown as its table, the other lines of the attempt as text.
                 latestTables = [.. shown.Select(line => CombatTable(line.EventId)).OfType<CloseCombatTable>()];
-                latestOthers = [.. shown.Where(line => CombatTable(line.EventId) is null).Select(line => Sentence(line.Text))];
+
+                // A fire in the latest attempt is shown as its card (the Records tab's), under its line (the user, 2026-10-21).
+                var fires = Fire.ToDictionary(view => view.EventId, StringComparer.Ordinal);
+                latestFires = [.. shown.Where(line => fires.ContainsKey(line.EventId)).Select(line => (fires[line.EventId], Sentence(line.Text)))];
+                latestOthers = [.. shown.Where(line => CombatTable(line.EventId) is null && !fires.ContainsKey(line.EventId)).Select(line => Sentence(line.Text))];
                 latestWhen = from.Length == 0 ? null : WhenOf(from[^1].EventId);
             }
 
             return latest.Text;
+        }
+    }
+
+    private IReadOnlyList<(FireView View, string Line)> latestFires = [];
+
+    /// <summary>The fire attacks of the latest attempt, each with its line, to show as their cards (the user, 2026-10-21); empty when it holds none.</summary>
+    public IReadOnlyList<(FireView View, string Line)> LatestFires
+    {
+        get
+        {
+            _ = Latest;
+            return latestFires;
         }
     }
 
