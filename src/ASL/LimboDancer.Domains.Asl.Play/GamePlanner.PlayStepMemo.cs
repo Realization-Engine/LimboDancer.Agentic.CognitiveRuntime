@@ -75,6 +75,13 @@ public sealed partial class GamePlanner
         /// </summary>
         public ConcurrentDictionary<(BoardLocation At, BoardLocation? From), bool> DefenderMayFire { get; } = new();
 
+        /// <summary>
+        /// A berserk stack's charge (the Berserk Charge Plan, T1): the search's answer by stack, start, and whether the stack is in the state's move.
+        /// It reads the state only (a Known enemy unit is read from the unit's own conditions, never from a view), so one answer serves every view.
+        /// Kept only for the state's own unit objects and its own move (<see cref="ChargeKeyOf"/>). The kept answer is read, never written.
+        /// </summary>
+        public ConcurrentDictionary<ChargeKey, (IReadOnlyDictionary<BoardLocation, ChargeStep> Steps, BoardLocation? Target, string? Undecided)> Charges { get; } = new();
+
         /// <summary>The map edges a Location lies on (the Play streamlining plan, S7): the map's geometry, read once a state and Location.</summary>
         public ConcurrentDictionary<BoardLocation, string[]> ExitEdges { get; } = new();
 

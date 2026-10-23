@@ -1365,6 +1365,52 @@ public sealed partial class GamePlanner
     private (IReadOnlyDictionary<BoardLocation, ChargeStep> Steps, BoardLocation? Target, string? Undecided) ChargeSteps(GameState state,
         UnitInstance[] movers, BoardLocation from, MovementState? current)
     {
+        // The Berserk Charge Plan, T1: the page and the planner ask a state's charge up to five times a render; it is searched once.
+        if (ChargeKeyOf(state, movers, from, current) is not { } key)
+        {
+            return SearchCharge(state, movers, from, current);
+        }
+
+        var charges = MemoOf(state).Charges;
+        return charges.TryGetValue(key, out var kept) ? kept : charges.GetOrAdd(key, SearchCharge(state, movers, from, current));
+    }
+
+    /// <summary>
+    /// The memo's key for a charge (the Berserk Charge Plan, T1), or null when the answer may not be kept: a mover that is not the state's own
+    /// unit object (a changed copy reads other fields), or a move that is not the state's own.
+    /// </summary>
+    private static ChargeKey? ChargeKeyOf(GameState state, UnitInstance[] movers, BoardLocation from, MovementState? current)
+    {
+        if (movers.Length == 0 || (current is not null && !ReferenceEquals(current, state.Movement)))
+        {
+            return null;
+        }
+
+        foreach (var mover in movers)
+        {
+            if (!ReferenceEquals(state.Unit(mover.Id), mover))
+            {
+                return null;
+            }
+        }
+
+        return new ChargeKey(string.Join('\u001f', movers.Select(mover => mover.Id)), from, current is not null);
+    }
+
+    /// <summary>A charge's key in the memo: the movers' ids in order, the start, and whether the movers are in the state's move.</summary>
+    private readonly record struct ChargeKey(string Movers, BoardLocation From, bool InMove);
+
+    // How many charge searches this planner has run; read by its tests (the Berserk Charge Plan, ruling R1).
+    private int chargeSearches;
+
+    /// <summary>The charge searches this planner has run (the Berserk Charge Plan, ruling R1): its tests read it to see an answer kept.</summary>
+    internal int ChargeSearches => Volatile.Read(ref chargeSearches);
+
+    /// <summary>The charge search itself (see <see cref="ChargeSteps"/>).</summary>
+    private (IReadOnlyDictionary<BoardLocation, ChargeStep> Steps, BoardLocation? Target, string? Undecided) SearchCharge(GameState state,
+        UnitInstance[] movers, BoardLocation from, MovementState? current)
+    {
+        Interlocked.Increment(ref chargeSearches);
         var side = movers[0].Side;
         var scan = new ChargeScan(this, state, movers, unit => vocabulary.IsA(unit.Kind, "asl:crew"));
 

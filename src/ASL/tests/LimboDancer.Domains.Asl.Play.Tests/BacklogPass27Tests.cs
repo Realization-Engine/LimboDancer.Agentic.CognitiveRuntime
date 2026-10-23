@@ -318,6 +318,54 @@ public sealed class BacklogPass27Tests : IDisposable
     }
 
     [Fact]
+    public async Task AStatesChargeIsSearchedOnceHoweverOftenItIsAsked()
+    {
+        // The Berserk Charge Plan, T1: the page asks a state's charge through Charges, MustCharge, and ChargeLanes; one search answers them all.
+        await Setup(Squad("g1", L("D5"), "german", Conditions.Berserk), Squad("r1", L("D3"), "russian"));
+        var planner = Planner();
+        var state = planner.Replay(store.Read(Scope)!.Events).Current!;
+        var first = Assert.Single(planner.Charges(state));
+        var lanes = planner.ChargeLanes(state, first.Unit);
+        var again = Assert.Single(planner.Charges(state));
+        Assert.Equal(1, planner.ChargeSearches);
+        Assert.Equal(first.Target, again.Target);
+        Assert.Equal(first.Next, again.Next);
+        Assert.Equal(lanes, planner.ChargeLanes(state, first.Unit));
+        Assert.Equal([At("D4")], first.Next);
+    }
+
+    [Fact]
+    public async Task ANewStateIsSearchedAgainAndGivesTheSameCharge()
+    {
+        // The Berserk Charge Plan, T1: the memo lives with the state object, so another state object is searched for itself.
+        await Setup(Squad("g1", L("D5"), "german", Conditions.Berserk), Squad("r1", L("D3"), "russian"));
+        var planner = Planner();
+        var state = planner.Replay(store.Read(Scope)!.Events).Current!;
+        var first = Assert.Single(planner.Charges(state));
+        var copy = state with { };
+        var second = Assert.Single(planner.Charges(copy));
+        Assert.Equal(2, planner.ChargeSearches);
+        Assert.Equal(first.Target, second.Target);
+        Assert.Equal(first.Next, second.Next);
+    }
+
+    [Fact]
+    public async Task AUnitObjectThatIsNotTheStatesOwnIsNeverServedFromTheMemo()
+    {
+        // The Berserk Charge Plan, T1: a changed copy of a unit reads its own fields, so its charge is searched each time and never kept.
+        await Setup(Squad("g1", L("D5"), "german", Conditions.Berserk), Squad("r1", L("D3"), "russian"));
+        var planner = Planner();
+        var state = planner.Replay(store.Read(Scope)!.Events).Current!;
+        var copy = state.Unit("g1")! with { };
+        planner.ChargeLanes(state, copy);
+        planner.ChargeLanes(state, copy);
+        Assert.Equal(2, planner.ChargeSearches);
+        planner.ChargeLanes(state, state.Unit("g1")!);
+        planner.ChargeLanes(state, state.Unit("g1")!);
+        Assert.Equal(3, planner.ChargeSearches);
+    }
+
+    [Fact]
     public async Task ABerserkChargeClimbsAStairwellToAnEnemyUpstairs()
     {
         // B23.4, B23.421 (ruling R27.2): the Russian squad is on level 1 of D4, which has no stairwell; the charge climbs D5's stairwell and crosses
