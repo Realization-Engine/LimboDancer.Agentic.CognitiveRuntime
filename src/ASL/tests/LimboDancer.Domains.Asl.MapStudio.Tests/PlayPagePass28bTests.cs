@@ -165,7 +165,8 @@ public sealed class PlayPagePass28bTests : IDisposable
 
         // A10.62: the transfer leaves the broken r1 ADJACENT to g1 and g2, so it comes under DM; its owner keeps it as the RPh ends (the EXC), which is
         // recorded as kept, not gained (referee, pass 28b).
-        var gained = $"4-4-7 squad R1 in {DisplayText.Place(1, hexes.Two)} comes under DM (A10.62)";
+        // Read in the German view: the Russian squad by its hex, said once (the user's ruling of 2026-10-22).
+        var gained = $"4-4-7 squad in {DisplayText.Place(1, hexes.Two)} comes under DM (A10.62)";
         Assert.Equal(gained, page.Find("#play-rallies .dm-record").RecordText());
         // Pass 31 (ruling R31.6): r1's owner keeps its DM, from its own view, and either side ends the RPh.
         page.ViewAs("russian");
@@ -173,7 +174,7 @@ public sealed class PlayPagePass28bTests : IDisposable
         page.EndPhase(Commit);
         page.ViewAs("german");
         var kept = page.Find("#play-rallies li").RecordText();
-        Assert.Equal($"4-4-7 squad R1 in {DisplayText.Place(1, hexes.Two)} keeps DM as the RPh ends (A10.62)", kept);
+        Assert.Equal($"4-4-7 squad in {DisplayText.Place(1, hexes.Two)} keeps DM as the RPh ends (A10.62)", kept);
         for (var phase = 0; phase < 4; phase++)
         {
             page.EndPhase(Commit);
@@ -183,9 +184,10 @@ public sealed class PlayPagePass28bTests : IDisposable
         Assert.Contains(page.FindAll("#play-rallies .dm-record"), item => item.RecordText() == gained);
 
         // Each side reads the records too: none of these units is concealed.
+        // The Russian view names its own squad by its tag.
         page.ViewAs("russian");
         Assert.Single(page.FindAll("#play-rallies .transfer-record"));
-        Assert.Contains(page.FindAll("#play-rallies .dm-record"), item => item.RecordText() == gained);
+        Assert.Contains(page.FindAll("#play-rallies .dm-record"), item => item.RecordText() == $"4-4-7 squad R1 in {DisplayText.Place(1, hexes.Two)} comes under DM (A10.62)");
     }
 
     // Backlog section 23 (A10.5): a broken unit ADJACENT to an enemy tank must rout, and with no captor that could take it (A20.21) it is eliminated

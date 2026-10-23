@@ -114,7 +114,7 @@ public sealed class FigureArtLabTests : IDisposable
 
     private static string UnitsFolder()
     {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+        for (var directory = new DirectoryInfo(Environment.GetEnvironmentVariable("ASL_REPO") is { Length: > 0 } repo ? repo : AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
         {
             var units = Path.Combine(directory.FullName, "src", "ASL", "units");
             if (Directory.Exists(units))

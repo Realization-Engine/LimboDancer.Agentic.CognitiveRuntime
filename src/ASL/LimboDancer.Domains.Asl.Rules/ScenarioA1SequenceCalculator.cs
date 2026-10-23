@@ -92,12 +92,21 @@ public static class ScenarioA1SequenceCalculator
     /// unit that still owes a rout (<see cref="ScenarioA1RoutCalculator.RoutStillOwed"/>; pass 35, task 35.17), since one that has routed, is pinned, has
     /// no legal step, or surrenders instead can do nothing more, and waiting for it would keep the phase from ever ending.
     /// </summary>
-    public static string? RoutPhaseEndBar(string action, string? phase, Func<string?> owedSide)
+    /// <remarks>
+    /// The user, 2026-10-22: when the proposer is the ATTACKER and still owes a rout itself (<paramref name="proposerRoutsFirst"/>), it is told to rout
+    /// first, not to hand over: the other side's units may not rout before the ATTACKER's (A10.5: "ATTACKER first").
+    /// </remarks>
+    public static string? RoutPhaseEndBar(string action, string? phase, Func<string?> owedSide, Func<string?>? proposerRoutsFirst = null)
     {
         ArgumentNullException.ThrowIfNull(owedSide);
-        return action == "asl.game.advance-phase" && phase == "rtph" && owedSide() is { } owed
-            ? $"play.not-your-action: the {owed} side still has a unit that must rout, and ending the Rout Phase now would eliminate it or make it surrender; hand over to the {owed} side first (A10.5; ruling R31.6)"
-            : null;
+        if (action != "asl.game.advance-phase" || phase != "rtph" || owedSide() is not { } owed)
+        {
+            return null;
+        }
+
+        return proposerRoutsFirst?.Invoke() is { } first
+            ? $"play.rout-order: the {first} side routs first: its broken units that must rout go before the {owed} side's; rout them, then hand over to the {owed} side (A10.5)"
+            : $"play.not-your-action: the {owed} side still has a unit that must rout, and ending the Rout Phase now would eliminate it or make it surrender; hand over to the {owed} side first (A10.5; ruling R31.6)";
     }
 
     /// <summary>Ruling R31.6: a side's view does not act for another side's unit.</summary>

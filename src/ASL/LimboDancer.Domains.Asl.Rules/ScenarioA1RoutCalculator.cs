@@ -507,6 +507,18 @@ public static class ScenarioA1RoutCalculator
     public static bool AttackerMustRoutFirst(bool ofAttacker, bool routedThisPhase, bool pinned, Func<bool> mustRout, Func<bool> canRout, Func<bool> surrendersInstead) =>
         ofAttacker && RoutStillOwed(routedThisPhase, pinned, mustRout, canRout, surrendersInstead);
 
+    /// <summary>
+    /// A10.5 (the user, 2026-10-22): the side whose broken units hold the Rout Phase up now, which the views name and hand the screen to: the ATTACKER
+    /// while one of its units still owes a rout ("ATTACKER first"), then the DEFENDER while one of its units does; null when neither. The DEFENDER's
+    /// units are read only when the ATTACKER owes none.
+    /// </summary>
+    public static string? RoutPhaseHolder(string attacker, string? defender, Func<bool> attackerOwes, Func<bool> defenderOwes)
+    {
+        ArgumentNullException.ThrowIfNull(attackerOwes);
+        ArgumentNullException.ThrowIfNull(defenderOwes);
+        return attackerOwes() ? attacker : defender is not null && defenderOwes() ? defender : null;
+    }
+
     /// <summary>A10.5: the DEFENDER's unit waits for the ATTACKER's.</summary>
     public static string AttackerFirstText(string firstId) => $"play.rout-order: the ATTACKER's {firstId} must rout first (A10.5)";
 

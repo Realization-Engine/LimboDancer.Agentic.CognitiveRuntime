@@ -74,16 +74,17 @@ public sealed partial class PlayRecordsWordsTests : IDisposable
     public void LatestGivesAFiresResultInTheViewsWords()
     {
         // The Russian Prep Fire of Turn 1 from [F3], level 1: a 2MC that pins the leader and breaks the squad, which is Replaced (A19.13). Each
-        // side reads the firers by the tags its own view gives them.
-        const string result = " in [F3], level 1, directed by 10-2 leader R3 fire at [F5], level 1: 2MC; 9-1 leader G1: pinned; 4-6-7 squad G1: now 4-4-7 squad, broken.";
-        Assert.Equal("Latest: Turn 1, Russian Prep Fire Phase: 6-2-8 squad R7, 6-2-8 squad R18, 6-2-8 squad R19" + result, Records("german", 66).Latest);
-        Assert.Equal("Latest: Turn 1, Russian Prep Fire Phase: 6-2-8 squad R13, 6-2-8 squad R14, 6-2-8 squad R15" + result, Records("russian", 66).Latest);
+        // side reads its own units by their tags and the other side's by counter and hex, the hex said once (the user's ruling of 2026-10-22).
+        Assert.Equal("Latest: Turn 1, Russian Prep Fire Phase: 6-2-8 squad, 6-2-8 squad, 6-2-8 squad, directed by 10-2 leader in [F3], level 1 fire at [F5], level 1: 2MC; "
+            + "9-1 leader G1: pinned; 4-6-7 squad G1: now 4-4-7 squad, broken.", Records("german", 66).Latest);
+        Assert.Equal("Latest: Turn 1, Russian Prep Fire Phase: 6-2-8 squad R13, 6-2-8 squad R14, 6-2-8 squad R15 in [F3], level 1, directed by 10-2 leader R3 fire at [F5], level 1: 2MC; "
+            + "9-1 leader in [F5], level 1: pinned; 4-6-7 squad in [F5], level 1: now 4-4-7 squad, broken.", Records("russian", 66).Latest);
 
         // The start of the next phase does not take the fire's place: the latest line is the last attempt that did something.
         var movement = Records("german", 77);
         Assert.Equal(77, movement.Lines[^1].Revision);
         Assert.True(movement.Lines[^1].Minor);
-        Assert.StartsWith("Latest: Turn 1, Russian Prep Fire Phase: 6-2-8 squad R8, 6-2-8 squad R20, 6-2-8 squad R21 in [G4], level 1 fire at [H5], level 1: NMC;", movement.Latest, StringComparison.Ordinal);
+        Assert.StartsWith("Latest: Turn 1, Russian Prep Fire Phase: 6-2-8 squad, 6-2-8 squad, 6-2-8 squad in [G4], level 1 fire at [H5], level 1: NMC;", movement.Latest, StringComparison.Ordinal);
 
         // A move is a latest line too, and a view that does not hold the mover by name reads a concealed unit.
         Assert.Equal("Latest: Turn 1, Russian Movement Phase: A concealed unit moves from [G3] to [H3].", Records("german", 80).Latest);

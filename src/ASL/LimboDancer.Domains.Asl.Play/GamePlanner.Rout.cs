@@ -127,6 +127,44 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// A10.5 (pass 35, task 35.17): the ATTACKER's first broken unit that still owes a rout, which holds the DEFENDER's routs up; null when none. The
+    /// gate's rout order and the page read the same answer; it is kept for a settled state (the memo's rule for the rout's answers), and read anew for
+    /// one whose surrenders are still being decided.
+    /// </summary>
+    public UnitInstance? AttackerRoutOwed(GameState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        UnitInstance? Read()
+        {
+            var attacker = state.PhasingSide;
+            return state.Units.FirstOrDefault(other => ScenarioA1RoutCalculator.AttackerMustRoutFirst(other.Side == attacker, state.RoutedThisPhase.Contains(other.Id),
+                Is(other, Conditions.Pinned), () => MustRout(state, other) is not null, () => CanRout(state, other),
+                () => state.Location(other.Id)?.Location is { } otherAt && RoutSurrender(state, other, otherAt) is not null));
+        }
+
+        var memo = MemoOf(state);
+        return memo.RoutSettled ? memo.AttackerRoutOwed(Read) : Read();
+    }
+
+    /// <summary>
+    /// The side whose broken units hold the RtPh up now (A10.5; the user, 2026-10-22): the ATTACKER while one of its units still owes a rout, then the
+    /// DEFENDER while one of its units on the Failure to Rout list does; null outside the RtPh or when neither. Rules orders the two.
+    /// </summary>
+    public string? RoutPhaseHolder(GameState state, IReadOnlyList<GameEvent> existing)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(existing);
+        if (state.Phase != "rtph" || state.PhasingSide is not { } attacker)
+        {
+            return null;
+        }
+
+        var defender = state.Sides.FirstOrDefault(side => side.Id != attacker)?.Id;
+        return ScenarioA1RoutCalculator.RoutPhaseHolder(attacker, defender, () => AttackerRoutOwed(state) is not null,
+            () => FailureToRout(state, existing).Any(item => item.Unit.Side == defender && RoutStillOwed(state, item.Unit)));
+    }
+
+    /// <summary>
     /// A10.5, A20.21 (pass 35, task 35.17): whether a broken unit still has a rout to make this RtPh; Rules decides, and each search is read only when
     /// the one before it leaves the question open.
     /// </summary>
@@ -471,9 +509,7 @@ public sealed partial class GamePlanner
         }
 
         // Pass 35 (task 35.17): nor does one that surrenders instead of routing (A20.21), which owes no rout.
-        if (unit.Side != attacker && state.Units.FirstOrDefault(other => ScenarioA1RoutCalculator.AttackerMustRoutFirst(other.Side == attacker, state.RoutedThisPhase.Contains(other.Id),
-            Is(other, Conditions.Pinned), () => MustRout(state, other) is not null, () => CanRout(state, other),
-            () => state.Location(other.Id)?.Location is { } otherAt && RoutSurrender(state, other, otherAt) is not null)) is { } first)
+        if (unit.Side != attacker && AttackerRoutOwed(state) is { } first)
         {
             return Refused(scope, label, expected, ScenarioA1RoutCalculator.AttackerFirstText(first.Id));
         }

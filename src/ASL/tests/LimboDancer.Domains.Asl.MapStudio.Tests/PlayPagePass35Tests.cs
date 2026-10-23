@@ -162,8 +162,8 @@ public sealed class PlayPagePass35Tests : IDisposable
     private static string Text(IRenderedComponent<PlayPage> page, string selector) =>
         string.Join(" | ", page.FindAll(selector).Select(item => System.Text.RegularExpressions.Regex.Replace(item.TextContent, "\\s+", " ").Trim()));
 
-    // Pass 31c's row: a tag through Deployment and Recombination (ruling R31c.1). The HS take the squad's tag with "a" and "b", the squad they
-    // Recombine into takes the stem again, and the other side, which held the squad by name, reads the same tags.
+    // Pass 31c's row: a tag through Deployment and Recombination (ruling R31c.1). The HS take the squad's tag with "a" and "b", and the squad they
+    // Recombine into takes the stem again. The other side reads them by counter and hex, with no tag (the user's ruling of 2026-10-22).
     [Fact]
     public async Task ATagIsKeptThroughDeploymentAndRecombinationInBothViews()
     {
@@ -174,15 +174,18 @@ public sealed class PlayPagePass35Tests : IDisposable
         page.Find("#deploy-leader").Change("gl");
         dice.Enqueue([2, 2]);
         Commit(page, "#propose-deploy");
-        foreach (var view in Sides)
-        {
-            page.ViewAs(view);
-            var units = Text(page, "#play-units tr");
-            Assert.Contains("2-4-7 half-squad G1a", units, StringComparison.Ordinal);
-            Assert.Contains("2-4-7 half-squad G1b", units, StringComparison.Ordinal);
-            Assert.DoesNotContain("4-6-7 squad G1", units, StringComparison.Ordinal);
-            Assert.Contains($"4-6-7 squad G1 in {Said(WideBoards.At(5))} becomes the HS 2-4-7 half-squad G1a and 2-4-7 half-squad G1b (A1.31)", Text(page, "#play-latest"), StringComparison.Ordinal);
-        }
+        page.ViewAs("german");
+        var units = Text(page, "#play-units tr");
+        Assert.Contains("2-4-7 half-squad G1a", units, StringComparison.Ordinal);
+        Assert.Contains("2-4-7 half-squad G1b", units, StringComparison.Ordinal);
+        Assert.DoesNotContain("4-6-7 squad G1", units, StringComparison.Ordinal);
+        Assert.Contains($"4-6-7 squad G1 in {Said(WideBoards.At(5))} becomes the HS 2-4-7 half-squad G1a and 2-4-7 half-squad G1b (A1.31)", Text(page, "#play-latest"), StringComparison.Ordinal);
+
+        page.ViewAs("russian");
+        units = Text(page, "#play-units tr");
+        Assert.Contains($"2-4-7 half-squad in {Said(WideBoards.At(5))}", units, StringComparison.Ordinal);
+        Assert.DoesNotContain("G1", units, StringComparison.Ordinal);
+        Assert.Contains($"4-6-7 squad becomes the HS 2-4-7 half-squad and 2-4-7 half-squad in {Said(WideBoards.At(5))} (A1.31)", Text(page, "#play-latest"), StringComparison.Ordinal);
 
         // The next German RPh: the two HS Recombine. The review names no identifier: the squad is not in the game yet, and is "their squad".
         for (var phase = 0; phase < 16; phase++)
@@ -203,10 +206,13 @@ public sealed class PlayPagePass35Tests : IDisposable
         foreach (var view in Sides)
         {
             page.ViewAs(view);
-            var units = Text(page, "#play-units tr");
-            Assert.Contains("4-6-7 squad G1", units, StringComparison.Ordinal);
+            units = Text(page, "#play-units tr");
             Assert.DoesNotContain("half-squad", units, StringComparison.Ordinal);
-            Assert.Contains("Recombine into 4-6-7 squad G1 (A1.32)", Text(page, "#play-latest"), StringComparison.Ordinal);
+
+            // The German view by tag, the Russian view by counter and hex.
+            var squad = view == "german" ? "4-6-7 squad G1" : $"4-6-7 squad in {Said(WideBoards.At(5))}";
+            Assert.Contains(squad, units, StringComparison.Ordinal);
+            Assert.Contains($"Recombine into {squad} (A1.32)", Text(page, "#play-latest"), StringComparison.Ordinal);
         }
     }
 
@@ -268,7 +274,8 @@ public sealed class PlayPagePass35Tests : IDisposable
         page.Find("#move-to").Change(WideBoards.At(2));
         Commit(page, "#propose-move");
 
-        var moved = $"Turn 1, Russian Movement Phase: 4-4-7 squad R1 moves from {Said(WideBoards.At(1))} to {Said(WideBoards.At(2))}";
+        // Read in the German view: the Russian squad by its hex, which "moves from" says once (the user's ruling of 2026-10-22).
+        var moved = $"Turn 1, Russian Movement Phase: 4-4-7 squad moves from {Said(WideBoards.At(1))} to {Said(WideBoards.At(2))}";
         page.ViewAs("german");
         Assert.Equal("Since you last looked (1)", Text(page, "#play-activity-since"));
         Assert.Equal(moved, Text(page, "#play-since li"));
@@ -310,9 +317,12 @@ public sealed class PlayPagePass35Tests : IDisposable
         var record = $"4-6-7 squad G1 in {Said(from)} fires at {Said(to)}: the LOS is blocked, so the attack has no effect and its firers have fired (A6.11).";
         Assert.Contains(record, Text(page, "#play-latest"), StringComparison.Ordinal);
         Assert.Contains("prep-fire", Text(page, "#play-units tr[data-unit='g1']"), StringComparison.Ordinal);
-        Assert.Contains("4-4-7 squad R1 unaffected", Text(page, ".fire-record"), StringComparison.Ordinal);
+        // The user's ruling of 2026-10-22: the German view names the Russian squad by its hex.
+        Assert.Contains($"4-4-7 squad in {Said(to)} unaffected", Text(page, ".fire-record"), StringComparison.Ordinal);
+        // The Russian view names the German firer by its hex, said once (the user's ruling of 2026-10-22).
         page.ViewAs("russian");
-        Assert.Contains(record, Text(page, "#play-latest"), StringComparison.Ordinal);
+        Assert.Contains($"4-6-7 squad in {Said(from)} fires at {Said(to)}: the LOS is blocked, so the attack has no effect and its firers have fired (A6.11).",
+            Text(page, "#play-latest"), StringComparison.Ordinal);
     }
 
     // Pass 31d's row (design D9; ruling R31d.6; A20.5): where the package would refuse the Ambush, the due list says why in the package's own

@@ -186,7 +186,10 @@ public sealed class PlayPageFireTests : IDisposable
             page.ViewAs(perspective);
             var record = page.Find("#play-fires .fire-record");
             Assert.Equal(("10", "NMC"), (record.QuerySelector(".fire-final-dr")!.TextContent, record.QuerySelector(".fire-result")!.TextContent));
-            Assert.Contains("4-4-7 squad R1: 4 FP × 2 (Point Blank Fire, A7.21) = 8", record.QuerySelector(".fire-fp[data-unit='r1']")!.TextContent, StringComparison.Ordinal);
+            // r1 by its tag in its own side's view and the adjudicator's, by its hex in the German view (the user's ruling of 2026-10-22).
+            var r1 = record.QuerySelector(".fire-fp[data-unit='r1']")!.TextContent;
+            Assert.Contains(": 4 FP × 2 (Point Blank Fire, A7.21) = 8", r1, StringComparison.Ordinal);
+            Assert.StartsWith(perspective == "german" ? "4-4-7 squad in [" : "4-4-7 squad R1", r1.Trim(), StringComparison.Ordinal);
             Assert.Contains("Total 16 FP: the 16 column", record.QuerySelector(".fire-column")!.TextContent, StringComparison.Ordinal);
             Assert.Contains("+ 3 (stone building TEM, A7.6)", record.QuerySelector(".fire-dr")!.TextContent, StringComparison.Ordinal);
             Assert.Equal("pinned", record.QuerySelector(".fire-effects tr[data-unit='g1'] .fire-effect")!.TextContent);

@@ -202,6 +202,12 @@ public sealed class BacklogPass31Tests : IDisposable
         Assert.Equal(2, lost.Length);
         Assert.All(lost, item => Assert.Equal(ConsequenceKind.Loss, item.Kind));
         Assert.Contains(lost, item => item.Text.StartsWith("r-squad-20 is eliminated for Failure to Rout", StringComparison.Ordinal));
+
+        // A10.5 (the user, 2026-10-22): the Russian ATTACKER owes the routs, so the phase is held by it, and the planner names its first such unit.
+        var events = store.Read(scope)!.Events;
+        var state = Planner().Replay(events).Current!;
+        Assert.Equal("russian", Planner().RoutPhaseHolder(state, events));
+        Assert.Equal("russian", Planner().AttackerRoutOwed(state)?.Side);
     }
 
     [Fact]

@@ -137,7 +137,9 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         Commit(page, "#propose-cc");
         Assert.Empty(dice);
         var record = page.Find("#play-close-combats .cc-record").TextContent;
-        Assert.Contains("at 1-1, Kill Number 5: DR 6 (colored), 6 = 12 - 1 (leadership, 8-1 leader G1, A11.141); 4-4-7 squad R1: 11 = Final DR 11: no effect", record, StringComparison.Ordinal);
+        // The Russian view names the German leader by his hex and its own squad by its tag (the user's ruling of 2026-10-22).
+        Assert.Contains($"at 1-1, Kill Number 5: DR 6 (colored), 6 = 12 - 1 (leadership, 8-1 leader in {DisplayText.Place(1, hexes.Two)}, A11.141); 4-4-7 squad R1: 11 = Final DR 11: no effect",
+            record, StringComparison.Ordinal);
         Assert.Contains("at 1-2, Kill Number 4", record, StringComparison.Ordinal);
 
         // The user, 2026-10-21: the activity strip shows the round as a table, an outcome line per attack and a row per defender.
@@ -185,7 +187,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         Commit(page, "#propose-cc");
         var record = page.Find("#play-close-combats .cc-record").TextContent;
         Assert.Contains("capture, A20.22", record, StringComparison.Ordinal);
-        Assert.Contains("2-3-7 half-squad R1 is captured and guarded by 4-6-7 squad G1 (A20.22)", record, StringComparison.Ordinal);
+        Assert.Contains($"2-3-7 half-squad in {DisplayText.Place(1, hexes.Two)} is captured and guarded by 4-6-7 squad G1 (A20.22)", record, StringComparison.Ordinal);
         Assert.False(live.History("village")!.HasErrors);
     }
 
@@ -237,7 +239,8 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         dice.Enqueue(6);
         dice.Enqueue(6);
         Commit(page, "#propose-cc");
-        Assert.Contains($"; 4-4-7 squad R1 withdraws to {DisplayText.Place(1, hexes.One)} (A11.2)", page.Find("#play-close-combats .cc-record").TextContent, StringComparison.Ordinal);
+        Assert.Contains($"; 4-4-7 squad in {DisplayText.Place(1, hexes.Two)} withdraws to {DisplayText.Place(1, hexes.One)} (A11.2)", page.Find("#play-close-combats .cc-record").TextContent,
+            StringComparison.Ordinal);
         Assert.Contains("12 - 2 (against a withdrawing unit, A11.2)", page.Find("#play-close-combats .cc-record").TextContent, StringComparison.Ordinal);
         Assert.False(live.History("village")!.HasErrors);
     }
