@@ -79,7 +79,7 @@
     {
         <p class="muted" id="cc-ambush-first">Infantry advanced into CC here, in woods or a building or with or against a concealed unit, or a hidden unit was placed here: roll for Ambush before any attack is declared (A11.4).</p>
     }
-    <CloseCombatAttackBuilder Sides="@Sides" Declaring="@(!AmbushDue)" Attackers="@Attackers" Defenders="@Defenders" Directors="@Directors" Director="@Director"
+    <CloseCombatAttackBuilder Sides="@(Step == WaitStep ? [] : Sides)" Declaring="@(!AmbushDue && Step != WaitStep)" Attackers="@Attackers" Defenders="@Defenders" Directors="@Directors" Director="@Director"
         Capture="@Capture" Guard="@Guard" Yield="@Yield" OnAttacker="@OnAttacker" OnDefender="@OnDefender" OnDirector="@OnDirector" OnCapture="@OnCapture"
         OnGuard="@OnGuard" OnYield="@OnYield" OnAdd="@OnAddAttack" />
     @if (!AmbushDue)
@@ -88,13 +88,40 @@
         {
             <CloseCombatInfiltrationChoices Units="@infiltrators" Infiltrations="@Infiltrations" OnInfiltration="@OnInfiltration" />
         }
+        @* The user, 2026-10-22 (A11.11): both sides declare before a simultaneous round is resolved, the first side's attacks read here by the second. *@
+        @if (OtherDeclared)
+        {
+            <p class="toolbar-note" id="cc-declared-by">The @DisplayText.Side(FirstSide) side has declared @(OtherAttacks.Count == 0 ? "no attack" : OtherAttacks.Count == 1 ? "this attack" : "these attacks"):</p>
+            <ul id="cc-declared">
+                @foreach (var attack in OtherAttacks)
+                {
+                    <li>@AttackText(attack)</li>
+                }
+            </ul>
+        }
         <ul id="cc-attacks">
             @foreach (var attack in Attacks)
             {
-                <li>@Say(string.Join(", ", attack.Attackers)) @(attack.Capture ? "attempt to capture" : "attack") @Say(string.Join(", ", attack.Defenders))@(attack.Director is { } director ? Say($", directed by {director}") : "")@(attack.Yield.Length > 0 ? Say($" (the defender gives up {string.Join(", then ", attack.Yield)})") : "") <button class="link" aria-label="@Say($"Remove: {string.Join(", ", attack.Attackers)} against {string.Join(", ", attack.Defenders)}")" @onclick="@(() => OnRemoveAttack.InvokeAsync(attack))" hidden="@(!MayRemove(attack))">remove</button></li>
+                <li>@AttackText(attack) <button class="link" aria-label="@Say($"Remove: {string.Join(", ", attack.Attackers)} against {string.Join(", ", attack.Defenders)}")" @onclick="@(() => OnRemoveAttack.InvokeAsync(attack))" hidden="@(!MayRemove(attack))">remove</button></li>
             }
         </ul>
-        <button id="propose-cc" @onclick="@(() => OnPropose.InvokeAsync())">Propose: resolve CC@(Attacks.Count == 0 ? " with no attacks" : "")</button>
+        @if (Step == DeclareStep)
+        {
+            <button id="declare-cc" class="primary" @onclick="@(() => OnDeclare.InvokeAsync())">Declare @(Attacks.Count == 0 ? "no attack" : Attacks.Count == 1 ? "this attack" : "these attacks") and hand over</button>
+            <p class="toolbar-note" id="cc-declare-note">CC is simultaneous: the other side declares its attacks next, and then every attack is rolled together (A11.11).</p>
+        }
+        else if (Step == WaitStep)
+        {
+            <p class="toolbar-note" id="cc-declares-first">The @DisplayText.Side(FirstSide) side declares its CC attacks here first; then the screen comes to you to declare yours, and every attack is rolled together (A11.11).</p>
+        }
+        else
+        {
+            <button id="propose-cc" @onclick="@(() => OnPropose.InvokeAsync())">Propose: resolve CC@(Attacks.Count + OtherAttacks.Count == 0 ? " with no attacks" : "")</button>
+        }
+        @if (CanClear)
+        {
+            <button type="button" class="link" id="cc-clear-all" title="Drops every declaration of this round, both sides', kept or not yet proposed; nothing is recorded until the round is resolved." @onclick="@(() => OnClearAll.InvokeAsync())">Clear all declarations</button>
+        }
     }
 }
 </ActionSection>
@@ -245,4 +272,43 @@
 
     [Parameter]
     public EventCallback OnPropose { get; set; }
+
+    /// <summary>The view resolves the round (one view declares every side's attacks, or the other side has declared).</summary>
+    public const string ResolveStep = "resolve";
+
+    /// <summary>The view declares first in a simultaneous round, and hands the screen over (A11.11).</summary>
+    public const string DeclareStep = "declare";
+
+    /// <summary>The view declares second, and waits for the first side's declarations (A11.11).</summary>
+    public const string WaitStep = "wait";
+
+    /// <summary>What the view does with its declarations (the user, 2026-10-22).</summary>
+    [Parameter]
+    public string Step { get; set; } = ResolveStep;
+
+    /// <summary>The side that declares first, named while the view waits for it or reads its declarations.</summary>
+    [Parameter]
+    public string? FirstSide { get; set; }
+
+    /// <summary>The first side's declared attacks, which the second side's view reads before it declares its own; empty when none.</summary>
+    [Parameter]
+    public IReadOnlyList<DeclaredAttack> OtherAttacks { get; set; } = [];
+
+    /// <summary>Whether the first side has declared, so its attacks (perhaps none) are read here.</summary>
+    [Parameter]
+    public bool OtherDeclared { get; set; }
+
+    [Parameter]
+    public EventCallback OnDeclare { get; set; }
+
+    /// <summary>Whether there is anything to clear: a declaration kept for this round, or this view's own declared attacks.</summary>
+    [Parameter]
+    public bool CanClear { get; set; }
+
+    /// <summary>The escape hatch (the user, 2026-10-22): drops every declaration of the round, kept or drafted, so it starts over.</summary>
+    [Parameter]
+    public EventCallback OnClearAll { get; set; }
+
+    private string AttackText(DeclaredAttack attack) => $"{Say(string.Join(", ", attack.Attackers))} {(attack.Capture ? "attempt to capture" : "attack")} {Say(string.Join(", ", attack.Defenders))}"
+        + (attack.Director is { } director ? Say($", directed by {director}") : "") + (attack.Yield.Length > 0 ? Say($" (the defender gives up {string.Join(", then ", attack.Yield)})") : "");
 }

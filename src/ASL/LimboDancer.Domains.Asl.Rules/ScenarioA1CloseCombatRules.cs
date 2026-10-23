@@ -227,6 +227,20 @@ public static class ScenarioA1CloseCombatRules
         return ambusher is { } side ? rounds == 0 || ambusherAgain ? [side] : [.. sidesPhasingFirst.Where(item => item != side)] : sidesPhasingFirst;
     }
 
+    /// <summary>
+    /// A11.11 (the user, 2026-10-22): "CC is usually simultaneous, so both sides attack the other even if one or both is thereby eliminated". A round
+    /// that names the sides that declared (<paramref name="declared"/>) is refused while a side that may declare now has not, ATTACKER first (the
+    /// sequence of play, 8.24); a side may declare no attack. Null when every side has declared, or when the caller names none (the declarations
+    /// made in one view, as an MCP caller or the adjudicator makes them).
+    /// </summary>
+    public static string? UndeclaredSideBar(IReadOnlyList<string> mayDeclare, IReadOnlyCollection<string>? declared, string location)
+    {
+        ArgumentNullException.ThrowIfNull(mayDeclare);
+        return declared is not null && mayDeclare.FirstOrDefault(side => !declared.Contains(side)) is { } waiting
+            ? $"play.cc-declare: the {waiting} side has not declared its CC attacks in {location}; CC is simultaneous, so both sides declare before the round is resolved, the ATTACKER first (A11.11)"
+            : null;
+    }
+
     /// <summary>A11.4 (ruling R11.16): Ambush drs may be due in the CCPh where no CC has begun and no vehicle is present; the package then decides.</summary>
     public static bool AmbushDueCandidate(string? phase, bool ccBegun, bool vehicleThere) => phase == "ccph" && !ccBegun && !vehicleThere;
 

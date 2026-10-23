@@ -460,6 +460,15 @@ public sealed partial class GamePlanner
             }
         }
 
+        // A11.11 (the user, 2026-10-22): a round that names the sides that declared is refused while a side that may declare has not; the prisoners'
+        // round (A20.55) and an OVR's CC are declared by one side.
+        var prisonersRound = Text(arguments, "round", out var roundName) && roundName == CloseCombatFacts.PrisonersRound;
+        if (!overrun && !prisonersRound && ScenarioA1CloseCombatRules.UndeclaredSideBar(DeclaringSides(state, location, roundName == CloseCombatResolved.AmbusherRound),
+            arguments.TryGetProperty("declaredSides", out _) ? (IReadOnlyCollection<string>)[.. Strings(arguments, "declaredSides")] : null, location.ToString()) is { } declareBar)
+        {
+            return Refused(scope, label, expected, declareBar);
+        }
+
         // A11.14: the SMC stacking is declared once, before either side's attacks; the ambushed side's round keeps the first round's.
         var stacking = FirstRoundStacking(existing, state, location) ?? Map(arguments, "stacking");
 

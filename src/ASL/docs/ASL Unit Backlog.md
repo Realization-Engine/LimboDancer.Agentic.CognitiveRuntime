@@ -1255,3 +1255,11 @@ The [ASL Map Studio Play Streamlining Analysis](<ASL Map Studio Play Streamlinin
 | Assault Movement and Double Time declared per stack in the Movement Plan | S8's build (2026-10-21) | A4.61, A4.5 | The route panel's own declaration (the row above) | The plan's routes are made without them; a stack that needs them is moved by the Movement form |
 | ADJACENT read by the rules for the phase pass's exception, not as a range of one hex or less | S8's build (2026-10-21; ruling Q15a) | A.2 (ADJACENT), B9 | The planner's ADJACENT fact for two Locations | The exception may ask where the rules' ADJACENT would not (across a cliff), never the other way |
 | A better support weapon workflow: the action chosen from the weapon or unit on the map (a weapon's counter offering transfer, drop, recover, or dismantle), the receiving unit offered only from the weapon's Location, a SW dropped or recovered as a step of a plotted route, and the panel's long notes replaced by the gate's reasons | The user, 2026-10-21 ("we should make a backlog note to enhance the SW workflow"), with S7 | A4.43, A4.431, A4.44, A9.8 | S7 (the panel shows only the actions the phase allows) | One panel: choose the weapon, then the unit, then the action |
+
+## 69. Added by the CC declarations plan
+
+The [ASL Map Studio CC Declarations Plan](<ASL Map Studio CC Declarations Plan.md>), 2026-10-22: what the two-step declaration of a simultaneous CC round leaves out.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| `declaredSides` required of every CC proposal, so no caller can resolve a simultaneous round with one side's attacks | The plan, section 5 | A11.11 | The Play tests that resolve a round in one call, updated to name both sides | The page names the declared sides and the gate checks them; a caller that names none declares every side in one place, as the adjudicator's view does |
