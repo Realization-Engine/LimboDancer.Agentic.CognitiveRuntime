@@ -24,6 +24,8 @@ public sealed class CloseCombatStepsTests : IDisposable
     private static readonly UnitCatalog Catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary)!.Catalog!;
     private static readonly string[] Bd01 = ["bd01"];
     private static readonly string[] G1 = ["g1"];
+    private static readonly string[] GermanDeclared = ["german"];
+    private static readonly string[] BothDeclared = ["german", "russian"];
     private static readonly string[] G2 = ["g2"];
     private static readonly string[] G3 = ["g3"];
     private static readonly string[] R4 = ["r4"];
@@ -181,7 +183,7 @@ public sealed class CloseCombatStepsTests : IDisposable
         {
             location = "bd01:B1:0",
             attacks = new[] { Attack(G1, ["r1"]) },
-            declaredSides = new[] { "german" },
+            declaredSides = GermanDeclared,
         });
         Assert.NotEqual(PlayOutcome.Committed, oneSided.Outcome);
         Assert.Contains(oneSided.Reasons, reason => reason.StartsWith("play.cc-declare: the russian side has not declared", StringComparison.Ordinal));
@@ -192,7 +194,7 @@ public sealed class CloseCombatStepsTests : IDisposable
         {
             location = "bd01:B1:0",
             attacks = new[] { Attack(G1, ["r1"]), Attack(["r1"], G1) },
-            declaredSides = new[] { "german", "russian" },
+            declaredSides = BothDeclared,
         }));
         var record = Since(before).Select(item => item.Payload).OfType<CloseCombatResolved>().Single();
         var resolution = record.Resolution.Deserialize<CloseCombatResolution>(LiveFire.Json)!;
