@@ -24,6 +24,8 @@ public sealed class CloseCombatStepsTests : IDisposable
     private static readonly UnitCatalog Catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary)!.Catalog!;
     private static readonly string[] Bd01 = ["bd01"];
     private static readonly string[] G1 = ["g1"];
+    private static readonly string[] GermanDeclared = ["german"];
+    private static readonly string[] BothDeclared = ["german", "russian"];
     private static readonly string[] G2 = ["g2"];
     private static readonly string[] G3 = ["g3"];
     private static readonly string[] R4 = ["r4"];
@@ -176,12 +178,23 @@ public sealed class CloseCombatStepsTests : IDisposable
         await Advance();
         Assert.Equal("ccph", Current.Phase);
 
+        // A11.11 (the user, 2026-10-22): CC is simultaneous, so a round that says only the German side has declared is refused before any roll.
+        var oneSided = await Do(GameActions.CloseCombat, NoRoll(), new
+        {
+            location = "bd01:B1:0",
+            attacks = new[] { Attack(G1, ["r1"]) },
+            declaredSides = GermanDeclared,
+        });
+        Assert.NotEqual(PlayOutcome.Committed, oneSided.Outcome);
+        Assert.Contains(oneSided.Reasons, reason => reason.StartsWith("play.cc-declare: the russian side has not declared", StringComparison.Ordinal));
+
         // A11.11: 4 FP against 4 at 1-1, Kill Number 5; both sides' DR are 12: no effect. The record shows the odds and DR.
         var before = Revision;
         Committed(await Do(GameActions.CloseCombat, Once(6, 6, 6, 6), new
         {
             location = "bd01:B1:0",
             attacks = new[] { Attack(G1, ["r1"]), Attack(["r1"], G1) },
+            declaredSides = BothDeclared,
         }));
         var record = Since(before).Select(item => item.Payload).OfType<CloseCombatResolved>().Single();
         var resolution = record.Resolution.Deserialize<CloseCombatResolution>(LiveFire.Json)!;

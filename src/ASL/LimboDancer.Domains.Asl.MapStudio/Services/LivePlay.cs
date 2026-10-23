@@ -47,6 +47,12 @@ public sealed class LivePlay
         get;
     }
 
+    /// <summary>The first side's CC declarations of a simultaneous round, one per game, until the other side declares (A11.11); never in a game.</summary>
+    public CloseCombatDeclarations Declarations
+    {
+        get;
+    } = new();
+
     public CampaignPlayableFootprints Footprints
     {
         get;

@@ -386,4 +386,18 @@ public sealed class ScenarioA1CloseCombatRulesTests
         Assert.Equal("play.cc-order: CC is resolved one Location at a time: finish the CC in bd01:X4:0 first (A11.12)",
             ScenarioA1CloseCombatRules.OpenElsewhereBar("bd01:X4:0"));
     }
+
+    [Fact]
+    public void ASimultaneousRoundWaitsForEverySideThatMayDeclare()
+    {
+        // A11.11 (the user, 2026-10-22): both sides declare, the ATTACKER first; a side may declare no attack; a caller that names no declared sides
+        // declares them all in one place.
+        string[] both = ["german", "russian"];
+        Assert.Equal("play.cc-declare: the russian side has not declared its CC attacks in bd01:X3:0; CC is simultaneous, so both sides declare before the round is resolved, the ATTACKER first (A11.11)",
+            ScenarioA1CloseCombatRules.UndeclaredSideBar(both, ["german"], "bd01:X3:0"));
+        Assert.StartsWith("play.cc-declare: the german side", ScenarioA1CloseCombatRules.UndeclaredSideBar(both, [], "bd01:X3:0"), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1CloseCombatRules.UndeclaredSideBar(both, ["russian", "german"], "bd01:X3:0"));
+        Assert.Null(ScenarioA1CloseCombatRules.UndeclaredSideBar(both, null, "bd01:X3:0"));
+        Assert.Null(ScenarioA1CloseCombatRules.UndeclaredSideBar(["german"], ["german"], "bd01:X3:0"));
+    }
 }

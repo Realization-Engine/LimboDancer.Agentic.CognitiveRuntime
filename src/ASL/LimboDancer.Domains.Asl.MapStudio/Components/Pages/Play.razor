@@ -804,6 +804,8 @@ else if (state is not null)
                 {
                     <CloseCombatPanel Due="@Live.Planner.CloseCombatDue(state)" Locations="@([.. CloseCombatLocations])" Location="@ccLocation" Entry="@CloseCombatEntry" Round="@ccRound"
                         AmbushDue="@AmbushDue" HandToHandAllowed="@state.SpecialRules.Contains(GamePlanner.HandToHandRule)" HandToHand="@ccHandToHand" AmbushWithdrawals="@AmbushWithdrawals"
+                        Step="@CcStep" FirstSide="@(CloseCombatSides.FirstOrDefault())" OtherAttacks="@(CcOtherDeclared?.Attacks ?? [])" OtherDeclared="@(CcOtherDeclared is not null)" OnDeclare="@DeclareCloseCombat"
+                        CanClear="@(CcKept is not null || ccAttacks.Count > 0)" OnClearAll="@ClearAllCloseCombat"
                         Smcs="@StackingChoices" Stacking="@ccStacking" Withdrawers="@Withdrawers" Withdrawals="@ccWithdrawals" Sides="@DeclaringSides" Attackers="@ccAttackers"
                         Defenders="@ccDefenders" Directors="@([.. CloseCombatDirectors.Select(unit => unit.Id)])" Director="@ccDirector" Capture="@ccCapture" Guard="@ccGuard" Yield="@ccYield"
                         Infiltrators="@Infiltrators" Infiltrations="@ccInfiltrations" Attacks="@ccAttacks" OnLocation="@ChooseCloseCombatLocation" OnRound="@ChooseRound"
@@ -4422,13 +4424,85 @@ else if (state is not null)
         gameId, attemptId = Attempt("amb"), expectedRevision = (long)history!.Events.Count, location = ccLocation,
     }));
 
-    private Task ProposeCloseCombat() => Propose(GameActions.CloseCombat, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    // ---- A11.11 (the user, 2026-10-22): a simultaneous round is declared by both sides, the ATTACKER first, before it is resolved. A side's view
+    // declares only its own side's attacks, so the first side's declaration is kept (LivePlay.Declarations) while the screen is handed over, and
+    // the second side's view resolves every attack together. The adjudicator declares for both at once, as before.
+
+    /// <summary>The first side's declaration kept for this game at its revision, in whatever Location.</summary>
+    private CloseCombatSideDeclaration? CcKeptForGame => history is null || gameId.Length == 0 ? null : Live.Declarations.Of(gameId, history.Events.Count);
+
+    /// <summary>The declaration kept for the chosen Location.</summary>
+    private CloseCombatSideDeclaration? CcKept => CcKeptForGame is { } kept && kept.Location == ccLocation ? kept : null;
+
+    /// <summary>Whether this round is declared in two steps: two sides declare (a simultaneous round), in a side's view.</summary>
+    private bool CcTwoStep => !Viewer.IsAdjudicator && ccRound != CloseCombatResolved.PrisonersRound && CloseCombatSides.Count == 2;
+
+    /// <summary>What the view does with its declarations: resolve the round, declare and hand over, or wait for the first side.</summary>
+    private string CcStep => !CcTwoStep || CcKept is { } kept && kept.Side != viewAs ? CloseCombatPanel.ResolveStep
+        : viewAs == CloseCombatSides[0] ? CloseCombatPanel.DeclareStep
+        : CloseCombatPanel.WaitStep;
+
+    /// <summary>The first side's declared attacks, which the second side's view reads before it declares its own; null when there are none to read.</summary>
+    private CloseCombatSideDeclaration? CcOtherDeclared => CcKept is { } kept && kept.Side != viewAs ? kept : null;
+
+    /// <summary>The first side declares: its declarations are kept for the revision, and the screen goes to the other side.</summary>
+    private void DeclareCloseCombat()
+    {
+        if (history is null || CloseCombatSides is not [var first, var second] || viewAs != first)
+        {
+            return;
+        }
+
+        Live.Declarations.Declare(gameId, new CloseCombatSideDeclaration(viewAs, ccLocation, history.Events.Count, ccRound, [.. ccAttacks],
+            new Dictionary<string, string>(ccStacking, StringComparer.Ordinal), new Dictionary<string, string>(ccWithdrawals, StringComparer.Ordinal),
+            new Dictionary<string, string>(ccInfiltrations, StringComparer.Ordinal), ccHandToHand));
+        status = $"The {DisplayText.Side(first)} side has declared its CC attacks in {PlaceOf(ccLocation)}; the {DisplayText.Side(second)} side declares its own next (A11.11).";
+        ChangeView(second);
+    }
+
+    /// <summary>The escape hatch (the user, 2026-10-22): every declaration of the round, kept or drafted, is dropped, and the round starts over.</summary>
+    private void ClearAllCloseCombat()
+    {
+        if (CcKeptForGame is not null)
+        {
+            Live.Declarations.Drop(gameId);
+        }
+
+        var at = ccLocation;
+        ClearCloseCombat();
+        ccLocation = at;
+        status = $"Every CC declaration in {PlaceOf(at)} is cleared; the round starts over, the ATTACKER declaring first (A11.11).";
+    }
+
+    private Task ProposeCloseCombat()
+    {
+        // The second side resolves the round with the first side's declarations kept for it; each Location's draft holds the view's own.
+        var kept = CcOtherDeclared;
+        var attacks = kept is null ? ccAttacks : [.. kept.Attacks, .. ccAttacks];
+        var stacking = new Dictionary<string, string>(ccStacking, StringComparer.Ordinal);
+        var withdrawals = new Dictionary<string, string>(ccWithdrawals, StringComparer.Ordinal);
+        var infiltrations = new Dictionary<string, string>(ccInfiltrations, StringComparer.Ordinal);
+        foreach (var (from, into) in new[] { (kept?.Stacking, stacking), (kept?.Withdrawals, withdrawals), (kept?.Infiltrations, infiltrations) })
+        {
+            foreach (var (unit, value) in from ?? new Dictionary<string, string>())
+            {
+                into[unit] = value;
+            }
+        }
+
+        string[] declared = kept is null ? [.. CloseCombatSides] : [kept.Side, viewAs];
+        return ProposeCloseCombat(attacks, stacking, withdrawals, infiltrations, kept?.HandToHand ?? ccHandToHand, kept?.Round ?? ccRound, declared);
+    }
+
+    private Task ProposeCloseCombat(IReadOnlyList<CloseCombatPanel.DeclaredAttack> declaredAttacks, Dictionary<string, string> stacking, Dictionary<string, string> withdrawals,
+        Dictionary<string, string> infiltrations, bool handToHand, string round, string[] declaredSides) => Propose(GameActions.CloseCombat, JsonSerializer.SerializeToElement(new Dictionary<string, object>
     {
         ["gameId"] = gameId,
         ["attemptId"] = Attempt("cc"),
         ["expectedRevision"] = (long)history!.Events.Count,
         ["location"] = ccLocation,
-        ["attacks"] = ccAttacks.Select(attack =>
+        ["declaredSides"] = declaredSides,
+        ["attacks"] = declaredAttacks.Select(attack =>
         {
             var declared = new Dictionary<string, object> { ["attackers"] = attack.Attackers, ["defenders"] = attack.Defenders };
             if (attack.Director is { } director)
@@ -4453,11 +4527,11 @@ else if (state is not null)
 
             return declared;
         }).ToArray(),
-        ["stacking"] = ccStacking,
-        ["withdrawals"] = ccWithdrawals,
-        ["infiltrations"] = ccInfiltrations,
-        ["handToHand"] = ccHandToHand,
-        ["round"] = ccRound,
+        ["stacking"] = stacking,
+        ["withdrawals"] = withdrawals,
+        ["infiltrations"] = infiltrations,
+        ["handToHand"] = handToHand,
+        ["round"] = round,
     }));
 
     private Task ProposeTakePrisoner(string unit, string captor) => Propose(GameActions.TakePrisoner, JsonSerializer.SerializeToElement(new
@@ -4841,6 +4915,15 @@ else if (state is not null)
             }
 
             (highlight, openingHex) = (openingHex, null);
+
+            // A11.11 (the user, 2026-10-22): the side that declares second opens on the Location the first side declared in.
+            if (CcKeptForGame is { } declared && declared.Side != viewAs)
+            {
+                ccLocation = declared.Location;
+                ClearCloseCombat();
+                ccRound = declared.Round;
+            }
+
             ShowActions();
         }
     }
@@ -8358,6 +8441,8 @@ else if (state is not null)
     private string? HoldSide => state is not { } shown ? null
         : shown.Choice is not null || shown.PendingSurrenders.Count > 0 || shown is { Phase: "mph", Movement.WindowOpen: true } ? Awaiting(shown).Side
         : shown.Phase == "rtph" ? RoutHolderNow
+        // A11.11: once the first side has declared its CC attacks, the other side declares before the round is resolved.
+        : shown.Phase == "ccph" && CcKeptForGame is { } declared ? shown.Sides.FirstOrDefault(side => side.Id != declared.Side)?.Id
         : null;
 
     // The side holding the RtPh up, asked of the planner once a state (the Memory and Performance Guidelines): it runs the rout's searches.
@@ -8393,6 +8478,9 @@ else if (state is not null)
         { Phase: "rtph" } when AwaitingView == state.PhasingSide =>
             $"The {DisplayText.Side(state.PhasingSide)} side routs first: its broken units that must rout go before yours (A10.5). Your routs come once it has made them.",
         { Phase: "rtph" } => $"The {DisplayText.Side(AwaitingView)} side still has broken units that must rout (A10.5); the Rout Phase ends after them.",
+        { Phase: "ccph" } when CcKeptForGame is { } declared =>
+            $"The {DisplayText.Side(declared.Side)} side has declared its CC attacks in {PlaceOf(declared.Location)}; the {DisplayText.Side(AwaitingView)} side declares its own, "
+                + "and then every attack is rolled together, since CC is simultaneous (A11.11).",
         _ => AwaitingNote,
     };
 

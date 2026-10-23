@@ -1971,9 +1971,25 @@
         },
         {
           "kind": "button",
-          "label": "Propose: resolve CC@(Attacks.Count == 0 ? \u0022 with no attacks\u0022 : \u0022\u0022)",
+          "label": "Declare @(Attacks.Count == 0 ? \u0022no attack\u0022 : Attacks.Count == 1 ? \u0022this attac...",
+          "dynamic": true,
+          "id": "declare-cc",
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: resolve CC@(Attacks.Count \u002B OtherAttacks.Count == 0 ? \u0022 with no atta...",
           "dynamic": true,
           "id": "propose-cc",
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Clear all declarations",
+          "dynamic": false,
+          "id": "cc-clear-all",
           "status": "needed",
           "strip": "CloseCombatPanel"
         }
