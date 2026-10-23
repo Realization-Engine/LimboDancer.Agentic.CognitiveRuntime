@@ -1263,3 +1263,15 @@ The [ASL Map Studio CC Declarations Plan](<ASL Map Studio CC Declarations Plan.m
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | `declaredSides` required of every CC proposal, so no caller can resolve a simultaneous round with one side's attacks | The plan, section 5 | A11.11 | The Play tests that resolve a round in one call, updated to name both sides | The page names the declared sides and the gate checks them; a caller that names none declares every side in one place, as the adjudicator's view does |
+
+## 70. Added by the Berserk Charge Plan
+
+The [ASL Map Studio Berserk Charge Plan](<Memory-And-Performance/ASL Map Studio Berserk Charge Plan.md>), 2026-10-23: what the replay of `dl-tractor-works-02` found beside the berserk charge, and what the fix leaves out.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| A hand-over to another view late in a game costs 1.6 to 2.3 s of server work and about 450 MB of allocation (revision 1316 of `dl-tractor-works-02`): the victory check (`ScenarioA1VictoryCalculator.Control` and `Inside`, about 1.1 s) and `ScenarioVictory`'s reads of each unit's position through `GameState.Location`, `Find`, and `Aboard`, which scan every object; and the unit names catching up for the new viewer (`UnitNames.Advance`, `GameView.Of`). Likely part of the Turn 6 pauses the user saw in hot-seat play | The plan, ruling C1 (the index is used by the charge search only) | (none; Play and the page) | A measurement of the hand-over, then the victory facts and `GameView.Of` reading positions from the state's index (the plan's T2) | Each hand-over pays it; the victory check also runs on every render that reads `VictoryNow` |
+| The Turn 6 pauses of `dl-tractor-works-02` were not reproduced: every Turn 6 step was normal in all three views, a fire proposal took 0.38 s and its confirm 0.39 s, and the audit log shows the session's checks under 1.6 s | The plan, section 8 | (none) | The user's own Studio (Debug under Visual Studio, a long session), or a recording of the moment it happens; the hand-over item above | Nothing |
+| The index of a state's objects is used by the charge search and `BypassStep` only; every other `state.At` and `state.Find` in the planner and the page still scans every object | The plan, ruling C1 | (none) | A measurement showing a use worth it | As before |
+| Rout Phase steps still cost 0.3 to 1 s of work in this game (median 309 ms against 151 ms for other steps; Turn 1, revisions 422 to 444) | The plan, section 8; backlog 65 | A10 | Backlog 65's last item | As before |
+| The "Units moving" list of the move form names a unit as "4-4-7 squad R10 ([X4]), berserk", not "[X4]: ..." as the hex UI rule asks (seen in the Studio check of task 1, on main as well) | The plan's scope (no page change, ruling C3) | (none) | (none) | As before |

@@ -142,7 +142,23 @@ All three proposals accepted by the user, 2026-10-23.
 
 ## 9. Results
 
-(Task 3.)
+Measured 2026-10-23 on the branch (c69dd542) against `main` (5c178fc8), two Studios built the same way, each run with its tab in front and nothing else building. A first "after" run was discarded: a polling timer, throttled while the app was not in front, rounded its intervals to whole seconds from revision 859 on. Both runs below log with the page's observer, as `steplog.js` does.
+
+| Figure | Baseline (main) | After T1 | After T2 (the branch) | Verdict |
+|---|---|---|---|---|
+| Work of the step to 1316 | 12.8 s (whole run); 10.9 to 12.0 s (single steps, section 1) | 2.1 s (single step, under the gate's load) | 0.37 s (whole run); 0.56 and 0.68 s (single steps) | Met (under 1 s) |
+| `ChargeSteps` searches for the 1316 state | 5 in the step, 3 per later render | | 1 in the step (from `MustCharge`), 0 in the hand-over render | Met |
+| One charge search | 2.2 s | 2.2 s | 0.29 s | Met (more than halved) |
+| Allocation in the 1316 step | about 1.4 GB (counter estimate) | | about 102 MB (allocation ticks, `allocread.cs`) | Met (under 150 MB) |
+| A render after a hand-over to the Russian view at 1316 | about 7 s (trace, section 1); 6.1 s (stopwatch, under load) | 1.5 s | 1.6 to 2.3 s | **Not met (target 0.3 s).** No charge search is left in it; the rest is the victory check and the unit names catching up for the new viewer (backlog 70) |
+| Ordinary steps, whole game (430) | median 196 ms, p90 274 | | median 151 ms, p90 222 | No regression |
+| Rout Phase steps, whole game (63) | median 379 ms, p90 878 | | median 309 ms, p90 675 | No regression |
+
+Both runs hold one or two lone stalls at steps the other run took normally: main at 1305 (3.9 s) and 1362 (1.5 s), the branch at 1393 (3.8 s, a German move's window closing, with no berserk unit or Bypass in it). They are the store's intermittent append stall (backlog 65), not this change.
+
+Behaviour (section 4): at 1316, as the adjudicator and as the Russian side, the charge line reads the same in both Studios ("4-4-7 squad R10 in [X4] is berserk and charges [X3] ... next steps [W4] or [X3]"); the charge proposed by hand (R10 to [X3]) was accepted in both, with the event the user's game recorded at 1317. `demo-min-berserk` has no berserk unit despite its name; both Studios show no charge line in it. No recorded game holds an ordinary Bypass move (ruling R2).
+
+Tests run, by method only: 15 for T1 (3 new and the 12 named in task 1), then 19 for T2 (the index test, the 3 Bypass methods, and the 15). All passed.
 
 ## 10. Order and time
 
