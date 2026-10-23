@@ -307,7 +307,7 @@ public sealed partial class GamePlanner
     {
         // Pass 32.b: the target hex, its hexsides, and the units in it are read here, and Rules decides.
         var targetRead = ReadLocation(state, to);
-        var there = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
+        var there = ObjectsAt(state, to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
         var facts = new BypassStepFacts(
             [.. bypass.Select(bypassed => HexsideAt(state, to, bypassed) is { } read
                 ? new BypassedHexsideFacts((int)bypassed, bypassed.ToString().ToLowerInvariant(), true, read.Terrain?.Name, read.HexsideTerrain?.Name, read.Terrain?.IsRoad == true)

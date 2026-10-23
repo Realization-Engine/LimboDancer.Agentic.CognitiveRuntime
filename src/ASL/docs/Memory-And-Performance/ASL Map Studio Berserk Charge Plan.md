@@ -39,6 +39,8 @@ The figures after T1 and T2 are estimates from the trace: `At`, `Location`, and 
 | D3 | **The proof that no decision changed is the gate's replay proofs** with `CODE_MOVE=1` (a pass config like `passplaystep.conf`): the replay digest and the sweep must equal the baseline in every line |
 | D4 | **Each task: implement, build, the Studio test (section 4), rework until right, then only the named test methods (section 5).** The whole projects run once, at the gate. No page test that a new unit test already covers |
 | D5 | **Both stores live in the planner's per-state memo** (`PlayStepMemo`, `GamePlanner.PlayStepMemo.cs`), as the guidelines and ruling P4 require: never in `GameState`, never process-wide |
+| R1 | **Made in task 1 under the user's word to go on without intervention, open to a veto:** the tests see "searched once" through an internal count of the planner's charge searches (`GamePlanner.ChargeSearches`), with `InternalsVisibleTo` for the Play test project only; no timing in a test, and nothing public added |
+| R2 | **Made in task 2, the same way:** no recorded game holds an ordinary Bypass move, so `BypassStep`'s use of the index outside a charge is proved by the three Bypass test methods and the gate's sweep, not in the Studio |
 | D6 | **Fixtures:** copies only. `dl-tractor-works-02` is followed (the follower is a new game); the user's file is never written. `demo-min-berserk` and `p35-berserk-deploy` for the behaviour check |
 
 ## 4. The Studio test
