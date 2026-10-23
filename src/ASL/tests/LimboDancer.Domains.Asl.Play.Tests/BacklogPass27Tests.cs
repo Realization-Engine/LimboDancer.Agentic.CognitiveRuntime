@@ -342,7 +342,9 @@ public sealed class BacklogPass27Tests : IDisposable
         var planner = Planner();
         var state = planner.Replay(store.Read(Scope)!.Events).Current!;
         var first = Assert.Single(planner.Charges(state));
-        var copy = state with { };
+        var copy = state with
+        {
+        };
         var second = Assert.Single(planner.Charges(copy));
         Assert.Equal(2, planner.ChargeSearches);
         Assert.Equal(first.Target, second.Target);
@@ -356,7 +358,9 @@ public sealed class BacklogPass27Tests : IDisposable
         await Setup(Squad("g1", L("D5"), "german", Conditions.Berserk), Squad("r1", L("D3"), "russian"));
         var planner = Planner();
         var state = planner.Replay(store.Read(Scope)!.Events).Current!;
-        var copy = state.Unit("g1")! with { };
+        var copy = state.Unit("g1")! with
+        {
+        };
         planner.ChargeLanes(state, copy);
         planner.ChargeLanes(state, copy);
         Assert.Equal(2, planner.ChargeSearches);
