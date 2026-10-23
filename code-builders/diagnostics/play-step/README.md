@@ -14,6 +14,11 @@ as the adjudicator, the page visible, a step a second paced on the server.
 | `trace_nested.py` | Time on stacks that hold an outer frame, and of it, on stacks that also hold inner frames |
 | `stalls.py` | The stretches where the runtime's allocation counter reads 0 while collections run, and the jump that ends each (the analysis, 2.5) |
 | `window.py` | The counters' seconds around a wall-clock window |
+| `steps_by_phase.py` | A record's steps (attempts) counted by turn and phase, with their first revisions: where to cut a follower (the Berserk Charge Plan, 2026-10-23) |
+| `audit_spans.py` | The server's spans of a live session from `audit.jsonl`: check to gate verdict, and executor start to end, by turn, with the slowest |
+| `counters_series.py` | A `dotnet-counters` CSV as a table of working set, committed and generation sizes, allocation, CPU, and collections, every N seconds and in a window |
+| `trace_inclusive.py` | A speedscope trace's frames ranked by inclusive CPU time over all threads, filtered by a name; and the busiest threads |
+| `trace_calls.py` | How many times a frame is entered (outermost), each entry's duration, and from which enclosing frame |
 | `allocread/allocread.cs` | Reads a `gc-verbose` nettrace: allocation ticks by type, by the nearest LimboDancer frames, by second; and the collections. `dotnet run allocread.cs -- <file.nettrace>` (a file-based program) |
 | `clockbench/clock.cs` | The cost of a `TimeProvider.System.GetUtcNow()` call on this machine (the analysis, 2.4) |
 
