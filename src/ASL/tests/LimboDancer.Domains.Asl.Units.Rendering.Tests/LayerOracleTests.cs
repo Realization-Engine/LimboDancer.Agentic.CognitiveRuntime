@@ -46,6 +46,34 @@ public sealed class LayerOracleTests
         Assert.Contains("#nowhere", error.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The comparison finds what differs: identical text is skipped only where no move applies (the fast path of 2026-10-24), so a changed
+    /// path, a face whose drawing does not match its move, and a changed transform are each still found; the same drawing moved by its tier agrees.
+    /// </summary>
+    [Theory]
+    [InlineData("""<path d="M 10 10 L 20 20"/>""", """<path d="M 0 0 L 10 10"/>""", null)]
+    [InlineData("""<path d="M 10 10 L 20 20"/>""", """<path d="M 10 10 L 20 20"/>""", "d=")]
+    [InlineData("""<path d="M 10 10 L 20 20"/>""", """<path d="M 0 0 L 10 11"/>""", "d=")]
+    [InlineData("""<g transform="rotate(30 10 10)"><path d="M 10 10"/></g>""", """<g transform="rotate(30 0 0)"><path d="M 0 0"/></g>""", null)]
+    [InlineData("""<g transform="rotate(30 10 10)"><path d="M 10 10"/></g>""", """<g transform="rotate(31 0 0)"><path d="M 0 0"/></g>""", "transform=")]
+    [InlineData("""<g transform="translate(5 5)"><path d="M 1 1"/></g>""", """<g transform="translate(-5 -5)"><path d="M 1 1"/></g>""", null)]
+    [InlineData("""<g transform="translate(5 5)"><path d="M 1 1"/></g>""", """<g transform="translate(-5 -5)"><path d="M 1 2"/></g>""", "d=")]
+    public void TheComparisonFindsWhatDiffers(string whole, string atOrigin, string? found)
+    {
+        // The whole counter is drawn in place; the other is its face drawn at the origin, moved by its tier's group to (10, 10).
+        var difference = LayerOracle.Differs(XElement.Parse($"""<g id="layer-units"><g>{whole}</g></g>"""),
+            XElement.Parse($"""<g id="layer-units"><g data-tier="near" transform="translate(10 10)"><g data-face-def="near">{atOrigin}</g></g></g>"""));
+        if (found is null)
+        {
+            Assert.Null(difference);
+        }
+        else
+        {
+            Assert.NotNull(difference);
+            Assert.Contains(found, difference, StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void AUsesPlaceAndTransformGoOnItsGroup()
     {
