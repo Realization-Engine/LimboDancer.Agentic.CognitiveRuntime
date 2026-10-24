@@ -1186,7 +1186,7 @@ public sealed partial class GamePlanner
                 yield return ("instance-created", new InstanceCreated(new NewInstance(BlazeId(vehicle.Id), "asl:fire", null, null, new MapPosition(burningAt), null,
                     new Dictionary<string, ConditionState>())));
             }
-            else if (kill.CrewSurvival is { Survived: true } && LeavingCrew(vehicle, attemptId) is { } survivors)
+            else if (kill.CrewSurvival is { Survived: true } && LeavingCrew(state, vehicle, attemptId) is { } survivors)
             {
                 yield return ("instance-created", survivors);
             }
@@ -1203,7 +1203,7 @@ public sealed partial class GamePlanner
         if (kill.Abandoned == true)
         {
             yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)));
-            if (LeavingCrew(vehicle, attemptId) is { } crew)
+            if (LeavingCrew(state, vehicle, attemptId) is { } crew)
             {
                 yield return ("instance-created", crew);
             }
@@ -1239,7 +1239,7 @@ public sealed partial class GamePlanner
 
         if (state.Unit(vehicle.VehicleId) is { } stuck && ScenarioA1FireFollowUps.AbandonsWhenImmobilized(vehicle, MustLeave(stuck)))
         {
-            foreach (var (type, abandon) in AbandonEvents(stuck, attemptId))
+            foreach (var (type, abandon) in AbandonEvents(state, stuck, attemptId))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, package, null, [recordId]));
             }
@@ -1297,11 +1297,11 @@ public sealed partial class GamePlanner
     /// The one place a crew that leaves its vehicle is placed (D5.1, D5.5, D5.6, D5.341, D5.41; rulings R7.9, R65.19): beneath the vehicle, as the
     /// vehicle crew of its nationality (Rules picks the definition), with the id <c>{attempt}-{vehicle}-crew</c>; a Recalled crew keeps its Stun
     /// +1 (D5.34). An older game's recorded <c>instance-created</c> keeps the infantry crew it placed, since the definition is in the record.
+    /// A Carrier's crew leaves as its nationality's 2-4-7 HS, unless its MA is a FT or 76mm mortar or it tows a Gun (D6.82; ruling R65.18).
     /// </summary>
-    private static InstanceCreated? LeavingCrew(UnitInstance vehicle, string attemptId, bool stunRecovery = false)
+    private static InstanceCreated? LeavingCrew(GameState state, UnitInstance vehicle, string attemptId, bool stunRecovery = false)
     {
-        // Ruling R65.18 (increment 2f): a Carrier's inherent HS is placed here in place of a vehicle crew.
-        if (ScenarioA1Definitions.LeavingCrewDefinition(FireReference.Value.Definitions.Values, VehicleDefinition(vehicle)?.Nationality) is not { } crew
+        if (ScenarioA1CarrierRules.LeavingCrew(FireReference.Value.Definitions.Values, VehicleDefinition(vehicle)?.Nationality, InherentHalfSquad(state, vehicle)) is not { } crew
             || vehicle.Position is not MapPosition position)
         {
             return null;
@@ -1319,9 +1319,15 @@ public sealed partial class GamePlanner
             conditions[Conditions.StunRecovery] = ConditionState.True;
         }
 
-        return new InstanceCreated(new NewInstance($"{attemptId}-{vehicle.Id}-crew", ScenarioA1Definitions.VehicleCrewKind, crew, vehicle.Side,
+        return new InstanceCreated(new NewInstance($"{attemptId}-{vehicle.Id}-crew", crew.Kind, crew.Definition, vehicle.Side,
             new MapPosition(position.Location), null, conditions));
     }
+
+    /// <summary>Whether a vehicle's inherent crew is a Carrier's HS (D6.82; ruling R65.18): Rules decides from its class, its MA, and whether it tows a Gun.</summary>
+    private static bool InherentHalfSquad(GameState state, UnitInstance vehicle) =>
+        VehicleDefinition(vehicle) is { } definition && ScenarioA1CarrierRules.IsCarrier(definition.VehicleClass)
+        && ScenarioA1CarrierRules.InherentHalfSquad(definition.VehicleClass, definition.MainArmament, definition.Caliber,
+            state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id));
 
     /// <summary>An Ordnance package roll added to its rolls under its key.</summary>
     private static OrdnanceRolls ApplyOrdnanceRoll(OrdnanceRolls rolls, string key, IReadOnlyList<int> values)

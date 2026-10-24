@@ -747,6 +747,7 @@ else if (state is not null)
                                     EntryHexes="@EntryHexChoices(chosen)" EntryHex="@vehicleEntryHex" EntryFacings="@EntryFacingChoices(chosen)" EntryFacing="@vehicleEntryFacing"
                                     OnEntryHex="@(hex => ChooseEntryHex(chosen, hex))" OnEntryFacing="@(facing => vehicleEntryFacing = facing)"
                                     LoadChosen="@vehicleLoad" UnloadChosen="@vehicleUnload" OnStep="@ProposeVehicleRequest" OnOption="@SetVehicleOption"
+                                    CrewUnloads="@CrewUnloads(chosen)" UnloadCrew="@vehicleCrewUnload"
                                     RiderNote="@RiderNote(chosen)" AsRiders="@BoardsAsRiders(chosen)" RidersOnly="@(GamePlanner.PassengerCapacity(state, chosen) is null)"
                                     OnEsb="@(esb => vehicleEsb = esb)" OnIntended="@(at => vehicleIntended = at)"
                                     OnLoadToggle="@(pick => Toggle(vehicleLoad, pick.Unit, pick.Chosen))" OnUnloadToggle="@(pick => Toggle(vehicleUnload, pick.Unit, pick.Chosen))"
@@ -3325,6 +3326,7 @@ else if (state is not null)
         vehicleAllMp = false;
         vehicleMinimum = false;
         vehicleRiders = false;
+        vehicleCrewUnload = false;
         vehicleEsb = string.Empty;
         unhookFacing = "east";
     }
@@ -3551,6 +3553,10 @@ else if (state is not null)
             : [.. VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && aboard.Contains(holding.Holder))
                 .Select(item => item.Id).Order(StringComparer.Ordinal)];
 
+    /// <summary>Whether the chosen vehicle, stopped, is a Carrier whose inherent HS may unload as its Passengers do (D6.83; pass 65, ruling R65.18).</summary>
+    private bool CrewUnloads(UnitInstance vehicle) =>
+        state is not null && VehicleStopped(vehicle, boggedToo: ScenarioA1VehicleProjection.BoggedMaySpend("unload", false)) && GamePlanner.CrewMayUnload(state, vehicle);
+
     /// <summary>The Passengers that may unload (D6.5): the vehicle's, while it is on the map and stopped.</summary>
     private IReadOnlyList<string> UnloadableUnits(UnitInstance vehicle) =>
         state is null || !VehicleStopped(vehicle, boggedToo: ScenarioA1VehicleProjection.BoggedMaySpend("unload", false)) ? []
@@ -3587,6 +3593,9 @@ else if (state is not null)
             case "riders":
                 vehicleRiders = option.Value;
                 break;
+            case "crew":
+                vehicleCrewUnload = option.Value;
+                break;
         }
     }
 
@@ -3611,6 +3620,12 @@ else if (state is not null)
         if (kind == "unload" && vehicle is not null && vehicleLeave.Intersect(LeavableWeapons(vehicle), StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } leave)
         {
             arguments["leave"] = leave;
+        }
+
+        // D6.83 (pass 65, ruling R65.18): a Carrier's inherent HS unloads with the step when asked.
+        if (kind == "unload" && vehicle is not null && vehicleCrewUnload && CrewUnloads(vehicle))
+        {
+            arguments["crew"] = true;
         }
 
         // D6.2 (pass 65, ruling R65.16): a load names Riders when they board as Riders.
@@ -3861,6 +3876,7 @@ else if (state is not null)
     private bool vehicleAllMp;
     private bool vehicleMinimum;
     private bool vehicleRiders;
+    private bool vehicleCrewUnload;
     private string vehicleEsb = string.Empty;
     private string reactionAttacker = string.Empty;
     private string reactionLeader = string.Empty;
@@ -6654,6 +6670,7 @@ else if (state is not null)
         vehicleAllMp = false;
         vehicleMinimum = false;
         vehicleRiders = false;
+        vehicleCrewUnload = false;
         vehicleEsb = string.Empty;
         vehicleLoad.Clear();
         vehicleUnload.Clear();
@@ -7737,6 +7754,7 @@ else if (state is not null)
                 vehicleAllMp = false;
                 vehicleMinimum = false;
                 vehicleRiders = false;
+                vehicleCrewUnload = false;
                 vehicleEsb = string.Empty;
 
                 // Rulings R26.1, R26.2: the Passengers chosen and the entry are for one expenditure too.

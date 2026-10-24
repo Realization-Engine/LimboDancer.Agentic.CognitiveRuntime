@@ -412,17 +412,18 @@ public static class LiveFire
     /// <summary>
     /// Whether an AFV's crew is Crew Exposed: an OT AFV is CE unless under a BU, Stun, Shock, or Recall marker (D5.3, D5.34, C7.42); a CT AFV
     /// only when its owner has removed its BU counter (D5.2; ruling R7.11); an unarmored
-    /// vehicle has no crew to expose (D5.1).
+    /// vehicle has no crew to expose (D5.1). A Carrier's crew is always CE, stunned or shocked included (D6.84; pass 65, ruling R65.18).
     /// </summary>
     public static bool CrewExposed(UnitInstance vehicle) =>
-        ScenarioA1FireEligibility.CrewExposed(new CrewExposedFacts(GameState.Condition(vehicle, Conditions.ButtonedUp) switch
-        {
-            ConditionState.True => RuleState.True,
-            ConditionState.False => RuleState.False,
-            _ => RuleState.Unknown,
-        },
-            Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill),
-            GamePlanner.IsClosedTopped(vehicle)));
+        ScenarioA1CarrierRules.CrewExposed(VehicleClassOf(vehicle.Definition?.Definition),
+            ScenarioA1FireEligibility.CrewExposed(new CrewExposedFacts(GameState.Condition(vehicle, Conditions.ButtonedUp) switch
+            {
+                ConditionState.True => RuleState.True,
+                ConditionState.False => RuleState.False,
+                _ => RuleState.Unknown,
+            },
+                Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill),
+                GamePlanner.IsClosedTopped(vehicle))));
 
     /// <summary>A vehicle in the target Location, with its crew's state (A7.307, A7.308, D.8B).</summary>
     internal static FireVehicle Vehicle(UnitInstance vehicle, BoardLocation at) =>

@@ -26,6 +26,9 @@ public sealed class BacklogPass65Tests : IDisposable
     private static readonly UnitVocabulary Vocabulary = UnitVocabulary.Asl();
     private static readonly UnitCatalog Catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary)!.Catalog!;
     private static readonly string[] Bd01 = ["bd01"];
+    private static readonly string[] B9Route = ["bd01:B9:0"];
+    private static readonly string[] HalfSquadOnly = ["de-h"];
+    private static readonly string[] LmgOnly = ["de-lmg"];
     private const string Firer = "bd01:B10:0";
     private const string Target = "bd01:B8:0";
 
@@ -327,7 +330,7 @@ public sealed class BacklogPass65Tests : IDisposable
         var before = Revision;
         Committed(await Do(GameActions.Fire, Once(2, 4, 1, 1, 3, 4), new
         {
-            firers = new[] { "ru-1", "ru-2" },
+            firers = RussianSquads,
             target = Target,
         }));
         var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
@@ -402,7 +405,7 @@ public sealed class BacklogPass65Tests : IDisposable
         var before = Revision;
         var fired = await Do(GameActions.Fire, Once(5, 6), new
         {
-            firers = new[] { "de-s" },
+            firers = SquadOnly,
             director = "de-l",
             target = Target,
         });
@@ -420,7 +423,7 @@ public sealed class BacklogPass65Tests : IDisposable
         {
             vehicleId = "de-truck",
             kind = "unload",
-            units = new[] { "de-s" },
+            units = SquadOnly,
         }), "fired from its vehicle");
     }
 
@@ -445,7 +448,7 @@ public sealed class BacklogPass65Tests : IDisposable
             Aboard("de-s", "asl:squad", "attacker-squad", "de-ht", "german"), mmg, Unit("ru-s", "asl:squad", "defender-squad", Target, "russian"));
         Refused(await Do(GameActions.Fire, NoRoll(), new
         {
-            firers = new[] { "de-s" },
+            firers = SquadOnly,
             target = Target,
             weapons = new Dictionary<string, string[]> { ["de-s"] = ["de-mmg"] },
         }), "a Passenger fires only a LMG, a PIAT, or a Thrown DC (D6.1)");
@@ -461,7 +464,7 @@ public sealed class BacklogPass65Tests : IDisposable
             Unit("ru-s", "asl:squad", "defender-squad", Target, "russian"));
         Refused(await Do(GameActions.Fire, NoRoll(), new
         {
-            firers = new[] { "de-s" },
+            firers = SquadOnly,
             target = Target,
         }), "fire only while CE");
     }
@@ -483,7 +486,7 @@ public sealed class BacklogPass65Tests : IDisposable
         Refused(await Do(GameActions.Rout, NoRoll(), new
         {
             unitId = "de-s",
-            route = new[] { "bd01:B9:0" },
+            route = B9Route,
         }), "play.rout-beneath");
         Committed(await Do(GameActions.Rout, NoRoll(), new
         {
@@ -614,7 +617,7 @@ public sealed class BacklogPass65Tests : IDisposable
         var before = Revision;
         Committed(await Do(GameActions.Fire, Once(6, 6, 6, 6, 6, 6), new
         {
-            firers = new[] { "ru-1", "ru-2" },
+            firers = RussianSquads,
             target = Target,
         }));
         var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
@@ -640,7 +643,7 @@ public sealed class BacklogPass65Tests : IDisposable
         var before = Revision;
         Committed(await Do(GameActions.Fire, Once(4, 5, 3, 4, 6, 6, 6, 6), new
         {
-            firers = new[] { "ru-1", "ru-2" },
+            firers = RussianSquads,
             target = Target,
         }));
         var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
@@ -692,7 +695,7 @@ public sealed class BacklogPass65Tests : IDisposable
         Assert.Equal(["de-s"], Current.Movement!.Members);
         Refused(await Do(GameActions.Move, NoRoll(), new
         {
-            unitIds = new[] { "de-h" },
+            unitIds = HalfSquadOnly,
             to = "bd01:A10:0",
         }), "play.move-order");
         Refused(await Do(GameActions.Move, NoRoll(), new
@@ -741,7 +744,7 @@ public sealed class BacklogPass65Tests : IDisposable
             vehicleId = "de-ht",
             kind = "unload",
             units = SquadOnly,
-            leave = new[] { "de-lmg" },
+            leave = LmgOnly,
         });
         Committed(unloaded);
         var weapon = (EquipmentInstance)Current.Find("de-lmg")!;
@@ -906,6 +909,136 @@ public sealed class BacklogPass65Tests : IDisposable
         var squad = Current.Unit("de-s")!;
         Assert.Equal(((string?)null, ConditionState.True, ConditionState.True), (Current.Aboard("de-s"), GameState.Condition(squad, Conditions.Pinned),
             GameState.Condition(squad, Conditions.FinalFire)));
+        NoReplayErrors();
+    }
+
+    // Increment 2f: Carriers (D6.8 to D6.84, A26.213; ruling R65.18).
+
+    private static readonly string[] GermanSquads = ["de-1", "de-2"];
+
+    [Fact]
+    public async Task AKilledBrenCarriersSurvivingCrewIsABritishHalfSquad()
+    {
+        // D6.82, D5.6: the PzKpfw IIIH's AP eliminates the Bren carrier; a Crew Survival DR of 4, within its CS# 5, places the British 2-4-7 HS beneath
+        // the wreck, not a vehicle crew, with the id {attempt}-{vehicle}-crew. It is a HS, one VP (A26.211).
+        await Setup("german", "british", 1944, 7, "asl-scenario-a1@1.18.0", Vehicle("de-tank", "attacker-tank", Firer, "german", "north-east"),
+            Vehicle("uk-bren", "campaign-british-bren-carrier", Target, "british", "east"));
+        var before = Revision;
+        Committed(await Shoot("de-tank", "uk-bren", "ap", 4, 2, 4, 4, 2, 2));
+        var kill = LastShot(before).Resolution.GetProperty("kill");
+        Assert.True(Current.Unit("uk-bren")!.Status == InstanceStatus.Wrecked, kill.GetRawText());
+        var crew = Assert.Single(Current.Units, unit => unit.Side == "british" && unit.Status == InstanceStatus.Active && unit.Kind != "asl:vehicle");
+        Assert.Equal(("asl:half-squad", "british-half-squad", Target, true), (crew.Kind, crew.Definition!.Definition, Current.Location(crew.Id)!.Location.ToString(),
+            crew.Id.EndsWith("-uk-bren-crew", StringComparison.Ordinal)));
+        Assert.Equal(1, Planner().VictoryPoints(Current, crew));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ABrenCarrierIsNeverButtonedUpAndItsStunnedCrewStaysExposed()
+    {
+        // D6.84: a Carrier sets up CE and its owner may not button it up; the page offers it no BU toggle.
+        var buttoned = Vehicle("uk-bren", "campaign-british-bren-carrier", Target, "british", "east");
+        buttoned["conditions"] = new Dictionary<string, bool> { ["asl:bu"] = true };
+        Refused(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = "setup-bu",
+            expectedRevision = 0,
+            start = new Dictionary<string, object>
+            {
+                ["label"] = nameof(BacklogPass65Tests),
+                ["catalog"] = "asl-scenario-a1@1.18.0",
+                ["boards"] = Bd01,
+                ["firstSide"] = "british",
+                ["sides"] = new object[]
+                {
+                    new { id = "british", nationality = "british", elr = 3, friendlyEdge = "left" },
+                    new { id = "german", nationality = "german", elr = 3, friendlyEdge = "right" },
+                },
+            },
+            placements = new[] { buttoned },
+        })), "play.setup-carrier");
+
+        await Setup("british", "german", 1944, 7, "asl-scenario-a1@1.18.0", Vehicle("uk-bren", "campaign-british-bren-carrier", Target, "british", "east"),
+            Unit("de-1", "asl:squad", "attacker-squad", Firer, "german"));
+        await Advance();
+        Refused(await Do(GameActions.ButtonUp, NoRoll(), new
+        {
+            vehicleId = "uk-bren",
+            buttonedUp = true,
+        }), "uk-bren is a Carrier, which is never BU");
+        var bren = Current.Unit("uk-bren")!;
+        Assert.False(GamePlanner.MayChangeExposure(bren));
+        Assert.True(LiveFire.CrewExposed(bren));
+        Assert.True(LiveFire.CrewExposed(bren with
+        {
+            Conditions = new Dictionary<string, ConditionState>(bren.Conditions) { [Conditions.Stunned] = ConditionState.True, [Conditions.ButtonedUp] = ConditionState.True }
+        }));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AStunnedBrenCarriersCrewTakesTheCollateralAttack()
+    {
+        // D6.84, D.8B: two German 4-6-7s fire 8 FP at the stunned Bren carrier two hexes off, an Original DR of 6. Its crew, CE though stunned, takes the
+        // attack on the 8 column at a Final DR of 8 (+2 for CE), a NMC; the check (6, 6) fails, a second Stun, so it is Recalled (D5.342).
+        var stunned = Vehicle("uk-bren", "campaign-british-bren-carrier", Target, "british", "east");
+        stunned["conditions"] = new Dictionary<string, bool> { ["asl:stunned"] = true };
+        await Setup("german", "british", 1944, 7, "asl-scenario-a1@1.18.0", Unit("de-1", "asl:squad", "attacker-squad", Firer, "german"),
+            Unit("de-2", "asl:squad", "attacker-squad", Firer, "german"), stunned);
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(2, 4, 6, 6), new
+        {
+            firers = GermanSquads,
+            target = Target,
+        }));
+        var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        var vehicle = fire.Facts.GetProperty("vehicles")[0];
+        Assert.Equal((true, true, 0), (vehicle.GetProperty("crewExposed").GetBoolean(), vehicle.GetProperty("stunned").GetBoolean(), vehicle.GetProperty("prc").GetArrayLength()));
+        var effect = fire.Resolution.GetProperty("vehicleEffects")[0];
+        Assert.Equal(8, effect.GetProperty("finalDr").GetInt32());
+        Assert.Equal("recalled", effect.GetProperty("crewResult").GetString());
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("uk-bren")!, Conditions.Recalled));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ABrenCarriersInherentHalfSquadUnloadsAndAbandonsIt()
+    {
+        // D6.83: in the British MPh the Bren carrier's inherent HS unloads as a Passenger does, for a quarter of its MP; it is placed beneath the Carrier
+        // as the British 2-4-7 HS, and the Carrier is Abandoned. The Carrier's VP fall from 5 to 3, the HS's own one VP aside (A26.211, A26.213).
+        await Setup("british", "german", 1944, 7, "asl-scenario-a1@1.18.0", Vehicle("uk-bren", "campaign-british-bren-carrier", Target, "british", "east"),
+            Vehicle("uk-tank", "campaign-british-cromwell", Firer, "british", "east"), Unit("de-1", "asl:squad", "attacker-squad", "bd01:J2:0", "german"));
+        Assert.Equal(5, Planner().VictoryPoints(Current, Current.Unit("uk-bren")!));
+        await Advance();
+        Assert.True(GamePlanner.CrewMayUnload(Current, Current.Unit("uk-bren")!));
+        Refused(await Do(GameActions.MoveVehicle, NoRoll(), new
+        {
+            vehicleId = "uk-tank",
+            kind = "unload",
+            crew = true,
+        }), "only a Carrier's inherent HS does (D6.83)");
+
+        var before = Revision;
+        var unloaded = await Do(GameActions.MoveVehicle, NoRoll(), new
+        {
+            vehicleId = "uk-bren",
+            kind = "unload",
+            crew = true,
+        });
+        Committed(unloaded);
+        Assert.Contains(unloaded.Reasons, reason => reason.Contains("so uk-bren is Abandoned", StringComparison.Ordinal));
+        var halfSquad = Assert.Single(Since(before).Select(item => item.Payload).OfType<InstanceCreated>()).Instance;
+        var step = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleStepped>());
+        Assert.Equal(halfSquad.Id, Assert.Single(step.Units!));
+        Assert.True(step.Interim);
+        var unit = Current.Unit(halfSquad.Id)!;
+        Assert.Equal(("asl:half-squad", "british-half-squad", Target, (string?)null), (unit.Kind, unit.Definition!.Definition, Current.Location(unit.Id)!.Location.ToString(),
+            Current.Aboard(unit.Id)));
+        var bren = Current.Unit("uk-bren")!;
+        Assert.Equal((ConditionState.True, false), (GameState.Condition(bren, Conditions.Abandoned), GamePlanner.CrewMayUnload(Current, bren)));
+        Assert.Equal((3, 1), (Planner().VictoryPoints(Current, bren), Planner().VictoryPoints(Current, unit)));
         NoReplayErrors();
     }
 }

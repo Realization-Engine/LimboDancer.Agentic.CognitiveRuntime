@@ -84,6 +84,12 @@ public sealed partial class GamePlanner
 
         foreach (var vehicle in state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)))
         {
+            // D6.84 (pass 65, ruling R65.18): a Carrier sets up CE.
+            if (ScenarioA1CarrierRules.SetupBar(vehicle.Id, VehicleDefinition(vehicle)?.VehicleClass, Is(vehicle, Conditions.ButtonedUp)) is { } carrierBar)
+            {
+                return carrierBar;
+            }
+
             // A2.52 (ruling R26.1): a vehicle may wait off board to enter, in Motion, loaded up to its capacity, its Gun in tow.
             var at = vehicle.Position is MapPosition { Facing: not null } ? state.Location(vehicle.Id) : null;
             if (ScenarioA1VehicleMovementCalculator.VehicleSetupBar(vehicle.Id, () => TowSetupBar(state, vehicle) ?? PassengerSetupBar(state, vehicle),
@@ -952,6 +958,13 @@ public sealed partial class GamePlanner
 
         var buttonedUp = value.GetBoolean();
         var vehicle = state.Unit(id) is { Status: InstanceStatus.Active } unit && IsAfv(unit) ? unit : null;
+
+        // D6.84 (pass 65, ruling R65.18): a Carrier is never BU. No game recorded before the pass buttons one up (none holds a Carrier).
+        if (vehicle is not null && ScenarioA1CarrierRules.ButtonUpBar(id, VehicleDefinition(vehicle)?.VehicleClass, buttonedUp) is { } carrierBar)
+        {
+            return Refused(scope, label, expected, carrierBar);
+        }
+
         if (ScenarioA1VehicleMovementCalculator.ButtonUpBar(id, vehicle is not null,
             vehicle is not null && vehicle.Side == state.PhasingSide && state.Phase is "mph" or "aph",
             vehicle is not null && (Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled) || Is(vehicle, Conditions.Shocked) || Is(vehicle, Conditions.UnconfirmedKill)),

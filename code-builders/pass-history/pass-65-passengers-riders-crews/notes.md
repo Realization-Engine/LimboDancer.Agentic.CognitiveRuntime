@@ -115,5 +115,14 @@ A running record kept as the pass goes, at the user's word of 2026-10-23 ("Keep 
   - the load fieldset reads "as Riders (14 PP, 14 left)", locked on for the T-34; boarding the 7-0 and the 4-4-7 commits "[E8]: 7-0 leader R1, 4-4-7 squad R1 board vehicle R1 as Riders (D6.2, D6.4)";
   - the German DEFENDER passes, the T-34 starts (dice 1 1), the German passes, and entering [D8] (woods) proposes "... 4-4-7 squad R1, 7-0 leader R1 Bail Out in [E8], since the AFV moves through terrain Riders may not ride through (D6.21), each taking a NMC beneath it ..."; committed with NMC dice 2 2 each: "[E8]: 4-4-7 squad R1 Bails Out of vehicle R1, ...; its NMC against 7: passed (D6.24)", and the same for the leader.
   - Found and fixed (older than the pass, from 2026-10-01): the vehicle's entry buttons read "Propose: enter bd03:D8:0", the raw location id, against the hex UI rule; now `PlaceOf(to)`, "[D8]". Only a component test builds its own such label (VehicleComponentTests:124), so no test reads the page's.
-- 02:22 2e committed (below).
+- 02:22 2e committed, ce468692. The 2e games to `OWN`.
+- 02:23 The 2f agent launched on `brief_2f.md`, also asked to fix the CA1861 errors in `BacklogPass65Tests.cs` and confirm them gone by a strict build of the Play test project outside the repository.
+- About 02:50 The 2f agent reported (built 02:23 to about 02:50). Built: `ScenarioA1CarrierRules` (IsCarrier, ButtonUpBar, SetupBar, CrewExposed, PassengerCapacity, InherentHalfSquad, CrewUnloadBar, LeavingCrew); a Carrier never BU and always CE; its crew leaves as the nationality's 2-4-7 HS unless it has a FT, a 76mm mortar, or tows a Gun; D6.83's quicker unload as `crew: true` on an unload (instance-created aboard, Abandoned, then the unload step); `#vehicle-unload-crew`. Judged:
+  - The Studio game puts an 8-0 aboard, not a squad: D6.81's 4 PP are for SMC, SW, and ammo. Right.
+  - VP: the 2 VP were already counted; the fault was a double count once the HS left (`HasInherentCrew` knew a crew counter only). Fixed by `LeftItsVehicle`.
+  - CA1861: all 10 fixed (`fix_ca1861_2f.py`); a strict build of the Play test project into `asl-gate-work/strict-play-65`: 0 warnings, 0 errors; Rules tests strict too. Both folders registered with `outside_outputs.sh`.
+  - No live game (470) or store game (528) holds the Bren carrier, so the BU refusal needs no time gate.
+  - Seen: a Stun or Shock still writes `asl:bu` on a Carrier, and `StarshellFirers` (Play.razor about :5717) reads the raw condition. Backlog row, or a fix at the reviews.
+- 02:52 Studio check of 2f in p65-carrier-unload (British MPh): the vehicle panel shows "its inherent HS too, Abandoning it (D6.83)" and no BU control; unloading the crew commits "[F8]: 2-4-7 half-squad B1 unloads from vehicle B1 (D6.5)". Found: the proposal names the HS by its raw id ("Vehicle-beb23db0c4cc-ub-crew disembarks ..."), the unit not existing until the plan commits. For the reviews' fixes.
+- 02:54 2f committed (below).
 - The four estimates sum to about 15:00 of build against the plan's 7:00 (65.1 3:00, 65.2 2:30, 65.3 1:15, 65.4 1:30, 65.5 0:50, crews 0:45, 65.6 1:40, 65.7 1:10, 65.8 1:40, 65.9 0:50).

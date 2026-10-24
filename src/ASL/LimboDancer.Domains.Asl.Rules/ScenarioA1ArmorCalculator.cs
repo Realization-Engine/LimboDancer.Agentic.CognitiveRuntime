@@ -643,9 +643,12 @@ internal static class ScenarioA1ArmorCalculator
         OrdnanceKill kill, ScenarioA1OrdnanceReference reference)
     {
         var target = shot.VehicleTarget!;
+        // D6.84 (p. 207; pass 65, ruling R65.18): a Carrier's crew "remain CE if stunned or shocked, and are subject to the Collateral Attack that may result
+        // from that attack", where the shot carries the target's PRC (ruling R65.5), as every shot planned since the pass does.
+        var carrier = target.Prc is not null && ScenarioA1CarrierRules.IsCarrier(reference.Fire.Definitions.GetValueOrDefault(armor.Id)?.VehicleClass);
         // A9.611, D5.34 (pass 60): a MG's attack is at its IFT FP (the D1.22 example), and none follows its Stun, which leaves the crew BU at once.
-        var standing = kill.Result is not (OrdnanceKill.Dud or OrdnanceKill.Burn or OrdnanceKill.Eliminated or OrdnanceKill.Shock or OrdnanceKill.Stun) && kill.Shocked != true
-            && kill.Abandoned != true;
+        var standing = kill.Result is not (OrdnanceKill.Dud or OrdnanceKill.Burn or OrdnanceKill.Eliminated) && kill.Abandoned != true
+            && (carrier || (kill.Result is not (OrdnanceKill.Shock or OrdnanceKill.Stun) && kill.Shocked != true));
         var firepower = gun.GunType == ScenarioA1MachineGunKill.GunType ? gun.Firepower
             : kill.Ammunition == "he" ? reference.HeFirepower(gun.Caliber)
             // C8.31 note 1, C13.24: an ATR that is not 20mm has no HE Equivalency, so its hit makes no Collateral Attack.
@@ -662,7 +665,7 @@ internal static class ScenarioA1ArmorCalculator
 
         FireVehicleEffect? effect = null;
         string? result = null;
-        if (!armor.Unarmored && armor.FrontAf is not null && target.CrewExposed == true && target.CrewImpaired != true && target.Abandoned != true)
+        if (!armor.Unarmored && armor.FrontAf is not null && target.CrewExposed == true && (carrier || target.CrewImpaired != true) && target.Abandoned != true)
         {
             if ((target.CrewMorale ?? reference.Fire.AfvCrewMorale(armor.Nationality)) is not { } morale)
             {
@@ -677,7 +680,9 @@ internal static class ScenarioA1ArmorCalculator
                 return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:collateralCheck"]));
             }
 
-            var (check, crew) = ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, target.StunRecovery == true, morale, target.CrewMorale);
+            // D5.342 (p. 204): a Carrier's crew stunned by this very hit is Recalled by a second Stun (D6.84).
+            var (check, crew) = ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, target.StunRecovery == true || (carrier && kill.Result == OrdnanceKill.Stun),
+                morale, target.CrewMorale);
             effect = new FireVehicleEffect(target.VehicleId!, armor.Id, FireVehicleEffect.None, null, drm, final, null, check, crew);
         }
 

@@ -106,7 +106,7 @@ public sealed partial class GamePlanner
         return ScenarioA1VictoryCalculator.HasInherentCrew(
             ScenarioA1VictoryCalculator.VehicleArmed(armor?.MaType is not null, definition?.MainArmament is not null, definition?.AntiAircraftMg is not null, definition?.BowMg is not null,
                 definition?.CoaxialMg is not null),
-            Is(vehicle, Conditions.Abandoned), () => state.Units.Any(unit => ScenarioA1Definitions.IsCrew(unit.Kind) && unit.Id.EndsWith($"-{vehicle.Id}-crew", StringComparison.Ordinal)));
+            Is(vehicle, Conditions.Abandoned), () => state.Units.Any(unit => ScenarioA1VictoryCalculator.LeftItsVehicle(unit.Kind) && unit.Id.EndsWith($"-{vehicle.Id}-crew", StringComparison.Ordinal)));
     }
 
     /// <summary>

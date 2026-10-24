@@ -120,11 +120,14 @@ public sealed partial class GamePlanner
         return MustLeave(vehicle) || new[] { Conditions.Immobilized, Conditions.Stunned, Conditions.Shocked, Conditions.UnconfirmedKill, Conditions.Recalled, Conditions.PrepFire }.All(condition => !Is(vehicle, condition));
     }
 
-    /// <summary>Whether an AFV's crew may place or remove its BU counter by its state (D5.33, D5.34): not Stunned, and not Recalled until Recall; +1.</summary>
+    /// <summary>
+    /// Whether an AFV's crew may place or remove its BU counter by its state (D5.33, D5.34): not Stunned, and not Recalled until Recall; +1. A Carrier's
+    /// never does, since it is never BU (D6.84; pass 65, ruling R65.18).
+    /// </summary>
     public static bool MayChangeExposure(UnitInstance vehicle)
     {
         ArgumentNullException.ThrowIfNull(vehicle);
-        return !Is(vehicle, Conditions.Stunned) && !Is(vehicle, Conditions.Shocked) && !Is(vehicle, Conditions.UnconfirmedKill) && (!Is(vehicle, Conditions.Recalled) || Is(vehicle, Conditions.StunRecovery));
+        return !ScenarioA1CarrierRules.IsCarrier(VehicleDefinition(vehicle)?.VehicleClass) && !Is(vehicle, Conditions.Stunned) && !Is(vehicle, Conditions.Shocked) && !Is(vehicle, Conditions.UnconfirmedKill) && (!Is(vehicle, Conditions.Recalled) || Is(vehicle, Conditions.StunRecovery));
     }
 
     /// <summary>The map edge an exit leaves by: top, bottom, left, or right; null when the Location is not an edge hex that way.</summary>
@@ -239,7 +242,7 @@ public sealed partial class GamePlanner
     /// A Recalled AFV that is immobilized is Abandoned (D5.341, D5.41; ruling R5.18): marked Abandoned and stopped, with its crew placed beneath
     /// it as a crew counter of its nationality, carrying the Stun +1 (D5.34).
     /// </summary>
-    private static IEnumerable<(string Type, EventPayload Payload)> AbandonEvents(UnitInstance vehicle, string attemptId)
+    private static IEnumerable<(string Type, EventPayload Payload)> AbandonEvents(GameState state, UnitInstance vehicle, string attemptId)
     {
         yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, new Dictionary<string, ConditionState>(StringComparer.Ordinal)
         {
@@ -247,7 +250,7 @@ public sealed partial class GamePlanner
             [Conditions.Motion] = ConditionState.False,
         }));
 
-        if (LeavingCrew(vehicle, attemptId, stunRecovery: true) is { } crew)
+        if (LeavingCrew(state, vehicle, attemptId, stunRecovery: true) is { } crew)
         {
             yield return ("instance-created", crew);
         }

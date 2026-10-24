@@ -15,14 +15,28 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
-    /// <summary>A vehicle's Passenger capacity in PP (D6.1), less four PP, or eight at 100mm or more, for a Gun it tows (C10.13); null when it carries none.</summary>
+    /// <summary>
+    /// A vehicle's Passenger capacity in PP (D6.1), less four PP, or eight at 100mm or more, for a Gun it tows (C10.13); null when it carries none. A
+    /// Carrier's is four PP, none with a mortar, FT, or 6 FP AAMG as MA (D6.81; pass 65, ruling R65.18).
+    /// </summary>
     public static int? PassengerCapacity(GameState state, UnitInstance vehicle)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(vehicle);
-        return ScenarioA1PassengerCalculator.PassengerCapacity(VehicleDefinition(vehicle)?.PassengerCapacity,
+        var definition = VehicleDefinition(vehicle);
+        return ScenarioA1PassengerCalculator.PassengerCapacity(ScenarioA1CarrierRules.PassengerCapacity(definition?.VehicleClass, definition?.PassengerCapacity,
+                definition?.MainArmament, definition?.Caliber, definition?.AntiAircraftMg),
             state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id)
                 .Select(gun => gun.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Caliber : null));
+    }
+
+    /// <summary>Whether a Carrier's inherent HS is aboard and may unload as its Passengers do (D6.83; pass 65, ruling R65.18); Rules decides.</summary>
+    public static bool CrewMayUnload(GameState state, UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return ScenarioA1CarrierRules.IsCarrier(VehicleDefinition(vehicle)?.VehicleClass)
+            && ScenarioA1CarrierRules.CrewUnloadBar(vehicle.Id, InherentHalfSquad(state, vehicle), Is(vehicle, Conditions.Abandoned)) is null;
     }
 
     /// <summary>The Passengers and Riders of a vehicle, read from the state's index once per state (ruling R65.25), as <see cref="GameState.Passengers"/> has them.</summary>
@@ -344,9 +358,31 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.unload: {id} unloads Passengers only while stopped, not in Motion or Bypass; it must Stop first (D6.5)");
         }
 
-        if (UnitIds(arguments) is not { Count: > 0 } ids)
+        // D6.83 (pass 65, ruling R65.18): a Carrier's inherent HS may unload as its Passengers do, with them or alone, and the Carrier is Abandoned.
+        var crewUnloads = arguments.TryGetProperty("crew", out var crewArgument) && crewArgument.ValueKind == JsonValueKind.True;
+        if ((UnitIds(arguments) ?? (crewUnloads ? new List<string>() : null)) is not { } ids || (ids.Count == 0 && !crewUnloads))
         {
             return Refused(scope, label, expected, "play.invalid-arguments: an unload names the Passengers disembarking");
+        }
+
+        InstanceCreated? crewLeaving = null;
+        if (crewUnloads)
+        {
+            if (ScenarioA1CarrierRules.CrewUnloadBar(id, InherentHalfSquad(state, vehicle), Is(vehicle, Conditions.Abandoned)) is { } crewBar)
+            {
+                return Refused(scope, label, expected, crewBar);
+            }
+
+            // The HS is created aboard, so the step unloads it as a Passenger: beneath the vehicle, with its MF and the DEFENDER's FFNAM (D6.5).
+            crewLeaving = LeavingCrew(state, vehicle, attemptId) is { } placed
+                ? new InstanceCreated(placed.Instance with
+                {
+                    Position = new ContainedPosition(id, ContainmentRole.Passenger)
+                }) : null;
+            if (crewLeaving is null)
+            {
+                return Refused(scope, label, expected, $"play.unload: the catalog has no HS or vehicle crew of {id}'s nationality (D6.82)");
+            }
         }
 
         var aboard = state.Passengers(id);
@@ -405,18 +441,31 @@ public sealed partial class GamePlanner
         // D6.5, A4.14: "PRC may unload ... in an enemy-occupied hex with no special rules or consequences"; a CC counter shows they are not held in Melee.
         var enemyThere = index.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && !LiveFire.IsVehicle(unit));
         var mf = ScenarioA1PassengerCalculator.UnloadMf(spent, printed);
-        var text = $"play.unload: {string.Join(", ", ids)} disembark{(ids.Count == 1 ? "s" : string.Empty)} beneath {id} in {at} for {Mp(quarter)} of its MP; "
-            + $"{(ids.Count == 1 ? "it spends" : "each spends")} {mf} MF more"
+        List<string> leavers = [.. ids];
+        if (crewLeaving is not null)
+        {
+            leavers.Add(crewLeaving.Instance.Id);
+        }
+
+        var text = $"play.unload: {string.Join(", ", leavers)} disembark{(leavers.Count == 1 ? "s" : string.Empty)} beneath {id} in {at} for {Mp(quarter)} of its MP; "
+            + $"{(leavers.Count == 1 ? "it spends" : "each spends")} {mf} MF more"
             + (Is(vehicle, Conditions.PrepFire) ? $" and stays in {at} this MPh, since {id} Prep Fired" : " and may move on with the MF left, at most four, without Double Time, once "
                 + $"{id} ends its move and before any other unit moves (A4.11, A4.5)") + " (D6.5; ruling R26.2)"
             + (leave.Length > 0 ? $"; {string.Join(", ", leave)} {(leave.Length == 1 ? "stays" : "stay")} aboard (D6.4)" : string.Empty)
             + string.Concat(take.Select(item => $"; {item.Unit} takes {item.Weapon} with it (D6.5)"))
             + (enemyThere ? $"; {at} holds the enemy, and a CC counter shows they are not held in Melee (D6.5, A4.14)" : string.Empty)
-            + "; the DEFENDER may fire at them with FFNAM, and FFMO in Open Ground from an unarmored vehicle (D6.5)";
+            + "; the DEFENDER may fire at them with FFNAM, and FFMO in Open Ground from an unarmored vehicle (D6.5)"
+            + (crewLeaving is not null ? $"; {crewLeaving.Instance.Id} is {id}'s inherent HS, so {id} is Abandoned, and the HS neither Removes its armament nor destroys it (D6.83)"
+                : string.Empty);
         List<GameEvent> Build(Func<RollRequest, RollResult>? draw)
         {
-            List<GameEvent> events =
-                [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, VehicleStepped.Unload, at, null, quarter, step) { Units = [.. ids], UnitMf = mf, Interim = true }, null, null)];
+            // D6.83: the inherent HS is created aboard and the Carrier Abandoned (D5.41) before the step unloads it, as an Abandoned vehicle's Passengers unload.
+            List<GameEvent> events = crewLeaving is null ? []
+                : [Event(scope, attemptId, 1, expected, "instance-created", crewLeaving, null, null),
+                    Event(scope, attemptId, 2, expected, "conditions-changed", new ConditionsChanged(id, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)), null, null)];
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "vehicle-step",
+                new VehicleStepped(id, VehicleStepped.Unload, at, null, quarter, step) { Units = [.. leavers], UnitMf = mf, Interim = true }, null, null));
+
             foreach (var weapon in leave)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "equipment-transferred",

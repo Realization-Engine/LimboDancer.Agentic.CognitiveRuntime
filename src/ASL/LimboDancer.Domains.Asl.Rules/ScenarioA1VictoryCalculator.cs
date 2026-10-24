@@ -66,12 +66,22 @@ public static class ScenarioA1VictoryCalculator
     public static bool VehicleArmed(bool mainArmamentIsGun, bool mainArmament, bool antiAircraftMg, bool bowMg, bool coaxialMg) =>
         mainArmamentIsGun || mainArmament || antiAircraftMg || bowMg || coaxialMg;
 
-    /// <summary>A26.211 (rulings R24.3, R24.5): the inherent crew is gone once the vehicle is Abandoned or its crew is a counter of its own (read last).</summary>
+    /// <summary>
+    /// A26.211, A26.213 (p. 100; rulings R24.3, R24.5, R65.18): the inherent crew is gone once the vehicle is Abandoned or its crew is a counter of its own
+    /// (read last). Its two VP are a crew's (A26.211), and a Carrier's inherent HS is worth the same two, "Carrier HS are worth two VP when inherently
+    /// present in a Carrier" (A26.213), so a vehicle counts two for either.
+    /// </summary>
     public static bool HasInherentCrew(bool armed, bool abandoned, Func<bool> crewCounterExists)
     {
         ArgumentNullException.ThrowIfNull(crewCounterExists);
         return armed && !abandoned && !crewCounterExists();
     }
+
+    /// <summary>
+    /// Whether a unit of this kind may be a vehicle's crew that left it (D5.1, D6.82; ruling R65.18): a crew, or a Carrier's HS, which then counts as the HS
+    /// it is, one VP (A26.211).
+    /// </summary>
+    public static bool LeftItsVehicle(string? kind) => ScenarioA1Definitions.IsCrew(kind) || kind == "asl:half-squad";
 
     /// <summary>
     /// Ruling R21.4: whether a plan's events are read for an immediate Victory: there are events, the last does not already end the game, the game started from

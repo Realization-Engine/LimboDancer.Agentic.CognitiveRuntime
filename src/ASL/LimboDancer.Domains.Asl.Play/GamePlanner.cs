@@ -923,7 +923,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             foreach (var vehicle in state.Units.Where(unit => ScenarioA1SequenceCalculator.RecallAbandoned(phasing != state.PhasingSide, unit.Status == InstanceStatus.Active, LiveFire.IsVehicle(unit),
                 Is(unit, Conditions.Recalled), Is(unit, Conditions.Immobilized), Is(unit, Conditions.Abandoned), Is(unit, Conditions.Bogged))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
             {
-                foreach (var (type, abandon) in AbandonEvents(vehicle, attemptId))
+                foreach (var (type, abandon) in AbandonEvents(state, vehicle, attemptId))
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, null, null, [changed]));
                 }

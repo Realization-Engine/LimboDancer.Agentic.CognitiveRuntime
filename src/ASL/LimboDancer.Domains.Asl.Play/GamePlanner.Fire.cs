@@ -1071,7 +1071,7 @@ public sealed partial class GamePlanner
             // D5.341, D5.41 (ruling R5.18): a Recalled AFV on its way off the map that is immobilized is Abandoned by its crew.
             if (state.Unit(vehicle.VehicleId) is { } stuck && ScenarioA1FireFollowUps.AbandonsWhenImmobilized(vehicle, MustLeave(stuck)))
             {
-                foreach (var (type, abandon) in AbandonEvents(stuck, attemptId))
+                foreach (var (type, abandon) in AbandonEvents(state, stuck, attemptId))
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, package, null, [fireId]));
                 }

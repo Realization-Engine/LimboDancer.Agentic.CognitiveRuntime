@@ -549,7 +549,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor MoveVehicle = Descriptor("asl.game.move-vehicle", "Move a vehicle",
-        "In its MPh, a vehicle of the phasing side spends one MP expenditure: start (1 MP unless in Motion; forward or in Reverse; a bogged vehicle's Bog Removal), a VCA change of one hexspine, entering a hex forward, in Reverse, or in VBM at the Terrain Chart's cost with any Bog DR, as a Minimum Move, or with an OVR, stop (1 MP), a Delay MP, or exit; or an ESB DR for more MP, or an OVR declared where it is after the concealed units there chose; or Infantry board it (units, before it spends any MP, or as the last step of their own move) or its Passengers unload (units; a halftrack or Carrier may keep their SW aboard, leave, and they may take one left there, take); a turret may turn with the step; the DEFENDER may fire after each (D2.1 to D2.7, D2.17, D3.12, D6.4, D6.5, D7.1, D8.2, D8.3; rulings R11.1 to R11.12, R26.2, R65.15).",
+        "In its MPh, a vehicle of the phasing side spends one MP expenditure: start (1 MP unless in Motion; forward or in Reverse; a bogged vehicle's Bog Removal), a VCA change of one hexspine, entering a hex forward, in Reverse, or in VBM at the Terrain Chart's cost with any Bog DR, as a Minimum Move, or with an OVR, stop (1 MP), a Delay MP, or exit; or an ESB DR for more MP, or an OVR declared where it is after the concealed units there chose; or Infantry board it (units, before it spends any MP, or as the last step of their own move) or its Passengers unload (units; a halftrack or Carrier may keep their SW aboard, leave, and they may take one left there, take; a Carrier's inherent HS may unload too, Abandoning it, crew); a turret may turn with the step; the DEFENDER may fire after each (D2.1 to D2.7, D2.17, D3.12, D6.4, D6.5, D7.1, D8.2, D8.3; rulings R11.1 to R11.12, R26.2, R65.15).",
         PlayPermission, "asl.game.reviewed-fire-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -568,7 +568,7 @@ public static class GameActions
             "turret": { "type": "string" },
             "leave": { "type": "array", "items": { "type": "string" } },
             "take": { "type": "object", "additionalProperties": { "type": "string" } },
-            "riders": { "type": "boolean" }
+            "riders": { "type": "boolean" }, "crew": { "type": "boolean" }
           }
         }
         """);

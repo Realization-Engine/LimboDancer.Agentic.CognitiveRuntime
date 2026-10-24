@@ -751,4 +751,81 @@ public sealed class ScenarioA1Pass65RulesTests
         // A11.611: a Rider's part in CC is apart, +1 to its DR.
         Assert.Equal(ScenarioA1PassengerActionRules.Apart, ScenarioA1PassengerActionRules.CloseCombat(FirePrc.Rider, true, true, false).Part);
     }
+
+    // Increment 2f: Carriers (D6.8 to D6.84, A26.213; ruling R65.18).
+
+    [Fact]
+    public void ACarrierIsNeverBuAndItsCrewAndPassengersStayCeWhenStunned()
+    {
+        // D6.84: a Carrier's BU counter is refused, at setup too; asking for CE is not; a halftrack's is not decided here.
+        Assert.Contains("never BU", ScenarioA1CarrierRules.ButtonUpBar("uk-bren", "carrier", true), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1CarrierRules.ButtonUpBar("uk-bren", "carrier", false));
+        Assert.Null(ScenarioA1CarrierRules.ButtonUpBar("de-ht", "halftrack", true));
+        Assert.StartsWith("play.setup-carrier", ScenarioA1CarrierRules.SetupBar("uk-bren", "carrier", true), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1CarrierRules.SetupBar("de-ht", "halftrack", true));
+
+        // Its crew is CE where its markers would say BU (stunned or shocked); a halftrack's follows its markers.
+        Assert.True(ScenarioA1CarrierRules.CrewExposed("carrier", false));
+        Assert.False(ScenarioA1CarrierRules.CrewExposed("halftrack", false));
+        Assert.True(ScenarioA1CarrierRules.CrewExposed("halftrack", true));
+
+        // Its Passengers are CE with a stunned crew; a halftrack's are spared (D.8).
+        var passenger = new FirePrc("uk-l", "british-leader-8-1", FirePrc.Passenger, false, false);
+        Assert.Equal(ScenarioA1PrcRules.Exposed, ScenarioA1PrcRules.Exposure(passenger, Ordnance.Fire.Definitions["campaign-british-bren-carrier"], false, true));
+        Assert.Equal(ScenarioA1PrcRules.Spared, ScenarioA1PrcRules.Exposure(passenger, Ordnance.Fire.Definitions["attacker-halftrack"], false, true));
+    }
+
+    [Fact]
+    public void ACarrierCarriesFourPassengerPpAndEightRiderPp()
+    {
+        // D6.81: four Passenger PP, none with a mortar, FT, or 6 FP AAMG as MA; eight Rider PP. Any other vehicle keeps its printed capacity.
+        var bren = Ordnance.Fire.Definitions["campaign-british-bren-carrier"];
+        Assert.Equal(4, ScenarioA1CarrierRules.PassengerCapacity(bren.VehicleClass, bren.PassengerCapacity, bren.MainArmament, bren.Caliber, bren.AntiAircraftMg));
+        Assert.Null(ScenarioA1CarrierRules.PassengerCapacity("carrier", 4, "ft", null, null));
+        Assert.Null(ScenarioA1CarrierRules.PassengerCapacity("carrier", 4, null, 76, null));
+        Assert.Null(ScenarioA1CarrierRules.PassengerCapacity("carrier", 4, "aamg", null, 6));
+        Assert.Equal(4, ScenarioA1CarrierRules.PassengerCapacity("carrier", 4, "aamg", null, 4));
+        Assert.Equal(15, ScenarioA1CarrierRules.PassengerCapacity("halftrack", 15, "aamg", null, 3));
+        Assert.Equal(new RiderCapacity(8, false), ScenarioA1RiderRules.Capacity(bren.VehicleClass, bren.Unarmored == true));
+    }
+
+    [Fact]
+    public void ACarriersCrewLeavesAsAHalfSquadUnlessItHasAFtOr76mmMortarOrTowsAGun()
+    {
+        // D6.82: the Bren carrier's crew is the British 2-4-7 HS, not the elite 2-4-8; a FT or 76mm mortar Carrier, or one towing a Gun, has a crew.
+        var bren = Ordnance.Fire.Definitions["campaign-british-bren-carrier"];
+        Assert.True(ScenarioA1CarrierRules.InherentHalfSquad(bren.VehicleClass, bren.MainArmament, bren.Caliber, false));
+        Assert.False(ScenarioA1CarrierRules.InherentHalfSquad("carrier", "ft", null, false));
+        Assert.False(ScenarioA1CarrierRules.InherentHalfSquad("carrier", null, 76, false));
+        Assert.True(ScenarioA1CarrierRules.InherentHalfSquad("carrier", null, 51, false));
+        Assert.False(ScenarioA1CarrierRules.InherentHalfSquad("carrier", "mg", null, true));
+        Assert.False(ScenarioA1CarrierRules.InherentHalfSquad("halftrack", "aamg", null, false));
+
+        var definitions = Ordnance.Fire.Definitions.Values;
+        Assert.Equal(("british-half-squad", "asl:half-squad"), ScenarioA1CarrierRules.LeavingCrew(definitions, "british", true));
+        Assert.Equal(("attacker-half-squad", "asl:half-squad"), ScenarioA1CarrierRules.LeavingCrew(definitions, "german", true));
+        Assert.Equal(("british-vehicle-crew", "asl:vehicle-crew"), ScenarioA1CarrierRules.LeavingCrew(definitions, "british", false));
+
+        // A nationality with no 2-4-7 HS (the Italians' is 1-3-7) leaves its vehicle crew; one with neither, nothing.
+        Assert.Equal(("italian-vehicle-crew", "asl:vehicle-crew"), ScenarioA1CarrierRules.LeavingCrew(definitions, "italian", true));
+        Assert.Null(ScenarioA1CarrierRules.LeavingCrew(definitions, "japanese", true));
+
+        // D6.83: only a Carrier's inherent HS unloads as Passengers do, and once.
+        Assert.Null(ScenarioA1CarrierRules.CrewUnloadBar("uk-bren", true, false));
+        Assert.Contains("already left", ScenarioA1CarrierRules.CrewUnloadBar("uk-bren", true, true), StringComparison.Ordinal);
+        Assert.Contains("only a Carrier's inherent HS", ScenarioA1CarrierRules.CrewUnloadBar("de-ht", false, false), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ACarriersInherentHalfSquadIsWorthTwoVpAndOneOnceItLeaves()
+    {
+        // A26.213: the Bren carrier, its MG MA, AF 1, and its inherent HS: 1 + 1 + 1 + 2. Once the HS is a counter of its own it is a HS, one VP (A26.211),
+        // and it no longer counts in the Carrier.
+        Assert.Equal(5, ScenarioA1VictoryCalculator.VehicleVictoryPoints(true, false, false, false, true, [1, 1], () => true));
+        Assert.Equal(3, ScenarioA1VictoryCalculator.VehicleVictoryPoints(true, false, false, false, true, [1, 1], () => false));
+        Assert.Equal(1, ScenarioA1VictoryCalculator.VictoryPoints("asl:half-squad", () => null, () => 0));
+        Assert.True(ScenarioA1VictoryCalculator.LeftItsVehicle("asl:half-squad"));
+        Assert.True(ScenarioA1VictoryCalculator.LeftItsVehicle("asl:vehicle-crew"));
+        Assert.False(ScenarioA1VictoryCalculator.LeftItsVehicle("asl:squad"));
+    }
 }

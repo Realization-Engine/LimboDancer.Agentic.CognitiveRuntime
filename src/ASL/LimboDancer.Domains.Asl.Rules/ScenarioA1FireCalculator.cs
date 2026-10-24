@@ -2379,7 +2379,9 @@ public static class ScenarioA1FireCalculator
                     continue;
                 }
 
-                if (vehicle.CrewExposed != true || vehicle.Stunned == true)
+                // D6.84 (p. 207; pass 65, ruling R65.18): a Carrier's crew "remain CE if stunned or shocked, and are subject to the Collateral Attack",
+                // where the attack carries the vehicle's PRC (ruling R65.5), as every attack planned since the pass does.
+                if (vehicle.CrewExposed != true || (vehicle.Stunned == true && !(vehicle.Prc is not null && ScenarioA1CarrierRules.IsCarrier(definition.VehicleClass))))
                 {
                     var unexposed = WithPrc(new FireVehicleEffect(id, definition.Id, FireVehicleEffect.None, null, drm, final, null, null, FireVehicleEffect.NotVulnerable),
                         vehicle, definition, column, arithmetic, drm);
@@ -2420,7 +2422,8 @@ public static class ScenarioA1FireCalculator
                     usedRolls.Add("crewCheck:" + id);
                 }
 
-                var (check, crewResult) = CrewOutcome(outcome, dice, vehicle.StunRecovery == true, morale, vehicle.CrewMorale);
+                // D5.342 (p. 204): a second Stun Recalls the crew; only a Carrier's crew is attacked while Stunned (D6.84).
+                var (check, crewResult) = CrewOutcome(outcome, dice, vehicle.StunRecovery == true || vehicle.Stunned == true, morale, vehicle.CrewMorale);
                 var crewEffect = WithPrc(new FireVehicleEffect(id, definition.Id, FireVehicleEffect.None, null, crewDrm, crewFinal, null, check, crewResult),
                     vehicle, definition, column, arithmetic, drm);
                 if (crewEffect is null)
