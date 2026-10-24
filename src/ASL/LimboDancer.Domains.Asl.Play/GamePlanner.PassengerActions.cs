@@ -151,41 +151,49 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// D6.1 (ruling R65.11): a broken Passenger's vehicle and what it may do in the RtPh: stay aboard, rout beneath, or rout beneath because its vehicle's
-    /// inherent crew is gone (Abandoned). Null for a unit on foot.
+    /// inherent crew is gone (Abandoned) or broken. D5.311 (ruling R65.31): a crew broken inside its AFV is in the Crew role, and must rout beneath it
+    /// (<c>Crew</c> true). Null for a unit on foot.
     /// </summary>
-    private (string Vehicle, string Verdict)? PassengerRout(GameState state, UnitInstance unit)
+    private (string Vehicle, string Verdict, bool Crew)? PassengerRout(GameState state, UnitInstance unit)
     {
         if (VehicleOf(state, unit.Id) is not { } vehicleId || state.Unit(vehicleId) is not { } vehicle)
         {
             return null;
         }
 
-        // An inherent crew is eliminated with its vehicle, which then carries nobody (D5.6), and no crew counter breaks while inside: the crew is gone
-        // only when it has Abandoned the vehicle.
-        return (vehicleId, ScenarioA1RoutCalculator.RoutBeneath(Is(unit, Conditions.Broken), !Is(vehicle, Conditions.Motion), crewEliminated: false, crewBroken: false,
-            Is(vehicle, Conditions.Abandoned)));
+        // An inherent crew is eliminated with its vehicle, which then carries nobody (D5.6); the crew is gone when it has Abandoned the vehicle, and broken
+        // when its counter is broken inside it (D5.311), read from the state's index (ruling R65.25).
+        var crewBroken = MemoOf(state).Objects(state).CrewOf(vehicleId) is { } crew && Is(crew, Conditions.Broken);
+        return (vehicleId, ScenarioA1RoutCalculator.RoutBeneath(Is(unit, Conditions.Broken), !Is(vehicle, Conditions.Motion), crewEliminated: false, crewBroken,
+            Is(vehicle, Conditions.Abandoned)), unit.Position is ContainedPosition { Role: ContainmentRole.Crew });
     }
 
     /// <summary>
     /// D6.1, D5.311 (ruling R65.11): a broken Passenger routs beneath its vehicle, spending all its RtPh MF: one rout step into the vehicle's Location,
-    /// on foot.
+    /// on foot. D5.311 (ruling R65.31): a broken crew inside its AFV routs beneath it the same way, and the vehicle is Abandoned first.
     /// </summary>
     private GamePlan PlanRoutBeneath(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, GameState state, UnitInstance unit,
-        BoardLocation at, (string Vehicle, string Verdict) aboard, int routeSteps, bool lowCrawl)
+        BoardLocation at, (string Vehicle, string Verdict, bool Crew) aboard, int routeSteps, bool lowCrawl)
     {
         if (ScenarioA1RoutCalculator.RoutBeneathBar(unit.Id, aboard.Vehicle, aboard.Verdict, routeSteps, lowCrawl) is { } bar)
         {
             return Refused(scope, label, expected, bar);
         }
 
-        var events = new List<GameEvent>
+        var events = new List<GameEvent>();
+        if (aboard.Crew)
         {
-            Event(scope, attemptId, 1, expected, "rout-stepped", new RoutStepped(unit.Id, at, RoutHalfMf(unit), false), null, null),
-        };
+            events.Add(Event(scope, attemptId, 1, expected, "conditions-changed",
+                new ConditionsChanged(aboard.Vehicle, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)), null, null));
+        }
+
+        events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-stepped", new RoutStepped(unit.Id, at, RoutHalfMf(unit), false), null, null));
         AddAdjacentDm(scope, attemptId, expected, Replay([.. existing, .. events]).Current!, events);
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-            [$"play.rout: {unit.Id} routs beneath {aboard.Vehicle} in {at}, spending all its MF"
-                + (aboard.Verdict == ScenarioA1RoutCalculator.MustRoutBeneath ? ", since its vehicle has lost its inherent crew" : string.Empty) + " (D6.1, D5.311)"]);
+            [aboard.Crew
+                ? $"play.rout: {unit.Id}, the broken crew of {aboard.Vehicle}, routs beneath it in {at}, spending all its MF; {aboard.Vehicle} is Abandoned (D5.311)"
+                : $"play.rout: {unit.Id} routs beneath {aboard.Vehicle} in {at}, spending all its MF"
+                    + (aboard.Verdict == ScenarioA1RoutCalculator.MustRoutBeneath ? ", since its vehicle has lost its inherent crew" : string.Empty) + " (D6.1, D5.311)"]);
     }
 
     /// <summary>
@@ -195,7 +203,7 @@ public sealed partial class GamePlanner
     private string[]? OverrunPassengerIds(GameState state, UnitInstance vehicle, IReadOnlyList<string>? named)
     {
         if (VehicleDefinition(vehicle) is not { } definition
-            || ScenarioA1PassengerActionRules.OverrunShare(definition.Unarmored == true, PassengersExposed(vehicle, definition)) == 0)
+            || ScenarioA1PassengerActionRules.OverrunShare(definition.Unarmored == true, PassengersExposed(vehicle, definition), definition.VehicleClass) == 0)
         {
             return null;
         }

@@ -680,6 +680,33 @@ public sealed class BacklogPass65Tests : IDisposable
     }
 
     [Fact]
+    public async Task ALoaderSparedByTheAttackThatDestroysItsTruckStaysOnFoot()
+    {
+        // D5.43 and its EX (p. 204): the 4-6-7 boards the truck; the Russians' 8 FP, Original DR 5: on the Vehicle line, below the Kill Number of 7, the
+        // truck is eliminated; the squad, FFNAM alone, takes a 2MC on a Final 4 and passes it on a 3. The load fails with the vehicle destroyed, so the
+        // squad is back on foot in B8 before the wreck is written, not lost with the truck.
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("de-truck", "attacker-truck", Target, "german", "east"),
+            Unit("de-s", "asl:squad", "attacker-squad", Target, "german"), Unit("ru-1", "asl:squad", "defender-squad", Firer, "russian"),
+            Unit("ru-2", "asl:squad", "defender-squad", Firer, "russian"));
+        await Advance();
+        Committed(await Drive("de-truck", "load", "de-s"));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(2, 3, 1, 2, 6, 6, 6, 6), new
+        {
+            firers = RussianSquads,
+            target = Target,
+        }));
+        var events = Since(before).Select(item => item.Payload).ToArray();
+        Assert.Equal("eliminated", events.OfType<FireResolved>().Single().Resolution.GetProperty("vehicleEffects")[0].GetProperty("result").GetString());
+        var moved = Array.FindIndex(events, payload => payload is InstanceMoved { Id: "de-s" });
+        Assert.InRange(moved, 0, Array.FindIndex(events, payload => payload is VehicleWrecked) - 1);
+        var squad = Current.Unit("de-s")!;
+        Assert.Equal((InstanceStatus.Active, (string?)null, Target), (squad.Status, Current.Aboard("de-s"), Current.Location("de-s")!.Location.ToString()));
+        Assert.NotEqual(InstanceStatus.Active, Current.Unit("de-truck")!.Status);
+        NoReplayErrors();
+    }
+
+    [Fact]
     public async Task ASquadBoardsAtTheEndOfItsMove()
     {
         // D6.4 (ruling R65.15): the 4-6-7 enters B9 and B8 (two MF) and boards the unmoved truck there as its last step, once the DEFENDER passes.
@@ -1811,7 +1838,7 @@ public sealed class BacklogPass65Tests : IDisposable
     {
         // D5.311 (p. 203): the Russian 50mm hits the OT SPW 251/1 in woods. On the Vehicle line its IFT DR of 6 on the 2 column is above the Kill Number of 4,
         // so the halftrack is unharmed; its crew is attacked as Infantry with the Air Burst's -1: a Final DR of 5, a NMC. The crew's DR of 11 fails its Morale
-        // Level: it breaks and is placed beneath, broken, and the halftrack is Abandoned.
+        // Level: it breaks and stays inside, broken, and the halftrack Stops (ruling R65.31). In the RtPh the crew must rout beneath it, which Abandons it.
         changed = ("B8", "Woods");
         await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Unit("r1", "asl:squad", "defender-squad", FiveHexesOff, "russian"),
             LightMortar("ru-mtr", "defender-light-mortar", "r1", "russian"), Vehicle("de-ht", "attacker-halftrack", Target, "german", "east"));
@@ -1823,10 +1850,31 @@ public sealed class BacklogPass65Tests : IDisposable
         Assert.Equal(("NMC", 11, false), (line.GetProperty("crewCheck").GetProperty("kind").GetString(), line.GetProperty("crewCheck").GetProperty("finalDr").GetInt32(),
             line.GetProperty("crewCheck").GetProperty("passed").GetBoolean()));
         Assert.Contains("hit:checks:de-ht", shot.Rolls.Keys);
-        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("de-ht")!, Conditions.Abandoned));
+        Assert.NotEqual(ConditionState.True, GameState.Condition(Current.Unit("de-ht")!, Conditions.Abandoned));
+        Assert.NotEqual(ConditionState.True, GameState.Condition(Current.Unit("de-ht")!, Conditions.Motion));
         var crew = Assert.Single(Current.Units, unit => unit.Kind == "asl:vehicle-crew");
         Assert.Equal(("german-vehicle-crew", Target, ConditionState.True),
             (crew.Definition!.Definition, Current.Location(crew.Id)!.Location.ToString(), GameState.Condition(crew, Conditions.Broken)));
+        Assert.Equal(new ContainedPosition("de-ht", ContainmentRole.Crew), crew.Position);
+        NoReplayErrors();
+        var recorded = store.Read(Scope)!.Events.ToArray();
+
+        // R65.31: in the RtPh the broken crew must rout beneath the halftrack, with all its MF, and the halftrack is then Abandoned.
+        for (var phase = 0; phase < 6 && Current.Phase != "rtph"; phase++)
+        {
+            await Advance();
+        }
+
+        Assert.Equal("rtph", Current.Phase);
+        Assert.Contains("broken crew of de-ht", Planner().MustRout(Current, Current.Unit(crew.Id)!), StringComparison.Ordinal);
+        Committed(await Do(GameActions.Rout, NoRoll(), new
+        {
+            unitId = crew.Id,
+            beneath = true,
+        }));
+        Assert.Null(Current.Aboard(crew.Id));
+        Assert.Equal(Target, Current.Location(crew.Id)!.Location.ToString());
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("de-ht")!, Conditions.Abandoned));
         NoReplayErrors();
 
         // A shot recorded before the pass carries no PRC fact: the crew is not attacked and the halftrack is untouched, as it was resolved.
@@ -1837,9 +1885,10 @@ public sealed class BacklogPass65Tests : IDisposable
             return JsonSerializer.SerializeToElement(node);
         }
 
-        GameEvent[] older = [.. store.Read(Scope)!.Events
+        GameEvent[] older = [.. recorded
             .Where(item => item.Payload is not InstanceCreated { Instance.Kind: "asl:vehicle-crew" }
-                && !(item.Payload is ConditionsChanged changed && (changed.Conditions.ContainsKey(Conditions.Abandoned) || changed.Id == crew.Id)))
+                && !(item.Payload is ConditionsChanged changed && (changed.Conditions.ContainsKey(Conditions.Abandoned) || changed.Id == crew.Id
+                    || (changed.Id == "de-ht" && changed.Conditions.ContainsKey(Conditions.Motion)))))
             .Select((item, index) => item with { Revision = index + 1 })
             .Select(item => item.Payload is OrdnanceFired fired
                 ? item with

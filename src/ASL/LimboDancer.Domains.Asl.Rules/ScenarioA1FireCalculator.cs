@@ -1889,9 +1889,13 @@ public static class ScenarioA1FireCalculator
             vehicleKill = kill;
 
             // D.8, D.8A (p. 192; pass 60): an AFV left standing exposes its Vulnerable crew to a full-strength attack with the CE DRM alone, on the same
-            // Original DR; none after a Dud, a Shock, or an Abandonment, nor at a crew stunned, shocked, or BU.
-            var standing = kill is null || (kill.Result is not (OrdnanceKill.Dud or OrdnanceKill.Burn or OrdnanceKill.Eliminated or OrdnanceKill.Shock)
-                && kill.Shocked != true && kill.Abandoned != true);
+            // Original DR; none after a Dud, nor at the crew after a Shock or an Abandonment, nor at a crew stunned, shocked, or BU. The Collateral Attack
+            // Table's note 1 (p. 193; pass 65, the referee's review): its PRC are attacked whenever the AFV is not destroyed, its Passengers spared once
+            // the crew is or becomes shocked; only an attack that carries the PRC (ruling R65.5) attacks them, so an older record reads as before.
+            var standing = kill is null || kill.Result is not (OrdnanceKill.Dud or OrdnanceKill.Burn or OrdnanceKill.Eliminated);
+            var shocked = kill is not null && (kill.Result == OrdnanceKill.Shock || kill.Shocked == true);
+            var becomeImpaired = shocked || kill?.Result == OrdnanceKill.Stun;
+            var crewAttacked = !shocked && kill?.Abandoned != true;
             var column = Array.FindLastIndex(ScenarioA1FireReference.ColumnFp, fp => fp <= collateralFp) - shift;
             if (!standing || column < 0)
             {
@@ -1900,7 +1904,7 @@ public static class ScenarioA1FireCalculator
 
             FireVehicleEffect? effect = null;
             string? result = null;
-            if (named.CrewExposed == true && named.CrewImpaired != true && named.Abandoned != true)
+            if (crewAttacked && named.CrewExposed == true && named.CrewImpaired != true && named.Abandoned != true)
             {
                 var morale = named.CrewMorale ?? reference.AfvCrewMorale(armor.Nationality)!.Value;
                 var final = dice[0] + dice[1] + 2;
@@ -1922,7 +1926,11 @@ public static class ScenarioA1FireCalculator
             }
 
             // D.8A (pass 65, ruling R65.7): the PRC the named AFV carries take the same attack, when the record carries them.
-            if (SpecificOnPrc(named, column, dice[0] + dice[1], ordnanceHit: false) is not { } onPrc)
+            var reached = !becomeImpaired ? named : named with
+            {
+                CrewImpaired = true
+            };
+            if (SpecificOnPrc(reached, column, dice[0] + dice[1], ordnanceHit: false) is not { } onPrc)
             {
                 return false;
             }
@@ -2525,8 +2533,17 @@ public static class ScenarioA1FireCalculator
                 [
                     .. drm.Where(item => !((attack.VehicleFire is not null || attack.Canister is not null || fact) && item.Name == "height-advantage")
                         && !((attack.Canister is not null || fact) && item.Name is "wall" or "hedge")),
-                    new FireModifier("crew-exposed", 2m, "D5.31"),
                 ];
+
+                // D5.31, D6.61 (pp. 203, 205; pass 65, the referee's review): an OT AFV's CE DRM is one less for each full level of the firer's elevation
+                // advantage beyond the range, as its Passengers' is, where the attack carries the PRC fact. Treating the AFV as unarmored when it is
+                // reduced (D5.311) is pass 105's.
+                var beyondRange = fact && definition.OpenTopped == true ? Elevation().Beyond : 0;
+                var crewCe = ScenarioA1PrcRules.CeDrm(beyondRange);
+                if (crewCe > 0)
+                {
+                    crewDrm.Add(new FireModifier("crew-exposed", crewCe, beyondRange > 0 ? "D6.61" : "D5.31"));
+                }
                 var crewFinal = arithmetic.OriginalDr + (int)crewDrm.Sum(item => item.Value);
                 var outcome = column < 0 ? "none" : reference.Result(crewFinal, column);
                 // D3.42, D3.45 (p. 200; pass 55, rulings R55.17, R55.18): the crew checks at its Armor Leader's Morale Level, or an Inexperienced
@@ -2687,8 +2704,14 @@ public static class ScenarioA1FireCalculator
             }
 
             var (beyond, reached) = Elevation();
+            // D5.311 (p. 203; pass 65, the referee's review): the PRC of an OT AFV under Air Bursts are Vulnerable even if BU.
+            reached = reached || AirBurstUnarmored(attack.OrdnanceHit is { Area: true }, attack.TargetTerrain, definition);
             var ce = ScenarioA1PrcRules.CeDrm(beyond);
-            List<FireModifier> exposedDrm = [.. drm.Where(item => item.Name is not ("height-advantage" or "wall" or "hedge"))];
+
+            // A4.62, D.6, D.8B (pp. 51, 192; pass 65, the referee's review): Hazardous Movement is the moving units', never the PRC's; and Mud's cushion
+            // (E3.62) is a TEM, which a CE Passenger does not add to its CE DRM (D5.31).
+            drm = [.. drm.Where(item => item.Name != "hazardous-movement")];
+            List<FireModifier> exposedDrm = [.. drm.Where(item => item.Name is not ("height-advantage" or "wall" or "hedge" or "weather-cushion"))];
             List<FireModifier> buttonedDrm = [.. exposedDrm, new FireModifier("crew-exposed", 2m, "D6.66")];
             if (ce > 0)
             {
@@ -2696,12 +2719,22 @@ public static class ScenarioA1FireCalculator
             }
 
             List<FireModifier> openDrm = [.. drm, .. arithmetic.Drm.Where(item => item.Name.StartsWith("tem:", StringComparison.Ordinal))];
+
+            // B10.31 (p. 125; pass 65, the referee's review): an open PRC claims Height Advantage when it has no other positive TEM; the AFV's or wreck's
+            // cover that kept it from the Infantry is not theirs (D6.7), so it is read for them apart.
+            if (attack.HeightAdvantage == true && attack.OrdnanceHit is null && !Flamethrower && Cover(attack) is not null
+                && openDrm.All(item => item.Value <= 0 || !(item.Name.StartsWith("tem:", StringComparison.Ordinal) || item.Name is "wall" or "hedge" or "height-advantage")))
+            {
+                openDrm.Add(new FireModifier("height-advantage", 1m, "B10.31"));
+            }
+
             var open = new List<FirePrc>();
             var exposed = new List<FirePrc>();
             var desperate = new List<string>();
             foreach (var unit in aboard)
             {
-                var exposure = ScenarioA1PrcRules.Exposure(unit, definition, vehicle.CrewExposed == true, vehicle.Stunned == true);
+                // D.8 (p. 192; pass 65, the referee's review): a Shocked AFV's Passengers are spared as a Stunned one's are.
+                var exposure = ScenarioA1PrcRules.Exposure(unit, definition, vehicle.CrewExposed == true, vehicle.Stunned == true || vehicle.Shocked == true);
                 if (exposure == ScenarioA1PrcRules.Open)
                 {
                     open.Add(unit);
@@ -3532,7 +3565,8 @@ public static class ScenarioA1FireCalculator
             // D7.16, D6.65 (pass 65, ruling R65.13): with Passengers adding FP, one leadership modifier, the Armor Leader's or a Passenger leader's.
             if ((attack.Overrun is { Passengers.Count: > 0 } carrying
                     ? ScenarioA1PassengerActionRules.OverrunLeadership(OverrunPassengers(carrying),
-                        ScenarioA1PassengerActionRules.OverrunShare(reference.Definitions[carrying.DefinitionId!].Unarmored == true, carrying.CrewExposed == true) > 0, carrying.ArmorLeadership)
+                        ScenarioA1PassengerActionRules.OverrunShare(reference.Definitions[carrying.DefinitionId!].Unarmored == true, carrying.CrewExposed == true,
+                            reference.Definitions[carrying.DefinitionId!].VehicleClass) > 0, carrying.ArmorLeadership)
                     : ScenarioA1ArmorLeaders.Modifier(attack.Overrun is { } leading ? leading.ArmorLeadership
                         : attack.VehicleFire is { Weapons: null or { Count: 0 } } mainArmament ? mainArmament.ArmorLeadership : null)) is { } armorLeader)
             {
@@ -3761,7 +3795,8 @@ public static class ScenarioA1FireCalculator
 
             // D7.11 (pass 65, ruling R65.13): the Passengers the declaration named add their share of their printed FP, tripled; an OVR recorded before
             // the pass names none.
-            foreach (var passenger in ScenarioA1PassengerActionRules.OverrunFirepower(OverrunPassengers(overrun), definition.Unarmored == true, overrun.CrewExposed == true, common))
+            foreach (var passenger in ScenarioA1PassengerActionRules.OverrunFirepower(OverrunPassengers(overrun), definition.Unarmored == true, overrun.CrewExposed == true, common,
+                definition.VehicleClass))
             {
                 yield return passenger;
             }
@@ -3989,8 +4024,10 @@ public static class ScenarioA1FireCalculator
                 multipliers.Add(new FireModifier("dash", 0.5m, "A4.63"));
             }
 
-            // A7.24, A7.25 (ruling R12.1): AFPh fire is halved, unless it is Opportunity Fire.
-            if (attack.Phase == "AFPh" && firer.OpportunityFire != true)
+            // A7.24, A7.25 (ruling R12.1): AFPh fire is halved, unless it is Opportunity Fire. D6.22, D6.63 (pp. 205, 206; pass 65, the referee's review):
+            // a Rider whose AFV moved or is in Motion is quartered, its movement halving and the AFPh's being one, so it takes no second.
+            var riderQuartered = firer.Mounted is { Rider: true } riding && (riding.Moved == true || riding.Motion == true);
+            if (attack.Phase == "AFPh" && firer.OpportunityFire != true && !riderQuartered)
             {
                 multipliers.Add(new FireModifier("advancing-fire", 0.5m, "A7.24"));
             }

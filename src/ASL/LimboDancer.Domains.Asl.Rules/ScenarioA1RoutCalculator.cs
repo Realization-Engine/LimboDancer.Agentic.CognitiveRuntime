@@ -51,6 +51,12 @@ public static class ScenarioA1RoutCalculator
     /// <summary>The reason a broken Passenger must rout beneath its vehicle (D6.1), as the Rout panel and the gate say it.</summary>
     public static string RoutBeneathMustText(string vehicleId) => $"its vehicle {vehicleId} has lost its inherent crew, so it must rout beneath it (D6.1)";
 
+    /// <summary>
+    /// D5.311 (p. 203; pass 65, ruling R65.31): why a broken crew inside its AFV must rout: it routs beneath with all its initial-RtPh MF, and "If the crew
+    /// routs ... the vehicle is marked with an Abandoned counter".
+    /// </summary>
+    public static string RoutBeneathCrewText(string vehicleId) => $"it is the broken crew of {vehicleId}, so it must rout beneath it, and {vehicleId} is then Abandoned (D5.311)";
+
     /// <summary>Why a rout beneath a vehicle is refused (D6.1; ruling R65.11), or null when it is allowed.</summary>
     public static string? RoutBeneathBar(string unitId, string? vehicleId, string verdict, int routeSteps, bool lowCrawl) =>
         vehicleId is null ? $"play.rout-beneath: {unitId} is not a Passenger; only a Passenger routs beneath its vehicle (D6.1)"

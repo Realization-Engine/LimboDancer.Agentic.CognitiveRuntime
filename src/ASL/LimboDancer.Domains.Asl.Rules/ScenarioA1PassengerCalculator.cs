@@ -89,14 +89,25 @@ public static class ScenarioA1PassengerCalculator
     /// <summary>
     /// D5.43 (p. 204; pass 65, ruling R65.14): "Infantry attempting to enter a vehicle succeed only if they survive all such attacks unpinned and in Good
     /// Order". The loaders an attack on them left pinned or broken, which are back on foot in the Location; an eliminated one is gone, and an unloader
-    /// "does succeed" whatever befalls it. Empty for any other attack.
+    /// "does succeed" whatever befalls it. The D5.43 EX (p. 204): a loader also fails "if ... the vehicle is destroyed", so when the same attack eliminates
+    /// or burns the vehicle they board (<paramref name="conveyanceResult"/>, its Vehicle line's result), every loader it did not eliminate is back on foot.
+    /// Empty for any other attack.
     /// </summary>
-    public static IReadOnlyList<string> LoadFailures(FireEmbarking? embarking, IEnumerable<FireUnitEffect> effects)
+    public static IReadOnlyList<string> LoadFailures(FireEmbarking? embarking, IEnumerable<FireUnitEffect> effects, string? conveyanceResult = null)
     {
         ArgumentNullException.ThrowIfNull(effects);
-        return embarking is { Units: { } loaders, Unloading: false }
-            ? [.. effects.Where(effect => loaders.Contains(effect.UnitId, StringComparer.Ordinal) && !effect.Eliminated && (effect.Pinned || effect.Broken)).Select(effect => effect.UnitId)]
-            : [];
+        if (embarking is not { Units: { } loaders, Unloading: false })
+        {
+            return [];
+        }
+
+        if (conveyanceResult is FireVehicleEffect.Eliminated or FireVehicleEffect.BurningWreck)
+        {
+            var eliminated = effects.Where(effect => effect.Eliminated).Select(effect => effect.UnitId).ToHashSet(StringComparer.Ordinal);
+            return [.. loaders.Where(id => !eliminated.Contains(id)).Distinct(StringComparer.Ordinal)];
+        }
+
+        return [.. effects.Where(effect => loaders.Contains(effect.UnitId, StringComparer.Ordinal) && !effect.Eliminated && (effect.Pinned || effect.Broken)).Select(effect => effect.UnitId)];
     }
 
     /// <summary>

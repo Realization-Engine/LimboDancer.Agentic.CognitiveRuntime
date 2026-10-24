@@ -109,6 +109,12 @@ public static class LiveOrdnance
                 return (null, abandoned);
             }
 
+            // D5.311 (pass 65, ruling R65.31): a crew broken inside its AFV does not fire its MA.
+            if (GamePlanner.BrokenCrewBar(state, tank) is { } brokenCrew)
+            {
+                return (null, brokenCrew);
+            }
+
             // A21.22 (pass 65, ruling R65.22): a SMC crew fires a MA only in a one man turret, BU, and never in a Player Turn it moved.
             if (GamePlanner.SmcCrewFireBar(state, tank, "ma") is { } smcBar)
             {

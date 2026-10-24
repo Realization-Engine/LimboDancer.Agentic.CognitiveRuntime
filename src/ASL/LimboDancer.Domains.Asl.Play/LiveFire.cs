@@ -102,6 +102,12 @@ public static class LiveFire
             return (null, abandoned);
         }
 
+        // D5.311 (pass 65, ruling R65.31): a crew broken inside its AFV fires none of its weapons.
+        if (vehicleFirers.Length > 0 && GamePlanner.BrokenCrewBar(state, vehicleFirers[0]) is { } brokenCrew)
+        {
+            return (null, brokenCrew);
+        }
+
         // A21.22 (pass 65, ruling R65.22): a SMC crew fires only its AAMG while CE, its BMG or CMG while BU, and never in a Player Turn it moved.
         if (vehicleFirers.Length > 0 && vehicleFirers[0] is { TemporaryCrew.Manning: ScenarioA1CapturedVehicleRules.Smc } manned
             && (weapons?.GetValueOrDefault(manned.Id) is { Count: > 0 } mgs ? mgs

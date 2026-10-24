@@ -43,6 +43,17 @@ public static class ScenarioA1CrewActsRules
         : null;
 
     /// <summary>
+    /// D5.311 (p. 203; pass 65, ruling R65.31): an Unprotected crew that breaks stays inside its AFV, broken, until it routs beneath it in the RtPh; the
+    /// vehicle "automatically Stops" and its broken crew neither moves nor fires it. Why the vehicle may not act, or null when its crew is not broken.
+    /// </summary>
+    public static string? BrokenCrewBar(string vehicle, string? brokenCrew) =>
+        brokenCrew is null ? null
+            : $"play.vehicle-crew-broken: {vehicle}'s crew {brokenCrew} is broken inside it, so {vehicle} neither moves nor fires; the crew routs beneath it in the RtPh, and {vehicle} is then Abandoned (D5.311)";
+
+    /// <summary>D5.311 (p. 203; ruling R65.31): "The vehicle automatically Stops (no Stop MP is spent) when its crew breaks."</summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> CrewBrokeConditions { get; } = [(UnitCondition.Motion, false)];
+
+    /// <summary>
     /// D5.411 (p. 204): "Only an Inherent crew that voluntarily abandons a vehicle may turn it into a non-burning wreck or malfunction its weapon(s) as it
     /// leaves." Why the choice may not be made, or null: an unknown choice, a Temporary crew (A21.22), or a wreck made with PRC still aboard, which would be
     /// lost with it; they unload first.

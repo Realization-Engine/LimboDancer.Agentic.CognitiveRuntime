@@ -1818,6 +1818,6 @@ public sealed record FireVehicleEffect(
     public const string Pinned = "pinned";
     public const string NotVulnerable = "not-vulnerable";
 
-    /// <summary>An Unprotected crew broken (D5.311; pass 65, ruling R65.26): it routs beneath its vehicle, which is Abandoned.</summary>
+    /// <summary>An Unprotected crew broken (D5.311; pass 65, rulings R65.26, R65.31): it stays inside until it routs beneath its vehicle in the RtPh, which Abandons it.</summary>
     public const string Broken = "broken";
 }

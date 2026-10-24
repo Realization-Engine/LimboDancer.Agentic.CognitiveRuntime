@@ -383,6 +383,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, moveBar);
         }
 
+        // D5.311 (pass 65, ruling R65.31): a crew broken inside its AFV does not move it; its Passengers may still unload.
+        if (kind != VehicleStepped.Unload && MemoOf(state).Objects(state).CrewOf(id) is { } crewInside && Is(crewInside, Conditions.Broken)
+            && ScenarioA1CrewActsRules.BrokenCrewBar(id, crewInside.Id) is { } brokenCrew)
+        {
+            return Refused(scope, label, expected, brokenCrew);
+        }
+
         // D3.12 (pass 50): a turret named with an expenditure it does not turn with is refused, not dropped.
         if (!ScenarioA1VehicleMovementCalculator.TurretTurnsWith(kind)
             && TurretWithStep(state, vehicle, arguments, kind, at.Location, vehicle.Straddling is not null).Bar is { } noTurret)

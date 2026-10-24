@@ -27,7 +27,7 @@ public sealed partial class GamePlanner
         if (aboard is { } riding)
         {
             return unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Melee) && !Is(unit, Conditions.Captured) && riding.Verdict == ScenarioA1RoutCalculator.MustRoutBeneath
-                ? ScenarioA1RoutCalculator.RoutBeneathMustText(riding.Vehicle) : null;
+                ? riding.Crew ? ScenarioA1RoutCalculator.RoutBeneathCrewText(riding.Vehicle) : ScenarioA1RoutCalculator.RoutBeneathMustText(riding.Vehicle) : null;
         }
 
         if (!ScenarioA1RoutCalculator.MustRoutCandidate(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken), Is(unit, Conditions.Melee),

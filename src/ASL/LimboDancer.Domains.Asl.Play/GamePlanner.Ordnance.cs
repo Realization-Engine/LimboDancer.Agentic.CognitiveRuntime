@@ -1240,14 +1240,16 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// The events of an Unprotected crew's break or elimination (D5.311, p. 203; pass 65, ruling R65.26): the vehicle is Abandoned; a broken crew is beneath
-    /// it, broken, taking the Armor Leader as a failed TC's does (D3.43); an eliminated crew leaves no counter, and one crewing from inside is eliminated.
+    /// The events of an Unprotected crew's break or elimination (D5.311, p. 203; pass 65, rulings R65.26, R65.31): an eliminated crew leaves no counter,
+    /// one crewing from inside is eliminated, and the vehicle is Abandoned. A broken crew stays inside, broken, in the Crew role, and the vehicle Stops; the
+    /// inherent crew is placed as its counter there, carrying the Armor Leader as a crew that leaves does (D3.43). It routs beneath in the RtPh, which
+    /// Abandons the vehicle (<see cref="PlanRoutBeneath"/>).
     /// </summary>
     private static IEnumerable<(string Type, EventPayload Payload)> UnprotectedCrewEvents(GameState state, UnitInstance vehicle, string attemptId, bool broken)
     {
-        yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)));
         if (!broken)
         {
+            yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)));
             if (CrewInside(state, vehicle.Id) is { } gone)
             {
                 yield return ("instance-eliminated", new InstanceEliminated(gone.Id));
@@ -1256,11 +1258,23 @@ public sealed partial class GamePlanner
             yield break;
         }
 
-        if (CrewLeaves(state, vehicle, attemptId, armorLeader: vehicle.ArmorLeader) is { } crew)
+        yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1CrewActsRules.CrewBrokeConditions)));
+        var brokenState = new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Broken] = ConditionState.True };
+        if (CrewInside(state, vehicle.Id) is { } inside)
         {
-            yield return crew;
-            var id = crew.Payload is InstanceMoved moved ? moved.Id : ((InstanceCreated)crew.Payload).Instance.Id;
-            yield return ("conditions-changed", new ConditionsChanged(id, new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Broken] = ConditionState.True }));
+            yield return ("conditions-changed", new ConditionsChanged(inside.Id, brokenState));
+        }
+        else if (LeavingCrew(state, vehicle, attemptId, armorLeader: vehicle.ArmorLeader) is { } crew)
+        {
+            yield return ("instance-created", crew with
+            {
+                Instance = crew.Instance with
+                {
+                    Position = new ContainedPosition(vehicle.Id, ContainmentRole.Crew),
+                    Group = vehicle.Group,
+                    Conditions = new Dictionary<string, ConditionState>(crew.Instance.Conditions, StringComparer.Ordinal) { [Conditions.Broken] = ConditionState.True },
+                },
+            });
         }
     }
 

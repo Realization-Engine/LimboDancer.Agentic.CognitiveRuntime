@@ -380,7 +380,8 @@ public static class FireText
                 + $"{(hit.CrewCheck is { } made ? "; " + CheckText(made) : "")}: "
                 + (hit.CrewResult switch
                 {
-                    FireVehicleEffect.Broken => "broken, it routs beneath and the vehicle is Abandoned",
+                    // Ruling R65.31: the broken crew stays inside until the RtPh.
+                    FireVehicleEffect.Broken => "broken; it routs beneath in the RtPh",
                     FireVehicleEffect.Eliminated => "eliminated, and the vehicle is Abandoned",
                     _ => hit.CrewResult,
                 }) + " (D5.311)",

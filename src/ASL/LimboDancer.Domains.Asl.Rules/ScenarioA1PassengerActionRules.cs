@@ -210,25 +210,26 @@ public static class ScenarioA1PassengerActionRules
 
     /// <summary>
     /// D7.11 (p. 207; ruling R65.13): the share of a Passenger's printed FP its vehicle's OVR takes, before TPBF: one-half from a CE armored halftrack
-    /// or Carrier, one-fourth from any other vehicle, none from a BU halftrack, whose Passengers do not fire (D6.62).
+    /// (only, D7.11) or Carrier (D6.8), one-fourth from any other vehicle, none from a BU armored vehicle, whose Passengers do not fire (D6.62).
     /// </summary>
-    public static decimal OverrunShare(bool unarmored, bool crewExposed) => unarmored ? 0.25m : crewExposed ? 0.5m : 0m;
+    public static decimal OverrunShare(bool unarmored, bool crewExposed, string? vehicleClass) =>
+        unarmored ? 0.25m : !crewExposed ? 0m : vehicleClass == "halftrack" || ScenarioA1CarrierRules.IsCarrier(vehicleClass) ? 0.5m : 0.25m;
 
     /// <summary>
     /// D7.11, D7.16 (p. 207; ruling R65.13): each Passenger's FP added to its vehicle's OVR, its share tripled for TPBF and halved with the OVR's own
     /// <paramref name="common"/> halvings. A leader adds no FP.
     /// </summary>
     public static IReadOnlyList<FirerFirepower> OverrunFirepower(IReadOnlyList<OverrunPassengerFacts> passengers, bool unarmored, bool crewExposed,
-        IReadOnlyList<FireModifier> common)
+        IReadOnlyList<FireModifier> common, string? vehicleClass)
     {
         ArgumentNullException.ThrowIfNull(passengers);
         ArgumentNullException.ThrowIfNull(common);
-        var share = OverrunShare(unarmored, crewExposed);
+        var share = OverrunShare(unarmored, crewExposed, vehicleClass);
         var firepower = new List<FirerFirepower>();
         foreach (var passenger in passengers.Where(item => !item.Definition.IsLeader))
         {
             var printed = passenger.Wounded && passenger.Definition.WoundedFirepower is { } wounded ? wounded : passenger.Definition.Firepower ?? 0;
-            List<FireModifier> multipliers = [new FireModifier(unarmored ? "passenger-quarter" : "passenger-half", share, "D7.11"), new FireModifier("tpbf", 3m, "D7.11"), .. common];
+            List<FireModifier> multipliers = [new FireModifier(share == 0.5m ? "passenger-half" : "passenger-quarter", share, "D7.11"), new FireModifier("tpbf", 3m, "D7.11"), .. common];
             firepower.Add(new FirerFirepower(passenger.UnitId, printed, multipliers, multipliers.Aggregate((decimal)printed, (value, item) => value * item.Value)));
         }
 

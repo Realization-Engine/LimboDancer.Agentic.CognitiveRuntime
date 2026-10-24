@@ -441,9 +441,10 @@ public static class ScenarioA1FireFollowUps
     }
 
     /// <summary>
-    /// What an Unprotected crew's result does (D5.311, p. 203; pass 65, ruling R65.26): "If it breaks it must rout from the vehicle ... [EXC: it expends all
-    /// its initial-RtPh MF to be placed beneath the vehicle]" (true: placed beneath, broken), and one eliminated is gone (false); "If the crew routs or is
-    /// eliminated, the vehicle is marked with an Abandoned counter". Null for any other result, and for a vehicle the attack destroyed.
+    /// What an Unprotected crew's result does (D5.311, p. 203; pass 65, rulings R65.26, R65.31): "If it breaks it must rout from the vehicle ... [EXC: it
+    /// expends all its initial-RtPh MF to be placed beneath the vehicle]" (true: broken, it stays inside until it routs beneath in the RtPh, and the vehicle
+    /// Stops), and one eliminated is gone (false); "If the crew routs or is eliminated, the vehicle is marked with an Abandoned counter", at once for an
+    /// eliminated crew and at the rout for a broken one. Null for any other result, and for a vehicle the attack destroyed.
     /// </summary>
     public static bool? UnprotectedCrewPlacedBroken(FireVehicleEffect effect)
     {

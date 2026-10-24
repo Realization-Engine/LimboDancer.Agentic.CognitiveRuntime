@@ -33,6 +33,13 @@ public sealed partial class GamePlanner
             : [];
     }
 
+    /// <summary>
+    /// D5.311 (ruling R65.31): why a vehicle whose crew is broken inside it neither moves nor fires, or null. One scan of the state's units, made only when a
+    /// vehicle's own move or fire is planned, never in a loop.
+    /// </summary>
+    internal static string? BrokenCrewBar(GameState state, UnitInstance vehicle) =>
+        ScenarioA1CrewActsRules.BrokenCrewBar(vehicle.Id, CrewInside(state, vehicle.Id) is { } crew && Is(crew, Conditions.Broken) ? crew.Id : null);
+
     /// <summary>Whether a vehicle is armed, so manned by a crew that may leave it (D5.1): a MA or any MG, as the Victory count reads it.</summary>
     private static bool Armed(FireDefinition? definition) =>
         ScenarioA1VictoryCalculator.VehicleArmed(definition?.MaType is not null, definition?.MainArmament is not null, definition?.AntiAircraftMg is not null,

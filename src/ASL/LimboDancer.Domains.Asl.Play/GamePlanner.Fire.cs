@@ -1041,10 +1041,13 @@ public sealed partial class GamePlanner
             }
         }
 
-        // D5.43 (pass 65, ruling R65.14): a loader the attack left pinned or broken does not board; it is back on foot in the Location it boarded in.
+        // D5.43 (pass 65, ruling R65.14): a loader the attack left pinned or broken does not board; it is back on foot in the Location it boarded in. So is
+        // every loader it spared when it destroys the vehicle they board (the D5.43 EX), moved before the wreck is written so that it is not lost with it.
         if (BoardLocation.TryParse(facts.TargetLocationId, out var boardedIn))
         {
-            foreach (var failed in ScenarioA1PassengerCalculator.LoadFailures(facts.Embarking, resolution.Effects))
+            var conveyance = facts.Embarking?.Units?.Select(state.Unit).Select(unit => unit?.Position).OfType<ContainedPosition>().FirstOrDefault()?.Container;
+            var conveyanceResult = conveyance is null ? null : resolution.VehicleEffects?.FirstOrDefault(item => item.VehicleId == conveyance)?.Result;
+            foreach (var failed in ScenarioA1PassengerCalculator.LoadFailures(facts.Embarking, resolution.Effects, conveyanceResult))
             {
                 if (state.Unit(failed) is { Position: ContainedPosition })
                 {

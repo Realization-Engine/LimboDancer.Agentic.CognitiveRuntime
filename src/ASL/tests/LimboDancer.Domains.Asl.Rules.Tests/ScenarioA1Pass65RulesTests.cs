@@ -449,9 +449,9 @@ public sealed class ScenarioA1Pass65RulesTests
     {
         // D7.11: a CE halftrack's 4-6-7 adds half of 4, tripled: 6 FP; a truck's adds a quarter, tripled: 3 FP; a BU halftrack's adds none.
         OverrunPassengerFacts[] squad = [new("de-s", Definition("attacker-squad"), false)];
-        Assert.Equal(6m, Assert.Single(ScenarioA1PassengerActionRules.OverrunFirepower(squad, false, true, [])).Firepower);
-        Assert.Equal(3m, Assert.Single(ScenarioA1PassengerActionRules.OverrunFirepower(squad, true, false, [])).Firepower);
-        Assert.Equal(0m, Assert.Single(ScenarioA1PassengerActionRules.OverrunFirepower(squad, false, false, [])).Firepower);
+        Assert.Equal(6m, Assert.Single(ScenarioA1PassengerActionRules.OverrunFirepower(squad, false, true, [], "halftrack")).Firepower);
+        Assert.Equal(3m, Assert.Single(ScenarioA1PassengerActionRules.OverrunFirepower(squad, true, false, [], "truck")).Firepower);
+        Assert.Equal(0m, Assert.Single(ScenarioA1PassengerActionRules.OverrunFirepower(squad, false, false, [], "halftrack")).Firepower);
 
         // D7.16: one leadership modifier, the 9-1 Passenger leader's -1 over no Armor Leader, the Armor Leader's -2 over his; none for the leader alone.
         OverrunPassengerFacts[] led = [.. squad, new("de-l", Definition("attacker-leader-9-1"), false)];
@@ -1453,5 +1453,198 @@ public sealed class ScenarioA1Pass65RulesTests
         Assert.Null(ScenarioA1FireFollowUps.UnprotectedCrewPlacedBroken(Crew(FireVehicleEffect.Pinned)));
         Assert.Null(ScenarioA1FireFollowUps.UnprotectedCrewPlacedBroken(Crew(FireVehicleEffect.Broken, FireVehicleEffect.Eliminated)));
         Assert.Null(ScenarioA1FireFollowUps.UnprotectedCrewPlacedBroken(Crew(FireVehicleEffect.Broken, final: null)));
+    }
+
+    // The referee's review, Passengers (Round A of the fixes; ruling R65.31).
+
+    private static readonly int[] TurretHit = [1, 2];
+
+    private static FirePrc Rider(string id = "de-r") => new(id, "attacker-squad", FirePrc.Rider, false, false)
+    {
+        Elr = 3
+    };
+
+    [Fact]
+    public void ALoaderFailsWhenTheAttackDestroysTheVehicleItBoards()
+    {
+        // D5.43 and its EX (p. 204): a loader fails if "the vehicle is destroyed": every loader the attack did not eliminate is back on foot.
+        FireUnitEffect[] effects = [Effect("de-k", eliminated: true), Effect("de-p", pinned: true)];
+        var loading = new FireEmbarking(["de-p", "de-k", "de-s"], false, true);
+        Assert.Equal(["de-p", "de-s"], ScenarioA1PassengerCalculator.LoadFailures(loading, effects, FireVehicleEffect.Eliminated));
+        Assert.Equal(["de-p", "de-s"], ScenarioA1PassengerCalculator.LoadFailures(loading, effects, FireVehicleEffect.BurningWreck));
+
+        // A vehicle left standing fails only the pinned or broken; an unloader still succeeds.
+        Assert.Equal(["de-p"], ScenarioA1PassengerCalculator.LoadFailures(loading, effects, FireVehicleEffect.Immobilized));
+        Assert.Empty(ScenarioA1PassengerCalculator.LoadFailures(loading with
+        {
+            Unloading = true
+        }, effects, FireVehicleEffect.Eliminated));
+    }
+
+    [Fact]
+    public void AShockOrAnAbandonmentStopsOnlyTheCrewsSpecificCollateralAttack()
+    {
+        // C7.7, C3.9: the T-34's AP at the PzKpfw IIIH's turret on a TK DR equal to its Final TK# Shocks it. The Collateral Attack Table's note 1 (p. 193):
+        // its crew and Passenger are spared, and its Rider is still attacked.
+        static OrdnanceShot AtTurret(int[] toKill, IReadOnlyList<FirePrc>? prc)
+        {
+            var shot = AtTank(toKill, prc);
+            return shot with
+            {
+                VehicleTarget = shot.VehicleTarget! with
+                {
+                    CrewExposed = true
+                },
+                Rolls = shot.Rolls! with
+                {
+                    ToHit = TurretHit
+                },
+            };
+        }
+
+        var probe = Shot(AtTurret([6, 5], []));
+        Assert.Equal("turret", probe.Kill!.HitLocation);
+        var finalTk = probe.Kill.FinalTk;
+        int[] toKill = [(finalTk - 1) / 2, finalTk - ((finalTk - 1) / 2)];
+        var shocked = Shot(AtTurret(toKill, [Rider(), Aboard()]));
+        Assert.Equal(OrdnanceKill.Shock, shocked.Kill!.Result);
+        var effect = shocked.SpecificCollateral!.Effect;
+        Assert.Equal(FireVehicleEffect.NotVulnerable, effect.CrewResult);
+        Assert.Equal(["de-r"], Assert.Single(effect.PrcAttacks!).Effects.Select(item => item.UnitId));
+
+        // A shot recorded before the pass carries no PRC: nothing, as before.
+        Assert.Null(Shot(AtTurret(toKill, null)).SpecificCollateral);
+
+        // D.8A (p. 192): a failed Immobilization TC Abandons the tank, and its Rider is attacked all the same; an older record makes no attack.
+        var dr = Shot(AtImmobile([6, 5], [], [5, 6], immobile: false)).Kill!.FinalTk + 2;
+        var abandoned = Shot(AtImmobile([dr - 5, 5], [Rider()], [5, 6]));
+        Assert.True(abandoned.Kill!.Abandoned);
+        Assert.Equal(["de-r"], Assert.Single(abandoned.SpecificCollateral!.Effect.PrcAttacks!).Effects.Select(item => item.UnitId));
+        Assert.Null(Shot(AtImmobile([dr - 5, 5], null, [5, 6])).SpecificCollateral);
+    }
+
+    [Fact]
+    public void HazardousMovementAndMudsCushionStayOffThePrc()
+    {
+        // A4.62, D.8B: the -2 of a unit moving hazardously in the Location is not the Passengers'.
+        var hazardous = AtVehicle(Halftrack(true, [Aboard()])) with
+        {
+            Targets = [Enemy("de-x", "attacker-squad")],
+            HazardousMovement = true,
+        };
+        var result = Fired(hazardous, [3, 3]);
+        Assert.Contains(result.Arithmetic!.Drm, item => item.Name == "hazardous-movement");
+        Assert.DoesNotContain(Assert.Single(Assert.Single(result.VehicleEffects!).PrcAttacks!).Drm, item => item.Name == "hazardous-movement");
+
+        // E3.62, D5.31: Mud's +1 TEM against an Area hit in Open Ground is not added to a CE Passenger's CE DRM; a truck's Passenger takes it as its TEM.
+        FireAttack Cushioned(FireVehicle vehicle) => AtVehicle(vehicle) with
+        {
+            Firers = [],
+            OrdnanceHit = new FireOrdnanceHit("ru-mtr", 2, false) { Area = true },
+            CushionedOpenGround = true,
+        };
+        var exposed = Fired(Cushioned(Halftrack(true, [Aboard()])), [3, 3]);
+        Assert.Contains(exposed.Arithmetic!.Drm, item => item.Name == "weather-cushion");
+        Assert.Equal(["crew-exposed"], Assert.Single(Assert.Single(exposed.VehicleEffects!).PrcAttacks!).Drm.Select(item => item.Name));
+        var open = Fired(Cushioned(Halftrack(false, [Aboard("de-h", "attacker-half-squad")], "attacker-truck")), [3, 3]);
+        Assert.Contains(Assert.Single(Assert.Single(open.VehicleEffects!).PrcAttacks!).Drm, item => item.Name == "weather-cushion");
+    }
+
+    [Fact]
+    public void ARiderFiresAtAQuarterInTheAfphOnceItsAfvMoved()
+    {
+        // D6.22, D6.63 (pp. 205, 206): the movement halving and the AFPh's are one; a Rider whose AFV moved fires at a quarter, not an eighth.
+        FireAttack Riding(bool moved) => AtTargets(Enemy("de-x", "attacker-squad")) with
+        {
+            Phase = "AFPh",
+            Firers = [Squad("ru-1", FiredFrom) with { Mounted = new FireMounted("ru-t", "defender-tank") { Rider = true, Moved = moved ? true : null } }],
+        };
+        decimal Times(FireAttack attack) => Assert.Single(Fired(attack, [3, 3]).Arithmetic!.Firers).Multipliers.Aggregate(1m, (value, item) => value * item.Value);
+        Assert.Equal(0.25m, Times(Riding(moved: true)));
+        Assert.DoesNotContain(Assert.Single(Fired(Riding(moved: true), [3, 3]).Arithmetic!.Firers).Multipliers, item => item.Name == "advancing-fire");
+        Assert.Equal(0.25m, Times(Riding(moved: false)));
+    }
+
+    [Fact]
+    public void AShockedAfvsPassengersAreSparedAndItsRidersAreNot()
+    {
+        // D.8 (p. 192): the Passengers of an AFV whose crew is shocked are spared, as a stunned one's are; its Riders are attacked.
+        var shocked = Halftrack(true, [Aboard(), Rider()]) with
+        {
+            Shocked = true
+        };
+        var attack = Assert.Single(Assert.Single(Fired(AtVehicle(shocked), [3, 3]).VehicleEffects!).PrcAttacks!);
+        Assert.Equal(["de-r"], attack.Effects.Select(item => item.UnitId));
+    }
+
+    [Fact]
+    public void AirBurstsReachTheBuPassengersOfAnOtAfv()
+    {
+        // D5.311 (p. 203): a mortar's Area hit in woods at the BU OT SPW 251/1: its Passenger is Vulnerable even though BU, with the CE DRM.
+        var hit = AtVehicle(Halftrack(false, [Aboard()]), terrain: "woods") with
+        {
+            Firers = [],
+            OrdnanceHit = new FireOrdnanceHit("ru-mtr", 2, false) { Area = true },
+        };
+        var result = Fired(hit, [3, 3]);
+        Assert.Equal(FireResolution.Resolved, result.Disposition);
+        var attack = Assert.Single(Assert.Single(result.VehicleEffects!).PrcAttacks!);
+        Assert.Equal(["de-s"], attack.Effects.Select(item => item.UnitId));
+        Assert.Contains(attack.Drm, item => item.Name == "crew-exposed");
+
+        // In Open Ground it is not reached from two hexes away at its level (D6.61).
+        Assert.Null(Assert.Single(Fired(hit with
+        {
+            TargetTerrain = "open-ground"
+        }, [3, 3]).VehicleEffects!).PrcAttacks);
+    }
+
+    [Fact]
+    public void AnOtAfvsCrewTakesTheReducedCeDrmFromAboveBeyondTheRange()
+    {
+        // D5.31, D6.61 (pp. 203, 205): from three levels above at a range of one the CE crew of the OT SPW 251/1 takes +2 less 2, none at all, as its
+        // Passengers do; an older record keeps the +2.
+        var above = AtVehicle(Halftrack(true, []), range: 1, levelAbove: -3);
+        Assert.DoesNotContain(Assert.Single(Fired(above, [3, 3]).VehicleEffects!).Drm, item => item.Name == "crew-exposed");
+        var older = above with
+        {
+            Vehicles = [Halftrack(true, null)]
+        };
+        Assert.Equal(2m, Assert.Single(Fired(older, [3, 3]).VehicleEffects!).Drm.Single(item => item.Name == "crew-exposed").Value);
+    }
+
+    [Fact]
+    public void ABrokenCrewStaysInsideStopsItsAfvAndRoutsBeneathIt()
+    {
+        // D5.311 (p. 203; ruling R65.31): the AFV Stops; its broken crew neither moves nor fires it, and must rout beneath it, which Abandons it; its broken
+        // Passengers must too (D6.1).
+        Assert.Equal((UnitCondition.Motion, false), Assert.Single(ScenarioA1CrewActsRules.CrewBrokeConditions));
+        Assert.Null(ScenarioA1CrewActsRules.BrokenCrewBar("de-ht", null));
+        Assert.Contains("D5.311", ScenarioA1CrewActsRules.BrokenCrewBar("de-ht", "de-c"), StringComparison.Ordinal);
+        Assert.Equal(ScenarioA1RoutCalculator.MustRoutBeneath, ScenarioA1RoutCalculator.RoutBeneath(true, true, false, true, false));
+        Assert.Contains("Abandoned (D5.311)", ScenarioA1RoutCalculator.RoutBeneathCrewText("de-ht"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void OpenPrcClaimHeightAdvantageWhereTheInfantryTakeAnAfvsCover()
+    {
+        // B10.31, D9.3 (pp. 125, 209): a wreck's cover keeps Height Advantage from the Infantry; the truck's Passenger takes no such cover, so it claims it.
+        var attack = AtVehicle(Halftrack(false, [Aboard("de-h", "attacker-half-squad")], "attacker-truck"), levelAbove: 1) with
+        {
+            HeightAdvantage = true,
+            AfvCover = "de-wreck",
+        };
+        Assert.Contains("height-advantage", Assert.Single(Assert.Single(Fired(attack, [3, 3]).VehicleEffects!).PrcAttacks!).Drm.Select(item => item.Name));
+    }
+
+    [Fact]
+    public void OnlyACeArmoredHalftracksOrCarriersPassengersAddHalfToAnOvr()
+    {
+        // D7.11 (p. 207): "CE armored halftrack (only) Passengers can add one-half", a Carrier's too (D6.8); any other vehicle's one-fourth.
+        Assert.Equal(0.5m, ScenarioA1PassengerActionRules.OverrunShare(false, true, "halftrack"));
+        Assert.Equal(0.5m, ScenarioA1PassengerActionRules.OverrunShare(false, true, "carrier"));
+        Assert.Equal(0.25m, ScenarioA1PassengerActionRules.OverrunShare(false, true, "tank"));
+        Assert.Equal(0.25m, ScenarioA1PassengerActionRules.OverrunShare(true, false, "truck"));
+        Assert.Equal(0m, ScenarioA1PassengerActionRules.OverrunShare(false, false, "halftrack"));
     }
 }
