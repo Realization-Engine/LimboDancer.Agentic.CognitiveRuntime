@@ -9,7 +9,6 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 /// </summary>
 public sealed class AslScenarioA1RallyMatrixTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
     private const string MatrixSha256 = "3d5c0368aef1db65931840d9c4e1c9d67580c5d5e8aed5b50b562412d7208e0e";
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -36,7 +35,7 @@ public sealed class AslScenarioA1RallyMatrixTests
     [Fact]
     public void EverySourceFragmentIsRegisteredAndVerified()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         using var attestationJson = Read("asl-scenario-a1.source-attestation.json");
         var attestation = JsonSerializer.Deserialize<AslScenarioA1SourceAttestation>(attestationJson.RootElement.GetRawText(), JsonOptions)!;
         var verified = AslScenarioA1FireSourceReview.Build(RepositoryPaths.Root, manifests, attestation).Records

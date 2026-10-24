@@ -4,7 +4,6 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 public sealed class AslScenarioA1VerificationBatchTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
     private static readonly JsonSerializerOptions AttestationJsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -12,7 +11,7 @@ public sealed class AslScenarioA1VerificationBatchTests
     [Fact]
     public void AttestedSourceSubjectsBindToFullTirWithoutAcceptingSemantics()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var inventory = AslScenarioA1SourceInventory.Extract(manifests);
         var batch = AslScenarioA1VerificationBatchBuilder.Build(manifests, ReadAttestation());
 
@@ -57,7 +56,7 @@ public sealed class AslScenarioA1VerificationBatchTests
     [Fact]
     public void IncompleteOrWrongPdfAttestationCannotCreateVerificationRecords()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var inventory = AslScenarioA1SourceInventory.Extract(manifests);
         var attestation = ReadAttestation();
         Assert.Equal(inventory.PdfSha256, attestation.PdfSha256);

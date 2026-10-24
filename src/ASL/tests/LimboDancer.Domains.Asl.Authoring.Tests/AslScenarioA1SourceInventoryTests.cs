@@ -4,12 +4,10 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 public sealed class AslScenarioA1SourceInventoryTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
-
     [Fact]
     public void CandidateInventoryPreservesPageCrossingAndPdfCorrectionSeparately()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var inventory = AslScenarioA1SourceInventory.Extract(manifests);
 
         Assert.Equal("3.01", inventory.Edition);
@@ -61,7 +59,7 @@ public sealed class AslScenarioA1SourceInventoryTests
     [Fact]
     public void CandidateInventoryRejectsChangedSourceDigest()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var changed = manifests with
         {
             Fragments = manifests.Fragments.Select(fragment =>

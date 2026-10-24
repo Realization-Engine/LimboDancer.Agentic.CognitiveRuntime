@@ -4,7 +4,6 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 public sealed class AslScenarioA1ChartReviewTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
     private const string RegistryHash = "f73705eb8d8d3e3350bcbe81ab60e433f516bf7c691132a4f9ee866463a7bbef";
     private const string ComparisonHash = "d0a0fa8db20eabce3890f87e2fda3418fae147d1493f4190bf6658ee6ceef520";
     private static readonly JsonSerializerOptions WebJsonOptions = new(JsonSerializerDefaults.Web);
@@ -32,7 +31,7 @@ public sealed class AslScenarioA1ChartReviewTests
         var generated = JsonSerializer.SerializeToElement(decision, WebJsonOptions);
         Assert.True(JsonElement.DeepEquals(published.RootElement, generated));
 
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var verified = manifests.Fragments.Select(fragment => fragment.FragmentId)
             .ToHashSet(StringComparer.Ordinal);
         var result = AslScenarioA1CaseAssessor.AssessWithReviewedChart(
@@ -61,7 +60,7 @@ public sealed class AslScenarioA1ChartReviewTests
             RepositoryPaths.Root, registry, wrongComparison));
 
         var decision = AslScenarioA1ChartReview.Evaluate(RepositoryPaths.Root, registry, comparison);
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var changed = JsonSerializer.Deserialize<AslScenarioA1ChartReviewDecision>(
             JsonSerializer.Serialize(decision).Replace(decision.ChartRole,
                 "The chart is optional", StringComparison.Ordinal))!;

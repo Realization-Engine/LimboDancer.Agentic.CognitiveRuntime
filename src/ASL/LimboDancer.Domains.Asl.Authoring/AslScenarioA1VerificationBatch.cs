@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -50,6 +52,10 @@ public sealed record AslScenarioA1VerificationBatch(
 
 public static class AslScenarioA1VerificationBatchBuilder
 {
+    // The full TIR extraction (3.6 s for the rulebook) depends only on the manifests and the attestation's time and source; every review
+    // builder calls Build again with the same ones, so the extracted document is kept per manifests instance.
+    private static readonly ConditionalWeakTable<GeneratedManifests, ConcurrentDictionary<(DateTimeOffset At, string Source), TirDocument>> Documents = new();
+
     public static AslScenarioA1VerificationBatch Build(
         GeneratedManifests manifests,
         AslScenarioA1SourceAttestation attestation)
@@ -76,13 +82,14 @@ public static class AslScenarioA1VerificationBatchBuilder
             throw new InvalidOperationException("Source attestation must name each of the 11 exact Scenario A1 fragments once.");
         }
 
-        var document = TirStructuralExtractor.Extract(
-            manifests.Registry,
-            manifests.Fragments,
-            new TirExtractionOptions(
-                new TirPackageCandidate("asl", "easlrb-3.10-a-e", "0.0.0-candidate.1"),
-                attestation.AttestedAt,
-                attestation.AttestationSource));
+        var document = Documents.GetOrCreateValue(manifests).GetOrAdd((attestation.AttestedAt, attestation.AttestationSource),
+            key => TirStructuralExtractor.Extract(
+                manifests.Registry,
+                manifests.Fragments,
+                new TirExtractionOptions(
+                    new TirPackageCandidate("asl", "easlrb-3.10-a-e", "0.0.0-candidate.1"),
+                    key.At,
+                    key.Source)));
         var artifacts = document.Artifacts.OfType<TirSourceFragmentArtifact>()
             .Where(artifact => artifact.Envelope.SourceFragments.Count == 1
                 && expected.Contains(artifact.Envelope.SourceFragments[0].FragmentId))

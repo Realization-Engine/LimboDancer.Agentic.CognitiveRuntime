@@ -6,7 +6,6 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 /// <summary>Affirmative source and consequence review, without package or execution authority.</summary>
 public sealed class AslScenarioA1SecondDefenderConsequenceMatrixTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
     private const string MatrixDigest = "50375415804bfb8cc0e1a16c09f80a992d4fdcedca19e41234a2a63715214ec2";
     private static readonly string[] Rules = ["A12.15", "A4.14", "A4.15", "B23.4"];
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -25,7 +24,7 @@ public sealed class AslScenarioA1SecondDefenderConsequenceMatrixTests
             root.GetProperty("priorEligibilityMatrixSha256").GetString());
         Assert.Equal("none", root.GetProperty("executionAuthority").GetString());
 
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         using var attestationJson = Read("asl-scenario-a1.source-attestation.json");
         var attestation = JsonSerializer.Deserialize<AslScenarioA1SourceAttestation>(
             attestationJson.RootElement.GetRawText(), JsonOptions)!;

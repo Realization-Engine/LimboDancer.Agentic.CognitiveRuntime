@@ -6,7 +6,6 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 /// <summary>Affirmative review of A12.15 effects and the execution boundary; grants no authority.</summary>
 public sealed class AslScenarioA1SecondDefenderExecutionReviewTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
     private const string ReviewDigest = "ccec677b126067aa5cca45656b945cd8f34e870ed868b36225defe265e9d2693";
     private static readonly string[] Rules = ["A12.15", "A4.14", "A4.15", "B23.4"];
     private static readonly string[] AdmittedCases =
@@ -44,7 +43,7 @@ public sealed class AslScenarioA1SecondDefenderExecutionReviewTests
             root.GetProperty("priorConsequencePackageSha256").GetString());
         Assert.Equal("none", root.GetProperty("executionAuthority").GetString());
 
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         using var attestationJson = Read("asl-scenario-a1.source-attestation.json");
         var attestation = JsonSerializer.Deserialize<AslScenarioA1SourceAttestation>(
             attestationJson.RootElement.GetRawText(), JsonOptions)!;

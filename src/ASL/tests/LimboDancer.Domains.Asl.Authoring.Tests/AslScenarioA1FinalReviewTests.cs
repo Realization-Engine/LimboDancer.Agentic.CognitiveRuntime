@@ -4,7 +4,6 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 public sealed class AslScenarioA1FinalReviewTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
     private static readonly JsonSerializerOptions WebJsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
@@ -115,7 +114,7 @@ public sealed class AslScenarioA1FinalReviewTests
     private static (GeneratedManifests, AslScenarioA1SourceAttestation, JsonDocument,
         AslScenarioA1ChartReviewDecision) Inputs()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         using var source = Read("asl-scenario-a1.source-attestation.json");
         var attestation = JsonSerializer.Deserialize<AslScenarioA1SourceAttestation>(
             source.RootElement.GetRawText(), WebJsonOptions)!;

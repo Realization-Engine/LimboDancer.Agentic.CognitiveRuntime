@@ -9,7 +9,6 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 /// </summary>
 public sealed class AslScenarioA1OvrNtcSourceReviewTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private static AslScenarioA1SourceAttestation Attestation()
@@ -22,7 +21,7 @@ public sealed class AslScenarioA1OvrNtcSourceReviewTests
     [Fact]
     public void TheFourNewSubjectsAreVerifiedExactlyAsCompared()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var review = AslScenarioA1OvrNtcSourceReview.Build(RepositoryPaths.Root, manifests, Attestation());
         Assert.Equal(4, review.Records.Count);
         Assert.All(review.Records, record =>

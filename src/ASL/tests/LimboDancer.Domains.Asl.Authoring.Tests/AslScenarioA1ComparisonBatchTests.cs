@@ -4,7 +4,6 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 public sealed class AslScenarioA1ComparisonBatchTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
     private static readonly JsonSerializerOptions AttestationJsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -13,7 +12,7 @@ public sealed class AslScenarioA1ComparisonBatchTests
     [Fact]
     public void ComparisonsBindToSameFullTirAndRemainIndeterminate()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var attestation = ReadAttestation();
         using var comparison = ReadComparison();
         var batch = AslScenarioA1ComparisonBatch.Build(manifests, attestation, comparison);
@@ -45,7 +44,7 @@ public sealed class AslScenarioA1ComparisonBatchTests
     [Fact]
     public void ChangedPdfOrMissingFigureCannotProduceComparisonRecords()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var attestation = ReadAttestation();
         using var comparison = ReadComparison();
         var wrongPdf = comparison.RootElement.Clone();
