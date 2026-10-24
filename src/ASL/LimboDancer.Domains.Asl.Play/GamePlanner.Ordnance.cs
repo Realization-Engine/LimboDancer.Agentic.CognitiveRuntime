@@ -1240,6 +1240,31 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// The events of an Unprotected crew's break or elimination (D5.311, p. 203; pass 65, ruling R65.26): the vehicle is Abandoned; a broken crew is beneath
+    /// it, broken, taking the Armor Leader as a failed TC's does (D3.43); an eliminated crew leaves no counter, and one crewing from inside is eliminated.
+    /// </summary>
+    private static IEnumerable<(string Type, EventPayload Payload)> UnprotectedCrewEvents(GameState state, UnitInstance vehicle, string attemptId, bool broken)
+    {
+        yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)));
+        if (!broken)
+        {
+            if (CrewInside(state, vehicle.Id) is { } gone)
+            {
+                yield return ("instance-eliminated", new InstanceEliminated(gone.Id));
+            }
+
+            yield break;
+        }
+
+        if (CrewLeaves(state, vehicle, attemptId, armorLeader: vehicle.ArmorLeader) is { } crew)
+        {
+            yield return crew;
+            var id = crew.Payload is InstanceMoved moved ? moved.Id : ((InstanceCreated)crew.Payload).Instance.Id;
+            yield return ("conditions-changed", new ConditionsChanged(id, new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Broken] = ConditionState.True }));
+        }
+    }
+
+    /// <summary>
     /// A unit placed beneath its vehicle by Survival or a failed Immobilization TC "is subject to the effects of Hazardous Movement ... vs all subsequent
     /// attacks during that phase" (D5.5, D5.6, D6.9, p. 204; pass 65, ruling R65.21); the phase's end removes it.
     /// </summary>

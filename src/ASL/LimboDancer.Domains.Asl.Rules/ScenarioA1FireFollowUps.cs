@@ -440,6 +440,20 @@ public static class ScenarioA1FireFollowUps
         return new VehicleEffectVerdict(false, false, false, concealedOrHidden && notResidual && effect.CrewCheck is not null);
     }
 
+    /// <summary>
+    /// What an Unprotected crew's result does (D5.311, p. 203; pass 65, ruling R65.26): "If it breaks it must rout from the vehicle ... [EXC: it expends all
+    /// its initial-RtPh MF to be placed beneath the vehicle]" (true: placed beneath, broken), and one eliminated is gone (false); "If the crew routs or is
+    /// eliminated, the vehicle is marked with an Abandoned counter". Null for any other result, and for a vehicle the attack destroyed.
+    /// </summary>
+    public static bool? UnprotectedCrewPlacedBroken(FireVehicleEffect effect)
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+        return effect.UnprotectedCrewFinalDr is null || effect.Result is FireVehicleEffect.Eliminated or FireVehicleEffect.BurningWreck ? null
+            : effect.CrewResult == FireVehicleEffect.Broken ? true
+            : effect.CrewResult == FireVehicleEffect.Eliminated ? false
+            : null;
+    }
+
     /// <summary>A15.21: the heroes a unit's effect creates, in its Location, sharing its fire and movement status (ruling R5.11); a second Heat of Battle DR may create a second (ruling R5.10); concealed only when the unit kept its "?"; the creator named unless eliminated, under its Reduction's id.</summary>
     public static IReadOnlyList<HeroCreation> HeroCreations(FireUnitEffect effect, string attemptId)
     {

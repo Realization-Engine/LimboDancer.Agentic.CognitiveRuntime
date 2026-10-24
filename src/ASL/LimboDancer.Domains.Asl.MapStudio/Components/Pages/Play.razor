@@ -2857,7 +2857,7 @@ else if (state is not null)
                     foreach (var area in group.Areas.Where(area => area.Kind != "entry" && (area.Counters is not null || area.Concealed == false)))
                     {
                         var inArea = stacks.Where(stack => ScenarioSetup.Within(card, area, BoardLocation.Parse(stack.Location))).SelectMany(stack => stack.Rows).ToArray();
-                        var mmc = placements.Count(row => row.Kind is "asl:squad" or "asl:half-squad" or "asl:crew" && inArea.Any(line => line.Key == row.Key));
+                        var mmc = placements.Count(row => (row.Kind is "asl:squad" or "asl:half-squad" || ScenarioA1Definitions.IsCrew(row.Kind)) && inArea.Any(line => line.Key == row.Key));
                         short_ |= area.Counters is { } owed && inArea.Length < owed && offBoardRows.Length > 0;
                         notes.Add(SetupPoolsTable.AreaText(area) + ": "
                             + (area.Counters is { } limit ? $"{inArea.Length} of {limit} counters on the map (each SW counts as one)"
@@ -3192,14 +3192,14 @@ else if (state is not null)
             {
                 var towing = group.OffBoard.Any(need => need.Definition == row.Definition);
                 var holder = towing ? added.FirstOrDefault(item => item.Row.Kind == "asl:vehicle").Row?.Id
-                    : added.FirstOrDefault(item => item.Row.Kind == "asl:crew" && manned.Add(item.Row.Id)).Row?.Id;
+                    : added.FirstOrDefault(item => ScenarioA1Definitions.IsCrew(item.Row.Kind) && manned.Add(item.Row.Id)).Row?.Id;
                 added[index] = (row with { Holder = holder, Role = holder is null ? null : towing ? "towed" : "manned" }, area);
                 continue;
             }
 
             // Squads and half-squads first; a crew takes a SW only when the line's area has no other MMC.
             var squads = added.Where(item => item.Area == area && item.Row.Kind is "asl:squad" or "asl:half-squad").Select(item => item.Row.Id).ToArray();
-            squads = squads.Length > 0 ? squads : [.. added.Where(item => item.Area == area && item.Row.Kind == "asl:crew" && !manned.Contains(item.Row.Id)).Select(item => item.Row.Id)];
+            squads = squads.Length > 0 ? squads : [.. added.Where(item => item.Area == area && ScenarioA1Definitions.IsCrew(item.Row.Kind) && !manned.Contains(item.Row.Id)).Select(item => item.Row.Id)];
             if (squads.Length > 0)
             {
                 var turn = given.GetValueOrDefault(area ?? string.Empty);
@@ -5426,7 +5426,7 @@ else if (state is not null)
     private IEnumerable<UnitInstance> PanzerfaustFirers(string side) => state is null || state.Side(side)?.Nationality != "german"
         || state.ScenarioYear is not { } year || year < 1943 || (year == 1943 && state.ScenarioMonth < 10) ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && unit.Position is MapPosition
-                && unit.Kind is "asl:squad" or "asl:half-squad" or "asl:crew" or "asl:leader" or "asl:hero")
+                && (unit.Kind is "asl:squad" or "asl:half-squad" or "asl:leader" or "asl:hero" || ScenarioA1Definitions.IsCrew(unit.Kind)))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
     /// <summary>A Gun as a player reads it: its facing, its fire this phase and Player Turn, its Acquisition, and its crew's state.</summary>
@@ -5863,7 +5863,7 @@ else if (state is not null)
     /// <summary>The units of a side that may try a Starshell (E1.92; ruling R16.8): Good Order leaders and MMC, and CE AFV.</summary>
     private IEnumerable<string> StarshellFirers(string side) => state is null ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id) is not null
-            && (unit.Kind is "asl:leader" or "asl:squad" or "asl:half-squad" or "asl:crew"
+            && (unit.Kind is "asl:leader" or "asl:squad" or "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind)
                 ? GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Pinned) != ConditionState.True
                 : LiveFire.IsVehicle(unit) && GameState.Condition(unit, Conditions.ButtonedUp) != ConditionState.True))
             .Select(unit => unit.Id).Order(StringComparer.Ordinal);
@@ -5935,7 +5935,7 @@ else if (state is not null)
         {
             var inside = SeenOnly(current.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && current.Location(unit.Id)?.Location is { Level: >= 0 } at
                 && hexes.Any(hex => hex.Board == at.Board && hex.Hex == at.Hex))).OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
-            string[] moppers = [.. inside.Where(unit => unit.Kind is "asl:squad" or "asl:half-squad" or "asl:crew"
+            string[] moppers = [.. inside.Where(unit => (unit.Kind is "asl:squad" or "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind))
                 && !barred.Any(name => GameState.Condition(unit, name) == ConditionState.True)).Select(unit => unit.Id)];
             if (moppers.Length > 0)
             {
@@ -6481,7 +6481,7 @@ else if (state is not null)
     /// the Fire package read it.
     /// </summary>
     // Pass 31c (the third play test): a broken unit is not offered as a firer; the Fire package refuses a group that holds one.
-    private bool MayFire(UnitInstance unit) => state is not null && unit.Kind != "asl:crew" && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
+    private bool MayFire(UnitInstance unit) => state is not null && !ScenarioA1Definitions.IsCrew(unit.Kind) &&GameState.Condition(unit, Conditions.Broken) != ConditionState.True
         && GamePlanner.FireBar(state, unit) is null && !LiveFire.FireSpent(state, unit)
         // D3.5 (pass 50): a tank is a firer while its BMG or CMG may fire; neither needs a CE crew (D1.83). D1.3 (pass 60): so is a vehicle whose MA is a
         // MG, an AAMG only CE.

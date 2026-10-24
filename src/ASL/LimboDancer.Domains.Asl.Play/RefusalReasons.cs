@@ -21,7 +21,7 @@ public static class RefusalReasons
         ["fire.target-outside"] = "the target Location holds no enemy unit the package reviews, is the firers' own Location, or has terrain it does not review",
         ["fire.canister-outside"] = "Canister is fired by its Gun alone, with no other firer or leader, at Locations at the Gun's elevation and in its LOS: propose it as the Gun's shot, with Canister as the ammunition and one of the five aims (C8.4, A7.51)",
         ["fire.ordnance-hit-outside"] = "an ordnance hit attacks on its Gun's HE FP column, with no firers of its own (C.6, C3.32)",
-        ["fire.crew-target-unreviewed"] = "crews and the Guns they man as targets are not reviewed (C11; ruling R24.3)",
+        ["fire.crew-target-unreviewed"] = "a crew that mans a Gun is a target only alone in its Location with its Gun, and fire at it with other units is not reviewed (C11; ruling R8.3); a crew that mans no Gun is an ordinary Infantry target (A1.123)",
         ["fire.unit-listed-twice"] = "a unit or weapon is named twice in the attack",
         ["fire.firer-outside"] = "a firer is broken, is not a squad, half-squad, or hero, or the group's Locations are not each ADJACENT to another (A7.5)",
         ["fire.berserk-group-outside"] = "a berserk unit fires only with units of its own Location (A7.54)",

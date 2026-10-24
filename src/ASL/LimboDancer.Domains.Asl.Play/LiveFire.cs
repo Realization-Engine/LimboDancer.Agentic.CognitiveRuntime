@@ -310,7 +310,31 @@ public static class LiveFire
         {
             MgBoreSighted = boreSighted ? true : null,
             Embarking = boarding,
+            GunCrews = GunCrews(state, selection.Targets),
         }, null);
+    }
+
+    /// <summary>
+    /// The targets that man a Gun (C11; pass 65, ruling R65.28), read from the state in one pass over its equipment; null when none does. Rules keeps
+    /// such a crew to ruling R8.3's reading, and reads any other crew as ordinary Infantry (A1.123).
+    /// </summary>
+    internal static IReadOnlyList<string>? GunCrews(GameState state, IReadOnlyCollection<string>? targets) =>
+        targets is not { Count: > 0 } ? null
+            : state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Manned } holding && targets.Contains(holding.Holder))
+                .Select(item => item.Holding!.Holder).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } crews ? crews : null;
+
+    /// <summary>An attack read from the state with the targets that man a Gun (pass 65, ruling R65.28).</summary>
+    private static (FireAttack? Attack, string? Reason) WithGunCrews(GameState state, (FireAttack? Attack, string? Reason) read)
+    {
+        if (read.Attack is not { } attack)
+        {
+            return read;
+        }
+
+        return (attack with
+        {
+            GunCrews = GunCrews(state, attack.Targets?.Select(item => item.UnitId!).ToArray())
+        }, read.Reason);
     }
 
     /// <summary>
@@ -389,7 +413,7 @@ public static class LiveFire
         var here = state.Phase == "mph" && movement is not null && movement.Location == target;
         UnitInstance[] units = ok ? [.. state.At(target).OfType<UnitInstance>()] : [];
         var targetSide = ok ? state.Sides.FirstOrDefault(item => item.Id != side)?.Id : null;
-        return ScenarioA1FireEligibility.DemolitionCharge(new DemolitionChargeFacts(chargeId, chargeOk, charge?.Definition?.Definition, mode, placement is not null,
+        return WithGunCrews(state, ScenarioA1FireEligibility.DemolitionCharge(new DemolitionChargeFacts(chargeId, chargeOk, charge?.Definition?.Definition, mode, placement is not null,
             placement?.Unit, placement?.Cx, placement?.TargetsConcealed, possessor, user is { Definition: not null }, user?.Definition?.Definition, side,
             user is not null && Is(user, Conditions.Cx), user is not null && Is(user, Conditions.BoundingFire), ok ? GreenInexperienced(state, user!) : null,
             ok ? CapturedBy(charge!.Definition!.Definition, user!) : null, ok ? state.Location(userId!)?.Location.ToString() : null, side == state.PhasingSide, state.Phase,
@@ -399,7 +423,7 @@ public static class LiveFire
             targetSide, targetSide is null ? null : state.Side(targetSide)?.Elr, targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal),
             ok ? state.Side(side!)?.Elr : null, ok && state.NoQuarter.Contains(side, StringComparer.Ordinal), ok ? Allies(state, side!) : null, state.ScenarioMonth,
             id => Target(state, units.First(unit => unit.Id == id), target), id => Vehicle(units.First(unit => unit.Id == id), target),
-            id => units.First(unit => unit.Id == id).Custodian, id => state.Encircled(units.First(unit => unit.Id == id))));
+            id => units.First(unit => unit.Id == id).Custodian, id => state.Encircled(units.First(unit => unit.Id == id)))));
     }
 
     /// <summary>
@@ -610,11 +634,11 @@ public static class LiveFire
         }
 
         var targetSide = state.Sides.FirstOrDefault(item => item.Id != side)?.Id;
-        return (ScenarioA1FireEligibility.Canister(new CanisterLocationFacts(state.Phase, side == state.PhasingSide, from.ToString(), target.ToString(), side,
+        return WithGunCrews(state, (ScenarioA1FireEligibility.Canister(new CanisterLocationFacts(state.Phase, side == state.PhasingSide, from.ToString(), target.ToString(), side,
             [.. units.Select(unit => new LocationUnitFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, IsVehicle(unit), unit.Definition is not null,
                 Is(unit, Conditions.Captured), false))],
             targetSide is null ? null : state.Side(targetSide)?.Elr, targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.ScenarioMonth,
-            id => Target(state, units.First(unit => unit.Id == id), target), id => Vehicle(units.First(unit => unit.Id == id), target))), null);
+            id => Target(state, units.First(unit => unit.Id == id), target), id => Vehicle(units.First(unit => unit.Id == id), target))), null));
     }
 
     /// <summary>
@@ -632,7 +656,7 @@ public static class LiveFire
         var ok = at is not null && vehicle!.Definition is not null;
         UnitInstance[] units = ok ? [.. state.At(at!).OfType<UnitInstance>()] : [];
         var targetSide = ok ? state.Sides.FirstOrDefault(side => side.Id != vehicle!.Side)?.Id : null;
-        return ScenarioA1FireEligibility.Overrun(new OverrunFacts(found, isVehicle, at is not null, vehicle?.Definition is not null, vehicleId, vehicle?.Definition?.Definition,
+        return WithGunCrews(state, ScenarioA1FireEligibility.Overrun(new OverrunFacts(found, isVehicle, at is not null, vehicle?.Definition is not null, vehicleId, vehicle?.Definition?.Definition,
             at?.ToString() ?? string.Empty, vehicle?.Side, ok && CrewExposed(vehicle!), ok && Is(vehicle!, Conditions.Immobilized), ok && Is(vehicle!, Conditions.Bogged),
             vehicle?.Status == InstanceStatus.Wrecked, ok && Is(vehicle!, Conditions.Malfunctioned), ok && Is(vehicle!, Conditions.Disabled),
             ok && Is(vehicle!, Conditions.BmgMalfunctioned), ok && Is(vehicle!, Conditions.CmgMalfunctioned),
@@ -644,7 +668,7 @@ public static class LiveFire
         {
             // D7.16 (p. 207; pass 55, ruling R55.16): the OVRing vehicle's Armor Leader modifies its OVR DR.
             ArmorLeadership = ok ? ArmorLeadership(vehicle!) : null,
-        });
+        }));
     }
 
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice, in the calculator's shape.</summary>
@@ -1047,6 +1071,10 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
             // C11 (ruling R8.3): the Gun in the target Location, its Emplacement and gunshield, is a map read recorded with the attack.
             GunTarget = recorded.GunTarget,
+
+            // Pass 65 (ruling R65.28): the targets that man a Gun, as the record carries them; a record made before the pass names none, and its crews
+            // were each a Gun's crew alone with the Gun named.
+            GunCrews = recorded.GunCrews,
 
             // Pass 60 (ruling R60.15): the AFV a FT, MOL, or DC names is read from the state, its Target Facings from the record (a map read); a record
             // made before the pass names none.

@@ -1263,6 +1263,16 @@ public sealed partial class GamePlanner
         {
             yield return payload;
         }
+
+        // D5.311 (pass 65, ruling R65.26): an Unprotected crew that breaks is placed beneath its vehicle, broken; one eliminated is gone. Either way the
+        // vehicle is Abandoned.
+        if (vehicle is not null && ScenarioA1FireFollowUps.UnprotectedCrewPlacedBroken(effect) is { } placedBroken)
+        {
+            foreach (var payload in UnprotectedCrewEvents(state, vehicle, attemptId, placedBroken))
+            {
+                yield return payload;
+            }
+        }
     }
 
     /// <summary>The conditions a vehicle result that does not wreck it sets, with the "?" it loses.</summary>

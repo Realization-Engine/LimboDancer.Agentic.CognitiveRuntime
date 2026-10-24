@@ -172,5 +172,17 @@ A running record kept as the pass goes, at the user's word of 2026-10-23 ("Keep 
   - not built: the US exemption from captured-use penalties, a mortar MA's dm form, a Disabled condition for a non-MA AAMG. Backlog rows.
   - Seen for the reviews: the ordnance and FT/MOL vehicle choices read "dt (attacker-tank), a wreck", not hex-first.
 - 05:30 Studio check of 2j in p65-wreck-scrounge (Russian RPh): the scrounge choice offers "[F8]: 4-4-7 squad R1" and "[F8]: 2-3-7 half-squad R2"; with a dr of 2, "[F8]: 4-4-7 squad R1 scrounges vehicle in [F8] on a dr of 2: it salvages the LMG, its BMG; vehicle in [F8] is Scrounged, and 4-4-7 squad R1 is TI (D10.5)". Burning a wreck is asserted by `AT34BurnsAPanzerWreckThatAnEliminatingDrLeftAsItWas`; not walked.
-- 05:32 2j committed (below).
+- 05:32 2j committed, c01a1eba. The 2j game to `OWN`.
+- 05:34 Measurement after 2d to 2j (p65-perf-tw, warm runs, hand-over / proposal ms): base 337/170, 359/209, 340/187; pass 65 232/112, 225/125, 217/107. No regression (the pass reads its PRC through the index, and its page fixes removed per-render scans).
+- 05:35 The 2k agent launched on `brief_2k.md` (R65.28, R65.29, then R65.26's A7.308 and D5.311).
+- About 06:05 The 2k agent reported (built 05:35 to about 06:05); all four items built. Judged:
+  - a new recorded fact `gunCrews` on `FireAttack`: Rules can tell a crew mans a Gun only when the attack names the Gun, which vehicle MG fire, Canister, DC, and OVR do not. It is filled by the four `LiveFire` builders and taken from the record at replay. Right; to `SKIP_JSON`;
+  - the CC package refused every crew (`asl.a1.cc.unit-outside`); lifted for a crew whose manning fact is not true, a crew now an MMC in the CC calculator, Casualty Reduction eliminating it. Right (A1.123);
+  - A7.308 for the IFT only; the ordnance Infantry Target Type and the mortar keep `vehicles-beyond-kia`; ties to the first listed vehicle, no re-roll. Backlog rows;
+  - D5.311 simplified (the attack's own DRM with the Air Burst -1, no CE DRM; no Stop on the crew breaking, no ELR, no Heat of Battle). Backlog rows;
+  - one existing test renamed as the intended change (`TheFirePackageRefusesAGunsCrewWithOtherUnitsAsATarget`);
+  - slips: one `grep -rln` over tests in Bash, two `cd /tmp`; nothing changed.
+- 06:06 Fixed by me: seven literal `"asl:crew"` comparisons on the Play page (setup's MMC count and Gun manning, Panzerfaust firers, Starshell firers, mopping up, `MayFire`), which missed `asl:vehicle-crew`; now `ScenarioA1Definitions.IsCrew`. 2a's sweep had covered Rules, Play, and Units but not the page. Build exit 0.
+- 06:10 Studio check of 2k in p65-crew-target (Russian PFPh): the 4-4-7 at [F10] fires at [F8], which holds a German vehicle crew and squad: "Every check passed" (R8.3 refused this before).
+- 06:12 2k committed (below). The build of the increments is done: 2a to 2k, 15 commits from the frame.
 - The four estimates sum to about 15:00 of build against the plan's 7:00 (65.1 3:00, 65.2 2:30, 65.3 1:15, 65.4 1:30, 65.5 0:50, crews 0:45, 65.6 1:40, 65.7 1:10, 65.8 1:40, 65.9 0:50).

@@ -24,9 +24,12 @@ public sealed partial class GamePlanner
     private bool CcAttacker(UnitInstance unit) => ScenarioA1VehicleCloseCombatRules.CcAttacker(unit.Status == InstanceStatus.Active, LiveFire.IsVehicle(unit), vocabulary.IsA(unit.Kind, "asl:personnel"),
         Is(unit, Conditions.Broken), Is(unit, Conditions.Captured), unit.Kind == UnitKinds.Dummy);
 
-    /// <summary>A unit of a Location holding a vehicle as Rules reads it (pass 32.g): its CC armament, attacker status, Personnel, prisoner, berserk, Known, and crew flags.</summary>
-    private VehicleCcUnitFacts VehicleCcUnit(UnitInstance unit) => new(unit.Id, unit.Side, LiveFire.IsVehicle(unit), VehicleCcArmament(unit), CcAttacker(unit),
-        vocabulary.IsA(unit.Kind, "asl:personnel"), Is(unit, Conditions.Captured), Is(unit, Conditions.Berserk), KnownEnemy(unit), vocabulary.IsA(unit.Kind, "asl:crew"));
+    /// <summary>
+    /// A unit of a Location holding a vehicle as Rules reads it (pass 32.g): its CC armament, attacker status, Personnel, prisoner, berserk, Known, and
+    /// Gun's crew flags (a crew that mans no Gun is ordinary Infantry, pass 65, ruling R65.29).
+    /// </summary>
+    private VehicleCcUnitFacts VehicleCcUnit(GameState state, UnitInstance unit) => new(unit.Id, unit.Side, LiveFire.IsVehicle(unit), VehicleCcArmament(unit), CcAttacker(unit),
+        vocabulary.IsA(unit.Kind, "asl:personnel"), Is(unit, Conditions.Captured), Is(unit, Conditions.Berserk), KnownEnemy(unit), GunCrew(state, unit));
 
     /// <summary>
     /// The sides with an attack left in a CC Location holding a vehicle (ruling R11.16): Infantry that have not attacked and face an enemy vehicle, and
@@ -34,7 +37,7 @@ public sealed partial class GamePlanner
     /// </summary>
     private HashSet<string> SidesWithAttacks(GameState state, BoardLocation location, IReadOnlyCollection<string> attacked, IReadOnlyCollection<string> passed)
     {
-        return ScenarioA1VehicleCloseCombatRules.SidesWithAttacks([.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).Select(VehicleCcUnit)], attacked, passed);
+        return ScenarioA1VehicleCloseCombatRules.SidesWithAttacks([.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).Select(unit => VehicleCcUnit(state, unit))], attacked, passed);
     }
 
     /// <summary>
@@ -68,7 +71,7 @@ public sealed partial class GamePlanner
         }
 
         var here = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
-        return ScenarioA1VehicleCloseCombatRules.BerserkOwingVehicleAttack([.. here.Select(VehicleCcUnit)], side, entry?.Attacking ?? []) is { } owing ? here.First(unit => unit.Id == owing) : null;
+        return ScenarioA1VehicleCloseCombatRules.BerserkOwingVehicleAttack([.. here.Select(unit => VehicleCcUnit(state, unit))], side, entry?.Attacking ?? []) is { } owing ? here.First(unit => unit.Id == owing) : null;
     }
 
     /// <summary>

@@ -191,8 +191,8 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, unarmedBar);
         }
 
-        // A crew in CC, and the Gun it mans, are not reviewed (ruling R24.3).
-        if (ScenarioA1AdvanceCalculator.CrewBar(enemies.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew"))) is { } crewBar)
+        // A Gun's crew in CC, and the Gun it mans, are not reviewed (ruling R24.3); a crew that mans no Gun is advanced against (pass 65, ruling R65.29).
+        if (ScenarioA1AdvanceCalculator.CrewBar(enemies.Any(unit => GunCrew(state, unit))) is { } crewBar)
         {
             return Refused(scope, label, expected, crewBar);
         }
@@ -684,10 +684,10 @@ public sealed partial class GamePlanner
 
             var here = active.Where(unit => state.Location(unit.Id)!.Location == location).ToArray();
 
-            // CC with a crew (ruling R24.3) is not reviewed, so it cannot be required; a Location holding a vehicle has its sequential CC (A11.31). Rules
-            // picks the unit (pass 32.g).
+            // CC with a Gun's crew (ruling R24.3) is not reviewed, so it cannot be required; a Location holding a vehicle has its sequential CC (A11.31).
+            // Rules picks the unit (pass 32.g).
             if (ScenarioA1CloseCombatRules.RequiredUnit([.. here.Select(unit => new RequiredCcUnitFacts(unit.Id, unit.Side, Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), Is(unit, Conditions.Broken),
-                KnownEnemy(unit), state.Advances.Any(item => item.Unit == unit.Id && item.To == location), vocabulary.IsA(unit.Kind, "asl:crew"), LiveFire.IsVehicle(unit)))])
+                KnownEnemy(unit), state.Advances.Any(item => item.Unit == unit.Id && item.To == location), GunCrew(state, unit), LiveFire.IsVehicle(unit)))])
                 is not { } required || here.First(item => item.Id == required.Id) is not { } unit)
             {
                 continue;
@@ -842,6 +842,9 @@ public sealed partial class GamePlanner
     private static bool Mans(GameState state, UnitInstance unit) =>
         state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Manned } holding && holding.Holder == unit.Id);
 
+    /// <summary>Whether a unit is a Gun's crew, whose CC is not reviewed (ruling R24.3); a crew that mans no Gun is ordinary Infantry (pass 65, ruling R65.29).</summary>
+    private bool GunCrew(GameState state, UnitInstance unit) => ScenarioA1CloseCombatRules.GunCrew(vocabulary.IsA(unit.Kind, "asl:crew"), () => Mans(state, unit));
+
     /// <summary>A Guard: a unit with an active prisoner (A20.5).</summary>
     private static bool IsGuard(GameState state, UnitInstance unit) =>
         state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id);
@@ -857,7 +860,7 @@ public sealed partial class GamePlanner
 
         // Ruling R10.15: a charge into concealed units reveals them, one into prisoners enters, and one onto a lone SMC is an Infantry OVR; a Gun's
         // crew in CC stays unreviewed (ruling R24.3). Table player, pass 27: CC between Infantry in a Location holding a vehicle is not built (R11.16).
-        return ScenarioA1CloseCombatRules.ChargeBarred(enemies.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")), enemies.Any(LiveFire.IsVehicle), enemies.Any(unit => !LiveFire.IsVehicle(unit)), to.ToString());
+        return ScenarioA1CloseCombatRules.ChargeBarred(enemies.Any(unit => GunCrew(state, unit)), enemies.Any(LiveFire.IsVehicle), enemies.Any(unit => !LiveFire.IsVehicle(unit)), to.ToString());
     }
 
     /// <summary>A map of unit ids in the arguments, such as each SMC's MMC or each withdrawing unit's destination.</summary>
@@ -1421,7 +1424,10 @@ public sealed partial class GamePlanner
     {
         Interlocked.Increment(ref chargeSearches);
         var side = movers[0].Side;
-        var scan = new ChargeScan(this, state, movers, unit => vocabulary.IsA(unit.Kind, "asl:crew"));
+        // Pass 65 (ruling R65.29): only a Gun's crew bars a charge; who mans a Gun is read once for the search.
+        var gunners = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Manned })
+            .Select(item => item.Holding!.Holder).ToHashSet(StringComparer.Ordinal);
+        var scan = new ChargeScan(this, state, movers, unit => ScenarioA1CloseCombatRules.GunCrew(vocabulary.IsA(unit.Kind, "asl:crew"), () => gunners.Contains(unit.Id)));
 
         // Table player, pass 27: an Abandoned vehicle is no unit to charge.
         int[] enemies = [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && ScenarioA1ChargeCalculator.ChargeTarget(KnownEnemy(unit), LiveFire.IsVehicle(unit), Is(unit, Conditions.Abandoned)))

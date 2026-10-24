@@ -1350,4 +1350,108 @@ public sealed class ScenarioA1Pass65RulesTests
         Assert.True(ScenarioA1WreckRules.ScroungedDismantled("asl:mg", "german", "medium", null));
         Assert.Equal([(UnitCondition.BmgDisabled, true), (UnitCondition.Disabled, true)], ScenarioA1WreckRules.ScroungedConditions(BmgAndMa));
     }
+
+    // Increment 2k: a crew that mans no Gun as an ordinary target and in CC (A1.123; rulings R65.28, R65.29), and A7.308's Random Selection of vehicles
+    // beyond the KIA# (ruling R65.26).
+    private static FireTarget Enemy(string id, string definition) => new(id, definition, At, false, false, false, false, false, false, false)
+    {
+        KnownEnemyInLos = true,
+        Captors = [],
+    };
+
+    private static FireAttack AtTargets(params FireTarget[] targets) =>
+        new("PFPh", "phasing", true, FiredFrom, At, [Squad("ru-1", FiredFrom)], null, 2, true, new FireLos(false, 0, true, false), 7, "open-ground", targets, 3, null);
+
+    [Fact]
+    public void ACrewThatMansNoGunIsAnOrdinaryTargetAndAGunsCrewKeepsRulingR83()
+    {
+        const string unreviewed = "asl.a1.fire.crew-target-unreviewed";
+        var crew = Enemy("de-c", "german-vehicle-crew");
+        var squad = Enemy("de-s", "attacker-squad");
+
+        // A1.123 (ruling R65.28): a vehicle crew alone, or with a squad, is attacked as Infantry.
+        Assert.DoesNotContain(unreviewed, ScenarioA1FireCalculator.Precheck(AtTargets(crew), Ordnance.Fire));
+        Assert.DoesNotContain(unreviewed, ScenarioA1FireCalculator.Precheck(AtTargets(crew, squad), Ordnance.Fire));
+
+        // C11 (ruling R8.3): a Gun's crew alone with its Gun named is a target; with a squad it is not reviewed, nor where the attack names no Gun (a
+        // vehicle's fire) and its fact lists the crew as manning one.
+        var gunCrew = Enemy("de-gc", "attacker-crew");
+        var gun = new FireGunTarget("de-gun", "attacker-inf-gun", "de-gc", false, false);
+        FireAttack AtGun(FireAttack attack) => attack with
+        {
+            GunTarget = gun
+        };
+        var vehicleFire = AtTargets(gunCrew) with
+        {
+            GunCrews = ["de-gc"]
+        };
+        Assert.DoesNotContain(unreviewed, ScenarioA1FireCalculator.Precheck(AtGun(AtTargets(gunCrew)), Ordnance.Fire));
+        Assert.Contains(unreviewed, ScenarioA1FireCalculator.Precheck(AtGun(AtTargets(gunCrew, squad)), Ordnance.Fire));
+        Assert.Contains(unreviewed, ScenarioA1FireCalculator.Precheck(vehicleFire, Ordnance.Fire));
+
+        // R65.29: only a Gun's crew bars an advance and is left out of CC; the Gun is read only for a crew.
+        Assert.True(ScenarioA1CloseCombatRules.GunCrew(true, () => true));
+        Assert.False(ScenarioA1CloseCombatRules.GunCrew(true, () => false));
+        Assert.False(ScenarioA1CloseCombatRules.GunCrew(false, () => throw new InvalidOperationException("No Gun is read for a squad.")));
+    }
+
+    private static readonly int[] TruckDice = [1, 2];
+    private static readonly string[] ThirdTruck = ["de-t3"];
+
+    private static FireVehicle Truck(string id, bool fact = true) => new(id, "attacker-truck", At, false, false, false, false)
+    {
+        Prc = fact ? [] : null
+    };
+
+    /// <summary>A Russian HS's 2 FP at three German trucks in the open, with the Random Selection drs given.</summary>
+    private static FireAttack AtTrucks(bool fact, IReadOnlyDictionary<string, int>? selection) =>
+        new FireAttack("PFPh", "phasing", true, FiredFrom, At, [new FireFirer("ru-h", "defender-half-squad", FiredFrom, false, false, false, false, false)
+        {
+            KnownEnemyInLos = true,
+            Captors = [],
+        }], null, 2, true, new FireLos(false, 0, true, false), 7, "open-ground", [], 3, new FireRolls(TruckDice, selection, null, null))
+        {
+            Vehicles = [Truck("de-t1", fact), Truck("de-t2", fact), Truck("de-t3", fact)],
+        };
+
+    [Fact]
+    public void RandomSelectionPicksTheTrucksA2FpAttackAffects()
+    {
+        // A7.308 (p. 56): "a 2 or 4 FP attack could affect only two vehicles". The 2 column's highest KIA# is 2; three trucks each make a Random Selection
+        // dr, and the two highest (5 and 4) take the DR of 3; the third (2) is not affected.
+        Assert.Equal(2, Ordnance.Fire.HighestKia(Column(2)));
+        Assert.Contains("asl.a1.fire.roll-missing:randomSelection:de-t1,de-t2,de-t3", ScenarioA1FireCalculator.Resolve(AtTrucks(true, null), Ordnance.Fire).Reasons);
+        var result = ScenarioA1FireCalculator.Resolve(AtTrucks(true, new Dictionary<string, int> { ["de-t1"] = 2, ["de-t2"] = 5, ["de-t3"] = 4 }), Ordnance.Fire);
+        Assert.Equal(FireResolution.Resolved, result.Disposition);
+        var effects = result.VehicleEffects!.ToDictionary(item => item.VehicleId);
+        Assert.Equal((FireVehicleEffect.None, true, 2), (effects["de-t1"].Result, effects["de-t1"].NotSelected, effects["de-t1"].RandomSelectionDr));
+        Assert.Equal((null, 5), (effects["de-t2"].NotSelected, effects["de-t2"].RandomSelectionDr));
+        Assert.Equal((null, 4), (effects["de-t3"].NotSelected, effects["de-t3"].RandomSelectionDr));
+        Assert.NotEqual(FireVehicleEffect.None, effects["de-t2"].Result);
+        Assert.Equal(effects["de-t2"].Result, effects["de-t3"].Result);
+
+        // A tie goes in the attack's order.
+        var tied = ScenarioA1FireCalculator.Resolve(AtTrucks(true, new Dictionary<string, int> { ["de-t1"] = 3, ["de-t2"] = 3, ["de-t3"] = 3 }), Ordnance.Fire);
+        Assert.Equal(ThirdTruck, tied.VehicleEffects!.Where(item => item.NotSelected == true).Select(item => item.VehicleId));
+
+        // An older record carries no PRC fact: ruling R25.3's one vehicle stands.
+        Assert.Contains("asl.a1.fire.vehicle-outside", ScenarioA1FireCalculator.Resolve(AtTrucks(false, null), Ordnance.Fire).Reasons);
+    }
+
+    [Fact]
+    public void AnUnprotectedCrewThatBreaksIsPlacedBeneathAndOneEliminatedIsGone()
+    {
+        // D5.311 (p. 203): a broken Unprotected crew routs beneath its vehicle, an eliminated one is gone, and either Abandons it; a pin, a destroyed vehicle,
+        // or a record with no such attack places nothing.
+        static FireVehicleEffect Crew(string crewResult, string result = FireVehicleEffect.None, int? final = 5) =>
+            new("de-ht", "attacker-halftrack", result, 4, [], 6, null, null, crewResult)
+            {
+                UnprotectedCrewFinalDr = final
+            };
+        Assert.True(ScenarioA1FireFollowUps.UnprotectedCrewPlacedBroken(Crew(FireVehicleEffect.Broken)));
+        Assert.False(ScenarioA1FireFollowUps.UnprotectedCrewPlacedBroken(Crew(FireVehicleEffect.Eliminated)));
+        Assert.Null(ScenarioA1FireFollowUps.UnprotectedCrewPlacedBroken(Crew(FireVehicleEffect.Pinned)));
+        Assert.Null(ScenarioA1FireFollowUps.UnprotectedCrewPlacedBroken(Crew(FireVehicleEffect.Broken, FireVehicleEffect.Eliminated)));
+        Assert.Null(ScenarioA1FireFollowUps.UnprotectedCrewPlacedBroken(Crew(FireVehicleEffect.Broken, final: null)));
+    }
 }

@@ -317,12 +317,20 @@ public static class FireText
     public static string VehicleLineText(FireVehicleEffect hit)
     {
         ArgumentNullException.ThrowIfNull(hit);
+
+        // A7.308 (pass 65, ruling R65.26): more unarmored vehicles than the column's highest KIA#, each with its Random Selection dr.
+        if (hit.NotSelected == true)
+        {
+            return $"Random Selection dr {hit.RandomSelectionDr}: not selected, so not affected by the DR (A7.308)";
+        }
+
         return hit.KillNumber is not { } kill
             ? "unharmed by small arms (A7.307)"
-            : $"Kill Number {kill}, Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({DisplayText.Modifier(item.Name)} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))})"))}"
+            : (hit.RandomSelectionDr is { } selected ? $"Random Selection dr {selected}: selected (A7.308); " : "") + $"Kill Number {kill}, Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({DisplayText.Modifier(item.Name)} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))})"))}"
                 + (hit.UnlikelyKillDr is { } dr ? $", Unlikely Kill dr {dr}" : "") + $": {hit.Result.Replace('-', ' ')}"
                 + (hit.TaskCheck is { } tc ? $"; crew TC DR {tc.FinalDr} against {MoraleWords(tc)}: {(tc.Passed ? "passed" : "Abandoned")} (D5.5)" : "")
-                + (hit.CrewSurvival is { } cs ? $"; Crew Survival DR {cs.FinalDr}{(cs.Drm > 0 ? " (+1)" : "")} against CS# {cs.CrewSurvival}: {(cs.Survived ? "the crew survives" : "no survivors")} (D5.6)" : "");
+                + (hit.CrewSurvival is { } cs ? $"; Crew Survival DR {cs.FinalDr}{(cs.Drm > 0 ? " (+1)" : "")} against CS# {cs.CrewSurvival}: {(cs.Survived ? "the crew survives" : "no survivors")} (D5.6)" : "")
+                + (hit.UnprotectedCrewFinalDr is not null ? "; " + CrewText(hit) : "");
     }
 
     /// <summary>
@@ -366,6 +374,16 @@ public static class FireText
         return hit.CrewResult switch
         {
             FireVehicleEffect.NotVulnerable => "not Vulnerable (BU or Stunned, D5.3, D5.34)",
+
+            // D5.311 (pass 65, ruling R65.26): an OT AFV's crew under Air Bursts is attacked as Infantry.
+            _ when hit.UnprotectedCrewFinalDr is { } unprotected => $"Unprotected crew under Air Bursts, Final DR {unprotected}"
+                + $"{(hit.CrewCheck is { } made ? "; " + CheckText(made) : "")}: "
+                + (hit.CrewResult switch
+                {
+                    FireVehicleEffect.Broken => "broken, it routs beneath and the vehicle is Abandoned",
+                    FireVehicleEffect.Eliminated => "eliminated, and the vehicle is Abandoned",
+                    _ => hit.CrewResult,
+                }) + " (D5.311)",
             _ when hit.KillNumber is not null => "no crew attack (an Inherent Driver, D5.1)",
             _ => $"Collateral Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({DisplayText.Modifier(item.Name)} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))}, {item.Rule})"))}"
                 + $"{(hit.CrewCheck is { } check ? "; " + CheckText(check) : "")}: {hit.CrewResult}",

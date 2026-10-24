@@ -1683,4 +1683,184 @@ public sealed class BacklogPass65Tests : IDisposable
         Refused(await Scrounge("ru-s", "de-tank", Once(1)), "not TI");
         NoReplayErrors();
     }
+
+    // Increment 2k: a crew that mans no Gun as an ordinary target and in CC (A1.123; rulings R65.28, R65.29), and A7.308's Random Selection of the vehicles
+    // beyond the KIA# (ruling R65.26).
+
+    private Task<PlayResult> SquadFires(DiceRoller roller) => Do(GameActions.Fire, roller, new
+    {
+        firers = RussianSquadAtB9,
+        target = Target,
+    });
+
+    [Fact]
+    public async Task AGermanVehicleCrewAloneInTheOpenIsAttackedAsInfantry()
+    {
+        // A1.123 (ruling R65.28): the 4-4-7 fires 4 FP at the German vehicle crew in the open two hexes off, which ruling R8.3 refused before: an Original
+        // DR of 7, and the crew is a target of the record.
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Unit("ru-s", "asl:squad", "defender-squad", Firer, "russian"),
+            Unit("de-c", "asl:vehicle-crew", "german-vehicle-crew", Target, "german"));
+        var before = Revision;
+        Committed(await SquadFires(Once(3, 4, 2, 2, 2, 2)));
+        var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.Equal("de-c", Assert.Single(fire.Facts.GetProperty("targets").EnumerateArray()).GetProperty("unitId").GetString());
+        Assert.False(fire.Facts.TryGetProperty("gunCrews", out _));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AGermanVehicleCrewWithASquadIsAttackedWithIt()
+    {
+        // A1.123 (ruling R65.28): a crew that mans no Gun is attacked with the other units of its Location.
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Unit("ru-s", "asl:squad", "defender-squad", Firer, "russian"),
+            Unit("de-c", "asl:vehicle-crew", "german-vehicle-crew", Target, "german"), Unit("de-s", "asl:squad", "attacker-squad", Target, "german"));
+        var before = Revision;
+        Committed(await SquadFires(Once(3, 4, 2, 2, 2, 2, 2, 2)));
+        var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.Equal(2, fire.Facts.GetProperty("targets").GetArrayLength());
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AGunsCrewWithASquadIsStillRefusedAsATarget()
+    {
+        // C11 (ruling R8.3): the German crew mans its Gun, so with a squad beside it the attack is not reviewed; the record would name it a Gun's crew.
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0",
+            [Unit("ru-s", "asl:squad", "defender-squad", Firer, "russian"), .. Gun("de-gun", "attacker-inf-gun", "de-gc", "asl:crew", "attacker-crew", Target, "german", "east"),
+                Unit("de-s", "asl:squad", "attacker-squad", Target, "german")]);
+        Refused(await SquadFires(NoRoll()), "crew-target-unreviewed");
+        var (attack, _) = LiveFire.FromState(Current, RussianSquadAtB9, Array.Empty<string>(), BoardLocation.Parse(Target));
+        Assert.Equal(GunCrewOnly, attack!.GunCrews);
+    }
+
+    private static readonly string[] GunCrewOnly = ["de-gc"];
+
+    [Fact]
+    public async Task ARussianSquadAdvancesOntoAGermanVehicleCrewAndTheCcResolves()
+    {
+        // A1.123 (ruling R65.29): a crew that mans no Gun is advanced against, which ruling R24.3 refused before, and fights in CC as Infantry.
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Unit("de-c", "asl:vehicle-crew", "german-vehicle-crew", Target, "german"),
+            Unit("ru-s", "asl:squad", "defender-squad", Behind, "russian"), Unit("de-1", "asl:squad", "attacker-squad", Far, "german"));
+        await AdvanceInto(RussianSquadAtB9);
+        await Advance();
+        Assert.Equal("ccph", Current.Phase);
+        var before = Revision;
+        Committed(await Do(GameActions.CloseCombat, Once(3, 3, 2, 2, 2, 2, 2, 2), new
+        {
+            location = Target,
+            attacks = new[] { new { attackers = RussianSquadAtB9, defenders = VehicleCrewOnly } },
+        }));
+        var round = Assert.Single(Since(before).Select(item => item.Payload).OfType<CloseCombatResolved>());
+        Assert.Contains("de-c", round.Resolution.GetRawText(), StringComparison.Ordinal);
+        NoReplayErrors();
+    }
+
+    private static readonly string[] VehicleCrewOnly = ["de-c"];
+
+    [Fact]
+    public async Task AnAdvanceOntoAGunsCrewIsStillRefused()
+    {
+        // C11 (ruling R24.3): CC with a Gun's crew is not reviewed, so the advance into its Location is refused.
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0",
+            [.. Gun("de-gun", "attacker-inf-gun", "de-gc", "asl:crew", "attacker-crew", Target, "german", "east"), Unit("ru-s", "asl:squad", "defender-squad", Behind, "russian")]);
+        for (var step = 0; step < 10 && Current.Phase != "aph"; step++)
+        {
+            await Advance();
+        }
+
+        Refused(await Do(GameActions.Advance, NoRoll(), new
+        {
+            unitIds = RussianSquadAtB9,
+            to = Target,
+        }), "play.advance-crew");
+    }
+
+    [Fact]
+    public async Task ARussianHalfSquadsFireMeetsThreeTrucksAndRandomSelectionPicksTwo()
+    {
+        // A7.308 (p. 56): the 2-2-7's 2 FP at three German trucks in the open: the 2 column's highest KIA# is 2, so each truck makes a Random Selection dr
+        // (4, 5, 1) and the two highest take the IFT DR of 3; the third is not affected. Ruling R25.3's one vehicle is lifted for an attack that carries
+        // the PRC fact, as every attack planned since 2b does.
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Unit("ru-h", "asl:half-squad", "defender-half-squad", Firer, "russian"),
+            Vehicle("de-t1", "attacker-truck", Target, "german", "east"), Vehicle("de-t2", "attacker-truck", Target, "german", "east"),
+            Vehicle("de-t3", "attacker-truck", Target, "german", "east"));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(1, 2, 4, 5, 1), new
+        {
+            firers = HalfSquadAtFirer,
+            target = Target,
+        }));
+        var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        var effects = fire.Resolution.GetProperty("vehicleEffects").EnumerateArray().ToDictionary(item => item.GetProperty("vehicleId").GetString()!);
+        Assert.True(effects["de-t3"].GetProperty("notSelected").GetBoolean());
+        Assert.Equal(1, effects["de-t3"].GetProperty("randomSelectionDr").GetInt32());
+        Assert.False(effects["de-t1"].TryGetProperty("notSelected", out _));
+        Assert.Equal(InstanceStatus.Active, Current.Unit("de-t3")!.Status);
+        Assert.NotEqual(InstanceStatus.Active, Current.Unit("de-t1")!.Status);
+        NoReplayErrors();
+
+        // An attack recorded before the pass carries no PRC fact and was never made at three vehicles: its record is refused as ruling R25.3 has it.
+        var older = Planner().Replay(AsBeforeThePass());
+        Assert.True(older.HasErrors);
+    }
+
+    private static readonly string[] HalfSquadAtFirer = ["ru-h"];
+
+    [Fact]
+    public async Task AnAirBurstBreaksAnOtHalftracksCrewWhichRoutsBeneathAndAbandonsIt()
+    {
+        // D5.311 (p. 203): the Russian 50mm hits the OT SPW 251/1 in woods. On the Vehicle line its IFT DR of 6 on the 2 column is above the Kill Number of 4,
+        // so the halftrack is unharmed; its crew is attacked as Infantry with the Air Burst's -1: a Final DR of 5, a NMC. The crew's DR of 11 fails its Morale
+        // Level: it breaks and is placed beneath, broken, and the halftrack is Abandoned.
+        changed = ("B8", "Woods");
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Unit("r1", "asl:squad", "defender-squad", FiveHexesOff, "russian"),
+            LightMortar("ru-mtr", "defender-light-mortar", "r1", "russian"), Vehicle("de-ht", "attacker-halftrack", Target, "german", "east"));
+        var before = Revision;
+        Committed(await Lob("ru-mtr", 2, 2, 3, 3, 6, 5, 3, 3, 3, 3));
+        var shot = LastShot(before);
+        var line = shot.Resolution.GetProperty("hit").GetProperty("vehicleEffects").EnumerateArray().Single();
+        Assert.Equal(("none", "broken", 5), (line.GetProperty("result").GetString(), line.GetProperty("crewResult").GetString(), line.GetProperty("unprotectedCrewFinalDr").GetInt32()));
+        Assert.Equal(("NMC", 11, false), (line.GetProperty("crewCheck").GetProperty("kind").GetString(), line.GetProperty("crewCheck").GetProperty("finalDr").GetInt32(),
+            line.GetProperty("crewCheck").GetProperty("passed").GetBoolean()));
+        Assert.Contains("hit:checks:de-ht", shot.Rolls.Keys);
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("de-ht")!, Conditions.Abandoned));
+        var crew = Assert.Single(Current.Units, unit => unit.Kind == "asl:vehicle-crew");
+        Assert.Equal(("german-vehicle-crew", Target, ConditionState.True),
+            (crew.Definition!.Definition, Current.Location(crew.Id)!.Location.ToString(), GameState.Condition(crew, Conditions.Broken)));
+        NoReplayErrors();
+
+        // A shot recorded before the pass carries no PRC fact: the crew is not attacked and the halftrack is untouched, as it was resolved.
+        static JsonElement Older(JsonElement element, Action<JsonObject> change)
+        {
+            var node = JsonNode.Parse(element.GetRawText())!.AsObject();
+            change(node);
+            return JsonSerializer.SerializeToElement(node);
+        }
+
+        GameEvent[] older = [.. store.Read(Scope)!.Events
+            .Where(item => item.Payload is not InstanceCreated { Instance.Kind: "asl:vehicle-crew" }
+                && !(item.Payload is ConditionsChanged changed && (changed.Conditions.ContainsKey(Conditions.Abandoned) || changed.Id == crew.Id)))
+            .Select((item, index) => item with { Revision = index + 1 })
+            .Select(item => item.Payload is OrdnanceFired fired
+                ? item with
+                {
+                    Payload = fired with
+                    {
+                        Rolls = fired.Rolls.Where(roll => roll.Key != "hit:checks:de-ht").ToDictionary(roll => roll.Key, roll => roll.Value, StringComparer.Ordinal),
+                        Facts = Older(fired.Facts, node => node["hit"]!["vehicles"]![0]!.AsObject().Remove("prc")),
+                        Resolution = Older(fired.Resolution, node =>
+                        {
+                            var effect = node["hit"]!["vehicleEffects"]![0]!.AsObject();
+                            effect.Remove("unprotectedCrewFinalDr");
+                            effect["crewCheck"] = null;
+                            effect["crewResult"] = "none";
+                        }),
+                    }
+                }
+                : item)];
+        var replayed = Planner().Replay(older);
+        Assert.False(replayed.HasErrors, string.Join("; ", replayed.Diagnostics.Select(item => item.Message)));
+        Assert.NotEqual(ConditionState.True, GameState.Condition(replayed.Current!.Unit("de-ht")!, Conditions.Abandoned));
+        Assert.DoesNotContain(replayed.Current.Units, unit => unit.Kind == "asl:vehicle-crew");
+    }
 }

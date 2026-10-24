@@ -167,6 +167,16 @@ public sealed record FireAttack(
     }
 
     /// <summary>
+    /// The target units that man a Gun (C11; pass 65, ruling R65.28), the planner's read of the state, recorded with the attack: such a crew keeps ruling
+    /// R8.3's reading, and any other crew is an ordinary Infantry target (A1.123). Null is none, and a record made before the pass carries none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? GunCrews
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Whether a Final KIA makes the weapons its victims held check for Random SW/Gun Destruction (A9.74, C8.42, C11.6, pp. 65, 178, 182; pass 60,
     /// rulings R60.3, R60.17), and a DC destroys the Gun its target Location's units man. Set on every attack planned from the pass on and taken from
     /// the record at replay; null on every older record, whose KIA destroys nothing.
@@ -1724,6 +1734,23 @@ public sealed record FireVehicleEffect(
         get; init;
     }
 
+    /// <summary>
+    /// The vehicle's Random Selection dr, made when the Location held more unarmored vehicles than the column's highest KIA# (A7.308, p. 56; pass 65,
+    /// ruling R65.26); null when none was made.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? RandomSelectionDr
+    {
+        get; init;
+    }
+
+    /// <summary>Whether that Random Selection left the vehicle unaffected by the DR (A7.308; pass 65, ruling R65.26); null when it did not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? NotSelected
+    {
+        get; init;
+    }
+
     /// <summary>The Collateral Attacks on the vehicle's Vulnerable PRC (D.8; pass 65, ruling R65.7); null when there were none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<FirePrcAttack>? PrcAttacks
@@ -1772,6 +1799,16 @@ public sealed record FireVehicleEffect(
         get; init;
     }
 
+    /// <summary>
+    /// The Final DR of the attack on an Unprotected crew, an OT AFV's under Air Bursts (D5.311; pass 65, ruling R65.26), whose check and result are
+    /// <see cref="CrewCheck"/> and <see cref="CrewResult"/>; null when none was made, which is every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? UnprotectedCrewFinalDr
+    {
+        get; init;
+    }
+
     public const string None = "none";
     public const string Immobilized = "immobilized";
     public const string Eliminated = "eliminated";
@@ -1780,4 +1817,7 @@ public sealed record FireVehicleEffect(
     public const string Recalled = "recalled";
     public const string Pinned = "pinned";
     public const string NotVulnerable = "not-vulnerable";
+
+    /// <summary>An Unprotected crew broken (D5.311; pass 65, ruling R65.26): it routs beneath its vehicle, which is Abandoned.</summary>
+    public const string Broken = "broken";
 }
