@@ -152,27 +152,44 @@ public sealed partial class GamePlanner
     {
         private readonly Dictionary<string, MapPosition?> locations;
         private readonly Dictionary<BoardLocation, IGameObject[]> at;
+        private readonly Dictionary<string, string> vehicles;
+        private readonly Dictionary<string, UnitInstance[]> aboard;
 
-        private ObjectIndex(Dictionary<string, MapPosition?> locations, Dictionary<BoardLocation, IGameObject[]> at)
+        private ObjectIndex(Dictionary<string, MapPosition?> locations, Dictionary<BoardLocation, IGameObject[]> at, Dictionary<string, string> vehicles,
+            Dictionary<string, UnitInstance[]> aboard)
         {
             this.locations = locations;
             this.at = at;
+            this.vehicles = vehicles;
+            this.aboard = aboard;
         }
 
         public static ObjectIndex Of(GameState state)
         {
             var locations = new Dictionary<string, MapPosition?>(StringComparer.Ordinal);
+            var vehicles = new Dictionary<string, string>(StringComparer.Ordinal);
             var stacks = new Dictionary<BoardLocation, List<IGameObject>>();
+            var cargo = new Dictionary<string, List<UnitInstance>>(StringComparer.Ordinal);
             foreach (var item in state.Objects)
             {
                 // GameState.Location and Aboard read an id's first object, as Find does; At still lists every object, so a repeated id is too.
+                string? vehicle;
                 if (!locations.TryGetValue(item.Id, out var position))
                 {
                     position = state.Location(item.Id);
                     locations[item.Id] = position;
+                    vehicle = state.Aboard(item.Id);
+                    if (vehicle is not null)
+                    {
+                        vehicles[item.Id] = vehicle;
+                    }
+                }
+                else
+                {
+                    vehicle = vehicles.GetValueOrDefault(item.Id);
                 }
 
-                if (item.Status == InstanceStatus.Active && position is not null && state.Aboard(item.Id) is null)
+                if (item.Status == InstanceStatus.Active && position is not null && vehicle is null)
                 {
                     if (!stacks.TryGetValue(position.Location, out var stack))
                     {
@@ -181,10 +198,32 @@ public sealed partial class GamePlanner
 
                     stack.Add(item);
                 }
+
+                // Pass 65, ruling R65.25: the PRC of each vehicle, as GameState.Passengers reads them (active units in the Passenger or Rider role).
+                if (item is UnitInstance { Status: InstanceStatus.Active, Position: ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider } contained } unit)
+                {
+                    if (!cargo.TryGetValue(contained.Container, out var riding))
+                    {
+                        cargo[contained.Container] = riding = [];
+                    }
+
+                    riding.Add(unit);
+                }
             }
 
-            return new ObjectIndex(locations, stacks.ToDictionary(item => item.Key, item => item.Value.ToArray()));
+            return new ObjectIndex(locations, stacks.ToDictionary(item => item.Key, item => item.Value.ToArray()), vehicles,
+                cargo.ToDictionary(item => item.Key, item => item.Value.ToArray(), StringComparer.Ordinal));
         }
+
+        /// <summary>The active units riding a vehicle as Passengers or Riders, as <see cref="GameState.Passengers"/> reads them (D6.1, D6.2; ruling R65.25).</summary>
+        public IReadOnlyList<UnitInstance> Aboard(string vehicle) => aboard.TryGetValue(vehicle, out var riding) ? riding : [];
+
+        /// <summary>The units riding a vehicle in one role (D6.1 Passengers, D6.2 Riders).</summary>
+        public IEnumerable<UnitInstance> Aboard(string vehicle, ContainmentRole role) =>
+            Aboard(vehicle).Where(unit => unit.Position is ContainedPosition contained && contained.Role == role);
+
+        /// <summary>The vehicle an id rides, or whose Passenger or Rider holds it, as <see cref="GameState.Aboard"/> reads it; null when it is on foot.</summary>
+        public string? VehicleOf(string id) => vehicles.GetValueOrDefault(id);
 
         /// <summary>The active objects in a Location, as <see cref="GameState.At"/> reads them.</summary>
         public IReadOnlyList<IGameObject> At(BoardLocation location) => at.TryGetValue(location, out var stack) ? stack : [];

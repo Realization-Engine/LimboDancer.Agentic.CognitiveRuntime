@@ -27,7 +27,7 @@ public static class ScenarioA1OrdnanceProjection
     public static bool CrewLosesInherentFp(bool tank, bool panzerfaust, bool recorded) => !(tank || panzerfaust || recorded);
 
     /// <summary>C13.31 (ruling R9.7): the half-squad equivalents of a unit in its side's OB.</summary>
-    public static int HalfSquadEquivalents(string kind) => kind == "asl:squad" ? 2 : kind is "asl:half-squad" or "asl:crew" ? 1 : 0;
+    public static int HalfSquadEquivalents(string kind) => kind == "asl:squad" ? 2 : kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(kind) ? 1 : 0;
 
     /// <summary>
     /// C3.22 (ruling R8.9): a Gun changes its CA in its side's friendly fire phase while its Good Order, unpinned crew could still fire it; the
@@ -53,7 +53,7 @@ public static class ScenarioA1OrdnanceProjection
     /// C11.3 (p. 182; pass 60, rulings R60.18, R60.26): a Gun that "starts a scenario ... manned by a non-crew unit" loses its Emplacement for the
     /// scenario. Read once, as setup ends; a non-crew unit that mans it later does not end it (C11.2 only withholds the +2 while a squad mans it).
     /// </summary>
-    public static bool LosesEmplacement(string gunKind, string? holderKind) => gunKind == "asl:gun" && holderKind is not null && holderKind != "asl:crew";
+    public static bool LosesEmplacement(string gunKind, string? holderKind) => gunKind == "asl:gun" && holderKind is not null && !ScenarioA1Definitions.IsCrew(holderKind);
 
     /// <summary>A1.31 (ruling R13.4): a Deployment NTC passes when its Final DR does not exceed the Morale.</summary>
     public static bool DeploymentPassed(int first, int second, int drm, int morale) => first + second + drm <= morale;

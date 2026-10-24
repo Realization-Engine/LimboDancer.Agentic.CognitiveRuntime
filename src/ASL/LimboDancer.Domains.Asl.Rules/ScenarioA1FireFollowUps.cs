@@ -91,7 +91,7 @@ public static class ScenarioA1FireFollowUps
             }
 
             // A12.122: +US#, + the best Good Order leader's Leadership in the Location unless alone, - the Location's TEM and in-hex Hindrance.
-            var size = ScenarioA1Definitions.UnitSize(unit.Squad, unit.HalfSquad || unit.Kind == "asl:crew");
+            var size = ScenarioA1Definitions.UnitSize(unit.Squad, unit.HalfSquad || ScenarioA1Definitions.IsCrew(unit.Kind));
             var leadership = unit.BestLeadership();
             var tem = terrain is not null && ScenarioA1FireReference.Tem.TryGetValue(terrain, out var value) ? value : 0;
             // A6.7 (referee, pass 12): only SMOKE in the Location hinders its own units; brush, grain, orchard, and marsh do not.

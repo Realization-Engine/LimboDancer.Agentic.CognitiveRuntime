@@ -47,7 +47,14 @@ public static class LiveFire
     }
 
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.17.0";
+    public const string CatalogVersion = "1.18.0";
+
+    /// <summary>Whether the packages read the game's catalog: this catalog at an older or equal version of the same major (ruling R65.4; Rules decides).</summary>
+    public static bool ServesCatalog(GameState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return ScenarioA1Definitions.CatalogServes(Catalog, CatalogVersion, state.Catalog.Catalog, state.Catalog.Version);
+    }
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -76,7 +83,7 @@ public static class LiveFire
             return (null, "play.fire-firers: name each firer once");
         }
 
-        if (state.Catalog.Catalog != Catalog || state.Catalog.Version != CatalogVersion)
+        if (!ServesCatalog(state))
         {
             return (null, $"play.fire-catalog: the Fire package reads {Catalog}@{CatalogVersion}, and this game uses {state.Catalog.Catalog}@{state.Catalog.Version}");
         }
@@ -320,7 +327,7 @@ public static class LiveFire
     public static (FireAttack? Attack, string? Reason) DemolitionChargeFromState(GameState state, string chargeId, string mode, BoardLocation target)
     {
         ArgumentNullException.ThrowIfNull(state);
-        if (state.Catalog.Catalog != Catalog || state.Catalog.Version != CatalogVersion)
+        if (!ServesCatalog(state))
         {
             return (null, $"play.fire-catalog: the Fire package reads {Catalog}@{CatalogVersion}, and this game uses {state.Catalog.Catalog}@{state.Catalog.Version}");
         }

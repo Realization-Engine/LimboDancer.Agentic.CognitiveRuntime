@@ -32,7 +32,7 @@ public static class ScenarioA1GameStart
     /// a crew, and a Commissar are exempt.
     /// </summary>
     public static bool NeedsGroup(bool namesGroup, string kind, bool dummy, bool commissar, bool sideHasGroups, bool sideElrKnown) =>
-        !namesGroup && !dummy && kind is not ("asl:sniper" or "asl:hero" or "asl:crew") && !commissar && sideHasGroups && !sideElrKnown;
+        !namesGroup && !dummy && kind is not ("asl:sniper" or "asl:hero") && !ScenarioA1Definitions.IsCrew(kind) && !commissar && sideHasGroups && !sideElrKnown;
 
     /// <summary>Ruling R18.3, in words.</summary>
     public static string GroupText(string unitId, string? side) => $"play.group: {unitId} names no OB group, and the groups of {side} differ in ELR (A19.1; ruling R18.3)";

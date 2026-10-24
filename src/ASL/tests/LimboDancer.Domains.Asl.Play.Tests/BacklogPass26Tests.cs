@@ -456,6 +456,7 @@ public sealed class BacklogPass26Tests : IDisposable
         var planner = Planner();
         var states = planner.Replay(store.Read(Scope)!.Events).States;
         Assert.Contains(states, state => state.Aboard("gs") == "ght");
+        Assert.Contains(states, state => planner.Riding(state, "ght").Any(unit => unit.Id == "gs"));
         Assert.Contains(states, state => state.Find("gg") is EquipmentInstance { Holding.Role: HoldingRole.Manned });
         foreach (var state in states)
         {
@@ -469,9 +470,14 @@ public sealed class BacklogPass26Tests : IDisposable
             foreach (var item in state.Objects)
             {
                 Assert.Equal(state.Location(item.Id), planner.LocationOf(state, item.Id));
+
+                // Pass 65 (ruling R65.25): the PRC of each vehicle, and the vehicle each id rides, as the state reads them.
+                Assert.Equal(state.Aboard(item.Id), planner.VehicleOf(state, item.Id));
+                Assert.Equal(state.Passengers(item.Id), planner.Riding(state, item.Id));
             }
 
             Assert.Null(planner.LocationOf(state, "no-such-id"));
+            Assert.Empty(planner.Riding(state, "no-such-id"));
         }
     }
 

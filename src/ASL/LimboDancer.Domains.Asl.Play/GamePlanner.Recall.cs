@@ -247,20 +247,9 @@ public sealed partial class GamePlanner
             [Conditions.Motion] = ConditionState.False,
         }));
 
-        var nationality = VehicleDefinition(vehicle)?.Nationality;
-        if (FireReference.Value.Definitions.Values.Where(item => item.Kind == "asl:crew" && item.Nationality == nationality).Select(item => item.Id)
-            .Order(StringComparer.Ordinal).FirstOrDefault() is { } crew && vehicle.Position is MapPosition position)
+        if (LeavingCrew(vehicle, attemptId, stunRecovery: true) is { } crew)
         {
-            var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal)
-            {
-                [Conditions.Broken] = ConditionState.False,
-                [Conditions.Pinned] = ConditionState.False,
-                [Conditions.Concealed] = ConditionState.False,
-                [Conditions.Hidden] = ConditionState.False,
-                [Conditions.StunRecovery] = ConditionState.True,
-            };
-            yield return ("instance-created", new InstanceCreated(new NewInstance($"{attemptId}-{vehicle.Id}-crew", "asl:crew", crew, vehicle.Side,
-                new MapPosition(position.Location), null, conditions)));
+            yield return ("instance-created", crew);
         }
     }
 }

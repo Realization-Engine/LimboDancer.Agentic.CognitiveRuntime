@@ -517,7 +517,7 @@ public sealed partial class GamePlanner
             case VehicleStepped.Stop:
                 if (ScenarioA1VehicleMovementCalculator.StopBar(id, leaving, () => EnemyAfvBar(state, vehicle, existing), () => MayMoveOn(state, vehicle),
                     vehicle.Straddling is not null, () => TurnedAtCafp(state, vehicle),
-                    state.Passengers(id).Count > 0) is { } stopBar)
+                    Riding(state, id).Count > 0) is { } stopBar)
                 {
                     return Refused(scope, label, expected, stopBar);
                 }
@@ -541,7 +541,7 @@ public sealed partial class GamePlanner
                 cost = exit.HalfMp;
                 exitEdge = EdgeSides(state, at.Location).FirstOrDefault(item => item.Side == exit.Direction).Edge;
                 summary = $"{id} exits the map from {at.Location} for {Mp(cost)} MP (A2.6)" + (leaving ? " by its Friendly Board Edge (D5.341)" : string.Empty)
-                    + (state.Passengers(id) is { Count: > 0 } riding ? $", with {string.Join(", ", riding.Select(unit => unit.Id))} aboard" : string.Empty)
+                    + (Riding(state, id) is { Count: > 0 } riding ? $", with {string.Join(", ", riding.Select(unit => unit.Id))} aboard" : string.Empty)
                     + (state.Equipment.FirstOrDefault(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == id) is { } towing
                         ? $", towing {towing.Id}" : string.Empty)
                     + (exitEdge is not null ? ExitScoring(state, vehicle.Side, at.Location, exitEdge, false) : string.Empty);
@@ -563,7 +563,7 @@ public sealed partial class GamePlanner
         }
 
         // D5.341 (ruling R5.17): a leaving AFV keeps to a shortest route in MP to its Friendly Board Edge.
-        if (leaving && !ScenarioA1RecallCalculator.StopsToUnload(kind, state.Passengers(id).Count > 0))
+        if (leaving && !ScenarioA1RecallCalculator.StopsToUnload(kind, Riding(state, id).Count > 0))
         {
             var (moves, _, undecided) = RecallRoute(state, vehicle);
             if (undecided is not null)

@@ -738,7 +738,7 @@ public sealed partial class GamePlanner
         var withinCa = firers.Count > 0 && facing is { } barrel && firers.Any(from => from != target && Bearing(state, target, from) is { } bearing
             && ScenarioA1OrdnanceMapRules.WithinArc(bearing, (int)barrel));
         // C11.5 (referee, pass 8): the gunshield protects only a Good Order crew, never one moving or pushing the Gun under Defensive First Fire.
-        var crewKind = crew.Kind == "asl:crew";
+        var crewKind = ScenarioA1Definitions.IsCrew(crew.Kind);
         var emplaced = LiveOrdnance.Emplaced(state, gun, nonCrewManning: true);
         var moving = state.Phase == "mph" && state.Movement?.Movers.Contains(crew.Id) == true;
         return new FireGunTarget(gun.Id, gun.Definition?.Definition, crew.Id, emplaced, ScenarioA1OrdnanceMapRules.Gunshield(definition?.GunType, withinCa, crewKind, moving));
@@ -1173,7 +1173,7 @@ public sealed partial class GamePlanner
                 yield return ("instance-created", new InstanceCreated(new NewInstance(BlazeId(vehicle.Id), "asl:fire", null, null, new MapPosition(burningAt), null,
                     new Dictionary<string, ConditionState>())));
             }
-            else if (kill.CrewSurvival is { Survived: true } && CrewCounter(vehicle, attemptId) is { } survivors)
+            else if (kill.CrewSurvival is { Survived: true } && LeavingCrew(vehicle, attemptId) is { } survivors)
             {
                 yield return ("instance-created", survivors);
             }
@@ -1190,7 +1190,7 @@ public sealed partial class GamePlanner
         if (kill.Abandoned == true)
         {
             yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)));
-            if (CrewCounter(vehicle, attemptId) is { } crew)
+            if (LeavingCrew(vehicle, attemptId) is { } crew)
             {
                 yield return ("instance-created", crew);
             }
@@ -1277,21 +1277,34 @@ public sealed partial class GamePlanner
         }
     }
 
-    /// <summary>A vehicle's crew placed beneath it as a crew counter of its nationality (D5.5, D5.6; ruling R7.9).</summary>
-    private static InstanceCreated? CrewCounter(UnitInstance vehicle, string attemptId)
+    /// <summary>
+    /// The one place a crew that leaves its vehicle is placed (D5.1, D5.5, D5.6, D5.341, D5.41; rulings R7.9, R65.19): beneath the vehicle, as the
+    /// vehicle crew of its nationality (Rules picks the definition), with the id <c>{attempt}-{vehicle}-crew</c>; a Recalled crew keeps its Stun
+    /// +1 (D5.34). An older game's recorded <c>instance-created</c> keeps the infantry crew it placed, since the definition is in the record.
+    /// </summary>
+    private static InstanceCreated? LeavingCrew(UnitInstance vehicle, string attemptId, bool stunRecovery = false)
     {
-        var nationality = VehicleDefinition(vehicle)?.Nationality;
-        return FireReference.Value.Definitions.Values.Where(item => item.Kind == "asl:crew" && item.Nationality == nationality).Select(item => item.Id)
-            .Order(StringComparer.Ordinal).FirstOrDefault() is { } crew && vehicle.Position is MapPosition position
-            ? new InstanceCreated(new NewInstance($"{attemptId}-{vehicle.Id}-crew", "asl:crew", crew, vehicle.Side, new MapPosition(position.Location), null,
-                new Dictionary<string, ConditionState>(StringComparer.Ordinal)
-                {
-                    [Conditions.Broken] = ConditionState.False,
-                    [Conditions.Pinned] = ConditionState.False,
-                    [Conditions.Concealed] = ConditionState.False,
-                    [Conditions.Hidden] = ConditionState.False,
-                }))
-            : null;
+        // Ruling R65.18 (increment 2f): a Carrier's inherent HS is placed here in place of a vehicle crew.
+        if (ScenarioA1Definitions.LeavingCrewDefinition(FireReference.Value.Definitions.Values, VehicleDefinition(vehicle)?.Nationality) is not { } crew
+            || vehicle.Position is not MapPosition position)
+        {
+            return null;
+        }
+
+        var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal)
+        {
+            [Conditions.Broken] = ConditionState.False,
+            [Conditions.Pinned] = ConditionState.False,
+            [Conditions.Concealed] = ConditionState.False,
+            [Conditions.Hidden] = ConditionState.False,
+        };
+        if (stunRecovery)
+        {
+            conditions[Conditions.StunRecovery] = ConditionState.True;
+        }
+
+        return new InstanceCreated(new NewInstance($"{attemptId}-{vehicle.Id}-crew", ScenarioA1Definitions.VehicleCrewKind, crew, vehicle.Side,
+            new MapPosition(position.Location), null, conditions));
     }
 
     /// <summary>An Ordnance package roll added to its rolls under its key.</summary>

@@ -12,7 +12,7 @@ public static class ScenarioA1OrdnanceCalculator
 
     private static readonly string[] AdmittedGunTypes = ["at", "inf", "art", "mortar", "latw"];
 
-    private static readonly string[] Personnel = ["asl:squad", "asl:half-squad", "asl:crew", "asl:leader", "asl:hero"];
+    private static readonly string[] Personnel = ["asl:squad", "asl:half-squad", "asl:crew", "asl:vehicle-crew", "asl:leader", "asl:hero"];
 
     public static OrdnanceResolution Resolve(OrdnanceShot shot, ScenarioA1OrdnanceReference reference)
     {
@@ -100,7 +100,7 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("1945", -1, "C13.31"));
         }
 
-        if (kind is "asl:half-squad" or "asl:crew")
+        if (kind is "asl:half-squad" || ScenarioA1Definitions.IsCrew(kind))
         {
             drm.Add(new FireModifier("hs-or-crew", 1, "C13.31"));
         }
@@ -438,7 +438,7 @@ public static class ScenarioA1OrdnanceCalculator
         // Chart (pass 9b): a lone SMC does not fire a PSK at full effect.
         if ((shot.Vehicle is null ? reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!) is not { } crewDefinition
                 || crewDefinition.Nationality != gun.Nationality
-                || (mortar || latw || machineGun ? !Personnel.Contains(crewDefinition.Kind) : shot.NonQualified == true ? !crewDefinition.IsMmc : crewDefinition.Kind != "asl:crew")
+                || (mortar || latw || machineGun ? !Personnel.Contains(crewDefinition.Kind) : shot.NonQualified == true ? !crewDefinition.IsMmc : !ScenarioA1Definitions.IsCrew(crewDefinition.Kind))
                 || (gun.LatwType == "psk" && crewDefinition.Kind is "asl:leader" or "asl:hero")
                 : crew.DefinitionId != gun.Id || shot.NonQualified == true)
             || crew.Broken == true || (crew.Berserk == true && !pf))

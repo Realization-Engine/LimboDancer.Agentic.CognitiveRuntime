@@ -68,7 +68,7 @@ public static class ScenarioA1FireCalculator
     /// </summary>
     private static bool ElrImmune(string? definitionId, ScenarioA1FireReference reference) =>
         definitionId is { } id && reference.Definitions.TryGetValue(id, out var definition)
-        && (definition.IsHero || definition.Kind == "asl:crew" || ScenarioA1FireReference.IsCommissar(id));
+        && (definition.IsHero || ScenarioA1Definitions.IsCrew(definition.Kind) || ScenarioA1FireReference.IsCommissar(id));
 
     public static IReadOnlyList<string> Precheck(FireAttack attack, ScenarioA1FireReference reference)
     {
@@ -669,7 +669,7 @@ public static class ScenarioA1FireCalculator
                 outside.Add("asl.a1.fire.target-outside");
             }
 
-            if (targetDefinitions.Any(item => item?.Kind == "asl:crew") && !GunCrewAlone(attack))
+            if (targetDefinitions.Any(item => ScenarioA1Definitions.IsCrew(item?.Kind)) && !GunCrewAlone(attack))
             {
                 outside.Add("asl.a1.fire.crew-target-unreviewed");
             }
@@ -700,7 +700,7 @@ public static class ScenarioA1FireCalculator
         if (attack.FireGroupComplete != true || !locations.Contains(attack.FirerLocationId) || (multi && attack.FirerLocationsAdjacent != true)
             || firers.Any(item => item.Broken == true || (item.UsesSupportWeapon == true && item.Weapons is not { Count: > 0 }))
             || firers.Zip(firerDefinitions).Any(pair => pair.Second is null || (!LeaderMg(pair.First, pair.Second)
-                && (!(pair.Second.IsMmc || pair.Second.IsHero || pair.Second.Kind == "asl:crew") || pair.Second.Firepower is null || pair.Second.Range is null)))
+                && (!(pair.Second.IsMmc || pair.Second.IsHero || ScenarioA1Definitions.IsCrew(pair.Second.Kind)) || pair.Second.Firepower is null || pair.Second.Range is null)))
             || firers.Any(item => item.Partner is not null && !LeaderMg(item, reference.Definitions.GetValueOrDefault(item.DefinitionId!)))
             // A7.352, A7.353 (p. 56; ruling R8.4): a crew that fired its Gun this Player Turn has no inherent FP, but "Subsequent First Fire (8.3),
             // FPF (8.31), and Final Fire (8.4) vs adjacent units retain halved inherent FP": its own fire of those kinds, which is Area Fire.
@@ -761,7 +761,7 @@ public static class ScenarioA1FireCalculator
         var mol = firers.Where(item => item.Mol == true).ToArray();
         if (mol.Length > 1 || mol.Any(item => item.Pinned == true || RangeOf(attack, item) > 1 || item.UsesInherentFp == false || item.Weapons is { Count: > 0 }
             || kind is SubsequentFirstFire or FinalProtectiveFire || flamethrower || ((attack.Vehicles ?? []).Count > 0 && attack.TargetVehicle is null)
-            || reference.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty) is not { } molUser || !(molUser.IsMmc || molUser.IsHero || molUser.Kind == "asl:crew")))
+            || reference.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty) is not { } molUser || !(molUser.IsMmc || molUser.IsHero || ScenarioA1Definitions.IsCrew(molUser.Kind))))
         {
             outside.Add("asl.a1.fire.mol-outside");
         }
@@ -834,7 +834,7 @@ public static class ScenarioA1FireCalculator
         }
 
         // C11 (ruling R8.3): a Gun's crew is a target alone in its Location; a crew with other units, or with no Gun named, is not reviewed.
-        if (targetDefinitions.Any(item => item?.Kind == "asl:crew") && !GunCrewAlone(attack))
+        if (targetDefinitions.Any(item => ScenarioA1Definitions.IsCrew(item?.Kind)) && !GunCrewAlone(attack))
         {
             outside.Add("asl.a1.fire.crew-target-unreviewed");
         }
@@ -952,7 +952,7 @@ public static class ScenarioA1FireCalculator
             (FireDemolitionCharge.Thrower, "MPh", "non-phasing", null) => true,
             _ => false,
         };
-        if (definition is not { IsDc: true, Firepower: not null } || user is null || !(user.IsMmc || user.IsHero || user.IsLeader || user.Kind == "asl:crew")
+        if (definition is not { IsDc: true, Firepower: not null } || user is null || !(user.IsMmc || user.IsHero || user.IsLeader || ScenarioA1Definitions.IsCrew(user.Kind))
             || attack.Firers is { Count: > 0 } || Directors(attack).Any() || !phaseAdmitted
             || (charge.Mode == FireDemolitionCharge.Thrower ? attack.Range != 0 || attack.FirerLocationId != attack.TargetLocationId : attack.Range != 1)
             || (charge.OpportunityFire == true && attack.Phase != "AFPh"))
@@ -2584,7 +2584,7 @@ public static class ScenarioA1FireCalculator
                 usedRolls.Add("molCheck");
                 var user = reference.Definitions[molFirer.DefinitionId!];
                 var molDrm = new List<FireModifier>();
-                if (user.Kind is "asl:half-squad" or "asl:crew")
+                if (user.Kind is "asl:half-squad" || ScenarioA1Definitions.IsCrew(user.Kind))
                 {
                     molDrm.Add(new FireModifier("hs-or-crew", 1m, "A22.611"));
                 }
@@ -3939,7 +3939,7 @@ public static class ScenarioA1FireCalculator
         private void Replace(TargetState unit)
         {
             // A19.11 (ruling R15.6): a Commissar or a crew is never Replaced for an ELR failure; it breaks.
-            if (ScenarioA1FireReference.IsCommissar(unit.Definition.Id) || unit.Definition.Kind == "asl:crew")
+            if (ScenarioA1FireReference.IsCommissar(unit.Definition.Id) || ScenarioA1Definitions.IsCrew(unit.Definition.Kind))
             {
                 unit.Note("not-subject-to-replacement");
                 unit.Break(null);
@@ -4167,7 +4167,7 @@ public static class ScenarioA1FireCalculator
             }
 
             // A7.302 (p. 55; pass 45): "Casualty Reduction eliminates any HS or crew". The Recall exception is a vehicle's Inherent crew's (D5.341).
-            if (unit.Definition.Kind is "asl:half-squad" or "asl:crew")
+            if (unit.Definition.Kind is "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Definition.Kind))
             {
                 unit.Eliminate(reason);
                 return true;

@@ -432,7 +432,7 @@ public sealed class BacklogPass7Tests : IDisposable
             vehicleId = "ru-tank"
         }));
         Assert.Equal(InstanceStatus.Wrecked, Current.Unit("ru-tank")!.Status);
-        Assert.DoesNotContain(Current.Units, unit => unit.Kind == "asl:crew" && unit.Side == "russian");
+        Assert.DoesNotContain(Current.Units, unit => unit.Kind is "asl:crew" or "asl:vehicle-crew" && unit.Side == "russian");
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 
@@ -470,7 +470,9 @@ public sealed class BacklogPass7Tests : IDisposable
         await Advance();
         Committed(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "ap", 4, 2, 2, 3, 2, 2));
         Assert.Equal(InstanceStatus.Wrecked, Current.Unit("ru-tank")!.Status);
-        var crew = Assert.Single(Current.Units, unit => unit.Kind == "asl:crew" && unit.Side == "russian");
+        // D5.1 (ruling R65.19): the survivors are the Russian vehicle crew.
+        var crew = Assert.Single(Current.Units, unit => unit.Kind == "asl:vehicle-crew" && unit.Side == "russian");
+        Assert.Equal("russian-vehicle-crew", crew.Definition!.Definition);
         Assert.Equal(At("bd01:B8:0"), Current.Location(crew.Id)!.Location);
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
@@ -484,7 +486,7 @@ public sealed class BacklogPass7Tests : IDisposable
         Committed(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "ap", 4, 2, 3, 3, 5, 6));
         var abandoned = Current.Unit("ru-tank")!;
         Assert.True(Is(abandoned, Conditions.Immobilized) && Is(abandoned, Conditions.Abandoned));
-        Assert.Single(Current.Units, unit => unit.Kind == "asl:crew" && unit.Side == "russian" && unit.Status == InstanceStatus.Active);
+        Assert.Single(Current.Units, unit => unit.Kind == "asl:vehicle-crew" && unit.Side == "russian" && unit.Status == InstanceStatus.Active);
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 

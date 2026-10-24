@@ -238,7 +238,7 @@ public static class ScenarioA1VehicleCloseCombat
     private static int BaseCcv(FireDefinition definition) => definition.Kind switch
     {
         "asl:squad" => 5,
-        "asl:crew" => 4,
+        var kind when ScenarioA1Definitions.IsCrew(kind) => 4,
         "asl:half-squad" => 3,
         _ => 2,
     };
@@ -344,7 +344,7 @@ public static class ScenarioA1VehicleCloseCombat
             {
                 drm.Add(new FireModifier("escort:" + escort.UnitId, 2m, "A11.51"));
             }
-            else if (escortDefinition.Kind is "asl:half-squad" or "asl:crew")
+            else if (escortDefinition.Kind is "asl:half-squad" || ScenarioA1Definitions.IsCrew(escortDefinition.Kind))
             {
                 drm.Add(new FireModifier("escort:" + escort.UnitId, 1m, "A11.51"));
             }

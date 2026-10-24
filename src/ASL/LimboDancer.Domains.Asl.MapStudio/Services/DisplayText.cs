@@ -85,8 +85,9 @@ public static class DisplayText
         _ => name,
     };
 
-    /// <summary>A unit or entity kind without its vocabulary prefix: "asl:half-squad" reads "half-squad".</summary>
-    public static string Kind(string? kind) => (kind ?? string.Empty).Replace("asl:", string.Empty, StringComparison.Ordinal);
+    /// <summary>A unit or entity kind without its vocabulary prefix: "asl:half-squad" reads "half-squad"; the vehicle crew reads as the rulebook
+    /// writes it, "vehicle crew" (D5.1).</summary>
+    public static string Kind(string? kind) => kind == "asl:vehicle-crew" ? "vehicle crew" : (kind ?? string.Empty).Replace("asl:", string.Empty, StringComparison.Ordinal);
 
     /// <summary>A board's status in words.</summary>
     public static string BoardStatus(BoardStatus status) => status switch

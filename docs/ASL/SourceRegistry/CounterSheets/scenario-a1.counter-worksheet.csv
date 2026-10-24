@@ -3149,3 +3149,165 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,campaign-german-tiger,front,asl:fixed-bmg,,,,yes or no
 ,campaign-german-tiger,front,asl:vehicle-ft-range-2,,,,yes or no
 ,campaign-german-tiger,front,asl:cs-passengers-only,,,,yes or no
+,attacker-truck,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,attacker-truck,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,defender-truck,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,defender-truck,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,attacker-halftrack,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,attacker-halftrack,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,attacker-tank,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,attacker-tank,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,defender-tank,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,defender-tank,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,campaign-british-sexton,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,campaign-british-sexton,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,campaign-british-achilles,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,campaign-british-achilles,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,campaign-british-cromwell,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,campaign-british-cromwell,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,campaign-british-sherman75,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,campaign-british-sherman75,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,campaign-british-firefly,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,campaign-british-firefly,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,campaign-british-bren-carrier,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,campaign-british-bren-carrier,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,campaign-german-wespe,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,campaign-german-wespe,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,campaign-german-maultier,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,campaign-german-maultier,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,campaign-german-hummel,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,campaign-german-hummel,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,campaign-german-pziv,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,campaign-german-pziv,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,campaign-german-panther,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,campaign-german-panther,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,campaign-german-tiger,front,vehicle-class,,,,"tank, tankette, td, spa, spaa, assault-gun, carrier, halftrack, armored-car, truck, or other (D6.2; Chapter H Type column, Listings Key p. 338)"
+,campaign-german-tiger,wreck,asl:cs-red,,,,"yes or no: a red CS# (Listings Key, p. 338; D5.7)"
+,german-vehicle-crew,counter,kind,,,,expected asl:vehicle-crew
+,german-vehicle-crew,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,german-vehicle-crew,front,firepower,,,,whole number (A1.21)
+,german-vehicle-crew,front,range,,,,whole number (A1.22)
+,german-vehicle-crew,front,morale,,,,whole number (A1.23)
+,german-vehicle-crew,front,identity,,,,"identity as printed, or not-printed"
+,german-vehicle-crew,front,class,,,,"elite, 1st-line, 2nd-line, green, or conscript"
+,german-vehicle-crew,front,class-variant,,,,"circle or square, or not-printed"
+,german-vehicle-crew,front,smoke-exponent,,,,"whole number, or not-printed"
+,german-vehicle-crew,front,asl:assault-fire,,,,yes or no
+,german-vehicle-crew,front,asl:spraying-fire,,,,yes or no
+,german-vehicle-crew,front,asl:elr-5,,,,yes or no
+,german-vehicle-crew,front,asl:assault-engineer,,,,yes or no
+,german-vehicle-crew,broken,broken-morale,,,,whole number (A1.23)
+,german-vehicle-crew,broken,bpv,,,,whole number
+,german-vehicle-crew,broken,asl:self-rally,,,,yes or no
+,russian-vehicle-crew,counter,kind,,,,expected asl:vehicle-crew
+,russian-vehicle-crew,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,russian-vehicle-crew,front,firepower,,,,whole number (A1.21)
+,russian-vehicle-crew,front,range,,,,whole number (A1.22)
+,russian-vehicle-crew,front,morale,,,,whole number (A1.23)
+,russian-vehicle-crew,front,identity,,,,"identity as printed, or not-printed"
+,russian-vehicle-crew,front,class,,,,"elite, 1st-line, 2nd-line, green, or conscript"
+,russian-vehicle-crew,front,class-variant,,,,"circle or square, or not-printed"
+,russian-vehicle-crew,front,smoke-exponent,,,,"whole number, or not-printed"
+,russian-vehicle-crew,front,asl:assault-fire,,,,yes or no
+,russian-vehicle-crew,front,asl:spraying-fire,,,,yes or no
+,russian-vehicle-crew,front,asl:elr-5,,,,yes or no
+,russian-vehicle-crew,front,asl:assault-engineer,,,,yes or no
+,russian-vehicle-crew,broken,broken-morale,,,,whole number (A1.23)
+,russian-vehicle-crew,broken,bpv,,,,whole number
+,russian-vehicle-crew,broken,asl:self-rally,,,,yes or no
+,british-vehicle-crew,counter,kind,,,,expected asl:vehicle-crew
+,british-vehicle-crew,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,british-vehicle-crew,front,firepower,,,,whole number (A1.21)
+,british-vehicle-crew,front,range,,,,whole number (A1.22)
+,british-vehicle-crew,front,morale,,,,whole number (A1.23)
+,british-vehicle-crew,front,identity,,,,"identity as printed, or not-printed"
+,british-vehicle-crew,front,class,,,,"elite, 1st-line, 2nd-line, green, or conscript"
+,british-vehicle-crew,front,class-variant,,,,"circle or square, or not-printed"
+,british-vehicle-crew,front,smoke-exponent,,,,"whole number, or not-printed"
+,british-vehicle-crew,front,asl:assault-fire,,,,yes or no
+,british-vehicle-crew,front,asl:spraying-fire,,,,yes or no
+,british-vehicle-crew,front,asl:elr-5,,,,yes or no
+,british-vehicle-crew,front,asl:assault-engineer,,,,yes or no
+,british-vehicle-crew,broken,broken-morale,,,,whole number (A1.23)
+,british-vehicle-crew,broken,bpv,,,,whole number
+,british-vehicle-crew,broken,asl:self-rally,,,,yes or no
+,american-vehicle-crew,counter,kind,,,,expected asl:vehicle-crew
+,american-vehicle-crew,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,american-vehicle-crew,front,firepower,,,,whole number (A1.21)
+,american-vehicle-crew,front,range,,,,whole number (A1.22)
+,american-vehicle-crew,front,morale,,,,whole number (A1.23)
+,american-vehicle-crew,front,identity,,,,"identity as printed, or not-printed"
+,american-vehicle-crew,front,class,,,,"elite, 1st-line, 2nd-line, green, or conscript"
+,american-vehicle-crew,front,class-variant,,,,"circle or square, or not-printed"
+,american-vehicle-crew,front,smoke-exponent,,,,"whole number, or not-printed"
+,american-vehicle-crew,front,asl:assault-fire,,,,yes or no
+,american-vehicle-crew,front,asl:spraying-fire,,,,yes or no
+,american-vehicle-crew,front,asl:elr-5,,,,yes or no
+,american-vehicle-crew,front,asl:assault-engineer,,,,yes or no
+,american-vehicle-crew,broken,broken-morale,,,,whole number (A1.23)
+,american-vehicle-crew,broken,bpv,,,,whole number
+,american-vehicle-crew,broken,asl:self-rally,,,,yes or no
+,finnish-vehicle-crew,counter,kind,,,,expected asl:vehicle-crew
+,finnish-vehicle-crew,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,finnish-vehicle-crew,front,firepower,,,,whole number (A1.21)
+,finnish-vehicle-crew,front,range,,,,whole number (A1.22)
+,finnish-vehicle-crew,front,morale,,,,whole number (A1.23)
+,finnish-vehicle-crew,front,identity,,,,"identity as printed, or not-printed"
+,finnish-vehicle-crew,front,class,,,,"elite, 1st-line, 2nd-line, green, or conscript"
+,finnish-vehicle-crew,front,class-variant,,,,"circle or square, or not-printed"
+,finnish-vehicle-crew,front,smoke-exponent,,,,"whole number, or not-printed"
+,finnish-vehicle-crew,front,asl:assault-fire,,,,yes or no
+,finnish-vehicle-crew,front,asl:spraying-fire,,,,yes or no
+,finnish-vehicle-crew,front,asl:elr-5,,,,yes or no
+,finnish-vehicle-crew,front,asl:assault-engineer,,,,yes or no
+,finnish-vehicle-crew,broken,broken-morale,,,,whole number (A1.23)
+,finnish-vehicle-crew,broken,bpv,,,,whole number
+,finnish-vehicle-crew,broken,asl:self-rally,,,,yes or no
+,italian-vehicle-crew,counter,kind,,,,expected asl:vehicle-crew
+,italian-vehicle-crew,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,italian-vehicle-crew,front,firepower,,,,whole number (A1.21)
+,italian-vehicle-crew,front,range,,,,whole number (A1.22)
+,italian-vehicle-crew,front,morale,,,,whole number (A1.23)
+,italian-vehicle-crew,front,identity,,,,"identity as printed, or not-printed"
+,italian-vehicle-crew,front,class,,,,"elite, 1st-line, 2nd-line, green, or conscript"
+,italian-vehicle-crew,front,class-variant,,,,"circle or square, or not-printed"
+,italian-vehicle-crew,front,smoke-exponent,,,,"whole number, or not-printed"
+,italian-vehicle-crew,front,asl:assault-fire,,,,yes or no
+,italian-vehicle-crew,front,asl:spraying-fire,,,,yes or no
+,italian-vehicle-crew,front,asl:elr-5,,,,yes or no
+,italian-vehicle-crew,front,asl:assault-engineer,,,,yes or no
+,italian-vehicle-crew,broken,broken-morale,,,,whole number (A1.23)
+,italian-vehicle-crew,broken,bpv,,,,whole number
+,italian-vehicle-crew,broken,asl:self-rally,,,,yes or no
+,axis-minor-vehicle-crew,counter,kind,,,,expected asl:vehicle-crew
+,axis-minor-vehicle-crew,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-vehicle-crew,front,firepower,,,,whole number (A1.21)
+,axis-minor-vehicle-crew,front,range,,,,whole number (A1.22)
+,axis-minor-vehicle-crew,front,morale,,,,whole number (A1.23)
+,axis-minor-vehicle-crew,front,identity,,,,"identity as printed, or not-printed"
+,axis-minor-vehicle-crew,front,class,,,,"elite, 1st-line, 2nd-line, green, or conscript"
+,axis-minor-vehicle-crew,front,class-variant,,,,"circle or square, or not-printed"
+,axis-minor-vehicle-crew,front,smoke-exponent,,,,"whole number, or not-printed"
+,axis-minor-vehicle-crew,front,asl:assault-fire,,,,yes or no
+,axis-minor-vehicle-crew,front,asl:spraying-fire,,,,yes or no
+,axis-minor-vehicle-crew,front,asl:elr-5,,,,yes or no
+,axis-minor-vehicle-crew,front,asl:assault-engineer,,,,yes or no
+,axis-minor-vehicle-crew,broken,broken-morale,,,,whole number (A1.23)
+,axis-minor-vehicle-crew,broken,bpv,,,,whole number
+,axis-minor-vehicle-crew,broken,asl:self-rally,,,,yes or no
+,french-vehicle-crew,counter,kind,,,,expected asl:vehicle-crew
+,french-vehicle-crew,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,french-vehicle-crew,front,firepower,,,,whole number (A1.21)
+,french-vehicle-crew,front,range,,,,whole number (A1.22)
+,french-vehicle-crew,front,morale,,,,whole number (A1.23)
+,french-vehicle-crew,front,identity,,,,"identity as printed, or not-printed"
+,french-vehicle-crew,front,class,,,,"elite, 1st-line, 2nd-line, green, or conscript"
+,french-vehicle-crew,front,class-variant,,,,"circle or square, or not-printed"
+,french-vehicle-crew,front,smoke-exponent,,,,"whole number, or not-printed"
+,french-vehicle-crew,front,asl:assault-fire,,,,yes or no
+,french-vehicle-crew,front,asl:spraying-fire,,,,yes or no
+,french-vehicle-crew,front,asl:elr-5,,,,yes or no
+,french-vehicle-crew,front,asl:assault-engineer,,,,yes or no
+,french-vehicle-crew,broken,broken-morale,,,,whole number (A1.23)
+,french-vehicle-crew,broken,bpv,,,,whole number
+,french-vehicle-crew,broken,asl:self-rally,,,,yes or no

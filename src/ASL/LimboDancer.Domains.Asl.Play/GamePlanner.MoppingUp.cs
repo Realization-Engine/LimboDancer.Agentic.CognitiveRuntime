@@ -68,7 +68,7 @@ public sealed partial class GamePlanner
         var ids = Strings(arguments, "unitIds").Distinct(StringComparer.Ordinal).ToArray();
         var units = ids.Select(state.Unit).ToArray();
         if (ScenarioA1MoppingUp.UnitsBar(ids.Length, units.Any(unit => !ScenarioA1MoppingUp.MopUpUnit(unit is { Status: InstanceStatus.Active }, unit?.Side == side,
-            unit?.Kind is "asl:squad" or "asl:half-squad" or "asl:crew", unit is not null && state.Location(unit.Id)?.Location is { } at && InBuilding(at))), side!, building!) is { } unitsBar)
+            unit?.Kind is "asl:squad" or "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit?.Kind), unit is not null && state.Location(unit.Id)?.Location is { } at && InBuilding(at))), side!, building!) is { } unitsBar)
         {
             return Refused(scope, label, expected, unitsBar);
         }
@@ -174,7 +174,7 @@ public sealed partial class GamePlanner
         // A12.154: -1 per Stealthy unit, -1 per HS-equivalent beyond one, the best leader's leadership unless alone, +1 per Lax unit; the catalog and the
         // Inexperience are read here, and Rules counts (pass 32.g).
         var (drm, notes) = ScenarioA1MoppingUp.CasualtyDrm([.. defenders.Select(unit => new MopUpDefenderFacts(unit.Kind == "asl:hero", unit.Kind == "asl:leader", Is(unit, Conditions.Heroic),
-            ScenarioA1MoppingUp.HalfSquads(unit.Kind == "asl:squad", unit.Kind is "asl:half-squad" or "asl:crew"), DefinitionOf(unit)?.Leadership, Is(unit, Conditions.Wounded),
+            ScenarioA1MoppingUp.HalfSquads(unit.Kind == "asl:squad", unit.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind)), DefinitionOf(unit)?.Leadership, Is(unit, Conditions.Wounded),
             Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True))]);
 
         var before = events.ToArray();

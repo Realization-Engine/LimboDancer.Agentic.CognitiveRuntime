@@ -675,8 +675,9 @@ public sealed class BacklogPass5Tests : IDisposable
         Assert.Equal("russian", Current.PhasingSide);
         var halftrack = Current.Unit("de-ht")!;
         Assert.True(Is(halftrack, Conditions.Abandoned));
-        var crew = Current.Units.Single(unit => unit.Kind == "asl:crew");
-        Assert.Equal(("attacker-crew", At("bd01:A8:0"), true), (crew.Definition!.Definition, Current.Location(crew.Id)!.Location, Is(crew, Conditions.StunRecovery)));
+        // D5.1 (ruling R65.19): the crew leaves as the German vehicle crew.
+        var crew = Current.Units.Single(unit => unit.Kind == "asl:vehicle-crew");
+        Assert.Equal(("german-vehicle-crew", At("bd01:A8:0"), true), (crew.Definition!.Definition, Current.Location(crew.Id)!.Location, Is(crew, Conditions.StunRecovery)));
     }
 
     [Fact]

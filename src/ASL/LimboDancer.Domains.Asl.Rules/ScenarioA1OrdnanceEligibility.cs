@@ -36,7 +36,7 @@ public static class ScenarioA1OrdnanceEligibility
     public static bool Emplaced(string? mannedByKind, Func<bool> unemplaced)
     {
         ArgumentNullException.ThrowIfNull(unemplaced);
-        return mannedByKind == "asl:crew" && !unemplaced();
+        return ScenarioA1Definitions.IsCrew(mannedByKind) && !unemplaced();
     }
 
     /// <summary>
@@ -180,7 +180,7 @@ public static class ScenarioA1OrdnanceEligibility
 
     /// <summary>Why the Ordnance package does not read this game's catalog; null when it does.</summary>
     public static string? CatalogRefusal(string packageCatalog, string packageVersion, string gameCatalog, string gameVersion) =>
-        gameCatalog != packageCatalog || gameVersion != packageVersion
+        !ScenarioA1Definitions.CatalogServes(packageCatalog, packageVersion, gameCatalog, gameVersion)
             ? $"play.ordnance-catalog: the Ordnance package reads {packageCatalog}@{packageVersion}, and this game uses {gameCatalog}@{gameVersion}"
             : null;
 
@@ -387,7 +387,7 @@ public static class ScenarioA1OrdnanceEligibility
         vehicleTarget || ammunitionNamed || firingNationality == "american";
 
     /// <summary>Whether the Gun's crew is non-qualified (C5.8; ruling R8.8): a squad or HS manning a Gun, not a SW.</summary>
-    public static bool? NonQualified(bool equipment, string? crewKind, bool sw) => equipment && crewKind is not "asl:crew" && !sw ? true : null;
+    public static bool? NonQualified(bool equipment, string? crewKind, bool sw) => equipment && !ScenarioA1Definitions.IsCrew(crewKind) && !sw ? true : null;
 
     /// <summary>The refusal of a Spotter or director named for what is not a light mortar or SW (C9.3, A7.531).</summary>
     public const string SupportRefusal = "play.ordnance-support: only a light mortar has a Spotter, and only a SW a directing leader (C9.3, A7.531)";

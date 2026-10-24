@@ -24,7 +24,8 @@ public static class ScenarioA1VictoryCalculator
         ArgumentNullException.ThrowIfNull(vehicleVictoryPoints);
         return kind switch
         {
-            "asl:squad" or "asl:crew" => 2,
+            "asl:squad" => 2,
+            _ when ScenarioA1Definitions.IsCrew(kind) => 2,
             "asl:half-squad" => 1,
             "asl:leader" => 1 + Math.Max(0, -(leadership() ?? 0)),
             "asl:vehicle" => vehicleVictoryPoints(),
@@ -363,7 +364,8 @@ public static class ScenarioA1VictoryCalculator
         return units.Where(unit => unit.Side == side && !unit.Broken && !unit.Captured && !Undeclared(unit, knownTo)).Sum(unit => unit.Kind switch
         {
             "asl:squad" => 1.0,
-            "asl:half-squad" or "asl:crew" => 0.5,
+            "asl:half-squad" => 0.5,
+            var kind when ScenarioA1Definitions.IsCrew(kind) => 0.5,
             _ => 0.0,
         });
     }

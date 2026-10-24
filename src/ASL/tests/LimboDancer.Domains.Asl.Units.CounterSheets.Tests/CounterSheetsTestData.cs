@@ -62,6 +62,7 @@ internal static class CounterSheetsTestData
         (_, "ma-weapon") => "aamg",
         (_, "sa-mount") => "bow",
         (_, "vehicle-ft-mount") => "bow",
+        (_, "vehicle-class") => "tank",
         (_, "designation" or "special-ammo") => "S1",
         (_, var name) when name.Contains(':', StringComparison.Ordinal) => "no",
         _ => "1",

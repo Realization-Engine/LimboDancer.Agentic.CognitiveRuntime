@@ -9,7 +9,7 @@ public static class ScenarioA1CloseCombatFactBuilders
 {
     /// <summary>The Close Combat package reads one catalog at one version.</summary>
     public static string? CatalogBar(string catalog, string version, string expectedCatalog, string expectedVersion) =>
-        catalog != expectedCatalog || version != expectedVersion
+        !ScenarioA1Definitions.CatalogServes(expectedCatalog, expectedVersion, catalog, version)
             ? $"play.cc-catalog: the Close Combat package reads {expectedCatalog}@{expectedVersion}, and this game uses {catalog}@{version}"
             : null;
 

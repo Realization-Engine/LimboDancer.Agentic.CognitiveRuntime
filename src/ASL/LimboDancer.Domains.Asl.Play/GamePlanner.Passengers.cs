@@ -25,6 +25,12 @@ public sealed partial class GamePlanner
                 .Select(gun => gun.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Caliber : null));
     }
 
+    /// <summary>The Passengers and Riders of a vehicle, read from the state's index once per state (ruling R65.25), as <see cref="GameState.Passengers"/> has them.</summary>
+    internal IReadOnlyList<UnitInstance> Riding(GameState state, string vehicle) => MemoOf(state).Objects(state).Aboard(vehicle);
+
+    /// <summary>The vehicle an id rides, as <see cref="GameState.Aboard"/> has it, read from the same index.</summary>
+    internal string? VehicleOf(GameState state, string id) => MemoOf(state).Objects(state).VehicleOf(id);
+
     /// <summary>The PP a unit takes as a Passenger (D6.1): a squad ten, a HS or crew five, a SMC none, plus the SW it carries; null when a SW's PP are not recorded.</summary>
     private int? PassengerPp(GameState state, UnitInstance unit) =>
         ScenarioA1PassengerCalculator.PassengerPp(vocabulary.IsA(unit.Kind, "asl:squad"), vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew"),
@@ -209,10 +215,11 @@ public sealed partial class GamePlanner
 
         var boarding = new List<UnitInstance>();
         var least = int.MaxValue;
+        var index = MemoOf(state).Objects(state);
         foreach (var unitId in ids)
         {
             if (state.Unit(unitId) is not { Status: InstanceStatus.Active } unit || unit.Side != vehicle.Side || LiveFire.IsVehicle(unit) || !vocabulary.IsA(unit.Kind, "asl:personnel")
-                || state.Aboard(unit.Id) is not null || state.Location(unit.Id)?.Location != at || unit.MovementEnded)
+                || index.VehicleOf(unit.Id) is not null || index.Location(unit.Id)?.Location != at || unit.MovementEnded)
             {
                 return Refused(scope, label, expected, $"play.load: {unitId} is not Infantry of {vehicle.Side} on foot in {at} that may still move (D6.4)");
             }
@@ -324,11 +331,13 @@ public sealed partial class GamePlanner
     /// Why an action names a unit riding a vehicle (ruling R26.2): Passengers only ride, and unload (D6.5); their fire, rout, and Close Combat are plan
     /// pass 34. Null when no unit named is aboard.
     /// </summary>
-    private static string? AboardBar(GameState state, JsonElement arguments)
+    private string? AboardBar(GameState state, JsonElement arguments)
     {
+        // Ruling R65.25: the index answers Aboard for every argument; only an id aboard is looked up.
+        var index = MemoOf(state).Objects(state);
         foreach (var text in Strings(arguments))
         {
-            if (state.Find(text) is UnitInstance { Status: InstanceStatus.Active } unit && state.Aboard(unit.Id) is { } vehicle)
+            if (index.VehicleOf(text) is { } vehicle && state.Find(text) is UnitInstance { Status: InstanceStatus.Active } unit)
             {
                 return $"play.aboard: {unit.Id} rides {vehicle} as a Passenger; until it unloads (D6.5) it acts only with its vehicle, since Passengers' fire, rout, and Close Combat are not built (ruling R26.2)";
             }
