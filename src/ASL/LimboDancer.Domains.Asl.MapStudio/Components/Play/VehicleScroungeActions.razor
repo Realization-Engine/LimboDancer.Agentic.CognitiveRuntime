@@ -11,15 +11,18 @@
     @foreach (var vehicle in Vehicles)
     {
         var chosen = Chosen.GetValueOrDefault(vehicle.Id, string.Empty);
-        <label>
-            Scrounge @At(vehicle.Id)
-            <select class="scrounge-unit" data-vehicle="@vehicle.Id" value="@chosen" @onchange="@(args => OnUnit.InvokeAsync((vehicle.Id, args.Value as string ?? string.Empty)))">
-                <option value="">choose</option>
-                <UnitOptions Units="@vehicle.Units" Text="@At" />
-            </select>
-        </label>
-        <button class="vehicle-scrounge" data-vehicle="@vehicle.Id" disabled="@(!vehicle.Units.Any(unit => unit.Id == chosen))"
-            @onclick="@(() => OnScrounge.InvokeAsync((vehicle.Id, chosen)))">Propose: scrounge (D10.5)</button>
+        var ready = vehicle.Units.Any(unit => unit.Id == chosen);
+        <span @key="vehicle.Id" class="scrounge-row" data-vehicle="@vehicle.Id">
+            <label>
+                Scrounge @At(vehicle.Id)
+                <select class="scrounge-unit" data-vehicle="@vehicle.Id" value="@chosen" @onchange="@(args => OnUnit.InvokeAsync((vehicle.Id, args.Value as string ?? string.Empty)))">
+                    <option value="">choose</option>
+                    <UnitOptions Units="@vehicle.Units" Text="@At" />
+                </select>
+            </label>
+            <button class="vehicle-scrounge" data-vehicle="@vehicle.Id" disabled="@(!ready || Busy)" title="@(ready ? null : "Choose the unit that scrounges")"
+                @onclick="@(() => OnScrounge.InvokeAsync((vehicle.Id, chosen)))">Propose: scrounge (D10.5)</button>
+        </span>
     }
 </div>
 </ActionSection>
@@ -29,7 +32,7 @@
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }
 
-    /// <summary>A unit's name with its hex, "PzKpfw IIIH wreck in [F8]".</summary>
+    /// <summary>A unit's name with its hex after it, "PzKpfw IIIH G1 in [F8]" (pass 31c).</summary>
     [CascadingParameter(Name = "SayAt")]
     public Func<string, string>? WordsAt { get; set; }
 
@@ -44,6 +47,10 @@
     /// <summary>The unit chosen to scrounge each vehicle.</summary>
     [Parameter]
     public IReadOnlyDictionary<string, string> Chosen { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>Whether the page is committing an action, so no proposal is made meanwhile.</summary>
+    [Parameter]
+    public bool Busy { get; set; }
 
     [Parameter]
     public EventCallback<(string Vehicle, string Unit)> OnUnit { get; set; }

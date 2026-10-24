@@ -58,7 +58,9 @@ public static class ScenarioA1CapturedVehicleRules
     /// capture attempt on a vehicle is refused, or null.
     /// </summary>
     public static string? CaptureAttemptBar(string vehicle, bool armed, bool abandoned) =>
-        !armed || !abandoned ? $"play.cc-vehicle: only an Abandoned AFV is the target of a capture attempt; {vehicle} is not one, so attack it to eliminate it (A11.52, A21.2)" : null;
+        !armed ? $"play.cc-vehicle: only an Abandoned AFV is the target of a capture attempt; {vehicle} is unarmed, and is captured as the CCPh begins once no unit of its side is left with it, or attack it to eliminate it (A11.52, A21.2)"
+        : !abandoned ? $"play.cc-vehicle: only an Abandoned AFV is the target of a capture attempt; {vehicle} is manned, so attack it to eliminate it (A11.52, A21.2)"
+        : null;
 
     /// <summary>A21.2: a capture attempt is made in the CCPh; in the MPh only CC Reaction Fire attacks a vehicle (D7.21). Why it is refused then, or null.</summary>
     public static string? CaptureAttemptPhaseBar(string? phase) =>
@@ -84,12 +86,12 @@ public static class ScenarioA1CapturedVehicleRules
         : HalfSquad;
 
     /// <summary>
-    /// A21.22: "takes in a new inherent crew by removing the MMC that entered it (or exchanging a capturing squad for a HS)". The exchange is not built: a
-    /// squad that would be a Temporary crew is refused, and it Deploys first so that a HS enters.
+    /// A21.22: "takes in a new inherent crew by removing the MMC that entered it (or exchanging a capturing squad for a HS)". The exchange is not built
+    /// (ruling R65.32): a squad that would be a Temporary crew is refused, and the refusal says so, not as a rule.
     /// </summary>
     public static string? SquadBar(string unit, string vehicle, string? kind, string? manning) =>
         kind == "asl:squad" && manning == HalfSquad
-            ? $"play.recrew: {unit} is a squad, and a squad crews {vehicle} as a HS; it Deploys first, and a HS enters (A21.22, A1.31)"
+            ? $"play.recrew: {unit} is a squad, and a squad's exchange for a HS (A21.22) is not built: Deploy it, or let a HS or crew enter {vehicle}"
             : null;
 
     /// <summary>

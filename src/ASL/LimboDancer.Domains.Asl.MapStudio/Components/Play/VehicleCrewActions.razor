@@ -2,10 +2,10 @@
    self-destruction (D5.411) and the MG Removal (D6.631) asked once for the proposal, and each Abandoned vehicle of the side with the units on foot in its
    Location that may enter it to crew it (D5.42). The planner decides what the records bar: the Player Turn the crew left, a Recalled crew. *@
 <ActionSection Title="Vehicle crews" Key="crew-acts">
-<RuleHelp Id="crew-acts-help" Summary="In its own MPh a crew Abandons a vehicle that has not moved or fired this Player Turn, spending all its MF to be placed beneath it; it may destroy the vehicle or Remove a halftrack's MG as it leaves. Infantry in an Abandoned vehicle's Location at the start of its MPh enters it to crew it, spending all its MF (D5.41, D5.411, D6.631, D5.42).">
+<RuleHelp Id="crew-acts-help" Summary="In its own MPh a crew Abandons a vehicle that has not moved or fired this Player Turn, spending all its MF to be placed beneath it; it may destroy the vehicle or Remove a halftrack's or Carrier's MG as it leaves. Infantry in an Abandoned vehicle's Location at the start of its MPh enters it to crew it, spending all its MF (D5.41, D5.411, D6.631, D5.42).">
     In its own MPh the crew of an armed vehicle that has not moved or fired this Player Turn Abandons it, spending all its MF to be placed beneath it, and
     the DEFENDER may fire at it with FFNAM (D5.41, D5.43). An Inherent crew may leave the vehicle a non-burning wreck or malfunction its MA and every MG
-    (D5.411); the crew of an armored halftrack of its nationality may Remove its MG as its LMG (D6.631). The crew takes the Armor Leader with it (D3.43).
+    (D5.411); the crew of an armored halftrack or Carrier of its nationality may Remove its MG as its LMG (D6.631, D6.83). The crew takes the Armor Leader with it (D3.43).
     Infantry in Good Order in an Abandoned vehicle's Location at the start of its MPh enters it to crew it, spending all its MF, but not in the Player
     Turn its last crew left, and a Recalled crew never re-crews its own AFV (D5.42, D5.341). A unit other than a crew is a Temporary crew (A21.22).
 </RuleHelp>
@@ -22,27 +22,30 @@
         </label>
         @if (Abandonable.Any(vehicle => vehicle.MgRemovable))
         {
-            <label title="D6.631: the crew of an armored halftrack of its nationality may Remove the MG and take it as a MG counter of the same or less FP; the halftrack is Disabled until a crew brings it back.">
-                <input type="checkbox" id="abandon-remove-mg" checked="@RemoveMg" @onchange="@(args => OnRemoveMg.InvokeAsync(args.Value is true))" /> Remove a halftrack's MG as its LMG (D6.631)
+            <label title="D6.631, D6.83: the crew of an armored halftrack or Carrier of its nationality may Remove the MG and take it as a MG counter of the same or less FP; the vehicle is Disabled until a crew brings it back.">
+                <input type="checkbox" id="abandon-remove-mg" checked="@RemoveMg" @onchange="@(args => OnRemoveMg.InvokeAsync(args.Value is true))" /> Remove a halftrack's or Carrier's MG as its LMG (D6.631, D6.83)
             </label>
         }
         @foreach (var vehicle in Abandonable)
         {
-            <button class="vehicle-abandon" data-vehicle="@vehicle.Id" @onclick="@(() => OnAbandon.InvokeAsync(vehicle.Id))">Propose: Abandon @At(vehicle.Id)</button>
+            <button @key="vehicle.Id" class="vehicle-abandon" data-vehicle="@vehicle.Id" disabled="@Busy" @onclick="@(() => OnAbandon.InvokeAsync(vehicle.Id))">Propose: Abandon @At(vehicle.Id)</button>
         }
     }
     @foreach (var vehicle in Recrewable)
     {
         var chosen = Chosen.GetValueOrDefault(vehicle.Id, string.Empty);
-        <label>
-            Enter @At(vehicle.Id)
-            <select class="recrew-unit" data-vehicle="@vehicle.Id" value="@chosen" @onchange="@(args => OnUnit.InvokeAsync((vehicle.Id, args.Value as string ?? string.Empty)))">
-                <option value="">choose</option>
-                <UnitOptions Units="@vehicle.Units" Text="@At" />
-            </select>
-        </label>
-        <button class="vehicle-recrew" data-vehicle="@vehicle.Id" disabled="@(!vehicle.Units.Any(unit => unit.Id == chosen))"
-            @onclick="@(() => OnRecrew.InvokeAsync((vehicle.Id, chosen)))">Propose: re-crew (D5.42)</button>
+        var ready = vehicle.Units.Any(unit => unit.Id == chosen);
+        <span @key="vehicle.Id" class="recrew-row" data-vehicle="@vehicle.Id">
+            <label>
+                Enter @At(vehicle.Id)
+                <select class="recrew-unit" data-vehicle="@vehicle.Id" value="@chosen" @onchange="@(args => OnUnit.InvokeAsync((vehicle.Id, args.Value as string ?? string.Empty)))">
+                    <option value="">choose</option>
+                    <UnitOptions Units="@vehicle.Units" Text="@At" />
+                </select>
+            </label>
+            <button class="vehicle-recrew" data-vehicle="@vehicle.Id" disabled="@(!ready || Busy)" title="@(ready ? null : "Choose the unit that enters")"
+                @onclick="@(() => OnRecrew.InvokeAsync((vehicle.Id, chosen)))">Propose: re-crew (D5.42)</button>
+        </span>
     }
 </div>
 </ActionSection>
@@ -52,7 +55,7 @@
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }
 
-    /// <summary>A unit's name with its hex, "SPW 251/1 vehicle G1 in [F8]".</summary>
+    /// <summary>A unit's name with its hex after it, "SPW 251/1 vehicle G1 in [F8]" (pass 31c).</summary>
     [CascadingParameter(Name = "SayAt")]
     public Func<string, string>? WordsAt { get; set; }
 
@@ -80,6 +83,10 @@
     /// <summary>The unit chosen to enter each Abandoned vehicle.</summary>
     [Parameter]
     public IReadOnlyDictionary<string, string> Chosen { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>Whether the page is committing an action, so no proposal is made meanwhile.</summary>
+    [Parameter]
+    public bool Busy { get; set; }
 
     [Parameter]
     public EventCallback<string> OnDestroy { get; set; }

@@ -224,7 +224,7 @@ else
                     <details id="setup-by-hand">
                         <summary>Add a counter by hand</summary>
                         <SetupPlacementEditor Draft="@PlaceDraft" Definitions="@DefinitionChoices" Groups="@GroupChoiceList" Entries="@EntryChoices"
-                            Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" ArmedAfv="@GamePlanner.IsArmedAfv(placeDefinition)" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
+                            Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" ArmedAfv="@GamePlanner.IsArmedAfv(placeDefinition)" RiderAllowed="@PlaceRiderAllowed" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
                     </details>
                 }
             </InspectorTabs>
@@ -258,14 +258,14 @@ else
                 <details id="setup-before-start">
                     <summary>Or type the first counters here</summary>
                     <SetupPlacementEditor Draft="@PlaceDraft" Definitions="@DefinitionChoices" Groups="@GroupChoiceList" Entries="@EntryChoices"
-                        Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" ArmedAfv="@GamePlanner.IsArmedAfv(placeDefinition)" Note="@placeNote" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
+                        Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" ArmedAfv="@GamePlanner.IsArmedAfv(placeDefinition)" RiderAllowed="@PlaceRiderAllowed" Note="@placeNote" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
                     <SetupPlacementList Items="@PlacementItems" Ready="@CardChosen" OnRemove="@RemovePlacement" OnChange="@ChangePlacement" OnClear="@ClearPlacements" OnPropose="@ProposeSetup" />
                 </details>
             }
             else
             {
                 <SetupPlacementEditor Draft="@PlaceDraft" Definitions="@DefinitionChoices" Groups="@GroupChoiceList" Entries="@EntryChoices"
-                    Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" ArmedAfv="@GamePlanner.IsArmedAfv(placeDefinition)" Note="@placeNote" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
+                    Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" ArmedAfv="@GamePlanner.IsArmedAfv(placeDefinition)" RiderAllowed="@PlaceRiderAllowed" Note="@placeNote" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
                 <SetupPlacementList Items="@PlacementItems" Ready="@(history is not null || CardChosen)" OnRemove="@RemovePlacement"
                     OnChange="@ChangePlacement" OnClear="@ClearPlacements" OnPropose="@ProposeSetup" CanPick="@(history?.Current is not null && MapLayers?.Board is not null)"
                     OnPick="@(key => pickingKey = pickingKey == key ? null : key)" />
@@ -576,7 +576,7 @@ else if (state is not null)
                 @if (state.Phase == "rph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide) && ScroungeRows is { Count: > 0 } scroungeShown)
                 {
                     <VehicleScroungeActions Vehicles="@scroungeShown" Chosen="@scroungePicks" OnUnit="@(pick => scroungePicks[pick.Vehicle] = pick.Unit)"
-                        OnScrounge="@(pick => ProposeScrounge(pick.Vehicle, pick.Unit))" />
+                        OnScrounge="@(pick => ProposeScrounge(pick.Vehicle, pick.Unit))" Busy="@busy" />
                 }
                 @if (state.Phase == "rph")
                 {
@@ -754,7 +754,7 @@ else if (state is not null)
                                     OnEntryHex="@(hex => ChooseEntryHex(chosen, hex))" OnEntryFacing="@(facing => vehicleEntryFacing = facing)"
                                     LoadChosen="@vehicleLoad" UnloadChosen="@vehicleUnload" OnStep="@ProposeVehicleRequest" OnOption="@SetVehicleOption"
                                     CrewUnloads="@CrewUnloads(chosen)" UnloadCrew="@vehicleCrewUnload"
-                                    RiderNote="@RiderNote(chosen)" AsRiders="@BoardsAsRiders(chosen)" RidersOnly="@(GamePlanner.PassengerCapacity(state, chosen) is null)"
+                                    RiderNote="@RiderNote(chosen)" AsRiders="@BoardsAsRiders(chosen)" RidersOnly="@GamePlanner.BoardsAsRiders(state, chosen, false)"
                                     OnEsb="@(esb => vehicleEsb = esb)" OnIntended="@(at => vehicleIntended = at)"
                                     OnLoadToggle="@(pick => Toggle(vehicleLoad, pick.Unit, pick.Chosen))" OnUnloadToggle="@(pick => Toggle(vehicleUnload, pick.Unit, pick.Chosen))"
                                     Leavable="@LeavableWeapons(chosen)" LeaveChosen="@vehicleLeave" OnLeaveToggle="@(pick => Toggle(vehicleLeave, pick.Unit, pick.Chosen))" />
@@ -800,7 +800,7 @@ else if (state is not null)
                 {
                     <VehicleCrewActions Abandonable="@crewActs.Abandonable" Recrewable="@crewActs.Recrewable" Destroy="@abandonDestroy" RemoveMg="@abandonRemoveMg"
                         Chosen="@recrewPicks" OnDestroy="@(choice => abandonDestroy = choice)" OnRemoveMg="@(remove => abandonRemoveMg = remove)"
-                        OnAbandon="@ProposeAbandon" OnUnit="@(pick => recrewPicks[pick.Vehicle] = pick.Unit)" OnRecrew="@(pick => ProposeRecrew(pick.Vehicle, pick.Unit))" />
+                        OnAbandon="@ProposeAbandon" OnUnit="@(pick => recrewPicks[pick.Vehicle] = pick.Unit)" OnRecrew="@(pick => ProposeRecrew(pick.Vehicle, pick.Unit))" Busy="@busy" />
                 }
                 @* The Play streamlining plan, S7 (ruling R-PS.8): the Advance form is the ATTACKER's; the other view is shown no section for it. *@
                 @if (state.Phase == "aph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide))
@@ -1493,7 +1493,7 @@ else if (state is not null)
             : unit.MfSpent.ToString(CultureInfo.InvariantCulture)) + (unit.MovementEnded ? ", movement ended" : ""),
         string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => ConditionText(pair.Key)).Concat(Custody(unit)).Concat(VehicleNotes(unit)).Concat(CargoNotes(unit))
             .Concat(state.Encircled(unit) ? ["Encircled (A7.7)"] : CutOffUpstairs.Contains(unit.Id) ? ["Encircled: no path to ground level (A7.72)"] : [])
-            .Concat(unit.Status == InstanceStatus.Wrecked && GamePlanner.IsBurning(state, unit) ? ["burning (Blaze)"] : []))))];
+            .Concat(unit.Status == InstanceStatus.Wrecked && Live.Planner.Burns(state, unit) ? ["burning (Blaze)"] : []))))];
 
     private string DefinitionLabel(string id) => PublishedCatalog?.Definition(id) is { } definition ? ScenarioCards.Describe(definition) : id;
     private string placeGroup = string.Empty;
@@ -1636,6 +1636,14 @@ else if (state is not null)
     // D6.2 (pass 65, ruling R65.16): a unit placed aboard a vehicle rides it as a Rider.
     private bool placeRider;
 
+    /// <summary>
+    /// Whether the drafted counter may ride as a Rider (D6.2; pass 65, the UI review): Personnel whose holder is a vehicle placed or in the game; a SW given
+    /// a possessor is not.
+    /// </summary>
+    private bool PlaceRiderAllowed => placeHolder.Trim() is { Length: > 0 } holder
+        && Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind is { } kind && Library.Vocabulary.IsA(kind, "asl:personnel")
+        && (placements.Any(item => item.Id == holder && item.Kind == "asl:vehicle") || (state?.Unit(holder) is { } held && LiveFire.IsVehicle(held)));
+
     /// <summary>A change to the drafted placement; the entry area is cleared when the group changes or the counter no longer waits off board.</summary>
     private void ApplyPlaceDraft(SetupPlacementEditor.SetupDraft draft)
     {
@@ -1643,7 +1651,7 @@ else if (state is not null)
         (placeDefinition, placeId, placeGroup, placeLocation, placeHolder, placeFacing, placeBore) =
             (draft.Definition, draft.Id, draft.Group, draft.Location, draft.Holder, draft.Facing, draft.Bore);
         (placeConcealed, placeHidden, placeBroken, placeOffBoard) = (draft.Concealed, draft.Hidden, draft.Broken, draft.OffBoard);
-        placeRider = draft.Rider && draft.Holder.Length > 0;
+        placeRider = draft.Rider && PlaceRiderAllowed;
 
         // Pass 55: neither stays with a counter that is no armed AFV.
         var armed = GamePlanner.IsArmedAfv(draft.Definition);
@@ -3583,15 +3591,27 @@ else if (state is not null)
             : capacity.OneSmc ? "one SMC and the two PP he possesses"
             : $"{capacity.Pp} PP, {Live.Planner.RiderPpLeft(state, vehicle)} left";
 
-    /// <summary>Whether the units board the chosen vehicle as Riders: when asked, and always on one that takes no Passengers (D6.2).</summary>
-    private bool BoardsAsRiders(UnitInstance vehicle) =>
-        state is not null && GamePlanner.RiderCapacityOf(vehicle) is not null && (vehicleRiders || GamePlanner.PassengerCapacity(state, vehicle) is null);
+    /// <summary>Whether the units board the chosen vehicle as Riders: when asked, and always on one that takes no Passengers (D6.2); the planner asks Rules.</summary>
+    private bool BoardsAsRiders(UnitInstance vehicle) => state is not null && GamePlanner.BoardsAsRiders(state, vehicle, vehicleRiders);
 
-    /// <summary>The SW the chosen vehicle's Passengers hold, which a halftrack or Carrier keeps aboard as they unload (D6.4; pass 65, ruling R65.15).</summary>
-    private IReadOnlyList<string> LeavableWeapons(UnitInstance vehicle) =>
-        state is null || UnloadableUnits(vehicle) is not { Count: > 0 } aboard || !ScenarioA1PassengerCalculator.KeepsSwAboard(LiveFire.VehicleClassOf(vehicle.Definition?.Definition)) ? []
-            : [.. VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && aboard.Contains(holding.Holder))
-                .Select(item => item.Id).Order(StringComparer.Ordinal)];
+    /// <summary>
+    /// The SW the chosen vehicle's Passengers hold, which a halftrack or Carrier keeps aboard as they unload (D6.4; pass 65, ruling R65.15), each named by
+    /// its hex, itself, and its holder, "[F8]: LMG of 4-6-7 squad G1" (the UI review; the hex UI rule).
+    /// </summary>
+    private IReadOnlyList<PlayChoice> LeavableWeapons(UnitInstance vehicle)
+    {
+        if (state is null || UnloadableUnits(vehicle) is not { Count: > 0 } aboard || !GamePlanner.KeepsSwAboard(vehicle))
+        {
+            return [];
+        }
+
+        var where = UnitPlaceOf(vehicle.Id)?.Where;
+        // A SW reads "the LMG" in a sentence; in a list it is "LMG".
+        static string Bare(string said) => said.StartsWith("the ", StringComparison.Ordinal) ? said[4..] : said;
+        return [.. VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && aboard.Contains(holding.Holder))
+            .OrderBy(item => item.Id, StringComparer.Ordinal)
+            .Select(item => new PlayChoice(item.Id, (where is null ? string.Empty : $"{where}: ") + $"{Bare(Words(item.Id))} of {Words(item.Holding!.Holder)}"))];
+    }
 
     /// <summary>Whether the chosen vehicle, stopped, is a Carrier whose inherent HS may unload as its Passengers do (D6.83; pass 65, ruling R65.18).</summary>
     private bool CrewUnloads(UnitInstance vehicle) =>
@@ -3657,7 +3677,7 @@ else if (state is not null)
                 .Intersect(vehicle is not null ? kind == "load" ? LoadableUnits(vehicle) : UnloadableUnits(vehicle) : [], StringComparer.Ordinal)
                 .Order(StringComparer.Ordinal).ToArray(),
         };
-        if (kind == "unload" && vehicle is not null && vehicleLeave.Intersect(LeavableWeapons(vehicle), StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } leave)
+        if (kind == "unload" && vehicle is not null && vehicleLeave.Intersect(LeavableWeapons(vehicle).Select(weapon => weapon.Id), StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } leave)
         {
             arguments["leave"] = leave;
         }
@@ -3991,8 +4011,8 @@ else if (state is not null)
             [.. here.Where(unit => unit.Side == nextSide && !LiveFire.IsVehicle(unit) && unit.Kind != UnitKinds.Dummy && !attacked.Contains(unit.Id)
                 && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => unit.Id)],
             [.. here.Where(unit => unit.Side == nextSide && unit.Kind is "asl:leader" or "asl:hero").Select(unit => unit.Id)],
-            [.. here.Where(LiveFire.IsVehicle).Select(unit => new VehicleCloseCombatPanel.VehicleChoice(unit.Id, unit.Side,
-                GameState.Condition(unit, Conditions.Abandoned) == ConditionState.True && GamePlanner.IsArmoredVehicle(unit)))],
+            // A21.2 (pass 65, the UI review): the planner says, by the plan's own Rules bar, which vehicle a capture attempt may take.
+            [.. here.Where(LiveFire.IsVehicle).Select(unit => new VehicleCloseCombatPanel.VehicleChoice(unit.Id, unit.Side, GamePlanner.MayBeCaptureAttempted(unit)))],
             [.. here.Where(unit => !LiveFire.IsVehicle(unit) && unit.Side != nextSide).Select(unit => unit.Id)]);
     })];
 
@@ -5258,13 +5278,16 @@ else if (state is not null)
     /// <summary>The enemy vehicles in the chosen target Location, each a Vehicle Target Type target (C3.31).</summary>
     private IEnumerable<UnitInstance> OrdnanceVehicleTargets(string side) => state is null || !BoardLocation.TryParse(ordnanceTarget, out var at) ? []
         : state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && LiveFire.IsVehicle(unit))
-            // D10.1 (pass 65, ruling R65.23): a non-burning wreck of either side is fired at as its vehicle.
-            .Concat(GamePlanner.WrecksAt(state, at).Where(wreck => !GamePlanner.IsBurning(state, wreck)))
+            // D10.1 (pass 65, ruling R65.23): a non-burning wreck of either side is fired at as its vehicle; the planner reads the wrecks from its index.
+            .Concat(Live.Planner.WrecksFiredAt(state, at))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
-    /// <summary>A vehicle a shot or an attack may name, "de-tank (attacker-tank)", or "de-tank (attacker-tank), a wreck" (D10.1).</summary>
+    /// <summary>
+    /// A vehicle a shot or an attack may name, by its id, which the list says in the view's words after its hex ("[F8]: PzKpfw IIIH G1"), and ", a wreck"
+    /// for a wreck (D10.1; the hex UI rule, 2026-10-21).
+    /// </summary>
     private static PlayChoice NamedVehicleChoice(UnitInstance vehicle) =>
-        new(vehicle.Id, $"{vehicle.Id} ({vehicle.Definition?.Definition})" + (vehicle.Status == InstanceStatus.Wrecked ? ", a wreck" : string.Empty));
+        new(vehicle.Id, vehicle.Id + (vehicle.Status == InstanceStatus.Wrecked ? ", a wreck" : string.Empty));
 
     /// <summary>The ammunition the chosen Gun or tank may carry (C8.1); the scenario year and depletion decide the shot.</summary>
     private IReadOnlyList<string> OrdnanceAmmunitions => state?.Find(ordnanceGun) switch
@@ -5575,10 +5598,8 @@ else if (state is not null)
             // named twice.
             && !fireFirers.Contains(unit.Id)
             // Pass 65 (ruling R65.12; D6.64): a leader aboard directs the Passengers of his own vehicle, so he is offered when every firer rides it; the
-            // planner's FG bar decides the rest. Who rides what comes from the planner's index (ruling R65.25).
-            && (Live.Planner.VehicleRidden(state, unit.Id) is { } ridden
-                ? fireFirers.Count > 0 && fireFirers.All(id => Live.Planner.VehicleRidden(state, id) == ridden)
-                : fireFirers.Any(id => state.Location(id)?.Location is { } at && state.Location(unit.Id)?.Location == at)))
+            // planner's FG bar decides the rest. The planner reads who rides what from its index (ruling R65.25), and Rules decides (the UI review).
+            && Live.Planner.DirectorOffered(state, unit.Id, fireFirers))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
     /// <summary>The MGs the chosen firers possess (A9.1): each may add its FP to the attack or, with its holder's choice, fire alone.</summary>
@@ -5991,7 +6012,7 @@ else if (state is not null)
     private IReadOnlyList<PlayChoice> NamedVehicleChoices(string side, string location) =>
         state is null || !BoardLocation.TryParse(location.Trim(), out var at) ? []
             : [.. SeenOnly(state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active)
-                .Concat(GamePlanner.WrecksAt(state, at).Where(wreck => !GamePlanner.IsBurning(state, wreck)))
+                .Concat(Live.Planner.WrecksFiredAt(state, at))
                 .Where(unit => unit.Side != side && GamePlanner.IsArmoredVehicle(unit))
                 .OrderBy(unit => unit.Id, StringComparer.Ordinal)).Select(NamedVehicleChoice)];
 
@@ -6479,16 +6500,17 @@ else if (state is not null)
     /// the Fire package read it.
     /// </summary>
     // Pass 31c (the third play test): a broken unit is not offered as a firer; the Fire package refuses a group that holds one.
-    private bool MayFire(UnitInstance unit) => state is not null && !ScenarioA1Definitions.IsCrew(unit.Kind) &&GameState.Condition(unit, Conditions.Broken) != ConditionState.True
+    private bool MayFire(UnitInstance unit) => state is not null && !ScenarioA1Definitions.IsCrew(unit.Kind) && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
         && GamePlanner.FireBar(state, unit) is null && !LiveFire.FireSpent(state, unit)
         // D3.5 (pass 50): a tank is a firer while its BMG or CMG may fire; neither needs a CE crew (D1.83). D1.3 (pass 60): so is a vehicle whose MA is a
         // MG, an AAMG only CE.
         && (!LiveFire.IsVehicle(unit) || (GamePlanner.HasMainArmamentMg(unit) && (!GamePlanner.HasVehicleMg(unit) || LiveFire.CrewExposed(unit)))
             || VehicleMgChoices(unit).Any(weapon => weapon.Bar is null));
 
-    // Each unit's Location comes from the planner's index, once per state (ruling R65.25; the boundary review), not a scan of the state per unit.
+    // Each unit's Location comes from the planner's index, once per state (ruling R65.25; the boundary review), not a scan of the state per unit. A unit
+    // crewing a vehicle from inside is no Mounted Fire firer (D5.42; the UI review): the planner refuses it, so it is not offered.
     private IEnumerable<UnitInstance> FireGroupAt(string side) => state is null || fireFrom.Length == 0 ? []
-        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side)
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && unit.Position is not ContainedPosition { Role: ContainmentRole.Crew })
             .Select(unit => (Unit: unit, At: Live.Planner.LocationOf(state, unit.Id)?.Location.ToString()))
             .Where(item => item.At is { } at && (at == fireFrom || fireAlso.Contains(at)))
             .OrderBy(item => item.At == fireFrom ? 0 : 1 + fireAlso.IndexOf(item.At!)).ThenBy(item => item.Unit.Id, StringComparer.Ordinal).Select(item => item.Unit);
@@ -6849,6 +6871,12 @@ else if (state is not null)
         // D2.401 (the UI review of pass 55): the Motion attempt's vehicle and the VCA and TCA named for it.
         motionVehicle = motionFacing = motionTurret = string.Empty;
         ClearVehicleCc();
+
+        // Pass 65 (the UI review): the Abandonment's self-destruction and MG Removal, and the units chosen to re-crew or scrounge each vehicle.
+        abandonDestroy = string.Empty;
+        abandonRemoveMg = false;
+        recrewPicks.Clear();
+        scroungePicks.Clear();
     }
 
     private void Refresh()
@@ -7784,6 +7812,9 @@ else if (state is not null)
 
         (busy, status) = (true, "Confirming.");
         var asked = AskedBy;
+
+        // D10.1 (pass 65, the UI review): whether the vehicle an ordnance shot names was a wreck before it, so only such a wreck stays named after it.
+        var wreckBefore = ordnanceVehicle.Length > 0 && state?.Unit(ordnanceVehicle) is { Status: InstanceStatus.Wrecked };
         PlayResult result;
         try
         {
@@ -7849,9 +7880,9 @@ else if (state is not null)
                 // The UI review, pass 35: a shot may wreck its target or break its Spotter, and Intensive Fire is declared for one shot. The weapon
                 // and the Location stay for a weapon that keeps its ROF.
                 ordnanceIntensive = false;
-                // D10.1 (pass 65): a wreck stays named until it burns.
-                if (state?.Unit(ordnanceVehicle) is not { Status: InstanceStatus.Active } && !(state?.Unit(ordnanceVehicle) is { Status: InstanceStatus.Wrecked } wreck
-                    && !GamePlanner.IsBurning(state, wreck)))
+                // D10.1 (pass 65): a wreck stays named until it burns, when it was a wreck before the shot; a vehicle the shot wrecked is not named again.
+                if (state?.Unit(ordnanceVehicle) is not { Status: InstanceStatus.Active } && !(wreckBefore && state?.Unit(ordnanceVehicle) is { Status: InstanceStatus.Wrecked } wreck
+                    && !Live.Planner.Burns(state, wreck)))
                 {
                     ordnanceVehicle = string.Empty;
                 }
@@ -7913,6 +7944,20 @@ else if (state is not null)
             else if (proposal.Action == GameActions.VehicleCloseCombat)
             {
                 ClearVehicleCc();
+            }
+            else if (proposal.Action == GameActions.AbandonVehicle)
+            {
+                // Pass 65 (the UI review): a self-destruction or MG Removal is chosen for one Abandonment, not kept for the next.
+                abandonDestroy = string.Empty;
+                abandonRemoveMg = false;
+            }
+            else if (proposal.Action == GameActions.RecrewVehicle || proposal.Action == GameActions.Scrounge)
+            {
+                // The unit chosen for the vehicle has acted.
+                if (proposal.Arguments.TryGetProperty("vehicleId", out var acted) && acted.GetString() is { } actedOn)
+                {
+                    (proposal.Action == GameActions.Scrounge ? scroungePicks : recrewPicks).Remove(actedOn);
+                }
             }
             else if (proposal.Action == GameActions.Rally)
             {
@@ -9283,8 +9328,9 @@ else if (state is not null)
                     var said = say(text);
                     var end = text.IndexOf(' ', StringComparison.Ordinal);
                     var id = end < 0 ? text : text[..end];
-                    if (state?.Unit(id) is not { } unit
-                        || (Viewer.IsAdjudicator ? state.Location(id)?.Location : View?.Locations.TryGetValue(id, out var seen) == true ? seen.Location : null) is not { } at)
+                    // Pass 65 (the UI review): the unit and its Location come from the planner's index, once per state, not a scan of the state per label.
+                    if (state is null || Live.Planner.UnitOf(state, id) is not { } unit
+                        || (Viewer.IsAdjudicator ? Live.Planner.LocationOf(state, id)?.Location : View?.Locations.TryGetValue(id, out var seen) == true ? seen.Location : null) is not { } at)
                     {
                         return said;
                     }

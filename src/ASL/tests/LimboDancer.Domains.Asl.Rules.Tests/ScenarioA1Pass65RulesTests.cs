@@ -1147,7 +1147,7 @@ public sealed class ScenarioA1Pass65RulesTests
     public void ATemporaryCrewsPenaltiesFollowWhoMansTheVehicle()
     {
         // A21.22: in a captured vehicle a vehicle crew, an infantry crew, a HS, or a SMC is a Temporary crew; in a friendly one a MMC other than a crew or a SMC
-        // is; the vehicle's own crew, and a crew of its nationality, never is. A squad Deploys first.
+        // is; the vehicle's own crew, and a crew of its nationality, never is. A squad's exchange for a HS is not built (ruling R65.32).
         Assert.Equal(ScenarioA1CapturedVehicleRules.VehicleCrew, ScenarioA1CapturedVehicleRules.Manning("asl:vehicle-crew", false, false, true));
         Assert.Equal(ScenarioA1CapturedVehicleRules.InfantryCrew, ScenarioA1CapturedVehicleRules.Manning("asl:crew", false, false, true));
         Assert.Equal(ScenarioA1CapturedVehicleRules.HalfSquad, ScenarioA1CapturedVehicleRules.Manning("asl:half-squad", false, false, true));
@@ -1155,7 +1155,7 @@ public sealed class ScenarioA1Pass65RulesTests
         Assert.Null(ScenarioA1CapturedVehicleRules.Manning("asl:vehicle-crew", false, false, false));
         Assert.Null(ScenarioA1CapturedVehicleRules.Manning("asl:crew", false, false, false));
         Assert.Null(ScenarioA1CapturedVehicleRules.Manning("asl:half-squad", false, true, false));
-        Assert.Contains("Deploys first", ScenarioA1CapturedVehicleRules.SquadBar("ru-s", "de-v", "asl:squad", ScenarioA1CapturedVehicleRules.HalfSquad), StringComparison.Ordinal);
+        Assert.Contains("a squad's exchange for a HS (A21.22) is not built: Deploy it, or let a HS or crew enter de-v", ScenarioA1CapturedVehicleRules.SquadBar("ru-s", "de-v", "asl:squad", ScenarioA1CapturedVehicleRules.HalfSquad), StringComparison.Ordinal);
         Assert.Null(ScenarioA1CapturedVehicleRules.SquadBar("ru-h", "de-v", "asl:half-squad", ScenarioA1CapturedVehicleRules.HalfSquad));
 
         // Halved MP for a HS or an infantry crew: the PzKpfw IIIH's 11 MP (22 half MP) become 5 1/2; the start dr, +1 for a Russian captor: 4 or less starts,
@@ -1996,5 +1996,37 @@ public sealed class ScenarioA1Pass65RulesTests
         Assert.True(ScenarioA1PassengerCalculator.KeepsSwAboard(ScenarioA1CarrierRules.VehicleClass));
         Assert.False(ScenarioA1PassengerCalculator.KeepsSwAboard("truck"));
         Assert.False(ScenarioA1PassengerCalculator.KeepsSwAboard(null));
+    }
+
+    private static readonly string?[] BothInTheHalftrack = ["de-ht", "de-ht"];
+    private static readonly string?[] OneOnFoot = ["de-ht", null];
+    private static readonly string?[] NoFirer = [];
+
+    [Fact]
+    public void ThePagesPreFiltersAreRules()
+    {
+        // D6.2, D6.4 (the UI review): units board as Riders when asked, and always on a vehicle that takes Riders and no Passengers; never on one with no
+        // Rider capacity.
+        Assert.True(ScenarioA1RiderRules.BoardsAsRiders(true, false, false));
+        Assert.True(ScenarioA1RiderRules.BoardsAsRiders(true, true, true));
+        Assert.False(ScenarioA1RiderRules.BoardsAsRiders(true, true, false));
+        Assert.False(ScenarioA1RiderRules.BoardsAsRiders(false, true, true));
+
+        // D10.1: a non-burning wreck is fired at as its vehicle; a burning one is not.
+        Assert.True(ScenarioA1WreckRules.AttackedAsVehicle(false));
+        Assert.False(ScenarioA1WreckRules.AttackedAsVehicle(true));
+
+        // D6.64: a leader aboard directs only when every firer rides his vehicle; a leader on foot when a firer stands in his Location.
+        Assert.True(ScenarioA1PassengerActionRules.DirectorOffered("de-ht", BothInTheHalftrack, false));
+        Assert.False(ScenarioA1PassengerActionRules.DirectorOffered("de-ht", OneOnFoot, true));
+        Assert.False(ScenarioA1PassengerActionRules.DirectorOffered("de-ht", NoFirer, true));
+        Assert.True(ScenarioA1PassengerActionRules.DirectorOffered(null, OneOnFoot, true));
+        Assert.False(ScenarioA1PassengerActionRules.DirectorOffered(null, OneOnFoot, false));
+
+        // A11.52, A21.2: a manned AFV is attacked, not captured; an unarmed vehicle is captured once its side has left it.
+        Assert.Null(ScenarioA1CapturedVehicleRules.CaptureAttemptBar("de-v", true, true));
+        Assert.Contains("is manned, so attack it to eliminate it", ScenarioA1CapturedVehicleRules.CaptureAttemptBar("de-v", true, false), StringComparison.Ordinal);
+        Assert.Contains("is unarmed, and is captured as the CCPh begins once no unit of its side is left with it",
+            ScenarioA1CapturedVehicleRules.CaptureAttemptBar("de-truck", false, false), StringComparison.Ordinal);
     }
 }

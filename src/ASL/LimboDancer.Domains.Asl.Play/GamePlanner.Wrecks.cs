@@ -23,6 +23,25 @@ public sealed partial class GamePlanner
         return [.. state.Units.Where(unit => unit.Status == InstanceStatus.Wrecked && state.Location(unit.Id)?.Location == at)];
     }
 
+    /// <summary>
+    /// The wrecks at a Location that are fired at as their vehicles (D10.1; pass 65, the UI review): read from the state's index once per state, and Rules
+    /// decides which; for the Play page's ordnance, FT, and MOL lists.
+    /// </summary>
+    public IReadOnlyList<UnitInstance> WrecksFiredAt(GameState state, BoardLocation at)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var index = MemoOf(state).Objects(state);
+        return [.. index.Wrecks(at).Where(wreck => ScenarioA1WreckRules.AttackedAsVehicle(index.ActiveEntity(BlazeId(wreck.Id))))];
+    }
+
+    /// <summary>Whether a wreck carries a Blaze (B25.14), read from the state's index; for the Play page.</summary>
+    public bool Burns(GameState state, UnitInstance wreck)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(wreck);
+        return MemoOf(state).Objects(state).ActiveEntity(BlazeId(wreck.Id));
+    }
+
     /// <summary>Whether a wreck carries a Blaze (B25.14).</summary>
     public static bool IsBurning(GameState state, UnitInstance wreck)
     {

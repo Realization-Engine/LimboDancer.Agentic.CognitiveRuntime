@@ -156,9 +156,13 @@ public sealed partial class GamePlanner
         private readonly Dictionary<string, UnitInstance[]> aboard;
         private readonly Dictionary<string, EquipmentInstance[]> stowed;
         private readonly Dictionary<string, UnitInstance> crews;
+        private readonly Dictionary<string, UnitInstance> units;
+        private readonly Dictionary<BoardLocation, UnitInstance[]> wrecks;
+        private readonly HashSet<string> entities;
 
         private ObjectIndex(Dictionary<string, MapPosition?> locations, Dictionary<BoardLocation, IGameObject[]> at, Dictionary<string, string> vehicles,
-            Dictionary<string, UnitInstance[]> aboard, Dictionary<string, EquipmentInstance[]> stowed, Dictionary<string, UnitInstance> crews)
+            Dictionary<string, UnitInstance[]> aboard, Dictionary<string, EquipmentInstance[]> stowed, Dictionary<string, UnitInstance> crews,
+            Dictionary<string, UnitInstance> units, Dictionary<BoardLocation, UnitInstance[]> wrecks, HashSet<string> entities)
         {
             this.locations = locations;
             this.at = at;
@@ -166,6 +170,9 @@ public sealed partial class GamePlanner
             this.aboard = aboard;
             this.stowed = stowed;
             this.crews = crews;
+            this.units = units;
+            this.wrecks = wrecks;
+            this.entities = entities;
         }
 
         public static ObjectIndex Of(GameState state)
@@ -176,6 +183,9 @@ public sealed partial class GamePlanner
             var cargo = new Dictionary<string, List<UnitInstance>>(StringComparer.Ordinal);
             var stowed = new Dictionary<string, List<EquipmentInstance>>(StringComparer.Ordinal);
             var crews = new Dictionary<string, UnitInstance>(StringComparer.Ordinal);
+            var units = new Dictionary<string, UnitInstance>(StringComparer.Ordinal);
+            var wrecks = new Dictionary<BoardLocation, List<UnitInstance>>();
+            var entities = new HashSet<string>(StringComparer.Ordinal);
             foreach (var item in state.Objects)
             {
                 // GameState.Location and Aboard read an id's first object, as Find does; At still lists every object, so a repeated id is too.
@@ -232,12 +242,43 @@ public sealed partial class GamePlanner
 
                     held.Add(weapon);
                 }
+
+                // Pass 65 (the UI review): units by id as GameState.Unit reads them (the first), the wrecks by Location as WrecksAt reads them, and the
+                // active entities by id, for a Blaze on a wreck (B25.14), so the Play page reads none of them by a scan per item.
+                if (item is UnitInstance found)
+                {
+                    units.TryAdd(found.Id, found);
+                    if (found.Status == InstanceStatus.Wrecked && position is not null)
+                    {
+                        if (!wrecks.TryGetValue(position.Location, out var here))
+                        {
+                            wrecks[position.Location] = here = [];
+                        }
+
+                        here.Add(found);
+                    }
+                }
+
+                if (item is EntityInstance { Status: InstanceStatus.Active } entity)
+                {
+                    entities.Add(entity.Id);
+                }
             }
 
             return new ObjectIndex(locations, stacks.ToDictionary(item => item.Key, item => item.Value.ToArray()), vehicles,
                 cargo.ToDictionary(item => item.Key, item => item.Value.ToArray(), StringComparer.Ordinal),
-                stowed.ToDictionary(item => item.Key, item => item.Value.ToArray(), StringComparer.Ordinal), crews);
+                stowed.ToDictionary(item => item.Key, item => item.Value.ToArray(), StringComparer.Ordinal), crews, units,
+                wrecks.ToDictionary(item => item.Key, item => item.Value.ToArray()), entities);
         }
+
+        /// <summary>A unit by id, as <see cref="GameState.Unit"/> reads it; null for an id the state holds no unit by.</summary>
+        public UnitInstance? Unit(string id) => units.GetValueOrDefault(id);
+
+        /// <summary>The wrecks at a Location, as <see cref="WrecksAt"/> reads them (D10.1).</summary>
+        public IReadOnlyList<UnitInstance> Wrecks(BoardLocation location) => wrecks.TryGetValue(location, out var here) ? here : [];
+
+        /// <summary>Whether an active entity has this id: a Blaze by its name (B25.14).</summary>
+        public bool ActiveEntity(string id) => entities.Contains(id);
 
         /// <summary>The unit that crews a vehicle from inside after a re-crewing (D5.42; pass 65, ruling R65.20); null for an inherent crew or none.</summary>
         public UnitInstance? CrewOf(string vehicle) => crews.GetValueOrDefault(vehicle);

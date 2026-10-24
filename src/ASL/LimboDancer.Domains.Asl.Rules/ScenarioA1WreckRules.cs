@@ -30,6 +30,9 @@ public static class ScenarioA1WreckRules
     public const string MainArmament = "ma";
     public const string AntiAircraftMg = "aamg";
 
+    /// <summary>D10.1 (p. 210): whether a wreck is fired at as its vehicle, by either side: a non-burning one is; a burning one is not (pass 65, the UI review).</summary>
+    public static bool AttackedAsVehicle(bool burning) => !burning;
+
     /// <summary>
     /// D10.1 (p. 210): "A non-burning wreck may be attacked by either side, treating the wreck as if it were still the original vehicle". What a To Kill
     /// result does to a wreck: a Burn burns it (a Blaze is placed on it, B25.14, C7.6); any other result does nothing, and a wreck has no crew to check,

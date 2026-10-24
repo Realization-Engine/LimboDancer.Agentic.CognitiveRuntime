@@ -921,6 +921,9 @@ public sealed class BacklogPass65Tests : IDisposable
             to = "bd01:B9:0",
         });
         Committed(entered);
+
+        // The table player: the proposal says where the Rider goes, the hex the AFV left, not beneath the AFV.
+        Assert.Contains(entered.Reasons, reason => reason.Contains($"each taking a NMC in {Firer}, the hex the AFV left,", StringComparison.Ordinal));
         var bailed = Assert.Single(Since(before).Select(item => item.Payload).OfType<RiderBailedOut>());
         Assert.Equal(("de-s", ScenarioA1RiderRules.Terrain, Firer, ScenarioA1RiderRules.Passed), (bailed.Unit, bailed.Cause, bailed.At.ToString(), bailed.Result));
         Assert.Equal(ScenarioA1RiderRules.Malfunctioned, Assert.Single(bailed.Weapons!).Fate);
@@ -1082,6 +1085,10 @@ public sealed class BacklogPass65Tests : IDisposable
         });
         Committed(unloaded);
         Assert.Contains(unloaded.Reasons, reason => reason.Contains("so uk-bren is Abandoned", StringComparison.Ordinal));
+
+        // The UI review: the HS the step creates is named by its definition, which the page says as its counter, never by the id it is about to take.
+        Assert.Contains(unloaded.Reasons, reason => reason.Contains("its inherent british-half-squad disembarks", StringComparison.Ordinal));
+        Assert.DoesNotContain(unloaded.Reasons, reason => reason.Contains("-uk-bren-crew", StringComparison.Ordinal));
         var halfSquad = Assert.Single(Since(before).Select(item => item.Payload).OfType<InstanceCreated>()).Instance;
         var step = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleStepped>());
         Assert.Equal(halfSquad.Id, Assert.Single(step.Units!));
@@ -1161,6 +1168,10 @@ public sealed class BacklogPass65Tests : IDisposable
         var abandoned = await Abandon("de-tank", ScenarioA1CrewActsRules.Malfunction);
         Committed(abandoned);
         Assert.Contains(abandoned.Reasons, reason => reason.Contains("malfunctions de-tank's MA and every MG", StringComparison.Ordinal));
+
+        // The UI review: the crew the plan creates is named by its definition, never by the id it is about to take.
+        Assert.Contains(abandoned.Reasons, reason => reason.StartsWith("play.abandon: its german-vehicle-crew Abandons de-tank", StringComparison.Ordinal));
+        Assert.DoesNotContain(abandoned.Reasons, reason => reason.Contains("-de-tank-crew", StringComparison.Ordinal));
         var record = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleAbandoned>());
         var crew = Current.Unit(record.Crew)!;
         Assert.Equal(("asl:vehicle-crew", "german-vehicle-crew", Target, true), (crew.Kind, crew.Definition!.Definition, Current.Location(crew.Id)!.Location.ToString(),
@@ -1247,7 +1258,12 @@ public sealed class BacklogPass65Tests : IDisposable
             Unit("ru-1", "asl:squad", "defender-squad", Far, "russian"));
         await Advance();
         var before = Revision;
-        Committed(await Abandon("de-ht", removeMg: true));
+        var removing = await Abandon("de-ht", removeMg: true);
+        Committed(removing);
+
+        // The UI review: the LMG the plan creates is named by its definition (the page's "the LMG"), not by its id.
+        Assert.Contains(removing.Reasons, reason => reason.Contains("the crew Removes its MG and takes it as its own attacker-lmg", StringComparison.Ordinal));
+        Assert.DoesNotContain(removing.Reasons, reason => reason.Contains("-de-ht-mg", StringComparison.Ordinal));
         var record = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleAbandoned>());
         Assert.Equal(ScenarioA1CrewActsRules.MainArmament, record.Mount);
         var lmg = (EquipmentInstance)Current.Find(record.Removed!)!;
@@ -1540,11 +1556,11 @@ public sealed class BacklogPass65Tests : IDisposable
         // Fix Round C (the referee's review): the state keeps the side the record took it from, which Rules reads as captured (A21.22).
         Assert.Equal("german", tank.CapturedFrom);
 
-        // A21.22: in the next Russian MPh the infantry crew enters it as a Temporary crew: its MP allotment is halved (11 MP to 5 1/2), and a squad must
-        // Deploy first.
+        // A21.22: in the next Russian MPh the infantry crew enters it as a Temporary crew: its MP allotment is halved (11 MP to 5 1/2); a squad's exchange
+        // for a HS is not built (ruling R65.32).
         await NextMph("russian", 2);
         var full = GamePlanner.VehicleHalfMp(Current.Unit("de-tank")!).Allotment;
-        Refused(await Recrew("ru-s", "de-tank"), "Deploys first");
+        Refused(await Recrew("ru-s", "de-tank"), "a squad's exchange for a HS (A21.22) is not built");
         before = Revision;
         var recrewed = await Recrew("ru-c", "de-tank");
         Committed(recrewed);
@@ -1676,11 +1692,21 @@ public sealed class BacklogPass65Tests : IDisposable
         Assert.DoesNotContain(Since(before), item => item.Payload is VehicleWrecked);
         Assert.False(GamePlanner.IsBurning(Current, Current.Unit("de-tank")!));
 
+        // The UI review: the page reads the wreck from the planner's index, offered as a target while it does not burn.
+        var planner = Planner();
+        var state = Current;
+        Assert.Equal("de-tank", Assert.Single(planner.WrecksFiredAt(state, BoardLocation.Parse(Target))).Id);
+        Assert.False(planner.Burns(state, state.Unit("de-tank")!));
+        Assert.Same(state.Unit("de-tank"), planner.UnitOf(state, "de-tank"));
+
         before = Revision;
         Committed(await Shoot("ru-tank2", "de-tank", "ap", 4, 2, 1, 1));
         Assert.Equal("burn", LastShot(before).Resolution.GetProperty("kill").GetProperty("result").GetString());
         Assert.True(Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleWrecked>()).Burning);
         Assert.True(GamePlanner.IsBurning(Current, Current.Unit("de-tank")!));
+        state = Current;
+        Assert.Empty(planner.WrecksFiredAt(state, BoardLocation.Parse(Target)));
+        Assert.True(planner.Burns(state, state.Unit("de-tank")!));
         NoReplayErrors();
     }
 

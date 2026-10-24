@@ -229,6 +229,16 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// Whether a vehicle may be the target of a capture attempt (A11.52, A21.2; pass 65, the UI review): Rules decides from whether it is armed and Abandoned,
+    /// as the plan's own bar does. For the Play page's CC panel.
+    /// </summary>
+    public static bool MayBeCaptureAttempted(UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return ScenarioA1CapturedVehicleRules.CaptureAttemptBar(vehicle.Id, Armed(VehicleDefinition(vehicle)), Is(vehicle, Conditions.Abandoned)) is null;
+    }
+
+    /// <summary>
     /// A11.52 (ruling R11.16): at the start of the CCPh an unarmed vehicle, not in Motion, with no Personnel of its side in its Location but enemy
     /// Infantry there, is captured. Records made before pass 65 marked it Captured and Abandoned; since then it passes to its captor with a Temporary
     /// Driver (A21.21; ruling R65.22).
@@ -446,7 +456,7 @@ public sealed partial class GamePlanner
         var paatc = ScenarioA1VehicleCloseCombatRules.PaatcText([.. testing.Select(unit => unit.Id)]);
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
             [ScenarioA1VehicleCloseCombatRules.VehicleAttackSummary([.. units.Select(unit => unit.Id)], vehicle.Id, reaction, paatc)
-                + (capture ? $" as a capture attempt: a result that would eliminate {vehicle.Id} captures it (A21.2)" : string.Empty)])
+                + (capture ? $" as a capture attempt: a result that would eliminate or burn {vehicle.Id} captures it (A21.2)" : string.Empty)])
         {
             Roll = new PlannedRoll("cc-vehicle", Build),
             FirstEventId = EventId(attemptId, 1),

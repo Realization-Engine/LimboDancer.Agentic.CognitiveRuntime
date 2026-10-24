@@ -35,10 +35,8 @@
             Vehicle
             <select class="vehicle-cc-vehicle" value="@chosen" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">choose</option>
-                @foreach (var vehicle in location.Vehicles)
-                {
-                    <option value="@vehicle.Id">@vehicle.Id (@vehicle.Side)</option>
-                }
+                @* The hex UI rule (pass 65, the UI review): each vehicle named after its hex, "[F8]: PzKpfw IIIH G1, Abandoned". *@
+                <UnitOptions Units="@([.. location.Vehicles.Select(vehicle => new PlayChoice(vehicle.Id, vehicle.Id + (vehicle.Abandoned ? ", Abandoned" : string.Empty)))])" Text="@Say" />
             </select>
         </label>
         @foreach (var unit in location.Defenders)
@@ -49,7 +47,8 @@
         @* Pass 65 (ruling R65.22): an Abandoned AFV may be the target of a capture attempt, which captures it where an attack would eliminate it (A21.2). *@
         @if (location.Vehicles.Any(vehicle => vehicle.Abandoned))
         {
-            <button class="propose-vehicle-cc-capture" disabled="@(attacker.Length == 0 || !location.Vehicles.Any(vehicle => vehicle.Id == chosen && vehicle.Abandoned))"
+            var captureReady = attacker.Length > 0 && location.Vehicles.Any(vehicle => vehicle.Id == chosen && vehicle.Abandoned);
+            <button class="propose-vehicle-cc-capture" disabled="@(!captureReady)" title="@(captureReady ? null : "Choose an attacker and the Abandoned AFV")"
                 @onclick="@(() => OnProposeCapture.InvokeAsync(location.Location))">Propose: Infantry attempt to capture the Abandoned AFV (A21.2)</button>
         }
         <button class="propose-vehicle-cc-vehicle" disabled="@(chosen.Length == 0 || !anyDefender)" @onclick="@(() => OnProposeVehicle.InvokeAsync(location.Location))">Propose: the vehicle attacks the checked Infantry</button>

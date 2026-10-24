@@ -176,5 +176,7 @@ public sealed partial class GamePlanner
         bailing is not { } bail ? string.Empty
             : $"; {string.Join(", ", bail.Riders.Select(rider => rider.Id))} Bail{(bail.Riders.Count == 1 ? "s" : string.Empty)} Out in {bail.At}, since "
                 + ScenarioA1RiderRules.CauseText(bail.Riders[0].Cause).Replace("its AFV", "the AFV", StringComparison.Ordinal)
-                + ", each taking a NMC beneath it with its move ended, its SW checked for malfunction (D6.24)";
+                // D6.21 (the table player): Riders thrown off by terrain stay in the hex the AFV left, not beneath it.
+                + (bail.Riders[0].Cause == ScenarioA1RiderRules.Terrain ? $", each taking a NMC in {bail.At}, the hex the AFV left," : ", each taking a NMC beneath it")
+                + " with its move ended, its SW checked for malfunction (D6.24)";
 }

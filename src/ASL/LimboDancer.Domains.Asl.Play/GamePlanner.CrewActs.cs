@@ -136,6 +136,7 @@ public sealed partial class GamePlanner
 
         // D6.631: the MG Removed becomes the crew's LMG, malfunctioned if its mount was, and its mount is Disabled.
         string? removed = null;
+        string? removedDefinition = null;
         string? mount = null;
         if (arguments.TryGetProperty("removeMg", out var removeMg) && removeMg.ValueKind == JsonValueKind.True)
         {
@@ -153,7 +154,7 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, $"play.abandon: the catalog has no light MG of {crewNationality} for {id}'s MG to become (D6.631)");
             }
 
-            (removed, mount) = ($"{attemptId}-{id}-mg", removal.Mount);
+            (removed, removedDefinition, mount) = ($"{attemptId}-{id}-mg", lmg, removal.Mount);
             vehicleChanges[ConditionName(ScenarioA1CrewActsRules.RemovedCondition(mount!))] = ConditionState.True;
             var swConditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal)
             {
@@ -181,12 +182,15 @@ public sealed partial class GamePlanner
             events.Add(("vehicle-wrecked", new VehicleWrecked(id, false)));
         }
 
-        var text = $"play.abandon: {crewId} Abandons {id} in {at}, spending all its MF to be placed beneath it; {id} is Abandoned and may not move or fire (D5.41)"
+        // The UI review: a crew the plan creates, and the LMG it Removes, are named by their definitions, which the page says as counters ("its 1-2-7 vehicle
+        // crew", "the LMG"), never by the ids they are about to take.
+        var crewWords = inside is not null ? crewId : $"its {created!.Instance.Definition}";
+        var text = $"play.abandon: {crewWords} Abandons {id} in {at}, spending all its MF to be placed beneath it; {id} is Abandoned and may not move or fire (D5.41)"
             + (inside is not null ? $"; {crewId} leaves as itself, as it entered (D5.42)" : string.Empty)
             + (vehicle.ArmorLeader is not null ? "; its Armor Leader goes with the crew, to return if it re-crews (D3.43)" : string.Empty)
             + (destroy == ScenarioA1CrewActsRules.Wreck ? $"; the crew leaves {id} a non-burning wreck, with no Crew Survival roll (D5.411)"
                 : destroy == ScenarioA1CrewActsRules.Malfunction ? $"; the crew malfunctions {id}'s MA and every MG as it leaves (D5.411)" : string.Empty)
-            + (removed is not null ? $"; the crew Removes its MG as its LMG {removed}, and the mount is Disabled until a crew returns it (D6.631)" : string.Empty)
+            + (removed is not null ? $"; the crew Removes its MG and takes it as its own {removedDefinition}, and the mount is Disabled until a crew returns it (D6.631)" : string.Empty)
             + (counter is not null ? $"; the crew is marked {(counter == UnitCondition.PrepFire ? "Prep" : "Final")} Fire, since {id} was a moving target (D5.8)" : string.Empty)
             + "; the DEFENDER may fire at the crew with FFNAM (D5.43)";
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,

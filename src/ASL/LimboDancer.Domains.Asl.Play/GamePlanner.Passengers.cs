@@ -117,6 +117,20 @@ public sealed partial class GamePlanner
         return VehicleDefinition(vehicle) is { } definition ? ScenarioA1RiderRules.Capacity(definition.VehicleClass, definition.Unarmored == true) : null;
     }
 
+    /// <summary>
+    /// Whether units board a vehicle as Riders (D6.2, D6.4; pass 65, the UI review): Rules decides from whether it takes Riders and Passengers and whether
+    /// the player asked it. With <paramref name="asked"/> false, whether it takes Riders and no Passengers. For the Play page.
+    /// </summary>
+    public static bool BoardsAsRiders(GameState state, UnitInstance vehicle, bool asked) =>
+        ScenarioA1RiderRules.BoardsAsRiders(RiderCapacityOf(vehicle) is not null, PassengerCapacity(state, vehicle) is not null, asked);
+
+    /// <summary>Whether a vehicle keeps a SW its Passengers leave aboard (D6.4; pass 65, the UI review): Rules decides from its class. For the Play page.</summary>
+    public static bool KeepsSwAboard(UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return ScenarioA1PassengerCalculator.KeepsSwAboard(VehicleDefinition(vehicle)?.VehicleClass);
+    }
+
     /// <summary>The Rider PP a vehicle has left (D6.2), its Riders read from the state's index; null when it takes no Riders. For the Play page.</summary>
     public int? RiderPpLeft(GameState state, UnitInstance vehicle)
     {
@@ -465,20 +479,23 @@ public sealed partial class GamePlanner
         var enemyThere = index.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && !LiveFire.IsVehicle(unit));
         var mf = ScenarioA1PassengerCalculator.UnloadMf(spent, printed);
         List<string> leavers = [.. ids];
+        List<string> named = [.. ids];
         if (crewLeaving is not null)
         {
+            // The UI review: the HS the step creates is named by its definition, which the page says as its counter ("its inherent 2-4-7 half-squad").
             leavers.Add(crewLeaving.Instance.Id);
+            named.Add($"its inherent {crewLeaving.Instance.Definition}");
         }
 
-        var text = $"play.unload: {string.Join(", ", leavers)} disembark{(leavers.Count == 1 ? "s" : string.Empty)} beneath {id} in {at} for {Mp(quarter)} of its MP; "
+        var text = $"play.unload: {string.Join(", ", named)} disembark{(leavers.Count == 1 ? "s" : string.Empty)} beneath {id} in {at} for {Mp(quarter)} of its MP; "
             + $"{(leavers.Count == 1 ? "it spends" : "each spends")} {mf} MF more"
             + (Is(vehicle, Conditions.PrepFire) ? $" and stays in {at} this MPh, since {id} Prep Fired" : " and may move on with the MF left, at most four, without Double Time, once "
                 + $"{id} ends its move and before any other unit moves (A4.11, A4.5)") + " (D6.5; ruling R26.2)"
             + (leave.Length > 0 ? $"; {string.Join(", ", leave)} {(leave.Length == 1 ? "stays" : "stay")} aboard (D6.4)" : string.Empty)
             + string.Concat(take.Select(item => $"; {item.Unit} takes {item.Weapon} with it (D6.5)"))
-            + (enemyThere ? $"; {at} holds the enemy, and a CC counter shows they are not held in Melee (D6.5, A4.14)" : string.Empty)
+            + (enemyThere ? $"; {at} holds the enemy, and they are not held in Melee (D6.5, A4.14)" : string.Empty)
             + "; the DEFENDER may fire at them with FFNAM, and FFMO in Open Ground from an unarmored vehicle (D6.5)"
-            + (crewLeaving is not null ? $"; {crewLeaving.Instance.Id} is {id}'s inherent HS, so {id} is Abandoned, and the HS neither Removes its armament nor destroys it (D6.83)"
+            + (crewLeaving is not null ? $"; its inherent HS leaves {id}, so {id} is Abandoned, and the HS neither Removes its armament nor destroys it (D6.83)"
                 : string.Empty);
         List<GameEvent> Build(Func<RollRequest, RollResult>? draw)
         {

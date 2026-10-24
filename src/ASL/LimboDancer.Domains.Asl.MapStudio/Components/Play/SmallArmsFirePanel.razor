@@ -156,7 +156,7 @@
 
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
 
-    /// <summary>The page's words for a unit with its hex first, "[G4]: 4-6-7 squad A" (the hex UI rule).</summary>
+    /// <summary>The page's words for a unit with its hex after its name, "4-6-7 squad G1 in [G4]" (pass 31c).</summary>
     [CascadingParameter(Name = "SayAt")]
     public Func<string, string>? WordsAt { get; set; }
 

@@ -324,7 +324,11 @@ public static class ReplaySteps
 
             // D6.21, D6.24 (pass 65, ruling R65.17): Riders that Bail Out as it moves.
             var bailing = payloads.OfType<RiderBailedOut>().Any() ? ", and its Riders Bail Out" : string.Empty;
-            return ("move", side, $"{A(side, "vehicle")} {what} in {Place(before, drove.At)}{bailing}{end}", false);
+
+            // D6.83 (pass 65, the table player): a Carrier whose inherent HS unloads with the step is Abandoned.
+            var abandons = drove.Kind == VehicleStepped.Unload && payloads.OfType<ConditionsChanged>().Any(changed => changed.Id == drove.Vehicle
+                && changed.Conditions.TryGetValue(Conditions.Abandoned, out var now) && now == ConditionState.True) ? ", and its inherent HS leaves it Abandoned" : string.Empty;
+            return ("move", side, $"{A(side, "vehicle")} {what} in {Place(before, drove.At)}{bailing}{abandons}{end}", false);
         }
 
         // D5.41, D5.42 (pass 65, ruling R65.20): a crew leaves its vehicle, or a unit enters an Abandoned one to crew it.
@@ -366,6 +370,9 @@ public static class ReplaySteps
             var side = SideOf(routed.Unit);
             return ("rout", side, routed.Attempted is { } repulsedFrom
                 ? $"{A(side, "broken unit")} is repulsed from {Place(before, repulsedFrom)} by a concealed unit{end}"
+                // D6.1, D5.311 (pass 65, the table player): a unit aboard routs beneath its vehicle.
+                : before.Unit(routed.Unit) is { Position: ContainedPosition }
+                    ? $"{A(side, "broken unit")} routs beneath its vehicle in {Place(before, routed.To)}{end}"
                 : $"{A(side, "broken unit")} routs to {Place(before, routed.To)}{(routed.LowCrawl ? " by Low Crawl" : string.Empty)}{end}", false);
         }
 

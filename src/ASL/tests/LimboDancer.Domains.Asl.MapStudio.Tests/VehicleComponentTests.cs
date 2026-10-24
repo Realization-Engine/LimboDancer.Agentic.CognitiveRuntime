@@ -31,6 +31,26 @@ public sealed class VehicleComponentTests : IDisposable
         Assert.Equal(["south-west", "south-east"], picker.FindAll("#place-facing option").Select(option => option.GetAttribute("value")));
     }
 
+    // D6.2 (pass 65, the UI review): "as a Rider" only for Personnel whose holder is a vehicle, as the page says; a SW given a possessor is not offered it.
+    [Fact]
+    public void TheRiderBoxIsOfferedOnlyToPersonnelAboardAVehicle()
+    {
+        var held = Draft() with
+        {
+            Definition = "attacker-lmg",
+            Holder = "g1"
+        };
+        var editor = context.Render<SetupPlacementEditor>(parameters => parameters.Add(item => item.Draft, held).Add(item => item.Kind, "asl:mg"));
+        Assert.Empty(editor.FindAll("#place-rider"));
+        editor.Render(parameters => parameters.Add(item => item.Draft, held with
+        {
+            Definition = "attacker-squad",
+            Holder = "ght"
+        }).Add(item => item.Kind, "asl:squad")
+            .Add(item => item.RiderAllowed, true));
+        Assert.NotNull(editor.Find("#place-rider"));
+    }
+
     // P08 (rulings R25.4, R26.1): a vehicle's VCA, the holder for a Passenger, and the entry area only for a counter off board in a group with several.
     [Fact]
     public void TheSetupEditorOffersAnEntryAreaOnlyOffBoard()

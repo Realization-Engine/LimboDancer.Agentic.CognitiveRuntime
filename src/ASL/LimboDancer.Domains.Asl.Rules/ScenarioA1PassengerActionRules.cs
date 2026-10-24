@@ -227,6 +227,16 @@ public static class ScenarioA1PassengerActionRules
             : unitVehicle is null || !unitVehicleMoving;
 
     /// <summary>
+    /// D6.64 (p. 206; ruling R65.12): whether a leader may be offered to direct a fire group before its FG bar is read. A leader aboard directs only the
+    /// Passengers of his own vehicle, so every firer rides it; a leader on foot directs a group with a firer in his Location.
+    /// </summary>
+    public static bool DirectorOffered(string? leaderVehicle, IReadOnlyCollection<string?> firerVehicles, bool firerInHisLocation)
+    {
+        ArgumentNullException.ThrowIfNull(firerVehicles);
+        return leaderVehicle is not null ? firerVehicles.Count > 0 && firerVehicles.All(vehicle => vehicle == leaderVehicle) : firerInHisLocation;
+    }
+
+    /// <summary>
     /// D7.11 (p. 207; ruling R65.13): the share of a Passenger's printed FP its vehicle's OVR takes, before TPBF: one-half from a CE armored halftrack
     /// (only, D7.11) or Carrier (D6.8), one-fourth from any other vehicle, none from a BU armored vehicle, whose Passengers do not fire (D6.62).
     /// </summary>

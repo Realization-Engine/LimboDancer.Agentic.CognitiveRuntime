@@ -18,6 +18,20 @@ public sealed partial class GamePlanner
         return VehicleOf(state, unitId);
     }
 
+    /// <summary>
+    /// Whether a leader may be offered to direct the chosen firers (D6.64; ruling R65.12; the UI review): Rules decides from the vehicle each rides and
+    /// whether a firer stands in his Location, read from the state's index; the plan's FG bar decides the rest. For the Play page.
+    /// </summary>
+    public bool DirectorOffered(GameState state, string leader, IReadOnlyCollection<string> firers)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(firers);
+        var index = MemoOf(state).Objects(state);
+        var at = index.Location(leader)?.Location;
+        return ScenarioA1PassengerActionRules.DirectorOffered(index.VehicleOf(leader), [.. firers.Select(index.VehicleOf)],
+            at is not null && firers.Any(id => index.Location(id)?.Location == at));
+    }
+
     /// <summary>Whether a PRC's vehicle has moved as its Mounted Fire and its leader read it (D6.22, D6.65, C.8): Rules decides from the state's facts.</summary>
     private static bool VehicleMoved(GameState state, UnitInstance vehicle, bool rider) =>
         ScenarioA1PassengerActionRules.VehicleMoved(rider, state.Phase == "mph", state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal), Is(vehicle, Conditions.Motion));

@@ -1416,6 +1416,13 @@ public sealed partial class GamePlanner
         return MemoOf(state).Objects(state).Location(id);
     }
 
+    /// <summary>A unit by id, as <see cref="GameState.Unit"/> reads it, from the state's index (pass 65, the UI review): the page's words read it per label.</summary>
+    public UnitInstance? UnitOf(GameState state, string id)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return MemoOf(state).Objects(state).Unit(id);
+    }
+
     /// <summary>A charge's key in the memo: the movers' ids in order, the start, and whether the movers are in the state's move.</summary>
     private readonly record struct ChargeKey(string Movers, BoardLocation From, bool InMove);
 

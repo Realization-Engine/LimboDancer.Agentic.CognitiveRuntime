@@ -63,6 +63,12 @@ public static class ScenarioA1RiderRules
             };
 
     /// <summary>
+    /// D6.2, D6.4 (p. 205; ruling R65.16): whether units board a vehicle as Riders: when the player asks it of one that takes Riders, and always on one that
+    /// takes Riders and no Passengers (its Passenger PP capacity is none).
+    /// </summary>
+    public static bool BoardsAsRiders(bool takesRiders, bool takesPassengers, bool asked) => takesRiders && (asked || !takesPassengers);
+
+    /// <summary>
     /// D6.2 (p. 205; ruling R65.16): "AFV Riders cannot be used until 1942, and even then only by the Russians. In 1943 and thereafter, all nationalities
     /// may use Riders." Why a side may not use Riders in the game's year, or null; a game that names no year allows none.
     /// </summary>

@@ -358,6 +358,15 @@ public static class DisplayText
         ["first-move"] = "first move",
         ["sniper"] = "Sniper dr",
         ["wind-change"] = "Wind Change DR",
+
+        // Pass 65 (the table player): a Rider's Bail Out, its SW's fate, Scrounging, a CC attack on a vehicle and its Unlikely Kill, and a Temporary
+        // crew's start.
+        ["rider-bail-out"] = "Bail Out NMC DR",
+        ["rider-weapon"] = "Bail Out SW dr",
+        ["scrounge"] = "Scrounging dr",
+        ["cc-vehicle-attack"] = "CC DR at a vehicle",
+        ["cc-vehicle-unlikelyKill"] = "Unlikely Kill dr",
+        ["vehicle-temporary-start"] = "Temporary crew's start dr",
     };
 
     /// <summary>A roll's recorded purpose in words: "fire-ift" reads "IFT DR"; one with no words of its own reads with spaces for its hyphens.</summary>

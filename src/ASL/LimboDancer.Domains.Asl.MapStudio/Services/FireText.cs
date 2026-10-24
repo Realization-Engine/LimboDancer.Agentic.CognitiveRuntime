@@ -348,8 +348,10 @@ public static class FireText
             var drm = string.Concat(attack.Drm.Select(item => $" ({DisplayText.Modifier(item.Name)} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))}, {item.Rule})"));
             foreach (var unit in attack.Effects)
             {
+                // The table player: a passed check that changed nothing ends the line, not ": passed: unaffected".
+                var effect = EffectText(unit);
                 lines.Add($"{unit.UnitId} aboard {hit.VehicleId} takes {kind}, Final DR {attack.FinalDr}{drm}: {ResultText(attack.Result)}"
-                    + string.Concat(unit.Checks.Select(check => "; " + CheckText(check))) + $": {EffectText(unit)}");
+                    + string.Concat(unit.Checks.Select(check => "; " + CheckText(check))) + (effect == "unaffected" && unit.Checks.Count > 0 ? string.Empty : $": {effect}"));
             }
         }
 

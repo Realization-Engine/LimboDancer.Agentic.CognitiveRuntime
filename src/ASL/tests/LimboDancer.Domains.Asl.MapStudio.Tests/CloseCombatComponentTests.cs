@@ -33,7 +33,8 @@ public sealed class CloseCombatComponentTests : IDisposable
         var first = panel.Find(".vehicle-cc[data-location='bd04:E5:0']");
         Assert.Contains("the russian side attacks next", first.TextContent, StringComparison.Ordinal);
         Assert.Equal(["", "r1", "r2"], first.QuerySelectorAll(".vehicle-cc-attacker option").Select(option => option.GetAttribute("value")));
-        Assert.Equal("gt (german)", first.QuerySelectorAll(".vehicle-cc-vehicle option")[1].TextContent);
+        // Pass 65 (the UI review): the vehicle is said in the page's words after its hex; with neither given here, its id.
+        Assert.Equal("gt", first.QuerySelectorAll(".vehicle-cc-vehicle option")[1].TextContent);
         Assert.Empty(first.QuerySelectorAll(".vehicle-cc-defender"));
         var second = panel.Find(".vehicle-cc[data-location='bd04:F5:0']");
         Assert.Single(second.QuerySelectorAll(".vehicle-cc-attacker option"));
