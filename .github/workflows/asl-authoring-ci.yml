@@ -31,9 +31,35 @@ permissions:
   contents: read
 
 jobs:
+  # The test projects run as parallel jobs, each on its own machine (2026-10-24): in one job the four large projects shared four cores, and
+  # Authoring's 9:35 set the run's length. Each job builds the whole solution with warnings as errors, so every job also proves the strict build.
   source-conformance:
+    name: source-conformance (${{ matrix.share }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - share: authoring
+            tests: src/ASL/tests/LimboDancer.Domains.Asl.Authoring.Tests
+          - share: mapstudio
+            tests: src/ASL/tests/LimboDancer.Domains.Asl.MapStudio.Tests
+            node: true
+          - share: rules
+            tests: src/ASL/tests/LimboDancer.Domains.Asl.Rules.Tests
+          - share: play
+            tests: src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests
+          - share: the rest
+            tests: >-
+              src/ASL/tests/LimboDancer.Domains.Asl.Maps.Tests
+              src/ASL/tests/LimboDancer.Domains.Asl.Maps.Rendering.Tests
+              src/ASL/tests/LimboDancer.Domains.Asl.Maps.Vasl.Tests
+              src/ASL/tests/LimboDancer.Domains.Asl.Units.Tests
+              src/ASL/tests/LimboDancer.Domains.Asl.Units.Rendering.Tests
+              src/ASL/tests/LimboDancer.Domains.Asl.Units.CounterSheets.Tests
+              src/ASL/tests/LimboDancer.Dice.Tests
+            cli: true
 
     steps:
       - name: Check out repository
@@ -51,12 +77,19 @@ jobs:
         run: dotnet build src/ASL/LimboDancer.Domains.Asl.sln --configuration Release --no-restore --warnaserror
 
       - name: Test Map Studio viewport interactions
+        if: matrix.node
         run: node --test src/ASL/tests/LimboDancer.Domains.Asl.MapStudio.Tests/boardViewport.pointer.test.mjs
 
-      - name: Test source registry and fragment locator
-        run: dotnet test src/ASL/LimboDancer.Domains.Asl.sln --configuration Release --no-build --no-restore
+      - name: Test ${{ matrix.share }}
+        run: |
+          failed=0
+          for project in ${{ matrix.tests }}; do
+            dotnet test "$project" --configuration Release --no-build --no-restore || failed=1
+          done
+          exit $failed
 
       - name: Generate and check Scenario A1 source verification batch
+        if: matrix.cli
         run: |
           dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli --configuration Release --no-build --no-restore -- \
             --source-commit a3254ff1d492dbdd28483d86f5b42437b48e80d4 \
@@ -67,6 +100,7 @@ jobs:
           cmp docs/ASL/SourceRegistry/asl-scenario-a1.source-verification.json "$RUNNER_TEMP/asl-scenario-a1.source-verification.json"
 
       - name: Generate and check pending Scenario A1 comparison records
+        if: matrix.cli
         run: |
           dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli --configuration Release --no-build --no-restore -- \
             --source-commit a3254ff1d492dbdd28483d86f5b42437b48e80d4 \
@@ -78,6 +112,7 @@ jobs:
           cmp docs/ASL/SourceRegistry/asl-scenario-a1.pending-comparison-records.json "$RUNNER_TEMP/asl-scenario-a1.pending-comparison-records.json"
 
       - name: Regenerate bounded Scenario A1 chart supplement
+        if: matrix.cli
         run: |
           dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli --configuration Release --no-build --no-restore -- \
             --source-commit a3254ff1d492dbdd28483d86f5b42437b48e80d4 \
