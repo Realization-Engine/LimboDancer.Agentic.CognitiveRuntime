@@ -1738,7 +1738,8 @@ textarea.placements-text {
 
 .figure-art-grid {
     display: grid;
-    grid-template-columns: minmax(7rem, max-content) repeat(9, minmax(8.5rem, 1fr));
+    /* One column per pose: the page sets --figure-poses from FigureArt.PoseNames. */
+    grid-template-columns: minmax(7rem, max-content) repeat(var(--figure-poses, 10), minmax(8.5rem, 1fr));
     gap: 0.5rem;
     overflow-x: auto;
     font-size: 0.8rem;

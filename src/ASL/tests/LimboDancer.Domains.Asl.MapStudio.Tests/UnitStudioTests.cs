@@ -56,7 +56,7 @@ public sealed class UnitStudioTests : IDisposable
         Assert.True(entry.Set.Synthetic);
         Assert.Equal("bd01-demo", entry.Set.SetId);
         Assert.Empty(library.SetsFor(FakeBoardProvider.Board));
-        Assert.Equal(33, library.Examples.Count);
+        Assert.Equal(34, library.Examples.Count);
     }
 
     [Fact]

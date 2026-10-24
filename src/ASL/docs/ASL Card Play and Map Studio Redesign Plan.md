@@ -1619,7 +1619,7 @@ Passes 90, 125, 135, and 165 lose part of their titles: 90 is night alone, 125 i
 | 40 | Infantry I: movement, stacking, and Locations | 49 | none | 35 | 5:20 | 6:35 | 3:18 |
 | 45 | Infantry II: fire, MGs, and SW | 38 | none (the German HMG's and the mortars' dm values are manufactured, R0.3) | 40 (ADJACENT) | 5:40 | 6:55 | 3:28 |
 | 60 | Armored combat III: other attacks on vehicles and Guns | 37 | none | 50; 45 (Residual FP from ordnance) | 4:40 | 5:55 | 2:58 |
-| 65 | Passengers, Riders, and crews | 63 | vehicle-crew counters; a Carrier with its HS crew; Rider capacity by vehicle class | 50, 60 (Collateral Attacks) | 7:00 | 8:15 | 4:08 |
+| 65 | Passengers, Riders, and crews | 63 | vehicle-crew counters (new, manufactured); Carrier and Rider data on existing vehicles (D6.2, D6.81, D6.82: a Carrier's HS crew uses the existing HS counters) | 50, 60 (Collateral Attacks) | 7:00 | 8:15 | 4:08 |
 | 70 | Infantry III: morale, Close Combat, and concealment | 35 | none | 40 (Infantry OVR, ADJACENT) | 7:20 | 8:35 | 4:18 |
 | 75 | Infantry IV: the small sections, and Interrogation | 56 | none | 40; 45 for DC between levels | 6:20 | 7:35 | 3:48 |
 | 80 | Nationalities I: the catalog's counters | 14 | none | 35 | 1:25 | 2:40 | 1:20 |
@@ -1743,7 +1743,7 @@ Passes 90, 125, 135, and 165 lose part of their titles: 90 is night alone, 125 i
 
 Moved here by pass 55 (2026-10-13), with no task renumbered: a hit on another vehicle of an overstacked hex (A5.132, with 60.6); AP against Infantry by a Gun whose HE is by a Depletion Number (C8.31, with 60.4); a Critical Hit's reversal of the Height Advantage TEM (C3.71); a Canister KIA and a SW (C8.42, with 60.5).
 
-**Pass 65: Passengers, Riders, and crews** (new; 63 rows of the inventory). Counters: vehicle-crew counters; a Carrier with its HS crew; Rider capacity by vehicle class. Needs first: 50, 60 (Collateral Attacks).
+**Pass 65: Passengers, Riders, and crews** (new; 63 rows of the inventory). Counters: vehicle-crew counters, new and manufactured (D5.1: FP 1, often a lower morale; today a surviving crew is placed as an infantry crew). No new counter for the rest: a Carrier's inherent 2-4-7 or 2-4-8 HS crew (D6.82) uses the existing HS counters, and Rider capacity (D6.2, D6.81) is data on the existing vehicles, with a vehicle class to tell tanks, tankettes, TD, SPA, SPAA, Assault Guns, and Carriers apart (corrected 2026-10-23). Needs first: 50, 60 (Collateral Attacks).
 
 | Task | Rules | Estimate |
 |---|---|---|

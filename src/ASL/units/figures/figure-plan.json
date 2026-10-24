@@ -68,6 +68,13 @@
       "brief": "a prisoner standing upright, both hands raised high above the helmet with palms open, no weapon, webbing belt and empty pouches",
       "meaning": "A captured unit in a Guard's custody (A20.5).",
       "reference": ""
+    },
+    {
+      "key": "pose-vehicle-crew",
+      "label": "Vehicle crew: crouching with a pistol",
+      "brief": "a tank crewman crouching low as if he has just jumped down from his tank, knees deeply bent, torso leaning forward, his rear hand touching the ground for balance, his front arm extended forward at shoulder height holding a pistol; a short tanker's jacket with a holster, no pack, no rifle, a close-fitting padded tank crew helmet",
+      "meaning": "A vehicle crew out of its vehicle (D5.1, A1.123): FP 1 and non-elite, so it reads apart from an infantry crew. It keeps its own padded helmet for every side.",
+      "reference": ""
     }
   ],
   "assignments": [],

@@ -42,6 +42,7 @@ asl|personnel::slot(glyph)  { content: glyph(size-figures); }
 /* The figure's pose (ASL Unit Figure Art Plan): each falls back to the drawn figure until its art is accepted, standing but for the
    broken pose, which lies prone. */
 asl|crew::slot(glyph)   { content: glyph(size-figures, crew); }
+asl|vehicle-crew::slot(glyph) { content: glyph(size-figures, vehicle-crew); }
 asl|leader::slot(glyph) { content: glyph(size-figures, leader); }
 asl|hero::slot(glyph)   { content: glyph(size-figures, hero); }
 asl|smc:face(wounded)::slot(glyph) { content: glyph(size-figures, wounded); }
@@ -417,6 +418,7 @@ asl|dummy::slot(label) { content: "DUMMY"; font-weight: bold; font-size: 0.24; }
   unit:concealed { face-template: "q"; }
   asl|personnel:face(broken)::slot(glyph) { content: glyph(size-figures, broken); }
   asl|crew::slot(glyph)   { content: glyph(size-figures, crew); }
+  asl|vehicle-crew::slot(glyph) { content: glyph(size-figures, vehicle-crew); }
   asl|leader::slot(glyph) { content: glyph(size-figures, leader); }
   asl|hero::slot(glyph)   { content: glyph(size-figures, hero); }
   asl|smc:face(wounded)::slot(glyph) { content: glyph(size-figures, wounded); }

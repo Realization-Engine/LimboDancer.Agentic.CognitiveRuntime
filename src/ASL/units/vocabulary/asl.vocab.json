@@ -1,6 +1,6 @@
 {
   "pack": "asl",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "label": "ASL Personnel, support weapons, Guns, vehicles, and entities that are not units",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
@@ -297,6 +297,7 @@
     { "name": "asl:squad", "label": "squad", "extends": "asl:mmc", "sizeClass": 3, "rule": "A1.1 to A1.123, p. 44" },
     { "name": "asl:half-squad", "label": "half-squad", "extends": "asl:mmc", "sizeClass": 2, "rule": "A1.1 to A1.123, p. 44" },
     { "name": "asl:crew", "label": "crew", "extends": "asl:mmc", "sizeClass": 2, "rule": "A1.1 to A1.123, p. 44" },
+    { "name": "asl:vehicle-crew", "label": "vehicle crew", "extends": "asl:crew", "sizeClass": 2, "rule": "A1.123, p. 44; D5.1, p. 203" },
     { "name": "asl:smc", "label": "SMC", "extends": "asl:personnel", "sizeClass": 1, "rule": "A1.1 to A1.123, p. 44" },
     {
       "name": "asl:leader", "label": "leader", "extends": "asl:smc", "attributes": ["asl:leadership"], "rule": "A10.7, p. 68",

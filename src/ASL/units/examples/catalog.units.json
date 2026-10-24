@@ -44,6 +44,17 @@
     }
   },
   {
+    "vocabulary": ["asl@1.18.0"],
+    "id": "example-vehicle-crew",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:vehicle-crew",
+    "side": "american",
+    "faces": {
+      "front": { "firepower": 1, "range": 2, "morale": 6, "identity": "4" },
+      "broken": { "broken-morale": 7 }
+    }
+  },
+  {
     "vocabulary": ["asl@1.3.0"],
     "id": "example-leader",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
