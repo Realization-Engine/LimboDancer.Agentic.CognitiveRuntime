@@ -2,7 +2,7 @@
 
 **Written:** 2026-10-23, at the user's word: "Yes, plan the fix", after the replay of `dl-tractor-works-02` (memory note `berserk-charge-slowness`). The user's rule for this work, the same day: "test everything in the Studio. Do not run ALL unit tests until the gate. You are permitted to run specific unit tests that impact code you've changed. Standing Rule: Do Not run unnecessary tests."
 **Scope:** the berserk charge search's cost in Play, in one branch and one pull request: T1 (the charge answer kept per state) and T2 (C2, the index of a state's objects, used by the charge search). No rule changes. Not in scope: any other use of the index, the Rout Phase's remaining cost, and the Turn 6 pauses the replay did not reproduce (section 8).
-**Status:** approved 2026-10-23 at the user's word: "Proposals C1, C2 and C3 accepted. Plan approved. Proceed. Start on the branch berserk-charge-memo. Attempt to execute without my intervention." Building on `berserk-charge-memo`.
+**Status:** approved 2026-10-23 at the user's word: "Proposals C1, C2 and C3 accepted. Plan approved. Proceed. Start on the branch berserk-charge-memo. Attempt to execute without my intervention." Built on `berserk-charge-memo`: task 1 (8841f234), task 2 (c69dd542), task 3 (07a439ba, results in section 9). Task 4: the gate passed 2026-10-23 (strict, then baseline, build, proofs with `CODE_MOVE=1`: the text list, replay digest, and sweep equal the baseline's in every line; the Node viewport test 13 of 13). The merge waits for a green CI run and the user's word.
 
 ## 1. Expected gains
 

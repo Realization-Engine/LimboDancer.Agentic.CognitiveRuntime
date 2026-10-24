@@ -18,6 +18,7 @@ as the adjudicator, the page visible, a step a second paced on the server.
 | `audit_spans.py` | The server's spans of a live session from `audit.jsonl`: check to gate verdict, and executor start to end, by turn, with the slowest |
 | `counters_series.py` | A `dotnet-counters` CSV as a table of working set, committed and generation sizes, allocation, CPU, and collections, every N seconds and in a window |
 | `trace_inclusive.py` | A speedscope trace's frames ranked by inclusive CPU time over all threads, filtered by a name; and the busiest threads |
+| `split_log.py` | Two whole-game follower runs' step works (compact `[revision, interval]` logs) split into Rout Phase and other steps: count, median, p90, max, and the slowest |
 | `trace_calls.py` | How many times a frame is entered (outermost), each entry's duration, and from which enclosing frame |
 | `allocread/allocread.cs` | Reads a `gc-verbose` nettrace: allocation ticks by type, by the nearest LimboDancer frames, by second; and the collections. `dotnet run allocread.cs -- <file.nettrace>` (a file-based program) |
 | `clockbench/clock.cs` | The cost of a `TimeProvider.System.GetUtcNow()` call on this machine (the analysis, 2.4) |
