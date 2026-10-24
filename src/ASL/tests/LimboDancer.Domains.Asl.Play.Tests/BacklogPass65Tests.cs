@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Maps.Los;
 using LimboDancer.Domains.Asl.Maps.Read;
 using LimboDancer.Domains.Asl.Units.Catalog;
@@ -363,5 +364,196 @@ public sealed class BacklogPass65Tests : IDisposable
         var older = Planner().Replay(AsBeforeThePass("de-h", "de-s"));
         Assert.False(older.HasErrors);
         Assert.NotEqual(InstanceStatus.Active, older.Current!.Unit("de-h")!.Status);
+    }
+
+    // Increment 2c: Passenger action (D6.1, D6.5, D6.63 to D6.65, D7.11, D7.16, D.3; rulings R65.10 to R65.13).
+
+    private static void Refused(PlayResult result, string text)
+    {
+        Assert.NotEqual(PlayOutcome.Committed, result.Outcome);
+        Assert.Contains(result.Reasons, reason => reason.Contains(text, StringComparison.Ordinal));
+    }
+
+    private static Dictionary<string, object> Broken(Dictionary<string, object> unit)
+    {
+        unit["conditions"] = new Dictionary<string, bool> { ["asl:broken"] = true, ["asl:concealed"] = false, ["asl:hidden"] = false };
+        return unit;
+    }
+
+    private async Task Advance() => Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+    {
+    }));
+
+    /// <summary>The hex beyond a hexside of a hex of board 01, as the vehicle tests of pass 11 name it.</summary>
+    private static string Beyond(string hex, HexsideDirection side) => $"bd01:{Board01Fixture.Handle().Neighbor(HexName.Parse(hex), side)}:0";
+
+    [Fact]
+    public async Task ATrucksPassengerFiresAtHalfFpAndFreezesTheTruck()
+    {
+        // D6.1, D6.72: the 4-6-7 aboard the Stopped truck fires at the Russian squad two hexes off, directed by the 9-1 aboard with it (D6.65), its 4 FP
+        // halved as Mounted Fire: the 2 column, an Original DR of 11 and -1 leadership: no effect. D.3: the truck is marked as having Prep Fired.
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("de-truck", "attacker-truck", Firer, "german", "north-east"),
+            Aboard("de-s", "asl:squad", "attacker-squad", "de-truck", "german"), Aboard("de-l", "asl:leader", "attacker-leader-9-1", "de-truck", "german"),
+            Unit("ru-s", "asl:squad", "defender-squad", Target, "russian"));
+        var before = Revision;
+        var fired = await Do(GameActions.Fire, Once(5, 6), new
+        {
+            firers = new[] { "de-s" },
+            director = "de-l",
+            target = Target,
+        });
+        Committed(fired);
+        Assert.Contains(fired.Reasons, reason => reason.Contains("de-s fires from de-truck as Mounted Fire, its FP times 1/2 (D6.1)", StringComparison.Ordinal));
+        var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.Equal("de-truck", fire.Facts.GetProperty("firers")[0].GetProperty("mounted").GetProperty("vehicleId").GetString());
+        Assert.Equal(2m, fire.Resolution.GetProperty("arithmetic").GetProperty("totalFirepower").GetDecimal());
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("de-truck")!, Conditions.PrepFire));
+        NoReplayErrors();
+
+        // D6.5, D.3: in the MPh the squad that fired does not unload.
+        await Advance();
+        Refused(await Do(GameActions.MoveVehicle, NoRoll(), new
+        {
+            vehicleId = "de-truck",
+            kind = "unload",
+            units = new[] { "de-s" },
+        }), "fired from its vehicle");
+    }
+
+    [Fact]
+    public async Task ACeHalftracksPassengerFiresNoMmg()
+    {
+        // D6.1: a Passenger fires a LMG, a PIAT, or a DC, so the squad aboard the CE halftrack does not fire its MMG.
+        var mmg = new Dictionary<string, object>
+        {
+            ["id"] = "de-mmg",
+            ["kind"] = "asl:mg",
+            ["definition"] = "attacker-mmg",
+            ["side"] = "german",
+            ["holding"] = new
+            {
+                holder = "de-s",
+                role = "possessed"
+            },
+            ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+        };
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("de-ht", "attacker-halftrack", Firer, "german", "north-east"),
+            Aboard("de-s", "asl:squad", "attacker-squad", "de-ht", "german"), mmg, Unit("ru-s", "asl:squad", "defender-squad", Target, "russian"));
+        Refused(await Do(GameActions.Fire, NoRoll(), new
+        {
+            firers = new[] { "de-s" },
+            target = Target,
+            weapons = new Dictionary<string, string[]> { ["de-s"] = ["de-mmg"] },
+        }), "a Passenger fires only a LMG, a PIAT, or a Thrown DC (D6.1)");
+    }
+
+    [Fact]
+    public async Task ABuHalftracksPassengerDoesNotFire()
+    {
+        // D6.62: an armored halftrack's Passengers fire only while CE; its crew is BU.
+        var halftrack = Vehicle("de-ht", "attacker-halftrack", Firer, "german", "north-east");
+        halftrack["conditions"] = new Dictionary<string, bool> { ["asl:bu"] = true };
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", halftrack, Aboard("de-s", "asl:squad", "attacker-squad", "de-ht", "german"),
+            Unit("ru-s", "asl:squad", "defender-squad", Target, "russian"));
+        Refused(await Do(GameActions.Fire, NoRoll(), new
+        {
+            firers = new[] { "de-s" },
+            target = Target,
+        }), "fire only while CE");
+    }
+
+    [Fact]
+    public async Task ABrokenPassengerRoutsBeneathItsStoppedTruck()
+    {
+        // D6.1, D5.311 (ruling R65.11): in the RtPh the broken 4-6-7 aboard the Stopped truck routs beneath it with all its MF, on foot in its Location.
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("de-truck", "attacker-truck", Firer, "german", "north-east"),
+            Broken(Aboard("de-s", "asl:squad", "attacker-squad", "de-truck", "german")), Unit("ru-s", "asl:squad", "defender-squad", "bd01:J2:0", "russian"));
+        for (var phase = 0; phase < 4; phase++)
+        {
+            await Advance();
+        }
+
+        Assert.Equal("rtph", Current.Phase);
+        Assert.Null(Planner().MustRout(Current, Current.Unit("de-s")!));
+        Assert.True(Planner().MayRout(Current, Current.Unit("de-s")!));
+        Refused(await Do(GameActions.Rout, NoRoll(), new
+        {
+            unitId = "de-s",
+            route = new[] { "bd01:B9:0" },
+        }), "play.rout-beneath");
+        Committed(await Do(GameActions.Rout, NoRoll(), new
+        {
+            unitId = "de-s",
+            beneath = true,
+        }));
+        Assert.Null(Current.Aboard("de-s"));
+        Assert.Equal(Firer, Current.Location("de-s")!.Location.ToString());
+        Assert.Contains("de-s", Current.RoutedThisPhase);
+        NoReplayErrors();
+    }
+
+    /// <summary>
+    /// The CE SPW 251/1 at A9 with a 4-6-7 and a 9-1 aboard starts and enters the Russian squad's Open Ground hex with an OVR (D7.1), its Passengers named
+    /// as <paramref name="units"/> gives (all that may fire when null); the DEFENDER passes, and the OVR is resolved.
+    /// </summary>
+    private async Task<FireResolved> OverrunWithPassengers(string[]? units)
+    {
+        var at = Beyond("A9", HexsideDirection.NorthEast);
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Exposed(Vehicle("de-ht", "attacker-halftrack", "bd01:A9:0", "german", "east")),
+            Aboard("de-s", "asl:squad", "attacker-squad", "de-ht", "german"), Aboard("de-l", "asl:leader", "attacker-leader-9-1", "de-ht", "german"),
+            Unit("ru-s", "asl:squad", "defender-squad", at, "russian"));
+        await Advance();
+        Committed(await Do(GameActions.MoveVehicle, NoRoll(), new
+        {
+            vehicleId = "de-ht",
+            kind = "start",
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        var entry = new Dictionary<string, object> { ["vehicleId"] = "de-ht", ["kind"] = "enter", ["to"] = at, ["overrun"] = true };
+        if (units is not null)
+        {
+            entry["units"] = units;
+        }
+
+        Committed(await Do(GameActions.MoveVehicle, NoRoll(), entry));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        var before = Revision;
+        Committed(await Do(GameActions.Overrun, Once(5, 6, 3, 3, 3, 3), new
+        {
+        }));
+        return Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+    }
+
+    [Fact]
+    public async Task ALoadedHalftracksOvrAddsHalfItsPassengersFpTripledAndTheirLeader()
+    {
+        // D7.11: the CE halftrack's 4-6-7 adds half of 4, tripled: 6 FP; D7.16: the 9-1 aboard modifies the OVR DR by -1, the one leadership modifier.
+        var fire = await OverrunWithPassengers(null);
+        var declared = store.Read(Scope)!.Events.Select(item => item.Payload).OfType<VehicleStepped>().Last(step => step.Overrunning);
+        Assert.Equal(["de-l", "de-s"], declared.Units!.Order(StringComparer.Ordinal));
+        Assert.Equal(2, fire.Facts.GetProperty("overrun").GetProperty("passengers").GetArrayLength());
+        var arithmetic = fire.Resolution.GetProperty("arithmetic");
+        Assert.Contains(arithmetic.GetProperty("firers").EnumerateArray(), item => item.GetProperty("unitId").GetString() == "de-s" && item.GetProperty("firepower").GetDecimal() == 6m);
+        Assert.Contains(arithmetic.GetProperty("drm").EnumerateArray(), item => item.GetProperty("name").GetString() == "leadership:de-l");
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnOvrWhoseRecordNamesNoPassengerResolvesAsBefore()
+    {
+        // An OVR declared with no Passenger adding FP is recorded as one made before the pass: no units on the step, no Passengers in the facts, and the
+        // OVR's FP is the vehicle's alone, 6 less than with the squad.
+        var fire = await OverrunWithPassengers([]);
+        var declared = store.Read(Scope)!.Events.Select(item => item.Payload).OfType<VehicleStepped>().Last(step => step.Overrunning);
+        Assert.Null(declared.Units);
+        Assert.False(fire.Facts.GetProperty("overrun").TryGetProperty("passengers", out _));
+        var arithmetic = fire.Resolution.GetProperty("arithmetic");
+        Assert.DoesNotContain(arithmetic.GetProperty("firers").EnumerateArray(), item => item.GetProperty("unitId").GetString() == "de-s");
+        Assert.DoesNotContain(arithmetic.GetProperty("drm").EnumerateArray(), item => item.GetProperty("name").GetString() == "leadership:de-l");
+        NoReplayErrors();
     }
 }

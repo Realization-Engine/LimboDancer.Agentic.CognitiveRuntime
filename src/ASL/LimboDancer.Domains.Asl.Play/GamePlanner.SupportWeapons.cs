@@ -445,6 +445,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.transfer-unit: a SW passes between Good Order unpinned Infantry of one side in one Location (A4.431)");
         }
 
+        // D6.31 (pass 65, ruling R65.10): a PRC passes a SW to Infantry in its Location or to a PRC of its own vehicle; Rules decides.
+        if (ScenarioA1PassengerActionRules.TransferBar(giver.Id, VehicleOf(state, giver.Id), taker.Id, VehicleOf(state, taker.Id)) is { } aboardBar)
+        {
+            return Refused(scope, label, expected, aboardBar);
+        }
+
         // A20.5 (ruling R14.5; table player, pass 14): an Unarmed unit uses no SW, so it receives none.
         if (Is(taker, Conditions.Unarmed))
         {

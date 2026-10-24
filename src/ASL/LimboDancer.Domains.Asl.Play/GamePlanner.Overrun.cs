@@ -39,7 +39,7 @@ public sealed partial class GamePlanner
     /// PAATC, as its next expenditure there.
     /// </summary>
     private GamePlan PlanDeclareOverrun(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor,
-        GameState state, UnitInstance vehicle, BoardLocation at, bool moving, int step)
+        GameState state, UnitInstance vehicle, BoardLocation at, bool moving, int step, IReadOnlyList<string>? named)
     {
         var steps = StepsThisPhase(existing, vehicle.Id);
         if (!moving || steps.LastOrDefault() is not { Kind: VehicleStepped.Enter, Overrunning: false } last || last.At != at || last.Straddling is not null
@@ -60,14 +60,21 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, mp);
         }
 
-        GameEvent[] declared = [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(vehicle.Id, VehicleStepped.Overrun, at, null, cost, step) { Overrunning = true }, null, null)];
+        // D7.11, D6.5 (pass 65, ruling R65.13): the Passengers who add their FP are named with the declaration, and do not unload this MPh.
+        var adding = OverrunPassengerIds(state, vehicle, named);
+        GameEvent[] declared = [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(vehicle.Id, VehicleStepped.Overrun, at, null, cost, step)
+        {
+            Overrunning = true,
+            Units = adding,
+        }, null, null)];
         if (OverrunDeclarationBar(existing, declared, vehicle.Id, at) is { } unresolvable)
         {
             return Refused(scope, label, expected, unresolvable);
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, declared,
-            [$"play.move-vehicle-ovr: {vehicle.Id} declares an OVR of {at} for {Mp(cost)} MP; the DEFENDER may fire first, then the OVR is resolved (A12.41, D7.1)"]);
+            [$"play.move-vehicle-ovr: {vehicle.Id} declares an OVR of {at} for {Mp(cost)} MP; the DEFENDER may fire first, then the OVR is resolved (A12.41, D7.1)"
+                + OverrunPassengerPreview(adding)]);
     }
 
     /// <summary>
@@ -91,7 +98,7 @@ public sealed partial class GamePlanner
         var id = declared!;
         var at = movement.Overrun!;
 
-        var (attack, refusal, terrain, wall, smoke, targetSide) = OverrunAttack(state, movement, id, at);
+        var (attack, refusal, terrain, wall, smoke, targetSide) = OverrunAttack(state, movement, id, at, DeclaredOverrunPassengers(existing, id));
         if (attack is null)
         {
             return Refused(scope, label, expected, refusal!);
@@ -121,12 +128,15 @@ public sealed partial class GamePlanner
     /// the declaration is refused on the same reasons as the resolution would be, so a declared OVR always resolves (table-player finding).
     /// </summary>
     private (FireAttack? Attack, string[]? Refusal, string Terrain, FireHexsideTem? Wall, int Smoke, string TargetSide) OverrunAttack(GameState state, MovementState movement,
-        string id, BoardLocation at)
+        string id, BoardLocation at, IReadOnlyList<string>? passengers)
     {
-        if (LiveFire.OverrunFromState(state, id) is not ({ } attack, null) || state.Unit(id) is not { } vehicle)
+        if (LiveFire.OverrunFromState(state, id) is not ({ } overrun, null) || state.Unit(id) is not { } vehicle)
         {
             return (null, ["play.overrun: the OVR cannot be read from the game state"], string.Empty, null, 0, string.Empty);
         }
+
+        // D7.11, D7.12, D7.16 (pass 65, ruling R65.13): the Passengers its declaration named, and the PRC of each enemy vehicle there.
+        var attack = WithOverrunPassengers(state, overrun, passengers);
 
         if (ReadLocation(state, at) is not { } read || TerrainKey(read) is not { } terrain)
         {
@@ -160,7 +170,7 @@ public sealed partial class GamePlanner
     /// <summary>The refusal of an OVR declared by the events given, read from the state after them, or null when the Fire package would resolve it.</summary>
     private string[]? OverrunDeclarationBar(IReadOnlyList<GameEvent> existing, IReadOnlyList<GameEvent> declared, string id, BoardLocation at) =>
         Replay([.. existing, .. declared]).Current is not { Movement: { Vehicle: true } movement } after ? ["play.overrun: the OVR cannot be read from the game state"]
-            : OverrunAttack(after, movement, id, at).Refusal;
+            : OverrunAttack(after, movement, id, at, DeclaredOverrunPassengers([.. existing, .. declared], id)).Refusal;
 
     /// <summary>
     /// The OVR is done once its fire record is made with no option left to answer (D7.1, D7.2): at once, or after the owner's answer resumes the attack

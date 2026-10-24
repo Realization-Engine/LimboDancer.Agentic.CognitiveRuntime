@@ -478,6 +478,27 @@ public sealed record FireOverrun(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The Passengers who add their FP to the OVR, named at its declaration (D7.11, D7.16, D6.5; pass 65, ruling R65.13), and taken from the record at
+    /// replay: results against them after the declaration do not change the OVR's FP. Null on every OVR recorded before the pass, which resolves as it did.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireOverrunPassenger>? Passengers
+    {
+        get; init;
+    }
+}
+
+/// <summary>A Passenger adding its FP to an OVR (D7.11; pass 65, ruling R65.13): the unit and its definition; a leader adds his leadership (D7.16).</summary>
+public sealed record FireOverrunPassenger(string? UnitId, string? DefinitionId)
+{
+    /// <summary>Whether the unit is a wounded SMC (A17.2); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Wounded
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -961,6 +982,35 @@ public sealed record FireFirer(
     /// <summary>Whether this firer makes the attack's MOL Check (A22.611; ruling R15.4): at most one per attack; null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Mol
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The vehicle this Passenger fires from, as Mounted Fire (D6.1, D6.63; pass 65, ruling R65.10). Written by the planner, taken from the record at
+    /// replay; null for a firer on foot and on every attack recorded before the pass, when no Passenger fired.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireMounted? Mounted
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// A Passenger's vehicle as its Mounted Fire reads it (D6.1, D6.63; pass 65, ruling R65.10): the vehicle and its definition, whether it moved this
+/// phase (entered a new hex or hexside, C.8), and whether it is in Motion. Null facts are false.
+/// </summary>
+public sealed record FireMounted(string? VehicleId, string? DefinitionId)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Moved
+    {
+        get; init;
+    }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Motion
     {
         get; init;
     }

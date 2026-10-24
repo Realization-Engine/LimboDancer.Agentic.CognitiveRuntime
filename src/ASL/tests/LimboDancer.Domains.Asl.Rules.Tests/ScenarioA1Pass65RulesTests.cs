@@ -308,4 +308,202 @@ public sealed class ScenarioA1Pass65RulesTests
         // A burning wreck takes its PRC with it: no Survival DR (A7.308, D5.6).
         Assert.Null(Shot(TankAt("attacker-truck", [1, 1], [Aboard("de-h", "attacker-half-squad")], crewExposed: false), survival).Kill!.PrcSurvival);
     }
+
+    // Increment 2c: Passenger action (D6.1, D6.31, D6.5, D6.62 to D6.65, D6.651, D7.11, D7.16, A11.611, A11.71; rulings R65.10 to R65.13).
+
+    private static FireDefinition Definition(string id) => Ordnance.Fire.Definitions[id];
+
+    private static MountedFireFacts Mounted(string vehicle, bool crewExposed = true, bool moved = false, bool motion = false, bool bypass = false, string phase = "PFPh",
+        string? weapon = null) =>
+        new("de-s", "de-v", Definition(vehicle), crewExposed, true, moved, motion, bypass, phase,
+            weapon is null ? [] : [new MountedWeaponFacts(weapon, Ordnance.Fire.Definitions.GetValueOrDefault(weapon))]);
+
+    private static decimal Times(MountedFireVerdict verdict) => verdict.Multipliers.Aggregate(1m, (value, item) => value * item.Value);
+
+    [Fact]
+    public void ATrucksPassengersFireAtHalfAndAtAQuarterWhenItMoves()
+    {
+        // D6.1, D6.72: halved for Mounted Fire; halved again for Bounding First Fire in its MPh after it moved, and for Motion.
+        var stopped = ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-truck"));
+        Assert.Null(stopped.Refusal);
+        Assert.Equal((0.5m, "mounted-fire", "D6.1"), (Times(stopped), stopped.Multipliers[0].Name, stopped.Multipliers[0].Rule));
+        Assert.Equal(0.25m, Times(ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-truck", moved: true, phase: "MPh"))));
+        Assert.Equal(0.25m, Times(ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-truck", motion: true))));
+
+        // The AFPh's halving is A7.24's Advancing Fire, which the Fire package applies to every Infantry firer: Mounted Fire adds only its own.
+        Assert.Equal(0.5m, Times(ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-truck", moved: true, phase: "AFPh"))));
+    }
+
+    [Fact]
+    public void ACeHalftracksPassengersFireAtFullUnlessItMovedAndABuOnesDoNot()
+    {
+        // D6.63: never halved for Mounted Fire; halved as Bounding First Fire when it moved; D6.62: only while CE.
+        var unmoved = ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-halftrack"));
+        Assert.Equal((null, 0), (unmoved.Refusal, unmoved.Multipliers.Count));
+        var moved = ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-halftrack", moved: true, phase: "MPh"));
+        Assert.Equal((0.5m, "D6.63"), (Times(moved), moved.Multipliers[0].Rule));
+        Assert.StartsWith("play.mounted-fire: de-s rides de-v BU", ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-halftrack", crewExposed: false)).Refusal);
+        Assert.Contains("D6.62", ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-halftrack") with
+        {
+            PassengerExposed = false
+        }).Refusal);
+
+        // A truck's Passengers have no CE state to lose; a vehicle in Bypass fires from its CAFP, which is pass 100's.
+        Assert.Null(ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-truck", crewExposed: false)).Refusal);
+        Assert.Contains("Bypass", ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-halftrack", bypass: true)).Refusal);
+    }
+
+    [Fact]
+    public void APassengerFiresOnlyALmgAPiatOrADc()
+    {
+        // D6.1 (p. 205): "LMG, PIAT, and Thrown DC are the only SW which can be fired by Passengers".
+        Assert.Null(ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-truck", weapon: "attacker-lmg")).Refusal);
+        Assert.Null(ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-truck", weapon: "attacker-dc")).Refusal);
+        Assert.Equal("play.mounted-fire: de-s may not fire attacker-mmg from de-v: a Passenger fires only a LMG, a PIAT, or a Thrown DC (D6.1)",
+            ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-truck", weapon: "attacker-mmg")).Refusal);
+        Assert.NotNull(ScenarioA1PassengerActionRules.MountedFire(Mounted("attacker-truck", weapon: "attacker-ft")).Refusal);
+        Assert.True(ScenarioA1PassengerActionRules.Allowed(new FireDefinition("british-piat", "asl:latw", "british", null, null, null, null, null, null, null) { LatwType = "piat" }));
+        Assert.False(ScenarioA1PassengerActionRules.Allowed(null));
+    }
+
+    [Fact]
+    public void ABrokenPassengerRoutsBeneathAStoppedVehicleAndMustWhenItsCrewIsGone()
+    {
+        // D6.1 (p. 204): it may stay aboard or rout beneath a Stopped vehicle; it must when the inherent crew is eliminated, breaks, or Abandons.
+        Assert.Equal(ScenarioA1RoutCalculator.MayRoutBeneath, ScenarioA1RoutCalculator.RoutBeneath(true, true, false, false, false));
+        Assert.Equal(ScenarioA1RoutCalculator.StaysAboard, ScenarioA1RoutCalculator.RoutBeneath(true, false, false, false, false));
+        Assert.Equal(ScenarioA1RoutCalculator.StaysAboard, ScenarioA1RoutCalculator.RoutBeneath(false, true, false, false, true));
+        Assert.Equal(ScenarioA1RoutCalculator.MustRoutBeneath, ScenarioA1RoutCalculator.RoutBeneath(true, true, false, false, true));
+        Assert.Equal(ScenarioA1RoutCalculator.MustRoutBeneath, ScenarioA1RoutCalculator.RoutBeneath(true, false, true, false, false));
+        Assert.Equal(ScenarioA1RoutCalculator.MustRoutBeneath, ScenarioA1RoutCalculator.RoutBeneath(true, true, false, true, false));
+
+        // D5.311: all its MF, so no route and no Low Crawl; and only a Passenger routs beneath.
+        Assert.Null(ScenarioA1RoutCalculator.RoutBeneathBar("de-s", "de-v", ScenarioA1RoutCalculator.MayRoutBeneath, 0, false));
+        Assert.NotNull(ScenarioA1RoutCalculator.RoutBeneathBar("de-s", "de-v", ScenarioA1RoutCalculator.MayRoutBeneath, 1, false));
+        Assert.NotNull(ScenarioA1RoutCalculator.RoutBeneathBar("de-s", "de-v", ScenarioA1RoutCalculator.StaysAboard, 0, false));
+        Assert.StartsWith("play.rout-beneath: de-s is not a Passenger", ScenarioA1RoutCalculator.RoutBeneathBar("de-s", null, ScenarioA1RoutCalculator.MayRoutBeneath, 0, false));
+    }
+
+    [Fact]
+    public void D664GroupsPassengersWithTheirVehicleAndACeHalftracksWithInfantry()
+    {
+        FireGroupMemberFacts OnFoot(string id) => new(id, null, null, false);
+        FireGroupMemberFacts Truck(string id, string vehicle = "de-truck") => new(id, vehicle, FirePrc.Passenger, false);
+        FireGroupMemberFacts Halftrack(string id, string vehicle = "de-ht") => new(id, vehicle, FirePrc.Passenger, true);
+        string? Bar(FireGroupMemberFacts[] firers, params FireGroupLeaderFacts[] leaders) => ScenarioA1PassengerActionRules.FireGroupBar(firers, leaders, []);
+
+        // D6.64: Passengers of one truck together; not with Infantry, nor with another truck's.
+        Assert.Null(Bar([Truck("a"), Truck("b")]));
+        Assert.StartsWith("play.fire-group-prc: a rides de-truck", Bar([Truck("a"), OnFoot("c")]));
+        Assert.NotNull(Bar([Truck("a"), Truck("b", "de-truck-2")]));
+
+        // A CE halftrack's Passengers with Infantry and another CE halftrack's Passengers, not with a truck's.
+        Assert.Null(Bar([Halftrack("a"), OnFoot("c"), Halftrack("b", "de-ht-2")]));
+        Assert.NotNull(Bar([Halftrack("a"), Truck("b")]));
+
+        // Riders only with the Riders of their vehicle.
+        Assert.NotNull(Bar([new FireGroupMemberFacts("r", "de-tank", FirePrc.Rider, false), OnFoot("c")]));
+
+        // D6.65: a CE Passenger leader directs his halftrack's Passengers, and the hex's others only while it has not moved; BU, nobody.
+        var leader = new FireGroupLeaderFacts("de-l", "de-ht", true, true, false, false);
+        Assert.Null(Bar([Halftrack("a"), OnFoot("c")], leader));
+        Assert.Contains("moved this phase", Bar([Halftrack("a"), OnFoot("c")], leader with
+        {
+            Moved = true
+        }));
+        Assert.Null(Bar([Halftrack("a")], leader with
+        {
+            Moved = true
+        }));
+        Assert.Contains("BU", Bar([Halftrack("a")], leader with
+        {
+            Exposed = false
+        }));
+        Assert.NotNull(Bar([Truck("a"), Truck("b")], new FireGroupLeaderFacts("de-l", "de-truck-2", true, false, false, false)));
+
+        // D3.4, D6.65: an Armor Leader only inside his halftrack's group; a leader on foot directs a CE halftrack's Passengers, not a truck's.
+        var armor = new FireGroupLeaderFacts("al", "de-ht", true, true, false, true);
+        Assert.NotNull(Bar([Halftrack("a")], armor));
+        Assert.Null(ScenarioA1PassengerActionRules.FireGroupBar([Halftrack("a")], [armor], ["de-ht"]));
+        var onFoot = new FireGroupLeaderFacts("de-l", null, true, false, false, false);
+        Assert.Null(Bar([Halftrack("a"), OnFoot("c")], onFoot));
+        Assert.NotNull(Bar([Truck("a")], onFoot));
+    }
+
+    [Fact]
+    public void APassengerLeadersReachIsHisVehicle()
+    {
+        // D6.651: Rally, MC, TC, and LLMC reach the other Passengers of his vehicle; others only from a CE halftrack that has not moved.
+        Assert.True(ScenarioA1PassengerActionRules.LeaderReaches("de-ht", false, "de-ht", true));
+        Assert.False(ScenarioA1PassengerActionRules.LeaderReaches("de-ht", false, null, false));
+        Assert.True(ScenarioA1PassengerActionRules.LeaderReaches("de-ht", true, null, false));
+        Assert.False(ScenarioA1PassengerActionRules.LeaderReaches("de-truck", false, "de-ht", false));
+
+        // A leader on foot reaches the Passengers of a vehicle that has not moved.
+        Assert.True(ScenarioA1PassengerActionRules.LeaderReaches(null, false, "de-ht", false));
+        Assert.False(ScenarioA1PassengerActionRules.LeaderReaches(null, false, "de-ht", true));
+    }
+
+    [Fact]
+    public void AnOvrAddsItsPassengersShareTripledWithOneLeadershipModifier()
+    {
+        // D7.11: a CE halftrack's 4-6-7 adds half of 4, tripled: 6 FP; a truck's adds a quarter, tripled: 3 FP; a BU halftrack's adds none.
+        OverrunPassengerFacts[] squad = [new("de-s", Definition("attacker-squad"), false)];
+        Assert.Equal(6m, Assert.Single(ScenarioA1PassengerActionRules.OverrunFirepower(squad, false, true, [])).Firepower);
+        Assert.Equal(3m, Assert.Single(ScenarioA1PassengerActionRules.OverrunFirepower(squad, true, false, [])).Firepower);
+        Assert.Equal(0m, Assert.Single(ScenarioA1PassengerActionRules.OverrunFirepower(squad, false, false, [])).Firepower);
+
+        // D7.16: one leadership modifier, the 9-1 Passenger leader's -1 over no Armor Leader, the Armor Leader's -2 over his; none for the leader alone.
+        OverrunPassengerFacts[] led = [.. squad, new("de-l", Definition("attacker-leader-9-1"), false)];
+        Assert.Equal(("leadership:de-l", -1m), (ScenarioA1PassengerActionRules.OverrunLeadership(led, true, null)!.Name, ScenarioA1PassengerActionRules.OverrunLeadership(led, true, null)!.Value));
+        Assert.Equal(-2m, ScenarioA1PassengerActionRules.OverrunLeadership(led, true, -2)!.Value);
+        Assert.Null(ScenarioA1PassengerActionRules.OverrunLeadership([new("de-l", Definition("attacker-leader-9-1"), false)], true, null));
+
+        // Through the Fire package: the SPW 251/1's OVR with the squad aboard has 6 FP more than without, and an OVR recorded with no Passengers is as before.
+        static FireAttack Ovr(IReadOnlyList<FireOverrunPassenger>? passengers) =>
+            new FireAttack("MPh", "phasing", null, At, At, null, null, 0, true, new FireLos(false, 0, true, false), 7, "open-ground",
+                [new FireTarget("ru-s", "defender-squad", At, false, false, false, false, false, false, false)], 3, new FireRolls([3, 4], null, null, null))
+            {
+                FireKind = ScenarioA1FireCalculator.OverrunFire,
+                Overrun = new FireOverrun("de-ht", "attacker-halftrack", At, true, false, false, false, false) { Passengers = passengers },
+            };
+        FireResolution Resolved(FireAttack attack)
+        {
+            var result = ScenarioA1FireCalculator.Resolve(attack, Ordnance.Fire);
+            return result.Reasons is [{ } missing] && missing.StartsWith("asl.a1.fire.roll-missing:checks:", StringComparison.Ordinal)
+                ? ScenarioA1FireCalculator.Resolve(attack with
+                {
+                    Rolls = attack.Rolls! with
+                    {
+                        Checks = new Dictionary<string, IReadOnlyList<int>> { ["ru-s"] = CheckDice }
+                    }
+                }, Ordnance.Fire)
+                : result;
+        }
+
+        var without = Resolved(Ovr(null)).Arithmetic!.TotalFirepower;
+        var carried = Resolved(Ovr([new FireOverrunPassenger("de-s", "attacker-squad"), new FireOverrunPassenger("de-l", "attacker-leader-9-1")])).Arithmetic!;
+        Assert.Equal(without + 6m, carried.TotalFirepower);
+        Assert.Contains(carried.Drm, item => item.Name == "leadership:de-l" && item.Rule == "D7.16");
+    }
+
+    [Fact]
+    public void PassengersInCcAPassedSwAndAnUnloadAfterFire()
+    {
+        // A11.611, D6.62, A11.71: a BU halftrack's Passengers do not attack; a Rider attacks apart; a Mobile vehicle's PRC are not held in Melee.
+        Assert.Equal((ScenarioA1PassengerActionRules.Idle, false), ScenarioA1PassengerActionRules.CloseCombat(FirePrc.Passenger, true, false, true));
+        Assert.Equal((ScenarioA1PassengerActionRules.Attacks, true), ScenarioA1PassengerActionRules.CloseCombat(FirePrc.Passenger, true, true, false));
+        Assert.Equal((ScenarioA1PassengerActionRules.Apart, false), ScenarioA1PassengerActionRules.CloseCombat(FirePrc.Rider, false, false, true));
+
+        // D6.31: a Passenger passes a SW to Infantry in its Location or a Passenger of its vehicle; Infantry passes none to a Passenger.
+        Assert.Null(ScenarioA1PassengerActionRules.TransferBar("de-s", "de-ht", "de-h", null));
+        Assert.Null(ScenarioA1PassengerActionRules.TransferBar("de-s", "de-ht", "de-h", "de-ht"));
+        Assert.Contains("D6.31", ScenarioA1PassengerActionRules.TransferBar("de-s", "de-ht", "de-h", "de-truck"));
+        Assert.Contains("only as it loads", ScenarioA1PassengerActionRules.TransferBar("de-h", null, "de-s", "de-ht"));
+
+        // D6.5, D.3: a Passenger that fired, or added its FP to the OVR, does not unload in that phase.
+        Assert.Null(ScenarioA1PassengerActionRules.UnloadAfterFireBar("de-s", false, false));
+        Assert.Contains("D6.5", ScenarioA1PassengerActionRules.UnloadAfterFireBar("de-s", true, false));
+        Assert.Contains("OVR", ScenarioA1PassengerActionRules.UnloadAfterFireBar("de-s", false, true));
+    }
 }

@@ -3317,8 +3317,12 @@ public static class ScenarioA1FireCalculator
 
             // D3.44, D7.16, D3.45 (pp. 200, 207; pass 55, rulings R55.16, R55.18): a vehicle's Armor Leader modifies the IFT DR of a MA that is a
             // MG, and its OVR DR whatever the weapons; "an Armor Leader cannot modify non-OVR MG/FT (unless MA) attacks", so a BMG or CMG takes none.
-            if (ScenarioA1ArmorLeaders.Modifier(attack.Overrun is { } leading ? leading.ArmorLeadership
-                : attack.VehicleFire is { Weapons: null or { Count: 0 } } mainArmament ? mainArmament.ArmorLeadership : null) is { } armorLeader)
+            // D7.16, D6.65 (pass 65, ruling R65.13): with Passengers adding FP, one leadership modifier, the Armor Leader's or a Passenger leader's.
+            if ((attack.Overrun is { Passengers.Count: > 0 } carrying
+                    ? ScenarioA1PassengerActionRules.OverrunLeadership(OverrunPassengers(carrying),
+                        ScenarioA1PassengerActionRules.OverrunShare(reference.Definitions[carrying.DefinitionId!].Unarmored == true, carrying.CrewExposed == true) > 0, carrying.ArmorLeadership)
+                    : ScenarioA1ArmorLeaders.Modifier(attack.Overrun is { } leading ? leading.ArmorLeadership
+                        : attack.VehicleFire is { Weapons: null or { Count: 0 } } mainArmament ? mainArmament.ArmorLeadership : null)) is { } armorLeader)
             {
                 drm.Add(armorLeader);
             }
@@ -3538,7 +3542,19 @@ public static class ScenarioA1FireCalculator
                 List<FireModifier> multipliers = [new FireModifier("tpbf", 3m, "D7.11"), new FireModifier("bounding-fire", 0.5m, "D7.11"), .. common];
                 yield return new FirerFirepower(overrun.VehicleId! + ":" + weapon, printed, multipliers, Apply(printed, multipliers));
             }
+
+            // D7.11 (pass 65, ruling R65.13): the Passengers the declaration named add their share of their printed FP, tripled; an OVR recorded before
+            // the pass names none.
+            foreach (var passenger in ScenarioA1PassengerActionRules.OverrunFirepower(OverrunPassengers(overrun), definition.Unarmored == true, overrun.CrewExposed == true, common))
+            {
+                yield return passenger;
+            }
         }
+
+        /// <summary>The Passengers an OVR's record names (D7.11; ruling R65.13), with their definitions.</summary>
+        private OverrunPassengerFacts[] OverrunPassengers(FireOverrun overrun) =>
+            [.. (overrun.Passengers ?? []).Where(item => item.UnitId is not null && item.DefinitionId is not null && reference.Definitions.ContainsKey(item.DefinitionId))
+                .Select(item => new OverrunPassengerFacts(item.UnitId!, reference.Definitions[item.DefinitionId!], item.Wounded == true))];
 
         /// <summary>
         /// A vehicle's MA AAMG FP (D1.83: Normal Range eight hexes): doubled at Point Blank Range (A7.21), halved beyond its Normal Range
@@ -3628,6 +3644,7 @@ public static class ScenarioA1FireCalculator
                         multipliers.Add(new FireModifier("pinned-firer", 0.5m, "A7.8"));
                     }
 
+                    multipliers.AddRange(Mounted(firer));
                     var printed = firer.Wounded == true && definition.WoundedFirepower is { } woundedFp ? woundedFp : definition.Firepower!.Value;
                     var fp = multipliers.Aggregate((decimal)printed, (value, item) => value * item.Value);
 
@@ -3674,11 +3691,20 @@ public static class ScenarioA1FireCalculator
                         multipliers.Add(new FireModifier("smc-area-fire", 0.5m, "A9.12"));
                     }
 
+                    multipliers.AddRange(Mounted(firer));
                     var fp = multipliers.Aggregate((decimal)mg.Firepower!.Value, (value, item) => value * item.Value);
                     yield return new FirerFirepower(weapon.EquipmentId!, mg.Firepower.Value, multipliers, fp) { Operator = firer.UnitId };
                 }
             }
         }
+
+        /// <summary>
+        /// A Passenger's Mounted Fire multipliers (D6.1, D6.63; pass 65, ruling R65.10), from the vehicle facts its record carries; none for a firer on foot.
+        /// </summary>
+        private IReadOnlyList<FireModifier> Mounted(FireFirer firer) =>
+            firer.Mounted is { DefinitionId: { } vehicle } mounted
+                ? ScenarioA1PassengerActionRules.Multipliers(reference.Definitions.GetValueOrDefault(vehicle)?.Unarmored == true, mounted.Moved == true, mounted.Motion == true, attack.Phase)
+                : [];
 
         /// <summary>A firer's Normal Range: a wounded hero's is his wounded side's (A15.2).</summary>
         private static int NormalRange(FireDefinition definition, FireFirer firer) =>

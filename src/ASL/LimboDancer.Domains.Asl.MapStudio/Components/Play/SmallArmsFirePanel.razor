@@ -42,7 +42,7 @@
     }
     @foreach (var unit in Firers)
     {
-        <label><input class="fire-firer" type="checkbox" data-unit="@unit" checked="@SelectedFirers.Contains(unit)" @onchange="@(args => OnFirer.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @Say(unit)@(Places.TryGetValue(unit, out var place) ? Say($" in {place}") : "")</label>
+        <label><input class="fire-firer" type="checkbox" data-unit="@unit" checked="@SelectedFirers.Contains(unit)" @onchange="@(args => OnFirer.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @(Aboard.TryGetValue(unit, out var vehicle) ? $"{At(unit)}, aboard {Say(vehicle)}" : Say(unit))@(Places.TryGetValue(unit, out var place) ? Say($" in {place}") : "")</label>
     }
     @foreach (var weapon in Weapons)
     {
@@ -155,6 +155,16 @@
     public Func<string, string>? Words { get; set; }
 
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    /// <summary>The page's words for a unit with its hex first, "[G4]: 4-6-7 squad A" (the hex UI rule).</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string text) => WordsAt?.Invoke(text) ?? Say(text);
+
+    /// <summary>The vehicle each Passenger firer rides (D6.1; pass 65, ruling R65.10), said beside it; empty when nobody aboard may fire.</summary>
+    [Parameter]
+    public IReadOnlyDictionary<string, string> Aboard { get; set; } = new Dictionary<string, string>();
 
     /// <summary>A MG, FT, or ATR a chosen firer possesses, and its holder; or a vehicle's BMG or CMG (D3.5; pass 50), with the words it is listed under.</summary>
     public sealed record Weapon(string Id, string Holder, string? Bar = null, bool Ft = false, string? Label = null);

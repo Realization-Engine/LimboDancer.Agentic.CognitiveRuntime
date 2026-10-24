@@ -21,9 +21,17 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
-        // D6.1 (ruling R26.2): a broken Passenger may stay aboard, free of rout requirements.
+        // D6.1 (ruling R26.2): a broken Passenger may stay aboard, free of rout requirements; pass 65 (ruling R65.11): unless its vehicle's inherent crew
+        // is gone, when it must rout beneath the vehicle. The index answers who rides (ruling R65.25).
+        var aboard = PassengerRout(state, unit);
+        if (aboard is { } riding)
+        {
+            return unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Melee) && !Is(unit, Conditions.Captured) && riding.Verdict == ScenarioA1RoutCalculator.MustRoutBeneath
+                ? ScenarioA1RoutCalculator.RoutBeneathMustText(riding.Vehicle) : null;
+        }
+
         if (!ScenarioA1RoutCalculator.MustRoutCandidate(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken), Is(unit, Conditions.Melee),
-                Is(unit, Conditions.Captured), state.Aboard(unit.Id) is not null)
+                Is(unit, Conditions.Captured), false)
             || state.Location(unit.Id)?.Location is not { } at)
         {
             return null;
@@ -51,8 +59,11 @@ public sealed partial class GamePlanner
 
     /// <summary>Whether a broken unit may rout (A10.5): it must, or it is under DM.</summary>
     public bool MayRout(GameState state, UnitInstance unit) =>
-        ScenarioA1RoutCalculator.MayRout(MustRout(state, unit), unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken), Is(unit, Conditions.DesperationMorale),
-            Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, Conditions.Disrupted));
+        // D6.1 (pass 65, ruling R65.11): a broken Passenger of a Stopped vehicle may rout beneath it.
+        PassengerRout(state, unit) is { } aboard
+            ? aboard.Verdict != ScenarioA1RoutCalculator.StaysAboard && unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Melee) && !Is(unit, Conditions.Captured)
+            : ScenarioA1RoutCalculator.MayRout(MustRout(state, unit), unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken), Is(unit, Conditions.DesperationMorale),
+                Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, Conditions.Disrupted));
 
     /// <summary>
     /// A20.21 (pass 35, task 35.17): why a broken unit surrenders instead of routing, and to whom, or null: by day, not Fanatic nor under No Quarter,
@@ -61,6 +72,12 @@ public sealed partial class GamePlanner
     /// </summary>
     private (string Cause, IReadOnlyList<string> Captors)? RoutSurrender(GameState state, UnitInstance unit, BoardLocation start)
     {
+        // Pass 65 (ruling R65.11): a Passenger routs beneath its vehicle and is not held to A20.21's surrender; the capture of Passengers is pass 75's.
+        if (VehicleOf(state, unit.Id) is not null)
+        {
+            return null;
+        }
+
         // The Play Step Plan, task 2: kept for a state whose surrender window is closed (V6). The window's own read is this one, for each broken
         // unit, so inside it nothing is kept.
         var memo = MemoOf(state);
@@ -427,7 +444,9 @@ public sealed partial class GamePlanner
 
     /// <summary>Whether a broken unit has any legal rout step (A10.5): a step or a Low Crawl the rules allow.</summary>
     private bool CanRout(GameState state, UnitInstance unit) =>
-        state.Location(unit.Id)?.Location is { } at && ScenarioA1RoutCalculator.CanRout(RoutReach(state, unit, at, SeenBy(state, unit.Side, at), 0, RoutHalfMf(unit)).Count);
+        // D6.1 (pass 65, ruling R65.11): a Passenger's rout is beneath its vehicle, always open to it.
+        PassengerRout(state, unit) is { } aboard ? aboard.Verdict != ScenarioA1RoutCalculator.StaysAboard
+            : state.Location(unit.Id)?.Location is { } at && ScenarioA1RoutCalculator.CanRout(RoutReach(state, unit, at, SeenBy(state, unit.Side, at), 0, RoutHalfMf(unit)).Count);
 
     /// <summary>Whether a broken unit ADJACENT to its captors can get away from every Known unbroken armed enemy unit only by Interdiction or Low Crawl (A20.21).</summary>
     private bool TrappedByInterdiction(GameState state, UnitInstance unit, BoardLocation start)
@@ -512,6 +531,18 @@ public sealed partial class GamePlanner
         if (unit.Side != attacker && AttackerRoutOwed(state) is { } first)
         {
             return Refused(scope, label, expected, ScenarioA1RoutCalculator.AttackerFirstText(first.Id));
+        }
+
+        // D6.1, D5.311 (pass 65, ruling R65.11): a broken Passenger routs beneath its vehicle with all its MF, or names no route at all.
+        if (PassengerRout(state, unit) is { } aboard)
+        {
+            return Flag(arguments, "beneath") ? PlanRoutBeneath(scope, existing, attemptId, expected, label, state, unit, start, aboard, route.Count, lowCrawl)
+                : Refused(scope, label, expected, ScenarioA1RoutCalculator.PassengerRouteText(unit.Id, aboard.Vehicle));
+        }
+
+        if (Flag(arguments, "beneath"))
+        {
+            return Refused(scope, label, expected, ScenarioA1RoutCalculator.RoutBeneathBar(unit.Id, null, ScenarioA1RoutCalculator.StaysAboard, 0, false)!);
         }
 
         // E1.54 (backlog pass 16, ruling R16.6): at night a broken unit always Low Crawls, and surrenders only in CC.

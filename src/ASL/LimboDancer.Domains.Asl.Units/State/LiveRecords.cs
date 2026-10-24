@@ -275,7 +275,10 @@ public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation A
         get; init;
     }
 
-    /// <summary>For a load or an unload (D6.4, D6.5; ruling R26.2): the Infantry boarding or the Passengers disembarking.</summary>
+    /// <summary>
+    /// For a load or an unload (D6.4, D6.5; ruling R26.2): the Infantry boarding or the Passengers disembarking. For an OVR's declaration (D7.11; pass 65,
+    /// ruling R65.13): the Passengers adding their FP to it; null on every OVR declared before the pass and by a vehicle carrying none.
+    /// </summary>
     public IReadOnlyList<string>? Units
     {
         get; init;

@@ -162,7 +162,15 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, reason!);
         }
 
-        attack = WithSeen(state, attack);
+        // D6.1, D6.62 to D6.65 (pass 65, rulings R65.10, R65.12): a Passenger fires from its vehicle's Location as Mounted Fire, in a group and under a
+        // leader D6.64 allows; Rules decides.
+        var (withMounted, mountedBar) = WithMounted(state, attack);
+        if (withMounted is null)
+        {
+            return Refused(scope, label, expected, mountedBar!);
+        }
+
+        attack = WithSeen(state, withMounted);
 
         // D1.81, D1.82, D3.52, C5.11, C5.13 (pass 50): the hexspines each of a vehicle's MGs must turn its CA to cover the target.
         if (attack.VehicleFire is { Weapons.Count: > 0 })
@@ -392,7 +400,13 @@ public sealed partial class GamePlanner
                     return (null, why);
                 }
 
-                part = WithSeen(state, part);
+                var (mountedPart, mountedWhy) = WithMounted(state, part);
+                if (mountedPart is null)
+                {
+                    return (null, mountedWhy);
+                }
+
+                part = WithSeen(state, mountedPart);
                 var (read, readWhy) = FireMapFacts(state, part with
                 {
                     SnapShot = attack.SnapShot
@@ -444,7 +458,13 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, sprayReason!);
             }
 
-            sprayAttack = WithSeen(state, sprayAttack);
+            var (mountedSpray, mountedSprayReason) = WithMounted(state, sprayAttack);
+            if (mountedSpray is null)
+            {
+                return Refused(scope, label, expected, mountedSprayReason!);
+            }
+
+            sprayAttack = WithSeen(state, mountedSpray);
 
             var (sprayMap, sprayMapReason) = FireMapFacts(state, sprayAttack, second!, existing);
             if (sprayMap is null)
@@ -557,6 +577,7 @@ public sealed partial class GamePlanner
                     [.. facts.Firers!.Where(item => item.UsesInherentFp == false).Select(item => item.UnitId!)],
                     facts.Firers!.Where(item => item.Partner is not null).ToDictionary(item => item.UnitId!, item => item.Partner!),
                     facts.Firers!.FirstOrDefault(item => item.Mol == true)?.UnitId).Attack;
+                reread = reread is null ? null : WithMounted(after, reread).Attack;
                 if (reread is not null && FireMapFacts(after, WithSeen(after, reread), target, [.. existing, .. events]).Facts is { } rereadMap)
                 {
                     AddFireEvents(scope, attemptId, expected, actor, after, HeatOfBattleFacts(after, rereadMap) with
@@ -566,6 +587,7 @@ public sealed partial class GamePlanner
                     }, targetSide, step, events, draw);
                 }
 
+                AddMountedPrepFire(scope, attemptId, expected, state, facts, events);
                 AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
                 return events;
             }
@@ -580,6 +602,7 @@ public sealed partial class GamePlanner
             };
             AddFireEvents(scope, attemptId, expected, actor, state, facts, targetSide, step, events, draw, followUps: followUps);
             AddFireFollowUps(scope, attemptId, expected, actor, existing, state, targetSide, step, events, draw, followUps);
+            AddMountedPrepFire(scope, attemptId, expected, state, facts, events);
             AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
             return events;
         }
@@ -590,6 +613,7 @@ public sealed partial class GamePlanner
                 + (facts.FireKind is { } kind ? $" ({kind})" : string.Empty)
                 + (directing.Length > 0 ? $", directed by {string.Join(", ", directing)}" : string.Empty)
                 + $"; range {facts.Range}, {facts.TargetTerrain}, Hindrance {facts.Los!.HindranceDrm}"
+                + MountedPreview(facts)
                 + (spray is not null ? $"; Spraying Fire at {spray.TargetLocationId} too, on the same DR (A9.5)" : string.Empty)
                 + (lane is { } declared ? $"; a Fire Lane of {declared.Weapon} to {declared.Entries[^1].Location} (A9.22)" : string.Empty)
                 + (blockedFirst is not null ? "; the firers whose LOS is blocked fire first and drop out (A6.11, A7.52)" : string.Empty)

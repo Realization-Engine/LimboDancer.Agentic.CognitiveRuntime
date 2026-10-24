@@ -389,7 +389,7 @@ public sealed partial class GamePlanner
             case "esb":
                 return PlanEsb(scope, arguments, existing, attemptId, expected, label, actor, state, vehicle, moving, afterAll);
             case VehicleStepped.Overrun:
-                return PlanDeclareOverrun(scope, existing, attemptId, expected, label, actor, state, vehicle, at.Location, moving, step);
+                return PlanDeclareOverrun(scope, existing, attemptId, expected, label, actor, state, vehicle, at.Location, moving, step, UnitIds(arguments));
             case VehicleStepped.Load:
                 return PlanLoad(scope, arguments, existing, attemptId, expected, label, actor, state, vehicle, at.Location);
             case VehicleStepped.Unload:
@@ -426,6 +426,7 @@ public sealed partial class GamePlanner
         VehicleEntry? entry = null;
         (int? Drm, IReadOnlyList<string> Causes) turnBog = (null, []);
         var overrun = false;
+        IReadOnlyList<string>? overrunPassengers = null;
         var minimumMove = false;
         string? exitEdge = null;
         switch (kind)
@@ -507,11 +508,14 @@ public sealed partial class GamePlanner
                     }
 
                     cost += OverrunHalfMp(vehicle);
+
+                    // D7.11, D6.5 (pass 65, ruling R65.13): the Passengers who add their FP are named with the declaration.
+                    overrunPassengers = OverrunPassengerIds(state, vehicle, UnitIds(arguments));
                 }
 
                 summary = $"{id} enters {to}{(entry.Bypass ? $" in VBM, straddling the hexside with {entry.Straddling}" : string.Empty)}{(reverse ? " in Reverse" : string.Empty)} for {Mp(cost)} MP"
                     + (entry.All ? " (ALL, B13.41)" : minimumMove ? " (Minimum Move, D2.15)" : string.Empty)
-                    + (overrun ? $", with an OVR ({Mp(OverrunHalfMp(vehicle))} MP, D7.1)" : string.Empty)
+                    + (overrun ? $", with an OVR ({Mp(OverrunHalfMp(vehicle))} MP, D7.1)" + OverrunPassengerPreview(overrunPassengers) : string.Empty)
                     + (entry.BogDrm is { } entryBog ? $"; Bog DR at {entryBog:+0;-0;0} (D8.21)" : string.Empty);
                 break;
             case VehicleStepped.Stop:
@@ -616,6 +620,7 @@ public sealed partial class GamePlanner
                 Reverse = kind == VehicleStepped.Enter && reverse,
                 Straddling = kind == VehicleStepped.Enter ? straddling : null,
                 Overrunning = overrun,
+                Units = overrun ? overrunPassengers : null,
                 MinimumMove = minimumMove,
                 All = entry?.All == true,
                 Turret = stepKind == kind ? turret : null,
@@ -634,6 +639,7 @@ public sealed partial class GamePlanner
                 {
                     Straddling = stuck ? null : straddling,
                     Overrunning = !stuck && overrun,
+                    Units = !stuck && overrun ? overrunPassengers : null,
                     All = !stuck && entry?.All == true,
                 }, null, null));
                 events.Add(Event(scope, attemptId, 3, expected, "vehicle-check-rolled", new VehicleCheckRolled(id, VehicleCheckRolled.Bog, rollId, hedgeBog, result), null, null,

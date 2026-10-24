@@ -935,6 +935,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
                     // Pass 45 (ruling R45.4): a firer's berserk state is a fact of attacks planned from the pass on; an older record has none.
                     Berserk = recorded.CoweringMarksAndWeaponResidual == true ? fact.Berserk : record.Berserk,
+
+                    // Pass 65 (ruling R65.10): a Passenger's Mounted Fire is the planner's read of its vehicle, recorded with the attack.
+                    Mounted = record.Mounted,
                 })],
             // A7.7 (ruling R12.11): the Encirclement an attack completes is read before the attack, and recorded with it.
             Targets = recorded.Targets is null || expected.Targets is null ? expected.Targets
@@ -985,6 +988,14 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
             // Pass 65 (ruling R65.5): each vehicle's PRC as the record carries them.
             Vehicles = LiveFire.WithRecordedPrc(expected.Vehicles, recorded.Vehicles),
+
+            // Pass 65 (ruling R65.13): the Passengers an OVR's declaration named, as the record carries them; an older OVR names none.
+            Overrun = expected.Overrun is { } overrunFacts && recorded.Overrun is { } overrunRecord
+                ? overrunFacts with
+                {
+                    Passengers = overrunRecord.Passengers
+                }
+                : expected.Overrun,
 
             // Backlog pass 10 (rulings R10.4 to R10.8, R10.13): the levels, the wall or hedge TEM with Wall Advantage, Height Advantage, and
             // Hazardous Movement are map reads recorded with the attack; a Snap Shot is the DEFENDER's declaration.

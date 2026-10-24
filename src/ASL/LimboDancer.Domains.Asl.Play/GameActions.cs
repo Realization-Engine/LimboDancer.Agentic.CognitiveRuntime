@@ -45,17 +45,19 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor Rout = Descriptor("asl.game.rout", "Rout",
-        "In the RtPh, rout a broken unit that must or may rout along a route of ADJACENT Locations to the nearest woods or building Location, within six MF (three for a wounded SMC), or by Low Crawl one Location; entering Open Ground in the LOS and Normal Range of an unbroken enemy unit is Interdicted by a NMC (A10.5 to A10.533; ruling R13.3).",
+        "In the RtPh, rout a broken unit that must or may rout along a route of ADJACENT Locations to the nearest woods or building Location, within six MF (three for a wounded SMC), or by Low Crawl one Location; entering Open Ground in the LOS and Normal Range of an unbroken enemy unit is Interdicted by a NMC (A10.5 to A10.533; ruling R13.3). A broken Passenger names no route and routs beneath its Stopped vehicle with all its MF (beneath; D6.1, pass 65).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
-          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "route"],
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId"],
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "unitId": { "type": "string" },
-            "route": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-            "lowCrawl": { "type": "boolean" }
+            "route": { "type": "array", "items": { "type": "string" } },
+            "lowCrawl": { "type": "boolean" },
+            "keep": { "type": "array", "items": { "type": "string" } },
+            "beneath": { "type": "boolean" }
           }
         }
         """);

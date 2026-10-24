@@ -521,7 +521,7 @@ else if (state is not null)
                         Load="@RoutLoadText" Loads="@RoutLoads" Keep="@string.Join(",", RoutKept)" OnKeep="@(keep => routKeep = keep)"
                         OnUseRoute="@(way => (routUnit, routRoute, routKeep, routLowCrawl) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty, routLowCrawl && !way.Route.Contains(',')))"
                         OnUnit="@(id => (routUnit, routKeep, routRoute) = (id, string.Empty, id == routUnit ? routRoute : string.Empty))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout"
-                        OnRoutGroup="@ProposeRoutGroup" Busy="@busy" />
+                        OnRoutGroup="@ProposeRoutGroup" OnBeneath="@ProposeRoutBeneath" Busy="@busy" />
                 }
                 @* The Play streamlining plan, S7 (ruling R-PS.3): the panel and each of its actions only when the phase allows it to the view; in the RtPh
                    the Rout form chooses what a broken unit keeps. *@
@@ -991,7 +991,7 @@ else if (state is not null)
                     var ofTarget = FireRangeOfTarget();
                     <SmallArmsFirePanel Side="@firing" Phase="@state.Phase" PhaseLabel="@Games.PhaseLabel(state.Phase)" Locations="@fireLocations" From="@fireFrom"
                         TargetNotes="@byRange.Notes" TargetsOut="@byRange.Out" RangeSummary="@ofTarget.Summary" RangeRows="@ofTarget.Rows" OnShowRange="@ShowFireRange"
-                        Also="@fireAlso" AlsoChoices="@FireAlsoChoices(firing)" OnAlso="@(pick => ToggleFireAlso(pick.Id, pick.On))" Places="@FirerPlaces(firing)" AloneCandidates="@FireAloneCandidates(firing)"
+                        Also="@fireAlso" AlsoChoices="@FireAlsoChoices(firing)" OnAlso="@(pick => ToggleFireAlso(pick.Id, pick.On))" Places="@FirerPlaces(firing)" Aboard="@FireAboard(firing)" AloneCandidates="@FireAloneCandidates(firing)"
                         Firers="@FirerChoices(firing)" SelectedFirers="@fireFirers" Weapons="@([.. FireWeapons.Select(weapon => new SmallArmsFirePanel.Weapon(weapon.Id, weapon.Holding!.Holder, LiveFire.WeaponBar(weapon), weapon.Kind == "asl:ft")), .. FireVehicleMgs])"
                         SelectedWeapons="@fireWeapons" Alone="@fireAlone" Leaders="@([.. FireLeaders(firing).Select(leader => leader.Id)])" Director="@fireDirector"
                         MolAllowed='@state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal)' Mol="@fireMol" Targets="@byRange.Targets" Target="@fireTarget"
@@ -4960,10 +4960,15 @@ else if (state is not null)
 
     // A side's view with no replayed state shows nothing rather than the whole game (UI review, pass 23).
     /// <summary>The units of a list the view may see: every action's picker passes through it (ruling R23.1; Studio demo, pass 23).</summary>
-    private IEnumerable<UnitInstance> SeenOnly(IEnumerable<UnitInstance> units)
+    private IEnumerable<UnitInstance> SeenOnly(IEnumerable<UnitInstance> units, bool aboardToo = false)
     {
-        // Ruling R26.2: a Passenger acts only with its vehicle, so no action list offers it.
-        units = units.Where(unit => state?.Aboard(unit.Id) is null);
+        // Ruling R26.2: a Passenger acts only with its vehicle, so no action list offers it, but the Rout panel (pass 65, ruling R65.11: a
+        // broken Passenger routs beneath its vehicle). Who rides what is read from the planner's index once per state (ruling R65.25).
+        if (!aboardToo && state is { } current)
+        {
+            units = units.Where(unit => Live.Planner.VehicleRidden(current, unit.Id) is null);
+        }
+
         if (Viewer.IsAdjudicator)
         {
             return units;
@@ -5350,7 +5355,11 @@ else if (state is not null)
             // The Play streamlining plan, S4: a leader ticked as a firer is not offered as the director too, which the attack would refuse as a unit
             // named twice.
             && !fireFirers.Contains(unit.Id)
-            && state.Aboard(unit.Id) is null && fireFirers.Any(id => state.Location(id)?.Location is { } at && state.Location(unit.Id)?.Location == at))
+            // Pass 65 (ruling R65.12; D6.64): a leader aboard directs the Passengers of his own vehicle, so he is offered when every firer rides it; the
+            // planner's FG bar decides the rest. Who rides what comes from the planner's index (ruling R65.25).
+            && (Live.Planner.VehicleRidden(state, unit.Id) is { } ridden
+                ? fireFirers.Count > 0 && fireFirers.All(id => Live.Planner.VehicleRidden(state, id) == ridden)
+                : fireFirers.Any(id => state.Location(id)?.Location is { } at && state.Location(unit.Id)?.Location == at)))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
     /// <summary>The MGs the chosen firers possess (A9.1): each may add its FP to the attack or, with its holder's choice, fire alone.</summary>
@@ -5362,6 +5371,11 @@ else if (state is not null)
 
     /// <summary>The target: any Location typed in, or else the one chosen from the Locations the firing side knows to hold an enemy.</summary>
     private string FireTarget => fireFreeTarget.Trim() is { Length: > 0 } typed ? typed : fireTarget;
+
+    /// <summary>The vehicle each Passenger of the chosen group rides (D6.1; pass 65, ruling R65.10), said beside it in the firer list.</summary>
+    private IReadOnlyDictionary<string, string> FireAboard(string side) => state is null ? new Dictionary<string, string>()
+        : FireGroupAt(side).Select(unit => (unit.Id, Vehicle: Live.Planner.VehicleRidden(state, unit.Id))).Where(item => item.Vehicle is not null)
+            .ToDictionary(item => item.Id, item => item.Vehicle!, StringComparer.Ordinal);
 
     /// <summary>The units of the chosen group that may fire: not a leader unless he possesses a MG (plan C13).</summary>
     private IReadOnlyList<string> FirerChoices(string side) => [.. FireGroupAt(side).Where(unit => (unit.Kind != "asl:leader" || PossessesMg(unit)) && MayFire(unit)).Select(unit => unit.Id)];
@@ -6250,7 +6264,7 @@ else if (state is not null)
 
     private IEnumerable<UnitInstance> FireGroupAt(string side) => state is null || fireFrom.Length == 0 ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id)?.Location.ToString() is { } at
-            && (at == fireFrom || fireAlso.Contains(at)) && state.Aboard(unit.Id) is null)
+            && (at == fireFrom || fireAlso.Contains(at)))
             .OrderBy(unit => state.Location(unit.Id)!.Location.ToString() == fireFrom ? 0 : 1 + fireAlso.IndexOf(state.Location(unit.Id)!.Location.ToString())).ThenBy(unit => unit.Id, StringComparer.Ordinal);
 
     /// <summary>
@@ -7049,6 +7063,12 @@ else if (state is not null)
         Refresh();
     }
 
+    /// <summary>A broken Passenger routs beneath its vehicle (D6.1; pass 65, ruling R65.11): no route, all its MF.</summary>
+    private Task ProposeRoutBeneath(string unitId) => Propose(GameActions.Rout, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("rout"), expectedRevision = (long)history!.Events.Count, unitId, beneath = true,
+    }));
+
     private Task ProposeRout() => Propose(GameActions.Rout, JsonSerializer.SerializeToElement(new
     {
         gameId, attemptId = Attempt("rout"), expectedRevision = (long)history!.Events.Count, unitId = routUnit, route = RouteLocations(routRoute), lowCrawl = routLowCrawl,
@@ -7136,7 +7156,7 @@ else if (state is not null)
         var choosable = new List<PlayChoice>();
         if (state is not null)
         {
-            foreach (var unit in ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True))
+            foreach (var unit in SeenOnly(VisibleUnits, aboardToo: true).Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True))
             {
                 if (!Live.Planner.MayRout(state, unit))
                 {
@@ -7152,10 +7172,19 @@ else if (state is not null)
                 }
 
                 var why = Live.Planner.MustRout(state, unit);
-                var owes = unit.Id + (why is not null ? $" must rout: {why}" : " may rout, since it is under DM");
+                // Pass 65 (ruling R65.11; D6.1): a broken Passenger stays aboard or routs beneath its vehicle, with no route to choose.
+                var vehicle = Live.Planner.VehicleRidden(state, unit.Id);
+                var owes = unit.Id + (why is not null ? $" must rout: {why}"
+                    : vehicle is not null ? $" may rout beneath {vehicle}, spending all its MF, or stay aboard (D6.1)" : " may rout, since it is under DM");
                 if (routed)
                 {
                     obligations.Add(new RoutActionPanel.Obligation(unit.Id, owes + ". It has routed."));
+                    continue;
+                }
+
+                if (vehicle is not null)
+                {
+                    obligations.Add(new RoutActionPanel.Obligation(unit.Id, owes, Beneath: vehicle));
                     continue;
                 }
 

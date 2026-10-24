@@ -28,6 +28,40 @@ public static class ScenarioA1RoutCalculator
     /// <summary>D6.1 (ruling R26.2): a broken Passenger may stay aboard, free of rout requirements; a unit in Melee or captured need not rout.</summary>
     public static bool MustRoutCandidate(bool active, bool broken, bool melee, bool captured, bool aboard) => active && broken && !melee && !captured && !aboard;
 
+    /// <summary>A broken Passenger stays aboard, free of rout requirements (D6.1).</summary>
+    public const string StaysAboard = "stays";
+
+    /// <summary>A broken Passenger may rout beneath its Stopped vehicle (D6.1, D5.311).</summary>
+    public const string MayRoutBeneath = "may";
+
+    /// <summary>A broken Passenger must rout beneath its vehicle: its inherent crew is gone (D6.1).</summary>
+    public const string MustRoutBeneath = "must";
+
+    /// <summary>
+    /// D6.1 (p. 204; pass 65, ruling R65.11): a broken Passenger "may remain in their vehicle even while broken or may rout beneath a Stopped vehicle per
+    /// 5.311, unless the inherent crew (if any) is eliminated, breaks, or Abandons the vehicle, in which case any broken Passengers must rout beneath the
+    /// vehicle". A rout beneath spends all its initial RtPh MF. A vehicle with no inherent crew (none is eliminated, broken, or gone) gives no must.
+    /// </summary>
+    public static string RoutBeneath(bool broken, bool stopped, bool crewEliminated, bool crewBroken, bool abandoned) =>
+        !broken ? StaysAboard
+            : crewEliminated || crewBroken || abandoned ? MustRoutBeneath
+            : stopped ? MayRoutBeneath
+            : StaysAboard;
+
+    /// <summary>The reason a broken Passenger must rout beneath its vehicle (D6.1), as the Rout panel and the gate say it.</summary>
+    public static string RoutBeneathMustText(string vehicleId) => $"its vehicle {vehicleId} has lost its inherent crew, so it must rout beneath it (D6.1)";
+
+    /// <summary>Why a rout beneath a vehicle is refused (D6.1; ruling R65.11), or null when it is allowed.</summary>
+    public static string? RoutBeneathBar(string unitId, string? vehicleId, string verdict, int routeSteps, bool lowCrawl) =>
+        vehicleId is null ? $"play.rout-beneath: {unitId} is not a Passenger; only a Passenger routs beneath its vehicle (D6.1)"
+            : verdict == StaysAboard ? $"play.rout-beneath: {unitId} may rout beneath {vehicleId} only when broken and the vehicle is Stopped (D6.1, D5.311); it stays aboard"
+            : routeSteps > 0 || lowCrawl ? $"play.rout-beneath: {unitId} routs beneath {vehicleId} with all its MF and goes no further this RtPh (D6.1, D5.311)"
+            : null;
+
+    /// <summary>Why a broken Passenger names a route instead of routing beneath its vehicle (D6.1; ruling R65.11).</summary>
+    public static string PassengerRouteText(string unitId, string vehicleId) =>
+        $"play.rout-beneath: {unitId} rides {vehicleId}; a broken Passenger stays aboard or routs beneath the vehicle, spending all its MF (D6.1, D5.311)";
+
     /// <summary>Why a broken unit must rout (A10.5; ruling R13.3), or null when it need not.</summary>
     public static string? MustRout(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int at, int? scenarioMonth) =>
         NearUnbrokenArmedEnemy(reader, enemies, at) is { } enemy ? $"{enemy} is a Known unbroken armed enemy unit ADJACENT to it or in its Location"

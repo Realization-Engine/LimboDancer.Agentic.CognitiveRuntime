@@ -291,6 +291,15 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.unload: {stranger} is not a Passenger of {id} (D6.5)");
         }
 
+        // D6.5, D.3 (pass 65, ruling R65.10): a Passenger that fired, or added its FP to the OVR, does not unload in that phase.
+        foreach (var unit in aboard.Where(unit => ids.Contains(unit.Id)))
+        {
+            if (ScenarioA1PassengerActionRules.UnloadAfterFireBar(unit.Id, LiveFire.Fired(unit), OverranThisPhase(existing, unit.Id)) is { } firedBar)
+            {
+                return Refused(scope, label, expected, firedBar);
+            }
+        }
+
         var printed = PrintedHalfMp(vehicle);
         var (spent, allotment) = HalfMp(vehicle);
         if (ScenarioA1PassengerCalculator.UnloadTooLate(spent, printed))
@@ -328,8 +337,8 @@ public sealed partial class GamePlanner
             : null;
 
     /// <summary>
-    /// Why an action names a unit riding a vehicle (ruling R26.2): Passengers only ride, and unload (D6.5); their fire, rout, and Close Combat are plan
-    /// pass 34. Null when no unit named is aboard.
+    /// Why an action names a unit riding a vehicle (ruling R26.2): Passengers ride, unload (D6.5), and, since pass 65, fire, pass a SW, and rout beneath
+    /// their vehicle (rulings R65.10, R65.11); their other actions are not built. Null when no unit named is aboard.
     /// </summary>
     private string? AboardBar(GameState state, JsonElement arguments)
     {
@@ -339,7 +348,7 @@ public sealed partial class GamePlanner
         {
             if (index.VehicleOf(text) is { } vehicle && state.Find(text) is UnitInstance { Status: InstanceStatus.Active } unit)
             {
-                return $"play.aboard: {unit.Id} rides {vehicle} as a Passenger; until it unloads (D6.5) it acts only with its vehicle, since Passengers' fire, rout, and Close Combat are not built (ruling R26.2)";
+                return $"play.aboard: {unit.Id} rides {vehicle} as a Passenger; until it unloads (D6.5) it fires, passes a SW, routs beneath, and otherwise acts only with its vehicle, since Passengers' other actions are not built (ruling R26.2)";
             }
         }
 

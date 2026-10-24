@@ -363,6 +363,8 @@ The referee agent of the documents step checks the rows against the chart, as at
 
 **F26. What 2b left (ruling made at the task, 2026-10-24).** **R65.26:** D5.311 (an OT AFV's crew under Air Bursts) and A7.308 (Random Selection of the vehicles beyond the KIA#, with ruling R25.3's one-vehicle refusal lifted for the IFT) move to a small increment 2k after 2j, or to the backlog if the session's end comes first.
 
+**F27. A Passenger's Prep Fire and its vehicle (ruling made at task 2c, 2026-10-24).** D.3 (p. 192) bars a vehicle whose PRC Prep Fired from moving in the MPh and from firing in the MPh and the AFPh, but not from its own fire in that PFPh. The build marks the vehicle Prep Fired, the path the projector, the movement planner, and the fire bars already read, which also bars that PFPh fire. **R65.27:** keep the marker; a vehicle fires its own weapons before its Passengers in the PFPh; D.3's exact reading goes to the backlog.
+
 **F25. Testing** (the standing rules, section 2, the user's rule of 2026-10-23).
 - While a task is built, the Studio is its test, in a small game made for it (`games_2x.py`).
 - A task's new Rules and Play tests are run by method, and only those.
