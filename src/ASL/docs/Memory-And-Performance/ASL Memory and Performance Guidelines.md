@@ -189,6 +189,7 @@ The SVG work merged in PR 19, footprint and stable placement identifiers in PR 2
 | Heavy Play step allocation, revisions 621 to 622 | About 315 MB before Play Step; 101 MB after it | 68 MB after A3b |
 | Median Rout Phase board lookups and location resolutions, A3 probe | 27,990 lookups; 34,472 resolutions | 1 lookup; 180 resolutions |
 | Gambit placed-map Rout steps, A3 measurements | 22.5 to 49.5 s | About 0.05 to 0.7 s |
+| Berserk charge step, `dl-tractor-works-02` revision 1316, Berserk Charge Plan | 12.8 s; 5 searches of 2.2 s; about 1.4 GB | 0.37 s; 1 search of 0.29 s; about 102 MB |
 
 These are reference measurements, not universal timing limits. Workloads, instrumentation, and machine load differ; do not multiply their percentages into a cumulative speedup. The heavy-step sequence of approximately 315 to 101 to 68 MB does provide a recorded allocation progression for that step.
 
@@ -207,7 +208,7 @@ Use `GamePlanner`'s existing `MemoOf(state)` and `PlayStepMemo` for repeated der
 - Keep cached results immutable to callers. A retained collection must not become another search's mutable working storage.
 - Keep fills safe across circuits. The shared planner permits concurrent fills to compute equivalent answers more than once during a race. `GetOrAdd` is not an exactly-once guarantee; factories must have no externally visible side effects. Add stricter coordination only for correctness or measured contention.
 
-Avoid repeated full-state scans inside per-unit or per-neighbor loops. Reuse enemy lists, encirclement answers, rout advice, and map reads. Add another index only after its benefit justifies construction and retention cost; the general state-object index remains deferred.
+Avoid repeated full-state scans inside per-unit or per-neighbor loops. Reuse enemy lists, encirclement answers, rout advice, and map reads. Add another index only after its benefit justifies construction and retention cost. The state-object index (C2) is built in the memo (`ObjectIndex`, read through `GamePlanner.ObjectsAt` and `LocationOf`) and used by the berserk charge search and `BypassStep` only ([Berserk Charge Plan](<ASL Map Studio Berserk Charge Plan.md>), ruling C1). Extend its use only with a measurement; backlog 70 names the hand-over's victory and view reads as the next candidates.
 
 ## Use the state map context
 
@@ -228,6 +229,7 @@ Every new cache must state its owner, lifetime or bound, complete key, invalidat
 | Existing cache or retained value | Contract to preserve |
 |---|---|
 | Planner memo | State object lifetime; side and unit distinctions in the relevant stores |
+| Charge answers and the object index (Berserk Charge Plan) | State object lifetime; a charge kept only for the state's own unit objects and its own move, keyed by movers, start, and move; the index built from the state's own `Location` and `Aboard`, read only |
 | Page unit rows | Reuse for the same state and viewer; recompute when either changes |
 | Unit fragment cache | Shared through `UnitLibrary`; four-million-character bound including keys and markup; least-recently-used eviction; no rendering while holding its lock |
 | Fragment key | Complete drawing inputs, renderer identity, and lead; warnings returned on hits and misses |

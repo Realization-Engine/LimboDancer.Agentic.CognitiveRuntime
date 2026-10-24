@@ -8,6 +8,10 @@
     <EmbeddedResource Include="..\..\..\docs\ASL\SourceRegistry\asl-scenario-a1.pass17-pdf-comparison.json" LogicalName="SourceRegistry.asl-scenario-a1.pass17-pdf-comparison.json" WithCulture="false" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The Berserk Charge Plan, ruling R1: the planner's search counts are read by its own tests only. -->
+    <InternalsVisibleTo Include="LimboDancer.Domains.Asl.Play.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Units\LimboDancer.Domains.Asl.Units.csproj" />
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Rules\LimboDancer.Domains.Asl.Rules.csproj" />
     <ProjectReference Include="..\LimboDancer.Dice\LimboDancer.Dice.csproj" />

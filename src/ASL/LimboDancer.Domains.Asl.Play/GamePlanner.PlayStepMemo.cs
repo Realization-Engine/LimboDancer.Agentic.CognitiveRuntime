@@ -75,8 +75,25 @@ public sealed partial class GamePlanner
         /// </summary>
         public ConcurrentDictionary<(BoardLocation At, BoardLocation? From), bool> DefenderMayFire { get; } = new();
 
+        /// <summary>
+        /// A berserk stack's charge (the Berserk Charge Plan, T1): the search's answer by stack, start, and whether the stack is in the state's move.
+        /// It reads the state only (a Known enemy unit is read from the unit's own conditions, never from a view), so one answer serves every view.
+        /// Kept only for the state's own unit objects and its own move (<see cref="ChargeKeyOf"/>). The kept answer is read, never written.
+        /// </summary>
+        public ConcurrentDictionary<ChargeKey, (IReadOnlyDictionary<BoardLocation, ChargeStep> Steps, BoardLocation? Target, string? Undecided)> Charges { get; } = new();
+
         /// <summary>The map edges a Location lies on (the Play streamlining plan, S7): the map's geometry, read once a state and Location.</summary>
         public ConcurrentDictionary<BoardLocation, string[]> ExitEdges { get; } = new();
+
+        // The index of the state's objects (the Berserk Charge Plan, T2), built at its first use; two circuits may each build it, and either is kept.
+        private ObjectIndex? objects;
+
+        /// <summary>
+        /// The state's objects by id and by Location (C2 of the Play Step Analysis; the Berserk Charge Plan, T2, ruling C1): built once from the state's
+        /// own <see cref="GameState.Location"/> and <see cref="GameState.Aboard"/>, so it answers exactly as <see cref="GameState.At"/> and
+        /// <see cref="GameState.Location"/> do, without their scans of every object. View-independent.
+        /// </summary>
+        public ObjectIndex Objects(GameState state) => Volatile.Read(ref objects) ?? (objects = ObjectIndex.Of(state));
 
         // The ids of the units that guard an active prisoner, read once for the state; two circuits may each build it, and either is kept.
         private IReadOnlySet<string>? custodians;
@@ -124,5 +141,55 @@ public sealed partial class GamePlanner
             Volatile.Write(ref composedKept, 1);
             return made;
         }
+    }
+
+    /// <summary>
+    /// A state's objects by id and by Location (the Berserk Charge Plan, T2). <see cref="At"/> holds what <see cref="GameState.At"/> returns, in the
+    /// same order (the state's objects in order: units, equipment, entities); <see cref="Location"/> what <see cref="GameState.Location"/> returns.
+    /// Read only, never written after it is built.
+    /// </summary>
+    internal sealed class ObjectIndex
+    {
+        private readonly Dictionary<string, MapPosition?> locations;
+        private readonly Dictionary<BoardLocation, IGameObject[]> at;
+
+        private ObjectIndex(Dictionary<string, MapPosition?> locations, Dictionary<BoardLocation, IGameObject[]> at)
+        {
+            this.locations = locations;
+            this.at = at;
+        }
+
+        public static ObjectIndex Of(GameState state)
+        {
+            var locations = new Dictionary<string, MapPosition?>(StringComparer.Ordinal);
+            var stacks = new Dictionary<BoardLocation, List<IGameObject>>();
+            foreach (var item in state.Objects)
+            {
+                // GameState.Location and Aboard read an id's first object, as Find does; At still lists every object, so a repeated id is too.
+                if (!locations.TryGetValue(item.Id, out var position))
+                {
+                    position = state.Location(item.Id);
+                    locations[item.Id] = position;
+                }
+
+                if (item.Status == InstanceStatus.Active && position is not null && state.Aboard(item.Id) is null)
+                {
+                    if (!stacks.TryGetValue(position.Location, out var stack))
+                    {
+                        stacks[position.Location] = stack = [];
+                    }
+
+                    stack.Add(item);
+                }
+            }
+
+            return new ObjectIndex(locations, stacks.ToDictionary(item => item.Key, item => item.Value.ToArray()));
+        }
+
+        /// <summary>The active objects in a Location, as <see cref="GameState.At"/> reads them.</summary>
+        public IReadOnlyList<IGameObject> At(BoardLocation location) => at.TryGetValue(location, out var stack) ? stack : [];
+
+        /// <summary>Where an object is, as <see cref="GameState.Location"/> reads it; null for an id the state does not hold.</summary>
+        public MapPosition? Location(string id) => locations.GetValueOrDefault(id);
     }
 }

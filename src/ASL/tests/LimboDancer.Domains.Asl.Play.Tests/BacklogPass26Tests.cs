@@ -421,6 +421,60 @@ public sealed class BacklogPass26Tests : IDisposable
         Assert.Null(Current.Aboard("gc"));
     }
 
+    // The Berserk Charge Plan, T2: the index of a state's objects answers as GameState.At and GameState.Location do, in every state of a game with
+    // Passengers aboard a halftrack, a Gun towed by a truck with its crew aboard, and the Gun then unhooked and manned.
+    [Fact]
+    public async Task TheObjectIndexReadsEveryLocationAndPositionAsTheStateDoes()
+    {
+        await SetUp();
+        await AdvanceTo("german", "mph");
+        Committed(await Drive("ght", "enter", new
+        {
+            to = "bd04:I1:0",
+            facing = "south-east"
+        }));
+        await Pass();
+        Committed(await Drive("ght", "stop"));
+        await Pass();
+        await EndMove();
+        Committed(await Drive("gt", "enter", new
+        {
+            to = "bd04:Q1:0",
+            facing = "south-west"
+        }));
+        await Pass();
+        Committed(await Drive("gt", "stop"));
+        await Pass();
+        Committed(await Act(GameActions.HookGun, new
+        {
+            vehicleId = "gt",
+            gunId = "gg",
+            hooked = false,
+            facing = "south-west"
+        }));
+
+        var planner = Planner();
+        var states = planner.Replay(store.Read(Scope)!.Events).States;
+        Assert.Contains(states, state => state.Aboard("gs") == "ght");
+        Assert.Contains(states, state => state.Find("gg") is EquipmentInstance { Holding.Role: HoldingRole.Manned });
+        foreach (var state in states)
+        {
+            var places = state.Objects.Select(item => state.Location(item.Id)?.Location).OfType<BoardLocation>()
+                .SelectMany(place => new[] { place, place with { Level = place.Level + 1 } }).Append(At("bd04:A1:0")).Distinct();
+            foreach (var place in places)
+            {
+                Assert.Equal(state.At(place), planner.ObjectsAt(state, place));
+            }
+
+            foreach (var item in state.Objects)
+            {
+                Assert.Equal(state.Location(item.Id), planner.LocationOf(state, item.Id));
+            }
+
+            Assert.Null(planner.LocationOf(state, "no-such-id"));
+        }
+    }
+
     // R26.4 (A2.6, A26.23): a vehicle that leaves the map records its exit with its Passengers'; their VP win the Germans the game at once.
     [Fact]
     public async Task AVehicleLeavingWithItsPassengersCountsExitVp()
