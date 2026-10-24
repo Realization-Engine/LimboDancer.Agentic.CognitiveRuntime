@@ -1179,7 +1179,7 @@ public sealed partial class GamePlanner
     /// beneath it (D5.6); an immobilized vehicle, Abandoned by a crew that fails its TC (D5.5); a Shocked AFV, BU and stopped (C7.42), which
     /// a second Shock returns from an Unconfirmed Kill. A concealed vehicle hit loses its "?" (A12.2).
     /// </summary>
-    private static IEnumerable<(string Type, EventPayload Payload)> KillEvents(GameState state, UnitInstance vehicle, OrdnanceKill kill, string attemptId)
+    private IEnumerable<(string Type, EventPayload Payload)> KillEvents(GameState state, UnitInstance vehicle, OrdnanceKill kill, string attemptId)
     {
         var at = state.Location(vehicle.Id)?.Location;
         if (ScenarioA1OrdnanceEventRules.Wrecks(kill.Result))
@@ -1239,7 +1239,7 @@ public sealed partial class GamePlanner
     /// the phase (pass 65, ruling R65.21). D3.43 (pass 65, ruling R65.20): the crew takes the Armor Leader with it, dormant, since it may re-crew the vehicle;
     /// D5.34: and the Stun "+1" (the referee's review).
     /// </summary>
-    private static IEnumerable<(string Type, EventPayload Payload)> TaskCheckAbandons(GameState state, UnitInstance vehicle, string attemptId)
+    private IEnumerable<(string Type, EventPayload Payload)> TaskCheckAbandons(GameState state, UnitInstance vehicle, string attemptId)
     {
         yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)));
         foreach (var crew in CrewLeaves(state, vehicle, attemptId, Is(vehicle, Conditions.StunRecovery), vehicle.ArmorLeader, hazardous: true))
@@ -1254,7 +1254,7 @@ public sealed partial class GamePlanner
     /// inherent crew is placed as its counter there, carrying the Armor Leader as a crew that leaves does (D3.43). It routs beneath in the RtPh, which
     /// Abandons the vehicle (<see cref="PlanRoutBeneath"/>).
     /// </summary>
-    private static IEnumerable<(string Type, EventPayload Payload)> UnprotectedCrewEvents(GameState state, UnitInstance vehicle, string attemptId, bool broken)
+    private IEnumerable<(string Type, EventPayload Payload)> UnprotectedCrewEvents(GameState state, UnitInstance vehicle, string attemptId, bool broken)
     {
         if (!broken)
         {
@@ -1305,19 +1305,17 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// The unit that crews a vehicle from inside (D5.42; pass 65, ruling R65.20), by one scan of the state's units: read only by the rare events that
-    /// place a crew, never in a loop.
+    /// The unit that crews a vehicle from inside (D5.42; pass 65, ruling R65.20), from the state's index, built once per state (ruling R65.25; the boundary
+    /// review).
     /// </summary>
-    private static UnitInstance? CrewInside(GameState state, string vehicle) =>
-        state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Position is ContainedPosition { Role: ContainmentRole.Crew } inside
-            && inside.Container == vehicle);
+    private UnitInstance? CrewInside(GameState state, string vehicle) => MemoOf(state).Objects(state).CrewOf(vehicle);
 
     /// <summary>
     /// The records of a crew leaving its intact vehicle (rulings R65.19, R65.20): a unit that crews it from inside leaves as itself, moved beneath it
     /// (<see cref="InsideCrewLeaves"/>), under Hazardous Movement when <paramref name="hazardous"/>; otherwise the crew counter is placed
     /// (<see cref="LeavingCrew"/>). None when the catalog has no crew to place.
     /// </summary>
-    private static IEnumerable<(string Type, EventPayload Payload)> CrewLeaves(GameState state, UnitInstance vehicle, string attemptId, bool stunRecovery = false,
+    private IEnumerable<(string Type, EventPayload Payload)> CrewLeaves(GameState state, UnitInstance vehicle, string attemptId, bool stunRecovery = false,
         ArmorLeader? armorLeader = null, bool hazardous = false)
     {
         if (CrewInside(state, vehicle.Id) is { } inside && vehicle.Position is MapPosition position)
@@ -1357,7 +1355,7 @@ public sealed partial class GamePlanner
     /// The events of a mortar's hit on an AFV (C1.55; pass 60, ruling R60.10), written as a To Kill result's are: a burning wreck, a wreck its crew may
     /// survive, an Immobilization, or a Shock, which is never a possible one. A result of none writes nothing, and the AFV keeps any "?".
     /// </summary>
-    private static IEnumerable<(string Type, EventPayload Payload)> AreaVehicleEvents(GameState state, UnitInstance vehicle, OrdnanceAreaVehicle hit, string attemptId) =>
+    private IEnumerable<(string Type, EventPayload Payload)> AreaVehicleEvents(GameState state, UnitInstance vehicle, OrdnanceAreaVehicle hit, string attemptId) =>
         hit.Result == OrdnanceKill.None ? []
             : KillEvents(state, vehicle, new OrdnanceKill("he", hit.HitLocation, "none", null, hit.Drm, null, null, hit.KillDr, hit.Dice, hit.FinalDr, hit.Result)
             {
@@ -1483,20 +1481,21 @@ public sealed partial class GamePlanner
             conditions[ConditionName(counter)] = ConditionState.True;
         }
 
-        return new InstanceCreated(new NewInstance($"{attemptId}-{vehicle.Id}-crew", crew.Kind, crew.Definition, vehicle.Side,
+        return new InstanceCreated(new NewInstance(ScenarioA1CrewActsRules.CrewId(attemptId, vehicle.Id), crew.Kind, crew.Definition, vehicle.Side,
             new MapPosition(position.Location), null, conditions)
         {
             ArmorLeader = armorLeader,
         });
     }
 
-    /// <summary>Whether a vehicle carries a fire counter of this Player Turn (D5.8): Prep, First, Final, Bounding, or Intensive Fire.</summary>
+    /// <summary>Whether a vehicle carries a fire counter of this Player Turn (D5.8): Rules decides from its Prep, First, Final, Bounding, and Intensive Fire counters.</summary>
     private static bool VehicleFiredThisPlayerTurn(UnitInstance vehicle) =>
-        new[] { Conditions.PrepFire, Conditions.FirstFire, Conditions.FinalFire, Conditions.BoundingFire, Conditions.IntensiveFire }.Any(name => Is(vehicle, name));
+        ScenarioA1CrewActsRules.VehicleFired(Is(vehicle, Conditions.PrepFire), Is(vehicle, Conditions.FirstFire), Is(vehicle, Conditions.FinalFire), Is(vehicle, Conditions.BoundingFire),
+            Is(vehicle, Conditions.IntensiveFire));
 
-    /// <summary>Whether a vehicle moved this Player Turn (D5.8, C.8): it entered a new hex (the state's list) or spent MP in this MPh.</summary>
+    /// <summary>Whether a vehicle moved this Player Turn (D5.8, C.8): Rules decides from the state's list of this Player Turn and the MP it spent in this MPh.</summary>
     private static bool VehicleMovedThisPlayerTurn(GameState state, UnitInstance vehicle) =>
-        state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal) || (state.Phase == "mph" && (vehicle.MfSpent > 0 || vehicle.HalfMfSpent));
+        ScenarioA1CrewActsRules.VehicleMoved(state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal), state.Phase == "mph", vehicle.MfSpent > 0 || vehicle.HalfMfSpent);
 
     /// <summary>Whether a vehicle's inherent crew is a Carrier's HS (D6.82; ruling R65.18): Rules decides from its class, its MA, and whether it tows a Gun.</summary>
     private static bool InherentHalfSquad(GameState state, UnitInstance vehicle) =>

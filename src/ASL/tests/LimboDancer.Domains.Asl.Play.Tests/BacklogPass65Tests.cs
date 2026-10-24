@@ -672,7 +672,8 @@ public sealed class BacklogPass65Tests : IDisposable
             target = Target,
         }));
         var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
-        Assert.False(fire.Facts.GetProperty("embarking").GetProperty("unloading").GetBoolean());
+        // A load writes no unloading flag; absent is false (the boundary review).
+        Assert.False(fire.Facts.GetProperty("embarking").TryGetProperty("unloading", out _));
         Assert.Equal(["ffnam"], MovementDrm(fire));
         Assert.Contains(Since(before).Select(item => item.Payload).OfType<InstanceMoved>(), moved => moved.Id == "de-s");
         var squad = Current.Unit("de-s")!;
@@ -1204,6 +1205,39 @@ public sealed class BacklogPass65Tests : IDisposable
         NoReplayErrors();
     }
 
+    /// <summary>The events renumbered from revision 1, as a store holds them.</summary>
+    private static GameEvent[] Renumbered(IEnumerable<GameEvent> events) => [.. events.Select((item, index) => item with { Revision = index + 1 })];
+
+    /// <summary>A record written by hand after the game's events, for the projector to read.</summary>
+    private static GameEvent Written(int revision, string type, EventPayload payload) =>
+        new(Scope, $"written-{revision}", revision, DateTimeOffset.UnixEpoch, LiveGames.Source, type, payload, null, [], null);
+
+    [Fact]
+    public async Task TheProjectorRefusesAReCrewingInThePlayerTurnTheCrewLeftAndAnAbandonmentAfterFire()
+    {
+        // Fix Round C (the boundary review): the projector reads each crew act by the planner's bar. A re-crewing written in the Player Turn the tank's crew
+        // left it (D5.42), which the planner refuses, is refused at replay (UNIT-STATE-034), the state holding the tank among those Abandoned this Player
+        // Turn; so is the same Abandonment written after the tank Prep Fired (D5.41).
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Led(Vehicle("de-tank", "attacker-tank", Target, "german", "east")),
+            Unit("de-s", "asl:squad", "attacker-squad", Target, "german"), Unit("ru-1", "asl:squad", "defender-squad", Far, "russian"));
+        await Advance();
+        var before = Revision;
+        Committed(await Abandon("de-tank"));
+        await EndTheMove();
+        Assert.Equal(["de-tank"], Current.AbandonedThisPlayerTurn);
+        Refused(await Recrew("de-s", "de-tank"), "left it this Player Turn");
+
+        var events = store.Read(Scope)!.Events;
+        var recrewed = Planner().Replay([.. events, Written(events.Count + 1, "vehicle-recrewed", new VehicleRecrewed("de-tank", BoardLocation.Parse(Target), "de-s"))]);
+        Assert.Contains(recrewed.Diagnostics, diagnostic => diagnostic.Code == "UNIT-STATE-034");
+
+        var fired = new ConditionsChanged("de-tank", new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.PrepFire] = ConditionState.True });
+        var afterFire = Planner().Replay(Renumbered([.. events.Where(item => item.Revision <= before), Written(0, "conditions-changed", fired),
+            .. events.Where(item => item.Revision > before)]));
+        Assert.Contains(afterFire.Diagnostics, diagnostic => diagnostic.Code == "UNIT-STATE-034");
+        NoReplayErrors();
+    }
+
     [Fact]
     public async Task AHalftracksMgIsRemovedAsItsCrewAbandonsItAndReturnedWhenItReCrews()
     {
@@ -1502,6 +1536,9 @@ public sealed class BacklogPass65Tests : IDisposable
         Assert.Equal(("de-tank", "russian", VehicleCaptured.Automatic, (string?)null), (captured.Vehicle, captured.Side, captured.Cause, captured.Driver));
         var tank = Current.Unit("de-tank")!;
         Assert.Equal(("russian", ConditionState.True, ConditionState.Unknown), (tank.Side, GameState.Condition(tank, Conditions.Abandoned), GameState.Condition(tank, Conditions.Captured)));
+
+        // Fix Round C (the referee's review): the state keeps the side the record took it from, which Rules reads as captured (A21.22).
+        Assert.Equal("german", tank.CapturedFrom);
 
         // A21.22: in the next Russian MPh the infantry crew enters it as a Temporary crew: its MP allotment is halved (11 MP to 5 1/2), and a squad must
         // Deploy first.

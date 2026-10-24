@@ -414,9 +414,10 @@ public sealed partial class GamePlanner
         }
 
         // D6.5, D.3 (pass 65, ruling R65.10): a Passenger that fired, or added its FP to the OVR, does not unload in that phase.
+        var overran = OverranThisPhase(existing);
         foreach (var unit in aboard.Where(unit => ids.Contains(unit.Id)))
         {
-            if (ScenarioA1PassengerActionRules.UnloadAfterFireBar(unit.Id, LiveFire.Fired(unit), OverranThisPhase(existing, unit.Id)) is { } firedBar)
+            if (ScenarioA1PassengerActionRules.UnloadAfterFireBar(unit.Id, LiveFire.Fired(unit), overran.Contains(unit.Id)) is { } firedBar)
             {
                 return Refused(scope, label, expected, firedBar);
             }

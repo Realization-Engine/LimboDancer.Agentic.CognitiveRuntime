@@ -33,13 +33,15 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        var cause = kind == VehicleStepped.Enter && entry is not null && ScenarioA1RiderRules.TerrainBailOut(TerrainBailOutFacts(state, vehicle, from, entry))
+        // D6.21: whether the AFV is turreted is its armor reference's (ArmorDefinition.Turreted); where the Riders land is Rules'.
+        var entering = kind == VehicleStepped.Enter && entry is not null;
+        var cause = entering && ScenarioA1RiderRules.TerrainBailOut(TerrainBailOutFacts(state, vehicle, from, entry!))
             ? ScenarioA1RiderRules.Terrain
-            : ScenarioA1RiderRules.TurretBailOut(LiveFire.MaTypeOf(vehicle.Definition?.Definition) is "t" or "st" or "rst" or "1mt",
+            : ScenarioA1RiderRules.TurretBailOut(OrdnanceReference.Value.Armor.Vehicles.GetValueOrDefault(vehicle.Definition?.Definition ?? string.Empty)?.Turreted == true,
                 (int?)LiveOrdnance.TurretFacing(state, vehicle), (int?)turret) ? ScenarioA1RiderRules.Turret : null;
         return cause is null ? null
             : ([.. riders.Select(unit => new BailingRider(unit, unit.Id, unit.Definition?.Definition, Is(unit, Conditions.Broken), cause))],
-                cause == ScenarioA1RiderRules.Terrain || kind != VehicleStepped.Enter || entry is null ? from : entry.To);
+                ScenarioA1RiderRules.BailsOutWhereItWas(cause, entering) ? from : entry!.To);
     }
 
     /// <summary>

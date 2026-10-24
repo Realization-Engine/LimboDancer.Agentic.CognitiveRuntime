@@ -157,6 +157,12 @@ public static class ScenarioA1RiderRules
     /// </summary>
     public static bool TurretBailOut(bool turreted, int? tca, int? turnedTo) => turreted && turnedTo is { } turned && turned != tca;
 
+    /// <summary>
+    /// D6.21 (p. 205; ruling R65.17; the boundary review): where Riders Bail Out: "in the last hex occupied prior to that prohibited terrain", and in
+    /// the AFV's Location for a TCA change, the Location it enters when the change comes with an entry. True for the Location the AFV was in.
+    /// </summary>
+    public static bool BailsOutWhereItWas(string cause, bool entry) => cause == Terrain || !entry;
+
     /// <summary>D6.23 (p. 205; ruling R65.17): "AFV Riders must Bail Out if pinned or broken"; an eliminated one does not.</summary>
     public static bool CombatBailOut(bool rider, bool eliminated, bool pinned, bool broken) => rider && !eliminated && (pinned || broken);
 

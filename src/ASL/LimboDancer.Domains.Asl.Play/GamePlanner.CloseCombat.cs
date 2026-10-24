@@ -1406,8 +1406,15 @@ public sealed partial class GamePlanner
     /// </summary>
     internal IReadOnlyList<IGameObject> ObjectsAt(GameState state, BoardLocation location) => MemoOf(state).Objects(state).At(location);
 
-    /// <summary>Where an object is, as <see cref="GameState.Location"/> reads it, from the state's index (the Berserk Charge Plan, T2).</summary>
-    internal MapPosition? LocationOf(GameState state, string id) => MemoOf(state).Objects(state).Location(id);
+    /// <summary>
+    /// Where an object is, as <see cref="GameState.Location"/> reads it, from the state's index (the Berserk Charge Plan, T2). Public since pass 65 (the
+    /// boundary review): the Play page's fire group reads its units' Locations here, not by a scan per unit.
+    /// </summary>
+    public MapPosition? LocationOf(GameState state, string id)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return MemoOf(state).Objects(state).Location(id);
+    }
 
     /// <summary>A charge's key in the memo: the movers' ids in order, the start, and whether the movers are in the state's move.</summary>
     private readonly record struct ChargeKey(string Movers, BoardLocation From, bool InMove);

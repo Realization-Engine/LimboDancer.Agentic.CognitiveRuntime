@@ -13,8 +13,8 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
-    /// <summary>The id of the Blaze on a burning wreck (B25.14).</summary>
-    public static string BlazeId(string vehicle) => vehicle + "-blaze";
+    /// <summary>The id of the Blaze on a burning wreck (B25.14), as Rules names it for the planner and the projector.</summary>
+    public static string BlazeId(string vehicle) => ScenarioA1WreckRules.BlazeId(vehicle);
 
     /// <summary>The wrecks at a Location (D10.1).</summary>
     public static IReadOnlyList<UnitInstance> WrecksAt(GameState state, BoardLocation at)

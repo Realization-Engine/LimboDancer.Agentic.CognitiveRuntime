@@ -3380,8 +3380,8 @@ else if (state is not null)
     }
 
     /// <summary>
-    /// A captured vehicle's side and its Temporary crew (A21.2, A21.22; pass 65, ruling R65.22), for its own side's view: the vehicle of another nationality
-    /// than its side's, and the crew's penalties. Read for the one vehicle the panel shows.
+    /// A captured vehicle's side and its Temporary crew (A21.2, A21.22; pass 65, ruling R65.22), for its own side's view: a vehicle Rules reads as captured
+    /// from its capture's record, as the re-crewing does (the boundary review), and the crew's penalties. Read for the one vehicle the panel shows.
     /// </summary>
     private string CaptureNote(UnitInstance vehicle)
     {
@@ -3390,9 +3390,7 @@ else if (state is not null)
             return string.Empty;
         }
 
-        var nationality = vehicle.Definition is { } reference ? Definitions.FirstOrDefault(definition => definition.Id == reference.Definition)?.Nationality : null;
-        var captured = nationality is not null && state.Side(vehicle.Side)?.Nationality is { } own && own != nationality
-            ? $", captured: the {DisplayText.Side(vehicle.Side)} side's (A21.2)" : string.Empty;
+        var captured = ScenarioA1CapturedVehicleRules.Captured(vehicle.CapturedFrom, vehicle.Side) ? $", captured: the {DisplayText.Side(vehicle.Side)} side's (A21.2)" : string.Empty;
         return captured + (vehicle.TemporaryCrew is { } crew ? ", manned by " + ScenarioA1CapturedVehicleRules.ManningText(crew.Manning, crew.Captured) : string.Empty);
     }
 
@@ -3591,7 +3589,7 @@ else if (state is not null)
 
     /// <summary>The SW the chosen vehicle's Passengers hold, which a halftrack or Carrier keeps aboard as they unload (D6.4; pass 65, ruling R65.15).</summary>
     private IReadOnlyList<string> LeavableWeapons(UnitInstance vehicle) =>
-        state is null || UnloadableUnits(vehicle) is not { Count: > 0 } aboard || LiveFire.VehicleClassOf(vehicle.Definition?.Definition) is not ("halftrack" or "carrier") ? []
+        state is null || UnloadableUnits(vehicle) is not { Count: > 0 } aboard || !ScenarioA1PassengerCalculator.KeepsSwAboard(LiveFire.VehicleClassOf(vehicle.Definition?.Definition)) ? []
             : [.. VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && aboard.Contains(holding.Holder))
                 .Select(item => item.Id).Order(StringComparer.Ordinal)];
 
@@ -5608,7 +5606,7 @@ else if (state is not null)
 
     /// <summary>Where each unit of the group is, said beside it once the group has more than one Location.</summary>
     private IReadOnlyDictionary<string, string> FirerPlaces(string side) => fireAlso.Count == 0 || state is null ? new Dictionary<string, string>()
-        : FireGroupAt(side).ToDictionary(unit => unit.Id, unit => state.Location(unit.Id)!.Location.ToString(), StringComparer.Ordinal);
+        : FireGroupAt(side).ToDictionary(unit => unit.Id, unit => Live.Planner.LocationOf(state, unit.Id)!.Location.ToString(), StringComparer.Ordinal);
 
     /// <summary>The firers that possess a MG, FT, or ATR, each of which may fire it without its own FP (play test P-17: shown before it is ticked).</summary>
     private IReadOnlyList<string> FireAloneCandidates(string side) => state is null ? []
@@ -6488,10 +6486,12 @@ else if (state is not null)
         && (!LiveFire.IsVehicle(unit) || (GamePlanner.HasMainArmamentMg(unit) && (!GamePlanner.HasVehicleMg(unit) || LiveFire.CrewExposed(unit)))
             || VehicleMgChoices(unit).Any(weapon => weapon.Bar is null));
 
+    // Each unit's Location comes from the planner's index, once per state (ruling R65.25; the boundary review), not a scan of the state per unit.
     private IEnumerable<UnitInstance> FireGroupAt(string side) => state is null || fireFrom.Length == 0 ? []
-        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id)?.Location.ToString() is { } at
-            && (at == fireFrom || fireAlso.Contains(at)))
-            .OrderBy(unit => state.Location(unit.Id)!.Location.ToString() == fireFrom ? 0 : 1 + fireAlso.IndexOf(state.Location(unit.Id)!.Location.ToString())).ThenBy(unit => unit.Id, StringComparer.Ordinal);
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side)
+            .Select(unit => (Unit: unit, At: Live.Planner.LocationOf(state, unit.Id)?.Location.ToString()))
+            .Where(item => item.At is { } at && (at == fireFrom || fireAlso.Contains(at)))
+            .OrderBy(item => item.At == fireFrom ? 0 : 1 + fireAlso.IndexOf(item.At!)).ThenBy(item => item.Unit.Id, StringComparer.Ordinal).Select(item => item.Unit);
 
     /// <summary>
     /// The Locations the firing side may target: those holding an enemy unit it can see or a concealed one it knows is there

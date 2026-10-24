@@ -48,6 +48,20 @@ public static class ScenarioA1RoutCalculator
             : stopped ? MayRoutBeneath
             : StaysAboard;
 
+    /// <summary>
+    /// D6.1, D5.311, A20.21 (pp. 203, 204; pass 65, rulings R65.11, R65.31; the boundary review): a unit aboard a vehicle in the RtPh. Its verdict
+    /// (<see cref="RoutBeneath"/>); why it must rout, or null: an active unit not in Melee nor captured whose vehicle's inherent crew is gone, or broken
+    /// inside it as this unit, the crew (<paramref name="crew"/>); whether it may rout (beneath, unless it stays aboard); and whether it is held to A20.21's
+    /// surrender instead: never aboard, since a PRC routs only beneath its vehicle (the capture of PRC is pass 75's).
+    /// </summary>
+    public static (string Beneath, string? MustRout, bool MayRout, bool MaySurrender) AboardRout(string vehicleId, bool active, bool broken, bool melee, bool captured,
+        bool crew, bool stopped, bool crewBroken, bool abandoned)
+    {
+        var beneath = RoutBeneath(broken, stopped, crewEliminated: false, crewBroken, abandoned);
+        var free = active && !melee && !captured;
+        return (beneath, free && beneath == MustRoutBeneath ? crew ? RoutBeneathCrewText(vehicleId) : RoutBeneathMustText(vehicleId) : null, free && beneath != StaysAboard, false);
+    }
+
     /// <summary>The reason a broken Passenger must rout beneath its vehicle (D6.1), as the Rout panel and the gate say it.</summary>
     public static string RoutBeneathMustText(string vehicleId) => $"its vehicle {vehicleId} has lost its inherent crew, so it must rout beneath it (D6.1)";
 

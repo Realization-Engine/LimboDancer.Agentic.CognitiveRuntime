@@ -242,7 +242,7 @@ public sealed partial class GamePlanner
     /// A Recalled AFV that is immobilized is Abandoned (D5.341, D5.41; ruling R5.18): marked Abandoned and stopped, with its crew placed beneath
     /// it as a crew counter of its nationality, carrying the Stun +1 (D5.34).
     /// </summary>
-    private static IEnumerable<(string Type, EventPayload Payload)> AbandonEvents(GameState state, UnitInstance vehicle, string attemptId)
+    private IEnumerable<(string Type, EventPayload Payload)> AbandonEvents(GameState state, UnitInstance vehicle, string attemptId)
     {
         yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, new Dictionary<string, ConditionState>(StringComparer.Ordinal)
         {

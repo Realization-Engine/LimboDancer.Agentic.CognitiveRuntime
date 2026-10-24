@@ -559,6 +559,17 @@ public sealed record UnitInstance(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The side a vehicle belonged to before its first <c>vehicle-captured</c> record (A21.2; the referee's review of pass 65), kept through later captures;
+    /// Rules reads a captured vehicle from it (<c>ScenarioA1CapturedVehicleRules.Captured</c>). Null for a vehicle no such record took, and so for every
+    /// vehicle of a game recorded before the pass.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? CapturedFrom
+    {
+        get; init;
+    }
 }
 
 /// <summary>

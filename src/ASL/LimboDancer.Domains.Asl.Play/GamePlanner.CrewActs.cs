@@ -35,10 +35,11 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// D5.311 (ruling R65.31): why a vehicle whose crew is broken inside it neither moves nor fires, or null. One scan of the state's units, made only when a
-    /// vehicle's own move or fire is planned, never in a loop.
+    /// vehicle's own move or fire is planned, never in a loop; static, since the fire packages that ask it (LiveFire, LiveOrdnance) hold no planner's index.
     /// </summary>
     internal static string? BrokenCrewBar(GameState state, UnitInstance vehicle) =>
-        ScenarioA1CrewActsRules.BrokenCrewBar(vehicle.Id, CrewInside(state, vehicle.Id) is { } crew && Is(crew, Conditions.Broken) ? crew.Id : null);
+        ScenarioA1CrewActsRules.BrokenCrewBar(vehicle.Id, state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active
+            && unit.Position is ContainedPosition { Role: ContainmentRole.Crew } inside && inside.Container == vehicle.Id) is { } crew && Is(crew, Conditions.Broken) ? crew.Id : null);
 
     /// <summary>Whether a vehicle is armed, so manned by a crew that may leave it (D5.1): a MA or any MG, as the Victory count reads it.</summary>
     private static bool Armed(FireDefinition? definition) =>
@@ -95,10 +96,10 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, bar);
         }
 
-        // D5.42 (ruling R65.20): a unit that re-crewed the vehicle leaves as itself; one that re-crewed as a Temporary crew (A21.22) is no Inherent crew.
+        // D5.42 (ruling R65.20): a unit that re-crewed the vehicle leaves as itself; one that re-crewed as a Temporary crew (A21.22) is no Inherent crew,
+        // which the vehicle's state holds (the boundary review).
         var inside = index.CrewOf(id);
-        var temporary = inside is not null && existing.Select(item => item.Payload).OfType<VehicleRecrewed>().LastOrDefault(item => item.Vehicle == id && item.Unit == inside.Id)
-            is { Temporary: true };
+        var temporary = inside is not null && vehicle.TemporaryCrew is not null;
         string? destroy = Text(arguments, "destroy", out var choice) ? choice : null;
         if (ScenarioA1CrewActsRules.SelfDestructionBar(id, destroy, !temporary, index.Aboard(id).Count > 0) is { } destroyBar)
         {
@@ -173,7 +174,7 @@ public sealed partial class GamePlanner
             Destroyed = destroy,
             Removed = removed,
             Mount = mount,
-            FireCounter = counter switch { UnitCondition.PrepFire => "prep", UnitCondition.FinalFire => "final", _ => null },
+            FireCounter = ScenarioA1CrewActsRules.FireCounterName(counter),
         }));
         if (destroy == ScenarioA1CrewActsRules.Wreck)
         {
@@ -217,25 +218,35 @@ public sealed partial class GamePlanner
 
         var index = MemoOf(state).Objects(state);
         var at = vehicle.Position is MapPosition ? index.Location(vehicleId)?.Location : null;
-        var ownCrew = unitId.EndsWith($"-{vehicleId}-crew", StringComparison.Ordinal);
+
+        // D5.42 (the boundary review): Rules knows the vehicle's own crew by the id it gave the counter, and when its crew left it by the state's list.
+        var ownCrew = ScenarioA1CrewActsRules.IsOwnCrew(unitId, vehicleId);
         if (ScenarioA1CrewActsRules.RecrewBar(new RecrewFacts(unitId, vehicleId, state.Phase == "mph" && unit.Side == state.PhasingSide,
             at is not null && Is(vehicle, Conditions.Abandoned), unit.Side == vehicle.Side,
             vocabulary.IsA(unit.Kind, "asl:personnel") && !LiveFire.IsVehicle(unit) && unit.Position is MapPosition,
             at is not null && index.Location(unitId)?.Location == at, unit.MfSpent > 0 || unit.HalfMfSpent || unit.MovementEnded,
-            new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Captured, "asl:ti" }.All(name => !Is(unit, name)),
-            LeftThisPlayerTurn(existing, vehicleId, state), ownCrew, Is(vehicle, Conditions.Recalled))) is { } bar)
+            ScenarioA1CrewActsRules.RecrewReady(Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee),
+                Is(unit, Conditions.Captured), Is(unit, "asl:ti")),
+            state.AbandonedThisPlayerTurn.Contains(vehicleId, StringComparer.Ordinal), ownCrew, Is(vehicle, Conditions.Recalled))) is { } bar)
         {
             return Refused(scope, label, expected, bar);
         }
 
-        // D6.631: the MG Removed from this vehicle goes back with a crew that holds it.
-        var removal = existing.Select(item => item.Payload).OfType<VehicleAbandoned>().LastOrDefault(item => item.Vehicle == vehicleId && item.Removed is not null);
+        // D6.631: the MG Removed from this vehicle goes back with a crew that holds it; the last Removal is read walking back from the end (the boundary
+        // review), and only when a mount is Disabled.
+        VehicleAbandoned? removal = null;
+        var disabled = Is(vehicle, Conditions.Disabled) || Is(vehicle, Conditions.BmgDisabled);
+        for (var back = existing.Count - 1; disabled && back >= 0 && removal is null; back--)
+        {
+            removal = existing[back].Payload is VehicleAbandoned { Removed: not null } left && left.Vehicle == vehicleId ? left : null;
+        }
+
         var returned = removal is not null && state.Find(removal.Removed!) is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } holding }
             && holding.Holder == unitId && Is(vehicle, ConditionName(ScenarioA1CrewActsRules.RemovedCondition(removal.Mount ?? ScenarioA1CrewActsRules.MainArmament)))
             ? removal : null;
-        // A21.22 (pass 65, ruling R65.22): a unit of another nationality than the vehicle's crews a captured vehicle; Rules gives how it mans it.
-        var crewNationality = unit.Definition is { } own ? FireReference.Value.Definitions.GetValueOrDefault(own.Definition)?.Nationality : null;
-        var captured = crewNationality is not null && VehicleDefinition(vehicle)?.Nationality is { } vehicleNationality && vehicleNationality != crewNationality;
+        // A21.22 (pass 65, ruling R65.22): Rules reads a captured vehicle from its capture's record (the side it was taken from, the referee's review), and
+        // gives how the unit mans it.
+        var captured = ScenarioA1CapturedVehicleRules.Captured(vehicle.CapturedFrom, vehicle.Side);
         var manning = ScenarioA1CapturedVehicleRules.Manning(unit.Kind, vocabulary.IsA(unit.Kind, "asl:smc"), ownCrew, captured);
         if (ScenarioA1CapturedVehicleRules.SquadBar(unitId, vehicleId, unit.Kind, manning) is { } squadBar)
         {
@@ -258,29 +269,5 @@ public sealed partial class GamePlanner
                 Manning = manning,
                 Captured = manning is not null && captured,
             }, null, null)], [text]);
-    }
-
-    /// <summary>
-    /// Whether a vehicle's last crew left it in the present Player Turn (D5.42): the records that marked it Abandoned, by any path, read with the Game
-    /// Turn and phasing side of the phase each fell in.
-    /// </summary>
-    private static bool LeftThisPlayerTurn(IReadOnlyList<GameEvent> existing, string vehicle, GameState state)
-    {
-        (int Turn, string? Side) now = (0, null);
-        (int Turn, string? Side)? left = null;
-        foreach (var payload in existing.Select(item => item.Payload))
-        {
-            if (payload is PhaseChanged phase)
-            {
-                now = (phase.Turn, phase.PhasingSide);
-            }
-            else if (payload is VehicleAbandoned { } abandoned ? abandoned.Vehicle == vehicle
-                : payload is ConditionsChanged changed && changed.Id == vehicle && changed.Conditions.TryGetValue(Conditions.Abandoned, out var value) && value == ConditionState.True)
-            {
-                left = now;
-            }
-        }
-
-        return left is { } when && when.Turn == state.Turn && when.Side == state.PhasingSide;
     }
 }

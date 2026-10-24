@@ -1763,4 +1763,238 @@ public sealed class ScenarioA1Pass65RulesTests
         Assert.Equal((false, true), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(true, false, false, false, alreadyWounded: true));
         Assert.Equal((true, false), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(true, false, false, false));
     }
+
+    // Fix Round C (the boundary review): the projector's checks are Rules' verdicts over facts, each the planner's bar; and the facts Play used to decide.
+
+    private static readonly string[] StackOfTwo = ["de-a", "de-b"];
+    private static readonly string[] OneOfTwo = ["de-a"];
+    private static readonly string[] TwoAndAStranger = ["de-a", "de-b", "de-c"];
+    private static readonly string[] NamedOther = ["p3"];
+    private static readonly string[] LoaderP = ["de-p"];
+
+    [Fact]
+    public void ALoadRecordedWithNoUnloadingFlagIsALoad()
+    {
+        // D5.43: a load writes no unloading flag since the fixes, and an earlier record of the pass writes false; both fail the pinned loader. An unload
+        // does not.
+        FireUnitEffect[] effects = [Effect("de-p", pinned: true)];
+        Assert.Equal(["de-p"], ScenarioA1PassengerCalculator.LoadFailures(new FireEmbarking(LoaderP, null, null), effects));
+        Assert.Equal(["de-p"], ScenarioA1PassengerCalculator.LoadFailures(new FireEmbarking(LoaderP, false, true), effects));
+        Assert.Empty(ScenarioA1PassengerCalculator.LoadFailures(new FireEmbarking(LoaderP, true, null), effects));
+    }
+
+    [Fact]
+    public void TheProjectorBoardsAStackAfterItsMoveByThePlannersBar()
+    {
+        // D6.4, A4.2: every member of the moving stack, and no other unit, once the DEFENDER's window has closed.
+        Assert.True(ScenarioA1VehicleProjection.BoardsAfterMove(true, true, false, StackOfTwo, StackOfTwo));
+        Assert.False(ScenarioA1VehicleProjection.BoardsAfterMove(true, true, true, StackOfTwo, StackOfTwo));
+        Assert.False(ScenarioA1VehicleProjection.BoardsAfterMove(true, true, false, StackOfTwo, OneOfTwo));
+        Assert.False(ScenarioA1VehicleProjection.BoardsAfterMove(true, true, false, StackOfTwo, TwoAndAStranger));
+        Assert.False(ScenarioA1VehicleProjection.BoardsAfterMove(true, false, false, Array.Empty<string>(), StackOfTwo));
+        Assert.False(ScenarioA1VehicleProjection.BoardsAfterMove(false, true, false, StackOfTwo, StackOfTwo));
+    }
+
+    [Fact]
+    public void TheProjectorReadsAVoluntaryAbandonmentByThePlannersBar()
+    {
+        // D5.41, D5.34, C7.42: in its own MPh, no unit moving, not moved or fired this Player Turn, not Shocked or Stunned; the crew of its side, inside or beneath.
+        static AbandonRecordFacts Facts() => new(true, true, true, false, false, false, false, false, false, true, false, true);
+        Assert.True(ScenarioA1VehicleProjection.AbandonStands(Facts()));
+        Assert.True(ScenarioA1VehicleProjection.AbandonStands(Facts() with
+        {
+            CrewInside = true,
+            CrewInLocation = false
+        }));
+        Assert.All(new[]
+        {
+            Facts() with { OwnMph = false }, Facts() with { Vehicle = false }, Facts() with { InRecordedLocation = false }, Facts() with { Abandoned = true },
+            Facts() with { UnitMoving = true }, Facts() with { Moved = true }, Facts() with { Fired = true }, Facts() with { Shocked = true },
+            Facts() with { Stunned = true }, Facts() with { CrewOfItsSide = false }, Facts() with { CrewInLocation = false },
+        }, facts => Assert.False(ScenarioA1VehicleProjection.AbandonStands(facts)));
+    }
+
+    [Fact]
+    public void TheProjectorReadsAReCrewingByThePlannersBar()
+    {
+        // D5.42, D5.43, D5.341: the planner's RecrewBar over the state's facts, with no unit moving and a returned SW the unit's own.
+        static RecrewFacts Facts() => new("de-crew", "de-tank", true, true, true, true, true, false, true, false, true, false);
+        Assert.True(ScenarioA1VehicleProjection.RecrewStands(true, false, Facts(), true));
+        Assert.False(ScenarioA1VehicleProjection.RecrewStands(true, true, Facts(), true));
+        Assert.False(ScenarioA1VehicleProjection.RecrewStands(false, false, Facts(), true));
+        Assert.False(ScenarioA1VehicleProjection.RecrewStands(true, false, Facts(), false));
+        Assert.False(ScenarioA1VehicleProjection.RecrewStands(true, false, Facts() with
+        {
+            LeftThisPlayerTurn = true
+        }, true));
+        Assert.False(ScenarioA1VehicleProjection.RecrewStands(true, false, Facts() with
+        {
+            GoodOrder = false
+        }, true));
+        Assert.False(ScenarioA1VehicleProjection.RecrewStands(true, false, Facts() with
+        {
+            Recalled = true
+        }, true));
+    }
+
+    [Fact]
+    public void TheProjectorReadsAScroungingByThePlannersBar()
+    {
+        // D10.5: the planner's ScroungeBar, a dr rolled as one die, and no more SW than the dr, each the unit's own.
+        static ScroungeFacts Facts() => new("ru-s", "de-tank", true, true, true, false, false, false, true, true, false, false, false, false);
+        Assert.True(ScenarioA1VehicleProjection.ScroungeStands(true, Facts(), true, 2, 2, true));
+        Assert.True(ScenarioA1VehicleProjection.ScroungeStands(true, Facts(), true, 5, 0, true));
+        Assert.False(ScenarioA1VehicleProjection.ScroungeStands(true, Facts() with
+        {
+            Burning = true
+        }, true, 2, 1, true));
+        Assert.False(ScenarioA1VehicleProjection.ScroungeStands(true, Facts() with
+        {
+            Disabled = true
+        }, true, 2, 1, true));
+        Assert.False(ScenarioA1VehicleProjection.ScroungeStands(true, Facts() with
+        {
+            Ti = true
+        }, true, 2, 1, true));
+        Assert.False(ScenarioA1VehicleProjection.ScroungeStands(true, Facts(), false, 2, 1, true));
+        Assert.False(ScenarioA1VehicleProjection.ScroungeStands(true, Facts(), true, 2, 3, true));
+        Assert.False(ScenarioA1VehicleProjection.ScroungeStands(true, Facts(), true, 4, 1, true));
+        Assert.False(ScenarioA1VehicleProjection.ScroungeStands(true, Facts(), true, 2, 1, false));
+    }
+
+    [Fact]
+    public void TheProjectorReadsACaptureByThePlannersBar()
+    {
+        // A11.52, A21.2, A21.21: in the CCPh, to another side in the game, an AFV only when Abandoned; the Temporary Driver a SMC of the captor's side there.
+        Assert.True(ScenarioA1VehicleProjection.CaptureStands(true, true, true, true, true, ScenarioA1CapturedVehicleRules.Automatic, true));
+        Assert.False(ScenarioA1VehicleProjection.CaptureStands(true, true, true, true, true, ScenarioA1CapturedVehicleRules.CloseCombat, false));
+        Assert.True(ScenarioA1VehicleProjection.CaptureStands(true, true, true, true, true, ScenarioA1CapturedVehicleRules.Unarmed, false));
+        Assert.False(ScenarioA1VehicleProjection.CaptureStands(true, true, true, true, true, "taken", true));
+        Assert.False(ScenarioA1VehicleProjection.CaptureStands(false, true, true, true, true, ScenarioA1CapturedVehicleRules.Automatic, true));
+        Assert.False(ScenarioA1VehicleProjection.CaptureStands(true, true, false, true, true, ScenarioA1CapturedVehicleRules.Automatic, true));
+        Assert.True(ScenarioA1VehicleProjection.DriverStands(ScenarioA1CapturedVehicleRules.Unarmed, true, true, true));
+        Assert.False(ScenarioA1VehicleProjection.DriverStands(ScenarioA1CapturedVehicleRules.Automatic, true, true, true));
+        Assert.False(ScenarioA1VehicleProjection.DriverStands(ScenarioA1CapturedVehicleRules.Unarmed, false, true, true));
+    }
+
+    [Fact]
+    public void TheCrewsActsNameTheirFactsInRules()
+    {
+        // D5.1, D5.42: the crew counter's id, and the vehicle's own crew known by it.
+        Assert.Equal("a1-de-tank-crew", ScenarioA1CrewActsRules.CrewId("a1", "de-tank"));
+        Assert.True(ScenarioA1CrewActsRules.IsOwnCrew(ScenarioA1CrewActsRules.CrewId("a1", "de-tank"), "de-tank"));
+        Assert.False(ScenarioA1CrewActsRules.IsOwnCrew("de-crew", "de-tank"));
+        Assert.False(ScenarioA1CrewActsRules.IsOwnCrew("a1-de-tank2-crew", "de-tank"));
+
+        // D5.8, C.8: fired by any fire counter of the Player Turn; moved by the state's list, or MP spent in this MPh.
+        Assert.True(ScenarioA1CrewActsRules.VehicleFired(false, false, false, true, false));
+        Assert.False(ScenarioA1CrewActsRules.VehicleFired(false, false, false, false, false));
+        Assert.True(ScenarioA1CrewActsRules.VehicleMoved(true, false, false));
+        Assert.True(ScenarioA1CrewActsRules.VehicleMoved(false, true, true));
+        Assert.False(ScenarioA1CrewActsRules.VehicleMoved(false, false, true));
+
+        // D5.43: unpinned and in Good Order.
+        Assert.True(ScenarioA1CrewActsRules.RecrewReady(false, false, false, false, false, false));
+        Assert.False(ScenarioA1CrewActsRules.RecrewReady(false, true, false, false, false, false));
+        Assert.False(ScenarioA1CrewActsRules.RecrewReady(false, false, false, false, false, true));
+
+        // D5.8: the record's fire counter, both ways.
+        Assert.Equal(UnitCondition.PrepFire, ScenarioA1CrewActsRules.FireCounterOf(ScenarioA1CrewActsRules.FireCounterName(UnitCondition.PrepFire)));
+        Assert.Equal(UnitCondition.FinalFire, ScenarioA1CrewActsRules.FireCounterOf(ScenarioA1CrewActsRules.FireCounterName(UnitCondition.FinalFire)));
+        Assert.Null(ScenarioA1CrewActsRules.FireCounterName(null));
+        Assert.Null(ScenarioA1CrewActsRules.FireCounterOf("other"));
+
+        // D3.43, D5.34: what a crew takes as it leaves from inside, and what a re-crewing unit brings back.
+        Assert.Equal((true, true), ScenarioA1CrewActsRules.AbandonCarries(true, true));
+        Assert.Equal((false, true), ScenarioA1CrewActsRules.AbandonCarries(true, false));
+        Assert.Equal((false, false), ScenarioA1CrewActsRules.AbandonCarries(false, true));
+        Assert.Equal((true, false), ScenarioA1CrewActsRules.RecrewCarries(true, false));
+
+        // B25.14: one Blaze name for the planner and the projector.
+        Assert.Equal("de-tank-blaze", ScenarioA1WreckRules.BlazeId("de-tank"));
+    }
+
+    [Fact]
+    public void ACapturedVehicleIsReadFromItsCaptureNotItsNationality()
+    {
+        // A21.2, A21.22: taken from another side and not taken back; a vehicle no capture took is not captured, whatever its nationality.
+        Assert.True(ScenarioA1CapturedVehicleRules.Captured("german", "russian"));
+        Assert.False(ScenarioA1CapturedVehicleRules.Captured(null, "russian"));
+        Assert.False(ScenarioA1CapturedVehicleRules.Captured("german", "german"));
+
+        // A21.2: a capture attempt in the CCPh, never as CC Reaction Fire.
+        Assert.Contains("A21.2", ScenarioA1CapturedVehicleRules.CaptureAttemptPhaseBar("mph"), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1CapturedVehicleRules.CaptureAttemptPhaseBar("ccph"));
+    }
+
+    [Fact]
+    public void APassengersExposureItsVehiclesMoveAndTheOvrShareAreRules()
+    {
+        // D6.62, D6.84: an unarmored vehicle's Passengers are exposed; an armored one's while its crew is CE.
+        Assert.True(ScenarioA1PassengerActionRules.PassengersExposed(true, false));
+        Assert.True(ScenarioA1PassengerActionRules.PassengersExposed(false, true));
+        Assert.False(ScenarioA1PassengerActionRules.PassengersExposed(false, false));
+
+        // D6.22: a Rider's AFV moved this Player Turn; D6.65, C.8: a Passenger's vehicle moved in this MPh, or is in Motion.
+        Assert.True(ScenarioA1PassengerActionRules.VehicleMoved(true, false, true, false));
+        Assert.False(ScenarioA1PassengerActionRules.VehicleMoved(true, true, false, true));
+        Assert.True(ScenarioA1PassengerActionRules.VehicleMoved(false, true, true, false));
+        Assert.False(ScenarioA1PassengerActionRules.VehicleMoved(false, false, true, false));
+        Assert.True(ScenarioA1PassengerActionRules.VehicleMoved(false, false, false, true));
+
+        // D7.11: the Passengers that may fire add to the OVR; none when the share is none, or none of those named may.
+        OverrunAboardFacts[] aboard =
+        [
+            new("p1", true, false, false, false, false), new("p2", true, true, false, false, false), new("p3", true, false, false, false, true),
+            new("r1", false, false, false, false, false),
+        ];
+        Assert.Equal(["p1"], ScenarioA1PassengerActionRules.OverrunPassengers(0.5m, aboard, null)!);
+        Assert.Null(ScenarioA1PassengerActionRules.OverrunPassengers(0m, aboard, null));
+        Assert.Null(ScenarioA1PassengerActionRules.OverrunPassengers(0.25m, aboard, NamedOther));
+    }
+
+    [Fact]
+    public void APinnedPassengerLeaderDirectsNoAttack()
+    {
+        // A7.8 (p. 62): "A pinned leader can neither direct an attack".
+        var leader = new FireGroupLeaderFacts("de-l", "de-ht", true, true, false, false)
+        {
+            Pinned = true
+        };
+        Assert.Contains("A7.8", ScenarioA1PassengerActionRules.FireGroupBar([new FireGroupMemberFacts("a", "de-ht", FirePrc.Passenger, true)], [leader], []), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AUnitAboardRoutsBeneathAndIsNotHeldToSurrender()
+    {
+        // D6.1: a broken Passenger of an Abandoned vehicle must rout beneath it; A20.21's surrender never holds it.
+        var (beneath, must, may, surrender) = ScenarioA1RoutCalculator.AboardRout("de-v", true, true, false, false, false, true, false, true);
+        Assert.Equal((ScenarioA1RoutCalculator.MustRoutBeneath, true, false), (beneath, may, surrender));
+        Assert.Contains("lost its inherent crew", must, StringComparison.Ordinal);
+
+        // D5.311: the broken crew inside must rout beneath, and the vehicle is then Abandoned.
+        Assert.Contains("broken crew", ScenarioA1RoutCalculator.AboardRout("de-v", true, true, false, false, true, false, true, false).MustRout, StringComparison.Ordinal);
+
+        // In Melee it neither must nor may; of a Stopped vehicle whose crew is there it may; unbroken it stays aboard.
+        var melee = ScenarioA1RoutCalculator.AboardRout("de-v", true, true, true, false, false, true, false, true);
+        Assert.Equal(((string?)null, false), (melee.MustRout, melee.MayRout));
+        var stopped = ScenarioA1RoutCalculator.AboardRout("de-v", true, true, false, false, false, true, false, false);
+        Assert.Equal((ScenarioA1RoutCalculator.MayRoutBeneath, (string?)null, true), (stopped.Beneath, stopped.MustRout, stopped.MayRout));
+        Assert.Equal(ScenarioA1RoutCalculator.StaysAboard, ScenarioA1RoutCalculator.AboardRout("de-v", true, false, false, false, false, true, false, true).Beneath);
+    }
+
+    [Fact]
+    public void RidersBailOutWhereTheAfvWasUnlessItsTurretTurnsAsItEnters()
+    {
+        // D6.21: terrain in the last hex occupied; a TCA change in the AFV's Location, the one it enters when it comes with an entry.
+        Assert.True(ScenarioA1RiderRules.BailsOutWhereItWas(ScenarioA1RiderRules.Terrain, true));
+        Assert.True(ScenarioA1RiderRules.BailsOutWhereItWas(ScenarioA1RiderRules.Turret, false));
+        Assert.False(ScenarioA1RiderRules.BailsOutWhereItWas(ScenarioA1RiderRules.Turret, true));
+
+        // D6.4: a halftrack or a Carrier keeps SW aboard.
+        Assert.True(ScenarioA1PassengerCalculator.KeepsSwAboard("halftrack"));
+        Assert.True(ScenarioA1PassengerCalculator.KeepsSwAboard(ScenarioA1CarrierRules.VehicleClass));
+        Assert.False(ScenarioA1PassengerCalculator.KeepsSwAboard("truck"));
+        Assert.False(ScenarioA1PassengerCalculator.KeepsSwAboard(null));
+    }
 }

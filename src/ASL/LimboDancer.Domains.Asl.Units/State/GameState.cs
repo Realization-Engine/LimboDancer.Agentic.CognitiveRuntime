@@ -70,6 +70,12 @@ public sealed record GameState(
     /// </summary>
     public IReadOnlyList<string> MovedVehicles { get; init; } = [];
 
+    /// <summary>
+    /// The vehicles marked Abandoned in the current Player Turn, by a <c>vehicle-abandoned</c> record or an Abandoned condition (D5.42; pass 65, the
+    /// boundary review): "A vehicle may not be entered during the same Player Turn in which its previous crew left." Cleared at each new Player Turn.
+    /// </summary>
+    public IReadOnlyList<string> AbandonedThisPlayerTurn { get; init; } = [];
+
     /// <summary>The fire attacks made in the current phase (A7.55); cleared at every phase change.</summary>
     public IReadOnlyList<FireRecord> FiresThisPhase { get; init; } = [];
 

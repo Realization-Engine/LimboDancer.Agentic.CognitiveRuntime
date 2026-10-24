@@ -27,6 +27,64 @@ public static class ScenarioA1CrewActsRules
     /// <summary>D6.631: the MG Removed is the vehicle's BMG.</summary>
     public const string BowMg = "bmg";
 
+    /// <summary>D5.8: the fire counter a crew leaving its vehicle takes, as the <c>vehicle-abandoned</c> record names it.</summary>
+    public const string PrepFireCounter = "prep";
+    public const string FinalFireCounter = "final";
+
+    /// <summary>
+    /// D5.1, D5.6 (pass 65, ruling R65.19; the boundary review): the id of the crew counter a vehicle's inherent crew takes as it leaves the vehicle, made
+    /// by the action that places it. The planner writes it, and the re-crewing and the Victory count know the vehicle's own crew by it.
+    /// </summary>
+    public static string CrewId(string attemptId, string vehicle) => $"{attemptId}-{vehicle}-crew";
+
+    /// <summary>Whether a unit is the crew counter its vehicle's inherent crew became as it left (D5.42, D5.341), by the id <see cref="CrewId"/> gives it.</summary>
+    public static bool IsOwnCrew(string unitId, string vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(unitId);
+        return unitId.EndsWith($"-{vehicle}-crew", StringComparison.Ordinal);
+    }
+
+    /// <summary>D5.8, C.8: whether a vehicle has fired this Player Turn: it carries a Prep, First, Final, Bounding, or Intensive Fire counter.</summary>
+    public static bool VehicleFired(bool prepFire, bool firstFire, bool finalFire, bool boundingFire, bool intensiveFire) =>
+        prepFire || firstFire || finalFire || boundingFire || intensiveFire;
+
+    /// <summary>
+    /// D5.8, C.8, D5.41: whether a vehicle has moved this Player Turn: it entered a new hex or moved under a Motion counter (the state's list of this
+    /// Player Turn), or it has spent MP in this MPh.
+    /// </summary>
+    public static bool VehicleMoved(bool movedThisPlayerTurn, bool mph, bool spentMp) => movedThisPlayerTurn || (mph && spentMp);
+
+    /// <summary>D5.43: a unit enters a vehicle to crew it only unpinned and in Good Order: not broken, berserk, in Melee, captured, or TI either.</summary>
+    public static bool RecrewReady(bool broken, bool pinned, bool berserk, bool melee, bool captured, bool ti) => !broken && !pinned && !berserk && !melee && !captured && !ti;
+
+    /// <summary>The D5.8 fire counter as the <c>vehicle-abandoned</c> record names it, from <see cref="CrewFireCounter"/>'s answer; null for none.</summary>
+    public static string? FireCounterName(UnitCondition? counter) => counter switch
+    {
+        UnitCondition.PrepFire => PrepFireCounter,
+        UnitCondition.FinalFire => FinalFireCounter,
+        _ => null,
+    };
+
+    /// <summary>The D5.8 fire counter a <c>vehicle-abandoned</c> record names, read back for the crew; null for none or a name it does not know.</summary>
+    public static UnitCondition? FireCounterOf(string? recorded) => recorded switch
+    {
+        PrepFireCounter => UnitCondition.PrepFire,
+        FinalFireCounter => UnitCondition.FinalFire,
+        _ => null,
+    };
+
+    /// <summary>
+    /// D3.43, D5.34 (pp. 200, 203): what a crew Abandoning its vehicle takes with it. A unit crewing it from inside leaves as itself with the vehicle's Armor
+    /// Leader, dormant, and its Stun "+1"; the inherent crew placed as its own counter carries both in the record that places it.
+    /// </summary>
+    public static (bool StunRecovery, bool ArmorLeader) AbandonCarries(bool crewInside, bool vehicleStunRecovery) => (crewInside && vehicleStunRecovery, crewInside);
+
+    /// <summary>
+    /// D3.43, D5.34, D5.42 (pp. 200, 203, 204): what a unit entering an Abandoned vehicle to crew it brings back: its Stun "+1" goes to the vehicle and
+    /// leaves the unit, and an Armor Leader it carries is the vehicle's again (the vehicle keeps its own when the unit carries none).
+    /// </summary>
+    public static (bool VehicleStunRecovery, bool ArmorLeaderReturns) RecrewCarries(bool unitStunRecovery, bool unitArmorLeader) => (unitStunRecovery, unitArmorLeader);
+
     /// <summary>
     /// D5.41 (p. 204): "A crew may abandon its vehicle only during its own MPh, and does so by expending all of its MF to be placed beneath the vehicle.
     /// The vehicle/crew may not have moved or fired during that Player Turn." D5.1: "All unarmed vehicles are manned only by an Inherent Driver who never

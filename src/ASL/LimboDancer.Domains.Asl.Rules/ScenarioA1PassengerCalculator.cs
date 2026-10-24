@@ -96,7 +96,8 @@ public static class ScenarioA1PassengerCalculator
     public static IReadOnlyList<string> LoadFailures(FireEmbarking? embarking, IEnumerable<FireUnitEffect> effects, string? conveyanceResult = null)
     {
         ArgumentNullException.ThrowIfNull(effects);
-        if (embarking is not { Units: { } loaders, Unloading: false })
+        // A load writes no unloading flag since the boundary review's fixes, and an earlier record of this pass writes false: both are loads.
+        if (embarking is not { Units: { } loaders } || embarking.Unloading == true)
         {
             return [];
         }
@@ -180,10 +181,13 @@ public static class ScenarioA1PassengerCalculator
             return $"play.unload: {stray} is not held by a Passenger that unloads, so it is not left aboard (D6.4)";
         }
 
-        return weapons.Any() && vehicleClass is not ("halftrack" or "carrier")
+        return weapons.Any() && !KeepsSwAboard(vehicleClass)
             ? $"play.unload: only a halftrack or a Carrier keeps a SW aboard without Passengers, and {vehicleId} is neither; the SW unloads with its holder (D6.4)"
             : null;
     }
+
+    /// <summary>D6.4 (p. 205; ruling R65.15): whether a vehicle keeps SW aboard as their holders unload: a halftrack or a Carrier.</summary>
+    public static bool KeepsSwAboard(string? vehicleClass) => vehicleClass == "halftrack" || ScenarioA1CarrierRules.IsCarrier(vehicleClass);
 
     /// <summary>
     /// D6.5 (p. 205; pass 65, ruling R65.15): "no unit other than the conveying vehicle and any other disembarking PRC of that vehicle may move in the

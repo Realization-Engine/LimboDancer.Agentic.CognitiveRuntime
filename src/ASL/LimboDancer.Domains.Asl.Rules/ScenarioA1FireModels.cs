@@ -576,7 +576,9 @@ public sealed record FireVehicle(
 
     /// <summary>
     /// Whether the vehicle is Shocked or under an Unconfirmed Kill (C7.42; pass 65, ruling R65.21): +1 to its Crew Survival DR and no Immobilization TC
-    /// (D5.5, D5.6). Written with <see cref="Prc"/> by every attack planned since the pass and taken from the record at replay; null is false.
+    /// (D5.5, D5.6). Written with <see cref="Prc"/> by every attack planned since the pass and taken from the record at replay; null is false. One fact
+    /// for both on purpose (the boundary review): C7.42 (p. 177): "An AFV under an UK counter is still shocked", and no rule read here tells the two apart;
+    /// a rule that must (C7.42's flip back on a second Shock) reads the vehicle's own condition.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Shocked
@@ -607,9 +609,10 @@ public sealed record FireVehicle(
 
 /// <summary>
 /// A Passenger or Rider of a vehicle (D6.1, D6.2; pass 65, ruling R65.5): the unit, its definition, its role, and the states its Vulnerability (D6.61,
-/// D6.62) and its checks read.
+/// D6.62) and its checks read. Broken and pinned are written only when true (the boundary review); null is false.
 /// </summary>
-public sealed record FirePrc(string? UnitId, string? DefinitionId, string? Role, bool? Broken, bool? Pinned)
+public sealed record FirePrc(string? UnitId, string? DefinitionId, string? Role, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? Broken,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? Pinned)
 {
     public const string Passenger = "passenger";
     public const string Rider = "rider";
@@ -830,9 +833,11 @@ public sealed record FireMovement(bool? AssaultMovement);
 
 /// <summary>
 /// The (un)loaders a Defensive First Fire attacks with the MP expenditure of their vehicle's load or unload (D6.4, D6.5, D5.43; pass 65, ruling R65.14):
-/// their ids, whether they unload (rather than board), and whether the vehicle is an unarmored conveyance.
+/// their ids, whether they unload (rather than board), and whether the vehicle is an unarmored conveyance. The two flags are written only when true (the
+/// boundary review); null is false.
 /// </summary>
-public sealed record FireEmbarking(IReadOnlyList<string>? Units, bool? Unloading, bool? UnarmoredConveyance);
+public sealed record FireEmbarking(IReadOnlyList<string>? Units, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? Unloading,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? UnarmoredConveyance);
 
 /// <summary>A MG a firer uses in the attack (A7.35, A9.1), with its reviewed catalog definition.</summary>
 public sealed record FireWeapon(string? EquipmentId, string? DefinitionId, bool? Malfunctioned, bool? FiredThisPlayerTurn, bool? FirstFireMarked)

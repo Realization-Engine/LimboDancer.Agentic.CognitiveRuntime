@@ -19,6 +19,12 @@ public static class ScenarioA1WreckRules
     /// <summary>The purpose of a Scrounging dr, and of its Random Selection.</summary>
     public const string Purpose = "scrounge";
 
+    /// <summary>
+    /// B25.14 (backlog pass 6): the id of the Blaze on a burning wreck, its vehicle's id with <c>-blaze</c>. The one name the planner writes and the
+    /// projector reads (pass 65, the boundary review).
+    /// </summary>
+    public static string BlazeId(string vehicle) => vehicle + "-blaze";
+
     /// <summary>D10.51: the weapons a vehicle's Scrounging may salvage, by the mount they come from.</summary>
     public const string BowMg = "bmg";
     public const string MainArmament = "ma";

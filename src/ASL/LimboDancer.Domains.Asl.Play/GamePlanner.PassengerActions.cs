@@ -18,13 +18,13 @@ public sealed partial class GamePlanner
         return VehicleOf(state, unitId);
     }
 
-    /// <summary>Whether a vehicle moved this phase as D6.65 and C.8 read it: it entered a new hex or hexside in this MPh, or is in Motion.</summary>
-    private static bool MovedThisPhase(GameState state, UnitInstance vehicle) =>
-        (state.Phase == "mph" && state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal)) || Is(vehicle, Conditions.Motion);
+    /// <summary>Whether a PRC's vehicle has moved as its Mounted Fire and its leader read it (D6.22, D6.65, C.8): Rules decides from the state's facts.</summary>
+    private static bool VehicleMoved(GameState state, UnitInstance vehicle, bool rider) =>
+        ScenarioA1PassengerActionRules.VehicleMoved(rider, state.Phase == "mph", state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal), Is(vehicle, Conditions.Motion));
 
-    /// <summary>Whether an armored vehicle's Passengers are CE with its crew (D6.62, D6.84): a Carrier's always; a truck's are always exposed.</summary>
+    /// <summary>Whether a vehicle's Passengers are exposed with its crew (D6.62, D6.84): Rules decides from its armor and its crew's CE (a Carrier's always).</summary>
     private static bool PassengersExposed(UnitInstance vehicle, FireDefinition definition) =>
-        definition.Unarmored == true || definition.VehicleClass == "carrier" || LiveFire.CrewExposed(vehicle);
+        ScenarioA1PassengerActionRules.PassengersExposed(definition.Unarmored == true, LiveFire.CrewExposed(vehicle));
 
     /// <summary>
     /// An attack with each Passenger firer's Mounted Fire (D6.1, D6.62, D6.63; ruling R65.10) and the makeup of its group and leaders (D6.64, D6.65;
@@ -60,7 +60,7 @@ public sealed partial class GamePlanner
             // D6.22 (pass 65, ruling R65.17): a Rider is always exposed, and its FP is quartered once its AFV has moved this Player Turn.
             var rider = unit.Position is ContainedPosition { Role: ContainmentRole.Rider };
             var exposed = rider || PassengersExposed(vehicle, definition);
-            var moved = rider ? state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal) : MovedThisPhase(state, vehicle);
+            var moved = VehicleMoved(state, vehicle, rider);
             var verdict = ScenarioA1PassengerActionRules.MountedFire(new MountedFireFacts(unit.Id, vehicle.Id, definition, exposed,
                 !Is(unit, Conditions.Pinned) && !Is(unit, Conditions.Broken), moved, Is(vehicle, Conditions.Motion), vehicle.Straddling is not null, attack.Phase,
                 [.. (firer.Weapons ?? []).Select(weapon => new MountedWeaponFacts(weapon.EquipmentId ?? string.Empty,
@@ -91,8 +91,11 @@ public sealed partial class GamePlanner
         {
             if (VehicleOf(state, id) is { } vehicleId && state.Unit(vehicleId) is { } vehicle && VehicleDefinition(vehicle) is { } definition && state.Unit(id) is { } leader)
             {
-                leaders.Add(new FireGroupLeaderFacts(id, vehicleId, PassengersExposed(vehicle, definition) && !Is(leader, Conditions.Pinned), definition.Unarmored != true,
-                    MovedThisPhase(state, vehicle), false));
+                leaders.Add(new FireGroupLeaderFacts(id, vehicleId, PassengersExposed(vehicle, definition), definition.Unarmored != true,
+                    VehicleMoved(state, vehicle, false), false)
+                {
+                    Pinned = Is(leader, Conditions.Pinned),
+                });
             }
             else
             {
@@ -152,9 +155,9 @@ public sealed partial class GamePlanner
     /// <summary>
     /// D6.1 (ruling R65.11): a broken Passenger's vehicle and what it may do in the RtPh: stay aboard, rout beneath, or rout beneath because its vehicle's
     /// inherent crew is gone (Abandoned) or broken. D5.311 (ruling R65.31): a crew broken inside its AFV is in the Crew role, and must rout beneath it
-    /// (<c>Crew</c> true). Null for a unit on foot.
+    /// (<c>Crew</c> true). Rules decides, with why it must rout, whether it may, and whether A20.21's surrender holds it. Null for a unit on foot.
     /// </summary>
-    private (string Vehicle, string Verdict, bool Crew)? PassengerRout(GameState state, UnitInstance unit)
+    private (string Vehicle, string Verdict, bool Crew, string? MustRout, bool MayRout, bool MaySurrender)? PassengerRout(GameState state, UnitInstance unit)
     {
         if (VehicleOf(state, unit.Id) is not { } vehicleId || state.Unit(vehicleId) is not { } vehicle)
         {
@@ -164,8 +167,10 @@ public sealed partial class GamePlanner
         // An inherent crew is eliminated with its vehicle, which then carries nobody (D5.6); the crew is gone when it has Abandoned the vehicle, and broken
         // when its counter is broken inside it (D5.311), read from the state's index (ruling R65.25).
         var crewBroken = MemoOf(state).Objects(state).CrewOf(vehicleId) is { } crew && Is(crew, Conditions.Broken);
-        return (vehicleId, ScenarioA1RoutCalculator.RoutBeneath(Is(unit, Conditions.Broken), !Is(vehicle, Conditions.Motion), crewEliminated: false, crewBroken,
-            Is(vehicle, Conditions.Abandoned)), unit.Position is ContainedPosition { Role: ContainmentRole.Crew });
+        var asCrew = unit.Position is ContainedPosition { Role: ContainmentRole.Crew };
+        var (beneath, mustRout, mayRout, maySurrender) = ScenarioA1RoutCalculator.AboardRout(vehicleId, unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
+            Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), asCrew, !Is(vehicle, Conditions.Motion), crewBroken, Is(vehicle, Conditions.Abandoned));
+        return (vehicleId, beneath, asCrew, mustRout, mayRout, maySurrender);
     }
 
     /// <summary>
@@ -173,7 +178,7 @@ public sealed partial class GamePlanner
     /// on foot. D5.311 (ruling R65.31): a broken crew inside its AFV routs beneath it the same way, and the vehicle is Abandoned first.
     /// </summary>
     private GamePlan PlanRoutBeneath(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, GameState state, UnitInstance unit,
-        BoardLocation at, (string Vehicle, string Verdict, bool Crew) aboard, int routeSteps, bool lowCrawl)
+        BoardLocation at, (string Vehicle, string Verdict, bool Crew, string? MustRout, bool MayRout, bool MaySurrender) aboard, int routeSteps, bool lowCrawl)
     {
         if (ScenarioA1RoutCalculator.RoutBeneathBar(unit.Id, aboard.Vehicle, aboard.Verdict, routeSteps, lowCrawl) is { } bar)
         {
@@ -200,19 +205,12 @@ public sealed partial class GamePlanner
     /// The Passengers who add their FP to a vehicle's OVR as it is declared (D7.11, D6.62, D6.5; ruling R65.13): those named, or every Passenger that may
     /// fire from it (Good Order, unpinned, CE in an armored vehicle) when none is named. Null when none adds, so the record keeps its older shape.
     /// </summary>
-    private string[]? OverrunPassengerIds(GameState state, UnitInstance vehicle, IReadOnlyList<string>? named)
-    {
-        if (VehicleDefinition(vehicle) is not { } definition
-            || ScenarioA1PassengerActionRules.OverrunShare(definition.Unarmored == true, PassengersExposed(vehicle, definition), definition.VehicleClass) == 0)
-        {
-            return null;
-        }
-
-        string[] able = [.. Riding(state, vehicle.Id).Where(unit => unit.Position is ContainedPosition { Role: ContainmentRole.Passenger } && !Is(unit, Conditions.Broken)
-            && !Is(unit, Conditions.Pinned) && !Is(unit, Conditions.BoundingFire) && !LiveFire.Fired(unit) && (named is null || named.Contains(unit.Id, StringComparer.Ordinal)))
-            .Select(unit => unit.Id)];
-        return able.Length == 0 ? null : able;
-    }
+    private string[]? OverrunPassengerIds(GameState state, UnitInstance vehicle, IReadOnlyList<string>? named) =>
+        VehicleDefinition(vehicle) is not { } definition ? null
+            : ScenarioA1PassengerActionRules.OverrunPassengers(
+                ScenarioA1PassengerActionRules.OverrunShare(definition.Unarmored == true, PassengersExposed(vehicle, definition), definition.VehicleClass),
+                Riding(state, vehicle.Id).Select(unit => new OverrunAboardFacts(unit.Id, unit.Position is ContainedPosition { Role: ContainmentRole.Passenger },
+                    Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.BoundingFire), LiveFire.Fired(unit))), named);
 
     /// <summary>The Passengers the declaration of a vehicle's current OVR named (D7.11; ruling R65.13), from the last overrunning step this phase.</summary>
     private static IReadOnlyList<string>? DeclaredOverrunPassengers(IReadOnlyList<GameEvent> events, string vehicleId) =>
@@ -237,7 +235,7 @@ public sealed partial class GamePlanner
             },
         } : attack);
 
-    /// <summary>D6.5 (ruling R65.10): whether a Passenger added its FP to its vehicle's OVR this phase.</summary>
-    private static bool OverranThisPhase(IReadOnlyList<GameEvent> existing, string unitId) =>
-        ThisPhase(existing).Select(item => item.Payload).OfType<VehicleStepped>().Any(step => step.Overrunning && step.Units?.Contains(unitId, StringComparer.Ordinal) == true);
+    /// <summary>D6.5 (ruling R65.10): the Passengers that added their FP to their vehicle's OVR this phase, read once per plan from the phase's steps.</summary>
+    private static HashSet<string> OverranThisPhase(IReadOnlyList<GameEvent> existing) =>
+        new(ThisPhase(existing).Select(item => item.Payload).OfType<VehicleStepped>().Where(step => step.Overrunning).SelectMany(step => step.Units ?? []), StringComparer.Ordinal);
 }

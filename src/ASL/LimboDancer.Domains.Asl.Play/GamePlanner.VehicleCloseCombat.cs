@@ -178,9 +178,9 @@ public sealed partial class GamePlanner
         }
 
         // A11.52, A21.2 (pass 65, ruling R65.22): a capture attempt is made in the CCPh, on an Abandoned AFV.
-        if (capture && (state.Phase == "mph" ? "play.cc-vehicle: a capture attempt is made in the CCPh, not as CC Reaction Fire (A21.2)"
-            : vehicleId is not null && state.Unit(vehicleId) is { } target ? ScenarioA1CapturedVehicleRules.CaptureAttemptBar(target.Id, Armed(VehicleDefinition(target)), Is(target, Conditions.Abandoned))
-            : null) is { } captureBar)
+        if (capture && (ScenarioA1CapturedVehicleRules.CaptureAttemptPhaseBar(state.Phase)
+            ?? (vehicleId is not null && state.Unit(vehicleId) is { } target
+                ? ScenarioA1CapturedVehicleRules.CaptureAttemptBar(target.Id, Armed(VehicleDefinition(target)), Is(target, Conditions.Abandoned)) : null)) is { } captureBar)
         {
             return Refused(scope, label, expected, captureBar);
         }

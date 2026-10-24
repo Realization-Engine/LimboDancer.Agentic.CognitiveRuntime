@@ -60,9 +60,20 @@ public static class ScenarioA1CapturedVehicleRules
     public static string? CaptureAttemptBar(string vehicle, bool armed, bool abandoned) =>
         !armed || !abandoned ? $"play.cc-vehicle: only an Abandoned AFV is the target of a capture attempt; {vehicle} is not one, so attack it to eliminate it (A11.52, A21.2)" : null;
 
+    /// <summary>A21.2: a capture attempt is made in the CCPh; in the MPh only CC Reaction Fire attacks a vehicle (D7.21). Why it is refused then, or null.</summary>
+    public static string? CaptureAttemptPhaseBar(string? phase) =>
+        phase == "mph" ? "play.cc-vehicle: a capture attempt is made in the CCPh, not as CC Reaction Fire (A21.2)" : null;
+
+    /// <summary>
+    /// A21.2, A21.22 (the referee's review of pass 65): whether a vehicle is captured, from the record of its capture: it belongs to another side than the
+    /// one it was captured from. A vehicle that no <c>vehicle-captured</c> record took (<paramref name="capturedFrom"/> null), or that its own side took
+    /// back, is not; nor is a friendly vehicle of another nationality.
+    /// </summary>
+    public static bool Captured(string? capturedFrom, string? side) => capturedFrom is not null && capturedFrom != side;
+
     /// <summary>
     /// A21.22 (p. 88), D5.42: how a unit entering a vehicle to crew it mans it, or null for an Inherent crew: the vehicle's own crew, and a vehicle or
-    /// infantry crew of the vehicle's nationality. In a captured vehicle (another nationality's) a vehicle crew, an infantry crew, a HS, or a SMC is a
+    /// infantry crew of a vehicle not captured. In a captured vehicle (<see cref="Captured"/>) a vehicle crew, an infantry crew, a HS, or a SMC is a
     /// Temporary crew; in a friendly one a MMC other than a crew, or a SMC, is (ruling R65.20).
     /// </summary>
     public static string? Manning(string? kind, bool smc, bool ownCrew, bool captured) =>

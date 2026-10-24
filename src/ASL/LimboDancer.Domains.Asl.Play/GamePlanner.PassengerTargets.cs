@@ -18,7 +18,8 @@ public sealed partial class GamePlanner
     internal IReadOnlyList<FirePrc>? PrcOf(GameState state, UnitInstance vehicle) =>
         Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden) ? null
             : [.. Riding(state, vehicle.Id).Select(unit => new FirePrc(unit.Id, unit.Definition?.Definition,
-                unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? FirePrc.Rider : FirePrc.Passenger, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned))
+                unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? FirePrc.Rider : FirePrc.Passenger, Is(unit, Conditions.Broken) ? true : null,
+                Is(unit, Conditions.Pinned) ? true : null)
             {
                 Wounded = Is(unit, Conditions.Wounded) ? true : null,
                 Fanatic = Is(unit, Conditions.Fanatic) ? true : null,

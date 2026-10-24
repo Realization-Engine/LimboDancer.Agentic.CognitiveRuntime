@@ -22,12 +22,10 @@ public sealed partial class GamePlanner
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
         // D6.1 (ruling R26.2): a broken Passenger may stay aboard, free of rout requirements; pass 65 (ruling R65.11): unless its vehicle's inherent crew
-        // is gone, when it must rout beneath the vehicle. The index answers who rides (ruling R65.25).
-        var aboard = PassengerRout(state, unit);
-        if (aboard is { } riding)
+        // is gone, when it must rout beneath the vehicle. The index answers who rides (ruling R65.25); Rules decides.
+        if (PassengerRout(state, unit) is { } riding)
         {
-            return unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Melee) && !Is(unit, Conditions.Captured) && riding.Verdict == ScenarioA1RoutCalculator.MustRoutBeneath
-                ? riding.Crew ? ScenarioA1RoutCalculator.RoutBeneathCrewText(riding.Vehicle) : ScenarioA1RoutCalculator.RoutBeneathMustText(riding.Vehicle) : null;
+            return riding.MustRout;
         }
 
         if (!ScenarioA1RoutCalculator.MustRoutCandidate(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken), Is(unit, Conditions.Melee),
@@ -61,7 +59,7 @@ public sealed partial class GamePlanner
     public bool MayRout(GameState state, UnitInstance unit) =>
         // D6.1 (pass 65, ruling R65.11): a broken Passenger of a Stopped vehicle may rout beneath it.
         PassengerRout(state, unit) is { } aboard
-            ? aboard.Verdict != ScenarioA1RoutCalculator.StaysAboard && unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Melee) && !Is(unit, Conditions.Captured)
+            ? aboard.MayRout
             : ScenarioA1RoutCalculator.MayRout(MustRout(state, unit), unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken), Is(unit, Conditions.DesperationMorale),
                 Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, Conditions.Disrupted));
 
@@ -72,8 +70,9 @@ public sealed partial class GamePlanner
     /// </summary>
     private (string Cause, IReadOnlyList<string> Captors)? RoutSurrender(GameState state, UnitInstance unit, BoardLocation start)
     {
-        // Pass 65 (ruling R65.11): a Passenger routs beneath its vehicle and is not held to A20.21's surrender; the capture of Passengers is pass 75's.
-        if (VehicleOf(state, unit.Id) is not null)
+        // Pass 65 (ruling R65.11): a Passenger routs beneath its vehicle and is not held to A20.21's surrender (Rules decides); the capture of Passengers
+        // is pass 75's.
+        if (PassengerRout(state, unit) is { MaySurrender: false })
         {
             return null;
         }

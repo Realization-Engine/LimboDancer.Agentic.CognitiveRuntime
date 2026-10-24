@@ -146,6 +146,10 @@ The documents step gives each row its own note and pass.
 - new events: a Rider's Bail Out, a voluntary Abandonment, a re-crewing, a capture, and a Scrounging;
 - a new containment role for a crew inside its vehicle.
 
+**Read from the loaded catalog, not the record** (the boundary review, fix Round C): the Carrier's reads (`CrewExposed`, `PassengerCapacity` 5 to 4, `MayChangeExposure`, `ButtonUpBar`) take the vehicle's class from the catalog loaded now, not from a fact recorded with the game. This is absent-safe only because no live game (470) or store game (528) holds a Carrier; a game recorded before catalog 1.18.0 with the Bren carrier would read its class at replay. Kept so; a game that needs it would carry the class as a record fact.
+
+**State facts added at the fixes (Round C),** computed by the projector from records every game already holds, so no record gains a fact: `UnitInstance.CapturedFrom` (the side a `vehicle-captured` record took a vehicle from; null for every older game) and `GameState.AbandonedThisPlayerTurn` (the vehicles marked Abandoned in the current Player Turn). Both are new state properties, so the gate's computed `PROOF_SKIP` takes them; no older record's replay changes.
+
 ## 5. What the frame found outside the rows
 
 1. **The Bren carrier's Passenger capacity is 5;** D6.81 gives 4 (sheet MFG, so a manufactured value corrected under its rule). Repaired in 2a.

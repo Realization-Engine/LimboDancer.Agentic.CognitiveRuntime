@@ -31,10 +31,23 @@ public sealed record FireGroupMemberFacts(string UnitId, string? VehicleId, stri
 /// A leader directing a fire group as D6.65 and D3.4 read him (pass 65, ruling R65.12): his vehicle when he is a Passenger, whether he is CE or otherwise
 /// exposed, whether his vehicle is an armored halftrack or Carrier, and whether it moved this phase; an Armor Leader is inherent in his vehicle.
 /// </summary>
-public sealed record FireGroupLeaderFacts(string UnitId, string? VehicleId, bool Exposed, bool Halftrack, bool Moved, bool ArmorLeader);
+public sealed record FireGroupLeaderFacts(string UnitId, string? VehicleId, bool Exposed, bool Halftrack, bool Moved, bool ArmorLeader)
+{
+    /// <summary>Whether the leader is pinned (A7.8): a pinned leader directs no attack.</summary>
+    public bool Pinned
+    {
+        get; init;
+    }
+}
 
 /// <summary>A Passenger adding its FP to its vehicle's OVR (D7.11; pass 65, ruling R65.13), with its reviewed definition.</summary>
 public sealed record OverrunPassengerFacts(string UnitId, FireDefinition Definition, bool Wounded);
+
+/// <summary>
+/// A unit aboard a vehicle as its OVR is declared (D7.11; pass 65, ruling R65.13): whether it rides as a Passenger (not a Rider), and what keeps it from
+/// firing: broken, pinned, a Bounding Fire counter, or having fired.
+/// </summary>
+public sealed record OverrunAboardFacts(string UnitId, bool Passenger, bool Broken, bool Pinned, bool BoundingFire, bool Fired);
 
 /// <summary>
 /// The actions of Passengers and Riders (pass 65, task 65.2; rulings R65.10 to R65.13): Mounted Fire, the SW a Passenger passes, the makeup of a fire
@@ -184,6 +197,11 @@ public static class ScenarioA1PassengerActionRules
                 continue;
             }
 
+            if (leader.Pinned)
+            {
+                return $"play.fire-leader-prc: {leader.UnitId} rides {leader.VehicleId} pinned, and a pinned leader directs no attack (A7.8)";
+            }
+
             if (!leader.Exposed)
             {
                 return $"play.fire-leader-prc: {leader.UnitId} rides {leader.VehicleId} BU and directs no fire; a Passenger leader directs only while CE (D6.62, D6.65)";
@@ -214,6 +232,38 @@ public static class ScenarioA1PassengerActionRules
     /// </summary>
     public static decimal OverrunShare(bool unarmored, bool crewExposed, string? vehicleClass) =>
         unarmored ? 0.25m : !crewExposed ? 0m : vehicleClass == "halftrack" || ScenarioA1CarrierRules.IsCarrier(vehicleClass) ? 0.5m : 0.25m;
+
+    /// <summary>
+    /// D6.62, D6.84 (pp. 206; the boundary review): whether a vehicle's Passengers are exposed with its crew: an unarmored vehicle's always; an armored
+    /// one's while its crew is CE, which a Carrier's always is (<see cref="ScenarioA1CarrierRules.CrewExposed"/>, read into
+    /// <paramref name="crewExposed"/>).
+    /// </summary>
+    public static bool PassengersExposed(bool unarmored, bool crewExposed) => unarmored || crewExposed;
+
+    /// <summary>
+    /// D6.22, D6.65, C.8 (the boundary review): whether a PRC's vehicle has moved, as its Mounted Fire and its leader read it. A Rider's AFV has moved when
+    /// it entered a new hex or moved under Motion this Player Turn (the state's list); a Passenger's vehicle when it did so in this MPh, or is in Motion.
+    /// </summary>
+    public static bool VehicleMoved(bool rider, bool mph, bool movedThisPlayerTurn, bool motion) =>
+        rider ? movedThisPlayerTurn : (mph && movedThisPlayerTurn) || motion;
+
+    /// <summary>
+    /// D7.11, D6.62, D6.5 (p. 207; ruling R65.13; the boundary review): the Passengers who add their FP to a vehicle's OVR as it is declared: none when the
+    /// vehicle's share is none (<see cref="OverrunShare"/>); else those named, or every one that may fire when none is named: a Passenger, not a Rider, not
+    /// broken or pinned, with no Bounding Fire counter, that has not fired. Null when none adds, so the record keeps its older shape.
+    /// </summary>
+    public static string[]? OverrunPassengers(decimal share, IEnumerable<OverrunAboardFacts> aboard, IReadOnlyCollection<string>? named)
+    {
+        ArgumentNullException.ThrowIfNull(aboard);
+        if (share == 0)
+        {
+            return null;
+        }
+
+        string[] able = [.. aboard.Where(unit => unit.Passenger && !unit.Broken && !unit.Pinned && !unit.BoundingFire && !unit.Fired
+            && (named is null || named.Contains(unit.UnitId, StringComparer.Ordinal))).Select(unit => unit.UnitId)];
+        return able.Length == 0 ? null : able;
+    }
 
     /// <summary>
     /// D7.11, D7.16 (p. 207; ruling R65.13): each Passenger's FP added to its vehicle's OVR, its share tripled for TPBF and halved with the OVR's own

@@ -301,11 +301,19 @@ public sealed partial class GamePlanner
     private static string? VehicleEntryBar(GameState state, UnitInstance vehicle, BoardLocation to) =>
         ScenarioA1VehicleMovementCalculator.EntryBar(state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Melee)));
 
-    /// <summary>The events of this phase so far.</summary>
+    /// <summary>
+    /// The events of this phase so far: from the last phase change (or the game's start) on, found by walking back from the end, so that a plan reads
+    /// only the phase, never the whole history (pass 65, the boundary review).
+    /// </summary>
     private static IEnumerable<GameEvent> ThisPhase(IReadOnlyList<GameEvent> existing)
     {
-        var since = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged or GameStarted).index;
-        return existing.Skip(since);
+        var since = existing.Count - 1;
+        while (since > 0 && existing[since].Payload is not (PhaseChanged or GameStarted))
+        {
+            since--;
+        }
+
+        return existing.Skip(Math.Max(since, 0));
     }
 
     private static VehicleStepped[] StepsThisPhase(IReadOnlyList<GameEvent> existing, string vehicle) =>

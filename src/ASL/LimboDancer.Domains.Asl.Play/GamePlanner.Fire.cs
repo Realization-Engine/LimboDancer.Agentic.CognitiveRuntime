@@ -1239,7 +1239,7 @@ public sealed partial class GamePlanner
     /// The events that record a vehicle's effect (rulings R25.5, R25.6, R6.5, R6.7), as Rules decides it (pass 32.c): a destroyed vehicle becomes a
     /// wreck, with a Blaze when it burns; else its conditions change, and a concealed vehicle may lose its "?".
     /// </summary>
-    private static IEnumerable<(string Type, EventPayload Payload)> VehicleEffectEvents(GameState state, FireVehicleEffect effect, FireAttack facts, string attemptId)
+    private IEnumerable<(string Type, EventPayload Payload)> VehicleEffectEvents(GameState state, FireVehicleEffect effect, FireAttack facts, string attemptId)
     {
         var vehicle = state.Unit(effect.VehicleId);
         var verdict = ScenarioA1FireFollowUps.VehicleEffect(effect, facts.FireKind, vehicle is not null && (Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)));
