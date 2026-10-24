@@ -62,7 +62,7 @@
         <legend>Board as Passengers (D6.4): one MF each; the vehicle keeps a quarter of its MP per MF left</legend>
         @foreach (var unit in Loadable)
         {
-            <label><input type="checkbox" class="vehicle-load" value="@unit" checked="@LoadChosen.Contains(unit)" @onchange="@(args => OnLoadToggle.InvokeAsync((unit, args.Value is true)))" /> @unit</label>
+            <label><input type="checkbox" class="vehicle-load" value="@unit" checked="@LoadChosen.Contains(unit)" @onchange="@(args => OnLoadToggle.InvokeAsync((unit, args.Value is true)))" /> @At(unit)</label>
         }
         <button id="vehicle-load" disabled="@(!Loadable.Any(LoadChosen.Contains))" aria-describedby="vehicle-load-note" @onclick="@(() => OnStep.InvokeAsync(new StepRequest("load")))">Propose: board</button>
         <span id="vehicle-load-note" class="toolbar-note">Check the units that board.</span>
@@ -74,10 +74,20 @@
         <legend>Passengers aboard; unload while stopped for a quarter of its MP (D6.5)</legend>
         @foreach (var unit in Unloadable)
         {
-            <label><input type="checkbox" class="vehicle-unload" value="@unit" checked="@UnloadChosen.Contains(unit)" @onchange="@(args => OnUnloadToggle.InvokeAsync((unit, args.Value is true)))" /> @unit</label>
+            <label><input type="checkbox" class="vehicle-unload" value="@unit" checked="@UnloadChosen.Contains(unit)" @onchange="@(args => OnUnloadToggle.InvokeAsync((unit, args.Value is true)))" /> @At(unit)</label>
+        }
+        @if (Leavable.Count > 0)
+        {
+            <span role="group" id="vehicle-leave-weapons" aria-label="SW left aboard (D6.4)" title="D6.4: a halftrack or Carrier keeps a SW placed in it, within its Passenger PP capacity; only its Passengers unload it again (D6.5).">
+                Leave aboard:
+                @foreach (var weapon in Leavable)
+                {
+                    <label><input type="checkbox" class="vehicle-leave" value="@weapon" checked="@LeaveChosen.Contains(weapon)" @onchange="@(args => OnLeaveToggle.InvokeAsync((weapon, args.Value is true)))" /> @At(weapon)</label>
+                }
+            </span>
         }
         <button id="vehicle-unload" disabled="@(!Unloadable.Any(UnloadChosen.Contains))" aria-describedby="vehicle-unload-note" @onclick="@(() => OnStep.InvokeAsync(new StepRequest("unload")))">Propose: unload</button>
-        <span id="vehicle-unload-note" class="toolbar-note">Check the Passengers that get off; they move on with the MF left.</span>
+        <span id="vehicle-unload-note" class="toolbar-note">Check the Passengers that get off; they move on with the MF left, at most four, before any other unit moves.</span>
     </fieldset>
 }
 
@@ -186,4 +196,20 @@
 
     [Parameter]
     public EventCallback<(string Unit, bool Chosen)> OnUnloadToggle { get; set; }
+
+    /// <summary>The SW the Passengers hold that a halftrack or Carrier keeps aboard as they unload (D6.4; pass 65, ruling R65.15).</summary>
+    [Parameter]
+    public IReadOnlyList<string> Leavable { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlySet<string> LeaveChosen { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public EventCallback<(string Unit, bool Chosen)> OnLeaveToggle { get; set; }
+
+    /// <summary>A counter's name with its hex, "[F8]: LMG" (the hex UI rule, 2026-10-21); the id itself where the page gives no words.</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string id) => WordsAt?.Invoke(id) ?? id;
 }

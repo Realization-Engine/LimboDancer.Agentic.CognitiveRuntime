@@ -1037,6 +1037,18 @@ public sealed partial class GamePlanner
             }
         }
 
+        // D5.43 (pass 65, ruling R65.14): a loader the attack left pinned or broken does not board; it is back on foot in the Location it boarded in.
+        if (BoardLocation.TryParse(facts.TargetLocationId, out var boardedIn))
+        {
+            foreach (var failed in ScenarioA1PassengerCalculator.LoadFailures(facts.Embarking, resolution.Effects))
+            {
+                if (state.Unit(failed) is { Position: ContainedPosition })
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-moved", new InstanceMoved(failed, new MapPosition(boardedIn)), package, null, [fireId]));
+                }
+            }
+        }
+
         // A7.308, A7.309, D.8B: the Vehicle line's result and the crew's (ruling R25.5, R25.6).
         // D.8B, D6.9 (pass 65, rulings R65.7, R65.9): the PRC that survive are beneath the wreck before it is written; what a General Collateral Attack
         // did to the others follows the vehicle's own result.

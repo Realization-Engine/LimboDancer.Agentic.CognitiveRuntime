@@ -111,16 +111,26 @@ public sealed partial class GamePlanner
         MotionAttemptMover[] movers = [.. movement.Movers.Where(mover => state.Unit(mover) is { Status: InstanceStatus.Active } unit && unit.Side == state.PhasingSide)
             .Select(mover =>
             {
+                // D2.401 (pass 65, ruling R65.15): a unit that unloaded this MPh counts its time aboard: its vehicle's steps from its boarding (or the
+                // phase's start) to its unloading, and its own MF to board and to disembark.
+                var unloaded = phase.LastOrDefault(item => item.Payload is VehicleStepped { Kind: VehicleStepped.Unload } off && off.Units?.Contains(mover, StringComparer.Ordinal) == true);
+                var carrier = (unloaded?.Payload as VehicleStepped)?.Vehicle;
+                var boarded = carrier is null ? null : phase.LastOrDefault(item => item.Revision < unloaded!.Revision
+                    && item.Payload is VehicleStepped { Kind: VehicleStepped.Load } on && on.Vehicle == carrier && on.Units?.Contains(mover, StringComparer.Ordinal) == true);
+                bool Carried(GameEvent item) => carrier is not null && item.Payload is VehicleStepped carried && carried.Vehicle == carrier
+                    && item.Revision >= (boarded?.Revision ?? 0) && item.Revision <= unloaded!.Revision;
                 GameEvent[] steps = [.. phase.Where(item => item.Payload switch
                 {
                     MovementStepped stepped => stepped.Movers.Contains(mover, StringComparer.Ordinal),
-                    VehicleStepped drove => drove.Vehicle == mover,
+                    VehicleStepped drove => drove.Vehicle == mover || Carried(item),
                     _ => false,
                 })];
                 var origin = steps.Length > 0 ? history.At(steps[0].Revision - 1)?.Location(mover)?.Location : state.Location(mover)?.Location;
                 return new MotionAttemptMover(mover, origin is null ? false : Seen(origin), [.. steps.Select(item => item.Payload switch
                 {
                     MovementStepped stepped => (Seen(stepped.To) == true, stepped.HalfMf),
+                    VehicleStepped drove when drove.Vehicle != mover => ScenarioA1MotionAttempts.AboardStep(Seen(drove.At) == true, drove.HalfMp,
+                        ReferenceEquals(item, unloaded) || ReferenceEquals(item, boarded)),
                     VehicleStepped drove => (Seen(drove.At) == true, drove.HalfMp),
                     _ => (false, 0),
                 })]);

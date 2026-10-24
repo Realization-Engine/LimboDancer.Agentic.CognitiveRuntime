@@ -91,5 +91,15 @@ A running record kept as the pass goes, at the user's word of 2026-10-23 ("Keep 
   - **The fire panel's director list left out every leader aboard** (`FireLeaders`, Play.razor about :5358, `state.Aboard(unit.Id) is null`). Fixed: a leader aboard is offered when every firer rides his vehicle; on foot as before; the planner's FG bar decides the rest. Then in p65-mounted-truck: the director list offers "[F8]: 9-1 leader G1"; the proposal reads "4-6-7 squad G1: 4 FP × 0.5 (mounted fire, D6.1) = 2" and "... fires from vehicle G1 as Mounted Fire, its FP times 1/2 (D6.1)".
   - The new button `button.rout-beneath` needed the Icon Lab's coverage file: `IconCoverageTests.TheCoverageFileMatchesTheSources` with `ASL_ICONS_UPDATE_COVERAGE=1`, then without: passed, 7 lines added (my memory's lesson of PR 29).
 - 01:05 Measurement after 2b and 2c (p65-perf-tw, warm runs, hand-over / proposal ms): base 287/140, 241/160, 310/171; pass 65 253/104, 221/109, 322/126. No regression.
-- 01:06 2c committed (below).
+- 01:06 2c committed, c7ece170. `brief_build.md` gains a "Lessons" section (icon coverage for new buttons; `SeenOnly` leaves units aboard out; the index on the page).
+- 01:07 The 2d agent launched on `brief_2d.md`.
+- About 01:38 The 2d agent reported (built 01:07 to about 01:38). Built: FFNAM/FFMO on (un)loaders through `FireAttack.Embarking` (`embarking`), a failed load put back on foot, boarding at the end of a move with a leader's IPC (A4.42), a SW left aboard (`leave`) and taken (`take`), four MF / no Double Time / no leader bonus after unloading, D2.401's time aboard, the interim move (`interim` on the unload step), the record lines, the move-vehicle schema, hex-first load and unload lists. Judged:
+  - The interim move is simplified (the unloaders move once the vehicle's move ends, no other unit before them). Accepted; D6.5's exact interleaving to the backlog.
+  - No CC counter on an unload into an enemy Location: no such condition exists (`asl:cc-reaction` is another thing). The proposal says the units are not held in Melee. Backlog row.
+  - Ordnance First Fire does not treat (un)loaders as targets (only the IFT). The Road Bonus can still lift an unloader above four MF. Backlog rows.
+  - `ResolveOverrun` and others that build a new `MovementState` drop `Disembarked`: an OVR after an unload loses the interim stack. Backlog row (a fault, small).
+  - `MovementState` gains three state-only properties: older games with a load or unload change their state lines, which the gate's computed `PROOF_SKIP` takes.
+- 01:39 Fixed by me: `UnloadableUnits` (Play.razor) scanned `state.Passengers` on every render; now `Live.Planner.Riding` (made public), from the index. Build 0:44, exit 0.
+- 01:40 Studio check of 2d in p65-unload-fire (German MPh): the vehicle panel offers "[F8]: vehicle G1 ([F8])"; unloading "4-6-7 squad G1 in [F8]" commits with the record "[F8]: 4-6-7 squad G1 unloads from vehicle G1 (D6.5)", and the step carries `interim: true` (read from the game file). The DFF on the unloaders is asserted by `AnUnloadFromATruckInTheOpenTakesFfnamAndFfmo`; not walked in the Studio this time.
+- 01:42 2d committed (below).
 - The four estimates sum to about 15:00 of build against the plan's 7:00 (65.1 3:00, 65.2 2:30, 65.3 1:15, 65.4 1:30, 65.5 0:50, crews 0:45, 65.6 1:40, 65.7 1:10, 65.8 1:40, 65.9 0:50).

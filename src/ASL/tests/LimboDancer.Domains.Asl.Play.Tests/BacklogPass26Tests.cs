@@ -356,7 +356,13 @@ public sealed class BacklogPass26Tests : IDisposable
         Assert.Null(Current.Aboard("gs"));
         Assert.Contains(Current.At(At("bd04:I1:0")), item => item.Id == "gs");
         Assert.True(Current.Unit("gs")!.MfSpent >= 2);
-        await EndMove();
+
+        // D6.5 (pass 65, ruling R65.15): the halftrack's move ends, and the units it unloaded move next, before any other unit.
+        for (var step = 0; step < 4 && Current.Movement is { Vehicle: true } moving; step++)
+        {
+            Committed(await Act(moving.WindowOpen ? GameActions.PassFire : GameActions.EndMove));
+        }
+
         Committed(await Act(GameActions.Move, new
         {
             unitIds = SquadOnly,

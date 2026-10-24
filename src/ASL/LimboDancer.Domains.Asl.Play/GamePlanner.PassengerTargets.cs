@@ -25,16 +25,24 @@ public sealed partial class GamePlanner
                 Elr = unit.Group is not null ? state.ElrOf(unit) : state.Side(unit.Side)?.Elr,
             })];
 
-    /// <summary>An attack with the PRC of each vehicle in its target Location, and of the AFV it names (ruling R65.5).</summary>
+    /// <summary>
+    /// An attack with the PRC of each vehicle in its target Location, and of the AFV it names (ruling R65.5). The units boarding with the expenditure the
+    /// attack answers are attacked on foot, not as PRC (D5.43; ruling R65.14).
+    /// </summary>
     internal FireAttack WithPrc(GameState state, FireAttack attack) => attack with
     {
         Vehicles = attack.Vehicles is null ? null
-            : [.. attack.Vehicles.Select(vehicle => state.Unit(vehicle.VehicleId ?? string.Empty) is { } unit ? vehicle with { Prc = PrcOf(state, unit) } : vehicle)],
+            : [.. attack.Vehicles.Select(vehicle => state.Unit(vehicle.VehicleId ?? string.Empty) is { } unit
+                ? vehicle with { Prc = OnFoot(PrcOf(state, unit), attack.Embarking?.Units) }
+                : vehicle)],
         TargetVehicle = attack.TargetVehicle is { VehicleId: { } named } aimed && state.Unit(named) is { } target ? aimed with
         {
             Prc = PrcOf(state, target)
         } : attack.TargetVehicle,
     };
+
+    private static IReadOnlyList<FirePrc>? OnFoot(IReadOnlyList<FirePrc>? prc, IReadOnlyList<string>? loaders) =>
+        prc is null || loaders is null ? prc : [.. prc.Where(item => item.UnitId is not { } id || !loaders.Contains(id, StringComparer.Ordinal))];
 
     /// <summary>A shot with the PRC of the vehicle it fires at and of each vehicle its hit attacks (ruling R65.5).</summary>
     internal OrdnanceShot WithPrc(GameState state, OrdnanceShot shot) => shot with

@@ -358,12 +358,14 @@ public sealed partial class GamePlanner
 
         // D5.341: a Recall stops the AFV like a Stun for the rest of that Player Turn; once its counter shows Recall; +1 it must leave.
         var leaving = MustLeave(vehicle);
-        var current = state.Movement;
+
+        // D6.4 (pass 65, ruling R65.15): a moving Infantry stack boards as the last step of its move; the load decides whether it may.
+        var current = kind == VehicleStepped.Load && state.Movement is { Vehicle: false } ? null : state.Movement;
         if (ScenarioA1VehicleMovementCalculator.MoveBar(id, kind, vehicle.MovementEnded,
             () => ButtonedUpAfv(vehicle) && NvrOf(state, vehicle) == 0, condition => Is(vehicle, condition), leaving,
             current is not null && (!current.Vehicle || !current.Members.SequenceEqual([vehicle.Id], StringComparer.Ordinal)) ? current.Members : null,
             current is { WindowOpen: true }, current?.Reaction == true, current?.Overrun?.ToString(),
-            () => current is null && MustCharge(state) is [{ } charging, ..] ? charging.Id : null, current is not null) is { } moveBar)
+            () => state.Movement is null && MustCharge(state) is [{ } charging, ..] ? charging.Id : null, current is not null) is { } moveBar)
         {
             return Refused(scope, label, expected, moveBar);
         }

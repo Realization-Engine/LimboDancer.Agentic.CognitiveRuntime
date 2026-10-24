@@ -59,6 +59,11 @@ I am the session that briefs you. I review your diff, check the work in the Stud
   - a new condition a verdict carries needs its case in the projector's `ConditionName` switch.
 - **Player-facing texts.** Proposal lines, refusals, and record lines are plain sentences that cite the rule, as the surrounding ones do. A refusal says what the player can do instead, where that is short.
 
+## Lessons of the earlier increments (2a to 2c)
+- **A new button or tab id** needs the Icon Lab's coverage file. Run `IconCoverageTests.TheCoverageFileMatchesTheSources` with `ASL_ICONS_UPDATE_COVERAGE=1`, then without, and keep the file it writes.
+- **The Play page's unit lists go through `SeenOnly`,** which leaves out units aboard unless asked (`aboardToo: true`). A list that must offer a Passenger, a Rider, or a crew inside (fire, rout, Bail Out, re-crew, scrounge) must say so. In 2c the Rout panel and the director list missed Passengers until the session fixed them. Check in your report that each control you add actually lists the units it acts on.
+- **Use the planner's index on the page too:** `Live.Planner.VehicleRidden(state, id)`, never `state.Aboard` per unit in a render.
+
 ## Report (your closing message, under 900 words)
 1. What departs from the brief or a ruling, first: anything you left out, simplified, or decided yourself, each with its reason.
 2. What you built: files and members, new facts in records (with their JSON names), new texts.

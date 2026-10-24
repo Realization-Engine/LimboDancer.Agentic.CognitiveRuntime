@@ -666,6 +666,12 @@ public static class GameEventWriter
                     writer.WriteNumber("unitMf", vehicle.UnitMf);
                 }
 
+                // D6.5 (pass 65, ruling R65.15): written only by an unload since the pass.
+                if (vehicle.Interim)
+                {
+                    writer.WriteBoolean("interim", true);
+                }
+
                 if (vehicle.Units is { } aboard)
                 {
                     writer.WriteStartArray("units");

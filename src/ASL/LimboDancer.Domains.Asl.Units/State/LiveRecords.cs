@@ -290,6 +290,16 @@ public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation A
         get; init;
     }
 
+    /// <summary>
+    /// For an unload (D6.5; pass 65, ruling R65.15): the disembarking units move on before any other unit once their vehicle's move ends, since "no
+    /// unit other than the conveying vehicle and any other disembarking PRC of that vehicle may move in the interim". False on every unload recorded
+    /// before the pass, after which any unit moved next.
+    /// </summary>
+    public bool Interim
+    {
+        get; init;
+    }
+
     /// <summary>A Start declaring Reverse movement, and an entry made in Reverse (D2.2, D2.23; ruling R11.1).</summary>
     public bool Reverse
     {
@@ -622,6 +632,30 @@ public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation L
 
     /// <summary>The hex a moving vehicle left to enter its present one (D7.15; ruling R11.11): an OVR takes the wall TEM of the hexside it crossed.</summary>
     public BoardLocation? EnteredFrom
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The units that boarded or disembarked with a vehicle's latest MP expenditure (D6.4, D6.5, D5.43; pass 65, ruling R65.14): Infantry targets of the
+    /// DEFENDER's First Fire with it; null after any other step.
+    /// </summary>
+    public IReadOnlyList<string>? Embarking
+    {
+        get; init;
+    }
+
+    /// <summary>Whether <see cref="Embarking"/> disembarked (D6.5) rather than boarded (D6.4).</summary>
+    public bool Unloading
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The units a moving vehicle disembarked this move by an unload recorded since pass 65 (D6.5; ruling R65.15): they move on before any other unit
+    /// once its move ends; null when none did.
+    /// </summary>
+    public IReadOnlyList<string>? Disembarked
     {
         get; init;
     }

@@ -73,7 +73,7 @@ public static class LiveFire
     /// </summary>
     public static (FireAttack? Attack, string? Reason) FromState(GameState state, IReadOnlyList<string> firerIds, IReadOnlyList<string> directorIds,
         BoardLocation target, IReadOnlyDictionary<string, IReadOnlyList<string>>? weapons = null, IReadOnlyCollection<string>? withoutInherent = null,
-        IReadOnlyDictionary<string, string>? partners = null, string? molUser = null)
+        IReadOnlyDictionary<string, string>? partners = null, string? molUser = null, bool embarking = true)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(firerIds);
@@ -156,6 +156,21 @@ public static class LiveFire
         // A8.1, A7.308, A15.41: who the attack hits, as Rules sorts the target Location's units.
         var movers = state.Phase == "mph" && state.Movement is { } movement && movement.Location == target ? movement.Movers : null;
         UnitInstance[] atTarget = [.. state.At(target).OfType<UnitInstance>()];
+
+        // D6.4, D6.5, D5.43 (pass 65, ruling R65.14): the units boarding or disembarking with the vehicle's expenditure are moving Infantry targets, a
+        // loader attacked on foot in the Location it boards in. A record made before the pass does not ask for them (embarking false), and its targets
+        // are read as before.
+        FireEmbarking? boarding = null;
+        if (embarking && movers is not null && state.Movement is { Vehicle: true, Embarking: { Count: > 0 } loaders } loading)
+        {
+            movers = [.. movers, .. loaders];
+            atTarget = [.. atTarget, .. loaders.Where(id => atTarget.All(unit => unit.Id != id)).Select(state.Unit).OfType<UnitInstance>()
+                .Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location == target)];
+            boarding = new FireEmbarking(loaders, loading.Unloading,
+                state.Unit(loading.Movers.Count > 0 ? loading.Movers[0] : loading.Members[0])?.Definition?.Definition is { } conveyance
+                    ? CatalogReference.Value.Definitions.GetValueOrDefault(conveyance)?.Unarmored == true : null);
+        }
+
         UnitInstance UnitAt(string id) => atTarget.First(unit => unit.Id == id);
         var selection = ScenarioA1FireEligibility.SelectTargets([.. atTarget.Select(unit => new TargetUnitStateFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side,
             IsVehicle(unit), unit.Kind == UnitKinds.Dummy, unit.Definition is not null, movers?.Contains(unit.Id)))], movers is not null);
@@ -266,6 +281,7 @@ public static class LiveFire
             Allies(state, side), [.. selection.Companions.Select(id => Target(state, UnitAt(id), target))])) with
         {
             MgBoreSighted = boreSighted ? true : null,
+            Embarking = boarding,
         }, null);
     }
 
@@ -378,6 +394,9 @@ public static class LiveFire
 
     /// <summary>A vehicle definition's turret type (D1.3), as the catalog prints it; null when it prints none.</summary>
     public static string? MaTypeOf(string? definition) => definition is null ? null : CatalogReference.Value.Definitions.GetValueOrDefault(definition)?.MaType;
+
+    /// <summary>A vehicle definition's class (catalog 1.18.0; pass 65, ruling R65.3), such as <c>halftrack</c> or <c>carrier</c>; null when it prints none.</summary>
+    public static string? VehicleClassOf(string? definition) => definition is null ? null : CatalogReference.Value.Definitions.GetValueOrDefault(definition)?.VehicleClass;
 
     /// <summary>Whether a unit is a vehicle (D1).</summary>
     public static bool IsVehicle(UnitInstance unit) => unit.Kind == "asl:vehicle";
@@ -901,7 +920,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                 weapons = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal) { [armed] = [.. vehicleWeapons.Select(item => item.Weapon ?? string.Empty)] };
             }
 
-            (expected, reason) = LiveFire.FromState(state, fire.Firers, directors, target, weapons, alone, partners is { Count: > 0 } ? partners : null, mol);
+            // Pass 65 (ruling R65.14): the (un)loaders are targets only of an attack whose record names them; an older one is read as it was made.
+            (expected, reason) = LiveFire.FromState(state, fire.Firers, directors, target, weapons, alone, partners is { Count: > 0 } ? partners : null, mol,
+                recorded.Embarking is not null);
         }
 
         if (expected is null)

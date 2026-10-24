@@ -307,6 +307,9 @@ public sealed class PlayRecords
                 VehicleStepped { Kind: VehicleStepped.Turn, Turret: { } turnTurret } turnedBoth => $"{turnedBoth.Vehicle} turns its turret to {UnitFacings.Name(turnTurret)} with its VCA change (D3.12)",
                 VehicleStepped { Kind: VehicleStepped.Delay } delay => $"{delay.Vehicle} spends a Delay MP in {delay.At} (D2.17)"
                     + (delay.Turret is { } delayTurret ? $", turning its turret to {UnitFacings.Name(delayTurret)} (D3.12)" : string.Empty),
+                // D6.4, D6.5 (pass 65, ruling R65.15): a load and an unload name who boards or gets off.
+                VehicleStepped { Kind: VehicleStepped.Load, Units: { Count: > 0 } boarders } boarding => $"{boarding.At}: " + Many(boarders, "boards", "board") + $" {boarding.Vehicle} (D6.4)",
+                VehicleStepped { Kind: VehicleStepped.Unload, Units: { Count: > 0 } leavers } leaving => $"{leaving.At}: " + Many(leavers, "unloads", "unload") + $" from {leaving.Vehicle} (D6.5)",
                 VehicleStepped { Kind: not VehicleStepped.Turn } drive => $"{drive.Vehicle} moves{From(before, drive.Vehicle)} to {drive.At}"
                     + (drive.Turret is { } driveTurret ? $", turning its turret to {UnitFacings.Name(driveTurret)} (D3.12)" : string.Empty),
                 AdvanceMoved advance => Many(advance.Units, "advances", "advance") + (advance.Exit is { } edge ? $" off the {edge} edge from {advance.To}" : $"{From(before, advance.Units.Count > 0 ? advance.Units[0] : null)} to {advance.To}"),

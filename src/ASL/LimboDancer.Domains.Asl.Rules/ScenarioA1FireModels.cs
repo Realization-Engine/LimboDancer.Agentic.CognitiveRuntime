@@ -366,6 +366,17 @@ public sealed record FireAttack(
         get; init;
     }
 
+    /// <summary>
+    /// The units loading onto or unloading from a vehicle with the MP expenditure the Defensive First Fire answers (D6.4, D6.5, D5.43; pass 65, ruling
+    /// R65.14): Infantry targets with FFNAM always, and FFMO only when unloading from an unarmored conveyance. Null on every attack made before the
+    /// pass and on any other attack, which resolves as before.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireEmbarking? Embarking
+    {
+        get; init;
+    }
+
     /// <summary>Spraying Fire at this Location and one other sharing a hexside, on one Original DR (A9.5; backlog pass 12, ruling R12.6): Area Fire; null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? SprayingFire
@@ -766,6 +777,12 @@ public sealed record FireCanister(string? GunId, int? Firepower)
 
 /// <summary>How a moving target stack moved in the MPh: Assault Movement avoids FFNAM but not FFMO (A4.61).</summary>
 public sealed record FireMovement(bool? AssaultMovement);
+
+/// <summary>
+/// The (un)loaders a Defensive First Fire attacks with the MP expenditure of their vehicle's load or unload (D6.4, D6.5, D5.43; pass 65, ruling R65.14):
+/// their ids, whether they unload (rather than board), and whether the vehicle is an unarmored conveyance.
+/// </summary>
+public sealed record FireEmbarking(IReadOnlyList<string>? Units, bool? Unloading, bool? UnarmoredConveyance);
 
 /// <summary>A MG a firer uses in the attack (A7.35, A9.1), with its reviewed catalog definition.</summary>
 public sealed record FireWeapon(string? EquipmentId, string? DefinitionId, bool? Malfunctioned, bool? FiredThisPlayerTurn, bool? FirstFireMarked)

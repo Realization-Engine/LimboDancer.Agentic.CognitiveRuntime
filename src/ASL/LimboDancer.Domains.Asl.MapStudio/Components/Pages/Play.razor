@@ -748,7 +748,8 @@ else if (state is not null)
                                     OnEntryHex="@(hex => ChooseEntryHex(chosen, hex))" OnEntryFacing="@(facing => vehicleEntryFacing = facing)"
                                     LoadChosen="@vehicleLoad" UnloadChosen="@vehicleUnload" OnStep="@ProposeVehicleRequest" OnOption="@SetVehicleOption"
                                     OnEsb="@(esb => vehicleEsb = esb)" OnIntended="@(at => vehicleIntended = at)"
-                                    OnLoadToggle="@(pick => Toggle(vehicleLoad, pick.Unit, pick.Chosen))" OnUnloadToggle="@(pick => Toggle(vehicleUnload, pick.Unit, pick.Chosen))" />
+                                    OnLoadToggle="@(pick => Toggle(vehicleLoad, pick.Unit, pick.Chosen))" OnUnloadToggle="@(pick => Toggle(vehicleUnload, pick.Unit, pick.Chosen))"
+                                    Leavable="@LeavableWeapons(chosen)" LeaveChosen="@vehicleLeave" OnLeaveToggle="@(pick => Toggle(vehicleLeave, pick.Unit, pick.Chosen))" />
                                 @if (TowChoices(chosen) is { Count: > 0 } guns)
                                 {
                                     <VehicleTowingActions Guns="@guns" Facing="@unhookFacing" Boards="@hookBoards" OnFacing="@(facing => unhookFacing = facing)"
@@ -1604,6 +1605,9 @@ else if (state is not null)
     private string vehicleEntryFacing = string.Empty;
     private readonly HashSet<string> vehicleLoad = new(StringComparer.Ordinal);
     private readonly HashSet<string> vehicleUnload = new(StringComparer.Ordinal);
+
+    // D6.4 (pass 65, ruling R65.15): the SW the unloading Passengers leave aboard a halftrack or Carrier.
+    private readonly HashSet<string> vehicleLeave = new(StringComparer.Ordinal);
 
     /// <summary>The setup placement being drafted (plan P08), as the form shows it.</summary>
     private SetupPlacementEditor.SetupDraft PlaceDraft => new(placeDefinition, placeId, placeGroup, placeLocation, placeHolder, placeFacing, placeBore, placeConcealed,
@@ -3305,6 +3309,7 @@ else if (state is not null)
         boundingWeapons.Clear();
         vehicleLoad.Clear();
         vehicleUnload.Clear();
+        vehicleLeave.Clear();
         vehicleIntended = string.Empty;
         hookBoards = false;
         boundingTarget = string.Empty;
@@ -3394,8 +3399,9 @@ else if (state is not null)
         var steps = new List<VehicleStepChoices.StepButton>();
         static Dictionary<string, object> Data(params (string Name, object Value)[] pairs) => pairs.ToDictionary(pair => pair.Name, pair => pair.Value);
 
-        // A2.52, D2.4 (ruling R26.1): off board, its only expenditure is its entry, chosen by hex and VCA.
-        if (vehicle.Position is not MapPosition { Facing: { } vca })
+        // A2.52, D2.4 (ruling R26.1): off board, its only expenditure is its entry, chosen by hex and VCA. Pass 65 (ruling R65.15): while an Infantry
+        // stack moves, the vehicle only takes it aboard.
+        if (vehicle.Position is not MapPosition { Facing: { } vca } || state!.Movement is { Vehicle: false })
         {
             return steps;
         }
@@ -3492,27 +3498,36 @@ else if (state is not null)
 
     /// <summary>
     /// The units that may board the vehicle (D6.4): of its side, on foot in its Location, not done moving, Good Order and unpinned, while it is stopped, not in
-    /// Motion, and has spent no MP this MPh.
+    /// Motion, and has spent no MP this MPh. While an Infantry stack moves, only its members, as the last step of their move once the DEFENDER passes
+    /// (pass 65, ruling R65.15).
     /// </summary>
     private IReadOnlyList<string> LoadableUnits(UnitInstance vehicle)
     {
-        if (state is null || state.Movement is not null || vehicle.Position is not MapPosition || vehicle.MfSpent != 0 || vehicle.HalfMfSpent
+        if (state is null || state.Movement is { Vehicle: true } or { WindowOpen: true } || vehicle.Position is not MapPosition || vehicle.MfSpent != 0 || vehicle.HalfMfSpent
             || GameState.Condition(vehicle, Conditions.Motion) == ConditionState.True || GamePlanner.PassengerCapacity(state, vehicle) is null
             || state.Location(vehicle.Id)?.Location is not { } at)
         {
             return [];
         }
 
+        var members = state.Movement?.Members;
         return [.. SeenOnly(state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == vehicle.Side && !LiveFire.IsVehicle(unit)
-            && unit.Kind != UnitKinds.Dummy && Library.Vocabulary.IsA(unit.Kind, "asl:personnel") && !unit.MovementEnded
+            && unit.Kind != UnitKinds.Dummy && Library.Vocabulary.IsA(unit.Kind, "asl:personnel") && !unit.MovementEnded && (members is null || members.Contains(unit.Id))
             && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Pinned) != ConditionState.True))
             .Select(unit => unit.Id).Order(StringComparer.Ordinal)];
     }
 
+    /// <summary>The SW the chosen vehicle's Passengers hold, which a halftrack or Carrier keeps aboard as they unload (D6.4; pass 65, ruling R65.15).</summary>
+    private IReadOnlyList<string> LeavableWeapons(UnitInstance vehicle) =>
+        state is null || UnloadableUnits(vehicle) is not { Count: > 0 } aboard || LiveFire.VehicleClassOf(vehicle.Definition?.Definition) is not ("halftrack" or "carrier") ? []
+            : [.. VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && aboard.Contains(holding.Holder))
+                .Select(item => item.Id).Order(StringComparer.Ordinal)];
+
     /// <summary>The Passengers that may unload (D6.5): the vehicle's, while it is on the map and stopped.</summary>
     private IReadOnlyList<string> UnloadableUnits(UnitInstance vehicle) =>
         state is null || !VehicleStopped(vehicle, boggedToo: ScenarioA1VehicleProjection.BoggedMaySpend("unload", false)) ? []
-            : [.. state.Passengers(vehicle.Id).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
+            // Who rides the vehicle comes from the planner's index, once per state (ruling R65.25), not a scan of the state each render.
+            : [.. Live.Planner.Riding(state, vehicle.Id).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
 
     /// <summary>The Guns in a stopped vehicle's hex it may hook up or unhook (C10.11, C10.12).</summary>
     private IReadOnlyList<VehicleTowingActions.TowChoice> TowChoices(UnitInstance vehicle) =>
@@ -3544,18 +3559,31 @@ else if (state is not null)
         }
     }
 
-    /// <summary>Infantry boarding the chosen vehicle, or its Passengers disembarking (D6.4, D6.5; ruling R26.2).</summary>
-    private Task ProposeVehicleLoad(string kind) => Propose(GameActions.MoveVehicle, JsonSerializer.SerializeToElement(new
+    /// <summary>
+    /// Infantry boarding the chosen vehicle, or its Passengers disembarking (D6.4, D6.5; ruling R26.2), with the SW they leave aboard a halftrack or Carrier
+    /// (pass 65, ruling R65.15).
+    /// </summary>
+    private Task ProposeVehicleLoad(string kind)
     {
-        gameId,
-        attemptId = Attempt("vehicle"),
-        expectedRevision = (long)history!.Events.Count,
-        vehicleId = vehicleUnit,
-        kind,
-        units = (kind == "load" ? vehicleLoad : vehicleUnload)
-            .Intersect(state?.Unit(vehicleUnit) is { } vehicle ? kind == "load" ? LoadableUnits(vehicle) : UnloadableUnits(vehicle) : [], StringComparer.Ordinal)
-            .Order(StringComparer.Ordinal).ToArray(),
-    }));
+        var vehicle = state?.Unit(vehicleUnit);
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId,
+            ["attemptId"] = Attempt("vehicle"),
+            ["expectedRevision"] = (long)history!.Events.Count,
+            ["vehicleId"] = vehicleUnit,
+            ["kind"] = kind,
+            ["units"] = (kind == "load" ? vehicleLoad : vehicleUnload)
+                .Intersect(vehicle is not null ? kind == "load" ? LoadableUnits(vehicle) : UnloadableUnits(vehicle) : [], StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal).ToArray(),
+        };
+        if (kind == "unload" && vehicle is not null && vehicleLeave.Intersect(LeavableWeapons(vehicle), StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } leave)
+        {
+            arguments["leave"] = leave;
+        }
+
+        return Propose(GameActions.MoveVehicle, JsonSerializer.SerializeToElement(arguments));
+    }
 
 
     private const string DummyPrefix = "dummy:";
@@ -3807,8 +3835,12 @@ else if (state is not null)
     /// The phasing side's vehicles that may spend MP now (D2.1): the moving vehicle while one moves; otherwise those not done moving, and not
     /// immobilized, Stunned, Recalled, or after Prep Fire (D.7, D5.34, D5.341, D.3).
     /// </summary>
+    // Pass 65 (ruling R65.15): while an Infantry stack moves, the unmoved vehicles in its Location, which it may board as its last step (D6.4).
     private IEnumerable<UnitInstance> VehicleCandidates => SeenOnly(state is null || state.Phase != "mph" ? []
-        : state.Movement is { } moving ? moving.Vehicle ? moving.Members.Select(state.Unit).OfType<UnitInstance>() : []
+        : state.Movement is { } moving ? moving.Vehicle ? moving.Members.Select(state.Unit).OfType<UnitInstance>()
+            : moving.WindowOpen ? []
+            : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && LiveFire.IsVehicle(unit) && !unit.MovementEnded
+                && unit.MfSpent == 0 && !unit.HalfMfSpent && unit.Position is MapPosition { Location: { } here } && here == moving.Location).OrderBy(unit => unit.Id, StringComparer.Ordinal)
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && LiveFire.IsVehicle(unit) && !unit.MovementEnded
             && GamePlanner.MayStartVehicleMove(unit))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal));
@@ -6586,6 +6618,7 @@ else if (state is not null)
         vehicleEsb = string.Empty;
         vehicleLoad.Clear();
         vehicleUnload.Clear();
+        vehicleLeave.Clear();
         hookBoards = false;
         vehicleEntryHex = string.Empty;
         vehicleEntryFacing = string.Empty;
@@ -7668,6 +7701,7 @@ else if (state is not null)
                 // Rulings R26.1, R26.2: the Passengers chosen and the entry are for one expenditure too.
                 vehicleLoad.Clear();
                 vehicleUnload.Clear();
+                vehicleLeave.Clear();
                 vehicleEntryHex = string.Empty;
                 vehicleEntryFacing = string.Empty;
             }

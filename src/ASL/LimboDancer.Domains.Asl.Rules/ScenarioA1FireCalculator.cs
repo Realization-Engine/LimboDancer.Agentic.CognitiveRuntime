@@ -3371,14 +3371,18 @@ public static class ScenarioA1FireCalculator
             }
             else if (IsMovementFire(attack) && attack.SnapShot != true && state.Values.Any(unit => !unit.IsDummy && !unit.Pinned))
             {
-                if (attack.TargetMovement!.AssaultMovement != true)
+                // D6.5, A4.6, D5.43 (pass 65, ruling R65.14): units loading or unloading take FFNAM always, and FFMO only when unloading from an
+                // unarmored conveyance; an attack recorded before the pass carries no (un)loaders and reads as before.
+                var embarking = attack.Embarking;
+                if (attack.TargetMovement!.AssaultMovement != true || embarking is not null)
                 {
-                    drm.Add(new FireModifier("ffnam", -1m, "A4.6"));
+                    drm.Add(new FireModifier("ffnam", -1m, embarking is null ? "A4.6" : "D6.5"));
                 }
 
-                if (attack.TargetTerrain == "open-ground" && hindrance == 0 && Cover(attack) is null && !noFfmo)
+                if (attack.TargetTerrain == "open-ground" && hindrance == 0 && Cover(attack) is null && !noFfmo
+                    && (embarking is null || ScenarioA1PassengerCalculator.EmbarkingFfmo(embarking.Unloading == true, embarking.UnarmoredConveyance == true)))
                 {
-                    drm.Add(new FireModifier("ffmo", -1m, "A4.6"));
+                    drm.Add(new FireModifier("ffmo", -1m, embarking is null ? "A4.6" : "D6.5"));
                 }
             }
 

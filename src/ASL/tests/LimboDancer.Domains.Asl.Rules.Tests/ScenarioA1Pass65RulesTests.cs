@@ -506,4 +506,117 @@ public sealed class ScenarioA1Pass65RulesTests
         Assert.Contains("D6.5", ScenarioA1PassengerActionRules.UnloadAfterFireBar("de-s", true, false));
         Assert.Contains("OVR", ScenarioA1PassengerActionRules.UnloadAfterFireBar("de-s", false, true));
     }
+
+    // Increment 2d: loading and unloading completed (D6.4, D6.5, D5.43, A4.6, A4.11, A4.12, A4.42, A4.5, A7.821, D2.401; rulings R65.14, R65.15).
+    private static readonly string[] SquadOnly = ["de-s"];
+
+    /// <summary>
+    /// A Russian squad's Defensive First Fire from the ADJACENT hex at a German truck in Open Ground and the 4-6-7 that unloads from it or boards it, with the
+    /// stack's movement as given; an Original DR of 12, no effect.
+    /// </summary>
+    private static FireAttack AtEmbarking(FireEmbarking? embarking, bool assault = false) =>
+        AtVehicle(Halftrack(false, [], "attacker-truck"), range: 1, from: "bd01:G6:0") with
+        {
+            Phase = "MPh",
+            FiringSide = "non-phasing",
+            FireKind = ScenarioA1FireCalculator.FirstFire,
+            TargetMovement = new FireMovement(assault),
+            Targets = [new FireTarget("de-s", "attacker-squad", At, false, false, false, false, false, false, false) { KnownEnemyInLos = true, Captors = [] }],
+            Embarking = embarking,
+        };
+
+    private static string[] MovementDrm(FireAttack attack) =>
+        [.. Fired(attack, [6, 6]).Arithmetic!.Drm.Where(item => item.Name is "ffnam" or "ffmo").Select(item => $"{item.Name} {item.Rule}")];
+
+    [Fact]
+    public void UnloadersTakeFfnamAndFfmoOnlyFromAnUnarmoredConveyance()
+    {
+        // D6.5: FFMO only for Passengers unloading from an unarmored conveyance in Open Ground; FFNAM always, Assault Movement or not.
+        Assert.True(ScenarioA1PassengerCalculator.EmbarkingFfmo(true, true));
+        Assert.False(ScenarioA1PassengerCalculator.EmbarkingFfmo(true, false));
+        Assert.False(ScenarioA1PassengerCalculator.EmbarkingFfmo(false, true));
+        Assert.Equal(["ffnam D6.5", "ffmo D6.5"], MovementDrm(AtEmbarking(new FireEmbarking(SquadOnly, true, true))));
+        Assert.Equal(["ffnam D6.5"], MovementDrm(AtEmbarking(new FireEmbarking(SquadOnly, false, true))));
+        Assert.Equal(["ffnam D6.5"], MovementDrm(AtEmbarking(new FireEmbarking(SquadOnly, true, false), assault: true)));
+
+        // An attack recorded before the pass names no (un)loaders: Assault Movement avoids FFNAM, and Open Ground gives FFMO, as before.
+        Assert.Equal(["ffnam A4.6", "ffmo A4.6"], MovementDrm(AtEmbarking(null)));
+        Assert.Equal(["ffmo A4.6"], MovementDrm(AtEmbarking(null, assault: true)));
+    }
+
+    private static FireUnitEffect Effect(string id, bool eliminated = false, bool broken = false, bool pinned = false) =>
+        new(id, "attacker-squad", "attacker-squad", null, eliminated, broken, pinned, false, false, false, [], []);
+
+    [Fact]
+    public void ALoadFailsOnAPinOrABreakAndAnUnloadDoesNot()
+    {
+        // D5.43: a loader left pinned or broken does not board; an eliminated one is gone; an unpinned Good Order one boards.
+        FireUnitEffect[] effects = [Effect("de-p", pinned: true), Effect("de-b", broken: true), Effect("de-k", eliminated: true), Effect("de-s"), Effect("de-x", pinned: true)];
+        Assert.Equal(["de-p", "de-b"], ScenarioA1PassengerCalculator.LoadFailures(new FireEmbarking(["de-p", "de-b", "de-k", "de-s"], false, true), effects));
+
+        // "A Passenger/Rider attempting to unload ... does succeed"; an attack with no (un)loaders fails no load.
+        Assert.Empty(ScenarioA1PassengerCalculator.LoadFailures(new FireEmbarking(["de-p", "de-b"], true, true), effects));
+        Assert.Empty(ScenarioA1PassengerCalculator.LoadFailures(null, effects));
+    }
+
+    [Fact]
+    public void AfterUnloadingFourMfNoDoubleTimeAndNoLeaderBonus()
+    {
+        // A4.11: four MF for a unit that rode or dismounted, a SMC's six cut to four; the usual allotment otherwise.
+        Assert.Equal(4, ScenarioA1PassengerCalculator.ConveyedAllowance(true));
+        Assert.Null(ScenarioA1PassengerCalculator.ConveyedAllowance(false));
+        var leader = new MfAllotmentFacts(false, null, true, false, false);
+        Assert.Equal(4, ScenarioA1MovementCalculator.MfAllotment(leader, 0, false, 0, 0, () => ScenarioA1PassengerCalculator.ConveyedAllowance(true) ?? 6, () => []));
+        Assert.Equal(6, ScenarioA1MovementCalculator.MfAllotment(leader, 0, false, 0, 0, () => ScenarioA1PassengerCalculator.ConveyedAllowance(false) ?? 6, () => []));
+
+        // A4.5: no Double Time after riding or dismounting; A4.12: no leader bonus.
+        Assert.Contains("A4.5", ScenarioA1PassengerCalculator.ConveyedDoubleTimeBar(true, [("de-s", false), ("de-l", true)]));
+        Assert.Null(ScenarioA1PassengerCalculator.ConveyedDoubleTimeBar(false, [("de-l", true)]));
+        Assert.Null(ScenarioA1PassengerCalculator.ConveyedDoubleTimeBar(true, [("de-s", false)]));
+        Assert.False(ScenarioA1PassengerCalculator.ConveyedLeaderBonus(true, true));
+        Assert.True(ScenarioA1PassengerCalculator.ConveyedLeaderBonus(true, false));
+
+        // D6.5, A7.821: the units disembarked that move on before any other: active, not done moving, Good Order and unpinned.
+        Assert.Equal(["de-s"], ScenarioA1PassengerCalculator.InterimMembers([("de-s", true, false, false, false), ("de-p", true, false, true, false),
+            ("de-b", true, false, false, true), ("de-e", true, true, false, false), ("de-k", false, false, false, false)]));
+    }
+
+    [Fact]
+    public void AStackBoardsAtTheEndOfItsMoveWithItsLeadersIpc()
+    {
+        // D6.4, A4.2: the whole stack boards once the DEFENDER passes; no unit outside it boards while it moves; no stack moving, nothing to bar.
+        Assert.Null(ScenarioA1PassengerCalculator.EndOfMoveLoadBar("de-t", false, false, [], SquadOnly));
+        Assert.Null(ScenarioA1PassengerCalculator.EndOfMoveLoadBar("de-t", true, false, ["de-s", "de-l"], ["de-s", "de-l"]));
+        Assert.Contains("A8.1", ScenarioA1PassengerCalculator.EndOfMoveLoadBar("de-t", true, true, SquadOnly, SquadOnly));
+        Assert.Contains("de-l moves with the stack", ScenarioA1PassengerCalculator.EndOfMoveLoadBar("de-t", true, false, ["de-s", "de-l"], SquadOnly));
+        Assert.Contains("de-h is not of the moving stack", ScenarioA1PassengerCalculator.EndOfMoveLoadBar("de-t", true, false, SquadOnly, ["de-s", "de-h"]));
+
+        // A4.42: the laden MMC gains the leader's one PP of IPC, and the leader spends his own.
+        Assert.Equal((1, -1, 0), (ScenarioA1PassengerCalculator.BoardingIpcBonus("de-s", "de-s", "de-l"), ScenarioA1PassengerCalculator.BoardingIpcBonus("de-l", "de-s", "de-l"),
+            ScenarioA1PassengerCalculator.BoardingIpcBonus("de-h", "de-s", "de-l")));
+
+        // D6.4's EX: a squad with five PP and a leader with none: IPC 4, so three MF; two spent entering Open Ground and boarding, the vehicle keeps a quarter.
+        var squad = new MfAllotmentFacts(false, null, false, false, false);
+        var allotment = ScenarioA1MovementCalculator.MfAllotment(squad, 0, false, 0, 1, () => ScenarioA1PassengerCalculator.ConveyanceAllowance, () => [5])!.Value;
+        Assert.Equal(3, allotment);
+        Assert.Equal(2, ScenarioA1PassengerCalculator.BoardingHalfMfLeft(allotment, 1, false));
+        Assert.Equal(4, ScenarioA1PassengerCalculator.LoadKeptHalfMp(16, 1));
+    }
+
+    [Fact]
+    public void ASwStaysAboardOnlyAHalftrackOrCarrierAndTimeAboardCounts()
+    {
+        // D6.4's EXC: a halftrack or Carrier keeps a SW its unloading Passenger held; a truck does not; a SW no unloader holds stays with its holder.
+        Assert.Null(ScenarioA1PassengerCalculator.LeaveAboardBar("de-ht", "halftrack", [("de-lmg", true)]));
+        Assert.Null(ScenarioA1PassengerCalculator.LeaveAboardBar("uk-c", "carrier", [("uk-bren", true)]));
+        Assert.Null(ScenarioA1PassengerCalculator.LeaveAboardBar("de-t", "truck", []));
+        Assert.Contains("neither", ScenarioA1PassengerCalculator.LeaveAboardBar("de-t", "truck", [("de-lmg", true)]));
+        Assert.Contains("not held by a Passenger that unloads", ScenarioA1PassengerCalculator.LeaveAboardBar("de-ht", "halftrack", [("de-lmg", false)]));
+
+        // D2.401: the vehicle's MP while the unit rode count, and its own one MF to board or get off.
+        Assert.Equal((true, 4), ScenarioA1MotionAttempts.AboardStep(true, 4, false));
+        Assert.Equal((false, 2), ScenarioA1MotionAttempts.AboardStep(false, 4, true));
+        Assert.Equal(6, ScenarioA1MotionAttempts.HalfPointsInLos([ScenarioA1MotionAttempts.AboardStep(true, 4, false), ScenarioA1MotionAttempts.AboardStep(true, 4, true),
+            ScenarioA1MotionAttempts.AboardStep(false, 2, false)]));
+    }
 }

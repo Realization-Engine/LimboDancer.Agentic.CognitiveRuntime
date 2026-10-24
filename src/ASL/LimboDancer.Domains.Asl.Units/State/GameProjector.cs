@@ -915,6 +915,22 @@ public static class GameProjector
                 };
             }
 
+            // D6.4 (pass 65, ruling R65.15): a SW left aboard a halftrack or Carrier, held by no unit, shares its vehicle's fate too.
+            foreach (var item in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is null
+                && item.Position is ContainedPosition { Role: ContainmentRole.Passenger }))
+            {
+                var container = state.Find(((ContainedPosition)item.Position).Container);
+                if (container is null || container.Status == InstanceStatus.Active)
+                {
+                    continue;
+                }
+
+                next = Replace(next, item with
+                {
+                    Status = Rules.ScenarioA1VehicleProjection.PassengerExits(container.Status == InstanceStatus.Exited) ? InstanceStatus.Exited : InstanceStatus.Eliminated,
+                })!;
+            }
+
             return next;
         }
 
@@ -2354,6 +2370,20 @@ public static class GameProjector
             }
 
             var current = state.Movement;
+
+            // D6.4 (pass 65, ruling R65.15): Infantry board as the last step of their own move, every member of their moving stack together, once the
+            // DEFENDER's window on its last step has closed; that move ends with the boarding.
+            var boardingAfterMove = step.Kind == VehicleStepped.Load && current is { Vehicle: false, WindowOpen: false } && step.Units is { Count: > 0 } named
+                && current.Members.All(id => named.Contains(id, StringComparer.Ordinal));
+            if (boardingAfterMove)
+            {
+                state = state with
+                {
+                    FiresThisPhase = [.. state.FiresThisPhase.Where(record => Rules.ScenarioA1MovementCalculator.FireRecordStays(record.Step is not null))],
+                };
+                current = null;
+            }
+
             if (current is not null && (!current.Vehicle || current.WindowOpen || !current.Members.SequenceEqual([vehicle.Id], StringComparer.Ordinal)))
             {
                 return Fail<GameState>("UNIT-STATE-034", "A vehicle moves alone, after the DEFENDER's window on its last MP expenditure closes, and no other unit moves until it ends (A8.11).");
@@ -2474,6 +2504,9 @@ public static class GameProjector
                         })!;
                 }
 
+                // D6.4, D6.5, D5.43 (pass 65, rulings R65.14, R65.15): the (un)loaders are the DEFENDER's targets with this expenditure, and the units
+                // an unload recorded since the pass disembarks move on before any other unit once the vehicle's move ends.
+                var unloading = step.Kind == VehicleStepped.Unload;
                 return loaded with
                 {
                     Movement = new MovementState([vehicle.Id], at.Location, (current?.HalfMfInLocation ?? 0) + step.HalfMp, step.Step, false, WindowOpen: true)
@@ -2483,6 +2516,9 @@ public static class GameProjector
                         Stopped = current?.Stopped ?? false,
                         Reverse = current?.Reverse == true,
                         EnteredFrom = current?.EnteredFrom,
+                        Embarking = step.Units,
+                        Unloading = unloading,
+                        Disembarked = unloading && step.Interim ? [.. current?.Disembarked ?? [], .. step.Units!] : current?.Disembarked,
                     },
                 };
             }
@@ -2541,6 +2577,7 @@ public static class GameProjector
                     Overrun = step.Overrunning ? step.At : null,
                     MinimumMove = step.MinimumMove,
                     EnteredFrom = step.Kind == VehicleStepped.Enter && !entering && (step.At.Board != at.Location.Board || step.At.Hex != at.Location.Hex) ? at.Location : current?.EnteredFrom,
+                    Disembarked = current?.Disembarked,
                 },
             };
         }
@@ -3055,11 +3092,30 @@ public static class GameProjector
                 }
             }
 
-            return Settle(next, movement! with
+            var settled = Settle(next, movement! with
             {
                 Members = [.. movement.Members.Where(id => !ended.Movers.Contains(id, StringComparer.Ordinal))],
                 Movers = [.. movement.Movers.Where(id => !ended.Movers.Contains(id, StringComparer.Ordinal))],
             });
+
+            // D6.5 (pass 65, ruling R65.15): once the vehicle's move ends, the units it disembarked by an unload recorded since the pass that may still move
+            // are the moving stack's members; they move, or end their move, before any other unit moves.
+            if (settled.Movement is null && movement.Vehicle && movement.Disembarked is { Count: > 0 } disembarked
+                && Rules.ScenarioA1PassengerCalculator.InterimMembers(disembarked.Select(id => Active(settled, id) is UnitInstance unit
+                    ? (id, unit.Position is MapPosition, unit.MovementEnded, GameState.Condition(unit, Conditions.Pinned) == ConditionState.True,
+                        GameState.Condition(unit, Conditions.Broken) == ConditionState.True)
+                    : (id, false, true, false, false))) is { Count: > 0 } interim)
+            {
+                settled = settled with
+                {
+                    Movement = new MovementState([], settled.Location(interim[0])?.Location ?? movement.Location, 0, movement.Step, false, WindowOpen: false)
+                    {
+                        Members = interim,
+                    },
+                };
+            }
+
+            return settled;
         }
 
         /// <summary>

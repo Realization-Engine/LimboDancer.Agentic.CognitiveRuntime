@@ -556,4 +556,218 @@ public sealed class BacklogPass65Tests : IDisposable
         Assert.DoesNotContain(arithmetic.GetProperty("drm").EnumerateArray(), item => item.GetProperty("name").GetString() == "leadership:de-l");
         NoReplayErrors();
     }
+
+    // Increment 2d: loading and unloading completed (D6.4, D6.5, D5.43, A4.6, A4.11, A4.5, A7.821, D2.401; rulings R65.14, R65.15).
+
+    private static readonly string[] SquadOnly = ["de-s"];
+
+    private Task<PlayResult> Drive(string vehicle, string kind, params string[] units) => Do(GameActions.MoveVehicle, NoRoll(), new
+    {
+        vehicleId = vehicle,
+        kind,
+        units,
+    });
+
+    private async Task PassFire() => Committed(await Do(GameActions.PassFire, NoRoll(), new
+    {
+    }));
+
+    /// <summary>The moving vehicle ends its move, the DEFENDER passing on any MP it spends to do so.</summary>
+    private async Task EndTheMove()
+    {
+        for (var step = 0; step < 4 && Current.Movement is { Vehicle: true } moving; step++)
+        {
+            Committed(await Do(moving.WindowOpen ? GameActions.PassFire : GameActions.EndMove, NoRoll(), new
+            {
+            }));
+        }
+    }
+
+    /// <summary>The names and rules of the FFNAM and FFMO DRM an attack took.</summary>
+    private static string[] MovementDrm(FireResolved fire) =>
+        [.. fire.Resolution.GetProperty("arithmetic").GetProperty("drm").EnumerateArray().Select(item => item.GetProperty("name").GetString()!)
+            .Where(name => name is "ffnam" or "ffmo")];
+
+    /// <summary>A German truck Stopped in Open Ground at B8 with a 4-6-7 aboard, the Russian squads two hexes off, in the German MPh.</summary>
+    private async Task TruckInTheOpen(params Dictionary<string, object>[] others)
+    {
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", [Vehicle("de-truck", "attacker-truck", Target, "german", "east"),
+            Aboard("de-s", "asl:squad", "attacker-squad", "de-truck", "german"), Unit("ru-1", "asl:squad", "defender-squad", Firer, "russian"),
+            Unit("ru-2", "asl:squad", "defender-squad", Firer, "russian"), .. others]);
+        await Advance();
+    }
+
+    [Fact]
+    public async Task AnUnloadFromATruckInTheOpenTakesFfnamAndFfmo()
+    {
+        // D6.5, A4.6 (ruling R65.14): the 4-6-7 unloads from the Stopped truck; the Russians' First Fire attacks it on foot, FFNAM and FFMO each -1, since
+        // the truck is an unarmored conveyance in Open Ground. Original DR 12: no effect. The record names the unloader.
+        await TruckInTheOpen();
+        var unloaded = await Drive("de-truck", "unload", "de-s");
+        Committed(unloaded);
+        Assert.Contains(unloaded.Reasons, reason => reason.Contains("FFNAM, and FFMO in Open Ground from an unarmored vehicle (D6.5)", StringComparison.Ordinal));
+        Assert.True(store.Read(Scope)!.Events.Select(item => item.Payload).OfType<VehicleStepped>().Last().Interim);
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(6, 6, 6, 6, 6, 6), new
+        {
+            firers = new[] { "ru-1", "ru-2" },
+            target = Target,
+        }));
+        var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        var embarking = fire.Facts.GetProperty("embarking");
+        Assert.Equal(("de-s", true, true), (embarking.GetProperty("units")[0].GetString(), embarking.GetProperty("unloading").GetBoolean(),
+            embarking.GetProperty("unarmoredConveyance").GetBoolean()));
+        Assert.Contains(fire.Facts.GetProperty("targets").EnumerateArray(), item => item.GetProperty("unitId").GetString() == "de-s");
+        Assert.Equal(["ffnam", "ffmo"], MovementDrm(fire));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AFailedLoadLeavesThePinnedSquadOnFoot()
+    {
+        // D5.43 (ruling R65.14): the 4-6-7 boards the truck; the Russians' 8 FP at it, FFNAM alone (no FFMO for a loader): Original DR 9, Final 8, a NMC;
+        // its DR of 7 equals its Morale Level, so it is pinned (A7.8) and stays on foot in B8.
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("de-truck", "attacker-truck", Target, "german", "east"),
+            Unit("de-s", "asl:squad", "attacker-squad", Target, "german"), Unit("ru-1", "asl:squad", "defender-squad", Firer, "russian"),
+            Unit("ru-2", "asl:squad", "defender-squad", Firer, "russian"));
+        await Advance();
+        Committed(await Drive("de-truck", "load", "de-s"));
+        Assert.Equal("de-truck", Current.Aboard("de-s"));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(4, 5, 3, 4, 6, 6, 6, 6), new
+        {
+            firers = new[] { "ru-1", "ru-2" },
+            target = Target,
+        }));
+        var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.False(fire.Facts.GetProperty("embarking").GetProperty("unloading").GetBoolean());
+        Assert.Equal(["ffnam"], MovementDrm(fire));
+        Assert.Contains(Since(before).Select(item => item.Payload).OfType<InstanceMoved>(), moved => moved.Id == "de-s");
+        var squad = Current.Unit("de-s")!;
+        Assert.Equal((ConditionState.True, (string?)null, Target), (GameState.Condition(squad, Conditions.Pinned), Current.Aboard("de-s"), Current.Location("de-s")!.Location.ToString()));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ASquadBoardsAtTheEndOfItsMove()
+    {
+        // D6.4 (ruling R65.15): the 4-6-7 enters B9 and B8 (two MF) and boards the unmoved truck there as its last step, once the DEFENDER passes.
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("de-truck", "attacker-truck", Target, "german", "east"),
+            Unit("de-s", "asl:squad", "attacker-squad", Firer, "german"), Unit("de-h", "asl:half-squad", "attacker-half-squad", Target, "german"),
+            Unit("ru-s", "asl:squad", "defender-squad", "bd01:J2:0", "russian"));
+        await Advance();
+        foreach (var hex in new[] { "bd01:B9:0", Target })
+        {
+            Committed(await Do(GameActions.Move, NoRoll(), new
+            {
+                unitIds = SquadOnly,
+                to = hex,
+            }));
+            Refused(await Drive("de-truck", "load", "de-s"), "the DEFENDER may still fire at the moving stack's last MF expenditure");
+            await PassFire();
+        }
+
+        Refused(await Drive("de-truck", "load", "de-s", "de-h"), "de-h is not of the moving stack");
+        var boarded = await Drive("de-truck", "load", "de-s");
+        Committed(boarded);
+        Assert.Contains(boarded.Reasons, reason => reason.Contains("the last step of its move", StringComparison.Ordinal));
+        Assert.Equal("de-truck", Current.Aboard("de-s"));
+        Assert.Equal((true, true), (Current.Unit("de-s")!.MovementEnded, Current.Movement is { Vehicle: true, Embarking: ["de-s"], Unloading: false }));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task UnloadedUnitsMoveNextOnFourMfWithoutDoubleTime()
+    {
+        // D6.5 (ruling R65.15): once the truck's move ends, the squad it unloaded moves before any other unit, without Double Time (A4.5).
+        await TruckInTheOpen(Unit("de-h", "asl:half-squad", "attacker-half-squad", "bd01:A9:0", "german"));
+        Committed(await Drive("de-truck", "unload", "de-s"));
+        await PassFire();
+        await EndTheMove();
+        var vehicleEnded = Revision;
+        Assert.Equal(["de-s"], Current.Movement!.Members);
+        Refused(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = new[] { "de-h" },
+            to = "bd01:A10:0",
+        }), "play.move-order");
+        Refused(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = SquadOnly,
+            to = "bd01:B9:0",
+            doubleTime = true,
+        }), "rode or dismounted a vehicle this Player Turn and does not Double Time (A4.5)");
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = SquadOnly,
+            to = "bd01:B9:0",
+        }));
+        NoReplayErrors();
+
+        // An unload recorded before the pass carries no interim fact: the truck's move ends with no stack held, so any unit moved next, as before.
+        GameEvent[] older = [.. store.Read(Scope)!.Events.Take((int)vehicleEnded)
+            .Select(item => item.Payload is VehicleStepped { Interim: true } step ? item with { Payload = step with { Interim = false } } : item)];
+        var replayed = Planner().Replay(older);
+        Assert.False(replayed.HasErrors);
+        Assert.Null(replayed.Current!.Movement);
+    }
+
+    [Fact]
+    public async Task AHalftrackKeepsTheLmgItsSquadLeavesAboard()
+    {
+        // D6.4's EXC (ruling R65.15): the 4-6-7 unloads from the CE SPW 251/1 and leaves its LMG aboard, held by no unit; a truck keeps none.
+        var lmg = new Dictionary<string, object>
+        {
+            ["id"] = "de-lmg",
+            ["kind"] = "asl:mg",
+            ["definition"] = "attacker-lmg",
+            ["side"] = "german",
+            ["holding"] = new
+            {
+                holder = "de-s",
+                role = "possessed"
+            },
+            ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+        };
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Exposed(Vehicle("de-ht", "attacker-halftrack", Target, "german", "east")),
+            Aboard("de-s", "asl:squad", "attacker-squad", "de-ht", "german"), lmg, Unit("ru-s", "asl:squad", "defender-squad", "bd01:J2:0", "russian"));
+        await Advance();
+        var unloaded = await Do(GameActions.MoveVehicle, NoRoll(), new
+        {
+            vehicleId = "de-ht",
+            kind = "unload",
+            units = SquadOnly,
+            leave = new[] { "de-lmg" },
+        });
+        Committed(unloaded);
+        var weapon = (EquipmentInstance)Current.Find("de-lmg")!;
+        Assert.Equal(((Holding?)null, "de-ht", (string?)null), (weapon.Holding, Current.Aboard("de-lmg"), Current.Aboard("de-s")));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public void TheMoveVehicleDescriptorTakesALoadAndAnUnload()
+    {
+        // The descriptor (additionalProperties false) lists every kind and argument the planner takes, so a load names its units within the schema.
+        var schema = GameActions.MoveVehicle.InputSchema;
+        var properties = schema.GetProperty("properties");
+        Assert.False(schema.GetProperty("additionalProperties").GetBoolean());
+        string[] kinds = [.. properties.GetProperty("kind").GetProperty("enum").EnumerateArray().Select(item => item.GetString()!)];
+        Assert.Contains("load", kinds);
+        Assert.Contains("unload", kinds);
+        Assert.Contains("delay", kinds);
+        var load = JsonSerializer.SerializeToElement(new
+        {
+            gameId = "g",
+            attemptId = "a",
+            expectedRevision = 0,
+            vehicleId = "de-truck",
+            kind = "load",
+            units = SquadOnly,
+            turret = "east"
+        });
+        Assert.All(load.EnumerateObject(), item => Assert.True(properties.TryGetProperty(item.Name, out _), item.Name));
+        Assert.True(properties.TryGetProperty("leave", out _));
+        Assert.True(properties.TryGetProperty("take", out _));
+    }
 }

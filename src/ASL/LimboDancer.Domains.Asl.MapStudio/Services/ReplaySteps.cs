@@ -312,7 +312,16 @@ public static class ReplaySteps
         if (First<VehicleStepped>(payloads) is { } drove)
         {
             var side = SideOf(drove.Vehicle);
-            return ("move", side, $"{A(side, "vehicle")} {(drove.Kind == VehicleStepped.Delay ? "spends a Delay MP" : "moves")} in {Place(before, drove.At)}{end}", false);
+
+            // D6.4, D6.5 (pass 65, ruling R65.15): Infantry board, or Passengers unload, in place of a move.
+            var what = drove.Kind switch
+            {
+                VehicleStepped.Delay => "spends a Delay MP",
+                VehicleStepped.Load => $"takes {(drove.Units?.Count == 1 ? "a unit" : "units")} aboard",
+                VehicleStepped.Unload => $"unloads {(drove.Units?.Count == 1 ? "a unit" : "units")}",
+                _ => "moves",
+            };
+            return ("move", side, $"{A(side, "vehicle")} {what} in {Place(before, drove.At)}{end}", false);
         }
 
         if (First<MotionAttempted>(payloads) is { } motion)
