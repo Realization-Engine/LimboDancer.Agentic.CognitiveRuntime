@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FIGURES = ROOT / "src" / "ASL" / "units" / "figures"
 OUTPUT = FIGURES / "figures.json"
 SVG = "{http://www.w3.org/2000/svg}"
-POSES = ["standing", "crew", "leader", "hero", "wounded", "broken", "pinned", "berserk", "prisoner"]
+POSES = ["standing", "crew", "leader", "hero", "wounded", "broken", "pinned", "berserk", "prisoner", "vehicle-crew"]
 WEAPONS = ["rifle", "smg"]
 
 

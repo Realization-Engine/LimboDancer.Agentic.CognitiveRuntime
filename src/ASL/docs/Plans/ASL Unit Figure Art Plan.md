@@ -29,6 +29,7 @@ Made in the conversation of 2026-10-17; the ones marked *provisional* were propo
 | F8 | **Nothing changes until art exists.** A pose, helmet, or weapon without a file falls back to today's figure, so the golden SVGs change only when an accepted batch lands. |
 | F10 | **The user's ruling, 2026-10-17: a squad stands in a staggered file,** each man half a pose width on and the man behind raised; every figure but the rearmost, and every helmet, is ringed in the counter's color, with the skull drawn again inside the helmet's ring so the face meets the helmet. A multi-man counter shows multiple men. |
 | F11 | **The pose's weapon comes from the pick** (revising F1 after the first Midjourney run, 2026-10-17): a soldier drawn without a weapon came out as a civilian walking, so the pick carries its rifle and helmet; the tracer removes the helmet (`--bare`) and the side's helmet is drawn on the skull. The drawn weapons stay for poses traced without one. |
+| F17 | **The user's ruling, 2026-10-23: a vehicle crew keeps its own padded tank helmet for every side.** Drawing tanker headgear for each nationality was judged too much work for little gain; the pose's traced helmet stays (`ownHelmet`), so only the side's color tells vehicle crews apart. The pose itself (crouching, a hand on the ground, a pistol forward) is what sets it apart from the kneeling infantry crew. |
 | F9 | **Same pose, same framing, for every nation,** so only the national kit differs; the kit is exaggerated (a larger helmet, a bolder weapon) where the far detail level needs it, since a figure there is about ten pixels tall. |
 
 ## 3. How a figure is made
@@ -177,3 +178,13 @@ The poses came from ChatGPT, not Midjourney: Midjourney refused the military pro
 - The pose format gained, as the picks needed them: a version per side, a head tilt, an own helmet, and a body extent.
 
 **Accepted, 2026-10-18.** The user accepted every infantry pose; Claude accepted the eight sides' helmets with them, since every pose was reviewed wearing them. The drawn weapons stay unaccepted: no traced pose uses them. The counters in play now draw the figures; the golden SVGs of personnel changed at every tier. A synthetic placement set on board 1, `bd01-infantry-figures`, shows every side in every infantry type (`code-builders/unit-figures/make_infantry_showcase.py`).
+
+## 10. Status, 2026-10-23: the vehicle crew
+
+Pass 65 needs vehicle-crew counters (D5.1): FP 1, non-elite, with their own values on the National Capabilities Chart (p. 695). Their figure comes first, on branch `vehicle-crew-figure`.
+
+- The pose `vehicle-crew` is traced from the user's ChatGPT pick of 2026-10-23: a tank crewman crouching, the rear hand on the ground, a pistol held forward. One outline; the pistol is part of the body, so it holds no drawn weapon. Its body extent (`data-body`, 120 to 1120) leaves out the outstretched arm, so a file of men is spaced by the body.
+- It keeps its own padded helmet for every side (F17).
+- The kind `asl:vehicle-crew` extends `asl:crew` (asl@1.18.0; A1.123, D5.1); both style sheets give it the pose, and the Studio's examples gain `example-vehicle-crew` (an American 1-2-6), on which the Art tab judges it. Its catalog definitions, with the chart's values, come with pass 65.
+- A pose counted as lying when wider than 1.5 times its height; the crouching crewman is 1.52, so the cutoff is now 2.5 (the pinned pose is 5.4, every other pose 1.5 or less). The Art tab's grid takes its column count from the pose list.
+- Accepted by Claude at the user's word to use the pick and commit when the tests pass (2026-10-23). No unit in play is a vehicle crew yet, so no counter in play and no golden SVG changed.

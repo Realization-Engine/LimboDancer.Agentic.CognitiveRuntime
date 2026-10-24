@@ -43,7 +43,7 @@ public sealed partial class FigureArt
     public const string ResourceName = "Figures.figures.json";
 
     /// <summary>The poses a style sheet may name in <c>glyph(size-figures, pose)</c>; <c>prone</c> is the pinned pose's older name.</summary>
-    public static readonly IReadOnlyList<string> PoseNames = ["standing", "crew", "leader", "hero", "wounded", "broken", "pinned", "berserk", "prisoner"];
+    public static readonly IReadOnlyList<string> PoseNames = ["standing", "crew", "leader", "hero", "wounded", "broken", "pinned", "berserk", "prisoner", "vehicle-crew"];
 
     /// <summary>The weapon kinds a pose may hold.</summary>
     public static readonly IReadOnlyList<string> WeaponNames = ["rifle", "smg"];

@@ -103,7 +103,7 @@ internal static class Glyphs
     /// <summary>
     /// One to three figures composed from a pose, the side's helmet on the head, and the side's weapon along the grip; each in one group
     /// filled with the slot's color. An upright pose repeats as a staggered file, the man behind higher and drawn first; a lying one (wider
-    /// than one and a half times its height) repeats downward. On a known ground (the face or slot behind the glyph), every figure but the
+    /// than two and a half times its height; a crouching man with his arm out is about one and a half) repeats downward. On a known ground (the face or slot behind the glyph), every figure but the
     /// rearmost is ringed in it, so overlapping men stay apart, and the helmet is ringed too, with the skull drawn again inside the ring so
     /// the face meets the helmet. With piping, every figure, the rearmost too, and every helmet get a thin line of the piping's color instead.
     /// </summary>
@@ -113,7 +113,7 @@ internal static class Glyphs
         count = Math.Clamp(count, 1, 3);
         var width = pose.Width / 1000;
         var height = pose.Height / 1000;
-        var lying = width > 1.5 * height;
+        var lying = width > 2.5 * height;
         // The men are spaced by the body's width, or the pose's when it names no body.
         var body = pose.Body is { } extent ? (extent.Right - extent.Left) / 1000 : width;
         var across = lying ? width : width + (body * Step * (count - 1));

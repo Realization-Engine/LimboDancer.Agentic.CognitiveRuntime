@@ -71,7 +71,7 @@ public sealed class DocumentTests
         var vocabulary = UnitsTestData.Asl.Value;
         var catalog = UnitDocumentReader.Read(File.ReadAllBytes(Path.Combine(UnitsTestData.UnitsDirectory(), "examples", "catalog.units.json")), vocabulary);
         Assert.Empty(catalog.Diagnostics);
-        Assert.Equal(33, catalog.Documents.Count);
+        Assert.Equal(34, catalog.Documents.Count);
         var set = UnitPlacementSetReader.Read(File.ReadAllBytes(Path.Combine(UnitsTestData.UnitsDirectory(), "examples", "bd01-demo.units.json")), vocabulary);
         Assert.Empty(set.Diagnostics);
         Assert.True(set.Set!.Synthetic);
@@ -83,7 +83,7 @@ public sealed class DocumentTests
     public void TheExamplesAreEmbeddedInTheUnitsAssembly()
     {
         var vocabulary = UnitsTestData.Asl.Value;
-        Assert.Equal(33, UnitExamples.Catalog(vocabulary).Count);
+        Assert.Equal(34, UnitExamples.Catalog(vocabulary).Count);
         // Two built-in sets since 2026-10-18: the demo and the infantry figures on board 1; both read without a finding.
         var sets = UnitExamples.PlacementSets(vocabulary);
         Assert.Equal(["bd01-demo", "bd01-infantry-figures"], sets.Select(set => set.Set!.SetId));

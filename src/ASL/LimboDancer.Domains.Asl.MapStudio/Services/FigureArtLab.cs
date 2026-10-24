@@ -75,6 +75,7 @@ public sealed class FigureArtLab(string folder) : IArtShelf
             "pinned" => ("example-squad", null, "asl:pinned"),
             "berserk" => ("example-squad", null, "asl:berserk"),
             "prisoner" => ("example-squad", null, "asl:captured"),
+            "vehicle-crew" => ("example-vehicle-crew", null, null),
             _ => null,
         };
         if (choice is not { } chosen || examples.FirstOrDefault(example => example.Id == chosen.Id) is not { } document)

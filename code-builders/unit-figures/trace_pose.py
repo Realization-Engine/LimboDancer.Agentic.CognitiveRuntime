@@ -24,7 +24,7 @@ from trace_figure import area, closed, loops, simplify  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 POSES = ROOT / "src" / "ASL" / "units" / "figures" / "poses"
-NAMES = ["standing", "crew", "leader", "hero", "wounded", "broken", "pinned", "berserk", "prisoner"]
+NAMES = ["standing", "crew", "leader", "hero", "wounded", "broken", "pinned", "berserk", "prisoner", "vehicle-crew"]
 ENLARGE = 3
 DARK = 110
 LYING_LENGTH = 1150

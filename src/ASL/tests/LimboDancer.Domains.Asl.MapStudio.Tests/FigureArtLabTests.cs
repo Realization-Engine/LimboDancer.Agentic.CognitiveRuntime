@@ -43,6 +43,7 @@ public sealed class FigureArtLabTests : IDisposable
     [InlineData("pinned", "asl:squad", null, "asl:pinned")]
     [InlineData("berserk", "asl:squad", null, "asl:berserk")]
     [InlineData("prisoner", "asl:squad", null, "asl:captured")]
+    [InlineData("vehicle-crew", "asl:vehicle-crew", null, null)]
     public void EachPoseIsJudgedOnTheCounterThatTakesIt(string pose, string kind, string? face, string? state)
     {
         var sample = FigureArtLab.Sample(library.Examples, pose, "russian");
