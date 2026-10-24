@@ -1077,4 +1077,155 @@ public sealed class ScenarioA1Pass65RulesTests
         Assert.All(Ordnance.Armor.Vehicles.Values, item => Assert.False(item.CsRed));
         Assert.All(Ordnance.Fire.Definitions.Values.Where(item => item.IsVehicle), item => Assert.NotEqual(true, item.CsRed));
     }
+
+    // Increment 2i: captured vehicles (A21.2, A21.21, A21.22, D5.343, A26.12; ruling R65.22).
+
+    private static readonly ScenarioA1CloseCombatReference CloseCombat = new ScenarioA1CloseCombatPackage().Reference;
+    private static readonly int[] CaptureDice = [3, 3];
+    private static readonly string[] UnmannedDrm = ["vs-no-manned-mg", "vs-ce-closed-topped", "vs-immobile"];
+
+    private static CaptureUnitFacts Here(string id, string side, bool personnel = true, bool goodOrder = true, bool smc = false) => new(id, side, personnel, goodOrder, smc);
+
+    [Fact]
+    public void AnAbandonedAfvIsCapturedAsTheCcphEndsWhenNoneOfItsSidesPersonnelIsThere()
+    {
+        // A21.2: Good Order Russian Infantry alone with the Abandoned German AFV capture it; a German crew beneath it, broken or not, prevents it, as does a
+        // manned or unarmed vehicle, one marked captured before the pass (R11.16), or no Good Order captor.
+        Assert.True(ScenarioA1CapturedVehicleRules.AutomaticCaptureDue("ccph"));
+        Assert.False(ScenarioA1CapturedVehicleRules.AutomaticCaptureDue("aph"));
+        Assert.Equal("russian", ScenarioA1CapturedVehicleRules.AutomaticCaptor("german", true, true, false, [Here("ru-s", "russian")]));
+        Assert.Null(ScenarioA1CapturedVehicleRules.AutomaticCaptor("german", true, true, false, [Here("ru-s", "russian"), Here("de-c", "german", goodOrder: false)]));
+        Assert.Null(ScenarioA1CapturedVehicleRules.AutomaticCaptor("german", true, false, false, [Here("ru-s", "russian")]));
+        Assert.Null(ScenarioA1CapturedVehicleRules.AutomaticCaptor("german", false, true, false, [Here("ru-s", "russian")]));
+        Assert.Null(ScenarioA1CapturedVehicleRules.AutomaticCaptor("german", true, true, true, [Here("ru-s", "russian")]));
+        Assert.Null(ScenarioA1CapturedVehicleRules.AutomaticCaptor("german", true, true, false, [Here("ru-s", "russian", goodOrder: false)]));
+        Assert.Equal("russian", ScenarioA1CapturedVehicleRules.AutomaticCaptor("german", true, true, false, [Here("ru-s", "russian"), Here("de-v", "german", personnel: false)]));
+
+        // A21.21: a MMC captor's Temporary Driver costs nothing; SMC captors alone give up the first of them to drive it.
+        Assert.Null(ScenarioA1CapturedVehicleRules.TemporaryDriver([Here("ru-s", "russian"), Here("ru-l", "russian", smc: true)]));
+        Assert.Equal("ru-a", ScenarioA1CapturedVehicleRules.TemporaryDriver([Here("ru-b", "russian", smc: true), Here("ru-a", "russian", smc: true)]));
+
+        // A11.52, A21.2: a capture attempt is made on an Abandoned AFV only.
+        Assert.Null(ScenarioA1CapturedVehicleRules.CaptureAttemptBar("de-v", true, true));
+        Assert.Contains("only an Abandoned AFV", ScenarioA1CapturedVehicleRules.CaptureAttemptBar("de-v", true, false), StringComparison.Ordinal);
+        Assert.Contains("(A21.2)", ScenarioA1CapturedVehicleRules.CapturedText("de-v", "russian", At, ScenarioA1CapturedVehicleRules.Automatic, null), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ACaptureAttemptCapturesTheAbandonedTankWhereAnAttackWouldEliminateIt()
+    {
+        // A21.2, A11.51, A11.61: the Russian squad's CCV 5 against the Abandoned PzKpfw IIIH at -1 (no manned MG), -1 (assumed CE), -1 (assumed Immobile): a
+        // DR of 6 is a Final 3, below the CCV, so the capture attempt captures it where an attack to eliminate would eliminate it.
+        var units = new[] { new CloseCombatUnit("ru-s", "defender-squad", "russian", false, false, false, false, false, false, false, false, false, false, false) { Inexperienced = false } };
+        var tank = new VehicleCloseCombatVehicle("de-v", "attacker-tank", "german", false, false, false, false, false, true, false, false, false);
+        VehicleCloseCombatFacts Facts(bool? capture, bool? unmanned) => new("CCPh", At, tank, units, ["ru-s"], [], false, false, new VehicleCloseCombatRolls(CaptureDice))
+        {
+            Capture = capture,
+            Unmanned = unmanned,
+        };
+
+        var captured = ScenarioA1VehicleCloseCombat.Resolve(Facts(true, true), CloseCombat);
+        Assert.Equal((VehicleCloseCombatResolution.Captured, 3), (captured.VehicleResult, captured.FinalDr));
+        Assert.Equal(UnmannedDrm, captured.Drm.Select(item => item.Name));
+        Assert.Equal(VehicleCloseCombatResolution.Eliminated, ScenarioA1VehicleCloseCombat.Resolve(Facts(null, true), CloseCombat).VehicleResult);
+
+        // A record made before the pass has no unmanned fact: -1 alone, a Final 5 equal to the CCV, which immobilizes; a capture attempt then does nothing.
+        Assert.Equal(VehicleCloseCombatResolution.Immobilized, ScenarioA1VehicleCloseCombat.Resolve(Facts(null, null), CloseCombat).VehicleResult);
+        Assert.Equal(VehicleCloseCombatResolution.None, ScenarioA1VehicleCloseCombat.Resolve(Facts(true, null), CloseCombat).VehicleResult);
+
+        // A manned AFV is never the target of a capture attempt (A11.52).
+        Assert.Contains("asl.a1.cc-vehicle.capture-outside", ScenarioA1VehicleCloseCombat.Precheck(Facts(true, true) with
+        {
+            Vehicle = tank with
+            {
+                Abandoned = false
+            }
+        }, CloseCombat));
+    }
+
+    [Fact]
+    public void ATemporaryCrewsPenaltiesFollowWhoMansTheVehicle()
+    {
+        // A21.22: in a captured vehicle a vehicle crew, an infantry crew, a HS, or a SMC is a Temporary crew; in a friendly one a MMC other than a crew or a SMC
+        // is; the vehicle's own crew, and a crew of its nationality, never is. A squad Deploys first.
+        Assert.Equal(ScenarioA1CapturedVehicleRules.VehicleCrew, ScenarioA1CapturedVehicleRules.Manning("asl:vehicle-crew", false, false, true));
+        Assert.Equal(ScenarioA1CapturedVehicleRules.InfantryCrew, ScenarioA1CapturedVehicleRules.Manning("asl:crew", false, false, true));
+        Assert.Equal(ScenarioA1CapturedVehicleRules.HalfSquad, ScenarioA1CapturedVehicleRules.Manning("asl:half-squad", false, false, true));
+        Assert.Equal(ScenarioA1CapturedVehicleRules.Smc, ScenarioA1CapturedVehicleRules.Manning("asl:leader", true, false, true));
+        Assert.Null(ScenarioA1CapturedVehicleRules.Manning("asl:vehicle-crew", false, false, false));
+        Assert.Null(ScenarioA1CapturedVehicleRules.Manning("asl:crew", false, false, false));
+        Assert.Null(ScenarioA1CapturedVehicleRules.Manning("asl:half-squad", false, true, false));
+        Assert.Contains("Deploys first", ScenarioA1CapturedVehicleRules.SquadBar("ru-s", "de-v", "asl:squad", ScenarioA1CapturedVehicleRules.HalfSquad), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1CapturedVehicleRules.SquadBar("ru-h", "de-v", "asl:half-squad", ScenarioA1CapturedVehicleRules.HalfSquad));
+
+        // Halved MP for a HS or an infantry crew: the PzKpfw IIIH's 11 MP (22 half MP) become 5 1/2; the start dr, +1 for a Russian captor: 4 or less starts,
+        // 5 no movement, 6 or more Bogs.
+        Assert.Equal(11, ScenarioA1CapturedVehicleRules.AllotmentHalfMp(22, 11, ScenarioA1CapturedVehicleRules.InfantryCrew));
+        Assert.Equal(11, ScenarioA1CapturedVehicleRules.AllotmentHalfMp(22, 11, ScenarioA1CapturedVehicleRules.HalfSquad));
+        Assert.Equal(22, ScenarioA1CapturedVehicleRules.AllotmentHalfMp(22, 11, ScenarioA1CapturedVehicleRules.VehicleCrew));
+        Assert.Equal(22, ScenarioA1CapturedVehicleRules.AllotmentHalfMp(22, 11, null));
+        Assert.True(ScenarioA1CapturedVehicleRules.StartDrRequired(ScenarioA1CapturedVehicleRules.InfantryCrew));
+        Assert.False(ScenarioA1CapturedVehicleRules.StartDrRequired(ScenarioA1CapturedVehicleRules.VehicleCrew));
+        Assert.Equal((1, 1, 0), (ScenarioA1CapturedVehicleRules.StartDrm("russian"), ScenarioA1CapturedVehicleRules.StartDrm("japanese"), ScenarioA1CapturedVehicleRules.StartDrm("german")));
+        Assert.Equal((ScenarioA1ResultTables.CheckPassed, ScenarioA1ResultTables.CheckNoMove, ScenarioA1ResultTables.CheckBogged),
+            (ScenarioA1ResultTables.VehicleCheck(ScenarioA1ResultTables.TemporaryStartCheck, 4), ScenarioA1ResultTables.VehicleCheck(ScenarioA1ResultTables.TemporaryStartCheck, 5),
+                ScenarioA1ResultTables.VehicleCheck(ScenarioA1ResultTables.TemporaryStartCheck, 6)));
+        Assert.True(ScenarioA1CapturedVehicleRules.StartStops(ScenarioA1ResultTables.CheckNoMove));
+
+        // A vehicle crew in a captured vehicle takes red MP and the captured-weapon penalty; a HS doubles it there; a SMC and an infantry crew take it once.
+        Assert.True(ScenarioA1CapturedVehicleRules.RedMp(ScenarioA1CapturedVehicleRules.VehicleCrew, true));
+        Assert.False(ScenarioA1CapturedVehicleRules.RedMp(ScenarioA1CapturedVehicleRules.InfantryCrew, true));
+        Assert.Equal((1, 1, 2, 1, (int?)null), (ScenarioA1CapturedVehicleRules.WeaponPenalty(ScenarioA1CapturedVehicleRules.VehicleCrew, true),
+            ScenarioA1CapturedVehicleRules.WeaponPenalty(ScenarioA1CapturedVehicleRules.InfantryCrew, true), ScenarioA1CapturedVehicleRules.WeaponPenalty(ScenarioA1CapturedVehicleRules.HalfSquad, true),
+            ScenarioA1CapturedVehicleRules.WeaponPenalty(ScenarioA1CapturedVehicleRules.Smc, true), ScenarioA1CapturedVehicleRules.WeaponPenalty(null, false)));
+    }
+
+    [Fact]
+    public void ATemporaryCrewsOrdnanceFiresOnTheRedNumbersWithCaseHAndALowerBreakdown()
+    {
+        // A21.12, A21.13: a HS in a captured T-34 doubles the penalty: Case H +4, the B# four lower.
+        var shot = AtTank(CaptureDice, []);
+        var plain = Shot(shot);
+        var captured = Shot(shot with
+        {
+            CapturedPenalty = 2
+        });
+        Assert.True(captured.ToHit is not null, string.Join("; ", captured.Reasons));
+        Assert.Equal("red", captured.ToHit.Color);
+        Assert.Equal(4, (int)captured.ToHit.Drm.Single(item => item.Name == "case-h:captured").Value);
+        Assert.Equal(plain.Gun!.BreakdownNumber - 4, captured.Gun!.BreakdownNumber);
+        Assert.DoesNotContain(plain.ToHit!.Drm, item => item.Name == "case-h:captured");
+    }
+
+    [Fact]
+    public void ASmcCrewIsWoundedByAStunAndEliminatedByARecall()
+    {
+        // D5.343: Wounded on a Stun; eliminated on a Recall, but one with a Disabled MA (D3.7).
+        Assert.Equal((true, false), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(true, false, false, false));
+        Assert.Equal((false, true), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(false, true, false, false));
+        Assert.Equal((false, false), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(false, true, true, false));
+        Assert.Equal((false, false), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(false, false, false, false));
+
+        // A21.22: CE, the AAMG alone and no move; BU, the BMG or CMG; never both move and fire in one Player Turn.
+        Assert.Null(ScenarioA1CapturedVehicleRules.SmcFireBar("de-ht", true, "aamg", false, false));
+        Assert.Contains("only its AAMG", ScenarioA1CapturedVehicleRules.SmcFireBar("de-ht", true, "bmg", false, false), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1CapturedVehicleRules.SmcFireBar("de-v", false, "bmg", false, false));
+        Assert.Contains("BMG or CMG", ScenarioA1CapturedVehicleRules.SmcFireBar("de-v", false, "ma", false, false), StringComparison.Ordinal);
+        Assert.Contains("both move and fire", ScenarioA1CapturedVehicleRules.SmcFireBar("de-v", false, "cmg", false, true), StringComparison.Ordinal);
+        Assert.Contains("Immobile while he is CE", ScenarioA1CapturedVehicleRules.SmcMoveBar("de-v", true, false), StringComparison.Ordinal);
+        Assert.Contains("both move and fire", ScenarioA1CapturedVehicleRules.SmcMoveBar("de-v", false, true), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1CapturedVehicleRules.SmcMoveBar("de-v", false, false));
+    }
+
+    [Fact]
+    public void AMannedCapturedVehicleHoldsControlForItsCaptor()
+    {
+        // A26.12 (ruling R65.22): a vehicle captured by the pass's record is its captor's, unmarked, and armed once manned; one marked captured under ruling
+        // R11.16 is not (R24.5), nor an Abandoned one with no crew yet.
+        VictoryUnitFacts Vehicle(bool captured, bool abandoned, bool? crew) =>
+            new("de-v", "russian", "asl:vehicle", false, "bd01:G5", 0, false, false, false, false, captured, false, abandoned, true, crew, false, false, false, false);
+        Assert.True(ScenarioA1VictoryCalculator.Armed(Vehicle(false, false, true)));
+        Assert.False(ScenarioA1VictoryCalculator.Armed(Vehicle(true, true, false)));
+        Assert.False(ScenarioA1VictoryCalculator.Armed(Vehicle(false, true, false)));
+    }
 }

@@ -8,6 +8,12 @@ Read `brief_build.md` beside this file first; it binds you. Increments 2a to 2j 
 - Only refusals turn into plans, so no recorded game changes.
 - **Tests:** a German vehicle crew alone in the open under a Russian squad's fire; a vehicle crew with a squad; a Gun's crew with a squad still refused.
 
+## 1b. CC with a crew (R65.29)
+- **Pages:** p. 44 (A1.123); p. 73 and 74 (A11); ruling R24.3 (`ScenarioA1AdvanceCalculator.CrewBar`, `play.advance-crew`, about :99; the CC rules' leaving out of a crew, `ScenarioA1CloseCombatRules` about :187; the charge's bar, `ScenarioA1ChargeModels`).
+- A crew that mans no Gun may be advanced against and fights in CC as ordinary Infantry (A1.123). A Gun's crew keeps R24.3's reading.
+- Only refusals turn into plans, so no recorded game changes.
+- **Tests:** a Russian squad advances into a Location holding a German vehicle crew and the CC resolves; a Gun's crew still refused.
+
 ## 2. A7.308's Random Selection (R65.26)
 - **Pages:** p. 55 and 56 (A7.308, A7.309); p. 165 (C1.55); ruling R25.3's one-vehicle refusal (`vehicles.Count > 1` in FireCalculator's `Outside`) and `vehicles-beyond-kia`.
 - When an IFT attack (or a mortar's C1.55 hit) meets more unarmored vehicles in the Location than the column's highest KIA#, Random Selection picks which vehicles are affected, with its dr on the record.

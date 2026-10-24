@@ -684,6 +684,16 @@ public sealed record FireVehicleFire(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The captured-weapon penalty of a Temporary crew, as a multiple (A21.22, A21.11, A21.12, A21.13, p. 88; pass 65, ruling R65.22): the B# two lower and
+    /// the Multiple ROF one lower for each. Null is none, which is every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? CapturedPenalty
+    {
+        get; init;
+    }
 }
 
 /// <summary>

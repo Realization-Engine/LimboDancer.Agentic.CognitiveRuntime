@@ -738,6 +738,19 @@ public static class GameEventWriter
 
                 WriteOptional(writer, "returned", recrewed.Returned);
                 WriteOptional(writer, "mount", recrewed.Mount);
+                WriteOptional(writer, "manning", recrewed.Manning);
+                if (recrewed.Captured)
+                {
+                    writer.WriteBoolean("captured", true);
+                }
+
+                break;
+            case VehicleCaptured captured:
+                writer.WriteString("vehicle", captured.Vehicle);
+                writer.WriteString("at", captured.At.ToString());
+                writer.WriteString("side", captured.Side);
+                writer.WriteString("cause", captured.Cause);
+                WriteOptional(writer, "driver", captured.Driver);
                 break;
             case VehicleCheckRolled check:
                 writer.WriteString("vehicle", check.Vehicle);

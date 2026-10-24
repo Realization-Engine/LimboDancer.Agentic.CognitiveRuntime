@@ -82,6 +82,26 @@ public sealed record VehicleCloseCombatFacts(
     {
         get; init;
     }
+
+    /// <summary>
+    /// A21.2 (p. 88; pass 65, ruling R65.22): the attack is a capture attempt on an Abandoned AFV, which captures it where it would eliminate it; null is an
+    /// attack to eliminate. A declaration, taken from the record.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Capture
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// A21.2: the attack on an Abandoned AFV was planned since pass 65, so the AFV "is assumed to be CE and Immobile as long as it is unmanned"; null for
+    /// every record made before, which resolves as it did.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Unmanned
+    {
+        get; init;
+    }
 }
 
 /// <summary>The answer to one CC attack with a vehicle: its arithmetic, what it did to the vehicle, and the effects on Infantry.</summary>
@@ -101,6 +121,9 @@ public sealed record VehicleCloseCombatResolution(
     public const string Immobilized = "immobilized";
     public const string Eliminated = "eliminated";
     public const string BurningWreck = "burning-wreck";
+
+    /// <summary>A21.2 (pass 65, ruling R65.22): a capture attempt's success, where an attack to eliminate would have eliminated or burned the AFV.</summary>
+    public const string Captured = "captured";
 
     /// <summary>The Unlikely Kill dr after an Original 2 (A11.501); null when none was rolled.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -227,6 +250,12 @@ public static class ScenarioA1VehicleCloseCombat
             reasons.Add("asl.a1.cc-vehicle.fact-missing:inexperienced");
         }
 
+        // A11.52, A21.2 (pass 65, ruling R65.22): a capture attempt is made in the CCPh on an Abandoned AFV alone.
+        if (facts.Capture == true && (facts.Reaction == true || vehicle.Abandoned != true || reference.Definitions.GetValueOrDefault(vehicle.DefinitionId) is not { Unarmored: not true }))
+        {
+            reasons.Add("asl.a1.cc-vehicle.capture-outside");
+        }
+
         return reasons;
     }
 
@@ -320,19 +349,21 @@ public static class ScenarioA1VehicleCloseCombat
             drm.Add(new FireModifier("vs-no-manned-mg", -1m, "A11.51"));
         }
 
+        // A21.2 (pass 65, ruling R65.22): an Abandoned AFV "is assumed to be CE and Immobile as long as it is unmanned", for an attack planned since the pass.
+        var unmanned = facts.Unmanned == true && vehicle.Abandoned == true && definition.Unarmored != true;
         if (definition.Unarmored != true && definition.OpenTopped == true)
         {
             drm.Add(new FireModifier("vs-open-topped", -2m, "A11.61"));
         }
-        else if (definition.Unarmored != true && vehicle.CrewExposed == true)
+        else if (definition.Unarmored != true && (vehicle.CrewExposed == true || unmanned))
         {
-            drm.Add(new FireModifier("vs-ce-closed-topped", -1m, "A11.61"));
+            drm.Add(new FireModifier("vs-ce-closed-topped", -1m, unmanned ? "A21.2" : "A11.61"));
         }
 
         // A11.61 (referee, pass 11): "Any Immobile AFV".
-        if (vehicle.Immobile == true && definition.Unarmored != true)
+        if ((vehicle.Immobile == true || unmanned) && definition.Unarmored != true)
         {
-            drm.Add(new FireModifier("vs-immobile", -1m, "A11.61"));
+            drm.Add(new FireModifier("vs-immobile", -1m, unmanned && vehicle.Immobile != true ? "A21.2" : "A11.61"));
         }
 
         // A11.51: +1 for each unbroken, unpinned, armed enemy HS or crew in the Location and +2 for each such squad.
@@ -398,6 +429,13 @@ public static class ScenarioA1VehicleCloseCombat
                 _ => VehicleCloseCombatResolution.None,
             };
             result = Severity(subsequent) > Severity(result) ? subsequent : result;
+        }
+
+        // A21.2 (pass 65, ruling R65.22): a capture attempt captures the Abandoned AFV where an attack to eliminate it would eliminate or burn it; it is
+        // already Immobile, so nothing else.
+        if (facts.Capture == true)
+        {
+            result = result is VehicleCloseCombatResolution.Eliminated or VehicleCloseCombatResolution.BurningWreck ? VehicleCloseCombatResolution.Captured : VehicleCloseCombatResolution.None;
         }
 
         // A11.621: an Original 12 against a crewed vehicle, not Abandoned, Shocked, or Stunned, Casualty Reduces the attackers.

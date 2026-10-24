@@ -808,7 +808,7 @@ else if (state is not null)
                     <VehicleCloseCombatPanel Locations="@vehicleCc" Attacker="@vehicleCcAttacker" Leader="@vehicleCcLeader" Vehicle="@vehicleCcVehicle" Defenders="@vehicleCcDefenders"
                         OnAttacker="@(id => vehicleCcAttacker = id)" OnLeader="@(id => vehicleCcLeader = id)" OnVehicle="@(id => vehicleCcVehicle = id)"
                         OnDefender="@(pick => Toggle(vehicleCcDefenders, pick.Id, pick.On))"
-                        OnProposeAttack="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: false))"
+                        OnProposeAttack="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: false))" OnProposeCapture="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: false, capture: true))"
                         OnProposeVehicle="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: true))" OnPass="@(at => ProposeVehicleCc(at, [], null, [], true))" />
                 }
                 @if (state.Phase == "ccph")
@@ -3370,7 +3370,24 @@ else if (state is not null)
             + (vehicle.Straddling is { } lane ? $", in Bypass along the hexside with {lane}" : string.Empty)
             + (vehicle.EsbMp > 0 ? $", ESB +{vehicle.EsbMp} MP" : string.Empty)
             + (GameState.Condition(vehicle, Conditions.Bogged) == ConditionState.True ? ", bogged" : string.Empty)
-            + (GameState.Condition(vehicle, Conditions.Mired) == ConditionState.True ? ", Mired" : string.Empty) + cargo;
+            + (GameState.Condition(vehicle, Conditions.Mired) == ConditionState.True ? ", Mired" : string.Empty) + CaptureNote(vehicle) + cargo;
+    }
+
+    /// <summary>
+    /// A captured vehicle's side and its Temporary crew (A21.2, A21.22; pass 65, ruling R65.22), for its own side's view: the vehicle of another nationality
+    /// than its side's, and the crew's penalties. Read for the one vehicle the panel shows.
+    /// </summary>
+    private string CaptureNote(UnitInstance vehicle)
+    {
+        if (state is null || (!Viewer.IsAdjudicator && vehicle.Side != viewAs))
+        {
+            return string.Empty;
+        }
+
+        var nationality = vehicle.Definition is { } reference ? Definitions.FirstOrDefault(definition => definition.Id == reference.Definition)?.Nationality : null;
+        var captured = nationality is not null && state.Side(vehicle.Side)?.Nationality is { } own && own != nationality
+            ? $", captured: the {DisplayText.Side(vehicle.Side)} side's (A21.2)" : string.Empty;
+        return captured + (vehicle.TemporaryCrew is { } crew ? ", manned by " + ScenarioA1CapturedVehicleRules.ManningText(crew.Manning, crew.Captured) : string.Empty);
     }
 
     /// <summary>What a Passenger rides, and what a vehicle carries and tows (D6.1, C10.1; ruling R26.2).</summary>
@@ -3967,7 +3984,8 @@ else if (state is not null)
             [.. here.Where(unit => unit.Side == nextSide && !LiveFire.IsVehicle(unit) && unit.Kind != UnitKinds.Dummy && !attacked.Contains(unit.Id)
                 && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => unit.Id)],
             [.. here.Where(unit => unit.Side == nextSide && unit.Kind is "asl:leader" or "asl:hero").Select(unit => unit.Id)],
-            [.. here.Where(LiveFire.IsVehicle).Select(unit => new VehicleCloseCombatPanel.VehicleChoice(unit.Id, unit.Side))],
+            [.. here.Where(LiveFire.IsVehicle).Select(unit => new VehicleCloseCombatPanel.VehicleChoice(unit.Id, unit.Side,
+                GameState.Condition(unit, Conditions.Abandoned) == ConditionState.True && GamePlanner.IsArmoredVehicle(unit)))],
             [.. here.Where(unit => !LiveFire.IsVehicle(unit) && unit.Side != nextSide).Select(unit => unit.Id)]);
     })];
 
@@ -3975,7 +3993,7 @@ else if (state is not null)
     /// Pass 35: the Locations share one attack draft, so an attack proposed in a Location names only that Location's own units; what was chosen or
     /// checked in another Location stays out of it.
     /// </summary>
-    private Task ProposeVehicleCcAt(IReadOnlyList<VehicleCloseCombatPanel.CcLocation> rows, string at, bool byVehicle)
+    private Task ProposeVehicleCcAt(IReadOnlyList<VehicleCloseCombatPanel.CcLocation> rows, string at, bool byVehicle, bool capture = false)
     {
         if (rows.FirstOrDefault(row => row.Location == at) is not { } row || !row.Vehicles.Any(vehicle => vehicle.Id == vehicleCcVehicle))
         {
@@ -3985,7 +4003,7 @@ else if (state is not null)
         string[] attackers = byVehicle || !row.Attackers.Contains(vehicleCcAttacker, StringComparer.Ordinal) ? []
             : [vehicleCcAttacker, .. (row.Leaders.Contains(vehicleCcLeader, StringComparer.Ordinal) && vehicleCcLeader != vehicleCcAttacker ? new[] { vehicleCcLeader } : [])];
         string[] defenders = byVehicle ? [.. row.Defenders.Where(vehicleCcDefenders.Contains)] : [];
-        return attackers.Length == 0 && defenders.Length == 0 ? Task.CompletedTask : ProposeVehicleCc(at, attackers, vehicleCcVehicle, defenders, false);
+        return attackers.Length == 0 && defenders.Length == 0 ? Task.CompletedTask : ProposeVehicleCc(at, attackers, vehicleCcVehicle, defenders, false, capture);
     }
 
     /// <summary>Pass 35: the vehicle CC and CC Reaction Fire drafts, cleared with the other panel choices and after a committed attack or pass.</summary>
@@ -3996,7 +4014,7 @@ else if (state is not null)
         reactionAttacker = reactionLeader = string.Empty;
     }
 
-    private Task ProposeVehicleCc(string location, IReadOnlyList<string> attackers, string? vehicle, IReadOnlyList<string> defenders, bool pass)
+    private Task ProposeVehicleCc(string location, IReadOnlyList<string> attackers, string? vehicle, IReadOnlyList<string> defenders, bool pass, bool capture = false)
     {
         var arguments = new Dictionary<string, object>
         {
@@ -4023,6 +4041,12 @@ else if (state is not null)
         if (pass)
         {
             arguments["pass"] = true;
+        }
+
+        // A21.2 (pass 65, ruling R65.22): a capture attempt on an Abandoned AFV.
+        if (capture)
+        {
+            arguments["capture"] = true;
         }
 
         return Propose(GameActions.VehicleCloseCombat, JsonSerializer.SerializeToElement(arguments));

@@ -10,6 +10,7 @@ using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.State;
 using LimboDancer.Domains.Asl.Units.Vocabulary;
+using ScenarioA1CapturedVehicleRules = LimboDancer.Domains.Asl.Rules.ScenarioA1CapturedVehicleRules;
 using ScenarioA1CrewActsRules = LimboDancer.Domains.Asl.Rules.ScenarioA1CrewActsRules;
 using ScenarioA1RiderRules = LimboDancer.Domains.Asl.Rules.ScenarioA1RiderRules;
 
@@ -1400,5 +1401,195 @@ public sealed class BacklogPass65Tests : IDisposable
         Assert.Contains(fire.Resolution.GetProperty("arithmetic").GetProperty("drm").EnumerateArray(),
             item => item.GetProperty("name").GetString() == "hazardous-movement" && item.GetProperty("value").GetDecimal() == -2);
         NoReplayErrors();
+    }
+
+    // Increment 2i: captured vehicles (A21.2, A21.21, A21.22, D5.343, A26.12; ruling R65.22).
+
+    private void Inject(params (string Type, EventPayload Payload)[] items)
+    {
+        var revision = Revision;
+        GameEvent[] events = [.. items.Select((item, index) => new GameEvent(Scope, $"inject-{revision}-{index + 1}", revision + index + 1, DateTimeOffset.UnixEpoch,
+            LiveGames.Source, item.Type, item.Payload, null, [], null))];
+        var result = store.Append(Scope, "inject", revision, events, Planner().Replay);
+        Assert.True(result.Status == AppendStatus.Committed, string.Join("; ", result.Diagnostics.Select(item => item.Message)));
+    }
+
+    /// <summary>The phases advanced to the named side's MPh of the named Game Turn.</summary>
+    private async Task NextMph(string side, int turn)
+    {
+        for (var step = 0; step < 60 && (Current.PhasingSide, Current.Phase, Current.Turn) != (side, "mph", turn); step++)
+        {
+            await Advance();
+        }
+
+        Assert.Equal((side, "mph", turn), (Current.PhasingSide, Current.Phase, Current.Turn));
+    }
+
+    /// <summary>
+    /// A Russian game of 1943 in which an Abandoned PzKpfw IIIH shares its Location with a Russian 4-4-7, a Russian infantry crew, and a 6+1 leader, and no
+    /// German unit: as the Russian CCPh ends the tank is captured (A21.2), and the game goes on to the Russian MPh of Game Turn 2.
+    /// </summary>
+    private async Task<long> CaptureThePanzer()
+    {
+        var tank = Vehicle("de-tank", "attacker-tank", Target, "german", "east");
+        tank["conditions"] = new Dictionary<string, bool> { ["asl:abandoned"] = true };
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", tank, Unit("ru-s", "asl:squad", "defender-squad", Behind, "russian"),
+            Unit("ru-c", "asl:crew", "defender-crew", Behind, "russian"), Unit("ru-l", "asl:leader", "defender-leader", Behind, "russian"),
+            Unit("de-1", "asl:squad", "attacker-squad", Far, "german"));
+        await AdvanceInto(RussiansAtB9);
+        for (var step = 0; step < 4 && Current.Phase != "ccph"; step++)
+        {
+            await Advance();
+        }
+
+        var before = Revision;
+        await Advance();
+        return before;
+    }
+
+    private static readonly string[] RussiansAtB9 = ["ru-s", "ru-c", "ru-l"];
+    private static readonly string[] RussianSquadAtB9 = ["ru-s"];
+
+    /// <summary>The game advanced to the first side's APh, where the named units advance into the vehicle's Location (setup keeps enemies apart, R25.3).</summary>
+    private async Task AdvanceInto(string[] units)
+    {
+        for (var step = 0; step < 10 && Current.Phase != "aph"; step++)
+        {
+            await Advance();
+        }
+
+        Committed(await Do(GameActions.Advance, Once(2, 2, 2, 2, 2, 2), new
+        {
+            unitIds = units,
+            to = Target,
+        }));
+    }
+
+    [Fact]
+    public async Task AnAbandonedPanzerIsCapturedAsTheCcphEndsAndCrewedByARussianCrewUnderTheTemporaryPenalties()
+    {
+        // A21.2: no German Personnel is with the Abandoned PzKpfw IIIH as the Russian CCPh ends, so the Russians capture it; it stays Abandoned.
+        var before = await CaptureThePanzer();
+        var captured = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCaptured>());
+        Assert.Equal(("de-tank", "russian", VehicleCaptured.Automatic, (string?)null), (captured.Vehicle, captured.Side, captured.Cause, captured.Driver));
+        var tank = Current.Unit("de-tank")!;
+        Assert.Equal(("russian", ConditionState.True, ConditionState.Unknown), (tank.Side, GameState.Condition(tank, Conditions.Abandoned), GameState.Condition(tank, Conditions.Captured)));
+
+        // A21.22: in the next Russian MPh the infantry crew enters it as a Temporary crew: its MP allotment is halved (11 MP to 5 1/2), and a squad must
+        // Deploy first.
+        await NextMph("russian", 2);
+        var full = GamePlanner.VehicleHalfMp(Current.Unit("de-tank")!).Allotment;
+        Refused(await Recrew("ru-s", "de-tank"), "Deploys first");
+        before = Revision;
+        var recrewed = await Recrew("ru-c", "de-tank");
+        Committed(recrewed);
+        Assert.Contains(recrewed.Reasons, reason => reason.Contains("an infantry crew: its MP allotment is halved", StringComparison.Ordinal));
+        var record = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleRecrewed>());
+        Assert.Equal((true, ScenarioA1CapturedVehicleRules.InfantryCrew, true), (record.Temporary, record.Manning, record.Captured));
+        tank = Current.Unit("de-tank")!;
+        Assert.Equal(new TemporaryCrew(ScenarioA1CapturedVehicleRules.InfantryCrew, true), tank.TemporaryCrew);
+        Assert.Equal(full, 2 * GamePlanner.VehicleHalfMp(tank).Allotment);
+        Assert.Equal(1, LiveFire.CapturedPenalty(tank));
+
+        // In the Russian MPh of Game Turn 3 the start is preceded by the dr: a colored 4, +1 for a Russian captor, allows no movement this phase.
+        await NextMph("russian", 3);
+        before = Revision;
+        var started = await Do(GameActions.MoveVehicle, Once(4, 1), new
+        {
+            vehicleId = "de-tank",
+            kind = "start",
+        });
+        Committed(started);
+        Assert.Contains(started.Reasons, reason => reason.Contains("start dr at +1", StringComparison.Ordinal));
+        var check = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCheckRolled>());
+        Assert.Equal((VehicleCheckRolled.TemporaryStart, 1, VehicleCheckRolled.NoMove), (check.Check, check.Drm, check.Result));
+        Assert.True(Current.Movement is { Ending: true });
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ACaptureAttemptInCcTakesAnEscortedAbandonedPanzer()
+    {
+        // A21.2: a German HS beside the Abandoned PzKpfw IIIH prevents the automatic capture, so the Russian squad attempts it in CC: CCV 5, -1 (no manned MG),
+        // -1 (assumed CE), -1 (assumed Immobile), +1 (the HS, an escort): a DR of 6 is a Final 4, which would eliminate it, so it is captured. (A crew there
+        // would bar the advance: CC with a Gun's crew is not reviewed, R24.3.)
+        var tank = Vehicle("de-tank", "attacker-tank", Target, "german", "east");
+        tank["conditions"] = new Dictionary<string, bool> { ["asl:abandoned"] = true };
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", tank, Unit("de-h", "asl:half-squad", "attacker-half-squad", Target, "german"),
+            Unit("ru-s", "asl:squad", "defender-squad", Behind, "russian"));
+        await AdvanceInto(RussianSquadAtB9);
+        await Advance();
+        Assert.Equal("ccph", Current.Phase);
+        var before = Revision;
+        var attempt = await Do(GameActions.VehicleCloseCombat, Once(3, 3), new
+        {
+            location = Target,
+            attackers = RussianSquadAtB9,
+            vehicleId = "de-tank",
+            capture = true,
+        });
+        Committed(attempt);
+        Assert.Contains(attempt.Reasons, reason => reason.Contains("as a capture attempt", StringComparison.Ordinal));
+        var combat = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>());
+        Assert.Equal("captured", combat.Resolution.GetProperty("vehicleResult").GetString());
+        Assert.Equal(4, combat.Resolution.GetProperty("finalDr").GetInt32());
+        var captured = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCaptured>());
+        Assert.Equal(("russian", VehicleCaptured.CloseCombat), (captured.Side, captured.Cause));
+        Assert.Equal("russian", Current.Unit("de-tank")!.Side);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ASmcTemporaryCrewIsWoundedByAStunAndEliminatedByARecall()
+    {
+        // D5.343: the 6+1 crews the captured tank; a Stun Wounds him, and a Recall eliminates him, leaving the tank Abandoned.
+        await CaptureThePanzer();
+        await NextMph("russian", 2);
+        Committed(await Recrew("ru-l", "de-tank"));
+        Assert.Equal(ScenarioA1CapturedVehicleRules.Smc, Current.Unit("de-tank")!.TemporaryCrew?.Manning);
+        Inject(("conditions-changed", new ConditionsChanged("de-tank", new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Stunned] = ConditionState.True })));
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("ru-l")!, Conditions.Wounded));
+        Inject(("conditions-changed", new ConditionsChanged("de-tank", new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Recalled] = ConditionState.True })));
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("ru-l")!.Status);
+        var tank = Current.Unit("de-tank")!;
+        Assert.Equal((ConditionState.True, (TemporaryCrew?)null), (GameState.Condition(tank, Conditions.Abandoned), tank.TemporaryCrew));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ACapturedTrucksTemporaryDriverRunsItAndAnOlderCaptureReplaysAsBefore()
+    {
+        // A11.52, A21.21: the stopped German truck alone with the Russian squad as the CCPh begins passes to the Russians with a Temporary Driver, at no cost.
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("de-t", "attacker-truck", Target, "german", "east"),
+            Unit("ru-s", "asl:squad", "defender-squad", Behind, "russian"), Unit("de-1", "asl:squad", "attacker-squad", Far, "german"));
+        await AdvanceInto(RussianSquadAtB9);
+        var before = Revision;
+        for (var step = 0; step < 4 && Current.Phase != "ccph"; step++)
+        {
+            await Advance();
+        }
+
+        var captured = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCaptured>());
+        Assert.Equal(("russian", VehicleCaptured.Unarmed, (string?)null), (captured.Side, captured.Cause, captured.Driver));
+        var truck = Current.Unit("de-t")!;
+        Assert.Equal(("russian", ConditionState.Unknown), (truck.Side, GameState.Condition(truck, Conditions.Abandoned)));
+        NoReplayErrors();
+
+        // A game recorded before the pass marked the truck Captured and Abandoned (ruling R11.16); that record replays as it did.
+        GameEvent[] older = [.. store.Read(Scope)!.Events.Select(item => item.Payload is VehicleCaptured taken
+            ? item with
+            {
+                Type = "conditions-changed",
+                Payload = new ConditionsChanged(taken.Vehicle, new Dictionary<string, ConditionState>(StringComparer.Ordinal)
+                {
+                    [Conditions.Captured] = ConditionState.True,
+                    [Conditions.Abandoned] = ConditionState.True,
+                }),
+            }
+            : item)];
+        var replayed = Planner().Replay(older);
+        Assert.False(replayed.HasErrors);
+        var kept = replayed.Current!.Unit("de-t")!;
+        Assert.Equal(("german", ConditionState.True, ConditionState.True), (kept.Side, GameState.Condition(kept, Conditions.Captured), GameState.Condition(kept, Conditions.Abandoned)));
     }
 }

@@ -417,6 +417,21 @@ public sealed record VehicleRecrewed(string Vehicle, BoardLocation At, string Un
         get; init;
     }
 
+    /// <summary>
+    /// A21.22 (pass 65, ruling R65.22): how a Temporary crew mans the vehicle, Rules' name (<c>vehicle-crew</c>, <c>infantry-crew</c>, <c>half-squad</c>,
+    /// <c>smc</c>), which gives its penalties; null for a qualified crew and for every record made before increment 2i, which has none.
+    /// </summary>
+    public string? Manning
+    {
+        get; init;
+    }
+
+    /// <summary>A21.22: the vehicle is captured, of an enemy nationality to the crew, so its weapons are captured weapons (A21.11, A21.12).</summary>
+    public bool Captured
+    {
+        get; init;
+    }
+
     /// <summary>D6.631: the SW the unit returns to the vehicle; null when it returns none.</summary>
     public string? Returned
     {
@@ -425,6 +440,25 @@ public sealed record VehicleRecrewed(string Vehicle, BoardLocation At, string Un
 
     /// <summary>D6.631: the mount the returned MG goes back to, <c>ma</c> or <c>bmg</c>.</summary>
     public string? Mount
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// <c>vehicle-captured</c>: a vehicle in the CCPh passes to <paramref name="Side"/>, the captor (A11.52, A21.2, A21.21; pass 65, ruling R65.22): an Abandoned
+/// AFV at the end of the CCPh with no Personnel of its side there (<c>automatic</c>), or by a capture attempt in CC (<c>cc</c>), stays Abandoned until a crew
+/// enters it; an unarmed vehicle alone with the captor's Infantry (<c>unarmed</c>) runs at once with a Temporary Driver, a SMC captor alone being removed
+/// into it as its <see cref="Driver"/>. Captures recorded before the pass are <c>conditions-changed</c> records (ruling R11.16), which stay as they were.
+/// </summary>
+public sealed record VehicleCaptured(string Vehicle, BoardLocation At, string Side, string Cause) : EventPayload
+{
+    public const string Automatic = Rules.ScenarioA1CapturedVehicleRules.Automatic;
+    public const string CloseCombat = Rules.ScenarioA1CapturedVehicleRules.CloseCombat;
+    public const string Unarmed = Rules.ScenarioA1CapturedVehicleRules.Unarmed;
+
+    /// <summary>A21.21: the SMC captor removed into an unarmed vehicle as its Temporary Driver; null for a MMC captor's driver, who costs nothing.</summary>
+    public string? Driver
     {
         get; init;
     }
@@ -442,11 +476,17 @@ public sealed record VehicleCheckRolled(string Vehicle, string Check, string Rol
     public const string Esb = "esb";
     public const string Mechanical = "mechanical";
 
+    /// <summary>A21.22 (pass 65, ruling R65.22): a Temporary crew's dr before each start, the colored dr of its DR as a Bog Removal's.</summary>
+    public const string TemporaryStart = Rules.ScenarioA1ResultTables.TemporaryStartCheck;
+
     public const string Passed = "passed";
     public const string Bogged = "bogged";
     public const string Freed = "freed";
     public const string Mired = "mired";
     public const string Immobilized = "immobilized";
+
+    /// <summary>A21.22: a start dr of 5, no movement this phase.</summary>
+    public const string NoMove = Rules.ScenarioA1ResultTables.CheckNoMove;
 
     /// <summary>The MP an ESB DR sought (D2.5); zero for other checks.</summary>
     public int Mp

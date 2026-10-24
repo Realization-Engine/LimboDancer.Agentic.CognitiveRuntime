@@ -181,6 +181,16 @@ public sealed record OrdnanceShot(
         get; init;
     }
 
+    /// <summary>
+    /// The captured-weapon penalty of a vehicle's Temporary crew, as a multiple (A21.22, A21.12, A21.13, p. 88; pass 65, ruling R65.22): the red To Hit
+    /// numbers, and for each a +2 To Hit DRM (Case H), a B# two lower, and a Multiple ROF one lower. Null is none, which is every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? CapturedPenalty
+    {
+        get; init;
+    }
+
     /// <summary>The moving target's facts for Defensive First Fire (C6.11 to C6.17); required when <see cref="FireKind"/> is set.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OrdnanceMovement? Movement

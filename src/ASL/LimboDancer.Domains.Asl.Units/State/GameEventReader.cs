@@ -613,6 +613,19 @@ public static class GameEventReader
                         Temporary = fields.OptionalBoolean(payload, "temporary", path),
                         Returned = fields.OptionalString(payload, "returned", path),
                         Mount = fields.OptionalString(payload, "mount", path),
+                        Manning = fields.OptionalString(payload, "manning", path),
+                        Captured = fields.OptionalBoolean(payload, "captured", path),
+                    };
+            case "vehicle-captured":
+                var capturedVehicle = fields.RequiredString(payload, "vehicle", path);
+                var capturedAt = ReadLocation(payload, "at", path, fields, diagnostics);
+                var captorSide = fields.RequiredString(payload, "side", path);
+                var captureCause = fields.RequiredString(payload, "cause", path);
+                return capturedVehicle is null || capturedAt is null || captorSide is null || captureCause is null
+                    ? Missing(diagnostics, "A capture names the vehicle, its Location, the captor's side, and the cause.", path)
+                    : new VehicleCaptured(capturedVehicle, capturedAt, captorSide, captureCause)
+                    {
+                        Driver = fields.OptionalString(payload, "driver", path),
                     };
             case "vehicle-check-rolled":
                 var checkedVehicle = fields.RequiredString(payload, "vehicle", path);

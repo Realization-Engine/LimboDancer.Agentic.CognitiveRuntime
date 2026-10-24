@@ -3257,6 +3257,13 @@
         },
         {
           "kind": "button",
+          "label": "Propose: Infantry attempt to capture the Abandoned AFV (A21.2)",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "VehicleCloseCombatPanel vehicle-cc"
+        },
+        {
+          "kind": "button",
           "label": "Propose: the vehicle attacks the checked Infantry",
           "dynamic": false,
           "status": "needed",

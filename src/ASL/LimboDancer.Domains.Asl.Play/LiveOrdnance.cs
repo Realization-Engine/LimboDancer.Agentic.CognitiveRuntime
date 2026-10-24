@@ -109,6 +109,12 @@ public static class LiveOrdnance
                 return (null, abandoned);
             }
 
+            // A21.22 (pass 65, ruling R65.22): a SMC crew fires a MA only in a one man turret, BU, and never in a Player Turn it moved.
+            if (GamePlanner.SmcCrewFireBar(state, tank, "ma") is { } smcBar)
+            {
+                return (null, smcBar);
+            }
+
             gun = tank;
             crew = tank;
         }
@@ -307,6 +313,9 @@ public static class LiveOrdnance
             NonQualified = ScenarioA1OrdnanceEligibility.NonQualified(gun is EquipmentInstance, crew.Kind, sw),
             TargetType = mortar ? OrdnanceTargetTypes.Area : null,
             AreaAcquisition = areaAcquisition,
+
+            // A21.22 (pass 65, ruling R65.22): a vehicle's Temporary crew fires its MA under the captured-weapon penalty.
+            CapturedPenalty = gun is UnitInstance mannedVehicle ? LiveFire.CapturedPenalty(mannedVehicle) : null,
         };
         if (mortar)
         {

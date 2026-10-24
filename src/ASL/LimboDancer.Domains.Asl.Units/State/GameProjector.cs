@@ -141,6 +141,7 @@ public static class GameProjector
                 RiderBailedOut bailed => BailOut(previous, bailed),
                 VehicleAbandoned abandoned => Abandon(previous, abandoned),
                 VehicleRecrewed recrewed => Recrew(previous, recrewed),
+                VehicleCaptured captured => CaptureVehicle(previous, captured),
                 VehicleCheckRolled check => CheckVehicle(previous, check),
                 MotionAttempted motion => AttemptMotion(previous, motion),
                 OverrunResolved overrun => ResolveOverrun(previous, overrun),
@@ -2726,6 +2727,9 @@ public static class GameProjector
                     [Conditions.Abandoned] = ConditionState.True,
                     [Conditions.Motion] = ConditionState.False,
                 },
+
+                // A21.22 (pass 65, ruling R65.22): a Temporary crew's penalties leave with it.
+                TemporaryCrew = null,
             })!;
             return next with
             {
@@ -2790,10 +2794,52 @@ public static class GameProjector
                 Conditions = vehicleConditions,
                 ArmorLeader = unit.ArmorLeader ?? vehicle.ArmorLeader,
                 MovementEnded = true,
+
+                // A21.22 (pass 65, ruling R65.22): the Temporary crew the record names, taken from it; none for a record made before increment 2i.
+                TemporaryCrew = recrewed.Manning is { } manning ? new TemporaryCrew(manning, recrewed.Captured) : null,
             })!;
             return returned is null ? next : Replace(next, returned with
             {
                 Status = InstanceStatus.Consumed
+            });
+        }
+
+        /// <summary>
+        /// A capture (A11.52, A21.2, A21.21; pass 65, ruling R65.22): in the CCPh an active vehicle of another side, in the recorded Location, passes to the
+        /// captor's side. An Abandoned AFV stays Abandoned until a crew enters it; a SMC captor named as an unarmed vehicle's Temporary Driver, of the captor's
+        /// side on foot in the Location, is removed into it in the crew's role.
+        /// </summary>
+        private GameState? CaptureVehicle(GameState state, VehicleCaptured captured)
+        {
+            const string Code = "UNIT-STATE-034";
+            if (state.Phase != "ccph" || Active(state, captured.Vehicle) is not UnitInstance vehicle || !vocabulary.IsA(vehicle.Kind, "asl:vehicle") || vehicle.Side == captured.Side
+                || state.Location(vehicle.Id)?.Location != captured.At || !state.Sides.Any(side => side.Id == captured.Side)
+                || captured.Cause is not (VehicleCaptured.Automatic or VehicleCaptured.CloseCombat or VehicleCaptured.Unarmed)
+                || (captured.Cause != VehicleCaptured.Unarmed && GameState.Condition(vehicle, Conditions.Abandoned) != ConditionState.True))
+            {
+                return Fail<GameState>(Code, "A vehicle is captured in the CCPh, in its Location, by the other side: an AFV only when Abandoned (A11.52, A21.2).");
+            }
+
+            var next = Replace(state, vehicle with
+            {
+                Side = captured.Side,
+                TemporaryCrew = null,
+            })!;
+            if (captured.Driver is not { } driver)
+            {
+                return next;
+            }
+
+            if (captured.Cause != VehicleCaptured.Unarmed || Active(next, driver) is not UnitInstance { Position: MapPosition } smc || smc.Side != captured.Side
+                || next.Location(driver)?.Location != captured.At || !vocabulary.IsA(smc.Kind, "asl:smc"))
+            {
+                return Fail<GameState>(Code, "A SMC captor removed into an unarmed vehicle as its Temporary Driver is of the captor's side, on foot in its Location (A21.21).");
+            }
+
+            return Replace(next, smc with
+            {
+                Position = new ContainedPosition(vehicle.Id, ContainmentRole.Crew),
+                MovementEnded = true,
             });
         }
 
@@ -2818,8 +2864,9 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-039", $"The vehicle check's roll '{check.Roll}' is not a recorded DR.");
             }
 
-            // D8.3: a Bog Removal is decided by its colored dr, the first die.
-            var final = Rules.ScenarioA1VehicleProjection.CheckFinal(check.Check == VehicleCheckRolled.BogRemoval, roll.Values[0], roll.Values[1], check.Drm);
+            // D8.3: a Bog Removal is decided by its colored dr, the first die; so is a Temporary crew's start dr (A21.22; pass 65, ruling R65.22).
+            var final = Rules.ScenarioA1VehicleProjection.CheckFinal(check.Check is VehicleCheckRolled.BogRemoval or VehicleCheckRolled.TemporaryStart, roll.Values[0], roll.Values[1],
+                check.Drm);
             if (check.Result != VehicleCheckRolled.For(check.Check, final) || (check.Check == VehicleCheckRolled.Esb) != (check.Mp > 0))
             {
                 return Fail<GameState>("UNIT-STATE-039", "The vehicle check's result disagrees with its DR.");
@@ -2863,7 +2910,7 @@ public static class GameProjector
                 EsbMp = esb
             })!;
             var stuck = Rules.ScenarioA1VehicleProjection.CheckStops(check.Result is VehicleCheckRolled.Bogged or VehicleCheckRolled.Immobilized, check.Check == VehicleCheckRolled.BogRemoval,
-                check.Result == VehicleCheckRolled.Freed);
+                check.Result == VehicleCheckRolled.Freed) || Rules.ScenarioA1CapturedVehicleRules.StartStops(check.Result);
             return stuck && next.Movement is { Vehicle: true } movement && movement.Members.Contains(vehicle.Id, StringComparer.Ordinal)
                 ? next with
                 {
@@ -3959,11 +4006,51 @@ public static class GameProjector
 
             return item switch
             {
-                UnitInstance unit => Replace(state, unit with { Conditions = merged }),
+                UnitInstance unit => SmcCrewAfter(Replace(state, unit with { Conditions = merged }), unit, change),
                 EquipmentInstance equipment => Replace(state, equipment with { Conditions = merged }),
                 EntityInstance entity => Replace(state, entity with { Conditions = merged }),
                 _ => null,
             };
+        }
+
+        /// <summary>
+        /// D5.343 (p. 204; pass 65, ruling R65.22): a SMC that mans a vehicle as its Temporary crew is Wounded by a Stun the vehicle takes, and eliminated by a
+        /// Recall, but one that comes with a Disabled MA (D3.7); the vehicle is then unmanned, so Abandoned. Rules decides. Only a vehicle re-crewed since
+        /// increment 2i has such a crew, so no older record changes. A one man turret's EXC is not read (no catalog vehicle has one).
+        /// </summary>
+        private GameState SmcCrewAfter(GameState next, UnitInstance before, ConditionsChanged change)
+        {
+            if (before.TemporaryCrew is not { Manning: Rules.ScenarioA1CapturedVehicleRules.Smc })
+            {
+                return next;
+            }
+
+            bool Now(string name) => change.Conditions.TryGetValue(name, out var value) && value == ConditionState.True && GameState.Condition(before, name) != ConditionState.True;
+            var (wounded, eliminated) = Rules.ScenarioA1CapturedVehicleRules.SmcCrewOutcome(Now(Conditions.Stunned), Now(Conditions.Recalled), Now(Conditions.Disabled), false);
+            if ((!wounded && !eliminated) || next.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active
+                && unit.Position is ContainedPosition { Role: ContainmentRole.Crew } inside && inside.Container == before.Id) is not { } crew)
+            {
+                return next;
+            }
+
+            if (wounded)
+            {
+                return Replace(next, crew with
+                {
+                    Conditions = new Dictionary<string, ConditionState>(crew.Conditions, StringComparer.Ordinal) { [Conditions.Wounded] = ConditionState.True },
+                });
+            }
+
+            var left = Eliminate(next, crew.Id) ?? next;
+            return left.Unit(before.Id) is { } vehicle ? Replace(left, vehicle with
+            {
+                Conditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal)
+                {
+                    [Conditions.Abandoned] = ConditionState.True,
+                    [Conditions.Motion] = ConditionState.False,
+                },
+                TemporaryCrew = null,
+            }) : left;
         }
 
         private GameState? RecordLineage(GameState state, LineageRecorded lineage)

@@ -178,7 +178,7 @@ public sealed partial class GamePlanner
         // D2.11, C5.11, D8.2: "one Bog DR per hexspine" of a VCA change in woods, a building, or rubble; D2.51: an AFV with red MP.
         var hexspines = facing is { } next ? ScenarioA1MotionAttempts.Hexspines((int)current, (int)next) : 0;
         var bogDrm = hexspines > 0 ? VehicleTurnCost(state, vehicle, position.Location).BogDrm : null;
-        var unreliable = IsAfv(vehicle) && VehicleDefinition(vehicle)?.MechanicallyUnreliable == true;
+        var unreliable = RedMp(vehicle);
         var halfPoints = read.HalfPoints;
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {

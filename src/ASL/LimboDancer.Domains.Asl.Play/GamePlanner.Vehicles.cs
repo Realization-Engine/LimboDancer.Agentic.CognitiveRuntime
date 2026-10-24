@@ -40,9 +40,16 @@ public sealed partial class GamePlanner
     public static bool IsClosedTopped(UnitInstance vehicle) =>
         ScenarioA1VehicleMovementCalculator.IsClosedTopped(IsAfv(vehicle), IsAfv(vehicle) ? VehicleDefinition(vehicle)?.OpenTopped : null);
 
-    /// <summary>The half MP a vehicle has spent this MPh and its allotment, with the MP a successful ESB added (D1.1, D2.5).</summary>
-    private static (int Spent, int Allotment) HalfMp(UnitInstance vehicle) =>
-        ScenarioA1VehicleMovementCalculator.HalfMp(vehicle.MfSpent, vehicle.HalfMfSpent, VehicleDefinition(vehicle)?.MovementPoints ?? 0, vehicle.EsbMp);
+    /// <summary>
+    /// The half MP a vehicle has spent this MPh and its allotment, with the MP a successful ESB added (D1.1, D2.5), halved under a HS or infantry crew
+    /// manning it as a Temporary crew (A21.22; pass 65, ruling R65.22).
+    /// </summary>
+    private static (int Spent, int Allotment) HalfMp(UnitInstance vehicle)
+    {
+        var printed = VehicleDefinition(vehicle)?.MovementPoints ?? 0;
+        var (spent, allotment) = ScenarioA1VehicleMovementCalculator.HalfMp(vehicle.MfSpent, vehicle.HalfMfSpent, printed, vehicle.EsbMp);
+        return (spent, ScenarioA1CapturedVehicleRules.AllotmentHalfMp(allotment, printed, vehicle.TemporaryCrew?.Manning));
+    }
 
     /// <summary>A vehicle's printed MP allotment in half MP (D1.1).</summary>
     private static int PrintedHalfMp(UnitInstance vehicle) => (VehicleDefinition(vehicle)?.MovementPoints ?? 0) * 2;
@@ -768,7 +775,7 @@ public sealed partial class GamePlanner
                     [EventId(attemptId, 1)]));
 
                 // D2.51 (referee, pass 11): the Bog Removal is a Start MP, so a red MP AFV rolls for Mechanical Reliability too.
-                if (IsAfv(vehicle) && VehicleDefinition(vehicle)?.MechanicallyUnreliable == true && result != VehicleCheckRolled.Immobilized)
+                if (RedMp(vehicle) && result != VehicleCheckRolled.Immobilized)
                 {
                     AddVehicleCheck(scope, attemptId, expected, actor, events, draw, id, VehicleCheckRolled.Mechanical, 0);
                 }
@@ -780,13 +787,29 @@ public sealed partial class GamePlanner
                 $"play.move-vehicle-bog: {id} attempts Bog Removal as its Start MP: it spends its colored dr times its white dr in MP{(truck ? ", doubled for a truck," : string.Empty)} and is freed on a {(leadership is null ? string.Empty : "Final ")}colored dr of 1 to 4{(Is(vehicle, Conditions.Mired) ? " (+1 Mired)" : string.Empty)}, Mired on 5, immobilized on 6 or more{ScenarioA1ArmorLeaders.BogRemovalText(leadership)}");
         }
 
-        var unreliable = IsAfv(vehicle) && VehicleDefinition(vehicle)?.MechanicallyUnreliable == true;
+        var unreliable = RedMp(vehicle);
+
+        // A21.22 (pass 65, ruling R65.22): a SMC crew does not move its vehicle while CE or after firing it this Player Turn; a HS or infantry crew's start
+        // is preceded by a dr: 4 or less starts it, 5 no movement this phase, 6 or more Bogs it (+1 for a Russian or Japanese captor).
+        if (vehicle.TemporaryCrew is { Manning: ScenarioA1CapturedVehicleRules.Smc }
+            && ScenarioA1CapturedVehicleRules.SmcMoveBar(id, LiveFire.CrewExposed(vehicle), VehicleFiredThisPlayerTurn(vehicle)) is { } smcBar)
+        {
+            return Refused(scope, label, expected, smcBar);
+        }
+
+        var startDrm = ScenarioA1CapturedVehicleRules.StartDrRequired(vehicle.TemporaryCrew?.Manning) ? ScenarioA1CapturedVehicleRules.StartDrm(CrewNationality(state, vehicle)) : (int?)null;
         List<GameEvent> Build(Func<RollRequest, RollResult>? draw)
         {
             var events = new List<GameEvent>
             {
                 Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, VehicleStepped.Start, at, null, 2, step) { Reverse = reverse }, null, null),
             };
+            if (startDrm is { } drm && AddVehicleCheck(scope, attemptId, expected, actor, events, draw, id, VehicleCheckRolled.TemporaryStart, drm, final: dice => dice[0])
+                is not VehicleCheckRolled.Passed)
+            {
+                return events;
+            }
+
             if (unreliable)
             {
                 AddVehicleCheck(scope, attemptId, expected, actor, events, draw, id, VehicleCheckRolled.Mechanical, 0);
@@ -795,8 +818,9 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, Build, unreliable, at, step,
+        return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, Build, unreliable || startDrm is not null, at, step,
             $"play.move-vehicle: {id} starts{(reverse ? " in Reverse" : string.Empty)} in {at} for 1 MP (D2.12{(reverse ? ", D2.23" : string.Empty)})"
+                + (startDrm is { } shown ? $"; its Temporary crew first makes a start dr{(shown > 0 ? $" at +{shown}" : string.Empty)}: 4 or less starts it, 5 allows no movement this phase, 6 or more Bogs it (A21.22)" : string.Empty)
                 + (unreliable ? "; its red MP make it roll for Mechanical Reliability: a 12 immobilizes it (D2.51)" : string.Empty)
                 + $"; {Mp(allotment - spent - 2)} MP left");
     }

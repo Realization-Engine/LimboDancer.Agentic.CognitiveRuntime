@@ -126,8 +126,8 @@ public static class ScenarioA1CrewActsRules
     /// <summary>
     /// D5.42 (p. 204): "An Infantry unit may enter an Abandoned vehicle to become its Inherent crew only if it occupies that vehicle's Location at the start of
     /// its MPh ... and expends all of its MF to do so ... A vehicle may not be entered during the same Player Turn in which its previous crew left." D5.43:
-    /// it succeeds only unpinned and in Good Order. D5.341: a Recalled AFV's crew "may not re-crew that AFV". Why the unit may not enter, or null. A
-    /// captured vehicle (A21.2) is increment 2i's.
+    /// it succeeds only unpinned and in Good Order. D5.341: a Recalled AFV's crew "may not re-crew that AFV". Why the unit may not enter, or null. An enemy
+    /// vehicle is entered once captured (A21.2; ruling R65.22), when it is the captor's.
     /// </summary>
     public static string? RecrewBar(RecrewFacts facts)
     {
@@ -135,7 +135,7 @@ public static class ScenarioA1CrewActsRules
         var (unit, vehicle) = (facts.Unit, facts.Vehicle);
         return !facts.OwnMph ? $"play.recrew: {unit} enters an Abandoned vehicle to crew it only in its own MPh (D5.42)"
             : !facts.VehicleAbandoned ? $"play.recrew: {vehicle} is not an Abandoned vehicle on the map; only such a vehicle is entered to crew it (D5.42)"
-            : !facts.SameSide ? $"play.recrew: {vehicle} is the enemy's; crewing a captured vehicle is not built (A21.2)"
+            : !facts.SameSide ? $"play.recrew: {vehicle} is the enemy's; it is captured first, at the end of a CCPh or by a capture attempt in CC, and then crewed (A21.2)"
             : !facts.Infantry ? $"play.recrew: {unit} is not Infantry on foot, which alone enters a vehicle to crew it (D5.42)"
             : !facts.InLocation || facts.MovedThisPhase ? $"play.recrew: {unit} enters {vehicle} only from its Location, where it is at the start of its MPh, before it spends any MF (D5.42)"
             : !facts.GoodOrder ? $"play.recrew: {unit} enters {vehicle} only unpinned and in Good Order (D5.43)"

@@ -306,7 +306,7 @@ internal static class ScenarioA1ArmorCalculator
         var ammunition = shot.Ammunition!;
         var range = shot.Range!.Value;
         var column = reference.Column(range);
-        var color = ScenarioA1OrdnanceReference.Color(gun, shot.ScenarioYear);
+        var color = ScenarioA1OrdnanceCalculator.CapturedColor(shot, ScenarioA1OrdnanceReference.Color(gun, shot.ScenarioYear));
 
         // C3.31, C4: the Vehicle row's Basic TH#, the Gun's modifications, and APCR's (C4.3). C13.33 (ruling R9.8): a PF's Basic TH# is 10, less
         // two for each hex of range, with no C4 modification.
@@ -579,7 +579,8 @@ internal static class ScenarioA1ArmorCalculator
             }
         }
 
-        var rof = gun.RateOfFire ?? 0;
+        // A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the Multiple ROF one each.
+        var rof = (gun.RateOfFire ?? 0) - (shot.CapturedPenalty ?? 0);
         if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
         {
             rof--;

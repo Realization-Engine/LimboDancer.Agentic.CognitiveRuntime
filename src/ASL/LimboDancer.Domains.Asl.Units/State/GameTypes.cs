@@ -543,7 +543,23 @@ public sealed record UnitInstance(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The Temporary crew that mans a vehicle (A21.22, D5.343, pp. 88 and 204; pass 65, ruling R65.22), as its <c>vehicle-recrewed</c> record names it.
+    /// Null for its own or a qualified crew, and for every vehicle of a game recorded before the pass.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public TemporaryCrew? TemporaryCrew
+    {
+        get; init;
+    }
 }
+
+/// <summary>
+/// A vehicle's Temporary crew (A21.22; pass 65, ruling R65.22): how it is manned (<c>vehicle-crew</c>, <c>infantry-crew</c>, <c>half-squad</c>, or
+/// <c>smc</c>, Rules' names) and whether the vehicle is captured, an enemy nationality's; Rules reads both for the penalties.
+/// </summary>
+public sealed record TemporaryCrew(string Manning, bool Captured);
 
 /// <summary>
 /// An Armor Leader as his vehicle carries him (D3.4, D3.41; pass 55, ruling R55.15): his Morale Level and his leadership modifier, of the grades

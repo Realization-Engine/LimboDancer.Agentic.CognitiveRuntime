@@ -367,6 +367,8 @@ The referee agent of the documents step checks the rows against the chart, as at
 
 **F28. A crew as a target (ruling made at task 2h, 2026-10-24).** Ruling R8.3 refuses IFT fire at a crew with other units or with no Gun named (`asl.a1.fire.crew-target-unreviewed`), so every vehicle crew the pass places could not be fired at. **R65.28:** a crew that mans no Gun is an ordinary Infantry target, alone or with other units (A1.123: it is an Infantry MMC with a crew's capabilities); a Gun's crew keeps R8.3's reading. It only turns refusals into plans, so no recorded game changes. Built in increment 2k.
 
+**F29. CC with a crew (ruling made at task 2i, 2026-10-24).** Ruling R24.3 refuses an advance into a Location that holds any crew (`play.advance-crew`, ScenarioA1AdvanceCalculator.CrewBar), and the CC rules leave a crew out, so a vehicle crew beneath its Abandoned AFV blocks both the advance and a capture. **R65.29:** a crew that mans no Gun is advanced against and fights in CC as ordinary Infantry (A1.123); a Gun's crew keeps R24.3's reading. Built in increment 2k with R65.28. It only turns refusals into plans.
+
 **F25. Testing** (the standing rules, section 2, the user's rule of 2026-10-23).
 - While a task is built, the Studio is its test, in a small game made for it (`games_2x.py`).
 - A task's new Rules and Play tests are run by method, and only those.

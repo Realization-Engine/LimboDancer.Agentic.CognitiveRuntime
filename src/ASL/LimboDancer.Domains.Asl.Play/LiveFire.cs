@@ -102,6 +102,15 @@ public static class LiveFire
             return (null, abandoned);
         }
 
+        // A21.22 (pass 65, ruling R65.22): a SMC crew fires only its AAMG while CE, its BMG or CMG while BU, and never in a Player Turn it moved.
+        if (vehicleFirers.Length > 0 && vehicleFirers[0] is { TemporaryCrew.Manning: ScenarioA1CapturedVehicleRules.Smc } manned
+            && (weapons?.GetValueOrDefault(manned.Id) is { Count: > 0 } mgs ? mgs
+                : [manned.Definition is { } own && CatalogReference.Value.Definitions.GetValueOrDefault(own.Definition)?.MainArmament == "aamg" ? "aamg" : "ma"])
+                .Select(weapon => GamePlanner.SmcCrewFireBar(state, manned, weapon)).FirstOrDefault(bar => bar is not null) is { } smcBar)
+        {
+            return (null, smcBar);
+        }
+
         if (vehicleFirers.Length > 0 && ScenarioA1FireEligibility.VehicleWeaponsNamedBar(vehicleFirers[0].Id, !LiveOrdnance.IsTank(vehicleFirers[0]),
             weapons?.GetValueOrDefault(vehicleFirers[0].Id)?.Count ?? 0) is { } unnamed)
         {
@@ -529,7 +538,18 @@ public static class LiveFire
             state.OrdnanceShots.Any(item => item.Gun == vehicle.Id && item.RateOfFireKept))
         {
             ArmorLeadership = ArmorLeadership(vehicle),
-        });
+        }) with
+        {
+            // A21.22 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty, from the state the re-crewing record made.
+            CapturedPenalty = CapturedPenalty(vehicle),
+        };
+
+    /// <summary>A21.22 (pass 65, ruling R65.22): the captured-weapon penalty of a vehicle's Temporary crew, as a multiple; null for none.</summary>
+    public static int? CapturedPenalty(UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return vehicle.TemporaryCrew is { } crew ? ScenarioA1CapturedVehicleRules.WeaponPenalty(crew.Manning, crew.Captured) : null;
+    }
 
     /// <summary>
     /// The state's part of a Residual FP attack on the moving stack as it enters a Location (A8.2, A8.22): no firers, the

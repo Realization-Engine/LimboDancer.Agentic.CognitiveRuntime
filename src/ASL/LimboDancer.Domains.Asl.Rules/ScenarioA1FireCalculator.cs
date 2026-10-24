@@ -2726,9 +2726,11 @@ public static class ScenarioA1FireCalculator
         {
             var definition = reference.Definitions[vehicle.DefinitionId!];
             // E3.741 (ruling R16.14): Extreme Winter lowers the B#.
-            var breakdown = (definition.Breakdown ?? 12) - (attack.BreakdownReduction ?? 0);
+            // A21.11, A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the B# two and the ROF one, each time.
+            var captured = vehicle.CapturedPenalty ?? 0;
+            var breakdown = (definition.Breakdown ?? 12) - (attack.BreakdownReduction ?? 0) - (2 * captured);
             var malfunctioned = arithmetic.OriginalDr >= breakdown;
-            var retained = !malfunctioned && vehicle.Pinned != true && attack.Phase != "AFPh" && definition.RateOfFire is { } rof && arithmetic.Dice[0] <= rof;
+            var retained = !malfunctioned && vehicle.Pinned != true && attack.Phase != "AFPh" && definition.RateOfFire is { } rof && arithmetic.Dice[0] <= rof - captured;
             return new FireWeaponEffect(vehicle.VehicleId!, breakdown, malfunctioned, retained, false, FireCounter(), null);
         }
 
@@ -2746,7 +2748,7 @@ public static class ScenarioA1FireCalculator
             }
 
             var id = vehicle.VehicleId!;
-            var breakdown = 12 - (attack.BreakdownReduction ?? 0);
+            var breakdown = 12 - (attack.BreakdownReduction ?? 0) - (2 * (vehicle.CapturedPenalty ?? 0));
             var selection = new Dictionary<string, int>(StringComparer.Ordinal);
             if (arithmetic.OriginalDr >= breakdown && named.Count > 1)
             {

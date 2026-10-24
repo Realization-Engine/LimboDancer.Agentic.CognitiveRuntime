@@ -240,6 +240,9 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             VehicleRecrewed recrewed => state.Unit(recrewed.Unit) is { Position: ContainedPosition { Role: ContainmentRole.Crew } inside } && inside.Container == recrewed.Vehicle
                 && state.Unit(recrewed.Vehicle) is { } manned && GameState.Condition(manned, Conditions.Abandoned) != ConditionState.True,
 
+            // A capture (A11.52, A21.2; pass 65, ruling R65.22): the vehicle is the captor's.
+            VehicleCaptured captured => state.Unit(captured.Vehicle) is { } taken && taken.Side == captured.Side,
+
             // A Motion attempt (D2.401; pass 55): the vehicle's one attempt of this enemy MPh is kept.
             MotionAttempted motion => state.MotionAttempts.Contains(motion.Vehicle, StringComparer.Ordinal),
 

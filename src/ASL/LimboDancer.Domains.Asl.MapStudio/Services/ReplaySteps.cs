@@ -644,6 +644,9 @@ public static class ReplaySteps
                 RiderBailedOut bailed => bailed.At,
                 VehicleAbandoned abandoned => abandoned.At,
                 VehicleRecrewed recrewed => recrewed.At,
+
+                // A11.52, A21.2 (pass 65, ruling R65.22): a capture is seen in its Location; it falls within a CC or phase step, which titles it.
+                VehicleCaptured captured => captured.At,
                 MotionAttempted motion => Open(before, motion.Vehicle, viewer) ? before.Location(motion.Vehicle)?.Location : null,
                 AdvanceMoved advanced => advanced.To,
                 RoutStepped routed => routed.To,

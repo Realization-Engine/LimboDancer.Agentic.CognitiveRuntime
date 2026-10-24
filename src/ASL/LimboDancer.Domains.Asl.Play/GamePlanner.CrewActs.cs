@@ -226,9 +226,18 @@ public sealed partial class GamePlanner
         var returned = removal is not null && state.Find(removal.Removed!) is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } holding }
             && holding.Holder == unitId && Is(vehicle, ConditionName(ScenarioA1CrewActsRules.RemovedCondition(removal.Mount ?? ScenarioA1CrewActsRules.MainArmament)))
             ? removal : null;
-        var temporary = ScenarioA1CrewActsRules.TemporaryCrew(unit.Kind, ownCrew);
+        // A21.22 (pass 65, ruling R65.22): a unit of another nationality than the vehicle's crews a captured vehicle; Rules gives how it mans it.
+        var crewNationality = unit.Definition is { } own ? FireReference.Value.Definitions.GetValueOrDefault(own.Definition)?.Nationality : null;
+        var captured = crewNationality is not null && VehicleDefinition(vehicle)?.Nationality is { } vehicleNationality && vehicleNationality != crewNationality;
+        var manning = ScenarioA1CapturedVehicleRules.Manning(unit.Kind, vocabulary.IsA(unit.Kind, "asl:smc"), ownCrew, captured);
+        if (ScenarioA1CapturedVehicleRules.SquadBar(unitId, vehicleId, unit.Kind, manning) is { } squadBar)
+        {
+            return Refused(scope, label, expected, squadBar);
+        }
+
+        var temporary = manning is not null;
         var text = $"play.recrew: {unitId} enters {vehicleId} in {at}, spending all its MF, and crews it"
-            + (temporary ? " as a Temporary crew (A21.22; its penalties are not built yet)" : string.Empty)
+            + (manning is not null ? " as " + ScenarioA1CapturedVehicleRules.ManningText(manning, captured) : string.Empty)
             + $"; {vehicleId} is no longer Abandoned and may move and fire from its next phase (D5.42)"
             + (unit.ArmorLeader is not null ? $"; the Armor Leader {unitId} took with it is back in {vehicleId} (D3.43)" : string.Empty)
             + (Is(unit, Conditions.StunRecovery) ? $"; {vehicleId} keeps its crew's Stun +1 (D5.34)" : string.Empty)
@@ -239,6 +248,8 @@ public sealed partial class GamePlanner
                 Temporary = temporary,
                 Returned = returned?.Removed,
                 Mount = returned?.Mount,
+                Manning = manning,
+                Captured = manning is not null && captured,
             }, null, null)], [text]);
     }
 

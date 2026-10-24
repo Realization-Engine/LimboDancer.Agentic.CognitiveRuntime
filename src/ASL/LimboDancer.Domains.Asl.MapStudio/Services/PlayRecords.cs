@@ -322,6 +322,10 @@ public sealed class PlayRecords
                     + (abandoned.Removed is { } removedMg ? $", taking its MG as {removedMg} (D6.631)" : string.Empty) + " (D5.41)",
                 VehicleRecrewed recrewed => $"{recrewed.At}: {recrewed.Unit} enters {recrewed.Vehicle} and crews it" + (recrewed.Temporary ? " as a Temporary crew (A21.22)" : string.Empty)
                     + (recrewed.Returned is { } returnedMg ? $", returning {returnedMg} (D6.631)" : string.Empty) + " (D5.42)",
+                // A11.52, A21.2, A21.21 (pass 65, ruling R65.22): a capture names the captor's side.
+                VehicleCaptured captured => $"{captured.At}: {captured.Vehicle} is captured by the {DisplayText.Side(captured.Side)} side"
+                    + (captured.Cause != VehicleCaptured.Unarmed ? " (A21.2)"
+                        : captured.Driver is { } driver ? $", {driver} removed into it as its Temporary Driver (A11.52, A21.21)" : ", a Temporary Driver running it for its captor (A11.52, A21.21)"),
                 VehicleStepped { Kind: VehicleStepped.Unload, Units: { Count: > 0 } leavers } leaving => $"{leaving.At}: " + Many(leavers, "unloads", "unload") + $" from {leaving.Vehicle} (D6.5)",
                 VehicleStepped { Kind: not VehicleStepped.Turn } drive => $"{drive.Vehicle} moves{From(before, drive.Vehicle)} to {drive.At}"
                     + (drive.Turret is { } driveTurret ? $", turning its turret to {UnitFacings.Name(driveTurret)} (D3.12)" : string.Empty),

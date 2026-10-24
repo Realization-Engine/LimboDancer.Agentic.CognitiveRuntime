@@ -326,8 +326,9 @@ public static class ScenarioA1VictoryCalculator
 
     /// <summary>
     /// A.7, A26.11 (ruling R24.5): an armed ground unit, which prevents the enemy from gaining Control: any unit but a Dummy, a prisoner, or an Unarmed
-    /// unit; a vehicle only with an inherent crew and not Abandoned (the Index's Armed), and never a captured one (a deviation: captured vehicles are not
-    /// used in play yet).
+    /// unit; a vehicle only with an inherent crew and not Abandoned (the Index's Armed), and never one marked captured by ruling R11.16 (a deviation kept for
+    /// the records made before pass 65). A vehicle captured by a <c>vehicle-captured</c> record (A21.2; pass 65, ruling R65.22) is its captor's, unmarked,
+    /// so once a crew mans it, it holds and prevents Control for its captor as any armed vehicle does (A26.12).
     /// </summary>
     public static bool Armed(VictoryUnitFacts unit)
     {
