@@ -37,7 +37,14 @@ public sealed class CounterLayerManifestTests(CounterLayerCases cases) : IClassF
         var wrong = actual.Where(item => !expected.TryGetValue(item.Name, out var hash) || hash != item.Hash).Select(item => item.Name).ToArray();
         Assert.True(wrong.Length == 0, $"{wrong.Length} layers differ from the manifest, the first: {string.Join(", ", wrong.Take(5))}");
     }
+}
 
+/// <summary>
+/// The fragment cache against the counter layer manifest. Apart from <see cref="CounterLayerManifestTests"/> and
+/// <see cref="CounterLayerOracleTests"/> so the three run in parallel: xUnit runs one class's tests one after another (2026-10-24).
+/// </summary>
+public sealed class CounterLayerCacheTests(CounterLayerCases cases) : IClassFixture<CounterLayerCases>
+{
     /// <summary>
     /// Option E: with the fragment cache, every layer is the manifest's, whether the games are stepped forward, back, or by jumps, and with the
     /// cache's own bound or one so small that hexes leave it all the time.
@@ -89,32 +96,6 @@ public sealed class CounterLayerManifestTests(CounterLayerCases cases) : IClassF
         }
     }
 
-    /// <summary>
-    /// The equivalence oracle over the games (the Counter Layer Design, section 11): every fourth layer of the manifest, expanded, is the layer
-    /// with every counter drawn whole. The shared definitions change how the layer is written, never what it draws.
-    /// </summary>
-    [Fact]
-    public void TheSharedLayerDrawsWhatTheWholeCountersDraw()
-    {
-        // Two steps: the faces drawn at the origin and moved draw the whole counters, to 1/32 pixel; the shared definitions are exactly that.
-        var wrong = new List<string>();
-        foreach (var item in cases.All.Where((_, index) => index % 4 == 0))
-        {
-            var origin = item.AtOrigin();
-            var expanded = LayerOracle.Expand(origin.Svg, origin.Figures is { } sprite ? [System.Xml.Linq.XElement.Parse(sprite)] : null);
-            if (LayerOracle.Differs(LayerOracle.Expand(item.Whole().Svg), expanded) is { } difference)
-            {
-                wrong.Add($"{item.Name} ({difference})");
-            }
-            else if (LayerOracle.Expanded(item.Build(null)) != expanded.ToString(System.Xml.Linq.SaveOptions.DisableFormatting))
-            {
-                wrong.Add($"{item.Name} (the shared definitions)");
-            }
-        }
-
-        Assert.True(wrong.Count == 0, $"{wrong.Count} layers draw otherwise than their whole counters, the first: {string.Join("; ", wrong.Take(3))}");
-    }
-
     /// <summary>The Studio's one cache, used by several circuits at once: two games stepped on four threads, each layer the manifest's.</summary>
     [Fact]
     public void ManyCallersAtOnceGetTheManifestsLayers()
@@ -141,7 +122,37 @@ public sealed class CounterLayerManifestTests(CounterLayerCases cases) : IClassF
     }
 }
 
-/// <summary>The cases of the counter layer manifest, made once for the test class: each a name and the overlay it builds.</summary>
+/// <summary>The equivalence oracle over the counter layer manifest's cases, in a class of its own so it runs beside the others.</summary>
+public sealed class CounterLayerOracleTests(CounterLayerCases cases) : IClassFixture<CounterLayerCases>
+{
+    /// <summary>
+    /// The equivalence oracle over the games (the Counter Layer Design, section 11): every fourth layer of the manifest, expanded, is the layer
+    /// with every counter drawn whole. The shared definitions change how the layer is written, never what it draws.
+    /// </summary>
+    [Fact]
+    public void TheSharedLayerDrawsWhatTheWholeCountersDraw()
+    {
+        // Two steps: the faces drawn at the origin and moved draw the whole counters, to 1/32 pixel; the shared definitions are exactly that.
+        var wrong = new List<string>();
+        foreach (var item in cases.All.Where((_, index) => index % 4 == 0))
+        {
+            var origin = item.AtOrigin();
+            var expanded = LayerOracle.Expand(origin.Svg, origin.Figures is { } sprite ? [System.Xml.Linq.XElement.Parse(sprite)] : null);
+            if (LayerOracle.Differs(LayerOracle.Expand(item.Whole().Svg), expanded) is { } difference)
+            {
+                wrong.Add($"{item.Name} ({difference})");
+            }
+            else if (LayerOracle.Expanded(item.Build(null)) != expanded.ToString(System.Xml.Linq.SaveOptions.DisableFormatting))
+            {
+                wrong.Add($"{item.Name} (the shared definitions)");
+            }
+        }
+
+        Assert.True(wrong.Count == 0, $"{wrong.Count} layers draw otherwise than their whole counters, the first: {string.Join("; ", wrong.Take(3))}");
+    }
+}
+
+/// <summary>The cases of the counter layer manifest, made once for each test class that uses them (about 8 s): each a name and the overlay it builds.</summary>
 public sealed class CounterLayerCases : IDisposable
 {
     private static readonly string[] Views = [Perspective.AdjudicatorName, "german", "russian"];
