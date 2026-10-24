@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
@@ -111,6 +112,77 @@ public sealed class BacklogPass65Tests : IDisposable
         ["position"] = new Dictionary<string, string> { ["at"] = at, ["facing"] = facing },
         ["conditions"] = new Dictionary<string, bool>(),
     };
+
+    /// <summary>A unit aboard a vehicle as a Passenger (D6.1).</summary>
+    private static Dictionary<string, object> Aboard(string id, string kind, string definition, string vehicle, string side)
+    {
+        var unit = Unit(id, kind, definition, Target, side);
+        unit["position"] = new Dictionary<string, string> { ["in"] = vehicle, ["role"] = "passenger" };
+        return unit;
+    }
+
+    /// <summary>A vehicle whose crew is CE: its BU counter removed (D5.2, D5.3).</summary>
+    private static Dictionary<string, object> Exposed(Dictionary<string, object> vehicle)
+    {
+        vehicle["conditions"] = new Dictionary<string, bool> { ["asl:bu"] = false };
+        return vehicle;
+    }
+
+    /// <summary>
+    /// The game's records as a game recorded before pass 65 holds them (ruling R65.5): no PRC in the facts, no PRC result or roll, and no event of one of
+    /// the named units.
+    /// </summary>
+    private GameEvent[] AsBeforeThePass(params string[] prc)
+    {
+        static void Remove(JsonNode? node, string[] names)
+        {
+            if (node is JsonObject item)
+            {
+                foreach (var name in names)
+                {
+                    item.Remove(name);
+                }
+
+                foreach (var (_, child) in item.ToArray())
+                {
+                    Remove(child, names);
+                }
+            }
+            else if (node is JsonArray list)
+            {
+                foreach (var child in list)
+                {
+                    Remove(child, names);
+                }
+            }
+        }
+
+        static JsonElement Strip(JsonElement element, params string[] names)
+        {
+            var node = JsonNode.Parse(element.GetRawText());
+            Remove(node, names);
+            return JsonSerializer.SerializeToElement(node);
+        }
+
+        Dictionary<string, string> Kept(IReadOnlyDictionary<string, string> rolls) =>
+            rolls.Where(item => !item.Key.StartsWith("prc:", StringComparison.Ordinal) && !prc.Any(id => item.Key.EndsWith(":" + id, StringComparison.Ordinal)))
+                .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
+        return [.. store.Read(Scope)!.Events
+            .Where(item => item.Payload is not (ConditionsChanged or InstanceMoved) || !prc.Contains((item.Payload as ConditionsChanged)?.Id ?? ((InstanceMoved)item.Payload).Id))
+            .Select((item, index) => item with { Revision = index + 1 })
+            .Select(item => item.Payload switch
+            {
+                FireResolved fire => item with
+                {
+                    Payload = fire with { Rolls = Kept(fire.Rolls), Facts = Strip(fire.Facts, "prc"), Resolution = Strip(fire.Resolution, "prcAttacks", "prcDesperation", "prcSurvival") }
+                },
+                OrdnanceFired shot => item with
+                {
+                    Payload = shot with { Rolls = Kept(shot.Rolls), Facts = Strip(shot.Facts, "prc"), Resolution = Strip(shot.Resolution, "prcAttacks", "prcDesperation", "prcSurvival") }
+                },
+                _ => item,
+            })];
+    }
 
     private static async Task<PlayResult> Commit(GamePlay play, Abstractions.Actions.ActionDescriptor action, JsonElement arguments)
     {
@@ -234,5 +306,62 @@ public sealed class BacklogPass65Tests : IDisposable
         Assert.True(LiveFire.ServesCatalog(Current));
         Committed(await Shoot("uk-gun", null, "ap", 4, 3, 6, 6));
         NoReplayErrors();
+    }
+
+    // Increment 2b: Passengers and Riders as targets (D.8, D.8A, D.8B, D6.9; rulings R65.5 to R65.9).
+
+    [Fact]
+    public async Task AnIftAttackOnALoadedHalftrackPinsItsCePassengers()
+    {
+        // D.8B, D5.31: two Russian 4-4-7s fire 8 FP at the CE SPW 251/1 two hexes off, an Original DR of 6. Its crew and the 4-6-7 aboard each take the
+        // NMC of a Final DR of 8 (+2 for CE): the crew passes (2); the squad passes on its Morale Level, 7, and is pinned (A7.8), still aboard. The record
+        // carries the PRC.
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Unit("ru-1", "asl:squad", "defender-squad", Firer, "russian"),
+            Unit("ru-2", "asl:squad", "defender-squad", Firer, "russian"), Exposed(Vehicle("de-ht", "attacker-halftrack", Target, "german", "east")),
+            Aboard("de-s", "asl:squad", "attacker-squad", "de-ht", "german"));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(2, 4, 1, 1, 3, 4), new
+        {
+            firers = new[] { "ru-1", "ru-2" },
+            target = Target,
+        }));
+        var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        var prc = fire.Facts.GetProperty("vehicles")[0].GetProperty("prc")[0];
+        Assert.Equal(("de-s", "passenger"), (prc.GetProperty("unitId").GetString(), prc.GetProperty("role").GetString()));
+        var attack = fire.Resolution.GetProperty("vehicleEffects")[0].GetProperty("prcAttacks")[0];
+        Assert.Equal(("general", 8), (attack.GetProperty("kind").GetString(), attack.GetProperty("finalDr").GetInt32()));
+        var squad = Current.Unit("de-s")!;
+        Assert.Equal((ConditionState.True, "de-ht"), (GameState.Condition(squad, "asl:pinned"), Current.Aboard("de-s")));
+        NoReplayErrors();
+
+        // An attack recorded before the pass carries no PRC and replays as it was: the squad aboard untouched.
+        var older = Planner().Replay(AsBeforeThePass("de-s"));
+        Assert.False(older.HasErrors);
+        Assert.NotEqual(ConditionState.True, GameState.Condition(older.Current!.Unit("de-s")!, "asl:pinned"));
+    }
+
+    [Fact]
+    public async Task AKilledTrucksPassengersRollForSurvival()
+    {
+        // D6.9, D5.6: the T-34's HE eliminates the German truck (TK DR 11 below its Final TK# of 12, more than half of it). Each PRC rolls against the cs#
+        // 6: the HS aboard survives on a 6 and is placed beneath the wreck; the squad aboard dies on a 12, with the truck.
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("ru-tank", "defender-tank", Firer, "russian", "north-east"),
+            Vehicle("de-truck", "attacker-truck", Target, "german", "east"), Aboard("de-h", "asl:half-squad", "attacker-half-squad", "de-truck", "german"),
+            Aboard("de-s", "asl:squad", "attacker-squad", "de-truck", "german"));
+        var before = Revision;
+        Committed(await Shoot("ru-tank", "de-truck", "he", 4, 2, 5, 6, 3, 3, 6, 6));
+        var kill = LastShot(before).Resolution.GetProperty("kill");
+        Assert.Equal("eliminated", kill.GetProperty("result").GetString());
+        Assert.Equal([true, false], kill.GetProperty("prcSurvival").EnumerateArray().Select(item => item.GetProperty("survived").GetBoolean()));
+        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("de-truck")!.Status);
+        var survivor = Current.Unit("de-h")!;
+        Assert.Equal((InstanceStatus.Active, Target, (string?)null), (survivor.Status, Current.Location("de-h")!.Location.ToString(), Current.Aboard("de-h")));
+        Assert.NotEqual(InstanceStatus.Active, Current.Unit("de-s")!.Status);
+        NoReplayErrors();
+
+        // A destruction recorded before the pass carries no Survival: both are eliminated with the truck, as before.
+        var older = Planner().Replay(AsBeforeThePass("de-h", "de-s"));
+        Assert.False(older.HasErrors);
+        Assert.NotEqual(InstanceStatus.Active, older.Current!.Unit("de-h")!.Status);
     }
 }

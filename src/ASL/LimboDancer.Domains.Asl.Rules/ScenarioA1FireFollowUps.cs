@@ -169,6 +169,9 @@ public static class ScenarioA1FireFollowUps
 
             // A9.74 (pass 60, ruling R60.17): a weapon's Random SW/Gun Destruction dr.
             "weaponDestruction" => (1, "fire-weapon-destruction"),
+
+            // D6.9 (pass 65, ruling R65.9): a Passenger's or Rider's Survival DR.
+            "prcSurvival" => (2, "fire-prc-survival"),
             _ => (1, "fire-wound-severity"),
         };
         return new FireNextStep(false, null, key, count, purpose, null);

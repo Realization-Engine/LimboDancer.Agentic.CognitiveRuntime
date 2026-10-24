@@ -90,6 +90,15 @@ public sealed record FireDefinition(
         get; init;
     }
 
+    /// <summary>
+    /// A vehicle's class (vocabulary 1.19.0, <c>asl:vehicle-class</c>; pass 65, ruling R65.3): tank, carrier, halftrack, truck, and so on; null for other
+    /// definitions.
+    /// </summary>
+    public string? VehicleClass
+    {
+        get; init;
+    }
+
     /// <summary>A vehicle's printed MP allotment (D1.1).</summary>
     public int? MovementPoints
     {
@@ -690,6 +699,7 @@ public sealed class ScenarioA1FireReference
             WoundedRange = Value("wounded", "range"),
             WoundedMorale = Value("wounded", "morale"),
             MovementType = Text("front", "movement-type"),
+            VehicleClass = Text("front", "vehicle-class"),
             MovementPoints = Value("front", "movement-points"),
             Towing = Value("front", "towing"),
             PassengerCapacity = Value("front", "passenger-capacity"),

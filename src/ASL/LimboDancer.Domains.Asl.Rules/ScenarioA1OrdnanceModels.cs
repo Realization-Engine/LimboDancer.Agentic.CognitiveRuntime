@@ -483,6 +483,16 @@ public sealed record OrdnanceRolls(IReadOnlyList<int>? ToHit, int? Subsequent, I
     {
         get; init;
     }
+
+    /// <summary>
+    /// The rolls of the target's Passengers and Riders (pass 65, rulings R65.7, R65.9): the checks and Random Selection of a Specific Collateral Attack
+    /// on them, keyed as the Fire package keys a target unit's, and each one's Survival DR.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireRolls? Prc
+    {
+        get; init;
+    }
 }
 
 /// <summary>The To Hit arithmetic (C3.3, C4, C5, C6): Basic and Modified TH#, the DRM, the Final DR, and what it achieved.</summary>

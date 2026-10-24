@@ -565,6 +565,9 @@ public sealed class PlayRecords
                         foreach (var vehicle in attack.VehicleEffects ?? [])
                         {
                             parts.Add($"{vehicle.VehicleId}: " + (vehicle.KillNumber is not null ? FireText.VehicleLineText(vehicle) : FireText.CrewText(vehicle)));
+
+                            // D.8B, D6.9 (pass 65): what it did to the vehicle's PRC.
+                            parts.AddRange(FireText.PrcLines(vehicle));
                         }
 
                         // A9.74, C8.42 (pass 60, ruling R60.17): what the hit's KIA did to its victims' weapons.
@@ -623,6 +626,12 @@ public sealed class PlayRecords
                     var round = machineGun ? "the MG, on the AP To Kill Table" : kill.Ammunition.ToUpperInvariant();
                     parts.Add($"{kill.HitLocation} hit, {kill.TargetFacing} Target Facing, {round}: {tk}; TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
 
+                    // D6.9 (pass 65): the Survival DR of each PRC of the vehicle.
+                    if (shot?.VehicleTarget?.VehicleId is { } killedId)
+                    {
+                        parts.AddRange(FireText.PrcSurvivalLines(killedId, kill.PrcSurvival));
+                    }
+
                     // D5.34 (pass 60, ruling R60.25): a Stun buttons the crew up at once, so no Specific Collateral Attack follows it.
                     if (kill.Result == OrdnanceKill.Stun && shot?.SpecificCollateral == true && shot.VehicleTarget?.CrewExposed == true)
                     {
@@ -649,11 +658,17 @@ public sealed class PlayRecords
                 // D.8A (pass 60): the Specific Collateral Attack on the CE crew of the AFV the hit left standing.
                 if (resolution.SpecificCollateral is { } collateral)
                 {
+                    // Pass 65 (ruling R65.7): the attack may reach the PRC alone; the crew's part is written only when it took it.
                     var crew = collateral.Effect;
-                    parts.Add($"its CE crew takes a Specific Collateral Attack of {collateral.Firepower} FP on the same DR{ModifierText(crew.Drm)} (D.8A): Final DR {crew.FinalDr}, "
-                        + (collateral.Result == "none" ? "no effect" : collateral.Result)
-                        + (crew.CrewCheck is { } made ? $"; {FireText.CheckText(made)}" : "")
-                        + (crew.CrewResult == FireVehicleEffect.None ? "" : $": {crew.CrewResult}"));
+                    if (crew.CrewResult != FireVehicleEffect.NotVulnerable)
+                    {
+                        parts.Add($"its CE crew takes a Specific Collateral Attack of {collateral.Firepower} FP on the same DR{ModifierText(crew.Drm)} (D.8A): Final DR {crew.FinalDr}, "
+                            + (collateral.Result == "none" ? "no effect" : collateral.Result)
+                            + (crew.CrewCheck is { } made ? $"; {FireText.CheckText(made)}" : "")
+                            + (crew.CrewResult == FireVehicleEffect.None ? "" : $": {crew.CrewResult}"));
+                    }
+
+                    parts.AddRange(FireText.PrcLines(crew));
                 }
 
                 var boundingShot = shot?.FireKind == ScenarioA1FireCalculator.BoundingFirstFire;

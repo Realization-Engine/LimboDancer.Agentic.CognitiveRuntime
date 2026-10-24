@@ -636,6 +636,7 @@ public static class LiveOrdnance
         Dictionary<string, IReadOnlyList<int>>? survival = null;
         var hit = new Dictionary<string, string>(StringComparer.Ordinal);
         var critical = new Dictionary<string, string>(StringComparer.Ordinal);
+        var prc = new Dictionary<string, string>(StringComparer.Ordinal);
         var extra = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
         foreach (var (key, rollId) in fired.Rolls)
         {
@@ -683,6 +684,11 @@ public static class LiveOrdnance
             {
                 critical[key["critical-hit:".Length..]] = rollId;
             }
+            else if (key.StartsWith("prc:", StringComparison.Ordinal))
+            {
+                // Pass 65 (rulings R65.7, R65.9): the rolls of the target's PRC, keyed as the Fire package keys them.
+                prc[key["prc:".Length..]] = rollId;
+            }
             else
             {
                 return null;
@@ -693,7 +699,8 @@ public static class LiveOrdnance
             : LiveFire.Rolls(new FireResolved([], null, fired.Target.ToString(), fired.Target.ToString(), ids, fired.Facts, fired.Resolution), shot.Hit!, rolls);
         var hitRolls = Nested(hit);
         var criticalRolls = Nested(critical);
-        return (hit.Count > 0 && hitRolls is null) || (critical.Count > 0 && criticalRolls is null)
+        var prcRolls = Nested(prc);
+        return (hit.Count > 0 && hitRolls is null) || (critical.Count > 0 && criticalRolls is null) || (prc.Count > 0 && prcRolls is null)
             ? null
             : new OrdnanceRolls(toHit, subsequent, selection, hitRolls, criticalRolls)
             {
@@ -709,6 +716,7 @@ public static class LiveOrdnance
                 // D.8A (pass 60): the check of a Specific Collateral Attack.
                 CollateralCheck = extra.GetValueOrDefault("collateralCheck"),
                 AreaSurvival = survival,
+                Prc = prcRolls,
             };
     }
 
@@ -802,6 +810,19 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
                 Hit = LiveFire.WithRandomDestruction(state, merged.Hit!)
             };
         }
+
+        // Pass 65 (ruling R65.5): the PRC of the vehicles are taken from the record, never read again; a record made before the pass carries none.
+        merged = merged with
+        {
+            VehicleTarget = merged.VehicleTarget is { } aimed ? aimed with
+            {
+                Prc = recorded.VehicleTarget?.Prc
+            } : null,
+            Hit = merged.Hit! with
+            {
+                Vehicles = LiveFire.WithRecordedPrc(merged.Hit.Vehicles, recorded.Hit.Vehicles),
+            },
+        };
 
         // D3.41, D3.42 (pass 55, rulings R55.15, R55.17): a record keeps a target crew's Morale Level only when the shot made that crew check, so
         // one it leaves out is left out of the comparison; the checks it holds are held to the state's below.

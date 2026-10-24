@@ -326,8 +326,10 @@ internal static class ScenarioA1AreaCalculator
 
                 // Pass 60: the Fire package's rolls of one Location's attack, when several are attacked.
                 // A9.74 (ruling R60.17): with the dr of each weapon those units hold.
+                // Pass 65 (ruling R65.7): with the rolls of the PRC the struck vehicles carry.
                 var hitRolls = levels is null ? rolls.Hit : Filtered(rolls.Hit, [.. units.Select(item => item.UnitId!), .. struck.Select(item => item.VehicleId!),
-                    .. units.SelectMany(item => item.HeldWeapons ?? []).Select(item => item.EquipmentId).OfType<string>()]);
+                    .. units.SelectMany(item => item.HeldWeapons ?? []).Select(item => item.EquipmentId).OfType<string>(),
+                    .. struck.SelectMany(item => item.Prc ?? []).Select(item => item.UnitId).OfType<string>()]);
                 if (shared is not null)
                 {
                     hitRolls = (hitRolls ?? new FireRolls(null, null, null, null)) with
@@ -468,6 +470,7 @@ internal static class ScenarioA1AreaCalculator
             CrewChecks = Keep(rolls.CrewChecks),
             UnlikelyKill = Keep(rolls.UnlikelyKill),
             WeaponDestruction = Keep(rolls.WeaponDestruction),
+            PrcSurvival = Keep(rolls.PrcSurvival),
         };
     }
 

@@ -536,8 +536,10 @@ public static class ScenarioA1OrdnanceCalculator
         if (shot.VehicleTarget is not null)
         {
             ScenarioA1ArmorCalculator.Outside(shot, gun, reference, outside);
+            // Pass 65 (ruling R65.5): each PRC the target carries names a unit of the catalog, as a Passenger or a Rider.
             if (hit.TargetLocationId != shot.TargetLocationId || hit.Phase != shot.Phase || hit.FiringSide != shot.FiringSide || hit.Firers is { Count: > 0 }
-                || hit.Director is not null || hit.FireKind is not null || hit.OrdnanceHit is not null)
+                || hit.Director is not null || hit.FireKind is not null || hit.OrdnanceHit is not null
+                || ScenarioA1FireCalculator.PrcMalformed(shot.VehicleTarget.Prc, reference.Fire))
             {
                 outside.Add(Prefix + "target-outside");
             }

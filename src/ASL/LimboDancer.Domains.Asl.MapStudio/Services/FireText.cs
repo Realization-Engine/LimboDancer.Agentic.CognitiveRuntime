@@ -264,14 +264,23 @@ public static class FireText
             lines.Add($"To Kill DR at {vehicleId} on the {kill.Ammunition.ToUpperInvariant()} column (C7.34), {kill.TargetFacing} Target Facing: Basic TK# {kill.BasicTk}"
                 + $"{ScenarioA1FlameKill.ModifierText(kill.Modifications)}{(kill.ArmorFactor is { } af ? $", less AF {af}" : ", no AF")} = Final TK# {kill.FinalTk}; "
                 + $"TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
+
+            // D6.9 (pass 65): the Survival DR of each PRC.
+            lines.AddRange(PrcSurvivalLines(vehicleId, kill.PrcSurvival));
         }
 
         if (resolution.SpecificCollateral is { } collateral)
         {
+            // Pass 65 (ruling R65.7): the attack may reach the PRC alone; the crew's line is written only when it took it.
             var crew = collateral.Effect;
-            lines.Add($"its CE crew takes a Specific Collateral Attack of {collateral.Firepower} FP{ScenarioA1FlameKill.ModifierText(crew.Drm)} (D.8A): Final DR {crew.FinalDr}, {ResultText(collateral.Result)}"
-                + (crew.CrewCheck is { } made ? $"; {CheckText(made)}" : "")
-                + (crew.CrewResult == FireVehicleEffect.None ? "" : $": {crew.CrewResult}"));
+            if (crew.CrewResult != FireVehicleEffect.NotVulnerable)
+            {
+                lines.Add($"its CE crew takes a Specific Collateral Attack of {collateral.Firepower} FP{ScenarioA1FlameKill.ModifierText(crew.Drm)} (D.8A): Final DR {crew.FinalDr}, {ResultText(collateral.Result)}"
+                    + (crew.CrewCheck is { } made ? $"; {CheckText(made)}" : "")
+                    + (crew.CrewResult == FireVehicleEffect.None ? "" : $": {crew.CrewResult}"));
+            }
+
+            lines.AddRange(PrcLines(crew));
         }
 
         return lines;
@@ -304,6 +313,40 @@ public static class FireText
             : $"Kill Number {kill}, Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({DisplayText.Modifier(item.Name)} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))})"))}"
                 + (hit.UnlikelyKillDr is { } dr ? $", Unlikely Kill dr {dr}" : "") + $": {hit.Result.Replace('-', ' ')}";
     }
+
+    /// <summary>
+    /// What a vehicle's result did to its PRC (D.8, D6.66, D6.9; pass 65, rulings R65.7, R65.9), a line for each unit: the Collateral Attack it took with
+    /// its DRM, its check, and what it did; a broken BU Passenger put under DM; the Survival DR of each PRC of a destroyed vehicle. Unit ids, for the
+    /// view to say in its words. Empty when the record names none.
+    /// </summary>
+    public static IReadOnlyList<string> PrcLines(FireVehicleEffect hit, IReadOnlyList<PrcSurvival>? survival = null)
+    {
+        ArgumentNullException.ThrowIfNull(hit);
+        var lines = new List<string>();
+        foreach (var attack in hit.PrcAttacks ?? [])
+        {
+            var kind = attack.Kind == FirePrcAttack.Specific ? "a Specific Collateral Attack (D.8A)" : "a General Collateral Attack (D.8B)";
+            var drm = string.Concat(attack.Drm.Select(item => $" ({DisplayText.Modifier(item.Name)} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))}, {item.Rule})"));
+            foreach (var unit in attack.Effects)
+            {
+                lines.Add($"{unit.UnitId} aboard {hit.VehicleId} takes {kind}, Final DR {attack.FinalDr}{drm}: {ResultText(attack.Result)}"
+                    + string.Concat(unit.Checks.Select(check => "; " + CheckText(check))) + $": {EffectText(unit)}");
+            }
+        }
+
+        foreach (var id in hit.PrcDesperation ?? [])
+        {
+            lines.Add($"{id} aboard {hit.VehicleId}, broken, is under DM (D6.66, A10.62)");
+        }
+
+        lines.AddRange(PrcSurvivalLines(hit.VehicleId, survival ?? hit.PrcSurvival));
+        return lines;
+    }
+
+    /// <summary>The Survival DR of each PRC of a destroyed vehicle (D6.9, D5.6; pass 65, ruling R65.9), a line each.</summary>
+    public static IReadOnlyList<string> PrcSurvivalLines(string vehicleId, IReadOnlyList<PrcSurvival>? survival) =>
+        [.. (survival ?? []).Select(item => $"{item.UnitId} aboard {vehicleId}: Survival DR {string.Join(", ", item.Dice)}{(item.Drm > 0 ? " +1 (broken)" : "")} = {item.FinalDr}"
+            + $" against cs# {item.CrewSurvival}: {(item.Survived ? "survives, beneath the wreck" : "eliminated with the vehicle")} (D6.9)")];
 
     /// <summary>A vehicle crew's Collateral Attack (D.8B, D5.31): its Final DR with the CE DRM, its MC or NTC, and the result.</summary>
     public static string CrewText(FireVehicleEffect hit)

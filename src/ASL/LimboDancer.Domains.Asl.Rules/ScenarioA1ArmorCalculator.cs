@@ -655,27 +655,53 @@ internal static class ScenarioA1ArmorCalculator
         var column = firepower is not { } fp ? -1
             : gun.GunType == ScenarioA1MachineGunKill.GunType ? Array.FindLastIndex(ScenarioA1FireReference.ColumnFp, item => item <= fp)
             : Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp);
-        if (armor.Unarmored || armor.FrontAf is null || !standing || target.CrewExposed != true || target.CrewImpaired == true || target.Abandoned == true || column < 0)
+        if (!standing || column < 0)
         {
             return (null, null);
         }
 
-        if ((target.CrewMorale ?? reference.Fire.AfvCrewMorale(armor.Nationality)) is not { } morale)
+        FireVehicleEffect? effect = null;
+        string? result = null;
+        if (!armor.Unarmored && armor.FrontAf is not null && target.CrewExposed == true && target.CrewImpaired != true && target.Abandoned != true)
         {
-            return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "definition-incomplete:crew-morale:" + armor.Nationality]));
+            if ((target.CrewMorale ?? reference.Fire.AfvCrewMorale(armor.Nationality)) is not { } morale)
+            {
+                return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "definition-incomplete:crew-morale:" + armor.Nationality]));
+            }
+
+            IReadOnlyList<FireModifier> drm = [new FireModifier("crew-exposed", 2m, "D5.31")];
+            var final = kill.OriginalDr + 2;
+            result = reference.Fire.Result(final, column);
+            if (ScenarioA1FireCalculator.CrewChecks(result) && shot.Rolls!.CollateralCheck is null)
+            {
+                return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:collateralCheck"]));
+            }
+
+            var (check, crew) = ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, target.StunRecovery == true, morale, target.CrewMorale);
+            effect = new FireVehicleEffect(target.VehicleId!, armor.Id, FireVehicleEffect.None, null, drm, final, null, check, crew);
         }
 
-        IReadOnlyList<FireModifier> drm = [new FireModifier("crew-exposed", 2m, "D5.31")];
-        var final = kill.OriginalDr + 2;
-        var result = reference.Fire.Result(final, column);
-        if (ScenarioA1FireCalculator.CrewChecks(result) && shot.Rolls!.CollateralCheck is null)
+        // D.8A, D6.71 (pp. 192, 206; pass 65, ruling R65.7): the PRC the target carries take the same attack, an unarmored vehicle's included, when the
+        // record carries them; their checks and Random Selection are keyed under "prc:".
+        var (attacks, desperation, missing) = ScenarioA1FireCalculator.SpecificCollateralOnPrc(target, column, kill.OriginalDr, shot.Rolls!.Prc, reference.Fire);
+        if (missing is not null)
         {
-            return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:collateralCheck"]));
+            return (null, Refused(OrdnanceResolution.Indeterminate, [missing.StartsWith("asl.a1.fire.roll-missing:", StringComparison.Ordinal)
+                ? Prefix + "roll-missing:prc:" + missing["asl.a1.fire.roll-missing:".Length..] : missing]));
         }
 
-        var (check, crew) = ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, target.StunRecovery == true, morale, target.CrewMorale);
-        return (new OrdnanceCollateral(firepower!.Value, result,
-            new FireVehicleEffect(target.VehicleId!, armor.Id, FireVehicleEffect.None, null, drm, final, null, check, crew)), null);
+        if (attacks is not null || desperation is not null)
+        {
+            effect = (effect ?? new FireVehicleEffect(target.VehicleId!, armor.Id, FireVehicleEffect.None, null, [], kill.OriginalDr, null, null,
+                FireVehicleEffect.NotVulnerable)) with
+            {
+                PrcAttacks = attacks,
+                PrcDesperation = desperation,
+            };
+        }
+
+        return effect is null ? (null, null)
+            : (new OrdnanceCollateral(firepower!.Value, result ?? attacks?[0].Result ?? reference.Fire.Result(kill.OriginalDr, column), effect), null);
     }
 
     private static (OrdnanceKill? Kill, OrdnanceResolution? Pending) Kill(OrdnanceShot shot, GunDefinition gun, ArmorDefinition armor, ScenarioA1OrdnanceReference reference,
@@ -827,6 +853,22 @@ internal static class ScenarioA1ArmorCalculator
             made = made with
             {
                 CrewSurvival = new OrdnanceCrewSurvival([.. survival], drmValue, finalDr, cs, finalDr <= cs)
+            };
+        }
+
+        // D6.9, D5.6 (pp. 207, 204; pass 65, ruling R65.9): each Passenger and Rider of a vehicle eliminated, not burned, rolls its own Survival DR against
+        // the CS# or cs#, +1 if broken, when the record carries them.
+        if (result == OrdnanceKill.Eliminated)
+        {
+            var (prcSurvival, missing) = ScenarioA1FireCalculator.PrcSurvivals(target.Prc, armor.CrewSurvival, rolls.Prc?.PrcSurvival);
+            if (missing is not null)
+            {
+                return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:prc:" + missing]));
+            }
+
+            made = made with
+            {
+                PrcSurvival = prcSurvival
             };
         }
 

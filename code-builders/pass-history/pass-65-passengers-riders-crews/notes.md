@@ -67,5 +67,16 @@ A running record kept as the pass goes, at the user's word of 2026-10-23 ("Keep 
   - base: hand-over 276, 265, 355 ms; an "end the phase" proposal 135, 157, 147 ms;
   - pass 65 after 2a: hand-over 225, 245, 241 ms; the proposal 112, 137, 123 ms.
   No regression; within noise or a little faster.
-- 23:35 2a committed (below).
+- 23:35 2a committed, 0ccb9f4b.
+- 23:36 PR 33's CI passed (source-conformance, 11:59, run 40055795209, for d0a8f4cd). origin/main still 4702d90c, so nothing moved. Merged by the user's word ("push and merge vehicle-crew-figure") with a merge commit: 7040c768. Its tree is d0a8f4cd's, the baseline's base. The merge's own CI run on main is to be read.
+- 23:37 The 2b agent launched on `brief_2b.md`.
+- 23:37 to 23:39 The briefs of 2c to 2j written, from the rulings, while 2b builds. Each names its pages, what to build, its gating against older records, its tests by method, and its Studio game.
+- 23:39 The merge 7040c768's CI on main (run 40058993708) is in progress; to be read.
+- About 00:15 (2026-10-24) The 2b agent reported (built 23:37 to about 00:15). Main's CI for 7040c768: success, 8:22.
+  - Left out, as the brief allowed: D5.311 (an OT crew under Air Bursts) and A7.308 (Random Selection of vehicles beyond the KIA#; it also needs R25.3's one-vehicle refusal lifted). **Ruling R65.26:** both go to a small increment 2k after 2j, or to the backlog if the session's end comes first.
+  - Left for later, each to a backlog row in the documents step: Heat of Battle, leadership, and LLMC for PRC (leadership is 2c's D6.651); A9.74's weapon destruction on a PRC's KIA; PRC Survival after a mortar's kill of an AFV and after an Unconfirmed Kill (eliminated as before); an unarmored vehicle's crew under a Specific attack (the catalog's unarmored vehicles are trucks with an Inherent Driver, D5.1, so nothing to attack); a Shocked AFV's Passengers on the IFT path read as BU (FireVehicle has no Shocked fact: 2h adds it).
+  - A concealed or hidden vehicle's PRC fact is null, so the attack reads as before (nothing is revealed). Accepted.
+  - It ran the whole `ScenarioA1Pass65RulesTests` class once (5 methods of 2a beside its 6); a slip against the rule, small.
+- 00:20 `games_2b.py` run (p65-prc-halftrack, -bu, p65-prc-truck). Studio check in p65-prc-halftrack, Russian PFPh: the 4-4-7 squad with its LMG fires at [F8] (6 FP, +1 Height Advantage for the target 1 level up). The proposal says "it reaches 4-6-7 squad aboard vehicle in [F8] where Vulnerable (D.8B)". With dice 2 4 1 1: the Passenger squad "takes a General Collateral Attack (D.8B), Final DR 8 (CE +2, D5.31): PTC; NTC 1, 5 = 6 against 7: passed". The CE DRM replaced Height Advantage, as D5.31 has it.
+- 00:22 2b committed (below).
 - The four estimates sum to about 15:00 of build against the plan's 7:00 (65.1 3:00, 65.2 2:30, 65.3 1:15, 65.4 1:30, 65.5 0:50, crews 0:45, 65.6 1:40, 65.7 1:10, 65.8 1:40, 65.9 0:50).

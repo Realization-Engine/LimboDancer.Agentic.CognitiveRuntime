@@ -3369,7 +3369,8 @@ else if (state is not null)
         {
             if (state.Passengers(unit.Id) is { Count: > 0 } riding)
             {
-                yield return $"Passengers {string.Join(", ", riding.Select(item => Words(item.Id)))}";
+                // Pass 65 (D6.62, D6.66, A7.821): each Passenger's own state, broken, pinned, or under DM.
+                yield return $"Passengers {string.Join(", ", riding.Select(item => Words(item.Id) + PassengerState(item)))}";
             }
 
             foreach (var gun in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == unit.Id))
@@ -3377,6 +3378,14 @@ else if (state is not null)
                 yield return $"towing {gun.Id}";
             }
         }
+    }
+
+    /// <summary>A Passenger's state in parentheses (pass 65): broken, pinned, or under DM (D6.62, D6.66, A7.821); empty when none applies.</summary>
+    private static string PassengerState(UnitInstance passenger)
+    {
+        string[] states = [.. new[] { (Conditions.Broken, "broken"), (Conditions.Pinned, "pinned"), (Conditions.DesperationMorale, "DM") }
+            .Where(pair => GameState.Condition(passenger, pair.Item1) == ConditionState.True).Select(pair => pair.Item2)];
+        return states.Length == 0 ? string.Empty : $" ({string.Join(", ", states)})";
     }
 
     /// <summary>The chosen vehicle's MP expenditures as the planner offers them (plan A19).</summary>

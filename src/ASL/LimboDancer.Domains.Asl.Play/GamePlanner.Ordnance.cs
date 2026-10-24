@@ -163,6 +163,9 @@ public sealed partial class GamePlanner
         {
             Hit = LiveFire.WithRandomDestruction(state, shot.Hit!)
         };
+
+        // Pass 65 (ruling R65.5): the PRC of the vehicle it fires at and of the vehicles its hit attacks.
+        shot = WithPrc(state, shot);
         var reference = OrdnanceReference.Value;
         var precheck = ScenarioA1OrdnanceCalculator.Precheck(shot, reference);
         if (precheck.Count != 0)
@@ -247,7 +250,10 @@ public sealed partial class GamePlanner
             : string.Empty;
         return $"play.ordnance: {facts.Gun!.GunId} fires {aim} in the {facts.Phase}; range {facts.Range}, {facts.Hit!.TargetTerrain}"
             + (facts.HexspinesToTurn > 0 ? $", turning {(facts.Vehicle is null ? string.Empty : "its turret ")}{facts.HexspinesToTurn} hexspine(s) to {facing!.Value.Name()}" : string.Empty)
-            + toHit + each + depletion;
+            + toHit + each + depletion
+            // D.8A, D.8B (pass 65): the PRC the hit may reach, as Collateral.
+            + PrcPreview(facts.VehicleTarget is { } struck ? [(struck.VehicleId, struck.Prc)] : [], "D.8A, if it is left standing")
+            + PrcPreview((hit.Vehicles ?? []).Select(item => (item.VehicleId, item.Prc)), "D.8B");
     }
 
     /// <summary>
@@ -879,7 +885,8 @@ public sealed partial class GamePlanner
 
             var key = missing["asl.a1.ordnance.roll-missing:".Length..];
             string[] selected = key.StartsWith("criticalSelection:", StringComparison.Ordinal) ? key["criticalSelection:".Length..].Split(',') : [];
-            var nested = key.StartsWith("hit:", StringComparison.Ordinal) ? "hit:" : key.StartsWith("critical-hit:", StringComparison.Ordinal) ? "critical-hit:" : null;
+            var nested = key.StartsWith("hit:", StringComparison.Ordinal) ? "hit:" : key.StartsWith("critical-hit:", StringComparison.Ordinal) ? "critical-hit:"
+                : key.StartsWith("prc:", StringComparison.Ordinal) ? "prc:" : null;
             var inner = nested is null ? null : key[nested.Length..];
             var (count, purpose) = key switch
             {
@@ -1166,6 +1173,12 @@ public sealed partial class GamePlanner
         var at = state.Location(vehicle.Id)?.Location;
         if (ScenarioA1OrdnanceEventRules.Wrecks(kill.Result))
         {
+            // D6.9 (pass 65, ruling R65.9): the PRC that survive are beneath the wreck before it is written.
+            foreach (var survivor in SurvivorEvents(state, vehicle.Id, kill.PrcSurvival))
+            {
+                yield return survivor;
+            }
+
             var burning = kill.Result == OrdnanceKill.Burn;
             yield return ("vehicle-wrecked", new VehicleWrecked(vehicle.Id, burning));
             if (burning && at is { } burningAt)
@@ -1216,7 +1229,10 @@ public sealed partial class GamePlanner
     private void VehicleEffectsAfterHit(GameState state, FireVehicleEffect vehicle, FireAttack facts, GameScope scope, string attemptId, long expected, string package,
         string recordId, List<GameEvent> events)
     {
-        foreach (var payload in VehicleEffectEvents(state, vehicle, facts))
+        // D.8, D6.9 (pass 65, rulings R65.7, R65.9): the PRC that survive are beneath the wreck before it is written; what a Collateral Attack did to the
+        // others follows the vehicle's own result.
+        foreach (var payload in SurvivorEvents(state, vehicle.VehicleId, vehicle.PrcSurvival).Concat(VehicleEffectEvents(state, vehicle, facts))
+            .Concat(PrcEffectEvents(state, vehicle, attemptId)))
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [recordId]));
         }
@@ -1337,6 +1353,9 @@ public sealed partial class GamePlanner
                 }
             },
             _ when key.StartsWith("hit:", StringComparison.Ordinal) => rolls with { Hit = ApplyFireRoll(rolls.Hit ?? new FireRolls(null, null, null, null), key["hit:".Length..], values) },
+
+            // Pass 65 (rulings R65.7, R65.9): the rolls of the target's PRC, keyed as the Fire package keys them.
+            _ when key.StartsWith("prc:", StringComparison.Ordinal) => rolls with { Prc = ApplyFireRoll(rolls.Prc ?? new FireRolls(null, null, null, null), key["prc:".Length..], values) },
             _ => rolls with { CriticalHit = ApplyFireRoll(rolls.CriticalHit ?? new FireRolls(null, null, null, null), key["critical-hit:".Length..], values) },
         };
     }
@@ -1364,6 +1383,9 @@ public sealed partial class GamePlanner
 
             // A9.74 (pass 60, ruling R60.17): a weapon's Random SW/Gun Destruction dr.
             "weaponDestruction" => (1, "fire-weapon-destruction"),
+
+            // D6.9 (pass 65, ruling R65.9): a Passenger's or Rider's Survival DR.
+            "prcSurvival" => (2, "fire-prc-survival"),
             _ => (1, "fire-wound-severity"),
         };
     }
@@ -1407,6 +1429,9 @@ public sealed partial class GamePlanner
 
             // A9.74 (pass 60, ruling R60.17): a weapon's Random SW/Gun Destruction dr.
             "weaponDestruction" => rolls with { WeaponDestruction = Add(rolls.WeaponDestruction, unit, values[0]) },
+
+            // D6.9 (pass 65, ruling R65.9): a Passenger's or Rider's Survival DR.
+            "prcSurvival" => rolls with { PrcSurvival = Add(rolls.PrcSurvival, unit, values) },
             _ => rolls with { WoundSeverity = Add(rolls.WoundSeverity, unit, values[0]) },
         };
     }

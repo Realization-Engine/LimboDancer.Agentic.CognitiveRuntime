@@ -150,6 +150,16 @@ public sealed record OrdnanceVehicleTarget(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The target's Passengers and Riders (D6.1, D6.2; pass 65, ruling R65.5), empty when nobody is aboard: a state fact written by every shot planned
+    /// since the pass and taken from the record at replay. Null on every older record, whose hit reaches no PRC, and whose kill eliminates them.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FirePrc>? Prc
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -212,6 +222,13 @@ public sealed record OrdnanceKill(
     /// <summary>The Crew Survival DR (D5.6); null when none is rolled.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OrdnanceCrewSurvival? CrewSurvival
+    {
+        get; init;
+    }
+
+    /// <summary>The Survival DR of each Passenger and Rider of the eliminated vehicle (D6.9; pass 65, ruling R65.9); null when none is rolled.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<PrcSurvival>? PrcSurvival
     {
         get; init;
     }

@@ -520,7 +520,62 @@ public sealed record FireVehicle(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The vehicle's Passengers and Riders (D6.1, D6.2; pass 65, ruling R65.5), empty when nobody is aboard. Written by every attack planned since the
+    /// pass and taken from the record at replay; null on every older record, whose attack reaches no PRC (and an AFV in a positive TEM is refused,
+    /// ruling R25.6) as before.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FirePrc>? Prc
+    {
+        get; init;
+    }
 }
+
+/// <summary>
+/// A Passenger or Rider of a vehicle (D6.1, D6.2; pass 65, ruling R65.5): the unit, its definition, its role, and the states its Vulnerability (D6.61,
+/// D6.62) and its checks read.
+/// </summary>
+public sealed record FirePrc(string? UnitId, string? DefinitionId, string? Role, bool? Broken, bool? Pinned)
+{
+    public const string Passenger = "passenger";
+    public const string Rider = "rider";
+
+    /// <summary>Whether a SMC aboard is wounded (A17.2); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Wounded
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the unit is Fanatic (A10.8); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Fanatic
+    {
+        get; init;
+    }
+
+    /// <summary>The unit's ELR (A19.1): its OB group's, or its side's.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Elr
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// A Collateral Attack on a vehicle's Vulnerable PRC (D.8, D.8A, D.8B, p. 192; pass 65, ruling R65.7): <c>general</c> or <c>specific</c>, its DRM (TEM or
+/// the CE DRM, never both), its Final DR and IFT result, and what it did to each unit, as an attack's target units are recorded.
+/// </summary>
+public sealed record FirePrcAttack(string Kind, IReadOnlyList<FireModifier> Drm, int FinalDr, string Result, IReadOnlyList<FireUnitEffect> Effects)
+{
+    public const string General = "general";
+    public const string Specific = "specific";
+}
+
+/// <summary>A Passenger's or Rider's Survival DR (D6.9, D5.6, pp. 207, 204; pass 65, ruling R65.9): +1 if broken, against the CS# or cs#.</summary>
+public sealed record PrcSurvival(string UnitId, IReadOnlyList<int> Dice, int Drm, int FinalDr, int CrewSurvival, bool Survived);
 
 /// <summary>
 /// A vehicle's MA MG attack (D1.83, D3.5): the vehicle, its definition, and the facts that modify its FP and DR: Motion (D2.42), a
@@ -1164,6 +1219,13 @@ public sealed record FireRolls(
     {
         get; init;
     }
+
+    /// <summary>The Survival DR of each Passenger and Rider of a vehicle the attack eliminated (D6.9; pass 65, ruling R65.9), by unit id.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, IReadOnlyList<int>>? PrcSurvival
+    {
+        get; init;
+    }
 }
 
 /// <summary>One modifier with its value and rule.</summary>
@@ -1534,6 +1596,30 @@ public sealed record FireVehicleEffect(
     /// <summary>Whether the firer declined the Unlikely Kill dr it could make (A7.309, ruling R5.8); null when it made it or could not.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? UnlikelyKillDeclined
+    {
+        get; init;
+    }
+
+    /// <summary>The Collateral Attacks on the vehicle's Vulnerable PRC (D.8; pass 65, ruling R65.7); null when there were none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FirePrcAttack>? PrcAttacks
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The broken PRC the attack puts under DM (D6.66, A10.62; pass 65): a broken Passenger of an armored halftrack, BU, when the attack could have
+    /// inflicted a NMC on a hypothetical CE target, and a broken Vulnerable PRC attacked by FP that could inflict one. Null when none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? PrcDesperation
+    {
+        get; init;
+    }
+
+    /// <summary>The Survival DR of each PRC of the vehicle the attack eliminated without burning it (D6.9, A7.308; pass 65, ruling R65.9); null when none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<PrcSurvival>? PrcSurvival
     {
         get; init;
     }

@@ -361,6 +361,8 @@ The referee agent of the documents step checks the rows against the chart, as at
   - `dl-tractor-works-02` at revision 1316, where the berserk charge search was measured (PR 32), so the charge path does not regress.
 - A rise beyond the noise of three runs is a fault to find before the task is done.
 
+**F26. What 2b left (ruling made at the task, 2026-10-24).** **R65.26:** D5.311 (an OT AFV's crew under Air Bursts) and A7.308 (Random Selection of the vehicles beyond the KIA#, with ruling R25.3's one-vehicle refusal lifted for the IFT) move to a small increment 2k after 2j, or to the backlog if the session's end comes first.
+
 **F25. Testing** (the standing rules, section 2, the user's rule of 2026-10-23).
 - While a task is built, the Studio is its test, in a small game made for it (`games_2x.py`).
 - A task's new Rules and Play tests are run by method, and only those.

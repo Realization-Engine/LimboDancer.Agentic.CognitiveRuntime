@@ -11,6 +11,13 @@
                 <td class="fire-vehicle-result">@Say(FireText.VehicleLineText(hit))</td>
                 <td class="fire-vehicle-crew">@Say(FireText.CrewText(hit))</td>
             </tr>
+            @* Pass 65 (rulings R65.7, R65.9): what the attack did to the vehicle's Passengers and Riders, a row each. *@
+            @foreach (var line in FireText.PrcLines(hit))
+            {
+                <tr class="fire-vehicle-prc" data-vehicle="@hit.VehicleId">
+                    <td colspan="3">@Say(line)</td>
+                </tr>
+            }
         }
     </tbody>
 </table>

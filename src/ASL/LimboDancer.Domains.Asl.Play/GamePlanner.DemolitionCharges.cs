@@ -271,8 +271,8 @@ public sealed partial class GamePlanner
     private GamePlan ChargePlan(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor, GameState state,
         FireAttack facts, BoardLocation? thrower, string chargeId, string summary)
     {
-        // A15.44, A15.5: the Heat of Battle reads every target needs.
-        facts = HeatOfBattleFacts(state, facts);
+        // A15.44, A15.5: the Heat of Battle reads every target needs. Pass 65 (ruling R65.5): the PRC of the Location's vehicles.
+        facts = WithPrc(state, HeatOfBattleFacts(state, facts));
         var check = ScenarioA1FireCalculator.Precheck(facts, FireReference.Value);
         if (check.Count != 0)
         {

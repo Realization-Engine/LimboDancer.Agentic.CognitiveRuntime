@@ -598,7 +598,11 @@ public sealed partial class GamePlanner
                     // A22.612 (pass 60, the table player): at a named AFV the four FP go to the Specific Collateral Attack on its CE crew alone.
                     : facts.TargetVehicle is { } molAfv ? $"; {mol} makes a MOL Check first: on a dr of 3 or less after its drm the four FP go to the Specific Collateral Attack on {molAfv.VehicleId}'s CE crew alone, and the Location's other units take the Small Arms FP (A22.611, A22.612)"
                     : $"; {mol} makes a MOL Check first: a dr of 3 or less after its drm adds four FP (A22.611)")
-                + (ScenarioA1FireCalculator.NamedVehicleTerms(facts, FireReference.Value) is { } terms ? "; " + terms : string.Empty),
+                + (ScenarioA1FireCalculator.NamedVehicleTerms(facts, FireReference.Value) is { } terms ? "; " + terms : string.Empty)
+
+                // D.8A, D.8B (pass 65): the PRC the attack may reach, as Collateral.
+                + PrcPreview(facts.TargetVehicle is { } aimedAt ? [(aimedAt.VehicleId, aimedAt.Prc)] : [], "D.8A, if it is left standing")
+                + PrcPreview((facts.Vehicles ?? []).Where(item => item.VehicleId != facts.TargetVehicle?.VehicleId).Select(item => (item.VehicleId, item.Prc)), "D.8B"),
 
                 // Pass 31 (play test P-12, P-13): a shot with no LOS, or one that also hits the firing side's own units, is said before it is confirmed.
                 .. FireWarnings(facts)])
@@ -693,9 +697,13 @@ public sealed partial class GamePlanner
             };
         }
 
+        // Pass 65 (ruling R65.5): with the PRC it carries.
         return (attack with
         {
-            TargetVehicle = named
+            TargetVehicle = named with
+            {
+                Prc = PrcOf(state, vehicle)
+            }
         }, null);
     }
 
@@ -1006,9 +1014,12 @@ public sealed partial class GamePlanner
         }
 
         // A7.308, A7.309, D.8B: the Vehicle line's result and the crew's (ruling R25.5, R25.6).
+        // D.8B, D6.9 (pass 65, rulings R65.7, R65.9): the PRC that survive are beneath the wreck before it is written; what a General Collateral Attack
+        // did to the others follows the vehicle's own result.
         foreach (var vehicle in resolution.VehicleEffects ?? [])
         {
-            foreach (var payload in VehicleEffectEvents(state, vehicle, facts))
+            foreach (var payload in SurvivorEvents(state, vehicle.VehicleId, vehicle.PrcSurvival).Concat(VehicleEffectEvents(state, vehicle, facts))
+                .Concat(PrcEffectEvents(state, vehicle, attemptId)))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
             }
@@ -1705,8 +1716,9 @@ public sealed partial class GamePlanner
                 ? DashAgainst(state, [.. perLocation.Keys.Select(BoardLocation.Parse)], target) : null,
         };
 
-        // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): night and weather.
-        return UpperLevelEncircled(state, NightAndWeatherFacts(state, facts, target, targetRead.Hex.BaseLevel + (targetRead.Hex.Center.Terrain?.Height ?? 0), perLocation));
+        // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): night and weather. Pass 65 (ruling R65.5): the PRC of each vehicle there.
+        var encircled = UpperLevelEncircled(state, NightAndWeatherFacts(state, facts, target, targetRead.Hex.BaseLevel + (targetRead.Hex.Center.Terrain?.Height ?? 0), perLocation));
+        return encircled.Facts is { } withVehicles ? (WithPrc(state, withVehicles), encircled.Reason) : encircled;
     }
 
     /// <summary>

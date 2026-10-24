@@ -407,6 +407,14 @@ public static class LiveFire
         });
 
     /// <summary>
+    /// The vehicles of an attack read from the state, each with the PRC its record carries (pass 65, ruling R65.5): the fact is taken from the record at
+    /// replay, never read again, and a record made before the pass carries none.
+    /// </summary>
+    internal static IReadOnlyList<FireVehicle>? WithRecordedPrc(IReadOnlyList<FireVehicle>? state, IReadOnlyList<FireVehicle>? recorded) =>
+        state is null || recorded is null ? state
+            : [.. state.Select(vehicle => vehicle with { Prc = recorded.FirstOrDefault(item => item.VehicleId == vehicle.VehicleId)?.Prc })];
+
+    /// <summary>
     /// The AFV a FT, MOL, or DC attack names (A22.34, A22.612, A23.5; pass 60, ruling R60.15): a vehicle target's state facts, and whether it is Immobile,
     /// immobilized or bogged (C7.346). Its Target Facings are the planner's map reads.
     /// </summary>
@@ -594,6 +602,7 @@ public static class LiveFire
         Dictionary<string, int>? unlikelyKill = null;
         int? molCheck = null;
         Dictionary<string, int>? weaponDestruction = null;
+        Dictionary<string, IReadOnlyList<int>>? prcSurvival = null;
         var named = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
 
         // A selection roll names the units it selects among, one die each, in order.
@@ -694,6 +703,11 @@ public static class LiveFire
                 case "weaponDestruction" when roll.Count == 1 && unit.Length > 0:
                     (weaponDestruction ??= new(StringComparer.Ordinal))[unit] = roll.Values[0];
                     break;
+
+                // D6.9 (pass 65, ruling R65.9): a Passenger's or Rider's Survival DR.
+                case "prcSurvival" when roll.Count == 2 && unit.Length > 0:
+                    (prcSurvival ??= new(StringComparer.Ordinal))[unit] = roll.Values;
+                    break;
                 default:
                     return null;
             }
@@ -714,6 +728,7 @@ public static class LiveFire
             TaskCheck = named.GetValueOrDefault("taskCheck"),
             CollateralCheck = named.GetValueOrDefault("collateralCheck"),
             WeaponDestruction = weaponDestruction,
+            PrcSurvival = prcSurvival,
         };
     }
 
@@ -962,8 +977,14 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                 {
                     HullFacing = recordedNamed.HullFacing,
                     TurretFacing = recordedNamed.TurretFacing,
+
+                    // Pass 65 (ruling R65.5): its PRC as the record carries them.
+                    Prc = recordedNamed.Prc,
                 }, recordedNamed)
                 : null,
+
+            // Pass 65 (ruling R65.5): each vehicle's PRC as the record carries them.
+            Vehicles = LiveFire.WithRecordedPrc(expected.Vehicles, recorded.Vehicles),
 
             // Backlog pass 10 (rulings R10.4 to R10.8, R10.13): the levels, the wall or hedge TEM with Wall Advantage, Height Advantage, and
             // Hazardous Movement are map reads recorded with the attack; a Snap Shot is the DEFENDER's declaration.
