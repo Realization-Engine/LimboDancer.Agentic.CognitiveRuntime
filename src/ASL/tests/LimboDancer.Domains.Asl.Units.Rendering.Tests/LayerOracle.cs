@@ -80,6 +80,7 @@ internal static class LayerOracle
     public static string? Differs(XElement whole, XElement atOrigin, double tolerance = 1 / 32.0) => Compare(whole, atOrigin, 0, 0, tolerance, "layer");
 
     private static readonly System.Text.RegularExpressions.Regex Tokens = new(@"[A-Za-z]|-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?", System.Text.RegularExpressions.RegexOptions.Compiled);
+    private static readonly System.Text.RegularExpressions.Regex TransformFunctions = new(@"(\w+)\(([^)]*)\)", System.Text.RegularExpressions.RegexOptions.Compiled);
     private static readonly System.Text.RegularExpressions.Regex FocusStyle =
         new(@"^stroke: var\(--unit-focus-stroke, ([^)]+)\); stroke-width: var\(--unit-focus-width, ([^)]+)\)$", System.Text.RegularExpressions.RegexOptions.Compiled);
 
@@ -169,7 +170,12 @@ internal static class LayerOracle
         return attributes;
     }
 
-    private static bool SameValue(string name, string whole, string moved, double dx, double dy, double tolerance) => name switch
+    // The same text with no move to add is the same value under any tolerance: most of a layer's paths are compared this way, so they skip
+    // the tokenizing that dominated the oracle's time.
+    private static bool SameValue(string name, string whole, string moved, double dx, double dy, double tolerance) =>
+        (dx == 0 && dy == 0 && string.Equals(whole, moved, StringComparison.Ordinal)) || SameMovedValue(name, whole, moved, dx, dy, tolerance);
+
+    private static bool SameMovedValue(string name, string whole, string moved, double dx, double dy, double tolerance) => name switch
     {
         "x" or "cx" or "x1" or "x2" => Near(Numbers(whole), Numbers(moved), [dx], tolerance),
         "y" or "cy" or "y1" or "y2" => Near(Numbers(whole), Numbers(moved), [dy], tolerance),
@@ -226,8 +232,7 @@ internal static class LayerOracle
     // A translation is moved, as is a rotation's centre; a rotation's angle and a scale are not.
     private static bool SameTransform(string whole, string moved, double dx, double dy, double tolerance)
     {
-        var functions = new System.Text.RegularExpressions.Regex(@"(\w+)\(([^)]*)\)");
-        var (a, b) = (functions.Matches(whole).ToArray(), functions.Matches(moved).ToArray());
+        var (a, b) = (TransformFunctions.Matches(whole).ToArray(), TransformFunctions.Matches(moved).ToArray());
         return a.Length == b.Length && a.Zip(b).All(pair => pair.First.Groups[1].Value == pair.Second.Groups[1].Value && pair.First.Groups[1].Value switch
         {
             "translate" => Near(Numbers(pair.First.Groups[2].Value), Numbers(pair.Second.Groups[2].Value), [dx, dy], tolerance),
