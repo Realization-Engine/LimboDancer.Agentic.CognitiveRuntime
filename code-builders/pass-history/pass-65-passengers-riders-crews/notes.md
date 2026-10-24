@@ -124,5 +124,21 @@ A running record kept as the pass goes, at the user's word of 2026-10-23 ("Keep 
   - No live game (470) or store game (528) holds the Bren carrier, so the BU refusal needs no time gate.
   - Seen: a Stun or Shock still writes `asl:bu` on a Carrier, and `StarshellFirers` (Play.razor about :5717) reads the raw condition. Backlog row, or a fix at the reviews.
 - 02:52 Studio check of 2f in p65-carrier-unload (British MPh): the vehicle panel shows "its inherent HS too, Abandoning it (D6.83)" and no BU control; unloading the crew commits "[F8]: 2-4-7 half-squad B1 unloads from vehicle B1 (D6.5)". Found: the proposal names the HS by its raw id ("Vehicle-beb23db0c4cc-ub-crew disembarks ..."), the unit not existing until the plan commits. For the reviews' fixes.
-- 02:54 2f committed (below).
+- 02:54 2f committed, 49be757b. The 2f games to `OWN`.
+- 02:55 The 2g agent launched on `brief_2g.md`.
+- About 03:22 The 2g agent reported (built 02:55 to about 03:22). Built: `ScenarioA1CrewActsRules` (abandon, self-destruction, re-crew, Temporary, MG Removal, D5.8's `CrewFireCounter`, `CrewInsideFireBar`); `ContainmentRole.Crew`; events `vehicle-abandoned` and `vehicle-recrewed`; actions `abandon-vehicle` and `recrew-vehicle`; `GamePlanner.CrewActs.cs`; `ObjectIndex.CrewOf`; `VehicleCrewActions.razor`; icon coverage regenerated (2 buttons). Judged, each to a backlog row:
+  - re-crewing has no FFNAM window, so D5.43's failure on a pin or break is not built (the bar requires Good Order and unpinned before);
+  - MG Removal handles a MG MA or a BMG of 3 FP or less only; a heavier MG and a mortar are refused; a malfunctioned MG stays so as the LMG;
+  - a self-destruction wreck is refused while PRC are aboard (they unload first). Right: they would be eliminated with it;
+  - an Abandonment in Motion is allowed (D5.41 bars moved and fired only);
+  - the Armor Leader goes with the crew on a voluntary and a failed-TC Abandonment, not on Survival or Recall (D5.341);
+  - "own crew" is the id ending `-{vehicle}-crew`;
+  - a re-crewed vehicle has its movement ended for the MPh;
+  - D5.8: the projector takes conditions and the leader from the recorded `instance-created`, so older crews keep theirs; new plans on the Survival, TC, and Recall paths may now add Prep or Final Fire and the leader. These are intended sweep lines at the gate.
+- 03:23 to 03:26 Studio check of 2g in p65-crew-acts (German MPh, 1943):
+  - the "Vehicle crews" section offers "Propose: Abandon vehicle G2 in [F10]" and "... G1 in [F8]", the self-destruction choice (none, a non-burning wreck, its MA and every MG malfunctioned), and "Remove a halftrack's MG as its LMG (D6.631)";
+  - Abandoning the SPW 251/1 with Removal commits "[F10]: 1-2-7 vehicle crew G1 Abandons vehicle G2, taking its MG as the LMG (D6.631) (D5.41)"; the Russian DEFENDER's pass control appears and its pass ends the window cleanly; the tank's Abandon is still offered.
+  - Found: the proposal names the units the plan creates by raw id ("Abandon-65e58cf27955-dh-crew Abandons ...", "the LMG abandon-65e58cf27955-dh-mg"), the same fault as 2f's crew unload. For the reviews' fixes: a name for a unit the plan creates.
+  - Re-crewing a Player Turn later is asserted by `ACrewReCrewsItsTankAPlayerTurnLaterAndItsArmorLeaderReturns`; not walked in the Studio.
+- 03:27 2g committed (below).
 - The four estimates sum to about 15:00 of build against the plan's 7:00 (65.1 3:00, 65.2 2:30, 65.3 1:15, 65.4 1:30, 65.5 0:50, crews 0:45, 65.6 1:40, 65.7 1:10, 65.8 1:40, 65.9 0:50).

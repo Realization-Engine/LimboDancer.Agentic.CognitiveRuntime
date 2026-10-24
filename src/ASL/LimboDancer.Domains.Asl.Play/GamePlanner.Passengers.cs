@@ -373,6 +373,12 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, crewBar);
             }
 
+            // D5.42 (pass 65, ruling R65.20): a unit that re-crewed the Carrier leaves it as itself, by Abandoning it.
+            if (MemoOf(state).Objects(state).CrewOf(id) is { } recrewed)
+            {
+                return Refused(scope, label, expected, $"play.unload: {recrewed.Id} crews {id} from inside and leaves it by Abandoning it (D5.41, D5.42)");
+            }
+
             // The HS is created aboard, so the step unloads it as a Passenger: beneath the vehicle, with its MF and the DEFENDER's FFNAM (D6.5).
             crewLeaving = LeavingCrew(state, vehicle, attemptId) is { } placed
                 ? new InstanceCreated(placed.Instance with
@@ -515,7 +521,9 @@ public sealed partial class GamePlanner
         {
             if (index.VehicleOf(text) is { } vehicle && state.Find(text) is UnitInstance { Status: InstanceStatus.Active } unit)
             {
-                return $"play.aboard: {unit.Id} rides {vehicle} as a {(unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? "Rider" : "Passenger")}; until it unloads (D6.5) it fires, passes a SW, routs beneath, and otherwise acts only with its vehicle, since Passengers' other actions are not built (ruling R26.2)";
+                return unit.Position is ContainedPosition { Role: ContainmentRole.Crew }
+                    ? $"play.aboard: {unit.Id} crews {vehicle} from inside; it acts only as the vehicle's crew until it Abandons it (D5.41, D5.42)"
+                    : $"play.aboard: {unit.Id} rides {vehicle} as a {(unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? "Rider" : "Passenger")}; until it unloads (D6.5) it fires, passes a SW, routs beneath, and otherwise acts only with its vehicle, since Passengers' other actions are not built (ruling R26.2)";
             }
         }
 

@@ -42,6 +42,8 @@ public static class ScenarioA1SequenceCalculator
         ["asl.game.overrun"] = ["vehicleId"],
         ["asl.game.button-up"] = ["vehicleId"],
         ["asl.game.motion-attempt"] = ["vehicleId"],
+        ["asl.game.abandon-vehicle"] = ["vehicleId"],
+        ["asl.game.recrew-vehicle"] = ["unitId", "vehicleId"],
         ["asl.game.massacre"] = ["unitId"],
         ["asl.game.throw-dc"] = ["unitId"],
         ["asl.game.fire-starshell"] = ["unitId"],

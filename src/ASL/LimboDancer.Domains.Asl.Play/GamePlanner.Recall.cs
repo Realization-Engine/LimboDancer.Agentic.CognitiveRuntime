@@ -250,9 +250,10 @@ public sealed partial class GamePlanner
             [Conditions.Motion] = ConditionState.False,
         }));
 
-        if (LeavingCrew(state, vehicle, attemptId, stunRecovery: true) is { } crew)
+        // D5.42 (pass 65, ruling R65.20): a unit that crews it from inside leaves as itself.
+        if (CrewLeaves(state, vehicle, attemptId, stunRecovery: true) is { } crew)
         {
-            yield return ("instance-created", crew);
+            yield return crew;
         }
     }
 }

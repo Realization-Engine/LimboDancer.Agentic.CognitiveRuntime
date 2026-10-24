@@ -232,6 +232,14 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             VehicleStepped stepped => state.Movement is { WindowOpen: true, Vehicle: true } movement && movement.Step == stepped.Step
                 && state.Location(stepped.Vehicle)?.Location == stepped.At,
 
+            // A voluntary Abandonment (D5.41; pass 65, ruling R65.20): the vehicle is Abandoned, its crew beneath it, and the DEFENDER's window open on the crew.
+            VehicleAbandoned abandoned => state.Unit(abandoned.Vehicle) is { } left && GameState.Condition(left, Conditions.Abandoned) == ConditionState.True
+                && state.Location(abandoned.Crew)?.Location == abandoned.At && state.Movement is { WindowOpen: true, Embarking: [var leaving] } && leaving == abandoned.Crew,
+
+            // A re-crewing (D5.42; ruling R65.20): the unit is inside the vehicle as its crew, and the vehicle is no longer Abandoned.
+            VehicleRecrewed recrewed => state.Unit(recrewed.Unit) is { Position: ContainedPosition { Role: ContainmentRole.Crew } inside } && inside.Container == recrewed.Vehicle
+                && state.Unit(recrewed.Vehicle) is { } manned && GameState.Condition(manned, Conditions.Abandoned) != ConditionState.True,
+
             // A Motion attempt (D2.401; pass 55): the vehicle's one attempt of this enemy MPh is kept.
             MotionAttempted motion => state.MotionAttempts.Contains(motion.Vehicle, StringComparer.Ordinal),
 

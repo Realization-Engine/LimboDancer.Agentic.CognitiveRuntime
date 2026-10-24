@@ -10,6 +10,7 @@ using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.State;
 using LimboDancer.Domains.Asl.Units.Vocabulary;
+using ScenarioA1CrewActsRules = LimboDancer.Domains.Asl.Rules.ScenarioA1CrewActsRules;
 using ScenarioA1RiderRules = LimboDancer.Domains.Asl.Rules.ScenarioA1RiderRules;
 
 namespace LimboDancer.Domains.Asl.Play.Tests;
@@ -1039,6 +1040,142 @@ public sealed class BacklogPass65Tests : IDisposable
         var bren = Current.Unit("uk-bren")!;
         Assert.Equal((ConditionState.True, false), (GameState.Condition(bren, Conditions.Abandoned), GamePlanner.CrewMayUnload(Current, bren)));
         Assert.Equal((3, 1), (Planner().VictoryPoints(Current, bren), Planner().VictoryPoints(Current, unit)));
+        NoReplayErrors();
+    }
+
+    // Increment 2g: the crew's own acts (D5.41, D5.411, D5.42, D5.43, D5.8, D6.631, D3.43; ruling R65.20).
+
+    private const string Behind = "bd01:B9:0";
+    private const string Far = "bd01:J2:0";
+
+    /// <summary>A vehicle with a 9-1 Armor Leader (D3.4).</summary>
+    private static Dictionary<string, object> Led(Dictionary<string, object> vehicle)
+    {
+        vehicle["armorLeader"] = new
+        {
+            morale = 9,
+            leadership = -1
+        };
+        return vehicle;
+    }
+
+    private Task<PlayResult> Abandon(string vehicle, string? destroy = null, bool removeMg = false)
+    {
+        var arguments = new Dictionary<string, object> { ["vehicleId"] = vehicle };
+        if (destroy is not null)
+        {
+            arguments["destroy"] = destroy;
+        }
+
+        if (removeMg)
+        {
+            arguments["removeMg"] = true;
+        }
+
+        return Do(GameActions.AbandonVehicle, NoRoll(), arguments);
+    }
+
+    private Task<PlayResult> Recrew(string unit, string vehicle) => Do(GameActions.RecrewVehicle, NoRoll(), new
+    {
+        unitId = unit,
+        vehicleId = vehicle,
+    });
+
+    /// <summary>The phases advanced to the German MPh of Game Turn 2.</summary>
+    private async Task NextGermanMph()
+    {
+        for (var step = 0; step < 40 && (Current.PhasingSide, Current.Phase, Current.Turn) != ("german", "mph", 2); step++)
+        {
+            await Advance();
+        }
+
+        Assert.Equal(("german", "mph", 2), (Current.PhasingSide, Current.Phase, Current.Turn));
+    }
+
+    [Fact]
+    public async Task AVoluntaryAbandonmentMalfunctionsOrWrecksTheVehicleAsTheCrewLeaves()
+    {
+        // D5.41, D5.411: in the German MPh the PzKpfw IIIH's crew Abandons it, malfunctioning its weapons; it is placed beneath the tank as the German vehicle
+        // crew with its MF spent, carrying the 9-1 Armor Leader dormant (D3.43), and the DEFENDER's window opens on it (D5.43). A second tank's crew leaves it a
+        // non-burning wreck with no CS roll. A tank that Prep Fired may not be Abandoned this Player Turn.
+        var fired = Vehicle("de-tank3", "attacker-tank", Firer, "german", "east");
+        fired["conditions"] = new Dictionary<string, bool> { ["asl:prep-fire"] = true };
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Led(Vehicle("de-tank", "attacker-tank", Target, "german", "east")),
+            Vehicle("de-tank2", "attacker-tank", Behind, "german", "east"), fired, Unit("ru-1", "asl:squad", "defender-squad", Far, "russian"));
+        await Advance();
+        Refused(await Abandon("de-tank3"), "has fired this Player Turn");
+
+        var before = Revision;
+        var abandoned = await Abandon("de-tank", ScenarioA1CrewActsRules.Malfunction);
+        Committed(abandoned);
+        Assert.Contains(abandoned.Reasons, reason => reason.Contains("malfunctions de-tank's MA and every MG", StringComparison.Ordinal));
+        var record = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleAbandoned>());
+        var crew = Current.Unit(record.Crew)!;
+        Assert.Equal(("asl:vehicle-crew", "german-vehicle-crew", Target, true), (crew.Kind, crew.Definition!.Definition, Current.Location(crew.Id)!.Location.ToString(),
+            crew.MovementEnded));
+        Assert.Equal(new ArmorLeader(9, -1), crew.ArmorLeader);
+        var tank = Current.Unit("de-tank")!;
+        Assert.Equal((ConditionState.True, ConditionState.True, (ArmorLeader?)null), (GameState.Condition(tank, Conditions.Abandoned),
+            GameState.Condition(tank, Conditions.Malfunctioned), tank.ArmorLeader));
+        Assert.True(Current.Movement is { WindowOpen: true, Embarking: [var leaving] } && leaving == crew.Id);
+        await EndTheMove();
+
+        Committed(await Abandon("de-tank2", ScenarioA1CrewActsRules.Wreck));
+        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("de-tank2")!.Status);
+        Assert.Single(Current.Units, unit => unit.Status == InstanceStatus.Active && unit.Id.EndsWith("-de-tank2-crew", StringComparison.Ordinal));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ACrewReCrewsItsTankAPlayerTurnLaterAndItsArmorLeaderReturns()
+    {
+        // D5.42: a German squad in the tank's Location may not enter it in the Player Turn its crew Abandoned it. In the next German MPh the crew enters it,
+        // keeping its id, in the crew's role, not a Passenger and not in the Location's stack; the tank is manned again and its 9-1 is back (D3.43).
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Led(Vehicle("de-tank", "attacker-tank", Target, "german", "east")),
+            Unit("de-s", "asl:squad", "attacker-squad", Target, "german"), Unit("ru-1", "asl:squad", "defender-squad", Far, "russian"));
+        await Advance();
+        Committed(await Abandon("de-tank"));
+        var crew = Current.Units.Single(unit => unit.Id.EndsWith("-de-tank-crew", StringComparison.Ordinal)).Id;
+        await EndTheMove();
+        Refused(await Recrew("de-s", "de-tank"), "left it this Player Turn");
+
+        await NextGermanMph();
+        var before = Revision;
+        Committed(await Recrew(crew, "de-tank"));
+        Assert.False(Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleRecrewed>()).Temporary);
+        var tank = Current.Unit("de-tank")!;
+        Assert.Equal((ConditionState.False, new ArmorLeader(9, -1)), (GameState.Condition(tank, Conditions.Abandoned), tank.ArmorLeader));
+        var inside = Current.Unit(crew)!;
+        Assert.Equal((ContainmentRole.Crew, (ArmorLeader?)null, "de-tank"), ((inside.Position as ContainedPosition)?.Role, inside.ArmorLeader, Current.Aboard(crew)));
+        Assert.DoesNotContain(Current.At(Current.Location("de-tank")!.Location), item => item.Id == crew);
+        Assert.Empty(Current.Passengers("de-tank"));
+        Assert.Equal(crew, Planner().CrewInsideOf(Current, "de-tank")?.Id);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AHalftracksMgIsRemovedAsItsCrewAbandonsItAndReturnedWhenItReCrews()
+    {
+        // D6.631: the SPW 251/1's crew Abandons it, Removing its 3 FP AAMG MA as the German LMG it holds; the halftrack is Disabled. A Player Turn later the
+        // crew re-enters with the LMG, which goes back, and the halftrack is no longer Disabled.
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("de-ht", "attacker-halftrack", Target, "german", "east"),
+            Unit("ru-1", "asl:squad", "defender-squad", Far, "russian"));
+        await Advance();
+        var before = Revision;
+        Committed(await Abandon("de-ht", removeMg: true));
+        var record = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleAbandoned>());
+        Assert.Equal(ScenarioA1CrewActsRules.MainArmament, record.Mount);
+        var lmg = (EquipmentInstance)Current.Find(record.Removed!)!;
+        Assert.Equal(("attacker-lmg", record.Crew), (lmg.Definition!.Definition, lmg.Holding!.Holder));
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("de-ht")!, Conditions.Disabled));
+        await EndTheMove();
+
+        await NextGermanMph();
+        before = Revision;
+        Committed(await Recrew(record.Crew, "de-ht"));
+        Assert.Equal(record.Removed, Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleRecrewed>()).Returned);
+        Assert.Equal(InstanceStatus.Consumed, Current.Find(record.Removed!)!.Status);
+        Assert.Equal(ConditionState.False, GameState.Condition(Current.Unit("de-ht")!, Conditions.Disabled));
         NoReplayErrors();
     }
 }

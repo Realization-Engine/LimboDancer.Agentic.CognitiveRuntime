@@ -3272,6 +3272,32 @@
       ]
     },
     {
+      "name": "VehicleCrewActions",
+      "path": "Components/Play/VehicleCrewActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: Abandon @At(vehicle.Id)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "VehicleCrewActions toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: re-crew (D5.42)",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "VehicleCrewActions toolbar"
+        }
+      ]
+    },
+    {
       "name": "VehicleStepChoices",
       "path": "Components/Play/VehicleStepChoices.razor",
       "pages": [

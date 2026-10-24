@@ -370,6 +370,67 @@ public sealed record RiderBailedOut(string Unit, string Vehicle, BoardLocation A
 public sealed record RiderWeapon(string Weapon, string? Roll, string Fate);
 
 /// <summary>
+/// <c>vehicle-abandoned</c>: a crew Abandons its vehicle voluntarily in its own MPh (D5.41, D5.43; pass 65, ruling R65.20): <paramref name="Crew"/> is
+/// beneath <paramref name="Vehicle"/> in <paramref name="At"/>, its MF spent, and the vehicle is marked Abandoned and stopped. A crew counter placed by the
+/// <c>instance-created</c> before this record is already there; a unit that crewed the vehicle from inside leaves it as itself, taking the vehicle's Armor
+/// Leader (D3.43) and Stun +1 (D5.34). The DEFENDER may fire at the crew with FFNAM, as at an unloader (D5.43). The records before this one write what the
+/// choices did to the vehicle (malfunctioned or Disabled weapons, the Removed MG's counter) and the one after it a wreck.
+/// </summary>
+public sealed record VehicleAbandoned(string Vehicle, BoardLocation At, string Crew) : EventPayload
+{
+    /// <summary>D5.411: the self-destruction the crew chose, <c>wreck</c> or <c>malfunction</c>; null for none.</summary>
+    public string? Destroyed
+    {
+        get; init;
+    }
+
+    /// <summary>D6.631: the SW counter the crew took a Removed MG away as; null when it Removed none.</summary>
+    public string? Removed
+    {
+        get; init;
+    }
+
+    /// <summary>D6.631: the mount the MG was Removed from, <c>ma</c> or <c>bmg</c>; null when none was.</summary>
+    public string? Mount
+    {
+        get; init;
+    }
+
+    /// <summary>D5.8: the fire counter the crew takes, <c>prep</c> or <c>final</c>, when the vehicle fired or was a moving target; null for none.</summary>
+    public string? FireCounter
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// <c>vehicle-recrewed</c>: an Infantry unit of the vehicle's side enters an Abandoned vehicle in its Location to become its crew, spending all its MF (D5.42;
+/// pass 65, ruling R65.20). It is inside the vehicle in the crew's role, keeping its id; the vehicle is no longer Abandoned, and takes back the Armor Leader
+/// (D3.43) and the Stun +1 (D5.34) the unit carries. <see cref="Temporary"/> marks a Temporary crew (A21.22), whose penalties are increment 2i's; a SW
+/// Removed from the vehicle (D6.631) that the unit brings back is returned, and the mount's Disabled counter removed.
+/// </summary>
+public sealed record VehicleRecrewed(string Vehicle, BoardLocation At, string Unit) : EventPayload
+{
+    /// <summary>A21.22: the unit is a friendly MMC other than a vehicle or infantry crew, crewing as a Temporary crew.</summary>
+    public bool Temporary
+    {
+        get; init;
+    }
+
+    /// <summary>D6.631: the SW the unit returns to the vehicle; null when it returns none.</summary>
+    public string? Returned
+    {
+        get; init;
+    }
+
+    /// <summary>D6.631: the mount the returned MG goes back to, <c>ma</c> or <c>bmg</c>.</summary>
+    public string? Mount
+    {
+        get; init;
+    }
+}
+
+/// <summary>
 /// <c>vehicle-check-rolled</c>: a vehicle's DR or dr outside combat (rulings R11.3, R11.4, R11.9, R11.10): a Bog Check (<c>bog</c>), a Bog Removal
 /// (<c>bog-removal</c>), an ESB DR (<c>esb</c>, for <see cref="Mp"/> extra MP), or a Mechanical Reliability DR (<c>mechanical</c>), with its roll,
 /// its total DRM, and its result: <c>passed</c>, <c>bogged</c>, <c>freed</c>, <c>mired</c>, or <c>immobilized</c>.

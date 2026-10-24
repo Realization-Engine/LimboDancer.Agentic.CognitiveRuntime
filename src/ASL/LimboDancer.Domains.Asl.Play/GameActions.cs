@@ -734,6 +734,36 @@ public static class GameActions
         }
         """);
 
+    public static readonly ActionDescriptor AbandonVehicle = Descriptor("asl.game.abandon-vehicle", "Abandon a vehicle",
+        "In its own MPh, the crew of an armed vehicle that has not moved or fired this Player Turn leaves it, spending all its MF to be placed beneath it, and the vehicle is Abandoned; the DEFENDER may fire at the crew with FFNAM (D5.41, D5.43). An Inherent crew may also destroy it as it leaves (destroy: wreck for a non-burning wreck, malfunction for every MG and the MA; D5.411), and the crew of an armored halftrack of its nationality may Remove its MG as its LMG (removeMg; D6.631). The crew takes the vehicle's Armor Leader with it (D3.43).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "vehicleId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "vehicleId": { "type": "string" },
+            "destroy": { "type": "string", "enum": ["wreck", "malfunction"] },
+            "removeMg": { "type": "boolean" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor RecrewVehicle = Descriptor("asl.game.recrew-vehicle", "Re-crew a vehicle",
+        "In its own MPh, an Infantry unit in Good Order in the Location of its side's Abandoned vehicle since the MPh began enters it to become its crew, spending all its MF; not in the Player Turn its last crew left it, nor a Recalled crew into its own AFV. A unit other than a vehicle or infantry crew is a Temporary crew (A21.22). The crew brings back the Armor Leader and a MG it Removed (D5.42, D5.341, D3.43, D6.631).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "vehicleId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "vehicleId": { "type": "string" }
+          }
+        }
+        """);
+
     public static IReadOnlyList<ActionDescriptor> All
     {
         get;
@@ -741,7 +771,7 @@ public static class GameActions
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
             Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp,
-            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt];
+            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

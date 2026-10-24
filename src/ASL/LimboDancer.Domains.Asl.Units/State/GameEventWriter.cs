@@ -718,6 +718,27 @@ public static class GameEventWriter
                 }
 
                 break;
+            case VehicleAbandoned abandoned:
+                writer.WriteString("vehicle", abandoned.Vehicle);
+                writer.WriteString("at", abandoned.At.ToString());
+                writer.WriteString("crew", abandoned.Crew);
+                WriteOptional(writer, "destroyed", abandoned.Destroyed);
+                WriteOptional(writer, "removed", abandoned.Removed);
+                WriteOptional(writer, "mount", abandoned.Mount);
+                WriteOptional(writer, "fireCounter", abandoned.FireCounter);
+                break;
+            case VehicleRecrewed recrewed:
+                writer.WriteString("vehicle", recrewed.Vehicle);
+                writer.WriteString("at", recrewed.At.ToString());
+                writer.WriteString("unit", recrewed.Unit);
+                if (recrewed.Temporary)
+                {
+                    writer.WriteBoolean("temporary", true);
+                }
+
+                WriteOptional(writer, "returned", recrewed.Returned);
+                WriteOptional(writer, "mount", recrewed.Mount);
+                break;
             case VehicleCheckRolled check:
                 writer.WriteString("vehicle", check.Vehicle);
                 writer.WriteString("check", check.Check);
@@ -1137,6 +1158,7 @@ public static class GameEventWriter
                 {
                     ContainmentRole.Passenger => "passenger",
                     ContainmentRole.Rider => "rider",
+                    ContainmentRole.Crew => "crew",
                     _ => "in-fortification",
                 });
                 break;
@@ -1154,6 +1176,15 @@ public static class GameEventWriter
         }
 
         writer.WriteEndObject();
+    }
+
+    /// <summary>A string property written only when it has a value, so a record without it reads as one made before it existed.</summary>
+    private static void WriteOptional(Utf8JsonWriter writer, string name, string? value)
+    {
+        if (value is not null)
+        {
+            writer.WriteString(name, value);
+        }
     }
 
     private static void WriteHolding(Utf8JsonWriter writer, Holding? holding)

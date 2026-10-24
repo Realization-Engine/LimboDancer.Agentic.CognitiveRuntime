@@ -589,6 +589,31 @@ public static class GameEventReader
                     {
                         Weapons = bailedWeapons,
                     };
+            case "vehicle-abandoned":
+                var abandonedVehicle = fields.RequiredString(payload, "vehicle", path);
+                var abandonedAt = ReadLocation(payload, "at", path, fields, diagnostics);
+                var abandonedCrew = fields.RequiredString(payload, "crew", path);
+                return abandonedVehicle is null || abandonedAt is null || abandonedCrew is null
+                    ? Missing(diagnostics, "An Abandonment names the vehicle, its Location, and the crew that leaves it.", path)
+                    : new VehicleAbandoned(abandonedVehicle, abandonedAt, abandonedCrew)
+                    {
+                        Destroyed = fields.OptionalString(payload, "destroyed", path),
+                        Removed = fields.OptionalString(payload, "removed", path),
+                        Mount = fields.OptionalString(payload, "mount", path),
+                        FireCounter = fields.OptionalString(payload, "fireCounter", path),
+                    };
+            case "vehicle-recrewed":
+                var recrewedVehicle = fields.RequiredString(payload, "vehicle", path);
+                var recrewedAt = ReadLocation(payload, "at", path, fields, diagnostics);
+                var recrewedUnit = fields.RequiredString(payload, "unit", path);
+                return recrewedVehicle is null || recrewedAt is null || recrewedUnit is null
+                    ? Missing(diagnostics, "A re-crewing names the vehicle, its Location, and the unit that enters it.", path)
+                    : new VehicleRecrewed(recrewedVehicle, recrewedAt, recrewedUnit)
+                    {
+                        Temporary = fields.OptionalBoolean(payload, "temporary", path),
+                        Returned = fields.OptionalString(payload, "returned", path),
+                        Mount = fields.OptionalString(payload, "mount", path),
+                    };
             case "vehicle-check-rolled":
                 var checkedVehicle = fields.RequiredString(payload, "vehicle", path);
                 var checkKind = fields.RequiredString(payload, "check", path);
@@ -1093,8 +1118,9 @@ public static class GameEventReader
                 "passenger" => ContainmentRole.Passenger,
                 "rider" => ContainmentRole.Rider,
                 "in-fortification" => ContainmentRole.InFortification,
+                "crew" => ContainmentRole.Crew,
                 null => (ContainmentRole?)null,
-                var other => Invalid<ContainmentRole>(diagnostics, $"'{other}' is not passenger, rider, or in-fortification.", positionPath),
+                var other => Invalid<ContainmentRole>(diagnostics, $"'{other}' is not passenger, rider, crew, or in-fortification.", positionPath),
             };
             return role is null ? null : new ContainedPosition(container, role.Value);
         }

@@ -355,6 +355,12 @@ public enum ContainmentRole
 
     /// <summary>In a fortification such as a foxhole or pillbox.</summary>
     InFortification,
+
+    /// <summary>
+    /// An Infantry unit that entered an Abandoned vehicle to become its crew (D5.42; pass 65, ruling R65.20): inside it, no Passenger, counting no PP,
+    /// and attacked only as the vehicle's crew; it leaves again, as itself, when the vehicle is next Abandoned.
+    /// </summary>
+    Crew,
 }
 
 /// <summary>Inside another instance; its location is the container's (ASL-UNIT-025).</summary>

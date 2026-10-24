@@ -315,6 +315,13 @@ public sealed class PlayRecords
                     + $"; its NMC against {bailed.Morale}: {bailed.Result}"
                     + string.Concat((bailed.Weapons ?? []).Select(weapon => $"; {weapon.Weapon} {(weapon.Fate == ScenarioA1RiderRules.Kept ? "is kept" : $"is {weapon.Fate}")}"))
                     + " (D6.24)",
+                // D5.41, D5.411, D6.631, D5.42 (pass 65, ruling R65.20): the crew's own acts.
+                VehicleAbandoned abandoned => $"{abandoned.At}: {abandoned.Crew} Abandons {abandoned.Vehicle}"
+                    + (abandoned.Destroyed == ScenarioA1CrewActsRules.Wreck ? ", leaving it a wreck (D5.411)"
+                        : abandoned.Destroyed == ScenarioA1CrewActsRules.Malfunction ? ", malfunctioning its weapons (D5.411)" : string.Empty)
+                    + (abandoned.Removed is { } removedMg ? $", taking its MG as {removedMg} (D6.631)" : string.Empty) + " (D5.41)",
+                VehicleRecrewed recrewed => $"{recrewed.At}: {recrewed.Unit} enters {recrewed.Vehicle} and crews it" + (recrewed.Temporary ? " as a Temporary crew (A21.22)" : string.Empty)
+                    + (recrewed.Returned is { } returnedMg ? $", returning {returnedMg} (D6.631)" : string.Empty) + " (D5.42)",
                 VehicleStepped { Kind: VehicleStepped.Unload, Units: { Count: > 0 } leavers } leaving => $"{leaving.At}: " + Many(leavers, "unloads", "unload") + $" from {leaving.Vehicle} (D6.5)",
                 VehicleStepped { Kind: not VehicleStepped.Turn } drive => $"{drive.Vehicle} moves{From(before, drive.Vehicle)} to {drive.At}"
                     + (drive.Turret is { } driveTurret ? $", turning its turret to {UnitFacings.Name(driveTurret)} (D3.12)" : string.Empty),

@@ -828,4 +828,121 @@ public sealed class ScenarioA1Pass65RulesTests
         Assert.True(ScenarioA1VictoryCalculator.LeftItsVehicle("asl:vehicle-crew"));
         Assert.False(ScenarioA1VictoryCalculator.LeftItsVehicle("asl:squad"));
     }
+
+    // Increment 2g: the crew's own acts (D5.41, D5.411, D5.42, D5.341, D5.8, D6.631, D3.43, A21.22; ruling R65.20).
+
+    [Fact]
+    public void ACrewAbandonsOnlyAnUnmovedUnfiredArmedVehicleInItsOwnMph()
+    {
+        // D5.41: in its own MPh, not moved or fired that Player Turn; D5.1: an unarmed vehicle's Inherent Driver never leaves.
+        Assert.Null(ScenarioA1CrewActsRules.AbandonBar("de-tank", true, true, true, false, false, false, false));
+        Assert.Contains("only in its own MPh", ScenarioA1CrewActsRules.AbandonBar("de-tank", false, true, true, false, false, false, false), StringComparison.Ordinal);
+        Assert.Contains("Inherent Driver", ScenarioA1CrewActsRules.AbandonBar("de-truck", true, true, false, false, false, false, false), StringComparison.Ordinal);
+        Assert.Contains("already Abandoned", ScenarioA1CrewActsRules.AbandonBar("de-tank", true, true, true, true, false, false, false), StringComparison.Ordinal);
+        Assert.Contains("a unit is moving", ScenarioA1CrewActsRules.AbandonBar("de-tank", true, true, true, false, true, false, false), StringComparison.Ordinal);
+        Assert.Contains("has moved this Player Turn", ScenarioA1CrewActsRules.AbandonBar("de-tank", true, true, true, false, false, true, false), StringComparison.Ordinal);
+        Assert.Contains("has fired this Player Turn", ScenarioA1CrewActsRules.AbandonBar("de-tank", true, true, true, false, false, false, true), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void OnlyAnInherentCrewDestroysItsVehicleAndAWreckWaitsForThePassengers()
+    {
+        // D5.411: a wreck or every MG and the MA malfunctioned, by an Inherent crew alone; PRC unload before a wreck.
+        Assert.Null(ScenarioA1CrewActsRules.SelfDestructionBar("de-tank", null, false, true));
+        Assert.Null(ScenarioA1CrewActsRules.SelfDestructionBar("de-tank", ScenarioA1CrewActsRules.Wreck, true, false));
+        Assert.Null(ScenarioA1CrewActsRules.SelfDestructionBar("de-ht", ScenarioA1CrewActsRules.Malfunction, true, true));
+        Assert.Contains("Temporary crew", ScenarioA1CrewActsRules.SelfDestructionBar("de-tank", ScenarioA1CrewActsRules.Malfunction, false, false), StringComparison.Ordinal);
+        Assert.Contains("unload before", ScenarioA1CrewActsRules.SelfDestructionBar("de-ht", ScenarioA1CrewActsRules.Wreck, true, true), StringComparison.Ordinal);
+        Assert.Contains("is not a self-destruction", ScenarioA1CrewActsRules.SelfDestructionBar("de-ht", "burn", true, false), StringComparison.Ordinal);
+        Assert.Equal([(UnitCondition.Malfunctioned, true), (UnitCondition.BmgMalfunctioned, true)], ScenarioA1CrewActsRules.SelfDestructionConditions(true, true, false));
+    }
+
+    [Fact]
+    public void AReCrewingIsBarredTheTurnTheCrewLeftAndForARecalledCrew()
+    {
+        // D5.42: in its own MPh, in the Location since the MPh began, unpinned and in Good Order (D5.43), not in the Player Turn the old crew left; D5.341:
+        // a Recalled crew never re-crews its own AFV.
+        static RecrewFacts Facts() => new("de-crew", "de-tank", true, true, true, true, true, false, true, false, true, false);
+        Assert.Null(ScenarioA1CrewActsRules.RecrewBar(Facts()));
+        Assert.Contains("only in its own MPh", ScenarioA1CrewActsRules.RecrewBar(Facts() with
+        {
+            OwnMph = false
+        }), StringComparison.Ordinal);
+        Assert.Contains("not an Abandoned vehicle", ScenarioA1CrewActsRules.RecrewBar(Facts() with
+        {
+            VehicleAbandoned = false
+        }), StringComparison.Ordinal);
+        Assert.Contains("the enemy's", ScenarioA1CrewActsRules.RecrewBar(Facts() with
+        {
+            SameSide = false
+        }), StringComparison.Ordinal);
+        Assert.Contains("before it spends any MF", ScenarioA1CrewActsRules.RecrewBar(Facts() with
+        {
+            MovedThisPhase = true
+        }), StringComparison.Ordinal);
+        Assert.Contains("Good Order", ScenarioA1CrewActsRules.RecrewBar(Facts() with
+        {
+            GoodOrder = false
+        }), StringComparison.Ordinal);
+        Assert.Contains("left it this Player Turn", ScenarioA1CrewActsRules.RecrewBar(Facts() with
+        {
+            LeftThisPlayerTurn = true
+        }), StringComparison.Ordinal);
+        Assert.Contains("Recalled crew", ScenarioA1CrewActsRules.RecrewBar(Facts() with
+        {
+            Recalled = true
+        }), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1CrewActsRules.RecrewBar(Facts() with
+        {
+            Recalled = true,
+            OwnCrew = false
+        }));
+
+        // A21.22: a squad is a Temporary crew; a vehicle or infantry crew, or the vehicle's own crew (a Carrier's HS), is not.
+        Assert.True(ScenarioA1CrewActsRules.TemporaryCrew("asl:squad", false));
+        Assert.False(ScenarioA1CrewActsRules.TemporaryCrew("asl:vehicle-crew", false));
+        Assert.False(ScenarioA1CrewActsRules.TemporaryCrew("asl:crew", false));
+        Assert.False(ScenarioA1CrewActsRules.TemporaryCrew("asl:half-squad", true));
+
+        // D3.43: a crew counter may carry its Armor Leader, dormant; any other unit not a vehicle may not.
+        Assert.Null(ScenarioA1ArmorLeaders.AssignmentRefusal("de-crew", false, 9, -1, false, crew: true));
+        Assert.NotNull(ScenarioA1ArmorLeaders.AssignmentRefusal("de-squad", false, 9, -1, false));
+    }
+
+    [Fact]
+    public void ALeavingCrewIsMarkedPrepOrFinalFireAfterItsVehicleFiredOrMoved()
+    {
+        // D5.8: Prep Fire in its own Player Turn, Final Fire in the enemy's, when the vehicle fired or was a moving target (moved, or in Motion).
+        Assert.Null(ScenarioA1CrewActsRules.CrewFireCounter(false, false, false, true));
+        Assert.Equal(UnitCondition.PrepFire, ScenarioA1CrewActsRules.CrewFireCounter(true, false, false, true));
+        Assert.Equal(UnitCondition.PrepFire, ScenarioA1CrewActsRules.CrewFireCounter(false, true, false, true));
+        Assert.Equal(UnitCondition.FinalFire, ScenarioA1CrewActsRules.CrewFireCounter(false, false, true, false));
+        Assert.Equal(UnitCondition.FinalFire, ScenarioA1CrewActsRules.CrewFireCounter(true, false, false, false));
+    }
+
+    [Fact]
+    public void AnArmoredHalftracksMgOfThreeFpOrLessIsRemovedAsTheNationalitysLmg()
+    {
+        // D6.631: the SPW 251/1's 3 FP AAMG MA is Removed as the German LMG (3 FP); a heavier MG, a tank, another nationality's crew, a SMC, a crew
+        // forced out by a failed TC (D5.5), or a Disabled mount Removes none.
+        var spw = Ordnance.Fire.Definitions["attacker-halftrack"];
+        var removal = ScenarioA1CrewActsRules.MgRemoval("de-ht", spw.VehicleClass, spw.Unarmored == true, spw.Nationality, "german", false, false, spw.MainArmament,
+            spw.AntiAircraftMg, spw.BowMg, false, false);
+        Assert.Equal<(string?, int, string?)>((ScenarioA1CrewActsRules.MainArmament, 3, null), removal);
+        Assert.Equal("attacker-lmg", ScenarioA1CrewActsRules.RemovedMgDefinition(Ordnance.Fire.Definitions.Values, "german", removal.Fp));
+        Assert.Contains("3 FP or less", ScenarioA1CrewActsRules.MgRemoval("de-ht", "halftrack", false, "german", "german", false, false, "aamg", 4, null, false, false).Bar,
+            StringComparison.Ordinal);
+        Assert.Contains("armored halftrack", ScenarioA1CrewActsRules.MgRemoval("de-tank", "tank", false, "german", "german", false, false, null, null, 2, false, false).Bar,
+            StringComparison.Ordinal);
+        Assert.Contains("own nationality", ScenarioA1CrewActsRules.MgRemoval("de-ht", "halftrack", false, "german", "russian", false, false, "aamg", 3, null, false, false).Bar,
+            StringComparison.Ordinal);
+        Assert.Contains("lone SMC", ScenarioA1CrewActsRules.MgRemoval("de-ht", "halftrack", false, "german", "german", true, false, "aamg", 3, null, false, false).Bar,
+            StringComparison.Ordinal);
+        Assert.Contains("failed Immobilization TC", ScenarioA1CrewActsRules.MgRemoval("de-ht", "halftrack", false, "german", "german", false, true, "aamg", 3, null, false, false).Bar,
+            StringComparison.Ordinal);
+        Assert.Contains("no MG left", ScenarioA1CrewActsRules.MgRemoval("de-ht", "halftrack", false, "german", "german", false, false, "aamg", 3, null, true, false).Bar,
+            StringComparison.Ordinal);
+        Assert.Equal(UnitCondition.Disabled, ScenarioA1CrewActsRules.RemovedCondition(ScenarioA1CrewActsRules.MainArmament));
+        Assert.Equal(UnitCondition.BmgDisabled, ScenarioA1CrewActsRules.RemovedCondition(ScenarioA1CrewActsRules.BowMg));
+    }
 }

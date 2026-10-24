@@ -97,7 +97,8 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// Whether a vehicle has its inherent crew (A26.211, D5.1; rulings R24.3, R24.5): an armed vehicle (a MA or any MG) has one, an unarmed vehicle only an
-    /// Inherent Driver; it is gone once the vehicle is Abandoned or its crew is a counter of its own.
+    /// Inherent Driver; it is gone once the vehicle is Abandoned or its crew is a counter of its own, and back once a unit re-crews it (D5.42; pass 65,
+    /// ruling R65.20).
     /// </summary>
     private static bool HasInherentCrew(GameState state, UnitInstance vehicle)
     {
@@ -106,7 +107,8 @@ public sealed partial class GamePlanner
         return ScenarioA1VictoryCalculator.HasInherentCrew(
             ScenarioA1VictoryCalculator.VehicleArmed(armor?.MaType is not null, definition?.MainArmament is not null, definition?.AntiAircraftMg is not null, definition?.BowMg is not null,
                 definition?.CoaxialMg is not null),
-            Is(vehicle, Conditions.Abandoned), () => state.Units.Any(unit => ScenarioA1VictoryCalculator.LeftItsVehicle(unit.Kind) && unit.Id.EndsWith($"-{vehicle.Id}-crew", StringComparison.Ordinal)));
+            Is(vehicle, Conditions.Abandoned), () => CrewInside(state, vehicle.Id) is null
+                && state.Units.Any(unit => ScenarioA1VictoryCalculator.LeftItsVehicle(unit.Kind) && unit.Id.EndsWith($"-{vehicle.Id}-crew", StringComparison.Ordinal)));
     }
 
     /// <summary>

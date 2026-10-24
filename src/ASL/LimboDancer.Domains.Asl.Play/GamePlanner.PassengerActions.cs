@@ -51,6 +51,12 @@ public sealed partial class GamePlanner
                 continue;
             }
 
+            // D5.8 (pass 65, ruling R65.20): a unit crewing the vehicle from inside fires its armament, not its own FP.
+            if (unit.Position is ContainedPosition { Role: ContainmentRole.Crew })
+            {
+                return (null, ScenarioA1CrewActsRules.CrewInsideFireBar(unit.Id, vehicle.Id));
+            }
+
             // D6.22 (pass 65, ruling R65.17): a Rider is always exposed, and its FP is quartered once its AFV has moved this Player Turn.
             var rider = unit.Position is ContainedPosition { Role: ContainmentRole.Rider };
             var exposed = rider || PassengersExposed(vehicle, definition);

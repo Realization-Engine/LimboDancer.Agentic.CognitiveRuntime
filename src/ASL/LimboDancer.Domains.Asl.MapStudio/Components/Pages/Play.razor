@@ -788,6 +788,14 @@ else if (state is not null)
                     <CrewExposureActions Vehicles="@([.. ButtonUpCandidates.Select(afv => new CrewExposureActions.Exposure(afv.Id, GameState.Condition(afv, Conditions.ButtonedUp) == ConditionState.True))])"
                         OnToggle="@(afv => ProposeButtonUp(afv.Id, !afv.ButtonedUp))" />
                 }
+                @* Pass 65, task 65.6 (ruling R65.20): a crew Abandons its vehicle, or a unit enters an Abandoned one, in its side's MPh. *@
+                @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide) && CrewActRows is { } crewActs
+                    && (crewActs.Abandonable.Count > 0 || crewActs.Recrewable.Count > 0))
+                {
+                    <VehicleCrewActions Abandonable="@crewActs.Abandonable" Recrewable="@crewActs.Recrewable" Destroy="@abandonDestroy" RemoveMg="@abandonRemoveMg"
+                        Chosen="@recrewPicks" OnDestroy="@(choice => abandonDestroy = choice)" OnRemoveMg="@(remove => abandonRemoveMg = remove)"
+                        OnAbandon="@ProposeAbandon" OnUnit="@(pick => recrewPicks[pick.Vehicle] = pick.Unit)" OnRecrew="@(pick => ProposeRecrew(pick.Vehicle, pick.Unit))" />
+                }
                 @* The Play streamlining plan, S7 (ruling R-PS.8): the Advance form is the ATTACKER's; the other view is shown no section for it. *@
                 @if (state.Phase == "aph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide))
                 {
@@ -3377,11 +3385,22 @@ else if (state is not null)
         // Who rides which vehicle comes from the planner's index, once per state (ruling R65.25).
         if (Live.Planner.VehicleRidden(state, unit.Id) is { } vehicle)
         {
-            yield return unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? $"a Rider on {vehicle}" : $"aboard {vehicle}";
+            yield return unit.Position switch
+            {
+                ContainedPosition { Role: ContainmentRole.Rider } => $"a Rider on {vehicle}",
+                ContainedPosition { Role: ContainmentRole.Crew } => $"crewing {vehicle} (D5.42)",
+                _ => $"aboard {vehicle}",
+            };
         }
 
         if (LiveFire.IsVehicle(unit))
         {
+            // D5.42 (pass 65, ruling R65.20): the unit that crews it from inside, read from the planner's index.
+            if (Live.Planner.CrewInsideOf(state, unit.Id) is { } crewing)
+            {
+                yield return $"crewed by {Words(crewing.Id)}";
+            }
+
             var riding = Live.Planner.Riding(state, unit.Id);
             // Pass 65 (D6.62, D6.66, A7.821): each Passenger's own state, broken, pinned, or under DM; Riders apart (D6.2).
             if (riding.Where(item => item.Position is not ContainedPosition { Role: ContainmentRole.Rider }).ToArray() is { Length: > 0 } passengers)
@@ -3877,6 +3896,11 @@ else if (state is not null)
     private bool vehicleMinimum;
     private bool vehicleRiders;
     private bool vehicleCrewUnload;
+
+    // Pass 65, task 65.6 (ruling R65.20): the self-destruction and MG Removal asked of an Abandonment, and the unit chosen to enter each Abandoned vehicle.
+    private string abandonDestroy = string.Empty;
+    private bool abandonRemoveMg;
+    private readonly Dictionary<string, string> recrewPicks = new(StringComparer.Ordinal);
     private string vehicleEsb = string.Empty;
     private string reactionAttacker = string.Empty;
     private string reactionLeader = string.Empty;
@@ -4085,6 +4109,60 @@ else if (state is not null)
         expectedRevision = (long)history!.Events.Count,
         vehicleId = vehicle,
         buttonedUp,
+    }));
+
+    /// <summary>
+    /// The crew acts of the phasing side's MPh (D5.41, D5.42; pass 65, ruling R65.20): the vehicles its crews may Abandon, read from the state, and each
+    /// Abandoned vehicle with the units on foot in its Location that may enter it, read from the planner's index; the view sees only its own.
+    /// </summary>
+    private (IReadOnlyList<VehicleCrewActions.Abandoning> Abandonable, IReadOnlyList<VehicleCrewActions.Recrewing> Recrewable)? CrewActRows
+    {
+        get
+        {
+            if (state is null)
+            {
+                return null;
+            }
+
+            UnitInstance[] vehicles = [.. SeenOnly(state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && LiveFire.IsVehicle(unit))
+                .OrderBy(unit => unit.Id, StringComparer.Ordinal))];
+            return ([.. vehicles.Where(vehicle => GamePlanner.MayAbandon(state, vehicle)).Select(vehicle => new VehicleCrewActions.Abandoning(vehicle.Id, GamePlanner.MgRemovable(vehicle)))],
+                [.. vehicles.Where(vehicle => GameState.Condition(vehicle, Conditions.Abandoned) == ConditionState.True)
+                    .Select(vehicle => new VehicleCrewActions.Recrewing(vehicle.Id, [.. SeenOnly(Live.Planner.RecrewCandidates(state, vehicle)).Select(unit => new PlayChoice(unit.Id, unit.Id))]))
+                    .Where(row => row.Units.Count > 0)]);
+        }
+    }
+
+    private Task ProposeAbandon(string vehicle)
+    {
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId,
+            ["attemptId"] = Attempt("abandon"),
+            ["expectedRevision"] = (long)history!.Events.Count,
+            ["vehicleId"] = vehicle,
+        };
+        if (abandonDestroy.Length > 0)
+        {
+            arguments["destroy"] = abandonDestroy;
+        }
+
+        // D6.631: the MG Removal is asked only of a vehicle whose crew could Remove it.
+        if (abandonRemoveMg && state?.Unit(vehicle) is { } chosen && GamePlanner.MgRemovable(chosen))
+        {
+            arguments["removeMg"] = true;
+        }
+
+        return Propose(GameActions.AbandonVehicle, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    private Task ProposeRecrew(string vehicle, string unit) => Propose(GameActions.RecrewVehicle, JsonSerializer.SerializeToElement(new
+    {
+        gameId,
+        attemptId = Attempt("recrew"),
+        expectedRevision = (long)history!.Events.Count,
+        unitId = unit,
+        vehicleId = vehicle,
     }));
 
     /// <summary>Half MP as MP, such as "4½".</summary>

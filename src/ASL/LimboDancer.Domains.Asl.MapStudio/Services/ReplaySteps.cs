@@ -327,6 +327,19 @@ public static class ReplaySteps
             return ("move", side, $"{A(side, "vehicle")} {what} in {Place(before, drove.At)}{bailing}{end}", false);
         }
 
+        // D5.41, D5.42 (pass 65, ruling R65.20): a crew leaves its vehicle, or a unit enters an Abandoned one to crew it.
+        if (First<VehicleAbandoned>(payloads) is { } abandoned)
+        {
+            var side = SideOf(abandoned.Vehicle);
+            return ("move", side, $"{A(side, "vehicle")}'s crew Abandons it in {Place(before, abandoned.At)}{end}", false);
+        }
+
+        if (First<VehicleRecrewed>(payloads) is { } recrewed)
+        {
+            var side = SideOf(recrewed.Vehicle);
+            return ("move", side, $"{A(side, "unit")} crews an Abandoned vehicle in {Place(before, recrewed.At)}{end}", false);
+        }
+
         if (First<MotionAttempted>(payloads) is { } motion)
         {
             // D2.401 (pass 55): the DEFENDER's vehicle attempts Motion status in the enemy MPh.
@@ -629,6 +642,8 @@ public static class ReplaySteps
                 MovementStepped moved => moved.To,
                 VehicleStepped drove => drove.At,
                 RiderBailedOut bailed => bailed.At,
+                VehicleAbandoned abandoned => abandoned.At,
+                VehicleRecrewed recrewed => recrewed.At,
                 MotionAttempted motion => Open(before, motion.Vehicle, viewer) ? before.Location(motion.Vehicle)?.Location : null,
                 AdvanceMoved advanced => advanced.To,
                 RoutStepped routed => routed.To,

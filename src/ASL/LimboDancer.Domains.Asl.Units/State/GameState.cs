@@ -452,7 +452,8 @@ public sealed record GameState(
 
     /// <summary>
     /// The vehicle an instance rides as a Passenger or Rider, or whose Passenger or Rider holds it (D6.1, D6.2; ruling R26.2); null when it is on foot,
-    /// or is no such cargo.
+    /// or is no such cargo. A unit that crews a vehicle from inside (D5.42; pass 65, ruling R65.20) is in it too, and so out of its Location's stack;
+    /// it is no Passenger (<see cref="Passengers"/>).
     /// </summary>
     public string? Aboard(string id)
     {
@@ -466,7 +467,7 @@ public sealed record GameState(
                 continue;
             }
 
-            return item.Position is ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider } contained ? contained.Container : null;
+            return item.Position is ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider or ContainmentRole.Crew } contained ? contained.Container : null;
         }
 
         return null;

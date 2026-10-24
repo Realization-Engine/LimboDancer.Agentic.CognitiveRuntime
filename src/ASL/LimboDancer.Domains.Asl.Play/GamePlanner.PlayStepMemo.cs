@@ -155,15 +155,17 @@ public sealed partial class GamePlanner
         private readonly Dictionary<string, string> vehicles;
         private readonly Dictionary<string, UnitInstance[]> aboard;
         private readonly Dictionary<string, EquipmentInstance[]> stowed;
+        private readonly Dictionary<string, UnitInstance> crews;
 
         private ObjectIndex(Dictionary<string, MapPosition?> locations, Dictionary<BoardLocation, IGameObject[]> at, Dictionary<string, string> vehicles,
-            Dictionary<string, UnitInstance[]> aboard, Dictionary<string, EquipmentInstance[]> stowed)
+            Dictionary<string, UnitInstance[]> aboard, Dictionary<string, EquipmentInstance[]> stowed, Dictionary<string, UnitInstance> crews)
         {
             this.locations = locations;
             this.at = at;
             this.vehicles = vehicles;
             this.aboard = aboard;
             this.stowed = stowed;
+            this.crews = crews;
         }
 
         public static ObjectIndex Of(GameState state)
@@ -173,6 +175,7 @@ public sealed partial class GamePlanner
             var stacks = new Dictionary<BoardLocation, List<IGameObject>>();
             var cargo = new Dictionary<string, List<UnitInstance>>(StringComparer.Ordinal);
             var stowed = new Dictionary<string, List<EquipmentInstance>>(StringComparer.Ordinal);
+            var crews = new Dictionary<string, UnitInstance>(StringComparer.Ordinal);
             foreach (var item in state.Objects)
             {
                 // GameState.Location and Aboard read an id's first object, as Find does; At still lists every object, so a repeated id is too.
@@ -213,6 +216,12 @@ public sealed partial class GamePlanner
                     riding.Add(unit);
                 }
 
+                // D5.42 (pass 65, ruling R65.20): the unit that crews a vehicle from inside, no Passenger; GameState.Aboard reads it in the vehicle too.
+                if (item is UnitInstance { Status: InstanceStatus.Active, Position: ContainedPosition { Role: ContainmentRole.Crew } crewing } crew)
+                {
+                    crews.TryAdd(crewing.Container, crew);
+                }
+
                 // D6.4 (pass 65, ruling R65.15): a SW left aboard a halftrack or Carrier, held by no unit.
                 if (item is EquipmentInstance { Status: InstanceStatus.Active, Holding: null, Position: ContainedPosition { Role: ContainmentRole.Passenger } kept } weapon)
                 {
@@ -227,8 +236,11 @@ public sealed partial class GamePlanner
 
             return new ObjectIndex(locations, stacks.ToDictionary(item => item.Key, item => item.Value.ToArray()), vehicles,
                 cargo.ToDictionary(item => item.Key, item => item.Value.ToArray(), StringComparer.Ordinal),
-                stowed.ToDictionary(item => item.Key, item => item.Value.ToArray(), StringComparer.Ordinal));
+                stowed.ToDictionary(item => item.Key, item => item.Value.ToArray(), StringComparer.Ordinal), crews);
         }
+
+        /// <summary>The unit that crews a vehicle from inside after a re-crewing (D5.42; pass 65, ruling R65.20); null for an inherent crew or none.</summary>
+        public UnitInstance? CrewOf(string vehicle) => crews.GetValueOrDefault(vehicle);
 
         /// <summary>The SW left aboard a vehicle, held by no unit (D6.4; pass 65, ruling R65.15).</summary>
         public IReadOnlyList<EquipmentInstance> Stowed(string vehicle) => stowed.TryGetValue(vehicle, out var held) ? held : [];
