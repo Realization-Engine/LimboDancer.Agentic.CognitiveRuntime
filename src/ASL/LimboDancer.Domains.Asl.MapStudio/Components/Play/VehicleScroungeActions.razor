@@ -1,0 +1,53 @@
+@* Pass 65, task 65.9 (ruling R65.23): Scrounging in the side's RPh. The page lists each non-burning wreck and Abandoned vehicle not yet Scrounged with the
+   side's MMC in its Location that may scrounge it (D10.5); the planner decides what the unit's own state bars. *@
+<ActionSection Title="Scrounging" Key="scrounge">
+<RuleHelp Id="scrounge-help" Summary="In its own RPh an unbroken, non-berserk MMC not in Melee scrounges a non-burning wreck or Abandoned vehicle in its Location: a dr of 1 to 3 salvages that many of its SW; the vehicle is Scrounged and the unit TI whatever the dr (D10.5).">
+    In its own RPh an unbroken, non-berserk Infantry MMC not in Melee may scrounge a non-burning wreck or an Abandoned vehicle in its Location that has not
+    been scrounged or marked Disabled. A dr of 1 to 3 salvages that many of its BMG (not Fixed-Mount), AAMG, or mortar MA, chosen by Random Selection when
+    it has more; a MG becomes a LMG of the vehicle's nationality, a U.S. one a British LMG (D10.5, D10.51, D10.52). Whatever the dr, the vehicle is marked
+    Scrounged and its scroungeable weapons Disabled, and the unit and what it salvages are TI for the rest of the Player Turn (D10.5).
+</RuleHelp>
+<div class="toolbar">
+    @foreach (var vehicle in Vehicles)
+    {
+        var chosen = Chosen.GetValueOrDefault(vehicle.Id, string.Empty);
+        <label>
+            Scrounge @At(vehicle.Id)
+            <select class="scrounge-unit" data-vehicle="@vehicle.Id" value="@chosen" @onchange="@(args => OnUnit.InvokeAsync((vehicle.Id, args.Value as string ?? string.Empty)))">
+                <option value="">choose</option>
+                <UnitOptions Units="@vehicle.Units" Text="@At" />
+            </select>
+        </label>
+        <button class="vehicle-scrounge" data-vehicle="@vehicle.Id" disabled="@(!vehicle.Units.Any(unit => unit.Id == chosen))"
+            @onclick="@(() => OnScrounge.InvokeAsync((vehicle.Id, chosen)))">Propose: scrounge (D10.5)</button>
+    }
+</div>
+</ActionSection>
+
+@code {
+    /// <summary>The page's words for the view: a unit's name for its id.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    /// <summary>A unit's name with its hex, "PzKpfw IIIH wreck in [F8]".</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Words?.Invoke(text) ?? text;
+
+    /// <summary>A wreck or Abandoned vehicle that may be scrounged, and the side's MMC in its Location.</summary>
+    public sealed record Scrounging(string Id, IReadOnlyList<PlayChoice> Units);
+
+    [Parameter]
+    public IReadOnlyList<Scrounging> Vehicles { get; set; } = [];
+
+    /// <summary>The unit chosen to scrounge each vehicle.</summary>
+    [Parameter]
+    public IReadOnlyDictionary<string, string> Chosen { get; set; } = new Dictionary<string, string>();
+
+    [Parameter]
+    public EventCallback<(string Vehicle, string Unit)> OnUnit { get; set; }
+
+    [Parameter]
+    public EventCallback<(string Vehicle, string Unit)> OnScrounge { get; set; }
+}

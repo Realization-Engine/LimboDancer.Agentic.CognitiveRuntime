@@ -322,6 +322,11 @@ public sealed class PlayRecords
                     + (abandoned.Removed is { } removedMg ? $", taking its MG as {removedMg} (D6.631)" : string.Empty) + " (D5.41)",
                 VehicleRecrewed recrewed => $"{recrewed.At}: {recrewed.Unit} enters {recrewed.Vehicle} and crews it" + (recrewed.Temporary ? " as a Temporary crew (A21.22)" : string.Empty)
                     + (recrewed.Returned is { } returnedMg ? $", returning {returnedMg} (D6.631)" : string.Empty) + " (D5.42)",
+                // D10.5, D10.52 (pass 65, ruling R65.23): a Scrounging, its dr, and what it salvaged.
+                VehicleScrounged scrounged => $"{scrounged.At}: {scrounged.Unit} scrounges {scrounged.Vehicle} on a dr of {scrounged.Dr}: "
+                    + (scrounged.Taken is { Count: > 0 } found ? "it salvages " + string.Join(" and ", found.Select(item => $"{item.Weapon}, its {ScenarioA1WreckRules.MountText(item.Mount)}"))
+                        : "it salvages nothing")
+                    + $"; {scrounged.Vehicle} is Scrounged, and {scrounged.Unit} is TI (D10.5)",
                 // A11.52, A21.2, A21.21 (pass 65, ruling R65.22): a capture names the captor's side.
                 VehicleCaptured captured => $"{captured.At}: {captured.Vehicle} is captured by the {DisplayText.Side(captured.Side)} side"
                     + (captured.Cause != VehicleCaptured.Unarmed ? " (A21.2)"

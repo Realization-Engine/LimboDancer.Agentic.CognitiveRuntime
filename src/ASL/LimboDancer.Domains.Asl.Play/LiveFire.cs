@@ -73,7 +73,7 @@ public static class LiveFire
     /// </summary>
     public static (FireAttack? Attack, string? Reason) FromState(GameState state, IReadOnlyList<string> firerIds, IReadOnlyList<string> directorIds,
         BoardLocation target, IReadOnlyDictionary<string, IReadOnlyList<string>>? weapons = null, IReadOnlyCollection<string>? withoutInherent = null,
-        IReadOnlyDictionary<string, string>? partners = null, string? molUser = null, bool embarking = true)
+        IReadOnlyDictionary<string, string>? partners = null, string? molUser = null, bool embarking = true, bool wrecks = true)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(firerIds);
@@ -196,6 +196,17 @@ public static class LiveFire
             return (null, outside);
         }
 
+        // D10.1 (pass 65, ruling R65.23): an enemy non-burning wreck is attacked as its vehicle, outside the MPh's moving stack. Ruling R25.3's one vehicle
+        // a Location's attack reads stands until increment 2k: a wreck joins only as the Location's one vehicle. A record made before the pass lists no
+        // wreck (wrecks false), and its vehicles are read as before.
+        UnitInstance[] wrecked = wrecks && movers is null && selection.Vehicles.Count == 0
+            ? [.. GamePlanner.WrecksAt(state, target).Where(wreck => wreck.Side != side && !GamePlanner.IsBurning(state, wreck))]
+            : [];
+        if (wrecked.Length != 1)
+        {
+            wrecked = [];
+        }
+
         var targetSide = ScenarioA1FireEligibility.TargetSide(side, selection.Targets.Select(id => UnitAt(id).Side),
             selection.Vehicles.Count > 0 ? UnitAt(selection.Vehicles[0]).Side : null, state.Sides.FirstOrDefault(item => item.Id != side)?.Id);
         var friendlyTargets = selection.Targets.Any(id => UnitAt(id).Side == side);
@@ -292,7 +303,7 @@ public static class LiveFire
             [.. selection.Targets.Select(UnitAt).Select(unit => ScenarioA1FireEligibility.AttackTarget(new AttackTargetFacts(Target(state, unit, target), unit.Side == side,
                 Is(unit, Conditions.Captured), unit.Custodian, state.Encircled(unit))))],
             targetSide is null ? null : state.Side(targetSide)?.Elr, kind, AssaultOf(state), () => state.Side(side)?.Elr, friendlyTargets,
-            [.. selection.Vehicles.Select(id => Vehicle(UnitAt(id), target))], vehicleFirers.Length > 0
+            [.. selection.Vehicles.Select(id => Vehicle(UnitAt(id), target)), .. wrecked.Select(wreck => Vehicle(wreck, target))], vehicleFirers.Length > 0
                 ? VehicleFire(state, vehicleFirers[0], firers[0].At, weapons?.GetValueOrDefault(vehicleFirers[0].Id)) : null,
             targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.NoQuarter.Contains(side, StringComparer.Ordinal),
             Allies(state, side), [.. selection.Companions.Select(id => Target(state, UnitAt(id), target))])) with
@@ -441,6 +452,9 @@ public static class LiveFire
             Is(vehicle, Conditions.Concealed), Is(vehicle, Conditions.Hidden))
         {
             CrewMorale = CrewMorale(vehicle),
+
+            // D10.1 (pass 65, ruling R65.23): a wreck attacked as its vehicle.
+            Wreck = vehicle.Status == InstanceStatus.Wrecked,
         });
 
     /// <summary>
@@ -959,9 +973,10 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                 weapons = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal) { [armed] = [.. vehicleWeapons.Select(item => item.Weapon ?? string.Empty)] };
             }
 
-            // Pass 65 (ruling R65.14): the (un)loaders are targets only of an attack whose record names them; an older one is read as it was made.
+            // Pass 65 (ruling R65.14): the (un)loaders are targets only of an attack whose record names them; an older one is read as it was made. So is a
+            // wreck (ruling R65.23).
             (expected, reason) = LiveFire.FromState(state, fire.Firers, directors, target, weapons, alone, partners is { Count: > 0 } ? partners : null, mol,
-                recorded.Embarking is not null);
+                recorded.Embarking is not null, recorded.Vehicles?.Any(item => item.Wreck == true) == true);
         }
 
         if (expected is null)

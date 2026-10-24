@@ -141,6 +141,7 @@ public static class GameProjector
                 RiderBailedOut bailed => BailOut(previous, bailed),
                 VehicleAbandoned abandoned => Abandon(previous, abandoned),
                 VehicleRecrewed recrewed => Recrew(previous, recrewed),
+                VehicleScrounged scrounged => Scrounge(previous, scrounged),
                 VehicleCaptured captured => CaptureVehicle(previous, captured),
                 VehicleCheckRolled check => CheckVehicle(previous, check),
                 MotionAttempted motion => AttemptMotion(previous, motion),
@@ -1509,10 +1510,18 @@ public static class GameProjector
         }
 
         /// <summary>
-        /// D10.1 (ruling R6.5): a destroyed vehicle becomes a wreck at its Location, on its wreck face and out of Motion; it no longer acts.
+        /// D10.1 (ruling R6.5): a destroyed vehicle becomes a wreck at its Location, on its wreck face and out of Motion; it no longer acts. A non-burning
+        /// wreck attacked as its vehicle burns on a Burn (pass 65, ruling R65.23): the record of a burning wreck on a wreck leaves it as it is, and the Blaze
+        /// placed after it burns it.
         /// </summary>
         private GameState? Wreck(GameState state, VehicleWrecked wreck)
         {
+            if (wreck.Burning && state.Find(wreck.Id) is UnitInstance { Status: InstanceStatus.Wrecked } burnt && vocabulary.IsA(burnt.Kind, "asl:vehicle")
+                && state.Location(burnt.Id) is not null)
+            {
+                return state;
+            }
+
             if (Active(state, wreck.Id) is not UnitInstance vehicle || !Rules.ScenarioA1VehicleProjection.WreckAllowed(vocabulary.IsA(vehicle.Kind, "asl:vehicle"), () => state.Location(vehicle.Id) is not null))
             {
                 return Fail<GameState>("UNIT-STATE-037", $"'{wreck.Id}' is not an active vehicle on the map, so it cannot become a wreck (D10.1).");
@@ -2741,6 +2750,52 @@ public static class GameProjector
                     Embarking = [crew.Id],
                     Unloading = true,
                 },
+            };
+        }
+
+        /// <summary>
+        /// A Scrounging (D10.5 to D10.52; pass 65, ruling R65.23): in the phasing side's RPh, an active unit of that side on foot in the Location of a
+        /// non-burning wreck or an Abandoned vehicle not yet Scrounged, its dr recorded before it as a single die; no more SW taken than a dr of 1 to 3 allows,
+        /// each one the unit's own. The vehicle is marked Scrounged and the mounts named Disabled; the unit and each SW taken are TI.
+        /// </summary>
+        private GameState? Scrounge(GameState state, VehicleScrounged scrounged)
+        {
+            const string Code = "UNIT-STATE-034";
+            var taken = scrounged.Taken ?? [];
+            var vehicle = state.Find(scrounged.Vehicle) as UnitInstance;
+            if (state.Phase != "rph" || vehicle is null || !vocabulary.IsA(vehicle.Kind, "asl:vehicle") || state.Location(vehicle.Id)?.Location != scrounged.At
+                || !(vehicle.Status == InstanceStatus.Wrecked
+                    ? !state.Entities.Any(entity => entity.Status == InstanceStatus.Active && entity.Id == vehicle.Id + "-blaze")
+                    : vehicle.Status == InstanceStatus.Active && GameState.Condition(vehicle, Conditions.Abandoned) == ConditionState.True)
+                || GameState.Condition(vehicle, Conditions.Scrounged) == ConditionState.True
+                || Active(state, scrounged.Unit) is not UnitInstance { Position: MapPosition } unit || unit.Side != state.PhasingSide || state.Location(unit.Id)?.Location != scrounged.At
+                || !rolls.TryGetValue(scrounged.Roll, out var roll) || roll is not { Count: 1, Sides: 6 } || roll.Values[0] != scrounged.Dr
+                || taken.Count > (Rules.ScenarioA1WreckRules.Succeeds(scrounged.Dr) ? scrounged.Dr : 0)
+                || taken.Any(item => Active(state, item.Weapon) is not EquipmentInstance { Holding: { Role: HoldingRole.Possessed } holding } || holding.Holder != unit.Id))
+            {
+                return Fail<GameState>(Code, "A unit of the phasing side scrounges a non-burning wreck or an Abandoned vehicle not yet Scrounged in its Location, in its RPh, "
+                    + "taking at most as many of its SW as its dr of 1 to 3 (D10.5).");
+            }
+
+            var vehicleConditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal) { [Conditions.Scrounged] = ConditionState.True };
+            foreach (var (condition, _) in Rules.ScenarioA1WreckRules.ScroungedConditions(scrounged.Mounts ?? []))
+            {
+                vehicleConditions[ConditionName(condition)] = ConditionState.True;
+            }
+
+            var next = Replace(state, vehicle with
+            {
+                Conditions = vehicleConditions
+            })!;
+            next = Replace(next, unit with
+            {
+                Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { ["asl:ti"] = ConditionState.True },
+            })!;
+            return next with
+            {
+                Equipment = [.. next.Equipment.Select(item => taken.Any(weapon => weapon.Weapon == item.Id)
+                    ? item with { Conditions = new Dictionary<string, ConditionState>(item.Conditions, StringComparer.Ordinal) { ["asl:ti"] = ConditionState.True } }
+                    : item)],
             };
         }
 

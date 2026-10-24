@@ -162,5 +162,15 @@ A running record kept as the pass goes, at the user's word of 2026-10-23 ("Keep 
   - It sent a heredoc once; the hook refused it and nothing ran.
   - Seen: **an advance into any Location holding a crew is refused** (ruling R24.3), so a vehicle crew beneath its Abandoned AFV blocks the advance and the capture. **Ruling R65.29:** a crew that mans no Gun is advanced against and fights in CC as ordinary Infantry; built in 2k. Also: the vehicle CC panel's vehicle choice reads "dt (german)", against the hex UI rule (for the reviews' fixes).
 - 04:46 to 04:49 Studio check of 2i in p65-capture-cc: the Russian 4-4-7 advances from [F9] into [F8] (an Abandoned PzKpfw IIIH with a German HS); in the CCPh, "Propose: Infantry attempt to capture the Abandoned AFV (A21.2)" with dice 3 3 commits "[F8]: vehicle in [F8] is captured by the Russian side (A21.2)".
-- 04:50 R65.29 added to the design and `brief_2k.md`. 2i committed (below).
+- 04:50 R65.29 added to the design and `brief_2k.md`. 2i committed, 92ea61dc. `unmanned` to `SKIP_JSON`; the 2i games to `OWN`.
+- 04:51 The 2j agent launched on `brief_2j.md`.
+- About 05:28 The 2j agent reported (built 04:51 to about 05:28). Built: `ScenarioA1WreckRules`; a non-burning wreck as a target of ordnance on the Vehicle Target Type, the IFT's Vehicle line, and a FT or MOL, where only a Burn counts and places a Blaze; Scrounging (`asl.game.scrounge`, `vehicle-scrounged`, `asl:scrounged`); facts `wreck` on both vehicle-target records (only when true); `VehicleScroungeActions.razor`; a wreck's TCA as its VCA; an explicit refusal of CC at a wreck (pass 70's). Judged:
+  - **the LMG is not dismantled:** A9.8 gives a LMG no dm form, D10.52 says "if possible". **Ruling R65.30** corrects R65.23;
+  - the IFT attacks only a wreck of the side fired at, and only as the Location's single vehicle (R25.3 stands until 2k's A7.308); Infantry Target Type and mortar Area hits do not attack wrecks; a DC may name one. Backlog rows;
+  - fire at a wreck gains no Acquisition (C6.5: Known enemy units). Right;
+  - Random Selection of scrounged SW: the highest die first, ties by mount order, not a re-roll. Backlog row;
+  - not built: the US exemption from captured-use penalties, a mortar MA's dm form, a Disabled condition for a non-MA AAMG. Backlog rows.
+  - Seen for the reviews: the ordnance and FT/MOL vehicle choices read "dt (attacker-tank), a wreck", not hex-first.
+- 05:30 Studio check of 2j in p65-wreck-scrounge (Russian RPh): the scrounge choice offers "[F8]: 4-4-7 squad R1" and "[F8]: 2-3-7 half-squad R2"; with a dr of 2, "[F8]: 4-4-7 squad R1 scrounges vehicle in [F8] on a dr of 2: it salvages the LMG, its BMG; vehicle in [F8] is Scrounged, and 4-4-7 squad R1 is TI (D10.5)". Burning a wreck is asserted by `AT34BurnsAPanzerWreckThatAnEliminatingDrLeftAsItWas`; not walked.
+- 05:32 2j committed (below).
 - The four estimates sum to about 15:00 of build against the plan's 7:00 (65.1 3:00, 65.2 2:30, 65.3 1:15, 65.4 1:30, 65.5 0:50, crews 0:45, 65.6 1:40, 65.7 1:10, 65.8 1:40, 65.9 0:50).

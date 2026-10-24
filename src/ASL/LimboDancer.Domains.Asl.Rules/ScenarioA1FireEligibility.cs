@@ -71,10 +71,12 @@ public static class ScenarioA1FireEligibility
     public static FireVehicle VehicleTarget(VehicleTargetFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);
-        return new FireVehicle(facts.Id, facts.Definition, facts.At, facts.CrewExposed, facts.Stunned || facts.Recalled, facts.StunRecovery, facts.Immobilized)
+        // D10.1 (pass 65, ruling R65.23): a wreck has no crew to expose.
+        return new FireVehicle(facts.Id, facts.Definition, facts.At, facts.CrewExposed && !facts.Wreck, facts.Stunned || facts.Recalled, facts.StunRecovery, facts.Immobilized)
         {
             Concealed = facts.Concealed || facts.Hidden ? true : null,
             CrewMorale = facts.CrewMorale,
+            Wreck = facts.Wreck ? true : null,
         };
     }
 

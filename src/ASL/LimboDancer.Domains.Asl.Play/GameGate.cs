@@ -240,6 +240,10 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             VehicleRecrewed recrewed => state.Unit(recrewed.Unit) is { Position: ContainedPosition { Role: ContainmentRole.Crew } inside } && inside.Container == recrewed.Vehicle
                 && state.Unit(recrewed.Vehicle) is { } manned && GameState.Condition(manned, Conditions.Abandoned) != ConditionState.True,
 
+            // A Scrounging (D10.5; pass 65, ruling R65.23): the vehicle is marked Scrounged, and the unit is TI.
+            VehicleScrounged scrounged => state.Find(scrounged.Vehicle) is { } scroungedVehicle && GameState.Condition(scroungedVehicle, Conditions.Scrounged) == ConditionState.True
+                && state.Unit(scrounged.Unit) is { } scrounger && GameState.Condition(scrounger, "asl:ti") == ConditionState.True,
+
             // A capture (A11.52, A21.2; pass 65, ruling R65.22): the vehicle is the captor's.
             VehicleCaptured captured => state.Unit(captured.Vehicle) is { } taken && taken.Side == captured.Side,
 

@@ -168,6 +168,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, phaseBar);
         }
 
+        // D10.1 (pass 65, ruling R65.23): CC at a wreck is pass 70's.
+        if (vehicleId is not null && state.Unit(vehicleId) is { Status: InstanceStatus.Wrecked })
+        {
+            return Refused(scope, label, expected, ScenarioA1WreckRules.CloseCombatBar(vehicleId));
+        }
+
         // A11.52, A21.2 (pass 65, ruling R65.22): a capture attempt is made in the CCPh, on an Abandoned AFV.
         if (capture && (state.Phase == "mph" ? "play.cc-vehicle: a capture attempt is made in the CCPh, not as CC Reaction Fire (A21.2)"
             : vehicleId is not null && state.Unit(vehicleId) is { } target ? ScenarioA1CapturedVehicleRules.CaptureAttemptBar(target.Id, Armed(VehicleDefinition(target)), Is(target, Conditions.Abandoned))

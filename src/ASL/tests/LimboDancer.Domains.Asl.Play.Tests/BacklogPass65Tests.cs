@@ -1592,4 +1592,95 @@ public sealed class BacklogPass65Tests : IDisposable
         var kept = replayed.Current!.Unit("de-t")!;
         Assert.Equal(("german", ConditionState.True, ConditionState.True), (kept.Side, GameState.Condition(kept, Conditions.Captured), GameState.Condition(kept, Conditions.Abandoned)));
     }
+
+    // Increment 2j: a wreck attacked as its vehicle, and Scrounging (D10.1, D10.5 to D10.52; ruling R65.23).
+
+    [Fact]
+    public async Task AT34BurnsAPanzerWreckThatAnEliminatingDrLeftAsItWas()
+    {
+        // D10.1: two T-34s fire AP at the non-burning PzKpfw IIIH wreck as at the tank. The first's TK DR of 6 would eliminate a tank and does nothing to the
+        // wreck; the second's DR of 2 burns it, placing a Blaze.
+        await Setup("russian", "german", 1942, 7, "asl-scenario-a1@1.18.0", Vehicle("ru-tank", "defender-tank", Firer, "russian", "north-east"),
+            Vehicle("ru-tank2", "defender-tank", Behind, "russian", "north-east"), Vehicle("de-tank", "attacker-tank", Target, "german", "east"));
+        Inject(("vehicle-wrecked", new VehicleWrecked("de-tank", false)));
+        var before = Revision;
+        Committed(await Shoot("ru-tank", "de-tank", "ap", 4, 2, 3, 3));
+        var shot = LastShot(before);
+        Assert.True(shot.Facts.GetProperty("vehicleTarget").GetProperty("wreck").GetBoolean());
+        Assert.Equal("none", shot.Resolution.GetProperty("kill").GetProperty("result").GetString());
+        Assert.DoesNotContain(Since(before), item => item.Payload is VehicleWrecked);
+        Assert.False(GamePlanner.IsBurning(Current, Current.Unit("de-tank")!));
+
+        before = Revision;
+        Committed(await Shoot("ru-tank2", "de-tank", "ap", 4, 2, 1, 1));
+        Assert.Equal("burn", LastShot(before).Resolution.GetProperty("kill").GetProperty("result").GetString());
+        Assert.True(Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleWrecked>()).Burning);
+        Assert.True(GamePlanner.IsBurning(Current, Current.Unit("de-tank")!));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task TwoSquadsBurnATruckWreckOnTheIftsVehicleLine()
+    {
+        // D10.1, A7.308: two Russian 4-4-7s fire 8 FP at the German truck's non-burning wreck; their DR of 2 is a burning wreck on the Vehicle line, so it
+        // burns. The record lists the wreck among its vehicles, and replays. The dice after the DR serve the attack's other drs.
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Unit("ru-1", "asl:squad", "defender-squad", Firer, "russian"),
+            Unit("ru-2", "asl:squad", "defender-squad", Firer, "russian"), Vehicle("de-t", "attacker-truck", Target, "german", "east"));
+        Inject(("vehicle-wrecked", new VehicleWrecked("de-t", false)));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(1, 1, 6, 6, 6, 6), new
+        {
+            firers = RussianSquads,
+            target = Target,
+        }));
+        var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.True(fire.Facts.GetProperty("vehicles")[0].GetProperty("wreck").GetBoolean());
+        Assert.True(Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleWrecked>()).Burning);
+        Assert.True(GamePlanner.IsBurning(Current, Current.Unit("de-t")!));
+        NoReplayErrors();
+    }
+
+    private static readonly string[] RussiansAtTheWreck = ["ru-h", "ru-s"];
+
+    private Task<PlayResult> Scrounge(string unit, string vehicle, DiceRoller roller) => Do(GameActions.Scrounge, roller, new
+    {
+        unitId = unit,
+        vehicleId = vehicle,
+    });
+
+    [Fact]
+    public async Task ARussianSquadScroungesAPanzerWrecksBmgAsAGermanLmgAndTheWreckIsScroungedOnce()
+    {
+        // D10.5, D10.52: in the Russian RPh a 4-4-7 in the Location of the PzKpfw IIIH wreck scrounges it; a dr of 1 salvages its one scroungeable weapon, the
+        // BMG (its CMG and Gun are never scrounged), as the German LMG, whole, since a LMG has no dm form. The squad and the LMG are TI, and the wreck is
+        // Scrounged with its BMG Disabled.
+        await Start("russian", "german", 1942, 7, "asl-scenario-a1@1.18.0",
+            [Vehicle("de-tank", "attacker-tank", Target, "german", "east"), Unit("ru-s", "asl:squad", "defender-squad", Behind, "russian"),
+                Unit("ru-h", "asl:half-squad", "defender-half-squad", Behind, "russian"), Unit("de-1", "asl:squad", "attacker-squad", Far, "german")]);
+        Inject(("vehicle-wrecked", new VehicleWrecked("de-tank", false)), ("instance-moved", new InstanceMoved("ru-s", new MapPosition(BoardLocation.Parse(Target)))),
+            ("instance-moved", new InstanceMoved("ru-h", new MapPosition(BoardLocation.Parse(Target)))));
+        Assert.Equal("rph", Current.Phase);
+        var candidates = Planner().ScroungeCandidates(Current, Current.Unit("de-tank")!);
+        Assert.Equal(RussiansAtTheWreck, candidates.Select(unit => unit.Id).Order(StringComparer.Ordinal));
+
+        var before = Revision;
+        var scrounged = await Scrounge("ru-s", "de-tank", Once(1));
+        Committed(scrounged);
+        Assert.Contains(scrounged.Reasons, reason => reason.Contains("its BMG (D10.5, D10.51)", StringComparison.Ordinal));
+        var record = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleScrounged>());
+        var taken = Assert.Single(record.Taken!);
+        Assert.Equal((1, "bmg", (string?)null), (record.Dr, taken.Mount, record.Selection));
+        var lmg = (EquipmentInstance)Current.Find(taken.Weapon)!;
+        Assert.Equal(("attacker-lmg", "ru-s", ConditionState.True), (lmg.Definition!.Definition, lmg.Holding!.Holder, GameState.Condition(lmg, "asl:ti")));
+        Assert.NotEqual(ConditionState.True, GameState.Condition(lmg, Conditions.Dismantled));
+        var wreck = Current.Unit("de-tank")!;
+        Assert.Equal((ConditionState.True, ConditionState.True, ConditionState.True), (GameState.Condition(wreck, Conditions.Scrounged),
+            GameState.Condition(wreck, Conditions.BmgDisabled), GameState.Condition(Current.Unit("ru-s")!, "asl:ti")));
+        Assert.False(GamePlanner.MayBeScrounged(Current, wreck));
+
+        // D10.5: the wreck is scrounged once; the HS beside the squad is refused, and the squad, TI, would be too.
+        Refused(await Scrounge("ru-h", "de-tank", Once(1)), "scrounged already");
+        Refused(await Scrounge("ru-s", "de-tank", Once(1)), "not TI");
+        NoReplayErrors();
+    }
 }

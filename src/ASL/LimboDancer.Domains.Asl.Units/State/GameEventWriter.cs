@@ -752,6 +752,39 @@ public static class GameEventWriter
                 writer.WriteString("cause", captured.Cause);
                 WriteOptional(writer, "driver", captured.Driver);
                 break;
+            case VehicleScrounged scrounged:
+                writer.WriteString("vehicle", scrounged.Vehicle);
+                writer.WriteString("at", scrounged.At.ToString());
+                writer.WriteString("unit", scrounged.Unit);
+                writer.WriteString("roll", scrounged.Roll);
+                writer.WriteNumber("dr", scrounged.Dr);
+                WriteOptional(writer, "selection", scrounged.Selection);
+                if (scrounged.Taken is { } taken)
+                {
+                    writer.WriteStartArray("taken");
+                    foreach (var weapon in taken)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("weapon", weapon.Weapon);
+                        writer.WriteString("mount", weapon.Mount);
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndArray();
+                }
+
+                if (scrounged.Mounts is { } mounts)
+                {
+                    writer.WriteStartArray("mounts");
+                    foreach (var mount in mounts)
+                    {
+                        writer.WriteStringValue(mount);
+                    }
+
+                    writer.WriteEndArray();
+                }
+
+                break;
             case VehicleCheckRolled check:
                 writer.WriteString("vehicle", check.Vehicle);
                 writer.WriteString("check", check.Check);

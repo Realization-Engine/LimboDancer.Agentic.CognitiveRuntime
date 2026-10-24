@@ -405,6 +405,14 @@ public static class ReplaySteps
             return ("move", SideOf(ntc.Taker), $"{A(SideOf(ntc.Taker), "unit")} takes the NTC for an Infantry OVR: {(ntc.Passed ? "passed" : "failed")}", false);
         }
 
+        // D10.5 (pass 65, ruling R65.23): a unit scrounges a wreck or an Abandoned vehicle in the RPh.
+        if (First<VehicleScrounged>(payloads) is { } scrounged)
+        {
+            var side = SideOf(scrounged.Unit);
+            return ("rally", side, $"{A(side, "unit")} scrounges a vehicle in {Place(before, scrounged.At)}: "
+                + (scrounged.Taken is { Count: > 0 } found ? $"{found.Count} SW salvaged" : "nothing salvaged"), false);
+        }
+
         if (First<RecoveryAttempted>(payloads) is { } recovery)
         {
             return ("rally", SideOf(recovery.Unit), $"{A(SideOf(recovery.Unit), "unit")} tries to Recover a weapon: {(recovery.Recovered ? "recovered" : "not recovered")}", false);
@@ -644,6 +652,7 @@ public static class ReplaySteps
                 RiderBailedOut bailed => bailed.At,
                 VehicleAbandoned abandoned => abandoned.At,
                 VehicleRecrewed recrewed => recrewed.At,
+                VehicleScrounged scrounged => scrounged.At,
 
                 // A11.52, A21.2 (pass 65, ruling R65.22): a capture is seen in its Location; it falls within a CC or phase step, which titles it.
                 VehicleCaptured captured => captured.At,

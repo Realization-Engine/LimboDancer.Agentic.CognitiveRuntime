@@ -1829,6 +1829,13 @@ public static class ScenarioA1FireCalculator
                 kill = FlameKill(ScenarioA1FlameKill.Molotov, named, armor, dice);
             }
 
+            // D10.1 (p. 210; pass 65, ruling R65.23): a wreck attacked as its vehicle burns on a Burn and takes nothing else; it has no crew and no PRC.
+            if (named.Wreck == true)
+            {
+                vehicleKill = kill is null ? null : ScenarioA1WreckRules.WreckKill(kill);
+                return true;
+            }
+
             if (kill is not null && !KillChecks(ref kill, named, armor))
             {
                 return false;
@@ -2367,6 +2374,16 @@ public static class ScenarioA1FireCalculator
                         }
                     }
 
+                    // D10.1 (p. 210; pass 65, ruling R65.23): an unarmored wreck burns on the line's burning wreck and takes nothing else: no crew, no PRC.
+                    if (vehicle.Wreck == true)
+                    {
+                        effects.Add(new FireVehicleEffect(id, definition.Id, ScenarioA1WreckRules.WreckLineResult(result), kill, line, lineFinal, unlikely, null, FireVehicleEffect.None)
+                        {
+                            UnlikelyKillDeclined = declined,
+                        });
+                        continue;
+                    }
+
                     var crew = LineCrew(vehicle, definition, result);
                     if (crew is null)
                     {
@@ -2386,6 +2403,13 @@ public static class ScenarioA1FireCalculator
                     }
 
                     effects.Add(lineEffect);
+                    continue;
+                }
+
+                // D10.1 (pass 65, ruling R65.23): an armored wreck is unharmed by the IFT (A7.307) and has no crew to attack.
+                if (vehicle.Wreck == true)
+                {
+                    effects.Add(new FireVehicleEffect(id, definition.Id, FireVehicleEffect.None, null, drm, final, null, null, FireVehicleEffect.NotVulnerable));
                     continue;
                 }
 

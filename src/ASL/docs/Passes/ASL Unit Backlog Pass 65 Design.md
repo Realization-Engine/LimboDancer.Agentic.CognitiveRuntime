@@ -369,6 +369,8 @@ The referee agent of the documents step checks the rows against the chart, as at
 
 **F29. CC with a crew (ruling made at task 2i, 2026-10-24).** Ruling R24.3 refuses an advance into a Location that holds any crew (`play.advance-crew`, ScenarioA1AdvanceCalculator.CrewBar), and the CC rules leave a crew out, so a vehicle crew beneath its Abandoned AFV blocks both the advance and a capture. **R65.29:** a crew that mans no Gun is advanced against and fights in CC as ordinary Infantry (A1.123); a Gun's crew keeps R24.3's reading. Built in increment 2k with R65.28. It only turns refusals into plans.
 
+**F30. The scrounged LMG (ruling made at task 2j, 2026-10-24).** R65.23 said a scrounged MG becomes the nationality's LMG "dismantled". D10.52 says "in its dm form if possible", and A9.8 gives a LMG no dm form; the engine also refuses to assemble a LMG. **R65.30:** a scrounged MG becomes the nationality's LMG, assembled, since a LMG has no dm form; a mortar MA would be dismantled, but no catalog vehicle has one.
+
 **F25. Testing** (the standing rules, section 2, the user's rule of 2026-10-23).
 - While a task is built, the Studio is its test, in a small game made for it (`games_2x.py`).
 - A task's new Rules and Play tests are run by method, and only those.

@@ -319,8 +319,14 @@ public static class Conditions
     /// </summary>
     public const string HazardousMovement = "asl:hazardous-movement";
 
+    /// <summary>
+    /// A non-burning wreck or Abandoned vehicle that has been scrounged (D10.5, p. 211; pass 65, ruling R65.23): it is never scrounged again, and its
+    /// scroungeable weapons are Disabled. Written only by <c>vehicle-scrounged</c>, a record of the pass.
+    /// </summary>
+    public const string Scrounged = "asl:scrounged";
+
     /// <summary>Conditions the state model adds to the vocabulary's states; they have no drawn form.</summary>
-    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned, Bogged, Mired, BmgMalfunctioned, CmgMalfunctioned, CcReaction, Dismantled, Unarmed, BmgDisabled, CmgDisabled, InexperiencedCrew, HazardousMovement];
+    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned, Bogged, Mired, BmgMalfunctioned, CmgMalfunctioned, CcReaction, Dismantled, Unarmed, BmgDisabled, CmgDisabled, InexperiencedCrew, HazardousMovement, Scrounged];
 
     public static bool IsDeclared(string name, Vocabulary.UnitVocabulary vocabulary) =>
         Undrawn.Contains(name, StringComparer.Ordinal) || vocabulary.TryGetState(name, out _);

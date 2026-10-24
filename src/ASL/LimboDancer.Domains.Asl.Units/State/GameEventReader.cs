@@ -627,6 +627,35 @@ public static class GameEventReader
                     {
                         Driver = fields.OptionalString(payload, "driver", path),
                     };
+            case "vehicle-scrounged":
+                var scroungedVehicle = fields.RequiredString(payload, "vehicle", path);
+                var scroungedAt = ReadLocation(payload, "at", path, fields, diagnostics);
+                var scrounger = fields.RequiredString(payload, "unit", path);
+                var scroungeRoll = fields.RequiredString(payload, "roll", path);
+                var scroungeDr = fields.OptionalInteger(payload, "dr", path);
+                List<ScroungedWeapon>? scroungedWeapons = null;
+                if (payload.TryGetProperty("taken", out var takenList) && takenList.ValueKind == JsonValueKind.Array)
+                {
+                    scroungedWeapons = [];
+                    foreach (var item in takenList.EnumerateArray())
+                    {
+                        if (fields.RequiredString(item, "weapon", path) is not { } takenWeapon || fields.RequiredString(item, "mount", path) is not { } takenMount)
+                        {
+                            return Missing(diagnostics, "A scrounged SW names the SW and the mount it came from.", path);
+                        }
+
+                        scroungedWeapons.Add(new ScroungedWeapon(takenWeapon, takenMount));
+                    }
+                }
+
+                return scroungedVehicle is null || scroungedAt is null || scrounger is null || scroungeRoll is null || scroungeDr is null
+                    ? Missing(diagnostics, "A Scrounging names the vehicle, its Location, the unit, and the dr's roll and value.", path)
+                    : new VehicleScrounged(scroungedVehicle, scroungedAt, scrounger, scroungeRoll, scroungeDr.Value)
+                    {
+                        Selection = fields.OptionalString(payload, "selection", path),
+                        Taken = scroungedWeapons,
+                        Mounts = payload.TryGetProperty("mounts", out _) ? fields.StringList(payload, "mounts", path) : null,
+                    };
             case "vehicle-check-rolled":
                 var checkedVehicle = fields.RequiredString(payload, "vehicle", path);
                 var checkKind = fields.RequiredString(payload, "check", path);

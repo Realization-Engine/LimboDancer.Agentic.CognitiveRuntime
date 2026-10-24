@@ -465,6 +465,36 @@ public sealed record VehicleCaptured(string Vehicle, BoardLocation At, string Si
 }
 
 /// <summary>
+/// <c>vehicle-scrounged</c>: an Infantry MMC scrounges a non-burning wreck or an Abandoned vehicle in its Location in its own RPh (D10.5 to D10.52; pass 65,
+/// ruling R65.23). <paramref name="Roll"/> is the dr's roll and <paramref name="Dr"/> its value: 1 to 3 salvages that many SW, by the Random Selection of
+/// <see cref="Selection"/> when more exist. The SW taken are created, possessed by the unit, by the <c>instance-created</c> records before this one. The vehicle
+/// is marked Scrounged, and the mounts it may no longer fire Disabled, whatever the dr; the unit and its SW taken are TI for the rest of the Player Turn.
+/// </summary>
+public sealed record VehicleScrounged(string Vehicle, BoardLocation At, string Unit, string Roll, int Dr) : EventPayload
+{
+    /// <summary>A.9: the Random Selection's roll, one die a scroungeable mount, when more could be taken than the dr; null otherwise.</summary>
+    public string? Selection
+    {
+        get; init;
+    }
+
+    /// <summary>D10.51, D10.52: each SW salvaged, by its mount (<c>bmg</c>, <c>ma</c>, or <c>aamg</c>); null when none was.</summary>
+    public IReadOnlyList<ScroungedWeapon>? Taken
+    {
+        get; init;
+    }
+
+    /// <summary>D10.5: the scroungeable mounts, every one Disabled now; null when the vehicle had none.</summary>
+    public IReadOnlyList<string>? Mounts
+    {
+        get; init;
+    }
+}
+
+/// <summary>A SW salvaged by Scrounging (D10.52): the counter it became and the mount it came from.</summary>
+public sealed record ScroungedWeapon(string Weapon, string Mount);
+
+/// <summary>
 /// <c>vehicle-check-rolled</c>: a vehicle's DR or dr outside combat (rulings R11.3, R11.4, R11.9, R11.10): a Bog Check (<c>bog</c>), a Bog Removal
 /// (<c>bog-removal</c>), an ESB DR (<c>esb</c>, for <see cref="Mp"/> extra MP), or a Mechanical Reliability DR (<c>mechanical</c>), with its roll,
 /// its total DRM, and its result: <c>passed</c>, <c>bogged</c>, <c>freed</c>, <c>mired</c>, or <c>immobilized</c>.

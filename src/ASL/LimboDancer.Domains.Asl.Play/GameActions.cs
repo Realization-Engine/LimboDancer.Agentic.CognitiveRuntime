@@ -765,6 +765,20 @@ public static class GameActions
         }
         """);
 
+    public static readonly ActionDescriptor Scrounge = Descriptor("asl.game.scrounge", "Scrounge a vehicle",
+        "In its own RPh, an unbroken, non-berserk Infantry MMC not in Melee scrounges a non-burning wreck or an Abandoned vehicle in its Location that is not Scrounged or Disabled: a dr of 1 to 3 salvages that many of its BMG not fixed, AAMG, or mortar MA, by Random Selection, a MG as its nationality's LMG. Whatever the dr, the vehicle is marked Scrounged, and the unit and what it salvages are TI for the rest of the Player Turn (D10.5 to D10.52).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "vehicleId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "vehicleId": { "type": "string" }
+          }
+        }
+        """);
+
     public static IReadOnlyList<ActionDescriptor> All
     {
         get;
@@ -772,7 +786,7 @@ public static class GameActions
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
             Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp,
-            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle];
+            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle, Scrounge];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

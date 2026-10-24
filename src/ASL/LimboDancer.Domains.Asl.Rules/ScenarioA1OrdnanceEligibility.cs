@@ -78,13 +78,16 @@ public static class ScenarioA1OrdnanceEligibility
             facts.Concealed || facts.Hidden,
             facts.Stunned || facts.Shocked || facts.UnconfirmedKill || facts.Recalled,
             // D5.5: a Stunned or Shocked crew takes no Immobilization TC, nor does an absent crew or one already immobilized.
-            !facts.Stunned && !facts.Shocked && !facts.UnconfirmedKill && !facts.Abandoned && !facts.Immobilized)
+            !facts.Stunned && !facts.Shocked && !facts.UnconfirmedKill && !facts.Abandoned && !facts.Immobilized && !facts.Wreck)
         {
             Abandoned = facts.Abandoned ? true : null,
             StunRecovery = facts.StunRecovery ? true : null,
             Bypass = facts.Bypass ? true : null,
             CrewMorale = facts.CrewMorale,
-            CrewExposed = facts.CrewExposed ? true : null,
+
+            // D10.1 (pass 65, ruling R65.23): a wreck, which has no crew to expose.
+            CrewExposed = facts.CrewExposed && !facts.Wreck ? true : null,
+            Wreck = facts.Wreck ? true : null,
         };
     }
 

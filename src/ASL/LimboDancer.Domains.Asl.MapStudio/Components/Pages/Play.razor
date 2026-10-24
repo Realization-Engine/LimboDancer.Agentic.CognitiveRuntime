@@ -572,6 +572,12 @@ else if (state is not null)
                         OnLeader="@(id => recombineLeader = id)" OnPropose="@ProposeRecombine" />
                     </ActionSection>
                 }
+                @* Pass 65, task 65.9 (ruling R65.23): the phasing side's MMC scrounge a non-burning wreck or an Abandoned vehicle in their Location (D10.5). *@
+                @if (state.Phase == "rph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide) && ScroungeRows is { Count: > 0 } scroungeShown)
+                {
+                    <VehicleScroungeActions Vehicles="@scroungeShown" Chosen="@scroungePicks" OnUnit="@(pick => scroungePicks[pick.Vehicle] = pick.Unit)"
+                        OnScrounge="@(pick => ProposeScrounge(pick.Vehicle, pick.Unit))" />
+                }
                 @if (state.Phase == "rph")
                 {
                     <DmRetentionChoices Units="@DmRetainers" Selected="@retainDm" OnToggle="@(pick => Toggle(retainDm, pick.Id, pick.On))" />
@@ -3918,6 +3924,9 @@ else if (state is not null)
     private string abandonDestroy = string.Empty;
     private bool abandonRemoveMg;
     private readonly Dictionary<string, string> recrewPicks = new(StringComparer.Ordinal);
+
+    // Pass 65, task 65.9 (ruling R65.23): the unit chosen to scrounge each wreck or Abandoned vehicle.
+    private readonly Dictionary<string, string> scroungePicks = new(StringComparer.Ordinal);
     private string vehicleEsb = string.Empty;
     private string reactionAttacker = string.Empty;
     private string reactionLeader = string.Empty;
@@ -4179,6 +4188,24 @@ else if (state is not null)
 
         return Propose(GameActions.AbandonVehicle, JsonSerializer.SerializeToElement(arguments));
     }
+
+    /// <summary>
+    /// The wrecks and Abandoned vehicles the phasing side may scrounge in its RPh (D10.5; pass 65, ruling R65.23), each with the side's MMC in its Location,
+    /// read from the planner's index; one scan of the state's units a render, and the view sees only its own units.
+    /// </summary>
+    private IReadOnlyList<VehicleScroungeActions.Scrounging>? ScroungeRows => state is null ? null
+        : [.. SeenOnly(state.Units.Where(unit => GamePlanner.MayBeScrounged(state, unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+            .Select(vehicle => new VehicleScroungeActions.Scrounging(vehicle.Id, [.. SeenOnly(Live.Planner.ScroungeCandidates(state, vehicle)).Select(unit => new PlayChoice(unit.Id, unit.Id))]))
+            .Where(row => row.Units.Count > 0)];
+
+    private Task ProposeScrounge(string vehicle, string unit) => Propose(GameActions.Scrounge, JsonSerializer.SerializeToElement(new
+    {
+        gameId,
+        attemptId = Attempt("scrounge"),
+        expectedRevision = (long)history!.Events.Count,
+        unitId = unit,
+        vehicleId = vehicle,
+    }));
 
     private Task ProposeRecrew(string vehicle, string unit) => Propose(GameActions.RecrewVehicle, JsonSerializer.SerializeToElement(new
     {
@@ -5233,7 +5260,13 @@ else if (state is not null)
     /// <summary>The enemy vehicles in the chosen target Location, each a Vehicle Target Type target (C3.31).</summary>
     private IEnumerable<UnitInstance> OrdnanceVehicleTargets(string side) => state is null || !BoardLocation.TryParse(ordnanceTarget, out var at) ? []
         : state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && LiveFire.IsVehicle(unit))
+            // D10.1 (pass 65, ruling R65.23): a non-burning wreck of either side is fired at as its vehicle.
+            .Concat(GamePlanner.WrecksAt(state, at).Where(wreck => !GamePlanner.IsBurning(state, wreck)))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    /// <summary>A vehicle a shot or an attack may name, "de-tank (attacker-tank)", or "de-tank (attacker-tank), a wreck" (D10.1).</summary>
+    private static PlayChoice NamedVehicleChoice(UnitInstance vehicle) =>
+        new(vehicle.Id, $"{vehicle.Id} ({vehicle.Definition?.Definition})" + (vehicle.Status == InstanceStatus.Wrecked ? ", a wreck" : string.Empty));
 
     /// <summary>The ammunition the chosen Gun or tank may carry (C8.1); the scenario year and depletion decide the shot.</summary>
     private IReadOnlyList<string> OrdnanceAmmunitions => state?.Find(ordnanceGun) switch
@@ -5953,11 +5986,16 @@ else if (state is not null)
         return Propose(GameActions.DetonateDc, JsonSerializer.SerializeToElement(arguments));
     }
 
-    /// <summary>The enemy AFVs the view sees in a Location, which a FT, MOL, or DC may name as its target (A22.34, A22.612, A23.5; pass 60, ruling R60.15).</summary>
+    /// <summary>
+    /// The enemy AFVs the view sees in a Location, which a FT, MOL, or DC may name as its target (A22.34, A22.612, A23.5; pass 60, ruling R60.15), and its
+    /// enemy non-burning AFV wrecks, attacked as their vehicle (D10.1; pass 65, ruling R65.23).
+    /// </summary>
     private IReadOnlyList<PlayChoice> NamedVehicleChoices(string side, string location) =>
         state is null || !BoardLocation.TryParse(location.Trim(), out var at) ? []
-            : [.. SeenOnly(state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && GamePlanner.IsArmoredVehicle(unit))
-                .OrderBy(unit => unit.Id, StringComparer.Ordinal)).Select(vehicle => new PlayChoice(vehicle.Id, $"{vehicle.Id} ({vehicle.Definition?.Definition})"))];
+            : [.. SeenOnly(state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active)
+                .Concat(GamePlanner.WrecksAt(state, at).Where(wreck => !GamePlanner.IsBurning(state, wreck)))
+                .Where(unit => unit.Side != side && GamePlanner.IsArmoredVehicle(unit))
+                .OrderBy(unit => unit.Id, StringComparer.Ordinal)).Select(NamedVehicleChoice)];
 
     private Task ProposePlaceDc()
     {
@@ -7488,7 +7526,7 @@ else if (state is not null)
 
     /// <summary>The enemy vehicles in the target Location that the view sees (pass 28b, section 15.4).</summary>
     private IReadOnlyList<PlayChoice> OrdnanceVehicleChoices(string side) =>
-        [.. SeenOnly(OrdnanceVehicleTargets(side)).Select(vehicle => new PlayChoice(vehicle.Id, $"{vehicle.Id} ({vehicle.Definition?.Definition})"))];
+        [.. SeenOnly(OrdnanceVehicleTargets(side)).Select(NamedVehicleChoice)];
 
     private static IReadOnlyList<ActionRecordList.Entry> Entries(IEnumerable<(string EventId, string Text)> records, string kind) =>
         [.. records.Select(item => new ActionRecordList.Entry(item.EventId, kind, item.Text))];
@@ -7811,7 +7849,9 @@ else if (state is not null)
                 // The UI review, pass 35: a shot may wreck its target or break its Spotter, and Intensive Fire is declared for one shot. The weapon
                 // and the Location stay for a weapon that keeps its ROF.
                 ordnanceIntensive = false;
-                if (state?.Unit(ordnanceVehicle) is not { Status: InstanceStatus.Active })
+                // D10.1 (pass 65): a wreck stays named until it burns.
+                if (state?.Unit(ordnanceVehicle) is not { Status: InstanceStatus.Active } && !(state?.Unit(ordnanceVehicle) is { Status: InstanceStatus.Wrecked } wreck
+                    && !GamePlanner.IsBurning(state, wreck)))
                 {
                     ordnanceVehicle = string.Empty;
                 }

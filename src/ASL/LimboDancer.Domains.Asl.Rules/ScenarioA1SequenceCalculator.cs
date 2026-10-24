@@ -44,6 +44,9 @@ public static class ScenarioA1SequenceCalculator
         ["asl.game.motion-attempt"] = ["vehicleId"],
         ["asl.game.abandon-vehicle"] = ["vehicleId"],
         ["asl.game.recrew-vehicle"] = ["unitId", "vehicleId"],
+
+        // D10.5 (pass 65, ruling R65.23): the vehicle scrounged may be the enemy's.
+        ["asl.game.scrounge"] = ["unitId"],
         ["asl.game.massacre"] = ["unitId"],
         ["asl.game.throw-dc"] = ["unitId"],
         ["asl.game.fire-starshell"] = ["unitId"],

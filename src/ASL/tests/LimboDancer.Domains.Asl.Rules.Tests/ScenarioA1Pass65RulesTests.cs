@@ -1228,4 +1228,126 @@ public sealed class ScenarioA1Pass65RulesTests
         Assert.False(ScenarioA1VictoryCalculator.Armed(Vehicle(true, true, false)));
         Assert.False(ScenarioA1VictoryCalculator.Armed(Vehicle(false, true, false)));
     }
+
+    // Increment 2j: a wreck attacked as its vehicle, and Scrounging (D10.1, D10.5 to D10.52; ruling R65.23).
+
+    private static OrdnanceShot AtWreck(int[] toKill)
+    {
+        var shot = AtTank(toKill, []);
+        return shot with
+        {
+            VehicleTarget = shot.VehicleTarget! with
+            {
+                Wreck = true
+            },
+        };
+    }
+
+    private static int[] DiceOf(int dr) => [dr / 2, dr - (dr / 2)];
+
+    [Fact]
+    public void AWreckBurnsOnABurnAndNothingElseTouchesIt()
+    {
+        // D10.1: the T-34's AP at the PzKpfw IIIH wreck. A TK DR of half the Final TK# burns it, as it would the tank; a DR that would eliminate the tank, or
+        // immobilize it, does nothing to the wreck, which has no crew to survive and takes no Collateral Attack.
+        var finalTk = Shot(AtTank([6, 5], [])).Kill!.FinalTk;
+        var burn = Shot(AtWreck(DiceOf(finalTk / 2)));
+        Assert.Equal((OrdnanceKill.Burn, (OrdnanceCrewSurvival?)null), (burn.Kill!.Result, burn.Kill.CrewSurvival));
+        Assert.Equal(OrdnanceKill.Eliminated, Shot(AtTank(DiceOf(finalTk - 1), [])).Kill!.Result);
+        foreach (var dr in new[] { finalTk - 1, finalTk, finalTk + 1 })
+        {
+            var spared = Shot(AtWreck(DiceOf(dr)));
+            Assert.Equal((OrdnanceKill.None, (OrdnanceCrewSurvival?)null, (FireCheck?)null, (FireCheck?)null), (spared.Kill!.Result, spared.Kill.CrewSurvival, spared.Kill.CrewCheck,
+                spared.Kill.ShockCheck));
+            Assert.Null(spared.SpecificCollateral);
+        }
+
+        // The IFT's Vehicle line: the squads' DR of 2 burns a truck and its wreck alike; a DR that eliminates the truck leaves its wreck as it is.
+        var truck = new FireVehicle("de-t", "attacker-truck", At, false, false, false, false);
+        var wreck = truck with
+        {
+            Wreck = true
+        };
+        Assert.Equal(FireVehicleEffect.BurningWreck, Assert.Single(Fired(AtVehicle(truck), [1, 1]).VehicleEffects!).Result);
+        Assert.Equal(FireVehicleEffect.BurningWreck, Assert.Single(Fired(AtVehicle(wreck), [1, 1]).VehicleEffects!).Result);
+        var eliminating = Enumerable.Range(3, 10).First(dr => Fired(AtVehicle(truck), DiceOf(dr)).VehicleEffects![0].Result == FireVehicleEffect.Eliminated);
+        var untouched = Assert.Single(Fired(AtVehicle(wreck), DiceOf(eliminating)).VehicleEffects!);
+        Assert.Equal((FireVehicleEffect.None, (OrdnanceCrewSurvival?)null), (untouched.Result, untouched.CrewSurvival));
+
+        // An armored wreck is unharmed by the IFT and has no crew to attack.
+        var halftrackWreck = Halftrack(true, null) with
+        {
+            Wreck = true
+        };
+        var armored = Assert.Single(Fired(AtVehicle(halftrackWreck), [1, 1]).VehicleEffects!);
+        Assert.Equal((FireVehicleEffect.None, FireVehicleEffect.NotVulnerable), (armored.Result, armored.CrewResult));
+
+        // A FT's or MOL's result at a wreck is read the same way.
+        var flame = new OrdnanceKill("ft", "hull", "rear", 8, [], 8, null, 8, [3, 3], 6, OrdnanceKill.Eliminated)
+        {
+            CrewSurvival = new OrdnanceCrewSurvival([2, 2], 0, 4, 6, true)
+        };
+        var burnt = flame with
+        {
+            Result = OrdnanceKill.Burn
+        };
+        Assert.Equal((OrdnanceKill.None, (OrdnanceCrewSurvival?)null), (ScenarioA1WreckRules.WreckKill(flame).Result, ScenarioA1WreckRules.WreckKill(flame).CrewSurvival));
+        Assert.Equal(OrdnanceKill.Burn, ScenarioA1WreckRules.WreckKill(burnt).Result);
+        Assert.StartsWith("play.cc-vehicle", ScenarioA1WreckRules.CloseCombatBar("de-tank"), StringComparison.Ordinal);
+    }
+
+    private static ScroungeFacts Scrounging(bool rph = true, string kind = "asl:squad", bool broken = false, bool ti = false, bool wreck = true, bool burning = false,
+        bool abandoned = false, bool scrounged = false, bool disabled = false) =>
+        new("ru-s", "de-tank", rph, ScenarioA1Definitions.MmcKinds.Contains(kind), !broken, false, false, ti, true, wreck, burning, abandoned, scrounged, disabled);
+
+    private static readonly string[] BmgAndMa = ["bmg", "ma"];
+    private static readonly string[] BmgOnly = ["bmg"];
+    private static readonly string[] MaOnly = ["ma"];
+    private static readonly int[] MaHigher = [2, 5];
+
+    [Fact]
+    public void ScroungingTakesAsManyFunctioningSwAsItsDrFromAWreckOrAnAbandonedVehicle()
+    {
+        // D10.5: an unbroken MMC in its own RPh scrounges a non-burning wreck or an Abandoned vehicle not yet Scrounged or Disabled.
+        Assert.Null(ScenarioA1WreckRules.ScroungeBar(Scrounging()));
+        Assert.Null(ScenarioA1WreckRules.ScroungeBar(Scrounging(kind: "asl:vehicle-crew", wreck: false, abandoned: true)));
+        Assert.Contains("own RPh", ScenarioA1WreckRules.ScroungeBar(Scrounging(rph: false)), StringComparison.Ordinal);
+        Assert.Contains("MMC", ScenarioA1WreckRules.ScroungeBar(Scrounging(kind: "asl:leader")), StringComparison.Ordinal);
+        Assert.Contains("unbroken", ScenarioA1WreckRules.ScroungeBar(Scrounging(broken: true)), StringComparison.Ordinal);
+        Assert.Contains("TI", ScenarioA1WreckRules.ScroungeBar(Scrounging(ti: true)), StringComparison.Ordinal);
+        Assert.Contains("non-burning wreck", ScenarioA1WreckRules.ScroungeBar(Scrounging(burning: true)), StringComparison.Ordinal);
+        Assert.Contains("non-burning wreck", ScenarioA1WreckRules.ScroungeBar(Scrounging(wreck: false)), StringComparison.Ordinal);
+        Assert.Contains("scrounged already", ScenarioA1WreckRules.ScroungeBar(Scrounging(scrounged: true)), StringComparison.Ordinal);
+        Assert.Contains("Disabled", ScenarioA1WreckRules.ScroungeBar(Scrounging(disabled: true)), StringComparison.Ordinal);
+
+        // D10.51: a BMG not Fixed-Mount, the MA when it is an AAMG or a mortar, and an AAMG; each functioning. A CMG or a Gun MA is never scrounged.
+        Assert.Equal(BmgOnly, ScenarioA1WreckRules.Scroungeable(null, null, 3, false, false, false, false));
+        Assert.Empty(ScenarioA1WreckRules.Scroungeable(null, null, 3, true, false, false, false));
+        Assert.Empty(ScenarioA1WreckRules.Scroungeable(null, null, 3, false, false, true, false));
+        Assert.Empty(ScenarioA1WreckRules.Scroungeable(null, null, 3, false, false, false, true));
+        Assert.Equal(BmgAndMa, ScenarioA1WreckRules.Scroungeable("aamg", 2, 3, false, false, false, false));
+        Assert.Equal(BmgOnly, ScenarioA1WreckRules.Scroungeable("aamg", 2, 3, false, true, false, false));
+        Assert.Equal(MaOnly, ScenarioA1WreckRules.Scroungeable("mortar", null, null, false, false, false, false));
+        Assert.Empty(ScenarioA1WreckRules.Scroungeable("mg", null, null, false, false, false, false));
+        var tank = Ordnance.Fire.Definitions["attacker-tank"];
+        Assert.Equal(BmgOnly, ScenarioA1WreckRules.Scroungeable(tank.MainArmament, tank.AntiAircraftMg, tank.BowMg, tank.FixedBmg == true, false, false, false));
+
+        // D10.5: a dr of 1 to 3 succeeds and is the number taken; more SW than the dr are chosen by Random Selection, the highest die first.
+        Assert.True(ScenarioA1WreckRules.Succeeds(3));
+        Assert.False(ScenarioA1WreckRules.Succeeds(4));
+        Assert.Empty(ScenarioA1WreckRules.Taken(BmgAndMa, 4, null)!);
+        Assert.Equal(BmgAndMa, ScenarioA1WreckRules.Taken(BmgAndMa, 2, null));
+        Assert.True(ScenarioA1WreckRules.SelectionNeeded(1, 2));
+        Assert.Null(ScenarioA1WreckRules.Taken(BmgAndMa, 1, null));
+        Assert.Equal(MaOnly, ScenarioA1WreckRules.Taken(BmgAndMa, 1, MaHigher));
+
+        // D10.52: a MG is its nationality's LMG, a U.S. one a British LMG, whole: a LMG has no dm form (A9.8). The vehicle's scroungeable mounts are Disabled.
+        var definitions = Ordnance.Fire.Definitions.Values;
+        Assert.Equal("attacker-lmg", ScenarioA1WreckRules.ScroungedDefinition(definitions, "german", "bmg", null));
+        Assert.Equal("british-lmg", ScenarioA1WreckRules.ScroungedDefinition(definitions, ScenarioA1WreckRules.ScroungedNationality("american"), "bmg", null));
+        Assert.Equal("attacker-light-mortar", ScenarioA1WreckRules.ScroungedDefinition(definitions, "german", "ma", "mortar"));
+        Assert.False(ScenarioA1WreckRules.ScroungedDismantled("asl:mg", "german", "light", null));
+        Assert.True(ScenarioA1WreckRules.ScroungedDismantled("asl:mg", "german", "medium", null));
+        Assert.Equal([(UnitCondition.BmgDisabled, true), (UnitCondition.Disabled, true)], ScenarioA1WreckRules.ScroungedConditions(BmgAndMa));
+    }
 }

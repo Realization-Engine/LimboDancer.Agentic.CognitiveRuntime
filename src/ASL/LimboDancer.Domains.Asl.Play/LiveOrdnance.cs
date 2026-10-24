@@ -214,11 +214,17 @@ public static class LiveOrdnance
             }
         }
 
+        // D10.1 (pass 65, ruling R65.23): a non-burning wreck, of either side, is fired at as its vehicle; no shot recorded before the pass named one.
         UnitInstance? vehicleTarget = null;
-        if (targetVehicle is not null && (state.Unit(targetVehicle) is not { Status: InstanceStatus.Active } named || !LiveFire.IsVehicle(named)
-            || state.Location(named.Id)?.Location != target || (vehicleTarget = named).Side == side || (movers is not null && !movers.Contains(named.Id))))
+        if (targetVehicle is not null)
         {
-            return (null, ScenarioA1OrdnanceEligibility.VehicleTargetRefusal(targetVehicle, target.ToString()));
+            if (state.Unit(targetVehicle) is not { } named || !LiveFire.IsVehicle(named) || !Targetable(state, named, side) || state.Location(named.Id)?.Location != target
+                || (movers is not null && !movers.Contains(named.Id)))
+            {
+                return (null, ScenarioA1OrdnanceEligibility.VehicleTargetRefusal(targetVehicle, target.ToString()));
+            }
+
+            vehicleTarget = named;
         }
 
         // C3.31: a Vehicle Target Type shot attacks only the named vehicle. C3.33 (ruling R9.3): a mortar's Area Target Type shot attacks every unit
@@ -416,6 +422,13 @@ public static class LiveOrdnance
     }
 
     /// <summary>
+    /// Whether a named vehicle may be fired at (C3.31): an active enemy vehicle, or a non-burning wreck of either side, attacked as its vehicle (D10.1; pass
+    /// 65, ruling R65.23).
+    /// </summary>
+    internal static bool Targetable(GameState state, UnitInstance vehicle, string side) =>
+        vehicle.Status == InstanceStatus.Active ? vehicle.Side != side : vehicle.Status == InstanceStatus.Wrecked && !GamePlanner.IsBurning(state, vehicle);
+
+    /// <summary>
     /// A vehicle target's state facts (C6.1 Case J, C.8, D5.5, D5.6): a vehicle that entered a new hex or moved in Motion this Player Turn, or is in
     /// Motion, is moving; a Stunned, Shocked, or Recalled crew adds one to Crew Survival. The Target Facings are the planner's map reads.
     /// </summary>
@@ -434,6 +447,9 @@ public static class LiveOrdnance
 
             // D5.3, D.8A (pass 60): whether its crew is CE.
             CrewExposed = LiveFire.CrewExposed(vehicleTarget),
+
+            // D10.1 (pass 65, ruling R65.23): a wreck attacked as its vehicle.
+            Wreck = vehicleTarget.Status == InstanceStatus.Wrecked,
         });
     }
 
@@ -629,8 +645,10 @@ public static class LiveOrdnance
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(vehicle);
-        return (UnitFacing?)ScenarioA1OrdnanceEligibility.TurretFacing((int?)state.TurretFacings.FirstOrDefault(item => item.Vehicle == vehicle.Id)?.Facing,
-            (int?)(vehicle.Position as MapPosition)?.Facing);
+
+        // D10.1 (p. 210; pass 65, ruling R65.23): "Wreck counters retain the VCA of the original vehicle but the TCA is the same as the VCA."
+        return (UnitFacing?)ScenarioA1OrdnanceEligibility.TurretFacing(vehicle.Status == InstanceStatus.Wrecked ? null
+            : (int?)state.TurretFacings.FirstOrDefault(item => item.Vehicle == vehicle.Id)?.Facing, (int?)(vehicle.Position as MapPosition)?.Facing);
     }
 
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice, in the package's shape; null when one is misshapen.</summary>

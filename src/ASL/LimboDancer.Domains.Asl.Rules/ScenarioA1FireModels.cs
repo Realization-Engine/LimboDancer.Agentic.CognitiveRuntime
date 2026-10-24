@@ -583,6 +583,16 @@ public sealed record FireVehicle(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the vehicle is a non-burning wreck attacked as its vehicle (D10.1; pass 65, ruling R65.23): only a burning wreck result does anything. Only
+    /// an attack planned since the pass lists a wreck, and its record is read with them; null, false, is every older record.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Wreck
+    {
+        get; init;
+    }
 }
 
 /// <summary>

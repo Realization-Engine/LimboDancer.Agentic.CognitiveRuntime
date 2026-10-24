@@ -3305,6 +3305,25 @@
       ]
     },
     {
+      "name": "VehicleScroungeActions",
+      "path": "Components/Play/VehicleScroungeActions.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: scrounge (D10.5)",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "VehicleScroungeActions toolbar"
+        }
+      ]
+    },
+    {
       "name": "VehicleStepChoices",
       "path": "Components/Play/VehicleStepChoices.razor",
       "pages": [

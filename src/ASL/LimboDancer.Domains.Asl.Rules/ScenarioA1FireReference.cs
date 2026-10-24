@@ -165,6 +165,12 @@ public sealed record FireDefinition(
         get; init;
     }
 
+    /// <summary>Whether a vehicle's BMG is Fixed-Mount (D1.81; trait <c>asl:fixed-bmg</c>): it cannot be scrounged (D10.51; pass 65, ruling R65.23).</summary>
+    public bool? FixedBmg
+    {
+        get; init;
+    }
+
     /// <summary>A vehicle's CMG FP (D1.8); null when it has none (ruling R11.11).</summary>
     public int? CoaxialMg
     {
@@ -724,6 +730,7 @@ public sealed class ScenarioA1FireReference
             MaType = Text("front", "ma-type"),
             AntiAircraftMg = Value("front", "aamg"),
             BowMg = Value("front", "bmg"),
+            FixedBmg = Trait("front", "asl:fixed-bmg"),
             CoaxialMg = Value("front", "cmg"),
             Caliber = Value("front", "caliber"),
             GroundPressure = Text("front", "ground-pressure"),

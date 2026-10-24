@@ -620,7 +620,8 @@ internal static class ScenarioA1ArmorCalculator
         // C6.5: the shot acquires the target's Location, one step more if already acquired, unless the Gun malfunctions; a concealed vehicle
         // is acquired only when the shot costs it its "?" (the game decides that, R6.7).
         // C6.5 (the chart's G): a non-mortar SW acquires nothing; nor does a MG fired as ordnance, a vehicle's MA MG included (pass 60).
-        var acquires = !malfunctioned && target.Concealed != true && !latw && !machineGun;
+        // D10.1 (pass 65, ruling R65.23): a wreck is no unit to carry an Acquisition (C6.5: "Known enemy units"), and gives none.
+        var acquires = !malfunctioned && target.Concealed != true && !latw && !machineGun && target.Wreck != true;
         var acquisition = !acquires ? 0 : Math.Max((ScenarioA1OrdnanceCalculator.AcquisitionDenied(shot) ? 0 : shot.Acquisition!.Value) - 1, -2);
         var gunEffect = new OrdnanceGunEffect(ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference), malfunctioned, Math.Max(rof, 0), kept, counter, acquisition,
             acquires ? shot.TargetLocationId : null);
@@ -659,7 +660,8 @@ internal static class ScenarioA1ArmorCalculator
         var column = firepower is not { } fp ? -1
             : gun.GunType == ScenarioA1MachineGunKill.GunType ? Array.FindLastIndex(ScenarioA1FireReference.ColumnFp, item => item <= fp)
             : Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp);
-        if (!standing || column < 0)
+        // D10.1 (pass 65, ruling R65.23): a wreck has no crew and no PRC to take one.
+        if (!standing || column < 0 || target.Wreck == true)
         {
             return (null, null);
         }
@@ -797,6 +799,12 @@ internal static class ScenarioA1ArmorCalculator
         }
 
         var made = Made(result);
+
+        // D10.1 (p. 210; pass 65, ruling R65.23): a wreck fired at as its vehicle burns on a Burn; nothing else touches it, and it has no crew.
+        if (target.Wreck == true)
+        {
+            return (ScenarioA1WreckRules.WreckKill(made), null);
+        }
 
         // D5.5, D8.11, D8.22 (pp. 204, 208, 209; pass 65, ruling R65.21): an AFV already bogged or immobilized that the shot neither destroys, Stuns, nor
         // Shocks takes the TC when an Original TK DR of 5 would have destroyed or Shocked it; only a shot that carries its PRC, as every shot planned since

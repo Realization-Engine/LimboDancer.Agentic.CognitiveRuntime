@@ -695,7 +695,9 @@ public sealed partial class GamePlanner
     private (FireAttack? Attack, string? Reason) WithNamedVehicle(GameState state, FireAttack attack, string vehicleId, BoardLocation from, BoardLocation target,
         IReadOnlyList<DcTargetFacing>? placed = null)
     {
-        if (state.Unit(vehicleId) is not { Status: InstanceStatus.Active } vehicle || !LiveFire.IsVehicle(vehicle) || state.Location(vehicle.Id)?.Location != target)
+        // D10.1 (pass 65, ruling R65.23): a non-burning wreck is named as its vehicle; no attack recorded before the pass named one.
+        if (state.Unit(vehicleId) is not { } vehicle || !LiveFire.IsVehicle(vehicle) || state.Location(vehicle.Id)?.Location != target
+            || !(vehicle.Status == InstanceStatus.Active || (vehicle.Status == InstanceStatus.Wrecked && !IsBurning(state, vehicle))))
         {
             return (null, $"play.fire-vehicle: {vehicleId} is not a vehicle in {target}; a FT, MOL, or DC names an AFV in the Location it attacks (A22.34, A22.612, A23.5)");
         }

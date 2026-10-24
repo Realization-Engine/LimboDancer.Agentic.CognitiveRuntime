@@ -161,6 +161,16 @@ public sealed record OrdnanceVehicleTarget(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the target is a non-burning wreck attacked as its vehicle (D10.1; pass 65, ruling R65.23): only a Burn does anything. A state fact; no shot
+    /// recorded before the pass named a wreck, so null, false, is every older record.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Wreck
+    {
+        get; init;
+    }
 }
 
 /// <summary>
