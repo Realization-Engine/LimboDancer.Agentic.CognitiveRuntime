@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -26,9 +27,16 @@ public static partial class TirCanonicalJson
         return Write(writer => WriteDocument(writer, document, null));
     }
 
+    // A TirDocument is never changed once built, so its payload digest and its validation are kept per instance: a verification batch
+    // hashes the same document once for each of its records (0.2 s a hash for the full rulebook's TIR).
+    private static readonly ConditionalWeakTable<TirDocument, string> PayloadDigests = new();
+    private static readonly ConditionalWeakTable<TirDocument, object> ValidDocuments = new();
+    private static readonly object Valid = new();
+
     public static string ComputePayloadSha256(TirDocument document)
     {
-        return Hashing.Sha256Text(SerializePayload(document));
+        ArgumentNullException.ThrowIfNull(document);
+        return PayloadDigests.GetValue(document, static item => Hashing.Sha256Text(SerializePayload(item)));
     }
 
     public static string SerializeArtifactPayload(TirDocument document, string artifactId)
@@ -367,6 +375,17 @@ public static partial class TirCanonicalJson
     private static void Validate(TirDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
+        if (ValidDocuments.TryGetValue(document, out _))
+        {
+            return;
+        }
+
+        ValidateDocument(document);
+        ValidDocuments.AddOrUpdate(document, Valid);
+    }
+
+    private static void ValidateDocument(TirDocument document)
+    {
         if (!string.Equals(document.SchemaId, SchemaId, StringComparison.Ordinal)
             || !string.Equals(document.SchemaVersion, SchemaVersion, StringComparison.Ordinal))
         {

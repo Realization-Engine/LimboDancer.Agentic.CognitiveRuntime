@@ -4,12 +4,10 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 public sealed class AslScenarioA1SupplementaryRegistryTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
-
     [Fact]
     public void BoundedChartSupplementPinsDistinctSourceAndRemainsUnverified()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         using var candidate = ReadCandidate();
         var supplement = AslScenarioA1SupplementaryRegistryBuilder.Build(
             RepositoryPaths.Root, manifests, candidate);
@@ -35,7 +33,7 @@ public sealed class AslScenarioA1SupplementaryRegistryTests
     [Fact]
     public void AlteredCandidateOrTranscriptCannotReuseSupplementIdentity()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         using var candidate = ReadCandidate();
         using var wrongPage = JsonDocument.Parse(candidate.RootElement.GetRawText().Replace(
             "\"physicalPdfPage\": 698", "\"physicalPdfPage\": 699", StringComparison.Ordinal));

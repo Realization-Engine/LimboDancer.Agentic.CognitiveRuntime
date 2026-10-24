@@ -6,7 +6,6 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 /// <summary>Delegated source and domain review for the declared occupied-building cases.</summary>
 public sealed class AslScenarioA1OccupiedMatrixTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly string[] OverrunRuleIds =
         ["A2.8", "A4.13", "A4.14", "A4.15", "A4.151", "A4.152", "B23.4"];
@@ -77,7 +76,7 @@ public sealed class AslScenarioA1OccupiedMatrixTests
     [Fact]
     public void EveryReviewedRuleHasExactVerifiedFragmentsAndDeferredRulesRemainVisible()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         using var attestationJson = Read("asl-scenario-a1.source-attestation.json");
         var attestation = JsonSerializer.Deserialize<AslScenarioA1SourceAttestation>(
             attestationJson.RootElement.GetRawText(), JsonOptions)!;

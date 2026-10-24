@@ -6,7 +6,6 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 /// <summary>Affirmative xUnit review of the source-backed transition; publishes no domain package.</summary>
 public sealed class AslScenarioA1ConcealedSmcTransitionTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
     private const string ReviewDigest = "d1db66dbc66b00272cf458b341f5789512d4900c405024292c676324dcaf32f0";
     private static readonly string[] Rules = ["A12.15", "A4.14", "A4.15", "A4.151", "A4.152", "B23.4"];
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -29,7 +28,7 @@ public sealed class AslScenarioA1ConcealedSmcTransitionTests
         Assert.Equal("asl-supplement:b-terrain-chart-building-entry",
             review.GetProperty("buildingCostSupplement").GetString());
 
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         using var attestationJson = JsonDocument.Parse(File.ReadAllText(Registry("asl-scenario-a1.source-attestation.json")));
         var attestation = JsonSerializer.Deserialize<AslScenarioA1SourceAttestation>(
             attestationJson.RootElement.GetRawText(), JsonOptions)!;

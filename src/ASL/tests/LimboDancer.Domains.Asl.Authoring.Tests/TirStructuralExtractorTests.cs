@@ -4,8 +4,6 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 public sealed class TirStructuralExtractorTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
-
     private static readonly DateTimeOffset CreatedAt = new(
         2026,
         9,
@@ -360,7 +358,7 @@ public sealed class TirStructuralExtractorTests
     [Fact]
     public void CommittedStructuralSampleMatchesCurrentCSharpExtraction()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var extracted = TirStructuralExtractor.Extract(
             manifests.Registry,
             manifests.Fragments,

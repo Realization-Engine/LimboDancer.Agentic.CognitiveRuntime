@@ -114,7 +114,7 @@ public sealed class SourceRegistryTests
     [Fact]
     public void CommittedVerificationSampleMatchesCurrentSourceBytes()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var expected = ManifestJson.SerializeVerificationSample(
             manifests.Registry.RegistryId,
             manifests.VerificationSample);

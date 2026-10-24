@@ -4,12 +4,10 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 public sealed class AslScenarioA1CaseAssessmentTests
 {
-    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
-
     [Fact]
     public void InitialAttestationLeavesSpecificBaselineSourceAndSemanticGaps()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var initialAttested = AslScenarioA1SourceInventory.Extract(manifests);
         var verified = initialAttested.Rules.SelectMany(rule => rule.Fragments)
             .Select(fragment => fragment.FragmentId)
@@ -77,7 +75,7 @@ public sealed class AslScenarioA1CaseAssessmentTests
     [Fact]
     public void EvenEveryCandidateSourceFragmentWouldNotAuthorizeAnOutcome()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var all = manifests.Fragments.Select(fragment => fragment.FragmentId)
             .ToHashSet(StringComparer.Ordinal);
         var result = AslScenarioA1CaseAssessor.Assess(
@@ -116,7 +114,7 @@ public sealed class AslScenarioA1CaseAssessmentTests
             Assert.Equal("candidate-unverified", row.GetProperty("sourceStatus").GetString());
         });
 
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         Assert.DoesNotContain(manifests.Registry.Artifacts, artifact =>
             artifact.StartPage == candidate.PhysicalPdfPage || artifact.EndPage == candidate.PhysicalPdfPage);
         var result = AslScenarioA1CaseAssessor.Assess(
@@ -131,7 +129,7 @@ public sealed class AslScenarioA1CaseAssessmentTests
     [Fact]
     public void PdfComparisonEvidencePinsTenExactUnverifiedFragmentsAndTwoImages()
     {
-        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = SharedManifests.AtSourceCommit;
         var path = Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry",
             "asl-scenario-a1.first-case-pdf-comparison.json");
         using var evidence = JsonDocument.Parse(File.ReadAllText(path));
