@@ -191,7 +191,7 @@ The SVG work merged in PR 19, footprint and stable placement identifiers in PR 2
 | Gambit placed-map Rout steps, A3 measurements | 22.5 to 49.5 s | About 0.05 to 0.7 s |
 | Berserk charge step, `dl-tractor-works-02` revision 1316, Berserk Charge Plan | 12.8 s; 5 searches of 2.2 s; about 1.4 GB | 0.37 s; 1 search of 0.29 s; about 102 MB |
 | ASL CI run, one job against five parallel jobs (PR 35, 2026-10-24) | 11:54 | 5:37 |
-| Authoring tests, this Windows machine (PR 36, 2026-10-24) | 7:58 | 0:18 |
+| Authoring tests (PR 36, 2026-10-24) | 7:58 on this Windows machine; 4:00 in CI | 0:18 on this machine; 0:17 in CI |
 
 These are reference measurements, not universal timing limits. Workloads, instrumentation, and machine load differ; do not multiply their percentages into a cumulative speedup. The heavy-step sequence of approximately 315 to 101 to 68 MB does provide a recorded allocation progression for that step.
 
