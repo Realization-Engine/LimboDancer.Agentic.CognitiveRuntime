@@ -25,10 +25,11 @@ public static class ScenarioA1ArmorLeaders
 
     /// <summary>
     /// Why a record may not give a unit an Armor Leader (D3.4, D3.41, D3.45; ruling R55.15), or null: he is assigned to a vehicle, in one of the
-    /// four grades, and not to one whose crew is Inexperienced, whose 6+1 is the crew's leader.
+    /// four grades, and not to one whose crew is Inexperienced, whose 6+1 is the crew's leader. A crew counter that left its vehicle may carry him
+    /// too (<paramref name="crew"/>; D3.43; pass 65, ruling R65.20): he ceases to exist while it is a counter, and returns when it re-crews.
     /// </summary>
-    public static RecordRefusal? AssignmentRefusal(string unit, bool vehicle, int morale, int leadership, bool inexperiencedCrew) =>
-        !vehicle ? new RecordRefusal("UNIT-STATE-047", $"'{unit}' is not a vehicle: an Armor Leader is assigned to an AFV (D3.41).")
+    public static RecordRefusal? AssignmentRefusal(string unit, bool vehicle, int morale, int leadership, bool inexperiencedCrew, bool crew = false) =>
+        !vehicle && !crew ? new RecordRefusal("UNIT-STATE-047", $"'{unit}' is not a vehicle: an Armor Leader is assigned to an AFV (D3.41).")
         : !IsGrade(morale, leadership) ? new RecordRefusal("UNIT-STATE-047", $"'{unit}' names an Armor Leader {Grade(morale, leadership)}: the grades are 8-1, 9-1, 9-2, and 10-2 (D3.4, H1.43).")
         : inexperiencedCrew ? new RecordRefusal("UNIT-STATE-047", $"'{unit}' has an Inexperienced Crew, whose inherent 6+1 is its Armor Leader (D3.45): it takes no other.")
         : null;
@@ -159,7 +160,7 @@ public static class ScenarioA1ArmorLeaders
 
     /// <summary>The vehicles of an IFT resolution whose crews took a check.</summary>
     public static IReadOnlyCollection<string> Checked(FireResolution? resolution) =>
-        resolution?.VehicleEffects is { } effects ? [.. effects.Where(item => item.CrewCheck is not null).Select(item => item.VehicleId)] : [];
+        resolution?.VehicleEffects is { } effects ? [.. effects.Where(item => item.CrewCheck is not null || item.TaskCheck is not null).Select(item => item.VehicleId)] : [];
 
     /// <summary>An IFT attack's facts as its record keeps them (D3.41): a crew's Morale Level only for a vehicle whose crew the attack made check.</summary>
     public static FireAttack Recorded(FireAttack attack, FireResolution resolution)
@@ -187,7 +188,9 @@ public static class ScenarioA1ArmorLeaders
         ArgumentNullException.ThrowIfNull(shot);
         ArgumentNullException.ThrowIfNull(resolution);
         var target = KillChecked(resolution) ? shot.VehicleTarget : WithoutMorale(shot.VehicleTarget);
-        var vehicles = Recorded(shot.Hit?.Vehicles, [.. Checked(resolution.Hit), .. Checked(resolution.CriticalHit), .. (resolution.LevelHits ?? []).SelectMany(Checked)]);
+        // Pass 65 (ruling R65.21): an AFV crew a mortar's hit made take its Immobilization TC (D5.5) checked too.
+        var vehicles = Recorded(shot.Hit?.Vehicles, [.. Checked(resolution.Hit), .. Checked(resolution.CriticalHit), .. (resolution.LevelHits ?? []).SelectMany(Checked),
+            .. (resolution.AreaVehicles ?? []).Where(item => item.CrewCheck is not null).Select(item => item.VehicleId)]);
         if (ReferenceEquals(target, shot.VehicleTarget) && ReferenceEquals(vehicles, shot.Hit?.Vehicles))
         {
             return shot;

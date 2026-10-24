@@ -42,6 +42,11 @@ public static class ScenarioA1SequenceCalculator
         ["asl.game.overrun"] = ["vehicleId"],
         ["asl.game.button-up"] = ["vehicleId"],
         ["asl.game.motion-attempt"] = ["vehicleId"],
+        ["asl.game.abandon-vehicle"] = ["vehicleId"],
+        ["asl.game.recrew-vehicle"] = ["unitId", "vehicleId"],
+
+        // D10.5 (pass 65, ruling R65.23): the vehicle scrounged may be the enemy's.
+        ["asl.game.scrounge"] = ["unitId"],
         ["asl.game.massacre"] = ["unitId"],
         ["asl.game.throw-dc"] = ["unitId"],
         ["asl.game.fire-starshell"] = ["unitId"],
@@ -132,12 +137,15 @@ public static class ScenarioA1SequenceCalculator
         return action != "asl.game.setup" && proposer is not null && anyEvents && proposerBar() is { } notYours ? notYours : null;
     }
 
-    /// <summary>Ruling R26.2: a Passenger acts only with its vehicle until it unloads; eight actions are exempt.</summary>
+    /// <summary>
+    /// Ruling R26.2: a Passenger acts only with its vehicle until it unloads; eight actions are exempt. Pass 65 (rulings R65.10, R65.11): so are fire
+    /// (D6.1), a SW's transfer (D6.31), and a rout (beneath the vehicle, D6.1), whose plans check the Passenger's part.
+    /// </summary>
     public static string? PassengerBar(string action, bool anyEvents, Func<string?> aboardBar)
     {
         ArgumentNullException.ThrowIfNull(aboardBar);
         return action is not ("asl.game.setup" or "asl.game.move-vehicle" or "asl.game.hook-gun" or "asl.game.advance-phase" or "asl.game.choose" or "asl.game.pass-fire"
-            or "asl.game.end-move" or "asl.game.button-up") && anyEvents && aboardBar() is { } aboard ? aboard : null;
+            or "asl.game.end-move" or "asl.game.button-up" or "asl.game.fire" or "asl.game.transfer" or "asl.game.rout") && anyEvents && aboardBar() is { } aboard ? aboard : null;
     }
 
     /// <summary>A4.152 (ruling R27.3): once the DEFENDER's window on a berserk OVR's entry closes, its CC comes first; <paramref name="overrunAt"/> reads where it is pending.</summary>

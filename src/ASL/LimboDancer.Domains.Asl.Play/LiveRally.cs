@@ -18,7 +18,7 @@ public static class LiveRally
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unitId);
-        if (state.Catalog.Catalog != LiveFire.Catalog || state.Catalog.Version != LiveFire.CatalogVersion)
+        if (!LiveFire.ServesCatalog(state))
         {
             return (null, $"play.rally-catalog: the Rally package reads {LiveFire.Catalog}@{LiveFire.CatalogVersion}, and this game uses {state.Catalog.Catalog}@{state.Catalog.Version}");
         }

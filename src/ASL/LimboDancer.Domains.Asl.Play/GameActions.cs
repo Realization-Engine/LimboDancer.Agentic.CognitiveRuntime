@@ -45,17 +45,19 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor Rout = Descriptor("asl.game.rout", "Rout",
-        "In the RtPh, rout a broken unit that must or may rout along a route of ADJACENT Locations to the nearest woods or building Location, within six MF (three for a wounded SMC), or by Low Crawl one Location; entering Open Ground in the LOS and Normal Range of an unbroken enemy unit is Interdicted by a NMC (A10.5 to A10.533; ruling R13.3).",
+        "In the RtPh, rout a broken unit that must or may rout along a route of ADJACENT Locations to the nearest woods or building Location, within six MF (three for a wounded SMC), or by Low Crawl one Location; entering Open Ground in the LOS and Normal Range of an unbroken enemy unit is Interdicted by a NMC (A10.5 to A10.533; ruling R13.3). A broken Passenger names no route and routs beneath its Stopped vehicle with all its MF (beneath; D6.1, pass 65).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
-          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "route"],
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId"],
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "unitId": { "type": "string" },
-            "route": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-            "lowCrawl": { "type": "boolean" }
+            "route": { "type": "array", "items": { "type": "string" } },
+            "lowCrawl": { "type": "boolean" },
+            "keep": { "type": "array", "items": { "type": "string" } },
+            "beneath": { "type": "boolean" }
           }
         }
         """);
@@ -547,7 +549,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor MoveVehicle = Descriptor("asl.game.move-vehicle", "Move a vehicle",
-        "In its MPh, a vehicle of the phasing side spends one MP expenditure: start (1 MP unless in Motion; forward or in Reverse; a bogged vehicle's Bog Removal), a VCA change of one hexspine, entering a hex forward, in Reverse, or in VBM at the Terrain Chart's cost with any Bog DR, as a Minimum Move, or with an OVR, stop (1 MP), or exit; or an ESB DR for more MP, or an OVR declared where it is after the concealed units there chose; the DEFENDER may fire after each (D2.1 to D2.7, D7.1, D8.2, D8.3; rulings R11.1 to R11.12).",
+        "In its MPh, a vehicle of the phasing side spends one MP expenditure: start (1 MP unless in Motion; forward or in Reverse; a bogged vehicle's Bog Removal), a VCA change of one hexspine, entering a hex forward, in Reverse, or in VBM at the Terrain Chart's cost with any Bog DR, as a Minimum Move, or with an OVR, stop (1 MP), a Delay MP, or exit; or an ESB DR for more MP, or an OVR declared where it is after the concealed units there chose; or Infantry board it (units, before it spends any MP, or as the last step of their own move) or its Passengers unload (units; a halftrack or Carrier may keep their SW aboard, leave, and they may take one left there, take; a Carrier's inherent HS may unload too, Abandoning it, crew); a turret may turn with the step; the DEFENDER may fire after each (D2.1 to D2.7, D2.17, D3.12, D6.4, D6.5, D7.1, D8.2, D8.3; rulings R11.1 to R11.12, R26.2, R65.15).",
         PlayPermission, "asl.game.reviewed-fire-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -556,12 +558,17 @@ public static class GameActions
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "vehicleId": { "type": "string" },
-            "kind": { "type": "string", "enum": ["start", "turn", "enter", "stop", "exit", "esb", "overrun"] },
+            "kind": { "type": "string", "enum": ["start", "turn", "enter", "stop", "exit", "esb", "overrun", "load", "unload", "delay"] },
             "facing": { "type": "string" }, "to": { "type": "string" },
             "edge": { "type": "string", "enum": ["top", "bottom", "left", "right"] },
             "reverse": { "type": "boolean" }, "bypass": { "type": "boolean" }, "allMp": { "type": "boolean" },
             "overrun": { "type": "boolean" }, "minimumMove": { "type": "boolean" },
-            "mp": { "type": "integer", "minimum": 1 }
+            "mp": { "type": "integer", "minimum": 1 },
+            "units": { "type": "array", "items": { "type": "string" } },
+            "turret": { "type": "string" },
+            "leave": { "type": "array", "items": { "type": "string" } },
+            "take": { "type": "object", "additionalProperties": { "type": "string" } },
+            "riders": { "type": "boolean" }, "crew": { "type": "boolean" }
           }
         }
         """);
@@ -584,7 +591,7 @@ public static class GameActions
         }));
 
     public static readonly ActionDescriptor VehicleCloseCombat = Descriptor("asl.game.vehicle-close-combat", "Close Combat with a vehicle",
-        "One CC attack in a Location holding a vehicle: Infantry attack the vehicle (one unit, or one with a SMC), or the vehicle attacks Infantry with its CC armament, one attack at a time, the non-vehicular side first (A11.31, A11.5, A11.62; CC between Infantry there is not built); or a side passes; or, in the MPh, a DEFENDER unit's CC Reaction Fire at a vehicle in its Location, after any PAATC (D7.21; rulings R11.13 to R11.16).",
+        "One CC attack in a Location holding a vehicle: Infantry attack the vehicle (one unit, or one with a SMC), to eliminate it or, with capture, to capture an Abandoned AFV (A21.2), or the vehicle attacks Infantry with its CC armament, one attack at a time, the non-vehicular side first (A11.31, A11.5, A11.62; CC between Infantry there is not built); or a side passes; or, in the MPh, a DEFENDER unit's CC Reaction Fire at a vehicle in its Location, after any PAATC (D7.21; rulings R11.13 to R11.16, R65.22).",
         PlayPermission, "asl.game.reviewed-close-combat-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -596,7 +603,8 @@ public static class GameActions
             "attackers": { "type": "array", "items": { "type": "string" } },
             "defenders": { "type": "array", "items": { "type": "string" } },
             "vehicleId": { "type": "string" },
-            "pass": { "type": "boolean" }
+            "pass": { "type": "boolean" },
+            "capture": { "type": "boolean" }
           }
         }
         """, JsonSerializer.SerializeToElement(new
@@ -727,6 +735,50 @@ public static class GameActions
         }
         """);
 
+    public static readonly ActionDescriptor AbandonVehicle = Descriptor("asl.game.abandon-vehicle", "Abandon a vehicle",
+        "In its own MPh, the crew of an armed vehicle that has not moved or fired this Player Turn leaves it, spending all its MF to be placed beneath it, and the vehicle is Abandoned; the DEFENDER may fire at the crew with FFNAM (D5.41, D5.43). An Inherent crew may also destroy it as it leaves (destroy: wreck for a non-burning wreck, malfunction for every MG and the MA; D5.411), and the crew of an armored halftrack of its nationality may Remove its MG as its LMG (removeMg; D6.631). The crew takes the vehicle's Armor Leader with it (D3.43).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "vehicleId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "vehicleId": { "type": "string" },
+            "destroy": { "type": "string", "enum": ["wreck", "malfunction"] },
+            "removeMg": { "type": "boolean" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor RecrewVehicle = Descriptor("asl.game.recrew-vehicle", "Re-crew a vehicle",
+        "In its own MPh, an Infantry unit in Good Order in the Location of its side's Abandoned vehicle since the MPh began enters it to become its crew, spending all its MF; not in the Player Turn its last crew left it, nor a Recalled crew into its own AFV. A unit other than a vehicle or infantry crew is a Temporary crew (A21.22). The crew brings back the Armor Leader and a MG it Removed (D5.42, D5.341, D3.43, D6.631).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "vehicleId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "vehicleId": { "type": "string" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor Scrounge = Descriptor("asl.game.scrounge", "Scrounge a vehicle",
+        "In its own RPh, an unbroken, non-berserk Infantry MMC not in Melee scrounges a non-burning wreck or an Abandoned vehicle in its Location that is not Scrounged or Disabled: a dr of 1 to 3 salvages that many of its BMG not fixed, AAMG, or mortar MA, by Random Selection, a MG as its nationality's LMG. Whatever the dr, the vehicle is marked Scrounged, and the unit and what it salvages are TI for the rest of the Player Turn (D10.5 to D10.52).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "vehicleId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "vehicleId": { "type": "string" }
+          }
+        }
+        """);
+
     public static IReadOnlyList<ActionDescriptor> All
     {
         get;
@@ -734,7 +786,7 @@ public static class GameActions
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
             Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp,
-            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt];
+            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle, Scrounge];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

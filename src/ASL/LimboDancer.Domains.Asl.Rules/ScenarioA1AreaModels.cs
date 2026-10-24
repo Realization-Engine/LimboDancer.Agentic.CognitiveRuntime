@@ -79,6 +79,27 @@ public sealed record OrdnanceAreaVehicle(string VehicleId, string DefinitionId, 
     {
         get; init;
     }
+
+    /// <summary>The crew's Immobilization TC after a hull hit immobilized it (D5.5; pass 65, ruling R65.21); null when none was taken.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireCheck? CrewCheck
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the crew Abandons the AFV after failing its TC (D5.5; pass 65); null when it does not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Abandoned
+    {
+        get; init;
+    }
+
+    /// <summary>The Survival DR of each Passenger and Rider of the AFV destroyed and not burnt (D6.9, D9.2; pass 65, ruling R65.21); null when none is rolled.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<PrcSurvival>? PrcSurvival
+    {
+        get; init;
+    }
 }
 
 /// <summary>

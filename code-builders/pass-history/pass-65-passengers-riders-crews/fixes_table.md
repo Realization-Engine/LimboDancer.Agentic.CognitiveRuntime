@@ -1,0 +1,19 @@
+# R3, table player: the review's findings (2026-10-24), as reported
+
+1. MINOR. A rout beneath records "routs from [F8] to [F8] for 6 MF (A10.5)" (PlayRecords.cs:913) and Replay "routs to [F8]" (ReplaySteps.cs:369); game p65-rout-beneath rev 11. D6.1, D5.311. Fix: when the unit was aboard before the step, "{unit} routs beneath {vehicle} in {at}, spending all its MF (D6.1)", the Replay step the same.
+2. MINOR. A Carrier HS's unload never says the Carrier is now Abandoned (PlayRecords.cs:334, ReplaySteps.cs about :318); p65-carrier-unload rev 9-10. D6.83. Fix: append "; its inherent HS has left it, so vehicle B1 is Abandoned (D6.83)".
+3. MINOR. A failed load leaves no record line (Fire.cs:1044-1053 writes an `instance-moved` PlayRecords does not word). D5.43. Fix: "{unit} does not board {vehicle}: pinned/broken by the fire its boarding drew (D5.43)".
+4. MINOR. The IFT attack's record line says nothing of the PRC (PlayRecords.FireLine :370-401), unlike the ordnance records (:592, :656) which add `PrcLines`; p65-prc-halftrack rev 11. D.8B. Fix: append the non-trivial `FireText.PrcLines` per `fire.Vehicles` entry.
+5. MINOR. A capture attempt's arithmetic is never shown (no Studio service words `VehicleCloseCombatResolved`); p65-capture-cc rev 15-16. A21.2, A11.5, A11.51. Fix: a record line for a vehicle CC round: CCV, DR, each DRM with its rule, the result.
+6. MINOR. The Bail Out record has no DR (PlayRecords.cs:314-317), "reduced" unclear; p65-riders-woods rev 17, 19. D6.24. Fix: "NMC {d1}, {d2} = {dr} against {morale}: ..." from the event's roll; Reduced as "Casualty Reduced and broken".
+7. MINOR. A Bail Out NMC has no ELR replacement (ScenarioA1RiderRules.Check :148). D6.24, A19.13. Fix: carry the ELR (as `FirePrc.Elr`), or a backlog row.
+8. NOTE. The terrain Bail Out preview says "beneath it" though the Riders go to the hex left (Riders.cs:155-159). D6.21. Fix: "in [E8], the hex the AFV left".
+9. MINOR. Wrong advice for a squad as a Temporary crew (CapturedVehicleRules.SquadBar :79-81): A21.22 (p. 88) lets a capturing squad be exchanged for a HS, free; the refusal sends the player to A1.31's Deployment. Fix: let a squad enter with the exchange, or reword as not built (backlog).
+10. MINOR. A Carrier's MG Removal refused with the wrong rule (CrewActsRules.MgRemoval :79-82): D5.41 cites 6.83 for Carriers; D6.83 (p. 206) lets a Carrier HS/crew abandon with the MG/ATR/mortar as per 6.631. Fix: accept class carrier (not after D6.83's quick unload), or say not built and add a backlog row; the section's help text too.
+11. MINOR. D5.311's broken crew placed beneath and the AFV Abandoned at once (FireText.CrewText :379-386, Fire.cs:1267-1271), stated as done. Same as R1's 8. Fix: a ruling and backlog row, or move to the RtPh; meanwhile "broken; it routs beneath in the RtPh (D5.311)".
+12. NOTE. The unload proposal promises a CC counter never placed (Passengers.cs:462). Fix: "they are not held in Melee (D6.5)".
+13. NOTE. The capture attempt proposal (VehicleCloseCombat.cs:449) omits burn. Fix: "a result that would eliminate or burn it captures it".
+14. NOTE. Automatic capture is forced and needs Good Order (CapturedVehicles.cs:15-34); A21.2 says "may" and "any Infantry unit". Fix: a ruling line or a backlog row.
+15. NOTE. Wording: "(D6.631) (D5.41)" (PlayRecords.cs:322); PrcLines' "...: passed: unaffected" (:351); "[F8]: vehicle in [F8] is captured" names the hex twice; the roll purposes `rider-bail-out`, `rider-weapon`, `scrounge`, `cc-vehicle-attack` lack DisplayText.RollWords; no record line for the temporary-start check; `CaptureAttemptBar` advises "attack it to eliminate it" for an escorted unarmed vehicle, though A11.52 captures it once its escort is gone.
+
+Boundary: `PassengersExposed` (:26-27); `PlanRecrew`'s capture by nationality (CrewActs.cs:231); the own-crew id suffix (:213). No absent-safety fault; no hidden name.

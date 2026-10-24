@@ -60,7 +60,7 @@ public static class ScenarioA1RallyRules
     }
 
     /// <summary>A18.11: the MMC (a squad, half-squad, or crew) of a side whose Rally attempt counts as the side's first MMC Rally.</summary>
-    public static bool IsMmcRallier(bool sameSide, string kind) => sameSide && kind is "asl:squad" or "asl:half-squad" or "asl:crew";
+    public static bool IsMmcRallier(bool sameSide, string kind) => sameSide && (kind is "asl:squad" or "asl:half-squad" || ScenarioA1Definitions.IsCrew(kind));
 
     /// <summary>A1.31, A1.32: a leader who directed a Deployment or permitted a Recombination this RPh rallies no one.</summary>
     public static string? LeaderRallyPhaseActionBar(string? leaderId, bool tookRallyPhaseAction) =>

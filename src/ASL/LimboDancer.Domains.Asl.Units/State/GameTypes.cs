@@ -313,8 +313,20 @@ public static class Conditions
     /// </summary>
     public const string InexperiencedCrew = "asl:inexperienced-crew";
 
+    /// <summary>
+    /// A crew, Passenger, or Rider placed beneath its vehicle by Survival or a failed Immobilization TC (D5.5, D5.6, D6.9, p. 204; pass 65, ruling R65.21):
+    /// under Hazardous Movement against every later attack of that phase; removed as the phase ends. Written only by events planned since the pass.
+    /// </summary>
+    public const string HazardousMovement = "asl:hazardous-movement";
+
+    /// <summary>
+    /// A non-burning wreck or Abandoned vehicle that has been scrounged (D10.5, p. 211; pass 65, ruling R65.23): it is never scrounged again, and its
+    /// scroungeable weapons are Disabled. Written only by <c>vehicle-scrounged</c>, a record of the pass.
+    /// </summary>
+    public const string Scrounged = "asl:scrounged";
+
     /// <summary>Conditions the state model adds to the vocabulary's states; they have no drawn form.</summary>
-    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned, Bogged, Mired, BmgMalfunctioned, CmgMalfunctioned, CcReaction, Dismantled, Unarmed, BmgDisabled, CmgDisabled, InexperiencedCrew];
+    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned, Bogged, Mired, BmgMalfunctioned, CmgMalfunctioned, CcReaction, Dismantled, Unarmed, BmgDisabled, CmgDisabled, InexperiencedCrew, HazardousMovement, Scrounged];
 
     public static bool IsDeclared(string name, Vocabulary.UnitVocabulary vocabulary) =>
         Undrawn.Contains(name, StringComparer.Ordinal) || vocabulary.TryGetState(name, out _);
@@ -355,6 +367,12 @@ public enum ContainmentRole
 
     /// <summary>In a fortification such as a foxhole or pillbox.</summary>
     InFortification,
+
+    /// <summary>
+    /// An Infantry unit that entered an Abandoned vehicle to become its crew (D5.42; pass 65, ruling R65.20): inside it, no Passenger, counting no PP,
+    /// and attacked only as the vehicle's crew; it leaves again, as itself, when the vehicle is next Abandoned.
+    /// </summary>
+    Crew,
 }
 
 /// <summary>Inside another instance; its location is the container's (ASL-UNIT-025).</summary>
@@ -531,7 +549,34 @@ public sealed record UnitInstance(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The Temporary crew that mans a vehicle (A21.22, D5.343, pp. 88 and 204; pass 65, ruling R65.22), as its <c>vehicle-recrewed</c> record names it.
+    /// Null for its own or a qualified crew, and for every vehicle of a game recorded before the pass.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public TemporaryCrew? TemporaryCrew
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The side a vehicle belonged to before its first <c>vehicle-captured</c> record (A21.2; the referee's review of pass 65), kept through later captures;
+    /// Rules reads a captured vehicle from it (<c>ScenarioA1CapturedVehicleRules.Captured</c>). Null for a vehicle no such record took, and so for every
+    /// vehicle of a game recorded before the pass.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? CapturedFrom
+    {
+        get; init;
+    }
 }
+
+/// <summary>
+/// A vehicle's Temporary crew (A21.22; pass 65, ruling R65.22): how it is manned (<c>vehicle-crew</c>, <c>infantry-crew</c>, <c>half-squad</c>, or
+/// <c>smc</c>, Rules' names) and whether the vehicle is captured, an enemy nationality's; Rules reads both for the penalties.
+/// </summary>
+public sealed record TemporaryCrew(string Manning, bool Captured);
 
 /// <summary>
 /// An Armor Leader as his vehicle carries him (D3.4, D3.41; pass 55, ruling R55.15): his Morale Level and his leadership modifier, of the grades

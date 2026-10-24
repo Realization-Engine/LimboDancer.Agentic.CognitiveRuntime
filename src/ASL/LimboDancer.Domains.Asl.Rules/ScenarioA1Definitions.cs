@@ -10,13 +10,47 @@ public static class ScenarioA1Definitions
     public static IReadOnlyList<string> SmcKinds { get; } = ["asl:leader", "asl:hero"];
 
     /// <summary>The kinds that may set up hidden (A12.3; ruling R23.5).</summary>
-    public static IReadOnlyList<string> HiddenSetupKinds { get; } = ["asl:squad", "asl:half-squad", "asl:crew", "asl:leader", "asl:hero"];
+    public static IReadOnlyList<string> HiddenSetupKinds { get; } = ["asl:squad", "asl:half-squad", "asl:crew", "asl:vehicle-crew", "asl:leader", "asl:hero"];
 
     /// <summary>The unit kinds that are MMC for gaining Control (A26.11).</summary>
-    public static IReadOnlyList<string> MmcKinds { get; } = ["asl:squad", "asl:half-squad", "asl:crew"];
+    public static IReadOnlyList<string> MmcKinds { get; } = ["asl:squad", "asl:half-squad", "asl:crew", "asl:vehicle-crew"];
 
     /// <summary>The kinds a view shows as a counter of a stack before play (A2.9); SW and Guns lie beneath their units and are not seen before play.</summary>
-    public static IReadOnlyList<string> StackCounterKinds { get; } = ["asl:squad", "asl:half-squad", "asl:crew", "asl:leader", "asl:hero", "asl:vehicle"];
+    public static IReadOnlyList<string> StackCounterKinds
+    {
+        get;
+    } =
+        ["asl:squad", "asl:half-squad", "asl:crew", "asl:vehicle-crew", "asl:leader", "asl:hero", "asl:vehicle"];
+
+    /// <summary>
+    /// Whether a kind is a crew (A1.123, p. 44; D5.1, p. 203; pass 65, ruling R65.2): an infantry crew or a vehicle crew. "A vehicle-crew counter
+    /// has all the capability of an infantry-crew counter (A1.123), other than its lower Strength Factor", and that difference lives in the
+    /// definition's values, so every rule that speaks of a crew reads this member.
+    /// </summary>
+    public static bool IsCrew(string? kind) => kind is "asl:crew" or "asl:vehicle-crew";
+
+    /// <summary>The kind of the counter a crew becomes when it leaves its vehicle (D5.1, p. 203).</summary>
+    public const string VehicleCrewKind = "asl:vehicle-crew";
+
+    /// <summary>
+    /// The definition a crew that leaves its vehicle is placed as (D5.1, p. 203: "Whenever a crew leaves its vehicle it becomes a vehicle-crew
+    /// counter"; pass 65, ruling R65.19): the vehicle-crew definition of the vehicle's nationality, the first by id; null when the catalog has none.
+    /// </summary>
+    public static string? LeavingCrewDefinition(IEnumerable<FireDefinition> definitions, string? nationality)
+    {
+        ArgumentNullException.ThrowIfNull(definitions);
+        return definitions.Where(item => item.Kind == VehicleCrewKind && item.Nationality == nationality).Select(item => item.Id)
+            .Order(StringComparer.Ordinal).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Whether a package that reads <paramref name="packageCatalog"/> at <paramref name="packageVersion"/> serves a game's catalog (pass 65, ruling
+    /// R65.4): the same catalog at the same major version and a version no later than the package's, as the vocabulary's <c>Serves</c> reads a pack.
+    /// A catalog only adds and corrects definitions, never removes one, so a game of an older minor version still reads every definition it names.
+    /// </summary>
+    public static bool CatalogServes(string packageCatalog, string packageVersion, string gameCatalog, string gameVersion) =>
+        gameCatalog == packageCatalog && Version.TryParse(packageVersion, out var package) && Version.TryParse(gameVersion, out var game)
+        && game.Major == package.Major && game <= package;
 
     /// <summary>The Axis Minor nations (A25.8).</summary>
     public static IReadOnlyList<string> AxisMinorNations { get; } = ["romanian", "hungarian", "slovakian", "croatian", "bulgarian"];
@@ -334,7 +368,7 @@ public static class ScenarioA1Definitions
         fiveEighths ? (large ? 5 : 4) : squad ? 3 : halfSquadOrCrew ? 2 : 1;
 
     /// <summary>The US# of a Personnel unit by its kind (A1.6).</summary>
-    public static int UnitSize(string? kind) => UnitSize(kind == "asl:squad", kind is "asl:half-squad" or "asl:crew");
+    public static int UnitSize(string? kind) => UnitSize(kind == "asl:squad", kind == "asl:half-squad" || IsCrew(kind));
 
     public static bool GoodOrderOf(bool active, bool broken, bool berserk, bool melee, bool captured, bool stunned, bool shocked) =>
         active && !broken && !berserk && !melee && !captured && !stunned && !shocked;

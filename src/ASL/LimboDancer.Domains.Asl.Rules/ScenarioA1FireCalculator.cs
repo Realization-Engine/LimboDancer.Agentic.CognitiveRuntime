@@ -68,7 +68,7 @@ public static class ScenarioA1FireCalculator
     /// </summary>
     private static bool ElrImmune(string? definitionId, ScenarioA1FireReference reference) =>
         definitionId is { } id && reference.Definitions.TryGetValue(id, out var definition)
-        && (definition.IsHero || definition.Kind == "asl:crew" || ScenarioA1FireReference.IsCommissar(id));
+        && (definition.IsHero || ScenarioA1Definitions.IsCrew(definition.Kind) || ScenarioA1FireReference.IsCommissar(id));
 
     public static IReadOnlyList<string> Precheck(FireAttack attack, ScenarioA1FireReference reference)
     {
@@ -536,7 +536,7 @@ public static class ScenarioA1FireCalculator
             .ToArray();
 
         // A7.307, A7.308, D.8B: the vehicles in the target Location are attacked with the attack's IFT DR (unit step 25): one at a time
-        // (ruling R25.3 keeps a Location to one vehicle, so the A7.308 limit on vehicles affected never binds), by Residual FP too (A8.2,
+        // (ruling R25.3 keeps a Location to one vehicle for an attack made before pass 65, so the A7.308 limit binds only since), by Residual FP too (A8.2,
         // A8.222; ruling R6.6), by an ordnance hit only as below (the Vehicle Target Type is its own shot, R7.2): an unarmored vehicle, or an
         // AFV open-topped or closed-topped, whose CE crew alone is Vulnerable (R25.1, R7.11). An AFV in terrain with a positive TEM (not
         // cumulative with its crew's CE DRM, D5.31) is not reviewed (ruling R25.6).
@@ -545,14 +545,19 @@ public static class ScenarioA1FireCalculator
         // C3.332, C1.55 (pp. 170, 165; pass 60, ruling R60.10): an Area Target Type hit attacks its unarmored vehicles on the Vehicle line and the
         // Vulnerable crews of its AFVs alike; the Ordnance package resolves each AFV itself on the IFT.
         // D5.31 (pass 60, ruling R60.15): the CE crew of an AFV a FT, MOL, or DC names takes the CE DRM alone, in a positive TEM too.
+        // D5.31 (p. 203; pass 65, ruling R65.7): so does the crew of an AFV that carries the pass's fact of its PRC under any other IFT attack, which lifts
+        // ruling R25.6's refusal; each PRC names a unit of the catalog, as a Passenger or a Rider.
         var vehicles = attack.Vehicles ?? [];
         var ordnanceHit = attack.OrdnanceHit is not null;
-        if ((vehicles.Count > 1 && !ordnanceHit)
+        // A7.308 (p. 56; pass 65, ruling R65.26): an attack that carries every vehicle's PRC meets every vehicle of the Location, Random Selection picking
+        // those the DR affects; an older record keeps ruling R25.3's one vehicle.
+        if ((vehicles.Count > 1 && !ordnanceHit && vehicles.Any(item => item.Prc is null))
             || (!ordnanceHit && attack.TargetVehicle is null
                 && (attack.TargetTerrain is { } vehicleTerrain && ScenarioA1FireReference.Tem.TryGetValue(vehicleTerrain, out var vehicleTem) && vehicleTem > 0)
-                && vehicles.Any(item => reference.Definitions.GetValueOrDefault(item.DefinitionId!) is { IsVehicle: true, Unarmored: not true }))
+                && vehicles.Any(item => item.Prc is null && reference.Definitions.GetValueOrDefault(item.DefinitionId!) is { IsVehicle: true, Unarmored: not true }))
             || vehicles.Any(item => item.LocationId != attack.TargetLocationId
-                || reference.Definitions.GetValueOrDefault(item.DefinitionId!) is not { IsVehicle: true }))
+                || reference.Definitions.GetValueOrDefault(item.DefinitionId!) is not { IsVehicle: true })
+            || vehicles.Any(item => PrcMalformed(item.Prc, reference)))
         {
             outside.Add("asl.a1.fire.vehicle-outside");
         }
@@ -571,7 +576,7 @@ public static class ScenarioA1FireCalculator
                 || FiringNationalities(attack, reference).Contains(armor.Nationality)
                 || !vehicles.Any(item => item.VehicleId == named.VehicleId && item.DefinitionId == named.DefinitionId)
                 || (within ? named.HullFacing is not null : named.HullFacing is not ("front" or "side" or "rear"))
-                || named.TurretFacing is not (null or "front" or "side" or "rear"))
+                || named.TurretFacing is not (null or "front" or "side" or "rear") || PrcMalformed(named.Prc, reference))
             {
                 outside.Add("asl.a1.fire.target-vehicle-outside");
             }
@@ -669,7 +674,7 @@ public static class ScenarioA1FireCalculator
                 outside.Add("asl.a1.fire.target-outside");
             }
 
-            if (targetDefinitions.Any(item => item?.Kind == "asl:crew") && !GunCrewAlone(attack))
+            if (GunCrewUnreviewed(attack, targets, targetDefinitions))
             {
                 outside.Add("asl.a1.fire.crew-target-unreviewed");
             }
@@ -700,7 +705,7 @@ public static class ScenarioA1FireCalculator
         if (attack.FireGroupComplete != true || !locations.Contains(attack.FirerLocationId) || (multi && attack.FirerLocationsAdjacent != true)
             || firers.Any(item => item.Broken == true || (item.UsesSupportWeapon == true && item.Weapons is not { Count: > 0 }))
             || firers.Zip(firerDefinitions).Any(pair => pair.Second is null || (!LeaderMg(pair.First, pair.Second)
-                && (!(pair.Second.IsMmc || pair.Second.IsHero || pair.Second.Kind == "asl:crew") || pair.Second.Firepower is null || pair.Second.Range is null)))
+                && (!(pair.Second.IsMmc || pair.Second.IsHero || ScenarioA1Definitions.IsCrew(pair.Second.Kind)) || pair.Second.Firepower is null || pair.Second.Range is null)))
             || firers.Any(item => item.Partner is not null && !LeaderMg(item, reference.Definitions.GetValueOrDefault(item.DefinitionId!)))
             // A7.352, A7.353 (p. 56; ruling R8.4): a crew that fired its Gun this Player Turn has no inherent FP, but "Subsequent First Fire (8.3),
             // FPF (8.31), and Final Fire (8.4) vs adjacent units retain halved inherent FP": its own fire of those kinds, which is Area Fire.
@@ -761,7 +766,7 @@ public static class ScenarioA1FireCalculator
         var mol = firers.Where(item => item.Mol == true).ToArray();
         if (mol.Length > 1 || mol.Any(item => item.Pinned == true || RangeOf(attack, item) > 1 || item.UsesInherentFp == false || item.Weapons is { Count: > 0 }
             || kind is SubsequentFirstFire or FinalProtectiveFire || flamethrower || ((attack.Vehicles ?? []).Count > 0 && attack.TargetVehicle is null)
-            || reference.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty) is not { } molUser || !(molUser.IsMmc || molUser.IsHero || molUser.Kind == "asl:crew")))
+            || reference.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty) is not { } molUser || !(molUser.IsMmc || molUser.IsHero || ScenarioA1Definitions.IsCrew(molUser.Kind))))
         {
             outside.Add("asl.a1.fire.mol-outside");
         }
@@ -833,8 +838,9 @@ public static class ScenarioA1FireCalculator
             outside.Add("asl.a1.fire.director-outside");
         }
 
-        // C11 (ruling R8.3): a Gun's crew is a target alone in its Location; a crew with other units, or with no Gun named, is not reviewed.
-        if (targetDefinitions.Any(item => item?.Kind == "asl:crew") && !GunCrewAlone(attack))
+        // C11 (ruling R8.3): a Gun's crew is a target alone in its Location; with other units, or with no Gun named, it is not reviewed. A1.123 (p. 44;
+        // pass 65, ruling R65.28): a crew that mans no Gun is an ordinary Infantry target, alone or with other units.
+        if (GunCrewUnreviewed(attack, targets, targetDefinitions))
         {
             outside.Add("asl.a1.fire.crew-target-unreviewed");
         }
@@ -952,7 +958,7 @@ public static class ScenarioA1FireCalculator
             (FireDemolitionCharge.Thrower, "MPh", "non-phasing", null) => true,
             _ => false,
         };
-        if (definition is not { IsDc: true, Firepower: not null } || user is null || !(user.IsMmc || user.IsHero || user.IsLeader || user.Kind == "asl:crew")
+        if (definition is not { IsDc: true, Firepower: not null } || user is null || !(user.IsMmc || user.IsHero || user.IsLeader || ScenarioA1Definitions.IsCrew(user.Kind))
             || attack.Firers is { Count: > 0 } || Directors(attack).Any() || !phaseAdmitted
             || (charge.Mode == FireDemolitionCharge.Thrower ? attack.Range != 0 || attack.FirerLocationId != attack.TargetLocationId : attack.Range != 1)
             || (charge.OpportunityFire == true && attack.Phase != "AFPh"))
@@ -1172,7 +1178,8 @@ public static class ScenarioA1FireCalculator
         || rolls.MolCheck is < 1 or > 6
         || !Dice(rolls.Position, allowEmpty: true) || !Dice(rolls.CrewSurvival, allowEmpty: true) || !Dice(rolls.TaskCheck, allowEmpty: true)
         || !Dice(rolls.CollateralCheck, allowEmpty: true)
-        || rolls.WeaponDestruction?.Values.Any(dr => dr is < 1 or > 6) == true;
+        || rolls.WeaponDestruction?.Values.Any(dr => dr is < 1 or > 6) == true
+        || rolls.VehicleSurvival?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true;
 
     /// <summary>Whether a unit may fire in this attack under the fire-phase and First Fire rules (A7.1, A8.1, A8.3, A8.31, A8.4, A9.2).</summary>
     /// <summary>A leader firing one MG, alone or with a stacked SMC as his partner (A9.12; ruling R12.4); he has no inherent FP.</summary>
@@ -1230,6 +1237,15 @@ public static class ScenarioA1FireCalculator
     internal static bool GunCrewAlone(FireAttack attack) => attack.GunTarget is { CrewUnitId: { } crew } && attack.Targets is [{ } only] && only.UnitId == crew;
 
     /// <summary>
+    /// Whether the attack's targets hold a Gun's crew outside ruling R8.3's reading (C11): with other units, or with no Gun named. A crew is a Gun's
+    /// crew when the attack's Gun target names it or its <see cref="FireAttack.GunCrews"/> fact lists it; any other crew is an ordinary Infantry
+    /// target (A1.123, p. 44; pass 65, ruling R65.28).
+    /// </summary>
+    private static bool GunCrewUnreviewed(FireAttack attack, IReadOnlyList<FireTarget> targets, IReadOnlyList<FireDefinition?> definitions) =>
+        !GunCrewAlone(attack) && targets.Zip(definitions).Any(pair => ScenarioA1Definitions.IsCrew(pair.Second?.Kind)
+            && (attack.GunTarget?.CrewUnitId == pair.First.UnitId || attack.GunCrews?.Contains(pair.First.UnitId ?? string.Empty, StringComparer.Ordinal) == true));
+
+    /// <summary>
     /// Whether an AFV of an Area Target Type hit is attacked as unarmored (D5.311, B13.3, p. 203; pass 60, ruling R60.12): an OT AFV in woods, whose
     /// crew's CE DRM the Air Bursts reduce, is resolved on the Vehicle line with no Air Burst TEM.
     /// </summary>
@@ -1238,6 +1254,85 @@ public static class ScenarioA1FireCalculator
 
     /// <summary>Whether a Good Order crew's gunshield faces the attack (C11.5).</summary>
     private static bool GunshieldFaces(FireAttack attack, FireGunTarget gun) => gun.Gunshield == true && attack.Targets is [{ Broken: not true }];
+
+    /// <summary>Whether a vehicle's PRC fact names a unit the catalog lacks, or a role other than Passenger or Rider (pass 65, ruling R65.5).</summary>
+    internal static bool PrcMalformed(IReadOnlyList<FirePrc>? prc, ScenarioA1FireReference reference) =>
+        prc?.Any(item => item.UnitId is null || item.Role is not (FirePrc.Passenger or FirePrc.Rider)
+            || reference.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty) is not { IsVehicle: false }) == true;
+
+    /// <summary>
+    /// A Specific Collateral Attack on the PRC of the vehicle a hit names (D.8A, D6.71, p. 192; pass 65, ruling R65.7), for the Ordnance package: what
+    /// <see cref="Resolution.SpecificOnPrc"/> gives, on the PRC's own rolls, or the missing roll's reason.
+    /// </summary>
+    internal static (IReadOnlyList<FirePrcAttack>? Attacks, IReadOnlyList<string>? Desperation, string? Missing) SpecificCollateralOnPrc(OrdnanceVehicleTarget target,
+        int column, int originalDr, FireRolls? rolls, ScenarioA1FireReference reference)
+    {
+        var shell = new FireAttack(null, null, null, null, null, null, null, null, null, null, null, null, [], null, rolls ?? new FireRolls(null, null, null, null));
+        var resolution = new Resolution(shell, reference);
+        var made = resolution.SpecificOnPrc(target, column, originalDr, ordnanceHit: true);
+        return made is { } done ? (done.Attacks, done.Desperation, null) : (null, null, resolution.FirstUndecided);
+    }
+
+    /// <summary>
+    /// The Survival DR of each Passenger and Rider of a destroyed vehicle (D6.9, D5.6, pp. 207, 204; pass 65, ruling R65.9): one DR each against the CS# or
+    /// cs#, +1 if broken, no Shock or Stun DRM. Null with no PRC or no CS#; the key of the first missing roll otherwise.
+    /// </summary>
+    internal static (IReadOnlyList<PrcSurvival>? Survival, string? Missing) PrcSurvivals(IReadOnlyList<FirePrc>? prc, int? crewSurvival,
+        IReadOnlyDictionary<string, IReadOnlyList<int>>? rolls)
+    {
+        if (prc is not { Count: > 0 } aboard || crewSurvival is not { } cs)
+        {
+            return (null, null);
+        }
+
+        var made = new List<PrcSurvival>();
+        foreach (var unit in aboard)
+        {
+            if (rolls?.GetValueOrDefault(unit.UnitId!) is not { Count: 2 } dice)
+            {
+                return (null, "prcSurvival:" + unit.UnitId);
+            }
+
+            var drm = unit.Broken == true ? 1 : 0;
+            var final = dice[0] + dice[1] + drm;
+            made.Add(new PrcSurvival(unit.UnitId!, [.. dice], drm, final, cs, final <= cs));
+        }
+
+        return (made, null);
+    }
+
+    /// <summary>
+    /// What an IFT result does to an Unprotected crew (D5.311, p. 203; pass 65, ruling R65.26): "not susceptible to Stun/Recall ... it is instead subject to
+    /// PTC/MC/K/KIA results" as Infantry. A KIA or K eliminates it (a crew's Casualty Reduction, A7.302), as does an Original 12 on a MC (A10.31); a failed
+    /// MC breaks it, and a failed PTC pins it. <paramref name="dice"/> is the check's DR, needed when <see cref="CrewChecks"/> says so.
+    /// </summary>
+    internal static (FireCheck? Check, string Result) UnprotectedCrewOutcome(string outcome, IReadOnlyList<int>? dice, int morale, int? crewMorale)
+    {
+        if (Regex.IsMatch(outcome, "^([1-7])KIA$") || Regex.IsMatch(outcome, "^K/([1-4])$"))
+        {
+            return (null, FireVehicleEffect.Eliminated);
+        }
+
+        if (!CrewChecks(outcome) || dice is null)
+        {
+            return (null, FireVehicleEffect.None);
+        }
+
+        var mc = Regex.Match(outcome, "^([1-4])MC$");
+        var pin = outcome == "PTC";
+        List<FireModifier> checkDrm = mc.Success ? [new FireModifier("ift-mc", int.Parse(mc.Groups[1].Value, CultureInfo.InvariantCulture), "A7.304")] : [];
+        var original = dice[0] + dice[1];
+        var checkFinal = original + (int)checkDrm.Sum(item => item.Value);
+        var passed = checkFinal <= morale;
+        var result = !pin && original == 12 ? FireVehicleEffect.Eliminated
+            : passed ? FireVehicleEffect.None
+            : pin ? FireVehicleEffect.Pinned
+            : FireVehicleEffect.Broken;
+        return (new FireCheck(pin ? "NTC" : mc.Success ? outcome : "NMC", [.. dice], original, checkDrm, checkFinal, morale, passed, result)
+        {
+            MoraleSource = ScenarioA1ArmorLeaders.MoraleSource(crewMorale),
+        }, result);
+    }
 
     /// <summary>Whether a Vulnerable crew's IFT result calls on it to check (D.8, A7.303 to A7.305): a MC, a NMC, or a PTC.</summary>
     internal static bool CrewChecks(string outcome) => Regex.IsMatch(outcome, "^([1-4])MC$") || outcome is "NMC" or "PTC";
@@ -1427,6 +1522,13 @@ public static class ScenarioA1FireCalculator
 
         // A9.74, C11.6 (pass 60, ruling R60.17): the result and IFT column index each target unit took.
         private readonly Dictionary<string, (string Result, int Column)> taken = new(StringComparer.Ordinal);
+
+        // Pass 65 (ruling R65.7): the PRC a Collateral Attack reaches, apart from the target Location's units: no leader of the Location leads their
+        // checks, no leader's loss checks them, and they take no Heat of Battle (D6.651 and their leaders are increment 2c's).
+        private readonly Dictionary<string, TargetState> prc = new(StringComparer.Ordinal);
+
+        /// <summary>The first reason the resolution is undecided so far; null when none.</summary>
+        public string? FirstUndecided => undecided.Count > 0 ? undecided[0] : null;
 
         /// <summary>A FT attack (A22; ruling R15.1): its one firer's one weapon is a FT.</summary>
         private bool Flamethrower => (attack.Firers ?? []).SelectMany(item => item.Weapons ?? [])
@@ -1772,6 +1874,13 @@ public static class ScenarioA1FireCalculator
                 kill = FlameKill(ScenarioA1FlameKill.Molotov, named, armor, dice);
             }
 
+            // D10.1 (p. 210; pass 65, ruling R65.23): a wreck attacked as its vehicle burns on a Burn and takes nothing else; it has no crew and no PRC.
+            if (named.Wreck == true)
+            {
+                vehicleKill = kill is null ? null : ScenarioA1WreckRules.WreckKill(kill);
+                return true;
+            }
+
             if (kill is not null && !KillChecks(ref kill, named, armor))
             {
                 return false;
@@ -1780,37 +1889,68 @@ public static class ScenarioA1FireCalculator
             vehicleKill = kill;
 
             // D.8, D.8A (p. 192; pass 60): an AFV left standing exposes its Vulnerable crew to a full-strength attack with the CE DRM alone, on the same
-            // Original DR; none after a Dud, a Shock, or an Abandonment, nor at a crew stunned, shocked, or BU.
-            var standing = kill is null || (kill.Result is not (OrdnanceKill.Dud or OrdnanceKill.Burn or OrdnanceKill.Eliminated or OrdnanceKill.Shock)
-                && kill.Shocked != true && kill.Abandoned != true);
-            if (!standing || named.CrewExposed != true || named.CrewImpaired == true || named.Abandoned == true)
-            {
-                return true;
-            }
-
+            // Original DR; none after a Dud, nor at the crew after a Shock or an Abandonment, nor at a crew stunned, shocked, or BU. The Collateral Attack
+            // Table's note 1 (p. 193; pass 65, the referee's review): its PRC are attacked whenever the AFV is not destroyed, its Passengers spared once
+            // the crew is or becomes shocked; only an attack that carries the PRC (ruling R65.5) attacks them, so an older record reads as before.
+            var standing = kill is null || kill.Result is not (OrdnanceKill.Dud or OrdnanceKill.Burn or OrdnanceKill.Eliminated);
+            var shocked = kill is not null && (kill.Result == OrdnanceKill.Shock || kill.Shocked == true);
+            var becomeImpaired = shocked || kill?.Result == OrdnanceKill.Stun;
+            var crewAttacked = !shocked && kill?.Abandoned != true;
             var column = Array.FindLastIndex(ScenarioA1FireReference.ColumnFp, fp => fp <= collateralFp) - shift;
-            if (column < 0)
+            if (!standing || column < 0)
             {
                 return true;
             }
 
-            var morale = named.CrewMorale ?? reference.AfvCrewMorale(armor.Nationality)!.Value;
-            var final = dice[0] + dice[1] + 2;
-            var result = reference.Result(final, column);
-            if (CrewChecks(result))
+            FireVehicleEffect? effect = null;
+            string? result = null;
+            if (crewAttacked && named.CrewExposed == true && named.CrewImpaired != true && named.Abandoned != true)
             {
-                if (attack.Rolls!.CollateralCheck is null)
+                var morale = named.CrewMorale ?? reference.AfvCrewMorale(armor.Nationality)!.Value;
+                var final = dice[0] + dice[1] + 2;
+                result = reference.Result(final, column);
+                if (CrewChecks(result))
                 {
-                    undecided.Add("asl.a1.fire.roll-missing:collateralCheck");
-                    return false;
+                    if (attack.Rolls!.CollateralCheck is null)
+                    {
+                        undecided.Add("asl.a1.fire.roll-missing:collateralCheck");
+                        return false;
+                    }
+
+                    usedRolls.Add("collateralCheck");
                 }
 
-                usedRolls.Add("collateralCheck");
+                var (check, crew) = CrewOutcome(result, attack.Rolls!.CollateralCheck, named.StunRecovery == true, morale, named.CrewMorale);
+                effect = new FireVehicleEffect(named.VehicleId!, named.DefinitionId!, FireVehicleEffect.None, null, [new FireModifier("crew-exposed", 2m, "D5.31")], final,
+                    null, check, crew);
             }
 
-            var (check, crew) = CrewOutcome(result, attack.Rolls!.CollateralCheck, named.StunRecovery == true, morale, named.CrewMorale);
-            specificCollateral = new OrdnanceCollateral(ScenarioA1FireReference.ColumnFp[column], result,
-                new FireVehicleEffect(named.VehicleId!, named.DefinitionId!, FireVehicleEffect.None, null, [new FireModifier("crew-exposed", 2m, "D5.31")], final, null, check, crew));
+            // D.8A (pass 65, ruling R65.7): the PRC the named AFV carries take the same attack, when the record carries them.
+            var reached = !becomeImpaired ? named : named with
+            {
+                CrewImpaired = true
+            };
+            if (SpecificOnPrc(reached, column, dice[0] + dice[1], ordnanceHit: false) is not { } onPrc)
+            {
+                return false;
+            }
+
+            if (onPrc.Attacks is not null || onPrc.Desperation is not null)
+            {
+                effect = (effect ?? new FireVehicleEffect(named.VehicleId!, named.DefinitionId!, FireVehicleEffect.None, null, [], dice[0] + dice[1], null, null,
+                    FireVehicleEffect.NotVulnerable)) with
+                {
+                    PrcAttacks = onPrc.Attacks,
+                    PrcDesperation = onPrc.Desperation,
+                };
+            }
+
+            if (effect is not null)
+            {
+                specificCollateral = new OrdnanceCollateral(ScenarioA1FireReference.ColumnFp[column], result ?? onPrc.Attacks?[0].Result ?? reference.Result(dice[0] + dice[1], column),
+                    effect);
+            }
+
             return true;
         }
 
@@ -1918,8 +2058,11 @@ public static class ScenarioA1FireCalculator
             var af = position.Result == FirePosition.Optimal ? ScenarioA1FlameKill.AerialAf(armor)!.Value : ScenarioA1ArmorReference.ArmorFactor(armor, location, facing)!.Value;
             var finalTk = modified - af;
             var dr = dice[0] + dice[1];
+
+            // D5.7, C7.7 note A (pass 65, ruling R65.21): a red CS# burns on a Final TK DR one lower, for the burn alone.
+            var result = ScenarioA1FlameKill.ChargeResult(dr, finalTk, location == "turret");
             return new OrdnanceKill(ScenarioA1FlameKill.DemolitionCharge, location, facing, basic, modifiers, modified, af, finalTk, [.. dice], dr,
-                ScenarioA1FlameKill.ChargeResult(dr, finalTk, location == "turret"));
+                result == OrdnanceKill.Eliminated && ScenarioA1CrewSurvivalRules.BurnsRed(armor.CsRed, dr, lower => lower * 2 <= finalTk) ? OrdnanceKill.Burn : result);
         }
 
         /// <summary>
@@ -1982,7 +2125,11 @@ public static class ScenarioA1FireCalculator
 
             var finalTk = basic + (int)modifiers.Sum(item => item.Value);
             var dr = dice[0] + dice[1];
-            return new OrdnanceKill(weapon, "hull", facing, basic, modifiers, finalTk, null, finalTk, [.. dice], dr, ScenarioA1FlameKill.FlameResult(dr, finalTk));
+
+            // D5.7, C7.7 note A (pass 65, ruling R65.21): a red CS# burns on a Final TK DR one lower, for the burn alone.
+            var result = ScenarioA1FlameKill.FlameResult(dr, finalTk);
+            return new OrdnanceKill(weapon, "hull", facing, basic, modifiers, finalTk, null, finalTk, [.. dice], dr,
+                result == OrdnanceKill.Eliminated && ScenarioA1CrewSurvivalRules.BurnsRed(armor.CsRed, dr, lower => lower < finalTk) ? OrdnanceKill.Burn : result);
         }
 
         /// <summary>
@@ -2009,20 +2156,14 @@ public static class ScenarioA1FireCalculator
                 }
 
                 usedRolls.Add("taskCheck");
-                var morale = named.CrewMorale ?? reference.AfvCrewMorale(armor.Nationality)!.Value;
-                var total = check[0] + check[1];
-                var passed = total + plusOne <= morale;
-                IReadOnlyList<FireModifier> checkDrm = plusOne == 0 ? [] : [new FireModifier("stun", 1, "D5.34")];
+                var tc = ScenarioA1CrewSurvivalRules.TaskCheck(check, named.CrewMorale ?? reference.AfvCrewMorale(armor.Nationality)!.Value, plusOne == 1, named.CrewMorale);
                 kill = kill with
                 {
-                    CrewCheck = new FireCheck("TC", [.. check], total, checkDrm, total + plusOne, morale, passed, passed ? "none" : "abandoned")
-                    {
-                        MoraleSource = ScenarioA1ArmorLeaders.MoraleSource(named.CrewMorale),
-                    },
-                    Abandoned = passed ? null : true,
+                    CrewCheck = tc,
+                    Abandoned = tc.Passed ? null : true,
                 };
             }
-            else if (kill.Result == OrdnanceKill.Eliminated && armor.CrewSurvival is { } cs && !armor.CrewSurvivalPassengersOnly && named.Abandoned != true)
+            else if (kill.Result == OrdnanceKill.Eliminated && ScenarioA1CrewSurvivalRules.CrewSurvival(armor, named.Abandoned == true) is { } cs)
             {
                 if (attack.Rolls!.CrewSurvival is not { } survival)
                 {
@@ -2031,11 +2172,31 @@ public static class ScenarioA1FireCalculator
                 }
 
                 usedRolls.Add("crewSurvival");
-                var drmValue = named.CrewImpaired == true || named.StunRecovery == true ? 1 : 0;
-                var finalDr = survival[0] + survival[1] + drmValue;
                 kill = kill with
                 {
-                    CrewSurvival = new OrdnanceCrewSurvival([.. survival], drmValue, finalDr, cs, finalDr <= cs)
+                    CrewSurvival = ScenarioA1CrewSurvivalRules.Survival(cs, survival,
+                        ScenarioA1CrewSurvivalRules.SurvivalDrm(false, named.CrewImpaired == true, false, named.StunRecovery == true, named.Prc is not null))
+                };
+            }
+
+            // D6.9 (p. 207; pass 65, ruling R65.9): each Passenger and Rider of an AFV eliminated, not burned, rolls its own Survival DR.
+            if (kill.Result == OrdnanceKill.Eliminated)
+            {
+                var (prcSurvival, missing) = PrcSurvivals(named.Prc, armor.CrewSurvival, attack.Rolls!.PrcSurvival);
+                if (missing is not null)
+                {
+                    undecided.Add("asl.a1.fire.roll-missing:" + missing);
+                    return false;
+                }
+
+                foreach (var made in prcSurvival ?? [])
+                {
+                    usedRolls.Add("prcSurvival:" + made.UnitId);
+                }
+
+                kill = kill with
+                {
+                    PrcSurvival = prcSurvival
                 };
             }
 
@@ -2195,6 +2356,13 @@ public static class ScenarioA1FireCalculator
                 && (modifier.Name.StartsWith("gunshield:", StringComparison.Ordinal) || modifier.Name.StartsWith("emplacement:", StringComparison.Ordinal)));
             var drm = arithmetic.Drm.Where(item => !Own(item)).ToList();
             var final = arithmetic.OriginalDr + (int)drm.Sum(item => item.Value);
+            if (VehicleSelection(arithmetic) is not { } selection)
+            {
+                return null;
+            }
+
+            var (selectionDrs, spared) = selection;
+
             var effects = new List<FireVehicleEffect>();
             foreach (var vehicle in attack.Vehicles!)
             {
@@ -2226,9 +2394,16 @@ public static class ScenarioA1FireCalculator
                     int? unlikely = null;
                     bool? declined = null;
 
+                    // A7.308 (p. 56; pass 65, ruling R65.26): a vehicle Random Selection leaves out is not affected by the DR; its PRC still are.
+                    var notSelected = spared.Contains(id);
+                    if (notSelected)
+                    {
+                        result = FireVehicleEffect.None;
+                    }
+
                     // A7.309: after any Original 2 the firer may make the Unlikely Kill dr; a dr worse than the Original 2's own result does not
                     // cancel it (ruling R5.8). A burning wreck cannot be bettered.
-                    if (arithmetic.OriginalDr == 2 && result != FireVehicleEffect.BurningWreck && kill is not null)
+                    if (arithmetic.OriginalDr == 2 && result != FireVehicleEffect.BurningWreck && kill is not null && !notSelected)
                     {
                         var key = "unlikelyKill:" + id;
                         var take = true;
@@ -2266,25 +2441,111 @@ public static class ScenarioA1FireCalculator
                         }
                     }
 
-                    effects.Add(new FireVehicleEffect(id, definition.Id, result, kill, line, lineFinal, unlikely, null, FireVehicleEffect.None) { UnlikelyKillDeclined = declined });
+                    // D10.1 (p. 210; pass 65, ruling R65.23): an unarmored wreck burns on the line's burning wreck and takes nothing else: no crew, no PRC.
+                    if (vehicle.Wreck == true)
+                    {
+                        effects.Add(new FireVehicleEffect(id, definition.Id, ScenarioA1WreckRules.WreckLineResult(result), kill, line, lineFinal, unlikely, null, FireVehicleEffect.None)
+                        {
+                            UnlikelyKillDeclined = declined,
+                        });
+                        continue;
+                    }
+
+                    // D5.311 (p. 203; pass 65, ruling R65.26): the Inherent crew of an OT AFV under Air Bursts is attacked as Personnel, where the attack carries
+                    // the vehicle's PRC fact; a crew it breaks or eliminates takes no TC.
+                    FireCheck? unprotectedCheck = null;
+                    var unprotectedResult = FireVehicleEffect.None;
+                    int? unprotectedFinal = null;
+                    if (vehicle.Prc is not null && result is (FireVehicleEffect.None or FireVehicleEffect.Immobilized) && column >= 0
+                        && AirBurstUnarmored(attack.OrdnanceHit is { Area: true }, attack.TargetTerrain, definition) && vehicle.Abandoned != true)
+                    {
+                        unprotectedFinal = arithmetic.OriginalDr + (int)drm.Sum(item => item.Value);
+                        var crewOutcome = reference.Result(unprotectedFinal.Value, column);
+                        IReadOnlyList<int>? crewDice = null;
+                        if (CrewChecks(crewOutcome))
+                        {
+                            if (attack.Rolls!.Checks?.TryGetValue(id, out crewDice) != true)
+                            {
+                                undecided.Add("asl.a1.fire.roll-missing:checks:" + id);
+                                return null;
+                            }
+
+                            usedRolls.Add("checks:" + id);
+                        }
+
+                        (unprotectedCheck, unprotectedResult) = UnprotectedCrewOutcome(crewOutcome, crewDice,
+                            vehicle.CrewMorale ?? reference.AfvCrewMorale(definition.Nationality)!.Value, vehicle.CrewMorale);
+                    }
+
+                    var crew = LineCrew(vehicle, definition, unprotectedResult is FireVehicleEffect.Broken or FireVehicleEffect.Eliminated ? FireVehicleEffect.None : result);
+                    if (crew is null)
+                    {
+                        return null;
+                    }
+
+                    var lineEffect = WithPrc(new FireVehicleEffect(id, definition.Id, result, kill, line, lineFinal, unlikely, unprotectedCheck, unprotectedResult)
+                    {
+                        UnprotectedCrewFinalDr = unprotectedFinal,
+                        UnlikelyKillDeclined = declined,
+                        TaskCheck = crew.Value.TaskCheck,
+                        Abandoned = crew.Value.TaskCheck is { Passed: false } ? true : null,
+                        CrewSurvival = crew.Value.Survival,
+                        RandomSelectionDr = selectionDrs.TryGetValue(id, out var selectionDr) ? selectionDr : null,
+                        NotSelected = notSelected ? true : null,
+                    }, vehicle, definition, column, arithmetic, drm);
+                    if (lineEffect is null)
+                    {
+                        return null;
+                    }
+
+                    effects.Add(lineEffect);
                     continue;
                 }
 
-                if (vehicle.CrewExposed != true || vehicle.Stunned == true)
+                // D10.1 (pass 65, ruling R65.23): an armored wreck is unharmed by the IFT (A7.307) and has no crew to attack.
+                if (vehicle.Wreck == true)
                 {
                     effects.Add(new FireVehicleEffect(id, definition.Id, FireVehicleEffect.None, null, drm, final, null, null, FireVehicleEffect.NotVulnerable));
+                    continue;
+                }
+
+                // D6.84 (p. 207; pass 65, ruling R65.18): a Carrier's crew "remain CE if stunned or shocked, and are subject to the Collateral Attack",
+                // where the attack carries the vehicle's PRC (ruling R65.5), as every attack planned since the pass does. An Abandoned AFV has no crew inside to
+                // attack (D5.41; the referee's review), where the attack carries that fact.
+                if (vehicle.CrewExposed != true || (vehicle.Prc is not null && vehicle.Abandoned == true)
+                    || (vehicle.Stunned == true && !(vehicle.Prc is not null && ScenarioA1CarrierRules.IsCarrier(definition.VehicleClass))))
+                {
+                    var unexposed = WithPrc(new FireVehicleEffect(id, definition.Id, FireVehicleEffect.None, null, drm, final, null, null, FireVehicleEffect.NotVulnerable),
+                        vehicle, definition, column, arithmetic, drm);
+                    if (unexposed is null)
+                    {
+                        return null;
+                    }
+
+                    effects.Add(unexposed);
                     continue;
                 }
 
                 // B10.31, D5.31 (pp. 125, 203; referee's review of pass 55): "The CE DRM is not cumulative with any positive TEM". A vehicle's MG
                 // firing from below leaves the crew its +2 without Height Advantage, and a Canister attack leaves it without a wall's or a
                 // hedge's TEM too. Infantry fire keeps the line it had before the pass (ruling R10.4), so that its records resolve as they did.
+                // D5.31 (pass 65, ruling R65.7): an attack that carries the vehicle's PRC leaves the crew neither Height Advantage nor a wall's or hedge's TEM.
+                var fact = vehicle.Prc is not null;
                 List<FireModifier> crewDrm =
                 [
-                    .. drm.Where(item => !((attack.VehicleFire is not null || attack.Canister is not null) && item.Name == "height-advantage")
-                        && !(attack.Canister is not null && item.Name is "wall" or "hedge")),
-                    new FireModifier("crew-exposed", 2m, "D5.31"),
+                    .. drm.Where(item => !((attack.VehicleFire is not null || attack.Canister is not null || fact) && item.Name == "height-advantage")
+                        && !((attack.Canister is not null || fact) && item.Name is "wall" or "hedge")),
                 ];
+
+                // D5.31, D6.61 (pp. 203, 205; pass 65, the referee's review): an OT AFV's CE DRM is one less for each full level of the firer's elevation
+                // advantage beyond the range, as its Passengers' is, where the attack carries the PRC fact. Treating the AFV as unarmored when it is
+                // reduced (D5.311) is pass 105's.
+                var beyondRange = fact && definition.OpenTopped == true ? Elevation().Beyond : 0;
+                var crewCe = ScenarioA1PrcRules.CeDrm(beyondRange);
+                if (crewCe > 0)
+                {
+                    crewDrm.Add(new FireModifier("crew-exposed", crewCe, beyondRange > 0 ? "D6.61" : "D5.31"));
+                }
                 var crewFinal = arithmetic.OriginalDr + (int)crewDrm.Sum(item => item.Value);
                 var outcome = column < 0 ? "none" : reference.Result(crewFinal, column);
                 // D3.42, D3.45 (p. 200; pass 55, rulings R55.17, R55.18): the crew checks at its Armor Leader's Morale Level, or an Inexperienced
@@ -2302,11 +2563,330 @@ public static class ScenarioA1FireCalculator
                     usedRolls.Add("crewCheck:" + id);
                 }
 
-                var (check, crewResult) = CrewOutcome(outcome, dice, vehicle.StunRecovery == true, morale, vehicle.CrewMorale);
-                effects.Add(new FireVehicleEffect(id, definition.Id, FireVehicleEffect.None, null, crewDrm, crewFinal, null, check, crewResult));
+                // D5.342 (p. 204): a second Stun Recalls the crew; only a Carrier's crew is attacked while Stunned (D6.84).
+                var (check, crewResult) = CrewOutcome(outcome, dice, vehicle.StunRecovery == true || vehicle.Stunned == true, morale, vehicle.CrewMorale);
+                var crewEffect = WithPrc(new FireVehicleEffect(id, definition.Id, FireVehicleEffect.None, null, crewDrm, crewFinal, null, check, crewResult),
+                    vehicle, definition, column, arithmetic, drm);
+                if (crewEffect is null)
+                {
+                    return null;
+                }
+
+                effects.Add(crewEffect);
             }
 
             return effects;
+        }
+
+        /// <summary>
+        /// A7.308 (p. 56; pass 65, ruling R65.26): "nor can more vehicle/horse counters be affected by a DR than the highest KIA# of that column as randomly
+        /// determined". When an IFT attack's unarmored vehicles, wrecks aside, outnumber its column's highest KIA#, each makes a Random Selection dr (keyed
+        /// <c>randomSelection:</c>, as a target unit's is): the highest drs are affected, a tie in the attack's order, and the others are not. Only an
+        /// attack that carries every vehicle's PRC holds more than one vehicle (ruling R25.3 for the others), so an older record makes no selection.
+        /// Null when a dr is missing.
+        /// </summary>
+        private (IReadOnlyDictionary<string, int> Drs, HashSet<string> Spared)? VehicleSelection(FireArithmetic arithmetic)
+        {
+            var line = attack.Vehicles!.Where(vehicle => vehicle.Wreck != true && reference.Definitions[vehicle.DefinitionId!].Unarmored == true).ToArray();
+            var column = arithmetic.ColumnFp is { } fp ? Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp) : -1;
+            if (attack.OrdnanceHit is not null || column < 0 || line.Length <= reference.HighestKia(column))
+            {
+                return (new Dictionary<string, int>(StringComparer.Ordinal), []);
+            }
+
+            var drs = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var vehicle in line)
+            {
+                if (attack.Rolls!.RandomSelection?.TryGetValue(vehicle.VehicleId!, out var dr) != true)
+                {
+                    undecided.Add("asl.a1.fire.roll-missing:randomSelection:" + string.Join(",", line.Select(item => item.VehicleId)));
+                    return null;
+                }
+
+                drs[vehicle.VehicleId!] = dr;
+                usedRolls.Add("randomSelection:" + vehicle.VehicleId);
+            }
+
+            var affected = line.OrderByDescending(item => drs[item.VehicleId!]).Take(reference.HighestKia(column)).Select(item => item.VehicleId!).ToHashSet(StringComparer.Ordinal);
+            return (drs, [.. line.Select(item => item.VehicleId!).Where(id => !affected.Contains(id))]);
+        }
+
+        /// <summary>
+        /// What the Vehicle line's result does to the vehicle's Inherent crew (D5.5, D5.6, D9.2, A7.308, pp. 204, 209, 56; pass 65, ruling R65.21), for an
+        /// attack that carries the vehicle's PRC, as every attack planned since the pass does; an older record takes neither. An immobilized vehicle's crew,
+        /// neither Stunned nor Shocked and still inside, takes a TC (keyed <c>crewCheck:</c>, as a crew's check is); one eliminated without burning rolls
+        /// its Crew Survival DR (keyed <c>vehicleSurvival:</c>). Only a crew: an unarmed vehicle's Inherent Driver "is never treated as a crew" (D5.1),
+        /// and its cs# is printed in lower case. Null when a roll is missing.
+        /// </summary>
+        private (FireCheck? TaskCheck, OrdnanceCrewSurvival? Survival)? LineCrew(FireVehicle vehicle, FireDefinition definition, string result)
+        {
+            if (vehicle.Prc is null || reference.Armor.GetValueOrDefault(definition.Id) is not { } armor)
+            {
+                return (null, null);
+            }
+
+            var id = vehicle.VehicleId!;
+            var shocked = vehicle.Shocked == true;
+            var abandoned = vehicle.Abandoned == true;
+            if (result == FireVehicleEffect.Immobilized && ScenarioA1CrewSurvivalRules.CrewSurvival(armor, false) is not null && vehicle.Immobilized != true
+                && vehicle.Stunned != true && !shocked && !abandoned)
+            {
+                if (attack.Rolls!.CrewChecks?.TryGetValue(id, out var check) != true)
+                {
+                    undecided.Add("asl.a1.fire.roll-missing:crewCheck:" + id);
+                    return null;
+                }
+
+                if ((vehicle.CrewMorale ?? reference.InherentCrewMorale(definition.Nationality!, definition.Unarmored == true)) is not { } morale)
+                {
+                    undecided.Add("asl.a1.fire.definition-incomplete:crew-morale:" + definition.Nationality);
+                    return null;
+                }
+
+                usedRolls.Add("crewCheck:" + id);
+                return (ScenarioA1CrewSurvivalRules.TaskCheck(check!, morale, vehicle.StunRecovery == true, vehicle.CrewMorale), null);
+            }
+
+            if (result == FireVehicleEffect.Eliminated && ScenarioA1CrewSurvivalRules.CrewSurvival(armor, abandoned) is { } cs)
+            {
+                if (attack.Rolls!.VehicleSurvival?.TryGetValue(id, out var survival) != true)
+                {
+                    undecided.Add("asl.a1.fire.roll-missing:vehicleSurvival:" + id);
+                    return null;
+                }
+
+                usedRolls.Add("vehicleSurvival:" + id);
+                return (null, ScenarioA1CrewSurvivalRules.Survival(cs, survival!,
+                    ScenarioA1CrewSurvivalRules.SurvivalDrm(false, vehicle.Stunned == true, shocked, vehicle.StunRecovery == true, true)));
+            }
+
+            return (null, null);
+        }
+
+        /// <summary>
+        /// D.8, D.8B, D6.61 to D6.66, D6.7, D6.9, A7.211, A7.308 (pp. 192, 205 to 207, 55; pass 65, rulings R65.6 to R65.9), for a vehicle whose facts carry
+        /// its PRC: one eliminated without burning gives each PRC its Survival DR, a burning wreck takes them with it (A7.308); one left standing exposes its
+        /// Vulnerable PRC to a General Collateral Attack on the attack's column and Original DR. A Rider and the PRC of an unarmored vehicle take the
+        /// attack's DRM with the TEM (D6.7, D6.23); a CE Passenger takes the CE DRM instead of Height Advantage or a wall's TEM, never both (D5.31), one less
+        /// for each full level of the firer's elevation advantage beyond the range (D6.61); a BU one is attacked only from such an elevation or by TPBF
+        /// (D6.61, A7.211). A broken Passenger left BU is put under DM by an attack that could inflict a NMC on a CE one (D6.66), and a broken Vulnerable
+        /// PRC by one that could inflict a NMC on it (A10.62). Null when a roll is missing.
+        /// </summary>
+        private FireVehicleEffect? WithPrc(FireVehicleEffect effect, FireVehicle vehicle, FireDefinition definition, int column, FireArithmetic arithmetic,
+            IReadOnlyList<FireModifier> drm)
+        {
+            if (vehicle.Prc is not { Count: > 0 } aboard)
+            {
+                return effect;
+            }
+
+            if (effect.Result == FireVehicleEffect.Eliminated)
+            {
+                var (survival, missing) = PrcSurvivals(aboard, reference.Armor.GetValueOrDefault(definition.Id)?.CrewSurvival, attack.Rolls!.PrcSurvival);
+                if (missing is not null)
+                {
+                    undecided.Add("asl.a1.fire.roll-missing:" + missing);
+                    return null;
+                }
+
+                foreach (var made in survival ?? [])
+                {
+                    usedRolls.Add("prcSurvival:" + made.UnitId);
+                }
+
+                return effect with
+                {
+                    PrcSurvival = survival
+                };
+            }
+
+            if (effect.Result == FireVehicleEffect.BurningWreck || column < 0)
+            {
+                return effect;
+            }
+
+            var (beyond, reached) = Elevation();
+            // D5.311 (p. 203; pass 65, the referee's review): the PRC of an OT AFV under Air Bursts are Vulnerable even if BU.
+            reached = reached || AirBurstUnarmored(attack.OrdnanceHit is { Area: true }, attack.TargetTerrain, definition);
+            var ce = ScenarioA1PrcRules.CeDrm(beyond);
+
+            // A4.62, D.6, D.8B (pp. 51, 192; pass 65, the referee's review): Hazardous Movement is the moving units', never the PRC's; and Mud's cushion
+            // (E3.62) is a TEM, which a CE Passenger does not add to its CE DRM (D5.31).
+            drm = [.. drm.Where(item => item.Name != "hazardous-movement")];
+            List<FireModifier> exposedDrm = [.. drm.Where(item => item.Name is not ("height-advantage" or "wall" or "hedge" or "weather-cushion"))];
+            List<FireModifier> buttonedDrm = [.. exposedDrm, new FireModifier("crew-exposed", 2m, "D6.66")];
+            if (ce > 0)
+            {
+                exposedDrm.Add(new FireModifier("crew-exposed", ce, beyond > 0 ? "D6.61" : "D5.31"));
+            }
+
+            List<FireModifier> openDrm = [.. drm, .. arithmetic.Drm.Where(item => item.Name.StartsWith("tem:", StringComparison.Ordinal))];
+
+            // B10.31 (p. 125; pass 65, the referee's review): an open PRC claims Height Advantage when it has no other positive TEM; the AFV's or wreck's
+            // cover that kept it from the Infantry is not theirs (D6.7), so it is read for them apart.
+            if (attack.HeightAdvantage == true && attack.OrdnanceHit is null && !Flamethrower && Cover(attack) is not null
+                && openDrm.All(item => item.Value <= 0 || !(item.Name.StartsWith("tem:", StringComparison.Ordinal) || item.Name is "wall" or "hedge" or "height-advantage")))
+            {
+                openDrm.Add(new FireModifier("height-advantage", 1m, "B10.31"));
+            }
+
+            var open = new List<FirePrc>();
+            var exposed = new List<FirePrc>();
+            var desperate = new List<string>();
+            foreach (var unit in aboard)
+            {
+                // D.8 (p. 192; pass 65, the referee's review): a Shocked AFV's Passengers are spared as a Stunned one's are.
+                var exposure = ScenarioA1PrcRules.Exposure(unit, definition, vehicle.CrewExposed == true, vehicle.Stunned == true || vehicle.Shocked == true);
+                if (exposure == ScenarioA1PrcRules.Open)
+                {
+                    open.Add(unit);
+                }
+                else if (exposure == ScenarioA1PrcRules.Exposed || (exposure == ScenarioA1PrcRules.Buttoned && reached))
+                {
+                    exposed.Add(unit);
+                }
+                else if (exposure == ScenarioA1PrcRules.Buttoned && unit.Broken == true && CouldCauseNmc(buttonedDrm, column))
+                {
+                    desperate.Add(unit.UnitId!);
+                }
+            }
+
+            var attacks = new List<FirePrcAttack>();
+            foreach (var (group, groupDrm) in new[] { (open, openDrm), (exposed, exposedDrm) })
+            {
+                if (group.Count == 0)
+                {
+                    continue;
+                }
+
+                if (CouldCauseNmc(groupDrm, column))
+                {
+                    desperate.AddRange(group.Where(unit => unit.Broken == true).Select(unit => unit.UnitId!));
+                }
+
+                if (!PrcAttack(FirePrcAttack.General, vehicle.VehicleId!, group, groupDrm, arithmetic.OriginalDr, column, attacks))
+                {
+                    return null;
+                }
+            }
+
+            return effect with
+            {
+                PrcAttacks = attacks.Count > 0 ? attacks : null,
+                PrcDesperation = desperate.Count > 0 ? desperate : null,
+            };
+        }
+
+        /// <summary>
+        /// D6.61, A7.211 (pp. 205, 55; pass 65): the least elevation advantage beyond the range among the firers (an attack with none, its own), and
+        /// whether every firer reaches a BU Passenger: from an elevation advantage beyond the range, or by TPBF from within its Location at the same or a
+        /// higher level (Small Arms only).
+        /// </summary>
+        private (int Beyond, bool Reached) Elevation()
+        {
+            (int Range, int Above)[] firers = attack.Firers is { Count: > 0 } list
+                ? [.. list.Select(firer => (RangeOf(attack, firer) ?? 0, -LevelAboveOf(attack, firer)))]
+                : [(attack.Range ?? 0, attack.SameLevel == true ? 0 : -(attack.TargetLevelAbove ?? 0))];
+            var beyond = firers.Min(item => Math.Max(0, item.Above - item.Range));
+            var smallArms = attack.OrdnanceHit is null && attack.Firers is { Count: > 0 };
+            var reached = firers.All(item => item.Above > item.Range || (smallArms && item.Range == 0 && item.Above >= 0));
+            return (beyond, reached);
+        }
+
+        /// <summary>Whether an attack on this column with these DRM could inflict at least a NMC (A10.62, D6.66): its lowest Original DR, 2, would.</summary>
+        private bool CouldCauseNmc(IReadOnlyList<FireModifier> drm, int column) =>
+            ScenarioA1Definitions.AtLeastNmc.Contains(reference.Result(2 + (int)drm.Sum(item => item.Value), column));
+
+        /// <summary>
+        /// A Collateral Attack on PRC (D.8, D.8A, D.8B; pass 65, ruling R65.7): the units take the IFT result of their own Final DR on the attack's column, as
+        /// target units take theirs (A7.301 to A7.305), with their rolls keyed by their ids. False when a roll is missing.
+        /// </summary>
+        private bool PrcAttack(string kind, string vehicleId, IReadOnlyList<FirePrc> units, IReadOnlyList<FireModifier> drm, int originalDr, int column,
+            List<FirePrcAttack> made)
+        {
+            var group = new List<TargetState>();
+            foreach (var unit in units)
+            {
+                if (!prc.TryGetValue(unit.UnitId!, out var own))
+                {
+                    own = new TargetState(new FireTarget(unit.UnitId, unit.DefinitionId, "aboard:" + vehicleId, unit.Broken, unit.Pinned, false, false, false,
+                        unit.Wounded, false)
+                    {
+                        Elr = unit.Elr,
+                        Fanatic = unit.Fanatic,
+                    }, reference.Definitions[unit.DefinitionId!]);
+                    prc[unit.UnitId!] = own;
+                }
+
+                group.Add(own);
+            }
+
+            var final = originalDr + (int)drm.Sum(item => item.Value);
+            var result = reference.Result(final, column);
+            Apply(result, group);
+            if (undecided.Count != 0)
+            {
+                return false;
+            }
+
+            made.Add(new FirePrcAttack(kind, drm, final, result, [.. group.Select(item => item.Effect())]));
+            return true;
+        }
+
+        /// <summary>
+        /// The Specific Collateral Attack on the PRC of the AFV an attack names (D.8, D.8A, D6.71, p. 192; pass 65, ruling R65.7), on the attack's Original
+        /// DR and collateral column: the CE DRM alone on an exposed Passenger, no DRM on a Rider or an unarmored vehicle's PRC, none on a BU one. A broken
+        /// BU Passenger is put under DM by any ordnance hit, or by an attack that could inflict a NMC on a CE one (D6.66). Null when a roll is missing.
+        /// </summary>
+        public (IReadOnlyList<FirePrcAttack>? Attacks, IReadOnlyList<string>? Desperation)? SpecificOnPrc(OrdnanceVehicleTarget named, int column, int originalDr, bool ordnanceHit)
+        {
+            if (named.Prc is not { Count: > 0 } aboard || column < 0)
+            {
+                return (null, null);
+            }
+
+            var definition = reference.Definitions[named.DefinitionId!];
+            IReadOnlyList<FireModifier> ceDrm = [new FireModifier("crew-exposed", 2m, "D5.31")];
+            var open = new List<FirePrc>();
+            var exposed = new List<FirePrc>();
+            var desperate = new List<string>();
+            foreach (var unit in aboard)
+            {
+                var exposure = ScenarioA1PrcRules.Exposure(unit, definition, named.CrewExposed == true, named.CrewImpaired == true);
+                if (exposure == ScenarioA1PrcRules.Open)
+                {
+                    open.Add(unit);
+                }
+                else if (exposure == ScenarioA1PrcRules.Exposed)
+                {
+                    exposed.Add(unit);
+                }
+                else if (exposure == ScenarioA1PrcRules.Buttoned && unit.Broken == true && (ordnanceHit || CouldCauseNmc(ceDrm, column)))
+                {
+                    desperate.Add(unit.UnitId!);
+                }
+            }
+
+            var attacks = new List<FirePrcAttack>();
+            foreach (var (group, groupDrm) in new[] { (open, (IReadOnlyList<FireModifier>)[]), (exposed, ceDrm) })
+            {
+                if (group.Count == 0)
+                {
+                    continue;
+                }
+
+                if (CouldCauseNmc(groupDrm, column))
+                {
+                    desperate.AddRange(group.Where(unit => unit.Broken == true).Select(unit => unit.UnitId!));
+                }
+
+                if (!PrcAttack(FirePrcAttack.Specific, named.VehicleId!, group, groupDrm, originalDr, column, attacks))
+                {
+                    return null;
+                }
+            }
+
+            return (attacks.Count > 0 ? attacks : null, desperate.Count > 0 ? desperate : null);
         }
 
         private static int Severity(string result) => result switch
@@ -2326,9 +2906,11 @@ public static class ScenarioA1FireCalculator
         {
             var definition = reference.Definitions[vehicle.DefinitionId!];
             // E3.741 (ruling R16.14): Extreme Winter lowers the B#.
-            var breakdown = (definition.Breakdown ?? 12) - (attack.BreakdownReduction ?? 0);
+            // A21.11, A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the B# two and the ROF one, each time.
+            var captured = vehicle.CapturedPenalty ?? 0;
+            var breakdown = (definition.Breakdown ?? 12) - (attack.BreakdownReduction ?? 0) - (2 * captured);
             var malfunctioned = arithmetic.OriginalDr >= breakdown;
-            var retained = !malfunctioned && vehicle.Pinned != true && attack.Phase != "AFPh" && definition.RateOfFire is { } rof && arithmetic.Dice[0] <= rof;
+            var retained = !malfunctioned && vehicle.Pinned != true && attack.Phase != "AFPh" && definition.RateOfFire is { } rof && arithmetic.Dice[0] <= rof - captured;
             return new FireWeaponEffect(vehicle.VehicleId!, breakdown, malfunctioned, retained, false, FireCounter(), null);
         }
 
@@ -2346,7 +2928,7 @@ public static class ScenarioA1FireCalculator
             }
 
             var id = vehicle.VehicleId!;
-            var breakdown = 12 - (attack.BreakdownReduction ?? 0);
+            var breakdown = 12 - (attack.BreakdownReduction ?? 0) - (2 * (vehicle.CapturedPenalty ?? 0));
             var selection = new Dictionary<string, int>(StringComparer.Ordinal);
             if (arithmetic.OriginalDr >= breakdown && named.Count > 1)
             {
@@ -2584,7 +3166,7 @@ public static class ScenarioA1FireCalculator
                 usedRolls.Add("molCheck");
                 var user = reference.Definitions[molFirer.DefinitionId!];
                 var molDrm = new List<FireModifier>();
-                if (user.Kind is "asl:half-squad" or "asl:crew")
+                if (user.Kind is "asl:half-squad" || ScenarioA1Definitions.IsCrew(user.Kind))
                 {
                     molDrm.Add(new FireModifier("hs-or-crew", 1m, "A22.611"));
                 }
@@ -2982,8 +3564,13 @@ public static class ScenarioA1FireCalculator
 
             // D3.44, D7.16, D3.45 (pp. 200, 207; pass 55, rulings R55.16, R55.18): a vehicle's Armor Leader modifies the IFT DR of a MA that is a
             // MG, and its OVR DR whatever the weapons; "an Armor Leader cannot modify non-OVR MG/FT (unless MA) attacks", so a BMG or CMG takes none.
-            if (ScenarioA1ArmorLeaders.Modifier(attack.Overrun is { } leading ? leading.ArmorLeadership
-                : attack.VehicleFire is { Weapons: null or { Count: 0 } } mainArmament ? mainArmament.ArmorLeadership : null) is { } armorLeader)
+            // D7.16, D6.65 (pass 65, ruling R65.13): with Passengers adding FP, one leadership modifier, the Armor Leader's or a Passenger leader's.
+            if ((attack.Overrun is { Passengers.Count: > 0 } carrying
+                    ? ScenarioA1PassengerActionRules.OverrunLeadership(OverrunPassengers(carrying),
+                        ScenarioA1PassengerActionRules.OverrunShare(reference.Definitions[carrying.DefinitionId!].Unarmored == true, carrying.CrewExposed == true,
+                            reference.Definitions[carrying.DefinitionId!].VehicleClass) > 0, carrying.ArmorLeadership)
+                    : ScenarioA1ArmorLeaders.Modifier(attack.Overrun is { } leading ? leading.ArmorLeadership
+                        : attack.VehicleFire is { Weapons: null or { Count: 0 } } mainArmament ? mainArmament.ArmorLeadership : null)) is { } armorLeader)
             {
                 drm.Add(armorLeader);
             }
@@ -3032,14 +3619,18 @@ public static class ScenarioA1FireCalculator
             }
             else if (IsMovementFire(attack) && attack.SnapShot != true && state.Values.Any(unit => !unit.IsDummy && !unit.Pinned))
             {
-                if (attack.TargetMovement!.AssaultMovement != true)
+                // D6.5, A4.6, D5.43 (pass 65, ruling R65.14): units loading or unloading take FFNAM always, and FFMO only when unloading from an
+                // unarmored conveyance; an attack recorded before the pass carries no (un)loaders and reads as before.
+                var embarking = attack.Embarking;
+                if (attack.TargetMovement!.AssaultMovement != true || embarking is not null)
                 {
-                    drm.Add(new FireModifier("ffnam", -1m, "A4.6"));
+                    drm.Add(new FireModifier("ffnam", -1m, embarking is null ? "A4.6" : "D6.5"));
                 }
 
-                if (attack.TargetTerrain == "open-ground" && hindrance == 0 && Cover(attack) is null && !noFfmo)
+                if (attack.TargetTerrain == "open-ground" && hindrance == 0 && Cover(attack) is null && !noFfmo
+                    && (embarking is null || ScenarioA1PassengerCalculator.EmbarkingFfmo(embarking.Unloading == true, embarking.UnarmoredConveyance == true)))
                 {
-                    drm.Add(new FireModifier("ffmo", -1m, "A4.6"));
+                    drm.Add(new FireModifier("ffmo", -1m, embarking is null ? "A4.6" : "D6.5"));
                 }
             }
 
@@ -3203,7 +3794,20 @@ public static class ScenarioA1FireCalculator
                 List<FireModifier> multipliers = [new FireModifier("tpbf", 3m, "D7.11"), new FireModifier("bounding-fire", 0.5m, "D7.11"), .. common];
                 yield return new FirerFirepower(overrun.VehicleId! + ":" + weapon, printed, multipliers, Apply(printed, multipliers));
             }
+
+            // D7.11 (pass 65, ruling R65.13): the Passengers the declaration named add their share of their printed FP, tripled; an OVR recorded before
+            // the pass names none.
+            foreach (var passenger in ScenarioA1PassengerActionRules.OverrunFirepower(OverrunPassengers(overrun), definition.Unarmored == true, overrun.CrewExposed == true, common,
+                definition.VehicleClass))
+            {
+                yield return passenger;
+            }
         }
+
+        /// <summary>The Passengers an OVR's record names (D7.11; ruling R65.13), with their definitions.</summary>
+        private OverrunPassengerFacts[] OverrunPassengers(FireOverrun overrun) =>
+            [.. (overrun.Passengers ?? []).Where(item => item.UnitId is not null && item.DefinitionId is not null && reference.Definitions.ContainsKey(item.DefinitionId))
+                .Select(item => new OverrunPassengerFacts(item.UnitId!, reference.Definitions[item.DefinitionId!], item.Wounded == true))];
 
         /// <summary>
         /// A vehicle's MA AAMG FP (D1.83: Normal Range eight hexes): doubled at Point Blank Range (A7.21), halved beyond its Normal Range
@@ -3293,6 +3897,7 @@ public static class ScenarioA1FireCalculator
                         multipliers.Add(new FireModifier("pinned-firer", 0.5m, "A7.8"));
                     }
 
+                    multipliers.AddRange(Mounted(firer));
                     var printed = firer.Wounded == true && definition.WoundedFirepower is { } woundedFp ? woundedFp : definition.Firepower!.Value;
                     var fp = multipliers.Aggregate((decimal)printed, (value, item) => value * item.Value);
 
@@ -3339,11 +3944,21 @@ public static class ScenarioA1FireCalculator
                         multipliers.Add(new FireModifier("smc-area-fire", 0.5m, "A9.12"));
                     }
 
+                    multipliers.AddRange(Mounted(firer));
                     var fp = multipliers.Aggregate((decimal)mg.Firepower!.Value, (value, item) => value * item.Value);
                     yield return new FirerFirepower(weapon.EquipmentId!, mg.Firepower.Value, multipliers, fp) { Operator = firer.UnitId };
                 }
             }
         }
+
+        /// <summary>
+        /// A Passenger's Mounted Fire multipliers (D6.1, D6.63; pass 65, ruling R65.10), from the vehicle facts its record carries; none for a firer on foot.
+        /// </summary>
+        private IReadOnlyList<FireModifier> Mounted(FireFirer firer) =>
+            firer.Mounted is { DefinitionId: { } vehicle } mounted
+                ? ScenarioA1PassengerActionRules.Multipliers(reference.Definitions.GetValueOrDefault(vehicle)?.Unarmored == true, mounted.Moved == true, mounted.Motion == true, attack.Phase,
+                    mounted.Rider == true)
+                : [];
 
         /// <summary>A firer's Normal Range: a wounded hero's is his wounded side's (A15.2).</summary>
         private static int NormalRange(FireDefinition definition, FireFirer firer) =>
@@ -3411,8 +4026,10 @@ public static class ScenarioA1FireCalculator
                 multipliers.Add(new FireModifier("dash", 0.5m, "A4.63"));
             }
 
-            // A7.24, A7.25 (ruling R12.1): AFPh fire is halved, unless it is Opportunity Fire.
-            if (attack.Phase == "AFPh" && firer.OpportunityFire != true)
+            // A7.24, A7.25 (ruling R12.1): AFPh fire is halved, unless it is Opportunity Fire. D6.22, D6.63 (pp. 205, 206; pass 65, the referee's review):
+            // a Rider whose AFV moved or is in Motion is quartered, its movement halving and the AFPh's being one, so it takes no second.
+            var riderQuartered = firer.Mounted is { Rider: true } riding && (riding.Moved == true || riding.Motion == true);
+            if (attack.Phase == "AFPh" && firer.OpportunityFire != true && !riderQuartered)
             {
                 multipliers.Add(new FireModifier("advancing-fire", 0.5m, "A7.24"));
             }
@@ -3857,7 +4474,7 @@ public static class ScenarioA1FireCalculator
             // 2 in the attack (its LLMC after its MC) calls for a second, under its own roll key, unless the first left the unit surrendered to
             // a captor; one only Disrupted by a Surrender result with no captor is still subject (A15.5; ruling R5.10). A unit made berserk or
             // heroic by the first is no longer subject to it.
-            if (original == 2 && !unit.Eliminated && ScenarioA1HeatOfBattle.Subject(unit.Definition, unit.IsHeroType, unit.Berserk))
+            if (original == 2 && !unit.Eliminated && ScenarioA1HeatOfBattle.Subject(unit.Definition, unit.IsHeroType, unit.Berserk) && !prc.ContainsKey(unit.Id))
             {
                 if (unit.HeatOfBattleOutcome is null)
                 {
@@ -3939,7 +4556,7 @@ public static class ScenarioA1FireCalculator
         private void Replace(TargetState unit)
         {
             // A19.11 (ruling R15.6): a Commissar or a crew is never Replaced for an ELR failure; it breaks.
-            if (ScenarioA1FireReference.IsCommissar(unit.Definition.Id) || unit.Definition.Kind == "asl:crew")
+            if (ScenarioA1FireReference.IsCommissar(unit.Definition.Id) || ScenarioA1Definitions.IsCrew(unit.Definition.Kind))
             {
                 unit.Note("not-subject-to-replacement");
                 unit.Break(null);
@@ -4056,8 +4673,8 @@ public static class ScenarioA1FireCalculator
                 drm.Add(new FireModifier("ift-" + kind.ToLowerInvariant(), modifier, "A7.304"));
             }
 
-            // A25.221 (ruling R15.6): a Commissar never takes another leader's DRM.
-            if (useLeadership && !unit.Berserk && !ScenarioA1FireReference.IsCommissar(unit.Definition.Id))
+            // A25.221 (ruling R15.6): a Commissar never takes another leader's DRM. Pass 65: nor does a PRC (D6.651 is increment 2c's).
+            if (useLeadership && !unit.Berserk && !ScenarioA1FireReference.IsCommissar(unit.Definition.Id) && !prc.ContainsKey(unit.Id))
             {
                 // A10.21, A10.22: one unbroken, unpinned leader of the Location other than the checker, and of higher
                 // morale when the checker is a leader; A10.72: a non-zero modifier, a wounded leader's +1 included, cannot
@@ -4167,7 +4784,7 @@ public static class ScenarioA1FireCalculator
             }
 
             // A7.302 (p. 55; pass 45): "Casualty Reduction eliminates any HS or crew". The Recall exception is a vehicle's Inherent crew's (D5.341).
-            if (unit.Definition.Kind is "asl:half-squad" or "asl:crew")
+            if (unit.Definition.Kind is "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Definition.Kind))
             {
                 unit.Eliminate(reason);
                 return true;
@@ -4222,6 +4839,8 @@ public static class ScenarioA1FireCalculator
                 .Concat(rolls.UnlikelyKill?.Keys.Select(id => "unlikelyKill:" + id) ?? [])
                 .Concat(rolls.MolCheck is null ? [] : ["molCheck"])
                 .Concat(rolls.WeaponDestruction?.Keys.Select(id => "weaponDestruction:" + id) ?? [])
+                .Concat(rolls.PrcSurvival?.Keys.Select(id => "prcSurvival:" + id) ?? [])
+                .Concat(rolls.VehicleSurvival?.Keys.Select(id => "vehicleSurvival:" + id) ?? [])
                 .Concat(new[] { ("position", rolls.Position), ("crewSurvival", rolls.CrewSurvival), ("taskCheck", rolls.TaskCheck), ("collateralCheck", rolls.CollateralCheck) }
                     .Where(item => item.Item2 is not null).Select(item => item.Item1));
             return supplied.Where(key => !usedRolls.Contains(key)).Select(key => "asl.a1.fire.extra-roll:" + key).ToList();

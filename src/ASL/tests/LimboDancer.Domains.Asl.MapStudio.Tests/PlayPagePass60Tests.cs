@@ -161,6 +161,10 @@ public sealed class PlayPagePass60Tests : IDisposable
         page.Find("#fire-target").Change(At(6));
         var offered = page.FindAll("#fire-vehicle option").Single(item => item.GetAttribute("value") == "de-tank");
         Assert.NotEqual("de-tank (attacker-tank)", offered.TextContent.Trim());
+
+        // Pass 65 (the UI review; the hex UI rule): the AFV is named after its hex, and its definition's id is not said.
+        Assert.StartsWith("[", offered.TextContent.Trim(), StringComparison.Ordinal);
+        Assert.DoesNotContain("attacker-tank", offered.TextContent, StringComparison.Ordinal);
         page.Find("#fire-vehicle").Change("de-tank");
         dice.Enqueue([5, 6, 2, 2, 2, 2]);
         Commit(page, "#propose-fire");
@@ -180,6 +184,7 @@ public sealed class PlayPagePass60Tests : IDisposable
         page.Find("#throw-dc-at").Change(At(6));
         var offered = page.FindAll("#throw-dc-vehicle option").Single(item => item.GetAttribute("value") == "de-tank");
         Assert.NotEqual("de-tank (attacker-tank)", offered.TextContent.Trim());
+        Assert.StartsWith("[", offered.TextContent.Trim(), StringComparison.Ordinal);
     }
 
     [Fact]

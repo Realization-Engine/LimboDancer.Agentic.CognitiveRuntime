@@ -55,4 +55,72 @@ public static class ScenarioA1VehicleProjection
 
     /// <summary>D10.1: only an active vehicle on the map becomes a wreck.</summary>
     public static bool WreckAllowed(bool vehicle, Func<bool> onMap) => vehicle && onMap();
+
+    /// <summary>
+    /// D6.4, A4.2 (pass 65, ruling R65.15; the boundary review): whether a recorded load is the last step of a moving Infantry stack's own move, read by
+    /// the planner's <see cref="ScenarioA1PassengerCalculator.EndOfMoveLoadBar"/>: every member of the stack boards, and no other unit, once the DEFENDER's
+    /// window on its last step has closed. False when no Infantry stack moves, or when the record is no load.
+    /// </summary>
+    public static bool BoardsAfterMove(bool load, bool infantryMoving, bool windowOpen, IReadOnlyList<string> members, IReadOnlyCollection<string>? boarding) =>
+        load && infantryMoving && boarding is { Count: > 0 } && ScenarioA1PassengerCalculator.EndOfMoveLoadBar(string.Empty, true, windowOpen, members, boarding) is null;
+
+    /// <summary>
+    /// D5.41 (pass 65, ruling R65.20; the boundary review): whether a recorded voluntary Abandonment stands (UNIT-STATE-034), by the planner's
+    /// <see cref="ScenarioA1CrewActsRules.AbandonBar"/> over the facts the state holds, and what the record names: the vehicle in its recorded Location,
+    /// and its crew, of its side, either crewing it from inside or the counter placed beneath it. The projector holds no fire definition, so whether the
+    /// vehicle is armed (D5.1) is the planner's check alone.
+    /// </summary>
+    public static bool AbandonStands(AbandonRecordFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        return facts.Vehicle && ScenarioA1CrewActsRules.AbandonBar(string.Empty, facts.OwnMph, facts.InRecordedLocation, true, facts.Abandoned, facts.UnitMoving, facts.Moved,
+            facts.Fired, facts.Shocked, facts.Stunned) is null && facts.CrewOfItsSide && (facts.CrewInside || facts.CrewInLocation);
+    }
+
+    /// <summary>
+    /// D5.42, D5.43, D5.341 (pass 65, ruling R65.20; the boundary review): whether a recorded re-crewing stands (UNIT-STATE-034), by the planner's
+    /// <see cref="ScenarioA1CrewActsRules.RecrewBar"/> over the facts the state holds (when the vehicle's crew left it is the state's list of this Player
+    /// Turn), with no unit moving (A4.2), and a SW returned only when the entering unit holds it.
+    /// </summary>
+    public static bool RecrewStands(bool vehicle, bool unitMoving, RecrewFacts facts, bool returnedStands)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        return vehicle && !unitMoving && ScenarioA1CrewActsRules.RecrewBar(facts) is null && returnedStands;
+    }
+
+    /// <summary>
+    /// D10.5 (pass 65, ruling R65.23; the boundary review): whether a recorded Scrounging stands (UNIT-STATE-034), by the planner's
+    /// <see cref="ScenarioA1WreckRules.ScroungeBar"/> over the facts the state holds, and what the record names: a dr rolled as one die, and no more SW
+    /// taken than a dr of 1 to 3 allows, each the unit's own.
+    /// </summary>
+    public static bool ScroungeStands(bool vehicle, ScroungeFacts facts, bool drRolled, int dr, int taken, bool takenHeld)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        return vehicle && ScenarioA1WreckRules.ScroungeBar(facts) is null && drRolled && taken <= (ScenarioA1WreckRules.Succeeds(dr) ? dr : 0) && takenHeld;
+    }
+
+    /// <summary>
+    /// A11.52, A21.2, A21.21 (pass 65, ruling R65.22; the boundary review): whether a recorded capture stands (UNIT-STATE-034): in the CCPh, a vehicle in
+    /// its recorded Location passes to another side in the game, by a cause Rules names; an AFV only when Abandoned, as the planner's
+    /// <see cref="ScenarioA1CapturedVehicleRules.CaptureAttemptBar"/> has it. The projector holds no fire definition, so whether the vehicle is armed, and
+    /// which units share its Location, are the planner's checks alone.
+    /// </summary>
+    public static bool CaptureStands(bool ccph, bool vehicle, bool otherSide, bool inRecordedLocation, bool sideInGame, string cause, bool abandoned) =>
+        ccph && vehicle && otherSide && inRecordedLocation && sideInGame
+        && cause is ScenarioA1CapturedVehicleRules.Automatic or ScenarioA1CapturedVehicleRules.CloseCombat or ScenarioA1CapturedVehicleRules.Unarmed
+        && (cause == ScenarioA1CapturedVehicleRules.Unarmed || ScenarioA1CapturedVehicleRules.CaptureAttemptBar(string.Empty, true, abandoned) is null);
+
+    /// <summary>
+    /// A21.21: whether a recorded Temporary Driver stands: an unarmed vehicle's capture names him, a SMC of the captor's side on foot in its Location.
+    /// </summary>
+    public static bool DriverStands(string cause, bool smc, bool captorsSide, bool onFootInLocation) =>
+        cause == ScenarioA1CapturedVehicleRules.Unarmed && smc && captorsSide && onFootInLocation;
 }
+
+/// <summary>
+/// A recorded voluntary Abandonment as the projector reads it (D5.41; pass 65, ruling R65.20): the phase, the vehicle's state, and the crew the record
+/// names. <see cref="Moved"/> and <see cref="Fired"/> are <see cref="ScenarioA1CrewActsRules.VehicleMoved"/> and
+/// <see cref="ScenarioA1CrewActsRules.VehicleFired"/>, as the planner reads them.
+/// </summary>
+public sealed record AbandonRecordFacts(bool OwnMph, bool Vehicle, bool InRecordedLocation, bool Abandoned, bool UnitMoving, bool Moved, bool Fired, bool Shocked,
+    bool Stunned, bool CrewOfItsSide, bool CrewInside, bool CrewInLocation);

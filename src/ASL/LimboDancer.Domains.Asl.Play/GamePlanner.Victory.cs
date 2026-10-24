@@ -82,7 +82,7 @@ public sealed partial class GamePlanner
     /// one; an unarmored vehicle none), and the inherent crew's two (A26.211) unless it has left the vehicle, Abandoned or as a crew counter of its own. An
     /// unarmored vehicle with no armament has no inherent crew (A26.212 EX: an unarmed truck is worth one).
     /// </summary>
-    private static int VehicleVictoryPoints(GameState state, UnitInstance vehicle)
+    private int VehicleVictoryPoints(GameState state, UnitInstance vehicle)
     {
         var definition = VehicleDefinition(vehicle);
         var armor = vehicle.Definition is { } reference ? OrdnanceReference.Value.Armor.Vehicles.GetValueOrDefault(reference.Definition) : null;
@@ -97,16 +97,18 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// Whether a vehicle has its inherent crew (A26.211, D5.1; rulings R24.3, R24.5): an armed vehicle (a MA or any MG) has one, an unarmed vehicle only an
-    /// Inherent Driver; it is gone once the vehicle is Abandoned or its crew is a counter of its own.
+    /// Inherent Driver; it is gone once the vehicle is Abandoned or its crew is a counter of its own, and back once a unit re-crews it (D5.42; pass 65,
+    /// ruling R65.20).
     /// </summary>
-    private static bool HasInherentCrew(GameState state, UnitInstance vehicle)
+    private bool HasInherentCrew(GameState state, UnitInstance vehicle)
     {
         var definition = VehicleDefinition(vehicle);
         var armor = vehicle.Definition is { } reference ? OrdnanceReference.Value.Armor.Vehicles.GetValueOrDefault(reference.Definition) : null;
         return ScenarioA1VictoryCalculator.HasInherentCrew(
             ScenarioA1VictoryCalculator.VehicleArmed(armor?.MaType is not null, definition?.MainArmament is not null, definition?.AntiAircraftMg is not null, definition?.BowMg is not null,
                 definition?.CoaxialMg is not null),
-            Is(vehicle, Conditions.Abandoned), () => state.Units.Any(unit => unit.Kind == "asl:crew" && unit.Id.EndsWith($"-{vehicle.Id}-crew", StringComparison.Ordinal)));
+            Is(vehicle, Conditions.Abandoned), () => CrewInside(state, vehicle.Id) is null
+                && state.Units.Any(unit => ScenarioA1VictoryCalculator.LeftItsVehicle(unit.Kind) && ScenarioA1CrewActsRules.IsOwnCrew(unit.Id, vehicle.Id)));
     }
 
     /// <summary>

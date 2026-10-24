@@ -40,7 +40,7 @@ public sealed partial class GamePlanner
 
         var leader = unit.Kind == "asl:leader";
         var afv = LiveFire.IsVehicle(unit);
-        var mmc = unit.Kind is "asl:squad" or "asl:half-squad" or "asl:crew";
+        var mmc = unit.Kind is "asl:squad" or "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind);
         if (ScenarioA1Starshells.FirerBar(unitId, leader, afv, mmc, afv && ButtonedUpAfv(unit), Is(unit, Conditions.Stunned), Is(unit, Conditions.Shocked),
             GoodOrder(unit), Is(unit, Conditions.Pinned), Is(unit, "asl:ti"), Is(unit, Conditions.Captured)) is { } firerBar)
         {

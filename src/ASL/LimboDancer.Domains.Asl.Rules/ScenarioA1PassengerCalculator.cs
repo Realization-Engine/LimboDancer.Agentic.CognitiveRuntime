@@ -79,4 +79,124 @@ public static class ScenarioA1PassengerCalculator
 
     /// <summary>D6.5: each unloading unit spends one MF plus one for each quarter (FRU) of its printed MP the vehicle spent before.</summary>
     public static int UnloadMf(int spent, int printed) => 1 + (printed == 0 ? 0 : ((spent * 4) + printed - 1) / printed);
+
+    /// <summary>
+    /// D6.5 (p. 205; pass 65, ruling R65.14): "FFNAM always applies vs loading or unloading units (A4.6); FFMO applies only if unloading Passengers from
+    /// an unarmored conveyance in an Open Ground hex". Whether the FFMO of an Open Ground attack applies to the (un)loaders.
+    /// </summary>
+    public static bool EmbarkingFfmo(bool unloading, bool unarmoredConveyance) => unloading && unarmoredConveyance;
+
+    /// <summary>
+    /// D5.43 (p. 204; pass 65, ruling R65.14): "Infantry attempting to enter a vehicle succeed only if they survive all such attacks unpinned and in Good
+    /// Order". The loaders an attack on them left pinned or broken, which are back on foot in the Location; an eliminated one is gone, and an unloader
+    /// "does succeed" whatever befalls it. The D5.43 EX (p. 204): a loader also fails "if ... the vehicle is destroyed", so when the same attack eliminates
+    /// or burns the vehicle they board (<paramref name="conveyanceResult"/>, its Vehicle line's result), every loader it did not eliminate is back on foot.
+    /// Empty for any other attack.
+    /// </summary>
+    public static IReadOnlyList<string> LoadFailures(FireEmbarking? embarking, IEnumerable<FireUnitEffect> effects, string? conveyanceResult = null)
+    {
+        ArgumentNullException.ThrowIfNull(effects);
+        // A load writes no unloading flag since the boundary review's fixes, and an earlier record of this pass writes false: both are loads.
+        if (embarking is not { Units: { } loaders } || embarking.Unloading == true)
+        {
+            return [];
+        }
+
+        if (conveyanceResult is FireVehicleEffect.Eliminated or FireVehicleEffect.BurningWreck)
+        {
+            var eliminated = effects.Where(effect => effect.Eliminated).Select(effect => effect.UnitId).ToHashSet(StringComparer.Ordinal);
+            return [.. loaders.Where(id => !eliminated.Contains(id)).Distinct(StringComparer.Ordinal)];
+        }
+
+        return [.. effects.Where(effect => loaders.Contains(effect.UnitId, StringComparer.Ordinal) && !effect.Eliminated && (effect.Pinned || effect.Broken)).Select(effect => effect.UnitId)];
+    }
+
+    /// <summary>
+    /// D6.4, A4.2 (pass 65, ruling R65.15): a unit may board as the last step of its own move, once the DEFENDER's window on its last step has closed,
+    /// with every unit of its moving stack that may still move, and no unit outside that stack boards while it moves; null when it may (or no Infantry
+    /// stack moves).
+    /// </summary>
+    public static string? EndOfMoveLoadBar(string vehicleId, bool infantryMoving, bool windowOpen, IReadOnlyList<string> members, IReadOnlyCollection<string> boarding)
+    {
+        ArgumentNullException.ThrowIfNull(members);
+        ArgumentNullException.ThrowIfNull(boarding);
+        if (!infantryMoving)
+        {
+            return null;
+        }
+
+        if (windowOpen)
+        {
+            return "play.load: the DEFENDER may still fire at the moving stack's last MF expenditure; it boards once the DEFENDER passes (A8.1, D6.4)";
+        }
+
+        if (boarding.FirstOrDefault(id => !members.Contains(id, StringComparer.Ordinal)) is { } other)
+        {
+            return $"play.load: {other} is not of the moving stack, and no other unit acts until its move ends (A4.2)";
+        }
+
+        return members.FirstOrDefault(id => !boarding.Contains(id, StringComparer.Ordinal)) is { } left
+            ? $"play.load: {left} moves with the stack and boards {vehicleId} with it, or ends its move first (A4.2, D6.4)"
+            : null;
+    }
+
+    /// <summary>
+    /// A4.42, D6.4 (pp. 50, 205; pass 65, ruling R65.15): a leader "can add his IPC to one such unit's IPC to increase its movement capability": the IPC
+    /// a boarding unit gains (the MMC the leader lends his to), or loses (the leader, whose own IPC is spent), as the movement's lending has it.
+    /// </summary>
+    public static int BoardingIpcBonus(string unitId, string? recipient, string? leader) =>
+        unitId == recipient ? 1 : unitId == leader ? -1 : 0;
+
+    /// <summary>
+    /// A4.11 (p. 48; pass 65, ruling R65.15): a unit that mounted or dismounted a conveyance this Player Turn moves on with four MF (a SMC four in place
+    /// of six); null leaves its usual allotment.
+    /// </summary>
+    public static int? ConveyedAllowance(bool conveyed) => conveyed ? ConveyanceAllowance : null;
+
+    /// <summary>A4.12 (p. 48; pass 65, ruling R65.15): no leader bonus for a unit that expends MF to mount, ride, or dismount a conveyance.</summary>
+    public static bool ConveyedLeaderBonus(bool bonus, bool conveyed) => bonus && !conveyed;
+
+    /// <summary>
+    /// A4.5 (p. 51; pass 65, ruling R65.15): "Double Time may not be used by a unit that will mount, ride, or dismount any form of conveyance during that
+    /// Player Turn": a unit that boarded or unloaded this MPh does not Double Time on.
+    /// </summary>
+    public static string? ConveyedDoubleTimeBar(bool doubleTime, IEnumerable<(string Id, bool Conveyed)> movers)
+    {
+        ArgumentNullException.ThrowIfNull(movers);
+        return doubleTime && movers.FirstOrDefault(unit => unit.Conveyed) is { Id: { } id }
+            ? $"play.move-double-time: {id} rode or dismounted a vehicle this Player Turn and does not Double Time (A4.5)"
+            : null;
+    }
+
+    /// <summary>
+    /// D6.4 (p. 205; pass 65, ruling R65.15): "any halftrack or Carrier may retain any SW placed in it if those SW apply to that vehicle's Passenger PP
+    /// capacity". Why the named SW may not be left aboard as the units holding them unload, or null: only a halftrack or Carrier keeps them, and each
+    /// must be held by a unit that unloads.
+    /// </summary>
+    public static string? LeaveAboardBar(string vehicleId, string? vehicleClass, IEnumerable<(string Weapon, bool HeldByUnloader)> weapons)
+    {
+        ArgumentNullException.ThrowIfNull(weapons);
+        if (weapons.FirstOrDefault(item => !item.HeldByUnloader) is { Weapon: { } stray })
+        {
+            return $"play.unload: {stray} is not held by a Passenger that unloads, so it is not left aboard (D6.4)";
+        }
+
+        return weapons.Any() && !KeepsSwAboard(vehicleClass)
+            ? $"play.unload: only a halftrack or a Carrier keeps a SW aboard without Passengers, and {vehicleId} is neither; the SW unloads with its holder (D6.4)"
+            : null;
+    }
+
+    /// <summary>D6.4 (p. 205; ruling R65.15): whether a vehicle keeps SW aboard as their holders unload: a halftrack or a Carrier.</summary>
+    public static bool KeepsSwAboard(string? vehicleClass) => vehicleClass == "halftrack" || ScenarioA1CarrierRules.IsCarrier(vehicleClass);
+
+    /// <summary>
+    /// D6.5 (p. 205; pass 65, ruling R65.15): "no unit other than the conveying vehicle and any other disembarking PRC of that vehicle may move in the
+    /// interim". Once the vehicle's move ends, the units it disembarked that may still move are the moving stack's members, who move or end their move
+    /// before any other unit moves: active, not done moving, Good Order and unpinned (A7.821: a pinned unloader stays in its Dismount Location).
+    /// </summary>
+    public static IReadOnlyList<string> InterimMembers(IEnumerable<(string Id, bool Active, bool MoveEnded, bool Pinned, bool Broken)> disembarked)
+    {
+        ArgumentNullException.ThrowIfNull(disembarked);
+        return [.. disembarked.Where(unit => unit.Active && !unit.MoveEnded && !unit.Pinned && !unit.Broken).Select(unit => unit.Id).Distinct(StringComparer.Ordinal)];
+    }
 }

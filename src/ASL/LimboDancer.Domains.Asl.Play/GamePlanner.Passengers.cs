@@ -15,15 +15,35 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
-    /// <summary>A vehicle's Passenger capacity in PP (D6.1), less four PP, or eight at 100mm or more, for a Gun it tows (C10.13); null when it carries none.</summary>
+    /// <summary>
+    /// A vehicle's Passenger capacity in PP (D6.1), less four PP, or eight at 100mm or more, for a Gun it tows (C10.13); null when it carries none. A
+    /// Carrier's is four PP, none with a mortar, FT, or 6 FP AAMG as MA (D6.81; pass 65, ruling R65.18).
+    /// </summary>
     public static int? PassengerCapacity(GameState state, UnitInstance vehicle)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(vehicle);
-        return ScenarioA1PassengerCalculator.PassengerCapacity(VehicleDefinition(vehicle)?.PassengerCapacity,
+        var definition = VehicleDefinition(vehicle);
+        return ScenarioA1PassengerCalculator.PassengerCapacity(ScenarioA1CarrierRules.PassengerCapacity(definition?.VehicleClass, definition?.PassengerCapacity,
+                definition?.MainArmament, definition?.Caliber, definition?.AntiAircraftMg),
             state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id)
                 .Select(gun => gun.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Caliber : null));
     }
+
+    /// <summary>Whether a Carrier's inherent HS is aboard and may unload as its Passengers do (D6.83; pass 65, ruling R65.18); Rules decides.</summary>
+    public static bool CrewMayUnload(GameState state, UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return ScenarioA1CarrierRules.IsCarrier(VehicleDefinition(vehicle)?.VehicleClass)
+            && ScenarioA1CarrierRules.CrewUnloadBar(vehicle.Id, InherentHalfSquad(state, vehicle), Is(vehicle, Conditions.Abandoned)) is null;
+    }
+
+    /// <summary>The Passengers and Riders of a vehicle, read from the state's index once per state (ruling R65.25), as <see cref="GameState.Passengers"/> has them.</summary>
+    public IReadOnlyList<UnitInstance> Riding(GameState state, string vehicle) => MemoOf(state).Objects(state).Aboard(vehicle);
+
+    /// <summary>The vehicle an id rides, as <see cref="GameState.Aboard"/> has it, read from the same index.</summary>
+    internal string? VehicleOf(GameState state, string id) => MemoOf(state).Objects(state).VehicleOf(id);
 
     /// <summary>The PP a unit takes as a Passenger (D6.1): a squad ten, a HS or crew five, a SMC none, plus the SW it carries; null when a SW's PP are not recorded.</summary>
     private int? PassengerPp(GameState state, UnitInstance unit) =>
@@ -36,15 +56,86 @@ public sealed partial class GamePlanner
     /// </summary>
     internal string? CapacityBar(GameState state, UnitInstance vehicle, IEnumerable<UnitInstance> boarding)
     {
+        // D6.2 (pass 65, ruling R65.16): Riders are counted apart, against the Rider capacity (RiderBar); a vehicle carrying only Riders has no Passengers to bar.
+        UnitInstance[] aboard = [.. Riding(state, vehicle.Id).Where(unit => unit.Position is not ContainedPosition { Role: ContainmentRole.Rider }).Concat(boarding)
+            .DistinctBy(unit => unit.Id)];
+        if (aboard.Length == 0)
+        {
+            return null;
+        }
+
         var capacity = PassengerCapacity(state, vehicle);
         if (capacity is null)
         {
             return ScenarioA1PassengerCalculator.CapacityBar(vehicle.Id, null, null, 0, []);
         }
 
-        UnitInstance[] aboard = [.. state.Passengers(vehicle.Id).Concat(boarding).DistinctBy(unit => unit.Id)];
+        // D6.4 (pass 65, ruling R65.15): a SW left aboard counts against the Passenger PP capacity.
         return ScenarioA1PassengerCalculator.CapacityBar(vehicle.Id, capacity, VehicleDefinition(vehicle)?.PassengerCapacity, aboard.Count(unit => vocabulary.IsA(unit.Kind, "asl:smc")),
-            aboard.Select(unit => (unit.Id, (Func<int?>)(() => PassengerPp(state, unit)))));
+            aboard.Select(unit => (unit.Id, (Func<int?>)(() => PassengerPp(state, unit))))
+                .Concat(MemoOf(state).Objects(state).Stowed(vehicle.Id).Select(weapon => (weapon.Id, (Func<int?>)(() => PortageOf(weapon))))));
+    }
+
+    /// <summary>
+    /// Why a vehicle may not carry its Riders with <paramref name="boarding"/> added (D6.2, A5.5; pass 65, ruling R65.16): Riders are not allowed in the
+    /// game's year for the vehicle's side, it is not an AFV that takes Riders, or their PP exceed its Rider capacity, counted apart from its Passenger PP;
+    /// the referee's review: the vehicle is in terrain Riders are not allowed in (D6.21, B13.43), or the catalog gives a Rider no Morale Level for its Bail
+    /// Out's NMC (D6.24). Null when it may, or when nobody rides it as a Rider.
+    /// </summary>
+    internal string? RiderBar(GameState state, UnitInstance vehicle, IEnumerable<UnitInstance> boarding)
+    {
+        UnitInstance[] riders = [.. RidersOf(state, vehicle.Id).Concat(boarding).DistinctBy(unit => unit.Id)];
+        if (riders.Length == 0)
+        {
+            return null;
+        }
+
+        var definition = VehicleDefinition(vehicle);
+        var bar = ScenarioA1RiderRules.DateBar(vehicle.Id, state.ScenarioYear, state.Side(vehicle.Side)?.Nationality)
+            ?? ScenarioA1RiderRules.CapacityBar(vehicle.Id, ScenarioA1RiderRules.Capacity(definition?.VehicleClass, definition?.Unarmored == true),
+                riders.Select(unit => (unit.Id, vocabulary.IsA(unit.Kind, "asl:smc"), (Func<int?>)(() => PassengerPp(state, unit)))));
+        if (bar is null && vehicle.Position is MapPosition && MemoOf(state).Objects(state).Location(vehicle.Id)?.Location is { } at && ReadLocation(state, at) is { } read)
+        {
+            var terrain = read.Level.Terrain ?? read.Hex.Center.Terrain;
+            bar = ScenarioA1RiderRules.LocationBar(vehicle.Id, TerrainKey(read), terrain?.Name, terrain?.IsRoad == true,
+                terrain?.Name?.Contains("Stream", StringComparison.Ordinal) == true, vehicle.Straddling is not null);
+        }
+
+        foreach (var unit in riders)
+        {
+            var own = unit.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
+            bar ??= ScenarioA1RiderRules.MoraleBar(unit.Id, own?.Morale, own?.BrokenMorale);
+        }
+
+        return bar;
+    }
+
+    /// <summary>The Rider capacity of a vehicle in PP, or null when it takes none (D6.2), with whether it is one SMC's; for the Play page.</summary>
+    public static RiderCapacity? RiderCapacityOf(UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return VehicleDefinition(vehicle) is { } definition ? ScenarioA1RiderRules.Capacity(definition.VehicleClass, definition.Unarmored == true) : null;
+    }
+
+    /// <summary>
+    /// Whether units board a vehicle as Riders (D6.2, D6.4; pass 65, the UI review): Rules decides from whether it takes Riders and Passengers and whether
+    /// the player asked it. With <paramref name="asked"/> false, whether it takes Riders and no Passengers. For the Play page.
+    /// </summary>
+    public static bool BoardsAsRiders(GameState state, UnitInstance vehicle, bool asked) =>
+        ScenarioA1RiderRules.BoardsAsRiders(RiderCapacityOf(vehicle) is not null, PassengerCapacity(state, vehicle) is not null, asked);
+
+    /// <summary>Whether a vehicle keeps a SW its Passengers leave aboard (D6.4; pass 65, the UI review): Rules decides from its class. For the Play page.</summary>
+    public static bool KeepsSwAboard(UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return ScenarioA1PassengerCalculator.KeepsSwAboard(VehicleDefinition(vehicle)?.VehicleClass);
+    }
+
+    /// <summary>The Rider PP a vehicle has left (D6.2), its Riders read from the state's index; null when it takes no Riders. For the Play page.</summary>
+    public int? RiderPpLeft(GameState state, UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return RiderCapacityOf(vehicle) is { } capacity ? capacity.Pp - RidersOf(state, vehicle.Id).Sum(unit => PassengerPp(state, unit) ?? 0) : null;
     }
 
     /// <summary>The two VCAs of a vehicle entering across a hexside: its VCA holds the hex it enters, so it faces a hexspine 30 degrees either side of its travel (D2.11).</summary>
@@ -191,12 +282,14 @@ public sealed partial class GamePlanner
     /// Infantry board a vehicle (D6.4; ruling R26.2): the vehicle is stopped, not in Motion, not in Bypass, and has spent no MP this MPh; the units are
     /// Good Order, unpinned Personnel of its side in its Location that have not ended their move, each spending one MF and then riding with its move ended;
     /// the vehicle keeps a quarter of its MP allotment for each MF left to the unit that spent the most (FRD to the half MP). Within its capacity (D6.1).
+    /// Since pass 65 (ruling R65.15) a moving stack boards as the last step of its own move, and a leader boarding with a laden MMC lends it his IPC (A4.42).
     /// </summary>
     private GamePlan PlanLoad(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor,
         GameState state, UnitInstance vehicle, BoardLocation at)
     {
         var id = vehicle.Id;
-        if (state.Movement is not null || Is(vehicle, Conditions.Motion) || vehicle.MfSpent != 0 || vehicle.HalfMfSpent || StepsThisPhase(existing, id).Length > 0
+        var moving = state.Movement;
+        if (moving is { Vehicle: true } || Is(vehicle, Conditions.Motion) || vehicle.MfSpent != 0 || vehicle.HalfMfSpent || StepsThisPhase(existing, id).Length > 0
             || vehicle.Straddling is not null)
         {
             return Refused(scope, label, expected, $"play.load: {id} takes Passengers only stopped, not in Motion or Bypass, before it spends any MP this MPh (D6.4)");
@@ -207,12 +300,19 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: a load names the units boarding");
         }
 
+        // D6.4, A4.2 (pass 65, ruling R65.15): boarding as the last step of a stack's own move.
+        if (ScenarioA1PassengerCalculator.EndOfMoveLoadBar(id, moving is not null, moving?.WindowOpen == true, moving?.Members ?? [], ids) is { } afterMoveBar)
+        {
+            return Refused(scope, label, expected, afterMoveBar);
+        }
+
         var boarding = new List<UnitInstance>();
         var least = int.MaxValue;
+        var index = MemoOf(state).Objects(state);
         foreach (var unitId in ids)
         {
             if (state.Unit(unitId) is not { Status: InstanceStatus.Active } unit || unit.Side != vehicle.Side || LiveFire.IsVehicle(unit) || !vocabulary.IsA(unit.Kind, "asl:personnel")
-                || state.Aboard(unit.Id) is not null || state.Location(unit.Id)?.Location != at || unit.MovementEnded)
+                || index.VehicleOf(unit.Id) is not null || index.Location(unit.Id)?.Location != at || unit.MovementEnded)
             {
                 return Refused(scope, label, expected, $"play.load: {unitId} is not Infantry of {vehicle.Side} on foot in {at} that may still move (D6.4)");
             }
@@ -228,22 +328,31 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, tiredBar);
             }
 
-            if (MfAllotment(state, unit, 0, Is(unit, Conditions.Cx), 0, 0, ScenarioA1PassengerCalculator.ConveyanceAllowance) is not { } allotment)
+            boarding.Add(unit);
+        }
+
+        // A4.42, D6.4 (pass 65, ruling R65.15): a leader boarding with a laden MMC of his stack lends it his IPC, as he would on the move.
+        var (recipient, lender) = LeaderIpcRecipient(state, [.. boarding], moving?.IpcTo);
+        foreach (var unit in boarding)
+        {
+            if (MfAllotment(state, unit, 0, Is(unit, Conditions.Cx), 0, ScenarioA1PassengerCalculator.BoardingIpcBonus(unit.Id, recipient, lender),
+                ScenarioA1PassengerCalculator.ConveyanceAllowance) is not { } allotment)
             {
-                return Refused(scope, label, expected, $"play.load: {unitId}'s MF are not decided by the catalog (A4.1)");
+                return Refused(scope, label, expected, $"play.load: {unit.Id}'s MF are not decided by the catalog (A4.1)");
             }
 
             var left = ScenarioA1PassengerCalculator.BoardingHalfMfLeft(allotment, unit.MfSpent, unit.HalfMfSpent);
             if (left < 0)
             {
-                return Refused(scope, label, expected, $"play.load: {unitId} has no MF left to board, which costs one (D6.4)");
+                return Refused(scope, label, expected, $"play.load: {unit.Id} has no MF left to board, which costs one (D6.4)");
             }
 
             least = Math.Min(least, left / 2);
-            boarding.Add(unit);
         }
 
-        if (CapacityBar(state, vehicle, boarding) is { } full)
+        // D6.2 (pass 65, ruling R65.16): a load may board Riders, within the dates and the Rider capacity, counted apart from the Passengers'.
+        var riders = Flag(arguments, "riders");
+        if ((riders ? RiderBar(state, vehicle, boarding) : CapacityBar(state, vehicle, boarding)) is { } full)
         {
             return Refused(scope, label, expected, $"play.load: {full}");
         }
@@ -251,9 +360,14 @@ public sealed partial class GamePlanner
         var printed = PrintedHalfMp(vehicle);
         var kept = ScenarioA1PassengerCalculator.LoadKeptHalfMp(printed, least);
         var cost = printed - kept;
-        var text = $"play.load: {string.Join(", ", boarding.Select(unit => unit.Id))} board{(boarding.Count == 1 ? "s" : string.Empty)} {id} in {at} for one MF; {id} keeps {Mp(kept)} of its {Mp(printed)} MP (D6.4; ruling R26.2)";
+        var text = $"play.load: {string.Join(", ", boarding.Select(unit => unit.Id))} board{(boarding.Count == 1 ? "s" : string.Empty)} {id} in {at}"
+            + (riders ? " as Riders (D6.2)" : string.Empty) + " for one MF"
+            + (moving is not null ? $", the last step of {(boarding.Count == 1 ? "its" : "their")} move" : string.Empty)
+            + (recipient is not null ? $", {lender} lending {recipient} his IPC (A4.42)" : string.Empty)
+            + $"; {id} keeps {Mp(kept)} of its {Mp(printed)} MP (D6.4; ruling R26.2)"
+            + "; the DEFENDER may fire at the boarding units as Infantry on foot with FFNAM, and one left pinned or broken does not board (D5.43, D6.5)";
         return VehicleStepPlan(scope, label, attemptId, expected, actor, existing,
-            _ => [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, VehicleStepped.Load, at, null, cost, 1) { Units = [.. boarding.Select(unit => unit.Id)] }, null, null)],
+            _ => [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, VehicleStepped.Load, at, null, cost, 1) { Units = [.. boarding.Select(unit => unit.Id)], Riders = riders }, null, null)],
             false, at, 1, text);
     }
 
@@ -273,15 +387,54 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.unload: {id} unloads Passengers only while stopped, not in Motion or Bypass; it must Stop first (D6.5)");
         }
 
-        if (UnitIds(arguments) is not { Count: > 0 } ids)
+        // D6.83 (pass 65, ruling R65.18): a Carrier's inherent HS may unload as its Passengers do, with them or alone, and the Carrier is Abandoned.
+        var crewUnloads = arguments.TryGetProperty("crew", out var crewArgument) && crewArgument.ValueKind == JsonValueKind.True;
+        if ((UnitIds(arguments) ?? (crewUnloads ? new List<string>() : null)) is not { } ids || (ids.Count == 0 && !crewUnloads))
         {
             return Refused(scope, label, expected, "play.invalid-arguments: an unload names the Passengers disembarking");
+        }
+
+        InstanceCreated? crewLeaving = null;
+        if (crewUnloads)
+        {
+            if (ScenarioA1CarrierRules.CrewUnloadBar(id, InherentHalfSquad(state, vehicle), Is(vehicle, Conditions.Abandoned)) is { } crewBar)
+            {
+                return Refused(scope, label, expected, crewBar);
+            }
+
+            // D5.42 (pass 65, ruling R65.20): a unit that re-crewed the Carrier leaves it as itself, by Abandoning it.
+            if (MemoOf(state).Objects(state).CrewOf(id) is { } recrewed)
+            {
+                return Refused(scope, label, expected, $"play.unload: {recrewed.Id} crews {id} from inside and leaves it by Abandoning it (D5.41, D5.42)");
+            }
+
+            // The HS is created aboard, so the step unloads it as a Passenger: beneath the vehicle, with its MF and the DEFENDER's FFNAM (D6.5).
+            // D3.43, D5.34 (the referee's review): it takes the Armor Leader, dormant, and the Stun "+1" with it.
+            crewLeaving = LeavingCrew(state, vehicle, attemptId, Is(vehicle, Conditions.StunRecovery), vehicle.ArmorLeader) is { } placed
+                ? new InstanceCreated(placed.Instance with
+                {
+                    Position = new ContainedPosition(id, ContainmentRole.Passenger)
+                }) : null;
+            if (crewLeaving is null)
+            {
+                return Refused(scope, label, expected, $"play.unload: the catalog has no HS or vehicle crew of {id}'s nationality (D6.82)");
+            }
         }
 
         var aboard = state.Passengers(id);
         if (ids.FirstOrDefault(unitId => aboard.All(unit => unit.Id != unitId)) is { } stranger)
         {
             return Refused(scope, label, expected, $"play.unload: {stranger} is not a Passenger of {id} (D6.5)");
+        }
+
+        // D6.5, D.3 (pass 65, ruling R65.10): a Passenger that fired, or added its FP to the OVR, does not unload in that phase.
+        var overran = OverranThisPhase(existing);
+        foreach (var unit in aboard.Where(unit => ids.Contains(unit.Id)))
+        {
+            if (ScenarioA1PassengerActionRules.UnloadAfterFireBar(unit.Id, LiveFire.Fired(unit), overran.Contains(unit.Id)) is { } firedBar)
+            {
+                return Refused(scope, label, expected, firedBar);
+            }
         }
 
         var printed = PrintedHalfMp(vehicle);
@@ -297,13 +450,78 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.unload: unloading costs {id} a quarter of its MP, {Mp(quarter)}, and it has {Mp(Math.Max(0, allotment - spent))} left (D6.5)");
         }
 
+        // D6.4 (pass 65, ruling R65.15): the SW the unloaders leave aboard a halftrack or Carrier, and those left aboard that they take with them, since
+        // "SW carried by a vehicle's Passenger PP capacity can be unloaded/Recovered only by Passengers of the same vehicle" (D6.5).
+        var index = MemoOf(state).Objects(state);
+        string[] leave = [.. Strings(arguments, "leave")];
+        if (ScenarioA1PassengerCalculator.LeaveAboardBar(id, VehicleDefinition(vehicle)?.VehicleClass, leave.Select(weapon => (weapon,
+            state.Find(weapon) is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } holding } && ids.Contains(holding.Holder)))) is { } leaveBar)
+        {
+            return Refused(scope, label, expected, leaveBar);
+        }
+
+        var stowed = index.Stowed(id);
+        var take = new List<(string Weapon, string Unit)>();
+        if (arguments.TryGetProperty("take", out var takeArgument) && takeArgument.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var pick in takeArgument.EnumerateObject())
+            {
+                if (stowed.All(weapon => weapon.Id != pick.Name) || pick.Value.ValueKind != JsonValueKind.String || !ids.Contains(pick.Value.GetString()!))
+                {
+                    return Refused(scope, label, expected, $"play.unload: {pick.Name} is not a SW left aboard {id} taken by a Passenger that unloads (D6.5)");
+                }
+
+                take.Add((pick.Name, pick.Value.GetString()!));
+            }
+        }
+
+        // D6.5, A4.14: "PRC may unload ... in an enemy-occupied hex with no special rules or consequences"; a CC counter shows they are not held in Melee.
+        var enemyThere = index.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && !LiveFire.IsVehicle(unit));
         var mf = ScenarioA1PassengerCalculator.UnloadMf(spent, printed);
-        var text = $"play.unload: {string.Join(", ", ids)} disembark{(ids.Count == 1 ? "s" : string.Empty)} beneath {id} in {at} for {Mp(quarter)} of its MP; "
-            + $"{(ids.Count == 1 ? "it spends" : "each spends")} {mf} MF more"
-            + (Is(vehicle, Conditions.PrepFire) ? $" and stays in {at} this MPh, since {id} Prep Fired" : " and may move on with the MF left") + " (D6.5; ruling R26.2)";
-        return VehicleStepPlan(scope, label, attemptId, expected, actor, existing,
-            _ => [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, VehicleStepped.Unload, at, null, quarter, step) { Units = [.. ids], UnitMf = mf }, null, null)],
-            false, at, step, text);
+        List<string> leavers = [.. ids];
+        List<string> named = [.. ids];
+        if (crewLeaving is not null)
+        {
+            // The UI review: the HS the step creates is named by its definition, which the page says as its counter ("its inherent 2-4-7 half-squad").
+            leavers.Add(crewLeaving.Instance.Id);
+            named.Add($"its inherent {crewLeaving.Instance.Definition}");
+        }
+
+        var text = $"play.unload: {string.Join(", ", named)} disembark{(leavers.Count == 1 ? "s" : string.Empty)} beneath {id} in {at} for {Mp(quarter)} of its MP; "
+            + $"{(leavers.Count == 1 ? "it spends" : "each spends")} {mf} MF more"
+            + (Is(vehicle, Conditions.PrepFire) ? $" and stays in {at} this MPh, since {id} Prep Fired" : " and may move on with the MF left, at most four, without Double Time, once "
+                + $"{id} ends its move and before any other unit moves (A4.11, A4.5)") + " (D6.5; ruling R26.2)"
+            + (leave.Length > 0 ? $"; {string.Join(", ", leave)} {(leave.Length == 1 ? "stays" : "stay")} aboard (D6.4)" : string.Empty)
+            + string.Concat(take.Select(item => $"; {item.Unit} takes {item.Weapon} with it (D6.5)"))
+            + (enemyThere ? $"; {at} holds the enemy, and they are not held in Melee (D6.5, A4.14)" : string.Empty)
+            + "; the DEFENDER may fire at them with FFNAM, and FFMO in Open Ground from an unarmored vehicle (D6.5)"
+            + (crewLeaving is not null ? $"; its inherent HS leaves {id}, so {id} is Abandoned, and the HS neither Removes its armament nor destroys it (D6.83)"
+                : string.Empty);
+        List<GameEvent> Build(Func<RollRequest, RollResult>? draw)
+        {
+            // D6.83: the inherent HS is created aboard and the Carrier Abandoned (D5.41) before the step unloads it, as an Abandoned vehicle's Passengers unload.
+            List<GameEvent> events = crewLeaving is null ? []
+                : [Event(scope, attemptId, 1, expected, "instance-created", crewLeaving, null, null),
+                    Event(scope, attemptId, 2, expected, "conditions-changed", new ConditionsChanged(id, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)), null, null)];
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "vehicle-step",
+                new VehicleStepped(id, VehicleStepped.Unload, at, null, quarter, step) { Units = [.. leavers], UnitMf = mf, Interim = true }, null, null));
+
+            foreach (var weapon in leave)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "equipment-transferred",
+                    new EquipmentTransferred(weapon, null, new ContainedPosition(id, ContainmentRole.Passenger)), null, null));
+            }
+
+            foreach (var (weapon, unit) in take)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "equipment-transferred",
+                    new EquipmentTransferred(weapon, new Holding(unit, HoldingRole.Possessed), null), null, null));
+            }
+
+            return events;
+        }
+
+        return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, Build, false, at, step, text);
     }
 
     /// <summary>The two hexes a vehicle's VCA points at (D2.11), for the hex it wished to enter next (D2.4; backlog section 21); empty off the map.</summary>
@@ -314,6 +532,11 @@ public sealed partial class GamePlanner
         return state.Location(vehicle.Id) is { } at && vehicle.Position is MapPosition { Facing: { } facing } ? VcaHexes(state, at.Location, facing) : [];
     }
 
+    /// <summary>The units that boarded or disembarked a vehicle this MPh (A4.11, A4.5; pass 65, ruling R65.15), read once per plan from the phase's steps.</summary>
+    private static HashSet<string> ConveyedThisPhase(IReadOnlyList<GameEvent> existing) =>
+        new(ThisPhase(existing).Select(item => item.Payload).OfType<VehicleStepped>().Where(step => step.Kind is VehicleStepped.Load or VehicleStepped.Unload)
+            .SelectMany(step => step.Units ?? []), StringComparer.Ordinal);
+
     /// <summary>The unit ids an action's <c>units</c> argument names.</summary>
     private static List<string>? UnitIds(JsonElement arguments) =>
         arguments.TryGetProperty("units", out var units) && units.ValueKind == JsonValueKind.Array
@@ -321,16 +544,20 @@ public sealed partial class GamePlanner
             : null;
 
     /// <summary>
-    /// Why an action names a unit riding a vehicle (ruling R26.2): Passengers only ride, and unload (D6.5); their fire, rout, and Close Combat are plan
-    /// pass 34. Null when no unit named is aboard.
+    /// Why an action names a unit riding a vehicle (ruling R26.2): Passengers ride, unload (D6.5), and, since pass 65, fire, pass a SW, and rout beneath
+    /// their vehicle (rulings R65.10, R65.11); their other actions are not built. Null when no unit named is aboard.
     /// </summary>
-    private static string? AboardBar(GameState state, JsonElement arguments)
+    private string? AboardBar(GameState state, JsonElement arguments)
     {
+        // Ruling R65.25: the index answers Aboard for every argument; only an id aboard is looked up.
+        var index = MemoOf(state).Objects(state);
         foreach (var text in Strings(arguments))
         {
-            if (state.Find(text) is UnitInstance { Status: InstanceStatus.Active } unit && state.Aboard(unit.Id) is { } vehicle)
+            if (index.VehicleOf(text) is { } vehicle && state.Find(text) is UnitInstance { Status: InstanceStatus.Active } unit)
             {
-                return $"play.aboard: {unit.Id} rides {vehicle} as a Passenger; until it unloads (D6.5) it acts only with its vehicle, since Passengers' fire, rout, and Close Combat are not built (ruling R26.2)";
+                return unit.Position is ContainedPosition { Role: ContainmentRole.Crew }
+                    ? $"play.aboard: {unit.Id} crews {vehicle} from inside; it acts only as the vehicle's crew until it Abandons it (D5.41, D5.42)"
+                    : $"play.aboard: {unit.Id} rides {vehicle} as a {(unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? "Rider" : "Passenger")}; until it unloads (D6.5) it fires, passes a SW, routs beneath, and otherwise acts only with its vehicle, since Passengers' other actions are not built (ruling R26.2)";
             }
         }
 

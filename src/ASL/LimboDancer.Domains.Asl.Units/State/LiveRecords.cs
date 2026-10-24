@@ -275,7 +275,10 @@ public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation A
         get; init;
     }
 
-    /// <summary>For a load or an unload (D6.4, D6.5; ruling R26.2): the Infantry boarding or the Passengers disembarking.</summary>
+    /// <summary>
+    /// For a load or an unload (D6.4, D6.5; ruling R26.2): the Infantry boarding or the Passengers disembarking. For an OVR's declaration (D7.11; pass 65,
+    /// ruling R65.13): the Passengers adding their FP to it; null on every OVR declared before the pass and by a vehicle carrying none.
+    /// </summary>
     public IReadOnlyList<string>? Units
     {
         get; init;
@@ -283,6 +286,25 @@ public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation A
 
     /// <summary>For an unload (D6.5; ruling R26.2): the MF each disembarking unit has spent once beneath the vehicle.</summary>
     public int UnitMf
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// For an unload (D6.5; pass 65, ruling R65.15): the disembarking units move on before any other unit once their vehicle's move ends, since "no
+    /// unit other than the conveying vehicle and any other disembarking PRC of that vehicle may move in the interim". False on every unload recorded
+    /// before the pass, after which any unit moved next.
+    /// </summary>
+    public bool Interim
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// For a load (D6.2; pass 65, ruling R65.16): the units board as Riders, on the outside of the AFV. False on every load recorded before the pass,
+    /// which boarded Passengers.
+    /// </summary>
+    public bool Riders
     {
         get; init;
     }
@@ -328,6 +350,151 @@ public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation A
 }
 
 /// <summary>
+/// <c>rider-bailed-out</c>: a Rider Bails Out of its AFV (D6.21, D6.23, D6.24; pass 65, ruling R65.17): <paramref name="Unit"/> leaves
+/// <paramref name="Vehicle"/> for <paramref name="At"/> (the last Location before terrain Riders may not ride through, or the AFV's own) for its
+/// <paramref name="Cause"/> (<c>terrain</c>, <c>turret</c>, <c>pin</c>, or <c>break</c>), and takes a NMC: its roll, the Morale Level it is taken
+/// against, and its <paramref name="Result"/> (<c>passed</c>, <c>pinned</c>, <c>broken</c>, <c>reduced</c>, or <c>eliminated</c>), whose effects the
+/// records after it write. It is beneath the AFV on foot, its move ended, with a Prep or Final Fire counter if unbroken; each SW it carries is kept,
+/// malfunctioned, or eliminated as <see cref="Weapons"/> say.
+/// </summary>
+public sealed record RiderBailedOut(string Unit, string Vehicle, BoardLocation At, string Cause, string Roll, int Morale, string Result) : EventPayload
+{
+    /// <summary>Each SW the unit carries, with its dr's roll (null when the unit breaks or is eliminated, which eliminates it) and its fate (D6.24).</summary>
+    public IReadOnlyList<RiderWeapon>? Weapons
+    {
+        get; init;
+    }
+}
+
+/// <summary>A SW a Bailing Out Rider carries (D6.24): its dr's roll, null when the carrier breaks, and its fate: <c>kept</c>, <c>malfunctioned</c>, or <c>eliminated</c>.</summary>
+public sealed record RiderWeapon(string Weapon, string? Roll, string Fate);
+
+/// <summary>
+/// <c>vehicle-abandoned</c>: a crew Abandons its vehicle voluntarily in its own MPh (D5.41, D5.43; pass 65, ruling R65.20): <paramref name="Crew"/> is
+/// beneath <paramref name="Vehicle"/> in <paramref name="At"/>, its MF spent, and the vehicle is marked Abandoned and stopped. A crew counter placed by the
+/// <c>instance-created</c> before this record is already there; a unit that crewed the vehicle from inside leaves it as itself, taking the vehicle's Armor
+/// Leader (D3.43) and Stun +1 (D5.34). The DEFENDER may fire at the crew with FFNAM, as at an unloader (D5.43). The records before this one write what the
+/// choices did to the vehicle (malfunctioned or Disabled weapons, the Removed MG's counter) and the one after it a wreck.
+/// </summary>
+public sealed record VehicleAbandoned(string Vehicle, BoardLocation At, string Crew) : EventPayload
+{
+    /// <summary>D5.411: the self-destruction the crew chose, <c>wreck</c> or <c>malfunction</c>; null for none.</summary>
+    public string? Destroyed
+    {
+        get; init;
+    }
+
+    /// <summary>D6.631: the SW counter the crew took a Removed MG away as; null when it Removed none.</summary>
+    public string? Removed
+    {
+        get; init;
+    }
+
+    /// <summary>D6.631: the mount the MG was Removed from, <c>ma</c> or <c>bmg</c>; null when none was.</summary>
+    public string? Mount
+    {
+        get; init;
+    }
+
+    /// <summary>D5.8: the fire counter the crew takes, <c>prep</c> or <c>final</c>, when the vehicle fired or was a moving target; null for none.</summary>
+    public string? FireCounter
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// <c>vehicle-recrewed</c>: an Infantry unit of the vehicle's side enters an Abandoned vehicle in its Location to become its crew, spending all its MF (D5.42;
+/// pass 65, ruling R65.20). It is inside the vehicle in the crew's role, keeping its id; the vehicle is no longer Abandoned, and takes back the Armor Leader
+/// (D3.43) and the Stun +1 (D5.34) the unit carries. <see cref="Temporary"/> marks a Temporary crew (A21.22), whose penalties are increment 2i's; a SW
+/// Removed from the vehicle (D6.631) that the unit brings back is returned, and the mount's Disabled counter removed.
+/// </summary>
+public sealed record VehicleRecrewed(string Vehicle, BoardLocation At, string Unit) : EventPayload
+{
+    /// <summary>A21.22: the unit is a friendly MMC other than a vehicle or infantry crew, crewing as a Temporary crew.</summary>
+    public bool Temporary
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// A21.22 (pass 65, ruling R65.22): how a Temporary crew mans the vehicle, Rules' name (<c>vehicle-crew</c>, <c>infantry-crew</c>, <c>half-squad</c>,
+    /// <c>smc</c>), which gives its penalties; null for a qualified crew and for every record made before increment 2i, which has none.
+    /// </summary>
+    public string? Manning
+    {
+        get; init;
+    }
+
+    /// <summary>A21.22: the vehicle is captured, of an enemy nationality to the crew, so its weapons are captured weapons (A21.11, A21.12).</summary>
+    public bool Captured
+    {
+        get; init;
+    }
+
+    /// <summary>D6.631: the SW the unit returns to the vehicle; null when it returns none.</summary>
+    public string? Returned
+    {
+        get; init;
+    }
+
+    /// <summary>D6.631: the mount the returned MG goes back to, <c>ma</c> or <c>bmg</c>.</summary>
+    public string? Mount
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// <c>vehicle-captured</c>: a vehicle in the CCPh passes to <paramref name="Side"/>, the captor (A11.52, A21.2, A21.21; pass 65, ruling R65.22): an Abandoned
+/// AFV at the end of the CCPh with no Personnel of its side there (<c>automatic</c>), or by a capture attempt in CC (<c>cc</c>), stays Abandoned until a crew
+/// enters it; an unarmed vehicle alone with the captor's Infantry (<c>unarmed</c>) runs at once with a Temporary Driver, a SMC captor alone being removed
+/// into it as its <see cref="Driver"/>. Captures recorded before the pass are <c>conditions-changed</c> records (ruling R11.16), which stay as they were.
+/// </summary>
+public sealed record VehicleCaptured(string Vehicle, BoardLocation At, string Side, string Cause) : EventPayload
+{
+    public const string Automatic = Rules.ScenarioA1CapturedVehicleRules.Automatic;
+    public const string CloseCombat = Rules.ScenarioA1CapturedVehicleRules.CloseCombat;
+    public const string Unarmed = Rules.ScenarioA1CapturedVehicleRules.Unarmed;
+
+    /// <summary>A21.21: the SMC captor removed into an unarmed vehicle as its Temporary Driver; null for a MMC captor's driver, who costs nothing.</summary>
+    public string? Driver
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// <c>vehicle-scrounged</c>: an Infantry MMC scrounges a non-burning wreck or an Abandoned vehicle in its Location in its own RPh (D10.5 to D10.52; pass 65,
+/// ruling R65.23). <paramref name="Roll"/> is the dr's roll and <paramref name="Dr"/> its value: 1 to 3 salvages that many SW, by the Random Selection of
+/// <see cref="Selection"/> when more exist. The SW taken are created, possessed by the unit, by the <c>instance-created</c> records before this one. The vehicle
+/// is marked Scrounged, and the mounts it may no longer fire Disabled, whatever the dr; the unit and its SW taken are TI for the rest of the Player Turn.
+/// </summary>
+public sealed record VehicleScrounged(string Vehicle, BoardLocation At, string Unit, string Roll, int Dr) : EventPayload
+{
+    /// <summary>A.9: the Random Selection's roll, one die a scroungeable mount, when more could be taken than the dr; null otherwise.</summary>
+    public string? Selection
+    {
+        get; init;
+    }
+
+    /// <summary>D10.51, D10.52: each SW salvaged, by its mount (<c>bmg</c>, <c>ma</c>, or <c>aamg</c>); null when none was.</summary>
+    public IReadOnlyList<ScroungedWeapon>? Taken
+    {
+        get; init;
+    }
+
+    /// <summary>D10.5: the scroungeable mounts, every one Disabled now; null when the vehicle had none.</summary>
+    public IReadOnlyList<string>? Mounts
+    {
+        get; init;
+    }
+}
+
+/// <summary>A SW salvaged by Scrounging (D10.52): the counter it became and the mount it came from.</summary>
+public sealed record ScroungedWeapon(string Weapon, string Mount);
+
+/// <summary>
 /// <c>vehicle-check-rolled</c>: a vehicle's DR or dr outside combat (rulings R11.3, R11.4, R11.9, R11.10): a Bog Check (<c>bog</c>), a Bog Removal
 /// (<c>bog-removal</c>), an ESB DR (<c>esb</c>, for <see cref="Mp"/> extra MP), or a Mechanical Reliability DR (<c>mechanical</c>), with its roll,
 /// its total DRM, and its result: <c>passed</c>, <c>bogged</c>, <c>freed</c>, <c>mired</c>, or <c>immobilized</c>.
@@ -339,11 +506,17 @@ public sealed record VehicleCheckRolled(string Vehicle, string Check, string Rol
     public const string Esb = "esb";
     public const string Mechanical = "mechanical";
 
+    /// <summary>A21.22 (pass 65, ruling R65.22): a Temporary crew's dr before each start, the colored dr of its DR as a Bog Removal's.</summary>
+    public const string TemporaryStart = Rules.ScenarioA1ResultTables.TemporaryStartCheck;
+
     public const string Passed = "passed";
     public const string Bogged = "bogged";
     public const string Freed = "freed";
     public const string Mired = "mired";
     public const string Immobilized = "immobilized";
+
+    /// <summary>A21.22: a start dr of 5, no movement this phase.</summary>
+    public const string NoMove = Rules.ScenarioA1ResultTables.CheckNoMove;
 
     /// <summary>The MP an ESB DR sought (D2.5); zero for other checks.</summary>
     public int Mp
@@ -619,6 +792,39 @@ public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation L
 
     /// <summary>The hex a moving vehicle left to enter its present one (D7.15; ruling R11.11): an OVR takes the wall TEM of the hexside it crossed.</summary>
     public BoardLocation? EnteredFrom
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The units that boarded or disembarked with a vehicle's latest MP expenditure (D6.4, D6.5, D5.43; pass 65, ruling R65.14): Infantry targets of the
+    /// DEFENDER's First Fire with it; null after any other step.
+    /// </summary>
+    public IReadOnlyList<string>? Embarking
+    {
+        get; init;
+    }
+
+    /// <summary>Whether <see cref="Embarking"/> disembarked (D6.5) rather than boarded (D6.4).</summary>
+    public bool Unloading
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The units a moving vehicle disembarked this move by an unload recorded since pass 65 (D6.5; ruling R65.15): they move on before any other unit
+    /// once its move ends; null when none did.
+    /// </summary>
+    public IReadOnlyList<string>? Disembarked
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Riders that Bailed Out with the moving vehicle's latest MP expenditure or under the DEFENDER's fire at it (D6.24; pass 65, ruling R65.17):
+    /// for Defensive First Fire they spent all their MF, at least one, and take FFNAM as unloaders do; null when none did.
+    /// </summary>
+    public IReadOnlyList<string>? BailedOut
     {
         get; init;
     }

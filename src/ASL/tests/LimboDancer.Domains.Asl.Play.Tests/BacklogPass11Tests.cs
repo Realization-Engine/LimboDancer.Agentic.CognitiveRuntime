@@ -838,7 +838,8 @@ public sealed class BacklogPass11Tests : IDisposable
     [Fact]
     public async Task AnUnarmedTruckAloneWithEnemyInfantryIsCaptured()
     {
-        // A11.52 (R11.16; referee, pass 11): the stopped German truck with no German Personnel there is captured as the CCPh begins.
+        // A11.52 (R11.16; referee, pass 11): the stopped German truck with no German Personnel there is captured as the CCPh begins. A21.21 (pass 65,
+        // ruling R65.22): it passes to the Russians, run by a Temporary Driver; records made before the pass marked it Captured and Abandoned instead.
         await Setup("russian", Vehicle("de-t", "attacker-truck", L(Ne("E5")), "german"), Squad("r1", L("E5"), "russian"), Squad("g1", L("J9"), "german"));
         await Advance(4);
         Committed(await Do(GameActions.Advance, NoRoll(), new
@@ -847,8 +848,9 @@ public sealed class BacklogPass11Tests : IDisposable
             to = L(Ne("E5"))
         }));
         await Advance();
-        Assert.True(Is(Current.Unit("de-t")!, Conditions.Captured));
-        Assert.True(Is(Current.Unit("de-t")!, Conditions.Abandoned));
+        Assert.Equal("russian", Current.Unit("de-t")!.Side);
+        Assert.False(Is(Current.Unit("de-t")!, Conditions.Captured));
+        Assert.False(Is(Current.Unit("de-t")!, Conditions.Abandoned));
         Refused(await VehicleCc(L(Ne("E5")), NoRoll(), vehicle: "de-t", attackers: ["r1"]), "play.cc-vehicle");
         await Advance();
         Assert.False(Is(Current.Unit("r1")!, Conditions.Melee));

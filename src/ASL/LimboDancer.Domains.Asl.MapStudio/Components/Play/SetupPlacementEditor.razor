@@ -29,6 +29,10 @@
     <label title="A SW's possessor (A9.1); a Gun's manning crew, or the vehicle towing it (C10.1); a Passenger's vehicle (D6.1, A2.52).">
         @HolderLabel <input id="place-holder" value="@Draft.Holder" @onchange="@(args => Change(Draft with { Holder = args.Value as string ?? string.Empty }))" size="8" />
     </label>
+    @if (Draft.Holder.Length > 0 && RiderAllowed)
+    {
+        <label title="D6.2 (pass 65, ruling R65.16): Personnel aboard an AFV may ride on its outside as Riders, the Russians' from 1942 and every nationality's from 1943, within its Rider capacity."><input id="place-rider" type="checkbox" checked="@Draft.Rider" @onchange="@(args => Change(Draft with { Rider = args.Value is true }))" /> as a Rider</label>
+    }
     @if (Kind is "asl:gun" or "asl:vehicle")
     {
         var vehicle = Kind == "asl:vehicle";
@@ -96,7 +100,7 @@
 @code {
     /// <summary>The placement being drafted; the page keeps it.</summary>
     public sealed record SetupDraft(string Definition, string Id, string Group, string Location, string Holder, string Facing, string Bore, bool Concealed, bool Hidden,
-        bool Broken, bool OffBoard, string Entry, string ArmorLeader = "", bool InexperiencedCrew = false);
+        bool Broken, bool OffBoard, string Entry, string ArmorLeader = "", bool InexperiencedCrew = false, bool Rider = false);
 
     /// <summary>The grades of an Armor Leader (D3.4; the Availability Table of H1.43).</summary>
     private static readonly string[] ArmorLeaderGrades = ["8-1", "9-1", "9-2", "10-2"];
@@ -129,6 +133,13 @@
     /// <summary>The chosen counter's kind, such as asl:gun.</summary>
     [Parameter]
     public string? Kind { get; set; }
+
+    /// <summary>
+    /// Whether the counter is Personnel and its holder a vehicle, so it may ride as a Rider (D6.2; pass 65, the UI review): a SW given a possessor is not
+    /// offered the choice.
+    /// </summary>
+    [Parameter]
+    public bool RiderAllowed { get; set; }
 
     [Parameter]
     public string? Note { get; set; }

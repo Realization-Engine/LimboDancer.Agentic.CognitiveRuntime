@@ -12,7 +12,7 @@ public static class ScenarioA1OrdnanceCalculator
 
     private static readonly string[] AdmittedGunTypes = ["at", "inf", "art", "mortar", "latw"];
 
-    private static readonly string[] Personnel = ["asl:squad", "asl:half-squad", "asl:crew", "asl:leader", "asl:hero"];
+    private static readonly string[] Personnel = ["asl:squad", "asl:half-squad", "asl:crew", "asl:vehicle-crew", "asl:leader", "asl:hero"];
 
     public static OrdnanceResolution Resolve(OrdnanceShot shot, ScenarioA1OrdnanceReference reference)
     {
@@ -100,7 +100,7 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("1945", -1, "C13.31"));
         }
 
-        if (kind is "asl:half-squad" or "asl:crew")
+        if (kind is "asl:half-squad" || ScenarioA1Definitions.IsCrew(kind))
         {
             drm.Add(new FireModifier("hs-or-crew", 1, "C13.31"));
         }
@@ -438,7 +438,7 @@ public static class ScenarioA1OrdnanceCalculator
         // Chart (pass 9b): a lone SMC does not fire a PSK at full effect.
         if ((shot.Vehicle is null ? reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!) is not { } crewDefinition
                 || crewDefinition.Nationality != gun.Nationality
-                || (mortar || latw || machineGun ? !Personnel.Contains(crewDefinition.Kind) : shot.NonQualified == true ? !crewDefinition.IsMmc : crewDefinition.Kind != "asl:crew")
+                || (mortar || latw || machineGun ? !Personnel.Contains(crewDefinition.Kind) : shot.NonQualified == true ? !crewDefinition.IsMmc : !ScenarioA1Definitions.IsCrew(crewDefinition.Kind))
                 || (gun.LatwType == "psk" && crewDefinition.Kind is "asl:leader" or "asl:hero")
                 : crew.DefinitionId != gun.Id || shot.NonQualified == true)
             || crew.Broken == true || (crew.Berserk == true && !pf))
@@ -536,8 +536,10 @@ public static class ScenarioA1OrdnanceCalculator
         if (shot.VehicleTarget is not null)
         {
             ScenarioA1ArmorCalculator.Outside(shot, gun, reference, outside);
+            // Pass 65 (ruling R65.5): each PRC the target carries names a unit of the catalog, as a Passenger or a Rider.
             if (hit.TargetLocationId != shot.TargetLocationId || hit.Phase != shot.Phase || hit.FiringSide != shot.FiringSide || hit.Firers is { Count: > 0 }
-                || hit.Director is not null || hit.FireKind is not null || hit.OrdnanceHit is not null)
+                || hit.Director is not null || hit.FireKind is not null || hit.OrdnanceHit is not null
+                || ScenarioA1FireCalculator.PrcMalformed(shot.VehicleTarget.Prc, reference.Fire))
             {
                 outside.Add(Prefix + "target-outside");
             }
@@ -704,7 +706,7 @@ public static class ScenarioA1OrdnanceCalculator
         static bool Dice(IReadOnlyList<int>? dice) => dice is not null && (dice.Count != 2 || dice.Any(die => die is < 1 or > 6));
         return Dice(rolls.ToHit) || rolls.Subsequent is < 1 or > 6 || rolls.CriticalSelection?.Values.Any(dr => dr is < 1 or > 6) == true
             || Dice(rolls.ToKill) || Dice(rolls.ShockCheck) || Dice(rolls.CrewCheck) || Dice(rolls.CrewSurvival) || Dice(rolls.CollateralCheck) || rolls.PanzerfaustCheck is < 1 or > 6
-            || rolls.AreaSurvival?.Values.Any(Dice) == true;
+            || rolls.AreaSurvival?.Values.Any(Dice) == true || rolls.AreaCrewCheck?.Values.Any(Dice) == true;
     }
 
     private static List<string> Undecided(OrdnanceShot shot)
@@ -793,7 +795,7 @@ public static class ScenarioA1OrdnanceCalculator
         var rolls = shot.Rolls!;
         var hit = shot.Hit!;
         var range = shot.Range!.Value;
-        var color = ScenarioA1OrdnanceReference.Color(gun, shot.ScenarioYear);
+        var color = CapturedColor(shot, ScenarioA1OrdnanceReference.Color(gun, shot.ScenarioYear));
 
         // C3.3, C4: the Basic TH# of the Infantry Target Type by range and color, and the Gun and Ammo modifications. A LATW (pass 60, rulings
         // R60.5, R60.6) takes the To Hit it takes at a vehicle: a PF 10 less two a hex (C13.33), a PSK its own table (C13.42, C13.48), an ATR the
@@ -1128,8 +1130,9 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         // C2.24: an Original colored dr at most the ROF keeps the Multiple ROF; C2.5: a non-vehicular NT Gun's ROF is one lower after a
-        // CA change; C5.4: a pinned crew forfeits it; C5.2: none in the AFPh.
-        var rof = gun.RateOfFire ?? 0;
+        // CA change; C5.4: a pinned crew forfeits it; C5.2: none in the AFPh. A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty
+        // lowers it one each.
+        var rof = (gun.RateOfFire ?? 0) - (shot.CapturedPenalty ?? 0);
         if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
         {
             rof--;
@@ -1411,9 +1414,15 @@ public static class ScenarioA1OrdnanceCalculator
     /// <summary>The detail of a HEAT refusal at Infantry in the open whose weapon is a PF or a PSK, which has no HE or AP to fire instead.</summary>
     public const string LatwHeat = "latw";
 
+    /// <summary>A21.12 (pass 65, ruling R65.22): "All attacks by captured ordnance must use the red To Hit Numbers", under a Temporary crew's penalty.</summary>
+    internal static string CapturedColor(OrdnanceShot shot, string color) => shot.CapturedPenalty is > 0 ? "red" : color;
+
     /// <summary>The Gun's B#, two lower while Intensive Firing (C5.62), and lower in Extreme Winter (E3.741; ruling R16.14).</summary>
     internal static int Breakdown(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) =>
         gun.Breakdown - (shot.IntensiveFire == true ? 2 : 0) - (shot.BreakdownReduction ?? 0)
+
+        // A21.11 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty, two lower each.
+        - (2 * (shot.CapturedPenalty ?? 0))
 
         // A19.32 (referee, pass 9b): the B# or X# of a SW Inexperienced Personnel use is one lower.
         - (gun.GunType is "mortar" or "latw" or ScenarioA1MachineGunKill.GunType && gun.LatwType != "pf"
@@ -1506,6 +1515,12 @@ public static class ScenarioA1OrdnanceCalculator
         if (shot.NonQualified == true)
         {
             yield return new FireModifier("case-h", 2, "C5.8");
+        }
+
+        // A21.12, A21.13 (pass 65, ruling R65.22): a Temporary crew's captured ordnance adds Case H's +2, doubled for a HS in a captured vehicle.
+        if (shot.CapturedPenalty is > 0 and var captured)
+        {
+            yield return new FireModifier("case-h:captured", 2 * captured, "A21.12");
         }
 
         if (shot.FirerOverstack is { } over && over > 0)

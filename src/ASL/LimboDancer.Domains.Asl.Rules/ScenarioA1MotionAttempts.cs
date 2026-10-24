@@ -153,6 +153,12 @@ public static class ScenarioA1MotionAttempts
         return steps.Where(step => step.InLos).Sum(step => step.HalfPoints);
     }
 
+    /// <summary>
+    /// D2.401, D6.4, D6.5 (pass 65, ruling R65.15; the backlog row of pass 55): a Passenger's time aboard counts toward a later Motion attempt against
+    /// it, as one expenditure of the moving unit: each MP its vehicle spent while it rode, and its own one MF to board or to disembark.
+    /// </summary>
+    public static (bool InLos, int HalfPoints) AboardStep(bool inLos, int vehicleHalfMp, bool ownMf) => (inLos, ownMf ? 2 : vehicleHalfMp);
+
     /// <summary>The highest dr that passes: a dr is a whole number, so a fraction of a MF or MP adds nothing (a dr &lt;= 1½ is a dr of 1); a die shows no more than 6.</summary>
     public static int Number(int halfPoints) => Math.Min(6, Math.Max(0, halfPoints) / 2);
 

@@ -294,12 +294,13 @@ public static class ScenarioA1SetupCalculator
     public static double SquadEquivalent(string kind) => kind switch
     {
         "asl:squad" => 1.0,
-        "asl:half-squad" or "asl:crew" => 0.5,
+        "asl:half-squad" => 0.5,
+        _ when ScenarioA1Definitions.IsCrew(kind) => 0.5,
         _ => 0.0,
     };
 
     /// <summary>A MMC is a squad, HS, or crew.</summary>
-    public static bool Mmc(string kind) => kind is "asl:squad" or "asl:half-squad" or "asl:crew";
+    public static bool Mmc(string? kind) => kind is "asl:squad" or "asl:half-squad" || ScenarioA1Definitions.IsCrew(kind);
 
     /// <summary>A side's Battlefield Integrity total: the broken-side BPV of its starting MMC times their counts (A16.1).</summary>
     public static int IntegrityBpv(IEnumerable<(string Kind, int? Bpv, int Count)> starting)
@@ -603,7 +604,7 @@ public static class ScenarioA1SetupCalculator
                 foreach (var area in group.Areas.Where(area => area.Counters is not null))
                 {
                     var inArea = mine.Where(counter => !counter.Dummy && counter.At is not null && In(card, area, counter.At)).ToArray();
-                    var mmc = inArea.Count(counter => counter.Kind is "asl:squad" or "asl:half-squad" or "asl:crew");
+                    var mmc = inArea.Count(counter => Mmc(counter.Kind));
                     if (inArea.Length > area.Counters)
                     {
                         reasons.Add($"play.setup-limit: {inArea.Length} counters set up in {area.Id} of {group.Name}, and its SSR allows {area.Counters} (ruling R19.4)");
@@ -620,7 +621,7 @@ public static class ScenarioA1SetupCalculator
                     foreach (var area in group.Areas.Where(area => area.Counters is not null))
                     {
                         var inArea = mine.Where(counter => !counter.Dummy && counter.At is not null && In(card, area, counter.At)).ToArray();
-                        var mmc = inArea.Count(counter => counter.Kind is "asl:squad" or "asl:half-squad" or "asl:crew");
+                        var mmc = inArea.Count(counter => Mmc(counter.Kind));
                         if (inArea.Length < area.Counters)
                         {
                             remaining.Add(new SetupNeedVerdict(id, area.Id, "counters", area.Counters!.Value - inArea.Length));
@@ -707,7 +708,7 @@ public static class ScenarioA1SetupCalculator
                 continue;
             }
 
-            var used = hidden.Count(counter => counter.Kind == "asl:squad") + (hidden.Count(counter => counter.Kind is "asl:half-squad" or "asl:crew") / 2m);
+            var used = hidden.Count(counter => counter.Kind == "asl:squad") + (hidden.Count(counter => counter.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(counter.Kind)) / 2m);
             if (used > allowance)
             {
                 reasons.Add($"play.setup-hidden: {side.Side} sets up {used:0.#} squad-equivalents hidden, and its SSR allows {allowance:0.#} (A12.3; ruling R23.5)");

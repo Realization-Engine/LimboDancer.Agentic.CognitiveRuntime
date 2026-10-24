@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, LATW, FT, DC, Guns, vehicles, and tanks, with Commissars and six more nationalities, for the reviewed Scenario A1 cases and the scenario cards",
   "publication": "published",
   "vocabulary": [
@@ -12,9 +12,9 @@
       "id": "asl-counter-sheets:scenario-a1",
       "status": "reviewed",
       "record": "docs/ASL/SourceRegistry/CounterSheets/asl-counter-sheets.scenario-a1.source-record.json",
-      "recordSha256": "5ece6c950df3c63fb306019f63d84c3caea5f1936158505cf655028206d1cdf3",
+      "recordSha256": "68a04b431252015547003c2971a4362408bde9318651fbeea902d346283f3049",
       "transcription": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
-      "transcriptionSha256": "21637b3a3d18cad02a60f47e0b2dbcaf4f3707d55d9cc214b9c86353f7503fcf",
+      "transcriptionSha256": "416a2919b3dc2f4a91de4fb4e9b006740dd14cdedf75dc58b79bf53c9607b044",
       "transcriber": "Claude (claude-opus-5-5)",
       "reviewer": "Dennis Landi"
     }
@@ -4397,6 +4397,18 @@
           "trait": "asl:cs-passengers-only",
           "present": true,
           "row": 738
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "truck",
+          "row": 3152
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3153
         }
       ]
     },
@@ -4663,6 +4675,18 @@
           "trait": "asl:cs-passengers-only",
           "present": true,
           "row": 739
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "truck",
+          "row": 3154
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3155
         }
       ]
     },
@@ -4929,6 +4953,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 740
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "halftrack",
+          "row": 3156
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3157
         }
       ]
     },
@@ -5197,6 +5233,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 783
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "tank",
+          "row": 3158
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3159
         }
       ]
     },
@@ -5465,6 +5513,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 826
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "tank",
+          "row": 3160
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3161
         }
       ]
     },
@@ -17713,6 +17773,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 2678
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "spa",
+          "row": 3162
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3163
         }
       ]
     },
@@ -17979,6 +18051,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 2721
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "td",
+          "row": 3164
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3165
         }
       ]
     },
@@ -18245,6 +18329,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 2764
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "tank",
+          "row": 3166
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3167
         }
       ]
     },
@@ -18511,6 +18607,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 2807
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "tank",
+          "row": 3168
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3169
         }
       ]
     },
@@ -18777,6 +18885,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 2850
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "tank",
+          "row": 3170
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3171
         }
       ]
     },
@@ -18927,7 +19047,7 @@
         {
           "face": "front",
           "attribute": "passenger-capacity",
-          "value": 5,
+          "value": 4,
           "row": 2874
         },
         {
@@ -19043,6 +19163,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 2893
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "carrier",
+          "row": 3172
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3173
         }
       ]
     },
@@ -19309,6 +19441,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 2936
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "spa",
+          "row": 3174
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3175
         }
       ]
     },
@@ -19575,6 +19719,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 2979
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "halftrack",
+          "row": 3176
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3177
         }
       ]
     },
@@ -19841,6 +19997,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 3022
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "spa",
+          "row": 3178
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3179
         }
       ]
     },
@@ -20107,6 +20275,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 3065
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "tank",
+          "row": 3180
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3181
         }
       ]
     },
@@ -20373,6 +20553,18 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 3108
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "tank",
+          "row": 3182
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3183
         }
       ]
     },
@@ -20639,6 +20831,850 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 3151
+        },
+        {
+          "face": "front",
+          "attribute": "vehicle-class",
+          "value": "tank",
+          "row": 3184
+        },
+        {
+          "face": "wreck",
+          "trait": "asl:cs-red",
+          "present": false,
+          "row": 3185
+        }
+      ]
+    },
+    {
+      "id": "german-vehicle-crew",
+      "kind": "asl:vehicle-crew",
+      "kindRow": 3186,
+      "nationality": "german",
+      "nationalityRow": 3187,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "german-vehicle-crew"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 3188
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 3189
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 7,
+          "row": 3190
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 3191
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "recorded": false,
+          "row": 3192
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 3193
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 3194
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 3195
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 3196
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 3197
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 3198
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 7,
+          "row": 3199
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 7,
+          "row": 3200
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "present": true,
+          "row": 3201
+        }
+      ]
+    },
+    {
+      "id": "russian-vehicle-crew",
+      "kind": "asl:vehicle-crew",
+      "kindRow": 3202,
+      "nationality": "russian",
+      "nationalityRow": 3203,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "russian-vehicle-crew"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 3204
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 3205
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 7,
+          "row": 3206
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 3207
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "recorded": false,
+          "row": 3208
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 3209
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 3210
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 3211
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 3212
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 3213
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 3214
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 7,
+          "row": 3215
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 5,
+          "row": 3216
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "present": true,
+          "row": 3217
+        }
+      ]
+    },
+    {
+      "id": "british-vehicle-crew",
+      "kind": "asl:vehicle-crew",
+      "kindRow": 3218,
+      "nationality": "british",
+      "nationalityRow": 3219,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "british-vehicle-crew"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 3220
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 3221
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 7,
+          "row": 3222
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 3223
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "recorded": false,
+          "row": 3224
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 3225
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 3226
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 3227
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 3228
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 3229
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 3230
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 7,
+          "row": 3231
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 7,
+          "row": 3232
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "present": true,
+          "row": 3233
+        }
+      ]
+    },
+    {
+      "id": "american-vehicle-crew",
+      "kind": "asl:vehicle-crew",
+      "kindRow": 3234,
+      "nationality": "american",
+      "nationalityRow": 3235,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "american-vehicle-crew"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 3236
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 3237
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 6,
+          "row": 3238
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 3239
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "recorded": false,
+          "row": 3240
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 3241
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 3242
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 3243
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 3244
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 3245
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 3246
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 7,
+          "row": 3247
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 6,
+          "row": 3248
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "present": true,
+          "row": 3249
+        }
+      ]
+    },
+    {
+      "id": "finnish-vehicle-crew",
+      "kind": "asl:vehicle-crew",
+      "kindRow": 3250,
+      "nationality": "finnish",
+      "nationalityRow": 3251,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "finnish-vehicle-crew"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 3252
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 3253
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 7,
+          "row": 3254
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 3255
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "recorded": false,
+          "row": 3256
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 3257
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 3258
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 3259
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 3260
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 3261
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 3262
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 7,
+          "row": 3263
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 7,
+          "row": 3264
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "present": true,
+          "row": 3265
+        }
+      ]
+    },
+    {
+      "id": "italian-vehicle-crew",
+      "kind": "asl:vehicle-crew",
+      "kindRow": 3266,
+      "nationality": "italian",
+      "nationalityRow": 3267,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "italian-vehicle-crew"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 3268
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 3269
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 6,
+          "row": 3270
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 3271
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "recorded": false,
+          "row": 3272
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 3273
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 3274
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 3275
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 3276
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 3277
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 3278
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 5,
+          "row": 3279
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 5,
+          "row": 3280
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "present": true,
+          "row": 3281
+        }
+      ]
+    },
+    {
+      "id": "axis-minor-vehicle-crew",
+      "kind": "asl:vehicle-crew",
+      "kindRow": 3282,
+      "nationality": "axis-minor",
+      "nationalityRow": 3283,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "axis-minor-vehicle-crew"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 3284
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 3285
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 6,
+          "row": 3286
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 3287
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "recorded": false,
+          "row": 3288
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 3289
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 3290
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 3291
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 3292
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 3293
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 3294
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 5,
+          "row": 3295
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 5,
+          "row": 3296
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "present": true,
+          "row": 3297
+        }
+      ]
+    },
+    {
+      "id": "french-vehicle-crew",
+      "kind": "asl:vehicle-crew",
+      "kindRow": 3298,
+      "nationality": "french",
+      "nationalityRow": 3299,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "french-vehicle-crew"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 3300
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 3301
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 7,
+          "row": 3302
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 3303
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "recorded": false,
+          "row": 3304
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 3305
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 3306
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 3307
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 3308
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 3309
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 3310
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 6,
+          "row": 3311
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 5,
+          "row": 3312
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "present": true,
+          "row": 3313
         }
       ]
     }

@@ -306,7 +306,7 @@ internal static class ScenarioA1ArmorCalculator
         var ammunition = shot.Ammunition!;
         var range = shot.Range!.Value;
         var column = reference.Column(range);
-        var color = ScenarioA1OrdnanceReference.Color(gun, shot.ScenarioYear);
+        var color = ScenarioA1OrdnanceCalculator.CapturedColor(shot, ScenarioA1OrdnanceReference.Color(gun, shot.ScenarioYear));
 
         // C3.31, C4: the Vehicle row's Basic TH#, the Gun's modifications, and APCR's (C4.3). C13.33 (ruling R9.8): a PF's Basic TH# is 10, less
         // two for each hex of range, with no C4 modification.
@@ -579,7 +579,8 @@ internal static class ScenarioA1ArmorCalculator
             }
         }
 
-        var rof = gun.RateOfFire ?? 0;
+        // A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the Multiple ROF one each.
+        var rof = (gun.RateOfFire ?? 0) - (shot.CapturedPenalty ?? 0);
         if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
         {
             rof--;
@@ -619,7 +620,8 @@ internal static class ScenarioA1ArmorCalculator
         // C6.5: the shot acquires the target's Location, one step more if already acquired, unless the Gun malfunctions; a concealed vehicle
         // is acquired only when the shot costs it its "?" (the game decides that, R6.7).
         // C6.5 (the chart's G): a non-mortar SW acquires nothing; nor does a MG fired as ordnance, a vehicle's MA MG included (pass 60).
-        var acquires = !malfunctioned && target.Concealed != true && !latw && !machineGun;
+        // D10.1 (pass 65, ruling R65.23): a wreck is no unit to carry an Acquisition (C6.5: "Known enemy units"), and gives none.
+        var acquires = !malfunctioned && target.Concealed != true && !latw && !machineGun && target.Wreck != true;
         var acquisition = !acquires ? 0 : Math.Max((ScenarioA1OrdnanceCalculator.AcquisitionDenied(shot) ? 0 : shot.Acquisition!.Value) - 1, -2);
         var gunEffect = new OrdnanceGunEffect(ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference), malfunctioned, Math.Max(rof, 0), kept, counter, acquisition,
             acquires ? shot.TargetLocationId : null);
@@ -636,16 +638,24 @@ internal static class ScenarioA1ArmorCalculator
     /// <summary>
     /// The Specific Collateral Attack (D.8, D.8A, p. 192; pass 60, ruling R60.7): when a hit on an AFV does not destroy it, its CE crew takes the
     /// round's IFT FP (its HE FP, or its HE Equivalency, C8.31) on the Original TK DR, with the CE DRM alone, "the only DRM which applies" (D5.31). None
-    /// after a Dud (C7.35, the table's note 4), a Shock (C7.42), or an Abandonment, nor at a crew stunned, shocked, Recalled, or BU. One attack for the
-    /// hit, never doubled, and no Residual FP. Passengers and Riders are pass 65's. Null when there is none.
+    /// after a Dud (C7.35, the table's note 4) or a destroying hit; none at the crew after a Shock (C7.42) or an Abandonment, nor at a crew stunned,
+    /// shocked, Recalled, or BU. One attack for the hit, never doubled, and no Residual FP. The PRC the shot carries (pass 65) take it whenever the AFV
+    /// stands, its Passengers spared once the crew is or becomes stunned or shocked. Null when there is none.
     /// </summary>
     private static (OrdnanceCollateral? Collateral, OrdnanceResolution? Pending) SpecificCollateral(OrdnanceShot shot, GunDefinition gun, ArmorDefinition armor,
         OrdnanceKill kill, ScenarioA1OrdnanceReference reference)
     {
         var target = shot.VehicleTarget!;
+        // D6.84 (p. 207; pass 65, ruling R65.18): a Carrier's crew "remain CE if stunned or shocked, and are subject to the Collateral Attack that may result
+        // from that attack", where the shot carries the target's PRC (ruling R65.5), as every shot planned since the pass does.
+        var carrier = target.Prc is not null && ScenarioA1CarrierRules.IsCarrier(reference.Fire.Definitions.GetValueOrDefault(armor.Id)?.VehicleClass);
         // A9.611, D5.34 (pass 60): a MG's attack is at its IFT FP (the D1.22 example), and none follows its Stun, which leaves the crew BU at once.
-        var standing = kill.Result is not (OrdnanceKill.Dud or OrdnanceKill.Burn or OrdnanceKill.Eliminated or OrdnanceKill.Shock or OrdnanceKill.Stun) && kill.Shocked != true
-            && kill.Abandoned != true;
+        // D.8, D.8A and the Collateral Attack Table's note 1 (p. 192 to 193; pass 65, the referee's review): a Shock, a Stun, or an Abandonment stops only
+        // the crew's attack; "If crew/Passengers are/become stunned or shocked, Collateral Attack applies only to the vehicle's Riders", and the PRC are
+        // attacked whenever the vehicle is not destroyed. Only a shot that carries the PRC (ruling R65.5) attacks them, so an older record reads as before.
+        var standing = kill.Result is not (OrdnanceKill.Dud or OrdnanceKill.Burn or OrdnanceKill.Eliminated);
+        var becomeImpaired = kill.Result is OrdnanceKill.Shock or OrdnanceKill.Stun || kill.Shocked == true;
+        var crewAttacked = kill.Abandoned != true && (carrier || !becomeImpaired);
         var firepower = gun.GunType == ScenarioA1MachineGunKill.GunType ? gun.Firepower
             : kill.Ammunition == "he" ? reference.HeFirepower(gun.Caliber)
             // C8.31 note 1, C13.24: an ATR that is not 20mm has no HE Equivalency, so its hit makes no Collateral Attack.
@@ -655,27 +665,60 @@ internal static class ScenarioA1ArmorCalculator
         var column = firepower is not { } fp ? -1
             : gun.GunType == ScenarioA1MachineGunKill.GunType ? Array.FindLastIndex(ScenarioA1FireReference.ColumnFp, item => item <= fp)
             : Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp);
-        if (armor.Unarmored || armor.FrontAf is null || !standing || target.CrewExposed != true || target.CrewImpaired == true || target.Abandoned == true || column < 0)
+        // D10.1 (pass 65, ruling R65.23): a wreck has no crew and no PRC to take one.
+        if (!standing || column < 0 || target.Wreck == true)
         {
             return (null, null);
         }
 
-        if ((target.CrewMorale ?? reference.Fire.AfvCrewMorale(armor.Nationality)) is not { } morale)
+        FireVehicleEffect? effect = null;
+        string? result = null;
+        if (crewAttacked && !armor.Unarmored && armor.FrontAf is not null && target.CrewExposed == true && (carrier || target.CrewImpaired != true) && target.Abandoned != true)
         {
-            return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "definition-incomplete:crew-morale:" + armor.Nationality]));
+            if ((target.CrewMorale ?? reference.Fire.AfvCrewMorale(armor.Nationality)) is not { } morale)
+            {
+                return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "definition-incomplete:crew-morale:" + armor.Nationality]));
+            }
+
+            IReadOnlyList<FireModifier> drm = [new FireModifier("crew-exposed", 2m, "D5.31")];
+            var final = kill.OriginalDr + 2;
+            result = reference.Fire.Result(final, column);
+            if (ScenarioA1FireCalculator.CrewChecks(result) && shot.Rolls!.CollateralCheck is null)
+            {
+                return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:collateralCheck"]));
+            }
+
+            // D5.342 (p. 204): a Carrier's crew stunned by this very hit is Recalled by a second Stun (D6.84).
+            var (check, crew) = ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, target.StunRecovery == true || (carrier && kill.Result == OrdnanceKill.Stun),
+                morale, target.CrewMorale);
+            effect = new FireVehicleEffect(target.VehicleId!, armor.Id, FireVehicleEffect.None, null, drm, final, null, check, crew);
         }
 
-        IReadOnlyList<FireModifier> drm = [new FireModifier("crew-exposed", 2m, "D5.31")];
-        var final = kill.OriginalDr + 2;
-        var result = reference.Fire.Result(final, column);
-        if (ScenarioA1FireCalculator.CrewChecks(result) && shot.Rolls!.CollateralCheck is null)
+        // D.8A, D6.71 (pp. 192, 206; pass 65, ruling R65.7): the PRC the target carries take the same attack, an unarmored vehicle's included, when the
+        // record carries them; their checks and Random Selection are keyed under "prc:".
+        var reached = !becomeImpaired ? target : target with
         {
-            return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:collateralCheck"]));
+            CrewImpaired = true
+        };
+        var (attacks, desperation, missing) = ScenarioA1FireCalculator.SpecificCollateralOnPrc(reached, column, kill.OriginalDr, shot.Rolls!.Prc, reference.Fire);
+        if (missing is not null)
+        {
+            return (null, Refused(OrdnanceResolution.Indeterminate, [missing.StartsWith("asl.a1.fire.roll-missing:", StringComparison.Ordinal)
+                ? Prefix + "roll-missing:prc:" + missing["asl.a1.fire.roll-missing:".Length..] : missing]));
         }
 
-        var (check, crew) = ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, target.StunRecovery == true, morale, target.CrewMorale);
-        return (new OrdnanceCollateral(firepower!.Value, result,
-            new FireVehicleEffect(target.VehicleId!, armor.Id, FireVehicleEffect.None, null, drm, final, null, check, crew)), null);
+        if (attacks is not null || desperation is not null)
+        {
+            effect = (effect ?? new FireVehicleEffect(target.VehicleId!, armor.Id, FireVehicleEffect.None, null, [], kill.OriginalDr, null, null,
+                FireVehicleEffect.NotVulnerable)) with
+            {
+                PrcAttacks = attacks,
+                PrcDesperation = desperation,
+            };
+        }
+
+        return effect is null ? (null, null)
+            : (new OrdnanceCollateral(firepower!.Value, result ?? attacks?[0].Result ?? reference.Fire.Result(kill.OriginalDr, column), effect), null);
     }
 
     private static (OrdnanceKill? Kill, OrdnanceResolution? Pending) Kill(OrdnanceShot shot, GunDefinition gun, ArmorDefinition armor, ScenarioA1OrdnanceReference reference,
@@ -750,20 +793,42 @@ internal static class ScenarioA1ArmorCalculator
         // C7.7, C7.6: at most half the Final TK# burns, less eliminates, equal immobilizes (hull) or Shocks (turret); one more Shocks or
         // immobilizes an HE hit and gives any other ammunition a possible Shock. The unarmored table has no Shock.
         // A9.61, D5.34 (pass 60): a MG's To Kill DR burns, eliminates, or Stuns; it neither Shocks nor immobilizes.
-        var result = machineGun ? ScenarioA1MachineGunKill.Result(dr, finalTk)
-            : dr * 2 <= finalTk ? OrdnanceKill.Burn
-            : dr < finalTk ? OrdnanceKill.Eliminated
-            : dr == finalTk ? (armored && location == "turret" ? OrdnanceKill.Shock : OrdnanceKill.Immobilized)
-            : armored && dr == finalTk + 1 ? (ammunition == "he" ? (location == "turret" ? OrdnanceKill.Shock : OrdnanceKill.Immobilized) : OrdnanceKill.PossibleShock)
+        string ResultOn(int original) => machineGun ? ScenarioA1MachineGunKill.Result(original, finalTk)
+            : original * 2 <= finalTk ? OrdnanceKill.Burn
+            : original < finalTk ? OrdnanceKill.Eliminated
+            : original == finalTk ? (armored && location == "turret" ? OrdnanceKill.Shock : OrdnanceKill.Immobilized)
+            : armored && original == finalTk + 1 ? (ammunition == "he" ? (location == "turret" ? OrdnanceKill.Shock : OrdnanceKill.Immobilized) : OrdnanceKill.PossibleShock)
             : OrdnanceKill.None;
+        var result = ResultOn(dr);
+
+        // D5.7, C7.7 note A (pass 65, ruling R65.21): a red CS# burns on a Final TK DR one lower, for the burn alone.
+        if (result == OrdnanceKill.Eliminated && ScenarioA1CrewSurvivalRules.BurnsRed(armor.CsRed, dr, lower => lower * 2 <= finalTk))
+        {
+            result = OrdnanceKill.Burn;
+        }
+
         var made = Made(result);
+
+        // D10.1 (p. 210; pass 65, ruling R65.23): a wreck fired at as its vehicle burns on a Burn; nothing else touches it, and it has no crew.
+        if (target.Wreck == true)
+        {
+            return (ScenarioA1WreckRules.WreckKill(made), null);
+        }
+
+        // D5.5, D8.11, D8.22 (pp. 204, 208, 209; pass 65, ruling R65.21): an AFV already bogged or immobilized that the shot neither destroys, Stuns, nor
+        // Shocks takes the TC when an Original TK DR of 5 would have destroyed or Shocked it; only a shot that carries its PRC, as every shot planned since
+        // the pass does, so that an older record resolves as it did. An unarmed vehicle's Inherent Driver "is never treated as a crew" (D5.1): its cs# is
+        // printed in lower case. A MG's To Kill attack is no ordnance; a Possible Shock calls for the TC once its NTC has passed (the referee's review).
+        var secondCause = target.Prc is not null
+            && ScenarioA1CrewSurvivalRules.SecondCause(result, ResultOn, target.Immobile == true,
+                target.CrewImpaired != true && target.Abandoned != true && ScenarioA1CrewSurvivalRules.CrewSurvival(armor, false) is not null, machineGun);
 
         // D5.1: an AFV's crew has Elite morale, an unarmored vehicle's the 1st Line morale of its nationality.
         // D3.42, D3.45 (p. 200; pass 55, rulings R55.17, R55.18): "[EXC: Armor Leaders (3.42) & Inexperienced Crews (3.45)]": the crew "always has
         // the same Morale Level as any Armor Leader in that vehicle", 6 when Inexperienced. His leadership modifier is not added: he takes the check.
         var morale = target.CrewMorale ?? reference.Fire.Definitions.Values.Where(item => item.IsMmc && item.Nationality == armor.Nationality && item.Class == (armored ? "elite" : "1st-line"))
             .Max(item => item.Morale);
-        if (morale is null && (result == OrdnanceKill.PossibleShock || (result == OrdnanceKill.Immobilized && target.CrewMayTakeTc == true)))
+        if (morale is null && (result == OrdnanceKill.PossibleShock || (result == OrdnanceKill.Immobilized && target.CrewMayTakeTc == true) || secondCause))
         {
             return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "definition-incomplete:crew-morale:" + armor.Nationality]));
         }
@@ -794,7 +859,9 @@ internal static class ScenarioA1ArmorCalculator
                 Shocked = passed ? null : true,
             };
         }
-        else if (result == OrdnanceKill.Immobilized && target.CrewMayTakeTc == true && morale is { } tcMorale)
+
+        // D5.5: the TC follows a Possible Shock's NTC, when it passed, in the same resolution; an older record has no second cause.
+        if (((result == OrdnanceKill.Immobilized && target.CrewMayTakeTc == true) || (secondCause && made.Shocked != true)) && morale is { } tcMorale)
         {
             // D5.5: an immobilized vehicle's crew takes a TC at once; failure Abandons it.
             if (rolls.CrewCheck is not { } check)
@@ -802,18 +869,15 @@ internal static class ScenarioA1ArmorCalculator
                 return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:crewCheck"]));
             }
 
-            var total = check[0] + check[1];
-            var passed = total + plusOne <= tcMorale;
+            var tc = ScenarioA1CrewSurvivalRules.TaskCheck(check, tcMorale, plusOne == 1, target.CrewMorale);
             made = made with
             {
-                CrewCheck = new FireCheck("TC", [.. check], total, checkDrm, total + plusOne, tcMorale, passed, passed ? "none" : "abandoned")
-                {
-                    MoraleSource = ScenarioA1ArmorLeaders.MoraleSource(target.CrewMorale),
-                },
-                Abandoned = passed ? null : true,
+                CrewCheck = tc,
+                Abandoned = tc.Passed ? null : true,
+                SecondCause = secondCause ? true : null,
             };
         }
-        else if (result == OrdnanceKill.Eliminated && armor.CrewSurvival is { } cs && !armor.CrewSurvivalPassengersOnly && target.Abandoned != true)
+        else if (result == OrdnanceKill.Eliminated && ScenarioA1CrewSurvivalRules.CrewSurvival(armor, target.Abandoned == true) is { } cs)
         {
             // D5.6: a Final DR at most the CS#, +1 if the crew was Stunned, Shocked, Recalled, or under a "+1" counter, places a crew beneath the
             // wreck.
@@ -822,11 +886,26 @@ internal static class ScenarioA1ArmorCalculator
                 return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:crewSurvival"]));
             }
 
-            var drmValue = target.CrewImpaired == true || target.StunRecovery == true ? 1 : 0;
-            var finalDr = survival[0] + survival[1] + drmValue;
             made = made with
             {
-                CrewSurvival = new OrdnanceCrewSurvival([.. survival], drmValue, finalDr, cs, finalDr <= cs)
+                CrewSurvival = ScenarioA1CrewSurvivalRules.Survival(cs, survival,
+                    ScenarioA1CrewSurvivalRules.SurvivalDrm(false, target.CrewImpaired == true, false, target.StunRecovery == true, target.Prc is not null))
+            };
+        }
+
+        // D6.9, D5.6 (pp. 207, 204; pass 65, ruling R65.9): each Passenger and Rider of a vehicle eliminated, not burned, rolls its own Survival DR against
+        // the CS# or cs#, +1 if broken, when the record carries them.
+        if (result == OrdnanceKill.Eliminated)
+        {
+            var (prcSurvival, missing) = ScenarioA1FireCalculator.PrcSurvivals(target.Prc, armor.CrewSurvival, rolls.Prc?.PrcSurvival);
+            if (missing is not null)
+            {
+                return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:prc:" + missing]));
+            }
+
+            made = made with
+            {
+                PrcSurvival = prcSurvival
             };
         }
 

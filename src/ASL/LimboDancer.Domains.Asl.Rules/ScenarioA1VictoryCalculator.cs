@@ -24,7 +24,8 @@ public static class ScenarioA1VictoryCalculator
         ArgumentNullException.ThrowIfNull(vehicleVictoryPoints);
         return kind switch
         {
-            "asl:squad" or "asl:crew" => 2,
+            "asl:squad" => 2,
+            _ when ScenarioA1Definitions.IsCrew(kind) => 2,
             "asl:half-squad" => 1,
             "asl:leader" => 1 + Math.Max(0, -(leadership() ?? 0)),
             "asl:vehicle" => vehicleVictoryPoints(),
@@ -65,12 +66,22 @@ public static class ScenarioA1VictoryCalculator
     public static bool VehicleArmed(bool mainArmamentIsGun, bool mainArmament, bool antiAircraftMg, bool bowMg, bool coaxialMg) =>
         mainArmamentIsGun || mainArmament || antiAircraftMg || bowMg || coaxialMg;
 
-    /// <summary>A26.211 (rulings R24.3, R24.5): the inherent crew is gone once the vehicle is Abandoned or its crew is a counter of its own (read last).</summary>
+    /// <summary>
+    /// A26.211, A26.213 (p. 100; rulings R24.3, R24.5, R65.18): the inherent crew is gone once the vehicle is Abandoned or its crew is a counter of its own
+    /// (read last). Its two VP are a crew's (A26.211), and a Carrier's inherent HS is worth the same two, "Carrier HS are worth two VP when inherently
+    /// present in a Carrier" (A26.213), so a vehicle counts two for either.
+    /// </summary>
     public static bool HasInherentCrew(bool armed, bool abandoned, Func<bool> crewCounterExists)
     {
         ArgumentNullException.ThrowIfNull(crewCounterExists);
         return armed && !abandoned && !crewCounterExists();
     }
+
+    /// <summary>
+    /// Whether a unit of this kind may be a vehicle's crew that left it (D5.1, D6.82; ruling R65.18): a crew, or a Carrier's HS, which then counts as the HS
+    /// it is, one VP (A26.211).
+    /// </summary>
+    public static bool LeftItsVehicle(string? kind) => ScenarioA1Definitions.IsCrew(kind) || kind == "asl:half-squad";
 
     /// <summary>
     /// Ruling R21.4: whether a plan's events are read for an immediate Victory: there are events, the last does not already end the game, the game started from
@@ -315,8 +326,9 @@ public static class ScenarioA1VictoryCalculator
 
     /// <summary>
     /// A.7, A26.11 (ruling R24.5): an armed ground unit, which prevents the enemy from gaining Control: any unit but a Dummy, a prisoner, or an Unarmed
-    /// unit; a vehicle only with an inherent crew and not Abandoned (the Index's Armed), and never a captured one (a deviation: captured vehicles are not
-    /// used in play yet).
+    /// unit; a vehicle only with an inherent crew and not Abandoned (the Index's Armed), and never one marked captured by ruling R11.16 (a deviation kept for
+    /// the records made before pass 65). A vehicle captured by a <c>vehicle-captured</c> record (A21.2; pass 65, ruling R65.22) is its captor's, unmarked,
+    /// so once a crew mans it, it holds and prevents Control for its captor as any armed vehicle does (A26.12).
     /// </summary>
     public static bool Armed(VictoryUnitFacts unit)
     {
@@ -363,7 +375,8 @@ public static class ScenarioA1VictoryCalculator
         return units.Where(unit => unit.Side == side && !unit.Broken && !unit.Captured && !Undeclared(unit, knownTo)).Sum(unit => unit.Kind switch
         {
             "asl:squad" => 1.0,
-            "asl:half-squad" or "asl:crew" => 0.5,
+            "asl:half-squad" => 0.5,
+            var kind when ScenarioA1Definitions.IsCrew(kind) => 0.5,
             _ => 0.0,
         });
     }

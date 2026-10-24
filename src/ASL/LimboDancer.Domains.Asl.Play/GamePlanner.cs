@@ -345,6 +345,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.overrun" => PlanOverrun(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.vehicle-close-combat" => PlanVehicleCloseCombat(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.button-up" => PlanButtonUp(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.abandon-vehicle" => PlanAbandon(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.recrew-vehicle" => PlanRecrew(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.scrounge" => PlanScrounge(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.choose" => PlanChoose(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.infantry-overrun-ntc" => PlanInfantryOverrunNtc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.overrun-evade" => PlanOverrunEvade(scope, arguments, existing, attemptId, expected, label),
@@ -795,6 +798,16 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             reasons.Add(ScenarioA1SequenceCalculator.MeleeEliminatedText(unit.Id));
         }
 
+        // A21.2 (pass 65, ruling R65.22): an Abandoned AFV with Good Order enemy Infantry and none of its own Personnel is captured as the CCPh ends.
+        if (ScenarioA1CapturedVehicleRules.AutomaticCaptureDue(state.Phase))
+        {
+            foreach (var (vehicle, side, at) in AutomaticCaptures(state))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "vehicle-captured", new VehicleCaptured(vehicle.Id, at, side, VehicleCaptured.Automatic), null, null));
+                reasons.Add(ScenarioA1CapturedVehicleRules.CapturedText(vehicle.Id, side, at.ToString(), VehicleCaptured.Automatic, null));
+            }
+        }
+
         // Pass 31d (design D9; A11.15, read in the PDF, p. 72; ruling R31d.6): a Location that holds units of both sides, prisoners apart, in which no
         // round was fought this phase is said before the phase ends. It is a consequence and not a refusal: where the Close Combat package does
         // not decide the Location, a refusal would leave the phase with no way to end (ruling R31c.5).
@@ -901,14 +914,15 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 }
             }
 
-            // A11.52 (ruling R11.16): an unarmed vehicle alone with enemy Infantry is captured as the CCPh begins.
+            // A11.52 (ruling R11.16): an unarmed vehicle alone with enemy Infantry is captured as the CCPh begins. A21.21 (pass 65, ruling R65.22): since
+            // the pass it passes to its captor with a Temporary Driver (vehicle-captured); the Captured and Abandoned conditions of older records stay.
             if (ScenarioA1SequenceCalculator.VehicleCaptureDue(phase))
             {
                 foreach (var vehicle in CapturedVehicles(state))
                 {
-                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                        new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1SequenceCalculator.CapturedVehicleConditions())), null, null, [changed]));
-                    reasons.Add(ScenarioA1SequenceCalculator.CcVehicleCaptureText(vehicle.Id));
+                    var capture = UnarmedCapture(state, vehicle);
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "vehicle-captured", capture, null, null, [changed]));
+                    reasons.Add(ScenarioA1CapturedVehicleRules.CapturedText(vehicle.Id, capture.Side, capture.At.ToString(), capture.Cause, capture.Driver));
                 }
             }
 
@@ -923,7 +937,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             foreach (var vehicle in state.Units.Where(unit => ScenarioA1SequenceCalculator.RecallAbandoned(phasing != state.PhasingSide, unit.Status == InstanceStatus.Active, LiveFire.IsVehicle(unit),
                 Is(unit, Conditions.Recalled), Is(unit, Conditions.Immobilized), Is(unit, Conditions.Abandoned), Is(unit, Conditions.Bogged))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
             {
-                foreach (var (type, abandon) in AbandonEvents(vehicle, attemptId))
+                foreach (var (type, abandon) in AbandonEvents(state, vehicle, attemptId))
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, null, null, [changed]));
                 }

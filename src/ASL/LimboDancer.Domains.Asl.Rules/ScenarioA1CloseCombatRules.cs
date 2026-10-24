@@ -183,9 +183,19 @@ public static class ScenarioA1CloseCombatRules
         $"play.cc-required: {unitId} is berserk with a Known enemy vehicle in {locationText}, so it attacks the vehicle in CC before the CCPh ends (A15.43, A11.31)";
 
     /// <summary>
+    /// Whether a unit is a Gun's crew for CC and the advance (C11; ruling R24.3): a crew that mans a Gun, whose CC is not reviewed. A crew that mans no
+    /// Gun is advanced against and fights in CC as ordinary Infantry (A1.123, p. 44; pass 65, ruling R65.29). The caller reads the Gun only for a crew.
+    /// </summary>
+    public static bool GunCrew(bool crew, Func<bool> mansGun)
+    {
+        ArgumentNullException.ThrowIfNull(mansGun);
+        return crew && mansGun();
+    }
+
+    /// <summary>
     /// A15.43, A11.15: the unit whose CC the Location still requires: a berserk unit with a Known enemy there, else, where a Melee is held, an unbroken unit
-    /// that advanced in this APh; null when a crew or a vehicle is there (CC with them is not reviewed or is sequential) or none qualifies. The flag says
-    /// which rule.
+    /// that advanced in this APh; null when a Gun's crew (<see cref="GunCrew"/>) or a vehicle is there (CC with them is not reviewed or is sequential) or
+    /// none qualifies. The flag says which rule.
     /// </summary>
     public static (string Id, bool Berserk)? RequiredUnit(IReadOnlyList<RequiredCcUnitFacts> here)
     {

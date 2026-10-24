@@ -31,13 +31,18 @@ public static class ScenarioA1ResultTables
     public const string CheckMired = "mired";
     public const string CheckImmobilized = "immobilized";
 
-    /// <summary>The result a check's Final DR or dr gives (D2.5, D2.51, D8.21, D8.3).</summary>
+    /// <summary>A21.22 (pass 65, ruling R65.22): a Temporary crew's start dr, and its result of 5, no movement this phase.</summary>
+    public const string TemporaryStartCheck = "temporary-start";
+    public const string CheckNoMove = "no-move";
+
+    /// <summary>The result a check's Final DR or dr gives (D2.5, D2.51, D8.21, D8.3, A21.22).</summary>
     public static string VehicleCheck(string check, int final) => check switch
     {
         BogCheck => final >= 12 ? CheckBogged : CheckPassed,
         EsbCheck => final >= 12 ? CheckImmobilized : CheckPassed,
         MechanicalCheck => final >= 12 ? CheckImmobilized : CheckPassed,
         BogRemovalCheck => final <= 4 ? CheckFreed : final == 5 ? CheckMired : CheckImmobilized,
+        TemporaryStartCheck => final <= 4 ? CheckPassed : final == 5 ? CheckNoMove : CheckBogged,
         _ => CheckPassed,
     };
 

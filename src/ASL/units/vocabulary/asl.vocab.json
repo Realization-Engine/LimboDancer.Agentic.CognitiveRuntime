@@ -1,6 +1,6 @@
 {
   "pack": "asl",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "label": "ASL Personnel, support weapons, Guns, vehicles, and entities that are not units",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
@@ -196,6 +196,22 @@
     { "name": "asl:vehicle-ft-firepower", "label": "Vehicular FT FP", "type": "integer", "scope": "face", "rule": "D1.8, p. 195" },
     { "name": "asl:vehicle-ft-removal", "label": "Vehicular FT X#", "type": "integer", "scope": "face", "rule": "D1.8, p. 195" },
     { "name": "asl:crew-survival", "label": "Crew Survival Number", "type": "integer", "scope": "face", "faces": ["wreck"], "rule": "D1.9, p. 195; D5.6, p. 204" },
+    {
+      "name": "asl:vehicle-class", "label": "Vehicle class", "type": "enumeration", "scope": "face", "rule": "D6.2, p. 205; Chapter H Listings Key, Type column, p. 338",
+      "members": [
+        { "name": "tank", "label": "tank", "short": "tank" },
+        { "name": "tankette", "label": "tankette", "short": "Tt" },
+        { "name": "td", "label": "tank destroyer", "short": "TD" },
+        { "name": "spa", "label": "self-propelled artillery", "short": "SPA" },
+        { "name": "spaa", "label": "self-propelled anti-aircraft gun", "short": "SPAA" },
+        { "name": "assault-gun", "label": "assault gun", "short": "AG" },
+        { "name": "carrier", "label": "Carrier", "short": "Carrier" },
+        { "name": "halftrack", "label": "halftrack", "short": "ht" },
+        { "name": "armored-car", "label": "armored car", "short": "AC" },
+        { "name": "truck", "label": "truck", "short": "tr" },
+        { "name": "other", "label": "other", "short": "other" }
+      ]
+    },
     { "name": "asl:san", "label": "Sniper Activation Number", "type": "integer", "scope": "unit", "rule": "A14.1, p. 81" },
     { "name": "asl:capacity", "label": "Stacking capacity", "type": "integer", "scope": "face", "unit": "S", "rule": "B27.12, p. 146; B30.111, p. 150" },
     { "name": "asl:ca-defense", "label": "CA Defense Modification", "type": "rating", "scope": "face", "rule": "B30.112, p. 150" },
@@ -236,6 +252,7 @@
     { "name": "asl:rear-turret-unarmored", "label": "Rear turret unarmored", "short": "T", "rule": "D1.22, p. 193" },
     { "name": "asl:open-topped", "label": "Open-topped", "short": "OT", "rule": "D1.23, p. 194" },
     { "name": "asl:cs-passengers-only", "label": "Crew Survival applies to Passengers only", "short": "cs", "rule": "Chapter H Listings Key, p. 338; D5.6, p. 204" },
+    { "name": "asl:cs-red", "label": "Red Crew Survival Number (brew-up tendency)", "short": "red CS", "faces": ["wreck"], "rule": "Chapter H Listings Key, p. 338; D5.7, p. 204" },
     { "name": "asl:fixed-bmg", "label": "Fixed-Mount BMG", "short": "fixed", "rule": "D1.81, p. 195" },
     { "name": "asl:vehicle-ft-range-2", "label": "Vehicular FT Normal Range 2", "short": "FT range 2", "rule": "D1.8, p. 195" },
     { "name": "asl:known-minefield", "label": "Known Minefield", "short": "known", "rule": "B28.45, p. 148" },
@@ -369,9 +386,9 @@
         "asl:ma-type", "asl:ma-weapon", "asl:caliber", "asl:caliber-suffix", "asl:rate-of-fire", "asl:breakdown", "asl:special-ammo",
         "asl:sa-mount", "asl:sa-caliber", "asl:towing", "asl:passenger-capacity",
         "asl:bmg", "asl:cmg", "asl:aamg", "asl:hull-rear-mg", "asl:turret-rear-mg",
-        "asl:vehicle-ft-mount", "asl:vehicle-ft-firepower", "asl:vehicle-ft-removal", "asl:crew-survival"],
+        "asl:vehicle-ft-mount", "asl:vehicle-ft-firepower", "asl:vehicle-ft-removal", "asl:crew-survival", "asl:vehicle-class"],
       "traits": ["asl:mechanically-unreliable", "asl:unarmored", "asl:partially-armored", "asl:rear-turret-unarmored", "asl:open-topped",
-        "asl:no-ap", "asl:no-he", "asl:fixed-bmg", "asl:vehicle-ft-range-2", "asl:cs-passengers-only"],
+        "asl:no-ap", "asl:no-he", "asl:fixed-bmg", "asl:vehicle-ft-range-2", "asl:cs-passengers-only", "asl:cs-red"],
       "accessibleName": {
         "default": "{side} {designation} {movement-type} {kind} {identity}, {movement-points} MP, AF {af-front}/{af-side}, MA {caliber}{caliber-suffix?} {ma-weapon} {ma-type}",
         "wreck": "{side} wrecked {designation} {kind} {identity}, {survival-label} {crew-survival}"

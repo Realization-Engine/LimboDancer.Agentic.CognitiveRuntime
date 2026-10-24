@@ -265,6 +265,13 @@ public sealed class PlayRecords
         // Pass 31d (design D5; ruling R31d.3): a Dummy stack's removal is said to both sides, who both see the counters leave the map (A12.11, A12.15,
         // A11.19). One line for a stack, whatever its count of counters; removal by fire is said in the fire's own line.
         var dummiesSaid = new HashSet<(string Attempt, string At, string? Side)>();
+
+        // Pass 65 (the table player): the dice of each roll a record names by its id, and the vehicles each attempt marked Abandoned (D6.83), read once.
+        var dice = events.Select(item => item.Payload).OfType<DiceRolled>().GroupBy(roll => roll.Roll, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First().Values, StringComparer.Ordinal);
+        var abandoning = events.Where(item => item.Payload is ConditionsChanged changed && changed.Conditions.TryGetValue(Conditions.Abandoned, out var abandonedNow)
+                && abandonedNow == ConditionState.True)
+            .Select(item => (AttemptOf(item.EventId), ((ConditionsChanged)item.Payload).Id)).ToHashSet();
         foreach (var item in events.Where(item => item.IsVisibleTo(viewer)))
         {
             var before = history.At(item.Revision - 1);
@@ -307,6 +314,56 @@ public sealed class PlayRecords
                 VehicleStepped { Kind: VehicleStepped.Turn, Turret: { } turnTurret } turnedBoth => $"{turnedBoth.Vehicle} turns its turret to {UnitFacings.Name(turnTurret)} with its VCA change (D3.12)",
                 VehicleStepped { Kind: VehicleStepped.Delay } delay => $"{delay.Vehicle} spends a Delay MP in {delay.At} (D2.17)"
                     + (delay.Turret is { } delayTurret ? $", turning its turret to {UnitFacings.Name(delayTurret)} (D3.12)" : string.Empty),
+                // D6.4, D6.5 (pass 65, ruling R65.15): a load and an unload name who boards or gets off.
+                VehicleStepped { Kind: VehicleStepped.Load, Units: { Count: > 0 } boarders } boarding => $"{boarding.At}: " + Many(boarders, "boards", "board") + $" {boarding.Vehicle}"
+                    + (boarding.Riders ? " as Riders (D6.2, D6.4)" : " (D6.4)"),
+                // D6.21, D6.23, D6.24 (pass 65, ruling R65.17): a Rider's Bail Out says why, its NMC, and what became of its SW.
+                // The table player: the NMC's dice and total, and a Casualty Reduction said as such (D6.24, A10.31).
+                RiderBailedOut bailed => $"{bailed.At}: {bailed.Unit} Bails Out of {bailed.Vehicle}, since " + ScenarioA1RiderRules.CauseText(bailed.Cause)
+                    + "; NMC" + (dice.TryGetValue(bailed.Roll, out var bailDice) ? $" DR {string.Join(", ", bailDice)} = {bailDice.Sum()}" : string.Empty)
+                    + $" against {bailed.Morale}: {BailOutResult(bailed.Result)}"
+                    + string.Concat((bailed.Weapons ?? []).Select(weapon => $"; {weapon.Weapon} {(weapon.Fate == ScenarioA1RiderRules.Kept ? "is kept" : $"is {weapon.Fate}")}"
+                        + (weapon.Roll is { } weaponRoll && dice.TryGetValue(weaponRoll, out var weaponDice) ? $" on a dr of {weaponDice[0]}" : string.Empty)))
+                    + " (D6.24)",
+                // D5.41, D5.411, D6.631, D5.42 (pass 65, ruling R65.20): the crew's own acts, with their rules in one parenthesis (the table player).
+                VehicleAbandoned abandoned => $"{abandoned.At}: {abandoned.Crew} Abandons {abandoned.Vehicle}"
+                    + (abandoned.Destroyed == ScenarioA1CrewActsRules.Wreck ? ", leaving it a wreck"
+                        : abandoned.Destroyed == ScenarioA1CrewActsRules.Malfunction ? ", malfunctioning its weapons" : string.Empty)
+                    + (abandoned.Removed is { } removedMg ? $", taking its MG as {removedMg}" : string.Empty)
+                    + $" (D5.41{(abandoned.Destroyed is not null ? ", D5.411" : string.Empty)}{(abandoned.Removed is not null ? ", D6.631" : string.Empty)})",
+                VehicleRecrewed recrewed => $"{recrewed.At}: {recrewed.Unit} enters {recrewed.Vehicle} and crews it" + (recrewed.Temporary ? " as a Temporary crew" : string.Empty)
+                    + (recrewed.Returned is { } returnedMg ? $", returning {returnedMg}" : string.Empty)
+                    + $" (D5.42{(recrewed.Temporary ? ", A21.22" : string.Empty)}{(recrewed.Returned is not null ? ", D6.631" : string.Empty)})",
+                // D10.5, D10.52 (pass 65, ruling R65.23): a Scrounging, its dr, and what it salvaged.
+                VehicleScrounged scrounged => $"{scrounged.At}: {scrounged.Unit} scrounges {scrounged.Vehicle} on a dr of {scrounged.Dr}: "
+                    + (scrounged.Taken is { Count: > 0 } found ? "it salvages " + string.Join(" and ", found.Select(item => $"{item.Weapon}, its {ScenarioA1WreckRules.MountText(item.Mount)}"))
+                        : "it salvages nothing")
+                    + $"; {scrounged.Vehicle} is Scrounged, and {scrounged.Unit} is TI (D10.5)",
+                // A11.52, A21.2, A21.21 (pass 65, ruling R65.22): a capture names the captor's side.
+                // The table player: the hex said once, after the vehicle, so the other side's vehicle named by its hex does not say it twice.
+                VehicleCaptured captured => $"{captured.Vehicle} in {captured.At} is captured by the {DisplayText.Side(captured.Side)} side"
+                    + (captured.Cause != VehicleCaptured.Unarmed ? " (A21.2)"
+                        : captured.Driver is { } driver ? $", {driver} removed into it as its Temporary Driver (A11.52, A21.21)" : ", a Temporary Driver running it for its captor (A11.52, A21.21)"),
+                // D6.83 (pass 65, the table player): a Carrier whose inherent HS unloads with the step is Abandoned by it.
+                VehicleStepped { Kind: VehicleStepped.Unload, Units: { Count: > 0 } leavers } leaving => $"{leaving.At}: " + Many(leavers, "unloads", "unload") + $" from {leaving.Vehicle} (D6.5)"
+                    + (abandoning.Contains((AttemptOf(item.EventId), leaving.Vehicle)) ? $"; its inherent HS has left it, so {leaving.Vehicle} is Abandoned (D6.83)" : string.Empty),
+                // D5.43 (pass 65, the table player): a loader the fire its boarding drew pinned or broke, or whose vehicle it destroyed, is back on foot.
+                InstanceMoved { Ended: false, Mf: null, Position: MapPosition } back when before?.Unit(back.Id) is { Position: ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider } boarded } loader =>
+                    $"{back.Id} does not board {boarded.Container}: "
+                    + (GameState.Condition(loader, Conditions.Broken) == ConditionState.True ? "broken by the fire its boarding drew"
+                        : GameState.Condition(loader, Conditions.Pinned) == ConditionState.True ? "pinned by the fire its boarding drew"
+                        : $"the fire its boarding drew destroys {boarded.Container}") + ", so it is back on foot (D5.43)",
+                // A21.22 (pass 65, the table player): a Temporary crew's start dr.
+                VehicleCheckRolled { Check: VehicleCheckRolled.TemporaryStart } start => $"{start.Vehicle}'s Temporary crew makes its start dr"
+                    + (dice.TryGetValue(start.Roll, out var startDice) ? $" {startDice[0]}" + (start.Drm != 0 ? $" + {start.Drm} = {startDice[0] + start.Drm}" : string.Empty) : string.Empty)
+                    + ": " + (start.Result switch
+                    {
+                        VehicleCheckRolled.Passed => "it starts",
+                        VehicleCheckRolled.NoMove => "no movement this phase",
+                        _ => "it Bogs",
+                    }) + " (A21.22)",
+                // A11.5, A11.51, A11.62, A21.2 (pass 65, the table player): a CC attack with a vehicle, a capture attempt's among them, with its arithmetic.
+                VehicleCloseCombatResolved combat => VehicleCloseCombatText(combat),
                 VehicleStepped { Kind: not VehicleStepped.Turn } drive => $"{drive.Vehicle} moves{From(before, drive.Vehicle)} to {drive.At}"
                     + (drive.Turret is { } driveTurret ? $", turning its turret to {UnitFacings.Name(driveTurret)} (D3.12)" : string.Empty),
                 AdvanceMoved advance => Many(advance.Units, "advances", "advance") + (advance.Exit is { } edge ? $" off the {edge} edge from {advance.To}" : $"{From(before, advance.Units.Count > 0 ? advance.Units[0] : null)} to {advance.To}"),
@@ -363,6 +420,12 @@ public sealed class PlayRecords
                 "the Dummies there are removed (A12.14)"];
         }
 
+        // D.8B, D6.66, D6.9 (pass 65, the table player): what the attack did to the PRC of the vehicles it struck, as the ordnance records say it.
+        if (fire.Effects is not null && fire.Vehicles?.SelectMany(vehicle => PrcLines(vehicle)).ToArray() is { Length: > 0 } prc)
+        {
+            changed = [.. changed, .. prc.Select(line => fire.Say(line))];
+        }
+
         // The table player's review of pass 55: a Canister attack on a Location where the view knows of no unit.
         if (fire.NoKnownTarget)
         {
@@ -373,6 +436,44 @@ public sealed class PlayRecords
         return fire.LosBlocked
             ? $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: the LOS is blocked, so the attack has no effect and its firers have fired (A6.11)"
             : $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {ResultText(fire.Arithmetic.Result)}" + (changed.Length > 0 ? "; " + string.Join("; ", changed) : string.Empty);
+    }
+
+    /// <summary>A Bail Out NMC's result in words (D6.24, A10.31; pass 65, the table player): a Casualty Reduction is said with the break it brings.</summary>
+    private static string BailOutResult(string result) => result == ScenarioA1RiderRules.Reduced ? "Casualty Reduced and broken" : result;
+
+    /// <summary>
+    /// A CC attack with a vehicle in one line (A11.5, A11.51, A11.62, A21.2; pass 65, the table player): Infantry attacking the vehicle, a capture attempt
+    /// among them, with the Kill Number, the DR with each DRM and its rule, and the result; or the vehicle attacking Infantry, each defender's Final DR and
+    /// result. Null for a record that resolved nothing.
+    /// </summary>
+    private static string? VehicleCloseCombatText(VehicleCloseCombatResolved combat)
+    {
+        if (combat.Resolution.ValueKind != JsonValueKind.Object || combat.Resolution.Deserialize<VehicleCloseCombatResolution>(LiveFire.Json) is not { Dice.Count: > 0 } resolution)
+        {
+            return null;
+        }
+
+        if (combat.ByVehicle)
+        {
+            return $"{combat.Vehicle} attacks {string.Join(", ", combat.Defenders)} in CC" + (resolution.Odds is { } odds ? $" at {odds} odds" : string.Empty) + ": "
+                + string.Join("; ", (resolution.Defending ?? []).Select(defender => $"{defender.UnitId} Final DR {defender.FinalDr}{ModifierText(defender.Drm)}: {defender.Result}"))
+                + " (A11.62)";
+        }
+
+        var capture = combat.Facts.ValueKind == JsonValueKind.Object && combat.Facts.TryGetProperty("capture", out var declared) && declared.ValueKind == JsonValueKind.True;
+        var result = resolution.VehicleResult switch
+        {
+            VehicleCloseCombatResolution.Captured => "it is captured",
+            VehicleCloseCombatResolution.BurningWreck => "it burns (a burning wreck)",
+            VehicleCloseCombatResolution.Eliminated => "it is eliminated (a wreck)",
+            VehicleCloseCombatResolution.Immobilized => "it is immobilized",
+            _ => "no effect",
+        };
+        return $"{string.Join(" and ", combat.Attackers)} {(combat.Attackers.Count == 1 ? "attacks" : "attack")} {combat.Vehicle} in CC{(capture ? " to capture it" : string.Empty)}: "
+            + $"Kill Number {resolution.KillNumber}{(resolution.KillNumberModifiers.Count > 0 ? ", with" + ModifierText(resolution.KillNumberModifiers) : string.Empty)}; "
+            + $"DR {string.Join(", ", resolution.Dice)} = {resolution.OriginalDr}{ModifierText(resolution.Drm)} = {resolution.FinalDr}"
+            + (resolution.UnlikelyKillDr is { } unlikely ? $", Unlikely Kill dr {unlikely}" : string.Empty)
+            + $": {result} (A11.5{(capture ? ", A21.2" : string.Empty)})";
     }
 
     private static string Sentence(string text) => DisplayText.Sentence(text.TrimEnd()) + (text.TrimEnd().EndsWith('.') ? string.Empty : ".");
@@ -565,6 +666,9 @@ public sealed class PlayRecords
                         foreach (var vehicle in attack.VehicleEffects ?? [])
                         {
                             parts.Add($"{vehicle.VehicleId}: " + (vehicle.KillNumber is not null ? FireText.VehicleLineText(vehicle) : FireText.CrewText(vehicle)));
+
+                            // D.8B, D6.9 (pass 65): what it did to the vehicle's PRC.
+                            parts.AddRange(FireText.PrcLines(vehicle));
                         }
 
                         // A9.74, C8.42 (pass 60, ruling R60.17): what the hit's KIA did to its victims' weapons.
@@ -617,11 +721,17 @@ public sealed class PlayRecords
                     // The table player's review: "against crew morale 10, its Armor Leader's (D3.42)", with no parenthesis inside another.
                     static string Against(FireCheck made) => FireText.MoraleWords(made);
                     var checks = (kill.ShockCheck is { } ntc ? $"; NTC DR {ntc.FinalDr} against {Against(ntc)}: {(ntc.Passed ? "passed" : "Shocked")}" : "")
-                        + (kill.CrewCheck is { } tc ? $"; crew TC DR {tc.FinalDr} against {Against(tc)}: {(tc.Passed ? "passed" : "Abandoned")}" : "")
+                        + (kill.CrewCheck is { } tc ? $"; {(kill.SecondCause == true ? FireText.SecondCauseWords + ", " : "")}crew TC DR {tc.FinalDr} against {Against(tc)}: {(tc.Passed ? "passed" : "Abandoned")}" : "")
                         + (kill.CrewSurvival is { } cs ? $"; Crew Survival DR {cs.FinalDr} against CS# {cs.CrewSurvival}: {(cs.Survived ? "the crew survives" : "no survivors")}" : "");
                     // A9.61 (pass 60, the table player): a MG's To Kill attack is the MG's, on the AP To Kill Table, not a Gun's AP round.
                     var round = machineGun ? "the MG, on the AP To Kill Table" : kill.Ammunition.ToUpperInvariant();
                     parts.Add($"{kill.HitLocation} hit, {kill.TargetFacing} Target Facing, {round}: {tk}; TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
+
+                    // D6.9 (pass 65): the Survival DR of each PRC of the vehicle.
+                    if (shot?.VehicleTarget?.VehicleId is { } killedId)
+                    {
+                        parts.AddRange(FireText.PrcSurvivalLines(killedId, kill.PrcSurvival));
+                    }
 
                     // D5.34 (pass 60, ruling R60.25): a Stun buttons the crew up at once, so no Specific Collateral Attack follows it.
                     if (kill.Result == OrdnanceKill.Stun && shot?.SpecificCollateral == true && shot.VehicleTarget?.CrewExposed == true)
@@ -643,17 +753,27 @@ public sealed class PlayRecords
                     };
                     parts.Add($"{afv.VehicleId}: {(afv.Critical == true ? "a Critical Hit, " : "")}{afv.HitLocation} hit on the IFT (C1.55): {afv.Firepower} FP, DR "
                         + $"{string.Join(", ", afv.Dice)}{ModifierText(afv.Drm)} = {afv.FinalDr} against the K/# DR {afv.KillDr}: {fate}"
+                        + (afv.CrewCheck is { } areaTc ? $"; crew TC DR {areaTc.FinalDr} against {FireText.MoraleWords(areaTc)}: {(areaTc.Passed ? "passed" : "Abandoned")} (D5.5)" : "")
                         + (afv.CrewSurvival is { } survival ? $"; Crew Survival DR {survival.FinalDr} against CS# {survival.CrewSurvival}: {(survival.Survived ? "the crew survives" : "no survivors")}" : ""));
+
+                    // D6.9, D9.2 (pass 65): the Survival DR of each PRC of the AFV.
+                    parts.AddRange(FireText.PrcSurvivalLines(afv.VehicleId, afv.PrcSurvival));
                 }
 
                 // D.8A (pass 60): the Specific Collateral Attack on the CE crew of the AFV the hit left standing.
                 if (resolution.SpecificCollateral is { } collateral)
                 {
+                    // Pass 65 (ruling R65.7): the attack may reach the PRC alone; the crew's part is written only when it took it.
                     var crew = collateral.Effect;
-                    parts.Add($"its CE crew takes a Specific Collateral Attack of {collateral.Firepower} FP on the same DR{ModifierText(crew.Drm)} (D.8A): Final DR {crew.FinalDr}, "
-                        + (collateral.Result == "none" ? "no effect" : collateral.Result)
-                        + (crew.CrewCheck is { } made ? $"; {FireText.CheckText(made)}" : "")
-                        + (crew.CrewResult == FireVehicleEffect.None ? "" : $": {crew.CrewResult}"));
+                    if (crew.CrewResult != FireVehicleEffect.NotVulnerable)
+                    {
+                        parts.Add($"its CE crew takes a Specific Collateral Attack of {collateral.Firepower} FP on the same DR{ModifierText(crew.Drm)} (D.8A): Final DR {crew.FinalDr}, "
+                            + (collateral.Result == "none" ? "no effect" : collateral.Result)
+                            + (crew.CrewCheck is { } made ? $"; {FireText.CheckText(made)}" : "")
+                            + (crew.CrewResult == FireVehicleEffect.None ? "" : $": {crew.CrewResult}"));
+                    }
+
+                    parts.AddRange(FireText.PrcLines(crew));
                 }
 
                 var boundingShot = shot?.FireKind == ScenarioA1FireCalculator.BoundingFirstFire;
@@ -850,6 +970,12 @@ public sealed class PlayRecords
                 {
                     // Pass 35 (task 35.4; A10.533): a repulsed step is a sentence of its own, after whatever steps the rout made before it.
                     records.Add((item.EventId, "rout", $"{repulsed.Unit} is repulsed from {repulsedFrom} by a concealed unit there and ends its rout in {repulsed.To} (A10.533)"));
+                }
+                else if (item.Payload is RoutStepped beneath && before?.Unit(beneath.Unit) is { Position: ContainedPosition aboard })
+                {
+                    // D6.1, D5.311 (pass 65, the table player): a Passenger, or a broken crew inside its AFV, routs beneath its vehicle, spending all its MF.
+                    records.Add((item.EventId, "rout", $"{beneath.Unit} routs beneath {aboard.Container} in {beneath.To}, spending all its MF"
+                        + (aboard.Role == ContainmentRole.Crew ? $", and {aboard.Container} is Abandoned (D5.311)" : " (D6.1)")));
                 }
                 else if (item.Payload is RoutStepped routed)
                 {

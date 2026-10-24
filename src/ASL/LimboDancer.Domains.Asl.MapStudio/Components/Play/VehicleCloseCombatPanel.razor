@@ -5,6 +5,8 @@
     In a Location holding a vehicle CC is sequential: the non-vehicular side attacks first, one attack at a time, then the sides alternate
     until every unit has attacked or its side passes (A11.31). Infantry attack a vehicle with their CCV as the Kill Number, one unit or one
     with a SMC (A11.5); a vehicle attacks Infantry with its CMG and CE AAMG on the CCT (A11.62). CC between Infantry there is not built.
+    An Abandoned AFV may instead be the target of a capture attempt, at -1 and as if CE and Immobile; with no Personnel of its side there it is
+    captured anyway as the CCPh ends (A21.2).
 </RuleHelp>
 @foreach (var location in Locations)
 {
@@ -33,10 +35,8 @@
             Vehicle
             <select class="vehicle-cc-vehicle" value="@chosen" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">choose</option>
-                @foreach (var vehicle in location.Vehicles)
-                {
-                    <option value="@vehicle.Id">@vehicle.Id (@vehicle.Side)</option>
-                }
+                @* The hex UI rule (pass 65, the UI review): each vehicle named after its hex, "[F8]: PzKpfw IIIH G1, Abandoned". *@
+                <UnitOptions Units="@([.. location.Vehicles.Select(vehicle => new PlayChoice(vehicle.Id, vehicle.Id + (vehicle.Abandoned ? ", Abandoned" : string.Empty)))])" Text="@Say" />
             </select>
         </label>
         @foreach (var unit in location.Defenders)
@@ -44,6 +44,13 @@
             <label><input type="checkbox" class="vehicle-cc-defender" checked="@Defenders.Contains(unit)" @onchange="@(args => OnDefender.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @Say(unit)</label>
         }
         <button class="propose-vehicle-cc-attack" disabled="@(attacker.Length == 0 || chosen.Length == 0)" @onclick="@(() => OnProposeAttack.InvokeAsync(location.Location))">Propose: Infantry attack the vehicle</button>
+        @* Pass 65 (ruling R65.22): an Abandoned AFV may be the target of a capture attempt, which captures it where an attack would eliminate it (A21.2). *@
+        @if (location.Vehicles.Any(vehicle => vehicle.Abandoned))
+        {
+            var captureReady = attacker.Length > 0 && location.Vehicles.Any(vehicle => vehicle.Id == chosen && vehicle.Abandoned);
+            <button class="propose-vehicle-cc-capture" disabled="@(!captureReady)" title="@(captureReady ? null : "Choose an attacker and the Abandoned AFV")"
+                @onclick="@(() => OnProposeCapture.InvokeAsync(location.Location))">Propose: Infantry attempt to capture the Abandoned AFV (A21.2)</button>
+        }
         <button class="propose-vehicle-cc-vehicle" disabled="@(chosen.Length == 0 || !anyDefender)" @onclick="@(() => OnProposeVehicle.InvokeAsync(location.Location))">Propose: the vehicle attacks the checked Infantry</button>
         <button class="propose-vehicle-cc-pass" @onclick="@(() => OnPass.InvokeAsync(location.Location))">Propose: the @location.NextSide side passes</button>
     </div>
@@ -57,8 +64,8 @@
 
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
 
-    /// <summary>A vehicle in the Location and its side.</summary>
-    public sealed record VehicleChoice(string Id, string Side);
+    /// <summary>A vehicle in the Location and its side, and whether it is an Abandoned AFV, which a capture attempt may take (A21.2; pass 65).</summary>
+    public sealed record VehicleChoice(string Id, string Side, bool Abandoned = false);
 
     /// <summary>
     /// A Location whose sequential CC is open: the side that attacks next, its units that may still attack, its SMC, the vehicles there, and the
@@ -98,6 +105,10 @@
     /// <summary>Infantry attack the vehicle in this Location.</summary>
     [Parameter]
     public EventCallback<string> OnProposeAttack { get; set; }
+
+    /// <summary>Infantry attempt to capture the chosen Abandoned AFV in this Location (A21.2; pass 65, ruling R65.22).</summary>
+    [Parameter]
+    public EventCallback<string> OnProposeCapture { get; set; }
 
     /// <summary>The vehicle attacks the checked Infantry in this Location.</summary>
     [Parameter]

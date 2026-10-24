@@ -234,7 +234,7 @@ public static class GameEventReader
                 var position = ReadPosition(payload, "position", path, fields, diagnostics);
                 return movedId is null || position is null
                     ? Missing(diagnostics, "A move names the instance and its position.", path)
-                    : new InstanceMoved(movedId, position, fields.OptionalInteger(payload, "mf", path));
+                    : new InstanceMoved(movedId, position, fields.OptionalInteger(payload, "mf", path)) { Ended = fields.OptionalBoolean(payload, "ended", path) };
             case "equipment-transferred":
                 var transferredId = fields.RequiredString(payload, "id", path);
                 var holding = ReadHolding(payload, path, fields, diagnostics);
@@ -556,7 +556,105 @@ public static class GameEventReader
                         Edge = fields.OptionalString(payload, "edge", path),
                         Units = payload.TryGetProperty("units", out _) ? fields.StringList(payload, "units", path) : null,
                         UnitMf = fields.OptionalInteger(payload, "unitMf", path) ?? 0,
+                        Interim = fields.OptionalBoolean(payload, "interim", path),
+                        Riders = fields.OptionalBoolean(payload, "riders", path),
                         Turret = fields.OptionalString(payload, "turret", path) is { } turretName && UnitFacings.TryParse(turretName, out var stepTurret) ? stepTurret : null,
+                    };
+            case "rider-bailed-out":
+                var bailedUnit = fields.RequiredString(payload, "unit", path);
+                var bailedFrom = fields.RequiredString(payload, "vehicle", path);
+                var bailedAt = ReadLocation(payload, "at", path, fields, diagnostics);
+                var bailedCause = fields.RequiredString(payload, "cause", path);
+                var bailedRoll = fields.RequiredString(payload, "roll", path);
+                var bailedMorale = fields.OptionalInteger(payload, "morale", path);
+                var bailedResult = fields.RequiredString(payload, "result", path);
+                List<RiderWeapon>? bailedWeapons = null;
+                if (payload.TryGetProperty("weapons", out var weaponList) && weaponList.ValueKind == JsonValueKind.Array)
+                {
+                    bailedWeapons = [];
+                    foreach (var item in weaponList.EnumerateArray())
+                    {
+                        if (fields.RequiredString(item, "weapon", path) is not { } weaponId || fields.RequiredString(item, "fate", path) is not { } fate)
+                        {
+                            return Missing(diagnostics, "A Bailing Out Rider's SW names the SW and its fate.", path);
+                        }
+
+                        bailedWeapons.Add(new RiderWeapon(weaponId, fields.OptionalString(item, "roll", path), fate));
+                    }
+                }
+
+                return bailedUnit is null || bailedFrom is null || bailedAt is null || bailedCause is null || bailedRoll is null || bailedMorale is null || bailedResult is null
+                    ? Missing(diagnostics, "A Bail Out names its Rider, vehicle, Location, cause, NMC roll, Morale Level, and result.", path)
+                    : new RiderBailedOut(bailedUnit, bailedFrom, bailedAt, bailedCause, bailedRoll, bailedMorale.Value, bailedResult)
+                    {
+                        Weapons = bailedWeapons,
+                    };
+            case "vehicle-abandoned":
+                var abandonedVehicle = fields.RequiredString(payload, "vehicle", path);
+                var abandonedAt = ReadLocation(payload, "at", path, fields, diagnostics);
+                var abandonedCrew = fields.RequiredString(payload, "crew", path);
+                return abandonedVehicle is null || abandonedAt is null || abandonedCrew is null
+                    ? Missing(diagnostics, "An Abandonment names the vehicle, its Location, and the crew that leaves it.", path)
+                    : new VehicleAbandoned(abandonedVehicle, abandonedAt, abandonedCrew)
+                    {
+                        Destroyed = fields.OptionalString(payload, "destroyed", path),
+                        Removed = fields.OptionalString(payload, "removed", path),
+                        Mount = fields.OptionalString(payload, "mount", path),
+                        FireCounter = fields.OptionalString(payload, "fireCounter", path),
+                    };
+            case "vehicle-recrewed":
+                var recrewedVehicle = fields.RequiredString(payload, "vehicle", path);
+                var recrewedAt = ReadLocation(payload, "at", path, fields, diagnostics);
+                var recrewedUnit = fields.RequiredString(payload, "unit", path);
+                return recrewedVehicle is null || recrewedAt is null || recrewedUnit is null
+                    ? Missing(diagnostics, "A re-crewing names the vehicle, its Location, and the unit that enters it.", path)
+                    : new VehicleRecrewed(recrewedVehicle, recrewedAt, recrewedUnit)
+                    {
+                        Temporary = fields.OptionalBoolean(payload, "temporary", path),
+                        Returned = fields.OptionalString(payload, "returned", path),
+                        Mount = fields.OptionalString(payload, "mount", path),
+                        Manning = fields.OptionalString(payload, "manning", path),
+                        Captured = fields.OptionalBoolean(payload, "captured", path),
+                    };
+            case "vehicle-captured":
+                var capturedVehicle = fields.RequiredString(payload, "vehicle", path);
+                var capturedAt = ReadLocation(payload, "at", path, fields, diagnostics);
+                var captorSide = fields.RequiredString(payload, "side", path);
+                var captureCause = fields.RequiredString(payload, "cause", path);
+                return capturedVehicle is null || capturedAt is null || captorSide is null || captureCause is null
+                    ? Missing(diagnostics, "A capture names the vehicle, its Location, the captor's side, and the cause.", path)
+                    : new VehicleCaptured(capturedVehicle, capturedAt, captorSide, captureCause)
+                    {
+                        Driver = fields.OptionalString(payload, "driver", path),
+                    };
+            case "vehicle-scrounged":
+                var scroungedVehicle = fields.RequiredString(payload, "vehicle", path);
+                var scroungedAt = ReadLocation(payload, "at", path, fields, diagnostics);
+                var scrounger = fields.RequiredString(payload, "unit", path);
+                var scroungeRoll = fields.RequiredString(payload, "roll", path);
+                var scroungeDr = fields.OptionalInteger(payload, "dr", path);
+                List<ScroungedWeapon>? scroungedWeapons = null;
+                if (payload.TryGetProperty("taken", out var takenList) && takenList.ValueKind == JsonValueKind.Array)
+                {
+                    scroungedWeapons = [];
+                    foreach (var item in takenList.EnumerateArray())
+                    {
+                        if (fields.RequiredString(item, "weapon", path) is not { } takenWeapon || fields.RequiredString(item, "mount", path) is not { } takenMount)
+                        {
+                            return Missing(diagnostics, "A scrounged SW names the SW and the mount it came from.", path);
+                        }
+
+                        scroungedWeapons.Add(new ScroungedWeapon(takenWeapon, takenMount));
+                    }
+                }
+
+                return scroungedVehicle is null || scroungedAt is null || scrounger is null || scroungeRoll is null || scroungeDr is null
+                    ? Missing(diagnostics, "A Scrounging names the vehicle, its Location, the unit, and the dr's roll and value.", path)
+                    : new VehicleScrounged(scroungedVehicle, scroungedAt, scrounger, scroungeRoll, scroungeDr.Value)
+                    {
+                        Selection = fields.OptionalString(payload, "selection", path),
+                        Taken = scroungedWeapons,
+                        Mounts = payload.TryGetProperty("mounts", out _) ? fields.StringList(payload, "mounts", path) : null,
                     };
             case "vehicle-check-rolled":
                 var checkedVehicle = fields.RequiredString(payload, "vehicle", path);
@@ -1062,8 +1160,9 @@ public static class GameEventReader
                 "passenger" => ContainmentRole.Passenger,
                 "rider" => ContainmentRole.Rider,
                 "in-fortification" => ContainmentRole.InFortification,
+                "crew" => ContainmentRole.Crew,
                 null => (ContainmentRole?)null,
-                var other => Invalid<ContainmentRole>(diagnostics, $"'{other}' is not passenger, rider, or in-fortification.", positionPath),
+                var other => Invalid<ContainmentRole>(diagnostics, $"'{other}' is not passenger, rider, crew, or in-fortification.", positionPath),
             };
             return role is null ? null : new ContainedPosition(container, role.Value);
         }

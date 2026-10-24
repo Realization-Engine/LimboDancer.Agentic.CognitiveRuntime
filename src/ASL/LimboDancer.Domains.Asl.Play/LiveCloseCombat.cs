@@ -207,7 +207,12 @@ public static class LiveCloseCombat
                 ScenarioA1ArmorLeaders.CloseCombatLeadership(LiveFire.ArmorLeadership(vehicle), byVehicle)),
             [.. units.Where(unit => state.Unit(unit.UnitId!) is { } found && !LiveFire.IsVehicle(found))], attackers, defenders, byVehicle, reaction,
             ScenarioA1CloseCombatFactBuilders.FireMarked(reaction, [.. attackers.Where(id => state.Unit(id) is { } unit && (Is(unit, Conditions.FirstFire) || Is(unit, Conditions.FinalFire)))]));
-        return (facts, null);
+
+        // A21.2 (pass 65, ruling R65.22): an attack on an Abandoned AFV planned since the pass carries its unmanned state; Rules reads it for an AFV only.
+        return (Is(vehicle, Conditions.Abandoned) && !byVehicle ? facts with
+        {
+            Unmanned = true
+        } : facts, null);
     }
 
     /// <summary>The rolls of a CC record with a vehicle, rebuilt from its roll ids and the recorded dice.</summary>
@@ -371,6 +376,10 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
         expected = expected with
         {
             Units = [.. expected.Units!.Select(unit => unit with { Inexperienced = inexperienced.GetValueOrDefault(unit.UnitId!) })],
+
+            // A21.2 (pass 65, ruling R65.22): the capture declaration and the unmanned fact are the record's; a record made before the pass has neither.
+            Capture = recorded.Capture,
+            Unmanned = recorded.Unmanned,
         };
         if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

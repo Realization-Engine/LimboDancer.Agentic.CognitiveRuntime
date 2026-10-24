@@ -90,6 +90,15 @@ public sealed record FireDefinition(
         get; init;
     }
 
+    /// <summary>
+    /// A vehicle's class (vocabulary 1.19.0, <c>asl:vehicle-class</c>; pass 65, ruling R65.3): tank, carrier, halftrack, truck, and so on; null for other
+    /// definitions.
+    /// </summary>
+    public string? VehicleClass
+    {
+        get; init;
+    }
+
     /// <summary>A vehicle's printed MP allotment (D1.1).</summary>
     public int? MovementPoints
     {
@@ -156,6 +165,12 @@ public sealed record FireDefinition(
         get; init;
     }
 
+    /// <summary>Whether a vehicle's BMG is Fixed-Mount (D1.81; trait <c>asl:fixed-bmg</c>): it cannot be scrounged (D10.51; pass 65, ruling R65.23).</summary>
+    public bool? FixedBmg
+    {
+        get; init;
+    }
+
     /// <summary>A vehicle's CMG FP (D1.8); null when it has none (ruling R11.11).</summary>
     public int? CoaxialMg
     {
@@ -199,6 +214,12 @@ public sealed record FireDefinition(
 
     /// <summary>Whether the SW's Breakdown Number is an X#: reaching it removes the SW (A.11).</summary>
     public bool? BreakdownRemoves
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a vehicle's CS# is printed red (D5.7; catalog 1.18.0, trait <c>asl:cs-red</c> on its wreck face): -1 to a kill DR for burning only.</summary>
+    public bool? CsRed
     {
         get; init;
     }
@@ -518,6 +539,14 @@ public sealed class ScenarioA1FireReference
     public int? AfvCrewMorale(string nationality) =>
         Definitions.Values.Where(item => item.IsMmc && item.Nationality == nationality && item.Class == "elite").Max(item => item.Morale);
 
+    /// <summary>
+    /// D5.1 (p. 203): an Inherent crew inside its vehicle checks at its nationality's best elite Infantry MMC's Morale Level in an AFV, and at its best
+    /// 1st Line one in an unarmored vehicle; null when the catalog has none.
+    /// </summary>
+    public int? InherentCrewMorale(string nationality, bool unarmored) => unarmored
+        ? Definitions.Values.Where(item => item.IsMmc && item.Nationality == nationality && item.Class == "1st-line").Max(item => item.Morale)
+        : AfvCrewMorale(nationality);
+
     public IReadOnlyDictionary<string, FireDefinition> Definitions
     {
         get;
@@ -690,6 +719,7 @@ public sealed class ScenarioA1FireReference
             WoundedRange = Value("wounded", "range"),
             WoundedMorale = Value("wounded", "morale"),
             MovementType = Text("front", "movement-type"),
+            VehicleClass = Text("front", "vehicle-class"),
             MovementPoints = Value("front", "movement-points"),
             Towing = Value("front", "towing"),
             PassengerCapacity = Value("front", "passenger-capacity"),
@@ -700,12 +730,14 @@ public sealed class ScenarioA1FireReference
             MaType = Text("front", "ma-type"),
             AntiAircraftMg = Value("front", "aamg"),
             BowMg = Value("front", "bmg"),
+            FixedBmg = Trait("front", "asl:fixed-bmg"),
             CoaxialMg = Value("front", "cmg"),
             Caliber = Value("front", "caliber"),
             GroundPressure = Text("front", "ground-pressure"),
             MechanicallyUnreliable = Trait("front", "asl:mechanically-unreliable"),
             LatwType = Text("front", "latw-type"),
             BreakdownRemoves = Trait("front", "asl:breakdown-removes"),
+            CsRed = Trait("wreck", "asl:cs-red"),
         };
     }
 }

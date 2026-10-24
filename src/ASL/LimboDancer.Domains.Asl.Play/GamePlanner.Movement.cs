@@ -225,6 +225,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, badTiming);
         }
 
+        // A4.11, A4.5, A4.12 (pass 65, ruling R65.15): a unit that boarded or unloaded this MPh moves on with four MF, no Double Time, and no leader bonus.
+        var conveyed = ConveyedThisPhase(existing);
+        if (ScenarioA1PassengerCalculator.ConveyedDoubleTimeBar(doubleTime, movers.Select(unit => (unit.Id, conveyed.Contains(unit.Id)))) is { } rodeBar)
+        {
+            return Refused(scope, label, expected, rodeBar);
+        }
+
         // A4.63 (pass 40): once a Dash is declared no SMOKE grenade or DC is placed with the MF of the road Location.
         if (current?.Dash is { } pendingDash && (Text(arguments, "placeDc", out _) || Text(arguments, "smoke", out _)))
         {
@@ -326,7 +333,7 @@ public sealed partial class GamePlanner
         var (noCost, halfMf) = ScenarioA1MovementCalculator.EntryCost(
             new EntryCostFacts(entry, movers.Any(mover => Encircled(state, mover)), pushed is not null, bypassing is not null, occupy, minimumMove, assault, berserk, current is not null, doubleTime,
                 [.. movers.Select(unit => new EntryMoverFacts(unit.MfSpent != 0 || unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx)))], overstack),
-            (index, doubleTimeMf, cx) => MfAllotment(state, movers[index], doubleTimeMf, cx));
+            (index, doubleTimeMf, cx) => MfAllotment(state, movers[index], doubleTimeMf, cx, allowance: ScenarioA1PassengerCalculator.ConveyedAllowance(conveyed.Contains(movers[index].Id))));
         if (noCost is not null)
         {
             return Refused(scope, label, expected, noCost);
@@ -371,10 +378,11 @@ public sealed partial class GamePlanner
         }
 
         MfLeftMoverFacts[] mfMovers = [.. movers.Select(unit => new MfLeftMoverFacts(unit.Id, unit.MfSpent == 0 && !unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx), unit.OffRoad,
-            LeaderBonus(state, unit, movers), (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0)))];
+            ScenarioA1PassengerCalculator.ConveyedLeaderBonus(LeaderBonus(state, unit, movers), conveyed.Contains(unit.Id)), (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0)))];
         // The Play streamlining plan, S3: the same check gives what the stack has left after the step, shown as a route is plotted.
         var (noMf, halfMfLeft) = ScenarioA1MovementCalculator.MfCheck(mfMovers, minimumMove, entry.AllMf, doubleTime, entry.RoadRate, pushed is not null, state.Nvr, assault,
-            halfMf + dashHalfMf, leaderIpcTo, (index, doubleTimeMf, cx, bonusMf, ipcBonus) => MfAllotment(state, movers[index], doubleTimeMf, cx, bonusMf, ipcBonus));
+            halfMf + dashHalfMf, leaderIpcTo, (index, doubleTimeMf, cx, bonusMf, ipcBonus) => MfAllotment(state, movers[index], doubleTimeMf, cx, bonusMf, ipcBonus,
+                ScenarioA1PassengerCalculator.ConveyedAllowance(conveyed.Contains(movers[index].Id))));
         if (noMf is not null)
         {
             return Refused(scope, label, expected, noMf);

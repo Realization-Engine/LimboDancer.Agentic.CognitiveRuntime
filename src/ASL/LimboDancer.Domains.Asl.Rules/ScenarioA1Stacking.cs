@@ -61,7 +61,8 @@ public static class ScenarioA1Stacking
     public static StackUnitKind KindOf(string? kind) => kind switch
     {
         "asl:squad" => StackUnitKind.Squad,
-        "asl:half-squad" or "asl:crew" => StackUnitKind.HalfSquadOrCrew,
+        "asl:half-squad" => StackUnitKind.HalfSquadOrCrew,
+        _ when ScenarioA1Definitions.IsCrew(kind) => StackUnitKind.HalfSquadOrCrew,
         "asl:smc" or "asl:leader" or "asl:hero" => StackUnitKind.Smc,
         "asl:vehicle" => StackUnitKind.Vehicle,
         _ => StackUnitKind.Other,

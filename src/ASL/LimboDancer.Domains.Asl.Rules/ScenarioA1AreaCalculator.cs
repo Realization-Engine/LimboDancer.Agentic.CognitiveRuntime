@@ -326,8 +326,10 @@ internal static class ScenarioA1AreaCalculator
 
                 // Pass 60: the Fire package's rolls of one Location's attack, when several are attacked.
                 // A9.74 (ruling R60.17): with the dr of each weapon those units hold.
+                // Pass 65 (ruling R65.7): with the rolls of the PRC the struck vehicles carry.
                 var hitRolls = levels is null ? rolls.Hit : Filtered(rolls.Hit, [.. units.Select(item => item.UnitId!), .. struck.Select(item => item.VehicleId!),
-                    .. units.SelectMany(item => item.HeldWeapons ?? []).Select(item => item.EquipmentId).OfType<string>()]);
+                    .. units.SelectMany(item => item.HeldWeapons ?? []).Select(item => item.EquipmentId).OfType<string>(),
+                    .. struck.SelectMany(item => item.Prc ?? []).Select(item => item.UnitId).OfType<string>()]);
                 if (shared is not null)
                 {
                     hitRolls = (hitRolls ?? new FireRolls(null, null, null, null)) with
@@ -468,6 +470,8 @@ internal static class ScenarioA1AreaCalculator
             CrewChecks = Keep(rolls.CrewChecks),
             UnlikelyKill = Keep(rolls.UnlikelyKill),
             WeaponDestruction = Keep(rolls.WeaponDestruction),
+            PrcSurvival = Keep(rolls.PrcSurvival),
+            VehicleSurvival = Keep(rolls.VehicleSurvival),
         };
     }
 
@@ -509,7 +513,9 @@ internal static class ScenarioA1AreaCalculator
         var final = dice[0] + dice[1] + (int)drm.Sum(item => item.Value);
         var killDr = reference.Fire.KillDr(column);
         var cell = reference.Fire.Result(final, column);
-        var result = Regex.IsMatch(cell, "^([1-9])?KIA$") ? final * 2 <= killDr ? OrdnanceKill.Burn : OrdnanceKill.Eliminated
+        // D5.7, C7.7 note A (pass 65, ruling R65.21): a red CS# burns on a Final DR one lower, for the burn alone.
+        var result = Regex.IsMatch(cell, "^([1-9])?KIA$")
+                ? final * 2 <= killDr || ScenarioA1CrewSurvivalRules.BurnsRed(armor.CsRed, final, lower => lower * 2 <= killDr) ? OrdnanceKill.Burn : OrdnanceKill.Eliminated
             : Regex.IsMatch(cell, "^K/([1-9])$") || final == killDr + 1 ? turret ? OrdnanceKill.Shock : OrdnanceKill.Immobilized
             : OrdnanceKill.None;
         var made = new OrdnanceAreaVehicle(vehicle.VehicleId!, armor.Id, turret ? "turret" : "hull", firepower, [.. dice], drm, final, killDr, result)
@@ -517,19 +523,58 @@ internal static class ScenarioA1AreaCalculator
             Critical = critical ? true : null,
         };
 
-        // D5.6: a Final DR at most the CS#, +1 if the crew was Stunned or under a "+1" counter, places a crew beneath the wreck.
-        if (result == OrdnanceKill.Eliminated && armor.CrewSurvival is { } cs && !armor.CrewSurvivalPassengersOnly)
+        // Pass 65 (ruling R65.21): the crew's Shock and the vehicle's Abandonment count, and the TC and the PRC's Survival are rolled, only for a hit whose
+        // record carries the vehicle's PRC, as every shot planned since the pass does; an older record resolves as it did.
+        var fact = vehicle.Prc is not null;
+        var shocked = fact && vehicle.Shocked == true;
+        var abandoned = fact && vehicle.Abandoned == true;
+
+        // D5.5 (p. 204), C1.55: a hull hit that immobilizes the AFV makes its crew, neither Stunned nor Shocked and still inside, take a TC; failure
+        // Abandons it.
+        if (fact && result == OrdnanceKill.Immobilized && vehicle.Immobilized != true && vehicle.Stunned != true && !shocked && !abandoned)
+        {
+            if (shot.Rolls!.AreaCrewCheck?.GetValueOrDefault(vehicle.VehicleId!) is not { } check)
+            {
+                return (null, "areaCrewCheck:" + vehicle.VehicleId);
+            }
+
+            var tc = ScenarioA1CrewSurvivalRules.TaskCheck(check, vehicle.CrewMorale ?? reference.Fire.AfvCrewMorale(armor.Nationality)!.Value, vehicle.StunRecovery == true,
+                vehicle.CrewMorale);
+            made = made with
+            {
+                CrewCheck = tc,
+                Abandoned = tc.Passed ? null : true,
+            };
+        }
+
+        // D5.6: a Final DR at most the CS#, +1 if the crew was Stunned, Shocked, or under a "+1" counter, places a crew beneath the wreck; an
+        // Abandoned AFV has no crew to survive.
+        if (result == OrdnanceKill.Eliminated && ScenarioA1CrewSurvivalRules.CrewSurvival(armor, abandoned) is { } cs)
         {
             if (shot.Rolls!.AreaSurvival?.GetValueOrDefault(vehicle.VehicleId!) is not { } survival)
             {
                 return (null, "areaSurvival:" + vehicle.VehicleId);
             }
 
-            var plusOne = vehicle.Stunned == true || vehicle.StunRecovery == true ? 1 : 0;
-            var survivalDr = survival[0] + survival[1] + plusOne;
             made = made with
             {
-                CrewSurvival = new OrdnanceCrewSurvival([.. survival], plusOne, survivalDr, cs, survivalDr <= cs)
+                CrewSurvival = ScenarioA1CrewSurvivalRules.Survival(cs, survival,
+                    ScenarioA1CrewSurvivalRules.SurvivalDrm(false, vehicle.Stunned == true, shocked, vehicle.StunRecovery == true, vehicle.Prc is not null))
+            };
+        }
+
+        // D9.2, D6.9 (p. 209, 207): an attack that destroys but does not burn the AFV rolls each PRC's Survival instead of attacking it.
+        if (result == OrdnanceKill.Eliminated)
+        {
+            var (prcSurvival, missing) = ScenarioA1FireCalculator.PrcSurvivals(vehicle.Prc, armor.CrewSurvival, shot.Rolls!.Prc?.PrcSurvival);
+            if (missing is not null)
+            {
+                return (null, "prc:" + missing);
+            }
+
+            made = made with
+            {
+                PrcSurvival = prcSurvival
             };
         }
 

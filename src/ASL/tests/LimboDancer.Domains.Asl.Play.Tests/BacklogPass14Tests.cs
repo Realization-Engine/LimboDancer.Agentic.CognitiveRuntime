@@ -524,16 +524,18 @@ public sealed class BacklogPass14Tests : IDisposable
     }
 
     [Fact]
-    public async Task MandatoryCcLapsesWhenThePackageRefusesEveryAttack()
+    public async Task MandatoryCcHoldsForABerserkCrewThatMansNoGun()
     {
-        // A15.43 (ruling R14.14): a berserk crew's attack is refused (a crew in CC is not reviewed), so the CCPh may end. (Backlog pass 15 decides the NKVD
-        // Field Promotion this test used before.)
+        // A15.43 (ruling R14.14): a berserk unit with a Known enemy in its Location attacks before the CCPh ends. Until pass 65 a crew's attack was
+        // refused (a crew in CC was not reviewed), so the CCPh could end; a crew that mans no Gun now fights in CC as an MMC (A1.123; ruling R65.29).
         await Setup("russian", Unit("rn", "asl:crew", "defender-crew", "bd01:B1:0", "russian", "asl:berserk"), Unit("g1", "asl:squad", "attacker-squad", "bd01:B1:0", "german"));
         await Advance(7);
         Assert.Equal("ccph", Current.Phase);
-        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        var result = await Do(GameActions.AdvancePhase, NoRoll(), new
         {
-        }));
+        });
+        Assert.NotEqual(PlayOutcome.Committed, result.Outcome);
+        Assert.Contains(result.Reasons, reason => reason.StartsWith("play.cc-required:", StringComparison.Ordinal));
     }
 
     private sealed class NullAudit : IAuditSink

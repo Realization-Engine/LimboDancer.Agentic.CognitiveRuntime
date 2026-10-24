@@ -33,6 +33,12 @@ public sealed record OrdnanceVehicleTargetStateFacts(
     {
         get; init;
     }
+
+    /// <summary>Whether it is a non-burning wreck, attacked as its vehicle (D10.1; pass 65, ruling R65.23): it has no crew.</summary>
+    public bool Wreck
+    {
+        get; init;
+    }
 }
 
 /// <summary>

@@ -41,6 +41,12 @@ public sealed record VehicleTargetFacts(string Id, string? Definition, string At
     {
         get; init;
     }
+
+    /// <summary>Whether it is a non-burning wreck, attacked as its vehicle (D10.1; pass 65, ruling R65.23): it has no crew.</summary>
+    public bool Wreck
+    {
+        get; init;
+    }
 }
 
 /// <summary>A firing vehicle as the state has it (D2.42, A7.82, D3.7, C2.24): its id, definition, Location text, crew exposure, Motion counter, whether it moves unstopped as the moving vehicle, its conditions, its fire counters, and whether its last shot this phase kept its Multiple ROF.</summary>
@@ -449,6 +455,9 @@ public enum UnitCondition
     StunRecovery,
     BmgDisabled,
     CmgDisabled,
+
+    /// <summary>A crew or PRC beneath its vehicle after Survival or a failed Immobilization TC, under Hazardous Movement for the phase (D5.5, D5.6; pass 65).</summary>
+    HazardousMovement,
 }
 
 /// <summary>A weapon of a vehicle that fired this Player Turn, as the state has it (D3.5, D3.51; pass 50): the weapon, its fire phase, the hexspines its CA changed, and whether woods, a building, or rubble doubled that.</summary>

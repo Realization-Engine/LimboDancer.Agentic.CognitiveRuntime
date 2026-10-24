@@ -119,6 +119,12 @@ public static class ScenarioA1SequenceProjection
         _ => [],
     };
 
+    /// <summary>
+    /// The markers every ending phase removes, beside <see cref="ClearedMarkers"/>: the Hazardous Movement of a crew or PRC placed beneath its vehicle by
+    /// Survival or a failed Immobilization TC, which holds "vs all subsequent attacks during that phase" (D5.5, D5.6, p. 204; pass 65, ruling R65.21).
+    /// </summary>
+    public static IReadOnlyList<UnitCondition> PhaseMarkers { get; } = [UnitCondition.HazardousMovement];
+
     /// <summary>A4.51 (ruling R5.3): a side's CX counters leave at the start of its next MPh, and those units may not Double Time in it.</summary>
     public static bool CxRests(string nextPhase, bool active, bool ofPhasingSide, bool cx) => nextPhase == "mph" && active && ofPhasingSide && cx;
 

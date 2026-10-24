@@ -550,6 +550,7 @@ public static class ScenarioCards
             "asl:squad" => $"{strength} {definition.Class} squad",
             "asl:half-squad" => $"{strength} {definition.Class} half-squad",
             "asl:crew" => $"{strength} crew",
+            "asl:vehicle-crew" => $"{strength} vehicle crew",
             "asl:leader" when Value("front", "asl:leadership") is { } modifier =>
                 $"{Value("front", "asl:morale")}{(modifier > 0 ? "+" : "-")}{Math.Abs(modifier)} {(definition.Id.Contains("commissar", StringComparison.Ordinal) ? "Commissar" : "leader")}",
             "asl:hero" => "hero",

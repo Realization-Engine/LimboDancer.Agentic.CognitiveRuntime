@@ -379,7 +379,7 @@ public sealed partial class UnitNames
     /// </summary>
     private static string? GroupOf(string kind, bool unit) => kind switch
     {
-        "asl:squad" or "asl:half-squad" or "asl:crew" => "mmc",
+        "asl:squad" or "asl:half-squad" or "asl:crew" or "asl:vehicle-crew" => "mmc",
         "asl:leader" or "asl:hero" => "smc",
         "asl:gun" => "gun",
         _ => unit ? kind : null,

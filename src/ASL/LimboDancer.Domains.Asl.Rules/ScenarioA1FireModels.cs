@@ -167,6 +167,16 @@ public sealed record FireAttack(
     }
 
     /// <summary>
+    /// The target units that man a Gun (C11; pass 65, ruling R65.28), the planner's read of the state, recorded with the attack: such a crew keeps ruling
+    /// R8.3's reading, and any other crew is an ordinary Infantry target (A1.123). Null is none, and a record made before the pass carries none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? GunCrews
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Whether a Final KIA makes the weapons its victims held check for Random SW/Gun Destruction (A9.74, C8.42, C11.6, pp. 65, 178, 182; pass 60,
     /// rulings R60.3, R60.17), and a DC destroys the Gun its target Location's units man. Set on every attack planned from the pass on and taken from
     /// the record at replay; null on every older record, whose KIA destroys nothing.
@@ -366,6 +376,17 @@ public sealed record FireAttack(
         get; init;
     }
 
+    /// <summary>
+    /// The units loading onto or unloading from a vehicle with the MP expenditure the Defensive First Fire answers (D6.4, D6.5, D5.43; pass 65, ruling
+    /// R65.14): Infantry targets with FFNAM always, and FFMO only when unloading from an unarmored conveyance. Null on every attack made before the
+    /// pass and on any other attack, which resolves as before.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireEmbarking? Embarking
+    {
+        get; init;
+    }
+
     /// <summary>Spraying Fire at this Location and one other sharing a hexside, on one Original DR (A9.5; backlog pass 12, ruling R12.6): Area Fire; null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? SprayingFire
@@ -478,6 +499,27 @@ public sealed record FireOverrun(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The Passengers who add their FP to the OVR, named at its declaration (D7.11, D7.16, D6.5; pass 65, ruling R65.13), and taken from the record at
+    /// replay: results against them after the declaration do not change the OVR's FP. Null on every OVR recorded before the pass, which resolves as it did.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireOverrunPassenger>? Passengers
+    {
+        get; init;
+    }
+}
+
+/// <summary>A Passenger adding its FP to an OVR (D7.11; pass 65, ruling R65.13): the unit and its definition; a leader adds his leadership (D7.16).</summary>
+public sealed record FireOverrunPassenger(string? UnitId, string? DefinitionId)
+{
+    /// <summary>Whether the unit is a wounded SMC (A17.2); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Wounded
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -520,7 +562,95 @@ public sealed record FireVehicle(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The vehicle's Passengers and Riders (D6.1, D6.2; pass 65, ruling R65.5), empty when nobody is aboard. Written by every attack planned since the
+    /// pass and taken from the record at replay; null on every older record, whose attack reaches no PRC (and an AFV in a positive TEM is refused,
+    /// ruling R25.6) as before.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FirePrc>? Prc
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the vehicle is Shocked or under an Unconfirmed Kill (C7.42; pass 65, ruling R65.21): +1 to its Crew Survival DR and no Immobilization TC
+    /// (D5.5, D5.6). Written with <see cref="Prc"/> by every attack planned since the pass and taken from the record at replay; null is false. One fact
+    /// for both on purpose (the boundary review): C7.42 (p. 177): "An AFV under an UK counter is still shocked", and no rule read here tells the two apart;
+    /// a rule that must (C7.42's flip back on a second Shock) reads the vehicle's own condition.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Shocked
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the vehicle is Abandoned (D5.41; pass 65, ruling R65.21): it has no crew to take a TC or to survive it (D5.5, D5.6). Written with
+    /// <see cref="Prc"/> and taken from the record at replay; null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Abandoned
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the vehicle is a non-burning wreck attacked as its vehicle (D10.1; pass 65, ruling R65.23): only a burning wreck result does anything. Only
+    /// an attack planned since the pass lists a wreck, and its record is read with them; null, false, is every older record.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Wreck
+    {
+        get; init;
+    }
 }
+
+/// <summary>
+/// A Passenger or Rider of a vehicle (D6.1, D6.2; pass 65, ruling R65.5): the unit, its definition, its role, and the states its Vulnerability (D6.61,
+/// D6.62) and its checks read. Broken and pinned are written only when true (the boundary review); null is false.
+/// </summary>
+public sealed record FirePrc(string? UnitId, string? DefinitionId, string? Role, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? Broken,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? Pinned)
+{
+    public const string Passenger = "passenger";
+    public const string Rider = "rider";
+
+    /// <summary>Whether a SMC aboard is wounded (A17.2); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Wounded
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the unit is Fanatic (A10.8); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Fanatic
+    {
+        get; init;
+    }
+
+    /// <summary>The unit's ELR (A19.1): its OB group's, or its side's.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Elr
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// A Collateral Attack on a vehicle's Vulnerable PRC (D.8, D.8A, D.8B, p. 192; pass 65, ruling R65.7): <c>general</c> or <c>specific</c>, its DRM (TEM or
+/// the CE DRM, never both), its Final DR and IFT result, and what it did to each unit, as an attack's target units are recorded.
+/// </summary>
+public sealed record FirePrcAttack(string Kind, IReadOnlyList<FireModifier> Drm, int FinalDr, string Result, IReadOnlyList<FireUnitEffect> Effects)
+{
+    public const string General = "general";
+    public const string Specific = "specific";
+}
+
+/// <summary>A Passenger's or Rider's Survival DR (D6.9, D5.6, pp. 207, 204; pass 65, ruling R65.9): +1 if broken, against the CS# or cs#.</summary>
+public sealed record PrcSurvival(string UnitId, IReadOnlyList<int> Dice, int Drm, int FinalDr, int CrewSurvival, bool Survived);
 
 /// <summary>
 /// A vehicle's MA MG attack (D1.83, D3.5): the vehicle, its definition, and the facts that modify its FP and DR: Motion (D2.42), a
@@ -574,6 +704,16 @@ public sealed record FireVehicleFire(
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? ArmorLeadership
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The captured-weapon penalty of a Temporary crew, as a multiple (A21.22, A21.11, A21.12, A21.13, p. 88; pass 65, ruling R65.22): the B# two lower and
+    /// the Multiple ROF one lower for each. Null is none, which is every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? CapturedPenalty
     {
         get; init;
     }
@@ -690,6 +830,14 @@ public sealed record FireCanister(string? GunId, int? Firepower)
 
 /// <summary>How a moving target stack moved in the MPh: Assault Movement avoids FFNAM but not FFMO (A4.61).</summary>
 public sealed record FireMovement(bool? AssaultMovement);
+
+/// <summary>
+/// The (un)loaders a Defensive First Fire attacks with the MP expenditure of their vehicle's load or unload (D6.4, D6.5, D5.43; pass 65, ruling R65.14):
+/// their ids, whether they unload (rather than board), and whether the vehicle is an unarmored conveyance. The two flags are written only when true (the
+/// boundary review); null is false.
+/// </summary>
+public sealed record FireEmbarking(IReadOnlyList<string>? Units, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? Unloading,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? UnarmoredConveyance);
 
 /// <summary>A MG a firer uses in the attack (A7.35, A9.1), with its reviewed catalog definition.</summary>
 public sealed record FireWeapon(string? EquipmentId, string? DefinitionId, bool? Malfunctioned, bool? FiredThisPlayerTurn, bool? FirstFireMarked)
@@ -906,6 +1054,45 @@ public sealed record FireFirer(
     /// <summary>Whether this firer makes the attack's MOL Check (A22.611; ruling R15.4): at most one per attack; null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Mol
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The vehicle this Passenger fires from, as Mounted Fire (D6.1, D6.63; pass 65, ruling R65.10). Written by the planner, taken from the record at
+    /// replay; null for a firer on foot and on every attack recorded before the pass, when no Passenger fired.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireMounted? Mounted
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// A Passenger's vehicle as its Mounted Fire reads it (D6.1, D6.63; pass 65, ruling R65.10): the vehicle and its definition, whether it moved this
+/// phase (entered a new hex or hexside, C.8), and whether it is in Motion. Null facts are false.
+/// </summary>
+public sealed record FireMounted(string? VehicleId, string? DefinitionId)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Moved
+    {
+        get; init;
+    }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Motion
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the firer rides as a Rider (D6.22; pass 65, ruling R65.17): its FP halved, and quartered when the AFV has moved or is in Motion. Null on
+    /// every attack recorded before the pass, when no Rider existed, and for a Passenger.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Rider
     {
         get; init;
     }
@@ -1161,6 +1348,20 @@ public sealed record FireRolls(
     /// <summary>The Random SW/Gun Destruction dr of each weapon a unit eliminated by a Final KIA held (A9.74; pass 60, ruling R60.17).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyDictionary<string, int>? WeaponDestruction
+    {
+        get; init;
+    }
+
+    /// <summary>The Survival DR of each Passenger and Rider of a vehicle the attack eliminated (D6.9; pass 65, ruling R65.9), by unit id.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, IReadOnlyList<int>>? PrcSurvival
+    {
+        get; init;
+    }
+
+    /// <summary>The Crew Survival DR of each armed vehicle the Vehicle line eliminated (D5.6, D9.2; pass 65, ruling R65.21), by vehicle id.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, IReadOnlyList<int>>? VehicleSurvival
     {
         get; init;
     }
@@ -1538,6 +1739,81 @@ public sealed record FireVehicleEffect(
         get; init;
     }
 
+    /// <summary>
+    /// The vehicle's Random Selection dr, made when the Location held more unarmored vehicles than the column's highest KIA# (A7.308, p. 56; pass 65,
+    /// ruling R65.26); null when none was made.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? RandomSelectionDr
+    {
+        get; init;
+    }
+
+    /// <summary>Whether that Random Selection left the vehicle unaffected by the DR (A7.308; pass 65, ruling R65.26); null when it did not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? NotSelected
+    {
+        get; init;
+    }
+
+    /// <summary>The Collateral Attacks on the vehicle's Vulnerable PRC (D.8; pass 65, ruling R65.7); null when there were none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FirePrcAttack>? PrcAttacks
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The broken PRC the attack puts under DM (D6.66, A10.62; pass 65): a broken Passenger of an armored halftrack, BU, when the attack could have
+    /// inflicted a NMC on a hypothetical CE target, and a broken Vulnerable PRC attacked by FP that could inflict one. Null when none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? PrcDesperation
+    {
+        get; init;
+    }
+
+    /// <summary>The Survival DR of each PRC of the vehicle the attack eliminated without burning it (D6.9, A7.308; pass 65, ruling R65.9); null when none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<PrcSurvival>? PrcSurvival
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The crew's Immobilization TC after the Vehicle line immobilized the vehicle (D5.5, A7.308; pass 65, ruling R65.21); null when none was taken, which
+    /// is every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireCheck? TaskCheck
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the crew Abandons the vehicle after failing that TC (D5.5; pass 65); null when it does not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Abandoned
+    {
+        get; init;
+    }
+
+    /// <summary>The Crew Survival DR of an armed vehicle the Vehicle line eliminated without burning it (D5.6, D9.2; pass 65, ruling R65.21); null when none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceCrewSurvival? CrewSurvival
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Final DR of the attack on an Unprotected crew, an OT AFV's under Air Bursts (D5.311; pass 65, ruling R65.26), whose check and result are
+    /// <see cref="CrewCheck"/> and <see cref="CrewResult"/>; null when none was made, which is every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? UnprotectedCrewFinalDr
+    {
+        get; init;
+    }
+
     public const string None = "none";
     public const string Immobilized = "immobilized";
     public const string Eliminated = "eliminated";
@@ -1546,4 +1822,7 @@ public sealed record FireVehicleEffect(
     public const string Recalled = "recalled";
     public const string Pinned = "pinned";
     public const string NotVulnerable = "not-vulnerable";
+
+    /// <summary>An Unprotected crew broken (D5.311; pass 65, rulings R65.26, R65.31): it stays inside until it routs beneath its vehicle in the RtPh, which Abandons it.</summary>
+    public const string Broken = "broken";
 }

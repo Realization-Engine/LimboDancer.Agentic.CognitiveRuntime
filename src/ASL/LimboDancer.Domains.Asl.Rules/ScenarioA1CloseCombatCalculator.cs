@@ -153,7 +153,7 @@ public static class ScenarioA1CloseCombatCalculator
     private static bool GoodOrder(CloseCombatUnit unit) => unit.Broken != true && unit.Berserk != true && unit.Captured != true;
 
     private static bool Inexperienced(CloseCombatUnit unit, ScenarioA1CloseCombatReference reference) =>
-        reference.Definitions[unit.DefinitionId!] is { IsMmc: true } definition
+        reference.Definitions[unit.DefinitionId!] is { } definition && Mmc(definition)
         && (definition.Class == "conscript" || unit.Unarmed == true || (definition.Class == "green" && unit.Inexperienced == true));
 
     /// <summary>A leader's modifier, one worse when wounded (A17.3).</summary>
@@ -254,6 +254,9 @@ public static class ScenarioA1CloseCombatCalculator
         return missing;
     }
 
+    /// <summary>Whether a definition is an MMC in CC: a squad, a HS, or a crew (A1.123, p. 44; pass 65, ruling R65.29).</summary>
+    private static bool Mmc(FireDefinition definition) => definition.IsMmc || ScenarioA1Definitions.IsCrew(definition.Kind);
+
     /// <summary>The units' own scope: Infantry of the catalog, two sides, none concealed or captured, and within stacking limits.</summary>
     private static List<string> UnitsOutside(IReadOnlyList<CloseCombatUnit> units, string location, ScenarioA1CloseCombatReference reference)
     {
@@ -263,8 +266,9 @@ public static class ScenarioA1CloseCombatCalculator
             outside.Add("asl.a1.cc.unit-listed-twice");
         }
 
+        // A1.123 (p. 44; pass 65, ruling R65.29): a crew that mans no Gun fights in CC as an MMC; a Gun's crew stays outside (ruling R24.3).
         if (units.Any(unit => reference.Definitions.GetValueOrDefault(unit.DefinitionId ?? string.Empty) is not { } definition
-            || !(definition.IsMmc || definition.IsLeader || definition.IsHero)))
+            || !(definition.IsMmc || definition.IsLeader || definition.IsHero || (ScenarioA1Definitions.IsCrew(definition.Kind) && unit.Manning != true))))
         {
             outside.Add("asl.a1.cc.unit-outside");
             return outside;
@@ -333,7 +337,7 @@ public static class ScenarioA1CloseCombatCalculator
 
         // A11.14: a SMC stacks with one MMC of its own side, declared before either side designates its attacks.
         if (stacked.Any(unit => (!reference.Definitions[unit.DefinitionId!].IsLeader && !reference.Definitions[unit.DefinitionId!].IsHero)
-            || !byId.TryGetValue(unit.StackedWith!, out var mmc) || !reference.Definitions[mmc.DefinitionId!].IsMmc || mmc.Side != unit.Side))
+            || !byId.TryGetValue(unit.StackedWith!, out var mmc) || !Mmc(reference.Definitions[mmc.DefinitionId!]) || mmc.Side != unit.Side))
         {
             outside.Add("asl.a1.cc.stacking-outside");
         }
@@ -376,8 +380,8 @@ public static class ScenarioA1CloseCombatCalculator
             attacked.AddRange(defenders);
 
             // A11.14: a SMC combines with MMC only by attacking with the MMC it is stacked with; a SMC that attacks alone defends alone.
-            if (attackers.Any(id => byId[id] is { StackedWith: null } smc && !reference.Definitions[smc.DefinitionId!].IsMmc)
-                && attackers.Any(id => reference.Definitions[byId[id].DefinitionId!].IsMmc))
+            if (attackers.Any(id => byId[id] is { StackedWith: null } smc && !Mmc(reference.Definitions[smc.DefinitionId!]))
+                && attackers.Any(id => Mmc(reference.Definitions[byId[id].DefinitionId!])))
             {
                 outside.Add($"asl.a1.cc.stacking-outside:{index}");
             }
@@ -501,7 +505,7 @@ public static class ScenarioA1CloseCombatCalculator
         foreach (var unit in facts.Units!)
         {
             var definition = reference.Definitions[unit.DefinitionId!];
-            if (definition.Morale is null || (definition.IsMmc && definition.Firepower is null) || (definition.IsLeader && definition.Leadership is null))
+            if (definition.Morale is null || (Mmc(definition) && definition.Firepower is null) || (definition.IsLeader && definition.Leadership is null))
             {
                 undecided.Add("asl.a1.cc.definition-incomplete:" + definition.Id);
             }
@@ -517,7 +521,7 @@ public static class ScenarioA1CloseCombatCalculator
         // highest BPV, so each MMC of an attack mixing definitions needs its BPV.
         foreach (var (attack, index) in facts.Attacks!.Select((item, index) => (item, index)))
         {
-            var mmcs = attack.Attackers!.Select(id => byId[id]).Where(unit => reference.Definitions[unit.DefinitionId!].IsMmc).ToArray();
+            var mmcs = attack.Attackers!.Select(id => byId[id]).Where(unit => Mmc(reference.Definitions[unit.DefinitionId!])).ToArray();
             if (mmcs.Length == 0)
             {
                 continue;
@@ -659,7 +663,7 @@ public static class ScenarioA1CloseCombatCalculator
                 usedRolls.Add("attack:" + Key(index));
                 dice[index] = drawn!;
                 // A25.71 (backlog pass 15, ruling R15.13): the Finns create no leader.
-                var mmcs = ActiveAttackers(index).Select(id => units[id]).Where(unit => unit.Definition.IsMmc).ToArray();
+                var mmcs = ActiveAttackers(index).Select(id => units[id]).Where(unit => Mmc(unit.Definition)).ToArray();
                 if (drawn!.Sum() == 2 && mmcs.Length > 0 && ScenarioA1FieldPromotion.Applicable(mmcs[0].Definition.Nationality))
                 {
                     if (rolls.LeaderCreation?.TryGetValue(Key(index), out var dr) != true)
@@ -1160,7 +1164,7 @@ public static class ScenarioA1CloseCombatCalculator
                     .Select(item => units[item.UnitId].Captured ? units[item.UnitId].PrisonerSize : units[item.UnitId].Size).OrderByDescending(size => size).ToList();
                 foreach (var size in taken)
                 {
-                    var rearmed = attack.Attackers.Select(id => units[id]).Where(unit => unit.Facts.Unarmed == true && unit.Printed.IsMmc && unit.Present && unit.RearmedAs is null
+                    var rearmed = attack.Attackers.Select(id => units[id]).Where(unit => unit.Facts.Unarmed == true && Mmc(unit.Printed) && unit.Present && unit.RearmedAs is null
                         && unit.Size <= size).OrderByDescending(unit => unit.Size).FirstOrDefault();
                     rearmed?.Rearm(ConscriptOf(reference, rearmed.Definition)!);
                 }
@@ -1219,7 +1223,8 @@ public static class ScenarioA1CloseCombatCalculator
                 return true;
             }
 
-            if (unit.Definition.Kind == "asl:half-squad")
+            // A7.302: a HS or a crew is eliminated (a crew in CC since pass 65, ruling R65.29).
+            if (unit.Definition.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Definition.Kind))
             {
                 unit.Eliminate("eliminated-casualty-reduction");
                 return true;
@@ -1256,7 +1261,7 @@ public static class ScenarioA1CloseCombatCalculator
         public FireDefinition Printed { get; } = definition;
 
         /// <summary>A SMC's and an Unarmed unit's CC FP is one (A11.14, A20.5); an MMC's is its printed FP, broken or not (A11.16).</summary>
-        public int Firepower => Facts.Unarmed == true ? 1 : Printed.IsMmc ? Printed.Firepower!.Value : 1;
+        public int Firepower => Facts.Unarmed == true ? 1 : Mmc(Printed) ? Printed.Firepower!.Value : 1;
 
         public bool IsHeroType => Definition.IsHero || (Definition.IsLeader && Facts.Heroic == true);
 
@@ -1403,7 +1408,7 @@ public static class ScenarioA1CloseCombatCalculator
             ConcealmentLost = revealed && !Eliminated ? true : null,
             InfiltratedTo = !Eliminated ? InfiltratedTo : null,
             Escaped = Escaping && !Eliminated ? true : null,
-            Armed = Escaping && escapeSucceeded && !Eliminated && !Printed.IsMmc && Facts.Unarmed == true ? true : null,
+            Armed = Escaping && escapeSucceeded && !Eliminated && !Mmc(Printed) && Facts.Unarmed == true ? true : null,
             RearmedAs = !Eliminated ? RearmedAs : null,
         };
     }

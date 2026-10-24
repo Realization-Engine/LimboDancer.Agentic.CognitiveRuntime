@@ -248,6 +248,12 @@ public static class GameEventWriter
                     writer.WriteNumber("mf", mf);
                 }
 
+                // D5.5, D5.6, D6.9 (pass 65): written only by a placement beneath a vehicle since the pass.
+                if (moved.Ended)
+                {
+                    writer.WriteBoolean("ended", true);
+                }
+
                 break;
             case EquipmentTransferred transferred:
                 writer.WriteString("id", transferred.Id);
@@ -666,12 +672,119 @@ public static class GameEventWriter
                     writer.WriteNumber("unitMf", vehicle.UnitMf);
                 }
 
+                // D6.5 (pass 65, ruling R65.15): written only by an unload since the pass.
+                if (vehicle.Interim)
+                {
+                    writer.WriteBoolean("interim", true);
+                }
+
+                // D6.2 (pass 65, ruling R65.16): written only by a load of Riders since the pass.
+                if (vehicle.Riders)
+                {
+                    writer.WriteBoolean("riders", true);
+                }
+
                 if (vehicle.Units is { } aboard)
                 {
                     writer.WriteStartArray("units");
                     foreach (var unit in aboard)
                     {
                         writer.WriteStringValue(unit);
+                    }
+
+                    writer.WriteEndArray();
+                }
+
+                break;
+            case RiderBailedOut bailed:
+                writer.WriteString("unit", bailed.Unit);
+                writer.WriteString("vehicle", bailed.Vehicle);
+                writer.WriteString("at", bailed.At.ToString());
+                writer.WriteString("cause", bailed.Cause);
+                writer.WriteString("roll", bailed.Roll);
+                writer.WriteNumber("morale", bailed.Morale);
+                writer.WriteString("result", bailed.Result);
+                if (bailed.Weapons is { } carried)
+                {
+                    writer.WriteStartArray("weapons");
+                    foreach (var weapon in carried)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("weapon", weapon.Weapon);
+                        if (weapon.Roll is { } weaponRoll)
+                        {
+                            writer.WriteString("roll", weaponRoll);
+                        }
+
+                        writer.WriteString("fate", weapon.Fate);
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndArray();
+                }
+
+                break;
+            case VehicleAbandoned abandoned:
+                writer.WriteString("vehicle", abandoned.Vehicle);
+                writer.WriteString("at", abandoned.At.ToString());
+                writer.WriteString("crew", abandoned.Crew);
+                WriteOptional(writer, "destroyed", abandoned.Destroyed);
+                WriteOptional(writer, "removed", abandoned.Removed);
+                WriteOptional(writer, "mount", abandoned.Mount);
+                WriteOptional(writer, "fireCounter", abandoned.FireCounter);
+                break;
+            case VehicleRecrewed recrewed:
+                writer.WriteString("vehicle", recrewed.Vehicle);
+                writer.WriteString("at", recrewed.At.ToString());
+                writer.WriteString("unit", recrewed.Unit);
+                if (recrewed.Temporary)
+                {
+                    writer.WriteBoolean("temporary", true);
+                }
+
+                WriteOptional(writer, "returned", recrewed.Returned);
+                WriteOptional(writer, "mount", recrewed.Mount);
+                WriteOptional(writer, "manning", recrewed.Manning);
+                if (recrewed.Captured)
+                {
+                    writer.WriteBoolean("captured", true);
+                }
+
+                break;
+            case VehicleCaptured captured:
+                writer.WriteString("vehicle", captured.Vehicle);
+                writer.WriteString("at", captured.At.ToString());
+                writer.WriteString("side", captured.Side);
+                writer.WriteString("cause", captured.Cause);
+                WriteOptional(writer, "driver", captured.Driver);
+                break;
+            case VehicleScrounged scrounged:
+                writer.WriteString("vehicle", scrounged.Vehicle);
+                writer.WriteString("at", scrounged.At.ToString());
+                writer.WriteString("unit", scrounged.Unit);
+                writer.WriteString("roll", scrounged.Roll);
+                writer.WriteNumber("dr", scrounged.Dr);
+                WriteOptional(writer, "selection", scrounged.Selection);
+                if (scrounged.Taken is { } taken)
+                {
+                    writer.WriteStartArray("taken");
+                    foreach (var weapon in taken)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("weapon", weapon.Weapon);
+                        writer.WriteString("mount", weapon.Mount);
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndArray();
+                }
+
+                if (scrounged.Mounts is { } mounts)
+                {
+                    writer.WriteStartArray("mounts");
+                    foreach (var mount in mounts)
+                    {
+                        writer.WriteStringValue(mount);
                     }
 
                     writer.WriteEndArray();
@@ -1097,6 +1210,7 @@ public static class GameEventWriter
                 {
                     ContainmentRole.Passenger => "passenger",
                     ContainmentRole.Rider => "rider",
+                    ContainmentRole.Crew => "crew",
                     _ => "in-fortification",
                 });
                 break;
@@ -1114,6 +1228,15 @@ public static class GameEventWriter
         }
 
         writer.WriteEndObject();
+    }
+
+    /// <summary>A string property written only when it has a value, so a record without it reads as one made before it existed.</summary>
+    private static void WriteOptional(Utf8JsonWriter writer, string name, string? value)
+    {
+        if (value is not null)
+        {
+            writer.WriteString(name, value);
+        }
     }
 
     private static void WriteHolding(Utf8JsonWriter writer, Holding? holding)

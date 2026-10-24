@@ -109,6 +109,18 @@ public static class LiveOrdnance
                 return (null, abandoned);
             }
 
+            // D5.311 (pass 65, ruling R65.31): a crew broken inside its AFV does not fire its MA.
+            if (GamePlanner.BrokenCrewBar(state, tank) is { } brokenCrew)
+            {
+                return (null, brokenCrew);
+            }
+
+            // A21.22 (pass 65, ruling R65.22): a SMC crew fires a MA only in a one man turret, BU, and never in a Player Turn it moved.
+            if (GamePlanner.SmcCrewFireBar(state, tank, "ma") is { } smcBar)
+            {
+                return (null, smcBar);
+            }
+
             gun = tank;
             crew = tank;
         }
@@ -208,11 +220,17 @@ public static class LiveOrdnance
             }
         }
 
+        // D10.1 (pass 65, ruling R65.23): a non-burning wreck, of either side, is fired at as its vehicle; no shot recorded before the pass named one.
         UnitInstance? vehicleTarget = null;
-        if (targetVehicle is not null && (state.Unit(targetVehicle) is not { Status: InstanceStatus.Active } named || !LiveFire.IsVehicle(named)
-            || state.Location(named.Id)?.Location != target || (vehicleTarget = named).Side == side || (movers is not null && !movers.Contains(named.Id))))
+        if (targetVehicle is not null)
         {
-            return (null, ScenarioA1OrdnanceEligibility.VehicleTargetRefusal(targetVehicle, target.ToString()));
+            if (state.Unit(targetVehicle) is not { } named || !LiveFire.IsVehicle(named) || !Targetable(state, named, side) || state.Location(named.Id)?.Location != target
+                || (movers is not null && !movers.Contains(named.Id)))
+            {
+                return (null, ScenarioA1OrdnanceEligibility.VehicleTargetRefusal(targetVehicle, target.ToString()));
+            }
+
+            vehicleTarget = named;
         }
 
         // C3.31: a Vehicle Target Type shot attacks only the named vehicle. C3.33 (ruling R9.3): a mortar's Area Target Type shot attacks every unit
@@ -307,6 +325,9 @@ public static class LiveOrdnance
             NonQualified = ScenarioA1OrdnanceEligibility.NonQualified(gun is EquipmentInstance, crew.Kind, sw),
             TargetType = mortar ? OrdnanceTargetTypes.Area : null,
             AreaAcquisition = areaAcquisition,
+
+            // A21.22 (pass 65, ruling R65.22): a vehicle's Temporary crew fires its MA under the captured-weapon penalty.
+            CapturedPenalty = gun is UnitInstance mannedVehicle ? LiveFire.CapturedPenalty(mannedVehicle) : null,
         };
         if (mortar)
         {
@@ -407,6 +428,13 @@ public static class LiveOrdnance
     }
 
     /// <summary>
+    /// Whether a named vehicle may be fired at (C3.31): an active enemy vehicle, or a non-burning wreck of either side, attacked as its vehicle (D10.1; pass
+    /// 65, ruling R65.23).
+    /// </summary>
+    internal static bool Targetable(GameState state, UnitInstance vehicle, string side) =>
+        vehicle.Status == InstanceStatus.Active ? vehicle.Side != side : vehicle.Status == InstanceStatus.Wrecked && !GamePlanner.IsBurning(state, vehicle);
+
+    /// <summary>
     /// A vehicle target's state facts (C6.1 Case J, C.8, D5.5, D5.6): a vehicle that entered a new hex or moved in Motion this Player Turn, or is in
     /// Motion, is moving; a Stunned, Shocked, or Recalled crew adds one to Crew Survival. The Target Facings are the planner's map reads.
     /// </summary>
@@ -425,6 +453,9 @@ public static class LiveOrdnance
 
             // D5.3, D.8A (pass 60): whether its crew is CE.
             CrewExposed = LiveFire.CrewExposed(vehicleTarget),
+
+            // D10.1 (pass 65, ruling R65.23): a wreck attacked as its vehicle.
+            Wreck = vehicleTarget.Status == InstanceStatus.Wrecked,
         });
     }
 
@@ -620,8 +651,10 @@ public static class LiveOrdnance
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(vehicle);
-        return (UnitFacing?)ScenarioA1OrdnanceEligibility.TurretFacing((int?)state.TurretFacings.FirstOrDefault(item => item.Vehicle == vehicle.Id)?.Facing,
-            (int?)(vehicle.Position as MapPosition)?.Facing);
+
+        // D10.1 (p. 210; pass 65, ruling R65.23): "Wreck counters retain the VCA of the original vehicle but the TCA is the same as the VCA."
+        return (UnitFacing?)ScenarioA1OrdnanceEligibility.TurretFacing(vehicle.Status == InstanceStatus.Wrecked ? null
+            : (int?)state.TurretFacings.FirstOrDefault(item => item.Vehicle == vehicle.Id)?.Facing, (int?)(vehicle.Position as MapPosition)?.Facing);
     }
 
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice, in the package's shape; null when one is misshapen.</summary>
@@ -633,9 +666,10 @@ public static class LiveOrdnance
         IReadOnlyList<int>? toHit = null;
         int? subsequent = null, panzerfaustCheck = null;
         Dictionary<string, int>? selection = null;
-        Dictionary<string, IReadOnlyList<int>>? survival = null;
+        Dictionary<string, IReadOnlyList<int>>? survival = null, crewChecks = null;
         var hit = new Dictionary<string, string>(StringComparer.Ordinal);
         var critical = new Dictionary<string, string>(StringComparer.Ordinal);
+        var prc = new Dictionary<string, string>(StringComparer.Ordinal);
         var extra = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
         foreach (var (key, rollId) in fired.Rolls)
         {
@@ -671,6 +705,12 @@ public static class LiveOrdnance
                 survival ??= new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
                 survival[key["areaSurvival:".Length..]] = roll.Values;
             }
+            else if (key.StartsWith("areaCrewCheck:", StringComparison.Ordinal) && roll.Count == 2)
+            {
+                // C1.55, D5.5 (pass 65, ruling R65.21): the TC of an AFV crew a mortar's hull hit immobilized.
+                crewChecks ??= new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
+                crewChecks[key["areaCrewCheck:".Length..]] = roll.Values;
+            }
             else if (key is "toKill" or "shockCheck" or "crewCheck" or "crewSurvival" or "canister" or "collateralCheck" && roll.Count == 2)
             {
                 extra[key] = roll.Values;
@@ -683,6 +723,11 @@ public static class LiveOrdnance
             {
                 critical[key["critical-hit:".Length..]] = rollId;
             }
+            else if (key.StartsWith("prc:", StringComparison.Ordinal))
+            {
+                // Pass 65 (rulings R65.7, R65.9): the rolls of the target's PRC, keyed as the Fire package keys them.
+                prc[key["prc:".Length..]] = rollId;
+            }
             else
             {
                 return null;
@@ -693,7 +738,8 @@ public static class LiveOrdnance
             : LiveFire.Rolls(new FireResolved([], null, fired.Target.ToString(), fired.Target.ToString(), ids, fired.Facts, fired.Resolution), shot.Hit!, rolls);
         var hitRolls = Nested(hit);
         var criticalRolls = Nested(critical);
-        return (hit.Count > 0 && hitRolls is null) || (critical.Count > 0 && criticalRolls is null)
+        var prcRolls = Nested(prc);
+        return (hit.Count > 0 && hitRolls is null) || (critical.Count > 0 && criticalRolls is null) || (prc.Count > 0 && prcRolls is null)
             ? null
             : new OrdnanceRolls(toHit, subsequent, selection, hitRolls, criticalRolls)
             {
@@ -709,6 +755,8 @@ public static class LiveOrdnance
                 // D.8A (pass 60): the check of a Specific Collateral Attack.
                 CollateralCheck = extra.GetValueOrDefault("collateralCheck"),
                 AreaSurvival = survival,
+                AreaCrewCheck = crewChecks,
+                Prc = prcRolls,
             };
     }
 
@@ -802,6 +850,22 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
                 Hit = LiveFire.WithRandomDestruction(state, merged.Hit!)
             };
         }
+
+        // Pass 65 (ruling R65.5): the PRC of the vehicles are taken from the record, never read again; a record made before the pass carries none.
+        merged = merged with
+        {
+            VehicleTarget = merged.VehicleTarget is { } aimed ? aimed with
+            {
+                Prc = recorded.VehicleTarget?.Prc,
+
+                // Pass 65 (ruling R65.21): whether the target was already Immobile, for the Immobilization TC's second cause, is written with the PRC.
+                Immobile = recorded.VehicleTarget?.Immobile,
+            } : null,
+            Hit = merged.Hit! with
+            {
+                Vehicles = LiveFire.WithRecordedPrc(merged.Hit.Vehicles, recorded.Hit.Vehicles),
+            },
+        };
 
         // D3.41, D3.42 (pass 55, rulings R55.15, R55.17): a record keeps a target crew's Morale Level only when the shot made that crew check, so
         // one it leaves out is left out of the comparison; the checks it holds are held to the state's below.

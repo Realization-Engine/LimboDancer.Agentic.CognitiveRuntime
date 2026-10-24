@@ -91,7 +91,7 @@ public static class ScenarioA1FireFollowUps
             }
 
             // A12.122: +US#, + the best Good Order leader's Leadership in the Location unless alone, - the Location's TEM and in-hex Hindrance.
-            var size = ScenarioA1Definitions.UnitSize(unit.Squad, unit.HalfSquad || unit.Kind == "asl:crew");
+            var size = ScenarioA1Definitions.UnitSize(unit.Squad, unit.HalfSquad || ScenarioA1Definitions.IsCrew(unit.Kind));
             var leadership = unit.BestLeadership();
             var tem = terrain is not null && ScenarioA1FireReference.Tem.TryGetValue(terrain, out var value) ? value : 0;
             // A6.7 (referee, pass 12): only SMOKE in the Location hinders its own units; brush, grain, orchard, and marsh do not.
@@ -169,6 +169,12 @@ public static class ScenarioA1FireFollowUps
 
             // A9.74 (pass 60, ruling R60.17): a weapon's Random SW/Gun Destruction dr.
             "weaponDestruction" => (1, "fire-weapon-destruction"),
+
+            // D6.9 (pass 65, ruling R65.9): a Passenger's or Rider's Survival DR.
+            "prcSurvival" => (2, "fire-prc-survival"),
+
+            // D5.6, D9.2 (pass 65, ruling R65.21): the Crew Survival DR of an armed vehicle the Vehicle line eliminated.
+            "vehicleSurvival" => (2, "fire-crew-survival"),
             _ => (1, "fire-wound-severity"),
         };
         return new FireNextStep(false, null, key, count, purpose, null);
@@ -432,6 +438,21 @@ public static class ScenarioA1FireFollowUps
         }
 
         return new VehicleEffectVerdict(false, false, false, concealedOrHidden && notResidual && effect.CrewCheck is not null);
+    }
+
+    /// <summary>
+    /// What an Unprotected crew's result does (D5.311, p. 203; pass 65, rulings R65.26, R65.31): "If it breaks it must rout from the vehicle ... [EXC: it
+    /// expends all its initial-RtPh MF to be placed beneath the vehicle]" (true: broken, it stays inside until it routs beneath in the RtPh, and the vehicle
+    /// Stops), and one eliminated is gone (false); "If the crew routs or is eliminated, the vehicle is marked with an Abandoned counter", at once for an
+    /// eliminated crew and at the rout for a broken one. Null for any other result, and for a vehicle the attack destroyed.
+    /// </summary>
+    public static bool? UnprotectedCrewPlacedBroken(FireVehicleEffect effect)
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+        return effect.UnprotectedCrewFinalDr is null || effect.Result is FireVehicleEffect.Eliminated or FireVehicleEffect.BurningWreck ? null
+            : effect.CrewResult == FireVehicleEffect.Broken ? true
+            : effect.CrewResult == FireVehicleEffect.Eliminated ? false
+            : null;
     }
 
     /// <summary>A15.21: the heroes a unit's effect creates, in its Location, sharing its fire and movement status (ruling R5.11); a second Heat of Battle DR may create a second (ruling R5.10); concealed only when the unit kept its "?"; the creator named unless eliminated, under its Reduction's id.</summary>

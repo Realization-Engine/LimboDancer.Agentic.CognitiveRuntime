@@ -148,8 +148,10 @@ public sealed partial class GamePlanner
 
         // D3.3 (ruling R6.9): the moving vehicle's Bounding First Fire comes once the DEFENDER has passed on its MP expenditure; A8.1, A8.11: in the
         // MPh, Defensive fire answers the moving stack's MF expenditure, in its Location. Rules decides both (pass 32.c).
+        // D6.24 (pass 65, ruling R65.17): the Riders that Bailed Out with the expenditure are moving targets where they were placed, the Location the AFV left.
         var (bounding, windowRefusal) = ScenarioA1FireEligibility.MphWindow(state.Phase, firerIds.Length, () => LiveFire.MayBoundingFire(state, firerIds[0]),
-            state.Movement is { WindowOpen: true } window && window.Location == target);
+            state.Movement is { WindowOpen: true } window && (window.Location == target
+                || (window.BailedOut ?? []).Any(id => MemoOf(state).Objects(state).Location(id)?.Location == target)));
         if (windowRefusal is not null)
         {
             return Refused(scope, label, expected, windowRefusal);
@@ -162,7 +164,15 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, reason!);
         }
 
-        attack = WithSeen(state, attack);
+        // D6.1, D6.62 to D6.65 (pass 65, rulings R65.10, R65.12): a Passenger fires from its vehicle's Location as Mounted Fire, in a group and under a
+        // leader D6.64 allows; Rules decides.
+        var (withMounted, mountedBar) = WithMounted(state, attack);
+        if (withMounted is null)
+        {
+            return Refused(scope, label, expected, mountedBar!);
+        }
+
+        attack = WithSeen(state, withMounted);
 
         // D1.81, D1.82, D3.52, C5.11, C5.13 (pass 50): the hexspines each of a vehicle's MGs must turn its CA to cover the target.
         if (attack.VehicleFire is { Weapons.Count: > 0 })
@@ -392,7 +402,13 @@ public sealed partial class GamePlanner
                     return (null, why);
                 }
 
-                part = WithSeen(state, part);
+                var (mountedPart, mountedWhy) = WithMounted(state, part);
+                if (mountedPart is null)
+                {
+                    return (null, mountedWhy);
+                }
+
+                part = WithSeen(state, mountedPart);
                 var (read, readWhy) = FireMapFacts(state, part with
                 {
                     SnapShot = attack.SnapShot
@@ -444,7 +460,13 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, sprayReason!);
             }
 
-            sprayAttack = WithSeen(state, sprayAttack);
+            var (mountedSpray, mountedSprayReason) = WithMounted(state, sprayAttack);
+            if (mountedSpray is null)
+            {
+                return Refused(scope, label, expected, mountedSprayReason!);
+            }
+
+            sprayAttack = WithSeen(state, mountedSpray);
 
             var (sprayMap, sprayMapReason) = FireMapFacts(state, sprayAttack, second!, existing);
             if (sprayMap is null)
@@ -557,6 +579,7 @@ public sealed partial class GamePlanner
                     [.. facts.Firers!.Where(item => item.UsesInherentFp == false).Select(item => item.UnitId!)],
                     facts.Firers!.Where(item => item.Partner is not null).ToDictionary(item => item.UnitId!, item => item.Partner!),
                     facts.Firers!.FirstOrDefault(item => item.Mol == true)?.UnitId).Attack;
+                reread = reread is null ? null : WithMounted(after, reread).Attack;
                 if (reread is not null && FireMapFacts(after, WithSeen(after, reread), target, [.. existing, .. events]).Facts is { } rereadMap)
                 {
                     AddFireEvents(scope, attemptId, expected, actor, after, HeatOfBattleFacts(after, rereadMap) with
@@ -566,6 +589,7 @@ public sealed partial class GamePlanner
                     }, targetSide, step, events, draw);
                 }
 
+                AddMountedPrepFire(scope, attemptId, expected, state, facts, events);
                 AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
                 return events;
             }
@@ -580,6 +604,7 @@ public sealed partial class GamePlanner
             };
             AddFireEvents(scope, attemptId, expected, actor, state, facts, targetSide, step, events, draw, followUps: followUps);
             AddFireFollowUps(scope, attemptId, expected, actor, existing, state, targetSide, step, events, draw, followUps);
+            AddMountedPrepFire(scope, attemptId, expected, state, facts, events);
             AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
             return events;
         }
@@ -590,6 +615,7 @@ public sealed partial class GamePlanner
                 + (facts.FireKind is { } kind ? $" ({kind})" : string.Empty)
                 + (directing.Length > 0 ? $", directed by {string.Join(", ", directing)}" : string.Empty)
                 + $"; range {facts.Range}, {facts.TargetTerrain}, Hindrance {facts.Los!.HindranceDrm}"
+                + MountedPreview(facts)
                 + (spray is not null ? $"; Spraying Fire at {spray.TargetLocationId} too, on the same DR (A9.5)" : string.Empty)
                 + (lane is { } declared ? $"; a Fire Lane of {declared.Weapon} to {declared.Entries[^1].Location} (A9.22)" : string.Empty)
                 + (blockedFirst is not null ? "; the firers whose LOS is blocked fire first and drop out (A6.11, A7.52)" : string.Empty)
@@ -598,7 +624,14 @@ public sealed partial class GamePlanner
                     // A22.612 (pass 60, the table player): at a named AFV the four FP go to the Specific Collateral Attack on its CE crew alone.
                     : facts.TargetVehicle is { } molAfv ? $"; {mol} makes a MOL Check first: on a dr of 3 or less after its drm the four FP go to the Specific Collateral Attack on {molAfv.VehicleId}'s CE crew alone, and the Location's other units take the Small Arms FP (A22.611, A22.612)"
                     : $"; {mol} makes a MOL Check first: a dr of 3 or less after its drm adds four FP (A22.611)")
-                + (ScenarioA1FireCalculator.NamedVehicleTerms(facts, FireReference.Value) is { } terms ? "; " + terms : string.Empty),
+                + (ScenarioA1FireCalculator.NamedVehicleTerms(facts, FireReference.Value) is { } terms ? "; " + terms : string.Empty)
+
+                // D.8A, D.8B (pass 65): the PRC the attack may reach, as Collateral.
+                + PrcPreview(facts.TargetVehicle is { } aimedAt ? [(aimedAt.VehicleId, aimedAt.Prc)] : [], "D.8A, if it is left standing")
+                + PrcPreview((facts.Vehicles ?? []).Where(item => item.VehicleId != facts.TargetVehicle?.VehicleId).Select(item => (item.VehicleId, item.Prc)), "D.8B")
+
+                // D6.21 (pass 65, the referee's review): a CMG's turret turn makes the AFV's Riders Bail Out.
+                + BailOutPreview(TurretTurnBailOut(state, facts.VehicleFire?.VehicleId, VehicleTurretTurn(state, facts))),
 
                 // Pass 31 (play test P-12, P-13): a shot with no LOS, or one that also hits the firing side's own units, is said before it is confirmed.
                 .. FireWarnings(facts)])
@@ -665,7 +698,9 @@ public sealed partial class GamePlanner
     private (FireAttack? Attack, string? Reason) WithNamedVehicle(GameState state, FireAttack attack, string vehicleId, BoardLocation from, BoardLocation target,
         IReadOnlyList<DcTargetFacing>? placed = null)
     {
-        if (state.Unit(vehicleId) is not { Status: InstanceStatus.Active } vehicle || !LiveFire.IsVehicle(vehicle) || state.Location(vehicle.Id)?.Location != target)
+        // D10.1 (pass 65, ruling R65.23): a non-burning wreck is named as its vehicle; no attack recorded before the pass named one.
+        if (state.Unit(vehicleId) is not { } vehicle || !LiveFire.IsVehicle(vehicle) || state.Location(vehicle.Id)?.Location != target
+            || !(vehicle.Status == InstanceStatus.Active || (vehicle.Status == InstanceStatus.Wrecked && !IsBurning(state, vehicle))))
         {
             return (null, $"play.fire-vehicle: {vehicleId} is not a vehicle in {target}; a FT, MOL, or DC names an AFV in the Location it attacks (A22.34, A22.612, A23.5)");
         }
@@ -693,9 +728,13 @@ public sealed partial class GamePlanner
             };
         }
 
+        // Pass 65 (ruling R65.5): with the PRC it carries.
         return (attack with
         {
-            TargetVehicle = named
+            TargetVehicle = named with
+            {
+                Prc = PrcOf(state, vehicle)
+            }
         }, null);
     }
 
@@ -986,6 +1025,12 @@ public sealed partial class GamePlanner
                 [fireId]));
         }
 
+        // D6.21 (pass 65, the referee's review): a CMG's attack that turned the AFV's turret makes its Riders Bail Out beneath it.
+        if (TurretTurnBailOut(state, facts.VehicleFire?.VehicleId, VehicleTurretTurn(state, facts)) is { } turned)
+        {
+            AddBailOuts(scope, attemptId, expected, actor, package, events, draw, state, turned.Riders, facts.VehicleFire!.VehicleId!, turned.At, [fireId]);
+        }
+
         // A10.62: a broken unit attacked by FP that could inflict at least a NMC, allowing for Cowering, is under DM.
         var desperate = CouldCauseNmc(facts, arithmetic);
         foreach (var effect in resolution.Effects)
@@ -1005,18 +1050,42 @@ public sealed partial class GamePlanner
             }
         }
 
+        // D5.43 (pass 65, ruling R65.14): a loader the attack left pinned or broken does not board; it is back on foot in the Location it boarded in. So is
+        // every loader it spared when it destroys the vehicle they board (the D5.43 EX), moved before the wreck is written so that it is not lost with it.
+        if (BoardLocation.TryParse(facts.TargetLocationId, out var boardedIn))
+        {
+            var conveyance = facts.Embarking?.Units?.Select(state.Unit).Select(unit => unit?.Position).OfType<ContainedPosition>().FirstOrDefault()?.Container;
+            var conveyanceResult = conveyance is null ? null : resolution.VehicleEffects?.FirstOrDefault(item => item.VehicleId == conveyance)?.Result;
+            foreach (var failed in ScenarioA1PassengerCalculator.LoadFailures(facts.Embarking, resolution.Effects, conveyanceResult))
+            {
+                if (state.Unit(failed) is { Position: ContainedPosition })
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-moved", new InstanceMoved(failed, new MapPosition(boardedIn)), package, null, [fireId]));
+                }
+            }
+        }
+
         // A7.308, A7.309, D.8B: the Vehicle line's result and the crew's (ruling R25.5, R25.6).
+        // D.8B, D6.9 (pass 65, rulings R65.7, R65.9): the PRC that survive are beneath the wreck before it is written; what a General Collateral Attack
+        // did to the others follows the vehicle's own result.
         foreach (var vehicle in resolution.VehicleEffects ?? [])
         {
-            foreach (var payload in VehicleEffectEvents(state, vehicle, facts))
+            foreach (var payload in SurvivorEvents(state, vehicle.VehicleId, vehicle.PrcSurvival).Concat(VehicleEffectEvents(state, vehicle, facts, attemptId))
+                .Concat(PrcEffectEvents(state, vehicle, attemptId)))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
+            }
+
+            // D6.23, D6.24 (pass 65, ruling R65.17): a Rider the attack pinned or broke Bails Out beneath its AFV.
+            if (CombatBailOuts(state, vehicle, attemptId) is { Count: > 0 } bailing && MemoOf(state).Objects(state).Location(vehicle.VehicleId)?.Location is { } beneath)
+            {
+                AddBailOuts(scope, attemptId, expected, actor, package, events, draw, state, bailing, vehicle.VehicleId, beneath, [fireId]);
             }
 
             // D5.341, D5.41 (ruling R5.18): a Recalled AFV on its way off the map that is immobilized is Abandoned by its crew.
             if (state.Unit(vehicle.VehicleId) is { } stuck && ScenarioA1FireFollowUps.AbandonsWhenImmobilized(vehicle, MustLeave(stuck)))
             {
-                foreach (var (type, abandon) in AbandonEvents(stuck, attemptId))
+                foreach (var (type, abandon) in AbandonEvents(state, stuck, attemptId))
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, package, null, [fireId]));
                 }
@@ -1170,22 +1239,61 @@ public sealed partial class GamePlanner
     /// The events that record a vehicle's effect (rulings R25.5, R25.6, R6.5, R6.7), as Rules decides it (pass 32.c): a destroyed vehicle becomes a
     /// wreck, with a Blaze when it burns; else its conditions change, and a concealed vehicle may lose its "?".
     /// </summary>
-    private static IEnumerable<(string Type, EventPayload Payload)> VehicleEffectEvents(GameState state, FireVehicleEffect effect, FireAttack facts)
+    private IEnumerable<(string Type, EventPayload Payload)> VehicleEffectEvents(GameState state, FireVehicleEffect effect, FireAttack facts, string attemptId)
     {
         var vehicle = state.Unit(effect.VehicleId);
         var verdict = ScenarioA1FireFollowUps.VehicleEffect(effect, facts.FireKind, vehicle is not null && (Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)));
         if (verdict.Wrecked)
         {
+            // D5.6, D9.2 (pass 65, ruling R65.21): an armed vehicle's crew that survives is beneath the wreck, under Hazardous Movement for the phase; a
+            // unit that crews it from inside survives as itself, moved before the wreck is written.
+            var inside = !verdict.Burning && effect.CrewSurvival is { Survived: true } && vehicle is not null ? CrewInside(state, vehicle.Id) : null;
+            if (inside is not null && vehicle is { Position: MapPosition beneath })
+            {
+                foreach (var leaving in InsideCrewLeaves(vehicle, inside, beneath.Location, Is(vehicle, Conditions.StunRecovery)))
+                {
+                    yield return leaving;
+                }
+
+                yield return Hazardous(inside.Id);
+            }
+
             yield return ("vehicle-wrecked", new VehicleWrecked(effect.VehicleId, verdict.Burning));
             if (verdict.Burning && vehicle is not null && state.Location(vehicle.Id) is { } at)
             {
                 yield return ("instance-created", new InstanceCreated(new NewInstance(BlazeId(vehicle.Id), "asl:fire", null, null, new MapPosition(at.Location), null,
                     new Dictionary<string, ConditionState>())));
             }
+            else if (inside is null && effect.CrewSurvival is { Survived: true } && vehicle is not null
+                && LeavingCrew(state, vehicle, attemptId, Is(vehicle, Conditions.StunRecovery), vehicle.ArmorLeader, hazardous: true) is { } survivors)
+            {
+                yield return ("instance-created", survivors);
+            }
 
             yield break;
         }
 
+        // D5.5 (pass 65, ruling R65.21): a crew that fails the TC the Vehicle line's Immobilization called for Abandons the vehicle, after its result.
+        foreach (var payload in VehicleConditionEvents(effect, verdict)
+            .Concat(effect.Abandoned == true && vehicle is not null ? TaskCheckAbandons(state, vehicle, attemptId) : []))
+        {
+            yield return payload;
+        }
+
+        // D5.311 (pass 65, ruling R65.26): an Unprotected crew that breaks is placed beneath its vehicle, broken; one eliminated is gone. Either way the
+        // vehicle is Abandoned.
+        if (vehicle is not null && ScenarioA1FireFollowUps.UnprotectedCrewPlacedBroken(effect) is { } placedBroken)
+        {
+            foreach (var payload in UnprotectedCrewEvents(state, vehicle, attemptId, placedBroken))
+            {
+                yield return payload;
+            }
+        }
+    }
+
+    /// <summary>The conditions a vehicle result that does not wreck it sets, with the "?" it loses.</summary>
+    private static IEnumerable<(string Type, EventPayload Payload)> VehicleConditionEvents(FireVehicleEffect effect, VehicleEffectVerdict verdict)
+    {
         if (verdict.Changes)
         {
             var changed = VehicleConditions(effect)!;
@@ -1697,7 +1805,8 @@ public sealed partial class GamePlanner
                 && LiveStacking.Of(state, target, targetSide, knownOnly: true).DefensePenalty is var crowded and > 0 ? crowded : null,
 
             // A4.62 (p. 51; pass 40): Hazardous Movement holds against any attack, a vehicle's and Residual FP's too.
-            HazardousMovement = ScenarioA1FireMapRules.HazardousMovement(state.HazardousMovers, attack),
+            // D5.5, D5.6 (pass 65, ruling R65.21): so does a survivor's, for the phase it was placed in.
+            HazardousMovement = ScenarioA1FireMapRules.HazardousMovement(HazardousUnits(state), attack),
 
             // A4.63 (pass 40): non-ordnance Defensive First Fire at a Dashing stack in its road Location; a Fire Lane and Residual FP are excepted.
             Dash = attack.OrdnanceHit is null && attack.FireLane != true
@@ -1705,8 +1814,9 @@ public sealed partial class GamePlanner
                 ? DashAgainst(state, [.. perLocation.Keys.Select(BoardLocation.Parse)], target) : null,
         };
 
-        // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): night and weather.
-        return UpperLevelEncircled(state, NightAndWeatherFacts(state, facts, target, targetRead.Hex.BaseLevel + (targetRead.Hex.Center.Terrain?.Height ?? 0), perLocation));
+        // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): night and weather. Pass 65 (ruling R65.5): the PRC of each vehicle there.
+        var encircled = UpperLevelEncircled(state, NightAndWeatherFacts(state, facts, target, targetRead.Hex.BaseLevel + (targetRead.Hex.Center.Terrain?.Height ?? 0), perLocation));
+        return encircled.Facts is { } withVehicles ? (WithPrc(state, withVehicles), encircled.Reason) : encircled;
     }
 
     /// <summary>

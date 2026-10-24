@@ -40,9 +40,16 @@ public sealed partial class GamePlanner
     public static bool IsClosedTopped(UnitInstance vehicle) =>
         ScenarioA1VehicleMovementCalculator.IsClosedTopped(IsAfv(vehicle), IsAfv(vehicle) ? VehicleDefinition(vehicle)?.OpenTopped : null);
 
-    /// <summary>The half MP a vehicle has spent this MPh and its allotment, with the MP a successful ESB added (D1.1, D2.5).</summary>
-    private static (int Spent, int Allotment) HalfMp(UnitInstance vehicle) =>
-        ScenarioA1VehicleMovementCalculator.HalfMp(vehicle.MfSpent, vehicle.HalfMfSpent, VehicleDefinition(vehicle)?.MovementPoints ?? 0, vehicle.EsbMp);
+    /// <summary>
+    /// The half MP a vehicle has spent this MPh and its allotment, with the MP a successful ESB added (D1.1, D2.5), halved under a HS or infantry crew
+    /// manning it as a Temporary crew (A21.22; pass 65, ruling R65.22).
+    /// </summary>
+    private static (int Spent, int Allotment) HalfMp(UnitInstance vehicle)
+    {
+        var printed = VehicleDefinition(vehicle)?.MovementPoints ?? 0;
+        var (spent, allotment) = ScenarioA1VehicleMovementCalculator.HalfMp(vehicle.MfSpent, vehicle.HalfMfSpent, printed, vehicle.EsbMp);
+        return (spent, ScenarioA1CapturedVehicleRules.AllotmentHalfMp(allotment, printed, vehicle.TemporaryCrew?.Manning));
+    }
 
     /// <summary>A vehicle's printed MP allotment in half MP (D1.1).</summary>
     private static int PrintedHalfMp(UnitInstance vehicle) => (VehicleDefinition(vehicle)?.MovementPoints ?? 0) * 2;
@@ -84,6 +91,12 @@ public sealed partial class GamePlanner
 
         foreach (var vehicle in state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)))
         {
+            // D6.84 (pass 65, ruling R65.18): a Carrier sets up CE.
+            if (ScenarioA1CarrierRules.SetupBar(vehicle.Id, VehicleDefinition(vehicle)?.VehicleClass, Is(vehicle, Conditions.ButtonedUp)) is { } carrierBar)
+            {
+                return carrierBar;
+            }
+
             // A2.52 (ruling R26.1): a vehicle may wait off board to enter, in Motion, loaded up to its capacity, its Gun in tow.
             var at = vehicle.Position is MapPosition { Facing: not null } ? state.Location(vehicle.Id) : null;
             if (ScenarioA1VehicleMovementCalculator.VehicleSetupBar(vehicle.Id, () => TowSetupBar(state, vehicle) ?? PassengerSetupBar(state, vehicle),
@@ -107,7 +120,7 @@ public sealed partial class GamePlanner
     private string? PassengerSetupBar(GameState state, UnitInstance vehicle) =>
         ScenarioA1VehicleMovementCalculator.PassengerSetupBar(vehicle.Side, vehicle.Group, [.. state.Passengers(vehicle.Id).Select(unit => new PassengerSetupFacts(unit.Id,
                 unit.Side, unit.Group, LiveFire.IsVehicle(unit), vocabulary.IsA(unit.Kind, "asl:personnel"), Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden)))],
-            vehicle.Id, () => CapacityBar(state, vehicle, []));
+            vehicle.Id, () => CapacityBar(state, vehicle, []) ?? RiderBar(state, vehicle, []));
 
     /// <summary>
     /// Why a Gun set up in tow is refused (C10.1, C10.2, C10.13; ruling R26.1): the vehicle's T# exceeds the Gun's M#, the Gun is not QSU (limbering is not
@@ -288,11 +301,19 @@ public sealed partial class GamePlanner
     private static string? VehicleEntryBar(GameState state, UnitInstance vehicle, BoardLocation to) =>
         ScenarioA1VehicleMovementCalculator.EntryBar(state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Melee)));
 
-    /// <summary>The events of this phase so far.</summary>
+    /// <summary>
+    /// The events of this phase so far: from the last phase change (or the game's start) on, found by walking back from the end, so that a plan reads
+    /// only the phase, never the whole history (pass 65, the boundary review).
+    /// </summary>
     private static IEnumerable<GameEvent> ThisPhase(IReadOnlyList<GameEvent> existing)
     {
-        var since = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged or GameStarted).index;
-        return existing.Skip(since);
+        var since = existing.Count - 1;
+        while (since > 0 && existing[since].Payload is not (PhaseChanged or GameStarted))
+        {
+            since--;
+        }
+
+        return existing.Skip(Math.Max(since, 0));
     }
 
     private static VehicleStepped[] StepsThisPhase(IReadOnlyList<GameEvent> existing, string vehicle) =>
@@ -358,14 +379,23 @@ public sealed partial class GamePlanner
 
         // D5.341: a Recall stops the AFV like a Stun for the rest of that Player Turn; once its counter shows Recall; +1 it must leave.
         var leaving = MustLeave(vehicle);
-        var current = state.Movement;
+
+        // D6.4 (pass 65, ruling R65.15): a moving Infantry stack boards as the last step of its move; the load decides whether it may.
+        var current = kind == VehicleStepped.Load && state.Movement is { Vehicle: false } ? null : state.Movement;
         if (ScenarioA1VehicleMovementCalculator.MoveBar(id, kind, vehicle.MovementEnded,
             () => ButtonedUpAfv(vehicle) && NvrOf(state, vehicle) == 0, condition => Is(vehicle, condition), leaving,
             current is not null && (!current.Vehicle || !current.Members.SequenceEqual([vehicle.Id], StringComparer.Ordinal)) ? current.Members : null,
             current is { WindowOpen: true }, current?.Reaction == true, current?.Overrun?.ToString(),
-            () => current is null && MustCharge(state) is [{ } charging, ..] ? charging.Id : null, current is not null) is { } moveBar)
+            () => state.Movement is null && MustCharge(state) is [{ } charging, ..] ? charging.Id : null, current is not null) is { } moveBar)
         {
             return Refused(scope, label, expected, moveBar);
+        }
+
+        // D5.311 (pass 65, ruling R65.31): a crew broken inside its AFV does not move it; its Passengers may still unload.
+        if (kind != VehicleStepped.Unload && MemoOf(state).Objects(state).CrewOf(id) is { } crewInside && Is(crewInside, Conditions.Broken)
+            && ScenarioA1CrewActsRules.BrokenCrewBar(id, crewInside.Id) is { } brokenCrew)
+        {
+            return Refused(scope, label, expected, brokenCrew);
         }
 
         // D3.12 (pass 50): a turret named with an expenditure it does not turn with is refused, not dropped.
@@ -389,7 +419,7 @@ public sealed partial class GamePlanner
             case "esb":
                 return PlanEsb(scope, arguments, existing, attemptId, expected, label, actor, state, vehicle, moving, afterAll);
             case VehicleStepped.Overrun:
-                return PlanDeclareOverrun(scope, existing, attemptId, expected, label, actor, state, vehicle, at.Location, moving, step);
+                return PlanDeclareOverrun(scope, existing, attemptId, expected, label, actor, state, vehicle, at.Location, moving, step, UnitIds(arguments));
             case VehicleStepped.Load:
                 return PlanLoad(scope, arguments, existing, attemptId, expected, label, actor, state, vehicle, at.Location);
             case VehicleStepped.Unload:
@@ -407,10 +437,27 @@ public sealed partial class GamePlanner
                     return Refused(scope, label, expected, delayTurretBar);
                 }
 
+                var delayText = $"play.move-vehicle: {id} spends a Delay MP in {at.Location} (D2.17)" + (delayTurret is { } delayed ? $", turning its turret to {UnitFacings.Name(delayed)} (D3.12)" : string.Empty)
+                    + $"; {Mp(Math.Max(0, allotment - spent - 2))} MP left";
+
+                // D6.21 (pass 65, ruling R65.17): a turreted AFV's TCA change makes its Riders Bail Out.
+                if (StepBailOut(state, vehicle, kind, at.Location, null, delayTurret) is { } delayBailing)
+                {
+                    return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, draw =>
+                    {
+                        List<GameEvent> events = [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, kind, at.Location, null, 2, step) { Turret = delayTurret }, null, null)];
+                        if (draw is not null)
+                        {
+                            AddBailOuts(scope, attemptId, expected, actor, null, events, draw, state, delayBailing.Riders, id, delayBailing.At, [EventId(attemptId, 1)]);
+                        }
+
+                        return events;
+                    }, true, at.Location, step, delayText + BailOutPreview(delayBailing));
+                }
+
                 return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
                     [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, kind, at.Location, null, 2, step) { Turret = delayTurret }, null, null)],
-                    [$"play.move-vehicle: {id} spends a Delay MP in {at.Location} (D2.17)" + (delayTurret is { } delayed ? $", turning its turret to {UnitFacings.Name(delayed)} (D3.12)" : string.Empty)
-                        + $"; {Mp(Math.Max(0, allotment - spent - 2))} MP left"]);
+                    [delayText]);
         }
 
         if (ScenarioA1VehicleMovementCalculator.MovingBar(id, kind, moving, afterAll) is { } movingBar)
@@ -426,6 +473,7 @@ public sealed partial class GamePlanner
         VehicleEntry? entry = null;
         (int? Drm, IReadOnlyList<string> Causes) turnBog = (null, []);
         var overrun = false;
+        IReadOnlyList<string>? overrunPassengers = null;
         var minimumMove = false;
         string? exitEdge = null;
         switch (kind)
@@ -507,17 +555,20 @@ public sealed partial class GamePlanner
                     }
 
                     cost += OverrunHalfMp(vehicle);
+
+                    // D7.11, D6.5 (pass 65, ruling R65.13): the Passengers who add their FP are named with the declaration.
+                    overrunPassengers = OverrunPassengerIds(state, vehicle, UnitIds(arguments));
                 }
 
                 summary = $"{id} enters {to}{(entry.Bypass ? $" in VBM, straddling the hexside with {entry.Straddling}" : string.Empty)}{(reverse ? " in Reverse" : string.Empty)} for {Mp(cost)} MP"
                     + (entry.All ? " (ALL, B13.41)" : minimumMove ? " (Minimum Move, D2.15)" : string.Empty)
-                    + (overrun ? $", with an OVR ({Mp(OverrunHalfMp(vehicle))} MP, D7.1)" : string.Empty)
+                    + (overrun ? $", with an OVR ({Mp(OverrunHalfMp(vehicle))} MP, D7.1)" + OverrunPassengerPreview(overrunPassengers) : string.Empty)
                     + (entry.BogDrm is { } entryBog ? $"; Bog DR at {entryBog:+0;-0;0} (D8.21)" : string.Empty);
                 break;
             case VehicleStepped.Stop:
                 if (ScenarioA1VehicleMovementCalculator.StopBar(id, leaving, () => EnemyAfvBar(state, vehicle, existing), () => MayMoveOn(state, vehicle),
                     vehicle.Straddling is not null, () => TurnedAtCafp(state, vehicle),
-                    state.Passengers(id).Count > 0) is { } stopBar)
+                    Riding(state, id).Count > 0) is { } stopBar)
                 {
                     return Refused(scope, label, expected, stopBar);
                 }
@@ -541,7 +592,7 @@ public sealed partial class GamePlanner
                 cost = exit.HalfMp;
                 exitEdge = EdgeSides(state, at.Location).FirstOrDefault(item => item.Side == exit.Direction).Edge;
                 summary = $"{id} exits the map from {at.Location} for {Mp(cost)} MP (A2.6)" + (leaving ? " by its Friendly Board Edge (D5.341)" : string.Empty)
-                    + (state.Passengers(id) is { Count: > 0 } riding ? $", with {string.Join(", ", riding.Select(unit => unit.Id))} aboard" : string.Empty)
+                    + (Riding(state, id) is { Count: > 0 } riding ? $", with {string.Join(", ", riding.Select(unit => unit.Id))} aboard" : string.Empty)
                     + (state.Equipment.FirstOrDefault(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == id) is { } towing
                         ? $", towing {towing.Id}" : string.Empty)
                     + (exitEdge is not null ? ExitScoring(state, vehicle.Side, at.Location, exitEdge, false) : string.Empty);
@@ -562,8 +613,12 @@ public sealed partial class GamePlanner
             summary += $", turning its turret to {UnitFacings.Name(turretTo)} (D3.12)";
         }
 
+        // D6.21, B13.43 (pass 65, ruling R65.17): terrain Riders may not ride through, or a turreted AFV's TCA change, makes them Bail Out.
+        var bailing = kind is VehicleStepped.Exit ? null : StepBailOut(state, vehicle, kind, at.Location, entry, turret);
+        summary += BailOutPreview(bailing);
+
         // D5.341 (ruling R5.17): a leaving AFV keeps to a shortest route in MP to its Friendly Board Edge.
-        if (leaving && !ScenarioA1RecallCalculator.StopsToUnload(kind, state.Passengers(id).Count > 0))
+        if (leaving && !ScenarioA1RecallCalculator.StopsToUnload(kind, Riding(state, id).Count > 0))
         {
             var (moves, _, undecided) = RecallRoute(state, vehicle);
             if (undecided is not null)
@@ -616,6 +671,7 @@ public sealed partial class GamePlanner
                 Reverse = kind == VehicleStepped.Enter && reverse,
                 Straddling = kind == VehicleStepped.Enter ? straddling : null,
                 Overrunning = overrun,
+                Units = overrun ? overrunPassengers : null,
                 MinimumMove = minimumMove,
                 All = entry?.All == true,
                 Turret = stepKind == kind ? turret : null,
@@ -634,6 +690,7 @@ public sealed partial class GamePlanner
                 {
                     Straddling = stuck ? null : straddling,
                     Overrunning = !stuck && overrun,
+                    Units = !stuck && overrun ? overrunPassengers : null,
                     All = !stuck && entry?.All == true,
                 }, null, null));
                 events.Add(Event(scope, attemptId, 3, expected, "vehicle-check-rolled", new VehicleCheckRolled(id, VehicleCheckRolled.Bog, rollId, hedgeBog, result), null, null,
@@ -646,6 +703,13 @@ public sealed partial class GamePlanner
             else
             {
                 events.Add(Event(scope, attemptId, 1, expected, "vehicle-step", Stepped(kind, to), null, null));
+            }
+
+            // D6.24 (pass 65, ruling R65.17): the Riders Bail Out with the expenditure, which costs the AFV nothing.
+            if (bailing is { } bail && draw is not null)
+            {
+                var stepId = events.Last(item => item.Payload is VehicleStepped).EventId;
+                AddBailOuts(scope, attemptId, expected, actor, null, events, draw, state, bail.Riders, id, bail.At, [stepId]);
             }
 
             var boggedThere = bogDrm is { } drm && draw is not null
@@ -677,7 +741,8 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, unresolvable);
         }
 
-        return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, Build, bogDrm is not null || hedgeDrm is not null, kind == VehicleStepped.Enter ? to : at.Location, step,
+        return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, Build, bogDrm is not null || hedgeDrm is not null || bailing is not null,
+            kind == VehicleStepped.Enter ? to : at.Location, step,
             text + (subject.Count > 0 ? $"; the concealed units in {to} are revealed or take a PAATC, as their owner chooses (A12.41)" : string.Empty));
     }
 
@@ -725,7 +790,7 @@ public sealed partial class GamePlanner
                     [EventId(attemptId, 1)]));
 
                 // D2.51 (referee, pass 11): the Bog Removal is a Start MP, so a red MP AFV rolls for Mechanical Reliability too.
-                if (IsAfv(vehicle) && VehicleDefinition(vehicle)?.MechanicallyUnreliable == true && result != VehicleCheckRolled.Immobilized)
+                if (RedMp(vehicle) && result != VehicleCheckRolled.Immobilized)
                 {
                     AddVehicleCheck(scope, attemptId, expected, actor, events, draw, id, VehicleCheckRolled.Mechanical, 0);
                 }
@@ -737,13 +802,29 @@ public sealed partial class GamePlanner
                 $"play.move-vehicle-bog: {id} attempts Bog Removal as its Start MP: it spends its colored dr times its white dr in MP{(truck ? ", doubled for a truck," : string.Empty)} and is freed on a {(leadership is null ? string.Empty : "Final ")}colored dr of 1 to 4{(Is(vehicle, Conditions.Mired) ? " (+1 Mired)" : string.Empty)}, Mired on 5, immobilized on 6 or more{ScenarioA1ArmorLeaders.BogRemovalText(leadership)}");
         }
 
-        var unreliable = IsAfv(vehicle) && VehicleDefinition(vehicle)?.MechanicallyUnreliable == true;
+        var unreliable = RedMp(vehicle);
+
+        // A21.22 (pass 65, ruling R65.22): a SMC crew does not move its vehicle while CE or after firing it this Player Turn; a HS or infantry crew's start
+        // is preceded by a dr: 4 or less starts it, 5 no movement this phase, 6 or more Bogs it (+1 for a Russian or Japanese captor).
+        if (vehicle.TemporaryCrew is { Manning: ScenarioA1CapturedVehicleRules.Smc }
+            && ScenarioA1CapturedVehicleRules.SmcMoveBar(id, LiveFire.CrewExposed(vehicle), VehicleFiredThisPlayerTurn(vehicle)) is { } smcBar)
+        {
+            return Refused(scope, label, expected, smcBar);
+        }
+
+        var startDrm = ScenarioA1CapturedVehicleRules.StartDrRequired(vehicle.TemporaryCrew?.Manning) ? ScenarioA1CapturedVehicleRules.StartDrm(CrewNationality(state, vehicle)) : (int?)null;
         List<GameEvent> Build(Func<RollRequest, RollResult>? draw)
         {
             var events = new List<GameEvent>
             {
                 Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, VehicleStepped.Start, at, null, 2, step) { Reverse = reverse }, null, null),
             };
+            if (startDrm is { } drm && AddVehicleCheck(scope, attemptId, expected, actor, events, draw, id, VehicleCheckRolled.TemporaryStart, drm, final: dice => dice[0])
+                is not VehicleCheckRolled.Passed)
+            {
+                return events;
+            }
+
             if (unreliable)
             {
                 AddVehicleCheck(scope, attemptId, expected, actor, events, draw, id, VehicleCheckRolled.Mechanical, 0);
@@ -752,8 +833,9 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, Build, unreliable, at, step,
+        return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, Build, unreliable || startDrm is not null, at, step,
             $"play.move-vehicle: {id} starts{(reverse ? " in Reverse" : string.Empty)} in {at} for 1 MP (D2.12{(reverse ? ", D2.23" : string.Empty)})"
+                + (startDrm is { } shown ? $"; its Temporary crew first makes a start dr{(shown > 0 ? $" at +{shown}" : string.Empty)}: 4 or less starts it, 5 allows no movement this phase, 6 or more Bogs it (A21.22)" : string.Empty)
                 + (unreliable ? "; its red MP make it roll for Mechanical Reliability: a 12 immobilizes it (D2.51)" : string.Empty)
                 + $"; {Mp(allotment - spent - 2)} MP left");
     }
@@ -915,6 +997,13 @@ public sealed partial class GamePlanner
 
         var buttonedUp = value.GetBoolean();
         var vehicle = state.Unit(id) is { Status: InstanceStatus.Active } unit && IsAfv(unit) ? unit : null;
+
+        // D6.84 (pass 65, ruling R65.18): a Carrier is never BU. No game recorded before the pass buttons one up (none holds a Carrier).
+        if (vehicle is not null && ScenarioA1CarrierRules.ButtonUpBar(id, VehicleDefinition(vehicle)?.VehicleClass, buttonedUp) is { } carrierBar)
+        {
+            return Refused(scope, label, expected, carrierBar);
+        }
+
         if (ScenarioA1VehicleMovementCalculator.ButtonUpBar(id, vehicle is not null,
             vehicle is not null && vehicle.Side == state.PhasingSide && state.Phase is "mph" or "aph",
             vehicle is not null && (Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled) || Is(vehicle, Conditions.Shocked) || Is(vehicle, Conditions.UnconfirmedKill)),

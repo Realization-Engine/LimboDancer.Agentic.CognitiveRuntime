@@ -187,7 +187,10 @@ public sealed class ScenarioA1SequenceRulesTests
         Assert.False(read);
         Assert.Equal("refused", ScenarioA1SequenceCalculator.SetupOnlyBar("asl.game.move", true, () => "refused"));
         Assert.Null(ScenarioA1SequenceCalculator.PassengerBar("asl.game.button-up", true, () => "aboard"));
-        Assert.Equal("aboard", ScenarioA1SequenceCalculator.PassengerBar("asl.game.fire", true, () => "aboard"));
+        Assert.Equal("aboard", ScenarioA1SequenceCalculator.PassengerBar("asl.game.rally", true, () => "aboard"));
+
+        // Pass 65 (rulings R65.10, R65.11): a Passenger fires, passes a SW, and routs beneath its vehicle.
+        Assert.Null(ScenarioA1SequenceCalculator.PassengerBar("asl.game.fire", true, () => "aboard"));
         Assert.Null(ScenarioA1SequenceCalculator.OverrunCloseCombatFirstBar("asl.game.close-combat", true, () => "bd01:G4:0"));
         Assert.StartsWith("play.cc-overrun-first: the Infantry OVR in bd01:G4:0", ScenarioA1SequenceCalculator.OverrunCloseCombatFirstBar("asl.game.fire", true, () => "bd01:G4:0"));
         Assert.Equal("play.game-over: the game ended after Game Turn 6 (A3.9; ruling R20.1)", ScenarioA1SequenceCalculator.GameOverBar(6));

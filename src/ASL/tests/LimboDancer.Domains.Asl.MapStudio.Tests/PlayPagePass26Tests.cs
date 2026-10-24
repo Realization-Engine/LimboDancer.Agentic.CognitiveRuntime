@@ -127,5 +127,7 @@ public sealed class PlayPagePass26Tests : IDisposable
         Commit(page, "#vehicle-unload");
         page.WaitForAssertion(() => Assert.DoesNotContain("aboard vehicle G1", page.Find("#play-units tr[data-unit='gs']").TextContent, StringComparison.Ordinal));
 
+        // Pass 65 (ruling R65.15): the record names who got off, not "moves to" (D6.5).
+        Assert.Contains("4-6-7 squad G1 unloads from vehicle G1 (D6.5)", page.Find("#play-latest").TextContent, StringComparison.Ordinal);
     }
 }

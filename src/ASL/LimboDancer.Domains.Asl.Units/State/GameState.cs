@@ -70,6 +70,12 @@ public sealed record GameState(
     /// </summary>
     public IReadOnlyList<string> MovedVehicles { get; init; } = [];
 
+    /// <summary>
+    /// The vehicles marked Abandoned in the current Player Turn, by a <c>vehicle-abandoned</c> record or an Abandoned condition (D5.42; pass 65, the
+    /// boundary review): "A vehicle may not be entered during the same Player Turn in which its previous crew left." Cleared at each new Player Turn.
+    /// </summary>
+    public IReadOnlyList<string> AbandonedThisPlayerTurn { get; init; } = [];
+
     /// <summary>The fire attacks made in the current phase (A7.55); cleared at every phase change.</summary>
     public IReadOnlyList<FireRecord> FiresThisPhase { get; init; } = [];
 
@@ -452,7 +458,8 @@ public sealed record GameState(
 
     /// <summary>
     /// The vehicle an instance rides as a Passenger or Rider, or whose Passenger or Rider holds it (D6.1, D6.2; ruling R26.2); null when it is on foot,
-    /// or is no such cargo.
+    /// or is no such cargo. A unit that crews a vehicle from inside (D5.42; pass 65, ruling R65.20) is in it too, and so out of its Location's stack;
+    /// it is no Passenger (<see cref="Passengers"/>).
     /// </summary>
     public string? Aboard(string id)
     {
@@ -466,7 +473,7 @@ public sealed record GameState(
                 continue;
             }
 
-            return item.Position is ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider } contained ? contained.Container : null;
+            return item.Position is ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider or ContainmentRole.Crew } contained ? contained.Container : null;
         }
 
         return null;

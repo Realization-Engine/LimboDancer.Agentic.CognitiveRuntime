@@ -312,7 +312,36 @@ public static class ReplaySteps
         if (First<VehicleStepped>(payloads) is { } drove)
         {
             var side = SideOf(drove.Vehicle);
-            return ("move", side, $"{A(side, "vehicle")} {(drove.Kind == VehicleStepped.Delay ? "spends a Delay MP" : "moves")} in {Place(before, drove.At)}{end}", false);
+
+            // D6.4, D6.5 (pass 65, ruling R65.15): Infantry board, or Passengers unload, in place of a move.
+            var what = drove.Kind switch
+            {
+                VehicleStepped.Delay => "spends a Delay MP",
+                VehicleStepped.Load => drove.Riders ? $"takes {(drove.Units?.Count == 1 ? "a Rider" : "Riders")}" : $"takes {(drove.Units?.Count == 1 ? "a unit" : "units")} aboard",
+                VehicleStepped.Unload => $"unloads {(drove.Units?.Count == 1 ? "a unit" : "units")}",
+                _ => "moves",
+            };
+
+            // D6.21, D6.24 (pass 65, ruling R65.17): Riders that Bail Out as it moves.
+            var bailing = payloads.OfType<RiderBailedOut>().Any() ? ", and its Riders Bail Out" : string.Empty;
+
+            // D6.83 (pass 65, the table player): a Carrier whose inherent HS unloads with the step is Abandoned.
+            var abandons = drove.Kind == VehicleStepped.Unload && payloads.OfType<ConditionsChanged>().Any(changed => changed.Id == drove.Vehicle
+                && changed.Conditions.TryGetValue(Conditions.Abandoned, out var now) && now == ConditionState.True) ? ", and its inherent HS leaves it Abandoned" : string.Empty;
+            return ("move", side, $"{A(side, "vehicle")} {what} in {Place(before, drove.At)}{bailing}{abandons}{end}", false);
+        }
+
+        // D5.41, D5.42 (pass 65, ruling R65.20): a crew leaves its vehicle, or a unit enters an Abandoned one to crew it.
+        if (First<VehicleAbandoned>(payloads) is { } abandoned)
+        {
+            var side = SideOf(abandoned.Vehicle);
+            return ("move", side, $"{A(side, "vehicle")}'s crew Abandons it in {Place(before, abandoned.At)}{end}", false);
+        }
+
+        if (First<VehicleRecrewed>(payloads) is { } recrewed)
+        {
+            var side = SideOf(recrewed.Vehicle);
+            return ("move", side, $"{A(side, "unit")} crews an Abandoned vehicle in {Place(before, recrewed.At)}{end}", false);
         }
 
         if (First<MotionAttempted>(payloads) is { } motion)
@@ -341,6 +370,9 @@ public static class ReplaySteps
             var side = SideOf(routed.Unit);
             return ("rout", side, routed.Attempted is { } repulsedFrom
                 ? $"{A(side, "broken unit")} is repulsed from {Place(before, repulsedFrom)} by a concealed unit{end}"
+                // D6.1, D5.311 (pass 65, the table player): a unit aboard routs beneath its vehicle.
+                : before.Unit(routed.Unit) is { Position: ContainedPosition }
+                    ? $"{A(side, "broken unit")} routs beneath its vehicle in {Place(before, routed.To)}{end}"
                 : $"{A(side, "broken unit")} routs to {Place(before, routed.To)}{(routed.LowCrawl ? " by Low Crawl" : string.Empty)}{end}", false);
         }
 
@@ -378,6 +410,14 @@ public static class ReplaySteps
         if (First<InfantryOverrunNtc>(payloads) is { } ntc)
         {
             return ("move", SideOf(ntc.Taker), $"{A(SideOf(ntc.Taker), "unit")} takes the NTC for an Infantry OVR: {(ntc.Passed ? "passed" : "failed")}", false);
+        }
+
+        // D10.5 (pass 65, ruling R65.23): a unit scrounges a wreck or an Abandoned vehicle in the RPh.
+        if (First<VehicleScrounged>(payloads) is { } scrounged)
+        {
+            var side = SideOf(scrounged.Unit);
+            return ("rally", side, $"{A(side, "unit")} scrounges a vehicle in {Place(before, scrounged.At)}: "
+                + (scrounged.Taken is { Count: > 0 } found ? $"{found.Count} SW salvaged" : "nothing salvaged"), false);
         }
 
         if (First<RecoveryAttempted>(payloads) is { } recovery)
@@ -616,6 +656,13 @@ public static class ReplaySteps
             {
                 MovementStepped moved => moved.To,
                 VehicleStepped drove => drove.At,
+                RiderBailedOut bailed => bailed.At,
+                VehicleAbandoned abandoned => abandoned.At,
+                VehicleRecrewed recrewed => recrewed.At,
+                VehicleScrounged scrounged => scrounged.At,
+
+                // A11.52, A21.2 (pass 65, ruling R65.22): a capture is seen in its Location; it falls within a CC or phase step, which titles it.
+                VehicleCaptured captured => captured.At,
                 MotionAttempted motion => Open(before, motion.Vehicle, viewer) ? before.Location(motion.Vehicle)?.Location : null,
                 AdvanceMoved advanced => advanced.To,
                 RoutStepped routed => routed.To,

@@ -362,11 +362,19 @@ public sealed class ScenarioA1OrdnanceTests
     }
 
     [Fact]
-    public void TheFirePackageRefusesACrewAsATarget()
+    public void TheFirePackageRefusesAGunsCrewWithOtherUnitsAsATarget()
     {
-        // C11: a crew and its Gun as targets are not reviewed (ruling R24.3).
-        var shot = German(targets: [Target("ru-crew", "defender-crew")]);
-        Assert.Contains("asl.a1.ordnance.hit:asl.a1.fire.crew-target-unreviewed", ScenarioA1OrdnanceCalculator.Precheck(shot, Reference));
+        // C11 (ruling R8.3): a Gun's crew with another unit is not reviewed. A1.123 (pass 65, ruling R65.28): a crew that mans no Gun is an ordinary target.
+        var shot = German(targets: [Target("ru-crew", "defender-crew"), Target("ru-s")]);
+        Assert.DoesNotContain("asl.a1.ordnance.hit:asl.a1.fire.crew-target-unreviewed", ScenarioA1OrdnanceCalculator.Precheck(shot, Reference));
+        var manned = shot with
+        {
+            Hit = shot.Hit! with
+            {
+                GunTarget = new FireGunTarget("ru-gun", "defender-at-gun", "ru-crew", false, false)
+            }
+        };
+        Assert.Contains("asl.a1.ordnance.hit:asl.a1.fire.crew-target-unreviewed", ScenarioA1OrdnanceCalculator.Precheck(manned, Reference));
     }
 
     public static TheoryData<string> Accepted => ["german-open", "german-building-two-targets", "russian-long-range", "russian-improbable", "german-pinned-afph"];

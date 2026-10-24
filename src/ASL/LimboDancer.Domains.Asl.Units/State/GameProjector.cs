@@ -138,6 +138,11 @@ public static class GameProjector
                 GunHooked hooked => HookGun(previous, hooked),
                 MovementStepped moving => StepMovement(previous, moving),
                 VehicleStepped vehicle => StepVehicle(previous, vehicle),
+                RiderBailedOut bailed => BailOut(previous, bailed),
+                VehicleAbandoned abandoned => Abandon(previous, abandoned),
+                VehicleRecrewed recrewed => Recrew(previous, recrewed),
+                VehicleScrounged scrounged => Scrounge(previous, scrounged),
+                VehicleCaptured captured => CaptureVehicle(previous, captured),
                 VehicleCheckRolled check => CheckVehicle(previous, check),
                 MotionAttempted motion => AttemptMotion(previous, motion),
                 OverrunResolved overrun => ResolveOverrun(previous, overrun),
@@ -209,6 +214,21 @@ public static class GameProjector
                 next = next with
                 {
                     MovedVehicles = [.. next.MovedVehicles, stepped.Vehicle]
+                };
+            }
+
+            // D5.42 (pass 65, the boundary review): a vehicle whose crew left it this Player Turn, by a voluntary Abandonment or an Abandoned condition.
+            var crewLeft = gameEvent.Payload switch
+            {
+                VehicleAbandoned voluntary => voluntary.Vehicle,
+                ConditionsChanged marked when marked.Conditions.TryGetValue(Conditions.Abandoned, out var abandonedState) && abandonedState == ConditionState.True => marked.Id,
+                _ => null,
+            };
+            if (crewLeft is not null && !next.AbandonedThisPlayerTurn.Contains(crewLeft, StringComparer.Ordinal))
+            {
+                next = next with
+                {
+                    AbandonedThisPlayerTurn = [.. next.AbandonedThisPlayerTurn, crewLeft]
                 };
             }
 
@@ -551,7 +571,8 @@ public static class GameProjector
             // (A10.62, p. 68). Residual FP is removed at the end of the MPh (A8.2, p. 60), and a new Player Turn gives every
             // unit a new Rally attempt (A10.6, p. 68).
             // E1.8 (backlog pass 16, ruling R16.2): at night First and Final Fire counters stay, as Gunflashes, until the end of the AFPh.
-            string[] cleared = [.. Rules.ScenarioA1SequenceProjection.ClearedMarkers(state.Phase, state.Night).Select(ConditionName)];
+            string[] cleared = [.. Rules.ScenarioA1SequenceProjection.ClearedMarkers(state.Phase, state.Night).Concat(Rules.ScenarioA1SequenceProjection.PhaseMarkers)
+                .Select(ConditionName)];
             var newPlayerTurn = change.PhasingSide != state.PhasingSide;
             var melee = state.Phase == "ccph" ? InMelee(state) : null;
 
@@ -590,6 +611,7 @@ public static class GameProjector
                     OrdnanceShots = [],
                     Advances = newPlayerTurn ? [] : state.Advances,
                     MovedVehicles = newPlayerTurn ? [] : state.MovedVehicles,
+                    AbandonedThisPlayerTurn = newPlayerTurn ? [] : state.AbandonedThisPlayerTurn,
                     VehicleWeaponShots = newPlayerTurn ? [] : state.VehicleWeaponShots,
                     GunCrewsFired = newPlayerTurn ? [] : state.GunCrewsFired,
                     // A3.3 (table player, pass 12): a unit that fired only a SW in the PFPh has Prep Fired and does not move.
@@ -717,6 +739,13 @@ public static class GameProjector
             Rules.UnitCondition.Ti => "asl:ti",
             Rules.UnitCondition.Concealed => Conditions.Concealed,
             Rules.UnitCondition.Hidden => Conditions.Hidden,
+
+            // D6.631 (pass 65, ruling R65.20): the mount a Removed MG leaves Disabled.
+            Rules.UnitCondition.Disabled => Conditions.Disabled,
+            Rules.UnitCondition.BmgDisabled => Conditions.BmgDisabled,
+
+            // D5.5, D5.6 (pass 65, ruling R65.21): a survivor's Hazardous Movement, removed as the phase ends.
+            Rules.UnitCondition.HazardousMovement => Conditions.HazardousMovement,
             _ => throw new ArgumentOutOfRangeException(nameof(condition), condition, "The projector maps no such condition."),
         };
 
@@ -890,28 +919,47 @@ public static class GameProjector
 
         /// <summary>
         /// D6.1 (ruling R26.2): Passengers and Riders whose vehicle is no longer in play share its fate: eliminated with it, since Crew Survival for
-        /// Passengers (D5.6) is not built; exited with it, as its exit records.
+        /// Passengers (D5.6) is not built; exited with it, as its exit records. A unit that crews it from inside (D5.42; pass 65, ruling R65.20) does too.
         /// </summary>
         private static GameState KeepPassengers(GameState state)
         {
+            // One walk over the state's objects (pass 65, the boundary review): the units aboard and the SW left aboard, each read with its container.
             var next = state;
-            foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Position is ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider }))
+            foreach (var item in state.Objects)
             {
-                var container = state.Find(((ContainedPosition)unit.Position).Container);
-                if (container is null || container.Status == InstanceStatus.Active)
+                var contained = item switch
+                {
+                    UnitInstance { Status: InstanceStatus.Active, Position: ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider or ContainmentRole.Crew } aboard } => aboard,
+
+                    // D6.4 (pass 65, ruling R65.15): a SW left aboard a halftrack or Carrier, held by no unit, shares its vehicle's fate too.
+                    EquipmentInstance { Status: InstanceStatus.Active, Holding: null, Position: ContainedPosition { Role: ContainmentRole.Passenger } stowed } => stowed,
+                    _ => null,
+                };
+                if (contained is null || state.Find(contained.Container) is not { } container || container.Status == InstanceStatus.Active)
                 {
                     continue;
                 }
 
+                var fate = Rules.ScenarioA1VehicleProjection.PassengerExits(container.Status == InstanceStatus.Exited) ? InstanceStatus.Exited : InstanceStatus.Eliminated;
+                if (item is EquipmentInstance weapon)
+                {
+                    next = Replace(next, weapon with
+                    {
+                        Status = fate
+                    })!;
+                    continue;
+                }
+
+                var unit = (UnitInstance)item;
                 next = Replace(next, unit with
                 {
-                    Status = Rules.ScenarioA1VehicleProjection.PassengerExits(container.Status == InstanceStatus.Exited) ? InstanceStatus.Exited : InstanceStatus.Eliminated,
+                    Status = fate
                 })!;
                 next = next with
                 {
-                    Equipment = [.. next.Equipment.Select(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id
-                        ? item with { Status = Rules.ScenarioA1VehicleProjection.PassengerExits(container.Status == InstanceStatus.Exited) ? InstanceStatus.Exited : InstanceStatus.Eliminated }
-                        : item)],
+                    Equipment = [.. next.Equipment.Select(held => held.Status == InstanceStatus.Active && held.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id
+                        ? held with { Status = fate }
+                        : held)],
                 };
             }
 
@@ -1480,10 +1528,18 @@ public static class GameProjector
         }
 
         /// <summary>
-        /// D10.1 (ruling R6.5): a destroyed vehicle becomes a wreck at its Location, on its wreck face and out of Motion; it no longer acts.
+        /// D10.1 (ruling R6.5): a destroyed vehicle becomes a wreck at its Location, on its wreck face and out of Motion; it no longer acts. A non-burning
+        /// wreck attacked as its vehicle burns on a Burn (pass 65, ruling R65.23): the record of a burning wreck on a wreck leaves it as it is, and the Blaze
+        /// placed after it burns it.
         /// </summary>
         private GameState? Wreck(GameState state, VehicleWrecked wreck)
         {
+            if (wreck.Burning && state.Find(wreck.Id) is UnitInstance { Status: InstanceStatus.Wrecked } burnt && vocabulary.IsA(burnt.Kind, "asl:vehicle")
+                && state.Location(burnt.Id) is not null)
+            {
+                return state;
+            }
+
             if (Active(state, wreck.Id) is not UnitInstance vehicle || !Rules.ScenarioA1VehicleProjection.WreckAllowed(vocabulary.IsA(vehicle.Kind, "asl:vehicle"), () => state.Location(vehicle.Id) is not null))
             {
                 return Fail<GameState>("UNIT-STATE-037", $"'{wreck.Id}' is not an active vehicle on the map, so it cannot become a wreck (D10.1).");
@@ -2354,6 +2410,20 @@ public static class GameProjector
             }
 
             var current = state.Movement;
+
+            // D6.4 (pass 65, ruling R65.15): Infantry board as the last step of their own move, every member of their moving stack together and no other
+            // unit, once the DEFENDER's window on its last step has closed; that move ends with the boarding. Rules decides, as the planner's bar does.
+            var boardingAfterMove = Rules.ScenarioA1VehicleProjection.BoardsAfterMove(step.Kind == VehicleStepped.Load, current is { Vehicle: false },
+                current?.WindowOpen == true, current?.Members ?? [], step.Units);
+            if (boardingAfterMove)
+            {
+                state = state with
+                {
+                    FiresThisPhase = [.. state.FiresThisPhase.Where(record => Rules.ScenarioA1MovementCalculator.FireRecordStays(record.Step is not null))],
+                };
+                current = null;
+            }
+
             if (current is not null && (!current.Vehicle || current.WindowOpen || !current.Members.SequenceEqual([vehicle.Id], StringComparer.Ordinal)))
             {
                 return Fail<GameState>("UNIT-STATE-034", "A vehicle moves alone, after the DEFENDER's window on its last MP expenditure closes, and no other unit moves until it ends (A8.11).");
@@ -2393,8 +2463,10 @@ public static class GameProjector
                 VehicleStepped.Load => current is null && !inMotion && step.At == at.Location && step.Facing is null && step.Units is { Count: > 0 } boarding
                     && boarding.All(id => Active(state, id) is UnitInstance unit && unit.Side == vehicle.Side && !unit.MovementEnded && state.Aboard(unit.Id) is null
                         && state.Location(unit.Id)?.Location == at.Location && vocabulary.IsA(unit.Kind, "asl:personnel")),
+                // D6.5 (pass 65, ruling R65.16): Riders disembark as Passengers do.
                 VehicleStepped.Unload => stopped && vehicle.Straddling is null && step.At == at.Location && step.Facing is null && step.Units is { Count: > 0 } leaving
-                    && leaving.All(id => Active(state, id) is UnitInstance { Position: ContainedPosition { Role: ContainmentRole.Passenger } contained } && contained.Container == vehicle.Id),
+                    && leaving.All(id => Active(state, id) is UnitInstance { Position: ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider } contained }
+                        && contained.Container == vehicle.Id),
                 VehicleStepped.Stop => moving && step.At == at.Location && step.Facing is null && step.HalfMp == 2,
 
                 // D2.17 (pass 50): a Delay MP, one MP in place by a vehicle that is stopped or has not started.
@@ -2462,7 +2534,8 @@ public static class GameProjector
                     loaded = Replace(loaded, step.Kind == VehicleStepped.Load
                         ? unit with
                         {
-                            Position = new ContainedPosition(vehicle.Id, ContainmentRole.Passenger),
+                            // D6.2 (pass 65, ruling R65.16): a load recorded with riders boards Riders; any other, Passengers.
+                            Position = new ContainedPosition(vehicle.Id, step.Riders ? ContainmentRole.Rider : ContainmentRole.Passenger),
                             MfSpent = unit.MfSpent + 1,
                             MovementEnded = true,
                         }
@@ -2474,6 +2547,9 @@ public static class GameProjector
                         })!;
                 }
 
+                // D6.4, D6.5, D5.43 (pass 65, rulings R65.14, R65.15): the (un)loaders are the DEFENDER's targets with this expenditure, and the units
+                // an unload recorded since the pass disembarks move on before any other unit once the vehicle's move ends.
+                var unloading = step.Kind == VehicleStepped.Unload;
                 return loaded with
                 {
                     Movement = new MovementState([vehicle.Id], at.Location, (current?.HalfMfInLocation ?? 0) + step.HalfMp, step.Step, false, WindowOpen: true)
@@ -2483,6 +2559,9 @@ public static class GameProjector
                         Stopped = current?.Stopped ?? false,
                         Reverse = current?.Reverse == true,
                         EnteredFrom = current?.EnteredFrom,
+                        Embarking = step.Units,
+                        Unloading = unloading,
+                        Disembarked = unloading && step.Interim ? [.. current?.Disembarked ?? [], .. step.Units!] : current?.Disembarked,
                     },
                 };
             }
@@ -2541,8 +2620,340 @@ public static class GameProjector
                     Overrun = step.Overrunning ? step.At : null,
                     MinimumMove = step.MinimumMove,
                     EnteredFrom = step.Kind == VehicleStepped.Enter && !entering && (step.At.Board != at.Location.Board || step.At.Hex != at.Location.Hex) ? at.Location : current?.EnteredFrom,
+                    Disembarked = current?.Disembarked,
                 },
             };
+        }
+
+        /// <summary>
+        /// A Rider's Bail Out (D6.21, D6.23, D6.24; pass 65, ruling R65.17): a Rider of the vehicle, its NMC agreeing with its DR and each SW's fate with its
+        /// dr. The unit is beneath the AFV on foot in the recorded Location, its move ended, with a Prep Fire counter in its own Player Turn and a Final
+        /// Fire counter in the enemy's if the NMC leaves it unbroken; its SW are kept, malfunctioned, or eliminated as recorded. The records after this
+        /// one write what the NMC did. For Defensive First Fire it is one of the moving vehicle's units that Bailed Out (FFNAM).
+        /// </summary>
+        private GameState? BailOut(GameState state, RiderBailedOut bailed)
+        {
+            var refused = Rules.ScenarioA1RiderRules.BailOutRefusal();
+            if (Active(state, bailed.Unit) is not UnitInstance { Position: ContainedPosition { Role: ContainmentRole.Rider } contained } unit || contained.Container != bailed.Vehicle
+                || Active(state, bailed.Vehicle) is not UnitInstance || !rolls.TryGetValue(bailed.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6)
+            {
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
+            var broken = GameState.Condition(unit, Conditions.Broken) == ConditionState.True;
+            if (!Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result))
+            {
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
+            var carrierBroken = Rules.ScenarioA1RiderRules.LeavesBroken(bailed.Result, broken);
+            var conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal);
+            if (!carrierBroken)
+            {
+                conditions[Rules.ScenarioA1RiderRules.PrepFireCounter(unit.Side == state.PhasingSide) ? Conditions.PrepFire : Conditions.FinalFire] = ConditionState.True;
+            }
+
+            var next = Replace(state, unit with
+            {
+                Position = new MapPosition(bailed.At),
+                MovementEnded = true,
+                Conditions = conditions,
+            })!;
+            foreach (var weapon in bailed.Weapons ?? [])
+            {
+                int? dr = null;
+                if (weapon.Roll is { } weaponRoll)
+                {
+                    if (!rolls.TryGetValue(weaponRoll, out var drawn) || drawn.Count != 1 || drawn.Sides != 6)
+                    {
+                        return Fail<GameState>(refused.Code, refused.Text);
+                    }
+
+                    dr = drawn.Values[0];
+                }
+
+                if (Active(next, weapon.Weapon) is not EquipmentInstance { Holding: { Role: HoldingRole.Possessed } holding } carried || holding.Holder != unit.Id
+                    || !Rules.ScenarioA1RiderRules.WeaponAgrees(dr, weapon.Fate == Rules.ScenarioA1RiderRules.Eliminated, carrierBroken, weapon.Fate))
+                {
+                    return Fail<GameState>(refused.Code, refused.Text);
+                }
+
+                next = weapon.Fate == Rules.ScenarioA1RiderRules.Eliminated ? Eliminate(next, carried.Id)!
+                    : weapon.Fate == Rules.ScenarioA1RiderRules.Malfunctioned ? Replace(next, carried with
+                    {
+                        Conditions = new Dictionary<string, ConditionState>(carried.Conditions, StringComparer.Ordinal) { [Conditions.Malfunctioned] = ConditionState.True },
+                    })!
+                    : next;
+            }
+
+            // D6.24: for Defensive First Fire the unit spent all its remaining MF, at least one (FFNAM), with the moving AFV's expenditure.
+            return next.Movement is { Vehicle: true } moving && moving.Members.Contains(bailed.Vehicle, StringComparer.Ordinal)
+                ? next with
+                {
+                    Movement = moving with
+                    {
+                        BailedOut = [.. moving.BailedOut ?? [], unit.Id]
+                    }
+                }
+                : next;
+        }
+
+        /// <summary>
+        /// A voluntary Abandonment (D5.41, D5.43; pass 65, ruling R65.20): Rules decides whether the record stands by the planner's bar over the state's facts
+        /// (<c>ScenarioA1VehicleProjection.AbandonStands</c>): in the phasing side's MPh, with no unit moving, the phasing side's vehicle in the recorded
+        /// Location, not yet Abandoned, not moved or fired this Player Turn, not Shocked or Stunned, and its crew either the counter placed beneath it just
+        /// before or a unit crewing it from inside, which leaves as itself with what Rules says it takes: the vehicle's Armor Leader (D3.43) and Stun +1
+        /// (D5.34). A Removed MG is the crew's SW and its mount is Disabled (D6.631). The crew's MF are spent, with the D5.8 fire counter the record names; the
+        /// vehicle is Abandoned and stopped; and the DEFENDER's window opens on the crew, which takes FFNAM as an unloader (D5.43), the move ending when he
+        /// passes.
+        /// </summary>
+        private GameState? Abandon(GameState state, VehicleAbandoned abandoned)
+        {
+            const string Code = "UNIT-STATE-034";
+            const string Text = "A crew Abandons its vehicle in its own MPh, with no unit moving, from the vehicle's Location, before the vehicle moves or fires in that "
+                + "Player Turn and while it is neither Shocked nor Stunned (D5.41, D5.34, C7.42).";
+            var vehicle = Active(state, abandoned.Vehicle) as UnitInstance;
+            var crew = Active(state, abandoned.Crew) as UnitInstance;
+            var inside = crew?.Position is ContainedPosition { Role: ContainmentRole.Crew } contained && contained.Container == abandoned.Vehicle;
+            if (vehicle is null || crew is null || !Rules.ScenarioA1VehicleProjection.AbandonStands(new Rules.AbandonRecordFacts(
+                state.Phase == "mph" && vehicle.Side == state.PhasingSide, vocabulary.IsA(vehicle.Kind, "asl:vehicle"), state.Location(vehicle.Id)?.Location == abandoned.At,
+                GameState.Condition(vehicle, Conditions.Abandoned) == ConditionState.True, state.Movement is not null, VehicleMoved(state, vehicle), VehicleFired(vehicle),
+                GameState.Condition(vehicle, Conditions.Shocked) == ConditionState.True || GameState.Condition(vehicle, Conditions.UnconfirmedKill) == ConditionState.True,
+                GameState.Condition(vehicle, Conditions.Stunned) == ConditionState.True, crew.Side == vehicle.Side, inside,
+                state.Location(crew.Id)?.Location == abandoned.At)))
+            {
+                return Fail<GameState>(Code, Text);
+            }
+
+            if (abandoned.Removed is { } removed && (Active(state, removed) is not EquipmentInstance { Holding: { Role: HoldingRole.Possessed } holding } || holding.Holder != crew.Id
+                || abandoned.Mount is not (Rules.ScenarioA1CrewActsRules.MainArmament or Rules.ScenarioA1CrewActsRules.BowMg)
+                || GameState.Condition(vehicle, ConditionName(Rules.ScenarioA1CrewActsRules.RemovedCondition(abandoned.Mount))) != ConditionState.True))
+            {
+                return Fail<GameState>(Code, "A MG Removed as its crew Abandons a halftrack is that crew's SW, and its mount is Disabled (D6.631).");
+            }
+
+            var crewConditions = new Dictionary<string, ConditionState>(crew.Conditions, StringComparer.Ordinal);
+            if (Rules.ScenarioA1CrewActsRules.FireCounterOf(abandoned.FireCounter) is { } counter)
+            {
+                crewConditions[ConditionName(counter)] = ConditionState.True;
+            }
+
+            var (takesStun, takesLeader) = Rules.ScenarioA1CrewActsRules.AbandonCarries(inside, GameState.Condition(vehicle, Conditions.StunRecovery) == ConditionState.True);
+            if (takesStun)
+            {
+                crewConditions[Conditions.StunRecovery] = ConditionState.True;
+            }
+
+            var next = Replace(state, crew with
+            {
+                Position = inside ? new MapPosition(abandoned.At) : crew.Position,
+                MovementEnded = true,
+                Conditions = crewConditions,
+                ArmorLeader = takesLeader ? vehicle.ArmorLeader : crew.ArmorLeader,
+            })!;
+            next = Replace(next, vehicle with
+            {
+                Conditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal)
+                {
+                    [Conditions.Abandoned] = ConditionState.True,
+                    [Conditions.Motion] = ConditionState.False,
+                },
+
+                // A21.22 (pass 65, ruling R65.22): a Temporary crew's penalties leave with it.
+                TemporaryCrew = null,
+            })!;
+            return next with
+            {
+                Movement = new MovementState([vehicle.Id], abandoned.At, 0, 1, false, WindowOpen: true)
+                {
+                    Vehicle = true,
+                    Members = [],
+                    Ending = true,
+                    Embarking = [crew.Id],
+                    Unloading = true,
+                },
+            };
+        }
+
+        /// <summary>D5.8, C.8: whether a vehicle has moved this Player Turn, as the planner reads it (Rules decides from the state's facts).</summary>
+        private static bool VehicleMoved(GameState state, UnitInstance vehicle) =>
+            Rules.ScenarioA1CrewActsRules.VehicleMoved(state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal), state.Phase == "mph", vehicle.MfSpent > 0 || vehicle.HalfMfSpent);
+
+        /// <summary>D5.8: whether a vehicle has fired this Player Turn, as the planner reads it (Rules decides from its fire counters).</summary>
+        private static bool VehicleFired(UnitInstance vehicle) =>
+            Rules.ScenarioA1CrewActsRules.VehicleFired(GameState.Condition(vehicle, Conditions.PrepFire) == ConditionState.True,
+                GameState.Condition(vehicle, Conditions.FirstFire) == ConditionState.True, GameState.Condition(vehicle, Conditions.FinalFire) == ConditionState.True,
+                GameState.Condition(vehicle, Conditions.BoundingFire) == ConditionState.True, GameState.Condition(vehicle, Conditions.IntensiveFire) == ConditionState.True);
+
+        /// <summary>
+        /// A Scrounging (D10.5 to D10.52; pass 65, ruling R65.23): Rules decides whether the record stands by the planner's bar over the state's facts
+        /// (<c>ScenarioA1VehicleProjection.ScroungeStands</c>): in the phasing side's RPh, an unbroken Infantry MMC of that side, not berserk, in Melee, or TI,
+        /// on foot in the Location of a non-burning wreck (no Blaze by Rules' name) or an Abandoned vehicle not yet Scrounged nor Disabled, its dr recorded
+        /// before it as a single die; no more SW taken than a dr of 1 to 3 allows, each one the unit's own. The vehicle is marked Scrounged and the mounts named
+        /// Disabled; the unit and each SW taken are TI.
+        /// </summary>
+        private GameState? Scrounge(GameState state, VehicleScrounged scrounged)
+        {
+            const string Code = "UNIT-STATE-034";
+            var taken = scrounged.Taken ?? [];
+            var vehicle = state.Find(scrounged.Vehicle) as UnitInstance;
+            var unit = Active(state, scrounged.Unit) as UnitInstance;
+            if (vehicle is null || unit is null)
+            {
+                return Fail<GameState>(Code, "A Scrounging names a unit in play and a vehicle or wreck (D10.5).");
+            }
+
+            var wreck = vehicle.Status == InstanceStatus.Wrecked;
+            var blaze = Rules.ScenarioA1WreckRules.BlazeId(vehicle.Id);
+            static bool Has(IGameObject item, string name) => GameState.Condition(item, name) == ConditionState.True;
+            var facts = new Rules.ScroungeFacts(unit.Id, vehicle.Id, state.Phase == "rph" && unit.Side == state.PhasingSide, Rules.ScenarioA1Definitions.MmcKinds.Contains(unit.Kind),
+                !Has(unit, Conditions.Broken) && !Has(unit, Conditions.Captured), Has(unit, Conditions.Berserk), Has(unit, Conditions.Melee), Has(unit, "asl:ti"),
+                unit.Position is MapPosition && state.Location(unit.Id)?.Location == scrounged.At && state.Location(vehicle.Id)?.Location == scrounged.At, wreck,
+                wreck && state.Entities.Any(entity => entity.Status == InstanceStatus.Active && entity.Id == blaze),
+                vehicle.Status == InstanceStatus.Active && Has(vehicle, Conditions.Abandoned), Has(vehicle, Conditions.Scrounged),
+                Has(vehicle, Conditions.Disabled) || Has(vehicle, Conditions.BmgDisabled));
+            if (!Rules.ScenarioA1VehicleProjection.ScroungeStands(vocabulary.IsA(vehicle.Kind, "asl:vehicle"), facts,
+                rolls.TryGetValue(scrounged.Roll, out var roll) && roll is { Count: 1, Sides: 6 } && roll.Values[0] == scrounged.Dr, scrounged.Dr, taken.Count,
+                taken.All(item => Active(state, item.Weapon) is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } holding } && holding.Holder == unit.Id)))
+            {
+                return Fail<GameState>(Code, "An unbroken Infantry MMC of the phasing side scrounges a non-burning wreck or an Abandoned vehicle not yet Scrounged nor Disabled in its "
+                    + "Location, in its RPh, taking at most as many of its SW as its dr of 1 to 3 (D10.5).");
+            }
+
+            var vehicleConditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal) { [Conditions.Scrounged] = ConditionState.True };
+            foreach (var (condition, _) in Rules.ScenarioA1WreckRules.ScroungedConditions(scrounged.Mounts ?? []))
+            {
+                vehicleConditions[ConditionName(condition)] = ConditionState.True;
+            }
+
+            var next = Replace(state, vehicle with
+            {
+                Conditions = vehicleConditions
+            })!;
+            next = Replace(next, unit with
+            {
+                Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { ["asl:ti"] = ConditionState.True },
+            })!;
+            return next with
+            {
+                Equipment = [.. next.Equipment.Select(item => taken.Any(weapon => weapon.Weapon == item.Id)
+                    ? item with { Conditions = new Dictionary<string, ConditionState>(item.Conditions, StringComparer.Ordinal) { ["asl:ti"] = ConditionState.True } }
+                    : item)],
+            };
+        }
+
+        /// <summary>
+        /// A re-crewing (D5.42, D3.43, D5.34, D6.631; pass 65, ruling R65.20): Rules decides whether the record stands by the planner's bar over the state's
+        /// facts (<c>ScenarioA1VehicleProjection.RecrewStands</c>): in the phasing side's MPh, with no unit moving, an unpinned Good Order Infantry unit of
+        /// the vehicle's side on foot in the Location of its Abandoned vehicle, which has spent no MF, enters it in the crew's role, spending all its MF; not
+        /// in the Player Turn the vehicle's crew left it (the state's list), nor the vehicle's own Recalled crew. The vehicle is manned again: no longer
+        /// Abandoned, with what Rules says the unit brings back, the Armor Leader and the Stun +1 it carries; a SW the record returns, the unit's own, goes
+        /// back into its mount, whose Disabled counter is removed.
+        /// </summary>
+        private GameState? Recrew(GameState state, VehicleRecrewed recrewed)
+        {
+            const string Code = "UNIT-STATE-034";
+            var vehicle = Active(state, recrewed.Vehicle) as UnitInstance;
+            var unit = Active(state, recrewed.Unit) as UnitInstance;
+            var returned = recrewed.Returned is { } weapon ? Active(state, weapon) as EquipmentInstance : null;
+            if (vehicle is null || unit is null)
+            {
+                return Fail<GameState>(Code, "A re-crewing names a unit in play and a vehicle in play (D5.42).");
+            }
+
+            static bool Has(IGameObject item, string name) => GameState.Condition(item, name) == ConditionState.True;
+            var vehicleThere = state.Location(vehicle.Id)?.Location == recrewed.At;
+            var facts = new Rules.RecrewFacts(unit.Id, vehicle.Id, state.Phase == "mph" && unit.Side == state.PhasingSide, vehicleThere && Has(vehicle, Conditions.Abandoned),
+                unit.Side == vehicle.Side, vocabulary.IsA(unit.Kind, "asl:personnel") && !vocabulary.IsA(unit.Kind, "asl:vehicle") && unit.Position is MapPosition,
+                vehicleThere && state.Location(unit.Id)?.Location == recrewed.At, unit.MfSpent > 0 || unit.HalfMfSpent || unit.MovementEnded,
+                Rules.ScenarioA1CrewActsRules.RecrewReady(Has(unit, Conditions.Broken), Has(unit, Conditions.Pinned), Has(unit, Conditions.Berserk), Has(unit, Conditions.Melee),
+                    Has(unit, Conditions.Captured), Has(unit, "asl:ti")),
+                state.AbandonedThisPlayerTurn.Contains(vehicle.Id, StringComparer.Ordinal), Rules.ScenarioA1CrewActsRules.IsOwnCrew(unit.Id, vehicle.Id), Has(vehicle, Conditions.Recalled));
+            var returnedStands = recrewed.Returned is null || (returned is { Holding: { Role: HoldingRole.Possessed } holding } && holding.Holder == unit.Id
+                && recrewed.Mount is Rules.ScenarioA1CrewActsRules.MainArmament or Rules.ScenarioA1CrewActsRules.BowMg);
+            if (!Rules.ScenarioA1VehicleProjection.RecrewStands(vocabulary.IsA(vehicle.Kind, "asl:vehicle"), state.Movement is not null, facts, returnedStands))
+            {
+                return Fail<GameState>(Code, recrewed.Returned is not null && !returnedStands
+                    ? "A MG returned to a halftrack is the entering unit's SW, going back to the mount it was Removed from (D6.631)."
+                    : "An unpinned Good Order unit of the phasing side enters its side's Abandoned vehicle from its Location in its MPh, before it spends any MF and with "
+                        + "no unit moving, not in the Player Turn the vehicle's crew left it (D5.42, D5.43, D5.341).");
+            }
+
+            var unitConditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal);
+            var vehicleConditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal) { [Conditions.Abandoned] = ConditionState.False };
+            var (stunReturns, leaderReturns) = Rules.ScenarioA1CrewActsRules.RecrewCarries(Has(unit, Conditions.StunRecovery), unit.ArmorLeader is not null);
+            if (stunReturns)
+            {
+                vehicleConditions[Conditions.StunRecovery] = ConditionState.True;
+                unitConditions[Conditions.StunRecovery] = ConditionState.False;
+            }
+
+            if (returned is not null)
+            {
+                vehicleConditions[ConditionName(Rules.ScenarioA1CrewActsRules.RemovedCondition(recrewed.Mount!))] = ConditionState.False;
+            }
+
+            var next = Replace(state, unit with
+            {
+                Position = new ContainedPosition(vehicle.Id, ContainmentRole.Crew),
+                MovementEnded = true,
+                Conditions = unitConditions,
+                ArmorLeader = null,
+            })!;
+            // D5.42: entered with all the crew's MF, the vehicle moves from its next MPh.
+            next = Replace(next, vehicle with
+            {
+                Conditions = vehicleConditions,
+                ArmorLeader = leaderReturns ? unit.ArmorLeader : vehicle.ArmorLeader,
+                MovementEnded = true,
+
+                // A21.22 (pass 65, ruling R65.22): the Temporary crew the record names, taken from it; none for a record made before increment 2i.
+                TemporaryCrew = recrewed.Manning is { } manning ? new TemporaryCrew(manning, recrewed.Captured) : null,
+            })!;
+            return returned is null ? next : Replace(next, returned with
+            {
+                Status = InstanceStatus.Consumed
+            });
+        }
+
+        /// <summary>
+        /// A capture (A11.52, A21.2, A21.21; pass 65, ruling R65.22): Rules decides whether the record stands (<c>ScenarioA1VehicleProjection.CaptureStands</c>):
+        /// in the CCPh an active vehicle of another side, in the recorded Location, passes to the captor's side, an AFV only when Abandoned. The side it was
+        /// taken from is kept for Rules' captured reading (A21.22); an Abandoned AFV stays Abandoned until a crew enters it; a SMC captor named as an unarmed
+        /// vehicle's Temporary Driver, of the captor's side on foot in the Location, is removed into it in the crew's role.
+        /// </summary>
+        private GameState? CaptureVehicle(GameState state, VehicleCaptured captured)
+        {
+            const string Code = "UNIT-STATE-034";
+            if (Active(state, captured.Vehicle) is not UnitInstance vehicle || !Rules.ScenarioA1VehicleProjection.CaptureStands(state.Phase == "ccph",
+                vocabulary.IsA(vehicle.Kind, "asl:vehicle"), vehicle.Side != captured.Side, state.Location(vehicle.Id)?.Location == captured.At,
+                state.Sides.Any(side => side.Id == captured.Side), captured.Cause, GameState.Condition(vehicle, Conditions.Abandoned) == ConditionState.True))
+            {
+                return Fail<GameState>(Code, "A vehicle is captured in the CCPh, in its Location, by the other side: an AFV only when Abandoned (A11.52, A21.2).");
+            }
+
+            var next = Replace(state, vehicle with
+            {
+                Side = captured.Side,
+                TemporaryCrew = null,
+                CapturedFrom = vehicle.CapturedFrom ?? vehicle.Side,
+            })!;
+            if (captured.Driver is not { } driver)
+            {
+                return next;
+            }
+
+            if (Active(next, driver) is not UnitInstance smc || !Rules.ScenarioA1VehicleProjection.DriverStands(captured.Cause, vocabulary.IsA(smc.Kind, "asl:smc"),
+                smc.Side == captured.Side, smc.Position is MapPosition && next.Location(driver)?.Location == captured.At))
+            {
+                return Fail<GameState>(Code, "A SMC captor removed into an unarmed vehicle as its Temporary Driver is of the captor's side, on foot in its Location (A21.21).");
+            }
+
+            return Replace(next, smc with
+            {
+                Position = new ContainedPosition(vehicle.Id, ContainmentRole.Crew),
+                MovementEnded = true,
+            });
         }
 
         /// <summary>
@@ -2566,8 +2977,9 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-039", $"The vehicle check's roll '{check.Roll}' is not a recorded DR.");
             }
 
-            // D8.3: a Bog Removal is decided by its colored dr, the first die.
-            var final = Rules.ScenarioA1VehicleProjection.CheckFinal(check.Check == VehicleCheckRolled.BogRemoval, roll.Values[0], roll.Values[1], check.Drm);
+            // D8.3: a Bog Removal is decided by its colored dr, the first die; so is a Temporary crew's start dr (A21.22; pass 65, ruling R65.22).
+            var final = Rules.ScenarioA1VehicleProjection.CheckFinal(check.Check is VehicleCheckRolled.BogRemoval or VehicleCheckRolled.TemporaryStart, roll.Values[0], roll.Values[1],
+                check.Drm);
             if (check.Result != VehicleCheckRolled.For(check.Check, final) || (check.Check == VehicleCheckRolled.Esb) != (check.Mp > 0))
             {
                 return Fail<GameState>("UNIT-STATE-039", "The vehicle check's result disagrees with its DR.");
@@ -2611,7 +3023,7 @@ public static class GameProjector
                 EsbMp = esb
             })!;
             var stuck = Rules.ScenarioA1VehicleProjection.CheckStops(check.Result is VehicleCheckRolled.Bogged or VehicleCheckRolled.Immobilized, check.Check == VehicleCheckRolled.BogRemoval,
-                check.Result == VehicleCheckRolled.Freed);
+                check.Result == VehicleCheckRolled.Freed) || Rules.ScenarioA1CapturedVehicleRules.StartStops(check.Result);
             return stuck && next.Movement is { Vehicle: true } movement && movement.Members.Contains(vehicle.Id, StringComparer.Ordinal)
                 ? next with
                 {
@@ -3055,11 +3467,30 @@ public static class GameProjector
                 }
             }
 
-            return Settle(next, movement! with
+            var settled = Settle(next, movement! with
             {
                 Members = [.. movement.Members.Where(id => !ended.Movers.Contains(id, StringComparer.Ordinal))],
                 Movers = [.. movement.Movers.Where(id => !ended.Movers.Contains(id, StringComparer.Ordinal))],
             });
+
+            // D6.5 (pass 65, ruling R65.15): once the vehicle's move ends, the units it disembarked by an unload recorded since the pass that may still move
+            // are the moving stack's members; they move, or end their move, before any other unit moves.
+            if (settled.Movement is null && movement.Vehicle && movement.Disembarked is { Count: > 0 } disembarked
+                && Rules.ScenarioA1PassengerCalculator.InterimMembers(disembarked.Select(id => Active(settled, id) is UnitInstance unit
+                    ? (id, unit.Position is MapPosition, unit.MovementEnded, GameState.Condition(unit, Conditions.Pinned) == ConditionState.True,
+                        GameState.Condition(unit, Conditions.Broken) == ConditionState.True)
+                    : (id, false, true, false, false))) is { Count: > 0 } interim)
+            {
+                settled = settled with
+                {
+                    Movement = new MovementState([], settled.Location(interim[0])?.Location ?? movement.Location, 0, movement.Step, false, WindowOpen: false)
+                    {
+                        Members = interim,
+                    },
+                };
+            }
+
+            return settled;
         }
 
         /// <summary>
@@ -3203,10 +3634,12 @@ public static class GameProjector
             }
 
             // D3.4, D3.41, D3.45 (pass 55, rulings R55.15, R55.18): a vehicle, and nothing else, may set up with an Armor Leader of a listed grade;
-            // Rules decides.
+            // Rules decides. D3.43 (pass 65, ruling R65.20): a crew counter that left its vehicle carries him, dormant, until it re-crews; a Carrier's HS is
+            // its crew (D6.82).
             if (instance.ArmorLeader is { } armorLeader
                 && Rules.ScenarioA1ArmorLeaders.AssignmentRefusal(instance.Id, vocabulary.IsA(instance.Kind, "asl:vehicle"), armorLeader.Morale, armorLeader.Leadership,
-                    instance.Conditions.TryGetValue(Conditions.InexperiencedCrew, out var inexperiencedCrew) && inexperiencedCrew == ConditionState.True) is { } leaderRefusal)
+                    instance.Conditions.TryGetValue(Conditions.InexperiencedCrew, out var inexperiencedCrew) && inexperiencedCrew == ConditionState.True,
+                    Rules.ScenarioA1Definitions.IsCrew(instance.Kind) || vocabulary.IsA(instance.Kind, "asl:half-squad")) is { } leaderRefusal)
             {
                 return Fail<GameState>(leaderRefusal.Code, leaderRefusal.Text);
             }
@@ -3345,7 +3778,13 @@ public static class GameProjector
             return item switch
             {
                 // A20.53 (ruling R14.5): a Guard's prisoners go with it.
-                UnitInstance unit => MovePrisoners(Replace(state, unit with { Position = move.Position, MfSpent = unit.MfSpent + (move.Mf ?? 0) })!, unit.Id, move.Position),
+                // D5.5, D5.6, D6.9 (pass 65): a unit placed beneath its vehicle has spent all its MF; a record before the pass ends no move.
+                UnitInstance unit => MovePrisoners(Replace(state, unit with
+                {
+                    Position = move.Position,
+                    MfSpent = unit.MfSpent + (move.Mf ?? 0),
+                    MovementEnded = unit.MovementEnded || move.Ended,
+                })!, unit.Id, move.Position),
                 EntityInstance entity => Replace(state, entity with { Position = move.Position }),
                 _ => Fail<GameState>("UNIT-STATE-012", "Equipment moves with equipment-transferred."),
             };
@@ -3686,11 +4125,55 @@ public static class GameProjector
 
             return item switch
             {
-                UnitInstance unit => Replace(state, unit with { Conditions = merged }),
+                UnitInstance unit => SmcCrewAfter(Replace(state, unit with { Conditions = merged }), unit, change),
                 EquipmentInstance equipment => Replace(state, equipment with { Conditions = merged }),
                 EntityInstance entity => Replace(state, entity with { Conditions = merged }),
                 _ => null,
             };
+        }
+
+        /// <summary>
+        /// D5.343 (p. 204; pass 65, ruling R65.22): a SMC that mans a vehicle as its Temporary crew is Wounded by a Stun the vehicle takes, and eliminated by a
+        /// Recall, but one that comes with a Disabled MA (D3.7); the vehicle is then unmanned, so Abandoned. Rules decides. Only a vehicle re-crewed since
+        /// increment 2i has such a crew, so no older record changes. A one man turret's EXC is not read (no catalog vehicle has one).
+        /// </summary>
+        private GameState SmcCrewAfter(GameState next, UnitInstance before, ConditionsChanged change)
+        {
+            if (before.TemporaryCrew is not { Manning: Rules.ScenarioA1CapturedVehicleRules.Smc })
+            {
+                return next;
+            }
+
+            bool Now(string name) => change.Conditions.TryGetValue(name, out var value) && value == ConditionState.True && GameState.Condition(before, name) != ConditionState.True;
+            var (wounded, eliminated) = Rules.ScenarioA1CapturedVehicleRules.SmcCrewOutcome(Now(Conditions.Stunned), Now(Conditions.Recalled), Now(Conditions.Disabled), false);
+            if ((!wounded && !eliminated) || next.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active
+                && unit.Position is ContainedPosition { Role: ContainmentRole.Crew } inside && inside.Container == before.Id) is not { } crew)
+            {
+                return next;
+            }
+
+            // A17.2 (the referee's review): a Wounded SMC Wounded again is eliminated.
+            (wounded, eliminated) = Rules.ScenarioA1CapturedVehicleRules.SmcCrewOutcome(Now(Conditions.Stunned), Now(Conditions.Recalled), Now(Conditions.Disabled), false,
+                GameState.Condition(crew, Conditions.Wounded) == ConditionState.True);
+
+            if (wounded)
+            {
+                return Replace(next, crew with
+                {
+                    Conditions = new Dictionary<string, ConditionState>(crew.Conditions, StringComparer.Ordinal) { [Conditions.Wounded] = ConditionState.True },
+                });
+            }
+
+            var left = Eliminate(next, crew.Id) ?? next;
+            return left.Unit(before.Id) is { } vehicle ? Replace(left, vehicle with
+            {
+                Conditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal)
+                {
+                    [Conditions.Abandoned] = ConditionState.True,
+                    [Conditions.Motion] = ConditionState.False,
+                },
+                TemporaryCrew = null,
+            }) : left;
         }
 
         private GameState? RecordLineage(GameState state, LineageRecorded lineage)
