@@ -449,6 +449,9 @@ public enum UnitCondition
     StunRecovery,
     BmgDisabled,
     CmgDisabled,
+
+    /// <summary>A crew or PRC beneath its vehicle after Survival or a failed Immobilization TC, under Hazardous Movement for the phase (D5.5, D5.6; pass 65).</summary>
+    HazardousMovement,
 }
 
 /// <summary>A weapon of a vehicle that fired this Player Turn, as the state has it (D3.5, D3.51; pass 50): the weapon, its fire phase, the hexspines its CA changed, and whether woods, a building, or rubble doubled that.</summary>

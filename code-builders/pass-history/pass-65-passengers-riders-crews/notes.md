@@ -140,5 +140,16 @@ A running record kept as the pass goes, at the user's word of 2026-10-23 ("Keep 
   - Abandoning the SPW 251/1 with Removal commits "[F10]: 1-2-7 vehicle crew G1 Abandons vehicle G2, taking its MG as the LMG (D6.631) (D5.41)"; the Russian DEFENDER's pass control appears and its pass ends the window cleanly; the tank's Abandon is still offered.
   - Found: the proposal names the units the plan creates by raw id ("Abandon-65e58cf27955-dh-crew Abandons ...", "the LMG abandon-65e58cf27955-dh-mg"), the same fault as 2f's crew unload. For the reviews' fixes: a name for a unit the plan creates.
   - Re-crewing a Player Turn later is asserted by `ACrewReCrewsItsTankAPlayerTurnLaterAndItsArmorLeaderReturns`; not walked in the Studio.
-- 03:27 2g committed (below).
+- 03:27 2g committed, 3bd63d52. The 2g game to `OWN`.
+- 03:28 The 2h agent launched on `brief_2h.md`.
+- About 04:00 The 2h agent reported (built 03:28 to about 04:00). Built: `ScenarioA1CrewSurvivalRules` (SurvivalDrm, CrewSurvival, Survival, TaskCheck, SecondCause on an Original DR of 5, BurnsRed), used by all four paths; the TC on the mortar path and the IFT Vehicle line; Survival on the Vehicle-line kill; PRC Survival on the mortar path (a 2b leftover); `asl:hazardous-movement`, removed at each phase's end; facts `shocked`, `abandoned`, `immobile`, `secondCause`, and the mortar's `crewCheck`, `abandoned`, `prcSurvival`. Judged:
+  - a crew failing its TC also takes Hazardous Movement (D5.5's text). Right;
+  - "a crew" is a vehicle with an upper-case CS# (D5.1: an unarmed vehicle's Inherent Driver is never a crew). Right;
+  - the +1 for a broken crew is never set (a crew inside is never broken);
+  - the red CS# is not applied on the IFT Vehicle line (the unarmored line);
+  - no Residual FP skip is built (survivors spent all their MF, so it cannot arise);
+  - slips: its first Bash call `cd`'d into the repository, and it ran `games_2h.py`, which writes under boards (it deleted the three games at once). I ran it again myself.
+  - Seen, outside the task: **IFT fire at a crew that mans no Gun is refused** (ruling R8.3), so the pass's vehicle crews could not be fired at. **Ruling R65.28:** a crew that mans no Gun is an ordinary Infantry target, alone or with others; built in 2k. Also seen, to backlog rows: the existing ordnance TC still lets an unarmed truck's Inherent Driver take one; after a failed mortar TC the AFV still enters the hit's IFT attack for a crew Collateral Attack; D9.3's EXC is not built.
+- 04:05 Studio check of 2h in p65-tc-mortar (Russian PFPh): the 50mm mortar hits the SPW 251/1 at [D10] (To Hit 2 1, IFT 2 2, TC 6 6); the record: "... hull hit on the IFT (C1.55): 2 FP, DR 2, 2 - 1 (all af 4 or less) - 1 (open topped) = 2 against the K/# DR 2: immobilized; crew TC DR 12 against 8: Abandoned (D5.5) ...".
+- 04:08 `brief_2k.md` written (R65.28 first, then R65.26's A7.308 and D5.311). 2h committed (below).
 - The four estimates sum to about 15:00 of build against the plan's 7:00 (65.1 3:00, 65.2 2:30, 65.3 1:15, 65.4 1:30, 65.5 0:50, crews 0:45, 65.6 1:40, 65.7 1:10, 65.8 1:40, 65.9 0:50).

@@ -304,14 +304,25 @@ public static class FireText
                 : $"{fate.EquipmentId}, the Gun {fate.HolderId} manned: the DC's {ResultText(fate.Result)} leaves it {outcome} (C11.6)";
         })];
 
-    /// <summary>A vehicle's Vehicle line result (A7.308, A7.309): the Kill Number, its Final DR, and any Unlikely Kill dr.</summary>
+    /// <summary>
+    /// What the Immobilization TC's second cause says before the TC (D5.5, D8.11, D8.22; pass 65, ruling R65.21): the target was already Immobile, and an
+    /// Original TK DR of 5 would have destroyed or Shocked it.
+    /// </summary>
+    public const string SecondCauseWords = "already Immobile, and an Original TK DR of 5 would have destroyed or Shocked it (D5.5)";
+
+    /// <summary>
+    /// A vehicle's Vehicle line result (A7.308, A7.309): the Kill Number, its Final DR, and any Unlikely Kill dr; since pass 65 (ruling R65.21) its crew's
+    /// Immobilization TC (D5.5) or Crew Survival DR (D5.6).
+    /// </summary>
     public static string VehicleLineText(FireVehicleEffect hit)
     {
         ArgumentNullException.ThrowIfNull(hit);
         return hit.KillNumber is not { } kill
             ? "unharmed by small arms (A7.307)"
             : $"Kill Number {kill}, Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({DisplayText.Modifier(item.Name)} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))})"))}"
-                + (hit.UnlikelyKillDr is { } dr ? $", Unlikely Kill dr {dr}" : "") + $": {hit.Result.Replace('-', ' ')}";
+                + (hit.UnlikelyKillDr is { } dr ? $", Unlikely Kill dr {dr}" : "") + $": {hit.Result.Replace('-', ' ')}"
+                + (hit.TaskCheck is { } tc ? $"; crew TC DR {tc.FinalDr} against {MoraleWords(tc)}: {(tc.Passed ? "passed" : "Abandoned")} (D5.5)" : "")
+                + (hit.CrewSurvival is { } cs ? $"; Crew Survival DR {cs.FinalDr}{(cs.Drm > 0 ? " (+1)" : "")} against CS# {cs.CrewSurvival}: {(cs.Survived ? "the crew survives" : "no survivors")} (D5.6)" : "");
     }
 
     /// <summary>

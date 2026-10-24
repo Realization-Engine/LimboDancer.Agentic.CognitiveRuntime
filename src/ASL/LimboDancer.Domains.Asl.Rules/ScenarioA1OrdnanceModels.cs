@@ -484,6 +484,13 @@ public sealed record OrdnanceRolls(IReadOnlyList<int>? ToHit, int? Subsequent, I
         get; init;
     }
 
+    /// <summary>The Immobilization TC of each AFV crew a mortar's hull hit immobilized (C1.55, D5.5; pass 65, ruling R65.21), by vehicle id.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, IReadOnlyList<int>>? AreaCrewCheck
+    {
+        get; init;
+    }
+
     /// <summary>
     /// The rolls of the target's Passengers and Riders (pass 65, rulings R65.7, R65.9): the checks and Random Selection of a Specific Collateral Attack
     /// on them, keyed as the Fire package keys a target unit's, and each one's Survival DR.

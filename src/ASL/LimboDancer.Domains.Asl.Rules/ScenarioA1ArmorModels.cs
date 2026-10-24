@@ -143,7 +143,8 @@ public sealed record OrdnanceVehicleTarget(
 
     /// <summary>
     /// Whether the target is Immobile, immobilized or bogged (C7.346, p. 177; pass 60, ruling R60.16): -2 to a DC's Position DR. A state fact, given only
-    /// on the AFV a FT, MOL, or DC attack names; null is false.
+    /// on the AFV a FT, MOL, or DC attack names, and since pass 65 (ruling R65.21) on the target of an ordnance shot that carries its PRC, for the
+    /// Immobilization TC's second cause (D5.5); null is false.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Immobile
@@ -212,6 +213,16 @@ public sealed record OrdnanceKill(
         get; init;
     }
 
+    /// <summary>
+    /// Whether the TC was the second cause's (D5.5, D8.11, D8.22; pass 65, ruling R65.21): the target was already bogged or immobilized, and an Original
+    /// TK DR of 5 would have destroyed or Shocked it. Null otherwise, which is every shot recorded before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? SecondCause
+    {
+        get; init;
+    }
+
     /// <summary>Whether the crew Abandons the immobilized AFV after failing its TC (D5.5); null when it does not.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Abandoned
@@ -254,4 +265,10 @@ public sealed record ArmorDefinition(
 {
     /// <summary>Whether the vehicle has a turret (D1.31 to D1.322).</summary>
     public bool Turreted => MaType is "t" or "st" or "rst" or "1mt";
+
+    /// <summary>Whether its CS# is printed red (D5.7, C7.7 note A; catalog 1.18.0, trait <c>asl:cs-red</c>): -1 to a Final TK DR for burning only.</summary>
+    public bool CsRed
+    {
+        get; init;
+    }
 }

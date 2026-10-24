@@ -1056,7 +1056,7 @@ public sealed partial class GamePlanner
         // did to the others follows the vehicle's own result.
         foreach (var vehicle in resolution.VehicleEffects ?? [])
         {
-            foreach (var payload in SurvivorEvents(state, vehicle.VehicleId, vehicle.PrcSurvival).Concat(VehicleEffectEvents(state, vehicle, facts))
+            foreach (var payload in SurvivorEvents(state, vehicle.VehicleId, vehicle.PrcSurvival).Concat(VehicleEffectEvents(state, vehicle, facts, attemptId))
                 .Concat(PrcEffectEvents(state, vehicle, attemptId)))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
@@ -1225,22 +1225,47 @@ public sealed partial class GamePlanner
     /// The events that record a vehicle's effect (rulings R25.5, R25.6, R6.5, R6.7), as Rules decides it (pass 32.c): a destroyed vehicle becomes a
     /// wreck, with a Blaze when it burns; else its conditions change, and a concealed vehicle may lose its "?".
     /// </summary>
-    private static IEnumerable<(string Type, EventPayload Payload)> VehicleEffectEvents(GameState state, FireVehicleEffect effect, FireAttack facts)
+    private static IEnumerable<(string Type, EventPayload Payload)> VehicleEffectEvents(GameState state, FireVehicleEffect effect, FireAttack facts, string attemptId)
     {
         var vehicle = state.Unit(effect.VehicleId);
         var verdict = ScenarioA1FireFollowUps.VehicleEffect(effect, facts.FireKind, vehicle is not null && (Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)));
         if (verdict.Wrecked)
         {
+            // D5.6, D9.2 (pass 65, ruling R65.21): an armed vehicle's crew that survives is beneath the wreck, under Hazardous Movement for the phase; a
+            // unit that crews it from inside survives as itself, moved before the wreck is written.
+            var inside = !verdict.Burning && effect.CrewSurvival is { Survived: true } && vehicle is not null ? CrewInside(state, vehicle.Id) : null;
+            if (inside is not null && vehicle!.Position is MapPosition beneath)
+            {
+                yield return ("instance-moved", new InstanceMoved(inside.Id, new MapPosition(beneath.Location)));
+                yield return Hazardous(inside.Id);
+            }
+
             yield return ("vehicle-wrecked", new VehicleWrecked(effect.VehicleId, verdict.Burning));
             if (verdict.Burning && vehicle is not null && state.Location(vehicle.Id) is { } at)
             {
                 yield return ("instance-created", new InstanceCreated(new NewInstance(BlazeId(vehicle.Id), "asl:fire", null, null, new MapPosition(at.Location), null,
                     new Dictionary<string, ConditionState>())));
             }
+            else if (inside is null && effect.CrewSurvival is { Survived: true } && vehicle is not null
+                && LeavingCrew(state, vehicle, attemptId, hazardous: true) is { } survivors)
+            {
+                yield return ("instance-created", survivors);
+            }
 
             yield break;
         }
 
+        // D5.5 (pass 65, ruling R65.21): a crew that fails the TC the Vehicle line's Immobilization called for Abandons the vehicle, after its result.
+        foreach (var payload in VehicleConditionEvents(effect, verdict)
+            .Concat(effect.Abandoned == true && vehicle is not null ? TaskCheckAbandons(state, vehicle, attemptId) : []))
+        {
+            yield return payload;
+        }
+    }
+
+    /// <summary>The conditions a vehicle result that does not wreck it sets, with the "?" it loses.</summary>
+    private static IEnumerable<(string Type, EventPayload Payload)> VehicleConditionEvents(FireVehicleEffect effect, VehicleEffectVerdict verdict)
+    {
         if (verdict.Changes)
         {
             var changed = VehicleConditions(effect)!;
@@ -1752,7 +1777,8 @@ public sealed partial class GamePlanner
                 && LiveStacking.Of(state, target, targetSide, knownOnly: true).DefensePenalty is var crowded and > 0 ? crowded : null,
 
             // A4.62 (p. 51; pass 40): Hazardous Movement holds against any attack, a vehicle's and Residual FP's too.
-            HazardousMovement = ScenarioA1FireMapRules.HazardousMovement(state.HazardousMovers, attack),
+            // D5.5, D5.6 (pass 65, ruling R65.21): so does a survivor's, for the phase it was placed in.
+            HazardousMovement = ScenarioA1FireMapRules.HazardousMovement(HazardousUnits(state), attack),
 
             // A4.63 (pass 40): non-ordnance Defensive First Fire at a Dashing stack in its road Location; a Fire Lane and Residual FP are excepted.
             Dash = attack.OrdnanceHit is null && attack.FireLane != true

@@ -313,8 +313,14 @@ public static class Conditions
     /// </summary>
     public const string InexperiencedCrew = "asl:inexperienced-crew";
 
+    /// <summary>
+    /// A crew, Passenger, or Rider placed beneath its vehicle by Survival or a failed Immobilization TC (D5.5, D5.6, D6.9, p. 204; pass 65, ruling R65.21):
+    /// under Hazardous Movement against every later attack of that phase; removed as the phase ends. Written only by events planned since the pass.
+    /// </summary>
+    public const string HazardousMovement = "asl:hazardous-movement";
+
     /// <summary>Conditions the state model adds to the vocabulary's states; they have no drawn form.</summary>
-    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned, Bogged, Mired, BmgMalfunctioned, CmgMalfunctioned, CcReaction, Dismantled, Unarmed, BmgDisabled, CmgDisabled, InexperiencedCrew];
+    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned, Bogged, Mired, BmgMalfunctioned, CmgMalfunctioned, CcReaction, Dismantled, Unarmed, BmgDisabled, CmgDisabled, InexperiencedCrew, HazardousMovement];
 
     public static bool IsDeclared(string name, Vocabulary.UnitVocabulary vocabulary) =>
         Undrawn.Contains(name, StringComparer.Ordinal) || vocabulary.TryGetState(name, out _);

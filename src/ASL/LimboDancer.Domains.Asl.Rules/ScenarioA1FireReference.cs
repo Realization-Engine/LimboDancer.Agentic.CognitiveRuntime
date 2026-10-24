@@ -211,6 +211,12 @@ public sealed record FireDefinition(
     {
         get; init;
     }
+
+    /// <summary>Whether a vehicle's CS# is printed red (D5.7; catalog 1.18.0, trait <c>asl:cs-red</c> on its wreck face): -1 to a kill DR for burning only.</summary>
+    public bool? CsRed
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -527,6 +533,14 @@ public sealed class ScenarioA1FireReference
     public int? AfvCrewMorale(string nationality) =>
         Definitions.Values.Where(item => item.IsMmc && item.Nationality == nationality && item.Class == "elite").Max(item => item.Morale);
 
+    /// <summary>
+    /// D5.1 (p. 203): an Inherent crew inside its vehicle checks at its nationality's best elite Infantry MMC's Morale Level in an AFV, and at its best
+    /// 1st Line one in an unarmored vehicle; null when the catalog has none.
+    /// </summary>
+    public int? InherentCrewMorale(string nationality, bool unarmored) => unarmored
+        ? Definitions.Values.Where(item => item.IsMmc && item.Nationality == nationality && item.Class == "1st-line").Max(item => item.Morale)
+        : AfvCrewMorale(nationality);
+
     public IReadOnlyDictionary<string, FireDefinition> Definitions
     {
         get;
@@ -716,6 +730,7 @@ public sealed class ScenarioA1FireReference
             MechanicallyUnreliable = Trait("front", "asl:mechanically-unreliable"),
             LatwType = Text("front", "latw-type"),
             BreakdownRemoves = Trait("front", "asl:breakdown-removes"),
+            CsRed = Trait("wreck", "asl:cs-red"),
         };
     }
 }

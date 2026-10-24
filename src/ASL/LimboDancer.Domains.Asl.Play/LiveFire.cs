@@ -440,7 +440,10 @@ public static class LiveFire
     /// </summary>
     internal static IReadOnlyList<FireVehicle>? WithRecordedPrc(IReadOnlyList<FireVehicle>? state, IReadOnlyList<FireVehicle>? recorded) =>
         state is null || recorded is null ? state
-            : [.. state.Select(vehicle => vehicle with { Prc = recorded.FirstOrDefault(item => item.VehicleId == vehicle.VehicleId)?.Prc })];
+            : [.. state.Select(vehicle => recorded.FirstOrDefault(item => item.VehicleId == vehicle.VehicleId) is { } record
+                // Pass 65 (ruling R65.21): so are its Shock and Abandonment, written with the PRC.
+                ? vehicle with { Prc = record.Prc, Shocked = record.Shocked, Abandoned = record.Abandoned }
+                : vehicle with { Prc = null })];
 
     /// <summary>
     /// The AFV a FT, MOL, or DC attack names (A22.34, A22.612, A23.5; pass 60, ruling R60.15): a vehicle target's state facts, and whether it is Immobile,
@@ -631,6 +634,7 @@ public static class LiveFire
         int? molCheck = null;
         Dictionary<string, int>? weaponDestruction = null;
         Dictionary<string, IReadOnlyList<int>>? prcSurvival = null;
+        Dictionary<string, IReadOnlyList<int>>? vehicleSurvival = null;
         var named = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
 
         // A selection roll names the units it selects among, one die each, in order.
@@ -736,6 +740,11 @@ public static class LiveFire
                 case "prcSurvival" when roll.Count == 2 && unit.Length > 0:
                     (prcSurvival ??= new(StringComparer.Ordinal))[unit] = roll.Values;
                     break;
+
+                // D5.6, D9.2 (pass 65, ruling R65.21): the Crew Survival DR of an armed vehicle the Vehicle line eliminated.
+                case "vehicleSurvival" when roll.Count == 2 && unit.Length > 0:
+                    (vehicleSurvival ??= new(StringComparer.Ordinal))[unit] = roll.Values;
+                    break;
                 default:
                     return null;
             }
@@ -757,6 +766,7 @@ public static class LiveFire
             CollateralCheck = named.GetValueOrDefault("collateralCheck"),
             WeaponDestruction = weaponDestruction,
             PrcSurvival = prcSurvival,
+            VehicleSurvival = vehicleSurvival,
         };
     }
 

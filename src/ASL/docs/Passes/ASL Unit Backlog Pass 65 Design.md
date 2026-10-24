@@ -365,6 +365,8 @@ The referee agent of the documents step checks the rows against the chart, as at
 
 **F27. A Passenger's Prep Fire and its vehicle (ruling made at task 2c, 2026-10-24).** D.3 (p. 192) bars a vehicle whose PRC Prep Fired from moving in the MPh and from firing in the MPh and the AFPh, but not from its own fire in that PFPh. The build marks the vehicle Prep Fired, the path the projector, the movement planner, and the fire bars already read, which also bars that PFPh fire. **R65.27:** keep the marker; a vehicle fires its own weapons before its Passengers in the PFPh; D.3's exact reading goes to the backlog.
 
+**F28. A crew as a target (ruling made at task 2h, 2026-10-24).** Ruling R8.3 refuses IFT fire at a crew with other units or with no Gun named (`asl.a1.fire.crew-target-unreviewed`), so every vehicle crew the pass places could not be fired at. **R65.28:** a crew that mans no Gun is an ordinary Infantry target, alone or with other units (A1.123: it is an Infantry MMC with a crew's capabilities); a Gun's crew keeps R8.3's reading. It only turns refusals into plans, so no recorded game changes. Built in increment 2k.
+
 **F25. Testing** (the standing rules, section 2, the user's rule of 2026-10-23).
 - While a task is built, the Studio is its test, in a small game made for it (`games_2x.py`).
 - A task's new Rules and Play tests are run by method, and only those.

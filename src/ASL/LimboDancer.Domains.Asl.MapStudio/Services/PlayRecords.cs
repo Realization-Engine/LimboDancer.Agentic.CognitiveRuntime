@@ -636,7 +636,7 @@ public sealed class PlayRecords
                     // The table player's review: "against crew morale 10, its Armor Leader's (D3.42)", with no parenthesis inside another.
                     static string Against(FireCheck made) => FireText.MoraleWords(made);
                     var checks = (kill.ShockCheck is { } ntc ? $"; NTC DR {ntc.FinalDr} against {Against(ntc)}: {(ntc.Passed ? "passed" : "Shocked")}" : "")
-                        + (kill.CrewCheck is { } tc ? $"; crew TC DR {tc.FinalDr} against {Against(tc)}: {(tc.Passed ? "passed" : "Abandoned")}" : "")
+                        + (kill.CrewCheck is { } tc ? $"; {(kill.SecondCause == true ? FireText.SecondCauseWords + ", " : "")}crew TC DR {tc.FinalDr} against {Against(tc)}: {(tc.Passed ? "passed" : "Abandoned")}" : "")
                         + (kill.CrewSurvival is { } cs ? $"; Crew Survival DR {cs.FinalDr} against CS# {cs.CrewSurvival}: {(cs.Survived ? "the crew survives" : "no survivors")}" : "");
                     // A9.61 (pass 60, the table player): a MG's To Kill attack is the MG's, on the AP To Kill Table, not a Gun's AP round.
                     var round = machineGun ? "the MG, on the AP To Kill Table" : kill.Ammunition.ToUpperInvariant();
@@ -668,7 +668,11 @@ public sealed class PlayRecords
                     };
                     parts.Add($"{afv.VehicleId}: {(afv.Critical == true ? "a Critical Hit, " : "")}{afv.HitLocation} hit on the IFT (C1.55): {afv.Firepower} FP, DR "
                         + $"{string.Join(", ", afv.Dice)}{ModifierText(afv.Drm)} = {afv.FinalDr} against the K/# DR {afv.KillDr}: {fate}"
+                        + (afv.CrewCheck is { } areaTc ? $"; crew TC DR {areaTc.FinalDr} against {FireText.MoraleWords(areaTc)}: {(areaTc.Passed ? "passed" : "Abandoned")} (D5.5)" : "")
                         + (afv.CrewSurvival is { } survival ? $"; Crew Survival DR {survival.FinalDr} against CS# {survival.CrewSurvival}: {(survival.Survived ? "the crew survives" : "no survivors")}" : ""));
+
+                    // D6.9, D9.2 (pass 65): the Survival DR of each PRC of the AFV.
+                    parts.AddRange(FireText.PrcSurvivalLines(afv.VehicleId, afv.PrcSurvival));
                 }
 
                 // D.8A (pass 60): the Specific Collateral Attack on the CE crew of the AFV the hit left standing.

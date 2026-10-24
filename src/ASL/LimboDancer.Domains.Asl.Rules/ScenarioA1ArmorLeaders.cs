@@ -160,7 +160,7 @@ public static class ScenarioA1ArmorLeaders
 
     /// <summary>The vehicles of an IFT resolution whose crews took a check.</summary>
     public static IReadOnlyCollection<string> Checked(FireResolution? resolution) =>
-        resolution?.VehicleEffects is { } effects ? [.. effects.Where(item => item.CrewCheck is not null).Select(item => item.VehicleId)] : [];
+        resolution?.VehicleEffects is { } effects ? [.. effects.Where(item => item.CrewCheck is not null || item.TaskCheck is not null).Select(item => item.VehicleId)] : [];
 
     /// <summary>An IFT attack's facts as its record keeps them (D3.41): a crew's Morale Level only for a vehicle whose crew the attack made check.</summary>
     public static FireAttack Recorded(FireAttack attack, FireResolution resolution)
@@ -188,7 +188,9 @@ public static class ScenarioA1ArmorLeaders
         ArgumentNullException.ThrowIfNull(shot);
         ArgumentNullException.ThrowIfNull(resolution);
         var target = KillChecked(resolution) ? shot.VehicleTarget : WithoutMorale(shot.VehicleTarget);
-        var vehicles = Recorded(shot.Hit?.Vehicles, [.. Checked(resolution.Hit), .. Checked(resolution.CriticalHit), .. (resolution.LevelHits ?? []).SelectMany(Checked)]);
+        // Pass 65 (ruling R65.21): an AFV crew a mortar's hit made take its Immobilization TC (D5.5) checked too.
+        var vehicles = Recorded(shot.Hit?.Vehicles, [.. Checked(resolution.Hit), .. Checked(resolution.CriticalHit), .. (resolution.LevelHits ?? []).SelectMany(Checked),
+            .. (resolution.AreaVehicles ?? []).Where(item => item.CrewCheck is not null).Select(item => item.VehicleId)]);
         if (ReferenceEquals(target, shot.VehicleTarget) && ReferenceEquals(vehicles, shot.Hit?.Vehicles))
         {
             return shot;

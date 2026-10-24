@@ -706,7 +706,7 @@ public static class ScenarioA1OrdnanceCalculator
         static bool Dice(IReadOnlyList<int>? dice) => dice is not null && (dice.Count != 2 || dice.Any(die => die is < 1 or > 6));
         return Dice(rolls.ToHit) || rolls.Subsequent is < 1 or > 6 || rolls.CriticalSelection?.Values.Any(dr => dr is < 1 or > 6) == true
             || Dice(rolls.ToKill) || Dice(rolls.ShockCheck) || Dice(rolls.CrewCheck) || Dice(rolls.CrewSurvival) || Dice(rolls.CollateralCheck) || rolls.PanzerfaustCheck is < 1 or > 6
-            || rolls.AreaSurvival?.Values.Any(Dice) == true;
+            || rolls.AreaSurvival?.Values.Any(Dice) == true || rolls.AreaCrewCheck?.Values.Any(Dice) == true;
     }
 
     private static List<string> Undecided(OrdnanceShot shot)

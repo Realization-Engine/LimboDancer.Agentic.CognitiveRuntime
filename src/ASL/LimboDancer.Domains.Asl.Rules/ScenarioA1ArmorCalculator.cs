@@ -781,20 +781,36 @@ internal static class ScenarioA1ArmorCalculator
         // C7.7, C7.6: at most half the Final TK# burns, less eliminates, equal immobilizes (hull) or Shocks (turret); one more Shocks or
         // immobilizes an HE hit and gives any other ammunition a possible Shock. The unarmored table has no Shock.
         // A9.61, D5.34 (pass 60): a MG's To Kill DR burns, eliminates, or Stuns; it neither Shocks nor immobilizes.
-        var result = machineGun ? ScenarioA1MachineGunKill.Result(dr, finalTk)
-            : dr * 2 <= finalTk ? OrdnanceKill.Burn
-            : dr < finalTk ? OrdnanceKill.Eliminated
-            : dr == finalTk ? (armored && location == "turret" ? OrdnanceKill.Shock : OrdnanceKill.Immobilized)
-            : armored && dr == finalTk + 1 ? (ammunition == "he" ? (location == "turret" ? OrdnanceKill.Shock : OrdnanceKill.Immobilized) : OrdnanceKill.PossibleShock)
+        string ResultOn(int original) => machineGun ? ScenarioA1MachineGunKill.Result(original, finalTk)
+            : original * 2 <= finalTk ? OrdnanceKill.Burn
+            : original < finalTk ? OrdnanceKill.Eliminated
+            : original == finalTk ? (armored && location == "turret" ? OrdnanceKill.Shock : OrdnanceKill.Immobilized)
+            : armored && original == finalTk + 1 ? (ammunition == "he" ? (location == "turret" ? OrdnanceKill.Shock : OrdnanceKill.Immobilized) : OrdnanceKill.PossibleShock)
             : OrdnanceKill.None;
+        var result = ResultOn(dr);
+
+        // D5.7, C7.7 note A (pass 65, ruling R65.21): a red CS# burns on a Final TK DR one lower, for the burn alone.
+        if (result == OrdnanceKill.Eliminated && ScenarioA1CrewSurvivalRules.BurnsRed(armor.CsRed, dr, lower => lower * 2 <= finalTk))
+        {
+            result = OrdnanceKill.Burn;
+        }
+
         var made = Made(result);
+
+        // D5.5, D8.11, D8.22 (pp. 204, 208, 209; pass 65, ruling R65.21): an AFV already bogged or immobilized that the shot neither destroys, Stuns, nor
+        // Shocks takes the TC when an Original TK DR of 5 would have destroyed or Shocked it; only a shot that carries its PRC, as every shot planned since
+        // the pass does, so that an older record resolves as it did. An unarmed vehicle's Inherent Driver "is never treated as a crew" (D5.1): its cs# is
+        // printed in lower case.
+        var secondCause = target.Prc is not null
+            && ScenarioA1CrewSurvivalRules.SecondCause(result, ResultOn, target.Immobile == true,
+                target.CrewImpaired != true && target.Abandoned != true && ScenarioA1CrewSurvivalRules.CrewSurvival(armor, false) is not null);
 
         // D5.1: an AFV's crew has Elite morale, an unarmored vehicle's the 1st Line morale of its nationality.
         // D3.42, D3.45 (p. 200; pass 55, rulings R55.17, R55.18): "[EXC: Armor Leaders (3.42) & Inexperienced Crews (3.45)]": the crew "always has
         // the same Morale Level as any Armor Leader in that vehicle", 6 when Inexperienced. His leadership modifier is not added: he takes the check.
         var morale = target.CrewMorale ?? reference.Fire.Definitions.Values.Where(item => item.IsMmc && item.Nationality == armor.Nationality && item.Class == (armored ? "elite" : "1st-line"))
             .Max(item => item.Morale);
-        if (morale is null && (result == OrdnanceKill.PossibleShock || (result == OrdnanceKill.Immobilized && target.CrewMayTakeTc == true)))
+        if (morale is null && (result == OrdnanceKill.PossibleShock || (result == OrdnanceKill.Immobilized && target.CrewMayTakeTc == true) || secondCause))
         {
             return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "definition-incomplete:crew-morale:" + armor.Nationality]));
         }
@@ -825,7 +841,7 @@ internal static class ScenarioA1ArmorCalculator
                 Shocked = passed ? null : true,
             };
         }
-        else if (result == OrdnanceKill.Immobilized && target.CrewMayTakeTc == true && morale is { } tcMorale)
+        else if (((result == OrdnanceKill.Immobilized && target.CrewMayTakeTc == true) || secondCause) && morale is { } tcMorale)
         {
             // D5.5: an immobilized vehicle's crew takes a TC at once; failure Abandons it.
             if (rolls.CrewCheck is not { } check)
@@ -833,18 +849,15 @@ internal static class ScenarioA1ArmorCalculator
                 return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:crewCheck"]));
             }
 
-            var total = check[0] + check[1];
-            var passed = total + plusOne <= tcMorale;
+            var tc = ScenarioA1CrewSurvivalRules.TaskCheck(check, tcMorale, plusOne == 1, target.CrewMorale);
             made = made with
             {
-                CrewCheck = new FireCheck("TC", [.. check], total, checkDrm, total + plusOne, tcMorale, passed, passed ? "none" : "abandoned")
-                {
-                    MoraleSource = ScenarioA1ArmorLeaders.MoraleSource(target.CrewMorale),
-                },
-                Abandoned = passed ? null : true,
+                CrewCheck = tc,
+                Abandoned = tc.Passed ? null : true,
+                SecondCause = secondCause ? true : null,
             };
         }
-        else if (result == OrdnanceKill.Eliminated && armor.CrewSurvival is { } cs && !armor.CrewSurvivalPassengersOnly && target.Abandoned != true)
+        else if (result == OrdnanceKill.Eliminated && ScenarioA1CrewSurvivalRules.CrewSurvival(armor, target.Abandoned == true) is { } cs)
         {
             // D5.6: a Final DR at most the CS#, +1 if the crew was Stunned, Shocked, Recalled, or under a "+1" counter, places a crew beneath the
             // wreck.
@@ -853,11 +866,10 @@ internal static class ScenarioA1ArmorCalculator
                 return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:crewSurvival"]));
             }
 
-            var drmValue = target.CrewImpaired == true || target.StunRecovery == true ? 1 : 0;
-            var finalDr = survival[0] + survival[1] + drmValue;
             made = made with
             {
-                CrewSurvival = new OrdnanceCrewSurvival([.. survival], drmValue, finalDr, cs, finalDr <= cs)
+                CrewSurvival = ScenarioA1CrewSurvivalRules.Survival(cs, survival,
+                    ScenarioA1CrewSurvivalRules.SurvivalDrm(false, target.CrewImpaired == true, false, target.StunRecovery == true))
             };
         }
 

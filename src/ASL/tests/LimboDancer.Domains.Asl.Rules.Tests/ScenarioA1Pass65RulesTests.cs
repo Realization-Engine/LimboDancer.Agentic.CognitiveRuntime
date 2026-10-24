@@ -945,4 +945,136 @@ public sealed class ScenarioA1Pass65RulesTests
         Assert.Equal(UnitCondition.Disabled, ScenarioA1CrewActsRules.RemovedCondition(ScenarioA1CrewActsRules.MainArmament));
         Assert.Equal(UnitCondition.BmgDisabled, ScenarioA1CrewActsRules.RemovedCondition(ScenarioA1CrewActsRules.BowMg));
     }
+
+    // Increment 2h: the Immobilization TC's causes, Crew Survival, the red CS#, Brew Up (D5.5, D5.6, D5.7, D8.11, D8.22, D9.2; ruling R65.21).
+
+    /// <summary>The T-34's AP at the BU PzKpfw IIIH's front, its hull and turret.</summary>
+    private static OrdnanceShot AtTank(int[] toKill, IReadOnlyList<FirePrc>? prc)
+    {
+        var shot = TankAt("attacker-tank", toKill, prc, crewExposed: false, ammunition: "ap");
+        return shot with
+        {
+            VehicleTarget = shot.VehicleTarget! with
+            {
+                TurretFacing = "front"
+            },
+        };
+    }
+
+    /// <summary>The T-34's AP at the PzKpfw IIIH's front, the target already immobilized and its crew rolling the given TC.</summary>
+    private static OrdnanceShot AtImmobile(int[] toKill, IReadOnlyList<FirePrc>? prc, int[] crewCheck, bool immobile = true)
+    {
+        var shot = AtTank(toKill, prc);
+        return shot with
+        {
+            VehicleTarget = shot.VehicleTarget! with
+            {
+                Immobile = immobile ? true : null
+            },
+            Rolls = shot.Rolls! with
+            {
+                CrewCheck = crewCheck
+            },
+        };
+    }
+
+    [Fact]
+    public void AnImmobileTanksCrewTakesTheTcWhenAnOriginalFiveWouldHaveKilledIt()
+    {
+        // D5.5, D8.11 (pp. 204, 208): the AP's TK DR two above the Final TK# does nothing (one above is a possible Shock, C7.41), but an Original 5 is below
+        // the Final TK#, an elimination or a burn: the crew of the immobilized PzKpfw IIIH takes the TC, and a DR of 11 against its Morale Level fails it.
+        var probe = Shot(AtImmobile([6, 5], [], [5, 6], immobile: false));
+        Assert.True(probe.Kill is not null, string.Join("; ", probe.Reasons));
+        var finalTk = probe.Kill.FinalTk;
+        Assert.InRange(finalTk, 6, 9);
+        var dr = finalTk + 2;
+        int[] toKill = [dr - 5, 5];
+        var kill = Shot(AtImmobile(toKill, [], [5, 6])).Kill!;
+        Assert.Equal(OrdnanceKill.None, kill.Result);
+        Assert.Equal((true, true, "TC", 11, false), (kill.SecondCause, kill.Abandoned, kill.CrewCheck!.Kind, kill.CrewCheck.FinalDr, kill.CrewCheck.Passed));
+
+        // Not immobile, or a shot recorded before the pass (no PRC fact): no TC.
+        Assert.Null(Shot(AtImmobile(toKill, [], [5, 6], immobile: false)).Kill!.CrewCheck);
+        Assert.Null(Shot(AtImmobile(toKill, null, [5, 6])).Kill!.CrewCheck);
+
+        // Only a burn, an elimination, or an automatic Shock on an Original 5 counts; a possible Shock does not, nor a result that already did something.
+        Assert.True(ScenarioA1CrewSurvivalRules.SecondCause(OrdnanceKill.None, _ => OrdnanceKill.Burn, true, true));
+        Assert.True(ScenarioA1CrewSurvivalRules.SecondCause(OrdnanceKill.Immobilized, _ => OrdnanceKill.Shock, true, true));
+        Assert.False(ScenarioA1CrewSurvivalRules.SecondCause(OrdnanceKill.None, _ => OrdnanceKill.PossibleShock, true, true));
+        Assert.False(ScenarioA1CrewSurvivalRules.SecondCause(OrdnanceKill.Shock, _ => OrdnanceKill.Burn, true, true));
+        Assert.False(ScenarioA1CrewSurvivalRules.SecondCause(OrdnanceKill.None, _ => OrdnanceKill.Eliminated, false, true));
+        Assert.False(ScenarioA1CrewSurvivalRules.SecondCause(OrdnanceKill.None, _ => OrdnanceKill.Eliminated, true, false));
+        Assert.Equal(5, ScenarioA1CrewSurvivalRules.SecondCauseDr);
+    }
+
+    [Fact]
+    public void CrewSurvivalTakesPlusOneForABrokenStunnedOrShockedCrewAndNoneForAnAbandonedVehicle()
+    {
+        // D5.6: +1 if broken, Stunned (a Recall too), Shocked (an Unconfirmed Kill too), or under a "+1" counter; at most the CS# survives.
+        Assert.Equal(0, ScenarioA1CrewSurvivalRules.SurvivalDrm(false, false, false, false));
+        Assert.Equal(1, ScenarioA1CrewSurvivalRules.SurvivalDrm(true, false, false, false));
+        Assert.Equal(1, ScenarioA1CrewSurvivalRules.SurvivalDrm(false, true, false, false));
+        Assert.Equal(1, ScenarioA1CrewSurvivalRules.SurvivalDrm(false, false, true, false));
+        Assert.Equal(1, ScenarioA1CrewSurvivalRules.SurvivalDrm(false, false, false, true));
+        Assert.Equal(1, ScenarioA1CrewSurvivalRules.SurvivalDrm(true, true, true, true));
+        var survival = ScenarioA1CrewSurvivalRules.Survival(6, CheckDice, 1);
+        Assert.Equal((5, 6, true), (survival.FinalDr, survival.CrewSurvival, survival.Survived));
+        Assert.False(ScenarioA1CrewSurvivalRules.Survival(4, CheckDice, 1).Survived);
+
+        // The PzKpfw IIIH's CS# 6; an Abandoned vehicle has no crew to survive (D5.41); a truck's cs# serves its PRC alone.
+        var tank = Ordnance.Armor.Vehicles["attacker-tank"];
+        Assert.Equal(6, ScenarioA1CrewSurvivalRules.CrewSurvival(tank, false));
+        Assert.Null(ScenarioA1CrewSurvivalRules.CrewSurvival(tank, true));
+        Assert.Null(ScenarioA1CrewSurvivalRules.CrewSurvival(Ordnance.Armor.Vehicles["attacker-truck"], false));
+
+        // D9.2: a killed tank whose crew was Shocked rolls with the +1; an Abandoned one rolls none, but its PRC still roll theirs.
+        var finalTk = Shot(AtTank([6, 5], [])).Kill!.FinalTk;
+        var dr = finalTk - 1;
+        Assert.True(dr * 2 > finalTk);
+        int[] toKill = [dr / 2, dr - (dr / 2)];
+        var shocked = AtTank(toKill, []);
+        shocked = shocked with
+        {
+            VehicleTarget = shocked.VehicleTarget! with
+            {
+                CrewImpaired = true
+            }
+        };
+        var killed = Shot(shocked).Kill!;
+        Assert.Equal((OrdnanceKill.Eliminated, 1, 13), (killed.Result, killed.CrewSurvival!.Drm, killed.CrewSurvival.FinalDr));
+        var abandoned = AtTank(toKill, [Aboard()]);
+        abandoned = abandoned with
+        {
+            VehicleTarget = abandoned.VehicleTarget! with
+            {
+                Abandoned = true
+            }
+        };
+        var left = Shot(abandoned, new Dictionary<string, int[]> { ["de-s"] = [2, 2] }).Kill!;
+        Assert.Null(left.CrewSurvival);
+        Assert.True(Assert.Single(left.PrcSurvival!).Survived);
+    }
+
+    [Fact]
+    public void ARedCsNumberBurnsOneDrHigherAndChangesNothingElse()
+    {
+        // D5.7, C7.7 note A: -1 to the Final TK DR for burning only. Against a Final TK# of 12, a DR of 7 burns a red CS# AFV (6 is half of 12) but merely
+        // eliminates any other; a DR of 8 eliminates both, and nothing turns an elimination into anything but a burn.
+        static bool Burns(int dr) => dr * 2 <= 12;
+        Assert.True(ScenarioA1CrewSurvivalRules.BurnsRed(true, 7, Burns));
+        Assert.False(ScenarioA1CrewSurvivalRules.BurnsRed(false, 7, Burns));
+        Assert.False(ScenarioA1CrewSurvivalRules.BurnsRed(true, 8, Burns));
+
+        // A FT's or MOL's burn is a DR below its TK#: with a red CS# an equal DR burns too.
+        Assert.True(ScenarioA1CrewSurvivalRules.BurnsRed(true, 8, lower => lower < 8));
+
+        // A synthetic red CS# PzKpfw IIIH burns on its own DR of 7 against 12; no catalog vehicle prints one (catalog 1.18.0, trait asl:cs-red).
+        var red = Ordnance.Armor.Vehicles["attacker-tank"] with
+        {
+            CsRed = true
+        };
+        Assert.True(ScenarioA1CrewSurvivalRules.BurnsRed(red.CsRed, 7, Burns));
+        Assert.All(Ordnance.Armor.Vehicles.Values, item => Assert.False(item.CsRed));
+        Assert.All(Ordnance.Fire.Definitions.Values.Where(item => item.IsVehicle), item => Assert.NotEqual(true, item.CsRed));
+    }
 }

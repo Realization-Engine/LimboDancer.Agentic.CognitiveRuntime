@@ -554,7 +554,8 @@ public static class GameProjector
             // (A10.62, p. 68). Residual FP is removed at the end of the MPh (A8.2, p. 60), and a new Player Turn gives every
             // unit a new Rally attempt (A10.6, p. 68).
             // E1.8 (backlog pass 16, ruling R16.2): at night First and Final Fire counters stay, as Gunflashes, until the end of the AFPh.
-            string[] cleared = [.. Rules.ScenarioA1SequenceProjection.ClearedMarkers(state.Phase, state.Night).Select(ConditionName)];
+            string[] cleared = [.. Rules.ScenarioA1SequenceProjection.ClearedMarkers(state.Phase, state.Night).Concat(Rules.ScenarioA1SequenceProjection.PhaseMarkers)
+                .Select(ConditionName)];
             var newPlayerTurn = change.PhasingSide != state.PhasingSide;
             var melee = state.Phase == "ccph" ? InMelee(state) : null;
 
@@ -724,6 +725,9 @@ public static class GameProjector
             // D6.631 (pass 65, ruling R65.20): the mount a Removed MG leaves Disabled.
             Rules.UnitCondition.Disabled => Conditions.Disabled,
             Rules.UnitCondition.BmgDisabled => Conditions.BmgDisabled,
+
+            // D5.5, D5.6 (pass 65, ruling R65.21): a survivor's Hazardous Movement, removed as the phase ends.
+            Rules.UnitCondition.HazardousMovement => Conditions.HazardousMovement,
             _ => throw new ArgumentOutOfRangeException(nameof(condition), condition, "The projector maps no such condition."),
         };
 

@@ -1175,7 +1175,8 @@ public static class ScenarioA1FireCalculator
         || rolls.MolCheck is < 1 or > 6
         || !Dice(rolls.Position, allowEmpty: true) || !Dice(rolls.CrewSurvival, allowEmpty: true) || !Dice(rolls.TaskCheck, allowEmpty: true)
         || !Dice(rolls.CollateralCheck, allowEmpty: true)
-        || rolls.WeaponDestruction?.Values.Any(dr => dr is < 1 or > 6) == true;
+        || rolls.WeaponDestruction?.Values.Any(dr => dr is < 1 or > 6) == true
+        || rolls.VehicleSurvival?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true;
 
     /// <summary>Whether a unit may fire in this attack under the fire-phase and First Fire rules (A7.1, A8.1, A8.3, A8.31, A8.4, A9.2).</summary>
     /// <summary>A leader firing one MG, alone or with a stacked SMC as his partner (A9.12; ruling R12.4); he has no inherent FP.</summary>
@@ -1997,8 +1998,11 @@ public static class ScenarioA1FireCalculator
             var af = position.Result == FirePosition.Optimal ? ScenarioA1FlameKill.AerialAf(armor)!.Value : ScenarioA1ArmorReference.ArmorFactor(armor, location, facing)!.Value;
             var finalTk = modified - af;
             var dr = dice[0] + dice[1];
+
+            // D5.7, C7.7 note A (pass 65, ruling R65.21): a red CS# burns on a Final TK DR one lower, for the burn alone.
+            var result = ScenarioA1FlameKill.ChargeResult(dr, finalTk, location == "turret");
             return new OrdnanceKill(ScenarioA1FlameKill.DemolitionCharge, location, facing, basic, modifiers, modified, af, finalTk, [.. dice], dr,
-                ScenarioA1FlameKill.ChargeResult(dr, finalTk, location == "turret"));
+                result == OrdnanceKill.Eliminated && ScenarioA1CrewSurvivalRules.BurnsRed(armor.CsRed, dr, lower => lower * 2 <= finalTk) ? OrdnanceKill.Burn : result);
         }
 
         /// <summary>
@@ -2061,7 +2065,11 @@ public static class ScenarioA1FireCalculator
 
             var finalTk = basic + (int)modifiers.Sum(item => item.Value);
             var dr = dice[0] + dice[1];
-            return new OrdnanceKill(weapon, "hull", facing, basic, modifiers, finalTk, null, finalTk, [.. dice], dr, ScenarioA1FlameKill.FlameResult(dr, finalTk));
+
+            // D5.7, C7.7 note A (pass 65, ruling R65.21): a red CS# burns on a Final TK DR one lower, for the burn alone.
+            var result = ScenarioA1FlameKill.FlameResult(dr, finalTk);
+            return new OrdnanceKill(weapon, "hull", facing, basic, modifiers, finalTk, null, finalTk, [.. dice], dr,
+                result == OrdnanceKill.Eliminated && ScenarioA1CrewSurvivalRules.BurnsRed(armor.CsRed, dr, lower => lower < finalTk) ? OrdnanceKill.Burn : result);
         }
 
         /// <summary>
@@ -2088,20 +2096,14 @@ public static class ScenarioA1FireCalculator
                 }
 
                 usedRolls.Add("taskCheck");
-                var morale = named.CrewMorale ?? reference.AfvCrewMorale(armor.Nationality)!.Value;
-                var total = check[0] + check[1];
-                var passed = total + plusOne <= morale;
-                IReadOnlyList<FireModifier> checkDrm = plusOne == 0 ? [] : [new FireModifier("stun", 1, "D5.34")];
+                var tc = ScenarioA1CrewSurvivalRules.TaskCheck(check, named.CrewMorale ?? reference.AfvCrewMorale(armor.Nationality)!.Value, plusOne == 1, named.CrewMorale);
                 kill = kill with
                 {
-                    CrewCheck = new FireCheck("TC", [.. check], total, checkDrm, total + plusOne, morale, passed, passed ? "none" : "abandoned")
-                    {
-                        MoraleSource = ScenarioA1ArmorLeaders.MoraleSource(named.CrewMorale),
-                    },
-                    Abandoned = passed ? null : true,
+                    CrewCheck = tc,
+                    Abandoned = tc.Passed ? null : true,
                 };
             }
-            else if (kill.Result == OrdnanceKill.Eliminated && armor.CrewSurvival is { } cs && !armor.CrewSurvivalPassengersOnly && named.Abandoned != true)
+            else if (kill.Result == OrdnanceKill.Eliminated && ScenarioA1CrewSurvivalRules.CrewSurvival(armor, named.Abandoned == true) is { } cs)
             {
                 if (attack.Rolls!.CrewSurvival is not { } survival)
                 {
@@ -2110,11 +2112,10 @@ public static class ScenarioA1FireCalculator
                 }
 
                 usedRolls.Add("crewSurvival");
-                var drmValue = named.CrewImpaired == true || named.StunRecovery == true ? 1 : 0;
-                var finalDr = survival[0] + survival[1] + drmValue;
                 kill = kill with
                 {
-                    CrewSurvival = new OrdnanceCrewSurvival([.. survival], drmValue, finalDr, cs, finalDr <= cs)
+                    CrewSurvival = ScenarioA1CrewSurvivalRules.Survival(cs, survival,
+                        ScenarioA1CrewSurvivalRules.SurvivalDrm(false, named.CrewImpaired == true, false, named.StunRecovery == true))
                 };
             }
 
@@ -2366,9 +2367,18 @@ public static class ScenarioA1FireCalculator
                         }
                     }
 
+                    var crew = LineCrew(vehicle, definition, result);
+                    if (crew is null)
+                    {
+                        return null;
+                    }
+
                     var lineEffect = WithPrc(new FireVehicleEffect(id, definition.Id, result, kill, line, lineFinal, unlikely, null, FireVehicleEffect.None)
                     {
-                        UnlikelyKillDeclined = declined
+                        UnlikelyKillDeclined = declined,
+                        TaskCheck = crew.Value.TaskCheck,
+                        Abandoned = crew.Value.TaskCheck is { Passed: false } ? true : null,
+                        CrewSurvival = crew.Value.Survival,
                     }, vehicle, definition, column, arithmetic, drm);
                     if (lineEffect is null)
                     {
@@ -2435,6 +2445,58 @@ public static class ScenarioA1FireCalculator
             }
 
             return effects;
+        }
+
+        /// <summary>
+        /// What the Vehicle line's result does to the vehicle's Inherent crew (D5.5, D5.6, D9.2, A7.308, pp. 204, 209, 56; pass 65, ruling R65.21), for an
+        /// attack that carries the vehicle's PRC, as every attack planned since the pass does; an older record takes neither. An immobilized vehicle's crew,
+        /// neither Stunned nor Shocked and still inside, takes a TC (keyed <c>crewCheck:</c>, as a crew's check is); one eliminated without burning rolls
+        /// its Crew Survival DR (keyed <c>vehicleSurvival:</c>). Only a crew: an unarmed vehicle's Inherent Driver "is never treated as a crew" (D5.1),
+        /// and its cs# is printed in lower case. Null when a roll is missing.
+        /// </summary>
+        private (FireCheck? TaskCheck, OrdnanceCrewSurvival? Survival)? LineCrew(FireVehicle vehicle, FireDefinition definition, string result)
+        {
+            if (vehicle.Prc is null || reference.Armor.GetValueOrDefault(definition.Id) is not { } armor)
+            {
+                return (null, null);
+            }
+
+            var id = vehicle.VehicleId!;
+            var shocked = vehicle.Shocked == true;
+            var abandoned = vehicle.Abandoned == true;
+            if (result == FireVehicleEffect.Immobilized && ScenarioA1CrewSurvivalRules.CrewSurvival(armor, false) is not null && vehicle.Immobilized != true
+                && vehicle.Stunned != true && !shocked && !abandoned)
+            {
+                if (attack.Rolls!.CrewChecks?.TryGetValue(id, out var check) != true)
+                {
+                    undecided.Add("asl.a1.fire.roll-missing:crewCheck:" + id);
+                    return null;
+                }
+
+                if ((vehicle.CrewMorale ?? reference.InherentCrewMorale(definition.Nationality!, definition.Unarmored == true)) is not { } morale)
+                {
+                    undecided.Add("asl.a1.fire.definition-incomplete:crew-morale:" + definition.Nationality);
+                    return null;
+                }
+
+                usedRolls.Add("crewCheck:" + id);
+                return (ScenarioA1CrewSurvivalRules.TaskCheck(check!, morale, vehicle.StunRecovery == true, vehicle.CrewMorale), null);
+            }
+
+            if (result == FireVehicleEffect.Eliminated && ScenarioA1CrewSurvivalRules.CrewSurvival(armor, abandoned) is { } cs)
+            {
+                if (attack.Rolls!.VehicleSurvival?.TryGetValue(id, out var survival) != true)
+                {
+                    undecided.Add("asl.a1.fire.roll-missing:vehicleSurvival:" + id);
+                    return null;
+                }
+
+                usedRolls.Add("vehicleSurvival:" + id);
+                return (null, ScenarioA1CrewSurvivalRules.Survival(cs, survival!,
+                    ScenarioA1CrewSurvivalRules.SurvivalDrm(false, vehicle.Stunned == true, shocked, vehicle.StunRecovery == true)));
+            }
+
+            return (null, null);
         }
 
         /// <summary>
@@ -4592,6 +4654,7 @@ public static class ScenarioA1FireCalculator
                 .Concat(rolls.MolCheck is null ? [] : ["molCheck"])
                 .Concat(rolls.WeaponDestruction?.Keys.Select(id => "weaponDestruction:" + id) ?? [])
                 .Concat(rolls.PrcSurvival?.Keys.Select(id => "prcSurvival:" + id) ?? [])
+                .Concat(rolls.VehicleSurvival?.Keys.Select(id => "vehicleSurvival:" + id) ?? [])
                 .Concat(new[] { ("position", rolls.Position), ("crewSurvival", rolls.CrewSurvival), ("taskCheck", rolls.TaskCheck), ("collateralCheck", rolls.CollateralCheck) }
                     .Where(item => item.Item2 is not null).Select(item => item.Item1));
             return supplied.Where(key => !usedRolls.Contains(key)).Select(key => "asl.a1.fire.extra-roll:" + key).ToList();

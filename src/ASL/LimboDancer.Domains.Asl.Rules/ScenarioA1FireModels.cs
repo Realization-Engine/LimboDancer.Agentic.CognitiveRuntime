@@ -563,6 +563,26 @@ public sealed record FireVehicle(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the vehicle is Shocked or under an Unconfirmed Kill (C7.42; pass 65, ruling R65.21): +1 to its Crew Survival DR and no Immobilization TC
+    /// (D5.5, D5.6). Written with <see cref="Prc"/> by every attack planned since the pass and taken from the record at replay; null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Shocked
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the vehicle is Abandoned (D5.41; pass 65, ruling R65.21): it has no crew to take a TC or to survive it (D5.5, D5.6). Written with
+    /// <see cref="Prc"/> and taken from the record at replay; null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Abandoned
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -1303,6 +1323,13 @@ public sealed record FireRolls(
     {
         get; init;
     }
+
+    /// <summary>The Crew Survival DR of each armed vehicle the Vehicle line eliminated (D5.6, D9.2; pass 65, ruling R65.21), by vehicle id.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, IReadOnlyList<int>>? VehicleSurvival
+    {
+        get; init;
+    }
 }
 
 /// <summary>One modifier with its value and rule.</summary>
@@ -1697,6 +1724,30 @@ public sealed record FireVehicleEffect(
     /// <summary>The Survival DR of each PRC of the vehicle the attack eliminated without burning it (D6.9, A7.308; pass 65, ruling R65.9); null when none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<PrcSurvival>? PrcSurvival
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The crew's Immobilization TC after the Vehicle line immobilized the vehicle (D5.5, A7.308; pass 65, ruling R65.21); null when none was taken, which
+    /// is every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireCheck? TaskCheck
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the crew Abandons the vehicle after failing that TC (D5.5; pass 65); null when it does not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Abandoned
+    {
+        get; init;
+    }
+
+    /// <summary>The Crew Survival DR of an armed vehicle the Vehicle line eliminated without burning it (D5.6, D9.2; pass 65, ruling R65.21); null when none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceCrewSurvival? CrewSurvival
     {
         get; init;
     }

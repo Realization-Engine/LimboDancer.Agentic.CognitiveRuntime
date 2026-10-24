@@ -33,12 +33,22 @@ public sealed partial class GamePlanner
     {
         Vehicles = attack.Vehicles is null ? null
             : [.. attack.Vehicles.Select(vehicle => state.Unit(vehicle.VehicleId ?? string.Empty) is { } unit
-                ? vehicle with { Prc = OnFoot(PrcOf(state, unit), attack.Embarking?.Units) }
+                ? WithCrewState(vehicle with { Prc = OnFoot(PrcOf(state, unit), attack.Embarking?.Units) }, unit)
                 : vehicle)],
         TargetVehicle = attack.TargetVehicle is { VehicleId: { } named } aimed && state.Unit(named) is { } target ? aimed with
         {
             Prc = PrcOf(state, target)
         } : attack.TargetVehicle,
+    };
+
+    /// <summary>
+    /// A vehicle's Shock and Abandonment, written with its PRC for its crew's TC and Crew Survival (D5.5, D5.6; pass 65, ruling R65.21): nothing when the
+    /// vehicle carries no PRC fact, so that its attack reads as before the pass.
+    /// </summary>
+    private static FireVehicle WithCrewState(FireVehicle vehicle, UnitInstance unit) => vehicle.Prc is null ? vehicle : vehicle with
+    {
+        Shocked = Is(unit, Conditions.Shocked) || Is(unit, Conditions.UnconfirmedKill) ? true : null,
+        Abandoned = Is(unit, Conditions.Abandoned) ? true : null,
     };
 
     private static IReadOnlyList<FirePrc>? OnFoot(IReadOnlyList<FirePrc>? prc, IReadOnlyList<string>? loaders) =>
@@ -47,9 +57,12 @@ public sealed partial class GamePlanner
     /// <summary>A shot with the PRC of the vehicle it fires at and of each vehicle its hit attacks (ruling R65.5).</summary>
     internal OrdnanceShot WithPrc(GameState state, OrdnanceShot shot) => shot with
     {
-        VehicleTarget = shot.VehicleTarget is { VehicleId: { } named } aimed && state.Unit(named) is { } target ? aimed with
+        VehicleTarget = shot.VehicleTarget is { VehicleId: { } named } aimed && state.Unit(named) is { } target && PrcOf(state, target) is var prc ? aimed with
         {
-            Prc = PrcOf(state, target)
+            Prc = prc,
+
+            // D5.5, D8.11, D8.22 (pass 65, ruling R65.21): whether the target is already bogged or immobilized, for the TC's second cause.
+            Immobile = prc is not null && (Is(target, Conditions.Immobilized) || Is(target, Conditions.Bogged)) ? true : null,
         } : shot.VehicleTarget,
         Hit = shot.Hit is null ? null : WithPrc(state, shot.Hit),
     };
@@ -98,7 +111,7 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The PRC that survive their vehicle's destruction, placed beneath the wreck on foot before it is written (D6.9, D5.6; ruling R65.9), so that the
-    /// projector eliminates only the others with it; the SW a survivor holds goes with it.
+    /// projector eliminates only the others with it; the SW a survivor holds goes with it. Each is then under Hazardous Movement for the phase (ruling R65.21).
     /// </summary>
     private static IEnumerable<(string Type, EventPayload Payload)> SurvivorEvents(GameState state, string vehicleId, IReadOnlyList<PrcSurvival>? survival)
     {
@@ -112,6 +125,9 @@ public sealed partial class GamePlanner
             if (state.Unit(survivor.UnitId) is { Status: InstanceStatus.Active })
             {
                 yield return ("instance-moved", new InstanceMoved(survivor.UnitId, new MapPosition(at)));
+
+                // D5.6 (pass 65, ruling R65.21): under Hazardous Movement for the rest of the phase.
+                yield return Hazardous(survivor.UnitId);
             }
         }
     }

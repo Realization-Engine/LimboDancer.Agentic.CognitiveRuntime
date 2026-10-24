@@ -654,9 +654,10 @@ public sealed partial class GamePlanner
                     },
             };
         }
-        else if (shot.VehicleTarget is null && shot.Hit is { } aimed && ScenarioA1FireMapRules.HazardousMovement(state.HazardousMovers, aimed) == true)
+        else if (shot.VehicleTarget is null && shot.Hit is { } aimed && ScenarioA1FireMapRules.HazardousMovement(HazardousUnits(state), aimed) == true)
         {
             // C6.6, A4.62 (pass 40, ruling R40.10): Case O outside the MPh too, "regardless of fire phase".
+            // D5.5, D5.6 (pass 65, ruling R65.21): at a survivor too, in the phase it was placed in.
             shot = shot with
             {
                 HazardousTarget = true,
@@ -906,6 +907,9 @@ public sealed partial class GamePlanner
 
                 // C1.55, D5.6 (pass 60): the Crew Survival DR of an AFV a mortar's hit destroyed.
                 _ when key.StartsWith("areaSurvival:", StringComparison.Ordinal) => (2, "ordnance-crew-survival"),
+
+                // C1.55, D5.5 (pass 65, ruling R65.21): the Immobilization TC of an AFV crew a mortar's hull hit immobilized.
+                _ when key.StartsWith("areaCrewCheck:", StringComparison.Ordinal) => (2, "ordnance-crew-check"),
                 _ when selected.Length > 0 => (selected.Length, "ordnance-random-selection"),
                 _ => FireRollShape(inner!),
             };
@@ -1186,6 +1190,7 @@ public sealed partial class GamePlanner
             if (!burning && inside is not null && kill.CrewSurvival is { Survived: true } && at is { } survivedAt)
             {
                 yield return ("instance-moved", new InstanceMoved(inside.Id, new MapPosition(survivedAt)));
+                yield return Hazardous(inside.Id);
             }
 
             yield return ("vehicle-wrecked", new VehicleWrecked(vehicle.Id, burning));
@@ -1194,7 +1199,7 @@ public sealed partial class GamePlanner
                 yield return ("instance-created", new InstanceCreated(new NewInstance(BlazeId(vehicle.Id), "asl:fire", null, null, new MapPosition(burningAt), null,
                     new Dictionary<string, ConditionState>())));
             }
-            else if (inside is null && kill.CrewSurvival is { Survived: true } && LeavingCrew(state, vehicle, attemptId) is { } survivors)
+            else if (inside is null && kill.CrewSurvival is { Survived: true } && LeavingCrew(state, vehicle, attemptId, hazardous: true) is { } survivors)
             {
                 yield return ("instance-created", survivors);
             }
@@ -1210,14 +1215,45 @@ public sealed partial class GamePlanner
 
         if (kill.Abandoned == true)
         {
-            yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)));
-
-            // D3.43 (pass 65, ruling R65.20): the crew takes the Armor Leader with it, dormant, since it may re-crew the vehicle.
-            if (CrewLeaves(state, vehicle, attemptId, armorLeader: vehicle.ArmorLeader) is { } crew)
+            foreach (var abandon in TaskCheckAbandons(state, vehicle, attemptId))
             {
-                yield return crew;
+                yield return abandon;
             }
         }
+    }
+
+    /// <summary>
+    /// The events of a crew that fails its Immobilization TC (D5.5, p. 204): the vehicle is Abandoned, and the crew is beneath it under Hazardous Movement for
+    /// the phase (pass 65, ruling R65.21). D3.43 (pass 65, ruling R65.20): the crew takes the Armor Leader with it, dormant, since it may re-crew the vehicle.
+    /// </summary>
+    private static IEnumerable<(string Type, EventPayload Payload)> TaskCheckAbandons(GameState state, UnitInstance vehicle, string attemptId)
+    {
+        yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)));
+        if (CrewLeaves(state, vehicle, attemptId, armorLeader: vehicle.ArmorLeader, hazardous: true) is { } crew)
+        {
+            yield return crew;
+            if (crew.Payload is InstanceMoved moved)
+            {
+                yield return Hazardous(moved.Id);
+            }
+        }
+    }
+
+    /// <summary>
+    /// A unit placed beneath its vehicle by Survival or a failed Immobilization TC "is subject to the effects of Hazardous Movement ... vs all subsequent
+    /// attacks during that phase" (D5.5, D5.6, D6.9, p. 204; pass 65, ruling R65.21); the phase's end removes it.
+    /// </summary>
+    private static (string Type, EventPayload Payload) Hazardous(string unitId) =>
+        ("conditions-changed", new ConditionsChanged(unitId, new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.HazardousMovement] = ConditionState.True }));
+
+    /// <summary>
+    /// The units under Hazardous Movement as an attack is planned (A4.62, D5.5, D5.6): those that pushed a Gun this Player Turn, and since pass 65 (ruling
+    /// R65.21) those placed beneath their vehicle this phase. One scan of the state's units, once per attack planned; the attack records the answer.
+    /// </summary>
+    private static IReadOnlyCollection<string> HazardousUnits(GameState state)
+    {
+        var placed = state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.HazardousMovement)).Select(unit => unit.Id).ToArray();
+        return placed.Length == 0 ? state.HazardousMovers : [.. state.HazardousMovers, .. placed];
     }
 
     /// <summary>
@@ -1233,10 +1269,10 @@ public sealed partial class GamePlanner
     /// otherwise the crew counter is placed (<see cref="LeavingCrew"/>). Null when the catalog has no crew to place.
     /// </summary>
     private static (string Type, EventPayload Payload)? CrewLeaves(GameState state, UnitInstance vehicle, string attemptId, bool stunRecovery = false,
-        ArmorLeader? armorLeader = null) =>
+        ArmorLeader? armorLeader = null, bool hazardous = false) =>
         CrewInside(state, vehicle.Id) is { } inside && vehicle.Position is MapPosition position
             ? ("instance-moved", new InstanceMoved(inside.Id, new MapPosition(position.Location)))
-            : LeavingCrew(state, vehicle, attemptId, stunRecovery, armorLeader) is { } crew ? ("instance-created", crew) : null;
+            : LeavingCrew(state, vehicle, attemptId, stunRecovery, armorLeader, hazardous) is { } crew ? ("instance-created", crew) : null;
 
     /// <summary>
     /// The events of a mortar's hit on an AFV (C1.55; pass 60, ruling R60.10), written as a To Kill result's are: a burning wreck, a wreck its crew may
@@ -1248,6 +1284,11 @@ public sealed partial class GamePlanner
             {
                 Shocked = hit.Result == OrdnanceKill.Shock ? true : null,
                 CrewSurvival = hit.CrewSurvival,
+
+                // D5.5, D6.9 (pass 65, ruling R65.21): its crew's TC and its PRC's Survival.
+                CrewCheck = hit.CrewCheck,
+                Abandoned = hit.Abandoned,
+                PrcSurvival = hit.PrcSurvival,
             }, attemptId);
 
     /// <summary>
@@ -1259,7 +1300,7 @@ public sealed partial class GamePlanner
     {
         // D.8, D6.9 (pass 65, rulings R65.7, R65.9): the PRC that survive are beneath the wreck before it is written; what a Collateral Attack did to the
         // others follows the vehicle's own result.
-        foreach (var payload in SurvivorEvents(state, vehicle.VehicleId, vehicle.PrcSurvival).Concat(VehicleEffectEvents(state, vehicle, facts))
+        foreach (var payload in SurvivorEvents(state, vehicle.VehicleId, vehicle.PrcSurvival).Concat(VehicleEffectEvents(state, vehicle, facts, attemptId))
             .Concat(PrcEffectEvents(state, vehicle, attemptId)))
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [recordId]));
@@ -1330,7 +1371,8 @@ public sealed partial class GamePlanner
     /// that may re-crew carries the vehicle's Armor Leader, dormant (D3.43). An older game's recorded <c>instance-created</c> keeps the conditions it
     /// recorded, since the projector takes them from the record.
     /// </summary>
-    private static InstanceCreated? LeavingCrew(GameState state, UnitInstance vehicle, string attemptId, bool stunRecovery = false, ArmorLeader? armorLeader = null)
+    private static InstanceCreated? LeavingCrew(GameState state, UnitInstance vehicle, string attemptId, bool stunRecovery = false, ArmorLeader? armorLeader = null,
+        bool hazardous = false)
     {
         if (ScenarioA1CarrierRules.LeavingCrew(FireReference.Value.Definitions.Values, VehicleDefinition(vehicle)?.Nationality, InherentHalfSquad(state, vehicle)) is not { } crew
             || vehicle.Position is not MapPosition position)
@@ -1348,6 +1390,12 @@ public sealed partial class GamePlanner
         if (stunRecovery)
         {
             conditions[Conditions.StunRecovery] = ConditionState.True;
+        }
+
+        // D5.5, D5.6 (pass 65, ruling R65.21): a crew placed by Survival or a failed TC is under Hazardous Movement for the phase.
+        if (hazardous)
+        {
+            conditions[Conditions.HazardousMovement] = ConditionState.True;
         }
 
         if (ScenarioA1CrewActsRules.CrewFireCounter(VehicleFiredThisPlayerTurn(vehicle), VehicleMovedThisPlayerTurn(state, vehicle), Is(vehicle, Conditions.Motion),
@@ -1406,6 +1454,15 @@ public sealed partial class GamePlanner
                     [key["areaSurvival:".Length..]] = values
                 }
             },
+
+            // C1.55, D5.5 (pass 65, ruling R65.21): the TC of an AFV crew a mortar's hull hit immobilized.
+            _ when key.StartsWith("areaCrewCheck:", StringComparison.Ordinal) => rolls with
+            {
+                AreaCrewCheck = new Dictionary<string, IReadOnlyList<int>>(rolls.AreaCrewCheck ?? new Dictionary<string, IReadOnlyList<int>>(), StringComparer.Ordinal)
+                {
+                    [key["areaCrewCheck:".Length..]] = values
+                }
+            },
             _ when key.StartsWith("hit:", StringComparison.Ordinal) => rolls with { Hit = ApplyFireRoll(rolls.Hit ?? new FireRolls(null, null, null, null), key["hit:".Length..], values) },
 
             // Pass 65 (rulings R65.7, R65.9): the rolls of the target's PRC, keyed as the Fire package keys them.
@@ -1440,6 +1497,9 @@ public sealed partial class GamePlanner
 
             // D6.9 (pass 65, ruling R65.9): a Passenger's or Rider's Survival DR.
             "prcSurvival" => (2, "fire-prc-survival"),
+
+            // D5.6, D9.2 (pass 65, ruling R65.21): the Crew Survival DR of an armed vehicle the Vehicle line eliminated.
+            "vehicleSurvival" => (2, "fire-crew-survival"),
             _ => (1, "fire-wound-severity"),
         };
     }
@@ -1486,6 +1546,9 @@ public sealed partial class GamePlanner
 
             // D6.9 (pass 65, ruling R65.9): a Passenger's or Rider's Survival DR.
             "prcSurvival" => rolls with { PrcSurvival = Add(rolls.PrcSurvival, unit, values) },
+
+            // D5.6, D9.2 (pass 65, ruling R65.21): the Crew Survival DR of an armed vehicle the Vehicle line eliminated.
+            "vehicleSurvival" => rolls with { VehicleSurvival = Add(rolls.VehicleSurvival, unit, values) },
             _ => rolls with { WoundSeverity = Add(rolls.WoundSeverity, unit, values[0]) },
         };
     }

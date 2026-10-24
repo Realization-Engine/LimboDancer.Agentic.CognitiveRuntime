@@ -633,7 +633,7 @@ public static class LiveOrdnance
         IReadOnlyList<int>? toHit = null;
         int? subsequent = null, panzerfaustCheck = null;
         Dictionary<string, int>? selection = null;
-        Dictionary<string, IReadOnlyList<int>>? survival = null;
+        Dictionary<string, IReadOnlyList<int>>? survival = null, crewChecks = null;
         var hit = new Dictionary<string, string>(StringComparer.Ordinal);
         var critical = new Dictionary<string, string>(StringComparer.Ordinal);
         var prc = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -671,6 +671,12 @@ public static class LiveOrdnance
                 // C1.55, D5.6 (pass 60): the Crew Survival DR of an AFV a mortar's hit destroyed.
                 survival ??= new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
                 survival[key["areaSurvival:".Length..]] = roll.Values;
+            }
+            else if (key.StartsWith("areaCrewCheck:", StringComparison.Ordinal) && roll.Count == 2)
+            {
+                // C1.55, D5.5 (pass 65, ruling R65.21): the TC of an AFV crew a mortar's hull hit immobilized.
+                crewChecks ??= new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
+                crewChecks[key["areaCrewCheck:".Length..]] = roll.Values;
             }
             else if (key is "toKill" or "shockCheck" or "crewCheck" or "crewSurvival" or "canister" or "collateralCheck" && roll.Count == 2)
             {
@@ -716,6 +722,7 @@ public static class LiveOrdnance
                 // D.8A (pass 60): the check of a Specific Collateral Attack.
                 CollateralCheck = extra.GetValueOrDefault("collateralCheck"),
                 AreaSurvival = survival,
+                AreaCrewCheck = crewChecks,
                 Prc = prcRolls,
             };
     }
@@ -816,7 +823,10 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         {
             VehicleTarget = merged.VehicleTarget is { } aimed ? aimed with
             {
-                Prc = recorded.VehicleTarget?.Prc
+                Prc = recorded.VehicleTarget?.Prc,
+
+                // Pass 65 (ruling R65.21): whether the target was already Immobile, for the Immobilization TC's second cause, is written with the PRC.
+                Immobile = recorded.VehicleTarget?.Immobile,
             } : null,
             Hit = merged.Hit! with
             {

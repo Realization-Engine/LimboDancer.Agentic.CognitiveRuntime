@@ -245,6 +245,9 @@ public sealed class ScenarioA1ArmorReference
         bool Trait(string name) => Find("trait", name) is { } value && value.TryGetProperty("present", out var present) && present.GetBoolean();
         return new ArmorDefinition(item.GetProperty("id").GetString()!, item.GetProperty("nationality").GetString()!, Trait("asl:unarmored"), Number("af-front"),
             Number("af-side"), Text("turret-af-front"), Text("turret-af-side"), Text("ma-type"), Text("target-size"), Number("crew-survival"),
-            Trait("asl:cs-passengers-only"), Trait("asl:open-topped"));
+            Trait("asl:cs-passengers-only"), Trait("asl:open-topped"))
+        {
+            CsRed = Trait("asl:cs-red"),
+        };
     }
 }

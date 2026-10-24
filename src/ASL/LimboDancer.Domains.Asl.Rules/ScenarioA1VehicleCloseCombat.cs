@@ -373,7 +373,9 @@ public static class ScenarioA1VehicleCloseCombat
 
         var original = dice[0] + dice[1];
         var final = original + (int)drm.Sum(item => item.Value);
-        var result = final * 2 <= kill ? VehicleCloseCombatResolution.BurningWreck
+        // D5.7, C7.7 note A (pass 65, ruling R65.21): a red CS# burns on a Final DR one lower, for the burn alone.
+        var result = final * 2 <= kill || (final < kill && ScenarioA1CrewSurvivalRules.BurnsRed(definition.CsRed == true, final, lower => lower * 2 <= kill))
+                ? VehicleCloseCombatResolution.BurningWreck
             : final < kill ? VehicleCloseCombatResolution.Eliminated
             : final == kill ? VehicleCloseCombatResolution.Immobilized
             : VehicleCloseCombatResolution.None;

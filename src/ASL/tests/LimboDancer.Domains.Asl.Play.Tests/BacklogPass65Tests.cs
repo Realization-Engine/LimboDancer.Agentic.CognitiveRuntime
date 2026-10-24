@@ -202,6 +202,15 @@ public sealed class BacklogPass65Tests : IDisposable
     /// <summary>A game of the first side against the other at a date, under the named catalog, gone on to the first side's PFPh.</summary>
     private async Task Setup(string firstSide, string otherSide, int year, int month, string catalog, params Dictionary<string, object>[] placements)
     {
+        await Start(firstSide, otherSide, year, month, catalog, placements);
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+    }
+
+    /// <summary>The same game left in the first side's RPh, where a Shocked AFV makes its recovery dr (C7.42).</summary>
+    private async Task Start(string firstSide, string otherSide, int year, int month, string catalog, Dictionary<string, object>[] placements)
+    {
         Committed(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
         {
             gameId = Scope.Game,
@@ -223,6 +232,19 @@ public sealed class BacklogPass65Tests : IDisposable
             },
             placements,
         })));
+    }
+
+    /// <summary>
+    /// A game whose named AFV starts Shocked: in the first side's RPh it makes its recovery dr of 3, an Unconfirmed Kill, still Shocked (C7.42), and the game
+    /// goes on to the PFPh.
+    /// </summary>
+    private async Task SetupShocked(string firstSide, string otherSide, string shocked, params Dictionary<string, object>[] placements)
+    {
+        await Start(firstSide, otherSide, 1943, 7, "asl-scenario-a1@1.18.0", placements);
+        Committed(await Do(GameActions.RecoverShock, Once(3), new
+        {
+            vehicleId = shocked
+        }));
         Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
         {
         }));
@@ -1176,6 +1198,207 @@ public sealed class BacklogPass65Tests : IDisposable
         Assert.Equal(record.Removed, Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleRecrewed>()).Returned);
         Assert.Equal(InstanceStatus.Consumed, Current.Find(record.Removed!)!.Status);
         Assert.Equal(ConditionState.False, GameState.Condition(Current.Unit("de-ht")!, Conditions.Disabled));
+        NoReplayErrors();
+    }
+
+    // Increment 2h: the Immobilization TC's causes, Crew Survival, Brew Up, and Hazardous Movement for survivors (D5.5, D5.6, D9.2; ruling R65.21).
+
+    private static readonly string[] RiflemenR1 = ["r1"];
+    private const string FiveHexesOff = "bd01:B3:0";
+
+    /// <summary>A light mortar possessed by its holder.</summary>
+    private static Dictionary<string, object> LightMortar(string id, string definition, string holder, string side) => new()
+    {
+        ["id"] = id,
+        ["kind"] = "asl:light-mortar",
+        ["definition"] = definition,
+        ["side"] = side,
+        ["holding"] = new
+        {
+            holder,
+            role = "possessed"
+        },
+        ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+    };
+
+    /// <summary>A mortar's shot on the Area Target Type at the target Location.</summary>
+    private Task<PlayResult> Lob(string mortar, params int[] dice) =>
+        Do(GameActions.FireOrdnance, Once(dice), new Dictionary<string, object> { ["gunId"] = mortar, ["target"] = Target });
+
+    /// <summary>
+    /// The game's records as a game recorded before increment 2h holds them (ruling R65.21): no PRC, Shock, or Abandonment fact on a vehicle, no TC or Crew
+    /// Survival in a mortar's or the Vehicle line's result, no roll of either, and neither the crew it placed nor a Hazardous Movement.
+    /// </summary>
+    private GameEvent[] BeforeIncrement2h()
+    {
+        // The names each list's items lose: a vehicle's facts, a mortar's AFV result, and the Vehicle line's result.
+        static void Remove(JsonNode? node, Dictionary<string, string[]> names, string[] own)
+        {
+            if (node is JsonObject item)
+            {
+                foreach (var name in own)
+                {
+                    item.Remove(name);
+                }
+
+                foreach (var (key, child) in item.ToArray())
+                {
+                    if (child is JsonArray list)
+                    {
+                        foreach (var element in list)
+                        {
+                            Remove(element, names, names.GetValueOrDefault(key) ?? []);
+                        }
+                    }
+                    else
+                    {
+                        Remove(child, names, []);
+                    }
+                }
+            }
+        }
+
+        static JsonElement Strip(JsonElement element, Dictionary<string, string[]> names)
+        {
+            var node = JsonNode.Parse(element.GetRawText());
+            Remove(node, names, []);
+            return JsonSerializer.SerializeToElement(node);
+        }
+
+        var facts = new Dictionary<string, string[]>(StringComparer.Ordinal) { ["vehicles"] = ["prc", "shocked", "abandoned"] };
+        var results = new Dictionary<string, string[]>(StringComparer.Ordinal)
+        {
+            ["areaVehicles"] = ["crewCheck", "abandoned", "prcSurvival"],
+            ["vehicleEffects"] = ["taskCheck", "abandoned", "crewSurvival"],
+        };
+        static bool Added(string key) => key.StartsWith("areaCrewCheck:", StringComparison.Ordinal) || key.Contains("vehicleSurvival:", StringComparison.Ordinal);
+        static Dictionary<string, string> Kept(IReadOnlyDictionary<string, string> rolls) =>
+            rolls.Where(item => !Added(item.Key)).ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
+        return [.. store.Read(Scope)!.Events
+            .Where(item => item.Payload is not InstanceCreated { Instance.Kind: "asl:vehicle-crew" }
+                && !(item.Payload is ConditionsChanged changed && (changed.Conditions.ContainsKey(Conditions.HazardousMovement) || changed.Conditions.ContainsKey(Conditions.Abandoned))))
+            .Select((item, index) => item with { Revision = index + 1 })
+            .Select(item => item.Payload is OrdnanceFired shot
+                ? item with { Payload = shot with { Rolls = Kept(shot.Rolls), Facts = Strip(shot.Facts, facts), Resolution = Strip(shot.Resolution, results) } }
+                : item)];
+    }
+
+    [Fact]
+    public async Task AMortarImmobilizesATankAndItsCrewFailsTheTcUnderHazardousMovement()
+    {
+        // C1.55, D5.5: the German 50mm at the T-34 two hexes off, a To Hit DR of 6; an IFT DR of 3 on the 2 column, one above its K/# DR, its colored 2 not
+        // below its white 1: a hull hit that immobilizes it. Its crew, inside, takes the TC on a DR of 12 and fails: the T-34 is Abandoned and the Russian
+        // vehicle crew is beneath it, under Hazardous Movement until the phase ends (D5.5).
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Unit("g1", "asl:squad", "attacker-squad", Firer, "german"),
+            LightMortar("de-mtr", "attacker-light-mortar", "g1", "german"), Vehicle("ru-tank", "defender-tank", Target, "russian", "south-west"));
+        var before = Revision;
+        Committed(await Lob("de-mtr", 4, 2, 2, 1, 6, 6, 3, 3, 3, 3));
+        var shot = LastShot(before);
+        var tank = shot.Resolution.GetProperty("areaVehicles").EnumerateArray().Single();
+        Assert.Equal(("hull", "immobilized"), (tank.GetProperty("hitLocation").GetString(), tank.GetProperty("result").GetString()));
+        var tc = tank.GetProperty("crewCheck");
+        Assert.Equal(("TC", 12, false), (tc.GetProperty("kind").GetString(), tc.GetProperty("finalDr").GetInt32(), tc.GetProperty("passed").GetBoolean()));
+        Assert.True(tank.GetProperty("abandoned").GetBoolean());
+        Assert.Contains("areaCrewCheck:ru-tank", shot.Rolls.Keys);
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("ru-tank")!, Conditions.Abandoned));
+        var crew = Assert.Single(Current.Units, unit => unit.Kind == "asl:vehicle-crew");
+        Assert.Equal(("russian-vehicle-crew", Target, ConditionState.True),
+            (crew.Definition!.Definition, Current.Location(crew.Id)!.Location.ToString(), GameState.Condition(crew, Conditions.HazardousMovement)));
+        NoReplayErrors();
+
+        // A game recorded before the pass: the hit's facts carry no PRC, so no TC is taken and the shot replays as it was resolved.
+        var older = Planner().Replay(BeforeIncrement2h());
+        Assert.False(older.HasErrors, string.Join("; ", older.Diagnostics.Select(item => item.Message)));
+        Assert.Equal(ConditionState.True, GameState.Condition(older.Current!.Unit("ru-tank")!, Conditions.Immobilized));
+        Assert.NotEqual(ConditionState.True, GameState.Condition(older.Current.Unit("ru-tank")!, Conditions.Abandoned));
+        Assert.DoesNotContain(older.Current.Units, unit => unit.Kind == "asl:vehicle-crew");
+
+        // The phase's end removes the Hazardous Movement.
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        Assert.NotEqual(ConditionState.True, GameState.Condition(Current.Unit(crew.Id)!, Conditions.HazardousMovement));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnAirBurstWrecksAShockedHalftrackAndItsCrewSurvivesWithThePlusOne()
+    {
+        // D5.311, A7.308 (pass 60): the Russian 50mm hits the OT SPW 251/1 in woods, attacked as unarmored on the Vehicle line: an IFT DR of 3 is below the 2
+        // column's Kill Number of 4 and more than half of it, a wreck. D5.6, D9.2 (ruling R65.21): the armed halftrack's crew rolls its Crew Survival DR, +1 as
+        // it was Shocked: 4 + 1 = 5 against its CS# 5, so the German vehicle crew is beneath the wreck, under Hazardous Movement.
+        changed = ("B8", "Woods");
+        var halftrack = Vehicle("de-ht", "attacker-halftrack", Target, "german", "east");
+        halftrack["conditions"] = new Dictionary<string, bool> { ["asl:shocked"] = true };
+        await SetupShocked("russian", "german", "de-ht", Unit("r1", "asl:squad", "defender-squad", FiveHexesOff, "russian"),
+            LightMortar("ru-mtr", "defender-light-mortar", "r1", "russian"), halftrack);
+        var before = Revision;
+        Committed(await Lob("ru-mtr", 2, 2, 1, 2, 2, 2, 3, 3, 3, 3));
+        var shot = LastShot(before);
+        Assert.True(shot.Facts.GetProperty("hit").GetProperty("vehicles")[0].GetProperty("shocked").GetBoolean());
+        var line = shot.Resolution.GetProperty("hit").GetProperty("vehicleEffects").EnumerateArray().Single();
+        Assert.Equal(("eliminated", 4), (line.GetProperty("result").GetString(), line.GetProperty("killNumber").GetInt32()));
+        var survival = line.GetProperty("crewSurvival");
+        Assert.Equal((1, 5, true), (survival.GetProperty("drm").GetInt32(), survival.GetProperty("finalDr").GetInt32(), survival.GetProperty("survived").GetBoolean()));
+        Assert.Contains("hit:vehicleSurvival:de-ht", shot.Rolls.Keys);
+        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("de-ht")!.Status);
+        var crew = Assert.Single(Current.Units, unit => unit.Kind == "asl:vehicle-crew");
+        Assert.Equal(("german-vehicle-crew", ConditionState.True), (crew.Definition!.Definition, GameState.Condition(crew, Conditions.HazardousMovement)));
+        NoReplayErrors();
+
+        // A game recorded before the pass: no Crew Survival on the Vehicle line, as it was resolved.
+        var older = Planner().Replay(BeforeIncrement2h());
+        Assert.False(older.HasErrors, string.Join("; ", older.Diagnostics.Select(item => item.Message)));
+        Assert.Equal(InstanceStatus.Wrecked, older.Current!.Unit("de-ht")!.Status);
+        Assert.DoesNotContain(older.Current.Units, unit => unit.Kind == "asl:vehicle-crew");
+    }
+
+    [Fact]
+    public async Task AShockedTankKilledByAnAtShotRollsItsCrewSurvivalAtPlusOne()
+    {
+        // D5.6 (ruling R65.21): the T-34's AP eliminates the PzKpfw IIIH, Shocked and then an Unconfirmed Kill, on a TK DR of 6; its Crew Survival DR of 4
+        // takes the +1 for the Shock, 5 against its CS# 6, and the crew is beneath the wreck, under Hazardous Movement for the phase.
+        var tank = Vehicle("de-tank", "attacker-tank", Target, "german", "east");
+        tank["conditions"] = new Dictionary<string, bool> { ["asl:shocked"] = true };
+        await SetupShocked("russian", "german", "de-tank", Vehicle("ru-tank", "defender-tank", Firer, "russian", "north-east"), tank);
+        var before = Revision;
+        Committed(await Shoot("ru-tank", "de-tank", "ap", 4, 2, 3, 3, 2, 2));
+        var kill = LastShot(before).Resolution.GetProperty("kill");
+        Assert.Equal("eliminated", kill.GetProperty("result").GetString());
+        var survival = kill.GetProperty("crewSurvival");
+        Assert.Equal((1, 5, true), (survival.GetProperty("drm").GetInt32(), survival.GetProperty("finalDr").GetInt32(), survival.GetProperty("survived").GetBoolean()));
+        var crew = Assert.Single(Current.Units, unit => unit.Kind == "asl:vehicle-crew");
+        Assert.Equal(ConditionState.True, GameState.Condition(crew, Conditions.HazardousMovement));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ASurvivingRiderIsUnderHazardousMovementAgainstTheNextAttackOfThePhase()
+    {
+        // D5.6, D6.9 (ruling R65.21): the T-34's AP eliminates the PzKpfw IIIH on a TK DR of 6; its crew's Crew Survival DR of 12 fails, and its Rider, a
+        // 4-6-7, survives on a 4 against the CS# 6, beneath the wreck. The Russian 4-4-7's fire at it in the same PFPh takes Hazardous Movement's -2 (A4.62).
+        var rider = Aboard("de-s", "asl:squad", "attacker-squad", "de-tank", "german");
+        rider["position"] = new Dictionary<string, string> { ["in"] = "de-tank", ["role"] = "rider" };
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("ru-tank", "defender-tank", Firer, "russian", "north-east"),
+            Unit("r1", "asl:squad", "defender-squad", Firer, "russian"), Vehicle("de-tank", "attacker-tank", Target, "german", "east"), rider);
+        var before = Revision;
+        Committed(await Shoot("ru-tank", "de-tank", "ap", 4, 2, 3, 3, 6, 6, 2, 2));
+        var kill = LastShot(before).Resolution.GetProperty("kill");
+        Assert.False(kill.GetProperty("crewSurvival").GetProperty("survived").GetBoolean());
+        Assert.True(kill.GetProperty("prcSurvival")[0].GetProperty("survived").GetBoolean());
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("de-s")!, Conditions.HazardousMovement));
+        Assert.DoesNotContain(Current.Units, unit => unit.Kind == "asl:vehicle-crew");
+
+        before = Revision;
+        Committed(await Do(GameActions.Fire, Once(5, 6), new
+        {
+            firers = RiflemenR1,
+            target = Target,
+        }));
+        var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.True(fire.Facts.GetProperty("hazardousMovement").GetBoolean());
+        Assert.Contains(fire.Resolution.GetProperty("arithmetic").GetProperty("drm").EnumerateArray(),
+            item => item.GetProperty("name").GetString() == "hazardous-movement" && item.GetProperty("value").GetDecimal() == -2);
         NoReplayErrors();
     }
 }

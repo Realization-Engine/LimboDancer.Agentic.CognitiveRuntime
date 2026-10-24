@@ -172,6 +172,9 @@ public static class ScenarioA1FireFollowUps
 
             // D6.9 (pass 65, ruling R65.9): a Passenger's or Rider's Survival DR.
             "prcSurvival" => (2, "fire-prc-survival"),
+
+            // D5.6, D9.2 (pass 65, ruling R65.21): the Crew Survival DR of an armed vehicle the Vehicle line eliminated.
+            "vehicleSurvival" => (2, "fire-crew-survival"),
             _ => (1, "fire-wound-severity"),
         };
         return new FireNextStep(false, null, key, count, purpose, null);
