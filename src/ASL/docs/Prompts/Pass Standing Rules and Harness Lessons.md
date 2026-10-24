@@ -85,6 +85,9 @@ A prompt written for the next session (the user, 2026-10-12) holds what only tha
 
 **Building and running the Studio**
 
+- **Measure one Studio at a time** (pass 65, 2026-10-24). A base Studio and the pass's, a bisect build, and a dotnet-trace sample ran at once, all appending to the one audit file of the shared boards folder (7.8 MB); the pass's proposals read about 1,000 ms against the base's 150, a seeming regression that cost a bisect of two builds. Measured alone, each was level with the base. Stop every other Studio and the profiler before a timed run, and take the base and the pass in turn.
+- **Stop each Studio when it is no longer needed right away** (the user, 2026-10-24): "stop and clean up running studios when you no longer need them immediately." Start a new one when it is needed again. This holds for every Studio the session or its agents start (6670, a base on 6671, a bisect build), never the user's 5178.
+
 - The user's Studio on 5178 often holds MapStudio's usual build output, and it cannot be stopped from a session. Build Claude's Studio into its own folder outside the repository (`-p:OutDir=E:/Archive/GitHub/dlandi/asl-gate-work/studio-6670/`, launch config `map-studio-p31b`, which passes `--AslMaps:BoardsRoot` and `--AslMaps:OracleFixtures`, since outside the repository the Studio cannot find them by walking up from its DLL) and build the gate into `-p:BaseOutputPath=bin/gate/`. Until 2026-10-19 Claude's Studio was built into `bin/p31b`; the older lessons below that name `bin/p31b` mean that folder.
 - The launch config uses `--no-build`. Build MapStudio first, with Claude's Studio stopped, then start it. The Studio serves `site.css` and the scripts from its build output.
 - Claude's Studio and the user's share `src/ASL/boards` and the fidelity report cache.
