@@ -29,7 +29,7 @@ On 2026-10-23 the user said: "let's prepare to execute Pass 65." This prompt is 
 ## Open, and known before the start
 
 - **The branch above** waits on its pull request.
-- **The vehicle-crew values** wait on the chart's rendering and the referee's check before they enter the catalog. Adding definitions makes catalog 1.18.0, and games that name 1.17.0 then stop replaying, as at every catalog bump before.
+- **The vehicle-crew values** wait on the chart's rendering and the referee's check before they enter the catalog. Adding definitions makes catalog 1.18.0. Games that name 1.17.0 keep replaying: a game's recorded catalog version locks no replay, since the loaded catalog of that name is read (the standing rules, section 4), and ruling R65.4 relaxed the fire check so that they keep firing too. What the bump changes is the catalog's identity hashed into every state line, which the gate's `BOTH_SKIP` takes (corrected 2026-10-24, design section 5).
 - **Recorded games** where a crew survived hold an infantry crew. If the pass places a vehicle crew in its place, the replay digest will show it: keep what an older game recorded by a fact on the record, as earlier passes did.
 - **Rulings still open to a veto:** R40.12 to R40.26 and R45.3 to R45.5.
 
