@@ -317,11 +317,14 @@ public static class ReplaySteps
             var what = drove.Kind switch
             {
                 VehicleStepped.Delay => "spends a Delay MP",
-                VehicleStepped.Load => $"takes {(drove.Units?.Count == 1 ? "a unit" : "units")} aboard",
+                VehicleStepped.Load => drove.Riders ? $"takes {(drove.Units?.Count == 1 ? "a Rider" : "Riders")}" : $"takes {(drove.Units?.Count == 1 ? "a unit" : "units")} aboard",
                 VehicleStepped.Unload => $"unloads {(drove.Units?.Count == 1 ? "a unit" : "units")}",
                 _ => "moves",
             };
-            return ("move", side, $"{A(side, "vehicle")} {what} in {Place(before, drove.At)}{end}", false);
+
+            // D6.21, D6.24 (pass 65, ruling R65.17): Riders that Bail Out as it moves.
+            var bailing = payloads.OfType<RiderBailedOut>().Any() ? ", and its Riders Bail Out" : string.Empty;
+            return ("move", side, $"{A(side, "vehicle")} {what} in {Place(before, drove.At)}{bailing}{end}", false);
         }
 
         if (First<MotionAttempted>(payloads) is { } motion)
@@ -625,6 +628,7 @@ public static class ReplaySteps
             {
                 MovementStepped moved => moved.To,
                 VehicleStepped drove => drove.At,
+                RiderBailedOut bailed => bailed.At,
                 MotionAttempted motion => Open(before, motion.Vehicle, viewer) ? before.Location(motion.Vehicle)?.Location : null,
                 AdvanceMoved advanced => advanced.To,
                 RoutStepped routed => routed.To,

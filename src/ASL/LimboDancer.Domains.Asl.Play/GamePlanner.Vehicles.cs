@@ -107,7 +107,7 @@ public sealed partial class GamePlanner
     private string? PassengerSetupBar(GameState state, UnitInstance vehicle) =>
         ScenarioA1VehicleMovementCalculator.PassengerSetupBar(vehicle.Side, vehicle.Group, [.. state.Passengers(vehicle.Id).Select(unit => new PassengerSetupFacts(unit.Id,
                 unit.Side, unit.Group, LiveFire.IsVehicle(unit), vocabulary.IsA(unit.Kind, "asl:personnel"), Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden)))],
-            vehicle.Id, () => CapacityBar(state, vehicle, []));
+            vehicle.Id, () => CapacityBar(state, vehicle, []) ?? RiderBar(state, vehicle, []));
 
     /// <summary>
     /// Why a Gun set up in tow is refused (C10.1, C10.2, C10.13; ruling R26.1): the vehicle's T# exceeds the Gun's M#, the Gun is not QSU (limbering is not
@@ -409,10 +409,27 @@ public sealed partial class GamePlanner
                     return Refused(scope, label, expected, delayTurretBar);
                 }
 
+                var delayText = $"play.move-vehicle: {id} spends a Delay MP in {at.Location} (D2.17)" + (delayTurret is { } delayed ? $", turning its turret to {UnitFacings.Name(delayed)} (D3.12)" : string.Empty)
+                    + $"; {Mp(Math.Max(0, allotment - spent - 2))} MP left";
+
+                // D6.21 (pass 65, ruling R65.17): a turreted AFV's TCA change makes its Riders Bail Out.
+                if (StepBailOut(state, vehicle, kind, at.Location, null, delayTurret) is { } delayBailing)
+                {
+                    return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, draw =>
+                    {
+                        List<GameEvent> events = [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, kind, at.Location, null, 2, step) { Turret = delayTurret }, null, null)];
+                        if (draw is not null)
+                        {
+                            AddBailOuts(scope, attemptId, expected, actor, null, events, draw, state, delayBailing.Riders, id, delayBailing.At, [EventId(attemptId, 1)]);
+                        }
+
+                        return events;
+                    }, true, at.Location, step, delayText + BailOutPreview(delayBailing));
+                }
+
                 return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
                     [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, kind, at.Location, null, 2, step) { Turret = delayTurret }, null, null)],
-                    [$"play.move-vehicle: {id} spends a Delay MP in {at.Location} (D2.17)" + (delayTurret is { } delayed ? $", turning its turret to {UnitFacings.Name(delayed)} (D3.12)" : string.Empty)
-                        + $"; {Mp(Math.Max(0, allotment - spent - 2))} MP left"]);
+                    [delayText]);
         }
 
         if (ScenarioA1VehicleMovementCalculator.MovingBar(id, kind, moving, afterAll) is { } movingBar)
@@ -568,6 +585,10 @@ public sealed partial class GamePlanner
             summary += $", turning its turret to {UnitFacings.Name(turretTo)} (D3.12)";
         }
 
+        // D6.21, B13.43 (pass 65, ruling R65.17): terrain Riders may not ride through, or a turreted AFV's TCA change, makes them Bail Out.
+        var bailing = kind is VehicleStepped.Exit ? null : StepBailOut(state, vehicle, kind, at.Location, entry, turret);
+        summary += BailOutPreview(bailing);
+
         // D5.341 (ruling R5.17): a leaving AFV keeps to a shortest route in MP to its Friendly Board Edge.
         if (leaving && !ScenarioA1RecallCalculator.StopsToUnload(kind, Riding(state, id).Count > 0))
         {
@@ -656,6 +677,13 @@ public sealed partial class GamePlanner
                 events.Add(Event(scope, attemptId, 1, expected, "vehicle-step", Stepped(kind, to), null, null));
             }
 
+            // D6.24 (pass 65, ruling R65.17): the Riders Bail Out with the expenditure, which costs the AFV nothing.
+            if (bailing is { } bail && draw is not null)
+            {
+                var stepId = events.Last(item => item.Payload is VehicleStepped).EventId;
+                AddBailOuts(scope, attemptId, expected, actor, null, events, draw, state, bail.Riders, id, bail.At, [stepId]);
+            }
+
             var boggedThere = bogDrm is { } drm && draw is not null
                 && AddVehicleCheck(scope, attemptId, expected, actor, events, draw, id, VehicleCheckRolled.Bog, drm) == VehicleCheckRolled.Bogged;
 
@@ -685,7 +713,8 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, unresolvable);
         }
 
-        return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, Build, bogDrm is not null || hedgeDrm is not null, kind == VehicleStepped.Enter ? to : at.Location, step,
+        return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, Build, bogDrm is not null || hedgeDrm is not null || bailing is not null,
+            kind == VehicleStepped.Enter ? to : at.Location, step,
             text + (subject.Count > 0 ? $"; the concealed units in {to} are revealed or take a PAATC, as their owner chooses (A12.41)" : string.Empty));
     }
 

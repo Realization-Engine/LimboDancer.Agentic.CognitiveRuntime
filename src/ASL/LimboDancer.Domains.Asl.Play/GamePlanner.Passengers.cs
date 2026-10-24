@@ -42,18 +42,57 @@ public sealed partial class GamePlanner
     /// </summary>
     internal string? CapacityBar(GameState state, UnitInstance vehicle, IEnumerable<UnitInstance> boarding)
     {
+        // D6.2 (pass 65, ruling R65.16): Riders are counted apart, against the Rider capacity (RiderBar); a vehicle carrying only Riders has no Passengers to bar.
+        UnitInstance[] aboard = [.. Riding(state, vehicle.Id).Where(unit => unit.Position is not ContainedPosition { Role: ContainmentRole.Rider }).Concat(boarding)
+            .DistinctBy(unit => unit.Id)];
+        if (aboard.Length == 0)
+        {
+            return null;
+        }
+
         var capacity = PassengerCapacity(state, vehicle);
         if (capacity is null)
         {
             return ScenarioA1PassengerCalculator.CapacityBar(vehicle.Id, null, null, 0, []);
         }
 
-        UnitInstance[] aboard = [.. Riding(state, vehicle.Id).Concat(boarding).DistinctBy(unit => unit.Id)];
-
         // D6.4 (pass 65, ruling R65.15): a SW left aboard counts against the Passenger PP capacity.
         return ScenarioA1PassengerCalculator.CapacityBar(vehicle.Id, capacity, VehicleDefinition(vehicle)?.PassengerCapacity, aboard.Count(unit => vocabulary.IsA(unit.Kind, "asl:smc")),
             aboard.Select(unit => (unit.Id, (Func<int?>)(() => PassengerPp(state, unit))))
                 .Concat(MemoOf(state).Objects(state).Stowed(vehicle.Id).Select(weapon => (weapon.Id, (Func<int?>)(() => PortageOf(weapon))))));
+    }
+
+    /// <summary>
+    /// Why a vehicle may not carry its Riders with <paramref name="boarding"/> added (D6.2, A5.5; pass 65, ruling R65.16): Riders are not allowed in the
+    /// game's year for the vehicle's side, it is not an AFV that takes Riders, or their PP exceed its Rider capacity, counted apart from its Passenger PP;
+    /// null when it may, or when nobody rides it as a Rider.
+    /// </summary>
+    internal string? RiderBar(GameState state, UnitInstance vehicle, IEnumerable<UnitInstance> boarding)
+    {
+        UnitInstance[] riders = [.. RidersOf(state, vehicle.Id).Concat(boarding).DistinctBy(unit => unit.Id)];
+        if (riders.Length == 0)
+        {
+            return null;
+        }
+
+        var definition = VehicleDefinition(vehicle);
+        return ScenarioA1RiderRules.DateBar(vehicle.Id, state.ScenarioYear, state.Side(vehicle.Side)?.Nationality)
+            ?? ScenarioA1RiderRules.CapacityBar(vehicle.Id, ScenarioA1RiderRules.Capacity(definition?.VehicleClass, definition?.Unarmored == true),
+                riders.Select(unit => (unit.Id, vocabulary.IsA(unit.Kind, "asl:smc"), (Func<int?>)(() => PassengerPp(state, unit)))));
+    }
+
+    /// <summary>The Rider capacity of a vehicle in PP, or null when it takes none (D6.2), with whether it is one SMC's; for the Play page.</summary>
+    public static RiderCapacity? RiderCapacityOf(UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return VehicleDefinition(vehicle) is { } definition ? ScenarioA1RiderRules.Capacity(definition.VehicleClass, definition.Unarmored == true) : null;
+    }
+
+    /// <summary>The Rider PP a vehicle has left (D6.2), its Riders read from the state's index; null when it takes no Riders. For the Play page.</summary>
+    public int? RiderPpLeft(GameState state, UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return RiderCapacityOf(vehicle) is { } capacity ? capacity.Pp - RidersOf(state, vehicle.Id).Sum(unit => PassengerPp(state, unit) ?? 0) : null;
     }
 
     /// <summary>The two VCAs of a vehicle entering across a hexside: its VCA holds the hex it enters, so it faces a hexspine 30 degrees either side of its travel (D2.11).</summary>
@@ -268,7 +307,9 @@ public sealed partial class GamePlanner
             least = Math.Min(least, left / 2);
         }
 
-        if (CapacityBar(state, vehicle, boarding) is { } full)
+        // D6.2 (pass 65, ruling R65.16): a load may board Riders, within the dates and the Rider capacity, counted apart from the Passengers'.
+        var riders = Flag(arguments, "riders");
+        if ((riders ? RiderBar(state, vehicle, boarding) : CapacityBar(state, vehicle, boarding)) is { } full)
         {
             return Refused(scope, label, expected, $"play.load: {full}");
         }
@@ -276,13 +317,14 @@ public sealed partial class GamePlanner
         var printed = PrintedHalfMp(vehicle);
         var kept = ScenarioA1PassengerCalculator.LoadKeptHalfMp(printed, least);
         var cost = printed - kept;
-        var text = $"play.load: {string.Join(", ", boarding.Select(unit => unit.Id))} board{(boarding.Count == 1 ? "s" : string.Empty)} {id} in {at} for one MF"
+        var text = $"play.load: {string.Join(", ", boarding.Select(unit => unit.Id))} board{(boarding.Count == 1 ? "s" : string.Empty)} {id} in {at}"
+            + (riders ? " as Riders (D6.2)" : string.Empty) + " for one MF"
             + (moving is not null ? $", the last step of {(boarding.Count == 1 ? "its" : "their")} move" : string.Empty)
             + (recipient is not null ? $", {lender} lending {recipient} his IPC (A4.42)" : string.Empty)
             + $"; {id} keeps {Mp(kept)} of its {Mp(printed)} MP (D6.4; ruling R26.2)"
             + "; the DEFENDER may fire at the boarding units as Infantry on foot with FFNAM, and one left pinned or broken does not board (D5.43, D6.5)";
         return VehicleStepPlan(scope, label, attemptId, expected, actor, existing,
-            _ => [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, VehicleStepped.Load, at, null, cost, 1) { Units = [.. boarding.Select(unit => unit.Id)] }, null, null)],
+            _ => [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, VehicleStepped.Load, at, null, cost, 1) { Units = [.. boarding.Select(unit => unit.Id)], Riders = riders }, null, null)],
             false, at, 1, text);
     }
 
@@ -424,7 +466,7 @@ public sealed partial class GamePlanner
         {
             if (index.VehicleOf(text) is { } vehicle && state.Find(text) is UnitInstance { Status: InstanceStatus.Active } unit)
             {
-                return $"play.aboard: {unit.Id} rides {vehicle} as a Passenger; until it unloads (D6.5) it fires, passes a SW, routs beneath, and otherwise acts only with its vehicle, since Passengers' other actions are not built (ruling R26.2)";
+                return $"play.aboard: {unit.Id} rides {vehicle} as a {(unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? "Rider" : "Passenger")}; until it unloads (D6.5) it fires, passes a SW, routs beneath, and otherwise acts only with its vehicle, since Passengers' other actions are not built (ruling R26.2)";
             }
         }
 

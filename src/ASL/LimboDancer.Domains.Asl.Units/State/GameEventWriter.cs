@@ -672,12 +672,46 @@ public static class GameEventWriter
                     writer.WriteBoolean("interim", true);
                 }
 
+                // D6.2 (pass 65, ruling R65.16): written only by a load of Riders since the pass.
+                if (vehicle.Riders)
+                {
+                    writer.WriteBoolean("riders", true);
+                }
+
                 if (vehicle.Units is { } aboard)
                 {
                     writer.WriteStartArray("units");
                     foreach (var unit in aboard)
                     {
                         writer.WriteStringValue(unit);
+                    }
+
+                    writer.WriteEndArray();
+                }
+
+                break;
+            case RiderBailedOut bailed:
+                writer.WriteString("unit", bailed.Unit);
+                writer.WriteString("vehicle", bailed.Vehicle);
+                writer.WriteString("at", bailed.At.ToString());
+                writer.WriteString("cause", bailed.Cause);
+                writer.WriteString("roll", bailed.Roll);
+                writer.WriteNumber("morale", bailed.Morale);
+                writer.WriteString("result", bailed.Result);
+                if (bailed.Weapons is { } carried)
+                {
+                    writer.WriteStartArray("weapons");
+                    foreach (var weapon in carried)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("weapon", weapon.Weapon);
+                        if (weapon.Roll is { } weaponRoll)
+                        {
+                            writer.WriteString("roll", weaponRoll);
+                        }
+
+                        writer.WriteString("fate", weapon.Fate);
+                        writer.WriteEndObject();
                     }
 
                     writer.WriteEndArray();

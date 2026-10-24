@@ -3707,7 +3707,8 @@ public static class ScenarioA1FireCalculator
         /// </summary>
         private IReadOnlyList<FireModifier> Mounted(FireFirer firer) =>
             firer.Mounted is { DefinitionId: { } vehicle } mounted
-                ? ScenarioA1PassengerActionRules.Multipliers(reference.Definitions.GetValueOrDefault(vehicle)?.Unarmored == true, mounted.Moved == true, mounted.Motion == true, attack.Phase)
+                ? ScenarioA1PassengerActionRules.Multipliers(reference.Definitions.GetValueOrDefault(vehicle)?.Unarmored == true, mounted.Moved == true, mounted.Motion == true, attack.Phase,
+                    mounted.Rider == true)
                 : [];
 
         /// <summary>A firer's Normal Range: a wounded hero's is his wounded side's (A15.2).</summary>

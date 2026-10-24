@@ -138,6 +138,7 @@ public static class GameProjector
                 GunHooked hooked => HookGun(previous, hooked),
                 MovementStepped moving => StepMovement(previous, moving),
                 VehicleStepped vehicle => StepVehicle(previous, vehicle),
+                RiderBailedOut bailed => BailOut(previous, bailed),
                 VehicleCheckRolled check => CheckVehicle(previous, check),
                 MotionAttempted motion => AttemptMotion(previous, motion),
                 OverrunResolved overrun => ResolveOverrun(previous, overrun),
@@ -2423,8 +2424,10 @@ public static class GameProjector
                 VehicleStepped.Load => current is null && !inMotion && step.At == at.Location && step.Facing is null && step.Units is { Count: > 0 } boarding
                     && boarding.All(id => Active(state, id) is UnitInstance unit && unit.Side == vehicle.Side && !unit.MovementEnded && state.Aboard(unit.Id) is null
                         && state.Location(unit.Id)?.Location == at.Location && vocabulary.IsA(unit.Kind, "asl:personnel")),
+                // D6.5 (pass 65, ruling R65.16): Riders disembark as Passengers do.
                 VehicleStepped.Unload => stopped && vehicle.Straddling is null && step.At == at.Location && step.Facing is null && step.Units is { Count: > 0 } leaving
-                    && leaving.All(id => Active(state, id) is UnitInstance { Position: ContainedPosition { Role: ContainmentRole.Passenger } contained } && contained.Container == vehicle.Id),
+                    && leaving.All(id => Active(state, id) is UnitInstance { Position: ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider } contained }
+                        && contained.Container == vehicle.Id),
                 VehicleStepped.Stop => moving && step.At == at.Location && step.Facing is null && step.HalfMp == 2,
 
                 // D2.17 (pass 50): a Delay MP, one MP in place by a vehicle that is stopped or has not started.
@@ -2492,7 +2495,8 @@ public static class GameProjector
                     loaded = Replace(loaded, step.Kind == VehicleStepped.Load
                         ? unit with
                         {
-                            Position = new ContainedPosition(vehicle.Id, ContainmentRole.Passenger),
+                            // D6.2 (pass 65, ruling R65.16): a load recorded with riders boards Riders; any other, Passengers.
+                            Position = new ContainedPosition(vehicle.Id, step.Riders ? ContainmentRole.Rider : ContainmentRole.Passenger),
                             MfSpent = unit.MfSpent + 1,
                             MovementEnded = true,
                         }
@@ -2580,6 +2584,79 @@ public static class GameProjector
                     Disembarked = current?.Disembarked,
                 },
             };
+        }
+
+        /// <summary>
+        /// A Rider's Bail Out (D6.21, D6.23, D6.24; pass 65, ruling R65.17): a Rider of the vehicle, its NMC agreeing with its DR and each SW's fate with its
+        /// dr. The unit is beneath the AFV on foot in the recorded Location, its move ended, with a Prep Fire counter in its own Player Turn and a Final
+        /// Fire counter in the enemy's if the NMC leaves it unbroken; its SW are kept, malfunctioned, or eliminated as recorded. The records after this
+        /// one write what the NMC did. For Defensive First Fire it is one of the moving vehicle's units that Bailed Out (FFNAM).
+        /// </summary>
+        private GameState? BailOut(GameState state, RiderBailedOut bailed)
+        {
+            var refused = Rules.ScenarioA1RiderRules.BailOutRefusal();
+            if (Active(state, bailed.Unit) is not UnitInstance { Position: ContainedPosition { Role: ContainmentRole.Rider } contained } unit || contained.Container != bailed.Vehicle
+                || Active(state, bailed.Vehicle) is not UnitInstance || !rolls.TryGetValue(bailed.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6)
+            {
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
+            var broken = GameState.Condition(unit, Conditions.Broken) == ConditionState.True;
+            if (!Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result))
+            {
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
+            var carrierBroken = Rules.ScenarioA1RiderRules.LeavesBroken(bailed.Result, broken);
+            var conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal);
+            if (!carrierBroken)
+            {
+                conditions[Rules.ScenarioA1RiderRules.PrepFireCounter(unit.Side == state.PhasingSide) ? Conditions.PrepFire : Conditions.FinalFire] = ConditionState.True;
+            }
+
+            var next = Replace(state, unit with
+            {
+                Position = new MapPosition(bailed.At),
+                MovementEnded = true,
+                Conditions = conditions,
+            })!;
+            foreach (var weapon in bailed.Weapons ?? [])
+            {
+                int? dr = null;
+                if (weapon.Roll is { } weaponRoll)
+                {
+                    if (!rolls.TryGetValue(weaponRoll, out var drawn) || drawn.Count != 1 || drawn.Sides != 6)
+                    {
+                        return Fail<GameState>(refused.Code, refused.Text);
+                    }
+
+                    dr = drawn.Values[0];
+                }
+
+                if (Active(next, weapon.Weapon) is not EquipmentInstance { Holding: { Role: HoldingRole.Possessed } holding } carried || holding.Holder != unit.Id
+                    || !Rules.ScenarioA1RiderRules.WeaponAgrees(dr, weapon.Fate == Rules.ScenarioA1RiderRules.Eliminated, carrierBroken, weapon.Fate))
+                {
+                    return Fail<GameState>(refused.Code, refused.Text);
+                }
+
+                next = weapon.Fate == Rules.ScenarioA1RiderRules.Eliminated ? Eliminate(next, carried.Id)!
+                    : weapon.Fate == Rules.ScenarioA1RiderRules.Malfunctioned ? Replace(next, carried with
+                    {
+                        Conditions = new Dictionary<string, ConditionState>(carried.Conditions, StringComparer.Ordinal) { [Conditions.Malfunctioned] = ConditionState.True },
+                    })!
+                    : next;
+            }
+
+            // D6.24: for Defensive First Fire the unit spent all its remaining MF, at least one (FFNAM), with the moving AFV's expenditure.
+            return next.Movement is { Vehicle: true } moving && moving.Members.Contains(bailed.Vehicle, StringComparer.Ordinal)
+                ? next with
+                {
+                    Movement = moving with
+                    {
+                        BailedOut = [.. moving.BailedOut ?? [], unit.Id]
+                    }
+                }
+                : next;
         }
 
         /// <summary>

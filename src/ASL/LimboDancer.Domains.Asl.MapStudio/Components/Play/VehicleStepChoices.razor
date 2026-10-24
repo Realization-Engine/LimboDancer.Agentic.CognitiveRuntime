@@ -59,10 +59,14 @@
 @if (Loadable.Count > 0)
 {
     <fieldset class="vehicle-passengers" id="vehicle-load-units">
-        <legend>Board as Passengers (D6.4): one MF each; the vehicle keeps a quarter of its MP per MF left</legend>
+        <legend>Board as @(AsRiders ? "Riders (D6.2, D6.4)" : "Passengers (D6.4)"): one MF each; the vehicle keeps a quarter of its MP per MF left</legend>
         @foreach (var unit in Loadable)
         {
             <label><input type="checkbox" class="vehicle-load" value="@unit" checked="@LoadChosen.Contains(unit)" @onchange="@(args => OnLoadToggle.InvokeAsync((unit, args.Value is true)))" /> @At(unit)</label>
+        }
+        @if (RiderNote is { } riderNote)
+        {
+            <label title="D6.2: Riders ride on the outside of an AFV, the Russians' from 1942 and every nationality's from 1943, within its Rider capacity, counted apart from its Passengers'; they Bail Out in woods, orchard, buildings, rubble, Water Obstacles, or bocage off a road, and when a turreted AFV changes its TCA (D6.21)."><input type="checkbox" id="vehicle-load-riders" checked="@AsRiders" disabled="@RidersOnly" @onchange="@(args => OnOption.InvokeAsync(("riders", args.Value is true)))" /> as Riders (@riderNote)</label>
         }
         <button id="vehicle-load" disabled="@(!Loadable.Any(LoadChosen.Contains))" aria-describedby="vehicle-load-note" @onclick="@(() => OnStep.InvokeAsync(new StepRequest("load")))">Propose: board</button>
         <span id="vehicle-load-note" class="toolbar-note">Check the units that board.</span>
@@ -175,6 +179,18 @@
 
     [Parameter]
     public IReadOnlySet<string> LoadChosen { get; set; } = new HashSet<string>();
+
+    /// <summary>The vehicle's Rider capacity and what is left of it, "14 PP, 4 left" (D6.2; pass 65, ruling R65.16); null when it takes no Riders.</summary>
+    [Parameter]
+    public string? RiderNote { get; set; }
+
+    /// <summary>Whether the units board as Riders.</summary>
+    [Parameter]
+    public bool AsRiders { get; set; }
+
+    /// <summary>Whether the vehicle takes Riders and no Passengers, so the units board as Riders or not at all.</summary>
+    [Parameter]
+    public bool RidersOnly { get; set; }
 
     [Parameter]
     public IReadOnlySet<string> UnloadChosen { get; set; } = new HashSet<string>();

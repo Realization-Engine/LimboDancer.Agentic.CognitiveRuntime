@@ -619,4 +619,136 @@ public sealed class ScenarioA1Pass65RulesTests
         Assert.Equal(6, ScenarioA1MotionAttempts.HalfPointsInLos([ScenarioA1MotionAttempts.AboardStep(true, 4, false), ScenarioA1MotionAttempts.AboardStep(true, 4, true),
             ScenarioA1MotionAttempts.AboardStep(false, 2, false)]));
     }
+
+    // Increment 2e: Riders and Bailing Out (D6.2, D6.21 to D6.24, B13.43; rulings R65.16, R65.17).
+
+    [Fact]
+    public void RiderCapacityFollowsTheVehicleClass()
+    {
+        // D6.2, D6.81: a tank 14 PP, a Carrier 8, a halftrack one SMC and his two PP, a truck none.
+        Assert.Equal(new RiderCapacity(14, false), ScenarioA1RiderRules.Capacity("tank", false));
+        Assert.Equal(new RiderCapacity(14, false), ScenarioA1RiderRules.Capacity("assault-gun", false));
+        Assert.Equal(new RiderCapacity(8, false), ScenarioA1RiderRules.Capacity("carrier", false));
+        Assert.Equal(new RiderCapacity(2, true), ScenarioA1RiderRules.Capacity("halftrack", false));
+        Assert.Equal(new RiderCapacity(2, true), ScenarioA1RiderRules.Capacity("tankette", false));
+        Assert.Null(ScenarioA1RiderRules.Capacity("truck", true));
+
+        // A squad and a 9-1 ride a tank (10 PP); two squads do not fit beside a third; a halftrack takes the leader alone, not a squad.
+        (string, bool, Func<int?>) Squad(string id) => (id, false, () => 10);
+        (string, bool, Func<int?>) Leader(string id, int pp = 0) => (id, true, () => pp);
+        Assert.Null(ScenarioA1RiderRules.CapacityBar("t", new RiderCapacity(14, false), [Squad("s"), Leader("l")]));
+        Assert.Contains("would take 20 PP", ScenarioA1RiderRules.CapacityBar("t", new RiderCapacity(14, false), [Squad("s"), Squad("s2")]));
+        Assert.Null(ScenarioA1RiderRules.CapacityBar("h", new RiderCapacity(2, true), [Leader("l", 2)]));
+        Assert.Contains("one SMC", ScenarioA1RiderRules.CapacityBar("h", new RiderCapacity(2, true), [Squad("s")]));
+        Assert.Contains("carries no Riders", ScenarioA1RiderRules.CapacityBar("k", null, [Leader("l")]));
+    }
+
+    [Fact]
+    public void RidersAreRussianFrom1942AndEveryonesFrom1943()
+    {
+        // D6.2: a Russian in 1942 yes; a German in 1942 no; anyone in 1943; a game with no year refuses and says why.
+        Assert.Null(ScenarioA1RiderRules.DateBar("t", 1942, "russian"));
+        Assert.Contains("only from 1942 for the Russians", ScenarioA1RiderRules.DateBar("t", 1942, "german"));
+        Assert.Null(ScenarioA1RiderRules.DateBar("t", 1943, "german"));
+        Assert.Contains("1943", ScenarioA1RiderRules.DateBar("t", 1941, "russian"));
+        Assert.Contains("names no scenario year", ScenarioA1RiderRules.DateBar("t", null, "russian"));
+    }
+
+    [Fact]
+    public void RidersBailOutInWoodsButNotAcrossARoadInBypassOrInAStream()
+    {
+        // D6.21, B13.43: woods, orchard, a building, rubble, Water, bocage; not across a road hexside, in Bypass, or in a stream; a friendly VSE lets a building be.
+        static RiderTerrainFacts Into(string? terrain, string? name = null, string? hexside = null) => new("open-ground", terrain, name, hexside, false, false, false, false);
+        Assert.True(ScenarioA1RiderRules.TerrainBailOut(Into("woods")));
+        Assert.True(ScenarioA1RiderRules.TerrainBailOut(Into("orchard")));
+        Assert.True(ScenarioA1RiderRules.TerrainBailOut(Into("stone-building")));
+        Assert.True(ScenarioA1RiderRules.TerrainBailOut(Into("wooden-rubble")));
+        Assert.True(ScenarioA1RiderRules.TerrainBailOut(Into(null, "Water")));
+        Assert.True(ScenarioA1RiderRules.TerrainBailOut(Into("open-ground", hexside: "Bocage")));
+        Assert.False(ScenarioA1RiderRules.TerrainBailOut(Into("open-ground")));
+        Assert.False(ScenarioA1RiderRules.TerrainBailOut(Into("grain")));
+        Assert.False(ScenarioA1RiderRules.TerrainBailOut(Into("woods") with
+        {
+            Road = true
+        }));
+        Assert.False(ScenarioA1RiderRules.TerrainBailOut(Into("woods") with
+        {
+            Bypass = true
+        }));
+        Assert.False(ScenarioA1RiderRules.TerrainBailOut(Into("woods") with
+        {
+            Stream = true
+        }));
+        Assert.False(ScenarioA1RiderRules.TerrainBailOut(Into("wooden-building") with
+        {
+            FriendlyVse = true
+        }));
+
+        // Leaving woods with Riders aboard makes them Bail Out too.
+        Assert.True(ScenarioA1RiderRules.TerrainBailOut(new RiderTerrainFacts("woods", "open-ground", null, null, false, false, false, false)));
+    }
+
+    [Fact]
+    public void ATurretedAfvsTcaChangeMakesItsRidersBailOut()
+    {
+        // D6.21: a TCA change of a turreted AFV; no change, or no turret, keeps them aboard.
+        Assert.True(ScenarioA1RiderRules.TurretBailOut(true, 0, 1));
+        Assert.False(ScenarioA1RiderRules.TurretBailOut(true, 1, 1));
+        Assert.False(ScenarioA1RiderRules.TurretBailOut(true, 1, null));
+        Assert.False(ScenarioA1RiderRules.TurretBailOut(false, 0, 1));
+
+        // D6.23: a pin or a break makes a Rider Bail Out; an eliminated one, or a Passenger, does not.
+        Assert.True(ScenarioA1RiderRules.CombatBailOut(true, false, true, false));
+        Assert.True(ScenarioA1RiderRules.CombatBailOut(true, false, false, true));
+        Assert.False(ScenarioA1RiderRules.CombatBailOut(true, true, false, true));
+        Assert.False(ScenarioA1RiderRules.CombatBailOut(false, false, true, false));
+    }
+
+    [Fact]
+    public void ABailOutsNmcAndItsSwDrs()
+    {
+        // D6.24, A10.3, A7.8, A10.31: against Morale 7, a 6 passes, a 7 pins, an 8 breaks, a 12 Reduces as it breaks; a broken unit is Reduced on a fail and
+        // eliminated on a 12.
+        Assert.Equal(ScenarioA1RiderRules.Passed, ScenarioA1RiderRules.Check(3, 3, 7, false));
+        Assert.Equal(ScenarioA1RiderRules.Pinned, ScenarioA1RiderRules.Check(3, 4, 7, false));
+        Assert.Equal(ScenarioA1RiderRules.Broken, ScenarioA1RiderRules.Check(4, 4, 7, false));
+        Assert.Equal(ScenarioA1RiderRules.Reduced, ScenarioA1RiderRules.Check(6, 6, 7, false));
+        Assert.Equal(ScenarioA1RiderRules.Reduced, ScenarioA1RiderRules.Check(4, 4, 7, true));
+        Assert.Equal(ScenarioA1RiderRules.Eliminated, ScenarioA1RiderRules.Check(6, 6, 7, true));
+
+        // A SW's dr: 1 to 3 kept, 4 to 6 malfunctioned, an X# SW eliminated; every SW eliminated when its carrier breaks.
+        Assert.Equal(ScenarioA1RiderRules.Kept, ScenarioA1RiderRules.WeaponFate(3, false, false));
+        Assert.Equal(ScenarioA1RiderRules.Malfunctioned, ScenarioA1RiderRules.WeaponFate(4, false, false));
+        Assert.Equal(ScenarioA1RiderRules.Eliminated, ScenarioA1RiderRules.WeaponFate(4, true, false));
+        Assert.Equal(ScenarioA1RiderRules.Eliminated, ScenarioA1RiderRules.WeaponFate(null, false, true));
+        Assert.True(ScenarioA1RiderRules.LeavesBroken(ScenarioA1RiderRules.Pinned, true));
+        Assert.False(ScenarioA1RiderRules.LeavesBroken(ScenarioA1RiderRules.Pinned, false));
+    }
+
+    [Fact]
+    public void ARiderFiresAtHalfAQuarterOnceItsAfvMovedAndNoSw()
+    {
+        // D6.22: half its inherent FP, a quarter once the AFV moved or is in Motion, whatever the phase; it uses no SW; a BU tank does not stop it.
+        var riding = ScenarioA1PassengerActionRules.MountedFire(Mounted("defender-tank", crewExposed: false) with
+        {
+            Rider = true
+        });
+        Assert.Null(riding.Refusal);
+        Assert.Equal((0.5m, "D6.22"), (Times(riding), riding.Multipliers[0].Rule));
+        Assert.Equal(0.25m, Times(ScenarioA1PassengerActionRules.MountedFire(Mounted("defender-tank", moved: true, phase: "AFPh") with
+        {
+            Rider = true
+        })));
+        Assert.Equal(0.25m, Times(ScenarioA1PassengerActionRules.MountedFire(Mounted("defender-tank", motion: true) with
+        {
+            Rider = true
+        })));
+        Assert.Contains("Riders use no SW", ScenarioA1PassengerActionRules.MountedFire(Mounted("defender-tank", weapon: "defender-lmg") with
+        {
+            Rider = true
+        }).Refusal);
+
+        // A11.611: a Rider's part in CC is apart, +1 to its DR.
+        Assert.Equal(ScenarioA1PassengerActionRules.Apart, ScenarioA1PassengerActionRules.CloseCombat(FirePrc.Rider, true, true, false).Part);
+    }
 }

@@ -170,6 +170,14 @@ public static class LiveFire
                 state.Unit(loading.Movers.Count > 0 ? loading.Movers[0] : loading.Members[0])?.Definition?.Definition is { } conveyance
                     ? CatalogReference.Value.Definitions.GetValueOrDefault(conveyance)?.Unarmored == true : null);
         }
+        else if (embarking && state.Phase == "mph" && state.Movement is { Vehicle: true, WindowOpen: true, BailedOut: { Count: > 0 } bailed }
+            && bailed.Where(id => state.Location(id)?.Location == target).ToArray() is { Length: > 0 } bailedHere)
+        {
+            // D6.24, D6.5 (pass 65, ruling R65.17): Riders that Bailed Out with the AFV's expenditure, in the Location it left or its own, are moving
+            // Infantry targets that spent all their MF, with FFNAM as unloaders and no FFMO, since an AFV is no unarmored conveyance.
+            movers = [.. movers ?? Array.Empty<string>(), .. bailedHere];
+            boarding = new FireEmbarking(bailedHere, true, false);
+        }
 
         UnitInstance UnitAt(string id) => atTarget.First(unit => unit.Id == id);
         var selection = ScenarioA1FireEligibility.SelectTargets([.. atTarget.Select(unit => new TargetUnitStateFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side,

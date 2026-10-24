@@ -300,6 +300,15 @@ public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation A
         get; init;
     }
 
+    /// <summary>
+    /// For a load (D6.2; pass 65, ruling R65.16): the units board as Riders, on the outside of the AFV. False on every load recorded before the pass,
+    /// which boarded Passengers.
+    /// </summary>
+    public bool Riders
+    {
+        get; init;
+    }
+
     /// <summary>A Start declaring Reverse movement, and an entry made in Reverse (D2.2, D2.23; ruling R11.1).</summary>
     public bool Reverse
     {
@@ -339,6 +348,26 @@ public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation A
         get; init;
     }
 }
+
+/// <summary>
+/// <c>rider-bailed-out</c>: a Rider Bails Out of its AFV (D6.21, D6.23, D6.24; pass 65, ruling R65.17): <paramref name="Unit"/> leaves
+/// <paramref name="Vehicle"/> for <paramref name="At"/> (the last Location before terrain Riders may not ride through, or the AFV's own) for its
+/// <paramref name="Cause"/> (<c>terrain</c>, <c>turret</c>, <c>pin</c>, or <c>break</c>), and takes a NMC: its roll, the Morale Level it is taken
+/// against, and its <paramref name="Result"/> (<c>passed</c>, <c>pinned</c>, <c>broken</c>, <c>reduced</c>, or <c>eliminated</c>), whose effects the
+/// records after it write. It is beneath the AFV on foot, its move ended, with a Prep or Final Fire counter if unbroken; each SW it carries is kept,
+/// malfunctioned, or eliminated as <see cref="Weapons"/> say.
+/// </summary>
+public sealed record RiderBailedOut(string Unit, string Vehicle, BoardLocation At, string Cause, string Roll, int Morale, string Result) : EventPayload
+{
+    /// <summary>Each SW the unit carries, with its dr's roll (null when the unit breaks or is eliminated, which eliminates it) and its fate (D6.24).</summary>
+    public IReadOnlyList<RiderWeapon>? Weapons
+    {
+        get; init;
+    }
+}
+
+/// <summary>A SW a Bailing Out Rider carries (D6.24): its dr's roll, null when the carrier breaks, and its fate: <c>kept</c>, <c>malfunctioned</c>, or <c>eliminated</c>.</summary>
+public sealed record RiderWeapon(string Weapon, string? Roll, string Fate);
 
 /// <summary>
 /// <c>vehicle-check-rolled</c>: a vehicle's DR or dr outside combat (rulings R11.3, R11.4, R11.9, R11.10): a Bog Check (<c>bog</c>), a Bog Removal
@@ -656,6 +685,15 @@ public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation L
     /// once its move ends; null when none did.
     /// </summary>
     public IReadOnlyList<string>? Disembarked
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Riders that Bailed Out with the moving vehicle's latest MP expenditure or under the DEFENDER's fire at it (D6.24; pass 65, ruling R65.17):
+    /// for Defensive First Fire they spent all their MF, at least one, and take FFNAM as unloaders do; null when none did.
+    /// </summary>
+    public IReadOnlyList<string>? BailedOut
     {
         get; init;
     }

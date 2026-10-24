@@ -9,7 +9,14 @@ public sealed record MountedWeaponFacts(string EquipmentId, FireDefinition? Defi
 /// <paramref name="Moved"/> is a vehicle that entered a new hex or hexside or was in Motion this phase (D6.65, C.8).
 /// </summary>
 public sealed record MountedFireFacts(string UnitId, string VehicleId, FireDefinition Vehicle, bool CrewExposed, bool PassengerExposed, bool Moved, bool Motion,
-    bool Bypass, string? Phase, IReadOnlyList<MountedWeaponFacts> Weapons);
+    bool Bypass, string? Phase, IReadOnlyList<MountedWeaponFacts> Weapons)
+{
+    /// <summary>Whether the unit rides as a Rider (D6.22; pass 65, ruling R65.17): always exposed, firing no SW.</summary>
+    public bool Rider
+    {
+        get; init;
+    }
+}
 
 /// <summary>A Mounted Fire's verdict: the multipliers of the Passenger's FP, or why it may not fire.</summary>
 public sealed record MountedFireVerdict(IReadOnlyList<FireModifier> Multipliers, string? Refusal);
@@ -59,6 +66,14 @@ public static class ScenarioA1PassengerActionRules
             return new([], $"play.mounted-fire: {facts.UnitId} rides {facts.VehicleId} in Bypass, and fire from a vehicle in Bypass, traced from its CAFP, is not built (D6.65, D2.36; ruling R65.24)");
         }
 
+        // D6.22, D6.23 (pass 65, ruling R65.17): a Rider is always exposed and uses no SW.
+        if (facts.Rider)
+        {
+            return facts.Weapons.Count > 0
+                ? new([], $"play.mounted-fire: {facts.UnitId} rides {facts.VehicleId} as a Rider, and Riders use no SW; it fires its inherent FP alone (D6.22)")
+                : new(Multipliers(facts.Vehicle.Unarmored == true, facts.Moved, facts.Motion, facts.Phase, rider: true), null);
+        }
+
         if (facts.Vehicle.Unarmored != true && (!facts.CrewExposed || !facts.PassengerExposed))
         {
             return new([], $"play.mounted-fire: {facts.UnitId} rides {facts.VehicleId} BU; an armored halftrack's Passengers fire only while CE, unpinned and unbroken (D6.62); its crew may take off the BU counter first (D5.33)");
@@ -75,10 +90,18 @@ public static class ScenarioA1PassengerActionRules
     /// <summary>
     /// The multipliers of a Passenger's FP (D6.1, D6.63, D6.72; ruling R65.10): halved as Mounted Fire unless its vehicle is armored; halved for
     /// Bounding First Fire by a vehicle that moved in its MPh (the AFPh's halving is the Advancing Fire one, A7.24, which D6.63 names); halved again
-    /// while the vehicle is in Motion.
+    /// while the vehicle is in Motion. A Rider's inherent FP is halved as Mounted Fire, and quartered when its AFV has moved or is in Motion, an OVR
+    /// included (D6.22; pass 65, ruling R65.17).
     /// </summary>
-    public static IReadOnlyList<FireModifier> Multipliers(bool unarmored, bool moved, bool motion, string? phase)
+    public static IReadOnlyList<FireModifier> Multipliers(bool unarmored, bool moved, bool motion, string? phase, bool rider = false)
     {
+        if (rider)
+        {
+            return moved || motion
+                ? [new FireModifier("mounted-fire", 0.5m, "D6.22"), new FireModifier("rider-moved", 0.5m, "D6.22")]
+                : [new FireModifier("mounted-fire", 0.5m, "D6.22")];
+        }
+
         var multipliers = new List<FireModifier>();
         if (unarmored)
         {

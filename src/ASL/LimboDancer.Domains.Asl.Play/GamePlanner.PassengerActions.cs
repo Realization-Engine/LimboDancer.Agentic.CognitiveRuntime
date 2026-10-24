@@ -51,25 +51,31 @@ public sealed partial class GamePlanner
                 continue;
             }
 
-            var exposed = PassengersExposed(vehicle, definition);
-            var moved = MovedThisPhase(state, vehicle);
+            // D6.22 (pass 65, ruling R65.17): a Rider is always exposed, and its FP is quartered once its AFV has moved this Player Turn.
+            var rider = unit.Position is ContainedPosition { Role: ContainmentRole.Rider };
+            var exposed = rider || PassengersExposed(vehicle, definition);
+            var moved = rider ? state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal) : MovedThisPhase(state, vehicle);
             var verdict = ScenarioA1PassengerActionRules.MountedFire(new MountedFireFacts(unit.Id, vehicle.Id, definition, exposed,
                 !Is(unit, Conditions.Pinned) && !Is(unit, Conditions.Broken), moved, Is(vehicle, Conditions.Motion), vehicle.Straddling is not null, attack.Phase,
                 [.. (firer.Weapons ?? []).Select(weapon => new MountedWeaponFacts(weapon.EquipmentId ?? string.Empty,
-                    weapon.DefinitionId is { } held ? FireReference.Value.Definitions.GetValueOrDefault(held) : null))]));
+                    weapon.DefinitionId is { } held ? FireReference.Value.Definitions.GetValueOrDefault(held) : null))])
+            {
+                Rider = rider
+            });
             if (verdict.Refusal is { } refusal)
             {
                 return (null, refusal);
             }
 
-            var role = unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? FirePrc.Rider : FirePrc.Passenger;
-            members.Add(new FireGroupMemberFacts(unit.Id, vehicle.Id, role, definition.Unarmored != true && exposed));
+            var role = rider ? FirePrc.Rider : FirePrc.Passenger;
+            members.Add(new FireGroupMemberFacts(unit.Id, vehicle.Id, role, !rider && definition.Unarmored != true && exposed));
             mounted.Add(firer with
             {
                 Mounted = new FireMounted(vehicle.Id, vehicle.Definition!.Definition)
                 {
                     Moved = moved ? true : null,
                     Motion = Is(vehicle, Conditions.Motion) ? true : null,
+                    Rider = rider ? true : null,
                 },
             });
         }
@@ -109,7 +115,7 @@ public sealed partial class GamePlanner
         {
             var mounted = firer.Mounted!;
             var multipliers = ScenarioA1PassengerActionRules.Multipliers(FireReference.Value.Definitions.GetValueOrDefault(mounted.DefinitionId!)?.Unarmored == true,
-                mounted.Moved == true, mounted.Motion == true, facts.Phase);
+                mounted.Moved == true, mounted.Motion == true, facts.Phase, mounted.Rider == true);
             var times = multipliers.Aggregate(1m, (value, item) => value * item.Value);
             return $"; {firer.UnitId} fires from {mounted.VehicleId} as Mounted Fire"
                 + (multipliers.Count == 0 ? ", its FP not halved for it (D6.63)"

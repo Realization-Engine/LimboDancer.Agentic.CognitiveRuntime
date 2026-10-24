@@ -308,7 +308,13 @@ public sealed class PlayRecords
                 VehicleStepped { Kind: VehicleStepped.Delay } delay => $"{delay.Vehicle} spends a Delay MP in {delay.At} (D2.17)"
                     + (delay.Turret is { } delayTurret ? $", turning its turret to {UnitFacings.Name(delayTurret)} (D3.12)" : string.Empty),
                 // D6.4, D6.5 (pass 65, ruling R65.15): a load and an unload name who boards or gets off.
-                VehicleStepped { Kind: VehicleStepped.Load, Units: { Count: > 0 } boarders } boarding => $"{boarding.At}: " + Many(boarders, "boards", "board") + $" {boarding.Vehicle} (D6.4)",
+                VehicleStepped { Kind: VehicleStepped.Load, Units: { Count: > 0 } boarders } boarding => $"{boarding.At}: " + Many(boarders, "boards", "board") + $" {boarding.Vehicle}"
+                    + (boarding.Riders ? " as Riders (D6.2, D6.4)" : " (D6.4)"),
+                // D6.21, D6.23, D6.24 (pass 65, ruling R65.17): a Rider's Bail Out says why, its NMC, and what became of its SW.
+                RiderBailedOut bailed => $"{bailed.At}: {bailed.Unit} Bails Out of {bailed.Vehicle}, since " + ScenarioA1RiderRules.CauseText(bailed.Cause)
+                    + $"; its NMC against {bailed.Morale}: {bailed.Result}"
+                    + string.Concat((bailed.Weapons ?? []).Select(weapon => $"; {weapon.Weapon} {(weapon.Fate == ScenarioA1RiderRules.Kept ? "is kept" : $"is {weapon.Fate}")}"))
+                    + " (D6.24)",
                 VehicleStepped { Kind: VehicleStepped.Unload, Units: { Count: > 0 } leavers } leaving => $"{leaving.At}: " + Many(leavers, "unloads", "unload") + $" from {leaving.Vehicle} (D6.5)",
                 VehicleStepped { Kind: not VehicleStepped.Turn } drive => $"{drive.Vehicle} moves{From(before, drive.Vehicle)} to {drive.At}"
                     + (drive.Turret is { } driveTurret ? $", turning its turret to {UnitFacings.Name(driveTurret)} (D3.12)" : string.Empty),

@@ -10,6 +10,7 @@ using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.State;
 using LimboDancer.Domains.Asl.Units.Vocabulary;
+using ScenarioA1RiderRules = LimboDancer.Domains.Asl.Rules.ScenarioA1RiderRules;
 
 namespace LimboDancer.Domains.Asl.Play.Tests;
 
@@ -53,7 +54,10 @@ public sealed class BacklogPass65Tests : IDisposable
             new(LosStatus.Clear, false, Board.Distance(from.Hex, target.Hex) ?? 1, 0, null, string.Empty);
     }
 
-    private GamePlanner Planner() => new(store, new InMemoryBoardCatalog([Board01Fixture.Handle()]), Vocabulary, [Catalog], fireLos: new StubLos());
+    // A hex of board 01 read as another terrain (increment 2e: woods for a Bail Out).
+    private (string Hex, string Terrain)? changed;
+
+    private GamePlanner Planner() => new(store, new InMemoryBoardCatalog([Board01Fixture.Handle(changed: changed)]), Vocabulary, [Catalog], fireLos: new StubLos());
 
     private static DiceRoller Once(params int[] values)
     {
@@ -769,5 +773,139 @@ public sealed class BacklogPass65Tests : IDisposable
         Assert.All(load.EnumerateObject(), item => Assert.True(properties.TryGetProperty(item.Name, out _), item.Name));
         Assert.True(properties.TryGetProperty("leave", out _));
         Assert.True(properties.TryGetProperty("take", out _));
+    }
+
+    // Increment 2e: Riders and Bailing Out (D6.2, D6.21 to D6.24, B13.43; rulings R65.16, R65.17).
+
+    private static readonly string[] RussianRiders = ["ru-s", "ru-l"];
+    private static readonly string[] RussianSquad = ["ru-s"];
+    private static readonly string[] RussianSquads = ["ru-1", "ru-2"];
+
+    /// <summary>A unit riding an AFV as a Rider (D6.2).</summary>
+    private static Dictionary<string, object> Rider(string id, string kind, string definition, string vehicle, string side)
+    {
+        var unit = Unit(id, kind, definition, Target, side);
+        unit["position"] = new Dictionary<string, string> { ["in"] = vehicle, ["role"] = "rider" };
+        return unit;
+    }
+
+    /// <summary>A SW possessed by a unit.</summary>
+    private static Dictionary<string, object> Weapon(string id, string definition, string side, string holder) => new()
+    {
+        ["id"] = id,
+        ["kind"] = "asl:mg",
+        ["definition"] = definition,
+        ["side"] = side,
+        ["holding"] = new
+        {
+            holder,
+            role = "possessed"
+        },
+        ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+    };
+
+    private Task<PlayResult> Board(string vehicle, bool riders, params string[] units) => Do(GameActions.MoveVehicle, NoRoll(), new
+    {
+        vehicleId = vehicle,
+        kind = "load",
+        units,
+        riders,
+    });
+
+    [Fact]
+    public async Task RidersBoardAT34In1943AndReplay()
+    {
+        // D6.2 (ruling R65.16): a 4-4-7 and a 7-0 board the T-34 M41 as Riders (10 PP of its 14); the T-34 takes no Passengers. The load records riders.
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("ru-tank", "defender-tank", Firer, "russian", "north-east"),
+            Unit("ru-s", "asl:squad", "defender-squad", Firer, "russian"), Unit("ru-l", "asl:leader", "defender-leader-7-0", Firer, "russian"),
+            Unit("de-s", "asl:squad", "attacker-squad", "bd01:J2:0", "german"));
+        await Advance();
+        Refused(await Board("ru-tank", false, "ru-s", "ru-l"), "carries no Passengers");
+        var boarded = await Board("ru-tank", true, "ru-s", "ru-l");
+        Committed(boarded);
+        Assert.Contains(boarded.Reasons, reason => reason.Contains("as Riders (D6.2)", StringComparison.Ordinal));
+        Assert.True(store.Read(Scope)!.Events.Select(item => item.Payload).OfType<VehicleStepped>().Last().Riders);
+        Assert.All(RussianRiders, id => Assert.Equal(new ContainedPosition("ru-tank", ContainmentRole.Rider), Current.Unit(id)!.Position));
+        Assert.Equal(4, Planner().RiderPpLeft(Current, Current.Unit("ru-tank")!));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AGermanRiderIsRefusedIn1942()
+    {
+        // D6.2: only the Russians use Riders in 1942.
+        await Setup("german", "russian", 1942, 7, "asl-scenario-a1@1.18.0", Vehicle("de-tank", "attacker-tank", Target, "german", "east"),
+            Unit("de-s", "asl:squad", "attacker-squad", Target, "german"), Unit("ru-s", "asl:squad", "defender-squad", "bd01:J2:0", "russian"));
+        await Advance();
+        Refused(await Board("de-tank", true, "de-s"), "Riders are allowed only from 1942 for the Russians and from 1943 for every nationality");
+    }
+
+    [Fact]
+    public async Task ARiderBailsOutAsItsTankEntersWoods()
+    {
+        // D6.21, D6.24 (ruling R65.17): the PzKpfw IIIH starts at B10 and enters B9, read as woods; its Rider, a 4-6-7 with a LMG, Bails Out in B10 first:
+        // its NMC (2, 3) passes, the LMG's dr of 5 malfunctions it; it is on foot in B10, its move ended, under a Prep Fire counter. The tank then takes its
+        // Bog DR in the woods (1, 1). The Russian 4-4-7 at B8 fires at B10 with FFNAM, as at an unloader (D6.5), and no FFMO.
+        changed = ("B9", "Woods");
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("de-tank", "attacker-tank", Firer, "german", "north-east"),
+            Rider("de-s", "asl:squad", "attacker-squad", "de-tank", "german"), Weapon("de-lmg", "attacker-lmg", "german", "de-s"),
+            Unit("ru-s", "asl:squad", "defender-squad", Target, "russian"));
+        await Advance();
+        Committed(await Do(GameActions.MoveVehicle, NoRoll(), new
+        {
+            vehicleId = "de-tank",
+            kind = "start",
+        }));
+        await PassFire();
+        var before = Revision;
+        var entered = await Do(GameActions.MoveVehicle, Once(2, 3, 5, 1, 1), new
+        {
+            vehicleId = "de-tank",
+            kind = "enter",
+            to = "bd01:B9:0",
+        });
+        Committed(entered);
+        var bailed = Assert.Single(Since(before).Select(item => item.Payload).OfType<RiderBailedOut>());
+        Assert.Equal(("de-s", ScenarioA1RiderRules.Terrain, Firer, ScenarioA1RiderRules.Passed), (bailed.Unit, bailed.Cause, bailed.At.ToString(), bailed.Result));
+        Assert.Equal(ScenarioA1RiderRules.Malfunctioned, Assert.Single(bailed.Weapons!).Fate);
+        var squad = Current.Unit("de-s")!;
+        Assert.Equal((Firer, true, ConditionState.True), (Current.Location("de-s")!.Location.ToString(), squad.MovementEnded, GameState.Condition(squad, Conditions.PrepFire)));
+        Assert.Equal(ConditionState.True, GameState.Condition((EquipmentInstance)Current.Find("de-lmg")!, Conditions.Malfunctioned));
+        Assert.Equal(SquadOnly, Current.Movement!.BailedOut);
+        NoReplayErrors();
+
+        var fired = Revision;
+        Committed(await Do(GameActions.Fire, Once(6, 6), new
+        {
+            firers = RussianSquad,
+            target = Firer,
+        }));
+        var fire = Since(fired).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.Equal(["ffnam"], MovementDrm(fire));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task APinnedRiderBailsOutAndChecksItsSw()
+    {
+        // D6.23, D6.24 (ruling R65.17): two Russian 4-4-7s fire 8 FP at the BU PzKpfw IIIH two hexes off, an Original DR of 8; its Rider, always
+        // Vulnerable with no CE DRM, takes the NMC (3, 5: no Cowering) and is pinned on a 7 (3, 4). It Bails Out beneath the tank: its NMC (1, 1) passes and the LMG's dr of 2
+        // keeps it; in the Russian Player Turn it is marked with a Final Fire counter.
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Unit("ru-1", "asl:squad", "defender-squad", Firer, "russian"),
+            Unit("ru-2", "asl:squad", "defender-squad", Firer, "russian"), Vehicle("de-tank", "attacker-tank", Target, "german", "east"),
+            Rider("de-s", "asl:squad", "attacker-squad", "de-tank", "german"), Weapon("de-lmg", "attacker-lmg", "german", "de-s"));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(3, 5, 3, 4, 1, 1, 2), new
+        {
+            firers = RussianSquads,
+            target = Target,
+        }));
+        var bailed = Assert.Single(Since(before).Select(item => item.Payload).OfType<RiderBailedOut>());
+        Assert.Equal((ScenarioA1RiderRules.Pin, Target, ScenarioA1RiderRules.Passed), (bailed.Cause, bailed.At.ToString(), bailed.Result));
+        Assert.Equal(ScenarioA1RiderRules.Kept, Assert.Single(bailed.Weapons!).Fate);
+        var squad = Current.Unit("de-s")!;
+        Assert.Equal(((string?)null, ConditionState.True, ConditionState.True), (Current.Aboard("de-s"), GameState.Condition(squad, Conditions.Pinned),
+            GameState.Condition(squad, Conditions.FinalFire)));
+        NoReplayErrors();
     }
 }

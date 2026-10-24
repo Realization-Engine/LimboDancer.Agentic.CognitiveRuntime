@@ -101,5 +101,19 @@ A running record kept as the pass goes, at the user's word of 2026-10-23 ("Keep 
   - `MovementState` gains three state-only properties: older games with a load or unload change their state lines, which the gate's computed `PROOF_SKIP` takes.
 - 01:39 Fixed by me: `UnloadableUnits` (Play.razor) scanned `state.Passengers` on every render; now `Live.Planner.Riding` (made public), from the index. Build 0:44, exit 0.
 - 01:40 Studio check of 2d in p65-unload-fire (German MPh): the vehicle panel offers "[F8]: vehicle G1 ([F8])"; unloading "4-6-7 squad G1 in [F8]" commits with the record "[F8]: 4-6-7 squad G1 unloads from vehicle G1 (D6.5)", and the step carries `interim: true` (read from the game file). The DFF on the unloaders is asserted by `AnUnloadFromATruckInTheOpenTakesFfnamAndFfmo`; not walked in the Studio this time.
-- 01:42 2d committed (below).
+- 01:42 2d committed, 1edd653c. `interim` and `embarking` to `SKIP_JSON`; the 2d games to `OWN`.
+- 01:43 The 2e agent launched on `brief_2e.md`.
+- About 02:12 The 2e agent reported (built 01:43 to about 02:12). Built: `ScenarioA1RiderRules` (Capacity by class, DateBar, CapacityBar, TerrainBailOut, TurretBailOut, CombatBailOut, Check, WeaponFate, PrepFireCounter), `riders` on the load step, Unload taking either role, the event `rider-bailed-out`, `GamePlanner.Riders.cs`, Mounted Fire's Rider multipliers, the DEFENDER's MPh fire at the Location Riders bailed into, `#vehicle-load-riders`, setup's `#place-rider`. Left out, each to a backlog row:
+  - a Rider's +1 in CC (decided in Rules, CC with PRC still unwired, as in 2c); Riders adding FP to an OVR;
+  - a pin or break on a Rider by an ordnance, mortar, or FT/MOL/DC hit leaves it aboard (only the IFT path makes it Bail Out);
+  - a friendly Vehicular-Sized Entrance (always false) and a stream (read from the terrain's name only);
+  - no CC counter on a Bail Out into an enemy Location (no such condition, as in 2d);
+  - the Bail Out NMC has no Heat of Battle, no leadership DRM, and no Wound Severity dr for a SMC;
+  - a vehicle entering from off board with Riders is not checked for terrain.
+  - It reports 10 CA1861 errors in `BacklogPass65Tests.cs` from 2b to 2d (`firers = new[] {...}`), which the strict build will refuse: fixed at the strict stage.
+- 02:15 to 02:20 Studio check of 2e in p65-riders-woods (Russian MPh, 1943):
+  - the load fieldset reads "as Riders (14 PP, 14 left)", locked on for the T-34; boarding the 7-0 and the 4-4-7 commits "[E8]: 7-0 leader R1, 4-4-7 squad R1 board vehicle R1 as Riders (D6.2, D6.4)";
+  - the German DEFENDER passes, the T-34 starts (dice 1 1), the German passes, and entering [D8] (woods) proposes "... 4-4-7 squad R1, 7-0 leader R1 Bail Out in [E8], since the AFV moves through terrain Riders may not ride through (D6.21), each taking a NMC beneath it ..."; committed with NMC dice 2 2 each: "[E8]: 4-4-7 squad R1 Bails Out of vehicle R1, ...; its NMC against 7: passed (D6.24)", and the same for the leader.
+  - Found and fixed (older than the pass, from 2026-10-01): the vehicle's entry buttons read "Propose: enter bd03:D8:0", the raw location id, against the hex UI rule; now `PlaceOf(to)`, "[D8]". Only a component test builds its own such label (VehicleComponentTests:124), so no test reads the page's.
+- 02:22 2e committed (below).
 - The four estimates sum to about 15:00 of build against the plan's 7:00 (65.1 3:00, 65.2 2:30, 65.3 1:15, 65.4 1:30, 65.5 0:50, crews 0:45, 65.6 1:40, 65.7 1:10, 65.8 1:40, 65.9 0:50).

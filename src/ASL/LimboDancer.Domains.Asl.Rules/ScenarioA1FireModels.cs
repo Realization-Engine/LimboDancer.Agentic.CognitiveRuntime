@@ -1031,6 +1031,16 @@ public sealed record FireMounted(string? VehicleId, string? DefinitionId)
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the firer rides as a Rider (D6.22; pass 65, ruling R65.17): its FP halved, and quartered when the AFV has moved or is in Motion. Null on
+    /// every attack recorded before the pass, when no Rider existed, and for a Passenger.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Rider
+    {
+        get; init;
+    }
 }
 
 /// <summary>The leader directing the fire group (A7.53, A7.531).</summary>

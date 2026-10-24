@@ -567,7 +567,8 @@ public static class GameActions
             "units": { "type": "array", "items": { "type": "string" } },
             "turret": { "type": "string" },
             "leave": { "type": "array", "items": { "type": "string" } },
-            "take": { "type": "object", "additionalProperties": { "type": "string" } }
+            "take": { "type": "object", "additionalProperties": { "type": "string" } },
+            "riders": { "type": "boolean" }
           }
         }
         """);

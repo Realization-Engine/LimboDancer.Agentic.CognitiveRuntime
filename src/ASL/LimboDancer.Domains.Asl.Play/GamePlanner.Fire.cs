@@ -148,8 +148,10 @@ public sealed partial class GamePlanner
 
         // D3.3 (ruling R6.9): the moving vehicle's Bounding First Fire comes once the DEFENDER has passed on its MP expenditure; A8.1, A8.11: in the
         // MPh, Defensive fire answers the moving stack's MF expenditure, in its Location. Rules decides both (pass 32.c).
+        // D6.24 (pass 65, ruling R65.17): the Riders that Bailed Out with the expenditure are moving targets where they were placed, the Location the AFV left.
         var (bounding, windowRefusal) = ScenarioA1FireEligibility.MphWindow(state.Phase, firerIds.Length, () => LiveFire.MayBoundingFire(state, firerIds[0]),
-            state.Movement is { WindowOpen: true } window && window.Location == target);
+            state.Movement is { WindowOpen: true } window && (window.Location == target
+                || (window.BailedOut ?? []).Any(id => MemoOf(state).Objects(state).Location(id)?.Location == target)));
         if (windowRefusal is not null)
         {
             return Refused(scope, label, expected, windowRefusal);
@@ -1058,6 +1060,12 @@ public sealed partial class GamePlanner
                 .Concat(PrcEffectEvents(state, vehicle, attemptId)))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
+            }
+
+            // D6.23, D6.24 (pass 65, ruling R65.17): a Rider the attack pinned or broke Bails Out beneath its AFV.
+            if (CombatBailOuts(state, vehicle, attemptId) is { Count: > 0 } bailing && MemoOf(state).Objects(state).Location(vehicle.VehicleId)?.Location is { } beneath)
+            {
+                AddBailOuts(scope, attemptId, expected, actor, package, events, draw, state, bailing, vehicle.VehicleId, beneath, [fireId]);
             }
 
             // D5.341, D5.41 (ruling R5.18): a Recalled AFV on its way off the map that is immobilized is Abandoned by its crew.

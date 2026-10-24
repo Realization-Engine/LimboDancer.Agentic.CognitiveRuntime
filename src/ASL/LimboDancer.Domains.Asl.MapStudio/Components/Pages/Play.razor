@@ -747,6 +747,7 @@ else if (state is not null)
                                     EntryHexes="@EntryHexChoices(chosen)" EntryHex="@vehicleEntryHex" EntryFacings="@EntryFacingChoices(chosen)" EntryFacing="@vehicleEntryFacing"
                                     OnEntryHex="@(hex => ChooseEntryHex(chosen, hex))" OnEntryFacing="@(facing => vehicleEntryFacing = facing)"
                                     LoadChosen="@vehicleLoad" UnloadChosen="@vehicleUnload" OnStep="@ProposeVehicleRequest" OnOption="@SetVehicleOption"
+                                    RiderNote="@RiderNote(chosen)" AsRiders="@BoardsAsRiders(chosen)" RidersOnly="@(GamePlanner.PassengerCapacity(state, chosen) is null)"
                                     OnEsb="@(esb => vehicleEsb = esb)" OnIntended="@(at => vehicleIntended = at)"
                                     OnLoadToggle="@(pick => Toggle(vehicleLoad, pick.Unit, pick.Chosen))" OnUnloadToggle="@(pick => Toggle(vehicleUnload, pick.Unit, pick.Chosen))"
                                     Leavable="@LeavableWeapons(chosen)" LeaveChosen="@vehicleLeave" OnLeaveToggle="@(pick => Toggle(vehicleLeave, pick.Unit, pick.Chosen))" />
@@ -1611,11 +1612,14 @@ else if (state is not null)
 
     /// <summary>The setup placement being drafted (plan P08), as the form shows it.</summary>
     private SetupPlacementEditor.SetupDraft PlaceDraft => new(placeDefinition, placeId, placeGroup, placeLocation, placeHolder, placeFacing, placeBore, placeConcealed,
-        placeHidden, placeBroken, placeOffBoard, placeEntry, placeArmorLeader, placeInexperiencedCrew);
+        placeHidden, placeBroken, placeOffBoard, placeEntry, placeArmorLeader, placeInexperiencedCrew, placeRider);
 
     // D3.4, D3.45 (pass 55, rulings R55.15, R55.18): an armed AFV's Armor Leader ("9-1", empty for none) and its Inexperienced Crew, as the form holds them.
     private string placeArmorLeader = string.Empty;
     private bool placeInexperiencedCrew;
+
+    // D6.2 (pass 65, ruling R65.16): a unit placed aboard a vehicle rides it as a Rider.
+    private bool placeRider;
 
     /// <summary>A change to the drafted placement; the entry area is cleared when the group changes or the counter no longer waits off board.</summary>
     private void ApplyPlaceDraft(SetupPlacementEditor.SetupDraft draft)
@@ -1624,6 +1628,7 @@ else if (state is not null)
         (placeDefinition, placeId, placeGroup, placeLocation, placeHolder, placeFacing, placeBore) =
             (draft.Definition, draft.Id, draft.Group, draft.Location, draft.Holder, draft.Facing, draft.Bore);
         (placeConcealed, placeHidden, placeBroken, placeOffBoard) = (draft.Concealed, draft.Hidden, draft.Broken, draft.OffBoard);
+        placeRider = draft.Rider && draft.Holder.Length > 0;
 
         // Pass 55: neither stays with a counter that is no armed AFV.
         var armed = GamePlanner.IsArmedAfv(draft.Definition);
@@ -2419,6 +2424,7 @@ else if (state is not null)
     private string WhereText(Placement row) => row.Holder is { } holder ? row.Role switch
         {
             "passenger" => $"aboard {holder}",
+            "rider" => $"a Rider on {holder}",
             "towed" => $"towed by {holder}",
             "manned" => $"manned by {holder} at {PlaceOf(row.Location)}",
             _ => $"held by {holder}",
@@ -2776,7 +2782,7 @@ else if (state is not null)
                     row.Hidden ? "hidden" : null,
                     row.Broken ? "broken" : null,
                     row.BoreSighted is { } sighted ? $"Bore Sighted on {PlaceOf(sighted)}" : null,
-                    row.Role == "towed" ? "in tow" : row.Role == "passenger" ? "a Passenger" : null,
+                    row.Role == "towed" ? "in tow" : row.Role == "passenger" ? "a Passenger" : row.Role == "rider" ? "a Rider" : null,
                 ];
                 return new SetupCounters.Row(row.Key, PrintedLabel(row), row.Id)
                 {
@@ -3318,6 +3324,7 @@ else if (state is not null)
         vehicleOverrun = false;
         vehicleAllMp = false;
         vehicleMinimum = false;
+        vehicleRiders = false;
         vehicleEsb = string.Empty;
         unhookFacing = "east";
     }
@@ -3365,17 +3372,24 @@ else if (state is not null)
             yield break;
         }
 
-        if (state.Aboard(unit.Id) is { } vehicle)
+        // Who rides which vehicle comes from the planner's index, once per state (ruling R65.25).
+        if (Live.Planner.VehicleRidden(state, unit.Id) is { } vehicle)
         {
-            yield return $"aboard {vehicle}";
+            yield return unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? $"a Rider on {vehicle}" : $"aboard {vehicle}";
         }
 
         if (LiveFire.IsVehicle(unit))
         {
-            if (state.Passengers(unit.Id) is { Count: > 0 } riding)
+            var riding = Live.Planner.Riding(state, unit.Id);
+            // Pass 65 (D6.62, D6.66, A7.821): each Passenger's own state, broken, pinned, or under DM; Riders apart (D6.2).
+            if (riding.Where(item => item.Position is not ContainedPosition { Role: ContainmentRole.Rider }).ToArray() is { Length: > 0 } passengers)
             {
-                // Pass 65 (D6.62, D6.66, A7.821): each Passenger's own state, broken, pinned, or under DM.
-                yield return $"Passengers {string.Join(", ", riding.Select(item => Words(item.Id) + PassengerState(item)))}";
+                yield return $"Passengers {string.Join(", ", passengers.Select(item => Words(item.Id) + PassengerState(item)))}";
+            }
+
+            if (riding.Where(item => item.Position is ContainedPosition { Role: ContainmentRole.Rider }).ToArray() is { Length: > 0 } riders)
+            {
+                yield return $"Riders {string.Join(", ", riders.Select(item => Words(item.Id) + PassengerState(item)))}";
             }
 
             foreach (var gun in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == unit.Id))
@@ -3439,7 +3453,7 @@ else if (state is not null)
         {
             var inBypass = straddling is not null;
             steps.Add(new(new("enter", to.ToString(), Bypass: inBypass),
-                $"Propose: enter {to}{(inBypass ? $" in VBM beside {straddling}" : string.Empty)}{(reversing ? " in Reverse" : string.Empty)}"
+                $"Propose: enter {PlaceOf(to)}{(inBypass ? $" in VBM beside {straddling}" : string.Empty)}{(reversing ? " in Reverse" : string.Empty)}"
                     + (cost is { } half ? all ? " (ALL its MP)" : $" ({HalfMpText(half)} MP)" : string.Empty) + (bog is { } drm ? $", Bog DR {drm:+0;-0;+0}" : string.Empty),
                 Class: "vehicle-enter", Data: Data(("data-to", to.ToString()), ("data-bypass", inBypass.ToString())), Bar: cost is null ? bar ?? string.Empty : null));
         }
@@ -3504,7 +3518,8 @@ else if (state is not null)
     private IReadOnlyList<string> LoadableUnits(UnitInstance vehicle)
     {
         if (state is null || state.Movement is { Vehicle: true } or { WindowOpen: true } || vehicle.Position is not MapPosition || vehicle.MfSpent != 0 || vehicle.HalfMfSpent
-            || GameState.Condition(vehicle, Conditions.Motion) == ConditionState.True || GamePlanner.PassengerCapacity(state, vehicle) is null
+            || GameState.Condition(vehicle, Conditions.Motion) == ConditionState.True
+            || (GamePlanner.PassengerCapacity(state, vehicle) is null && GamePlanner.RiderCapacityOf(vehicle) is null)
             || state.Location(vehicle.Id)?.Location is not { } at)
         {
             return [];
@@ -3516,6 +3531,19 @@ else if (state is not null)
             && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Pinned) != ConditionState.True))
             .Select(unit => unit.Id).Order(StringComparer.Ordinal)];
     }
+
+    /// <summary>
+    /// The chosen vehicle's Rider capacity and what is left of it (D6.2; pass 65, ruling R65.16): "14 PP, 4 left", or "one SMC"; null when it takes no
+    /// Riders.
+    /// </summary>
+    private string? RiderNote(UnitInstance vehicle) =>
+        state is null || GamePlanner.RiderCapacityOf(vehicle) is not { } capacity ? null
+            : capacity.OneSmc ? "one SMC and the two PP he possesses"
+            : $"{capacity.Pp} PP, {Live.Planner.RiderPpLeft(state, vehicle)} left";
+
+    /// <summary>Whether the units board the chosen vehicle as Riders: when asked, and always on one that takes no Passengers (D6.2).</summary>
+    private bool BoardsAsRiders(UnitInstance vehicle) =>
+        state is not null && GamePlanner.RiderCapacityOf(vehicle) is not null && (vehicleRiders || GamePlanner.PassengerCapacity(state, vehicle) is null);
 
     /// <summary>The SW the chosen vehicle's Passengers hold, which a halftrack or Carrier keeps aboard as they unload (D6.4; pass 65, ruling R65.15).</summary>
     private IReadOnlyList<string> LeavableWeapons(UnitInstance vehicle) =>
@@ -3556,6 +3584,9 @@ else if (state is not null)
             case "minimum":
                 vehicleMinimum = option.Value;
                 break;
+            case "riders":
+                vehicleRiders = option.Value;
+                break;
         }
     }
 
@@ -3580,6 +3611,12 @@ else if (state is not null)
         if (kind == "unload" && vehicle is not null && vehicleLeave.Intersect(LeavableWeapons(vehicle), StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } leave)
         {
             arguments["leave"] = leave;
+        }
+
+        // D6.2 (pass 65, ruling R65.16): a load names Riders when they board as Riders.
+        if (kind == "load" && vehicle is not null && BoardsAsRiders(vehicle))
+        {
+            arguments["riders"] = true;
         }
 
         return Propose(GameActions.MoveVehicle, JsonSerializer.SerializeToElement(arguments));
@@ -3823,6 +3860,7 @@ else if (state is not null)
     private bool vehicleOverrun;
     private bool vehicleAllMp;
     private bool vehicleMinimum;
+    private bool vehicleRiders;
     private string vehicleEsb = string.Empty;
     private string reactionAttacker = string.Empty;
     private string reactionLeader = string.Empty;
@@ -6615,6 +6653,7 @@ else if (state is not null)
         vehicleOverrun = false;
         vehicleAllMp = false;
         vehicleMinimum = false;
+        vehicleRiders = false;
         vehicleEsb = string.Empty;
         vehicleLoad.Clear();
         vehicleUnload.Clear();
@@ -6752,7 +6791,7 @@ else if (state is not null)
         var holder = named.Length > 0 && (equipment || (vehicleNamed && definition.Kind != "asl:vehicle")) ? named : null;
         string? role = holder is null ? null
             : definition.Kind == "asl:gun" ? vehicleNamed ? "towed" : "manned"
-            : equipment ? "possessed" : "passenger";
+            : equipment ? "possessed" : placeRider ? "rider" : "passenger";
         // C2.23, A21.13: a Gun faces a hexspine at its Location and is manned by the crew named as its holder.
         var gun = definition.Kind is "asl:gun" or "asl:vehicle";
         // Referee, pass 18: a group of another side is not taken, and the page says so.
@@ -6773,6 +6812,7 @@ else if (state is not null)
         placeId = string.Empty;
         placeHolder = string.Empty;
         placeBore = string.Empty;
+        placeRider = false;
         (placeArmorLeader, placeInexperiencedCrew) = (string.Empty, false);
         ListChanged();
     }
@@ -6891,7 +6931,7 @@ else if (state is not null)
             return placement;
         }
 
-        if (item.Holder is { } holder && item.Role != "passenger")
+        if (item.Holder is { } holder && item.Role is not ("passenger" or "rider"))
         {
             placement["holding"] = new { holder, role = "possessed" };
             placement["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false };
@@ -6906,7 +6946,7 @@ else if (state is not null)
         }
 
         // A2.51 (ruling R20.5): a counter that enters waits off board.
-        placement["position"] = item.Role == "passenger" && item.Holder is { } vehicle ? new Dictionary<string, object> { ["in"] = vehicle, ["role"] = "passenger" }
+        placement["position"] = item.Role is "passenger" or "rider" && item.Holder is { } vehicle ? new Dictionary<string, object> { ["in"] = vehicle, ["role"] = item.Role }
             : item.OffBoard ? OffBoardPosition(item) : new Dictionary<string, object> { ["at"] = item.Location };
         if (item.Kind == "asl:sniper")
         {
@@ -7696,6 +7736,7 @@ else if (state is not null)
                 vehicleOverrun = false;
                 vehicleAllMp = false;
                 vehicleMinimum = false;
+                vehicleRiders = false;
                 vehicleEsb = string.Empty;
 
                 // Rulings R26.1, R26.2: the Passengers chosen and the entry are for one expenditure too.

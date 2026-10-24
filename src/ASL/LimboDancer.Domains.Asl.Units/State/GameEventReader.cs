@@ -557,7 +557,37 @@ public static class GameEventReader
                         Units = payload.TryGetProperty("units", out _) ? fields.StringList(payload, "units", path) : null,
                         UnitMf = fields.OptionalInteger(payload, "unitMf", path) ?? 0,
                         Interim = fields.OptionalBoolean(payload, "interim", path),
+                        Riders = fields.OptionalBoolean(payload, "riders", path),
                         Turret = fields.OptionalString(payload, "turret", path) is { } turretName && UnitFacings.TryParse(turretName, out var stepTurret) ? stepTurret : null,
+                    };
+            case "rider-bailed-out":
+                var bailedUnit = fields.RequiredString(payload, "unit", path);
+                var bailedFrom = fields.RequiredString(payload, "vehicle", path);
+                var bailedAt = ReadLocation(payload, "at", path, fields, diagnostics);
+                var bailedCause = fields.RequiredString(payload, "cause", path);
+                var bailedRoll = fields.RequiredString(payload, "roll", path);
+                var bailedMorale = fields.OptionalInteger(payload, "morale", path);
+                var bailedResult = fields.RequiredString(payload, "result", path);
+                List<RiderWeapon>? bailedWeapons = null;
+                if (payload.TryGetProperty("weapons", out var weaponList) && weaponList.ValueKind == JsonValueKind.Array)
+                {
+                    bailedWeapons = [];
+                    foreach (var item in weaponList.EnumerateArray())
+                    {
+                        if (fields.RequiredString(item, "weapon", path) is not { } weaponId || fields.RequiredString(item, "fate", path) is not { } fate)
+                        {
+                            return Missing(diagnostics, "A Bailing Out Rider's SW names the SW and its fate.", path);
+                        }
+
+                        bailedWeapons.Add(new RiderWeapon(weaponId, fields.OptionalString(item, "roll", path), fate));
+                    }
+                }
+
+                return bailedUnit is null || bailedFrom is null || bailedAt is null || bailedCause is null || bailedRoll is null || bailedMorale is null || bailedResult is null
+                    ? Missing(diagnostics, "A Bail Out names its Rider, vehicle, Location, cause, NMC roll, Morale Level, and result.", path)
+                    : new RiderBailedOut(bailedUnit, bailedFrom, bailedAt, bailedCause, bailedRoll, bailedMorale.Value, bailedResult)
+                    {
+                        Weapons = bailedWeapons,
                     };
             case "vehicle-check-rolled":
                 var checkedVehicle = fields.RequiredString(payload, "vehicle", path);
