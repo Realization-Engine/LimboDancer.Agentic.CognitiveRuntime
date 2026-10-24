@@ -371,6 +371,12 @@ The referee agent of the documents step checks the rows against the chart, as at
 
 **F30. The scrounged LMG (ruling made at task 2j, 2026-10-24).** R65.23 said a scrounged MG becomes the nationality's LMG "dismantled". D10.52 says "in its dm form if possible", and A9.8 gives a LMG no dm form; the engine also refuses to assemble a LMG. **R65.30:** a scrounged MG becomes the nationality's LMG, assembled, since a LMG has no dm form; a mortar MA would be dismantled, but no catalog vehicle has one.
 
+**F31. Choices the reviews left open (rulings made at the reviews, 2026-10-24).**
+
+- **R65.31:** a crew that breaks under Air Bursts (D5.311) stays inside its AFV, broken, and must rout beneath in the RtPh; the AFV is Abandoned when it does.
+- **R65.32:** A21.22's free exchange of a capturing squad for a HS is not built; the refusal says so, and a backlog row records it.
+- **R65.33:** the best Good Order leader's modifier is a drm on the Scrounging dr (D10.5's ∆, A.10), recorded on `vehicle-scrounged`.
+
 **F25. Testing** (the standing rules, section 2, the user's rule of 2026-10-23).
 - While a task is built, the Studio is its test, in a small game made for it (`games_2x.py`).
 - A task's new Rules and Play tests are run by method, and only those.

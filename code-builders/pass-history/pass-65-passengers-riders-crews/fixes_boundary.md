@@ -1,0 +1,23 @@
+# R5, the Rules boundary and memory/performance: the review's findings (2026-10-24), as reported
+
+1. MAJOR. GameProjector.cs (Units): `Abandon` :2690, `Recrew` :2808, `CaptureVehicle` :2867, `Scrounge` :2761, `boardingAfterMove` in `StepVehicle` :2398 decide rule conditions inline (phase, no unit moving, phasing side, an AFV only when Abandoned unless unarmed, every stack member boards after its window closed), and move the Stun +1 and the Armor Leader by hand (D5.34, D3.43). `Scrounge` tests a burning wreck by the literal `vehicle.Id + "-blaze"`, repeating Play's `BlazeId`. They duplicate Rules' AbandonBar, RecrewBar, ScroungeBar with weaker checks. Fix: a Rules projection verdict over facts per arm (as `ScenarioA1VehicleProjection` does); one shared Blaze name.
+2. MINOR. PassengerActions.cs `PassengersExposed` :26 (the literal "carrier" bypasses `ScenarioA1CarrierRules.IsCarrier`; redundant with `LiveFire.CrewExposed`), `MovedThisPhase` :22 (Rider: this Player Turn; Passenger: this phase), `WithMounted` :63 (a pinned leader directs no one). Fix: raw facts into MountedFireFacts / FireGroupLeaderFacts; Rules decides.
+3. MINOR. PassengerActions.cs `OverrunPassengerIds` :204: who adds FP to an OVR decided in Play. Fix: a Rules member over per-unit facts.
+4. MINOR. Rout.cs `MustRout` :29, `MayRout` :64, `RoutSurrender` :76: Passenger branches build the obligation in Play and exempt a Passenger from A20.21 surrender there. Fix: one ScenarioA1RoutCalculator member over the Passenger facts.
+5. MINOR. CrewActs.cs `PlanRecrew`: :213 "own crew" by the id suffix; :218 hard-coded barring conditions; :231 "captured" by crew vs vehicle nationality. Fix: into RecrewFacts and the CapturedVehicleRules inputs.
+6. MINOR. Ordnance.cs `VehicleFiredThisPlayerTurn` :1440, `VehicleMovedThisPlayerTurn` :1444: "fired" and "moved" defined in Play (feeding CrewFireCounter, AbandonBar, SmcMoveBar); the first allocates an array per call. Fix: a Rules member over the condition flags.
+7. MINOR. Riders.cs `AddBailOuts` :101: `?? 0` gives a Rider with no definition Morale 0, so its NMC always fails silently. Fix: refuse, or a Rules bar.
+8. NOTE. PassengerTargets.cs `WithCrewState` :50 folds an Unconfirmed Kill into `shocked`. Fix: a separate fact or a Rules comment.
+9. NOTE. Riders.cs `StepBailOut` :38 tests "turreted" by MA-type literals instead of `ArmorDefinition.Turreted`; the Bail Out Location chosen in Play. Fix: read both from Rules.
+10. NOTE. VehicleCloseCombat.cs :181: the MPh refusal of a capture attempt written in Play. Fix: into `CaptureAttemptBar`.
+11. MINOR. Play.razor `LeavableWeapons` :3594 (repeats D6.4's test; Rules has `LeaveAboardBar`) and `CaptureNote` :3386 (side's nationality vs vehicle's, disagreeing with finding 5's crew test; scans Definitions per render). Fix: read from planner or Rules members.
+12. NOTE. The Carrier reads (`CrewExposed`, `PassengerCapacity` 5 to 4, `MayChangeExposure`, `ButtonUpBar`) take the class from the loaded catalog, not the record: safe because no live (470) or store (528) game holds a Carrier. Record it in the design's absent-safety list.
+13. NOTE. JSON: all fine but `FirePrc(..., bool? Broken, bool? Pinned)` and `FireEmbarking` always write false values. Fix: `PrcOf` passes `? true : null`.
+14. MINOR. Event-history scans per plan: `ConveyedThisPhase` (Movement.cs:229) on every Infantry move plan, `ThisPhase` (Vehicles.cs:305) walking the whole history; `OverranThisPhase` (Passengers.cs:403) once per unloading unit; `DeclaredOverrunPassengers` twice per OVR. Fix: the phase start once per plan or in `PlayStepMemo`, or the projector keeping the units conveyed this phase.
+15. MINOR. CrewActs.cs :93 (redundant: `vehicle.TemporaryCrew is not null` answers it), :225, `LeftThisPlayerTurn` :260: full-history scans. Fix: use `TemporaryCrew` at :93; a state fact for :260.
+16. MINOR. Static `CrewInside` (Ordnance.cs:1288): a full unit scan duplicating `ObjectIndex.CrewOf`, run per armed vehicle in `HasInherentCrew` (Victory.cs:110) beside an existing scan, per vehicle effect, and in `CrewLeaves`. Fix: take `MemoOf(state).Objects(state)`.
+17. NOTE. `KeepPassengers` (GameProjector.cs:933) adds an Equipment scan after every event. Fix: fold into the Units loop or skip when nothing is contained.
+18. MINOR. Play.razor `FireAboard` :5597 adds another `FireGroupAt` pass per render; `FireGroupAt` calls `state.Location` per unit. Fix: one group per render, Locations from the index.
+19. NOTE. `ScroungeRows` :4196 `IsBurning` per wreck per render in the RPh. Small.
+20. MINOR. The four never-cleared drafts (same as R4's finding 1).
+21. NOTE. `CargoNotes` (about :3400) reads from the full state; confirm a concealed enemy vehicle never reaches `View.Units` under its id.
