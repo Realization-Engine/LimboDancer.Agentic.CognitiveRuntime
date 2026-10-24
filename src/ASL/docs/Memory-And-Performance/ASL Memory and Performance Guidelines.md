@@ -190,6 +190,8 @@ The SVG work merged in PR 19, footprint and stable placement identifiers in PR 2
 | Median Rout Phase board lookups and location resolutions, A3 probe | 27,990 lookups; 34,472 resolutions | 1 lookup; 180 resolutions |
 | Gambit placed-map Rout steps, A3 measurements | 22.5 to 49.5 s | About 0.05 to 0.7 s |
 | Berserk charge step, `dl-tractor-works-02` revision 1316, Berserk Charge Plan | 12.8 s; 5 searches of 2.2 s; about 1.4 GB | 0.37 s; 1 search of 0.29 s; about 102 MB |
+| ASL CI run, one job against five parallel jobs (PR 35, 2026-10-24) | 11:54 | 5:37 |
+| Authoring tests, this Windows machine (PR 36, 2026-10-24) | 7:58 | 0:18 |
 
 These are reference measurements, not universal timing limits. Workloads, instrumentation, and machine load differ; do not multiply their percentages into a cumulative speedup. The heavy-step sequence of approximately 315 to 101 to 68 MB does provide a recorded allocation progression for that step.
 
@@ -237,6 +239,9 @@ Every new cache must state its owner, lifetime or bound, complete key, invalidat
 | Placement-map cache | Existing bounded recent-map policy; save and delete invalidate all builds of the affected map |
 | Missing campaign footprint | Five-second absence window; local publish invalidates immediately; another Studio's publication becomes discoverable after expiry |
 | Built-in scenario text | Reuse as immutable embedded content; do not apply this lifetime to mutable user files |
+| TIR payload digest and validation (`TirCanonicalJson`) | `TirDocument` object lifetime; only a document that passed validation is kept, so an invalid one still fails each time |
+| Extracted TIR of a verification batch (`AslScenarioA1VerificationBatchBuilder`) | `GeneratedManifests` object lifetime; keyed by the attestation's time and source, the only attestation inputs of the extraction |
+| Shared test manifests (`SharedManifests.AtSourceCommit`) | One test run; generated once at the pinned source commit; read only by the tests |
 
 When adding a drawable field, update the fragment key and its property-coverage test together. Include concealed, uninspected, Dummy, attachment, facing, level, and state distinctions where they affect output. Renderer identity works because renderer inputs are fixed at construction; making a renderer mutable would invalidate that assumption.
 
@@ -306,6 +311,16 @@ Follow the standing output-location rules. Do not add build folders under MapStu
 
 Register outside outputs when created with `outside_outputs.sh`, list them in the implementation plan, and clean them at the earliest opportunity. Confirm the registry is clear at completion. Remove only artifacts owned by the current work. Keep reusable scripts under `code-builders` and commit them with the change rather than copying an old pass's harness.
 
+## Fast unit tests and CI time
+
+Test time is paid on every CI run, about two per pass, and on this machine at the gate. In October 2026 the Authoring tests took 4:00 in CI and 7:58 here, not because they checked much but because each test rebuilt the same expensive inputs: fifty tests generated the same manifests, about 109 builder calls each extracted the full rulebook TIR (3.6 s), and every verification record hashed that whole document again (0.21 s a record). PR 36 removed the repetition without changing what any test asserts, and the project now runs in 18 seconds here.
+
+- **Build an expensive, read-only test input once per test run.** Put it behind a `Lazy<T>` in an internal static class and have the tests read it; `SharedManifests.AtSourceCommit` is the model. Share only inputs no test changes. A test that needs a variant makes its own copy with `with`, never alters the shared one.
+- **Do not repeat whole-document work for each item.** A digest, a validation, or an extraction over an immutable document belongs to that document's lifetime: key it by the instance with `ConditionalWeakTable`, as `TirCanonicalJson` and `AslScenarioA1VerificationBatchBuilder` do, never with a process-wide dictionary. Keep only successes, so an invalid input still fails every time. The section on cache ownership applies to these caches as to any other.
+- **Do not let a cache hollow out a test.** A test that proves output reproducible by computing it twice must compute from two fresh inputs; reading the second answer from a cache proves nothing.
+- **Measure before changing anything.** Run the project once with `--logger trx` and rank the tests with `code-builders/build-and-test/trx_rank.py <file.trx>`. xUnit runs test classes in parallel, so a class's time includes contention and the slowest class sets the project's length. Then time the suspected steps in a small harness outside the test runner before deciding what to share or cache.
+- **Know how CI runs the tests.** Since PR 35, `asl-authoring-ci.yml` runs five parallel jobs, each on its own machine, and names each test project in one share. A new test project must be added to a share, or CI does not run it. Put it in "the rest" unless its time would make that job the longest.
+
 ## Design and review checklist
 
 Each implementation design should answer the applicable questions briefly, with evidence links:
@@ -315,6 +330,7 @@ Each implementation design should answer the applicable questions briefly, with 
 - Are disclosure, rout settlement, state snapshots, pinned versions, and seams preserved?
 - Do unchanged counters reuse fragments and avoid whole-layer construction and transmission?
 - Which behavioral checks and measurements detect regression?
+- Do new tests build each expensive input once per run, and is any new test project named in a CI share?
 - Does the benefit exceed noise without unexplained regressions elsewhere? If not, what is corrected or explicitly unresolved?
 - Are results, limitations, backlog items, and outside-output cleanup recorded before completion?
 
