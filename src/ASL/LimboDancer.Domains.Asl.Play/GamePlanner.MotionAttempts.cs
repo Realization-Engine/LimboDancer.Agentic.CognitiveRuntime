@@ -180,6 +180,7 @@ public sealed partial class GamePlanner
         var bogDrm = hexspines > 0 ? VehicleTurnCost(state, vehicle, position.Location).BogDrm : null;
         var unreliable = RedMp(vehicle);
         var halfPoints = read.HalfPoints;
+        var bailing = TurretTurnBailOut(state, id, turret);
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var drawn = draw(new RollRequest(1, 6));
@@ -212,6 +213,12 @@ public sealed partial class GamePlanner
                 Turret = passed ? turret : null,
             }, null, null, [EventId(attemptId, 1)]));
 
+            // D6.21 (pass 65, the referee's review): a TCA changed on a passed attempt makes the AFV's Riders Bail Out beneath it.
+            if (passed && bailing is { } bail)
+            {
+                AddBailOuts(scope, attemptId, expected, actor, null, events, draw, state, bail.Riders, id, bail.At, [EventId(attemptId, events.Count)]);
+            }
+
             // A12.141 (p. 78): "Any other activity which a concealed unit engages in ... causes loss of concealment if that unit is currently in
             // the LOS and within 16 hexes of a Good Order enemy ground unit", a change of CA among its examples; gaining Motion status is no
             // exception of its list. D2.401 spares the "?" only for a failed dr ("no penalty (including "?" loss) for failing").
@@ -225,7 +232,7 @@ public sealed partial class GamePlanner
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
             [ScenarioA1MotionAttempts.Summary(id, mover.Id, halfPoints, state.Movement!.Vehicle, facing is { } vca ? UnitFacings.Name(vca) : null,
-                turret is { } tca ? UnitFacings.Name(tca) : null, unreliable, bogDrm, hexspines)])
+                turret is { } tca ? UnitFacings.Name(tca) : null, unreliable, bogDrm, hexspines) + (bailing is null ? string.Empty : BailOutPreview(bailing) + ", if it passes")])
         {
             Roll = new PlannedRoll(ScenarioA1MotionAttempts.Purpose, Build),
             FirstEventId = EventId(attemptId, 1),

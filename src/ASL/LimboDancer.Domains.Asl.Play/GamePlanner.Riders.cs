@@ -42,6 +42,22 @@ public sealed partial class GamePlanner
                 cause == ScenarioA1RiderRules.Terrain || kind != VehicleStepped.Enter || entry is null ? from : entry.To);
     }
 
+    /// <summary>
+    /// The Riders a turreted AFV's TCA change other than by an MP expenditure makes Bail Out in its Location (D6.21; the referee's review of pass 65): its
+    /// ordnance or Canister shot's turn, its CMG's, or a Motion attempt's. Null when the vehicle is no AFV in play on the map, does not turn, or has no Riders.
+    /// </summary>
+    private (IReadOnlyList<BailingRider> Riders, BoardLocation At)? TurretTurnBailOut(GameState state, string? vehicleId, UnitFacing? turnedTo)
+    {
+        if (turnedTo is null || vehicleId is null || state.Unit(vehicleId) is not { Status: InstanceStatus.Active, Position: MapPosition } vehicle
+            || MemoOf(state).Objects(state).Location(vehicleId)?.Location is not { } at)
+        {
+            return null;
+        }
+
+        // A kind other than an entry reads the TCA change alone, and puts the Riders in the Location it is in.
+        return StepBailOut(state, vehicle, VehicleStepped.Turn, at, null, turnedTo);
+    }
+
     /// <summary>The terrain of a vehicle's entry as D6.21 and B13.43 read it: the map's reads of the Locations left and entered and of the hexside crossed.</summary>
     private RiderTerrainFacts TerrainBailOutFacts(GameState state, UnitInstance vehicle, BoardLocation from, VehicleEntry entry)
     {
@@ -97,8 +113,10 @@ public sealed partial class GamePlanner
 
         foreach (var rider in riders)
         {
+            // D6.24: a Rider's Morale Level is in the catalog, which boarding and setup check (RiderBar).
             var definition = rider.Definition is { } known ? FireReference.Value.Definitions.GetValueOrDefault(known) : null;
-            var morale = (rider.Broken ? definition?.BrokenMorale : definition?.Morale) ?? 0;
+            var morale = (rider.Broken ? definition?.BrokenMorale : definition?.Morale)
+                ?? throw new InvalidOperationException($"The catalog gives the Rider {rider.Id} no Morale Level (D6.24).");
             var drawn = draw(new RollRequest(2, 6));
             var rollId = $"{attemptId}-roll-{(events.Count(item => item.Payload is DiceRolled) + 1).ToString(CultureInfo.InvariantCulture)}";
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",

@@ -1647,4 +1647,120 @@ public sealed class ScenarioA1Pass65RulesTests
         Assert.Equal(0.25m, ScenarioA1PassengerActionRules.OverrunShare(true, false, "truck"));
         Assert.Equal(0m, ScenarioA1PassengerActionRules.OverrunShare(false, false, "halftrack"));
     }
+
+    // The fixes of the referee's review of Riders, Carriers, crews, captures, and wrecks (R2).
+
+    [Fact]
+    public void ACarriersCrewRemovesItsBmgAsAHalftracksDoes()
+    {
+        // D6.83, D6.631 (p. 206): the Bren carrier's crew takes its 2 FP BMG as it Abandons it; a tank's crew still takes none.
+        Assert.Equal((ScenarioA1CrewActsRules.BowMg, 2, (string?)null),
+            ScenarioA1CrewActsRules.MgRemoval("uk-bren", "carrier", false, "british", "british", false, false, "mg", null, 2, false, false));
+        Assert.Contains("a Carrier's MG", ScenarioA1CrewActsRules.MgRemoval("de-tank", "tank", false, "german", "german", false, false, null, null, 2, false, false).Bar,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AShockedOrStunnedAfvsCrewMayNotAbandonIt()
+    {
+        // C7.42 (p. 177): a Shocked AFV's crew is incapable of any action; D5.34 (p. 203): a Stunned AFV spends no MP for any reason.
+        Assert.Contains("Shocked", ScenarioA1CrewActsRules.AbandonBar("de-tank", true, true, true, false, false, false, false, shocked: true), StringComparison.Ordinal);
+        Assert.Contains("Stunned", ScenarioA1CrewActsRules.AbandonBar("de-tank", true, true, true, false, false, false, false, stunned: true), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void APassedPossibleShockStillCallsForTheSecondCausesTcAndAMgsKillDoesNot()
+    {
+        // D5.5 (p. 204): the AP's TK DR one above the Final TK# is a possible Shock (C7.41). Its NTC of 4 passes, so the shot "fails to ... Shock" the
+        // immobilized PzKpfw IIIH that an Original 5 would have killed: its crew takes the TC after the NTC, and fails it on 11. An NTC of 12 Shocks it,
+        // and no TC follows. A MG's To Kill attack (A9.61) is no ordnance.
+        var finalTk = Shot(AtImmobile([6, 5], [], [5, 6], immobile: false)).Kill!.FinalTk;
+        int[] toKill = [finalTk + 1 - 5, 5];
+        var shot = AtImmobile(toKill, [], [5, 6]);
+        var passed = Shot(shot with
+        {
+            Rolls = shot.Rolls! with
+            {
+                ShockCheck = CheckDice
+            }
+        }).Kill!;
+        Assert.Equal(OrdnanceKill.PossibleShock, passed.Result);
+        Assert.Equal((true, (bool?)null, (bool?)true, false), (passed.ShockCheck!.Passed, passed.Shocked, passed.SecondCause, passed.CrewCheck!.Passed));
+        var shocked = Shot(shot with
+        {
+            Rolls = shot.Rolls! with
+            {
+                ShockCheck = [6, 6]
+            }
+        }).Kill!;
+        Assert.Equal(((bool?)true, (FireCheck?)null), (shocked.Shocked, shocked.CrewCheck));
+
+        // A shot recorded before the pass (no PRC fact) has no second cause after a passed NTC.
+        var older = AtImmobile(toKill, null, [5, 6]);
+        Assert.Null(Shot(older with
+        {
+            Rolls = older.Rolls! with
+            {
+                ShockCheck = CheckDice
+            }
+        }).Kill!.CrewCheck);
+        Assert.True(ScenarioA1CrewSurvivalRules.SecondCause(OrdnanceKill.PossibleShock, _ => OrdnanceKill.Eliminated, true, true));
+        Assert.False(ScenarioA1CrewSurvivalRules.SecondCause(OrdnanceKill.None, _ => OrdnanceKill.Burn, true, true, machineGun: true));
+    }
+
+    [Fact]
+    public void TheStunPlusOneCountsApartFromTheShockOrStunPlusOneForCrewSurvival()
+    {
+        // D5.6, D5.34 (pp. 204, 203): a Stunned crew under a "+1" counter takes +2 where the record carries the PRC fact; an older record keeps the one +1.
+        Assert.Equal(2, ScenarioA1CrewSurvivalRules.SurvivalDrm(false, true, false, true, apart: true));
+        Assert.Equal(1, ScenarioA1CrewSurvivalRules.SurvivalDrm(false, false, false, true, apart: true));
+        Assert.Equal(1, ScenarioA1CrewSurvivalRules.SurvivalDrm(false, true, false, true));
+    }
+
+    [Fact]
+    public void AGeneralCollateralAttackSparesTheAbsentCrewOfAnAbandonedAfv()
+    {
+        // D5.41: an Abandoned SPW 251/1 has no crew inside, so the CE crew line is not attacked where the attack carries the PRC fact; an older record
+        // attacks it as before.
+        var abandoned = Halftrack(true, []) with
+        {
+            Abandoned = true
+        };
+        Assert.Equal(FireVehicleEffect.NotVulnerable, Assert.Single(Fired(AtVehicle(abandoned), [3, 3]).VehicleEffects!).CrewResult);
+        Assert.NotEqual(FireVehicleEffect.NotVulnerable, Assert.Single(Fired(AtVehicle(abandoned with
+        {
+            Prc = null
+        }), [3, 3]).VehicleEffects!).CrewResult);
+    }
+
+    [Fact]
+    public void RidersMayNotBoardInWoodsButOnARoadInAStreamOrInBypass()
+    {
+        // D6.21, B13.43 (pp. 205, 128).
+        Assert.Contains("B13.43", ScenarioA1RiderRules.LocationBar("t", "woods", "Woods", false, false, false), StringComparison.Ordinal);
+        Assert.NotNull(ScenarioA1RiderRules.LocationBar("t", "stone-building", "Stone Building", false, false, false));
+        Assert.Null(ScenarioA1RiderRules.LocationBar("t", "woods", "Woods", true, false, false));
+        Assert.Null(ScenarioA1RiderRules.LocationBar("t", "woods", "Woods", false, false, true));
+        Assert.Null(ScenarioA1RiderRules.LocationBar("t", "open-ground", "Open Ground", false, false, false));
+    }
+
+    [Fact]
+    public void ABrokenRiderIsNeverPinnedAndOneWithNoMoraleLevelIsRefused()
+    {
+        // A7.8, D6.24: a broken Rider's NMC equal to its Morale Level leaves it as it was; an unbroken one's pins it. A Rider whose definition gives no
+        // Morale Level may not ride.
+        Assert.Equal(ScenarioA1RiderRules.Passed, ScenarioA1RiderRules.Check(3, 4, 7, true));
+        Assert.Equal(ScenarioA1RiderRules.Pinned, ScenarioA1RiderRules.Check(3, 4, 7, false));
+        Assert.Contains("incomplete", ScenarioA1RiderRules.MoraleBar("x", null, 7), StringComparison.Ordinal);
+        Assert.Contains("broken Morale Level", ScenarioA1RiderRules.MoraleBar("x", 7, null), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1RiderRules.MoraleBar("x", 7, 8));
+    }
+
+    [Fact]
+    public void AWoundedSmcTemporaryCrewWoundedAgainIsEliminated()
+    {
+        // D5.343, A17.2: a Stun Wounds the SMC; a second Wound eliminates him.
+        Assert.Equal((false, true), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(true, false, false, false, alreadyWounded: true));
+        Assert.Equal((true, false), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(true, false, false, false));
+    }
 }

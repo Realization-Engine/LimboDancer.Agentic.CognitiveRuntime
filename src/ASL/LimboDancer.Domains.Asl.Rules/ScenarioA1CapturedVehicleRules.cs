@@ -138,12 +138,14 @@ public static class ScenarioA1CapturedVehicleRules
     /// <summary>
     /// D5.343 (p. 204): "A SMC acting as a Temporary crew (A21.22) also becomes Wounded if he suffers a Stun result (even while in a 1MT AFV). If he suffers
     /// Recall [EXC: due to Disabled MA (3.7); Stunned in a 1MT AFV (5.341)] he is eliminated." What a Stun or Recall the vehicle just took does to its SMC
-    /// crew; an eliminated SMC leaves the vehicle Abandoned, unmanned.
+    /// crew; an eliminated SMC leaves the vehicle Abandoned, unmanned. A17.2 (the referee's review): a SMC already Wounded that is Wounded again is
+    /// eliminated.
     /// </summary>
-    public static (bool Wounded, bool Eliminated) SmcCrewOutcome(bool stunned, bool recalled, bool byDisabledMa, bool oneManTurret)
+    public static (bool Wounded, bool Eliminated) SmcCrewOutcome(bool stunned, bool recalled, bool byDisabledMa, bool oneManTurret, bool alreadyWounded = false)
     {
         var eliminated = recalled && !byDisabledMa && !(stunned && oneManTurret);
-        return (!eliminated && (stunned || (recalled && oneManTurret && !byDisabledMa)), eliminated);
+        var wounded = !eliminated && (stunned || (recalled && oneManTurret && !byDisabledMa));
+        return (wounded && !alreadyWounded, eliminated || (wounded && alreadyWounded));
     }
 
     /// <summary>The record's text for a capture (A21.2, A21.21): "[G4]: the PzKpfw IIIH is captured by the Russian side (A21.2)".</summary>

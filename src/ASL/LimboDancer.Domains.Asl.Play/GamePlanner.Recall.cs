@@ -251,7 +251,7 @@ public sealed partial class GamePlanner
         }));
 
         // D5.42 (pass 65, ruling R65.20): a unit that crews it from inside leaves as itself.
-        if (CrewLeaves(state, vehicle, attemptId, stunRecovery: true) is { } crew)
+        foreach (var crew in CrewLeaves(state, vehicle, attemptId, stunRecovery: true))
         {
             yield return crew;
         }

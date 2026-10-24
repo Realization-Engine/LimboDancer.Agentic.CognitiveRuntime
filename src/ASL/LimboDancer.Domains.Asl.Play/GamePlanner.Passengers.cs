@@ -79,7 +79,8 @@ public sealed partial class GamePlanner
     /// <summary>
     /// Why a vehicle may not carry its Riders with <paramref name="boarding"/> added (D6.2, A5.5; pass 65, ruling R65.16): Riders are not allowed in the
     /// game's year for the vehicle's side, it is not an AFV that takes Riders, or their PP exceed its Rider capacity, counted apart from its Passenger PP;
-    /// null when it may, or when nobody rides it as a Rider.
+    /// the referee's review: the vehicle is in terrain Riders are not allowed in (D6.21, B13.43), or the catalog gives a Rider no Morale Level for its Bail
+    /// Out's NMC (D6.24). Null when it may, or when nobody rides it as a Rider.
     /// </summary>
     internal string? RiderBar(GameState state, UnitInstance vehicle, IEnumerable<UnitInstance> boarding)
     {
@@ -90,9 +91,23 @@ public sealed partial class GamePlanner
         }
 
         var definition = VehicleDefinition(vehicle);
-        return ScenarioA1RiderRules.DateBar(vehicle.Id, state.ScenarioYear, state.Side(vehicle.Side)?.Nationality)
+        var bar = ScenarioA1RiderRules.DateBar(vehicle.Id, state.ScenarioYear, state.Side(vehicle.Side)?.Nationality)
             ?? ScenarioA1RiderRules.CapacityBar(vehicle.Id, ScenarioA1RiderRules.Capacity(definition?.VehicleClass, definition?.Unarmored == true),
                 riders.Select(unit => (unit.Id, vocabulary.IsA(unit.Kind, "asl:smc"), (Func<int?>)(() => PassengerPp(state, unit)))));
+        if (bar is null && vehicle.Position is MapPosition && MemoOf(state).Objects(state).Location(vehicle.Id)?.Location is { } at && ReadLocation(state, at) is { } read)
+        {
+            var terrain = read.Level.Terrain ?? read.Hex.Center.Terrain;
+            bar = ScenarioA1RiderRules.LocationBar(vehicle.Id, TerrainKey(read), terrain?.Name, terrain?.IsRoad == true,
+                terrain?.Name?.Contains("Stream", StringComparison.Ordinal) == true, vehicle.Straddling is not null);
+        }
+
+        foreach (var unit in riders)
+        {
+            var own = unit.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
+            bar ??= ScenarioA1RiderRules.MoraleBar(unit.Id, own?.Morale, own?.BrokenMorale);
+        }
+
+        return bar;
     }
 
     /// <summary>The Rider capacity of a vehicle in PP, or null when it takes none (D6.2), with whether it is one SMC's; for the Play page.</summary>
@@ -380,7 +395,8 @@ public sealed partial class GamePlanner
             }
 
             // The HS is created aboard, so the step unloads it as a Passenger: beneath the vehicle, with its MF and the DEFENDER's FFNAM (D6.5).
-            crewLeaving = LeavingCrew(state, vehicle, attemptId) is { } placed
+            // D3.43, D5.34 (the referee's review): it takes the Armor Leader, dormant, and the Stun "+1" with it.
+            crewLeaving = LeavingCrew(state, vehicle, attemptId, Is(vehicle, Conditions.StunRecovery), vehicle.ArmorLeader) is { } placed
                 ? new InstanceCreated(placed.Instance with
                 {
                     Position = new ContainedPosition(id, ContainmentRole.Passenger)

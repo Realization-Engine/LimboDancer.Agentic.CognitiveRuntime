@@ -234,7 +234,7 @@ public static class GameEventReader
                 var position = ReadPosition(payload, "position", path, fields, diagnostics);
                 return movedId is null || position is null
                     ? Missing(diagnostics, "A move names the instance and its position.", path)
-                    : new InstanceMoved(movedId, position, fields.OptionalInteger(payload, "mf", path));
+                    : new InstanceMoved(movedId, position, fields.OptionalInteger(payload, "mf", path)) { Ended = fields.OptionalBoolean(payload, "ended", path) };
             case "equipment-transferred":
                 var transferredId = fields.RequiredString(payload, "id", path);
                 var holding = ReadHolding(payload, path, fields, diagnostics);

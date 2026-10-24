@@ -818,10 +818,10 @@ internal static class ScenarioA1ArmorCalculator
         // D5.5, D8.11, D8.22 (pp. 204, 208, 209; pass 65, ruling R65.21): an AFV already bogged or immobilized that the shot neither destroys, Stuns, nor
         // Shocks takes the TC when an Original TK DR of 5 would have destroyed or Shocked it; only a shot that carries its PRC, as every shot planned since
         // the pass does, so that an older record resolves as it did. An unarmed vehicle's Inherent Driver "is never treated as a crew" (D5.1): its cs# is
-        // printed in lower case.
+        // printed in lower case. A MG's To Kill attack is no ordnance; a Possible Shock calls for the TC once its NTC has passed (the referee's review).
         var secondCause = target.Prc is not null
             && ScenarioA1CrewSurvivalRules.SecondCause(result, ResultOn, target.Immobile == true,
-                target.CrewImpaired != true && target.Abandoned != true && ScenarioA1CrewSurvivalRules.CrewSurvival(armor, false) is not null);
+                target.CrewImpaired != true && target.Abandoned != true && ScenarioA1CrewSurvivalRules.CrewSurvival(armor, false) is not null, machineGun);
 
         // D5.1: an AFV's crew has Elite morale, an unarmored vehicle's the 1st Line morale of its nationality.
         // D3.42, D3.45 (p. 200; pass 55, rulings R55.17, R55.18): "[EXC: Armor Leaders (3.42) & Inexperienced Crews (3.45)]": the crew "always has
@@ -859,7 +859,9 @@ internal static class ScenarioA1ArmorCalculator
                 Shocked = passed ? null : true,
             };
         }
-        else if (((result == OrdnanceKill.Immobilized && target.CrewMayTakeTc == true) || secondCause) && morale is { } tcMorale)
+
+        // D5.5: the TC follows a Possible Shock's NTC, when it passed, in the same resolution; an older record has no second cause.
+        if (((result == OrdnanceKill.Immobilized && target.CrewMayTakeTc == true) || (secondCause && made.Shocked != true)) && morale is { } tcMorale)
         {
             // D5.5: an immobilized vehicle's crew takes a TC at once; failure Abandons it.
             if (rolls.CrewCheck is not { } check)
@@ -887,7 +889,7 @@ internal static class ScenarioA1ArmorCalculator
             made = made with
             {
                 CrewSurvival = ScenarioA1CrewSurvivalRules.Survival(cs, survival,
-                    ScenarioA1CrewSurvivalRules.SurvivalDrm(false, target.CrewImpaired == true, false, target.StunRecovery == true))
+                    ScenarioA1CrewSurvivalRules.SurvivalDrm(false, target.CrewImpaired == true, false, target.StunRecovery == true, target.Prc is not null))
             };
         }
 

@@ -375,7 +375,7 @@ The referee agent of the documents step checks the rows against the chart, as at
 
 - **R65.31:** a crew that breaks under Air Bursts (D5.311) stays inside its AFV, broken, and must rout beneath in the RtPh; the AFV is Abandoned when it does.
 - **R65.32:** A21.22's free exchange of a capturing squad for a HS is not built; the refusal says so, and a backlog row records it.
-- **R65.33:** the best Good Order leader's modifier is a drm on the Scrounging dr (D10.5's ∆, A.10), recorded on `vehicle-scrounged`.
+- **R65.33 (revised at Round B, 2026-10-24):** the Scrounging dr takes no leadership modifier. D10.5's "1-3 dr (∆)" marks it with the triangle, and A.10 (p. 43) says leadership ratings "do not modify the DR/dr of certain actions ... identified by a triangle symbol". The review (R2, finding 10) and the first wording of this ruling read the ∆ backwards; the fixing agent caught it on the page, and the session confirmed it there.
 
 **F25. Testing** (the standing rules, section 2, the user's rule of 2026-10-23).
 - While a task is built, the Studio is its test, in a small game made for it (`games_2x.py`).

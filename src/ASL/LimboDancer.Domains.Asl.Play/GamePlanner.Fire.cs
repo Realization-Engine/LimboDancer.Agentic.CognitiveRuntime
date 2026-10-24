@@ -628,7 +628,10 @@ public sealed partial class GamePlanner
 
                 // D.8A, D.8B (pass 65): the PRC the attack may reach, as Collateral.
                 + PrcPreview(facts.TargetVehicle is { } aimedAt ? [(aimedAt.VehicleId, aimedAt.Prc)] : [], "D.8A, if it is left standing")
-                + PrcPreview((facts.Vehicles ?? []).Where(item => item.VehicleId != facts.TargetVehicle?.VehicleId).Select(item => (item.VehicleId, item.Prc)), "D.8B"),
+                + PrcPreview((facts.Vehicles ?? []).Where(item => item.VehicleId != facts.TargetVehicle?.VehicleId).Select(item => (item.VehicleId, item.Prc)), "D.8B")
+
+                // D6.21 (pass 65, the referee's review): a CMG's turret turn makes the AFV's Riders Bail Out.
+                + BailOutPreview(TurretTurnBailOut(state, facts.VehicleFire?.VehicleId, VehicleTurretTurn(state, facts))),
 
                 // Pass 31 (play test P-12, P-13): a shot with no LOS, or one that also hits the firing side's own units, is said before it is confirmed.
                 .. FireWarnings(facts)])
@@ -1022,6 +1025,12 @@ public sealed partial class GamePlanner
                 [fireId]));
         }
 
+        // D6.21 (pass 65, the referee's review): a CMG's attack that turned the AFV's turret makes its Riders Bail Out beneath it.
+        if (TurretTurnBailOut(state, facts.VehicleFire?.VehicleId, VehicleTurretTurn(state, facts)) is { } turned)
+        {
+            AddBailOuts(scope, attemptId, expected, actor, package, events, draw, state, turned.Riders, facts.VehicleFire!.VehicleId!, turned.At, [fireId]);
+        }
+
         // A10.62: a broken unit attacked by FP that could inflict at least a NMC, allowing for Cowering, is under DM.
         var desperate = CouldCauseNmc(facts, arithmetic);
         foreach (var effect in resolution.Effects)
@@ -1239,9 +1248,13 @@ public sealed partial class GamePlanner
             // D5.6, D9.2 (pass 65, ruling R65.21): an armed vehicle's crew that survives is beneath the wreck, under Hazardous Movement for the phase; a
             // unit that crews it from inside survives as itself, moved before the wreck is written.
             var inside = !verdict.Burning && effect.CrewSurvival is { Survived: true } && vehicle is not null ? CrewInside(state, vehicle.Id) : null;
-            if (inside is not null && vehicle!.Position is MapPosition beneath)
+            if (inside is not null && vehicle is { Position: MapPosition beneath })
             {
-                yield return ("instance-moved", new InstanceMoved(inside.Id, new MapPosition(beneath.Location)));
+                foreach (var leaving in InsideCrewLeaves(vehicle, inside, beneath.Location, Is(vehicle, Conditions.StunRecovery)))
+                {
+                    yield return leaving;
+                }
+
                 yield return Hazardous(inside.Id);
             }
 
@@ -1252,7 +1265,7 @@ public sealed partial class GamePlanner
                     new Dictionary<string, ConditionState>())));
             }
             else if (inside is null && effect.CrewSurvival is { Survived: true } && vehicle is not null
-                && LeavingCrew(state, vehicle, attemptId, hazardous: true) is { } survivors)
+                && LeavingCrew(state, vehicle, attemptId, Is(vehicle, Conditions.StunRecovery), vehicle.ArmorLeader, hazardous: true) is { } survivors)
             {
                 yield return ("instance-created", survivors);
             }

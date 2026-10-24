@@ -3720,7 +3720,13 @@ public static class GameProjector
             return item switch
             {
                 // A20.53 (ruling R14.5): a Guard's prisoners go with it.
-                UnitInstance unit => MovePrisoners(Replace(state, unit with { Position = move.Position, MfSpent = unit.MfSpent + (move.Mf ?? 0) })!, unit.Id, move.Position),
+                // D5.5, D5.6, D6.9 (pass 65): a unit placed beneath its vehicle has spent all its MF; a record before the pass ends no move.
+                UnitInstance unit => MovePrisoners(Replace(state, unit with
+                {
+                    Position = move.Position,
+                    MfSpent = unit.MfSpent + (move.Mf ?? 0),
+                    MovementEnded = unit.MovementEnded || move.Ended,
+                })!, unit.Id, move.Position),
                 EntityInstance entity => Replace(state, entity with { Position = move.Position }),
                 _ => Fail<GameState>("UNIT-STATE-012", "Equipment moves with equipment-transferred."),
             };
@@ -4087,6 +4093,10 @@ public static class GameProjector
             {
                 return next;
             }
+
+            // A17.2 (the referee's review): a Wounded SMC Wounded again is eliminated.
+            (wounded, eliminated) = Rules.ScenarioA1CapturedVehicleRules.SmcCrewOutcome(Now(Conditions.Stunned), Now(Conditions.Recalled), Now(Conditions.Disabled), false,
+                GameState.Condition(crew, Conditions.Wounded) == ConditionState.True);
 
             if (wounded)
             {

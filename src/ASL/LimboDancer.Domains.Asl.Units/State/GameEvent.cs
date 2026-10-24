@@ -126,7 +126,17 @@ public sealed record InstanceCreated(NewInstance Instance) : EventPayload
 }
 
 /// <summary><c>instance-moved</c>: a unit or entity takes a new position, spending <paramref name="Mf"/> MF when given.</summary>
-public sealed record InstanceMoved(string Id, Position Position, int? Mf = null) : EventPayload;
+public sealed record InstanceMoved(string Id, Position Position, int? Mf = null) : EventPayload
+{
+    /// <summary>
+    /// D5.5, D5.6, D6.9 (pass 65, the referee's review): the unit is placed "expending all remaining MF", so its move ends. Written only by a placement
+    /// beneath a vehicle since the pass; false on every record before it, which left the unit's MF as they were.
+    /// </summary>
+    public bool Ended
+    {
+        get; init;
+    }
+}
 
 /// <summary><c>equipment-transferred</c>: equipment changes holder, or is left at a map position with none.</summary>
 public sealed record EquipmentTransferred(string Id, Holding? Holding, Position? Position) : EventPayload;

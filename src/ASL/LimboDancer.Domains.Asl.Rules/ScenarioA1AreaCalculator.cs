@@ -559,7 +559,7 @@ internal static class ScenarioA1AreaCalculator
             made = made with
             {
                 CrewSurvival = ScenarioA1CrewSurvivalRules.Survival(cs, survival,
-                    ScenarioA1CrewSurvivalRules.SurvivalDrm(false, vehicle.Stunned == true, shocked, vehicle.StunRecovery == true))
+                    ScenarioA1CrewSurvivalRules.SurvivalDrm(false, vehicle.Stunned == true, shocked, vehicle.StunRecovery == true, vehicle.Prc is not null))
             };
         }
 

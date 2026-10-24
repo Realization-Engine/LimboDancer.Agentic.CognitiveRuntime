@@ -55,7 +55,7 @@ public sealed partial class GamePlanner
         ArgumentNullException.ThrowIfNull(vehicle);
         return ScenarioA1CrewActsRules.AbandonBar(vehicle.Id, state.Phase == "mph" && vehicle.Side == state.PhasingSide, vehicle.Position is MapPosition,
             Armed(VehicleDefinition(vehicle)), Is(vehicle, Conditions.Abandoned), state.Movement is not null, VehicleMovedThisPlayerTurn(state, vehicle),
-            VehicleFiredThisPlayerTurn(vehicle)) is null;
+            VehicleFiredThisPlayerTurn(vehicle), Is(vehicle, Conditions.Shocked) || Is(vehicle, Conditions.UnconfirmedKill), Is(vehicle, Conditions.Stunned)) is null;
     }
 
     /// <summary>Whether a vehicle's crew could Remove its MG as it Abandons it (D6.631), its own inherent crew assumed; for the Play page.</summary>
@@ -90,7 +90,7 @@ public sealed partial class GamePlanner
         var moved = VehicleMovedThisPlayerTurn(state, vehicle);
         var fired = VehicleFiredThisPlayerTurn(vehicle);
         if (ScenarioA1CrewActsRules.AbandonBar(id, state.Phase == "mph" && vehicle.Side == state.PhasingSide, at is not null, Armed(definition), Is(vehicle, Conditions.Abandoned),
-            state.Movement is not null, moved, fired) is { } bar)
+            state.Movement is not null, moved, fired, Is(vehicle, Conditions.Shocked) || Is(vehicle, Conditions.UnconfirmedKill), Is(vehicle, Conditions.Stunned)) is { } bar)
         {
             return Refused(scope, label, expected, bar);
         }

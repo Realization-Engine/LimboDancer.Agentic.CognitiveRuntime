@@ -60,7 +60,8 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [OrdnanceSummary(facts, facing)])
+        // D6.21 (pass 65, the referee's review): a turret turn makes the AFV's Riders Bail Out.
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [OrdnanceSummary(facts, facing) + BailOutPreview(TurretTurnBailOut(state, facts.Gun!.GunId, facing))])
         {
             Roll = new PlannedRoll("ordnance", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -959,6 +960,12 @@ public sealed partial class GamePlanner
             return;
         }
 
+        // D6.21 (pass 65, the referee's review): the shot turned the AFV's turret, so its Riders Bail Out beneath it.
+        if (TurretTurnBailOut(state, facts.Gun.GunId, facing) is { } bailing)
+        {
+            AddBailOuts(scope, attemptId, expected, actor, package, events, draw, state, bailing.Riders, facts.Gun.GunId!, bailing.At, [recordId]);
+        }
+
         // C7.7, D5.5, D5.6: a vehicle target's fate.
         if (resolution.Kill is { } kill && state.Unit(facts.VehicleTarget!.VehicleId!) is { } struck)
         {
@@ -1189,7 +1196,11 @@ public sealed partial class GamePlanner
             var inside = CrewInside(state, vehicle.Id);
             if (!burning && inside is not null && kill.CrewSurvival is { Survived: true } && at is { } survivedAt)
             {
-                yield return ("instance-moved", new InstanceMoved(inside.Id, new MapPosition(survivedAt)));
+                foreach (var leaving in InsideCrewLeaves(vehicle, inside, survivedAt, Is(vehicle, Conditions.StunRecovery)))
+                {
+                    yield return leaving;
+                }
+
                 yield return Hazardous(inside.Id);
             }
 
@@ -1199,7 +1210,8 @@ public sealed partial class GamePlanner
                 yield return ("instance-created", new InstanceCreated(new NewInstance(BlazeId(vehicle.Id), "asl:fire", null, null, new MapPosition(burningAt), null,
                     new Dictionary<string, ConditionState>())));
             }
-            else if (inside is null && kill.CrewSurvival is { Survived: true } && LeavingCrew(state, vehicle, attemptId, hazardous: true) is { } survivors)
+            else if (inside is null && kill.CrewSurvival is { Survived: true }
+                && LeavingCrew(state, vehicle, attemptId, Is(vehicle, Conditions.StunRecovery), vehicle.ArmorLeader, hazardous: true) is { } survivors)
             {
                 yield return ("instance-created", survivors);
             }
@@ -1224,18 +1236,15 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The events of a crew that fails its Immobilization TC (D5.5, p. 204): the vehicle is Abandoned, and the crew is beneath it under Hazardous Movement for
-    /// the phase (pass 65, ruling R65.21). D3.43 (pass 65, ruling R65.20): the crew takes the Armor Leader with it, dormant, since it may re-crew the vehicle.
+    /// the phase (pass 65, ruling R65.21). D3.43 (pass 65, ruling R65.20): the crew takes the Armor Leader with it, dormant, since it may re-crew the vehicle;
+    /// D5.34: and the Stun "+1" (the referee's review).
     /// </summary>
     private static IEnumerable<(string Type, EventPayload Payload)> TaskCheckAbandons(GameState state, UnitInstance vehicle, string attemptId)
     {
         yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)));
-        if (CrewLeaves(state, vehicle, attemptId, armorLeader: vehicle.ArmorLeader, hazardous: true) is { } crew)
+        foreach (var crew in CrewLeaves(state, vehicle, attemptId, Is(vehicle, Conditions.StunRecovery), vehicle.ArmorLeader, hazardous: true))
         {
             yield return crew;
-            if (crew.Payload is InstanceMoved moved)
-            {
-                yield return Hazardous(moved.Id);
-            }
         }
     }
 
@@ -1304,14 +1313,45 @@ public sealed partial class GamePlanner
             && inside.Container == vehicle);
 
     /// <summary>
-    /// The record of a crew leaving its intact vehicle (rulings R65.19, R65.20): a unit that crews it from inside leaves as itself, moved beneath it;
-    /// otherwise the crew counter is placed (<see cref="LeavingCrew"/>). Null when the catalog has no crew to place.
+    /// The records of a crew leaving its intact vehicle (rulings R65.19, R65.20): a unit that crews it from inside leaves as itself, moved beneath it
+    /// (<see cref="InsideCrewLeaves"/>), under Hazardous Movement when <paramref name="hazardous"/>; otherwise the crew counter is placed
+    /// (<see cref="LeavingCrew"/>). None when the catalog has no crew to place.
     /// </summary>
-    private static (string Type, EventPayload Payload)? CrewLeaves(GameState state, UnitInstance vehicle, string attemptId, bool stunRecovery = false,
-        ArmorLeader? armorLeader = null, bool hazardous = false) =>
-        CrewInside(state, vehicle.Id) is { } inside && vehicle.Position is MapPosition position
-            ? ("instance-moved", new InstanceMoved(inside.Id, new MapPosition(position.Location)))
-            : LeavingCrew(state, vehicle, attemptId, stunRecovery, armorLeader, hazardous) is { } crew ? ("instance-created", crew) : null;
+    private static IEnumerable<(string Type, EventPayload Payload)> CrewLeaves(GameState state, UnitInstance vehicle, string attemptId, bool stunRecovery = false,
+        ArmorLeader? armorLeader = null, bool hazardous = false)
+    {
+        if (CrewInside(state, vehicle.Id) is { } inside && vehicle.Position is MapPosition position)
+        {
+            foreach (var leaving in InsideCrewLeaves(vehicle, inside, position.Location, stunRecovery))
+            {
+                yield return leaving;
+            }
+
+            if (hazardous)
+            {
+                yield return Hazardous(inside.Id);
+            }
+        }
+        else if (LeavingCrew(state, vehicle, attemptId, stunRecovery, armorLeader, hazardous) is { } crew)
+        {
+            yield return ("instance-created", crew);
+        }
+    }
+
+    /// <summary>
+    /// The records of a unit that crews a vehicle from inside leaving it beneath (D5.42; pass 65, the referee's review): it is placed "expending all
+    /// remaining MF" (D5.5, D5.6, D5.41), and takes the vehicle's Stun "+1" with it (D5.34), as an Abandonment's crew does. The Armor Leader stays with the
+    /// vehicle: the move carries no leader.
+    /// </summary>
+    private static IEnumerable<(string Type, EventPayload Payload)> InsideCrewLeaves(UnitInstance vehicle, UnitInstance inside, BoardLocation at, bool stunRecovery)
+    {
+        yield return ("instance-moved", new InstanceMoved(inside.Id, new MapPosition(at)) { Ended = true });
+        if (stunRecovery && !Is(inside, Conditions.StunRecovery))
+        {
+            yield return ("conditions-changed", new ConditionsChanged(inside.Id,
+                new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.StunRecovery] = ConditionState.True }));
+        }
+    }
 
     /// <summary>
     /// The events of a mortar's hit on an AFV (C1.55; pass 60, ruling R60.10), written as a To Kill result's are: a burning wreck, a wreck its crew may

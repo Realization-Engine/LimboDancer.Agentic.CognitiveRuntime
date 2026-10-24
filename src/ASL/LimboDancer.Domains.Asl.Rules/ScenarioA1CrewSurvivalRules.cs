@@ -13,9 +13,12 @@ public static class ScenarioA1CrewSurvivalRules
     /// <summary>
     /// D5.6 (p. 204): "There is a +1 DRM to the CS DR if the crew had been broken or under the effects of Shock/Stun at the time of the vehicle
     /// elimination." A Recall is treated as a Stun (D5.341), an Unconfirmed Kill is still Shocked (C7.42), and a "+1" counter after a Stun keeps its +1
-    /// (D5.34).
+    /// (D5.34). Where the record carries the pass's PRC fact (<paramref name="apart"/>; the referee's review of pass 65) the "+1" counter adds its own +1
+    /// to D5.6's, since D5.34 lists Crew Survival among the DR it modifies; an older record keeps the one +1 it was resolved with.
     /// </summary>
-    public static int SurvivalDrm(bool broken, bool stunned, bool shocked, bool stunRecovery) => broken || stunned || shocked || stunRecovery ? 1 : 0;
+    public static int SurvivalDrm(bool broken, bool stunned, bool shocked, bool stunRecovery, bool apart = false) =>
+        apart ? (broken || stunned || shocked ? 1 : 0) + (stunRecovery ? 1 : 0)
+            : broken || stunned || shocked || stunRecovery ? 1 : 0;
 
     /// <summary>
     /// The CS# a crew rolls against when its vehicle is eliminated without burning (D5.6, D9.2): none for a cs# printed in lower case, which serves only
@@ -56,12 +59,14 @@ public static class ScenarioA1CrewSurvivalRules
     /// The TC's second cause (D5.5, D8.11, D8.22): a vehicle "already bogged/immobilized and ... hit by Direct Fire ordnance which fails to destroy, Stun,
     /// or Shock it but that would have destroyed or Shocked it with an Original TK ... DR of 5". <paramref name="result"/> is the shot's own To Kill
     /// result, <paramref name="resultOn"/> the same To Kill resolution on another Original DR; only a burn, an elimination, or an automatic Shock counts,
-    /// never a possible one. The crew must be inside, neither Stunned nor Shocked (<paramref name="crewMayCheck"/>).
+    /// never a possible one. The crew must be inside, neither Stunned nor Shocked (<paramref name="crewMayCheck"/>). A Possible Shock may be the shot's own
+    /// result: one whose NTC passes "fails to ... Shock", and the caller asks for the TC only then (the referee's review of pass 65). A MG's To Kill attack
+    /// (A9.61) is no ordnance (<paramref name="machineGun"/>).
     /// </summary>
-    public static bool SecondCause(string result, Func<int, string> resultOn, bool immobile, bool crewMayCheck)
+    public static bool SecondCause(string result, Func<int, string> resultOn, bool immobile, bool crewMayCheck, bool machineGun = false)
     {
         ArgumentNullException.ThrowIfNull(resultOn);
-        return immobile && crewMayCheck && result is OrdnanceKill.None or OrdnanceKill.Immobilized
+        return !machineGun && immobile && crewMayCheck && result is OrdnanceKill.None or OrdnanceKill.Immobilized or OrdnanceKill.PossibleShock
             && resultOn(SecondCauseDr) is OrdnanceKill.Burn or OrdnanceKill.Eliminated or OrdnanceKill.Shock;
     }
 

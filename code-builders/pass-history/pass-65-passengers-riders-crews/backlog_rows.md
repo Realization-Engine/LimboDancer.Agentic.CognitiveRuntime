@@ -8,4 +8,6 @@ Each row is filed in `src/ASL/docs/ASL Unit Backlog.md`, a new section "Added by
 - D5.311: a crew already broken inside its AFV attacked again by an Unprotected attack (`UnprotectedCrewOutcome` does not know it is broken) (Round A).
 - D5.311: the failure to rout of a broken crew inside its AFV does not Abandon the AFV (Round A).
 - `hazardous-movement` still reaches an AFV crew's CE line and an unarmored vehicle's Vehicle line (A4.62 is for the units moving) (Round A).
+- D3.43: a re-crewing unit that leaves its vehicle by a failed TC, a Recall's Abandonment, or Survival (`instance-moved`) does not carry the vehicle's Armor Leader; the record needs an `armorLeader` fact (R2 finding 3, Round B).
+- D6.82 (p. 206): a Carrier's inherent crew is a HS unless the Carrier is "specified as towing ordnance"; `InherentHalfSquad` reads whether it tows a Gun now. Read the scenario card's specification once cards name it (R2 finding 15, Round B).
 - To check: a truck's Vehicle line came to the Original DR + 1 in a Round A test (DR 6 immobilized at KN 7); which +1 it takes (Round A).

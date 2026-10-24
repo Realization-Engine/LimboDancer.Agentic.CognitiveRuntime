@@ -102,7 +102,10 @@ public static class ScenarioA1WreckRules
         return mounts;
     }
 
-    /// <summary>D10.5: "To scrounge anything of value, a 1-3 dr is necessary."</summary>
+    /// <summary>
+    /// D10.5: "To scrounge anything of value, a 1-3 dr (∆) is necessary." A.10 (p. 43): the ∆ marks a dr that leadership does not modify, so no leader's
+    /// modifier is added.
+    /// </summary>
     public static bool Succeeds(int dr) => dr is >= 1 and <= 3;
 
     /// <summary>D10.5: "The dr also doubles as the number of SW that may be scrounged (selected randomly) if more than one exists": a Random Selection is made when a success finds more SW than the dr.</summary>

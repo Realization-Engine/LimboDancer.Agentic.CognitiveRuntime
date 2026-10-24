@@ -30,13 +30,18 @@ public static class ScenarioA1CrewActsRules
     /// <summary>
     /// D5.41 (p. 204): "A crew may abandon its vehicle only during its own MPh, and does so by expending all of its MF to be placed beneath the vehicle.
     /// The vehicle/crew may not have moved or fired during that Player Turn." D5.1: "All unarmed vehicles are manned only by an Inherent Driver who never
-    /// leaves the vehicle." Why a vehicle's crew may not Abandon it now, or null.
+    /// leaves the vehicle." C7.42 (p. 177): "The crew and passengers of a shocked AFV are incapable of any action", an Unconfirmed Kill still Shocked; D5.34
+    /// (p. 203): a Stunned AFV may not move or spend MP "for any reason" in that Player Turn (the referee's review). Why a vehicle's crew may not Abandon it
+    /// now, or null.
     /// </summary>
-    public static string? AbandonBar(string vehicle, bool ownMph, bool onMap, bool armed, bool abandoned, bool unitMoving, bool moved, bool fired) =>
+    public static string? AbandonBar(string vehicle, bool ownMph, bool onMap, bool armed, bool abandoned, bool unitMoving, bool moved, bool fired, bool shocked = false,
+        bool stunned = false) =>
         !ownMph ? $"play.abandon: {vehicle}'s crew Abandons it only in its own MPh (D5.41)"
         : !onMap ? $"play.abandon: {vehicle} is not on the map"
         : !armed ? $"play.abandon: {vehicle} is unarmed; its Inherent Driver never leaves it (D5.1)"
         : abandoned ? $"play.abandon: {vehicle} is already Abandoned (D5.41)"
+        : shocked ? $"play.abandon: {vehicle} is Shocked, and its crew is incapable of any action until it recovers (C7.42)"
+        : stunned ? $"play.abandon: {vehicle} is Stunned, and its crew may not Abandon it this Player Turn (D5.34)"
         : unitMoving ? $"play.abandon: a unit is moving; {vehicle}'s crew Abandons it once that move ends (A4.2)"
         : moved ? $"play.abandon: {vehicle} has moved this Player Turn, so its crew may not Abandon it now (D5.41)"
         : fired ? $"play.abandon: {vehicle} has fired this Player Turn, so its crew may not Abandon it now (D5.41)"
@@ -76,8 +81,10 @@ public static class ScenarioA1CrewActsRules
     /// <summary>
     /// D6.631 (p. 206): "A crew abandoning (5.41) an armored halftrack of that crew's nationality may Remove from the AFV and take with them ... that
     /// halftrack's MG/mortar armament. The MG takes the form of a MG counter with the same or less FP as available to the vehicle." D5.5: "A crew thus
-    /// forced to leave its vehicle may not Remove (6.631) any weapons from it." D5.41: a lone SMC Removes none. The MG Removed, its mount and FP, or why
-    /// none may be: the MA when it is a MG (an AAMG), else the BMG. Only a MG of 3 FP or less is built, taken as the nationality's LMG; a mortar is not.
+    /// forced to leave its vehicle may not Remove (6.631) any weapons from it." D5.41: a lone SMC Removes none. D6.83 (p. 206): "A Carrier HS/crew may also
+    /// abandon/re-occupy a Carrier along with the Carrier's MG/ATR/mortar as per 6.631" (the referee's review); its quick unload (D6.5) Removes nothing.
+    /// The MG Removed, its mount and FP, or why none may be: the MA when it is a MG (an AAMG), else the BMG. Only a MG of 3 FP or less is built, taken as
+    /// the nationality's LMG; a mortar or ATR is not.
     /// </summary>
     public static (string? Mount, int Fp, string? Bar) MgRemoval(string vehicle, string? vehicleClass, bool unarmored, string? vehicleNationality, string? crewNationality,
         bool smcCrew, bool forcedByTc, string? mainArmament, int? antiAircraftMg, int? bowMg, bool maDisabled, bool bmgDisabled)
@@ -87,9 +94,9 @@ public static class ScenarioA1CrewActsRules
             return (null, 0, $"play.abandon: {vehicle}'s crew was forced out by a failed Immobilization TC and may not Remove its weapons (D5.5)");
         }
 
-        if (vehicleClass != "halftrack" || unarmored)
+        if (vehicleClass is not ("halftrack" or ScenarioA1CarrierRules.VehicleClass) || unarmored)
         {
-            return (null, 0, $"play.abandon: only an armored halftrack's MG is Removed as its crew Abandons it; {vehicle}'s weapons may only be Scrounged (D6.631, D5.41)");
+            return (null, 0, $"play.abandon: only an armored halftrack's or a Carrier's MG is Removed as its crew Abandons it; {vehicle}'s weapons may only be Scrounged (D6.631, D6.83, D5.41)");
         }
 
         if (smcCrew)

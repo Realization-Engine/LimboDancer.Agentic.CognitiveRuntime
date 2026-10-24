@@ -248,6 +248,12 @@ public static class GameEventWriter
                     writer.WriteNumber("mf", mf);
                 }
 
+                // D5.5, D5.6, D6.9 (pass 65): written only by a placement beneath a vehicle since the pass.
+                if (moved.Ended)
+                {
+                    writer.WriteBoolean("ended", true);
+                }
+
                 break;
             case EquipmentTransferred transferred:
                 writer.WriteString("id", transferred.Id);

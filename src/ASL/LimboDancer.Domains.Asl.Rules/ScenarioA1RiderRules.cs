@@ -134,7 +134,27 @@ public static class ScenarioA1RiderRules
         || (name is not null && (name == "Water" || name.Contains("River", StringComparison.Ordinal) || name.Contains("Canal", StringComparison.Ordinal)
             || name.Contains("Pond", StringComparison.Ordinal)));
 
-    /// <summary>D6.21 (p. 205; ruling R65.17): "A Rider on a turreted AFV must Bail Out if the AFV changes its TCA".</summary>
+    /// <summary>
+    /// D6.21, B13.43 (pp. 205, 128; pass 65, the referee's review): why Riders may not board or set up on a vehicle in its Location, or null: woods, orchard,
+    /// a building, rubble, or a Water Obstacle, unless the vehicle is on a road there, in a stream, or in Bypass outside the obstacle. A Vehicular-Sized
+    /// Entrance is not on the map read, so a building always bars them.
+    /// </summary>
+    public static string? LocationBar(string vehicleId, string? terrainKey, string? terrainName, bool road, bool stream, bool bypass) =>
+        road || stream || bypass || !Prohibited(terrainKey, terrainName) ? null
+            : $"{vehicleId} is in {terrainName ?? terrainKey}, where Riders are not allowed but on a road, in a stream, or in Bypass (D6.21, B13.43)";
+
+    /// <summary>
+    /// D6.24 (p. 205; pass 65, the referee's review): a Bail Out's NMC is taken against the unit's Morale Level, its broken side's when broken. Why a unit
+    /// may not ride as a Rider because the catalog gives it no such Morale Level, or null.
+    /// </summary>
+    public static string? MoraleBar(string unitId, int? morale, int? brokenMorale) =>
+        morale is not null && brokenMorale is not null ? null
+            : $"{unitId}'s definition is incomplete: the catalog gives it no {(morale is null ? "Morale Level" : "broken Morale Level")}, which a Rider's Bail Out NMC is taken against (D6.24)";
+
+    /// <summary>
+    /// D6.21 (p. 205; ruling R65.17): "A Rider on a turreted AFV must Bail Out if the AFV changes its TCA", whether by an MP expenditure, an ordnance shot, a
+    /// Canister shot, its CMG's fire, or a Motion attempt (the referee's review).
+    /// </summary>
     public static bool TurretBailOut(bool turreted, int? tca, int? turnedTo) => turreted && turnedTo is { } turned && turned != tca;
 
     /// <summary>D6.23 (p. 205; ruling R65.17): "AFV Riders must Bail Out if pinned or broken"; an eliminated one does not.</summary>
@@ -143,12 +163,13 @@ public static class ScenarioA1RiderRules
     /// <summary>
     /// D6.24, A10.3, A7.8, A10.31 (pp. 205, 63, 58; ruling R65.17): the result of a Bail Out's NMC against the unit's Morale Level (its broken side's
     /// when broken). A Final DR above it breaks an unbroken unit, and Casualty Reduces a broken one; an Original 12 Casualty Reduces an unbroken unit
-    /// as it breaks and eliminates a broken one; a Final DR equal to it pins.
+    /// as it breaks and eliminates a broken one; a Final DR equal to it pins an unbroken unit, and leaves a broken one as it was (A7.8: "Pinning affects broken units
+    /// only during Interdiction").
     /// </summary>
     public static string Check(int first, int second, int morale, bool broken)
     {
         var dr = first + second;
-        return broken ? dr == 12 ? Eliminated : dr > morale ? Reduced : dr == morale ? Pinned : Passed
+        return broken ? dr == 12 ? Eliminated : dr > morale ? Reduced : Passed
             : dr > morale ? dr == 12 ? Reduced : Broken : dr == morale ? Pinned : Passed;
     }
 

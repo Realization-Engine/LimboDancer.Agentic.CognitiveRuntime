@@ -124,7 +124,8 @@ public sealed partial class GamePlanner
         {
             if (state.Unit(survivor.UnitId) is { Status: InstanceStatus.Active })
             {
-                yield return ("instance-moved", new InstanceMoved(survivor.UnitId, new MapPosition(at)));
+                // D6.9, D5.6 (the referee's review): placed "expending all remaining MF".
+                yield return ("instance-moved", new InstanceMoved(survivor.UnitId, new MapPosition(at)) { Ended = true });
 
                 // D5.6 (pass 65, ruling R65.21): under Hazardous Movement for the rest of the phase.
                 yield return Hazardous(survivor.UnitId);

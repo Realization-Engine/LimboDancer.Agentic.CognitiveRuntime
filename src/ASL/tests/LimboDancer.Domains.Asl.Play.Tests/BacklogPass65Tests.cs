@@ -387,7 +387,8 @@ public sealed class BacklogPass65Tests : IDisposable
         Assert.Equal([true, false], kill.GetProperty("prcSurvival").EnumerateArray().Select(item => item.GetProperty("survived").GetBoolean()));
         Assert.Equal(InstanceStatus.Wrecked, Current.Unit("de-truck")!.Status);
         var survivor = Current.Unit("de-h")!;
-        Assert.Equal((InstanceStatus.Active, Target, (string?)null), (survivor.Status, Current.Location("de-h")!.Location.ToString(), Current.Aboard("de-h")));
+        Assert.Equal((InstanceStatus.Active, Target, (string?)null, true), (survivor.Status, Current.Location("de-h")!.Location.ToString(), Current.Aboard("de-h"),
+            survivor.MovementEnded));
         Assert.NotEqual(InstanceStatus.Active, Current.Unit("de-s")!.Status);
         NoReplayErrors();
 
@@ -1911,5 +1912,85 @@ public sealed class BacklogPass65Tests : IDisposable
         Assert.False(replayed.HasErrors, string.Join("; ", replayed.Diagnostics.Select(item => item.Message)));
         Assert.NotEqual(ConditionState.True, GameState.Condition(replayed.Current!.Unit("de-ht")!, Conditions.Abandoned));
         Assert.DoesNotContain(replayed.Current.Units, unit => unit.Kind == "asl:vehicle-crew");
+    }
+
+    // The fixes of the referee's review of Riders, Carriers, crews, captures, and wrecks (R2).
+
+    [Fact]
+    public async Task ATankShotThatTurnsItsTurretMakesItsRiderBailOut()
+    {
+        // D6.21: the PzKpfw IIIH at B10, its turret to the south-west, fires HE at the Russian squad at B8, turning its turret; its Rider, a 4-6-7, Bails
+        // Out beneath it on the shot's record, its NMC (2, 3) passing, under a Prep Fire counter. The proposal says so first.
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("de-tank", "attacker-tank", Firer, "german", "south-west"),
+            Rider("de-s", "asl:squad", "attacker-squad", "de-tank", "german"), Unit("ru-s", "asl:squad", "defender-squad", Target, "russian"));
+        var before = Revision;
+        var shot = await Shoot("de-tank", null, "he", 6, 5, 2, 3);
+        Committed(shot);
+        Assert.Contains(shot.Reasons, reason => reason.Contains("de-s Bails Out", StringComparison.Ordinal));
+        var bailed = Assert.Single(Since(before).Select(item => item.Payload).OfType<RiderBailedOut>());
+        Assert.Equal(("de-s", ScenarioA1RiderRules.Turret, Firer, ScenarioA1RiderRules.Passed), (bailed.Unit, bailed.Cause, bailed.At.ToString(), bailed.Result));
+        var squad = Current.Unit("de-s")!;
+        Assert.Equal(((string?)null, true, ConditionState.True), (Current.Aboard("de-s"), squad.MovementEnded, GameState.Condition(squad, Conditions.PrepFire)));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task RidersMayNotBoardATankInWoods()
+    {
+        // D6.21, B13.43: the T-34 stands in woods at B8, read so; the Russian squad there may not board it as a Rider, only as a Passenger would, which it
+        // carries none of.
+        changed = ("B8", "Woods");
+        await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("ru-tank", "defender-tank", Target, "russian", "east"),
+            Unit("ru-s", "asl:squad", "defender-squad", Target, "russian"), Unit("de-s", "asl:squad", "attacker-squad", Far, "german"));
+        await Advance();
+        Refused(await Board("ru-tank", true, "ru-s"), "where Riders are not allowed but on a road, in a stream, or in Bypass (D6.21, B13.43)");
+    }
+
+    [Fact]
+    public async Task AShockedOrStunnedTanksCrewMayNotAbandonIt()
+    {
+        // C7.42, D5.34: in the German MPh the Shocked (an Unconfirmed Kill now) PzKpfw IIIH's crew and the Stunned one's may not Abandon them.
+        var shocked = Vehicle("de-tank", "attacker-tank", Target, "german", "east");
+        shocked["conditions"] = new Dictionary<string, bool> { ["asl:shocked"] = true };
+        var stunned = Vehicle("de-tank2", "attacker-tank", Behind, "german", "east");
+        stunned["conditions"] = new Dictionary<string, bool> { ["asl:stunned"] = true };
+        await SetupShocked("german", "russian", "de-tank", shocked, stunned, Unit("ru-1", "asl:squad", "defender-squad", Far, "russian"));
+        await Advance();
+        Assert.False(GamePlanner.MayAbandon(Current, Current.Unit("de-tank")!));
+        Refused(await Abandon("de-tank"), "is Shocked");
+        Refused(await Abandon("de-tank2"), "is Stunned");
+    }
+
+    [Fact]
+    public async Task ACrewThatFailsItsTcTakesTheStunPlusOneWithIt()
+    {
+        // D5.5, D5.34: the mortar's hit immobilizes the T-34 under a "+1" counter, and its crew fails the TC (12, +1): the Russian vehicle crew beneath it
+        // carries the "+1".
+        var tank = Vehicle("ru-tank", "defender-tank", Target, "russian", "south-west");
+        tank["conditions"] = new Dictionary<string, bool> { ["asl:stun-recovery"] = true };
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Unit("g1", "asl:squad", "attacker-squad", Firer, "german"),
+            LightMortar("de-mtr", "attacker-light-mortar", "g1", "german"), tank);
+        Committed(await Lob("de-mtr", 4, 2, 2, 1, 6, 6, 3, 3, 3, 3));
+        var crew = Assert.Single(Current.Units, unit => unit.Kind == "asl:vehicle-crew");
+        Assert.Equal(ConditionState.True, GameState.Condition(crew, Conditions.StunRecovery));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AWoundedSmcTemporaryCrewWoundedAgainIsEliminated()
+    {
+        // D5.343, A17.2: the 6+1 crewing the captured tank is Wounded by a Stun; a second Stun Wounds him again, which eliminates him.
+        await CaptureThePanzer();
+        await NextMph("russian", 2);
+        Committed(await Recrew("ru-l", "de-tank"));
+        static (string, EventPayload) Stun(bool value) => ("conditions-changed", new ConditionsChanged("de-tank",
+            new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Stunned] = value ? ConditionState.True : ConditionState.False }));
+        Inject(Stun(true));
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("ru-l")!, Conditions.Wounded));
+        Inject(Stun(false));
+        Inject(Stun(true));
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("ru-l")!.Status);
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("de-tank")!, Conditions.Abandoned));
+        NoReplayErrors();
     }
 }
