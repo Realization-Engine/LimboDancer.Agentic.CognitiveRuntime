@@ -16,6 +16,7 @@ Repository `E:\Archive\GitHub\dlandi\LimboDancer.MCP`. Read `src/ASL/docs/Prompt
   - A Carrier's inherent crew is a 2-4-7 or 2-4-8 HS (D6.82), and those counters exist. The only Carrier in the catalog is `campaign-british-bren-carrier`, a game-default vehicle on sheet MFG.
   - Rider capacity goes by vehicle class (D6.2, D6.81), and no vehicle carries a class today.
 - **The tools and the gate** are as the standing rules and `code-builders/merge-gate/gate.sh` describe them: local proofs, then a green CI run on the pass's pull request.
+- **Two standing rules govern every test run of this pass,** both in the standing rules' section 2: the Studio is the only test while code is written and fixed, and no unit test runs before the Studio check of the whole pass has passed; and then only the test methods that assert the changed behavior run, never whole classes or projects before the gate. The second was brought up to the user's strict wording of 2026-10-19 to 22 on 2026-10-23.
 
 ## The user's word
 
