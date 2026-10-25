@@ -465,7 +465,8 @@ public sealed class PlayRecords
         {
             var leaderLoss = effect.Checks.Where(item => item.Kind is "LLMC" or "LLTC").ToArray();
             parts.Add(leaderLoss.Length > 0
-                ? $"{effect.UnitId} takes {string.Join(" and ", leaderLoss.Select(item => item.Kind))} after the loss of {string.Join(", ", lost)} to {cause}: "
+                // Pass 70 (ruling R70.11): a leader who broke and was not lost is said to have broken.
+                ? $"{effect.UnitId} takes {string.Join(" and ", leaderLoss.Select(item => item.Kind))} after the {(facts.LostLeaders is { Count: > 0 } ? "loss" : "break")} of {string.Join(", ", lost)} to {cause}: "
                     + string.Join(", ", leaderLoss.Select(FireText.CheckText)) + $", {FireText.EffectText(effect)} (A10.2)"
                 : $"{effect.UnitId}'s {(check.Cause == ScenarioA1MoraleCheck.Interdiction ? "Interdiction NMC" : "NMC")} is an Original 2, which calls for Heat of Battle (A15.1): {FireText.EffectText(effect)}");
         }
@@ -1017,20 +1018,29 @@ public sealed class PlayRecords
                 else if (item.Payload is RoutStepped routed)
                 {
                     // Pass 31d (design D11): the steps of one rout are one sentence, "routs from [Y5] by [Z5] to [AA5] for 3 MF", and name the unit once.
+                    // Pass 70 (ruling R70.12): a Voluntary Rout leader's steps are his own sentence, "routs with ... by Voluntary Rout".
                     var key = (AttemptOf(item.EventId), routed.Unit);
+                    var how = routed.With is { } companion ? $" with {companion} by Voluntary Rout" : string.Empty;
+                    var rule = routed.With is not null ? " (A10.711)" : routed.LowCrawl ? " by Low Crawl (A10.52)" : " (A10.5)";
                     if (routs.TryGetValue(key, out var earlier))
                     {
                         routs[key] = earlier = (earlier.Index, earlier.From, [.. earlier.Steps, routed.To.ToString()], earlier.HalfMf + routed.HalfMf);
                         var total = (earlier.HalfMf / 2.0).ToString("0.#", CultureInfo.InvariantCulture);
                         records[earlier.Index] = (records[earlier.Index].Item1, "rout",
-                            $"{routed.Unit} routs{earlier.From} by {string.Join(" then ", earlier.Steps.Take(earlier.Steps.Count - 1))} to {earlier.Steps[^1]} for {total} MF (A10.5)");
+                            $"{routed.Unit} routs{how}{earlier.From} by {string.Join(" then ", earlier.Steps.Take(earlier.Steps.Count - 1))} to {earlier.Steps[^1]} for {total} MF{(routed.With is not null ? " (A10.711)" : " (A10.5)")}");
                     }
                     else
                     {
                         var mf = (routed.HalfMf / 2.0).ToString("0.#", CultureInfo.InvariantCulture);
                         routs[key] = (records.Count, From(before, routed.Unit), [routed.To.ToString()], routed.HalfMf);
-                        records.Add((item.EventId, "rout", $"{routed.Unit} routs{From(before, routed.Unit)} to {routed.To} for {mf} MF{(routed.LowCrawl ? " by Low Crawl (A10.52)" : " (A10.5)")}"));
+                        records.Add((item.EventId, "rout", $"{routed.Unit} routs{how}{From(before, routed.Unit)} to {routed.To} for {mf} MF{rule}"));
                     }
+                }
+                else if (item.Payload is VoluntaryBreak voluntary)
+                {
+                    // Pass 70 (ruling R70.11): the units a side breaks at the start of the RtPh so as to rout.
+                    records.Add((item.EventId, "voluntary-break", string.Join(", ", voluntary.Units.Select(id => id + In(before, id)))
+                        + (voluntary.Units.Count == 1 ? " breaks" : " break") + " voluntarily at the start of the RtPh, under DM, so as to rout (A10.41, A10.62)"));
                 }
                 else if (item.Payload is DiceRolled { Purpose: ScenarioA1Wounds.SeverityPurpose } severity)
                 {
@@ -1049,8 +1059,14 @@ public sealed class PlayRecords
                 else if (item.Payload is RoutInterdicted interdicted)
                 {
                     var dr = rolls.TryGetValue(interdicted.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
+                    // Pass 70 (ruling R70.12): the Voluntary Rout leader's DRM, and his fate when the NMC fails.
+                    var led = interdicted.Leader is { } guide && roll is not null
+                        ? $" {(interdicted.Drm < 0 ? "-" : "+")} {Math.Abs(interdicted.Drm).ToString(CultureInfo.InvariantCulture)} (leadership, {guide}, A10.711) = {(roll.Values.Sum() + interdicted.Drm).ToString(CultureInfo.InvariantCulture)}"
+                        : string.Empty;
+                    var fate = interdicted.Leader is { } routedWith && interdicted.Result is RoutInterdicted.Reduced or RoutInterdicted.Eliminated
+                        ? $"; {routedWith}, routing with it, is eliminated (A10.711)" : string.Empty;
                     records.Add((item.EventId, "interdiction",
-                        $"Interdiction of {interdicted.Unit} entering {interdicted.At}{(interdicted.Interdictor is { } by ? $" by {by}" : "")}: NMC DR {dr} against broken morale {interdicted.Morale}: {interdicted.Result} (A10.53)"));
+                        $"Interdiction of {interdicted.Unit} entering {interdicted.At}{(interdicted.Interdictor is { } by ? $" by {by}" : "")}: NMC DR {dr}{led} against broken morale {interdicted.Morale}: {interdicted.Result} (A10.53){fate}"));
                 }
                 else if (item.Payload is LineageRecorded { Action: LineageAction.Deployed or LineageAction.Recombined } lineage && lineage.Consumed.All(id => Open(before, id)))
                 {

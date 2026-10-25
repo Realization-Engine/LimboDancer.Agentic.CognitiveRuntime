@@ -2828,6 +2828,14 @@
       "controls": [
         {
           "kind": "button",
+          "label": "Propose: Voluntary Break",
+          "dynamic": false,
+          "id": "propose-voluntary-break",
+          "status": "needed",
+          "strip": "RoutActionPanel voluntary-break"
+        },
+        {
+          "kind": "button",
           "label": "Rout @At(item.Unit) beneath @Say(vehicle)",
           "dynamic": true,
           "status": "needed",

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
@@ -517,5 +518,161 @@ public sealed class BacklogPass70Tests : IDisposable
         NoReplayErrors();
         GameEvent[] stripped = [.. store.Read(Scope)!.Events.Select(item => item.Payload is RiderBailedOut old ? item with { Payload = old with { Drm = null, Elr = null } } : item)];
         Assert.True(Planner().Replay(stripped).HasErrors);
+    }
+
+    // Increment 3c: Voluntary Break and Voluntary Rout (task 70.1, part II; rulings R70.11, R70.12).
+
+    private static readonly string[] PinnedHalfSquad = ["de-h"];
+    private static readonly string[] OtherSquad = ["de-s"];
+    private static readonly string[] GermanLeader = ["de-l"];
+
+    [Fact]
+    public async Task APinnedHalfSquadBreaksVoluntarilyAndRoutsAsInTheExampleOnPage69()
+    {
+        // A10.41, A10.62, A7.83 (pp. 66, 68, 58; ruling R70.11; the pinned HS in P8 of the example on p. 69): at the start of the German RtPh the pinned 2-3-7
+        // in E5, two hexes from the Russian 4-4-7 in E7 (in its LOS and Normal Range of 4), breaks voluntarily: broken, under DM, its pin gone. It must then
+        // rout, and does, to the woods of E4. Once a unit has routed, the 4-6-7 in E6 (ADJACENT to E7) may no longer break voluntarily.
+        woods.Add("E4");
+        await SetupAt(5, "german", Unit("de-h", "asl:half-squad", "attacker-half-squad", "E5", "german", Conditions.Pinned), Squad("de-s", "E6", "german"), Squad("ru-1", "E7", "russian"));
+        Assert.Equal("rtph", Current.Phase);
+        var before = Revision;
+        var result = await Do(GameActions.VoluntaryBreak, NoRoll(), new
+        {
+            unitIds = PinnedHalfSquad,
+        });
+        Committed(result);
+        Assert.Equal(PinnedHalfSquad, Assert.Single(Since(before).Select(item => item.Payload).OfType<VoluntaryBreak>()).Units);
+        Assert.Contains(result.Reasons, reason => reason.Contains("loses its pin by breaking (A7.83)", StringComparison.Ordinal));
+        var half = Current.Unit("de-h")!;
+        Assert.Equal((true, true, false), (Is(half, Conditions.Broken), Is(half, Conditions.DesperationMorale), Is(half, Conditions.Pinned)));
+        Assert.NotNull(Planner().MustRout(Current, half));
+        Committed(await Do(GameActions.Rout, NoRoll(), new
+        {
+            unitId = "de-h",
+            route = new[] { L("E4") },
+        }));
+        Assert.Equal(L("E4"), Current.Location("de-h")!.Location.ToString());
+        var late = await Do(GameActions.VoluntaryBreak, NoRoll(), new
+        {
+            unitIds = OtherSquad,
+        });
+        Assert.Contains(late.Reasons, reason => reason.Contains("a unit has routed this RtPh (A10.41)", StringComparison.Ordinal));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AUnitOutOfTheLosOfEveryKnownEnemyMayNotBreakVoluntarily()
+    {
+        // A10.41: with the LOS from E7 blocked, the HS in E5 is neither in a Known enemy unit's LOS nor ADJACENT to one.
+        blocked.Add(("E5", "E7"));
+        await SetupAt(5, "german", Unit("de-h", "asl:half-squad", "attacker-half-squad", "E5", "german"), Squad("ru-1", "E7", "russian"));
+        var refused = await Do(GameActions.VoluntaryBreak, NoRoll(), new
+        {
+            unitIds = PinnedHalfSquad,
+        });
+        Assert.Contains(refused.Reasons, reason => reason.StartsWith("play.voluntary-break: de-h is neither in the LOS", StringComparison.Ordinal));
+        Assert.False(Is(Current.Unit("de-h")!, Conditions.Broken));
+    }
+
+    [Fact]
+    public async Task ALeadersVoluntaryBreakCallsForALltcOfTheSquadWithHim()
+    {
+        // A10.2 (p. 65: "Should an unbroken leader break"; ruling R70.11): the 9-1 in E5 breaks voluntarily; the 4-6-7 with him, of lower Morale Level, takes
+        // a LLTC with his -1 reversed: 5 + 4 + 1 = 10 against 7, failed, so it is pinned rather than broken.
+        await SetupAt(5, "german", Unit("de-l", "asl:leader", "attacker-leader-9-1", "E5", "german"), Squad("de-s", "E5", "german"), Squad("ru-1", "E7", "russian"));
+        var before = Revision;
+        var result = await Do(GameActions.VoluntaryBreak, Once(5, 4), new
+        {
+            unitIds = GermanLeader,
+        });
+        Committed(result);
+        Assert.Contains(result.Reasons, reason => reason.StartsWith("play.leader-loss: the break of de-l", StringComparison.Ordinal));
+        var check = Assert.Single(ChecksSince(before));
+        Assert.Equal("voluntary-break", check.Cause);
+        var effect = Assert.Single(ResolutionOf(check).Effects);
+        Assert.Equal(("de-s", "LLTC", 10, false), (effect.UnitId, effect.Checks[0].Kind, effect.Checks[0].FinalDr, effect.Checks[0].Passed));
+        Assert.True(Is(Current.Unit("de-l")!, Conditions.Broken));
+        Assert.Equal((true, false), (Is(Current.Unit("de-s")!, Conditions.Pinned), Is(Current.Unit("de-s")!, Conditions.Broken)));
+        NoReplayErrors();
+    }
+
+    /// <summary>A Russian RtPh: the broken 4-4-7 r1 and the 8-1 rl in E5, in the LOS of the German 4-6-7 in E2; E7 is woods, E6 Open Ground in g1's range.</summary>
+    private async Task VoluntaryRoutGame()
+    {
+        woods.Add("E7");
+        await SetupAt(5, "russian", Squad("g1", "E2", "german"), Squad("r1", "E5", "russian", Conditions.Broken), Unit("rl", "asl:leader", "defender-leader-8-1", "E5", "russian"));
+    }
+
+    [Fact]
+    public async Task ALeaderRoutsWithABrokenSquadAndHisDrmPassesItsInterdiction()
+    {
+        // A10.711 (p. 69; ruling R70.12): the 8-1 routs with the broken 4-4-7 by E6 to the woods of E7, taking no NMC himself. Its Interdiction NMC in E6
+        // is 3 + 4 - 1 (his leadership) = 6 against 7: passed, where it would have pinned it at 7 without him. Both steps of both units are recorded, his
+        // naming the unit he routs with; without that name the projector refuses his steps.
+        await VoluntaryRoutGame();
+        var before = Revision;
+        var result = await Do(GameActions.Rout, Once(3, 4), new
+        {
+            unitId = "r1",
+            route = new[] { L("E6"), L("E7") },
+            withLeader = "rl",
+        });
+        Committed(result);
+        Assert.Contains(result.Reasons, reason => reason.StartsWith("play.voluntary-rout: rl routs with r1", StringComparison.Ordinal));
+        var interdicted = Assert.Single(Since(before).Select(item => item.Payload).OfType<RoutInterdicted>());
+        Assert.Equal(("r1", -1, "rl", RoutInterdicted.Passed), (interdicted.Unit, interdicted.Drm, interdicted.Leader, interdicted.Result));
+        RoutStepped[] led = [.. Since(before).Select(item => item.Payload).OfType<RoutStepped>().Where(step => step.Unit == "rl")];
+        Assert.Equal(2, led.Length);
+        Assert.All(led, step => Assert.Equal("r1", step.With));
+        Assert.Equal((L("E7"), L("E7")), (Current.Location("r1")!.Location.ToString(), Current.Location("rl")!.Location.ToString()));
+        Assert.False(Is(Current.Unit("rl")!, Conditions.Broken));
+        NoReplayErrors();
+        GameEvent[] stripped = [.. store.Read(Scope)!.Events.Select(item => item.Payload is RoutStepped { With: not null } step ? item with { Payload = step with { With = null } } : item)];
+        Assert.True(Planner().Replay(stripped).HasErrors);
+    }
+
+    [Fact]
+    public async Task ALeaderRoutingWithASquadThatFailsItsInterdictionIsEliminatedAndTheHalfSquadTakesTheLlmc()
+    {
+        // A10.711, A10.2 (rulings R70.12, R70.3): the NMC is 5 + 4 - 1 = 8 against 7: the 4-4-7 is Reduced to a broken HS and the 8-1 eliminated. His loss
+        // calls on the HS (broken Morale Level 6, lower than his 8) for a LLMC with his -1 reversed: 2 + 2 + 1 = 5, passed; the HS routs on to E7.
+        await VoluntaryRoutGame();
+        var before = Revision;
+        Committed(await Do(GameActions.Rout, Once(5, 4, 2, 2), new
+        {
+            unitId = "r1",
+            route = new[] { L("E6"), L("E7") },
+            withLeader = "rl",
+        }));
+        Assert.Equal(RoutInterdicted.Reduced, Assert.Single(Since(before).Select(item => item.Payload).OfType<RoutInterdicted>()).Result);
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("rl")!.Status);
+        var check = Assert.Single(ChecksSince(before));
+        Assert.Equal("interdiction", check.Cause);
+        var effect = Assert.Single(ResolutionOf(check).Effects);
+        Assert.Equal(("LLMC", 5, true), (effect.Checks[0].Kind, effect.Checks[0].FinalDr, effect.Checks[0].Passed));
+        var half = Current.Unit(effect.UnitId)!;
+        Assert.Equal(("asl:half-squad", InstanceStatus.Active, L("E7")), (half.Kind, half.Status, Current.Location(half.Id)!.Location.ToString()));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ARoutWithNoLeaderIsRecordedAndReplaysAsBeforeThePass()
+    {
+        // A10.53 (ruling R70.6): with no Voluntary Rout leader the 8-1 in the hex gives no DRM: 3 + 4 = 7 against 7 pins the 4-4-7 in E6. Its records
+        // carry neither the leader nor the unit routed with, as every record before the pass.
+        await VoluntaryRoutGame();
+        var before = Revision;
+        Committed(await Do(GameActions.Rout, Once(3, 4), new
+        {
+            unitId = "r1",
+            route = new[] { L("E6"), L("E7") },
+        }));
+        var interdicted = Assert.Single(Since(before).Select(item => item.Payload).OfType<RoutInterdicted>());
+        Assert.Equal((0, (string?)null, RoutInterdicted.Pinned), (interdicted.Drm, interdicted.Leader, interdicted.Result));
+        Assert.Equal((L("E6"), L("E5")), (Current.Location("r1")!.Location.ToString(), Current.Location("rl")!.Location.ToString()));
+        var written = JsonNode.Parse(GameEventWriter.Write(Scope, store.Read(Scope)!))!["events"]!.AsArray();
+        Assert.All(written.Where(item => item!["type"]!.GetValue<string>() is "rout-stepped" or "rout-interdicted"),
+            item => Assert.False(item!["payload"]!.AsObject().ContainsKey("with") || item["payload"]!.AsObject().ContainsKey("leader")));
+        NoReplayErrors();
     }
 }

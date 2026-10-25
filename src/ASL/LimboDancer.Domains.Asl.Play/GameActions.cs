@@ -45,7 +45,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor Rout = Descriptor("asl.game.rout", "Rout",
-        "In the RtPh, rout a broken unit that must or may rout along a route of ADJACENT Locations to the nearest woods or building Location, within six MF (three for a wounded SMC), or by Low Crawl one Location; entering Open Ground in the LOS and Normal Range of an unbroken enemy unit is Interdicted by a NMC (A10.5 to A10.533; ruling R13.3). A broken Passenger names no route and routs beneath its Stopped vehicle with all its MF (beneath; D6.1, pass 65).",
+        "In the RtPh, rout a broken unit that must or may rout along a route of ADJACENT Locations to the nearest woods or building Location, within six MF (three for a wounded SMC), or by Low Crawl one Location; entering Open Ground in the LOS and Normal Range of an unbroken enemy unit is Interdicted by a NMC (A10.5 to A10.533; ruling R13.3). A broken Passenger names no route and routs beneath its Stopped vehicle with all its MF (beneath; D6.1, pass 65). An unbroken, unpinned, non-berserk leader stacked with the unit may rout with it (withLeader): he takes no NMC, adds his leadership DRM to its Interdiction NMC, and is eliminated if it fails (A10.711; pass 70).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -57,7 +57,22 @@ public static class GameActions
             "route": { "type": "array", "items": { "type": "string" } },
             "lowCrawl": { "type": "boolean" },
             "keep": { "type": "array", "items": { "type": "string" } },
-            "beneath": { "type": "boolean" }
+            "beneath": { "type": "boolean" },
+            "withLeader": { "type": "string" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor VoluntaryBreak = Descriptor("asl.game.voluntary-break", "Break units voluntarily",
+        "At the start of the RtPh, before any unit routs, the owner breaks units of his side (even pinned ones) in the LOS and Normal Range of a Known armed unbroken enemy ground unit, or ADJACENT to a Known unbroken one, so that they may rout: each is broken and under DM, loses a pin and its \"?\"; not a unit already broken, a hero, a berserk or Unarmed unit, or one with no broken side; a leader's break calls for a LLTC (A10.41, A10.62, A10.2; pass 70).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitIds"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
           }
         }
         """);
@@ -786,7 +801,7 @@ public static class GameActions
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
             Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp,
-            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle, Scrounge];
+            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle, Scrounge, VoluntaryBreak];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

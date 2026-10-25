@@ -152,6 +152,7 @@ public static class GameProjector
                 OpportunityFireDeclared opportunity => DeclareOpportunityFire(previous, opportunity),
                 RoutStepped routed => Rout(previous, routed),
                 RoutInterdicted interdicted => Interdict(previous, interdicted),
+                VoluntaryBreak voluntary => BreakVoluntarily(previous, voluntary),
                 DeploymentAttempted deployment => AttemptDeployment(previous, deployment),
                 RallyPhaseActionTaken rphAction => TakeRallyPhaseAction(previous, rphAction),
                 RecoveryAttempted recovery => AttemptRecovery(previous, recovery),
@@ -3190,8 +3191,26 @@ public static class GameProjector
         /// </summary>
         private GameState? Rout(GameState state, RoutStepped routed)
         {
-            if (!Rules.ScenarioA1RoutRallyProjection.RoutPhase(state.Phase) || Active(state, routed.Unit) is not UnitInstance unit
-                || !Rules.ScenarioA1RoutRallyProjection.RoutStepAllowed(GameState.Condition(unit, Conditions.Broken) == ConditionState.True, GameState.Condition(unit, Conditions.Melee) == ConditionState.True,
+            if (!Rules.ScenarioA1RoutRallyProjection.RoutPhase(state.Phase) || Active(state, routed.Unit) is not UnitInstance unit)
+            {
+                var refused = Rules.ScenarioA1RoutRallyProjection.RoutStepRefusal();
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
+            // A10.711 (pass 70, ruling R70.12): a Voluntary Rout leader's step follows the broken unit he routs with into the Location it has just entered.
+            if (routed.With is { } companion)
+            {
+                if (!Rules.ScenarioA1VoluntaryRout.LeaderStepAllowed(GameState.Condition(unit, Conditions.Broken) == ConditionState.True,
+                    GameState.Condition(unit, Conditions.Pinned) == ConditionState.True, GameState.Condition(unit, Conditions.Berserk) == ConditionState.True,
+                    GameState.Condition(unit, Conditions.Melee) == ConditionState.True,
+                    Active(state, companion) is UnitInstance broken && GameState.Condition(broken, Conditions.Broken) == ConditionState.True && state.Location(companion)?.Location == routed.To,
+                    routed.HalfMf, routed.LowCrawl, unit.MfSpent, unit.HalfMfSpent, RoutHalfMf(unit), state.RoutedThisPhase.Contains(unit.Id, StringComparer.Ordinal)))
+                {
+                    var refused = Rules.ScenarioA1VoluntaryRout.Refusal();
+                    return Fail<GameState>(refused.Code, refused.Text);
+                }
+            }
+            else if (!Rules.ScenarioA1RoutRallyProjection.RoutStepAllowed(GameState.Condition(unit, Conditions.Broken) == ConditionState.True, GameState.Condition(unit, Conditions.Melee) == ConditionState.True,
                     GameState.Condition(unit, Conditions.Pinned) == ConditionState.True, routed.HalfMf, routed.LowCrawl, unit.MfSpent, unit.HalfMfSpent, RoutHalfMf(unit),
                     state.RoutedThisPhase.Contains(unit.Id, StringComparer.Ordinal)))
             {
@@ -3232,6 +3251,32 @@ public static class GameProjector
                 || !Rules.ScenarioA1RoutRallyProjection.InterdictionAgrees(roll.Values[0], roll.Values[1], interdicted.Drm, interdicted.Morale, interdicted.Result))
             {
                 var refused = Rules.ScenarioA1RoutRallyProjection.InterdictionRefusal();
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
+            // A10.711 (pass 70, ruling R70.12): the Voluntary Rout leader whose leadership is the DRM stands with the unit, unbroken, and routed with it; an
+            // older record names none.
+            if (interdicted.Leader is { } leader && !Rules.ScenarioA1VoluntaryRout.InterdictionLeaderAgrees(Active(state, leader) is UnitInstance,
+                Active(state, leader) is UnitInstance { } named && GameState.Condition(named, Conditions.Broken) == ConditionState.True,
+                state.Location(leader)?.Location == interdicted.At, state.RoutedThisPhase.Contains(leader, StringComparer.Ordinal)))
+            {
+                var refused = Rules.ScenarioA1VoluntaryRout.Refusal();
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
+            return state;
+        }
+
+        /// <summary>
+        /// A Voluntary Break (A10.41; pass 70, ruling R70.11): in the RtPh, before any unit routs, of active units not broken. It changes nothing itself; the
+        /// conditions changed after it break the units.
+        /// </summary>
+        private GameState? BreakVoluntarily(GameState state, VoluntaryBreak voluntary)
+        {
+            if (!Rules.ScenarioA1VoluntaryRout.BreakRecordAllowed(state.Phase, state.RoutedThisPhase.Count > 0,
+                voluntary.Units.Select(id => (Active(state, id) is UnitInstance, Active(state, id) is UnitInstance { } unit && GameState.Condition(unit, Conditions.Broken) == ConditionState.True))))
+            {
+                var refused = Rules.ScenarioA1VoluntaryRout.Refusal();
                 return Fail<GameState>(refused.Code, refused.Text);
             }
 

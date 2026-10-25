@@ -155,4 +155,44 @@ public sealed class PlayPagePass70Tests : IDisposable
                 StringComparison.Ordinal));
         }
     }
+
+    [Fact]
+    public async Task TheRoutPanelOffersAVoluntaryBreakByHexAndALeaderToRoutWith()
+    {
+        // Increment 3c (A10.41, A10.711; rulings R70.11, R70.12): at the start of the German RtPh the Russian's 4-4-7 and 8-1, two hexes from the German
+        // squad, may break voluntarily: the Rout panel lists them under their hex, the leader first. The 4-4-7 breaks; then, choosing the broken 4-4-7 to
+        // rout, the panel offers the unbroken 8-1 stacked with it to rout with it, named after his hex.
+        var leader = Squad("ru-l", "defender-leader-8-1", WideBoards.At(5), "russian");
+        leader["kind"] = "asl:leader";
+        var broken = Squad("ru-b", "defender-squad", WideBoards.At(5), "russian");
+        broken["conditions"] = new Dictionary<string, bool> { ["asl:broken"] = true, ["asl:concealed"] = false, ["asl:hidden"] = false };
+        await Start(Squad("de-1", "attacker-squad", WideBoards.At(3), "german"), Squad("ru-s", "defender-squad", WideBoards.At(5), "russian"), leader, broken);
+        for (var phase = 0; phase < 4; phase++)
+        {
+            await Do(GameActions.AdvancePhase, new
+            {
+            });
+        }
+
+        var page = Open("russian");
+        string[] offered = [.. page.FindAll("input.voluntary-break-unit").Select(box => box.GetAttribute("data-unit")!)];
+        Assert.Equal(VoluntaryBreakOffer, offered);
+        Assert.NotEmpty(page.FindAll("#voluntary-break .unit-group-hex"));
+        Assert.True(page.Find("#propose-voluntary-break").HasAttribute("disabled"));
+        page.Find("input.voluntary-break-unit[data-unit='ru-s']").Change(true);
+        page.Find("#propose-voluntary-break").Click();
+        page.WaitForAssertion(() => Assert.True(page.Find("#play-outcome").TextContent.Contains("Confirm to commit", StringComparison.Ordinal), page.Find("#play-proposal").TextContent));
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.Equal(VoluntaryBreakTaken, Assert.Single(Events.Select(item => item.Payload).OfType<VoluntaryBreak>()).Units);
+        var lines = new PlayRecords(live.History(Game)!, new Perspective("german"), long.MaxValue).Since(0).Select(line => line.Text).ToArray();
+        Assert.Contains(lines, line => line.Contains("breaks voluntarily at the start of the RtPh, under DM, so as to rout (A10.41, A10.62)", StringComparison.Ordinal));
+
+        page.Find("#rout-unit").Change("ru-b");
+        var option = Assert.Single(page.FindAll("#rout-with-leader option").Where(item => item.GetAttribute("value") == "ru-l"));
+        Assert.StartsWith("[", option.TextContent.Trim(), StringComparison.Ordinal);
+    }
+
+    private static readonly string[] VoluntaryBreakOffer = ["ru-l", "ru-s"];
+    private static readonly string[] VoluntaryBreakTaken = ["ru-s"];
 }

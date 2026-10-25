@@ -140,6 +140,9 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         : plan.Events.Select(item => item.Payload).OfType<RoutStepped>().ToArray() is { Length: > 0 } routed
         // A rout (A10.5; ruling R13.3): every unit that stepped is listed as routed this RtPh.
         ? routed.All(step => state.RoutedThisPhase.Contains(step.Unit))
+        : plan.Events.Select(item => item.Payload).OfType<VoluntaryBreak>().FirstOrDefault() is { } voluntary
+        // A Voluntary Break (A10.41; pass 70, ruling R70.11): its units are broken.
+        ? voluntary.Units.All(id => state.Unit(id) is { } unit && GameState.Condition(unit, Conditions.Broken) == ConditionState.True)
         : plan.Events.Select(item => item.Payload).OfType<DeploymentAttempted>().FirstOrDefault() is { } deployment
         // A Deployment attempt (A1.31; ruling R13.4): the squad has spent its RPh action.
         ? state.RallyPhaseActions.Contains(deployment.Squad)

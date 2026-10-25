@@ -722,6 +722,7 @@ public static class GameEventReader
                     : new RoutStepped(routUnit, routTo, routMf.Value, fields.OptionalBoolean(payload, "lowCrawl", path))
                     {
                         Attempted = payload.TryGetProperty("attempted", out _) ? ReadLocation(payload, "attempted", path, fields, diagnostics) : null,
+                        With = fields.OptionalString(payload, "with", path),
                     };
             case "rout-interdicted":
                 var interdictedUnit = fields.RequiredString(payload, "unit", path);
@@ -735,7 +736,11 @@ public static class GameEventReader
                     : new RoutInterdicted(interdictedUnit, interdictedAt, interdictedRoll, interdictedMorale.Value, interdictedDrm.Value, interdictedResult)
                     {
                         Interdictor = fields.OptionalString(payload, "interdictor", path),
+                        Leader = fields.OptionalString(payload, "leader", path),
                     };
+            case "voluntary-break":
+                var breaking = fields.StringList(payload, "units", path);
+                return breaking.Count == 0 ? Missing(diagnostics, "A Voluntary Break names its units.", path) : new VoluntaryBreak(breaking);
             case "deployment-attempted":
                 var deploySquad = fields.RequiredString(payload, "squad", path);
                 var deployRoll = fields.RequiredString(payload, "roll", path);

@@ -70,10 +70,12 @@ public static class ScenarioA1MoraleCheck
     public const string Rally = "rally";
     public const string Panzerfaust = "panzerfaust";
     public const string FailureToRout = "failure-to-rout";
+    public const string VoluntaryBreak = "voluntary-break";
 
     /// <summary>The words of a check's cause, for its record line, such as "Interdiction (A10.53)".</summary>
     public static string CauseText(string cause) => cause switch
     {
+        VoluntaryBreak => "a Voluntary Break (A10.41)",
         Interdiction => "Interdiction (A10.53)",
         MoppingUp => "a Mopping Up's Casualty dr (A12.153)",
         Sniper => "a Sniper attack (A14.3)",

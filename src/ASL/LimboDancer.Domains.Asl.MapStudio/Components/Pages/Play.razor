@@ -515,13 +515,16 @@ else if (state is not null)
                    entry plan through the Movement form. *@
                 @* A10.5 (the user, 2026-10-22): the DEFENDER's routs wait for the ATTACKER's, so his Rout panel is not offered meanwhile; the waiting
                    callout above says why. *@
-                @if (state.Phase == "rtph" && !DefenderRoutsWait && (RoutObligations.Count > 0 || RoutChoices.Count > 0))
+                @* Pass 70 (ruling R70.11): the Voluntary Break is offered to either side at the RtPh's start, before any unit routs, the DEFENDER's too. *@
+                @if (state.Phase == "rtph" && ((!DefenderRoutsWait && (RoutObligations.Count > 0 || RoutChoices.Count > 0)) || VoluntaryBreakRows.Count > 0))
                 {
                     <RoutActionPanel Obligations="@RoutObligations" Units="@RoutChoices" Unit="@routUnit" Route="@routRoute" LowCrawl="@routLowCrawl"
                         Load="@RoutLoadText" Loads="@RoutLoads" Keep="@string.Join(",", RoutKept)" OnKeep="@(keep => routKeep = keep)"
-                        OnUseRoute="@(way => (routUnit, routRoute, routKeep, routLowCrawl) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty, routLowCrawl && !way.Route.Contains(',')))"
-                        OnUnit="@(id => (routUnit, routKeep, routRoute) = (id, string.Empty, id == routUnit ? routRoute : string.Empty))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout"
-                        OnRoutGroup="@ProposeRoutGroup" OnBeneath="@ProposeRoutBeneath" Busy="@busy" />
+                        OnUseRoute="@(way => (routUnit, routRoute, routKeep, routLowCrawl, routLeader) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty, routLowCrawl && !way.Route.Contains(','), way.Unit == routUnit ? routLeader : string.Empty))"
+                        OnUnit="@(id => (routUnit, routKeep, routRoute, routLeader) = (id, string.Empty, id == routUnit ? routRoute : string.Empty, id == routUnit ? routLeader : string.Empty))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout"
+                        OnRoutGroup="@ProposeRoutGroup" OnBeneath="@ProposeRoutBeneath" Busy="@busy"
+                        RoutsOffered="@(!DefenderRoutsWait)" BreakRows="@VoluntaryBreakRows" BreakSelected="@voluntaryBreak" OnBreakToggle="@(toggle => { if (toggle.On) { voluntaryBreak.Add(toggle.Id); } else { voluntaryBreak.Remove(toggle.Id); } })"
+                        OnProposeBreak="@ProposeVoluntaryBreak" Leaders="@RoutLeaders" Leader="@routLeader" OnLeader="@(id => routLeader = id)" />
                 }
                 @* The Play streamlining plan, S7 (ruling R-PS.3): the panel and each of its actions only when the phase allows it to the view; in the RtPh
                    the Rout form chooses what a broken unit keeps. *@
@@ -3919,6 +3922,10 @@ else if (state is not null)
     private string routRoute = string.Empty;
     private bool routLowCrawl;
 
+    // Pass 70 (rulings R70.11, R70.12): the leader who routs with the chosen unit, and the units ticked to break voluntarily.
+    private string routLeader = string.Empty;
+    private readonly HashSet<string> voluntaryBreak = new(StringComparer.Ordinal);
+
     // Pass 31d (design D2): the load a laden unit keeps as it routs, as its SW ids joined by commas; empty for the first of its best loads.
     private string routKeep = string.Empty;
     private string swWeapon = string.Empty;
@@ -6854,8 +6861,9 @@ else if (state is not null)
         rallyUnit = rallyLeader = repairWeapon = string.Empty;
         ordnanceGun = ordnanceTarget = ordnanceVehicle = string.Empty;
         ordnanceTurn = "east";
-        routUnit = routRoute = routKeep = string.Empty;
+        routUnit = routRoute = routKeep = routLeader = string.Empty;
         routLowCrawl = false;
+        voluntaryBreak.Clear();
         swWeapon = swUnit = string.Empty;
         deploySquad = deployLeader = string.Empty;
         deployWeapons.Clear();
@@ -7332,7 +7340,49 @@ else if (state is not null)
     {
         gameId, attemptId = Attempt("rout"), expectedRevision = (long)history!.Events.Count, unitId = routUnit, route = RouteLocations(routRoute), lowCrawl = routLowCrawl,
         keep = RoutLoadNow is null ? null : RoutKept,
+        withLeader = RoutLeaders.Any(item => item.Id == routLeader) ? routLeader : null,
     }));
+
+    /// <summary>Pass 70 (ruling R70.11): the units ticked break voluntarily, at the start of the RtPh.</summary>
+    private Task ProposeVoluntaryBreak() => Propose(GameActions.VoluntaryBreak, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("voluntary-break"), expectedRevision = (long)history!.Events.Count,
+        unitIds = VoluntaryBreakRows.Select(row => row.Id).Where(voluntaryBreak.Contains).ToArray(),
+    }));
+
+    /// <summary>
+    /// Pass 70 (ruling R70.12): the leaders who may rout with the unit chosen to rout, by Voluntary Rout (A10.711), as the planner allows them, each named
+    /// after his hex; none for no unit chosen.
+    /// </summary>
+    private IReadOnlyList<PlayChoice> RoutLeaders => state is not null && RoutChoices.Any(item => item.Id == routUnit) && state.Unit(routUnit) is { } routing
+        ? [.. Live.Planner.VoluntaryRoutLeaders(state, routing).Select(id => new PlayChoice(id, id))]
+        : [];
+
+    // The Memory and Performance Guidelines (page projections by state and viewer): the units that may break voluntarily, read once a state and view.
+    private (GameState? State, string Viewer, IReadOnlyList<UnitSelectionList.Row> Rows) voluntaryBreakCache;
+
+    /// <summary>
+    /// Pass 70 (ruling R70.11): the view's own units that may break voluntarily now (A10.41): in the RtPh before any unit routs, units on foot the planner
+    /// allows, read once a state and view. The adjudicator is offered both sides', one side a proposal.
+    /// </summary>
+    private IReadOnlyList<UnitSelectionList.Row> VoluntaryBreakRows
+    {
+        get
+        {
+            if (ReferenceEquals(voluntaryBreakCache.State, state) && voluntaryBreakCache.Viewer == Viewer.Name)
+            {
+                return voluntaryBreakCache.Rows;
+            }
+
+            IReadOnlyList<UnitSelectionList.Row> rows = state is { Phase: "rtph", RoutedThisPhase.Count: 0 } shown
+                ? [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit)
+                        && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && Live.Planner.VoluntaryBreakBar(shown, unit, unit.Id) is null)
+                    .Select(unit => new UnitSelectionList.Row(unit.Id, unit.Id))]
+                : [];
+            voluntaryBreakCache = (state, Viewer.Name, rows);
+            return rows;
+        }
+    }
 
     // The Memory and Performance Guidelines (page projections by state and viewer): the SW panel's weapons and the actions the phase allows them,
     // read once a state and view, not at each render.
@@ -7975,6 +8025,11 @@ else if (state is not null)
                 routRoute = string.Empty;
                 routKeep = string.Empty;
                 routLowCrawl = false;
+                routLeader = string.Empty;
+            }
+            else if (proposal.Action == GameActions.VoluntaryBreak)
+            {
+                voluntaryBreak.Clear();
             }
             else if (proposal.Action == GameActions.Deploy || proposal.Action == GameActions.Recombine)
             {
@@ -9013,7 +9068,9 @@ else if (state is not null)
                     PhaseChanged phase => $"{DisplayText.Side(phase.PhasingSide)} {Games.PhaseLabel(phase.Phase)}, Turn {phase.Turn}.",
                     MovementStepped step => $"A stack moved into {PlaceOf(step.To)}.",
                     AdvanceMoved advance => $"Units advanced into {PlaceOf(advance.To)}.",
+                    RoutStepped { With: not null } led => $"A leader routed with a broken unit to {PlaceOf(led.To)}.",
                     RoutStepped rout => $"A broken unit routed to {PlaceOf(rout.To)}.",
+                    VoluntaryBreak voluntary => voluntary.Units.Count == 1 ? "A unit broke voluntarily." : "Units broke voluntarily.",
                     FireResolved fire when fire.Resolution.Deserialize<FireResolution>(LiveFire.Json) is { Arithmetic: { } arithmetic }
                         => $"Fire from {PublicLocation(fire.FirerLocation)} at {PublicLocation(fire.TargetLocation)}: {arithmetic.Result}.",
                     FireReported report when report.Arithmetic.Deserialize<FireArithmetic>(LiveFire.Json) is { } reported

@@ -467,4 +467,100 @@ public sealed class ScenarioA1Pass70RulesTests
         var broken = Hit(dice, true)!;
         Assert.Equal((false, FireVehicleEffect.Eliminated), (broken.CrewCheck!.Passed, broken.CrewResult));
     }
+
+    // Increment 3c: Voluntary Break and Voluntary Rout (task 70.1, part II; rulings R70.11, R70.12).
+
+    /// <summary>A row of Locations by index, each ADJACENT to the next, the LOS between two clear at their distance unless the pair is blocked.</summary>
+    private sealed class Line(params (int, int)[] blocked) : IRoutFactReader
+    {
+        public string Name(int location) => "bd01:A" + location + ":0";
+
+        public IEnumerable<int> Neighbors(int location) => [location - 1, location + 1];
+
+        public bool Playable(int location) => true;
+
+        public RoutLocationFacts? Location(int location) => new("open-ground", false);
+
+        public RoutLosFacts? Los(int fromLocation, int toLocation) =>
+            new(!blocked.Contains((fromLocation, toLocation)) && !blocked.Contains((toLocation, fromLocation)), 0, Math.Abs(fromLocation - toLocation));
+
+        public int? Distance(int one, int two) => Math.Abs(one - two);
+
+        public bool Adjacent(int one, int two) => Math.Abs(one - two) == 1;
+
+        public (InfantryEntry? Entry, string? Reason) Entry(int fromLocation, int toLocation) => (null, "not read");
+    }
+
+    private static RoutEnemyFacts Enemy(int at, int normalRange = 4, bool broken = false, bool armed = true, string id = "ru-1") =>
+        new(id, at, armed, broken, false, !armed, false, false, false, normalRange);
+
+    private static VoluntaryBreakFacts Breaker(bool broken = false, bool hero = false, bool berserk = false, bool unarmed = false, bool brokenSide = true, bool melee = false,
+        bool aboard = false, bool personnel = true) =>
+        new("de-h", true, true, personnel, broken, hero, berserk, unarmed, false, melee, aboard, brokenSide);
+
+    private static VoluntaryRoutLeaderFacts Guide(bool broken = false, bool pinned = false, bool berserk = false, bool stacked = true, bool leader = true, bool routed = false) =>
+        new("de-l", true, true, leader, broken, pinned, berserk, false, false, false, stacked, routed);
+
+    [Fact]
+    public void AUnitMayBreakInTheLosAndNormalRangeOfAKnownArmedUnbrokenEnemyOrAdjacentToOne()
+    {
+        // A10.41 (p. 66; ruling R70.11): the unit in 0 sees the 4-4-7 in 3, within its Normal Range of 4; not beyond it, not through a blocked LOS, and not
+        // a broken one. ADJACENT, any unbroken enemy unit allows it, whatever the LOS; an Abandoned vehicle does not.
+        var line = new Line();
+        Assert.Equal("ru-1", ScenarioA1VoluntaryRout.Threat(line, [Enemy(3)], 0));
+        Assert.Null(ScenarioA1VoluntaryRout.Threat(line, [Enemy(3, normalRange: 2)], 0));
+        Assert.Null(ScenarioA1VoluntaryRout.Threat(new Line((3, 0)), [Enemy(3)], 0));
+        Assert.Null(ScenarioA1VoluntaryRout.Threat(line, [Enemy(3, broken: true)], 0));
+        Assert.Equal("ru-1", ScenarioA1VoluntaryRout.Threat(new Line((1, 0)), [Enemy(1, normalRange: 0)], 0));
+        Assert.Null(ScenarioA1VoluntaryRout.Threat(line, [Enemy(1, normalRange: 0, armed: false)], 0));
+        Assert.Null(ScenarioA1VoluntaryRout.BreakUnitBar(Breaker(), () => "ru-1"));
+        Assert.StartsWith("play.voluntary-break: de-h is neither in the LOS", ScenarioA1VoluntaryRout.BreakUnitBar(Breaker(), () => null), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AVoluntaryBreakIsRefusedWhereBreakingWouldReduceTheUnitOrItNeverBreaksAndAfterARoutStep()
+    {
+        // A10.3, A10.41 (ruling R70.11): a broken unit would be Reduced and one with no broken side eliminated; heroes, berserk and Unarmed units never
+        // break; the enemy is not read for any of them. The break is made at the RtPh's start, before any rout step.
+        static string Never() => throw new InvalidOperationException("the enemy was read.");
+        Assert.Contains("already broken", ScenarioA1VoluntaryRout.BreakUnitBar(Breaker(broken: true), Never), StringComparison.Ordinal);
+        Assert.Contains("a hero", ScenarioA1VoluntaryRout.BreakUnitBar(Breaker(hero: true), Never), StringComparison.Ordinal);
+        Assert.Contains("berserk", ScenarioA1VoluntaryRout.BreakUnitBar(Breaker(berserk: true), Never), StringComparison.Ordinal);
+        Assert.Contains("Unarmed", ScenarioA1VoluntaryRout.BreakUnitBar(Breaker(unarmed: true), Never), StringComparison.Ordinal);
+        Assert.Contains("no broken side", ScenarioA1VoluntaryRout.BreakUnitBar(Breaker(brokenSide: false), Never), StringComparison.Ordinal);
+        Assert.Contains("in Melee", ScenarioA1VoluntaryRout.BreakUnitBar(Breaker(melee: true), Never), StringComparison.Ordinal);
+        Assert.Contains("only Personnel", ScenarioA1VoluntaryRout.BreakUnitBar(Breaker(personnel: false), Never), StringComparison.Ordinal);
+        Assert.NotNull(ScenarioA1VoluntaryRout.BreakPhaseBar("rph", false));
+        Assert.Contains("a unit has routed", ScenarioA1VoluntaryRout.BreakPhaseBar("rtph", true), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1VoluntaryRout.BreakPhaseBar("rtph", false));
+        Assert.True(ScenarioA1VoluntaryRout.BreakRecordAllowed("rtph", false, [(true, false)]));
+        Assert.False(ScenarioA1VoluntaryRout.BreakRecordAllowed("rtph", true, [(true, false)]));
+        Assert.False(ScenarioA1VoluntaryRout.BreakRecordAllowed("rtph", false, [(true, true)]));
+    }
+
+    [Fact]
+    public void AVoluntaryRoutLeaderAddsHisDrmToTheNmcAndIsEliminatedWhenItFails()
+    {
+        // A10.711 (p. 69; ruling R70.12): an unbroken, unpinned, non-berserk leader stacked with the broken unit routs with it; his -1 turns its NMC DR of 7
+        // against 7 from a pin into a pass; he is eliminated when it Reduces or eliminates the unit, not when it pins it.
+        Assert.Null(ScenarioA1VoluntaryRout.LeaderBar("de-s", Guide()));
+        Assert.Contains("pinned", ScenarioA1VoluntaryRout.LeaderBar("de-s", Guide(pinned: true)), StringComparison.Ordinal);
+        Assert.Contains("berserk", ScenarioA1VoluntaryRout.LeaderBar("de-s", Guide(berserk: true)), StringComparison.Ordinal);
+        Assert.Contains("is broken", ScenarioA1VoluntaryRout.LeaderBar("de-s", Guide(broken: true)), StringComparison.Ordinal);
+        Assert.Contains("not stacked", ScenarioA1VoluntaryRout.LeaderBar("de-s", Guide(stacked: false)), StringComparison.Ordinal);
+        Assert.Contains("not a leader", ScenarioA1VoluntaryRout.LeaderBar("de-s", Guide(leader: false)), StringComparison.Ordinal);
+        Assert.Contains("has routed", ScenarioA1VoluntaryRout.LeaderBar("de-s", Guide(routed: true)), StringComparison.Ordinal);
+        Assert.Equal((-1, 0), (ScenarioA1VoluntaryRout.LeaderDrm(-1, false), ScenarioA1VoluntaryRout.LeaderDrm(-1, true)));
+        Assert.True(ScenarioA1RoutRallyProjection.InterdictionAgrees(3, 4, -1, 7, ScenarioA1ResultTables.InterdictionPassed));
+        Assert.True(ScenarioA1RoutRallyProjection.InterdictionAgrees(3, 4, 0, 7, ScenarioA1ResultTables.InterdictionPinned));
+        Assert.True(ScenarioA1VoluntaryRout.LeaderEliminated(InterdictionOutcome.Reduced));
+        Assert.True(ScenarioA1VoluntaryRout.LeaderEliminated(InterdictionOutcome.Eliminated));
+        Assert.False(ScenarioA1VoluntaryRout.LeaderEliminated(InterdictionOutcome.Pinned));
+        Assert.False(ScenarioA1VoluntaryRout.LeaderEliminated(InterdictionOutcome.Passed));
+        Assert.True(ScenarioA1VoluntaryRout.LeaderStepAllowed(false, false, false, false, true, 2, false, 0, false, 12, false));
+        Assert.False(ScenarioA1VoluntaryRout.LeaderStepAllowed(false, false, false, false, false, 2, false, 0, false, 12, false));
+        Assert.False(ScenarioA1VoluntaryRout.LeaderStepAllowed(true, false, false, false, true, 2, false, 0, false, 12, false));
+        Assert.True(ScenarioA1VoluntaryRout.InterdictionLeaderAgrees(true, false, true, true));
+        Assert.False(ScenarioA1VoluntaryRout.InterdictionLeaderAgrees(true, false, false, true));
+    }
 }

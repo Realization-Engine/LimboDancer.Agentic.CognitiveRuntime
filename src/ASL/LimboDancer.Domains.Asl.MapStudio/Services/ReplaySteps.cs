@@ -364,6 +364,13 @@ public static class ReplaySteps
             return ("advance", side, $"{A(side, advanced.Units.Count == 1 ? "unit advances" : "stack advances")} into {Place(before, advanced.To)}{end}", false);
         }
 
+        // Pass 70 (ruling R70.11): units broken voluntarily at the start of the RtPh, so as to rout.
+        if (First<VoluntaryBreak>(payloads) is { } voluntary)
+        {
+            var side = SideOf(Head(voluntary.Units));
+            return ("rout", side, voluntary.Units.Count == 1 ? $"{A(side, "unit")} breaks voluntarily{end}" : $"{DisplayText.Side(side)} units break voluntarily{end}", false);
+        }
+
         // The table player, pass 35: a rout repulsed after a step it made is titled by the repulse, not by its first step.
         if ((payloads.OfType<RoutStepped>().FirstOrDefault(step => step.Attempted is not null) ?? First<RoutStepped>(payloads)) is { } routed)
         {
@@ -670,6 +677,9 @@ public static class ReplaySteps
                 AmbushRolled ambush => ambush.Location,
                 OrdnanceFired ordnance => ordnance.Target,
                 RallyAttempted rally => before.Location(rally.Unit)?.Location,
+
+                // Pass 70 (ruling R70.11): a Voluntary Break is seen where its first unit stands.
+                VoluntaryBreak voluntary => voluntary.Units.Count > 0 ? before.Location(voluntary.Units[0])?.Location : null,
 
                 // Pass 70 (ruling R70.4): a morale check made outside an attack is seen in its Location, within the step of what caused it.
                 MoraleCheckResolved check => BoardLocation.TryParse(check.Location, out var checkedAt) ? checkedAt : null,

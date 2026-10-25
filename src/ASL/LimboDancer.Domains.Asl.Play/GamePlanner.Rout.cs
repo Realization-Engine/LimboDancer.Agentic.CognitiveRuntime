@@ -475,6 +475,8 @@ public sealed partial class GamePlanner
         }
 
         var lowCrawl = arguments.TryGetProperty("lowCrawl", out var crawl) && crawl.ValueKind == JsonValueKind.True;
+        // A10.711 (pass 70, ruling R70.12): the leader who routs with the unit by Voluntary Rout, if any.
+        string? withLeader = Text(arguments, "withLeader", out var leaderText) ? leaderText : null;
         var route = new List<BoardLocation>();
         foreach (var text in Strings(arguments, "route"))
         {
@@ -535,7 +537,8 @@ public sealed partial class GamePlanner
         // D6.1, D5.311 (pass 65, ruling R65.11): a broken Passenger routs beneath its vehicle with all its MF, or names no route at all.
         if (PassengerRout(state, unit) is { } aboard)
         {
-            return Flag(arguments, "beneath") ? PlanRoutBeneath(scope, existing, attemptId, expected, label, state, unit, start, aboard, route.Count, lowCrawl)
+            return withLeader is not null ? Refused(scope, label, expected, ScenarioA1VoluntaryRout.BeneathLeaderText(unit.Id, aboard.Vehicle))
+                : Flag(arguments, "beneath") ? PlanRoutBeneath(scope, existing, attemptId, expected, label, state, unit, start, aboard, route.Count, lowCrawl)
                 : Refused(scope, label, expected, ScenarioA1RoutCalculator.PassengerRouteText(unit.Id, aboard.Vehicle));
         }
 
@@ -543,6 +546,14 @@ public sealed partial class GamePlanner
         {
             return Refused(scope, label, expected, ScenarioA1RoutCalculator.RoutBeneathBar(unit.Id, null, ScenarioA1RoutCalculator.StaysAboard, 0, false)!);
         }
+
+        // A10.711 (pass 70, ruling R70.12): a non-berserk, non-pinned, unbroken leader stacked with the unit before it routs may rout with it.
+        if (withLeader is not null && ScenarioA1VoluntaryRout.LeaderBar(unit.Id, VoluntaryRoutLeaderFactsOf(state, unit, start, withLeader)) is { } leaderBar)
+        {
+            return Refused(scope, label, expected, leaderBar);
+        }
+
+        var leader = withLeader is null ? null : state.Unit(withLeader);
 
         // E1.54 (backlog pass 16, ruling R16.6): at night a broken unit always Low Crawls, and surrenders only in CC.
         if (ScenarioA1RoutCalculator.NightRoutBar(unit.Id, state.Night, lowCrawl) is { } nightBar)
@@ -592,7 +603,8 @@ public sealed partial class GamePlanner
         }
 
         // A10.51: each step, its cost, and the Known armed enemy units that have had the unit in their LOS; Rules walks the route over the scan (pass 32.f).
-        var limit = RoutHalfMf(unit);
+        // A10.711: the leader "must remain with the broken unit throughout the RtPh", so the rout keeps within his MF too.
+        var limit = leader is null ? RoutHalfMf(unit) : Math.Min(RoutHalfMf(unit), RoutHalfMf(leader));
         var encircled = Encircled(state, unit);
         var scan = new RoutScan(this, state);
         var enemies = scan.Enemies(unit.Side);
@@ -621,10 +633,19 @@ public sealed partial class GamePlanner
             var here = start;
             var standing = state;
 
+            // A10.711 (ruling R70.12): the Voluntary Rout leader, until the unit fails an Interdiction NMC.
+            var companion = leader?.Id;
+
             // A10.4, A4.431: what it leaves is unpossessed in the Location it routs from, written as a drop is.
             foreach (var item in left)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "equipment-transferred", new EquipmentTransferred(item.Weapon, null, new MapPosition(start)), package, null));
+            }
+
+            // A12.14, A12.141 (ruling R70.17): a concealed leader who routs with the unit in the LOS of a Good Order enemy ground unit within 16 hexes loses his "?".
+            if (leader is not null)
+            {
+                AddActionConcealmentLoss(scope, attemptId, expected, events, state, leader);
             }
 
             for (var index = 0; index < route.Count; index++)
@@ -670,12 +691,25 @@ public sealed partial class GamePlanner
 
                         events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, ScenarioA1RoutCalculator.RoutRepulseShown(repulse.Pool, dice)));
                         events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-stepped", new RoutStepped(routing.Id, here, costs[index], lowCrawl) { Attempted = to }, null, null));
+                        if (companion is not null)
+                        {
+                            events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-stepped",
+                                new RoutStepped(companion, here, costs[index], lowCrawl) { Attempted = to, With = routing.Id }, null, null));
+                        }
+
                         AddAdjacentDm(scope, attemptId, expected, Replay([.. existing, .. events]).Current!, events);
                         break;
                     }
                 }
 
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-stepped", new RoutStepped(routing.Id, to, costs[index], lowCrawl), null, null));
+
+                // A10.711 (ruling R70.12): the Voluntary Rout leader routs with it, step by step, exempt from one unit at a time (A10.5's EXC).
+                if (companion is not null)
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-stepped", new RoutStepped(companion, to, costs[index], lowCrawl) { With = routing.Id }, null, null));
+                }
+
                 var after = Replay([.. existing, .. events]).Current!;
                 var cameFrom = here;
                 here = to;
@@ -694,11 +728,22 @@ public sealed partial class GamePlanner
                 var current = after.Unit(routing.Id)!;
                 var morale = ScenarioA1RoutCalculator.InterdictionMorale(BrokenMorale(current));
                 var original = drawn.Values[0] + drawn.Values[1];
-                var result = RoutInterdicted.For(original, original, morale);
+                // A10.711 (ruling R70.12): the Voluntary Rout leader adds his leadership DRM to the NMC; a leader merely in the hex gives none (R70.6).
+                var guide = companion is null ? null : after.Unit(companion);
+                var drm = guide is null ? 0 : ScenarioA1VoluntaryRout.LeaderDrm(DefinitionOf(guide)?.Leadership, Is(guide, Conditions.Wounded));
+
+                // A12.14: a leader still concealed has moved into Open Ground in the LOS of the unbroken Interdictor; he is named with his DRM, so he loses his "?".
+                if (guide is not null && (Is(guide, Conditions.Concealed) || Is(guide, Conditions.Hidden)))
+                {
+                    events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, [guide.Id]));
+                }
+
+                var result = RoutInterdicted.For(original, original + drm, morale);
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                     new DiceRolled(rollId, "interdiction", 2, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
                 var record = EventId(attemptId, events.Count + 1);
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-interdicted", new RoutInterdicted(routing.Id, to, rollId, morale, 0, result) { Interdictor = interdictor }, package, null));
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-interdicted",
+                    new RoutInterdicted(routing.Id, to, rollId, morale, drm, result) { Interdictor = interdictor, Leader = companion }, package, null));
                 var outcome = ScenarioA1RoutCalculator.InterdictionEffect(result);
 
                 // A10.53, A15.1 (pass 70, rulings R70.4, R70.5): the NMC is "subject to ... everything that normally entails", so its Original 2 calls for a
@@ -711,6 +756,8 @@ public sealed partial class GamePlanner
                         new FireRolls(null, null, new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal) { [routing.Id] = drawn.Values }, null, null))
                     {
                         NoQuarter = checking.NoQuarter.Contains(routing.Side!, StringComparer.Ordinal) ? true : null,
+                        // A10.711 (ruling R70.12): the Voluntary Rout leader leads the check; he takes none himself.
+                        Others = companion is not null && checking.Unit(companion) is { } leading ? [MoraleTarget(checking, leading, to)] : null,
                     };
                     var heat = AddMoraleCheck(scope, attemptId, expected, actor, events, draw, checking, facts,
                         new Dictionary<string, string>(StringComparer.Ordinal) { ["checks:" + routing.Id] = rollId }, routing.Side!, to, ScenarioA1MoraleCheck.Interdiction,
@@ -749,10 +796,25 @@ public sealed partial class GamePlanner
                 var (type, payload) = outcome == InterdictionOutcome.Reduced ? CasualtyReduction(current, attemptId, severity) : ("instance-eliminated", new InstanceEliminated(routing.Id));
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [record]));
 
-                // A10.2 (pass 70, ruling R70.3): a leader the Interdiction eliminates, a mortal wound included, causes a LLMC of the units in the Location.
+                // A10.711 (ruling R70.12): the Voluntary Rout leader "is eliminated if the broken unit he is stacked on top of fails an Interdiction MC".
+                var lost = new List<(string Id, bool Eliminated)>();
                 if (payload is InstanceEliminated)
                 {
-                    AddLeaderLossChecks(scope, attemptId, expected, actor, events, draw, after, Replay([.. existing, .. events]).Current!, [(routing.Id, true)],
+                    lost.Add((routing.Id, true));
+                }
+
+                if (companion is not null && ScenarioA1VoluntaryRout.LeaderEliminated(outcome))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(companion), package, null, [record]));
+                    lost.Add((companion, true));
+                    companion = null;
+                }
+
+                // A10.2 (pass 70, rulings R70.3, R70.12): a leader the Interdiction eliminates, a mortal wound and the Voluntary Rout leader included, causes a
+                // LLMC of the units in the Location; a HS the Casualty Reduction left takes it.
+                if (lost.Count > 0)
+                {
+                    AddLeaderLossChecks(scope, attemptId, expected, actor, events, draw, after, Replay([.. existing, .. events]).Current!, lost,
                         ScenarioA1MoraleCheck.Interdiction, [record]);
                     rolls = events.Count(item => item.Payload is DiceRolled);
                 }
@@ -763,7 +825,15 @@ public sealed partial class GamePlanner
                     break;
                 }
 
-                routing = Replay([.. existing, .. events]).Current!.Unit(payload is LineageRecorded { Produced: [{ } half] } ? half.Id : routing.Id)!;
+                var reduced = Replay([.. existing, .. events]).Current!;
+                routing = reduced.Unit(payload is LineageRecorded { Produced: [{ } half] } ? half.Id : routing.Id)!;
+
+                // Ruling R70.5: a LLMC that eliminated, rallied, or made berserk the unit left, or made it surrender, ends its rout here.
+                if (routing.Status != InstanceStatus.Active || !Is(routing, Conditions.Broken) || Is(routing, Conditions.Berserk)
+                    || reduced.PendingSurrenders.Any(item => item.Unit == routing.Id))
+                {
+                    break;
+                }
             }
 
             return events;
@@ -773,8 +843,10 @@ public sealed partial class GamePlanner
         (string Step, string By)[] threatened = lowCrawl ? [] : [.. route.Select((step, index) => (Step: step, From: index == 0 ? start : route[index - 1]))
             .DistinctBy(item => item.Step).Select(item => (Step: item.Step.ToString(), By: Interdictor(state, unit.Side, item.Step, item.From)))
             .Where(item => item.By is not null).Select(item => (item.Step, item.By!))];
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], ScenarioA1RoutCalculator.RoutSummary(unit.Id, lowCrawl,
-            [.. route.Select((step, index) => (step.ToString(), costs[index]))], threatened, [.. left.Select(item => (item.Weapon, item.Pp))], kept, start.ToString()))
+        string[] summary = ScenarioA1RoutCalculator.RoutSummary(unit.Id, lowCrawl,
+            [.. route.Select((step, index) => (step.ToString(), costs[index]))], threatened, [.. left.Select(item => (item.Weapon, item.Pp))], kept, start.ToString());
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
+            leader is null ? summary : [.. summary, ScenarioA1VoluntaryRout.LeaderRoutText(leader.Id, unit.Id), .. ConcealmentLossNote(ActionLosesConcealment(state, [leader]))])
         {
             Roll = new PlannedRoll("rout", Build),
             FirstEventId = EventId(attemptId, 1),

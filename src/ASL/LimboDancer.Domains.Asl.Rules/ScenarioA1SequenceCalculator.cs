@@ -52,6 +52,9 @@ public static class ScenarioA1SequenceCalculator
         ["asl.game.fire-starshell"] = ["unitId"],
         ["asl.game.place-hidden"] = ["unitIds"],
         ["asl.game.mop-up"] = ["unitIds"],
+
+        // A10.41 (pass 70, ruling R70.11): the owner breaks his own units.
+        ["asl.game.voluntary-break"] = ["unitIds"],
     };
 
     /// <summary>The side that ends the present phase: either side in the RPh, RtPh, and CCPh, where both act; the DEFENDER in the DFPh; else the ATTACKER.</summary>

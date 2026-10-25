@@ -9,11 +9,22 @@
     is one Location using all its MF and is never Interdicted (A10.52, A10.53). As the RtPh ends a broken unit ADJACENT to its enemy, or one that did
     not rout from the open, is eliminated, or surrenders to an ADJACENT Good Order enemy (A20.21).
 </RuleHelp>
+@* Pass 70 (ruling R70.11): at the start of the RtPh, before any unit routs, the side's units a Known enemy unit allows to break voluntarily, by hex,
+   leaders first; the planner decides which (A10.41). *@
+@if (BreakRows.Count > 0)
+{
+    <div class="toolbar" id="voluntary-break">
+        <UnitSelectionList Rows="@BreakRows" Selected="@BreakSelected" CssClass="voluntary-break-unit" Legend="Voluntary Break" OnToggle="@OnBreakToggle" />
+        <button id="propose-voluntary-break" disabled="@(BreakSelected.Count == 0 || Busy)"
+                title="Before any unit routs, a unit in the LOS and Normal Range of a Known armed unbroken enemy unit, or ADJACENT to one, may break so as to rout this RtPh; it is under DM, and a leader's break calls for a LLTC (A10.41, A10.62, A10.2)."
+                @onclick="@(() => OnProposeBreak.InvokeAsync())">Propose: Voluntary Break</button>
+    </div>
+}
+@if (RoutsOffered)
+{
 @* The user, 2026-10-21: the broken units by hex, each hex first offered the routes open to all its units, each unit's own routes behind a
    checkbox; every unit named after its hex. Each rout is still its own, one at a time (A10.5). *@
-@{
     var hexGroups = UnitGrouping.Groups(Obligations, item => item.Unit, PlaceOfUnit);
-}
 <ul id="rout-obligations">
     @foreach (var group in hexGroups)
     {
@@ -83,6 +94,17 @@
             <UnitOptions Units="@Units" Text="@At" />
         </select>
     </label>
+    @* Pass 70 (ruling R70.12): an unbroken leader stacked with the unit may rout with it (A10.711); only the leaders the planner allows are offered. *@
+    @if (Leaders.Count > 0)
+    {
+        <label title="He routs with the unit, takes no Interdiction NMC himself, adds his leadership DRM to its NMC, and is eliminated if it fails (A10.711).">
+            Leader routing with it
+            <select id="rout-with-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">none</option>
+                <UnitOptions Units="@Leaders" Text="@At" />
+            </select>
+        </label>
+    }
     @* Pass 31d (design D2; A10.4): what a laden unit leaves and keeps, said only for a unit that carries more than its IPC. *@
     @if (Load is { Length: > 0 })
     {
@@ -108,6 +130,7 @@
         <span id="propose-rout-ready" class="toolbar-note">Choose the unit that routs and give its route.</span>
     }
 </div>
+}
 </ActionSection>
 
 @code {
@@ -202,4 +225,31 @@
 
     [Parameter]
     public EventCallback OnPropose { get; set; }
+
+    /// <summary>Whether the rout's lists and form are offered: not to the DEFENDER while the ATTACKER's routs come first (A10.5).</summary>
+    [Parameter]
+    public bool RoutsOffered { get; set; } = true;
+
+    /// <summary>The units of the view's side that may break voluntarily now (A10.41; pass 70, ruling R70.11).</summary>
+    [Parameter]
+    public IReadOnlyList<UnitSelectionList.Row> BreakRows { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlySet<string> BreakSelected { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnBreakToggle { get; set; }
+
+    [Parameter]
+    public EventCallback OnProposeBreak { get; set; }
+
+    /// <summary>The leaders who may rout with the chosen unit by Voluntary Rout (A10.711; pass 70, ruling R70.12).</summary>
+    [Parameter]
+    public IReadOnlyList<PlayChoice> Leaders { get; set; } = [];
+
+    [Parameter]
+    public string Leader { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnLeader { get; set; }
 }

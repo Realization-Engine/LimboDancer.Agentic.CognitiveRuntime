@@ -618,6 +618,15 @@ public sealed record RoutStepped(string Unit, BoardLocation To, int HalfMf, bool
     {
         get; init;
     }
+
+    /// <summary>
+    /// The broken unit an unbroken leader routs with by Voluntary Rout (A10.711; pass 70, ruling R70.12), whose step just before is his; null for a
+    /// broken unit's own step, as every older record has it.
+    /// </summary>
+    public string? With
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -637,9 +646,24 @@ public sealed record RoutInterdicted(string Unit, BoardLocation At, string Roll,
         get; init;
     }
 
+    /// <summary>
+    /// The leader who routs with the unit by Voluntary Rout and whose leadership is the <see cref="Drm"/> (A10.711; pass 70, ruling R70.12); null with no
+    /// such leader, as every older record has it.
+    /// </summary>
+    public string? Leader
+    {
+        get; init;
+    }
+
     /// <summary>The result of an Interdiction NMC (A10.53, A10.31): an Original 12 eliminates, a Final DR above the Morale Level reduces, equal pins.</summary>
     public static string For(int original, int final, int morale) => Rules.ScenarioA1ResultTables.RoutInterdiction(original, final, morale);
 }
+
+/// <summary>
+/// <c>voluntary-break</c>: units that break voluntarily at the start of the RtPh so as to rout (A10.41; pass 70, ruling R70.11). The events after it
+/// break them, under DM (A10.62), and clear a pin (A7.83); a leader's break may call for a LLTC (A10.2).
+/// </summary>
+public sealed record VoluntaryBreak(IReadOnlyList<string> Units) : EventPayload;
 
 /// <summary>
 /// <c>deployment-attempted</c>: a squad's attempt to Deploy in its RPh (A1.31; ruling R13.4): the directing leader (none for Guards), the NTC roll,

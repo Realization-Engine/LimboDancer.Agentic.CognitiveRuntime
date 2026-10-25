@@ -870,6 +870,11 @@ public static class GameEventWriter
                     writer.WriteString("attempted", repulsedFrom.ToString());
                 }
 
+                if (routed.With is { } routedWith)
+                {
+                    writer.WriteString("with", routedWith);
+                }
+
                 break;
             case RoutInterdicted interdicted:
                 writer.WriteString("unit", interdicted.Unit);
@@ -882,6 +887,15 @@ public static class GameEventWriter
                 {
                     writer.WriteString("interdictor", interdictor);
                 }
+
+                if (interdicted.Leader is { } interdictedLeader)
+                {
+                    writer.WriteString("leader", interdictedLeader);
+                }
+
+                break;
+            case VoluntaryBreak voluntary:
+                Strings(writer, "units", voluntary.Units);
                 break;
             case DeploymentAttempted deployment:
                 writer.WriteString("squad", deployment.Squad);

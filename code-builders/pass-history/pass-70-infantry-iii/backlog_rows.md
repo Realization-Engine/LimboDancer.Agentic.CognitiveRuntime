@@ -20,4 +20,6 @@ Each row: what is left, where it came from, the rule and page, the pass it goes 
 - Battle Hardening refused (A15.3) in a morale check outside fire | 3b | A15.3, p. 83 | Backlog | Always taken: no choice resume for the member's checks.
 - A CE Passenger leader in an unmoved halftrack leading the Location's units on foot, in Fire | 3b | D6.651, p. 206 | Backlog | Built in the member; in Fire the PRC attack resolves after the Location's checks, so he leads only his fellow Passengers.
 - A LLMC on a side with no declared ELR | 3b | A10.2, p. 65 | Backlog | None is made through the member (its facts need the side's ELR).
+- A Passenger's or Rider's Voluntary Break, and a Voluntary Rout with a broken Passenger routing beneath its vehicle | 3c | A10.41, A10.711, D6.1 | Backlog | Refused.
+- The Voluntary Rout leader's own portage is not checked (his SW move with him) | 3c | A10.711, p. 69 | Backlog | Not checked.
 - The Records tab's list leaves out the LLMC line (the Latest line has it) | 3b, Studio check | A10.2 | For the reviews' fixes | As stated.
