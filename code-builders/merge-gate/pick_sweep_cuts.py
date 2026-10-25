@@ -33,4 +33,7 @@ for phase, cuts in sorted(by_phase.items()):
     chosen += [cuts[index][0] for index in picks]
     if "--table" in sys.argv:
         print(f"{phase}: {len(cuts)} cuts; taken " + ", ".join(f"r{cuts[i][0]} (turn {cuts[i][1]}, {cuts[i][2]})" for i in picks), file=sys.stderr)
-print(",".join(["=" + game] + [f"{game}-r{revision}" for revision in sorted(chosen)]))
+# A cut at the game's last event is the game itself, which is swept whole: leave it out rather than sweep the same state twice (2026-10-25).
+with open(S + game + ".game.json", encoding="utf-8") as f:
+    whole = len(json.load(f)["events"])
+print(",".join(["=" + game] + [f"{game}-r{revision}" for revision in sorted(set(chosen)) if revision != whole]))

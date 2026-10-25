@@ -44,7 +44,7 @@ The following meanings apply throughout these guidelines. Code names appear in b
 | Encirclement answer | A derived determination of whether a unit meets the applicable encirclement conditions. The performance changes retain this answer without changing those game rules. |
 | Concealed, uninspected, and Dummy | Distinctions affecting what a counter represents or reveals. Concealed units hide information; uninspected is a display/document flag for information not inspected; a Dummy represents apparent presence rather than an actual unit. Cache keys must preserve the distinctions used by the renderer. |
 | Attachment and facing | An attachment is an item associated with another counter in its representation. Facing specifies orientation, such as the direction of a vehicle or turret. Both can change the drawing. |
-| Reference workloads | `bd01` identifies the board used in rendering measurements. `cd-guards-5` is the recorded Guards Counterattack game used for Play and Replay measurements. `a3-gambit-rout` is the Gambit test record used to exercise routs on placed boards. |
+| Reference workloads | `bd01` identifies the board used in rendering measurements. Since 2026-10-25 the reference game is `dl-tractor-works-02`, the user's most recent full game, cut at a revision with `perf_cut.py` when a step must be repeated (`p65-perf-tw` is its cut at revision 1316). `cd-guards-5` and `a3-gambit-rout`, the earlier workloads, were retired with the other games on 2026-10-25 and are kept in `asl-retired-2026-10-25` beside the repository. |
 
 ### Reuse and concurrency
 
@@ -278,7 +278,7 @@ Before a performance change, state the workload, baseline commit, expected benef
 
 Use the [Play Step measurement instructions](<../../../../code-builders/diagnostics/play-step/README.md>) and existing tools. Record build configuration, data and board versions, view, revision range, pacing, instrumentation, and machine load.
 
-1. Compare identical games and revisions in before and after Studios built the same way. Use `cd-guards-5` for single-board play and `a3-gambit-rout` when placed-map reads change. Add a representative scenario for newly introduced units or rules; these fixtures alone do not establish larger-game scalability.
+1. Compare identical games and revisions in before and after Studios built the same way. Use `dl-tractor-works-02`, or a cut of it, for play; restore `a3-gambit-rout` from the retired games when placed-map reads change. Add a representative scenario for newly introduced units or rules; these fixtures alone do not establish larger-game scalability.
 2. Use server-paced Replay or the Play follower, with the measured tab in front. Hidden-pane frame throttling and browser timers made earlier comparisons invalid.
 3. Keep builds, tests, and avoidable heavy work out of timed runs. Record competing load and stalls; repeat a comparable pair rather than calling a small difference a gain.
 4. Split Play by phase. Report Rout and ordinary phases separately, with counts, medians, tail timings, and stalls. Short runs diagnose; whole-game runs confirm overall results.
