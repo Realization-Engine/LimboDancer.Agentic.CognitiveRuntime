@@ -451,8 +451,12 @@ public sealed partial class GamePlanner
             }
         }
 
+        // Pass 70 (A12.14, p. 78; ruling R70.21): the movers whose "?" the viewing side may decline to take, every Loss seer within 16 being concealed.
+        // Offered by day on a step that needs no roll; elsewhere the loss is forced, as before (ruling R31d.2's deviation, kept for the rest).
+        string[] optioned = [];
+
         // A12.14, A12.15, E1.31 (rulings R10.10, R16.4): the movers that lose their "?" are decided by Rules; the LOS scan and the illumination are read when it asks.
-        void Unmask(List<GameEvent> events)
+        void Unmask(List<GameEvent> events, bool mayOffer)
         {
             // The Play streamlining plan, S3: whether the movers lose their "?" reads the enemy's LOS, which a plotted route may not know.
             if (plotting > 0)
@@ -460,8 +464,16 @@ public sealed partial class GamePlanner
                 return;
             }
 
-            foreach (var unit in ScenarioA1MovementCalculator.Unmasked([.. movers.Select(mover => new MoverConcealmentFacts(mover.Id, mover.Kind == UnitKinds.Dummy, Is(mover, Conditions.Concealed)))],
-                forcedBack, assault, state.Night, terrain, () => EnemyGoodOrderInLosWithin16(state, state.PhasingSide!, landed), () => Illuminated(state, landed)))
+            var unmasked = ScenarioA1MovementCalculator.Unmasked([.. movers.Select(mover => new MoverConcealmentFacts(mover.Id, mover.Kind == UnitKinds.Dummy, Is(mover, Conditions.Concealed)))],
+                forcedBack, assault, state.Night, terrain, () => EnemyGoodOrderInLosWithin16(state, state.PhasingSide!, landed), () => Illuminated(state, landed));
+            if (mayOffer && !state.Night && unmasked.Count > 0 && ScenarioA1Sight.ViewerMayDecline(forcedBack, NearestGoodOrderEnemyInLos(state, state.PhasingSide!, landed),
+                () => NearestUnconcealedLossSeer(state, state.PhasingSide!, landed)))
+            {
+                optioned = [.. unmasked.Select(unit => unit.Id)];
+                return;
+            }
+
+            foreach (var unit in unmasked)
             {
                 events.Add(unit.Dummy
                     ? Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), package, null)
@@ -469,7 +481,7 @@ public sealed partial class GamePlanner
             }
         }
 
-        List<GameEvent> Stepped(IReadOnlyList<int>? dice, Func<RollRequest, RollResult>? draw)
+        List<GameEvent> Stepped(IReadOnlyList<int>? dice, Func<RollRequest, RollResult>? draw, bool mayOffer = false)
         {
             var events = new List<GameEvent>(prefix);
             if (needsSelection && draw is not null)
@@ -491,19 +503,31 @@ public sealed partial class GamePlanner
                 Reveal(events, dice);
             }
 
-            Unmask(events);
+            Unmask(events, mayOffer);
             return events;
         }
 
         if (gate.ReadyWithoutRoll)
         {
-            var events = Stepped(null, null);
+            var events = Stepped(null, null, mayOffer: true);
 
             // A12.2 Case H (ruling R6.7): the step may bring a concealed vehicle out of Concealment Terrain into the movers' LOS.
             if (!offMap && plotting == 0 && Replay([.. existing, .. events]).Current is { } stepped && VehicleConcealmentLost(stepped, null, false) is { Count: > 0 } lost)
             {
                 events = [.. events, .. RevealEvents(scope, attemptId, expected, events.Count + 1, lost)];
                 summary += $"; {string.Join(", ", lost)} loses its \"?\" (A12.2)";
+            }
+
+            // A12.34 (pass 70, ruling R70.22): the step may bring a hidden Emplaced Gun out of Concealment Terrain into a Good Order enemy's LOS.
+            if (!offMap && plotting == 0)
+            {
+                AddEmplacedHipLoss(scope, attemptId, expected, existing, events);
+            }
+
+            // A12.14 (ruling R70.21): the viewing side's option waits on its answer; the proposal says nothing of it to the moving side.
+            if (optioned.Length > 0)
+            {
+                events.Add(LossChoiceEvent(scope, attemptId, events.Count + 1, expected, state, state.PhasingSide!, landed, optioned));
             }
 
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary, .. dummyWarning]) { HalfMf = halfMf + dashHalfMf, HalfMfLeft = halfMfLeft };
@@ -547,6 +571,12 @@ public sealed partial class GamePlanner
             foreach (var (lane, entry) in lanes)
             {
                 AddFireLaneAttack(scope, attemptId, expected, actor, existing, events, lane, entry, landed, step, draw);
+            }
+
+            // A12.34 (pass 70, ruling R70.22): as on a step that needs no roll.
+            if (!offMap)
+            {
+                AddEmplacedHipLoss(scope, attemptId, expected, existing, events);
             }
 
             return events;

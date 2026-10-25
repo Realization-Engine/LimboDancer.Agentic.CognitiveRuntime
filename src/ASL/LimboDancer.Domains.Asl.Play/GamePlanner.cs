@@ -369,13 +369,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 ?? PlanStarshell(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.detonate-dc" => PlanDetonateDc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.place-hidden" => PlanPlaceHidden(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.remove-concealment" => PlanRemoveConcealment(scope, arguments, existing, attemptId, expected, label),
             "asl.game.mop-up" => PlanMopUp(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
 
         // Ruling R5.8: a pending choice is answered before anything else happens in the game.
         if (ScenarioA1SequenceCalculator.ChoicePendingBar(plan.Status == GamePlanStatus.Ready, action.Id.Value,
-            () => Replay(existing).Current is { Choice: { } choice } ? (choice.Side, DescribeChoice(choice)) : null) is { } choicePending)
+            () => Replay(existing).Current is { Choice: { } choice } ? (choice.Side, RefusalWordsOf(choice)) : null) is { } choicePending)
         {
             return Refused(scope, label, expected, choicePending);
         }
@@ -983,6 +984,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
                 reasons.Add(ScenarioA1SequenceCalculator.RecallAbandonedText(vehicle.Id, Is(vehicle, Conditions.Bogged) && !Is(vehicle, Conditions.Immobilized)));
             }
+
+            // A12.34 (pass 70, ruling R70.22): at each phase, a hidden Emplaced Gun out of Concealment Terrain that a Good Order enemy ground unit has a LOS
+            // to is placed beneath "?" ("e.g., at the start of the first RPh").
+            AddEmplacedHipLoss(scope, attemptId, expected, existing, events);
         }
     }
 

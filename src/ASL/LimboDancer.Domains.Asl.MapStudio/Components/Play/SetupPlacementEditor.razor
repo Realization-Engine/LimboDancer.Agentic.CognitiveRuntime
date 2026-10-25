@@ -53,7 +53,7 @@
         <LocationField Id="place-bore" Label="Bore Sighted" Value="@Draft.Bore" Title="C6.41, C6.42: a MMG or HMG the Scenario Defender possesses may Bore Sight one Location outside its hex, in its LOS, within its Normal Range and 16 hexes."
             OnChange="@(at => Change(Draft with { Bore = at }))" />
     }
-    <label><input id="place-concealed" type="checkbox" checked="@Draft.Concealed" @onchange="@(args => Change(Draft with { Concealed = args.Value is true }))" /> concealed</label>
+    <label title="On the map, an OB-designated concealment counter in Concealment Terrain (A12.12); off board, any stack may take one before it first enters (A12.12; ruling R70.35)."><input id="place-concealed" type="checkbox" checked="@Draft.Concealed" @onchange="@(args => Change(Draft with { Concealed = args.Value is true }))" /> concealed</label>
     <label title="HIP by an SSR for Infantry (A12.3); an Emplaced Gun and its crew in Concealment Terrain with no SSR (A12.34; ruling R26.5)."><input id="place-hidden" type="checkbox" checked="@Draft.Hidden" @onchange="@(args => Change(Draft with { Hidden = args.Value is true }))" /> hidden</label>
     @if (ArmedAfv)
     {

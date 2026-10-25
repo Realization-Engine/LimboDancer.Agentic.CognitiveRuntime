@@ -897,6 +897,9 @@ public static class GameEventWriter
             case VoluntaryBreak voluntary:
                 Strings(writer, "units", voluntary.Units);
                 break;
+            case ConcealmentVerified verified:
+                Strings(writer, "units", verified.Units);
+                break;
             case DeploymentAttempted deployment:
                 writer.WriteString("squad", deployment.Squad);
                 if (deployment.Leader is { } deployLeader)

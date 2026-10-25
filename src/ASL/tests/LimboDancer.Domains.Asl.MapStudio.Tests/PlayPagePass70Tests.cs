@@ -195,4 +195,58 @@ public sealed class PlayPagePass70Tests : IDisposable
 
     private static readonly string[] VoluntaryBreakOffer = ["ru-l", "ru-s"];
     private static readonly string[] VoluntaryBreakTaken = ["ru-s"];
+    private static readonly string[] ConcealedMover = ["de-m"];
+
+    private static Dictionary<string, object> Concealed(Dictionary<string, object> unit)
+    {
+        unit["conditions"] = new Dictionary<string, bool> { ["asl:broken"] = false, ["asl:concealed"] = true, ["asl:hidden"] = false };
+        return unit;
+    }
+
+    [Fact]
+    public async Task TheOwnerGivesUpAQuestionMarkFromThePlayPage()
+    {
+        // Increment 3e (A12.14; ruling R70.20): in the German PFPh the German view offers his concealed 4-6-7 under its hex to give up its "?"; the
+        // Russian view offers nothing of his. Proposed and confirmed, the squad is concealed no more.
+        await Start(Concealed(Squad("de-c", "attacker-squad", WideBoards.At(3), "german")), Concealed(Squad("de-k", "attacker-squad", WideBoards.At(2), "german")),
+            Squad("ru-1", "defender-squad", WideBoards.At(5), "russian"));
+        Assert.Empty(Open("russian").FindAll("#play-remove-concealment"));
+        var page = Open("german");
+        Assert.Equal(2, page.FindAll("#play-remove-concealment .unit-group-hex").Count);
+        Assert.True(page.Find("#propose-remove-concealment").HasAttribute("disabled"));
+        page.Find("input.remove-concealment-unit[data-unit='de-c']").Change(true);
+        page.Find("#propose-remove-concealment").Click();
+        page.WaitForAssertion(() => Assert.True(page.Find("#play-outcome").TextContent.Contains("Confirm to commit", StringComparison.Ordinal), page.Find("#play-proposal").TextContent));
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.NotEqual(ConditionState.True, GameState.Condition(live.History(Game)!.Current!.Unit("de-c")!, Conditions.Concealed));
+    }
+
+    [Fact]
+    public async Task TheViewersOptionIsShownToItsSideAloneAndTheMoverSeesTheWindow()
+    {
+        // Increment 3e (A12.14; ruling R70.21): in the German MPh the concealed 4-6-7 moves in Open Ground without Assault Movement, in the LOS of the
+        // concealed Russian 4-4-7 alone. The Russian view shows the choice with its two answers; the German view shows no choice, only the DEFENDER's
+        // window on its stack, and the German records say nothing of it.
+        await Start(Concealed(Squad("de-m", "attacker-squad", WideBoards.At(3), "german")), Concealed(Squad("ru-v", "defender-squad", WideBoards.At(6), "russian")));
+        await Do(GameActions.AdvancePhase, new
+        {
+        });
+        await Do(GameActions.Move, new
+        {
+            unitIds = ConcealedMover,
+            to = WideBoards.At(4),
+        });
+        Assert.Equal(ChoicePending.ConcealmentLoss, live.History(Game)!.Current!.Choice!.Kind);
+
+        var russian = Open("russian");
+        Assert.Equal(2, russian.FindAll("#play-choice button.choose").Count);
+        Assert.Contains("[", russian.Find("#play-choice").TextContent, StringComparison.Ordinal);
+
+        var german = Open("german");
+        Assert.Empty(german.FindAll("#play-choice"));
+        Assert.Empty(german.FindAll("#play-answer-first"));
+        var lines = new PlayRecords(live.History(Game)!, new Perspective("german"), long.MaxValue).Since(0).Select(line => line.Text).ToArray();
+        Assert.DoesNotContain(lines, line => line.Contains("A12.14; ruling R70.21", StringComparison.Ordinal));
+    }
 }

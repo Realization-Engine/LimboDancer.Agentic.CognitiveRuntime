@@ -1776,3 +1776,4 @@ One session under the user's word of 2026-10-25 ("Start Pass 70 ... Run it witho
 | 3b, 70.1 (I): one Morale Check member for every check outside fire | 13:04 | 14:20 | 1:16 | | Agent 13:04 to about 14:16; the Studio check and the commit (65ebcec8) |
 | 3c, 70.1 (II): Voluntary Break and Voluntary Rout | 14:20 | 14:56 | 0:36 | | Agent 14:20 to about 14:53; Studio check; estimate 2:00 |
 | 3d, 70.2: rout from a building, Interdiction by vehicles and Guns, Fanaticism by SSR | 14:57 | 15:27 | 0:30 | | Agent 14:57 to about 15:24; Studio check; estimate 2:25 |
+| 3e, 70.4 and 70.5: the owner's choices on a ?, concealment for crews and vehicles (R70.35, R70.36 added) | 15:28 | 16:19 | 0:51 | | Agent 15:28 to about 16:08, then R70.35 16:09 to 16:13; Studio check; estimate 5:30 |

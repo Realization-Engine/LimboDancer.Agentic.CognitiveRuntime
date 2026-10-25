@@ -741,6 +741,9 @@ public static class GameEventReader
             case "voluntary-break":
                 var breaking = fields.StringList(payload, "units", path);
                 return breaking.Count == 0 ? Missing(diagnostics, "A Voluntary Break names its units.", path) : new VoluntaryBreak(breaking);
+            case "concealment-verified":
+                var verifying = fields.StringList(payload, "units", path);
+                return verifying.Count == 0 ? Missing(diagnostics, "A momentary forfeiture of \"?\" names its units.", path) : new ConcealmentVerified(verifying);
             case "deployment-attempted":
                 var deploySquad = fields.RequiredString(payload, "squad", path);
                 var deployRoll = fields.RequiredString(payload, "roll", path);

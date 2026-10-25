@@ -153,6 +153,7 @@ public static class GameProjector
                 RoutStepped routed => Rout(previous, routed),
                 RoutInterdicted interdicted => Interdict(previous, interdicted),
                 VoluntaryBreak voluntary => BreakVoluntarily(previous, voluntary),
+                ConcealmentVerified verified => VerifyConcealment(previous, verified),
                 DeploymentAttempted deployment => AttemptDeployment(previous, deployment),
                 RallyPhaseActionTaken rphAction => TakeRallyPhaseAction(previous, rphAction),
                 RecoveryAttempted recovery => AttemptRecovery(previous, recovery),
@@ -1423,7 +1424,7 @@ public static class GameProjector
         {
             if (Rules.ScenarioA1SequenceProjection.PendChoiceRefusal(state.Choice is not null, state.Side(pending.Side) is not null, pending.Options.Count,
                 pending.Kind is ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc
-                    or ChoicePending.OverrunEvade or ChoicePending.GunDuel,
+                    or ChoicePending.OverrunEvade or ChoicePending.GunDuel or ChoicePending.ConcealmentLoss,
                 state.ChoicesMade.ContainsKey(pending.Key)) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);
@@ -1454,8 +1455,9 @@ public static class GameProjector
             {
                 Choice = null
             };
-            // A12.41 (ruling R11.12): the reveal or the PAATC follows the answer at once, as its own events.
-            if (pending.Kind == ChoicePending.Paatc)
+            // A12.41 (ruling R11.12): the reveal or the PAATC follows the answer at once, as its own events; so does a forced "?" loss (A12.14; pass 70,
+            // ruling R70.21).
+            if (pending.Kind is ChoicePending.Paatc or ChoicePending.ConcealmentLoss)
             {
                 return next;
             }
@@ -3261,6 +3263,22 @@ public static class GameProjector
                 state.Location(leader)?.Location == interdicted.At, state.RoutedThisPhase.Contains(leader, StringComparer.Ordinal)))
             {
                 var refused = Rules.ScenarioA1VoluntaryRout.Refusal();
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
+            return state;
+        }
+
+        /// <summary>
+        /// A viewer's momentary forfeiture of "?" (A12.14; pass 70, ruling R70.21): active units of one side, each concealed, which stay concealed. It changes
+        /// nothing in the state.
+        /// </summary>
+        private GameState? VerifyConcealment(GameState state, ConcealmentVerified verified)
+        {
+            if (!Rules.ScenarioA1ConcealmentChoices.VerifiedAllowed(verified.Units.Select(id => Active(state, id) is UnitInstance unit
+                ? (unit.Side, GameState.Condition(unit, Conditions.Concealed) == ConditionState.True) : ((string?)null, false))))
+            {
+                var refused = Rules.ScenarioA1ConcealmentChoices.VerifiedRefusal();
                 return Fail<GameState>(refused.Code, refused.Text);
             }
 

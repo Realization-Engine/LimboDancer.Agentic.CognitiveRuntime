@@ -337,16 +337,16 @@ public sealed class BacklogPass23Tests : IDisposable
         Assert.DoesNotContain(ViewAs(German).Events, item => item.Payload is InstanceCreated { Instance.Id: var created } && created == hidden);
     }
 
-    // R23.5 (referee, pass 23): HIP is built for Infantry, and since pass 26 for an Emplaced Gun with its crew (ruling R26.5); a vehicle, or a Gun not
-    // Emplaced with its hidden crew, set up hidden is refused, and a HIP token names a side of the card.
+    // R23.5 (referee, pass 23): HIP is built for Infantry, and since pass 26 for an Emplaced Gun with its crew (ruling R26.5); a Gun not Emplaced with
+    // its hidden crew, set up hidden is refused, and a HIP token names a side of the card. Pass 70 (A12.3; ruling R70.22): a vehicle uses the SSR's HIP too.
     [Fact]
     public void OnlyInfantrySetsUpHidden()
     {
         var card = cards.Read(GuardsWithHip("hip:russian:9"), Catalog)!.Card!;
         var at = BoardLocation.Parse("bd01:N4:0");
         SetupCounter Counter(string id, string kind, bool equipment = false) => new(id, "russian", "russian-1", null, kind, at, false, true, false, equipment, true);
-        Assert.Contains(ScenarioSetup.Check(card, [Counter("v1", "asl:vehicle")], _ => "stone-building", _ => true, _ => null, 10).Reasons,
-            reason => reason.Contains("play.setup-hidden", StringComparison.Ordinal) && reason.Contains("hidden vehicles are not built", StringComparison.Ordinal));
+        Assert.DoesNotContain(ScenarioSetup.Check(card, [Counter("v1", "asl:vehicle")], _ => "stone-building", _ => true, _ => null, 10).Reasons,
+            reason => reason.Contains("play.setup-hidden", StringComparison.Ordinal));
         Assert.Contains(ScenarioSetup.Check(card, [Counter("gun1", "asl:gun", equipment: true)], _ => "stone-building", _ => true, _ => null, 10).Reasons,
             reason => reason.Contains("only as an Emplaced Gun", StringComparison.Ordinal));
 

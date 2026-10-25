@@ -25,3 +25,12 @@ Each row: what is left, where it came from, the rule and page, the pass it goes 
 - A vehicle's or Gun's Interdiction: a mortar's minimum range, a restricted AAMG, a VCA-only CMG, Rear MGs | 3d | A10.532, p. 67 | Backlog | Not read; the longest weapon's range in its arc is taken.
 - Fanaticism by SSR for units created after setup (reinforcements, Deployment) | 3d | A10.8, p. 69 | Backlog | Only units placed through setup are made Fanatic.
 - The Records tab's list leaves out the LLMC line (the Latest line has it) | 3b, Studio check | A10.2 | For the reviews' fixes | As stated.
+
+## From 3e
+
+- The viewer's option not to force a "?" loss in the advance, in fire (a concealed firer), at night, and on a move step that rolls (Residual FP, a Fire Lane, a Random Selection) | 3e (R70.21) | A12.14, p. 78 | Backlog | The loss is forced, as R31d.2's deviation.
+- The voluntary removal's Sniper exception (between a Sniper's Random Location DR and its relocation) | 3e (R70.20) | A12.14, A14.2 | With the Sniper's state | Not built: the removal is allowed then.
+- Dummies among OB "?" reinforcements | 3e (R70.22) | A12.11, p. 77 | Backlog (no card gives an entering group "?") | Refused off board.
+- A crew manning a Gun not Emplaced, and a non-Emplaced Gun's Case H loss | 3e | A12.2, the Concealment Table | Backlog | Gains no "?".
+- HIP for a vehicle: how much of an SSR's HIP allowance it takes | 3e (a reading) | A12.3, p. 80 | For the user's ruling | One squad-equivalent.
+- An Emplaced Gun's HIP out of Concealment Terrain: the setup does not check that no enemy ground unit has a LOS to it | 3e | A12.34, p. 80 | Backlog | Placed beneath "?" at the next phase or step that finds a Good Order enemy in LOS.

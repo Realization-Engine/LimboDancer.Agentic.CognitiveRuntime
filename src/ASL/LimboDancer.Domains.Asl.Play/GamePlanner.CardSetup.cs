@@ -94,7 +94,7 @@ public sealed partial class GamePlanner
 
         return ScenarioSetup.Check(card, counters, at => ReadLocation(state, at) is { } read ? TerrainKey(read) : null,
             key => ScenarioA1SetupCalculator.InfantryCouldEnter(key, terrain => InfantryEntryHalfMf(state, terrain) is not null), ScenarioA1FireReference.HalfSquadOf, state.ScenarioMonth,
-            state.Scenario?.Balance, at => OtherHalf(state, at));
+            state.Scenario?.Balance, at => OtherHalf(state, at), at => RoadConcealmentHex(state, at));
     }
 
     /// <summary>

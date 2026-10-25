@@ -495,6 +495,13 @@ public static class ReplaySteps
             return ("other", null, $"A choice is answered{end}", false);
         }
 
+        // Pass 70 (A12.14; ruling R70.21): a concealed enemy unit shows itself for a moment to force a "?" loss; the record is the moving side's alone.
+        if (First<ConcealmentVerified>(payloads) is { } verified)
+        {
+            var side = SideOf(Head(verified.Units));
+            return ("other", side, $"{A(side, "concealed unit")} shows itself for a moment to force the loss of a \"?\"{end}", false);
+        }
+
         if (First<SniperAttacked>(payloads) is { } sniper)
         {
             return ("other", SideOf(sniper.Sniper), "A Sniper attacks" + (sniper.Target is { } target ? $" in {Place(before, target)}" : string.Empty) + end, false);
@@ -680,6 +687,9 @@ public static class ReplaySteps
 
                 // Pass 70 (ruling R70.11): a Voluntary Break is seen where its first unit stands.
                 VoluntaryBreak voluntary => voluntary.Units.Count > 0 ? before.Location(voluntary.Units[0])?.Location : null,
+
+                // Pass 70 (ruling R70.21): a momentary forfeiture of "?" is seen where its first unit stands (shown to the moving side only).
+                ConcealmentVerified verified => verified.Units.Count > 0 ? before.Location(verified.Units[0])?.Location : null,
 
                 // Pass 70 (ruling R70.4): a morale check made outside an attack is seen in its Location, within the step of what caused it.
                 MoraleCheckResolved check => BoardLocation.TryParse(check.Location, out var checkedAt) ? checkedAt : null,

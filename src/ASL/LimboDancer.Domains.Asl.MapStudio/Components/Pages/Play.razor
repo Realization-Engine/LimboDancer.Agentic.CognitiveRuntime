@@ -459,7 +459,7 @@ else if (state is not null)
                     </div>
                 }
                 @* Table player, pass 28c: what play waits on comes first. *@
-                @if (state.Choice is { } choice)
+                @if (state.Choice is { } choice && ChoiceShown(choice))
                 {
                     <PendingChoicePanel Key="@choice.Key" Side="@choice.Side" Description="@GamePlanner.DescribeChoice(choice)" MayAnswer="@MayAnswer(choice.Side)"
                         Options="@ChoiceOptions(choice)" OnChoose="@(option => ProposeChoose(choice.Key, option))" />
@@ -509,6 +509,18 @@ else if (state is not null)
                         {
                             <button class="place-hidden" data-unit="@unit.Id" @onclick="@(() => ProposePlaceHidden(unit.Id))">Propose: place @Words(unit.Id) in @PlaceOf(state.Location(unit.Id)!.Location) beneath "?"</button>
                         }
+                    </div>
+                }
+                @* Pass 70 (A12.14; ruling R70.20): the owner gives up a "?" at any time of either side's Player Turn; his own units under "?", hidden, or
+                   Dummies, by hex. *@
+                @if (!SetupOpen && RemoveConcealmentRows.Count > 0)
+                {
+                    <div class="toolbar" id="play-remove-concealment">
+                        <UnitSelectionList Rows="@RemoveConcealmentRows" Selected="@removeConcealment" CssClass="remove-concealment-unit" Legend="Give up &quot;?&quot;"
+                            OnToggle="@(toggle => { if (toggle.On) { removeConcealment.Add(toggle.Id); } else { removeConcealment.Remove(toggle.Id); } })" />
+                        <button id="propose-remove-concealment" disabled="@(removeConcealment.Count == 0 || busy)"
+                                title="The owner may remove any concealment at any time of his or his opponent's Player Turn: a concealed unit is revealed, a hidden one placed and revealed in full, a Dummy removed (A12.14, A12.31, A12.11)."
+                                @onclick="ProposeRemoveConcealment">Propose: give up "?"</button>
                     </div>
                 }
                 @* The Play streamlining plan, S7 (ruling R-PS.1): no separate building-entry form; a one-unit step into a building goes to the same
@@ -3926,6 +3938,9 @@ else if (state is not null)
     private string routLeader = string.Empty;
     private readonly HashSet<string> voluntaryBreak = new(StringComparer.Ordinal);
 
+    // Pass 70 (ruling R70.20): the units ticked to give up their "?".
+    private readonly HashSet<string> removeConcealment = new(StringComparer.Ordinal);
+
     // Pass 31d (design D2): the load a laden unit keeps as it routs, as its SW ids joined by commas; empty for the first of its best loads.
     private string routKeep = string.Empty;
     private string swWeapon = string.Empty;
@@ -4865,6 +4880,9 @@ else if (state is not null)
         // C2.2401 (pass 55): the moving vehicle's MA fires first, or the declared shot resolves.
         (ChoicePending.GunDuel, ChoicePending.Duel) => "fire first (Gun Duel)",
         (ChoicePending.GunDuel, _) => "decline: the declared shot resolves",
+        // A12.14 (pass 70, ruling R70.21): force the loss, showing a concealed unit for a moment, or let the stack keep its "?".
+        (ChoicePending.ConcealmentLoss, ChoicePending.Take) => "force the loss of its \"?\"",
+        (ChoicePending.ConcealmentLoss, _) => "decline: it keeps its \"?\"",
         (_, ChoicePending.Take) => "take it",
         (_, ChoicePending.Decline) => "decline it",
         (ChoicePending.Acquisition, _) => $"keep it on {option}",
@@ -6864,6 +6882,7 @@ else if (state is not null)
         routUnit = routRoute = routKeep = routLeader = string.Empty;
         routLowCrawl = false;
         voluntaryBreak.Clear();
+        removeConcealment.Clear();
         swWeapon = swUnit = string.Empty;
         deploySquad = deployLeader = string.Empty;
         deployWeapons.Clear();
@@ -7350,6 +7369,40 @@ else if (state is not null)
         unitIds = VoluntaryBreakRows.Select(row => row.Id).Where(voluntaryBreak.Contains).ToArray(),
     }));
 
+    /// <summary>Pass 70 (ruling R70.20): the units ticked give up their "?" (A12.14).</summary>
+    private Task ProposeRemoveConcealment() => Propose(GameActions.RemoveConcealment, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("remove-concealment"), expectedRevision = (long)history!.Events.Count,
+        unitIds = RemoveConcealmentRows.Select(row => row.Id).Where(removeConcealment.Contains).ToArray(),
+    }));
+
+    // The Memory and Performance Guidelines (page projections by state and viewer): the units that may give up their "?", read once a state and view.
+    private (GameState? State, string Viewer, IReadOnlyList<UnitSelectionList.Row> Rows) removeConcealmentCache;
+
+    /// <summary>
+    /// Pass 70 (A12.14; ruling R70.20): the view's own units on the map under a "?", hidden, or Dummies, which their owner may strip of it at any time of
+    /// either side's Player Turn; none during setup. The adjudicator is offered both sides', one side a proposal. Read once a state and view.
+    /// </summary>
+    private IReadOnlyList<UnitSelectionList.Row> RemoveConcealmentRows
+    {
+        get
+        {
+            if (ReferenceEquals(removeConcealmentCache.State, state) && removeConcealmentCache.Viewer == Viewer.Name)
+            {
+                return removeConcealmentCache.Rows;
+            }
+
+            IReadOnlyList<UnitSelectionList.Row> rows = state is { SetupClosed: true }
+                ? [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && PlaceOfUnitNow(unit.Id) is not null
+                        && (unit.Kind == UnitKinds.Dummy || GameState.Condition(unit, Conditions.Concealed) == ConditionState.True
+                            || GameState.Condition(unit, Conditions.Hidden) == ConditionState.True))
+                    .Select(unit => new UnitSelectionList.Row(unit.Id, unit.Id))]
+                : [];
+            removeConcealmentCache = (state, Viewer.Name, rows);
+            return rows;
+        }
+    }
+
     /// <summary>
     /// Pass 70 (ruling R70.12): the leaders who may rout with the unit chosen to rout, by Voluntary Rout (A10.711), as the planner allows them, each named
     /// after his hex; none for no unit chosen.
@@ -7805,7 +7858,13 @@ else if (state is not null)
     }
 
     /// <summary>Pass 31 (ruling R5.8): a choice or a surrender waits for its answer, and nothing else is proposed until it has one.</summary>
-    private bool WaitsOnAnswer => state is { } waiting && (waiting.Choice is not null || waiting.PendingSurrenders.Count > 0);
+    private bool WaitsOnAnswer => state is { } waiting && ((waiting.Choice is { } choice && ChoiceShown(choice)) || waiting.PendingSurrenders.Count > 0);
+
+    /// <summary>
+    /// Pass 70 (A12.14; ruling R70.21): the viewer's option not to force a "?" loss is shown to its own side and the adjudicator only; to the moving side
+    /// the step waits as on any DEFENDER's window.
+    /// </summary>
+    private bool ChoiceShown(PendingChoice choice) => choice.Kind != ChoicePending.ConcealmentLoss || Viewer.IsAdjudicator || viewAs == choice.Side;
 
     /// <summary>
     /// Lets the busy state be drawn before the gate is asked (pass 29). A component test that registers <see cref="ImmediateProposals"/> skips the
@@ -8030,6 +8089,10 @@ else if (state is not null)
             else if (proposal.Action == GameActions.VoluntaryBreak)
             {
                 voluntaryBreak.Clear();
+            }
+            else if (proposal.Action == GameActions.RemoveConcealment)
+            {
+                removeConcealment.Clear();
             }
             else if (proposal.Action == GameActions.Deploy || proposal.Action == GameActions.Recombine)
             {
@@ -8875,7 +8938,7 @@ else if (state is not null)
     private (string? Side, string Note) Awaiting(GameState shown)
     {
         var defender = shown.Sides.FirstOrDefault(side => side.Id != shown.PhasingSide)?.Id;
-        if (shown.Choice is { } choice)
+        if (shown.Choice is { } choice && ChoiceShown(choice))
         {
             return (choice.Side, $"The {DisplayText.Side(choice.Side)} side has a choice to make before play goes on.");
         }
@@ -8962,7 +9025,8 @@ else if (state is not null)
 
             var phase = Games.PhaseLabel(state.Phase);
             var ends = GamePlanner.PhaseEndedBy(state, next) == next;
-            return state.Choice is not null ? ["Answer the choice the game waits on; nothing else is proposed until it is answered."]
+            return state.Choice is { } choice && (choice.Kind != ChoicePending.ConcealmentLoss || choice.Side == next)
+                ? ["Answer the choice the game waits on; nothing else is proposed until it is answered."]
                 : state.PendingSurrenders.Count > 0 ? ["Take the surrendering unit prisoner, refuse it, or free it (A20.21)."]
                 : state.Phase == "mph" && state.Movement is { WindowOpen: true } moving
                     ? [MandatoryNow is null ? $"Fire at the moving stack in {PlaceOf(moving.Location)} with your units that see it, or pass." : ScenarioA1MandatoryFire.HandOverText(PlaceOf(moving.Location)),

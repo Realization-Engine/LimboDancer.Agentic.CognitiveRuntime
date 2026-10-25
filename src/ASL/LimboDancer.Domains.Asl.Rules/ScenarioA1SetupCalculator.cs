@@ -593,13 +593,17 @@ public static class ScenarioA1SetupCalculator
                     }
                 }
 
-                // R20.5: off board a counter is neither "?" nor hidden.
-                foreach (var counter in mine.Where(counter => counter.OffBoard && (counter.Concealed || counter.Hidden || counter.Dummy)))
+                // R20.5: off board a counter is never hidden nor a Dummy. Pass 70 (A12.12, p. 77: "Thereafter, a '?' may be placed on top of any
+                // non-concealed Good Order unit/stack before it enters the mapboard for the first time"; ruling R70.35): it may wait under a non-OB "?"
+                // to enter concealed, whatever its group's OB gives, a stack of an entry area under one "?" (the bracket's EXC: one per stack, never on
+                // top of another); no card gives an entering group Dummies, so they stay refused.
+                foreach (var counter in mine.Where(counter => counter.OffBoard && (counter.Hidden || counter.Dummy)))
                 {
-                    reasons.Add($"play.setup-offboard: {counter.Id} waits off board to enter, neither under \"?\" nor hidden (A2.51; ruling R20.5)");
+                    reasons.Add($"play.setup-offboard: {counter.Id} waits off board to enter, never hidden nor a Dummy (A2.51, A12.11, A12.12; rulings R20.5, R70.35)");
                 }
 
-                // R19.5 (A12.11, A12.12): the group's OB "?" are its Dummies plus each Location of its concealed real units.
+                // R19.5 (A12.11, A12.12): the group's OB "?" are its Dummies plus each Location of its concealed real units; a "?" on a stack waiting off
+                // board is a non-OB "?" and uses none of them (ruling R70.35).
                 var dummies = mine.Count(counter => counter.Dummy);
                 var concealedStacks = mine.Where(counter => counter.Concealed && !counter.NonOb && !counter.Dummy && !counter.Equipment && counter.At is not null)
                     .Select(counter => counter.At!.Text).Distinct(StringComparer.Ordinal).Count();
@@ -613,7 +617,8 @@ public static class ScenarioA1SetupCalculator
                 {
                     var key = terrain(counter.At!.Text);
                     var area = group.Areas.FirstOrDefault(item => item.Kind != "entry" && In(card, item, counter.At!));
-                    if (key is null || !ScenarioA1Definitions.IsConcealmentTerrain(key, month) || area?.Concealed == false)
+                    // Pass 70 (A12.2; ruling R70.22): a vehicle's woods-, orchard-, brush-, or grain-road hex is Concealment Terrain for its OB "?".
+                    if (!ScenarioA1ConcealmentChoices.SetupConcealmentTerrain(key, month, counter.Kind == "asl:vehicle", () => counter.At!.RoadConcealment) || area?.Concealed == false)
                     {
                         reasons.Add($"play.setup-concealment: {counter.Id} sets up under \"?\" at {counter.At}, which is not Concealment Terrain"
                             + (area?.Concealed == false ? " or the SSRs forbid \"?\" there" : string.Empty) + " (A12.12; ruling R19.5)");
@@ -695,8 +700,10 @@ public static class ScenarioA1SetupCalculator
         }
 
         // R26.5 (A12.34): an Emplaced Gun, set up manned and not in tow, and its manning crew may use HIP in Concealment Terrain with no SSR, together.
+        // Pass 70 (A12.34, p. 80; ruling R70.22): "An Emplaced Gun may also always use HIP if not in Concealment Terrain, provided it sets up out of the
+        // LOS of all enemy ground units"; the setup reads no LOS, and the Gun is placed beneath "?" once a Good Order enemy ground unit has a LOS to it,
+        // which Play reads after each step and at each phase (A12.34's own example: "at the start of the first RPh").
         var emplacedHidden = placed.Where(counter => counter.Kind == "asl:gun" && counter.Hidden && counter.Manning && !counter.Towed && counter.At is { } at
-            && terrain(at.Text) is { } key && ScenarioA1Definitions.IsConcealmentTerrain(key, month)
             && placed.Any(crew => !crew.Equipment && crew.Manning && crew.Hidden && crew.At?.Text == at.Text && crew.Side == counter.Side)).ToArray();
         bool HiddenWithGun(SetupCounterFacts counter) => !counter.Equipment && counter.Manning && emplacedHidden.Any(gun => gun.At?.Text == counter.At?.Text && gun.Side == counter.Side);
 
@@ -704,19 +711,20 @@ public static class ScenarioA1SetupCalculator
         // Terrain, and never a Dummy or a unit also under "?".
         foreach (var side in card.Sides)
         {
+            // Pass 70 (A12.3; ruling R70.22): a vehicle may use SSR-allowed HIP too.
             var hidden = placed.Where(counter => counter.Side == side.Side && counter.Hidden && !counter.Equipment && !HiddenWithGun(counter)).ToArray();
             foreach (var counter in placed.Where(counter => counter.Side == side.Side && counter.Hidden && !emplacedHidden.Contains(counter)
-                && (counter.Equipment || !ScenarioA1Definitions.HiddenSetupKinds.Contains(counter.Kind))))
+                && (counter.Equipment || !(ScenarioA1Definitions.HiddenSetupKinds.Contains(counter.Kind) || counter.Kind == "asl:vehicle"))))
             {
                 reasons.Add(counter.Kind == "asl:gun"
-                    ? $"play.setup-hidden: {counter.Id} sets up hidden only as an Emplaced Gun, manned and not in tow, in Concealment Terrain, with its manning crew hidden too (A12.34; ruling R26.5)"
-                    : $"play.setup-hidden: {counter.Id} sets up hidden; HIP is built for Infantry and Emplaced Guns only, and hidden vehicles are not built (A12.3, A12.34; rulings R23.5, R26.5)");
+                    ? $"play.setup-hidden: {counter.Id} sets up hidden only as an Emplaced Gun, manned and not in tow, with its manning crew hidden too (A12.34; rulings R26.5, R70.22)"
+                    : $"play.setup-hidden: {counter.Id} sets up hidden; HIP is built for Infantry, vehicles, and Emplaced Guns only (A12.3, A12.34; rulings R23.5, R26.5, R70.22)");
             }
 
             // A12.34 (ruling R26.5): a hidden crew manning a Gun hides with it.
             foreach (var crew in placed.Where(counter => counter.Side == side.Side && counter.Hidden && !counter.Equipment && counter.Manning && !HiddenWithGun(counter)))
             {
-                reasons.Add($"play.setup-hidden: {crew.Id} mans a Gun, so it is hidden only with its Gun, Emplaced in Concealment Terrain (A12.34; ruling R26.5)");
+                reasons.Add($"play.setup-hidden: {crew.Id} mans a Gun, so it is hidden only with its Gun, Emplaced (A12.34; rulings R26.5, R70.22)");
             }
 
             if (hidden.Length == 0)
@@ -730,7 +738,8 @@ public static class ScenarioA1SetupCalculator
                 continue;
             }
 
-            var used = hidden.Count(counter => counter.Kind == "asl:squad") + (hidden.Count(counter => counter.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(counter.Kind)) / 2m);
+            // Pass 70 (ruling R70.22, a reading): a hidden vehicle takes one squad-equivalent of the SSR's HIP, its inherent crew with it.
+            var used = hidden.Count(counter => counter.Kind is "asl:squad" or "asl:vehicle") + (hidden.Count(counter => counter.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(counter.Kind)) / 2m);
             if (used > allowance)
             {
                 reasons.Add($"play.setup-hidden: {side.Side} sets up {used:0.#} squad-equivalents hidden, and its SSR allows {allowance:0.#} (A12.3; ruling R23.5)");
@@ -742,7 +751,7 @@ public static class ScenarioA1SetupCalculator
                 {
                     reasons.Add($"play.setup-hidden: {counter.Id} is hidden or under \"?\", not both, and a Dummy is never hidden (A12.3; ruling R23.5)");
                 }
-                else if (counter.At is { } at && (terrain(at.Text) is not { } key || !ScenarioA1Definitions.IsConcealmentTerrain(key, month)))
+                else if (counter.At is { } at && !ScenarioA1ConcealmentChoices.SetupConcealmentTerrain(terrain(at.Text), month, counter.Kind == "asl:vehicle", () => at.RoadConcealment))
                 {
                     reasons.Add($"play.setup-hidden: {counter.Id} sets up hidden at {at}, which is not Concealment Terrain (A12.3; ruling R23.5)");
                 }
@@ -1054,6 +1063,15 @@ public sealed record SetupLocationFacts(string Text, string Board, string Hex, i
     /// the owning board's, the one placed later (ruling R40.23). Null for a full hex and for a half-hex on the map's edge.
     /// </summary>
     public SetupLocationFacts? OtherHalf
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the hex is a woods-, orchard-, brush-, or grain-road hex, Concealment Terrain for a vehicle setting up (A12.2; pass 70, ruling R70.22).
+    /// False when the caller does not read it, as before the pass.
+    /// </summary>
+    public bool RoadConcealment
     {
         get; init;
     }

@@ -530,7 +530,8 @@ public sealed class BacklogPass26Tests : IDisposable
     }
 
     // R26.3 (A5.5): a crew manning a Gun stacks as a squad; R26.5 (A12.34): an Emplaced Gun and its crew set up hidden in woods with no SSR, together;
-    // not in Open Ground, and not the Gun alone. R26.3: a Gun sets up manned.
+    // not the Gun alone. Pass 70 (A12.34; ruling R70.22): in Open Ground too, placed beneath "?" once a Good Order enemy sees it. R26.3: a Gun sets up
+    // manned.
     [Fact]
     public async Task AGunCrewStacksAsASquadAndAnEmplacedGunHidesInConcealmentTerrain()
     {
@@ -551,8 +552,13 @@ public sealed class BacklogPass26Tests : IDisposable
                 facing = "north-east"
             })), "play.setup-gun");
         Assert.Equal(0, Revision);
-        Refused(await Place(OnMap("rc", "defender-crew", "russian", "bd04:G9:0", null, "asl:hidden"), Gun("rg", "defender-at-gun", "russian", "bd04:G9:0", "north-east", "rc", "asl:hidden")),
-            "play.setup-hidden");
+        SetupCounter HiddenAt(string id, string definition, string kind, bool equipment) =>
+            new(id, "russian", "russian-1", definition, kind, At("bd04:G9:0"), false, true, false, equipment, true)
+            {
+                Manning = true
+            };
+        Assert.DoesNotContain(ScenarioSetup.Check(card, [HiddenAt("rc", "defender-crew", "asl:crew", false), HiddenAt("rg", "defender-at-gun", "asl:gun", true)],
+            _ => "open-ground", _ => true, _ => null, 8).Reasons, reason => reason.StartsWith("play.setup-hidden", StringComparison.Ordinal));
         Refused(await Place(OnMap("rc", "defender-crew", "russian", "bd04:G6:0"), Gun("rg", "defender-at-gun", "russian", "bd04:G6:0", "north-east", "rc", "asl:hidden")),
             "play.setup-hidden");
         await SetUp("bd04:G6:0", "asl:hidden");

@@ -731,4 +731,201 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.Contains("card.ssr: SSR 1's 'fanatic:soviet' names no side of the card", Assert.Single(ScenarioA1SetupCalculator.RuleDiagnostics([rule], TokenStatus, [])),
             StringComparison.Ordinal);
     }
+
+    // Increment 3e: the owner's and the viewer's choices on a "?", and concealment for a vehicle and an Emplaced Gun (tasks 70.4, 70.5; rulings R70.20 to
+    // R70.22).
+
+    [Fact]
+    public void AQuestionMarkIsRemovedVoluntarilyOnceInPlayADummyEliminatedAndAHiddenUnitRevealed()
+    {
+        // A12.14 (p. 78): "The owning player can voluntarily remove any concealment at any time during his or his opponent's Player Turn"; during setup it
+        // is not, nor of units of two sides, off the map, or under no "?". A Dummy is removed (A12.11); a hidden unit is revealed in full (A12.31).
+        Assert.StartsWith("play.remove-concealment: a \"?\" is removed voluntarily once play has begun", ScenarioA1ConcealmentChoices.RemovalBar(true, 1, false, 1),
+            StringComparison.Ordinal);
+        Assert.StartsWith("play.remove-concealment: the units are units of one side", ScenarioA1ConcealmentChoices.RemovalBar(false, 2, false, 2), StringComparison.Ordinal);
+        Assert.NotNull(ScenarioA1ConcealmentChoices.RemovalBar(false, 1, true, 1));
+        Assert.NotNull(ScenarioA1ConcealmentChoices.RemovalBar(false, 0, false, 0));
+        Assert.Null(ScenarioA1ConcealmentChoices.RemovalBar(false, 2, false, 1));
+        Assert.True(ScenarioA1ConcealmentChoices.RemovalEliminates(dummy: true));
+        Assert.False(ScenarioA1ConcealmentChoices.RemovalEliminates(dummy: false));
+        Assert.Equal("play.remove-concealment: g1 gives up its \"?\" voluntarily, revealed in full (A12.14, A12.31); 1 Dummy is removed (A12.11) (ruling R70.20)",
+            ScenarioA1ConcealmentChoices.RemovalText(["g1"], 1));
+    }
+
+    [Fact]
+    public void TheViewerMayDeclineOnlyWhenEveryLossSeerWithinSixteenIsConcealed()
+    {
+        // A12.14 (p. 78): "If the only Good Order enemy ground unit in LOS is itself concealed ... that enemy unit must completely forfeit its '?' momentarily
+        // ... if it opts to force the friendly unit to lose his". A concealed Loss seer is a Loss seer, not one in view; a hidden one is neither.
+        Assert.True(ScenarioA1Sight.Sees(Seer() with { Concealed = true }, SightPurpose.Loss));
+        Assert.False(ScenarioA1Sight.Sees(Seer() with { Concealed = true }, SightPurpose.LossInView));
+        Assert.True(ScenarioA1Sight.Sees(Seer(), SightPurpose.LossInView));
+        Assert.False(ScenarioA1Sight.Sees(Seer(hidden: true), SightPurpose.LossInView));
+
+        // Offered with a Loss seer within 16 and none unconcealed within 16; not with an unconcealed one there, nor with no seer near (the loss is not
+        // forced at all), nor for a loss that needs no seer (a forced back, A12.15), whose unconcealed seers are never read.
+        Assert.True(ScenarioA1Sight.ViewerMayDecline(false, 5, () => null));
+        Assert.True(ScenarioA1Sight.ViewerMayDecline(false, 5, () => 18));
+        Assert.False(ScenarioA1Sight.ViewerMayDecline(false, 5, () => 9));
+        Assert.False(ScenarioA1Sight.ViewerMayDecline(false, 17, () => throw new InvalidOperationException("not read")));
+        Assert.False(ScenarioA1Sight.ViewerMayDecline(true, 5, () => throw new InvalidOperationException("not read")));
+    }
+
+    // The gain search's map: the candidate at Location 0, every enemy at Location 1, at the range and with the LOS a test gives.
+    private sealed class GainMap(int range, bool los) : IConcealmentFactReader
+    {
+        public int? Range(int from, int target) => range;
+
+        public bool LosOpen(int from, int target) => los;
+
+        public int? Nvr(int unit) => null;
+
+        public bool Illuminated(int location) => false;
+    }
+
+    private static ConcealmentCandidateFacts Candidate(string id, string kind = "asl:squad", bool vehicle = false, string terrain = "open-ground", bool gun = false) =>
+        new(id, kind, true, true, vehicle, !vehicle, false, true, kind == "asl:squad", kind == "asl:half-squad", 0, false, false, false, false, false, false,
+            () => gun, () => false, () => terrain, () => false, () => 0);
+
+    private static List<ConcealmentGain> Gains(int range, bool los, params ConcealmentCandidateFacts[] units) =>
+        ScenarioA1FireFollowUps.ConcealmentGains(units, [new WatchingEnemyFacts(0, true, Seer(at: 1, side: "russian"))], false, 7, new GainMap(range, los));
+
+    private static readonly string[] GunOfTheCrew = ["de-gun"];
+    private static readonly string[] PassengerOfTheTruck = ["de-p"];
+
+    [Fact]
+    public void AnEmplacedGunsCrewAndAVehicleGainByCasesJAndKOnly()
+    {
+        // The Concealment Table (A12.121, p. 107, read from its render): an Emplaced Gun (and manning Infantry) and a vehicle (and PRC) gain "?" only out of
+        // the LOS of every unbroken enemy ground unit, Case J in Concealment Terrain, Case K out of it (a dr within 16 hexes); never in such a LOS, at any
+        // range, where Infantry in Concealment Terrain beyond 16 has Case I.
+        var crew = Candidate("de-gc", "asl:crew", gun: true) with { HoldsEmplacedGun = true, Shared = () => [("de-gun", true)] };
+        var truck = Candidate("de-truck", "asl:vehicle", vehicle: true) with { VehicleConcealmentTerrain = () => false, Shared = () => [("de-p", true)] };
+        var k = Gains(10, false, crew, truck);
+        Assert.Equal(("de-gc", (int?)4), (k[0].Id, k[0].Drm));
+        Assert.Equal(GunOfTheCrew, k[0].With);
+        Assert.Equal(("de-truck", (int?)4), (k[1].Id, k[1].Drm));
+        Assert.Equal(PassengerOfTheTruck, k[1].With);
+
+        // Case J: Concealment Terrain (for the vehicle, as it reads it in play) gains with no dr; beyond 16 out of it, Case K needs none either.
+        Assert.Null(Gains(10, false, truck with { VehicleConcealmentTerrain = () => true }).Single().Drm);
+        Assert.Null(Gains(20, false, crew with { TerrainKey = () => "woods" }).Single().Drm);
+        Assert.Null(Gains(20, false, truck).Single().Drm);
+
+        // In a LOS at 20 hexes: the squad in woods takes Case I's dr; the crew and the vehicle gain nothing.
+        Assert.Equal("de-s", Gains(20, true, Candidate("de-s", terrain: "woods"), crew with { TerrainKey = () => "woods" }, truck with { VehicleConcealmentTerrain = () => true }).Single().Id);
+
+        // A crew manning a Gun not Emplaced, a unit aboard, and a vehicle whose Passenger is broken gain nothing; a large vehicle's US# is 5 (A1.6).
+        Assert.Empty(Gains(10, false, Candidate("de-gc", "asl:crew", gun: true), Candidate("de-p") with { Aboard = true },
+            truck with { Shared = () => [("de-p", false)] }));
+        Assert.Equal(5, Gains(10, false, truck with { Large = true }).Single().Drm);
+    }
+
+    [Fact]
+    public void TheConcealmentDrTakesLaxAndStealthy()
+    {
+        // A12.122 (p. 77): +1 Lax, -1 Stealthy, with the US# (the example's Hero: "6 [dr] +1 [US#] -1 [Leadership] -1 [Stealthy] = 5").
+        Assert.Equal(4, Gains(10, false, Candidate("de-s") with { Lax = true }).Single().Drm);
+        Assert.Equal(0, Gains(10, false, Candidate("de-h", "asl:hero") with { Stealthy = true }).Single().Drm);
+        Assert.Equal(3, Gains(10, false, Candidate("de-s")).Single().Drm);
+    }
+
+    private static readonly string?[] OrchardRoad = ["Orchard", "Dirt Road", null, "Orchard", "Orchard", "Dirt Road"];
+    private static readonly string[] GrainRoad = ["Grain", "Dirt Road"];
+    private static readonly string[] OpenRoad = ["Open Ground", "Dirt Road"];
+    private static readonly string[] VehicleHip = ["hip:german:1"];
+
+    private static SetupCardFacts HipCard(params string[] tokens) => new(
+        [new SetupSideFacts("german", null, true, [], [new SetupGroupFacts("german-1", "Panzers", null, 1,
+            [new SetupAreaFacts("area", "hex-numbers", null, "bd01", 1, 9, null, null, null, null, null), new SetupAreaFacts("entry", "entry", null, null, null, null, 2, "top", null, null, null)],
+            [new SetupLineFacts("tank", 1, null), new SetupLineFacts("squad", 2, "entry")])]),
+         new SetupSideFacts("russian", null, false, [], [new SetupGroupFacts("russian-1", "Guards", null, null,
+            [new SetupAreaFacts("area", "hex-numbers", null, "bd01", 1, 9, null, null, null, null, null)], [new SetupLineFacts("rsquad", 1, null)])])],
+        1, "bd01", false, null, null, null, null, tokens);
+
+    private static SetupCounterFacts Placed(string id, string kind, string definition, bool concealed = false, bool hidden = false, bool road = false, bool offBoard = false,
+        bool manning = false, bool equipment = false, string? side = null) =>
+        new(id, side ?? "german", side == "russian" ? "russian-1" : "german-1", definition, kind,
+            offBoard ? null : new SetupLocationFacts("bd01:C5:0", "bd01", "C5", 5) { RoadConcealment = road },
+            concealed, hidden, false, equipment, true, offBoard, false, false, offBoard ? "entry" : null, null, manning, false);
+
+    [Fact]
+    public void AVehicleOnAWoodsOrchardBrushOrGrainRoadSetsUpUnderQuestionMarkOrHidden()
+    {
+        // A12.2 (p. 79): "A vehicle that sets up in a woods-road (or orchard-/brush-/grain- road) hex is considered to be in Concealment Terrain for the
+        // purposes of placing OB-designated '?' (12.12) and of using SSR-allowed HIP"; grain only in season (B15.6); an open road is none.
+        Assert.True(ScenarioA1ConcealmentChoices.RoadConcealmentHex(true, OrchardRoad, 3));
+        Assert.True(ScenarioA1ConcealmentChoices.RoadConcealmentHex(true, GrainRoad, 7));
+        Assert.False(ScenarioA1ConcealmentChoices.RoadConcealmentHex(true, GrainRoad, 3));
+        Assert.False(ScenarioA1ConcealmentChoices.RoadConcealmentHex(true, OpenRoad, 7));
+        Assert.False(ScenarioA1ConcealmentChoices.RoadConcealmentHex(false, OrchardRoad, 7));
+        Assert.True(ScenarioA1ConcealmentChoices.SetupConcealmentTerrain("open-ground", 7, true, () => true));
+        Assert.False(ScenarioA1ConcealmentChoices.SetupConcealmentTerrain("open-ground", 7, false, () => throw new InvalidOperationException("not read")));
+        Assert.True(ScenarioA1ConcealmentChoices.SetupConcealmentTerrain("woods", 7, false, () => throw new InvalidOperationException("not read")));
+
+        // The setup: the tank under its group's OB "?" on an orchard road; on an open road it is refused, and a squad on the orchard road is refused too.
+        string[] Concealment(params SetupCounterFacts[] counters) => [.. ScenarioA1SetupCalculator.Check(HipCard(), counters, _ => "open-ground", _ => true, _ => null, 7, null)
+            .Reasons.Where(reason => reason.StartsWith("play.setup-concealment", StringComparison.Ordinal))];
+        Assert.Empty(Concealment(Placed("de-t", "asl:vehicle", "tank", concealed: true, road: true)));
+        Assert.Single(Concealment(Placed("de-t", "asl:vehicle", "tank", concealed: true)));
+        Assert.Single(Concealment(Placed("de-s", "asl:squad", "squad", concealed: true, road: true)));
+    }
+
+    [Fact]
+    public void AVehicleSetsUpHiddenByItsSsr()
+    {
+        // A12.3 (p. 80; ruling R70.22): "A SSR may allow HIP for one or more units", vehicles included, in Concealment Terrain (its road hex, A12.2); with
+        // no SSR, or out of Concealment Terrain, it is refused. A hidden vehicle takes one squad-equivalent of the SSR's HIP (a reading).
+        string[] Hidden(SetupCardFacts card, params SetupCounterFacts[] counters) => [.. ScenarioA1SetupCalculator.Check(card, counters, _ => "open-ground", _ => true, _ => null, 7, null)
+            .Reasons.Where(reason => reason.StartsWith("play.setup-hidden", StringComparison.Ordinal))];
+        Assert.Empty(Hidden(HipCard(VehicleHip), Placed("de-t", "asl:vehicle", "tank", hidden: true, road: true)));
+        Assert.Contains("no SSR gives german HIP", Assert.Single(Hidden(HipCard(), Placed("de-t", "asl:vehicle", "tank", hidden: true, road: true))), StringComparison.Ordinal);
+        Assert.Contains("not Concealment Terrain", Assert.Single(Hidden(HipCard(VehicleHip), Placed("de-t", "asl:vehicle", "tank", hidden: true))), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnEmplacedGunSetsUpHiddenOutOfConcealmentTerrainAndIsPlacedBeneathQuestionMarkOnceSeen()
+    {
+        // A12.34 (p. 80): "An Emplaced Gun may also always use HIP if not in Concealment Terrain, provided it sets up out of the LOS of all enemy ground
+        // units--but must be placed onboard under a '?' as soon as a Good Order enemy ground unit has a LOS to it regardless of range". The setup takes it
+        // hidden in Open Ground with its crew and no SSR.
+        var reasons = ScenarioA1SetupCalculator.Check(HipCard(), [Placed("de-gun", "asl:gun", "gun", hidden: true, manning: true, equipment: true),
+            Placed("de-gc", "asl:crew", "crew", hidden: true, manning: true)], _ => "open-ground", _ => true, _ => null, 7, null).Reasons;
+        Assert.DoesNotContain(reasons, reason => reason.StartsWith("play.setup-hidden", StringComparison.Ordinal));
+
+        // In play: out of Concealment Terrain and seen, it is placed beneath "?"; unseen, or in Concealment Terrain (where it keeps HIP even in LOS), it is
+        // not; a Gun not hidden or not Emplaced reads nothing.
+        Assert.True(ScenarioA1ConcealmentChoices.EmplacedHipLost(true, true, () => false, () => true));
+        Assert.False(ScenarioA1ConcealmentChoices.EmplacedHipLost(true, true, () => false, () => false));
+        Assert.False(ScenarioA1ConcealmentChoices.EmplacedHipLost(true, true, () => true, () => throw new InvalidOperationException("not read")));
+        Assert.False(ScenarioA1ConcealmentChoices.EmplacedHipLost(false, true, () => throw new InvalidOperationException("not read"), () => true));
+        Assert.False(ScenarioA1ConcealmentChoices.EmplacedHipLost(true, false, () => throw new InvalidOperationException("not read"), () => true));
+    }
+
+    // Off board, every counter waits under one "?" or none: the OB reasons a test reads.
+    private static string[] OffBoardReasons(SetupCardFacts card, params SetupCounterFacts[] counters) => [.. ScenarioA1SetupCalculator.Check(card, counters, _ => "woods", _ => true,
+        _ => null, 7, null).Reasons.Where(reason => reason.StartsWith("play.setup-offboard", StringComparison.Ordinal) || reason.StartsWith("play.setup-concealment", StringComparison.Ordinal))];
+
+    [Fact]
+    public void AnyReinforcementWaitsOffBoardUnderANonObQuestionMark()
+    {
+        // A12.12 (p. 77; ruling R70.35, lifting R20.5's refusal): "Thereafter, a '?' may be placed on top of any non-concealed Good Order unit/stack before
+        // it enters the mapboard for the first time", whatever the OB gives: the Russian group with no "?" may, and the German group's OB "?" are not used
+        // by it (the tank under its one OB "?" on the map still fits). Never hidden off board, and never a Dummy (no card gives an entering group Dummies).
+        var none = HipCard() with { Sides = [HipCard().Sides[1]] };
+        Assert.Empty(OffBoardReasons(none, Placed("r-1", "asl:squad", "rsquad", concealed: true, offBoard: true, side: "russian")));
+        Assert.Empty(OffBoardReasons(HipCard(), Placed("de-t", "asl:vehicle", "tank", concealed: true), Placed("de-1", "asl:squad", "squad", concealed: true, offBoard: true)));
+        Assert.Contains("never hidden nor a Dummy", Assert.Single(OffBoardReasons(HipCard(), Placed("de-1", "asl:squad", "squad", hidden: true, offBoard: true))),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AStackOfTwoWaitingOffBoardTakesOneQuestionMark()
+    {
+        // A12.12's EXC (p. 77; ruling R70.35): "only one non-OB-designated '?' can be placed per stack": the two Russian squads of one entry area wait under
+        // one "?", in a group whose OB gives none, and nothing is refused.
+        var none = HipCard() with { Sides = [HipCard().Sides[1]] };
+        Assert.Empty(OffBoardReasons(none, Placed("r-1", "asl:squad", "rsquad", concealed: true, offBoard: true, side: "russian"),
+            Placed("r-2", "asl:squad", "rsquad", concealed: true, offBoard: true, side: "russian")));
+    }
 }

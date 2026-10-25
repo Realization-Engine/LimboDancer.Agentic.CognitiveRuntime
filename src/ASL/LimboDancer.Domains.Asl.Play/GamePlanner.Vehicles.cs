@@ -733,6 +733,8 @@ public sealed partial class GamePlanner
                 events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, lost));
             }
 
+            // A12.34 (pass 70, ruling R70.22): the vehicle's step may bring a hidden Emplaced Gun out of Concealment Terrain into its LOS.
+            AddEmplacedHipLoss(scope, attemptId, expected, existing, events);
             return events;
         }
 

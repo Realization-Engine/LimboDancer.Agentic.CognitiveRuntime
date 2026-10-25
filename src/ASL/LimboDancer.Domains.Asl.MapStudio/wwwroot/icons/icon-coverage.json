@@ -1349,6 +1349,14 @@
         },
         {
           "kind": "button",
+          "label": "Propose: give up \u0022?\u0022",
+          "dynamic": false,
+          "id": "propose-remove-concealment",
+          "status": "needed",
+          "strip": "Play play-remove-concealment"
+        },
+        {
+          "kind": "button",
           "label": "Propose: @WordsAt(guard) Deploys",
           "dynamic": true,
           "status": "needed",

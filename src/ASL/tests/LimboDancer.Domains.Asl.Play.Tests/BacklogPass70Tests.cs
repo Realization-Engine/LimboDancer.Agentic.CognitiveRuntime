@@ -779,4 +779,175 @@ public sealed class BacklogPass70Tests : IDisposable
         Assert.Contains("fanatic:russian", Current.SpecialRules);
         NoReplayErrors();
     }
+
+    // Increment 3e: the owner's and the viewer's choices on a "?", and concealment for a vehicle and an Emplaced Gun (tasks 70.4, 70.5; rulings R70.20 to
+    // R70.22).
+
+    private static readonly string[] RemovedUnits = ["de-c", "de-gc", "de-d"];
+    private static readonly string[] RevealedByRemoval = ["de-c", "de-gc", "de-gun"];
+    private static readonly string[] ConcealedRussian = ["r1"];
+    private static readonly string[] OpenGerman = ["de-o"];
+    private static readonly string[] RussianSquad = ["ru-1"];
+    private static readonly string[] TankAndRider = ["de-tank", "de-r"];
+    private static readonly string[] GunAndCrew = ["de-gun", "de-gc"];
+    private static readonly string[] GermanOnly = ["german"];
+
+    private static Dictionary<string, object> Dummy(string id, string hex) => new()
+    {
+        ["id"] = id,
+        ["kind"] = UnitKinds.Dummy,
+        ["side"] = "german",
+        ["position"] = new
+        {
+            at = L(hex)
+        },
+        ["conditions"] = new Dictionary<string, bool> { ["asl:concealed"] = true, ["asl:hidden"] = false },
+    };
+
+    private IReadOnlyList<GameEvent> EventsOf(string side)
+    {
+        var history = History;
+        return history.EventsFor(history.Current!.Perspectives.Single(item => item.Name == side), history.Current.Revision);
+    }
+
+    [Fact]
+    public async Task AVoluntaryRemovalShowsAUnitRevealsAHiddenGunWithItsCrewAndRemovesADummy()
+    {
+        // A12.14 (p. 78; ruling R70.20): "The owning player can voluntarily remove any concealment at any time during his or his opponent's Player Turn".
+        // In the German PFPh his concealed 4-6-7 in E5, his hidden crew in E7 with its Gun (A12.2: the Gun with it), and his Dummy in E6 give it up: the
+        // squad and the crew are revealed in full (A12.31), the Dummy is removed (A12.11); the events are public. A unit under no "?" is refused.
+        blocked.Add(("E2", "E7"));
+        await SetupAt(1, "german", [Squad("de-c", "E5", "german", "asl:concealed"), Dummy("de-d", "E6"), .. HiddenGun("E7"), Squad("de-o", "E4", "german"),
+            Squad("ru-1", "E2", "russian")]);
+        var refused = await Do(GameActions.RemoveConcealment, NoRoll(), new
+        {
+            unitIds = OpenGerman
+        });
+        Assert.NotEqual(PlayOutcome.Committed, refused.Outcome);
+        Assert.Contains(refused.Reasons, reason => reason.StartsWith("play.remove-concealment: the units are units of one side", StringComparison.Ordinal));
+
+        var before = Revision;
+        Committed(await Do(GameActions.RemoveConcealment, NoRoll(), new
+        {
+            unitIds = RemovedUnits
+        }));
+        Assert.Equal(RevealedByRemoval, Since(before).Where(item => item.Type == "concealment-lost").Select(item => ((ConditionsChanged)item.Payload).Id));
+        Assert.Equal("de-d", ((InstanceEliminated)Assert.Single(Since(before), item => item.Type == "instance-eliminated").Payload).Id);
+        Assert.All(Since(before), item => Assert.Null(item.Visibility));
+        Assert.False(Is(Current.Unit("de-c")!, Conditions.Concealed));
+        Assert.False(Is(Current.Unit("de-gc")!, Conditions.Hidden));
+        Assert.False(Is(Current.Find("de-gun")!, Conditions.Hidden));
+        Assert.Contains(ViewAs("russian").Units, unit => unit.Id == "de-c");
+        NoReplayErrors();
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task AConcealedViewerMayDeclineToForceAMoversLossAndTheMoverLearnsNothing(bool force)
+    {
+        // A12.14 (p. 78; ruling R70.21): the concealed r1 moves in Open Ground without Assault Movement in the LOS of g1, three hexes away, the only Good
+        // Order German ground unit in its LOS, itself concealed. The German may force the loss, g1 forfeiting its "?" for a moment, shown to the Russian
+        // only; or decline it, r1 keeping its "?". The choice and the answer are the German's records alone.
+        await SetupAt(2, "russian", Squad("r1", "E5", "russian", "asl:concealed"), Squad("g1", "E2", "german", "asl:concealed"));
+        var before = Revision;
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = ConcealedRussian,
+            to = L("E6")
+        }));
+        Assert.Equal((ChoicePending.ConcealmentLoss, "german"), (Current.Choice!.Kind, Current.Choice.Side));
+        Assert.True(Is(Current.Unit("r1")!, Conditions.Concealed));
+        Assert.DoesNotContain(EventsOf("russian"), item => item.Payload is ChoicePending);
+        Assert.Contains(EventsOf("german"), item => item.Payload is ChoicePending);
+
+        Committed(await Do(GameActions.Choose, NoRoll(), new
+        {
+            key = Current.Choice.Key,
+            option = force ? ChoicePending.Take : ChoicePending.Decline
+        }));
+        Assert.Null(Current.Choice);
+        Assert.Equal(!force, Is(Current.Unit("r1")!, Conditions.Concealed));
+        Assert.True(Is(Current.Unit("g1")!, Conditions.Concealed));
+        Assert.DoesNotContain(EventsOf("russian"), item => item.Payload is ChoiceMade);
+        Assert.Equal(force, EventsOf("russian").Any(item => item.Payload is ConcealmentVerified { Units: ["g1"] }));
+        Assert.DoesNotContain(EventsOf("german"), item => item.Payload is ConcealmentVerified);
+        Assert.Equal(force, Since(before).Any(item => item.Type == "concealment-lost"));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnUnconcealedViewerForcesTheLossWithNoChoice()
+    {
+        // A12.14: with an unconcealed Good Order German in LOS within 16, the loss is forced as before (the option is the concealed viewer's only).
+        await SetupAt(2, "russian", Squad("r1", "E5", "russian", "asl:concealed"), Squad("g1", "E2", "german", "asl:concealed"), Squad("g2", "E3", "german"));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = ConcealedRussian,
+            to = L("E6")
+        }));
+        Assert.Null(Current.Choice);
+        Assert.False(Is(Current.Unit("r1")!, Conditions.Concealed));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AVehicleAndItsRiderGainQuestionMarkAsItsPlayerTurnEnds()
+    {
+        // The Concealment Table (A12.121; ruling R70.22), Case K: the German tank in the Open Ground of E5, out of the LOS of the Russian squad in E2 but
+        // within 16 hexes of it, makes a Concealment dr: 1 + 4 (US# of a 5/8" counter, A1.6) = 5, and gains "?" with its Rider (A12.2), which no longer
+        // checks on its own.
+        year = 1943;
+        blocked.Add(("E2", "E5"));
+        await SetupAt(7, "german", Vehicle("de-tank", "attacker-tank", "E5", "german", "east"), Rider("de-r", "asl:squad", "attacker-squad", "de-tank"),
+            Squad("ru-1", "E2", "russian"));
+        Assert.Equal("ccph", Current.Phase);
+        var before = Revision;
+        Committed(await Do(GameActions.AdvancePhase, Once(1), new
+        {
+        }));
+        string[] gained = [.. Since(before).Where(item => item.Type == "concealment-gained").Select(item => ((ConditionsChanged)item.Payload).Id)];
+        Assert.Equal(TankAndRider, gained);
+        Assert.Single(Since(before), item => item.Payload is DiceRolled { Purpose: "concealment" });
+        Assert.True(Is(Current.Unit("de-tank")!, Conditions.Concealed));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AHiddenGunOutOfConcealmentTerrainIsPlacedBeneathQuestionMarkOnceAnEnemySeesIt()
+    {
+        // A12.34 (p. 80; ruling R70.22): the hidden German Gun and crew in the Open Ground of E5 are out of the LOS of the Russian squad in H8 as the phases
+        // pass; when the squad steps to H7, which sees E5, both are placed beneath "?", a record the German alone reads: the Russian sees a "?" appear.
+        blocked.Add(("H8", "E5"));
+        await SetupAt(2, "russian", [.. HiddenGun("E5"), Squad("ru-1", "H8", "russian")]);
+        Assert.True(Is(Current.Find("de-gun")!, Conditions.Hidden));
+        var before = Revision;
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = RussianSquad,
+            to = L("H7")
+        }));
+        var placed = Since(before).Where(item => item.Type == "hidden-placed").ToArray();
+        Assert.Equal(GunAndCrew, placed.Select(item => ((ConditionsChanged)item.Payload).Id));
+        Assert.All(placed, item => Assert.Equal(GermanOnly, item.Visibility!));
+        Assert.True(Is(Current.Find("de-gun")!, Conditions.Concealed));
+        Assert.False(Is(Current.Unit("de-gc")!, Conditions.Hidden));
+        Assert.Contains(ViewAs("russian").Sealed, item => item.Location.ToString() == L("E5"));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public void AnOffBoardReinforcementWaitsConcealedWhateverItsOb()
+    {
+        // A12.12 (p. 77; ruling R70.35, lifting R20.5's refusal): Gambit's British, whose OB gives no "?", may wait off board under a non-OB "?", the two
+        // squads of the entry area one stack under one "?"; a Dummy off board is still refused.
+        var gambit = ScenarioCards.Read("gambit", Catalog)!.Card!;
+        Assert.Contains(gambit.Sides.Single(side => side.Side == "british").Groups, group => (group.Dummies ?? 0) == 0);
+        SetupCounter OffBoard(string id, string kind = "asl:squad", string? definition = "british-elite-squad") =>
+            new(id, "british", "british-1", definition, kind, null, true, false, kind == UnitKinds.Dummy, false, true) { OffBoard = true };
+        IEnumerable<string> Reasons(params SetupCounter[] counters) => ScenarioSetup.Check(gambit, counters, _ => "open-ground", _ => true, Rules.ScenarioA1FireReference.HalfSquadOf,
+            gambit.Date.Month).Reasons.Where(reason => reason.StartsWith("play.setup-offboard", StringComparison.Ordinal) || reason.StartsWith("play.setup-concealment", StringComparison.Ordinal));
+        Assert.Empty(Reasons(OffBoard("bs1"), OffBoard("bs2")));
+        Assert.Contains(Reasons(OffBoard("bd1", UnitKinds.Dummy, null)), reason => reason.StartsWith("play.setup-offboard: bd1", StringComparison.Ordinal));
+    }
 }

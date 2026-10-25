@@ -40,7 +40,8 @@ public static class ScenarioA1FireFollowUps
     /// unbroken and uncaptured, Dummies included, not hidden, not an empty vehicle, A12.1) within 16 hexes (at night, within its NVR or
     /// Illuminated, E1.101), nor beyond 16 out of Concealment Terrain; with the Final Concealment dr modifier it needs (+US#, + the best Good Order
     /// leader's Leadership in the Location, - the Location's TEM, -2 for SMOKE in the hex; A12.122, A6.7), or null when it gains "?" with no dr (at
-    /// night, E1.32). A search through the fact reader (the design's D4).
+    /// night, E1.32). A search through the fact reader (the design's D4). Pass 70 (ruling R70.22): a vehicle and an Emplaced Gun's crew gain by their own
+    /// rows (Cases J and K, never in an enemy's LOS), with what shares their "?"; Lax and Stealthy and a 5/8" US# in the dr.
     /// </summary>
     public static List<ConcealmentGain> ConcealmentGains(IEnumerable<ConcealmentCandidateFacts> units, IEnumerable<WatchingEnemyFacts> watchers, bool night, int? month,
         IConcealmentFactReader map)
@@ -50,14 +51,29 @@ public static class ScenarioA1FireFollowUps
         ArgumentNullException.ThrowIfNull(map);
         var gains = new List<ConcealmentGain>();
         var enemies = watchers.Where(unit => unit.Enemy && ScenarioA1Sight.Sees(unit.Seer, SightPurpose.GainDenial)).ToArray();
-        foreach (var unit in units.Where(unit => unit.Active && unit.PhasingSide && !unit.Vehicle && unit.Personnel && !unit.Dummy && unit.HasDefinition)
+        // Pass 70 (A12.2, the Concealment Table read from its render; ruling R70.22): a vehicle gains "?" by its own row, its PRC with it.
+        foreach (var unit in units.Where(unit => unit.Active && unit.PhasingSide && (unit.Vehicle || (unit.Personnel && !unit.Aboard)) && !unit.Dummy && unit.HasDefinition)
             .OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
-            if (unit.Location is not { } at || unit.Concealed || unit.Hidden || unit.Broken || unit.Berserk || unit.Melee || unit.Captured || unit.HoldsGun() || unit.EnemyInLocation())
+            if (unit.Location is not { } at || unit.Concealed || unit.Hidden || unit.Broken || unit.Berserk || unit.Melee || unit.Captured
+                || (!unit.HoldsEmplacedGun && unit.HoldsGun()) || unit.EnemyInLocation())
             {
-                // A unit sharing its Location with enemy units is about to be held in Melee (A11.15), and gains no "?" (a reading).
+                // A unit sharing its Location with enemy units is about to be held in Melee (A11.15), and gains no "?" (a reading). A crew manning a Gun
+                // not Emplaced gains none (its Case H loss is not built).
                 continue;
             }
+
+            // A12.2 (ruling R70.22): what shares the "?" gains with it; a vehicle whose PRC could not gain one (not in Good Order, A12.12) gains none (a
+            // reading).
+            var shared = unit.Shared?.Invoke() ?? [];
+            if (shared.Any(item => !item.GoodOrder))
+            {
+                continue;
+            }
+
+            // The Concealment Table (A12.121, p. 107, rendered): an Emplaced Gun's crew and a vehicle gain "?" only out of the LOS of every unbroken
+            // enemy ground unit: Case J in Concealment Terrain, Case K out of it (a Concealment dr when such a unit is within 16 hexes).
+            var fiveEighths = unit.Vehicle || unit.HoldsEmplacedGun;
 
             var inLosNear = false;
             var inLosFar = false;
@@ -77,27 +93,31 @@ public static class ScenarioA1FireFollowUps
 
             var terrain = unit.TerrainKey();
             // Pass 70 (frame B): the one list of Concealment Terrain (A12.12), which this copy matched.
-            var concealmentTerrain = terrain is not null && ScenarioA1Definitions.IsConcealmentTerrain(terrain, month);
-            if (inLosNear || (inLosFar && !concealmentTerrain))
+            var concealmentTerrain = unit.Vehicle && unit.VehicleConcealmentTerrain is { } vehicleTerrain ? vehicleTerrain()
+                : terrain is not null && ScenarioA1Definitions.IsConcealmentTerrain(terrain, month);
+            if (inLosNear || (inLosFar && (!concealmentTerrain || fiveEighths)))
             {
                 continue;
             }
+
+            string[] with = [.. shared.Select(item => item.Id)];
 
             // E1.32 (backlog pass 16, ruling R16.4): at night what would need a Concealment dr gains "?" without one.
             var needsDr = !night && (inLosFar || (!concealmentTerrain && within16));
             if (!needsDr)
             {
-                gains.Add(new ConcealmentGain(unit.Id, null));
+                gains.Add(new ConcealmentGain(unit.Id, null) { With = with });
                 continue;
             }
 
-            // A12.122: +US#, + the best Good Order leader's Leadership in the Location unless alone, - the Location's TEM and in-hex Hindrance.
-            var size = ScenarioA1Definitions.UnitSize(unit.Squad, unit.HalfSquad || ScenarioA1Definitions.IsCrew(unit.Kind));
+            // A12.122: +US# of the unit or its possessed Gun (A1.6: 4 for a 5/8" counter, 5 when large), + the best Good Order leader's Leadership in the
+            // Location unless alone, +1 Lax, - the Location's TEM and in-hex Hindrance, -1 Stealthy (pass 70, ruling R70.22).
+            var size = ScenarioA1Definitions.UnitSize(unit.Squad, unit.HalfSquad || ScenarioA1Definitions.IsCrew(unit.Kind), fiveEighths, unit.Large);
             var leadership = unit.BestLeadership();
             var tem = terrain is not null && ScenarioA1FireReference.Tem.TryGetValue(terrain, out var value) ? value : 0;
             // A6.7 (referee, pass 12): only SMOKE in the Location hinders its own units; brush, grain, orchard, and marsh do not.
             var smoke = unit.SmokeInHex() ? 2 : 0;
-            gains.Add(new ConcealmentGain(unit.Id, size + leadership - tem - smoke));
+            gains.Add(new ConcealmentGain(unit.Id, size + leadership + (unit.Lax ? 1 : 0) - tem - smoke - (unit.Stealthy ? 1 : 0)) { With = with });
         }
 
         return gains;

@@ -14,6 +14,12 @@ public enum SightPurpose
 
     /// <summary>A12.16 (p. 79): the Right of Inspection, by the viewing side's Good Order ground units.</summary>
     Inspection,
+
+    /// <summary>
+    /// A12.14 (p. 78; pass 70, ruling R70.21): the loss of a "?" forced by a Loss seer not itself concealed, which needs no momentary forfeiture of its
+    /// own "?": where every Loss seer within 16 is concealed, the viewing side may decline to force the loss.
+    /// </summary>
+    LossInView,
 }
 
 /// <summary>
@@ -35,7 +41,14 @@ public enum SightLosReading
 /// A12.1, p. 76), and its Location as an index into the caller's table (null off the map).
 /// </summary>
 public sealed record SightSeerFacts(bool Active, string? Side, bool Dummy, bool Hidden, bool Aboard, bool GoodOrder, bool Unbroken, bool Captured, bool EmptyVehicle,
-    int? Location);
+    int? Location)
+{
+    /// <summary>Whether the unit is itself under a "?" (pass 70, ruling R70.21): such a Loss seer forces a loss only by forfeiting its "?" for a moment (A12.14).</summary>
+    public bool Concealed
+    {
+        get; init;
+    }
+}
 
 /// <summary>A LOS read as the map gives it: whether it is definitively clear, whether it is blocked (null when the map does not answer), and its range.</summary>
 public sealed record SightLosFacts(bool Clear, bool? Blocked, int Range);
@@ -71,8 +84,20 @@ public static class ScenarioA1Sight
         {
             SightPurpose.Loss => seer.GoodOrder && !seer.Dummy && !seer.Hidden && !seer.Aboard,
             SightPurpose.GainDenial => seer.Unbroken && !seer.Captured && !seer.Hidden,
+            SightPurpose.LossInView => seer.GoodOrder && !seer.Dummy && !seer.Hidden && !seer.Aboard && !seer.Concealed,
             _ => seer.GoodOrder && !seer.Dummy,
         };
+    }
+
+    /// <summary>
+    /// A12.14 (p. 78; pass 70, ruling R70.21): the viewing side's option not to force a "?" loss, open when a Loss seer within 16 has a LOS to the unit
+    /// but none of them is unconcealed ("If the only Good Order enemy ground unit in LOS is itself concealed ... if it opts to force"). Never for a loss
+    /// that needs no seer (a forced back, A12.15; a break or a Reduction, which the rule excepts). The unconcealed seers are read only when a seer is near.
+    /// </summary>
+    public static bool ViewerMayDecline(bool lossNeedsNoSeer, int? nearestLossSeer, Func<int?> nearestUnconcealedLossSeer)
+    {
+        ArgumentNullException.ThrowIfNull(nearestUnconcealedLossSeer);
+        return !lossNeedsNoSeer && SeenWithin(nearestLossSeer, 16) && !SeenWithin(nearestUnconcealedLossSeer(), 16);
     }
 
     /// <summary>

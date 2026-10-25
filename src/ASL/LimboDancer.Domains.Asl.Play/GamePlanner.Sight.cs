@@ -64,7 +64,11 @@ public sealed partial class GamePlanner
     private static SightSeerFacts SeerFactsOf(ObjectIndex index, UnitInstance unit, int? at) =>
         new(unit.Status == InstanceStatus.Active, unit.Side, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden), index.VehicleOf(unit.Id) is not null, GoodOrder(unit),
             !Is(unit, Conditions.Broken), Is(unit, Conditions.Captured),
-            LiveFire.IsVehicle(unit) && Is(unit, Conditions.Abandoned) && index.CrewOf(unit.Id) is null && index.Aboard(unit.Id).Count == 0, at);
+            LiveFire.IsVehicle(unit) && Is(unit, Conditions.Abandoned) && index.CrewOf(unit.Id) is null && index.Aboard(unit.Id).Count == 0, at)
+        {
+            // Pass 70 (A12.14; ruling R70.21): a concealed Loss seer forces a loss only by forfeiting its "?" for a moment.
+            Concealed = Is(unit, Conditions.Concealed),
+        };
 
     /// <summary>The LOS between two Locations of the sight table, the index past its end being the Location asked about, as the sight reads take it.</summary>
     private sealed class SightLos(GamePlanner planner, GameState state, SightTable table, BoardLocation at) : ISightLosReader

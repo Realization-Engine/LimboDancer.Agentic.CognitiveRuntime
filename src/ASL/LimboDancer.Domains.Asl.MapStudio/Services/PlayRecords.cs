@@ -1042,6 +1042,12 @@ public sealed class PlayRecords
                     records.Add((item.EventId, "voluntary-break", string.Join(", ", voluntary.Units.Select(id => id + In(before, id)))
                         + (voluntary.Units.Count == 1 ? " breaks" : " break") + " voluntarily at the start of the RtPh, under DM, so as to rout (A10.41, A10.62)"));
                 }
+                else if (item.Payload is ConcealmentVerified verified)
+                {
+                    // Pass 70 (ruling R70.21): the concealed units that forced a "?" loss, shown for a moment; the record is the moving side's alone.
+                    records.Add((item.EventId, "concealment-verified",
+                        ScenarioA1ConcealmentChoices.VerifiedText([.. verified.Units.Select(id => id + In(before, id))])));
+                }
                 else if (item.Payload is DiceRolled { Purpose: ScenarioA1Wounds.SeverityPurpose } severity)
                 {
                     // Pass 35 (task 35.1; A17.11): the Wound Severity dr of a SMC's Casualty Reduction, said where it is made.

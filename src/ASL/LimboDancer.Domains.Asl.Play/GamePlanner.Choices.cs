@@ -93,6 +93,13 @@ public sealed partial class GamePlanner
             return DescribeGunDuel(choice.Resume);
         }
 
+        // A12.14 (pass 70, ruling R70.21): the viewing side's option, by the stack's hex.
+        if (choice.Kind == ChoicePending.ConcealmentLoss)
+        {
+            return ScenarioA1ConcealmentChoices.LossChoiceText(choice.Resume.TryGetProperty("location", out var at) && BoardLocation.TryParse(at.GetString() ?? string.Empty, out var hex)
+                ? $"[{hex.Hex}]" : subject);
+        }
+
         return ScenarioA1SequenceCalculator.DescribeChoice(ChoiceKindOf(choice.Kind), subject, choice.Options);
     }
 
@@ -122,8 +129,15 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, optionBar);
         }
 
-        var made = Event(scope, attemptId, 1, expected, "choice-made", new ChoiceMade(key, option), null, null, [pending.Event]);
         var summary = ScenarioA1SequenceCalculator.ChoiceSummary(pending.Side, option, DescribeChoice(pending));
+
+        // A12.14 (pass 70, ruling R70.21): the viewing side forces a "?" loss or declines it; its answer is recorded for that side only.
+        if (pending.Kind == ChoicePending.ConcealmentLoss)
+        {
+            return PlanConcealmentLossAnswer(scope, attemptId, expected, label, state, pending, option, summary);
+        }
+
+        var made = Event(scope, attemptId, 1, expected, "choice-made", new ChoiceMade(key, option), null, null, [pending.Event]);
         if (pending.Kind == ChoicePending.Acquisition)
         {
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [made], [summary]);

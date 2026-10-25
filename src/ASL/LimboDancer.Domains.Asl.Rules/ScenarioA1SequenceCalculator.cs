@@ -55,6 +55,9 @@ public static class ScenarioA1SequenceCalculator
 
         // A10.41 (pass 70, ruling R70.11): the owner breaks his own units.
         ["asl.game.voluntary-break"] = ["unitIds"],
+
+        // A12.14 (pass 70, ruling R70.20): the owner removes his own units' "?".
+        ["asl.game.remove-concealment"] = ["unitIds"],
     };
 
     /// <summary>The side that ends the present phase: either side in the RPh, RtPh, and CCPh, where both act; the DEFENDER in the DFPh; else the ATTACKER.</summary>
