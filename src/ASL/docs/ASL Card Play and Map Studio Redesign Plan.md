@@ -1782,14 +1782,16 @@ Moved here by pass 60 (2026-10-15), with no task renumbered: more unarmored vehi
 
 Moved here by pass 65 (2026-10-24), with no task renumbered: PRC in CC, decided in Rules and not wired into Play (A11.611, A11.71, with 70.7); Heat of Battle, leadership, and LLMC for PRC, and D6.651's reach of a Passenger leader (D6.651); a CC counter on an unload or a Bail Out into an enemy Location, and a vehicle entered at its capture in the CCPh (D6.5, D6.24, D5.42); the Bail Out NMC's Heat of Battle, leadership, Wound Severity, and ELR, and D5.311's crew's (D6.24, D5.311); TPBF's CC counter at PRC (A7.211); CC against a wreck (D10.1); a Carrier HS's recombination without a TC or leader (D6.82).
 
+Moved here from pass 75 (2026-10-25, at the user's word, after weighing whether to combine passes 70 and 75: the passes stay separate), with no task renumbered and no estimate moved, so that the morale check outside fire and CC with a vehicle are each changed in one pass: Heat of Battle's Unarmed and PRC exemptions and its DR in the MCs outside Fire and Rally (A15.1), the wound procedure in every Casualty Reduction (A17.1), and the Unarmed unit's ELR immunity (A19.11), all with 70.1; Leader Creation in CC against a vehicle (A18.12) and A11.52's capture of Passengers, with 70.7. The inventory now gives pass 70 48 rows and pass 75 74; the frame of pass 70 estimates them.
+
 **Pass 75: Infantry IV: the small sections, and Interrogation** (new; 56 rows of the inventory). Counters: none. Needs first: 40; 45 for DC between levels.
 
 | Task | Rules | Estimate |
 |---|---|---|
 | 75.1 Snipers completed: the counter at setup, placement, the Sniper player's choices, attacks on vehicles and on the enemy Sniper, Sniper Check, LLMC after a hit | A14.01 (p. 82), A14.1 (p. 82), A14.2 (p. 82), A14.21 (p. 82), A14.22 (p. 82), A14.3 (p. 82), A14.31 (p. 82), A14.33 (p. 82), A14.4 (p. 82) | 1:00 |
-| 75.2 Heat of Battle and berserk remainder: Unarmed and PRC exemptions, a hero's weapons, the next nearest target, the return to normal | A15.1 (p. 83), A15.23 (p. 83), A15.43 (p. 84), A15.431 (p. 84), A15.432 (p. 84), A15.45 (p. 84), A15.46 (p. 84) | 1:00 |
-| 75.3 Wounds: the pin after more than 3 MF, a carried man; Leader Creation in Close Combat against a vehicle | A17.1 (p. 85), A17.2 (p. 85), A18.12 (p. 85), A18.2 (p. 85) | 0:20 |
-| 75.4 Unit Substitution: Unarmed exemption, Ammunition Shortage, an SSR ELR for underscored units, a MG's B# for Inexperienced users | A19.11 (p. 86), A19.131 (p. 86), A19.132 (p. 86), A19.31 (p. 86), A19.32 (p. 86) | 0:40 |
+| 75.2 Heat of Battle and berserk remainder: a hero's weapons, the next nearest target, the return to normal (A15.1's exemptions moved to pass 70, 2026-10-25) | A15.23 (p. 83), A15.43 (p. 84), A15.431 (p. 84), A15.432 (p. 84), A15.45 (p. 84), A15.46 (p. 84) | 1:00 |
+| 75.3 Wounds: the pin after more than 3 MF, a carried man; Field Promotions' remainder (A17.1 and A18.12 moved to pass 70, 2026-10-25) | A17.2 (p. 85), A18.2 (p. 85) | 0:20 |
+| 75.4 Unit Substitution: Ammunition Shortage, an SSR ELR for underscored units, a MG's B# for Inexperienced users (A19.11's Unarmed exemption moved to pass 70, 2026-10-25) | A19.131 (p. 86), A19.132 (p. 86), A19.31 (p. 86), A19.32 (p. 86) | 0:40 |
 | 75.5 Prisoners: Commissars and stacks at surrender, the exchange, Massacre of any Unarmed unit, a Guard's Deployment, escape by nationality, rearming, Scrounging, the double VP | A20.21 (p. 86), A20.221 (p. 87), A20.4 (p. 87), A20.5 (p. 87), A20.51 (p. 87), A20.53 (p. 87), A20.55 (p. 88), A20.551 (p. 88), A20.552 (p. 88), A26.222 (p. 100) | 0:40 |
 | 75.6 MOL by a leader; a DC at another level; Set DC and its Clearance | A22.611 (p. 89), A22.62 (p. 90), A23.3 (p. 90), A23.6 (p. 91), A23.61 (p. 91), A23.7 (p. 91), A23.71 (p. 91), A23.72 (p. 91), B24.75 (p. 142) | 1:40 |
 | 75.7 Control of any hex or Location a card names | A26.13 (p. 99) | 0:20 |
@@ -1799,7 +1801,7 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: PRC in CC, decided 
 
 Moved here by pass 60 (2026-10-15), with no task renumbered: a MOL at an unarmored vehicle, a leader's MOL, and a MOL in a FG (A22.612, C11.51, with 75.6).
 
-Moved here by pass 65 (2026-10-24), with no task renumbered: A11.52's capture of Passengers; rearming with scrounged small arms (A20.552, D10.5, with 75.5); captured vehicles' VP (A21.2); a DC thrown or Placed by a Passenger (D6.72, with 75.6).
+Moved here by pass 65 (2026-10-24), with no task renumbered: A11.52's capture of Passengers (moved on to pass 70 on 2026-10-25); rearming with scrounged small arms (A20.552, D10.5, with 75.5); captured vehicles' VP (A21.2); a DC thrown or Placed by a Passenger (D6.72, with 75.6).
 
 **Pass 80: Nationalities I: the catalog's counters** (new; 14 rows of the inventory). Counters: none. Needs first: 35.
 
