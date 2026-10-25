@@ -700,6 +700,28 @@ public sealed partial class GamePlanner
                 var record = EventId(attemptId, events.Count + 1);
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-interdicted", new RoutInterdicted(routing.Id, to, rollId, morale, 0, result) { Interdictor = interdictor }, package, null));
                 var outcome = ScenarioA1RoutCalculator.InterdictionEffect(result);
+
+                // A10.53, A15.1 (pass 70, rulings R70.4, R70.5): the NMC is "subject to ... everything that normally entails", so its Original 2 calls for a
+                // Heat of Battle DR, which the Morale Check member resolves after the Interdiction's record; one that rallies the unit or makes it berserk
+                // ends its rout here.
+                if (outcome == InterdictionOutcome.Passed && ScenarioA1MoraleCheck.InterdictionHeatOfBattleDue(original))
+                {
+                    var checking = Replay([.. existing, .. events]).Current!;
+                    var facts = new MoraleCheckFacts(MoraleCheckFacts.Nmc, [MoraleTarget(checking, checking.Unit(routing.Id)!, to)], checking.Side(routing.Side!)?.Elr,
+                        new FireRolls(null, null, new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal) { [routing.Id] = drawn.Values }, null, null))
+                    {
+                        NoQuarter = checking.NoQuarter.Contains(routing.Side!, StringComparer.Ordinal) ? true : null,
+                    };
+                    var heat = AddMoraleCheck(scope, attemptId, expected, actor, events, draw, checking, facts,
+                        new Dictionary<string, string>(StringComparer.Ordinal) { ["checks:" + routing.Id] = rollId }, routing.Side!, to, ScenarioA1MoraleCheck.Interdiction,
+                        [record]);
+                    rolls = events.Count(item => item.Payload is DiceRolled);
+                    if (heat?.Effects.FirstOrDefault(item => item.UnitId == routing.Id) is { } rallied && ScenarioA1MoraleCheck.EndsRout(rallied))
+                    {
+                        break;
+                    }
+                }
+
                 if (outcome == InterdictionOutcome.Passed)
                 {
                     continue;
@@ -726,6 +748,14 @@ public sealed partial class GamePlanner
 
                 var (type, payload) = outcome == InterdictionOutcome.Reduced ? CasualtyReduction(current, attemptId, severity) : ("instance-eliminated", new InstanceEliminated(routing.Id));
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [record]));
+
+                // A10.2 (pass 70, ruling R70.3): a leader the Interdiction eliminates, a mortal wound included, causes a LLMC of the units in the Location.
+                if (payload is InstanceEliminated)
+                {
+                    AddLeaderLossChecks(scope, attemptId, expected, actor, events, draw, after, Replay([.. existing, .. events]).Current!, [(routing.Id, true)],
+                        ScenarioA1MoraleCheck.Interdiction, [record]);
+                    rolls = events.Count(item => item.Payload is DiceRolled);
+                }
 
                 // A10.53: a HS left by Casualty Reduction, or a wounded SMC, routs on; an eliminated unit does not.
                 if (!ScenarioA1RoutCalculator.RoutsOn(payload is InstanceEliminated))

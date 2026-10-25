@@ -670,6 +670,9 @@ public static class ReplaySteps
                 AmbushRolled ambush => ambush.Location,
                 OrdnanceFired ordnance => ordnance.Target,
                 RallyAttempted rally => before.Location(rally.Unit)?.Location,
+
+                // Pass 70 (ruling R70.4): a morale check made outside an attack is seen in its Location, within the step of what caused it.
+                MoraleCheckResolved check => BoardLocation.TryParse(check.Location, out var checkedAt) ? checkedAt : null,
                 _ => null,
             };
             if (at is not null)

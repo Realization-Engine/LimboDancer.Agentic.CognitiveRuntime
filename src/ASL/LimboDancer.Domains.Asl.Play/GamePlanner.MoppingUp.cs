@@ -223,6 +223,13 @@ public sealed partial class GamePlanner
                 Push(type, payload);
             }
 
+            // A10.2 (pass 70, ruling R70.3): a leader the Casualty dr eliminates, by a mortal wound, causes a LLMC of the units in his Location.
+            (string, bool)[] lostLeaders = [.. struck.Where(id => built.Any(item => item.Payload is InstanceEliminated gone && gone.Id == id)).Select(id => (id, true))];
+            if (lostLeaders.Length > 0)
+            {
+                AddLeaderLossChecks(scope, attemptId, expected, actor, built, draw, state, Replay([.. existing, .. built]).Current!, lostLeaders, ScenarioA1MoraleCheck.MoppingUp, null);
+            }
+
             return built;
         }
 

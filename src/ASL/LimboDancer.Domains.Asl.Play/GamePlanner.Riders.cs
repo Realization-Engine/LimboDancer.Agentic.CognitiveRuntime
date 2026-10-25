@@ -113,6 +113,15 @@ public sealed partial class GamePlanner
             return rollId;
         }
 
+        // Pass 70 (ruling R70.9): the NMCs are resolved by the Morale Check member, with a Rider leader's DRM (A10.7 EXC), a SMC's Wound Severity dr (A17.11),
+        // and ELR Replacement, never Disruption (A19.12). A side with no ELR declared keeps the check of pass 65, its SMC's wound included.
+        var sideElr = state.Side(riders.Count > 0 ? riders[0].Source.Side ?? string.Empty : string.Empty)?.Elr;
+        if (sideElr is not null)
+        {
+            AddMemberBailOuts(scope, attemptId, expected, actor, package, events, draw, state, riders, vehicleId, at, causes, sideElr.Value, Roll);
+            return;
+        }
+
         foreach (var rider in riders)
         {
             // D6.24: a Rider's Morale Level is in the catalog, which boarding and setup check (RiderBar).
@@ -151,22 +160,133 @@ public sealed partial class GamePlanner
 
             if (result == ScenarioA1RiderRules.Reduced)
             {
-                var (type, payload) = CasualtyReduction(rider.Source with
+                // A17.11 (pass 70, the crash brief 3b names): a SMC's Casualty Reduction is a wound, and its Wound Severity dr is made at once.
+                var onFoot = OnFoot(rider, at, broken: true);
+                int? severity = null;
+                if (WoundSeverityDue(onFoot))
                 {
-                    Id = rider.Id,
-                    Kind = rider.Definition is { } final && FireReference.Value.Definitions.GetValueOrDefault(final) is { } replaced ? replaced.Kind : rider.Source.Kind,
-                    Definition = rider.Definition is { } named && rider.Source.Definition is { } reference ? reference with
-                    {
-                        Definition = named
-                    } : rider.Source.Definition,
-                    Position = new MapPosition(at),
-                    Conditions = new Dictionary<string, ConditionState>(rider.Source.Conditions, StringComparer.Ordinal) { [Conditions.Broken] = ConditionState.True },
-                }, attemptId, null);
+                    Roll(1, ScenarioA1Wounds.SeverityPurpose);
+                    severity = ((DiceRolled)events[^1].Payload).Values[0];
+                }
+
+                var (type, payload) = CasualtyReduction(onFoot, attemptId, severity);
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, causes));
             }
             else if (result == ScenarioA1RiderRules.Eliminated)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(rider.Id), package, null, causes));
+            }
+        }
+    }
+
+    /// <summary>A Bailing Out Rider on foot beneath its AFV, under its id and definition once the attack's results are written, broken when it is.</summary>
+    private static UnitInstance OnFoot(BailingRider rider, BoardLocation at, bool broken)
+    {
+        var conditions = new Dictionary<string, ConditionState>(rider.Source.Conditions, StringComparer.Ordinal);
+        if (broken)
+        {
+            conditions[Conditions.Broken] = ConditionState.True;
+        }
+
+        if (rider.Cause == ScenarioA1RiderRules.Pin && !broken)
+        {
+            conditions[Conditions.Pinned] = ConditionState.True;
+        }
+
+        return rider.Source with
+        {
+            Id = rider.Id,
+            Kind = rider.Definition is { } final && FireReference.Value.Definitions.GetValueOrDefault(final) is { } replaced ? replaced.Kind : rider.Source.Kind,
+            Definition = rider.Definition is { } named && rider.Source.Definition is { } reference ? reference with
+            {
+                Definition = named
+            } : rider.Source.Definition,
+            Position = new MapPosition(at),
+            Conditions = conditions,
+        };
+    }
+
+    /// <summary>
+    /// The Bail Outs of one vehicle's Riders through the Morale Check member (D6.24, A10.7 EXC, A17.11, A19.12, A19.13; pass 70, ruling R70.9): each NMC's DR,
+    /// the member's resolution of them all (a Rider leader's DRM reaches his vehicle's Riders; Riders take no Heat of Battle and no LLMC, A15.1, A10.2), and
+    /// for each Rider its SW drs, the <c>rider-bailed-out</c> record with its DRM and ELR, and its effects as a fire record's are written, on foot beneath the AFV.
+    /// </summary>
+    private void AddMemberBailOuts(GameScope scope, string attemptId, long expected, string actor, string? package, List<GameEvent> events, Func<RollRequest, RollResult> draw,
+        GameState state, IReadOnlyList<BailingRider> riders, string vehicleId, BoardLocation at, IReadOnlyList<string>? causes, int sideElr, Func<int, string, string> roll)
+    {
+        var moving = state.Unit(vehicleId) is { } vehicle && VehicleMoved(state, vehicle, false);
+        FireTarget Subject(UnitInstance unit, string id, string? definition, bool broken, bool pinned) => LiveFire.Target(state, unit, at) with
+        {
+            UnitId = id,
+            DefinitionId = definition ?? unit.Definition?.Definition,
+            Broken = broken,
+            Pinned = pinned && !broken,
+            Unarmed = Is(unit, Conditions.Unarmed) ? true : null,
+            Aboard = new FireAboard(vehicleId, FirePrc.Rider, moving, null),
+        };
+
+        var rolls = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
+        var rollIds = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var rider in riders)
+        {
+            // D6.24: a Rider's Morale Level is in the catalog, which boarding and setup check (RiderBar).
+            if (rider.Definition is not { } known || FireReference.Value.Definitions.GetValueOrDefault(known) is not { Morale: not null, BrokenMorale: not null })
+            {
+                throw new InvalidOperationException($"The catalog gives the Rider {rider.Id} no Morale Level (D6.24).");
+            }
+
+            var rollId = roll(2, "rider-bail-out");
+            rollIds[rider.Id] = rollId;
+            rolls[rider.Id] = ((DiceRolled)events[^1].Payload).Values;
+        }
+
+        // The vehicle's other Riders may lead the check (A10.7 EXC); a unit of a definition the catalog lacks is left out.
+        var bailing = riders.Select(rider => rider.Source.Id).ToHashSet(StringComparer.Ordinal);
+        FireTarget[] others = [.. RidersOf(state, vehicleId).Where(unit => !bailing.Contains(unit.Id) && DefinitionOf(unit) is not null)
+            .Select(unit => Subject(unit, unit.Id, null, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned)))];
+        FireTarget[] subjects = [.. riders.Select(rider => Subject(rider.Source, rider.Id, rider.Definition, rider.Broken,
+            rider.Cause == ScenarioA1RiderRules.Pin || Is(rider.Source, Conditions.Pinned)))];
+        var facts = new MoraleCheckFacts(MoraleCheckFacts.Nmc, subjects, sideElr, new FireRolls(null, null, rolls, null, null))
+        {
+            Others = others.Length > 0 ? others : null,
+            NoQuarter = state.NoQuarter.Contains(riders[0].Source.Side ?? string.Empty, StringComparer.Ordinal) ? true : null,
+        };
+        var (resolution, _) = ResolveMoraleCheck(scope, attemptId, expected, actor, events, draw, facts, null, causes);
+        foreach (var (rider, subject) in riders.Zip(subjects))
+        {
+            var effect = resolution.Effects.First(item => item.UnitId == rider.Id);
+            var check = effect.Checks.First(item => item.Kind == "MC");
+            var replaced = effect.Events.Any(item => item is "replaced-elr" or "replaced-by-two-half-squads");
+            var result = ScenarioA1MoraleCheck.BailOutResult(check, rider.Broken, replaced);
+            var carrierBroken = ScenarioA1RiderRules.LeavesBroken(result, rider.Broken);
+            var weapons = new List<RiderWeapon>();
+            foreach (var weapon in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
+                && holding.Holder == rider.Source.Id))
+            {
+                var weaponRoll = carrierBroken ? null : roll(1, "rider-weapon");
+                var dr = weaponRoll is null ? (int?)null : ((DiceRolled)events[^1].Payload).Values[0];
+                weapons.Add(new RiderWeapon(weapon.Id, weaponRoll, ScenarioA1RiderRules.WeaponFate(dr,
+                    weapon.Definition is { } held && FireReference.Value.Definitions.GetValueOrDefault(held.Definition)?.BreakdownRemoves == true, carrierBroken)));
+            }
+
+            var recordId = EventId(attemptId, events.Count + 1);
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "rider-bailed-out",
+                new RiderBailedOut(rider.Id, vehicleId, at, rider.Cause, rollIds[rider.Id], check.MoraleLevel, result)
+                {
+                    Weapons = weapons.Count == 0 ? null : weapons,
+                    Drm = (int)check.Drm.Sum(item => item.Value),
+                    Elr = subject.Elr ?? sideElr,
+                }, package, null, causes));
+
+            // What the NMC did, on the unit now on foot beneath the AFV, as a fire record's effect is written.
+            var onFoot = OnFoot(rider, at, rider.Broken);
+            var footing = state with
+            {
+                Units = [.. state.Units.Where(unit => unit.Id != rider.Source.Id && unit.Id != rider.Id), onFoot]
+            };
+            foreach (var payload in EffectEvents(footing, effect, attemptId, false))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [recordId]));
             }
         }
     }

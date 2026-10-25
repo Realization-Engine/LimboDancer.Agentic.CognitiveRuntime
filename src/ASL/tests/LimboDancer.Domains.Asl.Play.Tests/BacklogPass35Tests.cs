@@ -445,11 +445,12 @@ public sealed class BacklogPass35Tests : IDisposable
     public async Task ACommissarRoutsThroughInterdictionRatherThanSurrender()
     {
         // Task 35.4 (A20.21, A25.22). The broken Commissar rc in E3 is ADJACENT to g1 and can get away only through Open Ground g1 Interdicts. Another
-        // unit would surrender instead; a Commissar never does, and risks the Interdiction: two NMC, each passed.
+        // unit would surrender instead; a Commissar never does, and risks the Interdiction: two NMC, each passed. Pass 70 (ruling R70.4): an Original 3
+        // each, since an Original 2 now calls for Heat of Battle.
         await SetupAt(5, "german", Unit("g1", "attacker-squad", "E2", "german"), Unit("rc", "defender-commissar-9-0", "E3", "russian", "asl:broken"));
         Assert.Equal("rtph", Current.Phase);
         var before = Revision;
-        Committed(await Rout("rc", ["E4", "E5"], Once(1, 1, 1, 1)));
+        Committed(await Rout("rc", ["E4", "E5"], Once(1, 2, 1, 2)));
         Assert.Equal(2, Since(before).Select(item => item.Payload).OfType<RoutInterdicted>().Count());
         Assert.Equal(L("E5"), Current.Location("rc")!.Location.ToString());
     }

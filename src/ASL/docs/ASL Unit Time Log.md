@@ -1763,3 +1763,13 @@ One session under the user's word of 2026-10-23 ("start on Pass 65 without my in
 | Fix Round D: the page and the record lines | 07:56 | 08:35 | 0:39 |  | The four rounds: 2:07 |
 | The whole-pass Studio check and the measurement (bisect at Rounds B and C, a dotnet-trace sample) | 08:36 | 08:49 | 0:13 |  | The seeming 6x was three Studios and a profiler on one audit file; alone, level with the base |
 | The rule to stop Studios when done, the strict stage again (passed), the documents by an agent (the design's sections 7 to 20, the review, R65.1 to R65.33, backlog 71, the plan, 99 inventory rows, the coverage), read and corrected | 08:50 | 09:20 | 0:30 | | The base stage reused; baseline and build run beside the documents |
+
+## Pass 70: Infantry III: morale, Close Combat, and concealment, 2026-10-25
+
+One session under the user's word of 2026-10-25 ("Start Pass 70 ... Run it without my intervention, up to the merge gate"). The ends of the first rows are the clock reads of the pass's notes (`code-builders/pass-history/pass-70-infantry-iii/notes.md`); later rows are written by `timelog_row.py`.
+
+| Task | Start | End | Duration | Estimate | Note |
+|---|---|---|---|---|---|
+| The frame: the prompt and standing rules read, the state checked against main, the branch cut and `base` (11:52 to 11:57), four read-only frame agents, the design's sections 1 to 7 with R70.1 to R70.34 (R70.17 corrected on the page), the build brief and ten increment briefs | 11:51 | 12:14 | 0:23 | | Frame agents 11:54 to about 12:12 |
+| The base measurement (main's build, alone) | 12:14 | 12:17 | 0:03 | | |
+| 3a, 70.3 and 70.10: one read of who sees, the Right of Inspection by LOS | 12:17 | 13:04 | 0:47 | 4:30 | Agent 12:17 to about 12:55; then the test-game library repaired (its template game was retired by PR 38), the Studio check, the measurement again (the open re-measured from fresh processes), the proof tool built and run small on both sides, the commit |

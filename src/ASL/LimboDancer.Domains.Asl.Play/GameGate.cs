@@ -202,6 +202,8 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             && !(item.Payload is InstanceEliminated && plan.Events.Any(step => step.Payload is VehicleStepped))
             && !(item.Payload is VehicleCheckRolled or DiceRolled && plan.Events.Any(step => step.Payload is VehicleStepped))
             && !(item.Payload is ConditionsChanged && plan.Events.Any(step => step.Payload is PhaseChanged))
+            // D6.24 (pass 70): a Bail Out, and what its NMC did to a Rider, follow the step or the shot that caused it, which is read instead.
+            && !(item.Payload is ConditionsChanged or LineageRecorded or RiderBailedOut && plan.Events.Any(step => step.Payload is RiderBailedOut))
             // E1.921 (table player, pass 16): a hidden Starshell firer placed beneath a "?" follows the Starshell's own record.
             && !(item.Payload is ConditionsChanged && plan.Events.Any(step => step.Payload is StarshellFired))
             // A10.62 (ruling R13.1): the DM an action gives broken units follows its own effect.

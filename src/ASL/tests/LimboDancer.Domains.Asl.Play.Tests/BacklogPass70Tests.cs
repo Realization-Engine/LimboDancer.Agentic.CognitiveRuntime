@@ -10,6 +10,8 @@ using LimboDancer.Domains.Asl.Maps.Terrain;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.State;
 using LimboDancer.Domains.Asl.Units.Vocabulary;
+using FireResolution = LimboDancer.Domains.Asl.Rules.FireResolution;
+using HeatOfBattleOutcome = LimboDancer.Domains.Asl.Rules.HeatOfBattleOutcome;
 
 namespace LimboDancer.Domains.Asl.Play.Tests;
 
@@ -55,8 +57,21 @@ public sealed class BacklogPass70Tests : IDisposable
         Category = LosCategory.Open,
     };
 
-    /// <summary>Board 01's grid, all Open Ground at level 0.</summary>
-    private static BoardHandle Board()
+    private static TerrainType Woods() => new()
+    {
+        Code = 2,
+        Name = "Woods",
+        Category = LosCategory.Woods,
+    };
+
+    // Increment 3b: the hexes a test reads as woods.
+    private readonly HashSet<string> woods = new(StringComparer.Ordinal);
+
+    // Increment 3b: the scenario year of the game (D6.2: Riders of every nationality from 1943).
+    private int year = 1942;
+
+    /// <summary>Board 01's grid, all Open Ground at level 0 but the hexes a test reads as woods.</summary>
+    private BoardHandle Board()
     {
         var geometry = BoardGeometry.StandardGeomorphic;
         var hexes = new List<HexFacts>();
@@ -64,8 +79,9 @@ public sealed class BacklogPass70Tests : IDisposable
         {
             var name = HexName.Parse(text);
             Assert.True(geometry.TryGetIndex(name, out var index));
-            var center = new LocationFacts(0, Open(), null);
-            HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, Open(), null, false, false, false, false, null))];
+            var type = woods.Contains(text) ? Woods() : Open();
+            var center = new LocationFacts(0, type, null);
+            HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, type, null, false, false, false, false, null))];
             hexes.Add(new HexFacts(name, index, 0, false, center, [center], hexsides, null, CenterTerrainSource.CenterSample));
         }
 
@@ -190,7 +206,7 @@ public sealed class BacklogPass70Tests : IDisposable
                     new { id = "russian", nationality = "russian", elr = 2, friendlyEdge = "right" },
                 },
                 ["scenarioMonth"] = 7,
-                ["scenarioYear"] = 1942,
+                ["scenarioYear"] = year,
             },
             placements,
         })));
@@ -351,5 +367,155 @@ public sealed class BacklogPass70Tests : IDisposable
         Assert.Equal(!inLos, Is(Current.Unit("de-h")!, Conditions.Concealed));
         Assert.Equal(inLos, result.Reasons.Any(reason => reason.StartsWith("play.concealment:", StringComparison.Ordinal) && reason.Contains("(A12.141)", StringComparison.Ordinal)));
         NoReplayErrors();
+    }
+
+    // Increment 3b: the morale checks made outside an attack (task 70.1, part I; rulings R70.3 to R70.10).
+
+    private static Dictionary<string, object> Vehicle(string id, string definition, string hex, string side, string facing) => new()
+    {
+        ["id"] = id,
+        ["kind"] = "asl:vehicle",
+        ["definition"] = definition,
+        ["side"] = side,
+        ["position"] = new Dictionary<string, string> { ["at"] = L(hex), ["facing"] = facing },
+        ["conditions"] = new Dictionary<string, bool>(),
+    };
+
+    /// <summary>A unit aboard a vehicle as a Rider (D6.2).</summary>
+    private static Dictionary<string, object> Rider(string id, string kind, string definition, string vehicle)
+    {
+        var unit = Unit(id, kind, definition, "B10", "german");
+        unit["position"] = new Dictionary<string, string> { ["in"] = vehicle, ["role"] = "rider" };
+        return unit;
+    }
+
+    private IEnumerable<MoraleCheckResolved> ChecksSince(long revision) => Since(revision).Select(item => item.Payload).OfType<MoraleCheckResolved>();
+
+    private static FireResolution ResolutionOf(MoraleCheckResolved check) => check.Resolution.Deserialize<FireResolution>(LiveFire.Json)!;
+
+    [Fact]
+    public async Task AnInterdictionNmcsOriginalTwoDrawsHeatOfBattleAndABerserkUnitRoutsNoFurther()
+    {
+        // A10.53, A15.1 (pp. 67, 83; rulings R70.4, R70.5): the broken 4-4-7 routs from E5 for the woods of E7 and is Interdicted in E6 by the 4-6-7 in E2.
+        // Its NMC is an Original 2, which passes and calls for Heat of Battle: 3 + 3, +2 Russian, +1 broken = 9, Berserk, a Known enemy unit in its LOS.
+        // It rallies, so its rout ends in E6.
+        woods.Add("E7");
+        await SetupAt(5, "german", Squad("g1", "E2", "german"), Squad("r1", "E5", "russian", "asl:broken"));
+        var before = Revision;
+        Committed(await Do(GameActions.Rout, Once(1, 1, 3, 3), new
+        {
+            unitId = "r1",
+            route = new[] { L("E6"), L("E7") },
+        }));
+        Assert.Single(Since(before).Select(item => item.Payload).OfType<RoutInterdicted>());
+        var check = Assert.Single(ChecksSince(before));
+        Assert.Equal(("interdiction", L("E6")), (check.Cause, check.Location));
+        Assert.Equal(HeatOfBattleOutcome.Berserk, Assert.Single(ResolutionOf(check).Effects).HeatOfBattle!.Result);
+        var unit = Current.Unit("r1")!;
+        Assert.Equal((true, false, L("E6")), (Is(unit, Conditions.Berserk), Is(unit, Conditions.Broken), Current.Location("r1")!.Location.ToString()));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ALeaderLostToInterdictionCausesALlmcOfTheUnitsInHisLocation()
+    {
+        // A10.2 (p. 65; ruling R70.3): the broken 8-1 routs into E6, where the 4-4-7 r2 stands, and fails his Interdiction NMC (6 + 5 = 11 against 8): a
+        // wound, mortal on a 6 (A17.11). His loss calls on r2 for a LLMC with his -1 reversed: 2 + 3 + 1 = 6 against 7, passed.
+        woods.Add("E7");
+        await SetupAt(5, "german", Squad("g1", "E2", "german"), Unit("rl", "asl:leader", "defender-leader-8-1", "E5", "russian", "asl:broken"), Squad("r2", "E6", "russian"));
+        var before = Revision;
+        Committed(await Do(GameActions.Rout, Once(6, 5, 6, 2, 3), new
+        {
+            unitId = "rl",
+            route = new[] { L("E6"), L("E7") },
+        }));
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("rl")!.Status);
+        var check = Assert.Single(ChecksSince(before));
+        var effect = Assert.Single(ResolutionOf(check).Effects);
+        Assert.Equal(("r2", "LLMC", 6, true), (effect.UnitId, effect.Checks[0].Kind, effect.Checks[0].FinalDr, effect.Checks[0].Passed));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ALeaderEliminatedForFailureToRoutCausesALlmcBeforeThePhaseEnds()
+    {
+        // A10.5, A10.2 (ruling R70.3): the broken 8-1 in E5, in the Open Ground in the LOS and Normal Range of the 4-6-7 in E2, does not rout and is
+        // eliminated as the RtPh ends; before the phase changes the 4-4-7 with him takes its LLMC: 4 + 3 + 1 = 8 against 7, broken, within its ELR of 2.
+        await SetupAt(5, "german", Squad("g1", "E2", "german"), Unit("rl", "asl:leader", "defender-leader-8-1", "E5", "russian", "asl:broken"), Squad("r2", "E5", "russian"));
+        var before = Revision;
+        var result = await Do(GameActions.AdvancePhase, Once(4, 3), new
+        {
+        });
+        Committed(result);
+        Assert.Contains(result.Reasons, reason => reason.StartsWith("play.leader-loss:", StringComparison.Ordinal));
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("rl")!.Status);
+        var check = Assert.Single(ChecksSince(before));
+        Assert.Equal("failure-to-rout", check.Cause);
+        Assert.True(Is(Current.Unit("r2")!, Conditions.Broken));
+        NoReplayErrors();
+    }
+
+    /// <summary>A German PzKpfw IIIH at B10 with its Riders, moved in its MPh into B9, read as woods, so they Bail Out in B10 (D6.21).</summary>
+    private async Task<long> BailOutIntoWoods(DiceRoller dice, params Dictionary<string, object>[] riders)
+    {
+        year = 1943;
+        woods.Add("B9");
+        await SetupAt(2, "german", [Vehicle("de-tank", "attacker-tank", "B10", "german", "north-east"), .. riders, Squad("ru-s", "H8", "russian")]);
+        Committed(await Do(GameActions.MoveVehicle, NoRoll(), new
+        {
+            vehicleId = "de-tank",
+            kind = "start",
+        }));
+        if (Current.Movement is { WindowOpen: true })
+        {
+            Committed(await Do(GameActions.PassFire, NoRoll(), new
+            {
+            }));
+        }
+
+        var before = Revision;
+        Committed(await Do(GameActions.MoveVehicle, dice, new
+        {
+            vehicleId = "de-tank",
+            kind = "enter",
+            to = L("B9"),
+        }));
+        return before;
+    }
+
+    [Fact]
+    public async Task ASmcRidersBailOutTakesItsWoundSeverityDrAndAnOlderRecordReplaysAsItWas()
+    {
+        // D6.24, A10.31, A17.11, A19.13 (ruling R70.9; the crash of brief 3b): the 8-1 Rider's NMC is an Original 12, a Casualty MC 4 beyond his 8 and his
+        // side's ELR of 3: he is Replaced by the 8-0, then wounded, his Wound Severity dr of 2 minor, broken beneath the tank in B10. Before the pass the
+        // plan threw on the missing dr.
+        var before = await BailOutIntoWoods(Once(6, 6, 2, 1, 1), Rider("de-l", "asl:leader", "attacker-leader-8-1", "de-tank"));
+        var bailed = Assert.Single(Since(before).Select(item => item.Payload).OfType<RiderBailedOut>());
+        Assert.Equal(("reduced", 0, 3), (bailed.Result, bailed.Drm, bailed.Elr));
+        var leader = Assert.Single(Current.Units, unit => unit.Kind == "asl:leader" && unit.Status == InstanceStatus.Active);
+        Assert.Equal(("attacker-leader-8-0", true, true, L("B10")), (leader.Definition!.Definition, Is(leader, Conditions.Wounded), Is(leader, Conditions.Broken),
+            Current.Location(leader.Id)!.Location.ToString()));
+        NoReplayErrors();
+
+        // The record without the pass's DRM and ELR, as a Bail Out recorded before it, is checked as before and replays to the same state.
+        GameEvent[] older = [.. store.Read(Scope)!.Events.Select(item => item.Payload is RiderBailedOut old ? item with { Payload = old with { Drm = null, Elr = null } } : item)];
+        var replayed = Planner().Replay(older);
+        Assert.False(replayed.HasErrors);
+        Assert.Equal(JsonSerializer.Serialize(Current.Units), JsonSerializer.Serialize(replayed.Current!.Units));
+    }
+
+    [Fact]
+    public async Task ARiderLeadersDrmReachesTheBailOutNmcOfHisVehiclesRiders()
+    {
+        // A10.7 EXC, D6.24 (ruling R70.9): the 8-1 Rider passes his NMC (2, 2); the 4-6-7's 4 + 4 - 1 = 7 against 7 pins it rather than breaking it. Its
+        // record carries the DRM, which the projector checks; without it the record would say broken.
+        var before = await BailOutIntoWoods(Once(2, 2, 4, 4, 1, 1), Rider("de-l", "asl:leader", "attacker-leader-8-1", "de-tank"),
+            Rider("de-s", "asl:squad", "attacker-squad", "de-tank"));
+        var squad = Since(before).Select(item => item.Payload).OfType<RiderBailedOut>().Single(item => item.Unit == "de-s");
+        Assert.Equal(("pinned", -1), (squad.Result, squad.Drm));
+        Assert.True(Is(Current.Unit("de-s")!, Conditions.Pinned));
+        NoReplayErrors();
+        GameEvent[] stripped = [.. store.Read(Scope)!.Events.Select(item => item.Payload is RiderBailedOut old ? item with { Payload = old with { Drm = null, Elr = null } } : item)];
+        Assert.True(Planner().Replay(stripped).HasErrors);
     }
 }

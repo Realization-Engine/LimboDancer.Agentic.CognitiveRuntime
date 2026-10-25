@@ -66,6 +66,16 @@ public sealed record FireRecord(string EventId, string FirerLocation, string Tar
     }
 }
 
+/// <summary>
+/// <c>morale-check-resolved</c>: a morale check made outside an attack (pass 70, task 70.1; rulings R70.3, R70.4): the Heat of Battle an Interdiction NMC's
+/// Original 2 calls for, or the LLMC and LLTC after a leader lost outside fire. It records the <paramref name="Units"/> the check names, their
+/// <paramref name="Location"/>, its <paramref name="Cause"/> (<c>interdiction</c>, <c>mopping-up</c>, <c>sniper</c>, <c>rally</c>, <c>panzerfaust</c>, or
+/// <c>failure-to-rout</c>), the rolls it used by purpose, the facts, and the Morale Check member's resolution; the effects follow as a fire record's do, and
+/// replay hands it to the Fire verifier as it hands a fire record.
+/// </summary>
+public sealed record MoraleCheckResolved(IReadOnlyList<string> Units, string Location, string Cause, IReadOnlyDictionary<string, string> Rolls, JsonElement Facts,
+    JsonElement Resolution) : EventPayload;
+
 /// <summary>Recomputes a fire record from its facts and rolls; supplied to replay by the project that owns the package.</summary>
 public interface IFireRecordVerifier
 {
@@ -74,4 +84,11 @@ public interface IFireRecordVerifier
     /// in; otherwise the reason it does not.
     /// </summary>
     public string? Verify(GameState state, FireResolved fire, IReadOnlyDictionary<string, DiceRolled> rolls);
+
+    /// <summary>
+    /// Null when a morale check record reproduces from its facts and recorded rolls and its facts agree with the state it is made in (pass 70, ruling R70.4);
+    /// otherwise the reason it does not. A verifier that does not know the record refuses it.
+    /// </summary>
+    public string? VerifyMoraleCheck(GameState state, MoraleCheckResolved check, IReadOnlyDictionary<string, DiceRolled> rolls) =>
+        "A morale check record can be replayed only with the Fire verifier of pass 70.";
 }

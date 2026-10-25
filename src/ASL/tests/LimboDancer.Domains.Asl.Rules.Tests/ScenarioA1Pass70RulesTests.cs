@@ -17,7 +17,10 @@ public sealed class ScenarioA1Pass70RulesTests
     // unclear ones not definitive (clear but not definitively so), and at the missing ones not given.
     private sealed class RangeLos(int[]? blocked = null, int[]? unclear = null, int[]? missing = null) : ISightLosReader
     {
-        public int Reads { get; private set; }
+        public int Reads
+        {
+            get; private set;
+        }
 
         public SightLosFacts? Los(int fromLocation, int toLocation)
         {
@@ -128,14 +131,340 @@ public sealed class ScenarioA1Pass70RulesTests
         // A12.16 (ruling R70.18): after play, a counter in a stack out of the viewer's inspection is shown as before play: the top itself, the rest
         // counted, and the equipment beneath withheld; a stack in LOS is shown in full.
         var beneath = new CounterFacts(true, false, false, false, false, true, false, false) { OutOfInspection = true };
-        var top = beneath with { IsTop = true };
+        var top = beneath with
+        {
+            IsTop = true
+        };
         Assert.Equal(CounterPresence.SealedUninspected, ScenarioA1Visibility.UnitPresence(beneath, beforePlay: false));
         Assert.Equal(CounterPresence.Shown, ScenarioA1Visibility.UnitPresence(top, beforePlay: false));
-        Assert.Equal(CounterPresence.Shown, ScenarioA1Visibility.UnitPresence(beneath with { OutOfInspection = false }, beforePlay: false));
+        Assert.Equal(CounterPresence.Shown, ScenarioA1Visibility.UnitPresence(beneath with
+        {
+            OutOfInspection = false
+        }, beforePlay: false));
         Assert.True(ScenarioA1Visibility.Withheld([beneath], beforePlay: false, sealAllowed: false));
         Assert.False(ScenarioA1Visibility.Withheld([beneath], beforePlay: false, sealAllowed: true));
         var weapon = new CounterFacts(true, false, false, false, false, false, false, true) { OutOfInspection = true };
         Assert.True(ScenarioA1Visibility.Withheld([weapon], beforePlay: false, sealAllowed: false));
         Assert.False(ScenarioA1Visibility.Withheld([weapon with { OutOfInspection = false }], beforePlay: false, sealAllowed: false));
+    }
+
+    // Increment 3b: the Morale Check member (task 70.1, part I; rulings R70.3 to R70.10).
+    private static readonly ScenarioA1FireReference Reference = new ScenarioA1FirePackage().Reference;
+    private const string At = "bd03:P10:0";
+    private static readonly int[] SnakeEyes = [1, 1];
+    private static readonly int[] Threes = [3, 3];
+    private static readonly int[] TwoThree = [2, 3];
+    private static readonly int[] TwoTwo = [2, 2];
+    private static readonly int[] Fives = [5, 5];
+    private static readonly int[] FiveSix = [5, 6];
+    private static readonly int[] Boxcars = [6, 6];
+    private static readonly string[] LeaderLossOfSquad = ["asl.a1.fire.roll-missing:leaderLoss:ru-s"];
+    private static readonly FireAboard InHalftrack = new("ru-ht", FirePrc.Passenger, false, null);
+
+    private static FireTarget Unit(string id, string definition, bool broken = false, FireAboard? aboard = null) =>
+        new(id, definition, At, broken, false, false, false, false, false, false)
+        {
+            KnownEnemyInLos = true,
+            Captors = [],
+            Aboard = aboard,
+        };
+
+    private static FireRolls Rolls(IReadOnlyDictionary<string, IReadOnlyList<int>>? checks = null, IReadOnlyDictionary<string, IReadOnlyList<int>>? leaderLoss = null,
+        IReadOnlyDictionary<string, int>? wounds = null, IReadOnlyDictionary<string, IReadOnlyList<int>>? heat = null) =>
+        new(null, null, checks, leaderLoss, wounds)
+        {
+            HeatOfBattle = heat,
+        };
+
+    private static Dictionary<string, IReadOnlyList<int>> Dice(string id, int[] dice) => new(StringComparer.Ordinal) { [id] = dice };
+
+    private static FireResolution Resolved(MoraleCheckFacts facts)
+    {
+        var result = ScenarioA1MoraleCheck.Resolve(facts, Reference);
+        Assert.True(result.Disposition == FireResolution.Resolved, string.Join("; ", result.Reasons));
+        return result;
+    }
+
+    [Fact]
+    public void AnInterdictionNmcsOriginalTwoCallsForHeatOfBattle()
+    {
+        // A10.53 (p. 67): the Interdiction NMC is "subject to ... everything that normally entails"; A15.1 (p. 83): an Original 2 calls for the Heat of
+        // Battle DR, +1 for a broken unit even if the 2 rallied it, +2 for the Russians. The member asks for it once the NMC is passed.
+        Assert.True(ScenarioA1MoraleCheck.InterdictionHeatOfBattleDue(2));
+        Assert.False(ScenarioA1MoraleCheck.InterdictionHeatOfBattleDue(3));
+        var facts = new MoraleCheckFacts(MoraleCheckFacts.Nmc, [Unit("ru-s", "defender-squad", broken: true)], 3, Rolls(Dice("ru-s", SnakeEyes)));
+        Assert.Equal(["asl.a1.fire.roll-missing:heatOfBattle:ru-s"], ScenarioA1MoraleCheck.Resolve(facts, Reference).Reasons);
+
+        // A Final DR of 3 + 3 + 3 = 9 is Berserk (A15.4): the unit rallies, so its rout ends where it was interdicted (ruling R70.5).
+        var effect = Assert.Single(Resolved(facts with
+        {
+            Rolls = Rolls(Dice("ru-s", SnakeEyes), heat: Dice("ru-s", Threes))
+        }).Effects);
+        Assert.Equal((9, HeatOfBattleOutcome.Berserk, true, false), (effect.HeatOfBattle!.FinalDr, effect.HeatOfBattle.Result, effect.Berserk == true, effect.Broken));
+        Assert.True(Assert.Single(effect.Checks).Passed);
+        Assert.True(ScenarioA1MoraleCheck.EndsRout(effect));
+        Assert.True(ScenarioA1MoraleCheck.AnyCheck(Resolved(facts with
+        {
+            Rolls = Rolls(Dice("ru-s", SnakeEyes), heat: Dice("ru-s", Threes))
+        })));
+
+        // A unit still broken (a hero created beside it, say) routs on; an eliminated one ends with no rout to end.
+        Assert.False(ScenarioA1MoraleCheck.EndsRout(effect with
+        {
+            Berserk = null,
+            Broken = true
+        }));
+        Assert.False(ScenarioA1MoraleCheck.EndsRout(effect with
+        {
+            Eliminated = true
+        }));
+    }
+
+    [Fact]
+    public void AnUnarmedUnitTakesNoHeatOfBattleAndNoReplacement()
+    {
+        // A15.1 (p. 83): "Unarmed units ... are not subject to Heat of Battle"; A19.11 (p. 86): "unarmed ... units are never subject to Replacement".
+        var unarmed = Unit("ru-s", "defender-squad") with
+        {
+            Unarmed = true
+        };
+        Assert.False(ScenarioA1HeatOfBattle.Subject(Reference.Definitions["defender-squad"], false, false, unarmed: true));
+        Assert.Null(Assert.Single(Resolved(new MoraleCheckFacts(MoraleCheckFacts.Nmc, [unarmed], 3, Rolls(Dice("ru-s", SnakeEyes)))).Effects).HeatOfBattle);
+
+        // An 11 fails a 7 by 4: an Unarmed squad is only broken, with no ELR asked for; the armed squad of ELR 2 is Replaced (A19.13).
+        var broken = Assert.Single(Resolved(new MoraleCheckFacts(MoraleCheckFacts.Nmc, [unarmed], null, Rolls(Dice("ru-s", FiveSix)))).Effects);
+        Assert.Equal((true, "defender-squad", false), (broken.Broken, broken.FinalDefinitionId, broken.Disrupted));
+        var armed = Assert.Single(Resolved(new MoraleCheckFacts(MoraleCheckFacts.Nmc, [unarmed with { Unarmed = null }], 2, Rolls(Dice("ru-s", FiveSix)))).Effects);
+        Assert.True(armed.Broken);
+        Assert.Equal(ScenarioA1FireReference.ReplacementOf("defender-squad") ?? "defender-squad", armed.FinalDefinitionId);
+    }
+
+    [Fact]
+    public void ALlmcTakesTheReversedDrmAndRidersAndOtherVehiclesPassengersTakeNone()
+    {
+        // A10.2 (p. 65): the units of the Location with a lower Morale Level take a LLMC, the eliminated leader's negative modifier reversed; "Riders ...
+        // [and] Passengers ... neither take or cause LLMC/LLTC", but to fellow Passengers of the same vehicle.
+        var facts = new MoraleCheckFacts(MoraleCheckFacts.None, [], 3, Rolls())
+        {
+            Others = [Unit("ru-s", "defender-squad"), Unit("ru-r", "defender-squad", aboard: new FireAboard("ru-t", FirePrc.Rider, false, null)),
+                Unit("ru-p", "defender-squad", aboard: InHalftrack)],
+            LostLeaders = [Unit("ru-l", "defender-leader-8-1")],
+        };
+        Assert.Equal(LeaderLossOfSquad, ScenarioA1MoraleCheck.Resolve(facts, Reference).Reasons);
+        var resolved = Resolved(facts with
+        {
+            Rolls = Rolls(leaderLoss: Dice("ru-s", TwoThree))
+        });
+        var check = Assert.Single(resolved.Effects.Single(item => item.UnitId == "ru-s").Checks);
+        Assert.Equal(("LLMC", 6, true), (check.Kind, check.FinalDr, check.Passed));
+        Assert.Equal(1m, check.Drm.Single(item => item.Name == "reversed-leadership:ru-l").Value);
+        Assert.All(resolved.Effects.Where(item => item.UnitId != "ru-s"), item => Assert.Empty(item.Checks));
+
+        // A11.141: none in Melee; with no check at all the member says so.
+        var melee = Resolved(facts with
+        {
+            InMelee = true
+        });
+        Assert.False(ScenarioA1MoraleCheck.AnyCheck(melee));
+    }
+
+    [Fact]
+    public void AnUnbrokenLeaderWhoBreaksCausesALltc()
+    {
+        // A10.2 (p. 65): "Should an unbroken leader break ... must take a LLTC", pinned rather than broken if failed.
+        var facts = new MoraleCheckFacts(MoraleCheckFacts.None, [], 3, Rolls(leaderLoss: Dice("ru-s", Fives)))
+        {
+            Others = [Unit("ru-s", "defender-squad")],
+            BrokenLeaders = [Unit("ru-l", "defender-leader-8-1")],
+        };
+        var effect = Resolved(facts).Effects.Single(item => item.UnitId == "ru-s");
+        Assert.Equal(("LLTC", false), (effect.Checks[0].Kind, effect.Checks[0].Passed));
+        Assert.Equal((true, false), (effect.Pinned, effect.Broken));
+    }
+
+    [Fact]
+    public void APassengerLeaderAidsAndChecksOnlyHisVehiclesPassengers()
+    {
+        // D6.651 (p. 206): a Passenger leader affects only the MC of the Passengers of his vehicle; a leader on foot only the Passengers of a vehicle that
+        // has not moved this phase; his loss checks only his fellow Passengers (A10.2).
+        var aided = Resolved(new MoraleCheckFacts(MoraleCheckFacts.Nmc, [Unit("ru-p", "defender-squad", aboard: InHalftrack), Unit("ru-g", "defender-squad")], 3,
+            Rolls(new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal) { ["ru-p"] = Threes, ["ru-g"] = Threes }))
+        {
+            Others = [Unit("ru-l", "defender-leader-8-1", aboard: InHalftrack)],
+        });
+        Assert.Contains(aided.Effects.Single(item => item.UnitId == "ru-p").Checks[0].Drm, item => item.Name == "leadership:ru-l");
+        Assert.DoesNotContain(aided.Effects.Single(item => item.UnitId == "ru-g").Checks[0].Drm, item => item.Name.StartsWith("leadership:", StringComparison.Ordinal));
+
+        MoraleCheckFacts OnFoot(bool moving) => new(MoraleCheckFacts.Nmc, [Unit("ru-p", "defender-squad", aboard: InHalftrack with { VehicleMoving = moving })], 3,
+            Rolls(Dice("ru-p", Threes)))
+        {
+            Others = [Unit("ru-l", "defender-leader-8-1")],
+        };
+        Assert.Contains(Resolved(OnFoot(false)).Effects[0].Checks[0].Drm, item => item.Name == "leadership:ru-l");
+        Assert.DoesNotContain(Resolved(OnFoot(true)).Effects[0].Checks[0].Drm, item => item.Name == "leadership:ru-l");
+
+        // A CE Passenger leader in a halftrack that has not moved reaches the units on foot (D6.651).
+        var exposed = Resolved(new MoraleCheckFacts(MoraleCheckFacts.Nmc, [Unit("ru-g", "defender-squad")], 3, Rolls(Dice("ru-g", Threes)))
+        {
+            Others = [Unit("ru-l", "defender-leader-8-1", aboard: InHalftrack with { CeInUnmovedHalftrack = true })],
+        });
+        Assert.Contains(exposed.Effects[0].Checks[0].Drm, item => item.Name == "leadership:ru-l");
+
+        // His loss checks his fellow Passengers alone.
+        var lost = new MoraleCheckFacts(MoraleCheckFacts.None, [], 3, Rolls())
+        {
+            Others = [Unit("ru-p", "defender-squad", aboard: InHalftrack), Unit("ru-q", "defender-squad", aboard: InHalftrack with { VehicleId = "ru-truck" }),
+                Unit("ru-s", "defender-squad")],
+            LostLeaders = [Unit("ru-l", "defender-leader-8-1", aboard: InHalftrack)],
+        };
+        Assert.Equal(["asl.a1.fire.roll-missing:leaderLoss:ru-p"], ScenarioA1MoraleCheck.Resolve(lost, Reference).Reasons);
+    }
+
+    [Fact]
+    public void AFirePassengerLeaderAidsHisFellowPassengersWhenTheRecordCarriesThePassFacts()
+    {
+        // Ruling R70.8: in a Collateral Attack at a CE SPW 251/1, its Passenger 8-1 leads the MC of the 4-6-7 aboard; an attack recorded before the pass
+        // carries no such fact, and its PRC take no leadership, as before.
+        static FirePrc Prc(string id, string definition, bool? moving) => new(id, definition, FirePrc.Passenger, null, null)
+        {
+            Elr = 3,
+            VehicleMoving = moving,
+        };
+
+        FireResolution Fired(bool? moving)
+        {
+            var attack = new FireAttack("PFPh", "phasing", true, "bd01:G7:0", "bd01:G5:0",
+                [new FireFirer("ru-1", "defender-squad", "bd01:G7:0", false, false, false, false, false) { KnownEnemyInLos = true, Captors = [] },
+                 new FireFirer("ru-2", "defender-squad", "bd01:G7:0", false, false, false, false, false) { KnownEnemyInLos = true, Captors = [] }], null,
+                2, true, new FireLos(false, 0, true, false), 7, "open-ground", [], 3, null)
+            {
+                Vehicles = [new FireVehicle("de-ht", "attacker-halftrack", "bd01:G5:0", true, false, false, false)
+                {
+                    Prc = [Prc("de-s", "attacker-squad", moving), Prc("de-l", "attacker-leader-8-1", moving)],
+                }],
+            };
+            var rolls = new FireRolls(TwoTwo, null, null, null);
+            for (var step = 0; step < 20; step++)
+            {
+                var result = ScenarioA1FireCalculator.Resolve(attack with
+                {
+                    Rolls = rolls
+                }, Reference);
+                if (result.Reasons is not [{ } reason] || !reason.StartsWith("asl.a1.fire.roll-missing:", StringComparison.Ordinal))
+                {
+                    return result;
+                }
+
+                var key = reason["asl.a1.fire.roll-missing:".Length..].Split(':');
+                rolls = key[0] switch
+                {
+                    "checks" => rolls with { Checks = new Dictionary<string, IReadOnlyList<int>>(rolls.Checks ?? new Dictionary<string, IReadOnlyList<int>>()) { [key[1]] = TwoThree } },
+                    "crewCheck" => rolls with { CrewChecks = Dice(key[1], TwoThree) },
+                    "randomSelection" => rolls with { RandomSelection = key[1].Split(',').ToDictionary(id => id, _ => 3) },
+                    _ => throw new InvalidOperationException("An unexpected roll: " + reason),
+                };
+            }
+
+            throw new InvalidOperationException("The attack asked for too many rolls.");
+        }
+
+        Assert.Contains(PrcCheck(Fired(false)).Drm, item => item.Name == "leadership:de-l");
+        Assert.DoesNotContain(PrcCheck(Fired(null)).Drm, item => item.Name == "leadership:de-l");
+
+        static FireCheck PrcCheck(FireResolution result)
+        {
+            Assert.Equal(FireResolution.Resolved, result.Disposition);
+            return Assert.Single(result.VehicleEffects!).PrcAttacks!.SelectMany(item => item.Effects).Single(item => item.UnitId == "de-s").Checks[0];
+        }
+    }
+
+    [Fact]
+    public void ASmcsCasualtyReductionTakesItsWoundSeverityDr()
+    {
+        // A10.31, A17.11 (pp. 63, 85): an Original 12 on the 8-1's NMC Casualty Reduces him, a wound and its Wound Severity dr; a 5 is mortal, and his loss
+        // calls for the squad's LLMC (A10.2); a 1 wounds and breaks him, an LLTC for the unbroken squad.
+        var facts = new MoraleCheckFacts(MoraleCheckFacts.Nmc, [Unit("ru-l", "defender-leader-8-1")], 5, Rolls(Dice("ru-l", Boxcars)))
+        {
+            Others = [Unit("ru-s", "defender-squad")],
+        };
+        Assert.Equal(["asl.a1.fire.roll-missing:woundSeverity:ru-l"], ScenarioA1MoraleCheck.Resolve(facts, Reference).Reasons);
+        var mortal = ScenarioA1MoraleCheck.Resolve(facts with
+        {
+            Rolls = Rolls(Dice("ru-l", Boxcars), wounds: new Dictionary<string, int> { ["ru-l"] = 5 })
+        }, Reference);
+        Assert.Equal(LeaderLossOfSquad, mortal.Reasons);
+        var resolved = Resolved(facts with
+        {
+            Rolls = Rolls(Dice("ru-l", Boxcars), Dice("ru-s", TwoThree), new Dictionary<string, int> { ["ru-l"] = 5 })
+        });
+        Assert.True(resolved.Effects.Single(item => item.UnitId == "ru-l").Eliminated);
+        Assert.Equal("LLMC", resolved.Effects.Single(item => item.UnitId == "ru-s").Checks[0].Kind);
+        var wounded = Resolved(facts with
+        {
+            Rolls = Rolls(Dice("ru-l", Boxcars), Dice("ru-s", TwoThree), new Dictionary<string, int> { ["ru-l"] = 1 })
+        });
+        Assert.Equal((true, true), (wounded.Effects[0].Wounded, wounded.Effects[0].Broken));
+        Assert.Equal("LLTC", wounded.Effects.Single(item => item.UnitId == "ru-s").Checks[0].Kind);
+    }
+
+    [Fact]
+    public void ABailOutTakesARiderLeadersDrmAndElrReplacementNeverDisruption()
+    {
+        // D6.24, A10.7 EXC (pp. 205, 68): the Rider 8-1 leads the Bail Out NMC of his vehicle's Riders; A19.13: a failure by more than the ELR Replaces the
+        // squad; A19.12: a PRC is never Disrupted; A15.1 and A10.2: no Heat of Battle, no LLMC.
+        var rider = new FireAboard("ru-tank", FirePrc.Rider, false, null);
+        MoraleCheckFacts Bail(string definition, int[] dice) => new(MoraleCheckFacts.Nmc, [Unit("ru-r", definition, aboard: rider)], 2, Rolls(Dice("ru-r", dice)))
+        {
+            Others = [Unit("ru-l", "defender-leader-8-1", aboard: rider)],
+        };
+        var morale = Reference.Definitions["defender-squad"].Morale!.Value;
+        var broken = Resolved(Bail("defender-squad", Fives)).Effects[0];
+        var check = broken.Checks[0];
+        Assert.Equal((-1m, 9), (check.Drm.Sum(item => item.Value), check.FinalDr));
+        var brokenResult = ScenarioA1MoraleCheck.BailOutResult(check, false, false);
+        Assert.Equal((ScenarioA1RiderRules.Broken, true), (brokenResult, broken.Broken));
+        Assert.True(ScenarioA1RiderRules.CheckAgrees(5, 5, morale, false, brokenResult, -1, 2));
+
+        var replaced = Resolved(Bail("defender-squad", FiveSix)).Effects[0];
+        var lesser = ScenarioA1FireReference.ReplacementOf("defender-squad");
+        Assert.Equal(lesser ?? "defender-squad", replaced.FinalDefinitionId);
+        var replacedResult = ScenarioA1MoraleCheck.BailOutResult(replaced.Checks[0], false, lesser is not null);
+        Assert.True(ScenarioA1RiderRules.CheckAgrees(5, 6, morale, false, replacedResult, -1, 2));
+        Assert.False(ScenarioA1RiderRules.CheckAgrees(5, 6, morale, false, ScenarioA1RiderRules.Passed, -1, 2));
+
+        // An Original 2 calls for no Heat of Battle aboard; a unit with no lesser one is only broken, never Disrupted.
+        Assert.Null(Resolved(Bail("defender-squad", SnakeEyes)).Effects[0].HeatOfBattle);
+        var unreplaceable = Reference.Definitions.Values.First(item => item.IsMmc && item.Morale is <= 7 && item.BrokenMorale is not null && item.UnderscoredMorale != true
+            && ScenarioA1FireReference.ReplacementOf(item.Id) is null && ScenarioA1FireReference.HalfSquadOf(item.Id) is not null);
+        var notDisrupted = Resolved(Bail(unreplaceable.Id, FiveSix)).Effects[0];
+        Assert.Equal((true, false), (notDisrupted.Broken, notDisrupted.Disrupted));
+        Assert.Contains("prc-not-disrupted", notDisrupted.Events);
+    }
+
+    [Fact]
+    public void ABrokenUnprotectedCrewThatFailsAMcIsEliminated()
+    {
+        // D5.311 (p. 203; ruling R70.10): a mortar's Area hit in woods at the BU OT SPW 251/1 attacks its Inherent crew as Personnel; a crew already broken
+        // that fails its MC is eliminated by Casualty Reduction (A7.302); an older record, which says nothing of the crew, breaks it as before.
+        FireVehicleEffect? Hit(int[] dice, bool? crewBroken)
+        {
+            var hit = new FireAttack("PFPh", "phasing", true, "bd01:G7:0", "bd01:G5:0", [], null, 2, true, new FireLos(false, 0, true, false), 7, "woods", [], 3, null)
+            {
+                Vehicles = [new FireVehicle("de-ht", "attacker-halftrack", "bd01:G5:0", false, false, false, false) { Prc = [], CrewBroken = crewBroken }],
+                OrdnanceHit = new FireOrdnanceHit("ru-mtr", 2, false) { Area = true },
+            };
+            var result = ScenarioA1FireCalculator.Resolve(hit with
+            {
+                Rolls = new FireRolls(dice, null, Dice("de-ht", FiveSix), null)
+            }, Reference);
+            return result.Disposition == FireResolution.Resolved ? Assert.Single(result.VehicleEffects!) : null;
+        }
+
+        // The first IFT DR that calls on the crew for a MC, which its 11 fails.
+        var dice = Enumerable.Range(1, 6).SelectMany(first => Enumerable.Range(1, 6).Select(second => new[] { first, second }))
+            .First(pair => Hit(pair, null) is { CrewCheck: { Kind: not "NTC", Passed: false } });
+        Assert.Equal(FireVehicleEffect.Broken, Hit(dice, null)!.CrewResult);
+        var broken = Hit(dice, true)!;
+        Assert.Equal((false, FireVehicleEffect.Eliminated), (broken.CrewCheck!.Passed, broken.CrewResult));
     }
 }

@@ -588,7 +588,31 @@ public static class GameEventReader
                     : new RiderBailedOut(bailedUnit, bailedFrom, bailedAt, bailedCause, bailedRoll, bailedMorale.Value, bailedResult)
                     {
                         Weapons = bailedWeapons,
+                        Drm = fields.OptionalInteger(payload, "drm", path),
+                        Elr = fields.OptionalInteger(payload, "elr", path),
                     };
+            case "morale-check-resolved":
+                var checkLocation = fields.RequiredString(payload, "location", path);
+                var checkCause = fields.RequiredString(payload, "cause", path);
+                var checkRolls = new Dictionary<string, string>(StringComparer.Ordinal);
+                if (payload.TryGetProperty("rolls", out var checkRollMap) && checkRollMap.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (var entry in checkRollMap.EnumerateObject())
+                    {
+                        if (entry.Value.ValueKind != JsonValueKind.String)
+                        {
+                            return Missing(diagnostics, "Each morale check roll names its roll id.", path + ".rolls");
+                        }
+
+                        checkRolls[entry.Name] = entry.Value.GetString()!;
+                    }
+                }
+
+                return checkLocation is null || checkCause is null
+                    || !payload.TryGetProperty("facts", out var checkFacts) || checkFacts.ValueKind != JsonValueKind.Object
+                    || !payload.TryGetProperty("resolution", out var checkResolution) || checkResolution.ValueKind != JsonValueKind.Object
+                    ? Missing(diagnostics, "A morale check record names its Location, cause, facts, and resolution.", path)
+                    : new MoraleCheckResolved(fields.StringList(payload, "units", path), checkLocation, checkCause, checkRolls, checkFacts.Clone(), checkResolution.Clone());
             case "vehicle-abandoned":
                 var abandonedVehicle = fields.RequiredString(payload, "vehicle", path);
                 var abandonedAt = ReadLocation(payload, "at", path, fields, diagnostics);

@@ -203,6 +203,12 @@ public sealed partial class GamePlanner
             events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, visibility, [rallyId]));
         }
 
+        // A10.2 (pass 70, ruling R70.3): a leader Fate's mortal wound eliminates causes a LLMC of the units in his Location, whom the attempt left as they were.
+        if (resolution.Effect!.Eliminated)
+        {
+            AddLeaderLossChecks(scope, attemptId, expected, actor, events, draw, state, state, [(unit.Id, true)], ScenarioA1MoraleCheck.Rally, [rallyId]);
+        }
+
         // A15.5: a unit that surrendered to ADJACENT captors waits for the captor's choice, last.
         var heatOfBattle = resolution.Arithmetic!.HeatOfBattle;
         if (ScenarioA1RallyRules.SurrendersAfterRally(heatOfBattle?.Result == HeatOfBattleOutcome.Surrender, heatOfBattle?.Captors is { Count: > 0 }, resolution.Effect!.Eliminated))

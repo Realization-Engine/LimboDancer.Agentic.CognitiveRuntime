@@ -124,4 +124,35 @@ public sealed class PlayPagePass70Tests : IDisposable
         Assert.NotEmpty(german.FindAll("tr[data-unit='de-2']"));
         Assert.Empty(german.FindAll("tr[data-sealed]"));
     }
+
+    [Fact]
+    public async Task TheRecordsSayALlmcAfterALeaderLostToFailureToRout()
+    {
+        // Increment 3b (A10.2, A10.5; rulings R70.3, R70.4): in the German RtPh the broken Russian 8-1 in the Open Ground two hexes from the German squad
+        // does not rout and is eliminated as the phase ends; the 4-4-7 with him takes a LLMC, his -1 reversed: 4 + 3 + 1 = 8 against 7, broken. Both sides
+        // read the line, with its dice, its cause, and its rule.
+        var leader = Squad("ru-l", "defender-leader-8-1", WideBoards.At(5), "russian");
+        leader["kind"] = "asl:leader";
+        leader["conditions"] = new Dictionary<string, bool> { ["asl:broken"] = true, ["asl:concealed"] = false, ["asl:hidden"] = false };
+        await Start(Squad("de-1", "attacker-squad", WideBoards.At(3), "german"), leader, Squad("ru-s", "defender-squad", WideBoards.At(5), "russian"));
+        for (var phase = 0; phase < 4; phase++)
+        {
+            await Do(GameActions.AdvancePhase, new
+            {
+            });
+        }
+
+        dice.Enqueue([4, 3]);
+        await Do(GameActions.AdvancePhase, new
+        {
+        });
+        var check = Assert.Single(Events.Select(item => item.Payload).OfType<MoraleCheckResolved>());
+        Assert.Equal("failure-to-rout", check.Cause);
+        foreach (var view in new[] { Perspective.Adjudicator, new Perspective("german"), new Perspective("russian") })
+        {
+            var lines = new PlayRecords(live.History(Game)!, view, long.MaxValue).Since(0).Select(line => line.Text).ToArray();
+            Assert.Contains(lines, line => line.Contains("ru-s takes LLMC after the loss of ru-l to Failure to Rout (A10.5): LLMC 4, 3 + 1 (leadership reversed, ru-l) = 8 against 7: failed, broken (A10.2)",
+                StringComparison.Ordinal));
+        }
+    }
 }

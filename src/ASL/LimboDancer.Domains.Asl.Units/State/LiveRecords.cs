@@ -364,6 +364,21 @@ public sealed record RiderBailedOut(string Unit, string Vehicle, BoardLocation A
     {
         get; init;
     }
+
+    /// <summary>
+    /// The NMC's DRM: a Rider leader's modifier (A10.7 EXC; pass 70, ruling R70.9), 0 with none. Written by every Bail Out planned since the pass, whose NMC the
+    /// Morale Check member resolves; null on every older record, checked as before.
+    /// </summary>
+    public int? Drm
+    {
+        get; init;
+    }
+
+    /// <summary>The ELR the NMC was taken against (A19.13; pass 70, ruling R70.9), written with <see cref="Drm"/>; null with it, or for a unit with no ELR.</summary>
+    public int? Elr
+    {
+        get; init;
+    }
 }
 
 /// <summary>A SW a Bailing Out Rider carries (D6.24): its dr's roll, null when the carrier breaks, and its fate: <c>kept</c>, <c>malfunctioned</c>, or <c>eliminated</c>.</summary>

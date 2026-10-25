@@ -113,10 +113,11 @@ public static class ScenarioA1HeatOfBattle
 
     /// <summary>
     /// Whether a unit is subject to Heat of Battle (A15.1): armed Personnel other than heroes, heroic leaders, and units
-    /// already berserk. Crews, Cavalry, and the other exempt units are not in the catalog.
+    /// already berserk. Crews, Cavalry, and the other exempt units are not in the catalog. Pass 70 (ruling R70.7; A15.1, p. 83: "Unarmed units ... are not
+    /// subject to Heat of Battle"): nor is a unit whose facts say it is Unarmed.
     /// </summary>
-    public static bool Subject(FireDefinition definition, bool heroic, bool berserk = false) =>
-        (definition.IsMmc || definition.IsLeader) && !heroic && !berserk;
+    public static bool Subject(FireDefinition definition, bool heroic, bool berserk = false, bool unarmed = false) =>
+        (definition.IsMmc || definition.IsLeader) && !heroic && !berserk && !unarmed;
 
     /// <summary>
     /// Whether the unit's class needs the Inexperienced fact for the +1 DRM (A15.1, A19.2): a Green MMC is Inexperienced

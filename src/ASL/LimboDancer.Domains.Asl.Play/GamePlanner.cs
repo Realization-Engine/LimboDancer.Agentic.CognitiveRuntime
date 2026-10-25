@@ -726,6 +726,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         // A10.5, A20.21 (ruling R13.3): as the RtPh ends, a broken unit that failed to rout is eliminated, or surrenders to its captors first.
+        // A10.2 (pass 70, ruling R70.3): a leader so eliminated causes a LLMC of the units in his Location, rolled before the phase ends.
+        (string Id, bool Eliminated)[] routLost = [];
+        GameState? routAfter = null;
         if (ScenarioA1SequenceCalculator.FailuresToRoutDue(state.Phase))
         {
             var failed = FailureToRout(state, existing);
@@ -745,6 +748,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), null, null));
                 reasons.Add(ScenarioA1SequenceCalculator.FailureToRoutText(unit.Id, why));
+            }
+
+            if (failed.Any(item => item.Unit.Kind == "asl:leader") && Replay([.. existing, .. events]).Current is { } eliminatedAfter
+                && LeaderLossDue(state, eliminatedAfter, [.. failed.Select(item => (item.Unit.Id, true))]))
+            {
+                (routLost, routAfter) = ([.. failed.Select(item => (item.Unit.Id, true))], eliminatedAfter);
+                reasons.Add(ScenarioA1MoraleCheck.LeaderLossDueText([.. failed.Where(item => item.Unit.Kind == "asl:leader").Select(item => item.Unit.Id)]));
             }
         }
         if (ScenarioA1SequenceCalculator.BerserkChargeBar(state.Phase, () => MustCharge(state) is [{ } charging, ..] ? charging.Id : null) is { } berserkCharge)
@@ -824,12 +834,17 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var gains = ScenarioA1SequenceCalculator.ConcealmentGainsDue(ending, state.Phase, phasing != state.PhasingSide) ? ConcealmentGains(state) : [];
         // B25.65 (backlog pass 16, rulings R16.1, R16.10): the Wind Change DR at the start of a RPh.
         var wind = !ending && WindChangeDue(state, phase, turn, phasing);
-        if (gains.Any(item => item.Drm is not null) || wind)
+        if (gains.Any(item => item.Drm is not null) || wind || routAfter is not null)
         {
             var prefix = events.ToList();
             IReadOnlyList<GameEvent> Rolled(Func<RollRequest, RollResult> draw)
             {
                 var built = new List<GameEvent>(prefix);
+                if (routAfter is not null)
+                {
+                    AddLeaderLossChecks(scope, attemptId, expected, actor, built, draw, state, routAfter, routLost, ScenarioA1MoraleCheck.FailureToRout, null);
+                }
+
                 AddConcealmentGains(scope, attemptId, expected, actor, gains, built, draw, []);
                 Finish(built, [], draw);
                 return built;
@@ -842,7 +857,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                         : Array.Empty<string>(),
                     .. wind ? [ScenarioA1SequenceCalculator.WindChangeDueText()] : Array.Empty<string>()])
             {
-                Roll = new PlannedRoll(wind ? "wind-change" : "concealment", Rolled),
+                Roll = new PlannedRoll(wind ? "wind-change" : routAfter is not null ? "leader-loss" : "concealment", Rolled),
                 FirstEventId = EventId(attemptId, 1),
             };
         }

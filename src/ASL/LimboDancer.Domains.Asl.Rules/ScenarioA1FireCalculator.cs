@@ -56,6 +56,22 @@ public static class ScenarioA1FireCalculator
     }
 
     /// <summary>
+    /// The check-only branch of the calculator (pass 70, ruling R70.3) that <see cref="ScenarioA1MoraleCheck"/> calls with facts it has checked: the
+    /// subjects and the other units of the Location are the attack's targets, with the rolls, the choices, the side's ELR, No Quarter, and Melee.
+    /// </summary>
+    internal static FireResolution ResolveCheck(MoraleCheckFacts facts, ScenarioA1FireReference reference)
+    {
+        var attack = new FireAttack(null, null, null, null, null, null, null, null, null, null, null, null, [.. facts.Subjects!, .. facts.Others ?? []], facts.TargetSideElr,
+            facts.Rolls)
+        {
+            TargetSideNoQuarter = facts.NoQuarter,
+            TargetsInMelee = facts.InMelee,
+            Choices = facts.Choices,
+        };
+        return new Resolution(attack, reference).RunCheck(facts);
+    }
+
+    /// <summary>
     /// The reasons an attack cannot be committed before any roll (Fire in Live Play, unit step 18): empty when every
     /// outcome the dice can reach is decided. Every reason the package gives other than a missing roll depends on the
     /// facts alone, so the check is exact: the facts must stop only at the missing IFT roll, the target side's ELR (and
@@ -88,7 +104,8 @@ public static class ScenarioA1FireCalculator
         }
 
         var reasons = new List<string>();
-        if (attack.TargetSideElr is null && attack.Targets!.Any(item => item.Dummy != true && item.Elr is null && !ElrImmune(item.DefinitionId, reference)))
+        // A19.11 (pass 70, ruling R70.7): nor does an Unarmed target.
+        if (attack.TargetSideElr is null && attack.Targets!.Any(item => item.Dummy != true && item.Elr is null && item.Unarmed != true && !ElrImmune(item.DefinitionId, reference)))
         {
             reasons.Add("asl.a1.fire.elr-undecided:elr-undeclared");
         }
@@ -113,7 +130,7 @@ public static class ScenarioA1FireCalculator
         // it takes can reach a Berserk or Surrender result.
         foreach (var (target, index) in attack.Targets!.Select((item, index) => (item, index))
             .Where(pair => pair.item.Dummy != true
-                && ScenarioA1HeatOfBattle.Subject(reference.Definitions[pair.item.DefinitionId!], pair.item.Heroic == true, pair.item.Berserk == true)))
+                && ScenarioA1HeatOfBattle.Subject(reference.Definitions[pair.item.DefinitionId!], pair.item.Heroic == true, pair.item.Berserk == true, pair.item.Unarmed == true)))
         {
             if (target.KnownEnemyInLos is null)
             {
@@ -1304,16 +1321,17 @@ public static class ScenarioA1FireCalculator
     /// <summary>
     /// What an IFT result does to an Unprotected crew (D5.311, p. 203; pass 65, ruling R65.26): "not susceptible to Stun/Recall ... it is instead subject to
     /// PTC/MC/K/KIA results" as Infantry. A KIA or K eliminates it (a crew's Casualty Reduction, A7.302), as does an Original 12 on a MC (A10.31); a failed
-    /// MC breaks it, and a failed PTC pins it. <paramref name="dice"/> is the check's DR, needed when <see cref="CrewChecks"/> says so.
+    /// MC breaks it, and a failed PTC pins it. <paramref name="dice"/> is the check's DR, needed when <see cref="CrewChecks"/> says so. Pass 70 (ruling R70.10;
+    /// A7.302, A7.8): a crew already broken (<paramref name="crewBroken"/>) that fails a MC is eliminated by Casualty Reduction, and takes no PTC.
     /// </summary>
-    internal static (FireCheck? Check, string Result) UnprotectedCrewOutcome(string outcome, IReadOnlyList<int>? dice, int morale, int? crewMorale)
+    internal static (FireCheck? Check, string Result) UnprotectedCrewOutcome(string outcome, IReadOnlyList<int>? dice, int morale, int? crewMorale, bool crewBroken = false)
     {
         if (Regex.IsMatch(outcome, "^([1-7])KIA$") || Regex.IsMatch(outcome, "^K/([1-4])$"))
         {
             return (null, FireVehicleEffect.Eliminated);
         }
 
-        if (!CrewChecks(outcome) || dice is null)
+        if (!UnprotectedCrewChecks(outcome, crewBroken) || dice is null)
         {
             return (null, FireVehicleEffect.None);
         }
@@ -1327,6 +1345,7 @@ public static class ScenarioA1FireCalculator
         var result = !pin && original == 12 ? FireVehicleEffect.Eliminated
             : passed ? FireVehicleEffect.None
             : pin ? FireVehicleEffect.Pinned
+            : crewBroken ? FireVehicleEffect.Eliminated
             : FireVehicleEffect.Broken;
         return (new FireCheck(pin ? "NTC" : mc.Success ? outcome : "NMC", [.. dice], original, checkDrm, checkFinal, morale, passed, result)
         {
@@ -1336,6 +1355,9 @@ public static class ScenarioA1FireCalculator
 
     /// <summary>Whether a Vulnerable crew's IFT result calls on it to check (D.8, A7.303 to A7.305): a MC, a NMC, or a PTC.</summary>
     internal static bool CrewChecks(string outcome) => Regex.IsMatch(outcome, "^([1-4])MC$") || outcome is "NMC" or "PTC";
+
+    /// <summary>Whether an Unprotected crew checks (D5.311): as <see cref="CrewChecks"/>, but a crew already broken takes no PTC (A7.8; pass 70, ruling R70.10).</summary>
+    internal static bool UnprotectedCrewChecks(string outcome, bool crewBroken) => CrewChecks(outcome) && !(crewBroken && outcome == "PTC");
 
     /// <summary>
     /// What a Collateral Attack's IFT result does to a Vulnerable crew (D.8, D5.34, D5.341, A7.82; rulings R25.5, R25.6; pass 60, ruling R60.7): a KIA
@@ -1526,6 +1548,44 @@ public static class ScenarioA1FireCalculator
         // Pass 65 (ruling R65.7): the PRC a Collateral Attack reaches, apart from the target Location's units: no leader of the Location leads their
         // checks, no leader's loss checks them, and they take no Heat of Battle (D6.651 and their leaders are increment 2c's).
         private readonly Dictionary<string, TargetState> prc = new(StringComparer.Ordinal);
+
+        // A12.141 (pass 70, ruling R70.17): the leaders whose modifier the resolution applied to a check, which a morale check reads for their "?".
+        private readonly HashSet<string> leading = new(StringComparer.Ordinal);
+
+        /// <summary>A Passenger or Rider: a Collateral Attack's PRC, or a unit a morale check names aboard (pass 70, ruling R70.8). Neither takes Heat of Battle (A15.1).</summary>
+        private bool IsPrc(TargetState unit) => prc.ContainsKey(unit.Id) || unit.Target.Aboard is not null;
+
+        /// <summary>
+        /// D6.651, A10.7 EXC (pp. 206, 68; pass 70, ruling R70.8): whether a leader's MC modifier reaches a unit, read only where one of them is aboard
+        /// with the pass's facts. A PRC of an older record takes no leader's modifier and gives none, as before.
+        /// </summary>
+        private bool LeadershipReaches(TargetState leader, TargetState unit)
+        {
+            var (leaderAboard, unitAboard) = (leader.Target.Aboard, unit.Target.Aboard);
+            if ((prc.ContainsKey(leader.Id) && leaderAboard is null) || (prc.ContainsKey(unit.Id) && unitAboard is null))
+            {
+                return false;
+            }
+
+            return (leaderAboard is null && unitAboard is null)
+                || ScenarioA1PassengerActionRules.LeaderReaches(leaderAboard?.VehicleId, leaderAboard?.CeInUnmovedHalftrack == true, unitAboard?.VehicleId,
+                    unitAboard?.VehicleMoving == true);
+        }
+
+        /// <summary>
+        /// A10.2 (p. 65; pass 70, ruling R70.8): whether a leader's loss checks a unit: "Riders ... neither take or cause LLMC/LLTC", and "Passengers take/cause
+        /// LLMC/LLTC only to fellow passengers of the same vehicle". Units on foot as before.
+        /// </summary>
+        private static bool LeaderLossReaches(TargetState leader, TargetState unit)
+        {
+            var (leaderAboard, unitAboard) = (leader.Target.Aboard, unit.Target.Aboard);
+            if (leaderAboard?.Role == FirePrc.Rider || unitAboard?.Role == FirePrc.Rider)
+            {
+                return false;
+            }
+
+            return (leaderAboard is null && unitAboard is null) || (leaderAboard?.VehicleId is { } vehicle && unitAboard?.VehicleId == vehicle);
+        }
 
         /// <summary>The first reason the resolution is undecided so far; null when none.</summary>
         public string? FirstUndecided => undecided.Count > 0 ? undecided[0] : null;
@@ -1731,6 +1791,89 @@ public static class ScenarioA1FireCalculator
                 VehicleKill = vehicleKill,
                 SpecificCollateral = specificCollateral,
                 WeaponDestruction = destruction,
+            };
+        }
+
+        /// <summary>
+        /// A morale check made outside an attack (pass 70, ruling R70.3): the check its subjects take, resolved as an attack's result is (A10.1, A10.3,
+        /// A15.1, A17.11, A19.13), then the Leader Loss checks of every leader the check, or the cause outside it, lost (A10.2), and the Berserk TC of a
+        /// leader made berserk (A15.41). No IFT DR, no arithmetic. The other units of the Location take no check but may lead one or take a LLMC; the lost
+        /// leaders are gone already, and their effects are not given.
+        /// </summary>
+        public FireResolution RunCheck(MoraleCheckFacts facts)
+        {
+            var subjects = facts.Subjects!;
+            var others = facts.Others ?? [];
+            foreach (var target in subjects.Concat(others))
+            {
+                state[target.UnitId!] = new TargetState(target, reference.Definitions[target.DefinitionId!])
+                {
+                    NoQuarter = facts.NoQuarter == true,
+                };
+            }
+
+            // A10.2: "For each leader eliminated (whether by breaking when already broken, a mortal wound, or any other cause) ... must take a LLMC", and
+            // "Should an unbroken leader break ... must take a LLTC".
+            foreach (var (leader, eliminated) in (facts.LostLeaders ?? []).Select(item => (item, true)).Concat((facts.BrokenLeaders ?? []).Select(item => (item, false))))
+            {
+                var lost = new TargetState(leader, reference.Definitions[leader.DefinitionId!]);
+                if (eliminated)
+                {
+                    lost.Eliminate("lost-outside-fire");
+                }
+                else
+                {
+                    lost.Break("broken-outside-fire");
+                }
+
+                state[leader.UnitId!] = lost;
+            }
+
+            TargetState[] checking = [.. subjects.Select(item => state[item.UnitId!])];
+            var mc = Regex.Match(facts.Check!, "^([1-4])MC$");
+            if (facts.Check == MoraleCheckFacts.Nmc)
+            {
+                MoraleChecks(0, checking);
+            }
+            else if (mc.Success)
+            {
+                MoraleChecks(int.Parse(mc.Groups[1].Value, CultureInfo.InvariantCulture), checking);
+            }
+            else if (facts.Check == MoraleCheckFacts.Ptc)
+            {
+                PinTaskChecks(checking);
+            }
+
+            LeaderLoss();
+            var companions = BerserkTaskChecks();
+            if (undecided.Count != 0)
+            {
+                return Refused(FireResolution.Indeterminate, undecided.Distinct().ToArray());
+            }
+
+            // A12.141 (p. 78; ruling R70.17): a concealed unit seen by a Good Order enemy ground unit within 16 hexes loses its "?" by a LLMC or LLTC it takes,
+            // and by its leadership modifier applied to another unit's check.
+            TargetState[] named = [.. subjects.Concat(others).Select(item => state[item.UnitId!])];
+            foreach (var unit in named.Where(unit => (unit.Target.Concealed == true || unit.Target.Hidden == true) && unit.Target.SeenByGoodOrderEnemy == true
+                && (unit.Checks.Any(check => check.Kind is "LLMC" or "LLTC") || leading.Contains(unit.Id))))
+            {
+                unit.ConcealmentLost = true;
+            }
+
+            var extra = ExtraRolls();
+            if (extra.Count != 0)
+            {
+                return Refused(FireResolution.Abstained, extra);
+            }
+
+            if (attack.Choices?.Keys.FirstOrDefault(key => !usedChoices.Contains(key)) is { } unasked)
+            {
+                return Refused(FireResolution.Abstained, ["asl.a1.fire.extra-choice:" + unasked]);
+            }
+
+            return new FireResolution(FireResolution.Resolved, [], null, [.. named.Select(unit => unit.Effect())], [], null, [])
+            {
+                CompanionEffects = companions,
             };
         }
 
@@ -2462,7 +2605,10 @@ public static class ScenarioA1FireCalculator
                         unprotectedFinal = arithmetic.OriginalDr + (int)drm.Sum(item => item.Value);
                         var crewOutcome = reference.Result(unprotectedFinal.Value, column);
                         IReadOnlyList<int>? crewDice = null;
-                        if (CrewChecks(crewOutcome))
+
+                        // Pass 70 (ruling R70.10): a crew the record says is already broken takes no PTC, and a failed MC eliminates it.
+                        var crewBroken = vehicle.CrewBroken == true;
+                        if (UnprotectedCrewChecks(crewOutcome, crewBroken))
                         {
                             if (attack.Rolls!.Checks?.TryGetValue(id, out crewDice) != true)
                             {
@@ -2474,7 +2620,7 @@ public static class ScenarioA1FireCalculator
                         }
 
                         (unprotectedCheck, unprotectedResult) = UnprotectedCrewOutcome(crewOutcome, crewDice,
-                            vehicle.CrewMorale ?? reference.AfvCrewMorale(definition.Nationality)!.Value, vehicle.CrewMorale);
+                            vehicle.CrewMorale ?? reference.AfvCrewMorale(definition.Nationality)!.Value, vehicle.CrewMorale, crewBroken);
                     }
 
                     var crew = LineCrew(vehicle, definition, unprotectedResult is FireVehicleEffect.Broken or FireVehicleEffect.Eliminated ? FireVehicleEffect.None : result);
@@ -2814,6 +2960,9 @@ public static class ScenarioA1FireCalculator
                     {
                         Elr = unit.Elr,
                         Fanatic = unit.Fanatic,
+
+                        // Pass 70 (ruling R70.8): with the pass's facts, the unit's vehicle, for D6.651's reach and A10.2's LLMC; an older record has none.
+                        Aboard = unit.VehicleMoving is { } moving ? new FireAboard(vehicleId, unit.Role, moving, unit.CeInUnmovedHalftrack) : null,
                     }, reference.Definitions[unit.DefinitionId!]);
                     prc[unit.UnitId!] = own;
                 }
@@ -2824,6 +2973,14 @@ public static class ScenarioA1FireCalculator
             var final = originalDr + (int)drm.Sum(item => item.Value);
             var result = reference.Result(final, column);
             Apply(result, group);
+
+            // A10.2, D6.651 (pass 70, ruling R70.8): a Passenger leader the attack eliminated or broke checks his fellow Passengers it attacked; a Rider's
+            // loss checks no one. A record of before the pass carries no such fact and takes none.
+            if (undecided.Count == 0 && group.Any(item => item.Target.Aboard is not null))
+            {
+                LeaderLoss(group);
+            }
+
             if (undecided.Count != 0)
             {
                 return false;
@@ -2981,8 +3138,8 @@ public static class ScenarioA1FireCalculator
             foreach (var leader in leaders)
             {
                 var others = state.Values.Where(unit => unit != leader).Concat(companions)
-                    .Where(unit => !unit.IsDummy && !unit.Eliminated && unit.Target.LocationId == leader.Target.LocationId
-                        && ScenarioA1HeatOfBattle.Subject(unit.Definition, unit.IsHeroType, unit.Berserk))
+                    .Where(unit => !unit.IsDummy && !unit.Eliminated && unit.Target.LocationId == leader.Target.LocationId && !IsPrc(unit)
+                        && ScenarioA1HeatOfBattle.Subject(unit.Definition, unit.IsHeroType, unit.Berserk, unit.Target.Unarmed == true))
                     .ToArray();
 
                 // A25.223 (ruling R15.6): every friendly Infantry unit of a berserk Commissar's Location subject to Heat of Battle goes berserk, with no NTC.
@@ -4474,7 +4631,7 @@ public static class ScenarioA1FireCalculator
             // 2 in the attack (its LLMC after its MC) calls for a second, under its own roll key, unless the first left the unit surrendered to
             // a captor; one only Disrupted by a Surrender result with no captor is still subject (A15.5; ruling R5.10). A unit made berserk or
             // heroic by the first is no longer subject to it.
-            if (original == 2 && !unit.Eliminated && ScenarioA1HeatOfBattle.Subject(unit.Definition, unit.IsHeroType, unit.Berserk) && !prc.ContainsKey(unit.Id))
+            if (original == 2 && !unit.Eliminated && ScenarioA1HeatOfBattle.Subject(unit.Definition, unit.IsHeroType, unit.Berserk, unit.Target.Unarmed == true) && !IsPrc(unit))
             {
                 if (unit.HeatOfBattleOutcome is null)
                 {
@@ -4535,6 +4692,12 @@ public static class ScenarioA1FireCalculator
         /// <summary>A1.23, A19.13 (referee, pass 15): a MMC with an underscored Morale Factor has an ELR of 5; any other unit its side's.</summary>
         private int? ElrOf(TargetState unit, bool firingSide)
         {
+            // A19.11 (p. 86; pass 70, ruling R70.7): "unarmed ... units are never subject to Replacement due to ELR failure", so no failure exceeds theirs.
+            if (unit.Target.Unarmed == true)
+            {
+                return int.MaxValue;
+            }
+
             // Ruling R18.3: a unit's own ELR, from its OB group, before its side's; a unit ELR never Replaces needs none (A19.11).
             var elr = unit.Target.Elr ?? (ElrImmune(unit.Definition.Id, reference) && (firingSide ? attack.FiringSideElr : attack.TargetSideElr) is null ? 5 : Elr(firingSide));
             return unit.Definition is { IsMmc: true, UnderscoredMorale: true } && elr is not null ? 5 : elr;
@@ -4572,13 +4735,13 @@ public static class ScenarioA1FireCalculator
                     unit.ReduceTo(reference.Definitions[own], "replaced-by-two-half-squads");
                     unit.Split = true;
                 }
-                else if (!unit.Fanatic)
+                else if (NeverDisrupted(unit) is { } exempt)
                 {
-                    unit.Disrupt();
+                    unit.Note(exempt);
                 }
                 else
                 {
-                    unit.Note("fanatic-not-disrupted");
+                    unit.Disrupt();
                 }
 
                 unit.Break(null);
@@ -4587,13 +4750,13 @@ public static class ScenarioA1FireCalculator
 
             // A19.13: Replaced by a broken unit of lesser quality; A19.12: Disrupted when none exists.
             var replacement = ScenarioA1FireReference.ReplacementOf(unit.Definition.Id);
-            if (replacement is null && !unit.Fanatic)
+            if (replacement is null && NeverDisrupted(unit) is { } notDisrupted)
             {
-                unit.Disrupt();
+                unit.Note(notDisrupted);
             }
             else if (replacement is null)
             {
-                unit.Note("fanatic-not-disrupted");
+                unit.Disrupt();
             }
             else
             {
@@ -4602,6 +4765,14 @@ public static class ScenarioA1FireCalculator
 
             unit.Break(null);
         }
+
+        /// <summary>
+        /// Why a unit that cannot be Replaced is only broken, never Disrupted (A19.12, p. 86), as the note it takes; null when it is Disrupted. "Fanatic units, and
+        /// PRC are never Disrupted; only broken": a Fanatic unit, and (pass 70, the verification of brief 3b) a PRC whose record carries the pass's facts;
+        /// a PRC of an older record is Disrupted as it was.
+        /// </summary>
+        private static string? NeverDisrupted(TargetState unit) =>
+            unit.Fanatic ? "fanatic-not-disrupted" : unit.Target.Aboard is not null ? "prc-not-disrupted" : null;
 
         private bool ReduceBeyondElr(TargetState unit)
         {
@@ -4613,7 +4784,7 @@ public static class ScenarioA1FireCalculator
                 var half = ScenarioA1FireReference.HalfSquadOf(unit.Definition.Id)!;
                 var lesser = ScenarioA1FireReference.CasualtyHalfSquadOf(half);
                 unit.ReduceTo(reference.Definitions[lesser ?? half], "casualty-reduced-beyond-elr");
-                if (lesser is null && !unit.Fanatic)
+                if (lesser is null && NeverDisrupted(unit) is null)
                 {
                     unit.Disrupt();
                 }
@@ -4673,8 +4844,9 @@ public static class ScenarioA1FireCalculator
                 drm.Add(new FireModifier("ift-" + kind.ToLowerInvariant(), modifier, "A7.304"));
             }
 
-            // A25.221 (ruling R15.6): a Commissar never takes another leader's DRM. Pass 65: nor does a PRC (D6.651 is increment 2c's).
-            if (useLeadership && !unit.Berserk && !ScenarioA1FireReference.IsCommissar(unit.Definition.Id) && !prc.ContainsKey(unit.Id))
+            // A25.221 (ruling R15.6): a Commissar never takes another leader's DRM. Pass 65: nor does a PRC; pass 70 (ruling R70.8): a PRC whose record
+            // carries the pass's facts takes the modifier of a leader who reaches it (D6.651).
+            if (useLeadership && !unit.Berserk && !ScenarioA1FireReference.IsCommissar(unit.Definition.Id) && (!prc.ContainsKey(unit.Id) || unit.Target.Aboard is not null))
             {
                 // A10.21, A10.22: one unbroken, unpinned leader of the Location other than the checker, and of higher
                 // morale when the checker is a leader; A10.72: a non-zero modifier, a wounded leader's +1 included, cannot
@@ -4682,8 +4854,10 @@ public static class ScenarioA1FireCalculator
                 // Rulings R12.8, R12.9: only a leader of the unit's own side, and not a prisoner.
                 // A25.221 (ruling R15.6): an active Commissar's leadership alone applies in his Location.
                 // Pass 31 (ruling R31.5): with several such leaders the owner chooses (A10.21), so the most favorable modifier is taken.
-                var leader = state.Values.FirstOrDefault(other => ActiveCommissar(other, unit))
-                    ?? state.Values.Where(other => other.Definition.IsLeader && other != unit && !other.Eliminated
+                // Pass 70 (ruling R70.8): a leader aboard, or a unit aboard, only as D6.651 reaches (A10.7 EXC).
+                var pool = state.Values.Concat(prc.Values).Where(other => LeadershipReaches(other, unit)).ToArray();
+                var leader = pool.FirstOrDefault(other => ActiveCommissar(other, unit))
+                    ?? pool.Where(other => other.Definition.IsLeader && other != unit && !other.Eliminated
                     && !other.Broken && !other.Pinned && !other.IsDummy && other.Target.Berserk != true
                     && (other.Target.Friendly == true) == (unit.Target.Friendly == true) && other.Target.GuardId is null
                     && (!unit.Definition.IsLeader || other.MoraleLevel > unit.MoraleLevel))
@@ -4693,13 +4867,18 @@ public static class ScenarioA1FireCalculator
                 if (leader?.Leadership is { } leadership && leadership + AlliedPenalty(leader.Definition, unit.Definition) is var allied and not 0)
                 {
                     drm.Add(new FireModifier("leadership:" + leader.Id, allied, AlliedPenalty(leader.Definition, unit.Definition) > 0 ? "A10.7" : "A10.21"));
+                    leading.Add(leader.Id);
                 }
             }
 
             return (dice!, drm);
         }
 
-        private void LeaderLoss()
+        /// <summary>
+        /// The LLMC and LLTC of the leaders lost among <paramref name="pool"/> (A10.2), the target Location's units when none is given; pass 70 (ruling R70.8):
+        /// the units a Collateral Attack reached aboard one vehicle, when its record carries the pass's facts.
+        /// </summary>
+        private void LeaderLoss(IReadOnlyCollection<TargetState>? pool = null)
         {
             // Referee, pass 31 (A10.2, A11.141): units in Melee neither take nor cause a LLMC or LLTC.
             if (undecided.Count != 0 || attack.TargetsInMelee == true)
@@ -4707,11 +4886,13 @@ public static class ScenarioA1FireCalculator
                 return;
             }
 
+            var units = pool ?? state.Values;
+
             // Pass 31 (ruling R31.5; A10.2): every lost leader is taken in turn, one lost to another's LLMC included, the higher Morale Level first; a
             // leader that broke and is then eliminated is taken again for his LLMC.
             var taken = new HashSet<string>(StringComparer.Ordinal);
             var checksOf = new Dictionary<string, int>(StringComparer.Ordinal);
-            while (state.Values.Where(unit => unit.Definition.IsLeader && (unit.Eliminated || unit.BrokeInThisAttack) && !taken.Contains(unit.Id + (unit.Eliminated ? ":e" : ":b")))
+            while (units.Where(unit => unit.Definition.IsLeader && (unit.Eliminated || unit.BrokeInThisAttack) && !taken.Contains(unit.Id + (unit.Eliminated ? ":e" : ":b")))
                 .OrderByDescending(unit => unit.InitialMorale ?? 0).FirstOrDefault() is { } leader)
             {
                 taken.Add(leader.Id + (leader.Eliminated ? ":e" : ":b"));
@@ -4728,7 +4909,8 @@ public static class ScenarioA1FireCalculator
                 // Rulings R12.8, R12.9: a leader's loss checks his own side's units only, and never a prisoner (A20.54).
                 // A25.221 (ruling R15.6): a Commissar takes no LLMC or LLTC, and his own loss checks every other unit, whatever its Morale Level.
                 var commissar = ScenarioA1FireReference.IsCommissar(leader.Definition.Id);
-                foreach (var unit in state.Values.Where(unit => unit != leader && !unit.Eliminated && !unit.IsDummy && !unit.Berserk
+                // Pass 70 (ruling R70.8; A10.2): Riders neither take nor cause one, and Passengers only among the Passengers of one vehicle.
+                foreach (var unit in units.Where(unit => unit != leader && !unit.Eliminated && !unit.IsDummy && !unit.Berserk && LeaderLossReaches(leader, unit)
                     && (unit.Target.Friendly == true) == (leader.Target.Friendly == true) && unit.Target.GuardId is null && leader.Target.GuardId is null
                     && !ScenarioA1FireReference.IsCommissar(unit.Definition.Id)
                     && (eliminated || (!unit.Broken && !unit.IsHeroType)) && (commissar || unit.MoraleLevel < leaderMorale)).ToArray())

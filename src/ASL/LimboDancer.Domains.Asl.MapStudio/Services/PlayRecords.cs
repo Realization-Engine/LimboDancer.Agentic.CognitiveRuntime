@@ -321,11 +321,15 @@ public sealed class PlayRecords
                 // The table player: the NMC's dice and total, and a Casualty Reduction said as such (D6.24, A10.31).
                 RiderBailedOut bailed => $"{bailed.At}: {bailed.Unit} Bails Out of {bailed.Vehicle}, since " + ScenarioA1RiderRules.CauseText(bailed.Cause)
                     + "; NMC" + (dice.TryGetValue(bailed.Roll, out var bailDice) ? $" DR {string.Join(", ", bailDice)} = {bailDice.Sum()}" : string.Empty)
+                    // Pass 70 (ruling R70.9): a Rider leader's DRM, said when there is one.
+                    + (bailed.Drm is { } bailDrm && bailDrm != 0 && bailDice is not null ? $" {(bailDrm < 0 ? "-" : "+")} {Math.Abs(bailDrm)} (leadership, A10.7) = {bailDice.Sum() + bailDrm}" : string.Empty)
                     + $" against {bailed.Morale}: {BailOutResult(bailed.Result)}"
                     + string.Concat((bailed.Weapons ?? []).Select(weapon => $"; {weapon.Weapon} {(weapon.Fate == ScenarioA1RiderRules.Kept ? "is kept" : $"is {weapon.Fate}")}"
                         + (weapon.Roll is { } weaponRoll && dice.TryGetValue(weaponRoll, out var weaponDice) ? $" on a dr of {weaponDice[0]}" : string.Empty)))
                     + " (D6.24)",
                 // D5.41, D5.411, D6.631, D5.42 (pass 65, ruling R65.20): the crew's own acts, with their rules in one parenthesis (the table player).
+                // Pass 70 (rulings R70.3, R70.4): a morale check made outside an attack, its checks and what they did.
+                MoraleCheckResolved moraleCheck => MoraleCheckText(moraleCheck),
                 VehicleAbandoned abandoned => $"{abandoned.At}: {abandoned.Crew} Abandons {abandoned.Vehicle}"
                     + (abandoned.Destroyed == ScenarioA1CrewActsRules.Wreck ? ", leaving it a wreck"
                         : abandoned.Destroyed == ScenarioA1CrewActsRules.Malfunction ? ", malfunctioning its weapons" : string.Empty)
@@ -439,7 +443,40 @@ public sealed class PlayRecords
     }
 
     /// <summary>A Bail Out NMC's result in words (D6.24, A10.31; pass 65, the table player): a Casualty Reduction is said with the break it brings.</summary>
-    private static string BailOutResult(string result) => result == ScenarioA1RiderRules.Reduced ? "Casualty Reduced and broken" : result;
+    private static string BailOutResult(string result) => result == ScenarioA1RiderRules.Reduced ? "Casualty Reduced and broken"
+        : result == ScenarioA1RiderRules.Replaced ? "failed by more than its ELR, Replaced by a broken unit of lesser quality (A19.13)" : result;
+
+    /// <summary>
+    /// A morale check made outside an attack in words (pass 70, rulings R70.3, R70.4): "bd03:F8:0: de-s takes a LLMC after the loss of de-l to Interdiction
+    /// (A10.53): LLMC 3, 3 + 1 (leadership reversed, de-l) = 7 against 7: passed, unaffected (A10.2)"; the Heat of Battle of an Interdiction NMC's Original 2
+    /// says that, with what it did. Null when the record cannot be read.
+    /// </summary>
+    private static string? MoraleCheckText(MoraleCheckResolved check)
+    {
+        if (check.Resolution.Deserialize<FireResolution>(LiveFire.Json) is not { } resolution || check.Facts.Deserialize<MoraleCheckFacts>(LiveFire.Json) is not { } facts)
+        {
+            return null;
+        }
+
+        string[] lost = [.. (facts.LostLeaders ?? []).Concat(facts.BrokenLeaders ?? []).Select(item => item.UnitId ?? string.Empty)];
+        var cause = ScenarioA1MoraleCheck.CauseText(check.Cause);
+        var parts = new List<string>();
+        foreach (var effect in resolution.Effects.Where(item => item.Checks.Count > 0 || item.HeatOfBattle is not null))
+        {
+            var leaderLoss = effect.Checks.Where(item => item.Kind is "LLMC" or "LLTC").ToArray();
+            parts.Add(leaderLoss.Length > 0
+                ? $"{effect.UnitId} takes {string.Join(" and ", leaderLoss.Select(item => item.Kind))} after the loss of {string.Join(", ", lost)} to {cause}: "
+                    + string.Join(", ", leaderLoss.Select(FireText.CheckText)) + $", {FireText.EffectText(effect)} (A10.2)"
+                : $"{effect.UnitId}'s {(check.Cause == ScenarioA1MoraleCheck.Interdiction ? "Interdiction NMC" : "NMC")} is an Original 2, which calls for Heat of Battle (A15.1): {FireText.EffectText(effect)}");
+        }
+
+        foreach (var effect in resolution.CompanionEffects ?? [])
+        {
+            parts.Add($"{effect.UnitId}: {FireText.EffectText(effect)} (A15.41)");
+        }
+
+        return parts.Count == 0 ? null : $"{check.Location}: {string.Join("; ", parts)}";
+    }
 
     /// <summary>
     /// A CC attack with a vehicle in one line (A11.5, A11.51, A11.62, A21.2; pass 65, the table player): Infantry attacking the vehicle, a capture attempt

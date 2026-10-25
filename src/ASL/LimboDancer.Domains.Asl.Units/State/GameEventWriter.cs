@@ -723,6 +723,32 @@ public static class GameEventWriter
                     writer.WriteEndArray();
                 }
 
+                if (bailed.Drm is { } bailDrm)
+                {
+                    writer.WriteNumber("drm", bailDrm);
+                }
+
+                if (bailed.Elr is { } bailElr)
+                {
+                    writer.WriteNumber("elr", bailElr);
+                }
+
+                break;
+            case MoraleCheckResolved check:
+                Strings(writer, "units", check.Units);
+                writer.WriteString("location", check.Location);
+                writer.WriteString("cause", check.Cause);
+                writer.WriteStartObject("rolls");
+                foreach (var (key, roll) in check.Rolls.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+                {
+                    writer.WriteString(key, roll);
+                }
+
+                writer.WriteEndObject();
+                writer.WritePropertyName("facts");
+                check.Facts.WriteTo(writer);
+                writer.WritePropertyName("resolution");
+                check.Resolution.WriteTo(writer);
                 break;
             case VehicleAbandoned abandoned:
                 writer.WriteString("vehicle", abandoned.Vehicle);

@@ -128,6 +128,7 @@ public static class GameProjector
                 TaskCheck check => Check(previous, check),
                 FireResolved fire => Fire(previous, fire, gameEvent),
                 FireReported report => Report(previous, report, gameEvent),
+                MoraleCheckResolved check => MoraleCheck(previous, check),
                 ResidualFirePlaced residual => PlaceResidual(previous, residual),
                 RallyAttempted rally => Rally(previous, rally, gameEvent),
                 RepairAttempted repair => Repair(previous, repair),
@@ -1792,6 +1793,25 @@ public static class GameProjector
         private static Dictionary<string, ConditionState> Without(IReadOnlyDictionary<string, ConditionState> conditions, string[] removed) =>
             conditions.Where(item => !removed.Contains(item.Key)).ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
 
+        /// <summary>
+        /// A morale check made outside an attack (pass 70, ruling R70.4): its rolls are recorded before it, and it reproduces through the Morale Check member
+        /// from its facts, which agree with the state, as a fire record does. It changes nothing itself; its effects are the records after it.
+        /// </summary>
+        private GameState? MoraleCheck(GameState state, MoraleCheckResolved check)
+        {
+            if (fireVerifier is null)
+            {
+                return Fail<GameState>("UNIT-STATE-023", "A morale check record can be replayed only with the Fire verifier.");
+            }
+
+            if (check.Rolls.Values.FirstOrDefault(roll => !rolls.ContainsKey(roll)) is { } missing)
+            {
+                return Fail<GameState>("UNIT-STATE-023", $"The morale check record's roll '{missing}' is not recorded before it.");
+            }
+
+            return fireVerifier.VerifyMoraleCheck(state, check, rolls) is { } reason ? Fail<GameState>("UNIT-STATE-024", reason) : state;
+        }
+
         private GameState? Fire(GameState state, FireResolved fire, GameEvent gameEvent)
         {
             var eventId = gameEvent.EventId;
@@ -2641,7 +2661,9 @@ public static class GameProjector
             }
 
             var broken = GameState.Condition(unit, Conditions.Broken) == ConditionState.True;
-            if (!Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result))
+            // Pass 70 (ruling R70.9): a record that carries the NMC's DRM is checked with it and its ELR; an older record as before.
+            if (bailed.Drm is { } drm ? !Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result, drm, bailed.Elr)
+                : !Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result))
             {
                 return Fail<GameState>(refused.Code, refused.Text);
             }

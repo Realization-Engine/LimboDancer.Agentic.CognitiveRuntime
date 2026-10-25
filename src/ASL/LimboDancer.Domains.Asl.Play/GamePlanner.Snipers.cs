@@ -205,6 +205,16 @@ public sealed partial class GamePlanner
             SnipeUnit(scope, attemptId, expected, events, unit, rollId, value, location, package, Roll, Values, Record);
         }
 
+        // A10.2 (pass 70, ruling R70.3): a leader the Sniper eliminates, by a dr of 1 or a mortal wound, causes a LLMC of the units in his Location.
+        if (here.Any(unit => unit.Kind == "asl:leader") && Replay([.. existing, .. events]).Current is { } sniped)
+        {
+            (string, bool)[] lostLeaders = [.. here.Where(unit => unit.Kind == "asl:leader" && sniped.Unit(unit.Id) is { Status: not InstanceStatus.Active }).Select(unit => (unit.Id, true))];
+            if (lostLeaders.Length > 0)
+            {
+                AddLeaderLossChecks(scope, attemptId, expected, actor, events, draw, state, sniped, lostLeaders, ScenarioA1MoraleCheck.Sniper, null);
+            }
+        }
+
         // A14.3: an effective Sniper attack puts every broken unit of the attacked side in the Location under DM.
         if (Replay([.. existing, .. events]).Current is { } after)
         {
