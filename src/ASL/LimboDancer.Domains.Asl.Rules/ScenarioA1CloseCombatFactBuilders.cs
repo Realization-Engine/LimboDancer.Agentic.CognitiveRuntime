@@ -57,6 +57,18 @@ public static class ScenarioA1CloseCombatFactBuilders
             HiddenPlaced = hiddenPlaced ? true : null,
         };
 
+    /// <summary>
+    /// A11.4's table (pass 70, ruling R70.30): each side's vehicles in the Location, from each vehicle's side and whether it is an AFV that is BU (not CE) or
+    /// Stunned; null where no vehicle stands, so a record made before the pass reads as it did.
+    /// </summary>
+    public static IReadOnlyList<AmbushVehicleFacts>? AmbushVehicles(IReadOnlyList<(string Side, bool Afv, bool CrewExposed, bool Stunned)> vehicles)
+    {
+        ArgumentNullException.ThrowIfNull(vehicles);
+        return vehicles.Count == 0 ? null
+            : [.. vehicles.GroupBy(item => item.Side, StringComparer.Ordinal).OrderBy(group => group.Key, StringComparer.Ordinal)
+                .Select(group => new AmbushVehicleFacts(group.Key, group.Count(item => item.Afv && (!item.CrewExposed || item.Stunned))))];
+    }
+
     /// <summary>A4.152 (ruling R27.3): the CC of an Infantry OVR follows its entry at once in the MPh, as one simultaneous round with no Ambush.</summary>
     public static CloseCombatFacts Overrun(string locationText, string? terrain, string? phasingSide, IReadOnlyList<CloseCombatUnit> units, IReadOnlyList<CloseCombatDeclaration> attacks) =>
         new("MPh", locationText, terrain, phasingSide, CloseCombatFacts.Simultaneous, null, units, [], [], attacks, null)
@@ -78,7 +90,10 @@ public static class ScenarioA1CloseCombatFactBuilders
         ArgumentNullException.ThrowIfNull(recorded);
         var rounds = recorded.Count(item => item != CloseCombatFacts.PrisonersRound);
         var ambushers = ambusher is not null && ambusherPresent;
-        var round = requested == CloseCombatFacts.PrisonersRound && recorded.Count == 0 ? CloseCombatFacts.PrisonersRound
+
+        // A11.31 (pass 70, ruling R70.30): an Infantry attack on Infantry in a Location holding a vehicle is one sequential attack, asked for by name.
+        var round = requested == CloseCombatFacts.Sequential ? CloseCombatFacts.Sequential
+            : requested == CloseCombatFacts.PrisonersRound && recorded.Count == 0 ? CloseCombatFacts.PrisonersRound
             : ambusher is null ? CloseCombatFacts.Simultaneous
             : ambushers && (rounds == 0 || requested == CloseCombatFacts.AmbusherRound) ? CloseCombatFacts.AmbusherRound
             : CloseCombatFacts.AmbushedRound;

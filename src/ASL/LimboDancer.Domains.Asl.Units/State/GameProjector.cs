@@ -578,7 +578,7 @@ public static class GameProjector
             string[] cleared = [.. Rules.ScenarioA1SequenceProjection.ClearedMarkers(state.Phase, state.Night).Concat(Rules.ScenarioA1SequenceProjection.PhaseMarkers)
                 .Select(ConditionName)];
             var newPlayerTurn = change.PhasingSide != state.PhasingSide;
-            var melee = state.Phase == "ccph" ? InMelee(state) : null;
+            var melee = state.Phase == "ccph" ? InMelee(state, change.PrcHeldInMelee) : null;
 
             // D5.34, D5.341: at the end of the Player Turn in which it was placed, a Stun becomes Stun +1, and a Recall becomes Recall; +1,
             // after which the AFV must leave by its Friendly Board Edge (ruling R5.17).
@@ -795,13 +795,17 @@ public static class GameProjector
         /// A11.15: at the end of the CCPh, Infantry of both sides that remain in one Location are held in Melee; prisoners are
         /// neither held nor hold (A20.5). The units are those of Locations that still hold units of both sides.
         /// </summary>
-        private HashSet<string> InMelee(GameState state)
+        private HashSet<string> InMelee(GameState state, IReadOnlyList<string>? prcHeld)
         {
             // A11.7 (ruling R11.16): a vehicle is never held in Melee, and holds the enemy Infantry in its Location unless it is Abandoned or in Motion.
             // A11.15 EXC (ruling R14.2): a unit that keeps its "?" is neither held in Melee nor holds an enemy unit in Melee.
+            // A11.71 (pass 70, ruling R70.31): a unit aboard is read only when the record names it among the PRC held; a record before the pass names none,
+            // and every unit aboard is read as before (Aboard is asked only of a unit whose position is a container's).
             var units = state.Units.Where(unit => Rules.ScenarioA1CloseCombatProjection.MeleeCandidate(unit.Status == InstanceStatus.Active, GameState.Condition(unit, Conditions.Captured) == ConditionState.True,
                 GameState.Condition(unit, Conditions.Concealed) == ConditionState.True, GameState.Condition(unit, Conditions.Hidden) == ConditionState.True,
-                unit.Kind == "asl:dummy", state.Location(unit.Id) is not null)).ToArray();
+                unit.Kind == "asl:dummy", state.Location(unit.Id) is not null)
+                && Rules.ScenarioA1CloseCombatProjection.PrcMeleeCandidate(prcHeld is not null && unit.Position is ContainedPosition && state.Aboard(unit.Id) is not null, prcHeld is not null,
+                    prcHeld?.Contains(unit.Id, StringComparer.Ordinal) == true)).ToArray();
             return units.GroupBy(unit => state.Location(unit.Id)!.Location)
                 .SelectMany(group => Rules.ScenarioA1CloseCombatProjection.InMelee([.. group.Select(unit => new Rules.MeleeUnitFacts(unit.Id, unit.Side, vocabulary.IsA(unit.Kind, "asl:vehicle"), HoldsInMelee(unit),
                     GameState.Condition(unit, Conditions.Concealed) == ConditionState.True, GameState.Condition(unit, Conditions.Hidden) == ConditionState.True))]))
@@ -1129,6 +1133,38 @@ public static class GameProjector
             }
 
             var entry = state.CloseCombats.FirstOrDefault(item => item.Location == combat.Location);
+
+            // A11.31, A11.12 (pass 70, ruling R70.30): an Infantry attack on Infantry in a Location holding a vehicle is one attack of its sequence, by the side
+            // named next, recording the side that follows as the planner read it; the units Infantry attacked are counted apart from a vehicle's.
+            if (combat.Round == CloseCombatResolved.SequentialRound)
+            {
+                var attacker = combat.Attackers.Select(id => Active(state, id) as UnitInstance).FirstOrDefault();
+                if (Rules.ScenarioA1CloseCombatProjection.SequentialRoundRefusal(state.Phase, entry is { Closed: true }, attacker?.Side, entry?.Next,
+                    combat.Attackers.Any(id => entry?.Attacking.Contains(id) == true), combat.Defenders.Any(id => entry?.InfantryAttacked.Contains(id) == true),
+                    state.CloseCombats.Any(item => !item.Closed && item.Location != combat.Location)) is { } sequential)
+                {
+                    return Fail<GameState>(sequential.Code, sequential.Text);
+                }
+
+                if (closeCombatVerifier.Verify(state, combat, rolls) is { } sequentialReason)
+                {
+                    var verifier = Rules.ScenarioA1CloseCombatProjection.VerifierRefusal(sequentialReason);
+                    return Fail<GameState>(verifier.Code, verifier.Text);
+                }
+
+                var sequenced = (entry ?? new CloseCombatLocation(combat.Location, false, null, [], false)) with
+                {
+                    Rounds = [.. entry?.Rounds ?? [], combat.Round],
+                    Attacking = [.. entry?.Attacking ?? [], .. combat.Attackers],
+                    InfantryAttacked = [.. entry?.InfantryAttacked ?? [], .. combat.Defenders],
+                    Next = combat.Next,
+                    Closed = combat.Closed,
+                };
+                return state with
+                {
+                    CloseCombats = [.. state.CloseCombats.Where(item => item.Location != combat.Location), sequenced],
+                };
+            }
 
             // A4.152 (ruling R27.3): or at once in the MPh, the CC of a berserk Infantry OVR, once the DEFENDER's window on the entry has closed.
             var overrun = Rules.ScenarioA1CloseCombatProjection.OverrunRecord(state.Phase, combat.Facts.ValueKind == JsonValueKind.Object && combat.Facts.TryGetProperty("infantryOverrun", out var flag)
@@ -4454,6 +4490,20 @@ public static class GameProjector
                     CloseCombats = [.. next.CloseCombats.Select(item => item.Attacking.Any(ids.Contains) ? item with
                     {
                         Attacking = [.. item.Attacking, .. produced]
+                    } : item)],
+                };
+            }
+
+            // A11.12 (pass 70, ruling R70.30): so a HS a unit Infantry attacked is Reduced to has been attacked by Infantry there; only sequential rounds
+            // since the pass fill the list.
+            if (next.CloseCombats.Any(item => item.InfantryAttacked.Any(ids.Contains)))
+            {
+                var produced = lineage.Produced.Select(item => item.Id).ToArray();
+                next = next with
+                {
+                    CloseCombats = [.. next.CloseCombats.Select(item => item.InfantryAttacked.Any(ids.Contains) ? item with
+                    {
+                        InfantryAttacked = [.. item.InfantryAttacked, .. produced]
                     } : item)],
                 };
             }

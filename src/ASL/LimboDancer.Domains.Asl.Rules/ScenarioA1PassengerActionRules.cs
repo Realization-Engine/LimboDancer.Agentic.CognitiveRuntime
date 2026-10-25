@@ -319,6 +319,17 @@ public static class ScenarioA1PassengerActionRules
         (role == FirePrc.Rider ? Apart : armored && !exposed ? Idle : Attacks, !vehicleMobile);
 
     /// <summary>
+    /// D6.5, D6.24, A7.211 (pp. 205, 55; pass 70, ruling R70.32): PRC that unload, Bail Out, or survive TPBF in a Location holding a Known enemy unit are in
+    /// an enemy Location and not held in Melee; the CC counter that shows it is no stored condition, since units are held in Melee only at the CCPh's end.
+    /// </summary>
+    public static string EnemyLocationText(string locationText, string rule) =>
+        $"; {locationText} holds a Known enemy unit, so they are in an enemy Location and not held in Melee until the CCPh ends ({rule})";
+
+    /// <summary>A7.211 (p. 55; ruling R70.32): PRC attacked by TPBF in their own Location that survive are in an enemy Location, not held in Melee until after the CCPh.</summary>
+    public static string TpbfPrcText() =>
+        "; the PRC that survive are in an enemy Location and not held in Melee until after the CCPh, those of a Mobile vehicle never (A7.211, A11.71)";
+
+    /// <summary>
     /// D6.31 (p. 205; ruling R65.10): why a SW may not pass between these units, or null. A PRC passes a SW it possesses to friendly Infantry in its
     /// Location or to another PRC of its vehicle; a unit on foot passes none to a PRC, which takes a SW only as it loads.
     /// </summary>

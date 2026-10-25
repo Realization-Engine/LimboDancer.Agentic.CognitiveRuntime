@@ -76,6 +76,9 @@ public sealed class PlayPagePass70Tests : IDisposable
         Assert.True(result.Outcome == PlayOutcome.Committed, string.Join("; ", result.Reasons));
     }
 
+    // Increment 3i: the scenario year of the game (D6.2: Riders of every nationality from 1943).
+    private int year = 1942;
+
     /// <summary>A game named after this class on the wide board, gone on to the German PFPh, where setup has closed.</summary>
     private async Task Start(params Dictionary<string, object>[] placements)
     {
@@ -89,7 +92,7 @@ public sealed class PlayPagePass70Tests : IDisposable
                 boards = new[] { WideBoards.Board.Ref.Value },
                 firstSide = "german",
                 scenarioMonth = 7,
-                scenarioYear = 1942,
+                scenarioYear = year,
                 sides = new object[] { new { id = "german", nationality = "german", elr = 3 }, new { id = "russian", nationality = "russian", elr = 3 } },
             },
             placements,
@@ -346,5 +349,65 @@ public sealed class PlayPagePass70Tests : IDisposable
         Assert.StartsWith(DisplayText.Place(1, WideBoards.At(5)) + ": ", target.ParentElement!.TextContent.Trim(), StringComparison.Ordinal);
         page.Find(".cc-drop[data-weapon='de-mmg']").Change(true);
         Assert.True(page.Find(".cc-drop[data-weapon='de-mmg']").HasAttribute("checked"));
+    }
+
+    private static readonly string[] AdvancingSquad = ["de-1"];
+
+    [Fact]
+    public async Task TheVehicleCcPanelOffersAnInfantryAttackOnARiderNamedHexFirst()
+    {
+        // Increment 3i (A11.31, A11.611; rulings R70.30, R70.31): the German 4-6-7 advances onto the Russian T-34 with its Rider squad, passing its PAATC (3 +
+        // 4 against 7). In the German CCPh the vehicle CC panel offers the Rider, hex first and with its vehicle, for an Infantry attack; the button waits
+        // for an attacker and a checked defender, and the attack is recorded as one sequential round with -1 against the Rider.
+        year = 1943;
+        var tank = new Dictionary<string, object>
+        {
+            ["id"] = "ru-tank",
+            ["kind"] = "asl:vehicle",
+            ["definition"] = "defender-tank",
+            ["side"] = "russian",
+            ["position"] = new Dictionary<string, string> { ["at"] = WideBoards.At(5), ["facing"] = "west" },
+            ["conditions"] = new Dictionary<string, bool>(),
+        };
+        var rider = Squad("ru-r", "defender-squad", WideBoards.At(5), "russian");
+        rider["position"] = new Dictionary<string, string> { ["in"] = "ru-tank", ["role"] = "rider" };
+        await Start(Squad("de-1", "attacker-squad", WideBoards.At(4), "german"), tank, rider);
+        for (var phase = 0; phase < 5; phase++)
+        {
+            await Do(GameActions.AdvancePhase, new
+            {
+            });
+        }
+
+        dice.Enqueue([3, 4]);
+        await Do(GameActions.Advance, new
+        {
+            unitIds = AdvancingSquad,
+            to = WideBoards.At(5),
+        });
+        await Do(GameActions.AdvancePhase, new
+        {
+        });
+        Assert.Equal("ccph", live.History(Game)!.Current!.Phase);
+
+        var page = Open("german");
+        string Here(string control) => $".vehicle-cc[data-location='{WideBoards.At(5)}'] {control}";
+        var box = page.Find(Here(".vehicle-cc-defender"));
+        var label = box.ParentElement!.TextContent.Trim();
+        Assert.StartsWith(DisplayText.Place(1, WideBoards.At(5)) + ": ", label, StringComparison.Ordinal);
+        Assert.Contains(", Rider on ", label, StringComparison.Ordinal);
+        Assert.True(page.Find(Here(".propose-vehicle-cc-infantry")).HasAttribute("disabled"));
+        page.Find(Here(".vehicle-cc-attacker")).Change("de-1");
+        page.Find(Here(".vehicle-cc-defender")).Change(true);
+        Assert.False(page.Find(Here(".propose-vehicle-cc-infantry")).HasAttribute("disabled"));
+        dice.Enqueue([6, 6]);
+        page.Find(Here(".propose-vehicle-cc-infantry")).Click();
+        page.WaitForAssertion(() => Assert.True(page.Find("#play-outcome").TextContent.Contains("Confirm to commit", StringComparison.Ordinal), page.Find("#play-proposal").TextContent));
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        var round = Events.Select(item => item.Payload).OfType<CloseCombatResolved>().Last();
+        Assert.Equal((CloseCombatResolved.SequentialRound, "ru-r"), (round.Round, Assert.Single(round.Defenders)));
+        Assert.Contains(round.Resolution.GetProperty("attacks")[0].GetProperty("defending")[0].GetProperty("drm").EnumerateArray(),
+            item => item.GetProperty("name").GetString() == "vs-rider");
     }
 }

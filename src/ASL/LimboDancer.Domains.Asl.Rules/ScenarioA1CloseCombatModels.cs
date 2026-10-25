@@ -104,6 +104,16 @@ public sealed record CloseCombatUnit(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the unit is a Rider of a vehicle in the Location (A11.611, p. 75; pass 70, ruling R70.31): it is attacked apart in Infantry against Infantry
+    /// CC, with +1 to its own attacks and -1 to attacks against it. Null is false, as in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Rider
+    {
+        get; init;
+    }
 }
 
 /// <summary>One declared CC attack (A11.12): the units attacking together, the units they attack, and the leader directing it.</summary>
@@ -207,6 +217,12 @@ public sealed record CloseCombatFacts(
 
     /// <summary>The prisoners' escape attacks, resolved before any other CC in the Location (A11.33, A20.55; ruling R14.6).</summary>
     public const string PrisonersRound = "prisoners";
+
+    /// <summary>
+    /// One Infantry attack on Infantry in a Location holding a vehicle (A11.31, p. 73, the H3 example, p. 74; pass 70, ruling R70.30): one attack by the
+    /// side named next, with no simultaneous reply.
+    /// </summary>
+    public const string Sequential = "sequential";
 
     /// <summary>Whether the Location's CC is Hand-to-Hand this CCPh, with the red Kill Numbers (J2.31, A11.11; ruling R14.1); null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -406,7 +422,20 @@ public sealed record AmbushFacts(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The vehicles of each side in the Location (A11.4's table, p. 73; pass 70, ruling R70.30): a side with one takes +2, and +1 for each BU or Stunned
+    /// AFV. Null where no vehicle stands, as in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<AmbushVehicleFacts>? Vehicles
+    {
+        get; init;
+    }
 }
+
+/// <summary>A side's vehicles in an Ambush Location (A11.4; pass 70, ruling R70.30): the side, and how many of its AFV are BU or Stunned.</summary>
+public sealed record AmbushVehicleFacts(string Side, int ButtonedOrStunnedAfvs);
 
 /// <summary>One side's Ambush dr, its drm, and its Final dr.</summary>
 public sealed record AmbushSide(string Side, int Dr, IReadOnlyList<FireModifier> Drm, int FinalDr);

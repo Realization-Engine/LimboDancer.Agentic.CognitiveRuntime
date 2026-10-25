@@ -102,6 +102,26 @@ public sealed record VehicleCloseCombatFacts(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The side that ambushed in the Location this CCPh (A11.4, A11.51, the I5 example, pp. 73 to 75; pass 70, ruling R70.30): its attacks take -1 and attacks
+    /// against it +1, in CC with a vehicle both ways. Null where no Ambush occurred, as in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Ambusher
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Passengers who join a vehicle's own attack on Infantry (A11.62, p. 76; pass 70, ruling R70.31): a halftrack's while CE, an unarmored vehicle's
+    /// always. Null when none join, and in every record made before the pass, whose attack used the vehicle's armament alone.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<CloseCombatUnit>? Passengers
+    {
+        get; init;
+    }
 }
 
 /// <summary>The answer to one CC attack with a vehicle: its arithmetic, what it did to the vehicle, and the effects on Infantry.</summary>
@@ -203,7 +223,7 @@ public static class ScenarioA1VehicleCloseCombat
         }
 
         var units = facts.Units.Where(unit => unit.UnitId is not null).ToDictionary(unit => unit.UnitId!, StringComparer.Ordinal);
-        if (units.Count != facts.Units.Count || facts.Units.Any(unit => unit.DefinitionId is null || !reference.Definitions.ContainsKey(unit.DefinitionId)))
+        if (units.Count != facts.Units.Count || facts.Units.Concat(facts.Passengers ?? []).Any(unit => unit.DefinitionId is null || !reference.Definitions.ContainsKey(unit.DefinitionId)))
         {
             reasons.Add("asl.a1.cc-vehicle.unit-outside");
             return reasons;
@@ -386,6 +406,12 @@ public static class ScenarioA1VehicleCloseCombat
             drm.Add(new FireModifier("vs-motion", 2m, "A11.51"));
         }
 
+        // A11.51, A11.4 (pass 70, ruling R70.30): "An Ambush DRM ... can also apply to CC vs a vehicle", -1 by the ambusher and +1 against it.
+        if (facts.Ambusher is { } ambusher)
+        {
+            drm.Add(attackers[0].Facts.Side == ambusher ? new FireModifier("ambush", -1m, "A11.51") : new FireModifier("vs-ambush", 1m, "A11.51"));
+        }
+
         // A11.5: a leader's DRM only when he combines; A15.24: a hero's -1; A4.51 (ruling R5.2): +1 when a CX unit attacks.
         if (smc.Facts is not null && smc.Definition.IsLeader && smc.Definition.Leadership is { } leadership)
         {
@@ -487,6 +513,15 @@ public static class ScenarioA1VehicleCloseCombat
             fp += aamg;
         }
 
+        // A11.62 (p. 76; pass 70, ruling R70.31): "CE Passengers in a halftrack" add their FP to its attack: a MMC its printed FP, a SMC one (A11.14),
+        // a pinned one half (A11.62); a broken or captured one none. The whole is then halved as the vehicle's own FP is.
+        foreach (var passenger in (facts.Passengers ?? []).Where(item => item.Broken != true && item.Captured != true))
+        {
+            var printed = reference.Definitions[passenger.DefinitionId!];
+            decimal share = IsSmc(printed) ? 1 : printed.Firepower ?? 0;
+            fp += passenger.Pinned == true ? share / 2 : share;
+        }
+
         var modifiers = new List<FireModifier>();
         if (vehicle.InMotion == true)
         {
@@ -530,6 +565,12 @@ public static class ScenarioA1VehicleCloseCombat
             if (ScenarioA1ArmorLeaders.Modifier(facts.Vehicle.ArmorLeadership) is { } armorLeader)
             {
                 own.Add(armorLeader);
+            }
+
+            // A11.51, A11.4 (the I5 example, p. 75; pass 70, ruling R70.30): the vehicle's attack takes -1 when its side ambushed, +1 against an ambusher.
+            if (facts.Ambusher is { } ambusher)
+            {
+                own.Add(facts.Vehicle.Side == ambusher ? new FireModifier("ambush", -1m, "A11.51") : new FireModifier("vs-ambush", 1m, "A11.51"));
             }
 
             var final = original + (int)own.Sum(item => item.Value);

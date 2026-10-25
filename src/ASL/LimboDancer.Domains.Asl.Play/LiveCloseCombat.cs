@@ -19,7 +19,7 @@ public static class LiveCloseCombat
     /// </summary>
     public static (IReadOnlyList<CloseCombatUnit>? Units, string? Reason) Units(GameState state, BoardLocation location,
         IReadOnlyDictionary<string, string>? stacking, IReadOnlyDictionary<string, string>? withdrawals = null, IReadOnlyDictionary<string, string>? infiltrations = null,
-        bool guns = false)
+        bool guns = false, bool riders = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(location);
@@ -28,8 +28,13 @@ public static class LiveCloseCombat
             return (null, catalogBar);
         }
 
-        // A11.19 (ruling R14.2): Dummies are removed before any attack is declared, so they are never CC units.
-        UnitInstance[] units = [.. state.At(location).OfType<UnitInstance>().Where(unit => ScenarioA1CloseCombatFactBuilders.IsCcUnit(unit.Status == InstanceStatus.Active, unit.Kind == UnitKinds.Dummy))
+        // A11.19 (ruling R14.2): Dummies are removed before any attack is declared, so they are never CC units. Pass 70 (ruling R70.30): nor is a vehicle,
+        // whose CC is the vehicle package's; a Location holding one had no Infantry round or Ambush before the pass. With <paramref name="riders"/>, the
+        // Riders of its vehicles, attacked apart in Infantry against Infantry CC (A11.611; ruling R70.31).
+        var here = state.At(location).OfType<UnitInstance>().ToArray();
+        UnitInstance[] units = [.. here.Where(unit => ScenarioA1CloseCombatFactBuilders.IsCcUnit(unit.Status == InstanceStatus.Active, unit.Kind == UnitKinds.Dummy) && !LiveFire.IsVehicle(unit))
+            .Concat(riders ? here.Where(LiveFire.IsVehicle).SelectMany(vehicle => state.Passengers(vehicle.Id)).Where(unit => unit.Position is ContainedPosition { Role: ContainmentRole.Rider })
+                : [])
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         if (units.Any(unit => unit.Definition is null))
         {
@@ -37,8 +42,8 @@ public static class LiveCloseCombat
         }
 
         // Rulings R14.3, R14.5, R14.8: TI, Unarmed units and prisoners' Guards, and the declared Infiltrations; Rules builds each unit (pass 32.g). Pass 70
-        // (ruling R70.27): the Guns each unit mans, for A11.13's loss.
-        return ([.. units.Select(unit => ScenarioA1CloseCombatFactBuilders.Unit(unit.Id, unit.Definition!.Definition, unit.Side, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
+        // (ruling R70.27): the Guns each unit mans, for A11.13's loss; (ruling R70.31) a Rider marked as one.
+        return ([.. units.Select(unit => Marked(unit, ScenarioA1CloseCombatFactBuilders.Unit(unit.Id, unit.Definition!.Definition, unit.Side, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
             Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted), Is(unit, Conditions.Berserk), Is(unit, Conditions.Fanatic), Is(unit, Conditions.Heroic),
             Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), Is(unit, Conditions.Captured), state.Advances.Any(item => item.Unit == unit.Id && item.To == location),
             Is(unit, Conditions.Melee), stacking?.GetValueOrDefault(unit.Id), withdrawals?.GetValueOrDefault(unit.Id), Is(unit, Conditions.Cx), Is(unit, "asl:ti"),
@@ -46,7 +51,12 @@ public static class LiveCloseCombat
             [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
                 .Select(item => item.Id).Order(StringComparer.Ordinal)], LiveStacking.Manning(state, unit.Id),
             !guns ? null : [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned } manned
-                && manned.Holder == unit.Id).Select(item => item.Id).Order(StringComparer.Ordinal)]))], null);
+                && manned.Holder == unit.Id).Select(item => item.Id).Order(StringComparer.Ordinal)])))], null);
+
+        static CloseCombatUnit Marked(UnitInstance unit, CloseCombatUnit built) => unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? built with
+        {
+            Rider = true
+        } : built;
     }
 
     /// <summary>The Ambush facts of a Location, before the drs; <paramref name="terrain"/> is the planner's read.</summary>
@@ -55,9 +65,15 @@ public static class LiveCloseCombat
         ArgumentNullException.ThrowIfNull(state);
         var (units, reason) = Units(state, location, null);
 
-        // A11.4 (ruling R14.2): a hidden unit placed there as the CCPh began makes an Ambush possible.
+        // A11.4 (ruling R14.2): a hidden unit placed there as the CCPh began makes an Ambush possible. A11.4's table (pass 70, ruling R70.30): each side's
+        // vehicles there that are not Abandoned or captured, and which of them are AFV that are BU or Stunned, for the side's drm.
         return units is null ? (null, reason) : (ScenarioA1CloseCombatFactBuilders.Ambush(state.Phase, location.ToString(), terrain, state.PhasingSide, units,
-            units.Any(unit => state.HiddenPlaced.Contains(unit.UnitId!, StringComparer.Ordinal))), null);
+            units.Any(unit => state.HiddenPlaced.Contains(unit.UnitId!, StringComparer.Ordinal))) with
+        {
+            Vehicles = ScenarioA1CloseCombatFactBuilders.AmbushVehicles([.. state.At(location).OfType<UnitInstance>()
+                .Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && !Is(unit, Conditions.Abandoned) && !Is(unit, Conditions.Captured))
+                .Select(unit => (unit.Side, LiveFire.UnarmoredOf(unit.Definition?.Definition) != true, LiveFire.CrewExposed(unit), Is(unit, Conditions.Stunned)))]),
+        }, null);
     }
 
     /// <summary>
@@ -71,7 +87,9 @@ public static class LiveCloseCombat
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(attacks);
-        var (units, reason) = Units(state, location, stacking, withdrawals, infiltrations, guns: true);
+        // A11.31, A11.611 (pass 70, rulings R70.30, R70.31): a sequential round in a Location holding a vehicle reads its Riders too.
+        var sequential = requested == CloseCombatFacts.Sequential;
+        var (units, reason) = Units(state, location, stacking, withdrawals, infiltrations, guns: true, riders: sequential);
         if (units is null)
         {
             return (null, reason);
@@ -95,7 +113,10 @@ public static class LiveCloseCombat
         // (ruling R14.1): the Location's first round other than the prisoners' declares Hand-to-Hand for the CCPh.
         var (round, rounds) = ScenarioA1CloseCombatFactBuilders.NextRound(requested, entry?.Rounds ?? [], entry?.Ambusher, entry?.Ambusher is { } ambusher && units.Any(unit => unit.Side == ambusher && unit.Captured != true));
         var hand = ScenarioA1CloseCombatFactBuilders.HandToHand(rounds, entry?.HandToHand == true, round, handToHand);
-        return (ScenarioA1CloseCombatFactBuilders.Round(state.Phase, location.ToString(), terrain, state.PhasingSide, round, entry?.Ambusher, units, entry?.Attacked ?? [], entry?.Attacking ?? [], attacks, hand), null);
+
+        // A11.12's EXC (ruling R70.30): a sequential round's units attacked before are those Infantry attacked; a vehicle's attacks are counted apart.
+        return (ScenarioA1CloseCombatFactBuilders.Round(state.Phase, location.ToString(), terrain, state.PhasingSide, round, entry?.Ambusher, units,
+            (sequential ? entry?.InfantryAttacked : entry?.Attacked) ?? [], entry?.Attacking ?? [], attacks, hand), null);
     }
 
     /// <summary>The rolls of a CC record, rebuilt from its roll ids and the recorded dice, in the package's shape.</summary>
@@ -216,11 +237,45 @@ public static class LiveCloseCombat
             ScenarioA1CloseCombatFactBuilders.FireMarked(reaction, [.. attackers.Where(id => state.Unit(id) is { } unit && (Is(unit, Conditions.FirstFire) || Is(unit, Conditions.FinalFire)))]));
 
         // A21.2 (pass 65, ruling R65.22): an attack on an Abandoned AFV planned since the pass carries its unmanned state; Rules reads it for an AFV only.
-        return (Is(vehicle, Conditions.Abandoned) && !byVehicle ? facts with
+        // A11.4, A11.51 (pass 70, ruling R70.30): the side that ambushed there this CCPh, which no Location holding a vehicle had before the pass. A11.62
+        // (ruling R70.31): the vehicle's own attack takes the FP of the Passengers who join it, as Rules reads their part.
+        var joining = byVehicle ? JoiningPassengers(vehicle, state.Passengers(vehicle.Id)) : [];
+        var passengers = joining.Count == 0 ? null : PassengerUnits(state, joining);
+        return ((Is(vehicle, Conditions.Abandoned) && !byVehicle ? facts with
         {
             Unmanned = true
-        } : facts, null);
+        } : facts) with
+        {
+            Ambusher = state.CloseCombats.FirstOrDefault(item => item.Location == location)?.Ambusher,
+            Passengers = passengers,
+        }, null);
     }
+
+    /// <summary>
+    /// The PRC aboard a vehicle who join its own CC attack on Infantry (A11.62; pass 70, ruling R70.31), as Rules reads each one's part: a Passenger of a
+    /// halftrack while it is CE, of an unarmored vehicle always; a Rider attacks apart, and a broken or captured unit never.
+    /// </summary>
+    public static IReadOnlyList<string> JoiningPassengers(UnitInstance vehicle, IEnumerable<UnitInstance> aboard)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        ArgumentNullException.ThrowIfNull(aboard);
+        var unarmored = LiveFire.UnarmoredOf(vehicle.Definition?.Definition) == true;
+        var exposed = ScenarioA1PassengerActionRules.PassengersExposed(unarmored, LiveFire.CrewExposed(vehicle));
+        var mobile = !Is(vehicle, Conditions.Immobilized) && !Is(vehicle, Conditions.Bogged);
+        return [.. aboard.Where(passenger => passenger.Status == InstanceStatus.Active && !Is(passenger, Conditions.Broken) && !Is(passenger, Conditions.Captured)
+                && ScenarioA1PassengerActionRules.CloseCombat(passenger.Position is ContainedPosition { Role: ContainmentRole.Rider } ? FirePrc.Rider : FirePrc.Passenger, !unarmored, exposed,
+                    mobile).Part == ScenarioA1PassengerActionRules.Attacks)
+            .Select(passenger => passenger.Id).Order(StringComparer.Ordinal)];
+    }
+
+    /// <summary>The Passengers who join a vehicle's attack (A11.62; ruling R70.31), as the package reads a CC unit.</summary>
+    private static IReadOnlyList<CloseCombatUnit>? PassengerUnits(GameState state, IReadOnlyList<string> ids) =>
+        ids.Select(state.Unit).OfType<UnitInstance>().Where(unit => unit.Definition is not null).ToArray() is { Length: > 0 } found
+            ? [.. found.Select(unit => ScenarioA1CloseCombatFactBuilders.Unit(unit.Id, unit.Definition!.Definition, unit.Side, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
+                Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted), Is(unit, Conditions.Berserk), Is(unit, Conditions.Fanatic), Is(unit, Conditions.Heroic),
+                Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), Is(unit, Conditions.Captured), false, Is(unit, Conditions.Melee), null, null, Is(unit, Conditions.Cx),
+                Is(unit, "asl:ti"), Is(unit, Conditions.Unarmed), unit.Custodian, null, []))]
+            : null;
 
     /// <summary>The rolls of a CC record with a vehicle, rebuilt from its roll ids and the recorded dice.</summary>
     public static VehicleCloseCombatRolls? VehicleRolls(VehicleCloseCombatResolved combat, IReadOnlyDictionary<string, DiceRolled> rolls)
@@ -387,6 +442,10 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             // A21.2 (pass 65, ruling R65.22): the capture declaration and the unmanned fact are the record's; a record made before the pass has neither.
             Capture = recorded.Capture,
             Unmanned = recorded.Unmanned,
+
+            // A11.62 (pass 70, ruling R70.31): a record made before the pass names no Passengers joining, and its attack is replayed with the vehicle's
+            // armament alone; a record since must name the state's.
+            Passengers = recorded.Passengers is null ? null : expected.Passengers,
         };
         if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

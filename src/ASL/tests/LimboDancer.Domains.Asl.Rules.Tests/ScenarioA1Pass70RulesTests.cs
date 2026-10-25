@@ -1333,4 +1333,162 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.True(ScenarioA1CarrierRules.RecordsCarrier("asl:half-squad"));
         Assert.False(ScenarioA1CarrierRules.RecordsCarrier("asl:vehicle-crew"));
     }
+
+    // Increment 3i (task 70.7, part I): Infantry against Infantry in a Location with a vehicle (A11.31; ruling R70.30), its Ambush (A11.4, A11.34, A11.51),
+    // and PRC in CC (A11.611, A11.62, A11.71; ruling R70.31).
+    private static CloseCombatFacts Sequential(CloseCombatUnit[] units, CloseCombatDeclaration[] attacks, string? ambusher = null) =>
+        new("CCPh", "bd03:F8:0", "stone-building", "russian", CloseCombatFacts.Sequential, ambusher, units, [], [], attacks,
+            new CloseCombatRolls(new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal) { ["0"] = Sevens }));
+
+    private static readonly int[] Sevens = [3, 4];
+
+    private static readonly CloseCombatUnit[] SquadAgainstSquad = [CcUnit("ru-1", "defender-squad", "russian"), CcUnit("de-1", "attacker-squad", "german")];
+
+    [Fact]
+    public void ASequentialRoundIsOneAttackWithNoReplyAndKeepsTheAmbushDrm()
+    {
+        // A11.31 (p. 73): in a Location holding a vehicle "each side alternates taking its CC attacks one at a time"; the H3 example (p. 74): "the 6-2-8 attacks
+        // the German Infantry at 1:1 ... Subsequent attack opportunities alternate". One attack is the round; two are outside it.
+        CloseCombatDeclaration[] one = [new(["ru-1"], ["de-1"])];
+        Assert.Empty(ScenarioA1CloseCombatCalculator.Precheck(Sequential(SquadAgainstSquad, one), CloseCombat));
+        var resolved = ScenarioA1CloseCombatCalculator.Resolve(Sequential(SquadAgainstSquad, one), CloseCombat);
+        Assert.Equal(("russian", "1-1"), (Assert.Single(resolved.Attacks).Side, resolved.Attacks[0].Odds));
+        Assert.Contains("asl.a1.cc.round-outside", ScenarioA1CloseCombatCalculator.Precheck(Sequential(SquadAgainstSquad, [.. one, new(["de-1"], ["ru-1"])]), CloseCombat));
+
+        // A berserk unit's attack is one of the sequence, not owed in this attack (A15.43 holds it to its own turn).
+        Assert.Empty(ScenarioA1CloseCombatCalculator.Precheck(Sequential([SquadAgainstSquad[0], SquadAgainstSquad[1] with { Berserk = true }], one), CloseCombat));
+
+        // A11.34 and its example: "Should an Ambush occur in a CC Location containing a vehicle, the ambushing side gets to resolve all of its CC attacks in
+        // that Location first"; A11.4: -1 to the ambusher's attacks and +1 to attacks against it.
+        Assert.Contains(ScenarioA1CloseCombatCalculator.Resolve(Sequential(SquadAgainstSquad, one, "russian"), CloseCombat).Attacks[0].Drm, item => item.Name == "ambush" && item.Value == -1m);
+        Assert.Contains(ScenarioA1CloseCombatCalculator.Resolve(Sequential(SquadAgainstSquad, [new(["de-1"], ["ru-1"])], "russian"), CloseCombat).Attacks[0].Drm,
+            item => item.Name == "vs-ambush" && item.Value == 1m);
+    }
+
+    [Fact]
+    public void ARiderAttacksWithPlusOneAndIsAttackedWithMinusOne()
+    {
+        // A11.611 (p. 75): "Riders can be attacked separately as an Infantry-vs-Infantry CC attack. Riders are susceptible to a +1 CC DRM when attacking and a
+        // -1 CC DRM when defending" (ruling R70.31).
+        CloseCombatUnit[] units = [SquadAgainstSquad[0], SquadAgainstSquad[1] with { Rider = true }];
+        var against = ScenarioA1CloseCombatCalculator.Resolve(Sequential(units, [new(["ru-1"], ["de-1"])]), CloseCombat);
+        Assert.Equal([("vs-rider", -1m)], Assert.Single(against.Attacks[0].Defending).Drm.Select(item => (item.Name, item.Value)));
+        Assert.DoesNotContain(against.Attacks[0].Drm, item => item.Name.StartsWith("rider", StringComparison.Ordinal));
+        var by = ScenarioA1CloseCombatCalculator.Resolve(Sequential(units, [new(["de-1"], ["ru-1"])]), CloseCombat);
+        Assert.Contains(by.Attacks[0].Drm, item => item.Name == "rider:de-1" && item.Value == 1m);
+
+        // A record made before the pass marks no Rider: nothing changes.
+        Assert.Empty(ScenarioA1CloseCombatCalculator.Resolve(Sequential(SquadAgainstSquad, [new(["ru-1"], ["de-1"])]), CloseCombat).Attacks[0].Defending[0].Drm);
+    }
+
+    [Fact]
+    public void TheAmbushDrTakesTheVehicleDrmOfEachSide()
+    {
+        // A11.4's table (p. 73): "+2 Cavalry, Vehicle, or in Pillbox"; "+1 BU or Stunned AFV (each)". The H3 example (p. 74): "the German Ambush dr receives
+        // +2 drm (+2 vehicle, +1 BU, -1 Stealthy [Hero])". Here the German side has a BU AFV: +3; the Russian none. A Russian 4 against a German 3 (6
+        // Final): no Ambush.
+        CloseCombatUnit[] units = [CcUnit("ru-1", "defender-squad", "russian") with { Advanced = true }, CcUnit("de-1", "attacker-squad", "german")];
+        var facts = new AmbushFacts("CCPh", "bd03:F8:0", "stone-building", "russian", units, new Dictionary<string, int>(StringComparer.Ordinal) { ["russian"] = 4, ["german"] = 3 })
+        {
+            Vehicles = [new AmbushVehicleFacts("german", 1)],
+        };
+        var resolution = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts, CloseCombat);
+        var german = resolution.Sides.Single(side => side.Side == "german");
+        Assert.Equal([("vehicle", 2m), ("bu-or-stunned-afv", 1m)], german.Drm.Select(item => (item.Name, item.Value)));
+        Assert.Equal((6, 4, (string?)null), (german.FinalDr, resolution.Sides.Single(side => side.Side == "russian").FinalDr, resolution.Ambusher));
+
+        // A dr of 1 against the German 4 (7 Final) is at least three lower: the Russians ambush. Where no vehicle stands, no vehicle drm (null facts).
+        Assert.Equal("russian", ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with
+        {
+            Rolls = new Dictionary<string, int>(StringComparer.Ordinal) { ["russian"] = 1, ["german"] = 4 }
+        }, CloseCombat).Ambusher);
+        Assert.Empty(ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with { Vehicles = null }, CloseCombat).Sides.Single(side => side.Side == "german").Drm);
+
+        // The builder counts each side's AFV that is BU or Stunned; an unarmored vehicle, or a CE AFV, adds only the +2.
+        var built = ScenarioA1CloseCombatFactBuilders.AmbushVehicles([("german", true, false, false), ("german", false, false, false), ("russian", true, true, false)])!;
+        Assert.Equal([("german", 1), ("russian", 0)], built.Select(item => (item.Side, item.ButtonedOrStunnedAfvs)));
+        Assert.Null(ScenarioA1CloseCombatFactBuilders.AmbushVehicles([]));
+        Assert.True(ScenarioA1CloseCombatRules.AmbushDueCandidate("ccph", false));
+        Assert.False(ScenarioA1CloseCombatRules.AmbushDueCandidate("ccph", true));
+    }
+
+    private static VehicleCloseCombatVehicle CcTank() => new("de-v", "attacker-tank", "german", false, false, false, false, false, false, false, false, false);
+
+    [Fact]
+    public void TheAmbushDrmAppliesBothWaysInCcWithAVehicle()
+    {
+        // A11.51 (p. 74): "An Ambush DRM (11.4/11.8) ... can also apply to CC vs a vehicle"; the I5 example (p. 75): the T34/85 "attacks with its CMG ... with
+        // +1 DRM for Street Fighting Ambush". Ruling R70.30: the ambusher's attacks -1, attacks against it +1, either way.
+        CloseCombatUnit[] units = [CcUnit("ru-1", "defender-squad", "russian")];
+        VehicleCloseCombatFacts On(string? ambusher) => new("CCPh", "bd03:F8:0", CcTank(), units, ["ru-1"], [], false, false, new VehicleCloseCombatRolls(Sevens)) { Ambusher = ambusher };
+        Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(On("russian"), CloseCombat).Drm, item => item.Name == "ambush" && item.Value == -1m);
+        Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(On("german"), CloseCombat).Drm, item => item.Name == "vs-ambush" && item.Value == 1m);
+        Assert.DoesNotContain(ScenarioA1VehicleCloseCombat.Resolve(On(null), CloseCombat).Drm, item => item.Name.Contains("ambush", StringComparison.Ordinal));
+        VehicleCloseCombatFacts By(string? ambusher) => new("CCPh", "bd03:F8:0", CcTank(), units, [], ["ru-1"], true, false, new VehicleCloseCombatRolls(Sevens)) { Ambusher = ambusher };
+        Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By("german"), CloseCombat).Defending!).Drm, item => item.Name == "ambush" && item.Value == -1m);
+        Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By("russian"), CloseCombat).Defending!).Drm, item => item.Name == "vs-ambush" && item.Value == 1m);
+    }
+
+    [Fact]
+    public void ACeHalftracksPassengersJoinItsAttackAndOnlyAnImmobileVehiclesPrcAreHeldInMelee()
+    {
+        // A11.62 (p. 76): "The only other ways an AFV may attack in CC are with a RMG factor, Riders, CE Passengers in a halftrack"; the BU halftrack of
+        // scenario A1 has no CC armament of its own, so its Passenger squad's 4 FP is the attack (ruling R70.31), halved for a pinned Passenger.
+        CloseCombatUnit[] units = [CcUnit("ru-1", "defender-squad", "russian")];
+        var halftrack = new VehicleCloseCombatVehicle("de-ht", "attacker-halftrack", "german", true, false, false, false, false, false, false, false, false);
+        VehicleCloseCombatFacts Facts(IReadOnlyList<CloseCombatUnit>? passengers) =>
+            new("CCPh", "bd03:F8:0", halftrack, units, [], ["ru-1"], true, false, new VehicleCloseCombatRolls(Sevens)) { Passengers = passengers };
+        Assert.Contains("asl.a1.cc-vehicle.no-cc-armament", ScenarioA1VehicleCloseCombat.Precheck(Facts(null) with { Vehicle = halftrack with { CrewExposed = false } }, CloseCombat));
+        var joined = ScenarioA1VehicleCloseCombat.Resolve(Facts([CcUnit("de-p", "attacker-squad", "german")]), CloseCombat);
+        Assert.Equal(CloseCombatResolution.Resolved, joined.Disposition);
+        var withPassenger = joined.AttackFirepower!.Value - ScenarioA1VehicleCloseCombat.Resolve(Facts(null), CloseCombat).AttackFirepower!.Value;
+        Assert.Equal(4m, withPassenger);
+        Assert.Equal(2m, ScenarioA1VehicleCloseCombat.Resolve(Facts([CcUnit("de-p", "attacker-squad", "german") with { Pinned = true }]), CloseCombat).AttackFirepower!.Value
+            - ScenarioA1VehicleCloseCombat.Resolve(Facts(null), CloseCombat).AttackFirepower!.Value);
+
+        // A11.611, A11.62: a Rider attacks apart; a CE halftrack's Passenger joins; a BU one does nothing; an unarmored vehicle's always join.
+        Assert.Equal(ScenarioA1PassengerActionRules.Apart, ScenarioA1PassengerActionRules.CloseCombat(FirePrc.Rider, true, false, true).Part);
+        Assert.Equal(ScenarioA1PassengerActionRules.Attacks, ScenarioA1PassengerActionRules.CloseCombat(FirePrc.Passenger, true, true, true).Part);
+        Assert.Equal(ScenarioA1PassengerActionRules.Idle, ScenarioA1PassengerActionRules.CloseCombat(FirePrc.Passenger, true, false, true).Part);
+        Assert.Equal(ScenarioA1PassengerActionRules.Attacks, ScenarioA1PassengerActionRules.CloseCombat(FirePrc.Passenger, false, false, true).Part);
+
+        // A11.71 (p. 76): "Passengers/Riders of Immobile vehicles are held in Melee, but ... Passengers/Riders of Mobile vehicles who survive their initial round
+        // of CC are not required to remain in Melee". A unit aboard is read for Melee only when the CCPh's record names it; one before the pass names none.
+        Assert.True(ScenarioA1PassengerActionRules.CloseCombat(FirePrc.Rider, true, false, false).HeldInMelee);
+        Assert.False(ScenarioA1PassengerActionRules.CloseCombat(FirePrc.Rider, true, false, true).HeldInMelee);
+        Assert.True(ScenarioA1CloseCombatProjection.PrcMeleeCandidate(true, true, true));
+        Assert.False(ScenarioA1CloseCombatProjection.PrcMeleeCandidate(true, true, false));
+        Assert.True(ScenarioA1CloseCombatProjection.PrcMeleeCandidate(true, false, false));
+        Assert.True(ScenarioA1CloseCombatProjection.PrcMeleeCandidate(false, true, false));
+    }
+
+    [Fact]
+    public void TheSidesWithAttacksCountInfantryAgainstInfantryAndTheAmbusherAttacksFirst()
+    {
+        // A11.12's EXC (p. 72): units attack or are attacked once per CCPh "[EXC: ... CC vs/by a vehicle]": being attacked by Infantry and by a vehicle are
+        // counted apart (ruling R70.30). The German squad beside its own tank faces the Russian squad, which no Infantry has attacked: the Germans have an
+        // attack; once the Russian squad is attacked by Infantry, the German squad has none (the tank attacked already).
+        VehicleCcUnitFacts[] here =
+        [
+            new("de-v", "german", true, true, false, false, false, false, true), new("de-1", "german", false, false, true, true, false, false, true),
+            new("ru-1", "russian", false, false, true, true, false, false, true),
+        ];
+        Assert.Equal(["russian"], ScenarioA1VehicleCloseCombatRules.SidesWithAttacks(here, ["de-v", "de-1"], []));
+        Assert.Equal(["german", "russian"], ScenarioA1VehicleCloseCombatRules.SidesWithAttacks(here, ["de-v"], [], []).Order(StringComparer.Ordinal));
+        Assert.Equal(["russian"], ScenarioA1VehicleCloseCombatRules.SidesWithAttacks(here, ["de-v"], [], ["ru-1"]));
+
+        // A Rider attacks and is attacked in Infantry against Infantry CC only: never the vehicle, nor by the vehicle (A11.611).
+        VehicleCcUnitFacts[] rider = [here[0], new VehicleCcUnitFacts("ru-r", "russian", false, false, true, true, false, false, true) { Rider = true }];
+        Assert.Empty(ScenarioA1VehicleCloseCombatRules.SidesWithAttacks(rider, [], [], []));
+
+        // A11.34: after an Ambush the ambusher attacks first and keeps the attack while it has attacks left.
+        Assert.Equal("german", ScenarioA1VehicleCloseCombatRules.FirstCcSide([("german", false), ("russian", true)], "russian", "german"));
+        Assert.Equal(("german", false), ScenarioA1VehicleCloseCombatRules.NextCcSide(["german", "russian"], "german", "german"));
+        Assert.Equal(("russian", false), ScenarioA1VehicleCloseCombatRules.NextCcSide(["russian"], "german", "german"));
+
+        // UNIT-STATE-030: the round is the side's named next, and no unit is attacked twice by Infantry.
+        Assert.Null(ScenarioA1CloseCombatProjection.SequentialRoundRefusal("ccph", false, "russian", "russian", false, false, false));
+        Assert.NotNull(ScenarioA1CloseCombatProjection.SequentialRoundRefusal("ccph", false, "german", "russian", false, false, false));
+        Assert.NotNull(ScenarioA1CloseCombatProjection.SequentialRoundRefusal("ccph", false, "russian", "russian", false, true, false));
+    }
 }

@@ -291,12 +291,26 @@ public sealed partial class GamePlanner
         }
     }
 
-    /// <summary>What a proposal says of the Riders an MP expenditure makes Bail Out (D6.21, D6.24; ruling R65.17); empty when none does.</summary>
-    private static string BailOutPreview((IReadOnlyList<BailingRider> Riders, BoardLocation At)? bailing) =>
-        bailing is not { } bail ? string.Empty
-            : $"; {string.Join(", ", bail.Riders.Select(rider => rider.Id))} Bail{(bail.Riders.Count == 1 ? "s" : string.Empty)} Out in {bail.At}, since "
-                + ScenarioA1RiderRules.CauseText(bail.Riders[0].Cause).Replace("its AFV", "the AFV", StringComparison.Ordinal)
-                // D6.21 (the table player): Riders thrown off by terrain stay in the hex the AFV left, not beneath it.
-                + (bail.Riders[0].Cause == ScenarioA1RiderRules.Terrain ? $", each taking a NMC in {bail.At}, the hex the AFV left," : ", each taking a NMC beneath it")
-                + " with its move ended, its SW checked for malfunction (D6.24)";
+    /// <summary>
+    /// What a proposal says of the Riders an MP expenditure makes Bail Out (D6.21, D6.24; ruling R65.17); empty when none does. Pass 70 (ruling R70.32): where
+    /// they land with a Known enemy unit, they are in an enemy Location and not held in Melee (D6.24, D6.5), read from the planner's index.
+    /// </summary>
+    private string BailOutPreview(GameState state, (IReadOnlyList<BailingRider> Riders, BoardLocation At)? bailing)
+    {
+        if (bailing is not { } bail)
+        {
+            return string.Empty;
+        }
+
+        var index = MemoOf(state).Objects(state);
+        var side = index.Unit(bail.Riders[0].Id)?.Side;
+        var enemyThere = index.At(bail.At).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != side && !LiveFire.IsVehicle(unit)
+            && !Is(unit, Conditions.Captured) && KnownEnemy(unit));
+        return $"; {string.Join(", ", bail.Riders.Select(rider => rider.Id))} Bail{(bail.Riders.Count == 1 ? "s" : string.Empty)} Out in {bail.At}, since "
+            + ScenarioA1RiderRules.CauseText(bail.Riders[0].Cause).Replace("its AFV", "the AFV", StringComparison.Ordinal)
+            // D6.21 (the table player): Riders thrown off by terrain stay in the hex the AFV left, not beneath it.
+            + (bail.Riders[0].Cause == ScenarioA1RiderRules.Terrain ? $", each taking a NMC in {bail.At}, the hex the AFV left," : ", each taking a NMC beneath it")
+            + " with its move ended, its SW checked for malfunction (D6.24)"
+            + (enemyThere ? ScenarioA1PassengerActionRules.EnemyLocationText(bail.At.ToString(), "D6.24, D6.5") : string.Empty);
+    }
 }

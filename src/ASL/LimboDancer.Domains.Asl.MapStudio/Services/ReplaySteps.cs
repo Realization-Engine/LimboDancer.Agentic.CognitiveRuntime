@@ -293,6 +293,9 @@ public static class ReplaySteps
             {
                 CloseCombatResolved.AmbusherRound => ", the ambusher's round",
                 CloseCombatResolved.AmbushedRound => ", the ambushed side's round",
+
+                // A11.31 (pass 70, ruling R70.30): one Infantry attack on Infantry in a Location holding a vehicle.
+                CloseCombatResolved.SequentialRound => ", one attack of the sequence with a vehicle there",
                 _ => string.Empty,
             };
             return ("cc", null, $"Close Combat in {Place(before, combat.Location)}{round}{end}", false);

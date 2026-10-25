@@ -40,3 +40,14 @@ Each row: what is left, where it came from, the rule and page, the pass it goes 
 - A crew manning a Gun not Emplaced, and a non-Emplaced Gun's Case H loss | 3e | A12.2, the Concealment Table | Backlog | Gains no "?".
 - HIP for a vehicle: how much of an SSR's HIP allowance it takes | 3e (a reading) | A12.3, p. 80 | For the user's ruling | One squad-equivalent.
 - An Emplaced Gun's HIP out of Concealment Terrain: the setup does not check that no enemy ground unit has a LOS to it | 3e | A12.34, p. 80 | Backlog | Placed beneath "?" at the next phase or step that finds a Good Order enemy in LOS.
+
+## From 3i
+
+- Withdrawal from Melee and Infiltration in the sequential CC of a Location holding a vehicle | 3i (R70.30) | A11.3, A11.2, A11.22, p. 73 | Backlog | Not offered: the sequential Infantry attack declares no withdrawal and no Infiltration.
+- A capture attempt (A20.22) in an Infantry attack on Infantry in a Location holding a vehicle | 3i (R70.30) | A20.22, A11.52, pp. 87, 74 | Pass 70, 3j (A11.52's Passengers); then backlog | Not offered; a "capture" with no vehicle named is ignored.
+- A side whose force in an Ambush Location is a vehicle alone (A11.4's "+2 Vehicle" with no Infantry of that side) | 3i (R70.30) | A11.4, p. 73 | Backlog | No Ambush is possible: the Ambush needs Infantry of both sides there.
+- A Location holding a vehicle whose Ambush drs were rolled and in which no side has an attack left stays open, and bars the other Locations' CC (A11.12) | 3i | A11.12, A11.31 | For the reviews' fixes | Not seen in the tests; a pass is refused there ("holds no vehicle CC left").
+- A berserk charge into a Location holding an enemy vehicle and enemy Infantry, now that CC between Infantry there is built | 3i | A15.431, A15.432 | Backlog (ruling R30.5) | The charge ends in place, as before.
+- A Rider's Infantry CC against a vehicle, and a vehicle's attack on a Rider | 3i (R70.31, a reading of A11.611) | A11.611, A11.62, pp. 75, 76 | Backlog | Refused by the package: a Rider fights in Infantry against Infantry CC alone.
+- The CC counter of R70.32 as a map badge of the side's view | 3i (frame C, Q4) | D6.5, D6.24, A7.211 | Backlog | The proposal and record lines say it; nothing is drawn.
+- TPBF at PRC: the record line (FireText) of R70.32 | 3i | A7.211, p. 55 | Backlog | The fire proposal says "the PRC that survive are in an enemy Location and not held in Melee until after the CCPh ... (A7.211, A11.71)"; the fire record line does not.

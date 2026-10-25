@@ -452,7 +452,7 @@ public sealed partial class GamePlanner
                         }
 
                         return events;
-                    }, true, at.Location, step, delayText + BailOutPreview(delayBailing));
+                    }, true, at.Location, step, delayText + BailOutPreview(state, delayBailing));
                 }
 
                 return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
@@ -615,7 +615,7 @@ public sealed partial class GamePlanner
 
         // D6.21, B13.43 (pass 65, ruling R65.17): terrain Riders may not ride through, or a turreted AFV's TCA change, makes them Bail Out.
         var bailing = kind is VehicleStepped.Exit ? null : StepBailOut(state, vehicle, kind, at.Location, entry, turret);
-        summary += BailOutPreview(bailing);
+        summary += BailOutPreview(state, bailing);
 
         // D5.341 (ruling R5.17): a leaving AFV keeps to a shortest route in MP to its Friendly Board Edge.
         if (leaving && !ScenarioA1RecallCalculator.StopsToUnload(kind, Riding(state, id).Count > 0))

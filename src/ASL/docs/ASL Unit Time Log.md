@@ -1780,3 +1780,4 @@ One session under the user's word of 2026-10-25 ("Start Pass 70 ... Run it witho
 | 3f, 70.8: Bypass endings and detection (R70.37, R70.38 added) | 16:19 | 16:52 | 0:33 | | Agent 16:19 to about 16:48; Studio check; estimate 1:45 |
 | 3g, 70.9: Searching, Mopping Up in any building (R70.39 added), and the measurement after it | 16:53 | 17:35 | 0:42 | | Agent 16:53 to about 17:27; Studio check; the base measured again under the user's Studio's load; estimate 4:15 |
 | 3h, 70.6: Withdrawal completed, CC with a Gun's crew, a Carrier HS; R70.40 (units in an enemy's Location inspect it) after a read-only agent's answer | 17:35 | 18:36 | 1:01 | | Agent 17:35 to about 18:25, the rule question 18:26 to 18:27, R70.40 18:27 to 18:35; Studio check; estimate 1:35 |
+| 3i, 70.7 (I): Infantry against Infantry with a vehicle, its Ambush, PRC in CC; the reviews' brief | 18:37 | 19:27 | 0:50 | | Agent 18:37 to about 19:24; the review brief beside it; Studio check; estimate 3:00 |

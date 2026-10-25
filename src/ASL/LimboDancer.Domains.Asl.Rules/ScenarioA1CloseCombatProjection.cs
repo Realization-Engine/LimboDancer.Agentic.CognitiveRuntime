@@ -97,6 +97,23 @@ public static class ScenarioA1CloseCombatProjection
             ? new RecordRefusal("UNIT-STATE-030", "CC with a vehicle is sequential in the CCPh: the side named attacks next, and no unit attacks twice (A11.31).")
             : null;
 
+    /// <summary>
+    /// A11.31, A11.12 (UNIT-STATE-030; pass 70, ruling R70.30): an Infantry attack on Infantry in a Location holding a vehicle is one sequential attack in the
+    /// CCPh by the side named next; no unit attacks twice, and no unit is attacked twice by Infantry.
+    /// </summary>
+    public static RecordRefusal? SequentialRoundRefusal(string? phase, bool closed, string? attackerSide, string? next, bool anyAttackedTwice, bool anyDefendedTwice, bool otherOpen) =>
+        phase != "ccph" || closed || attackerSide is null || (next is not null && next != attackerSide) || anyAttackedTwice || anyDefendedTwice || otherOpen
+            ? new RecordRefusal("UNIT-STATE-030",
+                "Infantry attack Infantry in a Location holding a vehicle one attack at a time in the CCPh, by the side named next; no unit attacks twice or is attacked twice by Infantry (A11.31, A11.12).")
+            : null;
+
+    /// <summary>
+    /// A11.71 (p. 76; pass 70, ruling R70.31): a unit aboard a vehicle is read for Melee at the CCPh's end only when the record that ends the CCPh names it
+    /// among the PRC held there (those of an Immobile vehicle); a record made before the pass names none (<paramref name="recorded"/> false), and every unit is
+    /// read as it was.
+    /// </summary>
+    public static bool PrcMeleeCandidate(bool aboard, bool recorded, bool listed) => !aboard || !recorded || listed;
+
     /// <summary>D7.21: CC Reaction Fire leaves the Location's CC as it was.</summary>
     public static bool ReactionLeavesState(bool reaction) => reaction;
 

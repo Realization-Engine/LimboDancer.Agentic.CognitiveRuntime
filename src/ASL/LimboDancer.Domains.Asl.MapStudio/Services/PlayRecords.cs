@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.MapStudio.Components.Games;
 using LimboDancer.Domains.Asl.Play;
 using LimboDancer.Domains.Asl.Rules;
@@ -72,6 +73,16 @@ public sealed class PlayRecords
     private static string In(GameState? before, string? id) => id is not null && before?.Location(id)?.Location is { } at ? $" in {at}" : string.Empty;
 
     private static string From(GameState? before, string? id) => id is not null && before?.Location(id)?.Location is { } at ? $" from {at}" : string.Empty;
+
+    /// <summary>
+    /// D6.5, D6.24 (pass 70, ruling R70.32): units that unload or Bail Out where a Known enemy unit stands are in an enemy Location and not held in Melee; the
+    /// CC counter is no stored condition, so the line says it. Only an unconcealed enemy unit is read, which every view may know.
+    /// </summary>
+    private static string EnemyLocation(GameState? before, BoardLocation at, string ownId, string rule) =>
+        before?.Unit(ownId)?.Side is { } side && before.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != side && unit.Kind != "asl:vehicle"
+            && GameState.Condition(unit, Conditions.Concealed) != ConditionState.True && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True
+            && GameState.Condition(unit, Conditions.Captured) != ConditionState.True)
+            ? ScenarioA1PassengerActionRules.EnemyLocationText(at.ToString(), rule) : string.Empty;
 
     /// <summary>
     /// A Search's line (A12.152; pass 70, ruling R70.24), public to both sides: what the same attempt revealed after it, a "?" placed over hidden units said
@@ -341,7 +352,7 @@ public sealed class PlayRecords
                     + $" against {bailed.Morale}: {BailOutResult(bailed.Result)}"
                     + string.Concat((bailed.Weapons ?? []).Select(weapon => $"; {weapon.Weapon} {(weapon.Fate == ScenarioA1RiderRules.Kept ? "is kept" : $"is {weapon.Fate}")}"
                         + (weapon.Roll is { } weaponRoll && dice.TryGetValue(weaponRoll, out var weaponDice) ? $" on a dr of {weaponDice[0]}" : string.Empty)))
-                    + " (D6.24)",
+                    + " (D6.24)" + EnemyLocation(before, bailed.At, bailed.Unit, "D6.24, D6.5"),
                 // D5.41, D5.411, D6.631, D5.42 (pass 65, ruling R65.20): the crew's own acts, with their rules in one parenthesis (the table player).
                 // Pass 70 (rulings R70.3, R70.4): a morale check made outside an attack, its checks and what they did.
                 MoraleCheckResolved moraleCheck => MoraleCheckText(moraleCheck),
@@ -365,7 +376,8 @@ public sealed class PlayRecords
                         : captured.Driver is { } driver ? $", {driver} removed into it as its Temporary Driver (A11.52, A21.21)" : ", a Temporary Driver running it for its captor (A11.52, A21.21)"),
                 // D6.83 (pass 65, the table player): a Carrier whose inherent HS unloads with the step is Abandoned by it.
                 VehicleStepped { Kind: VehicleStepped.Unload, Units: { Count: > 0 } leavers } leaving => $"{leaving.At}: " + Many(leavers, "unloads", "unload") + $" from {leaving.Vehicle} (D6.5)"
-                    + (abandoning.Contains((AttemptOf(item.EventId), leaving.Vehicle)) ? $"; its inherent HS has left it, so {leaving.Vehicle} is Abandoned (D6.83)" : string.Empty),
+                    + (abandoning.Contains((AttemptOf(item.EventId), leaving.Vehicle)) ? $"; its inherent HS has left it, so {leaving.Vehicle} is Abandoned (D6.83)" : string.Empty)
+                    + EnemyLocation(before, leaving.At, leaving.Vehicle, "D6.5"),
                 // D5.43 (pass 65, the table player): a loader the fire its boarding drew pinned or broke, or whose vehicle it destroyed, is back on foot.
                 InstanceMoved { Ended: false, Mf: null, Position: MapPosition } back when before?.Unit(back.Id) is { Position: ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider } boarded } loader =>
                     $"{back.Id} does not board {boarded.Container}: "

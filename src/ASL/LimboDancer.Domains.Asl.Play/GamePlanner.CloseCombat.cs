@@ -816,9 +816,8 @@ public sealed partial class GamePlanner
     public bool AmbushDue(GameState state, BoardLocation location)
     {
         ArgumentNullException.ThrowIfNull(state);
-        // Ruling R11.16: no Ambush dr is made in a Location holding a vehicle.
-        if (!ScenarioA1CloseCombatRules.AmbushDueCandidate(state.Phase, state.CloseCombats.Any(item => item.Location == location),
-            state.At(location).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit))))
+        // Pass 70 (ruling R70.30; A11.34, p. 73): a Location holding a vehicle has its Ambush drs too, the vehicle's side taking its drm.
+        if (!ScenarioA1CloseCombatRules.AmbushDueCandidate(state.Phase, state.CloseCombats.Any(item => item.Location == location)))
         {
             return false;
         }
@@ -859,8 +858,10 @@ public sealed partial class GamePlanner
             && state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Side != ambusher && !Is(unit, Conditions.Captured) && state.Location(unit.Id)?.Location == item.Location));
         foreach (var open in state.CloseCombats.Where(item => !item.Closed && !NothingLeft(item)))
         {
-            // Ruling R11.16 (table-player finding): a Location holding a vehicle has no Ambush; its sides attack in turn.
-            due.Add(ScenarioA1CloseCombatRules.DueOpenLine(open.Location.ToString(), open.Next, open.Ambusher));
+            // Ruling R11.16 (table-player finding): in a Location holding a vehicle its sides attack in turn; since pass 70 (ruling R70.30) after any
+            // Ambush there too, the side named by the turn.
+            due.Add(ScenarioA1CloseCombatRules.DueOpenLine(open.Location.ToString(), open.Next ?? (VehicleCloseCombatTurn(state, open.Location) is { Open: true } turn ? turn.Next : null),
+                open.Ambusher));
         }
 
         var locations = state.Units.Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id) is not null)

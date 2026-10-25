@@ -58,9 +58,14 @@ public static class ScenarioA1CloseCombatRules
     public static string? OpenElsewhereBar(string? openLocationText) =>
         openLocationText is { } open ? $"play.cc-order: CC is resolved one Location at a time: finish the CC in {open} first (A11.12)" : null;
 
-    /// <summary>A11.31 (ruling R11.16): CC in a Location holding a vehicle is sequential, one attack at a time, with the vehicle CC action.</summary>
+    /// <summary>
+    /// A11.31 (ruling R11.16): CC in a Location holding a vehicle is sequential, one attack at a time, with the vehicle CC action; since pass 70 (ruling
+    /// R70.30) Infantry attack Infantry there with it too.
+    /// </summary>
     public static string? VehiclePresentBar(string? vehicleId, string locationText) =>
-        vehicleId is { } present ? $"play.cc-vehicle: {present} is in {locationText}, so its CC is sequential, one attack at a time (asl.game.vehicle-close-combat; A11.31)" : null;
+        vehicleId is { } present
+            ? $"play.cc-vehicle: {present} is in {locationText}, so its CC is sequential, one attack at a time, Infantry against Infantry too (asl.game.vehicle-close-combat; A11.31)"
+            : null;
 
     /// <summary>
     /// A15.432 (ruling R27.3): in the OVR's CC every berserk unit attacks the SMC together, and the SMC may attack them; at most two attacks, no capture,
@@ -249,8 +254,11 @@ public static class ScenarioA1CloseCombatRules
             : null;
     }
 
-    /// <summary>A11.4 (ruling R11.16): Ambush drs may be due in the CCPh where no CC has begun and no vehicle is present; the package then decides.</summary>
-    public static bool AmbushDueCandidate(string? phase, bool ccBegun, bool vehicleThere) => phase == "ccph" && !ccBegun && !vehicleThere;
+    /// <summary>
+    /// A11.4: Ambush drs may be due in the CCPh where no CC has begun; the package then decides. Since pass 70 (ruling R70.30; A11.34 and its example, p. 73)
+    /// a vehicle there no longer bars them, and the vehicle's side takes its drm.
+    /// </summary>
+    public static bool AmbushDueCandidate(string? phase, bool ccBegun) => phase == "ccph" && !ccBegun;
 
     /// <summary>Why the Close Combat package would refuse a Location's Ambush drs, each reason as its sentence (pass 31d, design D9).</summary>
     public static string AmbushUndecidedText(IReadOnlyList<string> reasons, Func<string, string> explain)

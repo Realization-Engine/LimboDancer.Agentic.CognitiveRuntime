@@ -3,8 +3,10 @@
 <ActionSection Title="Close Combat with vehicles" Key="close-combat-with-vehicles">
 <RuleHelp Id="vehicle-cc-help" Summary="With a vehicle in the Location, CC is sequential: the non-vehicular side attacks first, then the sides alternate until every unit has attacked or its side passes (A11.31).">
     In a Location holding a vehicle CC is sequential: the non-vehicular side attacks first, one attack at a time, then the sides alternate
-    until every unit has attacked or its side passes (A11.31). Infantry attack a vehicle with their CCV as the Kill Number, one unit or one
-    with a SMC (A11.5); a vehicle attacks Infantry with its CMG and CE AAMG on the CCT (A11.62). CC between Infantry there is not built.
+    until every unit has attacked or its side passes (A11.31); after an Ambush the ambusher makes all its attacks first (A11.34). Infantry attack
+    a vehicle with their CCV as the Kill Number, one unit or one with a SMC (A11.5); a vehicle attacks Infantry with its CMG and CE AAMG on the
+    CCT, a CE halftrack's Passengers adding their FP (A11.62). Infantry attack enemy Infantry there one attack at a time with no reply; a unit
+    attacked by a vehicle may still be attacked by Infantry (A11.12). A Rider is attacked apart, with -1, and attacks with +1 (A11.611).
     An Abandoned AFV may instead be the target of a capture attempt, at -1 and as if CE and Immobile; with no Personnel of its side there it is
     captured anyway as the CCPh ends (A21.2).
 </RuleHelp>
@@ -14,14 +16,16 @@
     var attacker = location.Attackers.Contains(Attacker, StringComparer.Ordinal) ? Attacker : string.Empty;
     var leader = location.Leaders.Contains(Leader, StringComparer.Ordinal) ? Leader : string.Empty;
     var chosen = location.Vehicles.Any(vehicle => vehicle.Id == Vehicle) ? Vehicle : string.Empty;
-    var anyDefender = location.Defenders.Any(Defenders.Contains);
+    var anyDefender = location.Defenders.Any(unit => Defenders.Contains(unit) && !location.Riders.ContainsKey(unit));
+    // Pass 70 (ruling R70.30): an Infantry attack needs a checked defender no Infantry has attacked this CCPh.
+    var infantryReady = attacker.Length > 0 && location.Defenders.Any(unit => Defenders.Contains(unit) && !location.InfantryAttacked.Contains(unit));
     <div @key="location.Location" class="toolbar vehicle-cc" data-location="@location.Location">
-        <span>@location.Location: the @location.NextSide side attacks next.</span>
+        <span>@Say(location.Location): the @location.NextSide side attacks next.</span>
         <label>
             Attacker
             <select class="vehicle-cc-attacker" value="@attacker" @onchange="@(args => OnAttacker.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">choose</option>
-                <UnitOptions Units="@([.. location.Attackers.Select(unit => new PlayChoice(unit, unit))])" Text="@Say" />
+                <UnitOptions Units="@([.. location.Attackers.Select(unit => new PlayChoice(unit, Label(location, unit)))])" Text="@Say" />
             </select>
         </label>
         <label>
@@ -39,10 +43,13 @@
                 <UnitOptions Units="@([.. location.Vehicles.Select(vehicle => new PlayChoice(vehicle.Id, vehicle.Id + (vehicle.Abandoned ? ", Abandoned" : string.Empty)))])" Text="@Say" />
             </select>
         </label>
+        @* The hex UI rule: each enemy unit named after its hex, leaders first, a Rider with the vehicle it rides. *@
         @foreach (var unit in location.Defenders)
         {
-            <label><input type="checkbox" class="vehicle-cc-defender" checked="@Defenders.Contains(unit)" @onchange="@(args => OnDefender.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @Say(unit)</label>
+            <label><input type="checkbox" class="vehicle-cc-defender" checked="@Defenders.Contains(unit)" @onchange="@(args => OnDefender.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @Say(location.Location): @Say(Label(location, unit))</label>
         }
+        <button class="propose-vehicle-cc-infantry" disabled="@(!infantryReady)" title="@(infantryReady ? null : "Choose an attacker and check enemy Infantry no Infantry has attacked")"
+            @onclick="@(() => OnProposeInfantry.InvokeAsync(location.Location))">Propose: the Infantry attack the checked enemy Infantry (A11.31)</button>
         <button class="propose-vehicle-cc-attack" disabled="@(attacker.Length == 0 || chosen.Length == 0)" @onclick="@(() => OnProposeAttack.InvokeAsync(location.Location))">Propose: Infantry attack the vehicle</button>
         @* Pass 65 (ruling R65.22): an Abandoned AFV may be the target of a capture attempt, which captures it where an attack would eliminate it (A21.2). *@
         @if (location.Vehicles.Any(vehicle => vehicle.Abandoned))
@@ -72,7 +79,17 @@
     /// non-vehicular units of the other side a vehicle may attack.
     /// </summary>
     public sealed record CcLocation(string Location, string NextSide, IReadOnlyList<string> Attackers, IReadOnlyList<string> Leaders,
-        IReadOnlyList<VehicleChoice> Vehicles, IReadOnlyList<string> Defenders);
+        IReadOnlyList<VehicleChoice> Vehicles, IReadOnlyList<string> Defenders)
+    {
+        /// <summary>The Riders among the units offered, each with the vehicle it rides (A11.611; pass 70, ruling R70.31).</summary>
+        public IReadOnlyDictionary<string, string> Riders { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        /// <summary>The units Infantry attacked there this CCPh, which no Infantry attacks again (A11.12; ruling R70.30).</summary>
+        public IReadOnlyList<string> InfantryAttacked { get; init; } = [];
+    }
+
+    /// <summary>A unit's label: its id, and for a Rider the vehicle it rides, "4-4-7 squad, Rider on PzKpfw IIIH" in the page's words.</summary>
+    private static string Label(CcLocation location, string unit) => location.Riders.TryGetValue(unit, out var vehicle) ? $"{unit}, Rider on {vehicle}" : unit;
 
     [Parameter, EditorRequired]
     public IReadOnlyList<CcLocation> Locations { get; set; } = [];
@@ -113,6 +130,10 @@
     /// <summary>The vehicle attacks the checked Infantry in this Location.</summary>
     [Parameter]
     public EventCallback<string> OnProposeVehicle { get; set; }
+
+    /// <summary>The chosen Infantry attack the checked enemy Infantry in this Location (A11.31; pass 70, ruling R70.30).</summary>
+    [Parameter]
+    public EventCallback<string> OnProposeInfantry { get; set; }
 
     /// <summary>The next side passes in this Location.</summary>
     [Parameter]

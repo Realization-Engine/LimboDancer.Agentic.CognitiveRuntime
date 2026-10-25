@@ -476,7 +476,9 @@ public sealed partial class GamePlanner
         }
 
         // D6.5, A4.14: "PRC may unload ... in an enemy-occupied hex with no special rules or consequences"; a CC counter shows they are not held in Melee.
-        var enemyThere = index.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && !LiveFire.IsVehicle(unit));
+        // Pass 70 (ruling R70.32): the counter is no stored condition, and the line names only a Known enemy unit, which the unloading side may see.
+        var enemyThere = index.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && !LiveFire.IsVehicle(unit)
+            && !Is(unit, Conditions.Captured) && KnownEnemy(unit));
         var mf = ScenarioA1PassengerCalculator.UnloadMf(spent, printed);
         List<string> leavers = [.. ids];
         List<string> named = [.. ids];
@@ -493,7 +495,7 @@ public sealed partial class GamePlanner
                 + $"{id} ends its move and before any other unit moves (A4.11, A4.5)") + " (D6.5; ruling R26.2)"
             + (leave.Length > 0 ? $"; {string.Join(", ", leave)} {(leave.Length == 1 ? "stays" : "stay")} aboard (D6.4)" : string.Empty)
             + string.Concat(take.Select(item => $"; {item.Unit} takes {item.Weapon} with it (D6.5)"))
-            + (enemyThere ? $"; {at} holds the enemy, and they are not held in Melee (D6.5, A4.14)" : string.Empty)
+            + (enemyThere ? ScenarioA1PassengerActionRules.EnemyLocationText(at.ToString(), "D6.5") : string.Empty)
             + "; the DEFENDER may fire at them with FFNAM, and FFMO in Open Ground from an unarmored vehicle (D6.5)"
             + (crewLeaving is not null ? $"; its inherent HS leaves {id}, so {id} is Abandoned, and the HS neither Removes its armament nor destroys it (D6.83)"
                 : string.Empty);

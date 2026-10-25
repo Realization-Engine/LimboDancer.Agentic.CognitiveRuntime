@@ -608,7 +608,7 @@ public static class GameActions
         }));
 
     public static readonly ActionDescriptor VehicleCloseCombat = Descriptor("asl.game.vehicle-close-combat", "Close Combat with a vehicle",
-        "One CC attack in a Location holding a vehicle: Infantry attack the vehicle (one unit, or one with a SMC), to eliminate it or, with capture, to capture an Abandoned AFV (A21.2), or the vehicle attacks Infantry with its CC armament, one attack at a time, the non-vehicular side first (A11.31, A11.5, A11.62; CC between Infantry there is not built); or a side passes; or, in the MPh, a DEFENDER unit's CC Reaction Fire at a vehicle in its Location, after any PAATC (D7.21; rulings R11.13 to R11.16, R65.22).",
+        "One CC attack in a Location holding a vehicle: Infantry attack the vehicle (one unit, or one with a SMC), to eliminate it or, with capture, to capture an Abandoned AFV (A21.2), or the vehicle attacks Infantry with its CC armament and any CE halftrack Passengers, one attack at a time, the non-vehicular side first, an ambusher first (A11.31, A11.34, A11.5, A11.62); or, with no vehicleId, Infantry attack enemy Infantry, a Rider among either, with the SMC stacking and director the attack declares (A11.31, A11.611; ruling R70.30); or a side passes; or, in the MPh, a DEFENDER unit's CC Reaction Fire at a vehicle in its Location, after any PAATC (D7.21; rulings R11.13 to R11.16, R65.22).",
         PlayPermission, "asl.game.reviewed-close-combat-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -621,7 +621,9 @@ public static class GameActions
             "defenders": { "type": "array", "items": { "type": "string" } },
             "vehicleId": { "type": "string" },
             "pass": { "type": "boolean" },
-            "capture": { "type": "boolean" }
+            "capture": { "type": "boolean" },
+            "stacking": { "type": "object", "additionalProperties": { "type": "string" } },
+            "director": { "type": "string" }
           }
         }
         """, JsonSerializer.SerializeToElement(new

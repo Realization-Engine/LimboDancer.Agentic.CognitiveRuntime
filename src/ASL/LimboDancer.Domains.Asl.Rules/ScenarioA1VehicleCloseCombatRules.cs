@@ -4,7 +4,14 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// A unit of a Location holding a vehicle, as the sequential CC reads it (A11.31; ruling R11.16): its side, whether it is a vehicle, armed for CC (a
 /// vehicle's CC armament), an Infantry CC attacker, Personnel, a prisoner, berserk, or Known.
 /// </summary>
-public sealed record VehicleCcUnitFacts(string Id, string Side, bool Vehicle, bool Armed, bool Attacker, bool Personnel, bool Captured, bool Berserk, bool Known);
+public sealed record VehicleCcUnitFacts(string Id, string Side, bool Vehicle, bool Armed, bool Attacker, bool Personnel, bool Captured, bool Berserk, bool Known)
+{
+    /// <summary>Whether the unit is a Rider of a vehicle there, which attacks and is attacked only in Infantry against Infantry CC (A11.611; pass 70, ruling R70.31).</summary>
+    public bool Rider
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// CC with vehicles as the planner decides it around <see cref="ScenarioA1VehicleCloseCombat"/> (backlog pass 11, rulings R11.13 to R11.16; pass 32.g,
@@ -25,9 +32,12 @@ public static class ScenarioA1VehicleCloseCombatRules
 
     /// <summary>
     /// The sides with an attack left in a CC Location holding a vehicle (ruling R11.16): Infantry that have not attacked and face an enemy vehicle, and
-    /// vehicles with CC armament that have not attacked and face enemy Infantry; a side that passed has none.
+    /// vehicles with CC armament that have not attacked and face enemy Infantry; a side that passed has none. Since pass 70 (ruling R70.30), with
+    /// <paramref name="infantryAttacked"/>, Infantry (a Rider among them) facing enemy Infantry that no Infantry has attacked this CCPh has one too, since
+    /// being attacked by Infantry and by a vehicle are counted apart (A11.12's EXC, p. 72).
     /// </summary>
-    public static HashSet<string> SidesWithAttacks(IReadOnlyList<VehicleCcUnitFacts> here, IReadOnlyCollection<string> attacked, IReadOnlyCollection<string> passed)
+    public static HashSet<string> SidesWithAttacks(IReadOnlyList<VehicleCcUnitFacts> here, IReadOnlyCollection<string> attacked, IReadOnlyCollection<string> passed,
+        IReadOnlyCollection<string>? infantryAttacked = null)
     {
         ArgumentNullException.ThrowIfNull(here);
         ArgumentNullException.ThrowIfNull(attacked);
@@ -36,8 +46,9 @@ public static class ScenarioA1VehicleCloseCombatRules
         foreach (var unit in here.Where(unit => !attacked.Contains(unit.Id) && !passed.Contains(unit.Side)))
         {
             var enemies = here.Where(other => other.Side != unit.Side && !other.Captured).ToArray();
-            if (unit.Vehicle ? unit.Armed && enemies.Any(other => (!other.Vehicle && other.Attacker) || (!other.Vehicle && other.Personnel))
-                : unit.Attacker && enemies.Any(other => other.Vehicle))
+            if (unit.Vehicle ? unit.Armed && enemies.Any(other => !other.Vehicle && !other.Rider && (other.Attacker || other.Personnel))
+                : unit.Attacker && ((!unit.Rider && enemies.Any(other => other.Vehicle))
+                    || (infantryAttacked is not null && enemies.Any(other => !other.Vehicle && other.Personnel && !infantryAttacked.Contains(other.Id)))))
             {
                 sides.Add(unit.Side);
             }
@@ -46,18 +57,35 @@ public static class ScenarioA1VehicleCloseCombatRules
         return sides;
     }
 
-    /// <summary>The side that attacks first in a CC Location holding a vehicle (A11.31): the non-vehicular side, or with vehicles on both sides the ATTACKER.</summary>
-    public static string FirstCcSide(IReadOnlyList<(string Side, bool Vehicle)> uncaptured, string phasingSide)
+    /// <summary>
+    /// The side that attacks first in a CC Location holding a vehicle (A11.31): the non-vehicular side, or with vehicles on both sides the ATTACKER. After an
+    /// Ambush there the ambusher attacks first (A11.34, p. 73; pass 70, ruling R70.30).
+    /// </summary>
+    public static string FirstCcSide(IReadOnlyList<(string Side, bool Vehicle)> uncaptured, string phasingSide, string? ambusher = null)
     {
         ArgumentNullException.ThrowIfNull(uncaptured);
+        if (ambusher is not null && uncaptured.Any(unit => unit.Side == ambusher))
+        {
+            return ambusher;
+        }
+
         var vehicular = uncaptured.Where(unit => unit.Vehicle).Select(unit => unit.Side).Distinct(StringComparer.Ordinal).ToArray();
         return vehicular.Length == 1 ? uncaptured.Select(unit => unit.Side).FirstOrDefault(side => side != vehicular[0]) ?? phasingSide : phasingSide;
     }
 
-    /// <summary>After an attack or a pass (A11.31; ruling R11.16): the other side while it has attacks left, else the same side, else the CC is over.</summary>
-    public static (string? Next, bool Closed) NextCcSide(HashSet<string> left, string moved)
+    /// <summary>
+    /// After an attack or a pass (A11.31; ruling R11.16): the other side while it has attacks left, else the same side, else the CC is over. After an
+    /// Ambush the ambusher "resolves all of its CC attacks in that Location first" (A11.32, A11.34 and its example, p. 73; pass 70, ruling R70.30): it attacks
+    /// while it has attacks left.
+    /// </summary>
+    public static (string? Next, bool Closed) NextCcSide(HashSet<string> left, string moved, string? ambusher = null)
     {
         ArgumentNullException.ThrowIfNull(left);
+        if (ambusher is not null && left.Contains(ambusher))
+        {
+            return (ambusher, false);
+        }
+
         var other = left.FirstOrDefault(side => side != moved);
         return other is not null ? (other, false) : left.Contains(moved) ? (moved, false) : (null, true);
     }
@@ -155,9 +183,51 @@ public static class ScenarioA1VehicleCloseCombatRules
     /// <summary>A11.31: the pass's words.</summary>
     public static string PassSummary(string side, string locationText) => $"play.cc-vehicle: the {side} side passes in {locationText} and makes no more attacks there (A11.31)";
 
-    /// <summary>Ruling R11.16: a CC attack here names the vehicle attacking or attacked.</summary>
+    /// <summary>Ruling R11.16: a CC attack here names the vehicle attacking or attacked, or (pass 70, ruling R70.30) Infantry attacking enemy Infantry.</summary>
     public static string? VehicleNamedBar(bool named) =>
-        named ? null : "play.cc-vehicle: a CC attack here names the vehicle attacking or attacked; CC between Infantry in a Location holding a vehicle is not built (ruling R11.16)";
+        named ? null : "play.cc-vehicle: a CC attack here names the vehicle attacking or attacked, or names Infantry attackers and the enemy Infantry they attack (A11.31; ruling R70.30)";
+
+    /// <summary>
+    /// A11.31, A11.12 (pass 70, ruling R70.30): an Infantry attacker of Infantry in the sequential CC: a CC attacker of the side named next in the Location
+    /// (a Rider of a vehicle there among them, A11.611), that has not attacked this CCPh.
+    /// </summary>
+    public static bool InfantryRoundAttacker(bool found, bool attacker, bool ofNext, bool atLocation, bool attacked) => found && attacker && ofNext && atLocation && !attacked;
+
+    /// <summary>A11.31, A11.12 (ruling R70.30): the side named next attacks Infantry with its own eligible Infantry.</summary>
+    public static string? InfantryRoundAttackersBar(bool anyIneligible, string next, string locationText) =>
+        anyIneligible
+            ? $"play.cc-vehicle-order: the {next} side attacks next, with its unbroken Infantry in {locationText}, a Rider among them, that have not attacked this CCPh (A11.31, A11.12)"
+            : null;
+
+    /// <summary>
+    /// A11.12 and its EXC, A11.611 (pass 70, ruling R70.30): an Infantry defender in the sequential CC: an enemy unit of the attackers, Personnel, not a
+    /// prisoner, in the Location (a Rider of a vehicle there among them), that no Infantry has attacked this CCPh; an attack by a vehicle is counted apart.
+    /// </summary>
+    public static bool InfantryRoundDefender(bool found, bool enemy, bool personnel, bool vehicle, bool captured, bool atLocation, bool attackedByInfantry) =>
+        found && enemy && personnel && !vehicle && !captured && atLocation && !attackedByInfantry;
+
+    /// <summary>A11.12 (ruling R70.30): the defenders of an Infantry attack here are enemy Infantry no Infantry has attacked this CCPh.</summary>
+    public static string? InfantryRoundDefendersBar(bool anyIneligible, string locationText) =>
+        anyIneligible
+            ? $"play.cc-vehicle-defenders: Infantry attack enemy Infantry in {locationText}, a Rider among them, that no Infantry has attacked this CCPh; an attack by a vehicle is counted apart (A11.12)"
+            : null;
+
+    /// <summary>A11.31 (ruling R70.30): the words of one Infantry attack on Infantry in the sequential CC.</summary>
+    public static string InfantryRoundSummary(IReadOnlyList<string> attackers, IReadOnlyList<string> defenders, string locationText, string? ambusher)
+    {
+        ArgumentNullException.ThrowIfNull(attackers);
+        ArgumentNullException.ThrowIfNull(defenders);
+        return $"play.cc-vehicle: {string.Join(" and ", attackers)} attack{(attackers.Count == 1 ? "s" : string.Empty)} {string.Join(", ", defenders)} in CC in {locationText}, "
+            + "one attack of the sequence with no simultaneous reply (A11.31)"
+            + (ambusher is { } side ? $"; the {side} side ambushed, so its attacks take -1 and attacks against it +1 (A11.4, A11.34)" : string.Empty);
+    }
+
+    /// <summary>A11.62 (pass 70, ruling R70.31): the Passengers who join a vehicle's attack, in its words.</summary>
+    public static string PassengersJoinText(IReadOnlyList<string> passengers)
+    {
+        ArgumentNullException.ThrowIfNull(passengers);
+        return passengers.Count == 0 ? string.Empty : $"; {string.Join(", ", passengers)} {(passengers.Count == 1 ? "adds its" : "add their")} FP to the attack as Passengers (A11.62)";
+    }
 
     /// <summary>A11.31: the vehicle attacks when its side is next and it has not attacked.</summary>
     public static string? VehicleAttackOrderBar(string next, bool vehicleIsNext, bool vehicleAttacked) =>

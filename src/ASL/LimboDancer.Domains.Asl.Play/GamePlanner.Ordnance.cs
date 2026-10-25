@@ -61,7 +61,7 @@ public sealed partial class GamePlanner
         }
 
         // D6.21 (pass 65, the referee's review): a turret turn makes the AFV's Riders Bail Out.
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [OrdnanceSummary(facts, facing) + BailOutPreview(TurretTurnBailOut(state, facts.Gun!.GunId, facing))])
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [OrdnanceSummary(facts, facing) + BailOutPreview(state, TurretTurnBailOut(state, facts.Gun!.GunId, facing))])
         {
             Roll = new PlannedRoll("ordnance", Build),
             FirstEventId = EventId(attemptId, 1),

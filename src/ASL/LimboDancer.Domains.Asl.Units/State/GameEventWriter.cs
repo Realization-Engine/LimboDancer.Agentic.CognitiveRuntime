@@ -230,6 +230,13 @@ public static class GameEventWriter
                 writer.WriteNumber("turn", phase.Turn);
                 writer.WriteString("phase", phase.Phase);
                 writer.WriteString("phasingSide", phase.PhasingSide);
+
+                // A11.71 (pass 70, ruling R70.31): written on a CCPh's ending record since the pass, even when empty.
+                if (phase.PrcHeldInMelee is { } held)
+                {
+                    Strings(writer, "prcHeldInMelee", held);
+                }
+
                 break;
             case InstanceCreated created:
                 writer.WritePropertyName("instance");
@@ -1029,6 +1036,18 @@ public static class GameEventWriter
                 combat.Facts.WriteTo(writer);
                 writer.WritePropertyName("resolution");
                 combat.Resolution.WriteTo(writer);
+
+                // A11.31 (pass 70, ruling R70.30): a sequential round names the side next and whether the Location's CC is over; no other round does.
+                if (combat.Next is { } sequentialNext)
+                {
+                    writer.WriteString("next", sequentialNext);
+                }
+
+                if (combat.Closed)
+                {
+                    writer.WriteBoolean("closed", true);
+                }
+
                 break;
             case OrdnanceFired ordnance:
                 writer.WriteString("gun", ordnance.Gun);

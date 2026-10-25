@@ -38,6 +38,24 @@ public sealed record CloseCombatResolved(BoardLocation Location, string Round, I
 
     /// <summary>The prisoners' escape round, before any other in the Location (A11.33, A20.55; ruling R14.6).</summary>
     public const string PrisonersRound = "prisoners";
+
+    /// <summary>One Infantry attack on Infantry in a Location holding a vehicle (A11.31; pass 70, ruling R70.30), a round no record before the pass holds.</summary>
+    public const string SequentialRound = "sequential";
+
+    /// <summary>
+    /// For a sequential round (A11.31; ruling R70.30): the side that attacks next, as the planner read it; null for every other round, which does not name
+    /// it, and when the Location's CC is over.
+    /// </summary>
+    public string? Next
+    {
+        get; init;
+    }
+
+    /// <summary>For a sequential round (ruling R70.30): whether the Location's CC is over, as the planner read it; false for every other round.</summary>
+    public bool Closed
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -113,6 +131,12 @@ public sealed record CloseCombatLocation(BoardLocation Location, bool AmbushRoll
 
     /// <summary>The sides that passed in a Location holding a vehicle, and attack no more there this CCPh (ruling R11.16).</summary>
     public IReadOnlyList<string> Passed { get; init; } = [];
+
+    /// <summary>
+    /// The units Infantry attacked in the sequential rounds of a Location holding a vehicle (A11.12's EXC; pass 70, ruling R70.30), counted apart from those
+    /// a vehicle attacked (<see cref="Attacked"/>).
+    /// </summary>
+    public IReadOnlyList<string> InfantryAttacked { get; init; } = [];
 
     /// <summary>Whether the Location's CC is Hand-to-Hand this CCPh, as its first round declared (J2.31; ruling R14.1).</summary>
     public bool HandToHand

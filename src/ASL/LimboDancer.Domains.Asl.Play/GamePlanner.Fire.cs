@@ -630,8 +630,11 @@ public sealed partial class GamePlanner
                 + PrcPreview(facts.TargetVehicle is { } aimedAt ? [(aimedAt.VehicleId, aimedAt.Prc)] : [], "D.8A, if it is left standing")
                 + PrcPreview((facts.Vehicles ?? []).Where(item => item.VehicleId != facts.TargetVehicle?.VehicleId).Select(item => (item.VehicleId, item.Prc)), "D.8B")
 
+                // A7.211 (p. 55; pass 70, ruling R70.32): PRC attacked in their own Location are not held in Melee until after the CCPh.
+                + (facts.Range == 0 && (facts.Vehicles ?? []).Any(item => item.Prc is { Count: > 0 }) ? ScenarioA1PassengerActionRules.TpbfPrcText() : string.Empty)
+
                 // D6.21 (pass 65, the referee's review): a CMG's turret turn makes the AFV's Riders Bail Out.
-                + BailOutPreview(TurretTurnBailOut(state, facts.VehicleFire?.VehicleId, VehicleTurretTurn(state, facts))),
+                + BailOutPreview(state, TurretTurnBailOut(state, facts.VehicleFire?.VehicleId, VehicleTurretTurn(state, facts))),
 
                 // Pass 31 (play test P-12, P-13): a shot with no LOS, or one that also hits the firing side's own units, is said before it is confirmed.
                 .. FireWarnings(facts)])

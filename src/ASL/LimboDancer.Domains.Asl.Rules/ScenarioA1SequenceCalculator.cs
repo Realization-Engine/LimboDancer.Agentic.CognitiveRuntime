@@ -148,13 +148,15 @@ public static class ScenarioA1SequenceCalculator
 
     /// <summary>
     /// Ruling R26.2: a Passenger acts only with its vehicle until it unloads; eight actions are exempt. Pass 65 (rulings R65.10, R65.11): so are fire
-    /// (D6.1), a SW's transfer (D6.31), and a rout (beneath the vehicle, D6.1), whose plans check the Passenger's part.
+    /// (D6.1), a SW's transfer (D6.31), and a rout (beneath the vehicle, D6.1), whose plans check the Passenger's part. Pass 70 (ruling R70.31): so is CC
+    /// with a vehicle, whose plan admits a Rider alone, in Infantry against Infantry CC (A11.611).
     /// </summary>
     public static string? PassengerBar(string action, bool anyEvents, Func<string?> aboardBar)
     {
         ArgumentNullException.ThrowIfNull(aboardBar);
         return action is not ("asl.game.setup" or "asl.game.move-vehicle" or "asl.game.hook-gun" or "asl.game.advance-phase" or "asl.game.choose" or "asl.game.pass-fire"
-            or "asl.game.end-move" or "asl.game.button-up" or "asl.game.fire" or "asl.game.transfer" or "asl.game.rout") && anyEvents && aboardBar() is { } aboard ? aboard : null;
+            or "asl.game.end-move" or "asl.game.button-up" or "asl.game.fire" or "asl.game.transfer" or "asl.game.rout" or "asl.game.vehicle-close-combat")
+            && anyEvents && aboardBar() is { } aboard ? aboard : null;
     }
 
     /// <summary>A4.152 (ruling R27.3): once the DEFENDER's window on a berserk OVR's entry closes, its CC comes first; <paramref name="overrunAt"/> reads where it is pending.</summary>

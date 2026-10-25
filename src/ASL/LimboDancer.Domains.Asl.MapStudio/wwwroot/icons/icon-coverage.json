@@ -3286,6 +3286,13 @@
       "controls": [
         {
           "kind": "button",
+          "label": "Propose: the Infantry attack the checked enemy Infantry (A11.31)",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "VehicleCloseCombatPanel vehicle-cc"
+        },
+        {
+          "kind": "button",
           "label": "Propose: Infantry attack the vehicle",
           "dynamic": false,
           "status": "needed",

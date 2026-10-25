@@ -457,6 +457,9 @@ public static class LiveFire
     /// <summary>A vehicle definition's class (catalog 1.18.0; pass 65, ruling R65.3), such as <c>halftrack</c> or <c>carrier</c>; null when it prints none.</summary>
     public static string? VehicleClassOf(string? definition) => definition is null ? null : CatalogReference.Value.Definitions.GetValueOrDefault(definition)?.VehicleClass;
 
+    /// <summary>Whether a vehicle definition is unarmored (D1.1), as the catalog prints it; null when it prints none.</summary>
+    public static bool? UnarmoredOf(string? definition) => definition is null ? null : CatalogReference.Value.Definitions.GetValueOrDefault(definition)?.Unarmored;
+
     /// <summary>Whether a unit is a vehicle (D1).</summary>
     public static bool IsVehicle(UnitInstance unit) => unit.Kind == "asl:vehicle";
 

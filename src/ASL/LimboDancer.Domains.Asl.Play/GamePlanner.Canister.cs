@@ -286,7 +286,7 @@ public sealed partial class GamePlanner
             [$"play.canister: {shot.Gun.GunId} fires Canister at {ScenarioA1CanisterCalculator.AimWords(block.Aim, block.Facing)} in the {shot.Phase}"
                 + (steps > 0 ? $", turning {steps.ToString(CultureInfo.InvariantCulture)} hexspine(s) to {facing.Name()}: Case A +{block.CaseA.ToString(CultureInfo.InvariantCulture)} on the IFT DR (D3.52)" : string.Empty)
                 + $"; no To Hit DR: one IFT DR attacks {string.Join("; ", lines)}; FP is halved again against concealed units (C8.4)"
-                + BailOutPreview(TurretTurnBailOut(state, gunId, turnTo)),
+                + BailOutPreview(state, TurretTurnBailOut(state, gunId, turnTo)),
              $"play.canister-dr: the same DR is the check of the {ScenarioA1Definitions.DepletionWords(shot)} (above it the Gun had no Canister, attacks nothing, has not fired, and has none "
                 + $"for the rest of the scenario, C8.9), of a malfunction on {preview.Gun!.BreakdownNumber.ToString(CultureInfo.InvariantCulture)} or more (C2.28), "
                 + "and, by its colored dr, of the ROF (C2.24); the Gun loses any Acquisition (C6.5)"])

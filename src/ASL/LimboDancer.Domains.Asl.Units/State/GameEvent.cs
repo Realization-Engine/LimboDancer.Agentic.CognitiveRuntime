@@ -106,7 +106,17 @@ public sealed record GameStarted(
 }
 
 /// <summary><c>phase-changed</c>.</summary>
-public sealed record PhaseChanged(int Turn, string Phase, string PhasingSide) : EventPayload;
+public sealed record PhaseChanged(int Turn, string Phase, string PhasingSide) : EventPayload
+{
+    /// <summary>
+    /// On the record that ends a CCPh (A11.71, p. 76; pass 70, ruling R70.31): the Passengers and Riders held in Melee, those of an Immobile vehicle; the
+    /// others aboard are not. Null on every record before the pass, which held every unit aboard as one on foot.
+    /// </summary>
+    public IReadOnlyList<string>? PrcHeldInMelee
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// <c>game-ended</c>: the Turn counter reached END (A3.9; ruling R20.1), after the last Player Turn of the given Game Turn, or a Victory Condition was met at

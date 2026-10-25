@@ -835,7 +835,8 @@ else if (state is not null)
                         OnAttacker="@(id => vehicleCcAttacker = id)" OnLeader="@(id => vehicleCcLeader = id)" OnVehicle="@(id => vehicleCcVehicle = id)"
                         OnDefender="@(pick => Toggle(vehicleCcDefenders, pick.Id, pick.On))"
                         OnProposeAttack="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: false))" OnProposeCapture="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: false, capture: true))"
-                        OnProposeVehicle="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: true))" OnPass="@(at => ProposeVehicleCc(at, [], null, [], true))" />
+                        OnProposeVehicle="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: true))" OnProposeInfantry="@(at => ProposeInfantryCcAt(vehicleCc, at))"
+                        OnPass="@(at => ProposeVehicleCc(at, [], null, [], true))" />
                 }
                 @if (state.Phase == "ccph")
                 {
@@ -4030,18 +4031,29 @@ else if (state is not null)
             .OrderBy(location => location.ToString(), StringComparer.Ordinal);
 
     /// <summary>Each open vehicle CC Location as the panel reads it (plan C01): the side that attacks next and the units it offers.</summary>
+    // Pass 70 (rulings R70.30, R70.31): the units come from the planner's index, Riders with their vehicles, and pass through the side's view.
     private IReadOnlyList<VehicleCloseCombatPanel.CcLocation> VehicleCcRows => state is null ? [] : [.. VehicleCcLocations.Select(location =>
     {
         var (nextSide, _) = Live.Planner.VehicleCloseCombatTurn(state, location);
-        var here = SeenOnly(state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active)).ToArray();
-        var attacked = state.CloseCombats.FirstOrDefault(item => item.Location == location && !item.Closed)?.Attacking ?? [];
+        var listed = Live.Planner.VehicleCloseCombatUnits(state, location);
+        var seen = SeenOnly(listed.Select(item => item.Unit), aboardToo: true).Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
+        var rides = listed.Where(item => item.Rides is not null && seen.Contains(item.Unit.Id)).ToDictionary(item => item.Unit.Id, item => item.Rides!, StringComparer.Ordinal);
+        var here = listed.Where(item => seen.Contains(item.Unit.Id)).Select(item => item.Unit).ToArray();
+        var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location && !item.Closed);
+        var attacked = entry?.Attacking ?? [];
+        var infantryAttacked = entry?.InfantryAttacked ?? [];
+        static bool Leader(UnitInstance unit) => unit.Kind is "asl:leader" or "asl:hero";
         return new VehicleCloseCombatPanel.CcLocation(location.ToString(), nextSide ?? string.Empty,
             [.. here.Where(unit => unit.Side == nextSide && !LiveFire.IsVehicle(unit) && unit.Kind != UnitKinds.Dummy && !attacked.Contains(unit.Id)
                 && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => unit.Id)],
-            [.. here.Where(unit => unit.Side == nextSide && unit.Kind is "asl:leader" or "asl:hero").Select(unit => unit.Id)],
+            [.. here.Where(unit => unit.Side == nextSide && Leader(unit) && !rides.ContainsKey(unit.Id)).Select(unit => unit.Id)],
             // A21.2 (pass 65, the UI review): the planner says, by the plan's own Rules bar, which vehicle a capture attempt may take.
             [.. here.Where(LiveFire.IsVehicle).Select(unit => new VehicleCloseCombatPanel.VehicleChoice(unit.Id, unit.Side, GamePlanner.MayBeCaptureAttempted(unit)))],
-            [.. here.Where(unit => !LiveFire.IsVehicle(unit) && unit.Side != nextSide).Select(unit => unit.Id)]);
+            [.. here.Where(unit => !LiveFire.IsVehicle(unit) && unit.Side != nextSide).OrderBy(unit => Leader(unit) ? 0 : 1).Select(unit => unit.Id)])
+        {
+            Riders = rides,
+            InfantryAttacked = [.. infantryAttacked],
+        };
     })];
 
     /// <summary>
@@ -4057,8 +4069,51 @@ else if (state is not null)
 
         string[] attackers = byVehicle || !row.Attackers.Contains(vehicleCcAttacker, StringComparer.Ordinal) ? []
             : [vehicleCcAttacker, .. (row.Leaders.Contains(vehicleCcLeader, StringComparer.Ordinal) && vehicleCcLeader != vehicleCcAttacker ? new[] { vehicleCcLeader } : [])];
-        string[] defenders = byVehicle ? [.. row.Defenders.Where(vehicleCcDefenders.Contains)] : [];
+        // Pass 70 (ruling R70.31): a vehicle attacks the Infantry on foot; a Rider is attacked by Infantry alone (A11.611).
+        string[] defenders = byVehicle ? [.. row.Defenders.Where(id => vehicleCcDefenders.Contains(id) && !row.Riders.ContainsKey(id))] : [];
         return attackers.Length == 0 && defenders.Length == 0 ? Task.CompletedTask : ProposeVehicleCc(at, attackers, vehicleCcVehicle, defenders, false, capture);
+    }
+
+    /// <summary>
+    /// Pass 70 (rulings R70.30, R70.31): the chosen Infantry, with the SMC stacked with it and directing, attack the checked enemy Infantry that no Infantry has
+    /// attacked this CCPh, a Rider among either (A11.31, A11.14, A11.141, A11.611). No vehicle is named.
+    /// </summary>
+    private Task ProposeInfantryCcAt(IReadOnlyList<VehicleCloseCombatPanel.CcLocation> rows, string at)
+    {
+        if (rows.FirstOrDefault(row => row.Location == at) is not { } row || !row.Attackers.Contains(vehicleCcAttacker, StringComparer.Ordinal))
+        {
+            return Task.CompletedTask;
+        }
+
+        var leader = row.Leaders.Contains(vehicleCcLeader, StringComparer.Ordinal) && vehicleCcLeader != vehicleCcAttacker ? vehicleCcLeader : null;
+        string[] attackers = [vehicleCcAttacker, .. leader is null ? Array.Empty<string>() : [leader]];
+        string[] defenders = [.. row.Defenders.Where(id => vehicleCcDefenders.Contains(id) && !row.InfantryAttacked.Contains(id, StringComparer.Ordinal))];
+        if (defenders.Length == 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId,
+            ["attemptId"] = Attempt("vehicle-cc"),
+            ["expectedRevision"] = (long)history!.Events.Count,
+            ["location"] = at,
+            ["attackers"] = attackers,
+            ["defenders"] = defenders,
+        };
+
+        // A11.14, A11.141: a SMC attacking with the MMC is stacked with it, and a leader directs the attack.
+        if (leader is not null)
+        {
+            arguments["stacking"] = new Dictionary<string, string> { [leader] = vehicleCcAttacker };
+            if (Live.Planner.UnitOf(state!, leader)?.Kind == "asl:leader")
+            {
+                arguments["director"] = leader;
+            }
+        }
+
+        return Propose(GameActions.VehicleCloseCombat, JsonSerializer.SerializeToElement(arguments));
     }
 
     /// <summary>Pass 35: the vehicle CC and CC Reaction Fire drafts, cleared with the other panel choices and after a committed attack or pass.</summary>

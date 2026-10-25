@@ -1508,4 +1508,203 @@ public sealed class BacklogPass70Tests : IDisposable
         Assert.Equal("asl:squad", Current.Unit("rec-h1")!.Kind);
         NoReplayErrors();
     }
+
+    // Increment 3i (task 70.7, part I): Infantry against Infantry in a Location with a vehicle (A11.31; ruling R70.30), its Ambush (A11.4, A11.34, A11.51),
+    // and PRC in CC (A11.611, A11.71; ruling R70.31).
+    private static readonly string[] RussianOne = ["ru-1"];
+    private static readonly string[] RussianTwo = ["ru-2"];
+    private static readonly string[] BothRussianSquads = ["ru-1", "ru-2"];
+    private static readonly string[] GermanOne = ["de-1"];
+    private static readonly string[] GermanRider = ["de-r"];
+    private static readonly int[] PaatcPassed = [3, 4];
+
+    private async Task<PlayResult> VehicleCc(DiceRoller roller, string hex = "E5", string[]? attackers = null, string[]? defenders = null, string? vehicle = null, bool pass = false)
+    {
+        var arguments = new Dictionary<string, object> { ["location"] = L(hex) };
+        if (attackers is not null)
+        {
+            arguments["attackers"] = attackers;
+        }
+
+        if (defenders is not null)
+        {
+            arguments["defenders"] = defenders;
+        }
+
+        if (vehicle is not null)
+        {
+            arguments["vehicleId"] = vehicle;
+        }
+
+        if (pass)
+        {
+            arguments["pass"] = true;
+        }
+
+        return await Do(GameActions.VehicleCloseCombat, roller, arguments);
+    }
+
+    /// <summary>
+    /// The Russian units in the first hex advance into the German vehicle's Location in their APh, each passing its PAATC (3 + 4 against 7; A11.6), and the
+    /// CCPh begins. A vehicle sharing a Location with an enemy unit at setup is not reviewed (ruling R25.3), so the CC is reached by the advance.
+    /// </summary>
+    private async Task AdvanceOntoTheTank(string to, string[] advancing, params Dictionary<string, object>[] placements)
+    {
+        await SetupAt(6, "russian", placements);
+        Committed(await Do(GameActions.Advance, Once([.. advancing.SelectMany(_ => PaatcPassed)]), new
+        {
+            unitIds = advancing,
+            to = L(to),
+        }));
+        Assert.Equal(L(to), Current.Location(advancing[0])!.Location.ToString());
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        Assert.Equal("ccph", Current.Phase);
+    }
+
+    [Fact]
+    public async Task TheH3ExamplesShapeAlternatesInfantryAndATankAgainstInfantryWithNoReply()
+    {
+        // A11.31 (p. 73) and the H3 example (p. 74): in E5 with the German PzKpfw IIIH and 4-6-7, the non-vehicular Russians attack first, "the 6-2-8 attacks
+        // the German Infantry at 1:1 ... Subsequent attack opportunities alternate between sides". Each attack is one record with no reply (ruling R70.30);
+        // A11.12's EXC: the tank may still attack a squad Infantry attacked, and Infantry no unit Infantry attacked already.
+        await AdvanceOntoTheTank("E5", BothRussianSquads, Squad("ru-1", "E4", "russian"), Squad("ru-2", "E4", "russian"), Vehicle("de-tank", "attacker-tank", "E5", "german", "east"),
+            Squad("de-1", "E5", "german"));
+        var e5 = BoardLocation.Parse(L("E5"));
+        Assert.Equal(("russian", true), Planner().VehicleCloseCombatTurn(Current, e5));
+        var simultaneous = await Do(GameActions.CloseCombat, NoRoll(), new
+        {
+            location = L("E5"),
+            attacks = new[] { new { attackers = RussianOne, defenders = GermanOne } },
+        });
+        Assert.Contains(simultaneous.Reasons, reason => reason.Contains("one attack at a time, Infantry against Infantry too", StringComparison.Ordinal));
+
+        var before = Revision;
+        Committed(await VehicleCc(Once(6, 6), attackers: RussianOne, defenders: GermanOne));
+        var first = Assert.Single(Since(before).Select(item => item.Payload).OfType<CloseCombatResolved>());
+        Assert.Equal((CloseCombatResolved.SequentialRound, "german", false), (first.Round, first.Next, first.Closed));
+        Assert.Equal(GermanOne, Current.CloseCombats.Single().InfantryAttacked);
+
+        Committed(await VehicleCc(Once(6, 6), attackers: GermanOne, defenders: RussianOne));
+        Assert.Equal("russian", Current.CloseCombats.Single().Next);
+        Assert.Contains((await VehicleCc(NoRoll(), attackers: RussianTwo, defenders: GermanOne)).Reasons, reason => reason.StartsWith("play.cc-vehicle-defenders", StringComparison.Ordinal));
+        Assert.Contains((await VehicleCc(NoRoll(), attackers: RussianOne, vehicle: "de-tank")).Reasons, reason => reason.StartsWith("play.cc-vehicle-order", StringComparison.Ordinal));
+
+        // ru-2 attacks the tank (CCV 5, +2 for the escorting squad): 8 + 2 has no effect; the tank then attacks both squads, ru-1 among them, and the CC is over.
+        Committed(await VehicleCc(Once(4, 4), attackers: RussianTwo, vehicle: "de-tank"));
+        Assert.Equal("german", Current.CloseCombats.Single().Next);
+        before = Revision;
+        Committed(await VehicleCc(Once(5, 6), defenders: BothRussianSquads, vehicle: "de-tank"));
+        Assert.True(Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>()).Closed);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnAmbushInAVehiclesLocationTakesTheVehicleDrmAndTheAmbusherAttacksFirstWithItsDrmBothWays()
+    {
+        // A11.4 (p. 73): the Russian squad advances into the woods of E5 (after its PAATC, 3 + 4 against 7), so an Ambush can occur though the German tank is
+        // there; the German dr takes +2 Vehicle and +1 for the BU AFV. A Russian 1 against the German 4 + 3: the Russians ambush. A11.34: they attack first;
+        // A11.4, A11.51 (ruling R70.30): -1 to their attacks, +1 to the tank's attack on them.
+        woods.Add("E5");
+        await SetupAt(6, "russian", Squad("ru-1", "E4", "russian"), Vehicle("de-tank", "attacker-tank", "E5", "german", "east"), Squad("de-1", "E5", "german"));
+        Committed(await Do(GameActions.Advance, Once(3, 4), new
+        {
+            unitIds = RussianOne,
+            to = L("E5"),
+        }));
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        var e5 = BoardLocation.Parse(L("E5"));
+        Assert.True(Planner().AmbushDue(Current, e5));
+        var before = Revision;
+        Committed(await Do(GameActions.Ambush, Once(1, 4), new
+        {
+            location = L("E5"),
+        }));
+        var ambush = Assert.Single(Since(before).Select(item => item.Payload).OfType<AmbushRolled>());
+        Assert.Equal("russian", ambush.Ambusher);
+        var german = ambush.Resolution.GetProperty("sides").EnumerateArray().Single(side => side.GetProperty("side").GetString() == "german");
+        Assert.Equal(["vehicle", "bu-or-stunned-afv"], german.GetProperty("drm").EnumerateArray().Select(item => item.GetProperty("name").GetString()));
+        Assert.Equal(("russian", true), Planner().VehicleCloseCombatTurn(Current, e5));
+
+        before = Revision;
+        Committed(await VehicleCc(Once(6, 6), attackers: RussianOne, defenders: GermanOne));
+        var round = Assert.Single(Since(before).Select(item => item.Payload).OfType<CloseCombatResolved>());
+        Assert.Contains(round.Resolution.GetProperty("attacks")[0].GetProperty("drm").EnumerateArray(), item => item.GetProperty("name").GetString() == "ambush");
+        Assert.Equal("german", round.Next);
+        before = Revision;
+        Committed(await VehicleCc(Once(5, 6), defenders: RussianOne, vehicle: "de-tank"));
+        var byTank = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>());
+        Assert.Equal("russian", byTank.Facts.GetProperty("ambusher").GetString());
+        Assert.Contains(byTank.Resolution.GetProperty("defending")[0].GetProperty("drm").EnumerateArray(), item => item.GetProperty("name").GetString() == "vs-ambush");
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnOlderRecordedVehicleCcSequenceKeepsItsRecordedNextAndClose()
+    {
+        // The gating of increment 3i: a vehicle CC record keeps the next side and the close it recorded (GameProjector), so a game made before the pass,
+        // whose last attack closed the Location with no CC between Infantry there, replays closed, though the German squad would now have an attack.
+        await AdvanceOntoTheTank("E5", RussianOne, Squad("ru-1", "E4", "russian"), Vehicle("de-tank", "attacker-tank", "E5", "german", "east"), Squad("de-1", "E5", "german"));
+        Committed(await VehicleCc(Once(4, 4), attackers: RussianOne, vehicle: "de-tank"));
+        Committed(await VehicleCc(Once(5, 6), defenders: RussianOne, vehicle: "de-tank"));
+        var events = store.Read(Scope)!.Events.ToList();
+        var index = events.FindLastIndex(item => item.Payload is VehicleCloseCombatResolved);
+        var last = (VehicleCloseCombatResolved)events[index].Payload;
+        Assert.Equal(("german", false), (last.Next, last.Closed));
+        events[index] = events[index] with
+        {
+            Payload = last with
+            {
+                Next = null,
+                Closed = true
+            }
+        };
+        var older = Planner().Replay(events);
+        Assert.False(older.HasErrors);
+        Assert.True(older.Current!.CloseCombats.Single().Closed);
+        Assert.False(Planner().VehicleCloseCombatTurn(older.Current, BoardLocation.Parse(L("E5"))).Open);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ARiderIsAttackedApartAndOnlyAnImmobileVehiclesPrcAreHeldInMelee(bool immobile)
+    {
+        // A11.611 (p. 75): the Russian squad attacks the German Rider apart, with -1 (ruling R70.31). A11.71 (p. 76): "Passengers/Riders of Immobile vehicles
+        // are held in Melee, but ... Passengers/Riders of Mobile vehicles who survive their initial round of CC are not required to remain in Melee"; the
+        // CCPh's record names the PRC held. The tank, stopped, holds the Russian squad either way (A11.7).
+        year = 1943;
+        var tank = Vehicle("de-tank", "attacker-tank", "B10", "german", "east");
+        if (immobile)
+        {
+            tank["conditions"] = new Dictionary<string, bool> { [Conditions.Immobilized] = true };
+        }
+
+        await AdvanceOntoTheTank("B10", RussianOne, Squad("ru-1", "B9", "russian"), tank, Rider("de-r", "asl:squad", "attacker-squad", "de-tank"));
+        var before = Revision;
+        Committed(await VehicleCc(Once(6, 6), "B10", attackers: RussianOne, defenders: GermanRider));
+        var round = Assert.Single(Since(before).Select(item => item.Payload).OfType<CloseCombatResolved>());
+        Assert.Contains(round.Resolution.GetProperty("attacks")[0].GetProperty("defending")[0].GetProperty("drm").EnumerateArray(),
+            item => item.GetProperty("name").GetString() == "vs-rider");
+        Assert.Equal("german", round.Next);
+        Committed(await VehicleCc(NoRoll(), "B10", pass: true));
+        before = Revision;
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        var ended = Assert.Single(Since(before).Select(item => item.Payload).OfType<PhaseChanged>());
+        Assert.Equal(immobile ? GermanRider : Array.Empty<string>(), ended.PrcHeldInMelee);
+        Assert.True(Is(Current.Unit("ru-1")!, Conditions.Melee));
+        Assert.Equal(immobile, Is(Current.Unit("de-r")!, Conditions.Melee));
+        NoReplayErrors();
+
+        // A record made before the pass names no PRC held, and the projector reads the Rider for Melee as it did: held, beside the Russian squad.
+        GameEvent[] older = [.. store.Read(Scope)!.Events.Select(item => item.Payload is PhaseChanged { PrcHeldInMelee: not null } change ? item with { Payload = change with { PrcHeldInMelee = null } } : item)];
+        var replayed = Planner().Replay(older);
+        Assert.False(replayed.HasErrors);
+        Assert.True(Is(replayed.Current!.Unit("de-r")!, Conditions.Melee));
+    }
 }

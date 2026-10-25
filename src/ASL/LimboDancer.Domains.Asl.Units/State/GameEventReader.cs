@@ -224,7 +224,11 @@ public static class GameEventReader
                 var nextTurn = fields.OptionalInteger(payload, "turn", path);
                 var nextPhase = fields.RequiredString(payload, "phase", path);
                 var nextPhasing = fields.RequiredString(payload, "phasingSide", path);
-                return nextTurn is null || nextPhase is null || nextPhasing is null ? null : new PhaseChanged(nextTurn.Value, nextPhase, nextPhasing);
+                // A11.71 (pass 70, ruling R70.31): the PRC held in Melee, on a record since the pass that ends a CCPh; absent on every other.
+                return nextTurn is null || nextPhase is null || nextPhasing is null ? null : new PhaseChanged(nextTurn.Value, nextPhase, nextPhasing)
+                {
+                    PrcHeldInMelee = payload.TryGetProperty("prcHeldInMelee", out _) ? fields.StringList(payload, "prcHeldInMelee", path) : null,
+                };
             case "instance-created":
                 return payload.TryGetProperty("instance", out var created) && ReadNew(created, path + ".instance", fields, diagnostics) is { } instance
                     ? new InstanceCreated(instance) { Creator = fields.OptionalString(payload, "creator", path) }
@@ -875,7 +879,12 @@ public static class GameEventReader
                     || !payload.TryGetProperty("resolution", out var combatResolution) || combatResolution.ValueKind != JsonValueKind.Object
                     ? Missing(diagnostics, "A CC record names its Location, round, rolls, facts, and resolution.", path)
                     : new CloseCombatResolved(combatAt, round, fields.StringList(payload, "attackers", path), fields.StringList(payload, "defenders", path), combatRolls,
-                        combatFacts.Clone(), combatResolution.Clone());
+                        combatFacts.Clone(), combatResolution.Clone())
+                    {
+                        // A11.31 (pass 70, ruling R70.30): a sequential round's next side and close; absent on every other round.
+                        Next = fields.OptionalString(payload, "next", path),
+                        Closed = fields.OptionalBoolean(payload, "closed", path),
+                    };
             case "vehicle-close-combat-resolved":
                 var vehicleCombatAt = ReadLocation(payload, "location", path, fields, diagnostics);
                 var vehicleCombatVehicle = fields.RequiredString(payload, "vehicle", path);

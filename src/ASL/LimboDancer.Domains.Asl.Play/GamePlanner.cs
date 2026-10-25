@@ -910,7 +910,11 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 return;
             }
 
-            var payload = new PhaseChanged(turn, phase, phasing);
+            // A11.71 (p. 76; pass 70, ruling R70.31): the record that ends a CCPh names the PRC held in Melee, those of an Immobile vehicle.
+            var payload = new PhaseChanged(turn, phase, phasing)
+            {
+                PrcHeldInMelee = state.Phase == "ccph" ? PrcHeldInMelee(state) : null,
+            };
             var changed = EventId(attemptId, events.Count + 1);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "phase-changed", payload, rulePackage: null, visibility: null));
             if (wind && draw is not null)
