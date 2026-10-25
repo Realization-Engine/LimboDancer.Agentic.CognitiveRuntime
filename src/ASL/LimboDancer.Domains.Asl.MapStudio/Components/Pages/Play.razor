@@ -4908,7 +4908,8 @@ else if (state is not null)
 
             if (viewCache.View is null || !ReferenceEquals(viewCache.History, history) || viewCache.Revision != state.Revision || viewCache.Viewer != Viewer.Name)
             {
-                viewCache = (history, state.Revision, Viewer.Name, GameView.Of(history, state.Revision, Viewer, Unseen));
+                // Pass 70 (ruling R70.18): the planner's one entry, with the groups out of sight and the stacks the viewer may not inspect (A12.16).
+                viewCache = (history, state.Revision, Viewer.Name, Live.Planner.ViewOf(history, state.Revision, Viewer));
             }
 
             return viewCache.View;
@@ -6540,7 +6541,7 @@ else if (state is not null)
 
         if (sideViewCache.View is null || !ReferenceEquals(sideViewCache.History, history) || sideViewCache.Revision != state.Revision || sideViewCache.Side != side)
         {
-            sideViewCache = (history, state.Revision, side, GameView.Of(history, state.Revision, perspective, Live.Planner.OutOfSight(state, perspective)));
+            sideViewCache = (history, state.Revision, side, Live.Planner.ViewOf(history, state.Revision, perspective));
         }
 
         return sideViewCache.View;

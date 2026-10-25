@@ -27,7 +27,7 @@ public sealed partial class UnitNames
 
     private readonly Perspective viewer;
     private readonly IReadOnlyDictionary<string, UnitDefinition> definitions;
-    private readonly Func<GameState, IReadOnlySet<string>?>? outOfSight;
+    private readonly Func<GameState, GameView>? viewOf;
     private readonly Lock gate = new();
 
     // What every view may be told of an id: its side, its kind, the revision that made it, and the units it came from.
@@ -48,14 +48,16 @@ public sealed partial class UnitNames
     private Regex? pattern;
     private int patternIds;
 
-    private UnitNames(GameHistory history, Perspective viewer, IReadOnlyDictionary<string, UnitDefinition> definitions, Func<GameState, IReadOnlySet<string>?>? outOfSight) =>
-        (this.history, this.viewer, this.definitions, this.outOfSight) = (history, viewer, definitions, outOfSight);
+    private UnitNames(GameHistory history, Perspective viewer, IReadOnlyDictionary<string, UnitDefinition> definitions, Func<GameState, GameView>? viewOf) =>
+        (this.history, this.viewer, this.definitions, this.viewOf) = (history, viewer, definitions, viewOf);
 
     /// <summary>
-    /// The names of <paramref name="history"/> for <paramref name="viewer"/>. <paramref name="outOfSight"/> gives the OB groups a side may not see
-    /// while they set up (ruling R23.3). The same game read again, longer, keeps every tag it has given.
+    /// The names of <paramref name="history"/> for <paramref name="viewer"/>. <paramref name="viewOf"/> builds the viewer's view of a state, with no
+    /// events (the planner's one entry: the OB groups a side may not see while they set up, ruling R23.3, and the stacks it may not inspect, ruling
+    /// R70.18); without it the view is the state's alone. A counter the view counts but does not show reads as any unit the view may not name. The same
+    /// game read again, longer, keeps every tag it has given.
     /// </summary>
-    public static UnitNames For(GameHistory history, Perspective viewer, IReadOnlyList<UnitCatalog> catalogs, Func<GameState, IReadOnlySet<string>?>? outOfSight = null)
+    public static UnitNames For(GameHistory history, Perspective viewer, IReadOnlyList<UnitCatalog> catalogs, Func<GameState, GameView>? viewOf = null)
     {
         ArgumentNullException.ThrowIfNull(history);
         ArgumentNullException.ThrowIfNull(viewer);
@@ -84,7 +86,7 @@ public sealed partial class UnitNames
 
         // A new game, or another game under the same first event (a copy cut back and played on differently): made whole before any reader has it
         // (the UI review, pass 31c). The cache is small: the games a Studio has open, not every game it ever opened.
-        var fresh = new UnitNames(history, viewer, DefinitionsOf(catalogs), outOfSight);
+        var fresh = new UnitNames(history, viewer, DefinitionsOf(catalogs), viewOf);
         lock (fresh.gate)
         {
             fresh.Advance(history);
@@ -303,7 +305,7 @@ public sealed partial class UnitNames
             if (!viewer.IsAdjudicator)
             {
                 // The view of this revision alone says which of the other side's units it holds by name; its events are not needed for that.
-                var view = GameView.Of(state, viewer, [], outOfSight?.Invoke(state));
+                var view = viewOf?.Invoke(state) ?? GameView.Of(state, viewer, []);
                 foreach (var unit in view.Units.Where(unit => unit.Side != viewer.Name))
                 {
                     now.Add(unit.Id);

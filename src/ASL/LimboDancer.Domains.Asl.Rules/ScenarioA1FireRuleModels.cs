@@ -394,8 +394,11 @@ public sealed record ConcealmentCandidateFacts(
     Func<bool> SmokeInHex,
     Func<int> BestLeadership);
 
-/// <summary>A unit of the game as the concealment gain's enemy scan reads it: its index (for its NVR), whether it is active, of the enemy side, broken, captured, and its Location's index (null off the map).</summary>
-public sealed record WatchingEnemyFacts(int Index, bool Active, bool Enemy, bool Broken, bool Captured, int? Location);
+/// <summary>
+/// A unit of the game as the concealment gain's enemy scan reads it: its index (for its NVR), whether it is of the enemy side, and its facts as a seer
+/// (pass 70, ruling R70.16), whose Location is an index into the gain search's table (null off the map).
+/// </summary>
+public sealed record WatchingEnemyFacts(int Index, bool Enemy, SightSeerFacts Seer);
 
 /// <summary>A fact reader for the concealment gain's search over the enemies that may see a Location (A12.12, E1.101; the pass 32 design, D4): Locations are indexes into the caller's table, units into its list.</summary>
 public interface IConcealmentFactReader

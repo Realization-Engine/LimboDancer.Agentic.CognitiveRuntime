@@ -81,6 +81,8 @@ var store = new FileGameStore(args[2]);
 IReadOnlyList<UnitCatalog> catalogs = [.. UnitCatalogs.Names.Select(name => UnitCatalogs.Read(name, units.Vocabulary)?.Catalog).OfType<UnitCatalog>()];
 var cards = new ScenarioCardLibrary(Path.Combine(boardsRoot, "cards"));
 var planner = new GamePlanner(store, new StudioBoardCatalog(boards), units.Vocabulary, catalogs, cardLibrary: cards);
+// Pass 70 (ruling R70.19): the planner's view entry, read by reflection since the tool compiles against the baseline too, which lacks it.
+var viewOf = typeof(GamePlanner).GetMethod("ViewOf", [typeof(GameHistory), typeof(long), typeof(Perspective)])?.CreateDelegate<Func<GameHistory, long, Perspective, GameView>>(planner);
 var vocabulary = units.Vocabulary;
 var lines = new List<string>();
 // The user (2026-10-05): the sweep runs over one game of each implemented scenario card, named on the command line.
@@ -239,7 +241,9 @@ else if (mode == "sweep")
         foreach (var perspective in state.Perspectives)
         {
             var outOfSight = Read(game, "OutOfSight", perspective.Name, () => planner.OutOfSight(state, perspective)) as IReadOnlySet<string>;
-            Read(game, "GameView", perspective.Name, () => GameView.Of(history, history.States.Count, perspective, outOfSight));
+            // Pass 70 (ruling R70.19): the view through the planner's one entry where the build has it, so a view line that differs is 70.10's (the
+            // Right of Inspection); a baseline without the entry builds the view as before. Bound once, as a delegate, so an exception is its own.
+            Read(game, "GameView", perspective.Name, () => viewOf is not null ? viewOf(history, history.States.Count, perspective) : GameView.Of(history, history.States.Count, perspective, outOfSight));
             Read(game, "PhaseEndedBy", perspective.Name, () => GamePlanner.PhaseEndedBy(state, perspective.Name));
         }
 

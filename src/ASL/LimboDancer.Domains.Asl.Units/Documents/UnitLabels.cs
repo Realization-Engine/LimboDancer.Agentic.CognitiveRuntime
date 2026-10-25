@@ -18,7 +18,9 @@ public static class UnitLabels
         ArgumentNullException.ThrowIfNull(vocabulary);
         if (document.Uninspected)
         {
-            return Clean($"{vocabulary.SideLabel(document.Side)} counter, not inspectable before play");
+            return Clean(document.OutOfLos
+                ? $"{vocabulary.SideLabel(document.Side)} counter, not inspectable out of the LOS of the viewing side's Good Order ground units"
+                : $"{vocabulary.SideLabel(document.Side)} counter, not inspectable before play");
         }
 
         if (document.Dummy)
@@ -74,7 +76,9 @@ public static class UnitLabels
         ArgumentNullException.ThrowIfNull(vocabulary);
         var rows = new List<UnitDetail>
         {
-            new("Kind", document.Uninspected ? "a counter not inspectable before play (A2.9)" : document.Dummy ? "Dummy: a \"?\" with no unit beneath it (A12.11)"
+            new("Kind", document.Uninspected
+                ? document.OutOfLos ? "a counter not inspectable: its stack is out of the LOS of the viewing side's Good Order ground units (A12.16)" : "a counter not inspectable before play (A2.9)"
+                : document.Dummy ? "Dummy: a \"?\" with no unit beneath it (A12.11)"
                 : document.Concealed ? "concealed unit" : vocabulary.Kind(document.Kind).Label),
         };
         if (document.Side is not null)

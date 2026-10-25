@@ -201,13 +201,14 @@ public sealed class LivePlay
     }
 
     /// <summary>
-    /// The names a view reads for a game's units (pass 31c, design D11), with the planner's reading of who sets up out of sight (ruling R23.3).
+    /// The names a view reads for a game's units (pass 31c, design D11), with the planner's view of each state: who sets up out of sight (ruling
+    /// R23.3) and the stacks the viewer may not inspect (ruling R70.18).
     /// </summary>
     public UnitNames NamesOf(GameHistory history, Perspective viewer)
     {
         ArgumentNullException.ThrowIfNull(viewer);
         var planner = Planner;
-        return UnitNames.For(history, viewer, Catalogs, state => planner.OutOfSight(state, viewer));
+        return UnitNames.For(history, viewer, Catalogs, state => planner.ViewOf(state, viewer, []));
     }
 
     /// <summary>A live game's history, replayed against the exact boards in play; null when the game does not exist.</summary>

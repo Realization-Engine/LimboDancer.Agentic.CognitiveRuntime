@@ -286,9 +286,14 @@ public sealed partial class GamePlanner
         var package = ScenarioA1FirePackage.Identity.ToString();
         var first = $"{attemptId}-{squad.Id}-1";
         var other = $"{attemptId}-{squad.Id}-2";
+
+        // A12.141 (p. 78; ruling R70.17): an attempt to Deploy, and the leader's modifier to its NTC, cost a "?" in the LOS of a Good Order enemy ground
+        // unit within 16 hexes; the HS take the squad's conditions, so they come without it.
+        var lost = ActionLosesConcealment(state, [squad, leader]);
+        void AddLoss(List<GameEvent> events) => events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, lost));
         void AddDeployed(List<GameEvent> events, string? cause, bool rphAction = true)
         {
-            var conditions = new Dictionary<string, ConditionState>(squad.Conditions, StringComparer.Ordinal);
+            var conditions = RevealedIf(squad.Conditions, lost.Contains(squad.Id, StringComparer.Ordinal));
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "lineage", new LineageRecorded(LineageAction.Deployed, [squad.Id],
                 [new NewInstance(first, "asl:half-squad", half, squad.Side, null, null, conditions), new NewInstance(other, "asl:half-squad", half, squad.Side, null, null, conditions)]),
                 package, null, cause is null ? null : [cause]));
@@ -307,9 +312,10 @@ public sealed partial class GamePlanner
         if (atWill)
         {
             var deployed = new List<GameEvent>();
+            AddLoss(deployed);
             AddDeployed(deployed, null, rphAction: false);
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, deployed,
-                [$"play.deploy: {squad.Id}, a Guard, Deploys into two HS, with no leader and no NTC (A20.5)"]);
+                [$"play.deploy: {squad.Id}, a Guard, Deploys into two HS, with no leader and no NTC (A20.5)", .. ConcealmentLossNote(lost)]);
         }
 
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
@@ -322,6 +328,7 @@ public sealed partial class GamePlanner
                 Event(scope, attemptId, 1, expected, "dice-rolled", new DiceRolled(rollId, "deployment", 2, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null),
                 Event(scope, attemptId, 2, expected, "deployment-attempted", new DeploymentAttempted(squad.Id, leader?.Id, rollId, morale, drm, passed), package, null),
             };
+            AddLoss(events);
             if (passed)
             {
                 AddDeployed(events, EventId(attemptId, 2));
@@ -331,7 +338,8 @@ public sealed partial class GamePlanner
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.deploy: {squad.Id} takes a NTC (Morale Level {morale}, DRM {drm:+0;-0;0}{(leader is null ? ", with no leader's direction" : $" for {leader.Id}")}) to Deploy into two HS (A1.31)"])
+            [$"play.deploy: {squad.Id} takes a NTC (Morale Level {morale}, DRM {drm:+0;-0;0}{(leader is null ? ", with no leader's direction" : $" for {leader.Id}")}) to Deploy into two HS (A1.31)",
+                .. ConcealmentLossNote(lost)])
         {
             Roll = new PlannedRoll("deployment", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -394,17 +402,17 @@ public sealed partial class GamePlanner
 
         var package = ScenarioA1FirePackage.Identity.ToString();
         var produced = $"{attemptId}-{one.Id}";
-        var conditions = new Dictionary<string, ConditionState>(one.Conditions, StringComparer.Ordinal)
-        {
-            [Conditions.Fanatic] = ScenarioA1SupportWeaponRules.RecombinedFanatic(Is(one, Conditions.Fanatic), Is(two, Conditions.Fanatic)) ? ConditionState.True : ConditionState.False,
-        };
+        var events = new List<GameEvent>();
+
+        // A12.141 (p. 78; ruling R70.17): Recombining, and the leader's direction of it, cost a "?" in the LOS of a Good Order enemy ground unit within 16
+        // hexes; the squad takes the first HS's conditions, so it comes without it.
+        var lost = AddActionConcealmentLoss(scope, attemptId, expected, events, state, one, two, leader);
+        var conditions = RevealedIf(one.Conditions, lost.Contains(one.Id, StringComparer.Ordinal));
+        conditions[Conditions.Fanatic] = ScenarioA1SupportWeaponRules.RecombinedFanatic(Is(one, Conditions.Fanatic), Is(two, Conditions.Fanatic)) ? ConditionState.True : ConditionState.False;
         string[] acting = [one.Id, two.Id, .. leader is null || state.RallyPhaseActions.Contains(leader.Id) ? Array.Empty<string>() : [leader.Id]];
-        var events = new List<GameEvent>
-        {
-            Event(scope, attemptId, 1, expected, "rph-action-taken", new RallyPhaseActionTaken(acting, "recombine"), package, null),
-            Event(scope, attemptId, 2, expected, "lineage", new LineageRecorded(LineageAction.Recombined, [one.Id, two.Id],
-                [new NewInstance(produced, "asl:squad", squad, one.Side, null, null, conditions)]), package, null),
-        };
+        events.Add(Event(scope, attemptId, events.Count + 1, expected, "rph-action-taken", new RallyPhaseActionTaken(acting, "recombine"), package, null));
+        events.Add(Event(scope, attemptId, events.Count + 1, expected, "lineage", new LineageRecorded(LineageAction.Recombined, [one.Id, two.Id],
+            [new NewInstance(produced, "asl:squad", squad, one.Side, null, null, conditions)]), package, null));
         foreach (var weapon in Held(state, one.Id).Concat(Held(state, two.Id)))
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "equipment-transferred",
@@ -414,7 +422,7 @@ public sealed partial class GamePlanner
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "rph-action-taken", new RallyPhaseActionTaken([produced], "recombined"), package, null));
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-            [$"play.recombine: {one.Id} and {two.Id} Recombine into their squad{(leader is null ? "" : $", directed by {leader.Id}")} (A1.32)"]);
+            [$"play.recombine: {one.Id} and {two.Id} Recombine into their squad{(leader is null ? "" : $", directed by {leader.Id}")} (A1.32)", .. ConcealmentLossNote(lost)]);
     }
 
     /// <summary>
@@ -481,7 +489,10 @@ public sealed partial class GamePlanner
         var events = new List<GameEvent>();
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "equipment-transferred",
             new EquipmentTransferred(weapon.Id, new Holding(taker.Id, HoldingRole.Possessed), null), package, null));
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [$"play.transfer: {giver.Id} passes {weapon.Id} to {taker.Id} (A4.431)"]);
+
+        // A12.141 (p. 78; ruling R70.17): a transfer is an activity of both units, and costs a "?" in the LOS of a Good Order enemy within 16 hexes.
+        var lost = AddActionConcealmentLoss(scope, attemptId, expected, events, state, giver, taker);
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [$"play.transfer: {giver.Id} passes {weapon.Id} to {taker.Id} (A4.431)", .. ConcealmentLossNote(lost)]);
     }
 
     /// <summary>
@@ -645,6 +656,9 @@ public sealed partial class GamePlanner
         // E1.56 (backlog pass 16, ruling R16.7): +1 at night.
         var drm = ScenarioA1SupportWeaponRules.RecoveryDrm(Is(unit, Conditions.Cx), state.Night);
         var package = ScenarioA1FirePackage.Identity.ToString();
+
+        // A12.141 (p. 78; ruling R70.17): a Recovery attempt, made or not, costs a "?" in the LOS of a Good Order enemy within 16 hexes.
+        var lost = ActionLosesConcealment(state, [unit]);
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var drawn = draw(new RollRequest(1, 6));
@@ -661,12 +675,13 @@ public sealed partial class GamePlanner
                     new EquipmentTransferred(weapon.Id, new Holding(unit.Id, HoldingRole.Possessed), null), package, null, [EventId(attemptId, 2)]));
             }
 
+            events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, lost));
             return events;
         }
 
         var cost = state.Phase == "mph" && !fromBroken ? " for one MF" : "";
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.recover: {unit.Id} tries to Recover {weapon.Id}{cost}: a Final dr below 6 (DRM {drm:+0;-0;0}) Recovers it (A4.44)"])
+            [$"play.recover: {unit.Id} tries to Recover {weapon.Id}{cost}: a Final dr below 6 (DRM {drm:+0;-0;0}) Recovers it (A4.44)", .. ConcealmentLossNote(lost)])
         {
             Roll = new PlannedRoll("recovery", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -735,8 +750,11 @@ public sealed partial class GamePlanner
                 [marker] = ConditionState.True,
             }), ScenarioA1FirePackage.Identity.ToString(), null),
         };
+
+        // A12.141 (p. 78; ruling R70.17): dismantling or assembling is an activity, and costs a "?" in the LOS of a Good Order enemy within 16 hexes.
+        var lost = AddActionConcealmentLoss(scope, attemptId, expected, events, state, unit);
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-            [$"play.dismantle: {unit.Id} {(dismantled ? "dismantles" : "assembles")} {weapon.Id}, which counts as its use this phase (A9.8)"]);
+            [$"play.dismantle: {unit.Id} {(dismantled ? "dismantles" : "assembles")} {weapon.Id}, which counts as its use this phase (A9.8)", .. ConcealmentLossNote(lost)]);
     }
 }
 

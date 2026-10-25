@@ -103,6 +103,34 @@ public sealed partial class GamePlanner
             ?? (custodians = state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian is not null)
                 .Select(prisoner => prisoner.Custodian!).ToHashSet(StringComparer.Ordinal));
 
+        // The state's units as seers (pass 70, ruling R70.16), built at its first use from the index; two circuits may each build it, and either is kept.
+        private SightTable? sight;
+
+        /// <summary>
+        /// Every unit's facts as a seer and the table of their Locations (ruling R70.16), built once from <see cref="Objects"/> in one pass over the units.
+        /// View-independent: it holds every side's units, hidden ones too, and is read only by the sight reads below, never shown.
+        /// </summary>
+        public SightTable Sight(Func<SightTable> build) => Volatile.Read(ref sight) ?? (sight = build());
+
+        /// <summary>
+        /// The distinct seer Locations by watched side and purpose (ruling R70.16), indexes into <see cref="Sight"/>'s table: the units of every side but
+        /// the watched one that see for the purpose (an Inspection key holds the viewer's own seers). The fill reads the table only.
+        /// </summary>
+        public ConcurrentDictionary<(string Side, SightPurpose Purpose), int[]> SeerLocations { get; } = new();
+
+        /// <summary>
+        /// The range to the nearest seer with a LOS (ruling R70.16), by watched side, purpose, LOS reading, and Location; null when none has one. It reads the
+        /// seeing side's units as the state holds them, so it is read for decisions and proposals, never shown to the watched side. The fill reads the
+        /// planner's LOS cache and has no side effect.
+        /// </summary>
+        public ConcurrentDictionary<(string Side, SightPurpose Purpose, SightLosReading Reading, BoardLocation At), int?> NearestSeers { get; } = new();
+
+        /// <summary>
+        /// The Locations of the enemy stacks a viewer may not inspect (A12.16; ruling R70.18), by the viewer's name; null before setup closes and for the
+        /// adjudicator. Keyed by viewer, since it reads the viewer's own seers (hidden ones too): it is that viewer's to know.
+        /// </summary>
+        public ConcurrentDictionary<string, IReadOnlySet<BoardLocation>?> Uninspected { get; } = new(StringComparer.Ordinal);
+
         // 1 once the ATTACKER's first unit owing a rout is kept (null kept too); written after the answer, read with a volatile read.
         private int attackerRoutKept;
         private UnitInstance? attackerRout;

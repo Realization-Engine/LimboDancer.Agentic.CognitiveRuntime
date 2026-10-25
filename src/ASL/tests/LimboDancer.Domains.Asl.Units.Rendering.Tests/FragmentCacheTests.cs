@@ -36,7 +36,7 @@ public sealed class FragmentCacheTests
     public void TheKeyWritesEveryPropertyOfADocument()
     {
         // UnitFragmentKey.Document writes each of these. A property added to a document must be added to the key, and to this list.
-        Assert.Equal(["Attached", "Concealed", "Dummy", "Faces", "Facing", "Hexside", "Id", "Kind", "Location", "Side", "SizeClass", "StackOrder", "States",
+        Assert.Equal(["Attached", "Concealed", "Dummy", "Faces", "Facing", "Hexside", "Id", "Kind", "Location", "OutOfLos", "Side", "SizeClass", "StackOrder", "States",
             "TurretFacing", "Uninspected", "Unit", "Vocabulary"], Properties(typeof(UnitDocument)));
         Assert.Equal(["Name", "Traits", "Values"], Properties(typeof(UnitFace)));
         Assert.Equal(["Attribute", "Items", "Number", "Text"], Properties(typeof(UnitValue)));
@@ -62,7 +62,7 @@ public sealed class FragmentCacheTests
         Assert.Equal(misses, cache.Hits);
     }
 
-    public static TheoryData<string> Changes => ["facing", "turret facing", "hexside", "concealed", "uninspected", "dummy", "state added", "state removed",
+    public static TheoryData<string> Changes => ["facing", "turret facing", "hexside", "concealed", "uninspected", "out of LOS", "dummy", "state added", "state removed",
         "attached removed", "attached changed", "side", "stack order", "size class", "level", "hex", "face value", "trait", "unit value", "id", "vocabulary"];
 
     [Theory]
@@ -86,6 +86,7 @@ public sealed class FragmentCacheTests
         "hexside" => unit with { Hexside = UnitHexside.NorthEast },
         "concealed" => unit with { Concealed = !unit.Concealed },
         "uninspected" => unit with { Concealed = true, Uninspected = true },
+        "out of LOS" => unit with { Concealed = true, Uninspected = true, OutOfLos = true },
         "dummy" => unit with { Concealed = true, Dummy = true },
         "state added" => unit with { States = [.. unit.States, "asl:broken"] },
         "state removed" => unit with { States = [] },

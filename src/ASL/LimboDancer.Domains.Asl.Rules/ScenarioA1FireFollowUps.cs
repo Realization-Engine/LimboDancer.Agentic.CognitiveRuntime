@@ -36,7 +36,8 @@ public static class ScenarioA1FireFollowUps
     /// <summary>
     /// The units that gain "?" as their Player Turn ends (A12.12, A12.121, A12.122, the Concealment Table; ruling R12.5): each active phasing Personnel
     /// unit from the catalog, in id order, not concealed, broken, berserk, in Melee, a prisoner, manning a Gun, or sharing its Location with enemy units
-    /// (about to be held in Melee, A11.15); not in the LOS of an active, unbroken, uncaptured enemy within 16 hexes (at night, within its NVR or
+    /// (about to be held in Melee, A11.15); not in the LOS of an enemy that denies the gain (the sight member's GainDenial seers, pass 70, ruling R70.16:
+    /// unbroken and uncaptured, Dummies included, not hidden, not an empty vehicle, A12.1) within 16 hexes (at night, within its NVR or
     /// Illuminated, E1.101), nor beyond 16 out of Concealment Terrain; with the Final Concealment dr modifier it needs (+US#, + the best Good Order
     /// leader's Leadership in the Location, - the Location's TEM, -2 for SMOKE in the hex; A12.122, A6.7), or null when it gains "?" with no dr (at
     /// night, E1.32). A search through the fact reader (the design's D4).
@@ -48,7 +49,7 @@ public static class ScenarioA1FireFollowUps
         ArgumentNullException.ThrowIfNull(watchers);
         ArgumentNullException.ThrowIfNull(map);
         var gains = new List<ConcealmentGain>();
-        var enemies = watchers.Where(unit => unit.Active && unit.Enemy && !unit.Broken && !unit.Captured && unit.Location is not null).ToArray();
+        var enemies = watchers.Where(unit => unit.Enemy && ScenarioA1Sight.Sees(unit.Seer, SightPurpose.GainDenial)).ToArray();
         foreach (var unit in units.Where(unit => unit.Active && unit.PhasingSide && !unit.Vehicle && unit.Personnel && !unit.Dummy && unit.HasDefinition)
             .OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
@@ -63,10 +64,11 @@ public static class ScenarioA1FireFollowUps
             var within16 = false;
             foreach (var enemy in enemies)
             {
-                var range = map.Range(enemy.Location!.Value, at);
+                var from = enemy.Seer.Location!.Value;
+                var range = map.Range(from, at);
                 within16 |= range <= 16;
                 // E1.101 (backlog pass 16, ruling R16.4): at night an enemy sees a Location within its NVR or Illuminated.
-                if (map.LosOpen(enemy.Location.Value, at) && (!night || range <= map.Nvr(enemy.Index) || map.Illuminated(at)))
+                if (map.LosOpen(from, at) && (!night || range <= map.Nvr(enemy.Index) || map.Illuminated(at)))
                 {
                     inLosNear |= range <= 16;
                     inLosFar |= range > 16;
@@ -74,9 +76,8 @@ public static class ScenarioA1FireFollowUps
             }
 
             var terrain = unit.TerrainKey();
-            var inSeason = month is >= 6 and <= 9;
-            var concealmentTerrain = terrain is "brush" or "woods" or "orchard" or "marsh" or "wooden-building" or "stone-building" or "wooden-rubble" or "stone-rubble"
-                || (terrain == "grain" && inSeason);
+            // Pass 70 (frame B): the one list of Concealment Terrain (A12.12), which this copy matched.
+            var concealmentTerrain = terrain is not null && ScenarioA1Definitions.IsConcealmentTerrain(terrain, month);
             if (inLosNear || (inLosFar && !concealmentTerrain))
             {
                 continue;

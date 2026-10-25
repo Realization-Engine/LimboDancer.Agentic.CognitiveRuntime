@@ -52,6 +52,9 @@ public sealed partial class GamePlanner
 
         var step = (current?.Step ?? 0) + 1;
         var package = ScenarioA1FirePackage.Identity.ToString();
+
+        // A12.141 (p. 78; ruling R70.17): placing SMOKE grenades costs the squad's "?" in the LOS of a Good Order enemy ground unit within 16 hexes.
+        var lost = ActionLosesConcealment(state, [squad]);
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var events = new List<GameEvent>();
@@ -71,11 +74,13 @@ public sealed partial class GamePlanner
                     new MapPosition(target), null, new Dictionary<string, ConditionState>(StringComparer.Ordinal))), package, null, [EventId(attemptId, 2)]));
             }
 
+            events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, lost));
             return events;
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.smoke: {squad.Id} attempts to place SMOKE grenades in {target} for {halfMf / 2m} MF of the stack; a dr of {exponent} or less{(doubleTime || Is(squad, Conditions.Cx) ? " (+1 while CX)" : string.Empty)} places a +2 SMOKE counter until the end of this MPh, a 6 ends {squad.Id}'s MPh (A24.1, A24.11)"])
+            [$"play.smoke: {squad.Id} attempts to place SMOKE grenades in {target} for {halfMf / 2m} MF of the stack; a dr of {exponent} or less{(doubleTime || Is(squad, Conditions.Cx) ? " (+1 while CX)" : string.Empty)} places a +2 SMOKE counter until the end of this MPh, a 6 ends {squad.Id}'s MPh (A24.1, A24.11)",
+                .. ConcealmentLossNote(lost)])
         {
             Roll = new PlannedRoll("smoke", Build),
             FirstEventId = EventId(attemptId, 1),

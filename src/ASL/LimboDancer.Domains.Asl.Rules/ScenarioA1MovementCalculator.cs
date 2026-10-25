@@ -165,10 +165,19 @@ public static class ScenarioA1MovementCalculator
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(los);
-        // Pass 35 (task 35.3; A.7): Good Order, not merely unbroken, as the two other scans read it.
-        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && !unit.Aboard && unit.GoodOrder)
-            .Select(unit => unit.Location).OfType<int>().Distinct()
-            .Select(location => los.Los(location, at) is { Clear: true } result ? result.Range : (int?)null).Where(range => range is not null).Min();
+        // Pass 35 (task 35.3; A.7): Good Order, not merely unbroken. Pass 70 (ruling R70.16): the sight member's Loss seers, so a hidden unit is not
+        // counted (R35.5), as the two other scans read it.
+        return ScenarioA1Sight.NearestSeer(ScenarioA1Sight.SeerLocations(units.Select(SeerOf), side, SightPurpose.Loss), at, new EnemyLos(los), SightLosReading.Clear);
+    }
+
+    /// <summary>A unit of the older scans as the sight member reads it (pass 70, ruling R70.16): unbroken is not read for the Loss purpose.</summary>
+    private static SightSeerFacts SeerOf(EnemyUnitFacts unit) =>
+        new(unit.Active, unit.Side, unit.Dummy, unit.Hidden, unit.Aboard, unit.GoodOrder, unit.GoodOrder, false, false, unit.Location);
+
+    /// <summary>The older scans' LOS reader as the sight member reads it: clear or not, and its range.</summary>
+    private sealed class EnemyLos(ILosFactReader los) : ISightLosReader
+    {
+        public SightLosFacts? Los(int fromLocation, int toLocation) => los.Los(fromLocation, toLocation) is { } read ? new SightLosFacts(read.Clear, !read.Clear, read.Range) : null;
     }
 
     /// <summary>
@@ -185,16 +194,28 @@ public static class ScenarioA1MovementCalculator
         ArgumentNullException.ThrowIfNull(subjects);
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(los);
+        var seers = units.Select(SeerOf).ToArray();
+        var reader = new EnemyLos(los);
+        return WithSeen(attack, night, unitId => subjects.GetValueOrDefault(unitId) is { Side: { } side, Location: { } at }
+            ? ScenarioA1Sight.SeenWithin(ScenarioA1Sight.NearestSeer(ScenarioA1Sight.SeerLocations(seers, side, SightPurpose.Loss), at, reader, SightLosReading.Clear), 16)
+            : null);
+    }
+
+    /// <summary>
+    /// <see cref="WithSeen(FireAttack, bool, IReadOnlyDictionary{string, SeenSubjectFacts}, IReadOnlyList{EnemyUnitFacts}, ILosFactReader)"/> with the
+    /// read given by the caller (pass 70, ruling R70.16): <paramref name="seenWithin16"/> says, for a concealed firer or director by unit id, whether a Loss seer
+    /// within 16 hexes has a LOS to it, or null when the state does not place it. It is asked only for a concealed unit, and not at night.
+    /// </summary>
+    public static FireAttack WithSeen(FireAttack attack, bool night, Func<string, bool?> seenWithin16)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(seenWithin16);
         if (night)
         {
             return attack;
         }
 
-        bool? Seen(string? unitId, bool? concealed) => concealed == true && unitId is not null && subjects.GetValueOrDefault(unitId) is { Side: { } side, Location: { } at }
-            ? units.Where(other => other.Side != side && !other.Dummy && other.GoodOrder && !other.Hidden && !other.Aboard)
-                .Select(other => other.Location).OfType<int>().Distinct()
-                .Any(location => location == at || los.Los(location, at) is { Clear: true, Range: <= 16 })
-            : null;
+        bool? Seen(string? unitId, bool? concealed) => concealed == true && unitId is not null ? seenWithin16(unitId) : null;
         FireFirer Firer(FireFirer item) => Seen(item.UnitId, item.Concealed) is not { } seen ? item : item with
         {
             SeenByGoodOrderEnemy = seen
@@ -1150,9 +1171,9 @@ public static class ScenarioA1MovementCalculator
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(los);
         // Pass 35 (task 35.3; A.7, A12.14; backlog section 51, the user's word of 2026-10-04): Good Order, not merely unbroken, and as fire reads it
-        // (WithSeen): not a hidden unit, which would have to show itself to force the loss, nor a Passenger, whose vehicle is counted.
-        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && unit.GoodOrder && !unit.Hidden && !unit.Aboard)
-            .Select(unit => unit.Location).OfType<int>().Distinct()
-            .Any(location => los.Los(location, at) is { Clear: true, Range: <= 16 });
+        // (WithSeen): not a hidden unit, which would have to show itself to force the loss, nor a Passenger, whose vehicle is counted. Pass 70 (ruling
+        // R70.16): the sight member's Loss seers, the nearest within 16.
+        return ScenarioA1Sight.SeenWithin(ScenarioA1Sight.NearestSeer(ScenarioA1Sight.SeerLocations(units.Select(SeerOf), side, SightPurpose.Loss), at, new EnemyLos(los),
+            SightLosReading.Clear), 16);
     }
 }

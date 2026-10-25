@@ -116,6 +116,10 @@ public sealed partial class GamePlanner
         void Add(string type, EventPayload payload, IReadOnlyList<string>? visibility = null) =>
             events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, null, visibility));
 
+        // A12.141 (p. 78; ruling R70.17): the Mopping Up declaration is an activity of each declaring unit, and costs its "?" in the LOS of a Good Order
+        // enemy ground unit within 16 hexes.
+        var lost = AddActionConcealmentLoss(scope, attemptId, expected, events, state, units);
+
         foreach (var hidden in enemies.Where(unit => Is(unit, Conditions.Hidden)))
         {
             Add("hidden-placed", new ConditionsChanged(hidden.Id, ConditionChanges(ScenarioA1MoppingUp.HiddenPlacedConditions())), [hidden.Side]);
@@ -160,6 +164,7 @@ public sealed partial class GamePlanner
                 reasons.Add(ScenarioA1MoppingUp.SurrenderText(broken.Id, guard.Id));
             }
 
+            reasons.AddRange(ConcealmentLossNote(lost));
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, reasons);
         }
 
@@ -168,7 +173,7 @@ public sealed partial class GamePlanner
         var summary = ScenarioA1MoppingUp.NotSecuredSummary(phrase);
         if (defenders.Length == 0)
         {
-            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary]);
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary, .. ConcealmentLossNote(lost)]);
         }
 
         // A12.154: -1 per Stealthy unit, -1 per HS-equivalent beyond one, the best leader's leadership unless alone, +1 per Lax unit; the catalog and the
@@ -222,7 +227,7 @@ public sealed partial class GamePlanner
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [ScenarioA1MoppingUp.CasualtyText(summary, notes)])
+            [ScenarioA1MoppingUp.CasualtyText(summary, notes), .. ConcealmentLossNote(lost)])
         {
             Roll = new PlannedRoll("search-casualty", Build),
             FirstEventId = EventId(attemptId, 1),

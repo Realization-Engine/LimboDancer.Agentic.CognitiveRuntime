@@ -17,6 +17,15 @@ public sealed record SealedPresence(string PlacementId, string Side, BoardLocati
     {
         get; init;
     }
+
+    /// <summary>
+    /// An <see cref="Uninspected"/> counter after play begins: one of an enemy stack out of the LOS of all the viewing side's Good Order ground units,
+    /// whose contents may not be inspected (A12.16, p. 79; pass 70, ruling R70.18).
+    /// </summary>
+    public bool OutOfLos
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -24,7 +33,8 @@ public sealed record SealedPresence(string PlacementId, string Side, BoardLocati
 /// know rather than marking it for a consumer to hide: an enemy's hidden instances (A12.3, p. 80) and everything
 /// inside or held by them are absent; an enemy's concealed units become <see cref="SealedPresence"/>s, and what they
 /// hold is absent. Before play starts, an enemy stack not under "?" shows its top counter and counts the rest (A2.9), and a side setting up now is
-/// out of sight entirely (A12.12; pass 23, rulings R23.1 and R23.3). The adjudicator's view is the whole state.
+/// out of sight entirely (A12.12; pass 23, rulings R23.1 and R23.3). After play, a stack out of the LOS of all the side's Good Order ground units is
+/// shown as one before play (A12.16; pass 70, ruling R70.18), when the caller names it. The adjudicator's view is the whole state.
 /// </summary>
 public sealed record GameView(
     Perspective Perspective,
@@ -45,15 +55,19 @@ public sealed record GameView(
     /// <summary>
     /// The view of the state at a revision of a history, with the events the perspective is entitled to. <paramref name="outOfSight"/> names the OB
     /// groups setting up now, whose units a side's view leaves out (A12.12: the player setting up does so "out of vision of his opponent"; ruling R23.3).
+    /// <paramref name="uninspected"/> names the Locations of the enemy stacks the perspective may not inspect (A12.16; ruling R70.18), which Play reads
+    /// from the map; null shows every stack after play in full, as before the pass.
     /// </summary>
-    public static GameView Of(GameHistory history, long revision, Perspective perspective, IReadOnlySet<string>? outOfSight = null)
+    public static GameView Of(GameHistory history, long revision, Perspective perspective, IReadOnlySet<string>? outOfSight = null,
+        IReadOnlySet<BoardLocation>? uninspected = null)
     {
         ArgumentNullException.ThrowIfNull(history);
         var state = history.At(revision) ?? throw new ArgumentOutOfRangeException(nameof(revision), revision, "The history has no state at that revision.");
-        return Of(state, perspective, history.EventsFor(perspective, revision), outOfSight);
+        return Of(state, perspective, history.EventsFor(perspective, revision), outOfSight, uninspected);
     }
 
-    public static GameView Of(GameState state, Perspective perspective, IReadOnlyList<GameEvent> events, IReadOnlySet<string>? outOfSight = null)
+    public static GameView Of(GameState state, Perspective perspective, IReadOnlyList<GameEvent> events, IReadOnlySet<string>? outOfSight = null,
+        IReadOnlySet<BoardLocation>? uninspected = null)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(perspective);
@@ -86,13 +100,16 @@ public sealed record GameView(
         bool Concealed(IGameObject item) => Rules.ScenarioA1Visibility.ConcealedToEnemy(Is(item, Conditions.Concealed), Dummy(item));
 
         // Ruling R23.3 (A2.9): before play starts, an enemy stack not under "?" shows only its top counter, so what its other counters hold is withheld too.
+        // Ruling R70.18 (A12.16): after play, so does one the perspective may not inspect.
         var beforePlay = !state.SetupClosed;
+        var outOfInspection = beforePlay || uninspected is null ? null : uninspected;
+        bool OutOfInspection(IGameObject item) => outOfInspection is not null && Enemy(item) && state.Location(item.Id) is { } at && outOfInspection.Contains(at.Location);
         var tops = new HashSet<string>(StringComparer.Ordinal);
         var stacked = new HashSet<(string Side, BoardLocation Location)>();
-        if (beforePlay)
+        if (beforePlay || outOfInspection is { Count: > 0 })
         {
             foreach (var stack in active.OfType<UnitInstance>().Where(unit => Enemy(unit) && !Is(unit, Conditions.Hidden)
-                && state.Location(unit.Id) is not null).GroupBy(unit => (unit.Side, state.Location(unit.Id)!.Location)))
+                && state.Location(unit.Id) is not null && (beforePlay || OutOfInspection(unit))).GroupBy(unit => (unit.Side, state.Location(unit.Id)!.Location)))
             {
                 stacked.Add(stack.Key);
                 if (Rules.ScenarioA1Visibility.TopCounter(stack.Select(unit => (unit.Id, Concealed(unit)))) is { } top)
@@ -109,7 +126,10 @@ public sealed record GameView(
         // The facts of one counter the verdicts read.
         Rules.CounterFacts FactsOf(IGameObject item) => new(Enemy(item), Is(item, Conditions.Hidden), Is(item, Conditions.Concealed), Dummy(item),
             item is UnitInstance { Group: { } group } && outOfSight?.Contains(group) == true, item is UnitInstance, tops.Contains(item.Id),
-            item is EquipmentInstance && Beneath(item));
+            item is EquipmentInstance && Beneath(item))
+        {
+            OutOfInspection = OutOfInspection(item),
+        };
 
         // The instance, then each holder or container outward: what it is inside or held by, each read once.
         IReadOnlyList<Rules.CounterFacts> Chain(IGameObject item)
@@ -153,7 +173,7 @@ public sealed record GameView(
 
         var sealedPresences = sealedUnits
             .OrderBy(item => item.Location.ToString(), StringComparer.Ordinal).ThenBy(item => item.Side, StringComparer.Ordinal).ThenBy(item => item.Uninspected)
-            .Select((item, index) => new SealedPresence($"sealed-{index + 1}", item.Side, item.Location) { Uninspected = item.Uninspected })
+            .Select((item, index) => new SealedPresence($"sealed-{index + 1}", item.Side, item.Location) { Uninspected = item.Uninspected, OutOfLos = item.Uninspected && !beforePlay })
             .ToArray();
         EquipmentInstance[] equipment = [.. active.OfType<EquipmentInstance>().Where(item => !Withheld(item, sealAllowed: false))];
         EntityInstance[] entities = [.. active.OfType<EntityInstance>().Where(item => !Withheld(item, sealAllowed: false))];

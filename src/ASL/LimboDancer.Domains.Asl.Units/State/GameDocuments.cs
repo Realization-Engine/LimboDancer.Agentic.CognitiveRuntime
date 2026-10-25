@@ -61,6 +61,7 @@ public static class GameDocuments
                 Concealed: true)
             {
                 Uninspected = presence.Uninspected,
+                OutOfLos = presence.OutOfLos,
             });
         }
 

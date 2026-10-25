@@ -4,7 +4,17 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// The facts of one counter a side's view decides on (pass 32.a, slice S11, from Units' <c>GameView.Of</c>): whether it is the enemy's, hidden,
 /// concealed, a Dummy, in an OB group setting up out of sight, a unit, the top counter of its stack, or equipment lying beneath an enemy stack.
 /// </summary>
-public sealed record CounterFacts(bool Enemy, bool Hidden, bool Concealed, bool Dummy, bool OutOfSight, bool IsUnit, bool IsTop, bool EquipmentBeneathStack);
+public sealed record CounterFacts(bool Enemy, bool Hidden, bool Concealed, bool Dummy, bool OutOfSight, bool IsUnit, bool IsTop, bool EquipmentBeneathStack)
+{
+    /// <summary>
+    /// Whether the counter lies in an enemy stack the viewer may not inspect after play begins, out of the LOS of all his Good Order ground units (A12.16,
+    /// p. 79; pass 70, ruling R70.18): such a stack is shown as one is before play.
+    /// </summary>
+    public bool OutOfInspection
+    {
+        get; init;
+    }
+}
 
 /// <summary>How a side's view shows a counter it does not withhold.</summary>
 public enum CounterPresence
@@ -15,7 +25,10 @@ public enum CounterPresence
     /// <summary>A "?" at its Location: a concealed enemy unit (A12.11).</summary>
     Sealed,
 
-    /// <summary>A counted but uninspected counter beneath the top of an enemy stack before play (A2.9; ruling R23.3).</summary>
+    /// <summary>
+    /// A counted but uninspected counter beneath the top of an enemy stack before play (A2.9; ruling R23.3), or after play in a stack out of the LOS of
+    /// all the viewer's Good Order ground units (A12.16; ruling R70.18).
+    /// </summary>
     SealedUninspected,
 }
 
@@ -47,7 +60,8 @@ public static class ScenarioA1Visibility
     /// Whether an instance is withheld from the view: it, or anything it is inside or held by, is an enemy's hidden or concealed instance, belongs to
     /// a side setting up out of sight (ruling R23.3), or lies beneath the top of an enemy stack before play (A2.9). <paramref name="chain"/> is the
     /// instance first, then each holder or container outward. A concealed instance, or one beneath a top, is not withheld as the instance itself
-    /// when <paramref name="sealAllowed"/>: it becomes a sealed presence instead.
+    /// when <paramref name="sealAllowed"/>: it becomes a sealed presence instead. After play, a stack out of the viewer's inspection is read as one
+    /// before play (A12.16; ruling R70.18).
     /// </summary>
     public static bool Withheld(IReadOnlyList<CounterFacts> chain, bool beforePlay, bool sealAllowed)
     {
@@ -56,10 +70,11 @@ public static class ScenarioA1Visibility
         {
             var current = chain[index];
             var self = index == 0;
+            var topOnly = beforePlay || current.OutOfInspection;
             if (current.Enemy && (current.Hidden || (ConcealedToEnemy(current.Concealed, current.Dummy) && !(sealAllowed && self))
                 || current.OutOfSight
-                || (beforePlay && current.IsUnit && !current.IsTop && !(sealAllowed && self))
-                || (beforePlay && current.EquipmentBeneathStack)))
+                || (topOnly && current.IsUnit && !current.IsTop && !(sealAllowed && self))
+                || (topOnly && current.EquipmentBeneathStack)))
             {
                 return true;
             }
@@ -68,13 +83,16 @@ public static class ScenarioA1Visibility
         return false;
     }
 
-    /// <summary>How a unit the view does not withhold is shown: a concealed enemy unit as a sealed presence, one beneath a stack's top before play as an uninspected one, else itself.</summary>
+    /// <summary>
+    /// How a unit the view does not withhold is shown: a concealed enemy unit as a sealed presence, one beneath a stack's top before play, or after play
+    /// in a stack out of the viewer's inspection (A12.16; ruling R70.18), as an uninspected one, else itself.
+    /// </summary>
     public static CounterPresence UnitPresence(CounterFacts unit, bool beforePlay)
     {
         ArgumentNullException.ThrowIfNull(unit);
         var concealed = unit.Enemy && ConcealedToEnemy(unit.Concealed, unit.Dummy);
         return concealed ? CounterPresence.Sealed
-            : beforePlay && unit.Enemy && !unit.IsTop ? CounterPresence.SealedUninspected
+            : (beforePlay || unit.OutOfInspection) && unit.Enemy && !unit.IsTop ? CounterPresence.SealedUninspected
             : CounterPresence.Shown;
     }
 

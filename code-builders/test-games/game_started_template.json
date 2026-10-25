@@ -1,0 +1,37 @@
+{
+  "note": "The game-started payload of p35-rst-cc (board 3), kept for game_file.py since PR 38 retired that game (pass 70, 2026-10-25).",
+  "tenant": "5a7d1f00-0000-4000-8000-0000000057d0",
+  "payload": {
+    "sides": [
+      {
+        "id": "german",
+        "nationality": "german",
+        "elr": 3,
+        "friendlyEdge": "left"
+      },
+      {
+        "id": "russian",
+        "nationality": "russian",
+        "elr": 2,
+        "friendlyEdge": "right"
+      }
+    ],
+    "map": {
+      "reference": "bd03",
+      "version": "ba2920ce55cd954a62394dc81f35833e24054093",
+      "boards": [
+        {
+          "board": "bd03",
+          "version": "ba2920ce55cd954a62394dc81f35833e24054093"
+        }
+      ]
+    },
+    "catalog": "asl-scenario-a1@1.13.0",
+    "turn": 1,
+    "phase": "rph",
+    "phasingSide": "russian",
+    "synthetic": false,
+    "scenarioMonth": 7,
+    "scenarioYear": 1942
+  }
+}

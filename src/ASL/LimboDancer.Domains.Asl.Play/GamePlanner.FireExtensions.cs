@@ -202,22 +202,25 @@ public sealed partial class GamePlanner
     {
         var map = new ConcealmentMap(this, state);
         UnitInstance[] units = [.. state.Units];
-        int? LocationIndex(UnitInstance unit) => state.Location(unit.Id) is { } at ? map.Index(at.Location) : null;
+        // Pass 70 (ruling R70.16; the memory guideline): every Location and stack from the state's index, and the watchers as the sight table holds them.
+        var index = MemoOf(state).Objects(state);
+        var sight = SightOf(state);
+        int? LocationIndex(UnitInstance unit) => index.Location(unit.Id) is { } at ? map.Index(at.Location) : null;
+        IEnumerable<UnitInstance> Stack(UnitInstance unit) => index.At(index.Location(unit.Id)!.Location).OfType<UnitInstance>();
         var gains = ScenarioA1FireFollowUps.ConcealmentGains(
             units.Select(unit => new ConcealmentCandidateFacts(unit.Id, unit.Kind, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide, LiveFire.IsVehicle(unit),
                 vocabulary.IsA(unit.Kind, "asl:personnel"), unit.Kind == UnitKinds.Dummy, unit.Definition is not null, vocabulary.IsA(unit.Kind, "asl:squad"),
                 vocabulary.IsA(unit.Kind, "asl:half-squad"), LocationIndex(unit), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), Is(unit, Conditions.Broken),
                 Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), Is(unit, Conditions.Captured),
                 () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { } holding && holding.Holder == unit.Id),
-                () => state.At(state.Location(unit.Id)!.Location).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)),
-                () => ReadLocation(state, state.Location(unit.Id)!.Location) is { } read ? TerrainKey(read) : null,
-                () => SmokeSources(state).Any(place => place.Board == state.Location(unit.Id)!.Location.Board && place.Hex == state.Location(unit.Id)!.Location.Hex),
-                () => state.At(state.Location(unit.Id)!.Location).OfType<UnitInstance>().Where(other => other != unit && other.Status == InstanceStatus.Active
+                () => Stack(unit).Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)),
+                () => ReadLocation(state, index.Location(unit.Id)!.Location) is { } read ? TerrainKey(read) : null,
+                () => SmokeSources(state).Any(place => place.Board == index.Location(unit.Id)!.Location.Board && place.Hex == index.Location(unit.Id)!.Location.Hex),
+                () => Stack(unit).Where(other => other != unit && other.Status == InstanceStatus.Active
                         && other.Side == unit.Side && other.Kind == "asl:leader" && !Is(other, Conditions.Broken) && !Is(other, Conditions.Pinned)
                         && other.Definition is { } definition && FireReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.Leadership is not null)
                     .Select(other => FireReference.Value.Definitions[other.Definition!.Definition].Leadership!.Value).DefaultIfEmpty(0).Min())),
-            units.Select((unit, index) => new WatchingEnemyFacts(index, unit.Status == InstanceStatus.Active, unit.Side != state.PhasingSide, Is(unit, Conditions.Broken),
-                Is(unit, Conditions.Captured), LocationIndex(unit))),
+            units.Select((unit, position) => new WatchingEnemyFacts(position, unit.Side != state.PhasingSide, sight.Units[position] with { Location = LocationIndex(unit) })),
             state.Night, state.ScenarioMonth, map);
         return [.. gains.Select(gain => (units.First(unit => unit.Id == gain.Id), gain.Drm))];
     }
