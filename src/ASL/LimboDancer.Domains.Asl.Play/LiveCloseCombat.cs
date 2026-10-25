@@ -13,9 +13,13 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public static class LiveCloseCombat
 {
-    /// <summary>The units of a CC Location as the package reads them, or the reason they cannot be read.</summary>
+    /// <summary>
+    /// The units of a CC Location as the package reads them, or the reason they cannot be read; with <paramref name="guns"/>, the Guns each mans, which a
+    /// round's A11.13 loss reads (pass 70, ruling R70.27) and an Ambush or a vehicle's CC does not.
+    /// </summary>
     public static (IReadOnlyList<CloseCombatUnit>? Units, string? Reason) Units(GameState state, BoardLocation location,
-        IReadOnlyDictionary<string, string>? stacking, IReadOnlyDictionary<string, string>? withdrawals = null, IReadOnlyDictionary<string, string>? infiltrations = null)
+        IReadOnlyDictionary<string, string>? stacking, IReadOnlyDictionary<string, string>? withdrawals = null, IReadOnlyDictionary<string, string>? infiltrations = null,
+        bool guns = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(location);
@@ -32,14 +36,17 @@ public static class LiveCloseCombat
             return (null, ScenarioA1CloseCombatFactBuilders.OutsideCatalogText());
         }
 
-        // Rulings R14.3, R14.5, R14.8: TI, Unarmed units and prisoners' Guards, and the declared Infiltrations; Rules builds each unit (pass 32.g).
+        // Rulings R14.3, R14.5, R14.8: TI, Unarmed units and prisoners' Guards, and the declared Infiltrations; Rules builds each unit (pass 32.g). Pass 70
+        // (ruling R70.27): the Guns each unit mans, for A11.13's loss.
         return ([.. units.Select(unit => ScenarioA1CloseCombatFactBuilders.Unit(unit.Id, unit.Definition!.Definition, unit.Side, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
             Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted), Is(unit, Conditions.Berserk), Is(unit, Conditions.Fanatic), Is(unit, Conditions.Heroic),
             Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), Is(unit, Conditions.Captured), state.Advances.Any(item => item.Unit == unit.Id && item.To == location),
             Is(unit, Conditions.Melee), stacking?.GetValueOrDefault(unit.Id), withdrawals?.GetValueOrDefault(unit.Id), Is(unit, Conditions.Cx), Is(unit, "asl:ti"),
             Is(unit, Conditions.Unarmed), unit.Custodian, infiltrations?.GetValueOrDefault(unit.Id),
             [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
-                .Select(item => item.Id).Order(StringComparer.Ordinal)], LiveStacking.Manning(state, unit.Id)))], null);
+                .Select(item => item.Id).Order(StringComparer.Ordinal)], LiveStacking.Manning(state, unit.Id),
+            !guns ? null : [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned } manned
+                && manned.Holder == unit.Id).Select(item => item.Id).Order(StringComparer.Ordinal)]))], null);
     }
 
     /// <summary>The Ambush facts of a Location, before the drs; <paramref name="terrain"/> is the planner's read.</summary>
@@ -64,7 +71,7 @@ public static class LiveCloseCombat
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(attacks);
-        var (units, reason) = Units(state, location, stacking, withdrawals, infiltrations);
+        var (units, reason) = Units(state, location, stacking, withdrawals, infiltrations, guns: true);
         if (units is null)
         {
             return (null, reason);
@@ -435,9 +442,17 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
 
         // Pass 40: whether a crew mans its Gun (A5.5) is taken as recorded, so a record made before the pass, which lacks the fact, replays.
         var manning = recorded.Units.Where(unit => unit.UnitId is not null).ToDictionary(unit => unit.UnitId!, unit => unit.Manning, StringComparer.Ordinal);
+
+        // Pass 70 (ruling R70.27): a record made before the pass lists no Guns, so its Gun loss is not rolled and the state's Guns are not asked of it; a
+        // record since the pass must list the state's.
+        var recordsGuns = recorded.Units.Any(unit => unit.Guns is not null);
         expected = expected with
         {
-            Units = expected.Units is null ? null : [.. expected.Units.Select(unit => unit with { Manning = unit.UnitId is { } id ? manning.GetValueOrDefault(id) : null })]
+            Units = expected.Units is null ? null : [.. expected.Units.Select(unit => unit with
+            {
+                Manning = unit.UnitId is { } id ? manning.GetValueOrDefault(id) : null,
+                Guns = recordsGuns ? unit.Guns : null,
+            })]
         };
         if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

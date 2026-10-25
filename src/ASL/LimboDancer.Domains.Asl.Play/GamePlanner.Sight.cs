@@ -171,7 +171,8 @@ public sealed partial class GamePlanner
     /// The Locations of the enemy stacks a viewer may not inspect (A12.16, p. 79; ruling R70.18): after setup closes, each Location of an enemy stack
     /// with a unit not concealed to the viewer, out of the LOS of every Good Order ground unit of the viewer, his hidden ones included and Dummies not.
     /// A LOS the map cannot give, or does not read as blocked, counts as in LOS. Null for the adjudicator and before setup closes (the view shows a
-    /// stack's top before play itself, A2.9). Kept per state and viewer; each stack's read stops at the first seer in LOS.
+    /// stack's top before play itself, A2.9). Kept per state and viewer; each stack's read stops at the first seer in LOS. A Location where the viewer has
+    /// any unit of its own is never uninspected (ruling R70.40).
     /// </summary>
     public IReadOnlySet<BoardLocation>? Uninspected(GameState state, Perspective viewer)
     {
@@ -206,7 +207,8 @@ public sealed partial class GamePlanner
         var uninspected = new HashSet<BoardLocation>();
         foreach (var at in stacks)
         {
-            if (!ScenarioA1Sight.Inspectable(state.SetupClosed,
+            // Ruling R70.40: any unit of the viewer's own in the Location inspects it, whatever its state.
+            if (!ScenarioA1Sight.Inspectable(state.SetupClosed, index.At(at).Any(item => item is UnitInstance { Status: InstanceStatus.Active } own && own.Side == name),
                 () => ScenarioA1Sight.AnySeerInLos(seers, table.IndexOf(at), new SightLos(this, state, table, at), SightLosReading.NotShownBlocked)))
             {
                 uninspected.Add(at);

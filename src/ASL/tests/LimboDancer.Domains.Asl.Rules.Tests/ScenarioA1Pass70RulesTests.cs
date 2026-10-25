@@ -116,6 +116,18 @@ public sealed class ScenarioA1Pass70RulesTests
     }
 
     [Fact]
+    public void ABrokenUnitAndAUnitInMeleeInTheEnemysLocationInspectIt()
+    {
+        // Ruling R70.40 (A11.12, A11.14, A11.19): a broken unit and one held in Melee (not Good Order) are no Inspection seers, yet a unit of the viewer's
+        // own in the enemy stack's Location inspects it whatever its state, with no seer read; before play none does (A2.9).
+        Assert.False(ScenarioA1Sight.Sees(Seer(goodOrder: false, unbroken: false), SightPurpose.Inspection));
+        Assert.False(ScenarioA1Sight.Sees(Seer(goodOrder: false), SightPurpose.Inspection));
+        Assert.True(ScenarioA1Sight.Inspectable(true, true, () => throw new InvalidOperationException("the seers were read.")));
+        Assert.False(ScenarioA1Sight.Inspectable(true, false, () => false));
+        Assert.False(ScenarioA1Sight.Inspectable(false, true, () => true));
+    }
+
+    [Fact]
     public void AnActionCostsAConcealedUnitsQuestionMarkInTheLosOfASeerWithinSixteen()
     {
         // A12.141 (p. 78; ruling R70.17): the nearest Loss seer is read only for a concealed unit.
@@ -1202,5 +1214,123 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.True(ScenarioA1MoppingUp.MopUpBuilding(1, true));
         Assert.False(ScenarioA1MoppingUp.PartOfBuilding(true));
         Assert.True(ScenarioA1MoppingUp.PartOfBuilding(false));
+    }
+
+    // Increment 3h (task 70.6): Withdrawal completed (A11.21; ruling R70.26), a Gun's crew in CC (A11.13, A1.123; ruling R70.27), and a Carrier HS
+    // (A1.32, D6.82; ruling R70.28).
+    private static WithdrawalLocationFacts There(string id, string side = "russian", bool concealed = false, bool hidden = false, bool dummy = false, bool captured = false,
+        bool equipment = false) => new(id, side, captured, concealed, hidden, dummy, equipment);
+
+    private static readonly string[] ConcealedPair = ["r1", "r2"];
+    private static readonly string[] SecondOfPair = ["r2"];
+    private static readonly string[] HiddenCrewAndGun = ["rc", "rg"];
+    private static readonly string[] DummyOnly = ["rd"];
+    private static readonly string[] FirstCrew = ["rc"];
+    private static readonly string[] GunOnly = ["rg"];
+    private static readonly string[] FirstOnly = ["r1"];
+    private static readonly int[] ThreeFive = [3, 5];
+    private static readonly int[] FourFour = [4, 4];
+    private static readonly string[] Lmg = ["g-lmg"];
+    private static readonly string[] LmgAndMmg = ["g-lmg", "g-mmg"];
+    private static readonly string[] CrewsGun = ["r-gun"];
+
+    [Fact]
+    public void AWithdrawalIsBarredOnlyByAKnownEnemyAndMeetsWhatIsThere()
+    {
+        // A11.21 (p. 73): "The Location withdrawn to cannot be currently occupied by a Known enemy unit"; a "?" or a hidden unit does not bar it.
+        Assert.True(ScenarioA1CloseCombatRules.WithdrawalDestination(true, true, false, false, false));
+        Assert.False(ScenarioA1CloseCombatRules.WithdrawalDestination(true, true, false, false, true));
+
+        // "If a unit withdraws into a concealed enemy's (not Dummy) Location it is eliminated automatically but an enemy unit(s) in that Location
+        // (determined by Random Selection) must forfeit its concealment"; Dummies beside real units are not named and stay.
+        var concealed = ScenarioA1Withdrawal.Entry([There("r1", concealed: true), There("r2", concealed: true), There("rd", concealed: true, dummy: true)], "german");
+        Assert.Equal((true, 0, 0), (concealed.Eliminated, concealed.Placed.Count, concealed.DummiesRemoved.Count));
+        Assert.Equal(ConcealedPair, concealed.Selection);
+
+        // The p. 74 example: a HIP AT Gun and crew in G4 "are placed on board unconcealed (11.21) and the 2-4-7 is eliminated".
+        var hidden = ScenarioA1Withdrawal.Entry([There("rc", hidden: true), There("rg", hidden: true, equipment: true)], "german");
+        Assert.Equal((true, 0), (hidden.Eliminated, hidden.Selection.Count));
+        Assert.Equal(HiddenCrewAndGun, hidden.Placed);
+
+        // "(If one had been a dummy stack, it would be removed now.)": Dummies alone are removed and the Location entered.
+        var dummies = ScenarioA1Withdrawal.Entry([There("rd", concealed: true, dummy: true)], "german");
+        Assert.False(dummies.Eliminated);
+        Assert.Equal(DummyOnly, dummies.DummiesRemoved);
+
+        // A Gun under its crew's "?" is placed unconcealed with the reveal, never selected itself.
+        var gunUnderQuestionMark = ScenarioA1Withdrawal.Entry([There("rc", concealed: true), There("rg", concealed: true, equipment: true)], "german");
+        Assert.Equal(FirstCrew, gunUnderQuestionMark.Selection);
+        Assert.Equal(GunOnly, gunUnderQuestionMark.Placed);
+
+        // Friends, prisoners, and an empty Location meet nothing; a hidden Gun alone holds no enemy unit.
+        Assert.Same(WithdrawalEntryVerdict.None, ScenarioA1Withdrawal.Entry([There("g9", "german", concealed: true), There("rp", captured: true, concealed: true)], "german"));
+        Assert.False(ScenarioA1Withdrawal.Entry([There("rg", hidden: true, equipment: true)], "german").Eliminated);
+
+        // A.9's Random Selection: the highest dr, ties all; one concealed unit needs no dr.
+        Assert.Equal(SecondOfPair, ScenarioA1Withdrawal.Revealed(ConcealedPair, ThreeFive));
+        Assert.Equal(ConcealedPair, ScenarioA1Withdrawal.Revealed(ConcealedPair, FourFour));
+        Assert.Equal(FirstOnly, ScenarioA1Withdrawal.Revealed(FirstOnly, null));
+        Assert.False(ScenarioA1Withdrawal.SelectionRolled(1));
+        Assert.Throws<ArgumentException>(() => ScenarioA1Withdrawal.Revealed(ConcealedPair, null));
+    }
+
+    [Fact]
+    public void AUnitAboveItsIpcWithdrawsByDroppingItsOwnSw()
+    {
+        // A11.21 (ruling R70.26): "may carry only <= its IPC"; the SW it drops stay unpossessed in the Location, and are its own.
+        Assert.Null(ScenarioA1Withdrawal.ForeignDrop(Lmg, _ => true));
+        Assert.Equal("g-mmg", ScenarioA1Withdrawal.ForeignDrop(LmgAndMmg, weapon => weapon == "g-lmg"));
+        Assert.StartsWith("play.cc-withdrawal-drop: g-mmg is not a SW possessed by a unit that withdraws", ScenarioA1CloseCombatRules.DropBarText("g-mmg"), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1CloseCombatRules.WithdrawalPortageBar("g1", false));
+        Assert.Equal("play.cc-withdrawal-portage: g1 carries more than its IPC, so it withdraws only by dropping SW down to its IPC, which stay unpossessed in its Location (A11.21, A4.43)",
+            ScenarioA1CloseCombatRules.WithdrawalPortageBar("g1", true));
+        Assert.Equal("play.cc-withdrawal-drop: g-lmg is dropped, unpossessed in the Location, if its unit withdraws (A11.21, A4.43; ruling R70.26)", ScenarioA1Withdrawal.DropsText(Lmg));
+    }
+
+    private static readonly ScenarioA1CloseCombatReference CloseCombat = new ScenarioA1CloseCombatPackage().Reference;
+
+    private static CloseCombatUnit CcUnit(string id, string definition, string side) => new(id, definition, side, false, false, false, false, false, false, false, false, false, false, false);
+
+    private static CloseCombatFacts CcRound(CloseCombatUnit[] units, CloseCombatDeclaration[] attacks, int[] dice, IReadOnlyDictionary<string, int>? weaponLoss = null) =>
+        new("CCPh", "bd03:D10:0", "open-ground", "german", CloseCombatFacts.Simultaneous, null, units, [], [], attacks,
+            new CloseCombatRolls(new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal) { ["0"] = dice }) { WeaponLoss = weaponLoss });
+
+    private static readonly int[] ColoredOne = [1, 2];
+    private static readonly int[] ColoredTwo = [2, 1];
+
+    [Fact]
+    public void AGunsCrewFightsInCcWithItsInherentFpAndItsGunIsLostOnAColoredOneAndTheKillNumber()
+    {
+        // A1.123 (p. 44) and A11.13 (p. 72; ruling R70.27): the crew that mans a Gun is a CC unit with its inherent FP, the Gun never used in CC; "Each
+        // Gun/SW counter possessed by a unit eliminated in CC may also be eliminated if the Original colored dr of that CC DR is a 1 ... if this dr is <=
+        // the black Kill Number".
+        // A German HS (2 FP) attacks the Russian crew (2 FP, its inherent FP) at 1-1, Kill Number 5: an Original 3 eliminates it.
+        CloseCombatUnit[] units = [CcUnit("g1", "attacker-half-squad", "german"), CcUnit("rc", "defender-crew", "russian") with { Manning = true, Guns = CrewsGun }];
+        CloseCombatDeclaration[] attacks = [new(["g1"], ["rc"])];
+        Assert.Empty(ScenarioA1CloseCombatCalculator.Precheck(CcRound(units, attacks, ColoredOne), CloseCombat));
+        Assert.Equal(["asl.a1.cc.roll-missing:weaponLoss:r-gun"], ScenarioA1CloseCombatCalculator.Resolve(CcRound(units, attacks, ColoredOne), CloseCombat).Reasons);
+        var lost = ScenarioA1CloseCombatCalculator.Resolve(CcRound(units, attacks, ColoredOne, new Dictionary<string, int> { ["r-gun"] = 5 }), CloseCombat);
+        Assert.Equal(("1-1", 5, 2m), (lost.Attacks[0].Odds, lost.Attacks[0].KillNumber, lost.Attacks[0].DefenseFirepower));
+        Assert.Equal(("r-gun", "rc", true), (Assert.Single(lost.WeaponEffects).EquipmentId, lost.WeaponEffects[0].HolderId, lost.WeaponEffects[0].Eliminated));
+        var kept = ScenarioA1CloseCombatCalculator.Resolve(CcRound(units, attacks, ColoredOne, new Dictionary<string, int> { ["r-gun"] = 6 }), CloseCombat);
+        Assert.False(Assert.Single(kept.WeaponEffects).Eliminated);
+
+        // A colored dr other than 1 rolls nothing for the Gun; a record made before the pass lists no Guns and rolls none either.
+        Assert.Empty(ScenarioA1CloseCombatCalculator.Resolve(CcRound(units, attacks, ColoredTwo), CloseCombat).WeaponEffects);
+        Assert.Empty(ScenarioA1CloseCombatCalculator.Resolve(CcRound([units[0], units[1] with { Guns = null }], attacks, ColoredOne), CloseCombat).WeaponEffects);
+    }
+
+    [Fact]
+    public void ACarrierHalfSquadRecombinesWithNoLeader()
+    {
+        // A1.32 (p. 45): "Finns, Guards, Carrier HS and unarmed HS do not need leader presence to Recombine"; D6.82 (p. 206): Carrier HS "need not pass a
+        // TC nor have a leader present". A Carrier HS is a HS whose creation recorded its Carrier (ruling R70.28).
+        Assert.True(ScenarioA1CarrierRules.CarrierHalfSquad(true, "gb-carrier"));
+        Assert.False(ScenarioA1CarrierRules.CarrierHalfSquad(true, null));
+        Assert.False(ScenarioA1CarrierRules.CarrierHalfSquad(false, "gb-carrier"));
+        Assert.True(ScenarioA1SupportWeaponRules.NeedsNoLeader(false, false, true));
+        Assert.False(ScenarioA1SupportWeaponRules.NeedsNoLeader(false, false));
+        Assert.True(ScenarioA1CarrierRules.RecordsCarrier("asl:half-squad"));
+        Assert.False(ScenarioA1CarrierRules.RecordsCarrier("asl:vehicle-crew"));
     }
 }

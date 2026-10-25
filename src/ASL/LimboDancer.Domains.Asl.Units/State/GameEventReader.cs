@@ -1083,6 +1083,9 @@ public static class GameEventReader
             {
                 Group = fields.OptionalString(item, "group", path),
                 ArmorLeader = armorLeader,
+
+                // Pass 70 (ruling R70.28): the Carrier a Carrier HS left.
+                CrewOf = fields.OptionalString(item, "crewOf", path),
             };
     }
 

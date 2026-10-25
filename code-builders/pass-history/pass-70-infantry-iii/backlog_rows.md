@@ -26,6 +26,10 @@ Each row: what is left, where it came from, the rule and page, the pass it goes 
 - Fanaticism by SSR for units created after setup (reinforcements, Deployment) | 3d | A10.8, p. 69 | Backlog | Only units placed through setup are made Fanatic.
 - A12.151's "or any other Infantry unit which legally ends its MPh" in the Bypassed Location revealing the "?" there | 3f | A12.151, p. 78 | Backlog | Only a broken or pinned mover of the latest step reveals them.
 - A forced back's record line reads "moves from [F5] to [F5]" | 3f (older than the pass) | A12.15 | For the reviews' fixes | As stated.
+- A concealed Gun in a withdrawal's destination joins the Random Selection | 3h | A11.21, p. 73 | Backlog | It is never selected and is revealed whenever the withdrawers are eliminated.
+- An Ambush Withdrawal that drops SW above the IPC offered on the page | 3h | A11.21 | Backlog | Built in the planner; the page offers only withdrawals that drop nothing.
+- D6.82's Carrier squads Deploying to mount with no leader or TC | 3h | D6.82, p. 206 | Backlog | Not built.
+- An A18.12 leader created by an infiltrating MMC that is eliminated on entry | 3h | A18.12, A11.22 | Backlog | The leader is still placed at the destination.
 - The Records tab's list leaves out the LLMC line (the Latest line has it) | 3b, Studio check | A10.2 | For the reviews' fixes | As stated.
 
 ## From 3e

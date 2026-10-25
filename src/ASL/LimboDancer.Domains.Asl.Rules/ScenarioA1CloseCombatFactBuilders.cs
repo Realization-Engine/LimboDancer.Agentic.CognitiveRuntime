@@ -21,11 +21,12 @@ public static class ScenarioA1CloseCombatFactBuilders
 
     /// <summary>
     /// A unit of a CC Location as the package reads it (rulings R14.3, R14.5, R14.8): concealed or hidden counts as concealed, TI, Unarmed, and CX are set
-    /// only when true, a prisoner's Guard is its custodian, and its SW are the possessed ones (none when it has none).
+    /// only when true, a prisoner's Guard is its custodian, its SW are the possessed ones (none when it has none), and its Guns the ones it mans (A11.13;
+    /// pass 70, ruling R70.27; none when it mans none).
     /// </summary>
     public static CloseCombatUnit Unit(string id, string definition, string side, bool broken, bool pinned, bool wounded, bool disrupted, bool berserk, bool fanatic, bool heroic,
         bool concealed, bool hidden, bool captured, bool advanced, bool melee, string? stackedWith, string? withdrawingTo, bool cx, bool ti, bool unarmed, string? custodian,
-        string? infiltrateTo, IReadOnlyList<string> weapons, bool manning = false)
+        string? infiltrateTo, IReadOnlyList<string> weapons, bool manning = false, IReadOnlyList<string>? guns = null)
     {
         ArgumentNullException.ThrowIfNull(weapons);
         return new CloseCombatUnit(id, definition, side, broken, pinned, wounded, disrupted, berserk, fanatic, heroic, concealed || hidden, captured, advanced, melee)
@@ -39,6 +40,7 @@ public static class ScenarioA1CloseCombatFactBuilders
             GuardId = captured ? custodian : null,
             InfiltrateTo = infiltrateTo,
             Weapons = weapons.Count > 0 ? weapons : null,
+            Guns = guns is { Count: > 0 } ? guns : null,
         };
     }
 

@@ -1329,8 +1329,16 @@ public sealed class PlayRecords
                     });
                     var lost = resolution.WeaponEffects.Where(weapon => weapon.Eliminated).Select(weapon => $"{weapon.EquipmentId} lost (dr {weapon.Dr}, A11.13)");
                     var ended = resolution.Effects.Where(effect => effect.BerserkEnded == true).Select(effect => $"{effect.UnitId} is no longer berserk (A15.46)");
-                    var withdrew = resolution.Effects.Where(effect => effect.WithdrewTo is not null).Select(effect => $"{effect.UnitId} withdraws to {effect.WithdrewTo} (A11.2)")
-                        .Concat(resolution.Effects.Where(effect => effect.InfiltratedTo is not null).Select(effect => $"{effect.UnitId} infiltrates to {effect.InfiltratedTo} (A11.22)"))
+                    // A11.21 (pass 70, ruling R70.26): a unit that withdrew into a concealed or hidden enemy's Location was eliminated by the round's own events.
+                    var enteredAndLost = resolution.Effects.Any(effect => effect.WithdrewTo is not null || effect.InfiltratedTo is not null)
+                        ? events.Where(other => other.Payload is InstanceEliminated && other.Causes.Contains(item.EventId)).Select(other => ((InstanceEliminated)other.Payload).Id)
+                            .ToHashSet(StringComparer.Ordinal)
+                        : [];
+                    string Went(string unitId, string went, string to, string rule) => enteredAndLost.Contains(unitId)
+                        ? $"{unitId} {went} to {to}, which holds a concealed or hidden enemy unit, and is eliminated (A11.21)"
+                        : $"{unitId} {went} to {to} ({rule})";
+                    var withdrew = resolution.Effects.Where(effect => effect.WithdrewTo is not null).Select(effect => Went(effect.UnitId, "withdraws", effect.WithdrewTo!, "A11.2"))
+                        .Concat(resolution.Effects.Where(effect => effect.InfiltratedTo is not null).Select(effect => Went(effect.UnitId, "infiltrates", effect.InfiltratedTo!, "A11.22")))
                         .Concat(resolution.Effects.Where(effect => effect.Captured == true).Select(effect => effect.GuardId is { } guard
                             ? $"{effect.UnitId}{(effect.CapturedHalf == true ? " gives up one HS, which" : "")} is captured and guarded by {guard} (A20.22)"
                             : $"{effect.UnitId} is captured but no one can guard it, so it is freed as Unarmed (A20.5)"))
@@ -1459,7 +1467,8 @@ public sealed class PlayRecords
         var before = history.At(combat.Revision - 1);
         var lost = resolution.WeaponEffects.Where(weapon => weapon.Eliminated).Select(weapon => weapon.EquipmentId).ToHashSet(StringComparer.Ordinal);
         return before is null ? []
-            : before.Equipment.Where(weapon => weapon.Status == InstanceStatus.Active && weapon.Holding is { Role: HoldingRole.Possessed } holding
+            // Pass 70 (ruling R70.27): a Gun its eliminated crew manned is left too, unless A11.13 eliminated it.
+            : before.Equipment.Where(weapon => weapon.Status == InstanceStatus.Active && weapon.Holding is { Role: HoldingRole.Possessed or HoldingRole.Manned } holding
                 && eliminated.Contains(holding.Holder) && !lost.Contains(weapon.Id)).Select(weapon => weapon.Id).Order(StringComparer.Ordinal);
     }
 

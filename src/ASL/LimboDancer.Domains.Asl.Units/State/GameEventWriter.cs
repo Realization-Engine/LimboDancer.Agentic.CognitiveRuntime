@@ -1234,6 +1234,12 @@ public static class GameEventWriter
             writer.WriteEndObject();
         }
 
+        // Pass 70 (ruling R70.28): the Carrier a Carrier HS left.
+        if (instance.CrewOf is { } crewOf)
+        {
+            writer.WriteString("crewOf", crewOf);
+        }
+
         writer.WriteEndObject();
     }
 

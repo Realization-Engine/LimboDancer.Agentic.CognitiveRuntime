@@ -288,4 +288,63 @@ public sealed class PlayPagePass70Tests : IDisposable
             Assert.Contains(lines, line => line.Contains("de-1 Searches from", StringComparison.Ordinal) && line.Contains("1 concealed enemy unit loses its \"?\" (A12.152)", StringComparison.Ordinal));
         }
     }
+
+    private static Dictionary<string, object> Held(string id, string definition, string holder) => new()
+    {
+        ["id"] = id,
+        ["kind"] = "asl:mg",
+        ["definition"] = definition,
+        ["side"] = "german",
+        ["holding"] = new
+        {
+            holder,
+            role = "possessed"
+        },
+        ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+    };
+
+    [Fact]
+    public async Task TheCcPanelOffersADropAboveTheIpcWithdrawalsTheSideMayKnowOfAndAGunsCrewHexFirst()
+    {
+        // Increment 3h (A11.21; rulings R70.26, R70.27): in the German CCPh the 4-6-7 in Melee in the fifth column carries an MMG and an LMG, above its IPC;
+        // the panel offers each to drop, and its withdrawal to the "?" in the fourth column (a "?" does not bar it) but not to the Known Russian squad in the
+        // sixth. The Russian Gun's crew in its Location is a target in the attack builder, named hex first.
+        var crew = Squad("ru-gc", "defender-crew", WideBoards.At(5), "russian");
+        crew["kind"] = "asl:crew";
+        var melee = Squad("de-1", "attacker-squad", WideBoards.At(5), "german");
+        ((Dictionary<string, bool>)melee["conditions"])["asl:melee"] = true;
+        await Start(crew, new Dictionary<string, object>
+        {
+            ["id"] = "ru-gun",
+            ["kind"] = "asl:gun",
+            ["definition"] = "defender-at-gun",
+            ["side"] = "russian",
+            ["position"] = new Dictionary<string, string> { ["at"] = WideBoards.At(5), ["facing"] = "west" },
+            ["holding"] = new
+            {
+                holder = "ru-gc",
+                role = "manned"
+            },
+            ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+        }, melee, Held("de-mmg", "attacker-mmg", "de-1"), Held("de-lmg", "attacker-lmg", "de-1"), Concealed(Squad("ru-c", "defender-squad", WideBoards.At(4), "russian")),
+            Squad("ru-k", "defender-squad", WideBoards.At(6), "russian"));
+        for (var phase = 0; phase < 6; phase++)
+        {
+            await Do(GameActions.AdvancePhase, new
+            {
+            });
+        }
+
+        Assert.Equal("ccph", live.History(Game)!.Current!.Phase);
+        var page = Open("german");
+        page.Find("#cc-location").Change(WideBoards.At(5));
+        Assert.Equal(2, page.FindAll(".cc-drop[data-unit='de-1']").Count);
+        string?[] destinations = [.. page.FindAll(".cc-withdraw[data-unit='de-1'] option").Select(option => option.GetAttribute("value"))];
+        Assert.Contains(WideBoards.At(4), destinations);
+        Assert.DoesNotContain(WideBoards.At(6), destinations);
+        var target = page.Find(".cc-defender[data-unit='ru-gc']");
+        Assert.StartsWith(DisplayText.Place(1, WideBoards.At(5)) + ": ", target.ParentElement!.TextContent.Trim(), StringComparison.Ordinal);
+        page.Find(".cc-drop[data-weapon='de-mmg']").Change(true);
+        Assert.True(page.Find(".cc-drop[data-weapon='de-mmg']").HasAttribute("checked"));
+    }
 }

@@ -445,6 +445,7 @@ public static class GameActions
             "stacking": { "type": "object", "additionalProperties": { "type": "string" } },
             "withdrawals": { "type": "object", "additionalProperties": { "type": "string" } },
             "infiltrations": { "type": "object", "additionalProperties": { "type": "string" } },
+            "drops": { "type": "array", "items": { "type": "string" } },
             "round": { "type": "string" }, "handToHand": { "type": "boolean" }
           }
         }
@@ -462,7 +463,8 @@ public static class GameActions
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
-            "location": { "type": "string" }, "unitIds": { "type": "array", "items": { "type": "string" } }, "to": { "type": "string" }
+            "location": { "type": "string" }, "unitIds": { "type": "array", "items": { "type": "string" } }, "to": { "type": "string" },
+            "drops": { "type": "array", "items": { "type": "string" } }
           }
         }
         """);

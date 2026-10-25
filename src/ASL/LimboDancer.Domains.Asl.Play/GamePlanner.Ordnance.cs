@@ -1494,6 +1494,9 @@ public sealed partial class GamePlanner
             new MapPosition(position.Location), null, conditions)
         {
             ArmorLeader = armorLeader,
+
+            // Pass 70 (ruling R70.28): a Carrier's inherent HS records the Carrier it left, so it Recombines as a Carrier HS (A1.32, D6.82).
+            CrewOf = ScenarioA1CarrierRules.RecordsCarrier(crew.Kind) ? vehicle.Id : null,
         });
     }
 

@@ -176,9 +176,17 @@ public static class ScenarioA1Sight
     /// A12.16 (p. 79; ruling R70.18): after play begins an enemy stack not concealed may be inspected, unless it is out of the LOS of every Good Order
     /// ground unit of the viewing side. Before play none is (A2.9; the view reads that itself). The seers are read only after setup closes.
     /// </summary>
-    public static bool Inspectable(bool setupClosed, Func<bool> anySeerInLos)
+    public static bool Inspectable(bool setupClosed, Func<bool> anySeerInLos) => Inspectable(setupClosed, false, anySeerInLos);
+
+    /// <summary>
+    /// Ruling R70.40: a stack is inspected too by any unit of the viewing side in its own Location, whatever its state (held in Melee, broken, pinned),
+    /// since CC cannot be played without knowing the units there (A11.12, p. 72: "any unit or combination of units in the same Location"; A11.14, A11.19:
+    /// even a concealed unit shows its strength before the declarations). The seers are then not read. A "?" is never inspected; the caller leaves
+    /// concealed and hidden units out of the stack.
+    /// </summary>
+    public static bool Inspectable(bool setupClosed, bool ownUnitThere, Func<bool> anySeerInLos)
     {
         ArgumentNullException.ThrowIfNull(anySeerInLos);
-        return setupClosed && anySeerInLos();
+        return setupClosed && (ownUnitThere || anySeerInLos());
     }
 }

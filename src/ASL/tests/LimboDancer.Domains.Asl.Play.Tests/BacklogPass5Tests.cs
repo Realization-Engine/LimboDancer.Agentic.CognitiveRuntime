@@ -694,8 +694,8 @@ public sealed class BacklogPass5Tests : IDisposable
     [Fact]
     public async Task AUnitCarryingMoreThanItsIpcMayNotWithdrawAndABerserkUnitLosesItsCx()
     {
-        // g5 carries the MMG and the LMG, 5PP, in Melee in A2; a withdrawal carries no more than its IPC, and dropping a SW is not built (A11.21,
-        // A4.43; R5.5). The CX g6 goes berserk and loses its CX counter (A15.42; R5.3).
+        // g5 carries the MMG and the LMG, 5PP, in Melee in A2; a withdrawal carries no more than its IPC (A11.21, A4.43; R5.5), so it withdraws only by
+        // dropping SW (pass 70, ruling R70.26). The CX g6 goes berserk and loses its CX counter (A15.42; R5.3).
         await Setup("german", 7, Squad("g5", "bd01:A3:0", "german"), Weapon("gm", "attacker-mmg", "g5", "german"),
             Weapon("gl", "attacker-lmg", "g5", "german"), Squad("r2", "bd01:A2:0", "russian"), Squad("g6", "bd01:J9:0", "german", Conditions.Cx));
         await Advance(6);
@@ -721,7 +721,8 @@ public sealed class BacklogPass5Tests : IDisposable
             attacks = new[] { new { attackers = R2, defenders = G5 } },
             withdrawals = new Dictionary<string, string> { ["g5"] = "bd01:A3:0" },
         }), "play.cc-withdrawal-portage");
-        Assert.Empty(Planner().WithdrawalDestinations(Current, Current.Unit("g5")!, At("bd01:A2:0")));
+        Assert.Empty(Planner().WithdrawalDestinations(Current, Current.Unit("g5")!, At("bd01:A2:0"), []));
+        Assert.NotEmpty(Planner().WithdrawalDestinations(Current, Current.Unit("g5")!, At("bd01:A2:0")));
         Assert.False(Planner().MustWithdraw(Current, Current.Unit("g5")!));
 
         var events = store.Read(Scope)!.Events;

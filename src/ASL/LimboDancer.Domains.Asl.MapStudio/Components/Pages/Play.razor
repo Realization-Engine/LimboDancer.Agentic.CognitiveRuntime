@@ -848,6 +848,7 @@ else if (state is not null)
                         Infiltrators="@Infiltrators" Infiltrations="@ccInfiltrations" Attacks="@ccAttacks" OnLocation="@ChooseCloseCombatLocation" OnRound="@ChooseRound"
                         OnHandToHand="@(on => ccHandToHand = on)" OnProposeAmbush="@ProposeAmbush" OnAmbushWithdraw="@(item => ProposeAmbushWithdrawal(item.Units, item.To))"
                         OnStacking="@(pick => SetStacking(pick.Unit, pick.Value))" OnWithdrawal="@(pick => SetWithdrawal(pick.Unit, pick.To))"
+                        Dropped="@ccDrops" OnDrop="@(pick => Toggle(ccDrops, pick.Id, pick.On))"
                         OnAttacker="@(pick => ToggleAttacker(pick.Id, pick.On))" OnDefender="@(pick => ToggleDefender(pick.Id, pick.On))" MayRemove="@MayRemoveAttack" OnDirector="@(id => ccDirector = id)"
                         OnCapture="@(on => ccCapture = on)" OnGuard="@(id => ccGuard = id)" OnYield="@(text => ccYield = text)" OnAddAttack="@AddAttack"
                         OnInfiltration="@(pick => SetInfiltration(pick.Unit, pick.To))" OnRemoveAttack="@(attack => ccAttacks.Remove(attack))" OnPropose="@ProposeCloseCombat" />
@@ -4319,6 +4320,9 @@ else if (state is not null)
     private readonly Dictionary<string, string> ccInfiltrations = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> ccStacking = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> ccWithdrawals = new(StringComparer.Ordinal);
+
+    // A11.21 (pass 70, ruling R70.26): the SW the view's units above their IPC drop to withdraw or infiltrate.
+    private readonly HashSet<string> ccDrops = new(StringComparer.Ordinal);
     private readonly List<CloseCombatPanel.DeclaredAttack> ccAttacks = [];
 
     /// <summary>
@@ -4389,13 +4393,27 @@ else if (state is not null)
         return Value("asl:firepower") is { } firepower && Value("asl:range") is { } range && Value("asl:morale") is { } level ? $"{firepower}-{range}-{level}" : null;
     }
 
-    /// <summary>The units held in Melee in the CC Location that may withdraw (A11.2: not pinned, berserk, Disrupted, or a prisoner), with their destinations.</summary>
+    /// <summary>
+    /// The units held in Melee in the CC Location that may withdraw (A11.2: not pinned, berserk, Disrupted, or a prisoner), with their destinations: no
+    /// Location of a Known enemy unit, as the planner reads it from what the side may know (pass 70, ruling R70.26), after the SW ticked to drop.
+    /// </summary>
     private IEnumerable<(UnitInstance Unit, IReadOnlyList<BoardLocation> Destinations)> WithdrawalUnits => state is null || ccLocation.Length == 0
         || !BoardLocation.TryParse(ccLocation, out var at) || CloseCombatEntry is not null
         ? []
         : CloseCombatUnits.Where(unit => GameState.Condition(unit, Conditions.Melee) == ConditionState.True
                 && !new[] { Conditions.Pinned, Conditions.Berserk, Conditions.Disrupted, Conditions.Captured }.Any(name => GameState.Condition(unit, name) == ConditionState.True))
-            .Select(unit => (unit, Live.Planner.WithdrawalDestinations(state, unit, at))).Where(item => item.Item2.Count > 0);
+            .Select(unit => (unit, Live.Planner.WithdrawalDestinations(state, unit, at, DropsTicked(unit)))).Where(item => item.Item2.Count > 0);
+
+    /// <summary>The SW of a unit ticked to drop, or null when none is, for the planner's reading of a unit above its IPC (A11.21; ruling R70.26).</summary>
+    private IReadOnlyCollection<string>? DropsTicked(UnitInstance unit) =>
+        state is not null && GamePlanner.PossessedSw(state, unit).Where(ccDrops.Contains).ToArray() is { Length: > 0 } ticked ? ticked : null;
+
+    /// <summary>
+    /// The SW a unit above its IPC may drop to withdraw or infiltrate (A11.21; pass 70, ruling R70.26), each named with its hex first; none for a unit
+    /// within its IPC.
+    /// </summary>
+    private IReadOnlyList<PlayChoice> DropChoices(UnitInstance unit) => state is null || !Live.Planner.Laden(state, unit, []) ? []
+        : [.. GamePlanner.PossessedSw(state, unit).Select(id => new PlayChoice(id, $"{PlaceOf(ccLocation)}: {id}"))];
 
     /// <summary>The leaders who may direct the attack being declared: attackers, Good Order, not pinned or berserk (A11.141, A7.831).</summary>
     private IEnumerable<UnitInstance> CloseCombatDirectors => CloseCombatUnits.Where(unit => unit.Kind == "asl:leader" && ccAttackers.Contains(unit.Id)
@@ -4572,7 +4590,8 @@ else if (state is not null)
     private IReadOnlyList<AmbushWithdrawalActions.Withdrawal>? AmbushWithdrawals => state is not null && CloseCombatEntry is { Ambusher: { } ambushing } withdrawing
         && (withdrawing.Rounds.Count == 0 || withdrawing.Closed) && (Viewer.IsAdjudicator || viewAs == ambushing) && BoardLocation.TryParse(ccLocation, out var ambushAt)
         ? [.. CloseCombatUnits.Where(unit => unit.Side == ambushing && GameState.Condition(unit, Conditions.Captured) != ConditionState.True)
-            .SelectMany(unit => Live.Planner.WithdrawalDestinations(state, unit, ambushAt).Select(to => new AmbushWithdrawalActions.Withdrawal(unit.Id, to.ToString())))]
+            // Pass 70 (ruling R70.26): with no SW dropped, as this list offers none to drop; a unit above its IPC withdraws in a CC round instead.
+            .SelectMany(unit => Live.Planner.WithdrawalDestinations(state, unit, ambushAt, []).Select(to => new AmbushWithdrawalActions.Withdrawal(unit.Id, to.ToString())))]
         : null;
 
     /// <summary>The SMC the view may declare stacking for (plan C04; ruling R23.1), each with the MMC of its side in the Location.</summary>
@@ -4610,15 +4629,19 @@ else if (state is not null)
 
     /// <summary>The units that may withdraw from Melee (plan C05), as a player reads them, with whether each must try.</summary>
     private IReadOnlyList<CloseCombatWithdrawals.Withdrawer> Withdrawers => [.. WithdrawalUnits.Select(item => new CloseCombatWithdrawals.Withdrawer(item.Unit.Id, UnitLabel(item.Unit),
-        Live.Planner.MustWithdraw(state!, item.Unit), [.. item.Destinations.Select(to => to.ToString())]))];
+        Live.Planner.MustWithdraw(state!, item.Unit), [.. item.Destinations.Select(to => to.ToString())])
+    {
+        Drops = DropChoices(item.Unit),
+    })];
 
     /// <summary>The sides the view may declare attacks for (plan C06; ruling R23.1), each with its units and the other sides' units.</summary>
+    // Pass 70 (the hex UI rule; ruling R70.27): each unit hex first, "[D10]: 2-2-8 crew R1", a Gun's crew among them.
     private IReadOnlyList<CloseCombatAttackBuilder.DeclaringSide> DeclaringSides => [.. CloseCombatSides.Where(side => Viewer.IsAdjudicator || viewAs == side)
         .Select(side => new CloseCombatAttackBuilder.DeclaringSide(side, side == state!.PhasingSide,
             [.. CloseCombatUnits.Where(unit => unit.Side == side && Prisoner(unit) == (ccRound == CloseCombatResolved.PrisonersRound) && !Declared(unit, attacking: true))
-                .Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, UnitLabel(unit), IsBroken(unit)))],
+                .Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, $"{PlaceOf(ccLocation)}: {UnitLabel(unit)}", IsBroken(unit)))],
             [.. CloseCombatUnits.Where(unit => unit.Side != side && !Prisoner(unit) && !Declared(unit, attacking: false))
-                .Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, UnitLabel(unit), IsBroken(unit)))]))];
+                .Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, $"{PlaceOf(ccLocation)}: {UnitLabel(unit)}", IsBroken(unit)))]))];
 
     /// <summary>
     /// The units the view may declare an infiltration for (plan N08; A11.22): not berserk or Disrupted, with somewhere to go. Read only while attacks
@@ -4627,7 +4650,10 @@ else if (state is not null)
     private IReadOnlyList<CloseCombatInfiltrationChoices.Infiltrator>? Infiltrators => state is not null && !AmbushDue && BoardLocation.TryParse(ccLocation, out var at)
         ? [.. CloseCombatUnits.Where(unit => (Viewer.IsAdjudicator || viewAs == unit.Side) && !Prisoner(unit)
                 && GameState.Condition(unit, Conditions.Berserk) != ConditionState.True && GameState.Condition(unit, Conditions.Disrupted) != ConditionState.True)
-            .Select(unit => new CloseCombatInfiltrationChoices.Infiltrator(unit.Id, [.. Live.Planner.WithdrawalDestinations(state, unit, at).Select(to => to.ToString())]))
+            .Select(unit => new CloseCombatInfiltrationChoices.Infiltrator(unit.Id, [.. Live.Planner.WithdrawalDestinations(state, unit, at, DropsTicked(unit)).Select(to => to.ToString())])
+            {
+                Drops = DropChoices(unit),
+            })
             .Where(item => item.Destinations.Count > 0)]
         : null;
 
@@ -4680,6 +4706,7 @@ else if (state is not null)
         ccRound = string.Empty;
         ccStacking.Clear();
         ccWithdrawals.Clear();
+        ccDrops.Clear();
         ccAttacks.Clear();
         ccInfiltrations.Clear();
         ccHandToHand = false;
@@ -4724,7 +4751,10 @@ else if (state is not null)
 
         Live.Declarations.Declare(gameId, new CloseCombatSideDeclaration(viewAs, ccLocation, history.Events.Count, ccRound, [.. ccAttacks],
             new Dictionary<string, string>(ccStacking, StringComparer.Ordinal), new Dictionary<string, string>(ccWithdrawals, StringComparer.Ordinal),
-            new Dictionary<string, string>(ccInfiltrations, StringComparer.Ordinal), ccHandToHand));
+            new Dictionary<string, string>(ccInfiltrations, StringComparer.Ordinal), ccHandToHand)
+        {
+            Drops = [.. ccDrops.Order(StringComparer.Ordinal)],
+        });
         status = $"The {DisplayText.Side(first)} side has declared its CC attacks in {PlaceOf(ccLocation)}; the {DisplayText.Side(second)} side declares its own next (A11.11).";
         ChangeView(second);
     }
@@ -4760,11 +4790,15 @@ else if (state is not null)
         }
 
         string[] declared = kept is null ? [.. CloseCombatSides] : [kept.Side, viewAs];
-        return ProposeCloseCombat(attacks, stacking, withdrawals, infiltrations, kept?.HandToHand ?? ccHandToHand, kept?.Round ?? ccRound, declared);
+
+        // A11.21 (ruling R70.26): the SW dropped by the units that withdraw or infiltrate, of both declarations.
+        string[] dropped = [.. ccDrops.Concat(kept?.Drops ?? []).Distinct(StringComparer.Ordinal).Where(weapon => state?.Find(weapon) is EquipmentInstance { Holding: { } holder }
+            && (withdrawals.ContainsKey(holder.Holder) || infiltrations.ContainsKey(holder.Holder))).Order(StringComparer.Ordinal)];
+        return ProposeCloseCombat(attacks, stacking, withdrawals, infiltrations, kept?.HandToHand ?? ccHandToHand, kept?.Round ?? ccRound, declared, dropped);
     }
 
     private Task ProposeCloseCombat(IReadOnlyList<CloseCombatPanel.DeclaredAttack> declaredAttacks, Dictionary<string, string> stacking, Dictionary<string, string> withdrawals,
-        Dictionary<string, string> infiltrations, bool handToHand, string round, string[] declaredSides) => Propose(GameActions.CloseCombat, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        Dictionary<string, string> infiltrations, bool handToHand, string round, string[] declaredSides, string[]? dropped = null) => Propose(GameActions.CloseCombat, JsonSerializer.SerializeToElement(new Dictionary<string, object>
     {
         ["gameId"] = gameId,
         ["attemptId"] = Attempt("cc"),
@@ -4799,6 +4833,9 @@ else if (state is not null)
         ["stacking"] = stacking,
         ["withdrawals"] = withdrawals,
         ["infiltrations"] = infiltrations,
+
+        // A11.21 (pass 70, ruling R70.26): the SW the units that withdraw drop; an empty list drops none.
+        ["drops"] = dropped ?? [],
         ["handToHand"] = handToHand,
         ["round"] = round,
     }));

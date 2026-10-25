@@ -1096,6 +1096,9 @@ public sealed class BacklogPass65Tests : IDisposable
         var unit = Current.Unit(halfSquad.Id)!;
         Assert.Equal(("asl:half-squad", "british-half-squad", Target, (string?)null), (unit.Kind, unit.Definition!.Definition, Current.Location(unit.Id)!.Location.ToString(),
             Current.Aboard(unit.Id)));
+
+        // Pass 70 (ruling R70.28): its creation records the Carrier it left, so it Recombines as a Carrier HS (A1.32, D6.82).
+        Assert.Equal(("uk-bren", "uk-bren"), (halfSquad.CrewOf, unit.CrewOf));
         var bren = Current.Unit("uk-bren")!;
         Assert.Equal((ConditionState.True, false), (GameState.Condition(bren, Conditions.Abandoned), GamePlanner.CrewMayUnload(Current, bren)));
         Assert.Equal((3, 1), (Planner().VictoryPoints(Current, bren), Planner().VictoryPoints(Current, unit)));
@@ -1849,9 +1852,9 @@ public sealed class BacklogPass65Tests : IDisposable
     private static readonly string[] VehicleCrewOnly = ["de-c"];
 
     [Fact]
-    public async Task AnAdvanceOntoAGunsCrewIsStillRefused()
+    public async Task AnAdvanceOntoAGunsCrewIsAllowedSincePass70()
     {
-        // C11 (ruling R24.3): CC with a Gun's crew is not reviewed, so the advance into its Location is refused.
+        // C11 (ruling R24.3) refused the advance into a Gun's crew's Location; pass 70 (ruling R70.27) lifts it: the crew fights in CC as Infantry (A1.123).
         await Setup("russian", "german", 1943, 7, "asl-scenario-a1@1.18.0",
             [.. Gun("de-gun", "attacker-inf-gun", "de-gc", "asl:crew", "attacker-crew", Target, "german", "east"), Unit("ru-s", "asl:squad", "defender-squad", Behind, "russian")]);
         for (var step = 0; step < 10 && Current.Phase != "aph"; step++)
@@ -1859,11 +1862,12 @@ public sealed class BacklogPass65Tests : IDisposable
             await Advance();
         }
 
-        Refused(await Do(GameActions.Advance, NoRoll(), new
+        Committed(await Do(GameActions.Advance, NoRoll(), new
         {
             unitIds = RussianSquadAtB9,
             to = Target,
-        }), "play.advance-crew");
+        }));
+        NoReplayErrors();
     }
 
     [Fact]

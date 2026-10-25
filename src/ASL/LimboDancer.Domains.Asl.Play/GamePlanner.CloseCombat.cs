@@ -191,11 +191,8 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, unarmedBar);
         }
 
-        // A Gun's crew in CC, and the Gun it mans, are not reviewed (ruling R24.3); a crew that mans no Gun is advanced against (pass 65, ruling R65.29).
-        if (ScenarioA1AdvanceCalculator.CrewBar(enemies.Any(unit => GunCrew(state, unit))) is { } crewBar)
-        {
-            return Refused(scope, label, expected, crewBar);
-        }
+        // Pass 70 (ruling R70.27): a Gun's crew is advanced against, as a crew that mans no Gun is (pass 65, ruling R65.29), and fights in CC with its
+        // inherent FP (A1.123); the Gun is never used in CC (A11.13).
 
         // A19.12 (ruling R14.11): a Disrupted unit there, not in Melee, surrenders to the Good Order armed Known units advancing in, unless No Quarter.
         // E1.54 (backlog pass 16, ruling R16.6): at night a unit surrenders only in CC.
@@ -291,8 +288,8 @@ public sealed partial class GamePlanner
     /// Whether an advance into a Location of this half MF cost is into Difficult Terrain for the unit (A4.72): at least four MF, or all of its
     /// non-Double Time allotment after portage, whichever is less. Null when the allotment is not decided or none is left after portage.
     /// </summary>
-    private bool? DifficultAdvance(GameState state, UnitInstance unit, int halfMf, bool aided = false, bool lent = false) =>
-        ScenarioA1AdvanceCalculator.DifficultAdvance(MfAllotment(state, unit, 0, Is(unit, Conditions.Cx), aided ? 2 : 0, lent ? 1 : 0), halfMf);
+    private bool? DifficultAdvance(GameState state, UnitInstance unit, int halfMf, bool aided = false, bool lent = false, IReadOnlyCollection<string>? dropped = null) =>
+        ScenarioA1AdvanceCalculator.DifficultAdvance(MfAllotment(state, unit, 0, Is(unit, Conditions.Cx), aided ? 2 : 0, lent ? 1 : 0, dropped: dropped), halfMf);
 
     /// <summary>The Ambush drs of a CC Location (A11.4): one dr for each side, the ATTACKER's first, resolved by the Close Combat package.</summary>
     private GamePlan PlanAmbush(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor)
@@ -475,16 +472,26 @@ public sealed partial class GamePlanner
         // A11.2, A11.21: a unit held in Melee may withdraw to an ADJACENT Location it could advance into that holds no Known enemy unit;
         // A11.16: a broken unit held in Melee that can withdraw must attempt it, unless Disrupted or a Guard.
         var withdrawals = Map(arguments, "withdrawals") ?? new Dictionary<string, string>(StringComparer.Ordinal);
+        var infiltrations = Map(arguments, "infiltrations") ?? new Dictionary<string, string>(StringComparer.Ordinal);
+
+        // A11.21, A4.43 (pass 70, ruling R70.26): a unit above its IPC withdraws, or infiltrates, by dropping SW, which stay unpossessed in the Location.
+        var (drops, dropBar) = WithdrawalDrops(state, arguments, withdrawals.Keys.Concat(infiltrations.Keys));
+        if (dropBar is not null)
+        {
+            return Refused(scope, label, expected, dropBar);
+        }
+
+        IReadOnlyCollection<string> DropsOf(string unitId) => drops.GetValueOrDefault(unitId) ?? [];
         foreach (var (unitId, destination) in withdrawals)
         {
-            // A11.21, A4.43 (ruling R5.5): a withdrawing unit carries no more than its IPC; dropping the SW beyond it is not built.
-            if (ScenarioA1CloseCombatRules.WithdrawalPortageBar(unitId, state.Unit(unitId) is { Status: InstanceStatus.Active } laden && Laden(state, laden)) is { } portageBar)
+            // A11.21, A4.43 (ruling R5.5): a withdrawing unit carries no more than its IPC, after the SW it drops.
+            if (ScenarioA1CloseCombatRules.WithdrawalPortageBar(unitId, state.Unit(unitId) is { Status: InstanceStatus.Active } laden && Laden(state, laden, DropsOf(unitId))) is { } portageBar)
             {
                 return Refused(scope, label, expected, portageBar);
             }
 
             if (ScenarioA1CloseCombatRules.WithdrawalBar(unitId, state.Unit(unitId) is { Status: InstanceStatus.Active } unit && state.Location(unit.Id)?.Location == location && Is(unit, Conditions.Melee)
-                && BoardLocation.TryParse(destination, out var to) && WithdrawalDestinations(state, unit, location).Contains(to)) is { } withdrawalBar)
+                && BoardLocation.TryParse(destination, out var to) && WithdrawalDestinations(state, unit, location, DropsOf(unitId)).Contains(to)) is { } withdrawalBar)
             {
                 return Refused(scope, label, expected, withdrawalBar);
             }
@@ -497,20 +504,24 @@ public sealed partial class GamePlanner
         }
 
         // A11.21, A4.72 (ruling R5.5): a withdrawal an advance could make only by becoming CX makes the unit CX.
-        var tiring = withdrawals.Where(item => state.Unit(item.Key) is { } unit && WithdrawalTires(state, unit, location, BoardLocation.Parse(item.Value)))
+        var tiring = withdrawals.Where(item => state.Unit(item.Key) is { } unit && WithdrawalTires(state, unit, location, BoardLocation.Parse(item.Value), DropsOf(item.Key)))
             .Select(item => item.Key).ToHashSet(StringComparer.Ordinal);
         // A11.22 (ruling R14.8): each Infiltration destination is one a withdrawal could reach.
-        var infiltrations = Map(arguments, "infiltrations") ?? new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (unitId, destination) in infiltrations)
         {
+            if (ScenarioA1CloseCombatRules.WithdrawalPortageBar(unitId, state.Unit(unitId) is { Status: InstanceStatus.Active } laden && Laden(state, laden, DropsOf(unitId))) is { } portageBar)
+            {
+                return Refused(scope, label, expected, portageBar);
+            }
+
             if (ScenarioA1CloseCombatRules.InfiltrationBar(unitId, state.Unit(unitId) is { Status: InstanceStatus.Active } unit && state.Location(unit.Id)?.Location == location
-                && BoardLocation.TryParse(destination, out var to) && WithdrawalDestinations(state, unit, location).Contains(to)) is { } infiltrationBar)
+                && BoardLocation.TryParse(destination, out var to) && WithdrawalDestinations(state, unit, location, DropsOf(unitId)).Contains(to)) is { } infiltrationBar)
             {
                 return Refused(scope, label, expected, infiltrationBar);
             }
         }
 
-        tiring.UnionWith(infiltrations.Where(item => state.Unit(item.Key) is { } unit && WithdrawalTires(state, unit, location, BoardLocation.Parse(item.Value)))
+        tiring.UnionWith(infiltrations.Where(item => state.Unit(item.Key) is { } unit && WithdrawalTires(state, unit, location, BoardLocation.Parse(item.Value), DropsOf(item.Key)))
             .Select(item => item.Key));
 
         // J2.31 (ruling R14.1): Hand-to-Hand is declared only where an SSR allows it, with the Location's first round.
@@ -592,10 +603,14 @@ public sealed partial class GamePlanner
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "close-combat-resolved",
                 new CloseCombatResolved(location, facts.Round!, [.. attacks.SelectMany(item => item.Attackers!)], [.. attacks.SelectMany(item => item.Defenders!)], rollIds,
                     JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json)), package, null));
-            foreach (var (type, payload) in CloseCombatEffects(state, location, resolution, attemptId, tiring))
+            // A11.21 (pass 70, ruling R70.26): what each surviving withdrawer or infiltrator meets where it goes, read from the state before the round.
+            var entries = WithdrawalEntries(state, resolution.Effects.Select(item => (item.UnitId, ScenarioA1PrisonerCalculator.MovesAfterRound(item.WithdrewTo, item.InfiltratedTo, item.RearmedAs))));
+            foreach (var (type, payload) in CloseCombatEffects(state, location, resolution, attemptId, tiring, entries, drops))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [recordId]));
             }
+
+            AddWithdrawalReveals(scope, attemptId, expected, actor, events, entries, draw, package);
 
             // A4.152 (ruling R27.3): an SMC that survives the OVR's CC and the units that OVR it are held in Melee, to fight again in the CCPh.
             if (overrun && Replay([.. existing, .. events]).Current is { } after)
@@ -614,7 +629,9 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [ScenarioA1CloseCombatRules.RoundSummary(facts, location.ToString(), ScenarioA1CloseCombatRules.DescribedAttacks(attacks))])
+        string[] dropping = [.. drops.Values.SelectMany(item => item).Order(StringComparer.Ordinal)];
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [ScenarioA1CloseCombatRules.RoundSummary(facts, location.ToString(), ScenarioA1CloseCombatRules.DescribedAttacks(attacks)),
+            .. dropping.Length > 0 ? [ScenarioA1Withdrawal.DropsText(dropping)] : Array.Empty<string>()])
         {
             Roll = new PlannedRoll("cc", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -630,14 +647,44 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The Locations a unit held in Melee may withdraw to (A11.21): ADJACENT Locations at ground level an advance could enter, in terrain
-    /// the movement review admits, across any hexside but a cliff and at any level, holding no enemy unit other than a prisoner (a
-    /// concealed one is not reviewed). A withdrawal an advance could make only by becoming CX makes the unit CX, and an already CX unit may
-    /// not make it (A4.72; ruling R5.5).
+    /// the movement review admits, across any hexside but a cliff and at any level, holding no Known enemy unit (pass 70, ruling R70.26: a "?" or a
+    /// hidden unit there does not bar it, which is all the withdrawing side may know of it). A withdrawal an advance could make only by becoming CX makes
+    /// the unit CX, and an already CX unit may not make it (A4.72; ruling R5.5). <paramref name="dropped"/> names the SW the unit drops to withdraw; with
+    /// none named, a unit above its IPC is read as dropping all it possesses, the most it could (ruling R70.26), and any other as dropping none. A unit
+    /// still above its IPC has none.
     /// </summary>
-    public IReadOnlyList<BoardLocation> WithdrawalDestinations(GameState state, UnitInstance unit, BoardLocation from) => Laden(state, unit) ? []
-        : [.. Neighbors(state, from).Where(to => PlayableBar(state, to) is null && InfantryStep(state, from, to).Entry is { } entry
-            && ScenarioA1CloseCombatRules.WithdrawalDestination(true, !entry.AllMf, entry.AllMf ? null : DifficultAdvance(state, unit, entry.HalfMf), Is(unit, Conditions.Cx),
-                !entry.AllMf && state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured))))];
+    public IReadOnlyList<BoardLocation> WithdrawalDestinations(GameState state, UnitInstance unit, BoardLocation from, IReadOnlyCollection<string>? dropped = null)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        IReadOnlyCollection<string> drops = dropped ?? (Laden(state, unit) ? PossessedSw(state, unit) : Array.Empty<string>());
+        if (Laden(state, unit, drops))
+        {
+            return [];
+        }
+
+        var index = MemoOf(state).Objects(state);
+        return [.. Neighbors(state, from).Where(to => PlayableBar(state, to) is null && InfantryStep(state, from, to).Entry is { } entry
+            && ScenarioA1CloseCombatRules.WithdrawalDestination(true, !entry.AllMf, entry.AllMf ? null : DifficultAdvance(state, unit, entry.HalfMf, dropped: drops), Is(unit, Conditions.Cx),
+                !entry.AllMf && index.At(to).OfType<UnitInstance>().Any(other => other.Side != unit.Side && KnownEnemy(other))))];
+    }
+
+    /// <summary>The SW a unit possesses, by id in order (A4.4), which a withdrawal may drop (A11.21; ruling R70.26).</summary>
+    public static IReadOnlyList<string> PossessedSw(GameState state, UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        return [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
+            .Select(item => item.Id).Order(StringComparer.Ordinal)];
+    }
+
+    /// <summary>Whether a unit carries more PP than its IPC (A4.42) after dropping SW, as a withdrawal may (A11.21; ruling R70.26).</summary>
+    public bool Laden(GameState state, UnitInstance unit, IReadOnlyCollection<string> dropped)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        return ScenarioA1MovementCalculator.Laden(vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded), Is(unit, Conditions.Cx), Portage(state, unit, dropped));
+    }
 
     /// <summary>Whether a unit carries more PP than its IPC (A4.42): three for a MMC, one for a SMC, none for a wounded SMC, one less while CX.</summary>
     /// <summary>
@@ -653,8 +700,9 @@ public sealed partial class GamePlanner
         ScenarioA1MovementCalculator.Laden(vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded), Is(unit, Conditions.Cx), Portage(state, unit));
 
     /// <summary>Whether a withdrawal to a Location makes the unit CX (A11.21, A4.72; ruling R5.5).</summary>
-    private bool WithdrawalTires(GameState state, UnitInstance unit, BoardLocation from, BoardLocation to) =>
-        InfantryStep(state, from, to).Entry is { } entry && ScenarioA1CloseCombatRules.WithdrawalTires(!entry.AllMf, entry.AllMf ? null : DifficultAdvance(state, unit, entry.HalfMf));
+    private bool WithdrawalTires(GameState state, UnitInstance unit, BoardLocation from, BoardLocation to, IReadOnlyCollection<string>? dropped = null) =>
+        InfantryStep(state, from, to).Entry is { } entry
+        && ScenarioA1CloseCombatRules.WithdrawalTires(!entry.AllMf, entry.AllMf ? null : DifficultAdvance(state, unit, entry.HalfMf, dropped: dropped));
 
     /// <summary>A11.16: a broken unit held in Melee, not Disrupted and not a Guard, must attempt to withdraw when it can.</summary>
     private bool MustWithdraw(GameState state, UnitInstance unit, BoardLocation at) =>
@@ -684,10 +732,10 @@ public sealed partial class GamePlanner
 
             var here = active.Where(unit => state.Location(unit.Id)!.Location == location).ToArray();
 
-            // CC with a Gun's crew (ruling R24.3) is not reviewed, so it cannot be required; a Location holding a vehicle has its sequential CC (A11.31).
-            // Rules picks the unit (pass 32.g).
+            // A Location holding a vehicle has its sequential CC (A11.31); a Gun's crew is fought as Infantry since pass 70 (ruling R70.27). Rules picks the
+            // unit (pass 32.g).
             if (ScenarioA1CloseCombatRules.RequiredUnit([.. here.Select(unit => new RequiredCcUnitFacts(unit.Id, unit.Side, Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), Is(unit, Conditions.Broken),
-                KnownEnemy(unit), state.Advances.Any(item => item.Unit == unit.Id && item.To == location), GunCrew(state, unit), LiveFire.IsVehicle(unit)))])
+                KnownEnemy(unit), state.Advances.Any(item => item.Unit == unit.Id && item.To == location), LiveFire.IsVehicle(unit)))])
                 is not { } required || here.First(item => item.Id == required.Id) is not { } unit)
             {
                 continue;
@@ -842,25 +890,22 @@ public sealed partial class GamePlanner
     private static bool Mans(GameState state, UnitInstance unit) =>
         state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Manned } holding && holding.Holder == unit.Id);
 
-    /// <summary>Whether a unit is a Gun's crew, whose CC is not reviewed (ruling R24.3); a crew that mans no Gun is ordinary Infantry (pass 65, ruling R65.29).</summary>
-    private bool GunCrew(GameState state, UnitInstance unit) => ScenarioA1CloseCombatRules.GunCrew(vocabulary.IsA(unit.Kind, "asl:crew"), () => Mans(state, unit));
-
     /// <summary>A Guard: a unit with an active prisoner (A20.5).</summary>
     private static bool IsGuard(GameState state, UnitInstance unit) =>
         state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id);
 
     /// <summary>
-    /// Why a berserk unit may not step into a Location (A15.431, A15.432): it holds a Gun's crew, whose CC is not built (backlog). A charge at a vehicle
-    /// enters its Location for the sequential CC there (ruling R27.2). Null when the step is allowed.
+    /// Why a berserk unit may not step into a Location (A15.431, A15.432): it holds an enemy vehicle with enemy Infantry. A charge at a vehicle enters its
+    /// Location for the sequential CC there (ruling R27.2), and one at a Gun's crew for CC with it (pass 70, ruling R70.27). Null when the step is allowed.
     /// </summary>
-    private string? ChargeBarred(GameState state, string side, BoardLocation to)
+    private static string? ChargeBarred(GameState state, string side, BoardLocation to)
     {
         var there = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
         var enemies = there.Where(unit => unit.Side != side).ToArray();
 
-        // Ruling R10.15: a charge into concealed units reveals them, one into prisoners enters, and one onto a lone SMC is an Infantry OVR; a Gun's
-        // crew in CC stays unreviewed (ruling R24.3). Table player, pass 27: CC between Infantry in a Location holding a vehicle is not built (R11.16).
-        return ScenarioA1CloseCombatRules.ChargeBarred(enemies.Any(unit => GunCrew(state, unit)), enemies.Any(LiveFire.IsVehicle), enemies.Any(unit => !LiveFire.IsVehicle(unit)), to.ToString());
+        // Ruling R10.15: a charge into concealed units reveals them, one into prisoners enters, and one onto a lone SMC is an Infantry OVR. Table player,
+        // pass 27: CC between Infantry in a Location holding a vehicle is not built (R11.16).
+        return ScenarioA1CloseCombatRules.ChargeBarred(enemies.Any(LiveFire.IsVehicle), enemies.Any(unit => !LiveFire.IsVehicle(unit)), to.ToString());
     }
 
     /// <summary>A map of unit ids in the arguments, such as each SMC's MMC or each withdrawing unit's destination.</summary>
@@ -888,7 +933,8 @@ public sealed partial class GamePlanner
     /// Reductions to HS, the wounds, the end of berserk status, and each SW lost.
     /// </summary>
     private static IEnumerable<(string Type, EventPayload Payload)> CloseCombatEffects(GameState state, BoardLocation location, CloseCombatResolution resolution,
-        string attemptId, HashSet<string> tiring)
+        string attemptId, HashSet<string> tiring, IReadOnlyDictionary<string, WithdrawalEntryVerdict>? entries = null,
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? drops = null)
     {
         foreach (var leader in resolution.CreatedLeaders)
         {
@@ -990,10 +1036,29 @@ public sealed partial class GamePlanner
             yield return ("instance-eliminated", new InstanceEliminated(weapon.EquipmentId));
         }
 
+        // A11.21 (pass 70, ruling R70.26): the enemy Dummies alone in a Location withdrawn into are removed before the units enter it.
+        foreach (var dummy in (entries?.Values ?? []).SelectMany(item => item.DummiesRemoved))
+        {
+            yield return ("instance-eliminated", new InstanceEliminated(dummy));
+        }
+
         // A11.2: a withdrawing unit neither eliminated nor Reduced leaves the Melee for the Location it declared, CX when the withdrawal needs it
         // (A11.21, A4.72; ruling R5.5); A11.22 (ruling R14.8): so does an infiltrating unit.
         foreach (var (effect, moved) in resolution.Effects.Select(item => (item, ScenarioA1PrisonerCalculator.MovesAfterRound(item.WithdrewTo, item.InfiltratedTo, item.RearmedAs))).Where(pair => pair.Item2 is not null))
         {
+            // A11.21 (ruling R70.26): one that withdraws into a concealed or hidden enemy's Location is eliminated automatically.
+            if (entries?.GetValueOrDefault(moved!) is { Eliminated: true })
+            {
+                yield return ("instance-eliminated", new InstanceEliminated(effect.UnitId));
+                continue;
+            }
+
+            // A11.21, A4.43 (ruling R70.26): the SW it drops to withdraw stay unpossessed in the Location it leaves.
+            foreach (var weapon in drops?.GetValueOrDefault(effect.UnitId) ?? [])
+            {
+                yield return ("equipment-transferred", new EquipmentTransferred(weapon, null, new MapPosition(location)));
+            }
+
             yield return ("instance-moved", new InstanceMoved(effect.UnitId, new MapPosition(BoardLocation.Parse(moved!))));
             if (tiring.Contains(effect.UnitId))
             {
@@ -1292,16 +1357,14 @@ public sealed partial class GamePlanner
         private readonly GamePlanner planner;
         private readonly GameState state;
         private readonly UnitInstance[] movers;
-        private readonly Func<UnitInstance, bool> crew;
         private readonly List<BoardLocation> locations = [];
         private readonly Dictionary<BoardLocation, int> indexes = [];
 
-        public ChargeScan(GamePlanner planner, GameState state, UnitInstance[] movers, Func<UnitInstance, bool> crew)
+        public ChargeScan(GamePlanner planner, GameState state, UnitInstance[] movers)
         {
             this.planner = planner;
             this.state = state;
             this.movers = movers;
-            this.crew = crew;
         }
 
         /// <summary>The index of a Location in the table, added when it is new.</summary>
@@ -1356,7 +1419,7 @@ public sealed partial class GamePlanner
         public ChargeOccupantFacts Occupants(int location)
         {
             var enemies = planner.ObjectsAt(state, locations[location]).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side).ToArray();
-            return new ChargeOccupantFacts(enemies.Any(crew), enemies.Any(LiveFire.IsVehicle), enemies.Any(unit => !LiveFire.IsVehicle(unit)));
+            return new ChargeOccupantFacts(enemies.Any(LiveFire.IsVehicle), enemies.Any(unit => !LiveFire.IsVehicle(unit)));
         }
     }
 
@@ -1438,10 +1501,8 @@ public sealed partial class GamePlanner
     {
         Interlocked.Increment(ref chargeSearches);
         var side = movers[0].Side;
-        // Pass 65 (ruling R65.29): only a Gun's crew bars a charge; who mans a Gun is read once for the search.
-        var gunners = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Manned })
-            .Select(item => item.Holding!.Holder).ToHashSet(StringComparer.Ordinal);
-        var scan = new ChargeScan(this, state, movers, unit => ScenarioA1CloseCombatRules.GunCrew(vocabulary.IsA(unit.Kind, "asl:crew"), () => gunners.Contains(unit.Id)));
+        // Pass 70 (ruling R70.27): a Gun's crew no longer bars a charge, so who mans a Gun is not read.
+        var scan = new ChargeScan(this, state, movers);
 
         // Table player, pass 27: an Abandoned vehicle is no unit to charge.
         int[] enemies = [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && ScenarioA1ChargeCalculator.ChargeTarget(KnownEnemy(unit), LiveFire.IsVehicle(unit), Is(unit, Conditions.Abandoned)))

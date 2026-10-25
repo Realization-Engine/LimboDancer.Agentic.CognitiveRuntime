@@ -161,12 +161,13 @@ public sealed class ScenarioA1CloseCombatRulesTests
     }
 
     [Fact]
-    public void AStepIntoACrewsLocationLeavesTheChargeUndecided()
+    public void AStepIntoAVehicleAndInfantryLocationLeavesTheChargeUndecided()
     {
-        var row = new Row().Holding(1, new ChargeOccupantFacts(true, false, false));
+        // Pass 70 (ruling R70.27): a Gun's crew no longer bars the step; an enemy vehicle with enemy Infantry still does (R11.16).
+        var row = new Row().Holding(1, new ChargeOccupantFacts(true, true));
         var (steps, _, undecided) = ScenarioA1ChargeCalculator.Steps(row, 0, [1], null, () => new ChargeNodeFacts(0, null, null));
         Assert.Empty(steps);
-        Assert.StartsWith("play.berserk-crew: a charge into bd01:B1:0", undecided, StringComparison.Ordinal);
+        Assert.StartsWith("play.berserk-vehicle: a charge into bd01:B1:0", undecided, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -222,12 +223,12 @@ public sealed class ScenarioA1CloseCombatRulesTests
     {
         RequiredCcUnitFacts[] here =
         [
-            new("g1", "german", false, true, false, true, true, false, false),
-            new("r1", "russian", true, true, false, true, false, false, false),
+            new("g1", "german", false, true, false, true, true, false),
+            new("r1", "russian", true, true, false, true, false, false),
         ];
         Assert.Equal(("r1", true), ScenarioA1CloseCombatRules.RequiredUnit(here)!.Value);
         Assert.Equal(("g1", false), ScenarioA1CloseCombatRules.RequiredUnit([here[0], here[1] with { Berserk = false }])!.Value);
-        Assert.Null(ScenarioA1CloseCombatRules.RequiredUnit([here[0], here[1] with { Berserk = false, Crew = true }]));
+        Assert.Null(ScenarioA1CloseCombatRules.RequiredUnit([here[0], here[1] with { Berserk = false, Vehicle = true }]));
         Assert.Null(ScenarioA1CloseCombatRules.RequiredUnit([here[0] with { Melee = false }, here[1] with { Berserk = false, Melee = false }]));
     }
 
@@ -239,8 +240,8 @@ public sealed class ScenarioA1CloseCombatRulesTests
         Assert.Equal("bd01:A1:0: the Ambush drs (A11.4)", ScenarioA1CloseCombatRules.DueAmbushLine("bd01:A1:0", null));
         Assert.True(ScenarioA1CloseCombatRules.NothingLeft(true, 1, false));
         Assert.False(ScenarioA1CloseCombatRules.NothingLeft(true, 0, false));
-        Assert.Null(ScenarioA1CloseCombatRules.ChargeBarred(false, true, false, "bd01:A1:0"));
-        Assert.StartsWith("play.berserk-vehicle", ScenarioA1CloseCombatRules.ChargeBarred(false, true, true, "bd01:A1:0"), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1CloseCombatRules.ChargeBarred(true, false, "bd01:A1:0"));
+        Assert.StartsWith("play.berserk-vehicle", ScenarioA1CloseCombatRules.ChargeBarred(true, true, "bd01:A1:0"), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -287,8 +288,8 @@ public sealed class ScenarioA1CloseCombatRulesTests
     {
         VehicleCcUnitFacts[] here =
         [
-            new("g1", "german", false, false, true, true, false, false, true, false),
-            new("t1", "russian", true, true, false, false, false, false, true, false),
+            new("g1", "german", false, false, true, true, false, false, true),
+            new("t1", "russian", true, true, false, false, false, false, true),
         ];
         Assert.Equal(["german", "russian"], ScenarioA1VehicleCloseCombatRules.SidesWithAttacks(here, [], []).Order(StringComparer.Ordinal));
         Assert.Equal(["russian"], ScenarioA1VehicleCloseCombatRules.SidesWithAttacks(here, ["g1"], []));

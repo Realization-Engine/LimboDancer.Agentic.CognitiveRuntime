@@ -806,11 +806,11 @@ public sealed class BacklogPass70Tests : IDisposable
     private static readonly string[] GunAndCrew = ["de-gun", "de-gc"];
     private static readonly string[] GermanOnly = ["german"];
 
-    private static Dictionary<string, object> Dummy(string id, string hex) => new()
+    private static Dictionary<string, object> Dummy(string id, string hex, string side = "german") => new()
     {
         ["id"] = id,
         ["kind"] = UnitKinds.Dummy,
-        ["side"] = "german",
+        ["side"] = side,
         ["position"] = new
         {
             at = L(hex)
@@ -1293,5 +1293,219 @@ public sealed class BacklogPass70Tests : IDisposable
         var building = ((BuildingMoppedUp)mopped.Payload).Building;
         Assert.DoesNotContain(':', building);
         Assert.Contains(building, history.At(mopped.Revision)!.MoppedUpThisPlayerTurn);
+    }
+
+    // Increment 3h (task 70.6): Withdrawal completed (A11.21; ruling R70.26), a Gun's crew in CC (A11.13, A1.123; ruling R70.27), and a Carrier HS
+    // (A1.32, D6.82; ruling R70.28).
+    private static readonly string[] AdvancingGermans = ["de-1", "de-2"];
+    private static readonly string[] RussianCrew = ["ru-gc"];
+    private static readonly string[] CarrierHalfSquads = ["h1", "h2"];
+    private static readonly string[] OrdinaryHalfSquads = ["h3", "h4"];
+    private static readonly string[] DroppedMmg = ["de-mmg"];
+
+    private static Dictionary<string, object> Sw(string id, string definition, string holder) => new()
+    {
+        ["id"] = id,
+        ["kind"] = "asl:mg",
+        ["definition"] = definition,
+        ["side"] = "german",
+        ["holding"] = new
+        {
+            holder,
+            role = "possessed"
+        },
+        ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+    };
+
+    /// <summary>A Russian 45mm AT Gun manned by its crew, both in plain sight.</summary>
+    private static Dictionary<string, object>[] RussianGun(string hex) =>
+    [
+        Unit("ru-gc", "asl:crew", "defender-crew", hex, "russian"),
+        new()
+        {
+            ["id"] = "ru-gun",
+            ["kind"] = "asl:gun",
+            ["definition"] = "defender-at-gun",
+            ["side"] = "russian",
+            ["position"] = new Dictionary<string, string> { ["at"] = L(hex), ["facing"] = "west" },
+            ["holding"] = new
+            {
+                holder = "ru-gc",
+                role = "manned"
+            },
+            ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+        },
+    ];
+
+    private async Task<PlayResult> Withdraw(DiceRoller roller, string unit, string to, string[]? drops = null) => await Do(GameActions.CloseCombat, roller, new
+    {
+        location = L("E5"),
+        attacks = Array.Empty<object>(),
+        withdrawals = new Dictionary<string, string> { [unit] = L(to) },
+        drops = drops ?? [],
+    });
+
+    [Fact]
+    public async Task AWithdrawalIntoAConcealedEnemysLocationEliminatesTheWithdrawerAndARandomSelectionLosesItsQuestionMark()
+    {
+        // A11.21 (p. 73; ruling R70.26): "The Location withdrawn to cannot be currently occupied by a Known enemy unit": E6, under two Russian "?", is
+        // offered, E4, with a Known Russian squad, is not. "If a unit withdraws into a concealed enemy's (not Dummy) Location it is eliminated
+        // automatically but an enemy unit(s) in that Location (determined by Random Selection) must forfeit its concealment": drs 3 and 5, ru-3 loses it.
+        // The projector frees a unit placed in Melee alone (KeepMelee), so the enemy is placed first and the withdrawer beside it.
+        await SetupAt(7, "german", Squad("ru-1", "E5", "russian", Conditions.Melee), Squad("de-1", "E5", "german", Conditions.Melee),
+            Squad("ru-2", "E6", "russian", Conditions.Concealed), Squad("ru-3", "E6", "russian", Conditions.Concealed), Squad("ru-4", "E4", "russian"));
+        Assert.Equal("ccph", Current.Phase);
+        var destinations = Planner().WithdrawalDestinations(Current, Current.Unit("de-1")!, BoardLocation.Parse(L("E5")));
+        Assert.Contains(BoardLocation.Parse(L("E6")), destinations);
+        Assert.DoesNotContain(BoardLocation.Parse(L("E4")), destinations);
+        var before = Revision;
+        Committed(await Withdraw(Once(3, 5), "de-1", "E6"));
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("de-1")!.Status);
+        Assert.True(Is(Current.Unit("ru-2")!, Conditions.Concealed));
+        Assert.False(Is(Current.Unit("ru-3")!, Conditions.Concealed));
+        var roll = Assert.Single(Since(before).Select(item => item.Payload).OfType<DiceRolled>());
+        Assert.Equal(("random-selection", 2), (roll.Purpose, roll.Count));
+        Assert.Contains(Since(before), item => item.Type == "concealment-lost" && item.Visibility is null);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AWithdrawalIntoAHiddenGunsLocationPlacesTheGunAndItsCrewUnconcealed()
+    {
+        // The p. 74 example: "there is a HIP Russian AT Gun and crew in G4 ... The Gun and crew are placed on board unconcealed (11.21) and the 2-4-7 is
+        // eliminated." Here the Russian squad withdraws from E5 into E6, where a German Gun and crew are hidden (out of its LOS, so A12.34 leaves them
+        // hidden); the Russian's list offers E6, which tells him nothing of them.
+        blocked.Add(("E5", "E6"));
+        await SetupAt(7, "german", [Squad("de-1", "E5", "german", Conditions.Melee), Squad("ru-1", "E5", "russian", Conditions.Melee), .. HiddenGun("E6")]);
+        Assert.True(Is(Current.Unit("de-gc")!, Conditions.Hidden));
+        Assert.Contains(BoardLocation.Parse(L("E6")), Planner().WithdrawalDestinations(Current, Current.Unit("ru-1")!, BoardLocation.Parse(L("E5"))));
+        Committed(await Withdraw(NoRoll(), "ru-1", "E6"));
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("ru-1")!.Status);
+        var crew = Current.Unit("de-gc")!;
+        var gun = Current.Find("de-gun")!;
+        Assert.Equal((false, false, false, false), (Is(crew, Conditions.Hidden), Is(crew, Conditions.Concealed), Is(gun, Conditions.Hidden), Is(gun, Conditions.Concealed)));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AUnitAboveItsIpcWithdrawsByDroppingItsMmgAndAWithdrawalRemovesTheDummiesItEnters()
+    {
+        // A11.21 (ruling R70.26): de-1 carries an MMG (4PP) and an LMG (1PP), above its IPC of three: it withdraws only by dropping SW, the MMG here, which
+        // stays unpossessed in E5. E6 holds a Russian Dummy alone, which is removed ("If one had been a dummy stack, it would be removed now", p. 74).
+        await SetupAt(7, "german", Squad("ru-1", "E5", "russian", Conditions.Melee), Squad("de-1", "E5", "german", Conditions.Melee), Sw("de-mmg", "attacker-mmg", "de-1"),
+            Sw("de-lmg", "attacker-lmg", "de-1"), Dummy("ru-d", "E6", "russian"));
+        Assert.Empty(Planner().WithdrawalDestinations(Current, Current.Unit("de-1")!, BoardLocation.Parse(L("E5")), []));
+        var refused = await Withdraw(NoRoll(), "de-1", "E6");
+        Assert.Contains(refused.Reasons, reason => reason.StartsWith("play.cc-withdrawal-portage: de-1 carries more than its IPC, so it withdraws only by dropping SW", StringComparison.Ordinal));
+        var foreign = await Withdraw(NoRoll(), "de-1", "E6", ["ru-none"]);
+        Assert.Contains(foreign.Reasons, reason => reason.StartsWith("play.cc-withdrawal-drop: ru-none is not a SW", StringComparison.Ordinal));
+        var dropped = await Withdraw(NoRoll(), "de-1", "E6", DroppedMmg);
+        Committed(dropped);
+        Assert.Contains(dropped.Reasons, reason => reason.Contains("de-mmg is dropped, unpossessed in the Location, if its unit withdraws", StringComparison.Ordinal));
+        Assert.Equal(L("E6"), Current.Location("de-1")!.Location.ToString());
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("ru-d")!.Status);
+        var mmg = (EquipmentInstance)Current.Find("de-mmg")!;
+        Assert.Equal(((Holding?)null, L("E5")), (mmg.Holding, Current.Location(mmg.Id)!.Location.ToString()));
+        Assert.Equal("de-1", ((EquipmentInstance)Current.Find("de-lmg")!).Holding!.Holder);
+        NoReplayErrors();
+    }
+
+    /// <summary>The German HS in E4 advance onto the Russian Gun's crew in E5 in their APh, and the CCPh begins.</summary>
+    private async Task AdvanceOntoTheGun()
+    {
+        await SetupAt(6, "german", [Squad("de-1", "E4", "german"), Squad("de-2", "E4", "german"), .. RussianGun("E5")]);
+        Assert.Equal("aph", Current.Phase);
+        Committed(await Do(GameActions.Advance, NoRoll(), new
+        {
+            unitIds = AdvancingGermans,
+            to = L("E5"),
+        }));
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        Assert.Equal("ccph", Current.Phase);
+    }
+
+    private async Task<PlayResult> AttackTheCrew(DiceRoller roller) => await Do(GameActions.CloseCombat, roller, new
+    {
+        location = L("E5"),
+        attacks = new[] { new { attackers = AdvancingGermans, defenders = RussianCrew } },
+    });
+
+    [Fact]
+    public async Task AnAdvanceOntoAGunsCrewLeadsToCcAndItsGunIsLostOnAColoredOneAndTheKillNumber()
+    {
+        // Ruling R70.27: the advance is no longer refused; the crew fights with its inherent FP (A1.123), 8 FP against its 2 at 4-1. A colored 1 and a
+        // white 2 eliminate it; A11.13: "The attacker makes a subsequent dr for each Gun/SW possessed by the eliminated unit and if this dr is <= the black
+        // Kill Number of that CC attack, the Gun/SW of the unit is eliminated also": a dr of 3, so the Gun goes too. The record lists the Gun the crew mans.
+        await AdvanceOntoTheGun();
+        var before = Revision;
+        Committed(await AttackTheCrew(Once(1, 2, 3)));
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("ru-gc")!.Status);
+        Assert.Equal(InstanceStatus.Eliminated, ((EquipmentInstance)Current.Find("ru-gun")!).Status);
+        var round = Assert.Single(Since(before).Select(item => item.Payload).OfType<CloseCombatResolved>());
+        var crewFacts = JsonNode.Parse(round.Facts.GetRawText())!["units"]!.AsArray().Single(unit => unit!["unitId"]!.GetValue<string>() == "ru-gc")!;
+        Assert.Equal("ru-gun", Assert.Single(crewFacts["guns"]!.AsArray())!.GetValue<string>());
+        Assert.Contains(Since(before).Select(item => item.Payload).OfType<DiceRolled>(), roll => roll.Purpose == "cc-weapon-loss");
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnOlderCcRecordThatListsNoGunsReplaysAsItDid()
+    {
+        // Ruling R70.27: a CC record made before the pass lists no Guns, so the projector asks none of the state and rolls no Gun loss. The same round on a
+        // colored 2 (no Gun loss), its facts stripped of the Gun, replays with the Gun left unpossessed in E5 (A11.13).
+        await AdvanceOntoTheGun();
+        Committed(await AttackTheCrew(Once(2, 1)));
+        var events = store.Read(Scope)!.Events.ToList();
+        var index = events.FindLastIndex(item => item.Payload is CloseCombatResolved);
+        var combat = (CloseCombatResolved)events[index].Payload;
+        var facts = JsonNode.Parse(combat.Facts.GetRawText())!.AsObject();
+        foreach (var unit in facts["units"]!.AsArray())
+        {
+            unit!.AsObject().Remove("guns");
+        }
+
+        Assert.DoesNotContain("\"guns\"", facts.ToJsonString(), StringComparison.Ordinal);
+        events[index] = events[index] with
+        {
+            Payload = combat with
+            {
+                Facts = JsonSerializer.SerializeToElement(facts)
+            }
+        };
+        var older = Planner().Replay(events);
+        Assert.False(older.HasErrors);
+        var gun = (EquipmentInstance)older.Current!.Find("ru-gun")!;
+        Assert.Equal((InstanceStatus.Active, (Holding?)null), (gun.Status, gun.Holding));
+        Assert.Equal(InstanceStatus.Eliminated, older.Current.Unit("ru-gc")!.Status);
+    }
+
+    [Fact]
+    public async Task CarrierHalfSquadsRecombineWithNoLeaderAndOrdinaryOnesStillNeedOne()
+    {
+        // A1.32 (p. 45): "Finns, Guards, Carrier HS and unarmed HS do not need leader presence to Recombine"; D6.82 (p. 206). Ruling R70.28: a Carrier
+        // HS is one whose creation recorded the Carrier it left ("crewOf"); two ordinary HS beside them still need their leader.
+        static Dictionary<string, object> Carried(Dictionary<string, object> unit)
+        {
+            unit["crewOf"] = "de-carrier";
+            return unit;
+        }
+
+        await SetupAt(0, "german", Carried(Unit("h1", "asl:half-squad", "attacker-half-squad", "C3", "german")), Carried(Unit("h2", "asl:half-squad", "attacker-half-squad", "C3", "german")),
+            Unit("h3", "asl:half-squad", "attacker-half-squad", "D3", "german"), Unit("h4", "asl:half-squad", "attacker-half-squad", "D3", "german"));
+        Assert.Equal("de-carrier", Current.Unit("h1")!.CrewOf);
+        var refused = await Do(GameActions.Recombine, NoRoll(), new
+        {
+            halfSquads = OrdinaryHalfSquads
+        });
+        Assert.Contains(refused.Reasons, reason => reason.StartsWith("play.deploy-leader", StringComparison.Ordinal));
+        Committed(await Do(GameActions.Recombine, NoRoll(), new
+        {
+            halfSquads = CarrierHalfSquads,
+            attemptId = "rec"
+        }));
+        Assert.Equal("asl:squad", Current.Unit("rec-h1")!.Kind);
+        NoReplayErrors();
     }
 }

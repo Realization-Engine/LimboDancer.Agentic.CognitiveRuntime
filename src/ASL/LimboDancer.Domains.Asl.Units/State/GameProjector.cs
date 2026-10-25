@@ -3888,6 +3888,9 @@ public static class GameProjector
 
                 // The record never says he is revealed: a record that carries his modifier or his morale does that (D3.41).
                 ArmorLeader = instance.ArmorLeader is { } assigned ? new ArmorLeader(assigned.Morale, assigned.Leadership) : null,
+
+                // Pass 70 (ruling R70.28): a Carrier HS keeps the Carrier it left, as recorded; absent in an older record.
+                CrewOf = instance.CrewOf,
             };
             return state with
             {

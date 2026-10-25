@@ -53,4 +53,8 @@ public sealed class CloseCombatDeclarations
 /// ATTACKER's Hand-to-Hand (J2.31), made at <see cref="Revision"/> in <see cref="Round"/>.
 /// </summary>
 public sealed record CloseCombatSideDeclaration(string Side, string Location, long Revision, string Round, IReadOnlyList<CloseCombatPanel.DeclaredAttack> Attacks,
-    IReadOnlyDictionary<string, string> Stacking, IReadOnlyDictionary<string, string> Withdrawals, IReadOnlyDictionary<string, string> Infiltrations, bool HandToHand);
+    IReadOnlyDictionary<string, string> Stacking, IReadOnlyDictionary<string, string> Withdrawals, IReadOnlyDictionary<string, string> Infiltrations, bool HandToHand)
+{
+    /// <summary>The SW its units drop to withdraw or infiltrate (A11.21; pass 70, ruling R70.26); none by default.</summary>
+    public IReadOnlyList<string> Drops { get; init; } = [];
+}

@@ -266,9 +266,10 @@ public static class ScenarioA1CloseCombatCalculator
             outside.Add("asl.a1.cc.unit-listed-twice");
         }
 
-        // A1.123 (p. 44; pass 65, ruling R65.29): a crew that mans no Gun fights in CC as an MMC; a Gun's crew stays outside (ruling R24.3).
+        // A1.123 (p. 44; pass 65, ruling R65.29): a crew fights in CC as an MMC with its inherent FP; since pass 70 (ruling R70.27) a Gun's crew too, the
+        // Gun never used in CC (A11.13, p. 72).
         if (units.Any(unit => reference.Definitions.GetValueOrDefault(unit.DefinitionId ?? string.Empty) is not { } definition
-            || !(definition.IsMmc || definition.IsLeader || definition.IsHero || (ScenarioA1Definitions.IsCrew(definition.Kind) && unit.Manning != true))))
+            || !(definition.IsMmc || definition.IsLeader || definition.IsHero || ScenarioA1Definitions.IsCrew(definition.Kind))))
         {
             outside.Add("asl.a1.cc.unit-outside");
             return outside;
@@ -863,13 +864,14 @@ public static class ScenarioA1CloseCombatCalculator
             }
 
             // A11.13: each SW of a unit eliminated in CC is lost too on an Original colored dr of 1 and a dr at most the attack's black Kill Number;
-            // any other stays in the Location unpossessed, as do a captured unit's (A20.24).
+            // any other stays in the Location unpossessed, as do a captured unit's (A20.24). Pass 70 (ruling R70.27): so is each Gun it mans, when the
+            // record lists them.
             var weaponEffects = new List<CloseCombatWeaponEffect>();
             foreach (var attack in arithmetic.Where(item => item.Dice[0] == 1))
             {
                 foreach (var defender in attack.Defending.Where(item => units[item.UnitId].Eliminated))
                 {
-                    foreach (var weapon in units[defender.UnitId].Facts.Weapons ?? [])
+                    foreach (var weapon in (units[defender.UnitId].Facts.Weapons ?? []).Concat(units[defender.UnitId].Facts.Guns ?? []))
                     {
                         if (rolls.WeaponLoss?.TryGetValue(weapon, out var dr) != true)
                         {

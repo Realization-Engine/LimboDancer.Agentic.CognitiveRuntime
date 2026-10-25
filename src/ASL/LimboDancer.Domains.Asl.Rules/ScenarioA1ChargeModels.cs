@@ -12,8 +12,8 @@ public readonly record struct ChargeMoveFacts(int To, string? Lane, int HalfMf);
 /// </summary>
 public sealed record ChargeSearchStep(int Target, int HalfMf, bool Plain, IReadOnlyList<string> Lanes);
 
-/// <summary>What a Location holds that bars a charge into it (rulings R24.3, R11.16): a Gun's crew, an enemy vehicle, enemy Infantry.</summary>
-public readonly record struct ChargeOccupantFacts(bool Crew, bool EnemyVehicle, bool EnemyInfantry);
+/// <summary>What a Location holds that bars a charge into it (ruling R11.16): an enemy vehicle, enemy Infantry. A Gun's crew no longer does (ruling R70.27).</summary>
+public readonly record struct ChargeOccupantFacts(bool EnemyVehicle, bool EnemyInfantry);
 
 /// <summary>
 /// A fact reader for the berserk charge's search (A15.43, A15.431; the pass 32 design, D4): Locations are indexes into the caller's table, hexsides 0 to 5

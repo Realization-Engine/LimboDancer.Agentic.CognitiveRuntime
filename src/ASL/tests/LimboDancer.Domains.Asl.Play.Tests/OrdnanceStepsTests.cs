@@ -294,14 +294,15 @@ public sealed class OrdnanceStepsTests : IDisposable
         };
         Assert.True(Planner().Replay(events).HasErrors);
 
-        // The Russians may not advance into the crew's Location, whose CC is not reviewed (R24.3).
+        // The Russians advance into the crew's Location: since pass 70 (ruling R70.27) a Gun's crew is fought in CC as Infantry (A1.123), where R24.3
+        // refused it before.
         await Advance(13);
         Assert.Equal(("aph", "russian"), (Current.Phase, Current.PhasingSide));
-        Assert.Contains((await Do(GameActions.Advance, NoRoll(), new
+        Committed(await Do(GameActions.Advance, NoRoll(), new
         {
             unitIds = R2,
             to = "bd01:A2:0"
-        })).Reasons, reason => reason.StartsWith("play.advance-crew", StringComparison.Ordinal));
+        }));
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 
@@ -324,22 +325,22 @@ public sealed class OrdnanceStepsTests : IDisposable
     }
 
     [Fact]
-    public async Task ABerserkChargeIntoACrewsLocationEndsInPlace()
+    public async Task ABerserkChargeIntoACrewsLocationLeadsToCc()
     {
-        // A berserk Russian squad next to the German crew and Gun may not charge in (CC with a crew is not reviewed, R24.3), so its charge
-        // ends in place (R30.5) and no CC is required; the game moves on.
+        // A berserk Russian squad next to the German crew and Gun charges in: R24.3 barred it (the charge ended in place, R30.5), and since pass 70
+        // (ruling R70.27) a Gun's crew is fought in CC as Infantry (A1.123), so the charge enters and its CC is required before the CCPh ends (A15.43).
         await Setup("russian", Unit("r1", "asl:squad", "defender-squad", "bd01:A3:0", "russian", "asl:berserk"),
             Unit("de-crew", "asl:crew", "attacker-crew", "bd01:A2:0", "german"), Gun("de-gun", "attacker-inf-gun", "bd01:A2:0", "south-east", "de-crew", "german"));
         await Advance(2);
         Assert.Equal("mph", Current.Phase);
-        Assert.Contains((await Do(GameActions.Move, NoRoll(), new
+        Committed(await Do(GameActions.Move, NoRoll(), new
         {
             unitIds = R1,
             to = "bd01:A2:0"
-        })).Reasons, reason => reason.StartsWith("play.berserk", StringComparison.Ordinal));
+        }));
         await Advance(5);
         Assert.Equal("ccph", Current.Phase);
-        await Advance();
+        Assert.Contains(Planner().CloseCombatDue(Current), line => line.StartsWith("play.cc-required: r1 is berserk", StringComparison.Ordinal));
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 

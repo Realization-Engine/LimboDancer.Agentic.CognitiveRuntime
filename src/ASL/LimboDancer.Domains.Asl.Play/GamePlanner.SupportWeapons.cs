@@ -392,8 +392,10 @@ public sealed partial class GamePlanner
         }
 
         var leaderId = Text(arguments, "leader", out var directing) ? directing : null;
-        var noLeader = leaderId is null && ScenarioA1SupportWeaponRules.NeedsNoLeader(IsGuard(state, one), Is(one, Conditions.Unarmed))
-            && ScenarioA1SupportWeaponRules.NeedsNoLeader(IsGuard(state, two), Is(two, Conditions.Unarmed));
+        // Pass 70 (ruling R70.28): and Carrier HS (A1.32, D6.82), each HS the record says left a Carrier.
+        var noLeader = leaderId is null
+            && ScenarioA1SupportWeaponRules.NeedsNoLeader(IsGuard(state, one), Is(one, Conditions.Unarmed), ScenarioA1CarrierRules.CarrierHalfSquad(true, one.CrewOf))
+            && ScenarioA1SupportWeaponRules.NeedsNoLeader(IsGuard(state, two), Is(two, Conditions.Unarmed), ScenarioA1CarrierRules.CarrierHalfSquad(true, two.CrewOf));
         var (leader, leaderReason) = noLeader ? (null, null) : DirectingLeader(state, existing, one, at, leaderId, recombining: true);
         if (leaderReason is not null)
         {

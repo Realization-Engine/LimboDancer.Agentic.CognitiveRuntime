@@ -44,6 +44,16 @@ public sealed record CloseCombatUnit(
     }
 
     /// <summary>
+    /// The Guns the unit mans (A11.13; pass 70, ruling R70.27): never used in CC, each lost with the unit on a colored dr of 1 and a dr at most the black
+    /// Kill Number. Null in a record made before the pass, whose Gun loss is not rolled, and when the unit mans none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? Guns
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The ADJACENT Location a unit held in Melee attempts to Withdraw to (A11.2, A11.21), declared before the attacks; null when it
     /// stands.
     /// </summary>
@@ -344,7 +354,7 @@ public sealed record CloseCombatCreatedLeader(int Attack, string UnitId, string 
     public const string PlaceholderPrefix = "created-leader:";
 }
 
-/// <summary>A SW of a unit eliminated in CC with an Original colored dr of 1: its loss dr against the black Kill Number (A11.13).</summary>
+/// <summary>A SW or Gun of a unit eliminated in CC with an Original colored dr of 1: its loss dr against the black Kill Number (A11.13).</summary>
 public sealed record CloseCombatWeaponEffect(string EquipmentId, string HolderId, int Dr, bool Eliminated);
 
 /// <summary>A prisoner's escape NTC (A20.55; ruling R14.6): its DR against its Morale Level.</summary>

@@ -53,6 +53,15 @@ public sealed record NewInstance(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The vehicle a Carrier's inherent HS left (D6.82; pass 70, ruling R70.28), written as <c>"crewOf": "gb-carrier"</c>: such a HS Recombines with no
+    /// leader (A1.32). Null for any other unit, which is every record made before pass 70.
+    /// </summary>
+    public string? CrewOf
+    {
+        get; init;
+    }
 }
 
 /// <summary>

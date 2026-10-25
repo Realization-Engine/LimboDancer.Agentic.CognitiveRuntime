@@ -2,9 +2,9 @@ namespace LimboDancer.Domains.Asl.Rules;
 
 /// <summary>
 /// A unit of a Location holding a vehicle, as the sequential CC reads it (A11.31; ruling R11.16): its side, whether it is a vehicle, armed for CC (a
-/// vehicle's CC armament), an Infantry CC attacker, Personnel, a prisoner, berserk, Known, or a Gun's crew.
+/// vehicle's CC armament), an Infantry CC attacker, Personnel, a prisoner, berserk, or Known.
 /// </summary>
-public sealed record VehicleCcUnitFacts(string Id, string Side, bool Vehicle, bool Armed, bool Attacker, bool Personnel, bool Captured, bool Berserk, bool Known, bool Crew);
+public sealed record VehicleCcUnitFacts(string Id, string Side, bool Vehicle, bool Armed, bool Attacker, bool Personnel, bool Captured, bool Berserk, bool Known);
 
 /// <summary>
 /// CC with vehicles as the planner decides it around <see cref="ScenarioA1VehicleCloseCombat"/> (backlog pass 11, rulings R11.13 to R11.16; pass 32.g,
@@ -67,16 +67,16 @@ public static class ScenarioA1VehicleCloseCombatRules
 
     /// <summary>
     /// A berserk unit (of <paramref name="side"/>, or of either side) that still owes an attack on a Known enemy vehicle in a Location's sequential CC
-    /// this CCPh (A15.43, A11.31; ruling R27.2): it may attack, has not, and the Location holds no Gun's crew, whose CC is not built. Null when none does.
+    /// this CCPh (A15.43, A11.31; ruling R27.2): it may attack and has not; a Gun's crew there no longer voids it (pass 70, ruling R70.27). Null when none
+    /// does.
     /// </summary>
     public static string? BerserkOwingVehicleAttack(IReadOnlyList<VehicleCcUnitFacts> here, string? side, IReadOnlyList<string> attacking)
     {
         ArgumentNullException.ThrowIfNull(here);
         ArgumentNullException.ThrowIfNull(attacking);
-        return here.Any(unit => unit.Crew) ? null
-            : here.Where(unit => (side is null || unit.Side == side) && unit.Berserk && unit.Attacker && !attacking.Contains(unit.Id)
+        return here.Where(unit => (side is null || unit.Side == side) && unit.Berserk && unit.Attacker && !attacking.Contains(unit.Id)
                 && here.Any(other => other.Side != unit.Side && other.Vehicle && other.Known && !other.Captured))
-                .OrderBy(unit => unit.Id, StringComparer.Ordinal).FirstOrDefault()?.Id;
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal).FirstOrDefault()?.Id;
     }
 
     /// <summary>A4.152, A15.432 (ruling R27.3): a berserk Infantry OVR's CC may be pending in the MPh once the charging stack has entered the charged Location, the window on that entry has closed, and no CC is there yet.</summary>
