@@ -414,7 +414,13 @@ public static class ScenarioCards
         // Ruling R17.10: the SSRs, numbered in order, and their tokens checked as a new game checks them.
         found.AddRange(ScenarioA1SetupCalculator.RuleDiagnostics([.. card.SpecialRules.Select(rule => new CardRuleFacts(rule.Number, rule.Status, rule.Tokens.Count, rule.Note, rule.Text, rule.Rules,
             [.. rule.Tokens.Where(token => token.StartsWith("hip:", StringComparison.Ordinal))
-                .Select(token => (token, token.Split(':') is [_, var named, _] && card.Sides.Any(side => side.Side == named) ? named : null))]))], RuleStatuses, CitableRules));
+                .Select(token => (token, token.Split(':') is [_, var named, _] && card.Sides.Any(side => side.Side == named) ? named : null))])
+        {
+            // Ruling R70.15 (A10.8): a Fanaticism token names a side of the card, and one of its OB groups by the id the game gives it.
+            FanaticTokens = [.. rule.Tokens.Where(token => token.StartsWith(ScenarioA1GameStart.FanaticRule, StringComparison.Ordinal))
+                .Select(token => (token, ScenarioA1GameStart.FanaticToken(token) is { } named && card.Sides.FirstOrDefault(side => side.Side == named.Side) is { } fanatic
+                    && (named.Group is null || fanatic.Groups.Select((_, index) => GroupId(fanatic.Side, index)).Contains(named.Group, StringComparer.Ordinal))))],
+        })], RuleStatuses, CitableRules));
 
         var start = new JsonObject
         {

@@ -563,4 +563,172 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.True(ScenarioA1VoluntaryRout.InterdictionLeaderAgrees(true, false, true, true));
         Assert.False(ScenarioA1VoluntaryRout.InterdictionLeaderAgrees(true, false, false, true));
     }
+
+    // Increment 3d: rout from a building, Interdiction by vehicles and Guns, Fanaticism by SSR (task 70.2; rulings R70.13 to R70.15).
+
+    /// <summary>
+    /// A street of four Locations, 0 to 3, each ADJACENT to the next: 0 and 1 one stone building, 2 Open Ground, 3 another, wooden building; every LOS clear.
+    /// The reader says 0 and 1 are one building only when asked to.
+    /// </summary>
+    private sealed class Street(bool oneBuilding) : IRoutFactReader
+    {
+        private static readonly string[] Terrain = ["stone-building", "stone-building", "open-ground", "wooden-building"];
+
+        public string Name(int location) => "bd01:" + "ABCD"[location] + "1:0";
+
+        public IEnumerable<int> Neighbors(int location) => new[] { location - 1, location + 1 }.Where(next => next is >= 0 and <= 3);
+
+        public bool Playable(int location) => true;
+
+        public RoutLocationFacts? Location(int location) => new(Terrain[location], false);
+
+        public RoutLosFacts? Los(int fromLocation, int toLocation) => new(true, 0, Math.Abs(fromLocation - toLocation));
+
+        public int? Distance(int one, int two) => Math.Abs(one - two);
+
+        public bool Adjacent(int one, int two) => Math.Abs(one - two) == 1;
+
+        public (InfantryEntry? Entry, string? Reason) Entry(int fromLocation, int toLocation) =>
+            (new InfantryEntry(Terrain[toLocation] == "open-ground" ? 2 : 4, Terrain[toLocation], false, false, false, false), null);
+
+        public bool SameBuilding(int one, int two) => oneBuilding && one <= 1 && two <= 1;
+    }
+
+    /// <summary>A row of open Locations like <see cref="Line"/>, whose bearings run toward 0 at 90 degrees (north) and away from it at 270.</summary>
+    private sealed class Bearings : IRoutFactReader
+    {
+        public string Name(int location) => "bd01:A" + location + ":0";
+
+        public IEnumerable<int> Neighbors(int location) => [location - 1, location + 1];
+
+        public bool Playable(int location) => true;
+
+        public RoutLocationFacts? Location(int location) => new("open-ground", false);
+
+        public RoutLosFacts? Los(int fromLocation, int toLocation) => new(true, 0, Math.Abs(fromLocation - toLocation));
+
+        public int? Distance(int one, int two) => Math.Abs(one - two);
+
+        public bool Adjacent(int one, int two) => Math.Abs(one - two) == 1;
+
+        public (InfantryEntry? Entry, string? Reason) Entry(int fromLocation, int toLocation) => (null, "not read");
+
+        public double? Bearing(int fromLocation, int toLocation) => toLocation < fromLocation ? 90 : 270;
+    }
+
+    private static readonly int[] OwnHex = [1];
+    private static readonly int[] OwnHexAndTheOther = [1, 3];
+    private static readonly int[] OutThroughItsBuilding = [1, 2, 3];
+    private static readonly Dictionary<int, int> StreetReach = new() { [0] = 0, [1] = 4, [2] = 6, [3] = 10 };
+
+    // Hexspine facings as the planner hands them (UnitFacing): 1 points at 60 degrees, 2 at 120, 4 at 240; north (90) lies on the spine between 1 and 2.
+    private static RoutVehicleFacts Tank(bool crewExposed = false, bool openTopped = false, bool motion = false, bool stunned = false, bool abandoned = false, int hull = 1,
+        int? turret = null, bool bmg = true, bool cmg = false, bool aamg = false, bool mainGun = false, int? gunRange = null, string? maType = "t") =>
+        new(abandoned, motion, stunned, false, false, openTopped, crewExposed, hull, turret, bmg, cmg, aamg, false, mainGun, gunRange, maType);
+
+    private static RoutEnemyFacts Armor(RoutVehicleFacts tank, int at = 5)
+    {
+        var (range, weapons) = ScenarioA1RoutCalculator.VehicleInterdiction(tank);
+        return new RoutEnemyFacts("ru-t", at, true, false, false, true, false, false, false, ScenarioA1RoutCalculator.VehicleNormalRange(tank), range) { ArcWeapons = weapons };
+    }
+
+    [Fact]
+    public void AUnitInABuildingMayIgnoreItsOwnBuildingsHexesWhenChoosingWhereToRout()
+    {
+        // A10.51's EXC (p. 67; ruling R70.13): "A broken unit in a building need not consider a hex of the same building in which it begins the RtPh ... as
+        // its closest building hex if it prefers to rout out of that building altogether ... even if it must cross Open Ground or another building hex of the
+        // same building to do so." The unit in 0 may make for 1 or for the other building in 3, by way of 1 and the street; read as two buildings, 1 binds it.
+        Assert.Equal(OwnHex, ScenarioA1RoutCalculator.RoutTargets(new Street(false), [], 0, StreetReach));
+        Assert.Equal(OwnHexAndTheOther, ScenarioA1RoutCalculator.RoutTargets(new Street(true), [], 0, StreetReach));
+        Assert.Null(ScenarioA1RoutCalculator.RoutDestinationBar(new Street(true), [], "de-1", 0, OutThroughItsBuilding, false, 12, false, 7));
+        Assert.Contains("goes on only into woods or building Locations", ScenarioA1RoutCalculator.RoutDestinationBar(new Street(false), [], "de-1", 0, OutThroughItsBuilding,
+            false, 12, false, 7), StringComparison.Ordinal);
+
+        // B23.71, B23.74 (the card editor's join, ruling R17.8): a building goes on across a building hexside into a building hex, not across a Rowhouse wall,
+        // a Breach, or a Factory's outside wall.
+        Assert.True(ScenarioA1RoutCalculator.BuildingGoesOn(true, true, "Stone Building", false, null, false));
+        Assert.False(ScenarioA1RoutCalculator.BuildingGoesOn(true, false, "Stone Building", false, null, false));
+        Assert.False(ScenarioA1RoutCalculator.BuildingGoesOn(true, true, "Stone Building", false, "Rowhouse Wall", false));
+        Assert.False(ScenarioA1RoutCalculator.BuildingGoesOn(true, true, "Stone Factory", true, null, false));
+    }
+
+    [Fact]
+    public void AVehicleInterdictsWithinItsMgsRangeAndCoveredArcAndNotWithAPositiveDrm()
+    {
+        // A10.532 (pp. 67, 68; ruling R70.14): the tank in 5 Interdicts the Open Ground in 0, five hexes north, with its BMG (Normal Range eight, D1.81) through
+        // its VCA, facing 1 (60 degrees). Faced away (4), it would change its VCA; ten hexes off, it is beyond the BMG's range.
+        var line = new Bearings();
+        Assert.Equal("ru-t", ScenarioA1RoutCalculator.Interdictor(line, [Armor(Tank())], 0, 7));
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(line, [Armor(Tank(hull: 4))], 0, 7));
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(line, [Armor(Tank(), at: 10)], 0, 7));
+
+        // "An AFV cannot Interdict if it would ... use armament which is currently penalized by the +1 BU or +1 Stun DRM", nor "Any unit whose FP is halved
+        // (... Motion ...)". A BU tank's MA Gun takes Case I's +1 (C5.9: it "prevents Interdiction"); with its crew CE, the MA Interdicts to 16 hexes.
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(line, [Armor(Tank(stunned: true))], 0, 7));
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(line, [Armor(Tank(motion: true))], 0, 7));
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(line, [Armor(Tank(bmg: false, mainGun: true), at: 12)], 0, 7));
+        Assert.Equal("ru-t", ScenarioA1RoutCalculator.Interdictor(line, [Armor(Tank(crewExposed: true, bmg: false, mainGun: true), at: 12)], 0, 7));
+
+        // D1.82, D1.321: the CMG reaches twelve hexes through the TCA, but not from a RST turret whose crew is CE; D5.3: an open-topped AFV fires no weapon but
+        // its BMG unless CE. D1.83: the AAMG fires in any direction, CE.
+        Assert.Equal("ru-t", ScenarioA1RoutCalculator.Interdictor(line, [Armor(Tank(cmg: true, turret: 2), at: 10)], 0, 7));
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(line, [Armor(Tank(crewExposed: true, cmg: true, turret: 2, maType: "rst"), at: 10)], 0, 7));
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(line, [Armor(Tank(openTopped: true, cmg: true, turret: 2), at: 10)], 0, 7));
+        Assert.Equal("ru-t", ScenarioA1RoutCalculator.Interdictor(line, [Armor(Tank(crewExposed: true, hull: 4, aamg: true))], 0, 7));
+
+        // A10.5 "unit/its-SW/Gun": the vehicle's Normal Range, whatever its arc, makes a broken unit in Open Ground rout and brings DM (A10.62).
+        Assert.Equal((12, 16, 0), (ScenarioA1RoutCalculator.VehicleNormalRange(Tank(cmg: true)), ScenarioA1RoutCalculator.VehicleNormalRange(Tank(mainGun: true)),
+            ScenarioA1RoutCalculator.VehicleNormalRange(Tank(abandoned: true))));
+        Assert.Equal("ru-t", ScenarioA1RoutCalculator.ExposedInOpenGround(line, [Armor(Tank(hull: 4))], 0, 7));
+        Assert.Equal("ru-t", ScenarioA1VoluntaryRout.Threat(line, [Armor(Tank(hull: 4))], 0));
+    }
+
+    [Fact]
+    public void AGunThatMustChangeItsCaDoesNotInterdict()
+    {
+        // A10.532 (p. 67): "If a Gun would have to change its CA in order to fire ... a positive DRM would usually come into effect and thereby disallow its
+        // Interdiction." The crew in 5 has its own range of 2; its Gun Interdicts to 16 hexes through its CA (1), not when faced away (4) or not working.
+        var line = new Bearings();
+        RoutEnemyFacts Crew(RoutArcWeapon? gun) => new("ru-gc", 5, true, false, false, false, false, false, false, Math.Max(2, gun is null ? 0 : gun.Range), 2)
+        {
+            ArcWeapons = gun is null ? null : [gun]
+        };
+
+        Assert.Equal("ru-gc", ScenarioA1RoutCalculator.Interdictor(line, [Crew(ScenarioA1RoutCalculator.GunArcWeapon(true, null, 1))], 0, 7));
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(line, [Crew(ScenarioA1RoutCalculator.GunArcWeapon(true, null, 4))], 0, 7));
+        Assert.Null(ScenarioA1RoutCalculator.GunArcWeapon(false, null, 1));
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(new Line(), [Crew(ScenarioA1RoutCalculator.GunArcWeapon(true, null, 1))], 0, 7));
+        Assert.Equal((16, 12, 0), (ScenarioA1RoutCalculator.GunNormalRange(true, null), ScenarioA1RoutCalculator.GunNormalRange(true, 12),
+            ScenarioA1RoutCalculator.GunNormalRange(false, null)));
+        Assert.Equal("ru-gc", ScenarioA1RoutCalculator.ExposedInOpenGround(line, [Crew(ScenarioA1RoutCalculator.GunArcWeapon(true, null, 4))], 0, 7));
+    }
+
+    private static readonly string[] RussianFanatics = ["fanatic:russian"];
+    private static readonly string[] SecondGroupFanatics = ["fanatic:russian:russian-2"];
+    private static readonly string[] MalformedFanatics = ["fanatic:"];
+    private static readonly string[] TokenStatus = ["token"];
+
+    [Fact]
+    public void TheSsrsTokenSetsFanaticism()
+    {
+        // A10.8 (p. 69; ruling R70.15): "Fanaticism is evoked only by SSR or Battle Hardening": fanatic:<side>, or fanatic:<side>:<group>, makes the Personnel of
+        // that side, or OB group, set up Fanatic; never a Dummy, a vehicle, or the other side's.
+        Assert.Equal<(string, string?)?>(("russian", null), ScenarioA1GameStart.FanaticToken("fanatic:russian"));
+        Assert.Equal<(string, string?)?>(("russian", "russian-2"), ScenarioA1GameStart.FanaticToken("fanatic:russian:russian-2"));
+        Assert.Null(ScenarioA1GameStart.FanaticToken("fanatic:"));
+        Assert.Null(ScenarioA1GameStart.FanaticToken("fanatic:russian:a:b"));
+        Assert.True(ScenarioA1GameStart.FanaticBySsr(RussianFanatics, "russian", "russian-1", true, false));
+        Assert.False(ScenarioA1GameStart.FanaticBySsr(RussianFanatics, "german", null, true, false));
+        Assert.False(ScenarioA1GameStart.FanaticBySsr(RussianFanatics, "russian", null, true, true));
+        Assert.False(ScenarioA1GameStart.FanaticBySsr(RussianFanatics, "russian", null, false, false));
+        Assert.True(ScenarioA1GameStart.FanaticBySsr(SecondGroupFanatics, "russian", "russian-2", true, false));
+        Assert.False(ScenarioA1GameStart.FanaticBySsr(SecondGroupFanatics, "russian", "russian-1", true, false));
+
+        // A new game refuses a malformed token; a card's token names a side of the card, and an OB group of it.
+        Assert.StartsWith("play.fanatic-rule:", ScenarioA1NightAndWeather.RulesBar(MalformedFanatics, (_, _) => true, true, true), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1NightAndWeather.RulesBar(RussianFanatics, (_, _) => true, true, true));
+        var rule = new CardRuleFacts(1, "token", 1, null, "The Russians are Fanatic.", [], []) { FanaticTokens = [("fanatic:soviet", false)] };
+        Assert.Contains("card.ssr: SSR 1's 'fanatic:soviet' names no side of the card", Assert.Single(ScenarioA1SetupCalculator.RuleDiagnostics([rule], TokenStatus, [])),
+            StringComparison.Ordinal);
+    }
 }

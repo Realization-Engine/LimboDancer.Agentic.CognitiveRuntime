@@ -6,7 +6,32 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// (pass 35, task 35.4), its Normal Range when none is given.
 /// </summary>
 public sealed record RoutEnemyFacts(string Id, int Location, bool Armed, bool Broken, bool Melee, bool Vehicle, bool Cx, bool Pinned, bool Encircled, int NormalRange,
-    int? InterdictionRange = null);
+    int? InterdictionRange = null)
+{
+    /// <summary>
+    /// The weapons that Interdict only through a Covered Arc (A10.532; pass 70, ruling R70.14): a vehicle's BMG, CMG, and MA, and a Gun the unit mans; null
+    /// for none. A vehicle Interdicts by these alone, and by its <see cref="InterdictionRange"/>.
+    /// </summary>
+    public IReadOnlyList<RoutArcWeapon>? ArcWeapons
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// A weapon that Interdicts only within its Covered Arc (A10.532, p. 67; pass 70, ruling R70.14): the range it Interdicts within (its Normal Range, at most
+/// 16 hexes) and the hexspine facing (0 to 5) of the arc it fires through now: the VCA, the TCA, or a Gun's CA. One that would have to change its CA to
+/// fire would take a positive DRM, so it does not Interdict there.
+/// </summary>
+public sealed record RoutArcWeapon(int Range, int Facing);
+
+/// <summary>
+/// A vehicle as the rout reads its weapons (A10.5, A10.532; D1.81 to D1.83, D5.2, D5.3; pass 70, ruling R70.14): whether it is Abandoned, in Motion,
+/// Stunned, or Shocked; unarmored or open-topped; whether its crew is CE; its hull (VCA) and turret (TCA) facings; which of its BMG, CMG, AAMG, MA MG, and MA
+/// Gun work; the MA Gun's printed maximum range, if any; and its MA Type.
+/// </summary>
+public sealed record RoutVehicleFacts(bool Abandoned, bool Motion, bool Stunned, bool Shocked, bool Unarmored, bool OpenTopped, bool CrewExposed, int? Hull, int? Turret,
+    bool Bmg, bool Cmg, bool Aamg, bool MainMg, bool MainGun, int? MainGunRange, string? MaType);
 
 /// <summary>
 /// What keeps one enemy unit from applying the FFMO DRM to a Location (A10.531; pass 35, task 35.4), beyond the LOS itself: the map Hindrance along
@@ -91,6 +116,18 @@ public interface IRoutFactReader
 
     /// <summary>Whether two Locations are ADJACENT (A.8).</summary>
     public bool Adjacent(int one, int two);
+
+    /// <summary>
+    /// The bearing in degrees from one Location to another, which a Covered Arc is read against (C3.2, A10.532; pass 70, ruling R70.14), or null when the map
+    /// cannot give it; then no weapon held to a Covered Arc Interdicts.
+    /// </summary>
+    public double? Bearing(int fromLocation, int toLocation) => null;
+
+    /// <summary>
+    /// Whether two Locations lie in the same building (A10.51's EXC, p. 67; pass 70, ruling R70.13): hexes joined across hexsides of building terrain, a
+    /// Rowhouse wall dividing them. A reader that does not give it reads none as the same building.
+    /// </summary>
+    public bool SameBuilding(int one, int two) => false;
 
     /// <summary>The Infantry entry of a step between two Locations (A4.1), or why there is none.</summary>
     public (InfantryEntry? Entry, string? Reason) Entry(int fromLocation, int toLocation);

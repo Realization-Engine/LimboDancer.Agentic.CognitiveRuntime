@@ -1774,3 +1774,5 @@ One session under the user's word of 2026-10-25 ("Start Pass 70 ... Run it witho
 | The base measurement (main's build, alone) | 12:14 | 12:17 | 0:03 | | |
 | 3a, 70.3 and 70.10: one read of who sees, the Right of Inspection by LOS | 12:17 | 13:04 | 0:47 | 4:30 | Agent 12:17 to about 12:55; then the test-game library repaired (its template game was retired by PR 38), the Studio check, the measurement again (the open re-measured from fresh processes), the proof tool built and run small on both sides, the commit |
 | 3b, 70.1 (I): one Morale Check member for every check outside fire | 13:04 | 14:20 | 1:16 | | Agent 13:04 to about 14:16; the Studio check and the commit (65ebcec8) |
+| 3c, 70.1 (II): Voluntary Break and Voluntary Rout | 14:20 | 14:56 | 0:36 | | Agent 14:20 to about 14:53; Studio check; estimate 2:00 |
+| 3d, 70.2: rout from a building, Interdiction by vehicles and Guns, Fanaticism by SSR | 14:57 | 15:27 | 0:30 | | Agent 14:57 to about 15:24; Studio check; estimate 2:25 |

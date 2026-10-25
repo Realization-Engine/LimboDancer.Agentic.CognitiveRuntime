@@ -71,6 +71,17 @@ public sealed class BacklogPass70Tests : IDisposable
     // Increment 3b: the scenario year of the game (D6.2: Riders of every nationality from 1943).
     private int year = 1942;
 
+    // Increment 3d: the hexes a test reads as one stone building, and the SSRs of the game.
+    private readonly HashSet<string> stone = new(StringComparer.Ordinal);
+    private string[] ssrs = [];
+
+    private static TerrainType Stone() => new()
+    {
+        Code = 3,
+        Name = "Stone Building",
+        Category = LosCategory.Building,
+    };
+
     /// <summary>Board 01's grid, all Open Ground at level 0 but the hexes a test reads as woods.</summary>
     private BoardHandle Board()
     {
@@ -80,7 +91,7 @@ public sealed class BacklogPass70Tests : IDisposable
         {
             var name = HexName.Parse(text);
             Assert.True(geometry.TryGetIndex(name, out var index));
-            var type = woods.Contains(text) ? Woods() : Open();
+            var type = woods.Contains(text) ? Woods() : stone.Contains(text) ? Stone() : Open();
             var center = new LocationFacts(0, type, null);
             HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, type, null, false, false, false, false, null))];
             hexes.Add(new HexFacts(name, index, 0, false, center, [center], hexsides, null, CenterTerrainSource.CenterSample));
@@ -190,25 +201,31 @@ public sealed class BacklogPass70Tests : IDisposable
     /// <summary>A game of the first side against the other, left in the first side's RPh and then advanced the times given (1: its PFPh, 2: its MPh).</summary>
     private async Task SetupAt(int advances, string firstSide, params Dictionary<string, object>[] placements)
     {
+        var start = new Dictionary<string, object>
+        {
+            ["label"] = nameof(BacklogPass70Tests),
+            ["catalog"] = $"asl-scenario-a1@{LiveFire.CatalogVersion}",
+            ["boards"] = Bd01,
+            ["firstSide"] = firstSide,
+            ["sides"] = new object[]
+            {
+                new { id = "german", nationality = "german", elr = 3, friendlyEdge = "left" },
+                new { id = "russian", nationality = "russian", elr = 2, friendlyEdge = "right" },
+            },
+            ["scenarioMonth"] = 7,
+            ["scenarioYear"] = year,
+        };
+        if (ssrs.Length > 0)
+        {
+            start["specialRules"] = ssrs;
+        }
+
         Committed(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
         {
             gameId = Scope.Game,
             attemptId = "setup-1",
             expectedRevision = 0,
-            start = new Dictionary<string, object>
-            {
-                ["label"] = nameof(BacklogPass70Tests),
-                ["catalog"] = $"asl-scenario-a1@{LiveFire.CatalogVersion}",
-                ["boards"] = Bd01,
-                ["firstSide"] = firstSide,
-                ["sides"] = new object[]
-                {
-                    new { id = "german", nationality = "german", elr = 3, friendlyEdge = "left" },
-                    new { id = "russian", nationality = "russian", elr = 2, friendlyEdge = "right" },
-                },
-                ["scenarioMonth"] = 7,
-                ["scenarioYear"] = year,
-            },
+            start,
             placements,
         })));
         for (var index = 0; index < advances; index++)
@@ -673,6 +690,93 @@ public sealed class BacklogPass70Tests : IDisposable
         var written = JsonNode.Parse(GameEventWriter.Write(Scope, store.Read(Scope)!))!["events"]!.AsArray();
         Assert.All(written.Where(item => item!["type"]!.GetValue<string>() is "rout-stepped" or "rout-interdicted"),
             item => Assert.False(item!["payload"]!.AsObject().ContainsKey("with") || item["payload"]!.AsObject().ContainsKey("leader")));
+        NoReplayErrors();
+    }
+
+    // Increment 3d: rout from a building, Interdiction by vehicles and Guns, Fanaticism by SSR (task 70.2; rulings R70.13 to R70.15).
+
+    /// <summary>
+    /// A German RtPh: the broken 4-6-7 de-1 in the Open Ground of E5, the Russian T-34 M41 ru-t in E2 with its hull facing the given hexspine; E7 is woods.
+    /// Facing south-east, E5 and E6 lie in its VCA, on the arc's edge (C3.2); facing north-east, they do not.
+    /// </summary>
+    private async Task TankGame(string facing)
+    {
+        woods.Add("E7");
+        await SetupAt(5, "german", Squad("de-1", "E5", "german", Conditions.Broken), Vehicle("ru-t", "defender-tank", "E2", "russian", facing));
+        Assert.Equal("rtph", Current.Phase);
+    }
+
+    [Fact]
+    public async Task ABrokenSquadInOpenGroundInRangeOfAnEnemyAfvMustRoutAndIsInterdictedByIt()
+    {
+        // A10.5 "unit/its-SW/Gun", A10.532 (pp. 66, 67; ruling R70.14): the T-34's Normal Range is its weapons' (the BMG's eight, the CMG's twelve, the MA's
+        // 16), so the broken 4-6-7 three hexes off in Open Ground must rout. Routing by E6 to the woods of E7, it is Interdicted in E6 by the T-34's BMG,
+        // four hexes off through its VCA: 3 + 3 = 6 against 7, passed.
+        await TankGame("south-east");
+        Assert.Contains("ru-t", Planner().MustRout(Current, Current.Unit("de-1")!), StringComparison.Ordinal);
+        var before = Revision;
+        var result = await Do(GameActions.Rout, Once(3, 3), new
+        {
+            unitId = "de-1",
+            route = new[] { L("E6"), L("E7") },
+        });
+        Committed(result);
+        Assert.Contains(result.Reasons, reason => reason.Contains($"{L("E6")} by ru-t", StringComparison.Ordinal));
+        var interdicted = Assert.Single(Since(before).Select(item => item.Payload).OfType<RoutInterdicted>());
+        Assert.Equal(("ru-t", RoutInterdicted.Passed), (interdicted.Interdictor, interdicted.Result));
+        Assert.Equal(L("E7"), Current.Location("de-1")!.Location.ToString());
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnOlderRecordedRoutPastAnEnemyAfvReplaysAsItDid()
+    {
+        // Ruling R70.14: Interdiction is decided at plan time and recorded; the projector does not read it again. A rout past the T-34 faced away, with no
+        // Interdiction, replays the same when the record's T-34 faces the route, as a game recorded before the pass, whose vehicles did not Interdict.
+        await TankGame("north-east");
+        var before = Revision;
+        Committed(await Do(GameActions.Rout, NoRoll(), new
+        {
+            unitId = "de-1",
+            route = new[] { L("E6"), L("E7") },
+        }));
+        Assert.Empty(Since(before).Select(item => item.Payload).OfType<RoutInterdicted>());
+        GameEvent[] older = [.. store.Read(Scope)!.Events.Select(item => item.Payload is InstanceCreated { Instance: { Id: "ru-t", Position: MapPosition at } tank }
+            ? item with { Payload = new InstanceCreated(tank with { Position = at with { Facing = Units.Documents.UnitFacing.SouthEast } }) } : item)];
+        var replayed = Planner().Replay(older);
+        Assert.False(replayed.HasErrors);
+        Assert.Equal(L("E7"), replayed.Current!.Location("de-1")!.Location.ToString());
+        Assert.Equal(Units.Documents.UnitFacing.SouthEast, (replayed.Current.Unit("ru-t")!.Position as MapPosition)!.Facing);
+    }
+
+    [Fact]
+    public async Task ABrokenUnitRoutsOutOfItsOwnBuildingPastItsOtherHex()
+    {
+        // A10.51's EXC (p. 67; ruling R70.13): the broken 4-6-7 in E5, a hex of the stone building E5-E6, ADJACENT to the Russian 4-4-7 in E4, must rout. It
+        // need not stop in E6, its own building's hex, and routs by it and the street of E7 to the woods of E8; the 4-4-7 has no LOS to E7.
+        stone.Add("E5");
+        stone.Add("E6");
+        woods.Add("E8");
+        blocked.Add(("E4", "E7"));
+        await SetupAt(5, "german", Squad("de-1", "E5", "german", Conditions.Broken), Squad("ru-1", "E4", "russian"));
+        Committed(await Do(GameActions.Rout, NoRoll(), new
+        {
+            unitId = "de-1",
+            route = new[] { L("E6"), L("E7"), L("E8") },
+        }));
+        Assert.Equal(L("E8"), Current.Location("de-1")!.Location.ToString());
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AFanaticSsrMakesTheSidesPersonnelFanaticAsTheySetUp()
+    {
+        // A10.8 (p. 69; ruling R70.15): the SSR fanatic:russian makes the Russian 4-4-7 Fanatic at setup, and the German 4-6-7 not; the condition is written
+        // in the unit's setup record, so the replay reads it from there.
+        ssrs = ["fanatic:russian"];
+        await SetupAt(0, "german", Squad("de-1", "E5", "german"), Squad("ru-1", "E2", "russian"));
+        Assert.Equal((true, false), (Is(Current.Unit("ru-1")!, Conditions.Fanatic), Is(Current.Unit("de-1")!, Conditions.Fanatic)));
+        Assert.Contains("fanatic:russian", Current.SpecialRules);
         NoReplayErrors();
     }
 }

@@ -41,7 +41,7 @@ public static class ScenarioA1NightAndWeather
     }
 
     /// <summary>
-    /// Why the SSRs of a new game are refused (rulings R16.1, R16.9, and R23.5 for HIP), or null. <paramref name="hipAllowanceKnown"/> reads the setup's HIP
+    /// Why the SSRs of a new game are refused (rulings R16.1, R16.9, R23.5 for HIP, and R70.15 for Fanaticism), or null. <paramref name="hipAllowanceKnown"/> reads the setup's HIP
     /// allowance of a rule and a side (S10), asked for a well-formed <c>hip:</c> rule.
     /// </summary>
     public static string? RulesBar(IReadOnlyList<string> rules, Func<string, string, bool> hipAllowanceKnown, bool hasMonth, bool hasYear)
@@ -52,6 +52,12 @@ public static class ScenarioA1NightAndWeather
             && (rule.Split(':') is not [_, { Length: > 0 } side, _] || !hipAllowanceKnown(rule, side))) is { } hip)
         {
             return $"play.hip-rule: '{hip}' is not hip:<side>:<n>, n the squad-equivalents of the side that may set up hidden, more than 0 (A12.3; ruling R23.5)";
+        }
+
+        // A10.8 (pass 70, ruling R70.15): Fanaticism by SSR names a side, and may name one of its OB groups.
+        if (rules.FirstOrDefault(rule => rule.StartsWith(ScenarioA1GameStart.FanaticRule, StringComparison.Ordinal) && ScenarioA1GameStart.FanaticToken(rule) is null) is { } fanatic)
+        {
+            return $"play.fanatic-rule: '{fanatic}' is not fanatic:<side> or fanatic:<side>:<group>, the side or OB group whose Personnel are Fanatic (A10.8; ruling R70.15)";
         }
 
         var weather = rules.Where(rule => rule.StartsWith("weather:", StringComparison.Ordinal)).Select(rule => rule["weather:".Length..]).ToArray();

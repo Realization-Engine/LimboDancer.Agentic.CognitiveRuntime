@@ -577,8 +577,10 @@ public sealed class BacklogPass10Tests : IDisposable
         Assert.Equal("rtph", Current.Phase);
         var (targets, canRout, routes) = Planner().RoutAdvice(Current, Current.Unit("g1")!);
         Assert.True(canRout);
-        // The ground floor, the floor above, and D4's level 1 are each one MF away (B23.4, B23.421), and none is offered as a place to end in.
-        Assert.Equal([L("D4", 1), L("D5"), L("D5", 2)], targets.Select(target => target.ToString()));
+        // The ground floor, the floor above, and D4's level 1 are each one MF away (B23.4, B23.421), and none is offered as a place to end in. Pass 70
+        // (ruling R70.13, A10.51's EXC): all are of the building it begins in, which it need not consider, so no cover binds it and it may rout to any hex
+        // the rules allow ("If no non-ignorable building/woods Location can be reached ...").
+        Assert.Empty(targets);
         Assert.Empty(routes);
         Refused(await Do(GameActions.Rout, NoRoll(), new
         {

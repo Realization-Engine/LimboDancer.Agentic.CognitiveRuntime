@@ -22,4 +22,6 @@ Each row: what is left, where it came from, the rule and page, the pass it goes 
 - A LLMC on a side with no declared ELR | 3b | A10.2, p. 65 | Backlog | None is made through the member (its facts need the side's ELR).
 - A Passenger's or Rider's Voluntary Break, and a Voluntary Rout with a broken Passenger routing beneath its vehicle | 3c | A10.41, A10.711, D6.1 | Backlog | Refused.
 - The Voluntary Rout leader's own portage is not checked (his SW move with him) | 3c | A10.711, p. 69 | Backlog | Not checked.
+- A vehicle's or Gun's Interdiction: a mortar's minimum range, a restricted AAMG, a VCA-only CMG, Rear MGs | 3d | A10.532, p. 67 | Backlog | Not read; the longest weapon's range in its arc is taken.
+- Fanaticism by SSR for units created after setup (reinforcements, Deployment) | 3d | A10.8, p. 69 | Backlog | Only units placed through setup are made Fanatic.
 - The Records tab's list leaves out the LLMC line (the Latest line has it) | 3b, Studio check | A10.2 | For the reviews' fixes | As stated.

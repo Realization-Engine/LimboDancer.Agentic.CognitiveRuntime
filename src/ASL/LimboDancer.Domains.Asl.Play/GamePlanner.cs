@@ -464,6 +464,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var sides = new Dictionary<string, string>(StringComparer.Ordinal);
         var boreSights = new List<(string Gun, BoardLocation At)>();
         StartRolls? startRolls = null;
+
+        // A10.8 (pass 70, ruling R70.15): the SSRs in force, from the game's start, which may make a side's Personnel Fanatic as they set up.
+        var ssrs = new List<string>(existing.Select(item => item.Payload).OfType<GameStarted>().FirstOrDefault()?.SpecialRules ?? []);
         if (existing.Count == 0)
         {
             if (!arguments.TryGetProperty("start", out var start) || start.ValueKind != JsonValueKind.Object)
@@ -490,6 +493,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
             label = startLabel;
             events.Add(EventNode(1, "game-started", payload!, visibility: null));
+            if (payload!["specialRules"] is JsonArray rules)
+            {
+                ssrs.AddRange(rules.OfType<JsonValue>().Select(item => item.TryGetValue<string>(out var rule) ? rule : null).OfType<string>());
+            }
         }
 
         if (!arguments.TryGetProperty("placements", out var placements) || placements.ValueKind != JsonValueKind.Array)
@@ -520,6 +527,22 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
             var hidden = IsTrue(placement, Conditions.Hidden) || IsTrue(placement, Conditions.Concealed);
             var side = placement.TryGetProperty("side", out var sideElement) && sideElement.ValueKind == JsonValueKind.String ? sideElement.GetString() : null;
+
+            // A10.8 (pass 70, ruling R70.15): a Personnel unit of the side, or the OB group, a fanatic: SSR names sets up Fanatic; Rules decides.
+            var kind = placement.TryGetProperty("kind", out var kindElement) && kindElement.ValueKind == JsonValueKind.String ? kindElement.GetString() : null;
+            var group = placement.TryGetProperty("group", out var groupElement) && groupElement.ValueKind == JsonValueKind.String ? groupElement.GetString() : null;
+            if (ssrs.Count > 0 && ScenarioA1GameStart.FanaticBySsr(ssrs, side, group, kind is not null && vocabulary.IsA(kind, "asl:personnel"), kind == UnitKinds.Dummy))
+            {
+                if (node["conditions"] is JsonObject conditions)
+                {
+                    conditions[Conditions.Fanatic] = true;
+                }
+                else
+                {
+                    node["conditions"] = new JsonObject { [Conditions.Fanatic] = true };
+                }
+            }
+
             events.Add(EventNode(events.Count + 1, "instance-created", new JsonObject { ["instance"] = node }, hidden && side is not null ? [side] : null));
         }
 

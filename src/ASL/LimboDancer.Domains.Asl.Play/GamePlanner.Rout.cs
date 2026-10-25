@@ -204,6 +204,9 @@ public sealed partial class GamePlanner
         // The side whose units rout: the side last asked for its enemies. Every scan and search asks for them before it reads a cover.
         private string? routingSide;
 
+        // The building a rout starts in (ruling R70.13), read for the first Location the scan is asked about.
+        private (BoardLocation Start, IReadOnlySet<(BoardRef Board, HexName Hex)> Hexes)? building;
+
         public RoutScan(GamePlanner planner, GameState state)
         {
             this.planner = planner;
@@ -240,9 +243,7 @@ public sealed partial class GamePlanner
                 var settled = memo.RoutSettled;
                 if (!settled || !memo.RoutEnemies.TryGetValue(side, out var read))
                 {
-                    read = [.. KnownEnemies(state, side).Where(item => !prisoners.Contains(item.Unit.Id)).Select(item => (item.At, new RoutEnemyFacts(item.Unit.Id, -1, Armed(item.Unit),
-                        Is(item.Unit, Conditions.Broken), Is(item.Unit, Conditions.Melee), LiveFire.IsVehicle(item.Unit), Is(item.Unit, Conditions.Cx),
-                        Is(item.Unit, Conditions.Pinned), planner.Encircled(state, item.Unit), NormalRange(state, item.Unit), planner.InterdictionRange(state, item.Unit, item.At))))];
+                    read = [.. KnownEnemies(state, side).Where(item => !prisoners.Contains(item.Unit.Id)).Select(item => (item.At, Facts(item.Unit, item.At)))];
                     if (settled)
                     {
                         memo.RoutEnemies.TryAdd(side, read);
@@ -253,6 +254,20 @@ public sealed partial class GamePlanner
             }
 
             return known;
+        }
+
+        /// <summary>
+        /// A Known enemy unit as the rout reads it, its Location to be indexed by the scan (A10.5, A10.532): its Normal Range and the range it Interdicts at,
+        /// and since pass 70 (ruling R70.14) a vehicle's and a manned Gun's weapons held to a Covered Arc.
+        /// </summary>
+        private RoutEnemyFacts Facts(UnitInstance unit, BoardLocation at)
+        {
+            var (normal, interdiction, arcs) = planner.RoutRanges(state, unit, at);
+            return new RoutEnemyFacts(unit.Id, -1, Armed(unit), Is(unit, Conditions.Broken), Is(unit, Conditions.Melee), LiveFire.IsVehicle(unit), Is(unit, Conditions.Cx),
+                Is(unit, Conditions.Pinned), planner.Encircled(state, unit), normal, interdiction)
+            {
+                ArcWeapons = arcs,
+            };
         }
 
         public string Name(int location) => locations[location].ToString();
@@ -281,6 +296,21 @@ public sealed partial class GamePlanner
         public bool Adjacent(int one, int two) => planner.IsAdjacent(state, locations[one], locations[two]);
 
         public (InfantryEntry? Entry, string? Reason) Entry(int fromLocation, int toLocation) => planner.InfantryStep(state, locations[fromLocation], locations[toLocation]);
+
+        public double? Bearing(int fromLocation, int toLocation) => planner.Bearing(state, locations[fromLocation], locations[toLocation]);
+
+        /// <summary>A10.51's EXC (ruling R70.13): the building of the first Location is read once a scan, then each other Location's hex is looked up in it.</summary>
+        public bool SameBuilding(int one, int two)
+        {
+            var start = locations[one];
+            if (building is null || building.Value.Start != start)
+            {
+                building = (start, planner.BuildingHexes(state, start));
+            }
+
+            var other = locations[two];
+            return building.Value.Hexes.Contains((other.Board, other.Hex));
+        }
     }
 
     /// <summary>A Known enemy unit (A10.51, A10.533): not a Dummy, concealed, hidden, or a prisoner.</summary>
@@ -302,12 +332,91 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The Normal Range in hexes of a unit's fire (A10.532): the longest of its own printed range and the Normal Ranges of the functioning SW it
-    /// possesses, at most 16; a leader without a SW has none. Vehicles and Guns have none here (backlog).
+    /// possesses, at most 16; a leader without a SW has none. A vehicle's and a manned Gun's are the rout's own (<see cref="RoutRanges"/>; ruling R70.14).
     /// </summary>
     private static int NormalRange(GameState state, UnitInstance unit)
     {
         var (own, weapons) = FireRanges(state, unit);
         return ScenarioA1RoutCalculator.NormalRange(own, weapons);
+    }
+
+    /// <summary>
+    /// The ranges a Known enemy unit makes a broken unit rout within and Interdicts within (A10.5 "unit/its-SW/Gun", A10.532; pass 70, ruling R70.14): a
+    /// vehicle's from its weapons, which Rules reads; any other unit's from its own range and its SW, a Gun it mans adding the Gun's range to its Normal Range
+    /// and Interdicting only within the Gun's CA. Read once a side for a state, with the rout's Known enemy units.
+    /// </summary>
+    private (int Normal, int Interdiction, IReadOnlyList<RoutArcWeapon>? Arcs) RoutRanges(GameState state, UnitInstance unit, BoardLocation at)
+    {
+        if (LiveFire.IsVehicle(unit))
+        {
+            var vehicle = RoutVehicle(state, unit);
+            var (range, weapons) = ScenarioA1RoutCalculator.VehicleInterdiction(vehicle);
+            return (ScenarioA1RoutCalculator.VehicleNormalRange(vehicle), range, weapons);
+        }
+
+        var normal = NormalRange(state, unit);
+        var interdiction = InterdictionRange(state, unit, at);
+        var guns = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned } manned
+            && manned.Holder == unit.Id).Select(gun => (Gun: gun, Definition: OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty)))
+            .Select(item => (Works: item.Definition is not null && !Is(item.Gun, Conditions.Malfunctioned) && !Is(item.Gun, Conditions.Disabled), item.Definition?.RangeMaximum,
+                Facing: (int?)(item.Gun.Position as MapPosition)?.Facing)).ToArray();
+        if (guns.Length == 0)
+        {
+            return (normal, interdiction, null);
+        }
+
+        return (Math.Max(normal, guns.Max(gun => ScenarioA1RoutCalculator.GunNormalRange(gun.Works, gun.RangeMaximum))), interdiction,
+            [.. guns.Select(gun => ScenarioA1RoutCalculator.GunArcWeapon(gun.Works, gun.RangeMaximum, gun.Facing)).OfType<RoutArcWeapon>()]);
+    }
+
+    /// <summary>A vehicle's weapons as the rout reads them (A10.532, D1.8, D5.2, D5.3; ruling R70.14): the state's and the catalog's facts; Rules decides.</summary>
+    private static RoutVehicleFacts RoutVehicle(GameState state, UnitInstance vehicle)
+    {
+        var definition = VehicleDefinition(vehicle);
+        var gun = vehicle.Definition is { } named ? OrdnanceReference.Value.Guns.GetValueOrDefault(named.Definition) : null;
+        var mainOut = Is(vehicle, Conditions.Malfunctioned) || Is(vehicle, Conditions.Disabled);
+        var main = definition?.MainArmament;
+        return new RoutVehicleFacts(Is(vehicle, Conditions.Abandoned), Is(vehicle, Conditions.Motion), Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Shocked),
+            definition?.Unarmored == true, definition?.OpenTopped == true, LiveFire.CrewExposed(vehicle), (int?)(vehicle.Position as MapPosition)?.Facing,
+            (int?)LiveOrdnance.TurretFacing(state, vehicle),
+            definition?.BowMg is not null && !Is(vehicle, Conditions.BmgMalfunctioned) && !Is(vehicle, Conditions.BmgDisabled),
+            definition?.CoaxialMg is not null && !Is(vehicle, Conditions.CmgMalfunctioned) && !Is(vehicle, Conditions.CmgDisabled),
+            definition?.AntiAircraftMg is not null && !(main == "aamg" && mainOut), main == "mg" && !mainOut,
+            gun is not null && main is not ("aamg" or "mg") && !mainOut, gun?.RangeMaximum, definition?.MaType);
+    }
+
+    /// <summary>
+    /// The hexes of the building a Location is in (A10.51's EXC, p. 67; pass 70, ruling R70.13), found as the card editor finds a building (ruling R17.8):
+    /// from its hex, across each hexside into a hex of building terrain where Rules says the building goes on; empty when the Location is in no building.
+    /// Read once a rout scan; increment 3g's building read per board handle (ruling R70.25) may stand in for it.
+    /// </summary>
+    private HashSet<(BoardRef Board, HexName Hex)> BuildingHexes(GameState state, BoardLocation start)
+    {
+        var found = new HashSet<(BoardRef Board, HexName Hex)>();
+        var ground = new BoardLocation(start.Board, start.Hex, 0);
+        if (ReadLocation(state, ground) is not { Hex.Center.Terrain.IsBuilding: true })
+        {
+            return found;
+        }
+
+        found.Add((ground.Board, ground.Hex));
+        var open = new Stack<BoardLocation>([ground]);
+        while (open.TryPop(out var hex))
+        {
+            foreach (var next in Neighbors(state, hex).Where(next => !found.Contains((next.Board, next.Hex))))
+            {
+                var (_, to, adjacent, crossed) = Step(state, hex, next);
+                if (adjacent && crossed is { } side && ScenarioA1RoutCalculator.BuildingGoesOn(side.OnMap && side.Terrain?.IsBuilding == true,
+                    to?.Hex.Center.Terrain?.IsBuilding == true, side.Terrain?.Name, side.Terrain?.IsOutsideFactoryWall == true, side.HexsideTerrain?.Name,
+                    side.HexsideTerrain?.IsOutsideFactoryWall == true))
+                {
+                    found.Add((next.Board, next.Hex));
+                    open.Push(next);
+                }
+            }
+        }
+
+        return found;
     }
 
     /// <summary>A unit's own printed range as the rout counts it (a leader's is none), and the ranges of the functioning SW it possesses (A10.532).</summary>

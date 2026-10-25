@@ -27,7 +27,17 @@ public sealed record CardSideFacts(string Side, int San, string? Nation, string 
     IReadOnlyList<CardLineFacts> BalanceUnits, IReadOnlyList<CardGroupFacts> Groups);
 
 /// <summary>An SSR of a card as facts (ruling R17.10): its number, status, token count, note, text, cited rules, and its HIP tokens' named sides.</summary>
-public sealed record CardRuleFacts(int Number, string Status, int Tokens, string? Note, string Text, IReadOnlyList<string> Rules, IReadOnlyList<(string Token, string? Side)> HipTokens);
+public sealed record CardRuleFacts(int Number, string Status, int Tokens, string? Note, string Text, IReadOnlyList<string> Rules, IReadOnlyList<(string Token, string? Side)> HipTokens)
+{
+    /// <summary>
+    /// Its <c>fanatic:</c> tokens (A10.8; pass 70, ruling R70.15), each with whether it names a side of the card, and an OB group of that side when it names
+    /// one; empty for none.
+    /// </summary>
+    public IReadOnlyList<(string Token, bool Named)> FanaticTokens
+    {
+        get; init;
+    } = [];
+}
 
 /// <summary>A structured Victory Condition of a card as facts (ruling R21.3), with the fields its type reads.</summary>
 public sealed record CardConditionFacts(string Type, string Side, IReadOnlyList<string>? Buildings, IReadOnlyList<string>? Versus, int? Margin, string? Building, int? AtLeast,
@@ -353,7 +363,10 @@ public static class ScenarioA1SetupCalculator
 
     // The SSRs (rulings R17.2, R17.10, R23.5).
 
-    /// <summary>The SSRs are numbered 1 onward, each with a status, tokens exactly when read, a note when not enforced, its text, cited rules, and HIP tokens that name a side.</summary>
+    /// <summary>
+    /// The SSRs are numbered 1 onward, each with a status, tokens exactly when read, a note when not enforced, its text, cited rules, and HIP and Fanaticism
+    /// tokens that name a side.
+    /// </summary>
     public static IEnumerable<string> RuleDiagnostics(IReadOnlyList<CardRuleFacts> rules, IReadOnlyList<string> statuses, IReadOnlyList<string> citable)
     {
         ArgumentNullException.ThrowIfNull(rules);
@@ -396,6 +409,15 @@ public static class ScenarioA1SetupCalculator
                 if (named is null)
                 {
                     yield return $"card.ssr: SSR {rule.Number}'s '{token}' names no side of the card";
+                }
+            }
+
+            // Ruling R70.15 (A10.8): a Fanaticism token names a side of the card, and an OB group of that side when it names one.
+            foreach (var (token, named) in rule.FanaticTokens)
+            {
+                if (!named)
+                {
+                    yield return $"card.ssr: SSR {rule.Number}'s '{token}' names no side of the card, or no OB group of that side (A10.8; ruling R70.15)";
                 }
             }
         }

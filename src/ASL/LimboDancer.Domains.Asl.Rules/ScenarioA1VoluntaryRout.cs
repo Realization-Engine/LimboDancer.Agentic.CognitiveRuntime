@@ -57,7 +57,8 @@ public static class ScenarioA1VoluntaryRout
     /// <summary>
     /// The Known enemy unit that lets a unit in a Location break voluntarily (A10.41, A10.532; ruling R70.11), or null: an unbroken one ADJACENT to it or in
     /// its Location (a vehicle not Abandoned), or an armed unbroken one with a clear LOS to it within its Normal Range. The enemies are the Known ones the
-    /// rout reads (A10.533), so the answer tells the side nothing it does not hold. A vehicle has no Normal Range here (rulings R70.14, 3d's).
+    /// rout reads (A10.533), so the answer tells the side nothing it does not hold. A vehicle's Normal Range is its weapons', and a Gun's crew's takes in the
+    /// Gun's, as the rout reads them (ruling R70.14, increment 3d).
     /// </summary>
     public static string? Threat(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int at)
     {

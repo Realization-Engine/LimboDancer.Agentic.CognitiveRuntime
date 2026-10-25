@@ -37,6 +37,36 @@ public static class ScenarioA1GameStart
     /// <summary>Ruling R18.3, in words.</summary>
     public static string GroupText(string unitId, string? side) => $"play.group: {unitId} names no OB group, and the groups of {side} differ in ELR (A19.1; ruling R18.3)";
 
+    /// <summary>The prefix of the SSR that makes a side's Personnel, or one OB group of them, Fanatic (A10.8; pass 70, ruling R70.15).</summary>
+    public const string FanaticRule = "fanatic:";
+
+    /// <summary>
+    /// The side and the OB group, or null for the whole side, an SSR <c>fanatic:&lt;side&gt;</c> or <c>fanatic:&lt;side&gt;:&lt;group&gt;</c> names (A10.8, p. 69:
+    /// "Fanaticism is evoked only by SSR or Battle Hardening"; ruling R70.15); null when the token is not a well-formed one.
+    /// </summary>
+    public static (string Side, string? Group)? FanaticToken(string token)
+    {
+        ArgumentNullException.ThrowIfNull(token);
+        return token.Split(':') switch
+        {
+            ["fanatic", { Length: > 0 } side] => (side, null),
+            ["fanatic", { Length: > 0 } side, { Length: > 0 } group] => (side, group),
+            _ => null,
+        };
+    }
+
+    /// <summary>
+    /// Whether the SSRs make a unit set up Fanatic (A10.8; ruling R70.15): a Personnel unit, not a Dummy, of a side a <c>fanatic:</c> SSR names, and of its OB
+    /// group when the SSR names one. A Fanatic unit has both Morale Levels one higher and takes no Cowering, RtPh surrender, or PAATC, which its rules read
+    /// from the condition.
+    /// </summary>
+    public static bool FanaticBySsr(IReadOnlyList<string> rules, string? side, string? group, bool personnel, bool dummy)
+    {
+        ArgumentNullException.ThrowIfNull(rules);
+        return personnel && !dummy && side is not null
+            && rules.Any(rule => FanaticToken(rule) is { } named && named.Side == side && (named.Group is null || named.Group == group));
+    }
+
     /// <summary>C6.41, C6.42: the Scenario Defender's manned Gun Bore Sights a Location outside its hex, in its LOS, within 16 hexes; the LOS is read last, only when the rest holds.</summary>
     public static string? BoreSightBar(bool mannedGunOnMap, bool scenarioDefenders, bool ownLocation, Func<bool> losClearWithin16, string gun)
     {
