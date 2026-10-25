@@ -26,25 +26,32 @@
 #
 # What a pass supplies is gate/pass<pass>.conf (see pass55.conf): its recorded games, extra sweep games, the JSON keys it added,
 # BOTH_SKIP (what changed in every record for a reason that is no rule: the catalog's identity, GameEvent.RulePackage after the packages
-# are pinned again), and CODE_MOVE=1 for a pass that moves code without changing rules, which sweeps every cut of p31c-tw.
+# are pinned again), and CODE_MOVE=1 for a pass that moves code without changing rules, which sweeps every cut of the swept game ($SWEEP_GAME below).
 # PROOF_SKIP is computed from the diff base..HEAD (new_properties.py); it is never carried over from another pass.
 source "$(dirname "${BASH_SOURCE[0]}")/../paths.sh"
 S="$WORK"
 G="$TOOLS/merge-gate"
 T="5a7d1f000000400080000000000057d0"
 PASS="$1"; BASE="$2"; STAGE="$3"
-SWEEP_SMALL="pass16-demo2,p26-demo,p25-visual,p35-interdict-trap,p35-rally-enemy-turn,p35-smoke-hill,p35-tow2,p35-bog,p35-mud,p40-tpbf-mixed,p30-armor,p40c-ovr"
-# The few games of the proofs' early check: three small games and two cuts of p31c-tw that plan moves and fire.
-EARLY="=pass16-demo2,=p26-demo,=p25-visual,p31c-tw-r459,p31c-tw-r471"
+# The user (2026-10-25): the proof store holds only the essentials: the user's most recent full games, the current pass's games, and the
+# previous pass's. The swept game is the most recent full game, cut at every phase change in the store (the tool's cut mode); everything
+# else whole in the store is swept at its last state. When a pass's branch is cut, the games of the pass before the previous one leave the
+# store and the live folder (retired outside the repository, never deleted by a session).
+SWEEP_GAME="dl-tractor-works-02"
 GATE="$R/src/ASL/LimboDancer.Domains.Asl.MapStudio/bin/gate/Debug/net10.0"
 MAINTOOL="$S/proof-main/bin/Debug/net10.0"
 if [ -z "$PASS" ] || [ -z "$BASE" ] || [ -z "$STAGE" ]; then sed -n 2,29p "$0"; exit 2; fi
 if [ ! -f "$G/pass-configs/pass$PASS.conf" ]; then echo "STOP: write $G/pass-configs/pass$PASS.conf first (pass55.conf is the form)"; exit 2; fi
 OWN=""; SWEEP_EXTRA=""; TRIAL_EXTRA=""; SKIP_JSON=""; SKIP_ADD=""; BOTH_SKIP=""; PRESENT=""; ABSENT=""; CODE_MOVE=""
 source "$G/pass-configs/pass$PASS.conf"
-# The user (2026-10-13): a rule pass sweeps p31c-tw at each of its eight phases at four points of the game; a pass that moves code, at every cut.
-if [ "$CODE_MOVE" = "1" ]; then TW="p31c-tw"; else TW=$(python "$G/pick_sweep_cuts.py" p31c-tw 4 < /dev/null); fi
-SWEEP_OLD="$TW,$SWEEP_SMALL"
+# A rule pass sweeps the swept game at each of its phases at two points of the game, the first and the last (the user, 2026-10-25; four
+# points before, from 2026-10-13); a pass that moves code, at every cut.
+if [ "$CODE_MOVE" = "1" ]; then TW="$SWEEP_GAME"; else TW=$(python "$G/pick_sweep_cuts.py" "$SWEEP_GAME" 2 < /dev/null); fi
+# Every other whole game in the store, but the pass's own (which are replayed, not swept): the other full games and the previous pass's.
+STORE_GAMES=$(ls "$S/store/$T/" 2>/dev/null | sed -n 's/\.game\.json$//p' | grep -vE -- '-r[0-9]+$' | grep -vxF -e "$SWEEP_GAME" $(for g in $OWN; do printf -- '-e %s ' "$g"; done) | sed 's/^/=/' | paste -sd, -)
+SWEEP_OLD="$TW${STORE_GAMES:+,$STORE_GAMES}"
+# The few games of the proofs' early check: three cuts of the swept game, early, middle, and late.
+EARLY=$(echo "$TW" | tr ',' '\n' | grep -E -- '-r[0-9]+$' | awk '{ cut[NR] = $0 } END { if (NR) print cut[1] "," cut[int((NR + 1) / 2)] "," cut[NR] }')
 exact() { echo "$1" | tr ' ' ',' | tr -s ',' | sed -e 's/^,//' -e 's/,$//' -e 's/[^,][^,]*/=&/g'; }
 OWN_COMMA=$(echo "$OWN" | tr ' ' ',' | tr -s ',' | sed -e 's/^,//' -e 's/,$//')
 OWN_EXACT=$(exact "$OWN"); EXTRA_EXACT=$(exact "$SWEEP_EXTRA")

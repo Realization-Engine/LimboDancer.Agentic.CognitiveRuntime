@@ -4,6 +4,9 @@ The measurements behind `src/ASL/docs/Memory-And-Performance/ASL Map Studio Play
 `ASL Map Studio Play Step Plan.md` (its section 2.1). Every figure comes from the Studio running the Play page's follower of `cd-guards-5`
 as the adjudicator, the page visible, a step a second paced on the server.
 
+Since 2026-10-25 `cd-guards-5` is retired with the other games (in `E:/Archive/GitHub/dlandi/asl-retired-2026-10-25/live`); follow
+`dl-tractor-works-02` instead, or copy `cd-guards-5` back into the live folder to repeat a recorded figure.
+
 | File | What it does |
 |---|---|
 | `follower_cut.py` | Brings a follower game to a revision of its record at once: after "Start following", rewrite the follower's file with the record's prefix that ends at a step's end, then press "Next step" once. Saves the 12 minutes of following 700 steps a second at a time |
