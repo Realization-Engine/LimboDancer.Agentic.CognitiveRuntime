@@ -375,9 +375,9 @@ public sealed class ScenarioA1Pass40RulesTests
 
         // A4.14 with the OVR: the Known SMC is no bar and is not drawn for a reveal; a concealed unit there still is (A12.15).
         UnitAtTargetFacts[] there = [new("l", true, "russian", false, true, false), new("q", true, "russian", false, false, false)];
-        var barred = ScenarioA1MovementCalculator.EnemiesAtTarget(there, "german", false, false, false, false, false, "g1", "x");
+        var barred = ScenarioA1MovementCalculator.EnemiesAtTarget(there, "german", false, false, false, false, "g1", "x");
         Assert.StartsWith("play.move-occupied:", barred.Refusal, StringComparison.Ordinal);
-        var entered = ScenarioA1MovementCalculator.EnemiesAtTarget(there, "german", false, false, false, false, false, "g1", "x", knownEntered: true);
+        var entered = ScenarioA1MovementCalculator.EnemiesAtTarget(there, "german", false, false, false, false, "g1", "x", knownEntered: true);
         Assert.Null(entered.Refusal);
         Assert.Equal(["q"], entered.EnemiesThere);
     }

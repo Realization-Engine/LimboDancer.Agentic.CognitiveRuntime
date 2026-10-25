@@ -1579,7 +1579,7 @@ public sealed partial class GamePlanner
         {
             var (bypassBar, bypassTerrain) = ScenarioA1FireMapRules.BypassTerrain(
                 [.. lane.Select(side => HexsideAt(state, target, side)).Select(side => new BypassHexsideFacts(side?.Terrain?.Name, side?.Terrain?.IsRoad == true))],
-                direct, (attack.Firers ?? []).Any(item => item.LocationId == target.ToString()), attack.SnapShot == true,
+                direct, attack.SnapShot == true,
                 targetRead.Hex.Hexsides.Any(side => WallOn(side) is not null));
             if (bypassBar is not null)
             {

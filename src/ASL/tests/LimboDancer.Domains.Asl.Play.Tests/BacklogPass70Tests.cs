@@ -71,6 +71,9 @@ public sealed class BacklogPass70Tests : IDisposable
     // Increment 3b: the scenario year of the game (D6.2: Riders of every nationality from 1943).
     private int year = 1942;
 
+    // Increment 3f: the hexsides of a woods hex a test reads as Open Ground, for Bypass (A4.3).
+    private readonly HashSet<(string Hex, HexsideDirection Side)> openSides = [];
+
     // Increment 3d: the hexes a test reads as one stone building, and the SSRs of the game.
     private readonly HashSet<string> stone = new(StringComparer.Ordinal);
     private string[] ssrs = [];
@@ -93,7 +96,8 @@ public sealed class BacklogPass70Tests : IDisposable
             Assert.True(geometry.TryGetIndex(name, out var index));
             var type = woods.Contains(text) ? Woods() : stone.Contains(text) ? Stone() : Open();
             var center = new LocationFacts(0, type, null);
-            HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, type, null, false, false, false, false, null))];
+            HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, openSides.Contains((text, side)) ? Open() : type, null, false, false,
+                false, false, null))];
             hexes.Add(new HexFacts(name, index, 0, false, center, [center], hexsides, null, CenterTerrainSource.CenterSample));
         }
 
@@ -944,10 +948,175 @@ public sealed class BacklogPass70Tests : IDisposable
         var gambit = ScenarioCards.Read("gambit", Catalog)!.Card!;
         Assert.Contains(gambit.Sides.Single(side => side.Side == "british").Groups, group => (group.Dummies ?? 0) == 0);
         SetupCounter OffBoard(string id, string kind = "asl:squad", string? definition = "british-elite-squad") =>
-            new(id, "british", "british-1", definition, kind, null, true, false, kind == UnitKinds.Dummy, false, true) { OffBoard = true };
+            new(id, "british", "british-1", definition, kind, null, true, false, kind == UnitKinds.Dummy, false, true)
+            {
+                OffBoard = true
+            };
         IEnumerable<string> Reasons(params SetupCounter[] counters) => ScenarioSetup.Check(gambit, counters, _ => "open-ground", _ => true, Rules.ScenarioA1FireReference.HalfSquadOf,
             gambit.Date.Month).Reasons.Where(reason => reason.StartsWith("play.setup-offboard", StringComparison.Ordinal) || reason.StartsWith("play.setup-concealment", StringComparison.Ordinal));
         Assert.Empty(Reasons(OffBoard("bs1"), OffBoard("bs2")));
         Assert.Contains(Reasons(OffBoard("bd1", UnitKinds.Dummy, null)), reason => reason.StartsWith("play.setup-offboard: bd1", StringComparison.Ordinal));
+    }
+
+    // Increment 3f: Bypass and detection (task 70.8; ruling R70.23).
+
+    private static readonly string[] GermanSquad = ["g1"];
+    private static readonly string[] BypassLane = ["southeast", "northeast"];
+    private static readonly string[] BothRussians = ["r1", "r2"];
+    private static readonly string[] ThirdRussian = ["r3"];
+
+    private static string N(string hex, HexsideDirection side) => Board01Fixture.Handle().Neighbor(HexName.Parse(hex), side)!.ToString()!;
+
+    /// <summary>D4 is woods but along its southeast and northeast hexsides (A4.3): a stack from D5 Bypasses it along them and leaves north, to D3 (A4.31).</summary>
+    private void BypassedWoods()
+    {
+        woods.Add("D4");
+        openSides.Add(("D4", HexsideDirection.SouthEast));
+        openSides.Add(("D4", HexsideDirection.NorthEast));
+    }
+
+    private Task<PlayResult> MoveG1(string hex, bool bypass = false, bool minimumMove = false)
+    {
+        var arguments = new Dictionary<string, object> { ["unitIds"] = GermanSquad, ["to"] = L(hex) };
+        if (bypass)
+        {
+            arguments["bypass"] = BypassLane;
+        }
+
+        if (minimumMove)
+        {
+            arguments["minimumMove"] = true;
+        }
+
+        return Do(GameActions.Move, NoRoll(), arguments);
+    }
+
+    private async Task PassFire() => Committed(await Do(GameActions.PassFire, NoRoll(), new
+    {
+    }));
+
+    private MovementStepped LastStep(long before) => Since(before).Select(item => item.Payload).OfType<MovementStepped>().Last();
+
+    private static IEnumerable<string> DrmNames(FireResolved record) =>
+        record.Resolution.GetProperty("arithmetic").GetProperty("drm").EnumerateArray().Select(item => item.GetProperty("name").GetString()!);
+
+    private IEnumerable<string> RevealedSince(long before) => Since(before).Where(item => item.Type == "concealment-lost").Select(item => ((ConditionsChanged)item.Payload).Id);
+
+    [Fact]
+    public async Task AMinimumMoveIntoAConcealedSquadIsForcedBackAndEndsItsMphUnpinned()
+    {
+        // A12.15 (p. 78; ruling R70.23): the German 4-6-7's Minimum Move into the woods of E4 meets the concealed Russian squad: it is revealed and the
+        // squad stays in E5, its MF spent and its MPh over. A4.134 (p. 48): it entered no hex, so it is neither pinned nor CX.
+        woods.Add("E4");
+        await SetupAt(2, "german", Squad("g1", "E5", "german"), Squad("r1", "E4", "russian", Conditions.Concealed));
+        var before = Revision;
+        Committed(await MoveG1("E4", minimumMove: true));
+        var step = LastStep(before);
+        Assert.Equal((L("E5"), L("E4"), true), (step.To.ToString(), step.Attempted?.ToString(), step.MinimumMove));
+        Assert.False(Is(Current.Unit("r1")!, Conditions.Concealed));
+        await PassFire();
+        var squad = Current.Unit("g1")!;
+        Assert.Equal((true, false, false, L("E5")), (squad.MovementEnded, Is(squad, Conditions.Pinned), Is(squad, Conditions.Cx), Current.Location("g1")!.Location.ToString()));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AStackForcedBackFromItsBypassExitStaysInItsLaneAndEveryQuestionMarkThereIsLost()
+    {
+        // A12.151 (p. 79; ruling R70.23): the German squad Bypasses D4 along its southeast and northeast hexsides, past the concealed Russian squad in the
+        // woods, and tries to leave for D3, where a second concealed squad stands: r2 is revealed, and g1 is forced back into its lane in D4, where it ends
+        // its MPh with a concealed enemy unit, so r1 loses its "?" too. r1 then fires TPBF at it: the lane's Open Ground, no woods TEM, and FFMO.
+        BypassedWoods();
+        await SetupAt(2, "german", Squad("g1", "D5", "german"), Squad("r1", "D4", "russian", Conditions.Concealed), Squad("r2", "D3", "russian", Conditions.Concealed));
+        Committed(await MoveG1("D4", bypass: true));
+        Assert.True(Is(Current.Unit("r1")!, Conditions.Concealed));
+        await PassFire();
+
+        var before = Revision;
+        var result = await MoveG1("D3");
+        Committed(result);
+        Assert.Contains(result.Reasons, reason => reason.Contains("it stays in Bypass", StringComparison.Ordinal) && reason.Contains("(A12.151)", StringComparison.Ordinal));
+        var step = LastStep(before);
+        Assert.Equal((L("D4"), L("D3"), 2), (step.To.ToString(), step.Attempted?.ToString(), step.Bypass?.Count));
+        Assert.Equal(2, Current.Movement!.Bypass!.Count);
+        Assert.Equal(BothRussians, RevealedSince(before).Order(StringComparer.Ordinal));
+
+        var fired = Revision;
+        Committed(await Do(GameActions.Fire, Once(6, 6), new Dictionary<string, object> { ["firers"] = R1, ["target"] = L("D4") }));
+        var drm = DrmNames(Since(fired).Select(item => item.Payload).OfType<FireResolved>().Single()).ToArray();
+        Assert.DoesNotContain("tem:woods", drm);
+        Assert.Contains("ffmo", drm);
+        await PassFire();
+        Assert.True(Current.Unit("g1")!.MovementEnded);
+        NoReplayErrors();
+
+        // A forced back recorded before the pass carries no lane: the projector reads it as before, the stack in the obstacle.
+        var events = store.Read(Scope)!.Events;
+        var at = events.Select((item, index) => (item, index)).Single(pair => pair.item.Payload is MovementStepped { Attempted: not null }).index;
+        GameEvent[] older = [.. events.Take(at + 1).Select(item => item.Payload is MovementStepped { Attempted: not null } old ? item with { Payload = old with { Bypass = null } } : item)];
+        var replayed = Planner().Replay(older);
+        Assert.False(replayed.HasErrors);
+        Assert.Null(replayed.Current!.Movement!.Bypass);
+    }
+
+    [Fact]
+    public async Task APinnedBypassMemberRevealsTheQuestionMarksOfItsLocationAsTheWindowCloses()
+    {
+        // A12.151, A4.33 (pp. 79, 50; ruling R70.23): the Russian squad two hexes off fires at the German squad Bypassing D4: 5 + 4, FFNAM and FFMO, a PTC
+        // the squad fails with 6 + 6, pinned. As the DEFENDER passes, g1's MPh ends in the Bypass Location with the concealed r1, which loses its "?".
+        BypassedWoods();
+        var firing = N(N("D4", HexsideDirection.SouthEast), HexsideDirection.SouthEast);
+        await SetupAt(2, "german", Squad("g1", "D5", "german"), Squad("r1", "D4", "russian", Conditions.Concealed), Squad("r3", firing, "russian"));
+        Committed(await MoveG1("D4", bypass: true));
+        Committed(await Do(GameActions.Fire, Once(5, 4, 6, 6), new Dictionary<string, object> { ["firers"] = ThirdRussian, ["target"] = L("D4") }));
+        Assert.True(Is(Current.Unit("g1")!, Conditions.Pinned));
+        Assert.True(Is(Current.Unit("r1")!, Conditions.Concealed));
+        var before = Revision;
+        var result = await Do(GameActions.PassFire, NoRoll(), new
+        {
+        });
+        Committed(result);
+        Assert.Equal(R1, RevealedSince(before));
+        Assert.Contains(result.Reasons, reason => reason.Contains("(A12.151)", StringComparison.Ordinal));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AVehicleEndingItsMphInBypassRevealsTheConcealedSquadThereButNotTheHiddenOne()
+    {
+        // A12.42 (p. 80; ruling R70.23): the German halftrack from E5 Bypasses the woods of the hex north-east of it along the hexside it shares with the
+        // hex south-east of E5 (D2.3), stops, and ends its MPh there: the concealed Russian squad in the woods loses its "?"; the hidden one stays hidden.
+        var wood = N("E5", HexsideDirection.NorthEast);
+        woods.Add(wood);
+        openSides.Add((wood, HexsideDirection.South));
+        await SetupAt(2, "german", Vehicle("de-ht", "attacker-halftrack", "E5", "german", "east"), Squad("r1", wood, "russian", Conditions.Concealed),
+            Squad("r2", wood, "russian", Conditions.Hidden));
+        async Task Step(Dictionary<string, object> arguments)
+        {
+            Committed(await Do(GameActions.MoveVehicle, NoRoll(), arguments));
+            if (Current.Movement is { WindowOpen: true })
+            {
+                await PassFire();
+            }
+        }
+
+        await Step(new Dictionary<string, object> { ["vehicleId"] = "de-ht", ["kind"] = "start" });
+        await Step(new Dictionary<string, object> { ["vehicleId"] = "de-ht", ["kind"] = "enter", ["to"] = L(wood), ["bypass"] = true });
+        Assert.NotNull(Current.Unit("de-ht")!.Straddling);
+        Assert.True(Is(Current.Unit("r1")!, Conditions.Concealed));
+        await Step(new Dictionary<string, object> { ["vehicleId"] = "de-ht", ["kind"] = "stop" });
+        var before = Revision;
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+        if (Current.Movement is { WindowOpen: true })
+        {
+            await PassFire();
+        }
+
+        Assert.Equal(R1, RevealedSince(before));
+        Assert.False(Is(Current.Unit("r1")!, Conditions.Concealed));
+        Assert.True(Is(Current.Unit("r2")!, Conditions.Hidden));
+        NoReplayErrors();
     }
 }

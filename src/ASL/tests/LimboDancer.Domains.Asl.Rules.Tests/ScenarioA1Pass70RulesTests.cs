@@ -757,8 +757,14 @@ public sealed class ScenarioA1Pass70RulesTests
     {
         // A12.14 (p. 78): "If the only Good Order enemy ground unit in LOS is itself concealed ... that enemy unit must completely forfeit its '?' momentarily
         // ... if it opts to force the friendly unit to lose his". A concealed Loss seer is a Loss seer, not one in view; a hidden one is neither.
-        Assert.True(ScenarioA1Sight.Sees(Seer() with { Concealed = true }, SightPurpose.Loss));
-        Assert.False(ScenarioA1Sight.Sees(Seer() with { Concealed = true }, SightPurpose.LossInView));
+        Assert.True(ScenarioA1Sight.Sees(Seer() with
+        {
+            Concealed = true
+        }, SightPurpose.Loss));
+        Assert.False(ScenarioA1Sight.Sees(Seer() with
+        {
+            Concealed = true
+        }, SightPurpose.LossInView));
         Assert.True(ScenarioA1Sight.Sees(Seer(), SightPurpose.LossInView));
         Assert.False(ScenarioA1Sight.Sees(Seer(hidden: true), SightPurpose.LossInView));
 
@@ -799,8 +805,16 @@ public sealed class ScenarioA1Pass70RulesTests
         // The Concealment Table (A12.121, p. 107, read from its render): an Emplaced Gun (and manning Infantry) and a vehicle (and PRC) gain "?" only out of
         // the LOS of every unbroken enemy ground unit, Case J in Concealment Terrain, Case K out of it (a dr within 16 hexes); never in such a LOS, at any
         // range, where Infantry in Concealment Terrain beyond 16 has Case I.
-        var crew = Candidate("de-gc", "asl:crew", gun: true) with { HoldsEmplacedGun = true, Shared = () => [("de-gun", true)] };
-        var truck = Candidate("de-truck", "asl:vehicle", vehicle: true) with { VehicleConcealmentTerrain = () => false, Shared = () => [("de-p", true)] };
+        var crew = Candidate("de-gc", "asl:crew", gun: true) with
+        {
+            HoldsEmplacedGun = true,
+            Shared = () => [("de-gun", true)]
+        };
+        var truck = Candidate("de-truck", "asl:vehicle", vehicle: true) with
+        {
+            VehicleConcealmentTerrain = () => false,
+            Shared = () => [("de-p", true)]
+        };
         var k = Gains(10, false, crew, truck);
         Assert.Equal(("de-gc", (int?)4), (k[0].Id, k[0].Drm));
         Assert.Equal(GunOfTheCrew, k[0].With);
@@ -808,25 +822,52 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.Equal(PassengerOfTheTruck, k[1].With);
 
         // Case J: Concealment Terrain (for the vehicle, as it reads it in play) gains with no dr; beyond 16 out of it, Case K needs none either.
-        Assert.Null(Gains(10, false, truck with { VehicleConcealmentTerrain = () => true }).Single().Drm);
-        Assert.Null(Gains(20, false, crew with { TerrainKey = () => "woods" }).Single().Drm);
+        Assert.Null(Gains(10, false, truck with
+        {
+            VehicleConcealmentTerrain = () => true
+        }).Single().Drm);
+        Assert.Null(Gains(20, false, crew with
+        {
+            TerrainKey = () => "woods"
+        }).Single().Drm);
         Assert.Null(Gains(20, false, truck).Single().Drm);
 
         // In a LOS at 20 hexes: the squad in woods takes Case I's dr; the crew and the vehicle gain nothing.
-        Assert.Equal("de-s", Gains(20, true, Candidate("de-s", terrain: "woods"), crew with { TerrainKey = () => "woods" }, truck with { VehicleConcealmentTerrain = () => true }).Single().Id);
+        Assert.Equal("de-s", Gains(20, true, Candidate("de-s", terrain: "woods"), crew with
+        {
+            TerrainKey = () => "woods"
+        }, truck with
+        {
+            VehicleConcealmentTerrain = () => true
+        }).Single().Id);
 
         // A crew manning a Gun not Emplaced, a unit aboard, and a vehicle whose Passenger is broken gain nothing; a large vehicle's US# is 5 (A1.6).
-        Assert.Empty(Gains(10, false, Candidate("de-gc", "asl:crew", gun: true), Candidate("de-p") with { Aboard = true },
-            truck with { Shared = () => [("de-p", false)] }));
-        Assert.Equal(5, Gains(10, false, truck with { Large = true }).Single().Drm);
+        Assert.Empty(Gains(10, false, Candidate("de-gc", "asl:crew", gun: true), Candidate("de-p") with
+        {
+            Aboard = true
+        },
+            truck with
+            {
+                Shared = () => [("de-p", false)]
+            }));
+        Assert.Equal(5, Gains(10, false, truck with
+        {
+            Large = true
+        }).Single().Drm);
     }
 
     [Fact]
     public void TheConcealmentDrTakesLaxAndStealthy()
     {
         // A12.122 (p. 77): +1 Lax, -1 Stealthy, with the US# (the example's Hero: "6 [dr] +1 [US#] -1 [Leadership] -1 [Stealthy] = 5").
-        Assert.Equal(4, Gains(10, false, Candidate("de-s") with { Lax = true }).Single().Drm);
-        Assert.Equal(0, Gains(10, false, Candidate("de-h", "asl:hero") with { Stealthy = true }).Single().Drm);
+        Assert.Equal(4, Gains(10, false, Candidate("de-s") with
+        {
+            Lax = true
+        }).Single().Drm);
+        Assert.Equal(0, Gains(10, false, Candidate("de-h", "asl:hero") with
+        {
+            Stealthy = true
+        }).Single().Drm);
         Assert.Equal(3, Gains(10, false, Candidate("de-s")).Single().Drm);
     }
 
@@ -912,7 +953,10 @@ public sealed class ScenarioA1Pass70RulesTests
         // A12.12 (p. 77; ruling R70.35, lifting R20.5's refusal): "Thereafter, a '?' may be placed on top of any non-concealed Good Order unit/stack before
         // it enters the mapboard for the first time", whatever the OB gives: the Russian group with no "?" may, and the German group's OB "?" are not used
         // by it (the tank under its one OB "?" on the map still fits). Never hidden off board, and never a Dummy (no card gives an entering group Dummies).
-        var none = HipCard() with { Sides = [HipCard().Sides[1]] };
+        var none = HipCard() with
+        {
+            Sides = [HipCard().Sides[1]]
+        };
         Assert.Empty(OffBoardReasons(none, Placed("r-1", "asl:squad", "rsquad", concealed: true, offBoard: true, side: "russian")));
         Assert.Empty(OffBoardReasons(HipCard(), Placed("de-t", "asl:vehicle", "tank", concealed: true), Placed("de-1", "asl:squad", "squad", concealed: true, offBoard: true)));
         Assert.Contains("never hidden nor a Dummy", Assert.Single(OffBoardReasons(HipCard(), Placed("de-1", "asl:squad", "squad", hidden: true, offBoard: true))),
@@ -924,8 +968,135 @@ public sealed class ScenarioA1Pass70RulesTests
     {
         // A12.12's EXC (p. 77; ruling R70.35): "only one non-OB-designated '?' can be placed per stack": the two Russian squads of one entry area wait under
         // one "?", in a group whose OB gives none, and nothing is refused.
-        var none = HipCard() with { Sides = [HipCard().Sides[1]] };
+        var none = HipCard() with
+        {
+            Sides = [HipCard().Sides[1]]
+        };
         Assert.Empty(OffBoardReasons(none, Placed("r-1", "asl:squad", "rsquad", concealed: true, offBoard: true, side: "russian"),
             Placed("r-2", "asl:squad", "rsquad", concealed: true, offBoard: true, side: "russian")));
+    }
+
+    // Increment 3f: Bypass and detection (task 70.8; ruling R70.23).
+
+    private static BypassLocationUnitFacts AtBypass(string id, string side = "russian", bool concealed = true, bool hidden = false, bool dummy = false, bool captured = false,
+        bool active = true) => new(id, active, side, captured, concealed, hidden, dummy);
+
+    private static readonly string[] OneMover = ["g1"];
+    private static readonly string[] RevealedInLane = ["r1", "g2"];
+    private static readonly string[] RevealedInObstacle = ["r1", "rh"];
+    private static readonly string[] DummyThere = ["rd"];
+    private static readonly string[] ConcealedOne = ["r1"];
+    private static readonly int[] Lane = [2, 1];
+    private static readonly BypassHexsideFacts[] OpenLane = [new("Open Ground", false), new("Open Ground", false)];
+
+    private static MoveStepFacts StepFacts(bool minimumMove = false, bool obstacleHeld = false, MoveRevealUnitFacts[]? there = null) =>
+        new(OneMover, "bd03:E6:0", "bd03:F5:0", false, null, obstacleHeld, "woods", null, 4, false, false, minimumMove, [], false, false, false, false, there ?? [], [], ObstacleHeld: obstacleHeld);
+
+    [Fact]
+    public void AMinimumMoveIntoAConcealedUnitIsForcedBackAndPinsNone()
+    {
+        // A12.15 (p. 78; ruling R70.23): the refusal of a Minimum Move into concealed units is lifted, and the normal forced back applies. A4.134 (p. 48):
+        // "After a unit has entered a hex by Minimum Move ... all unbroken survivors become both pinned and CX"; forced back, it entered none.
+        UnitAtTargetFacts[] there = [new("r1", true, "russian", false, false, false)];
+        var enemies = ScenarioA1MovementCalculator.EnemiesAtTarget(there, "german", false, false, false, false, "g1", "bd03:F5:0");
+        Assert.Null(enemies.Refusal);
+        Assert.Equal(ConcealedOne, enemies.EnemiesThere);
+        var verdict = ScenarioA1MovementCalculator.MoveStep(StepFacts(minimumMove: true, there: [new("r1", false, false)]));
+        Assert.True(verdict.ForcedBack);
+        Assert.Contains(", a Minimum Move (A4.134)", verdict.Summary, StringComparison.Ordinal);
+        Assert.DoesNotContain("pinned and CX", verdict.Summary, StringComparison.Ordinal);
+        Assert.False(ScenarioA1MovementCalculator.MinimumMoveEntered(true, true));
+        Assert.True(ScenarioA1MovementCalculator.MinimumMoveEntered(true, false));
+        Assert.Equal(OneMover, ScenarioA1MovementCalculator.EndingMembers(true, true, OneMover, null, null));
+    }
+
+    [Fact]
+    public void AStackForcedBackFromItsBypassExitKeepsItsLaneAndEveryQuestionMarkThereIsLost()
+    {
+        // A12.151 (p. 79): "should ... the presence of other unknown units in the planned exit hex ... force a Bypass Infantry unit ... to end its MPh
+        // prematurely in the Bypass Location with a concealed enemy unit, all concealment in that Location is lost". The lane is kept; every "?" there of
+        // both sides goes, a Dummy's by its removal; the mover's went with the forced back; a hidden unit, under no "?", stays hidden.
+        Assert.True(ScenarioA1BypassDetection.KeepsLane(true, true));
+        Assert.False(ScenarioA1BypassDetection.KeepsLane(true, false));
+        Assert.False(ScenarioA1BypassDetection.KeepsLane(false, true));
+        BypassLocationUnitFacts[] there = [AtBypass("g1", "german"), AtBypass("r1"), AtBypass("rd", dummy: true), AtBypass("rh", concealed: false, hidden: true),
+            AtBypass("g2", "german"), AtBypass("rc", captured: true)];
+        var lost = ScenarioA1BypassDetection.AllConcealmentLost(there, "german", false, OneMover);
+        Assert.Equal(RevealedInLane, lost.Revealed);
+        Assert.Equal(DummyThere, lost.DummiesRemoved);
+
+        // With no concealed enemy unit in the Location nothing is lost, the moving side's own "?" neither.
+        Assert.False(ScenarioA1BypassDetection.AllConcealmentLost([AtBypass("g2", "german"), AtBypass("rh", concealed: false, hidden: true)], "german", false, OneMover).Any);
+    }
+
+    [Fact]
+    public void ABypassMemberBrokenOrPinnedEndsItsMphWhereTheQuestionMarksAreLost()
+    {
+        // A12.151, A4.33 (pp. 79, 50): "Any Infantry unit that becomes pinned ... while using Bypass ... Concealed enemy units in the Location lose that status
+        // (12.151) at the end of the moving unit's MPh"; A4.32 for a broken one. A vehicle's move, and a stack not in Bypass, read nothing.
+        Assert.True(ScenarioA1BypassDetection.EndsInBypass(true, false, [(true, false, true)]));
+        Assert.True(ScenarioA1BypassDetection.EndsInBypass(true, false, [(true, false, false), (true, true, false)]));
+        Assert.False(ScenarioA1BypassDetection.EndsInBypass(true, false, [(true, false, false), (false, true, false)]));
+        Assert.False(ScenarioA1BypassDetection.EndsInBypass(false, false, [(true, false, true)]));
+        Assert.False(ScenarioA1BypassDetection.EndsInBypass(true, true, [(true, false, true)]));
+    }
+
+    [Fact]
+    public void AnAttemptToOccupyAnObstacleWithConcealedUnitsRevealsThemAndForcesTheStackBack()
+    {
+        // A12.151 (p. 78): "The opposing Infantry unit must actually attempt to occupy the concealed unit's obstacle and Location (not using Bypass) to cause
+        // loss of concealment"; with A12.15, the stack is forced back into its lane, where every "?" of the Location is lost, hidden units placed first.
+        BypassLocationUnitFacts[] held = [AtBypass("g1", "german"), AtBypass("r1"), AtBypass("rh", concealed: false, hidden: true), AtBypass("rd", dummy: true)];
+        var forced = ScenarioA1BypassDetection.Occupy(held, "german", OneMover, false);
+        Assert.Equal(ObstacleAttempt.ForcedBack, forced.Attempt);
+        Assert.Equal(RevealedInObstacle, forced.Reveal.Revealed);
+        Assert.Equal(DummyThere, forced.Reveal.DummiesRemoved);
+
+        // Only Dummies there: they are removed and the stack occupies the obstacle; a moving stack of Dummies alone is removed; no "?" there, no reveal.
+        var dummies = ScenarioA1BypassDetection.Occupy([AtBypass("g1", "german"), AtBypass("rd", dummy: true)], "german", OneMover, false);
+        Assert.Equal((ObstacleAttempt.Occupies, DummyThere.Length), (dummies.Attempt, dummies.Reveal.DummiesRemoved.Count));
+        Assert.Equal(ObstacleAttempt.MoversRemoved, ScenarioA1BypassDetection.Occupy(held, "german", OneMover, true).Attempt);
+        var none = ScenarioA1BypassDetection.Occupy([AtBypass("g1", "german")], "german", OneMover, false);
+        Assert.Equal((ObstacleAttempt.Occupies, false), (none.Attempt, none.Reveal.Any));
+
+        // A Known enemy unit in the obstacle still bars the step (A4.14); concealed ones do not, and the step reads the obstacle's cost.
+        MoveEntryVerdict Entry(bool known) => ScenarioA1TerrainCosts.MoveEntry(new MoveEntryFacts(true, Lane, true, true, false, true, known, false, "woods", 0, true, true, 3, null, "x"),
+            () => 3, _ => false, () => 0);
+        Assert.StartsWith("play.move-bypass: Infantry may not occupy an obstacle that holds a Known enemy unit", Entry(true).Refusal, StringComparison.Ordinal);
+        Assert.Equal("woods", Entry(false).Occupy!.Terrain);
+
+        // The step's record: forced back with the MF spent, its move ending.
+        var verdict = ScenarioA1MovementCalculator.MoveStep(StepFacts(obstacleHeld: true));
+        Assert.True(verdict.ForcedBack);
+        Assert.Contains("g1 attempts to occupy the obstacle of bd03:F5:0", verdict.Summary, StringComparison.Ordinal);
+        Assert.Contains("(A12.15, A12.151)", verdict.Summary, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AFirerInTheBypassedObstacleMayFireTpbfAtTheBypassingStack()
+    {
+        // A12.151 (p. 79): "The previously concealed DEFENDING unit(s) may use TPBF against any units in the same Location"; the lane's terrain is the
+        // target's, with no TEM of the obstacle. A Snap Shot at a Bypass step stays refused. Their TPBF is an option, never Mandatory Fire (A8.312).
+        var tpbf = ScenarioA1FireMapRules.BypassTerrain(OpenLane, true, false, false);
+        Assert.Equal((true, "open-ground"), (tpbf.Refusal is null, tpbf.Terrain));
+        Assert.StartsWith("play.fire-bypass: a Snap Shot", ScenarioA1FireMapRules.BypassTerrain(OpenLane, true, true, false).Refusal, StringComparison.Ordinal);
+        MandatoryDefenderFacts[] defenders = [new("r1", true, false, true, 0, false, false, false, false, false, false)];
+        Assert.Single(ScenarioA1MandatoryFire.Owed(true, true, true, true, defenders, _ => true));
+        Assert.Empty(ScenarioA1MandatoryFire.Owed(true, true, true, true, defenders, _ => true, inBypass: true));
+    }
+
+    [Fact]
+    public void AVehicleEndingItsMphInBypassRevealsTheConcealedUnitsThereUnlessBroken()
+    {
+        // A12.42 (p. 80): concealed units are revealed "if the vehicle/its-Passenger(s)/Rider(s) end its MPh in that Location [EXC: a 'broken' vehicle
+        // cannot cause concealment loss; 12.1]"; A12.1 (p. 76): "neither an inherent crew, nor Passenger(s), nor Rider(s)". Hidden units stay hidden.
+        Assert.False(ScenarioA1BypassDetection.VehicleEndRevealsInBypass(true, false, () => false));
+        Assert.True(ScenarioA1BypassDetection.VehicleEndRevealsInBypass(true, false, () => true));
+        Assert.True(ScenarioA1BypassDetection.VehicleEndRevealsInBypass(true, true, () => throw new InvalidOperationException("not read")));
+        Assert.False(ScenarioA1BypassDetection.VehicleEndRevealsInBypass(false, true, () => throw new InvalidOperationException("not read")));
+        var reveal = ScenarioA1BypassDetection.VehicleReveals([AtBypass("r1"), AtBypass("rh", concealed: false, hidden: true), AtBypass("rd", dummy: true), AtBypass("g2", "german")],
+            "german");
+        Assert.Equal(ConcealedOne, reveal.Revealed);
+        Assert.Equal(DummyThere, reveal.DummiesRemoved);
     }
 }

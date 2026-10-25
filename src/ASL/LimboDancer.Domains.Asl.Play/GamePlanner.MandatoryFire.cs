@@ -39,7 +39,7 @@ public sealed partial class GamePlanner
 
         // Rules asks, of a unit that would otherwise owe the attack, whether the fire rules give it one now; the fire plan answers.
         var owed = ScenarioA1MandatoryFire.Owed(state.Phase == "mph", movement.WindowOpen, movement.From is not null, mmcEntered, defenders,
-            id => MandatoryPossible(state, existing, [id], at));
+            id => MandatoryPossible(state, existing, [id], at), movement.Bypass is { Count: > 0 });
         return owed.Count == 0 ? null : new MandatoryFireOwed(at, owed, owed.Count == 1 || MandatoryPossible(state, existing, owed, at));
     }
 

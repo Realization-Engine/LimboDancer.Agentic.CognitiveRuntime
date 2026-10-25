@@ -258,7 +258,7 @@ public sealed partial class GamePlanner
             current is not null && movers.All(unit => current.Movers.Contains(unit.Id, StringComparer.Ordinal)),
             current is not null && current.Movers.Any(id => current.Members.Contains(id, StringComparer.Ordinal) && !movers.Any(unit => unit.Id == id)),
             to == from,
-            movers.Length > 0 && state.At(from).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side && !Is(unit, Conditions.Captured)),
+            movers.Length > 0 && state.At(from).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side && !Is(unit, Conditions.Captured) && KnownEnemy(unit)),
             bypass is not null,
             fromRead is null ? null : TerrainKey(fromRead),
             from.Level,

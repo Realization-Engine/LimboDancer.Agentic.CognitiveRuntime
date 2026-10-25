@@ -595,9 +595,10 @@ public static class ScenarioA1MovementCalculator
     /// <summary>
     /// A4.14, A12.15 (rulings R10.11, R10.15): a Location with a Known enemy unit is not entered in the MPh, but by a berserk charge; one with only
     /// concealed or hidden enemy units or Dummies reveals one, forcing the stack back unless it charges or they were all Dummies. A12.15 (referee,
-    /// pass 10): a moving stack of Dummies that tries to enter concealed enemy units is asked to show a real unit, and is removed.
+    /// pass 10): a moving stack of Dummies that tries to enter concealed enemy units is asked to show a real unit, and is removed. A Minimum Move into
+    /// concealed units is forced back as any entry is (A4.134, A12.15; pass 70, ruling R70.23).
     /// </summary>
-    public static MoveEnemiesVerdict EnemiesAtTarget(IReadOnlyList<UnitAtTargetFacts> there, string? phasingSide, bool charge, bool occupy, bool bypassing, bool allDummies, bool minimumMove,
+    public static MoveEnemiesVerdict EnemiesAtTarget(IReadOnlyList<UnitAtTargetFacts> there, string? phasingSide, bool charge, bool occupy, bool bypassing, bool allDummies,
         string idsText, string toText, bool knownEntered = false)
     {
         ArgumentNullException.ThrowIfNull(there);
@@ -617,11 +618,6 @@ public static class ScenarioA1MovementCalculator
         if (enemiesThere.Length > 0 && allDummies)
         {
             return new MoveEnemiesVerdict(null, true, $"play.move: {idsText} attempt {toText}, holding concealed enemy units; the moving stack shows no real unit, so its Dummies are removed (A12.15)", enemiesThere, hiddenEnemies);
-        }
-
-        if (enemiesThere.Length > 0 && minimumMove)
-        {
-            return new MoveEnemiesVerdict("play.move-occupied: a Minimum Move into concealed enemy units is not reviewed (A4.134, A12.15)", false, null, enemiesThere, hiddenEnemies);
         }
 
         return new MoveEnemiesVerdict(null, false, null, enemiesThere, hiddenEnemies);
@@ -776,9 +772,12 @@ public static class ScenarioA1MovementCalculator
         var ids = facts.Ids;
         var revealing = facts.EnemiesThere.Count > 0 ? facts.EnemiesThere : facts.HiddenEnemies;
         string[] realOnes = [.. revealing.Where(unit => !unit.Dummy).OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => unit.Id)];
-        var forcedBack = facts.EnemiesThere.Count > 0 && realOnes.Length > 0;
+        // Pass 70 (A12.151; ruling R70.23): an attempt to occupy an obstacle that holds concealed enemy units forces the stack back into its lane.
+        var forcedBack = (facts.EnemiesThere.Count > 0 && realOnes.Length > 0) || facts.ObstacleHeld;
         var charge = facts.ChargeText is not null;
-        var summary = $"{(facts.Entering ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (forcedBack ? $"{(ids.Count == 1 ? "attempts" : "attempt")} {facts.ToText}" : facts.Occupy ? $"{(ids.Count == 1 ? "occupies" : "occupy")} the obstacle of {facts.ToText}" : $"{(ids.Count == 1 ? "enters" : "enter")} {facts.ToText}")
+        var attempts = ids.Count == 1 ? "attempts" : "attempt";
+        var summary = $"{(facts.Entering ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (facts.ObstacleHeld ? $"{attempts} to occupy the obstacle of {facts.ToText}"
+            : forcedBack ? $"{attempts} {facts.ToText}" : facts.Occupy ? $"{(ids.Count == 1 ? "occupies" : "occupy")} the obstacle of {facts.ToText}" : $"{(ids.Count == 1 ? "enters" : "enter")} {facts.ToText}")
             + $" ({facts.Terrain}{(facts.BypassTexts is not null ? " in Bypass along " + string.Join(", ", facts.BypassTexts) : string.Empty)}) for {facts.HalfMf / 2m} MF"
             + (facts.OnRoad ? ", at the road rate: on the road, not in the hex's other terrain (A4.132)" : string.Empty)
             + (facts.DashText is { } dashed && !forcedBack ? ScenarioA1Dash.DeclaredText(dashed) : string.Empty)
@@ -786,7 +785,7 @@ public static class ScenarioA1MovementCalculator
             + (facts.OverstackExcess > 0 ? $", {facts.OverstackExcess} of them for a Location overstacked by {facts.OverstackExcess} squad-equivalent(s) (A5.11)" : string.Empty)
             + (facts.Assault ? ", by Assault Movement" : string.Empty)
             + (facts.DoubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty)
-            + (facts.MinimumMove ? ", a Minimum Move: pinned and CX once the DEFENDER's fire is done (A4.134)" : string.Empty)
+            + (facts.MinimumMove ? forcedBack ? ", a Minimum Move (A4.134)" : ", a Minimum Move: pinned and CX once the DEFENDER's fire is done (A4.134)" : string.Empty)
             + (charge ? $", charging {facts.ChargeText} (A15.43)" : string.Empty)
             + (facts.AbandonedIds.Count > 0 ? $"; {string.Join(", ", facts.AbandonedIds)} abandoned before the charge (A15.431)" : string.Empty);
 
@@ -822,6 +821,10 @@ public static class ScenarioA1MovementCalculator
                 ? $"; a concealed unit at {facts.ToText} is revealed and the stack stays in {facts.FromText} with the MF spent, its move ending (A12.15)"
                 : charge ? $"; the charge enters {facts.ToText} and draws among the counters there by Random Selection: each Dummy drawn before a real unit is eliminated (A15.431, A12.15, A.9)"
                 : $"; only Dummies were at {facts.ToText}, and they are removed (A12.15)";
+        }
+        else if (facts.ObstacleHeld)
+        {
+            summary += $"; concealed enemy units hold it, so the stack stays in Bypass in {facts.FromText} with the MF spent, its move ending, and every \"?\" there is lost (A12.15, A12.151)";
         }
 
         return new MoveStepVerdict(revealing, realOnes, forcedBack, offMap, facts.RoadRate && !facts.Pushed && !forcedBack, summary, pushSummary, dummyWarning, pool, needsSelection,
@@ -979,9 +982,10 @@ public static class ScenarioA1MovementCalculator
             return new StepRecordVerdict(null, true);
         }
 
-        // A4.134 (ruling R10.9): a Minimum Move is a stack's first and only step; A12.15 (ruling R10.11): a forced-back stack stays in its Location.
+        // A4.134 (ruling R10.9): a Minimum Move is a stack's first and only step; A12.15 (ruling R10.11): a forced-back stack stays in its Location. Pass 70
+        // (A12.151; ruling R70.23): a stack forced back from the obstacle it attempted to occupy names its own Location and keeps its Bypass lane.
         if ((facts.MinimumMove && (facts.CurrentExists || movers.Any(unit => unit.MfSpent != 0 || unit.HalfMfSpent)))
-            || (facts.AttemptedText is { } attempted && (attempted == facts.ToText || movers.Any(unit => unit.LocationText != facts.ToText)))
+            || (facts.AttemptedText is { } attempted && ((attempted == facts.ToText && facts.BypassCount is null) || movers.Any(unit => unit.LocationText != facts.ToText)))
             || (facts.BypassCount is < 1 or > 2))
         {
             return new StepRecordVerdict(new RecordRefusal("UNIT-STATE-029", "A Minimum Move is a stack's only step, a forced back leaves the stack in its Location, and a Bypass follows one or two hexsides (A4.134, A12.15, A4.31)."), false);
@@ -1069,6 +1073,13 @@ public static class ScenarioA1MovementCalculator
 
     /// <summary>A4.134 (ruling R10.9): once all First Fire at a Minimum Move is done, each unbroken survivor among its movers is pinned and CX.</summary>
     public static bool MinimumMoveSurvivorPinned(bool active, bool broken) => active && !broken;
+
+    /// <summary>
+    /// A4.134 (p. 48): "After a unit has entered a hex by Minimum Move and undergone all First Fire, all unbroken survivors become both pinned and CX". A
+    /// stack forced back by concealed units (A12.15; pass 70, ruling R70.23) has entered no hex, so its Minimum Move pins none; its MF are spent and its MPh
+    /// ends as any forced back's.
+    /// </summary>
+    public static bool MinimumMoveEntered(bool minimumMove, bool forcedBack) => minimumMove && !forcedBack;
 
     /// <summary>The ATTACKER ends the move of some or all of the stack's members once the DEFENDER's window closes (A4.2, A8.11; UNIT-STATE-029).</summary>
     public static RecordRefusal? VerifyEndMovement(bool movementExists, bool windowOpen, IReadOnlyList<string> ended, IReadOnlyList<string> members, IReadOnlyList<string> movers)

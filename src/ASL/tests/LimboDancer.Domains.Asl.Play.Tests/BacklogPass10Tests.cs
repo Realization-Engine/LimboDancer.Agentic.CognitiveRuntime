@@ -752,8 +752,9 @@ public sealed class BacklogPass10Tests : IDisposable
     [Fact]
     public async Task BypassRefusesWallsFriendsSplitsAndEnemyObstacles()
     {
-        // Table player, pass 10: no Bypass of a hex with a hedge or with friendly units; a stack in Bypass moves together; it does not occupy an
-        // obstacle holding enemy units; marsh is never entered by Assault Movement.
+        // Table player, pass 10: no Bypass of a hex with a hedge or with friendly units; a stack in Bypass moves together; marsh is never entered by
+        // Assault Movement. Pass 70 (A12.151, A12.15; ruling R70.23): the attempt to occupy the obstacle holding the concealed r1 reveals it and forces the
+        // stack back into its lane, the MF spent and its move over.
         board.Terrain["D4"] = "Woods";
         board.Terrain["F4"] = "Woods";
         board.Terrain["H4"] = "Woods";
@@ -774,8 +775,14 @@ public sealed class BacklogPass10Tests : IDisposable
         Assert.True(Is(Current.Unit("r1")!, Conditions.Concealed));
         await Pass();
         Refused(await Move(G1, L(Pass10Board.N("D4", HexsideDirection.North))), "play.move-bypass");
-        Refused(await Move(["g1", "g2"], L("D4")), "play.move-bypass");
-        Committed(await Move(["g1", "g2"], L(Pass10Board.N("D4", HexsideDirection.North))));
+        var before = Revision;
+        Committed(await Move(["g1", "g2"], L("D4")));
+        var step = LastStep(before);
+        Assert.Equal((At("D4"), At("D4"), 2), (step.To, step.Attempted!, step.Bypass?.Count));
+        Assert.False(Is(Current.Unit("r1")!, Conditions.Concealed));
+        await Pass();
+        Assert.True(Current.Unit("g1")!.MovementEnded);
+        Assert.Null(Current.Movement);
         NoReplayErrors();
     }
 

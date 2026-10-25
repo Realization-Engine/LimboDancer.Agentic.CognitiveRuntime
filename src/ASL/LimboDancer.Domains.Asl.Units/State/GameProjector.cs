@@ -2358,7 +2358,7 @@ public static class GameProjector
                     EndingMembers = Rules.ScenarioA1MovementCalculator.EndingMembers(moving.MinimumMove, moving.Attempted is not null, moving.Movers, moving.Smoke?.Unit, moving.Smoke?.Dr,
                         current?.Dash is { } dashedTo && dashedTo == moving.To && moving.Attempted is null),
                     Dash = moving.Dash,
-                    MinimumMove = moving.MinimumMove,
+                    MinimumMove = Rules.ScenarioA1MovementCalculator.MinimumMoveEntered(moving.MinimumMove, moving.Attempted is not null),
                     RoadRate = moving.RoadRate,
                     IpcTo = moving.IpcTo ?? current?.IpcTo,
                     InfantryOverrun = moving.InfantryOverrun ? moving.To : null,

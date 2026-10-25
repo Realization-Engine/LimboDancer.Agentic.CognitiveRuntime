@@ -231,7 +231,8 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             // Pass 21 (ruling R21.5): an exit leaves the movers Exited, with no moving stack.
             MovementStepped { Exit: not null } left => state.Movement is null && left.Movers.All(id => state.Unit(id) is { Status: InstanceStatus.Exited }),
             // Ruling R25.3: a stack forced back off board stays there, its move over, with no window.
-            MovementStepped { Attempted: { } attempted } offBoard when attempted == offBoard.To => state.Movement is null
+            // Pass 70 (A12.151; ruling R70.23): a stack forced back from the obstacle it attempted keeps its Bypass lane, its window open, as any step.
+            MovementStepped { Attempted: { } attempted, Bypass: null } offBoard when attempted == offBoard.To => state.Movement is null
                 && offBoard.Movers.All(id => state.Unit(id) is { MovementEnded: true } && state.Location(id) is null) && Revealed(state, plan),
             MovementStepped moved => state.Movement is { WindowOpen: true } movement && movement.Step == moved.Step && movement.Location == moved.To,
             // A vehicle's MP expenditure: its window is open at this step, and the vehicle is where the step put it.

@@ -967,18 +967,28 @@ public sealed partial class GamePlanner
         var (spent, allotment) = HalfMp(vehicle);
         var left = allotment - spent;
         var inMotion = movement.Started && !movement.Stopped && !Halted(vehicle);
+
+        // A12.42 (pass 70, ruling R70.23): a vehicle in Bypass ending its MPh reveals the concealed enemy units of its Location, unless it is "broken".
+        var reveal = VehicleBypassReveal(state, vehicle);
+        var revealText = reveal.Any && state.Location(vehicle.Id) is { } bypassed ? ScenarioA1BypassDetection.VehicleRevealText(vehicle.Id, bypassed.Location.ToString()) : string.Empty;
         if (left > 0 && !Halted(vehicle) && state.Location(vehicle.Id) is { } at)
         {
-            List<GameEvent> Build(Func<RollRequest, RollResult>? draw) =>
-                [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(vehicle.Id, VehicleStepped.Remain, at.Location, null, left, movement.Step + 1), null, null)];
+            List<GameEvent> Build(Func<RollRequest, RollResult>? draw)
+            {
+                List<GameEvent> built = [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(vehicle.Id, VehicleStepped.Remain, at.Location, null, left, movement.Step + 1), null, null)];
+                AddBypassReveal(scope, attemptId, expected, built, reveal);
+                return built;
+            }
+
             return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, Build, false, at.Location, movement.Step + 1,
                 $"play.end-move: {vehicle.Id} spends its {Mp(left)} MP left in {at.Location} (D2.1); the DEFENDER may fire, and its move ends when he passes"
-                    + (inMotion ? ", in Motion (D2.4)" : string.Empty));
+                    + (inMotion ? ", in Motion (D2.4)" : string.Empty) + revealText);
         }
 
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-            [Event(scope, attemptId, 1, expected, "movement-ended", new MovementEnded([vehicle.Id]), null, null)],
-            [$"play.end-move: {vehicle.Id} ends its move" + (inMotion ? " in Motion (D2.4)" : string.Empty)]);
+        List<GameEvent> ended = [Event(scope, attemptId, 1, expected, "movement-ended", new MovementEnded([vehicle.Id]), null, null)];
+        AddBypassReveal(scope, attemptId, expected, ended, reveal);
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, ended,
+            [$"play.end-move: {vehicle.Id} ends its move" + (inMotion ? " in Motion (D2.4)" : string.Empty) + revealText]);
     }
 
     /// <summary>

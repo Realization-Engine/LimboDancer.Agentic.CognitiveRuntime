@@ -65,6 +65,12 @@ I am the session that briefs you. I review your diff, check the work in the Stud
 - A proposal that names a unit the plan creates must name it by its definition, never its raw id.
 - A pass that lifts a refusal or adds a modifier name reaches tests that lean on the refusal or list the names: grep the tests for the refusal's text and for registry lists.
 
+## Lessons of pass 70's earlier increments (3a to 3e)
+- **Check every LOS pair a games script relies on** (the board viewer's LOS tab, or `LosCalculator` from a scratch tool) and write the result in the script's comment. 3e's hidden-Gun game put the seer in [L8], which has no LOS to [G7], so the game showed nothing.
+- **A route the script suggests must be a legal one:** 3d's suggested rout moved toward the enemy AFV and was refused (A10.51). Read the panel's own advice, or the rule, before writing it down.
+- **The user's own Studio runs on port 5178 and plays a live game** (`dl-tractor-works-03`): never touch it, never open a `dl-tractor-works-*.game.json`.
+- **Rulings the session added at the increments:** R70.35 (any Good Order reinforcement stack may enter under one non-OB "?", A12.12) and R70.36 (a hidden vehicle takes one squad-equivalent of HIP). R70.13's starting-building exception is A10.51's (pp. 66 to 67), not A10.532's.
+
 ## Report (your closing message, under 900 words)
 1. What departs from the brief or a ruling, first: anything you left out, simplified, or decided yourself, each with its reason.
 2. What you built: files and members, new facts in records (with their JSON names), new events and actions, new texts.
