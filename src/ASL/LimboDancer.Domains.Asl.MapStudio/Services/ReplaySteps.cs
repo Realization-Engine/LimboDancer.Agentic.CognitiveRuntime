@@ -449,6 +449,13 @@ public static class ReplaySteps
             return ("fire", side, $"{DisplayText.Side(side)} units are held for Opportunity Fire", false);
         }
 
+        // Pass 70 (ruling R70.24): a Search as the stack ends its move.
+        if (First<UnitsSearched>(payloads) is { } searched)
+        {
+            var side = SideOf(Head(searched.Units)) ?? before.PhasingSide;
+            return ("move", side, $"{A(side, searched.Units.Count == 1 ? "unit" : "stack")} Searches from {Place(before, searched.Location)}{end}", false);
+        }
+
         if (First<BuildingMoppedUp>(payloads) is { } mopped)
         {
             return ("other", mopped.Side, DisplayText.Hexes($"{The(mopped.Side, "side")} Mops Up building {mopped.Building}", before.Map.Boards.Count) + end, false);
@@ -690,6 +697,9 @@ public static class ReplaySteps
 
                 // Pass 70 (ruling R70.21): a momentary forfeiture of "?" is seen where its first unit stands (shown to the moving side only).
                 ConcealmentVerified verified => verified.Units.Count > 0 ? before.Location(verified.Units[0])?.Location : null,
+
+                // Pass 70 (ruling R70.24): a Search is seen in the Location it is made from.
+                UnitsSearched search => search.Location,
 
                 // Pass 70 (ruling R70.4): a morale check made outside an attack is seen in its Location, within the step of what caused it.
                 MoraleCheckResolved check => BoardLocation.TryParse(check.Location, out var checkedAt) ? checkedAt : null,

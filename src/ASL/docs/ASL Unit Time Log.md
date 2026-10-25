@@ -1778,3 +1778,4 @@ One session under the user's word of 2026-10-25 ("Start Pass 70 ... Run it witho
 | 3d, 70.2: rout from a building, Interdiction by vehicles and Guns, Fanaticism by SSR | 14:57 | 15:27 | 0:30 | | Agent 14:57 to about 15:24; Studio check; estimate 2:25 |
 | 3e, 70.4 and 70.5: the owner's choices on a ?, concealment for crews and vehicles (R70.35, R70.36 added) | 15:28 | 16:19 | 0:51 | | Agent 15:28 to about 16:08, then R70.35 16:09 to 16:13; Studio check; estimate 5:30 |
 | 3f, 70.8: Bypass endings and detection (R70.37, R70.38 added) | 16:19 | 16:52 | 0:33 | | Agent 16:19 to about 16:48; Studio check; estimate 1:45 |
+| 3g, 70.9: Searching, Mopping Up in any building (R70.39 added), and the measurement after it | 16:53 | 17:35 | 0:42 | | Agent 16:53 to about 17:27; Studio check; the base measured again under the user's Studio's load; estimate 4:15 |

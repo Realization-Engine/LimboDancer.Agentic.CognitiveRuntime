@@ -24,6 +24,8 @@ Each row: what is left, where it came from, the rule and page, the pass it goes 
 - The Voluntary Rout leader's own portage is not checked (his SW move with him) | 3c | A10.711, p. 69 | Backlog | Not checked.
 - A vehicle's or Gun's Interdiction: a mortar's minimum range, a restricted AAMG, a VCA-only CMG, Rear MGs | 3d | A10.532, p. 67 | Backlog | Not read; the longest weapon's range in its arc is taken.
 - Fanaticism by SSR for units created after setup (reinforcements, Deployment) | 3d | A10.8, p. 69 | Backlog | Only units placed through setup are made Fanatic.
+- A12.151's "or any other Infantry unit which legally ends its MPh" in the Bypassed Location revealing the "?" there | 3f | A12.151, p. 78 | Backlog | Only a broken or pinned mover of the latest step reveals them.
+- A forced back's record line reads "moves from [F5] to [F5]" | 3f (older than the pass) | A12.15 | For the reviews' fixes | As stated.
 - The Records tab's list leaves out the LLMC line (the Latest line has it) | 3b, Studio check | A10.2 | For the reviews' fixes | As stated.
 
 ## From 3e

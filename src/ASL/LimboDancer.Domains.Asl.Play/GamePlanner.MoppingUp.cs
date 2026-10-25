@@ -8,13 +8,13 @@ using LimboDancer.Domains.Asl.Units.State;
 namespace LimboDancer.Domains.Asl.Play;
 
 /// <summary>
-/// Mopping Up (A12.153, A12.154; pass 24 of the Card Play and Map Studio Redesign Plan, ruling R24.2): Infantry securing a building of the card in its PFPh,
-/// which gives its side the Control of every Location there (A26.11).
+/// Mopping Up (A12.153, A12.154; pass 24 of the Card Play and Map Studio Redesign Plan, ruling R24.2; pass 70, ruling R70.25): Infantry securing a building
+/// of the map in its PFPh, which gives its side the Control of every Location there (A26.11).
 /// </summary>
 public sealed partial class GamePlanner
 {
     /// <summary>
-    /// A12.153 (ruling R24.2): in its side's PFPh, armed unpinned Good Order Infantry MMC in a multi-hex or multi-level building of the card, with no
+    /// A12.153 (rulings R24.2, R70.25): in its side's PFPh, armed unpinned Good Order Infantry MMC in a multi-hex or multi-level building of the map, with no
     /// unconcealed unbroken enemy unit in it, each within two hexes of a ground-level Location its side does not Control (between them, of every one),
     /// become TI to Mop it Up, once per building per Player Turn and never after their side has employed No Quarter or Massacre. Hidden enemy units there
     /// are placed beneath "?" and enemy Dummies removed; with no concealed enemy unit left the building is secured: its side Controls every Location but
@@ -30,14 +30,10 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.no-game");
         }
 
-        // Pass 32.g: the card, the state, and the map are read here, and Rules decides each bar in its order.
+        // Pass 32.g: the card, the state, and the map are read here, and Rules decides each bar in its order. Pass 70 (ruling R70.25): any building of the
+        // map, the card's by its id, any other by its board and lowest hex.
         var card = CardOf(state);
-        if (ScenarioA1MoppingUp.CardBar(card is not null) is { } cardBar)
-        {
-            return Refused(scope, label, expected, cardBar);
-        }
-
-        var hexes = Text(arguments, "building", out var building) ? ScenarioCards.BuildingHexes(card!, building) : null;
+        var hexes = Text(arguments, "building", out var building) ? MopUpHexes(state, card, building) : null;
         if (ScenarioA1MoppingUp.BuildingBar(building, hexes is { Count: > 0 }) is { } buildingBar)
         {
             return Refused(scope, label, expected, buildingBar);
@@ -60,7 +56,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, onceBar);
         }
 
-        if (ScenarioA1MoppingUp.NoQuarterBar(card!.Sides.Any(item => item.Side != side && state.NoQuarter.Contains(item.Side, StringComparer.Ordinal)), side!) is { } quarterBar)
+        if (ScenarioA1MoppingUp.NoQuarterBar(state.NoQuarter.Any(item => item != side), side!) is { } quarterBar)
         {
             return Refused(scope, label, expected, quarterBar);
         }
@@ -84,15 +80,17 @@ public sealed partial class GamePlanner
         }
 
         // Referee and table player, pass 24: an enemy vehicle in Bypass is not inside the building (A26.11); it keeps its ground level out of the secured set.
-        var enemies = state.Units.Where(unit => ScenarioA1MoppingUp.EnemyInside(unit.Status == InstanceStatus.Active, unit.Side != side, state.Location(unit.Id)?.Location is { } at && InBuilding(at),
-            LiveFire.IsVehicle(unit), unit.Straddling is not null)).OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
+        // Pass 70 (ruling R70.25): the units there are read in one pass over the occupied stacks of the building's hexes.
+        var inside = UnitsInHexes(MemoOf(state).Objects(state), hexes);
+        var enemies = inside.Select(item => item.Unit).Where(unit => ScenarioA1MoppingUp.EnemyInside(true, unit.Side != side, true, LiveFire.IsVehicle(unit), unit.Straddling is not null))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
         if (enemies.Any(unit => ScenarioA1MoppingUp.UnconcealedUnbroken(unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), Is(unit, Conditions.Broken), Is(unit, Conditions.Captured))))
         {
             return Refused(scope, label, expected, ScenarioA1MoppingUp.EnemyText(building!));
         }
 
         // A12.153: within two hexes of every ground-level Location the side does not Control (A26.11; ruling R24.1).
-        var control = ScenarioVictory.LocationControl(card, history.States, building, hex => HexLevels(state, hex));
+        var control = ScenarioVictory.LocationControl(card, history.States, building!, hexes, hex => HexLevels(state, hex));
         foreach (var hex in hexes.Where(hex => control.GetValueOrDefault(hex with { Level = 0 }) != side))
         {
             if (ScenarioA1MoppingUp.RangeBar([.. units.Select(unit => HexDistance(state, state.Location(unit!.Id)!.Location, hex))], hex.Hex.ToString(), side!) is { } rangeBar)
@@ -140,9 +138,8 @@ public sealed partial class GamePlanner
         if (concealed.Length == 0)
         {
             // A26.11: every Location of the building, but a ground level holding an armed enemy vehicle in Bypass.
-            var bypassed = state.Units.Where(unit => ScenarioA1MoppingUp.BypassedVehicle(unit.Status == InstanceStatus.Active, unit.Side != side, LiveFire.IsVehicle(unit), unit.Straddling is not null,
-                Is(unit, Conditions.Abandoned), Is(unit, Conditions.Captured))).Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>()
-                .Select(at => at with { Level = 0, Side = null }).ToHashSet();
+            var bypassed = inside.Where(item => ScenarioA1MoppingUp.BypassedVehicle(true, item.Unit.Side != side, LiveFire.IsVehicle(item.Unit), item.Unit.Straddling is not null,
+                Is(item.Unit, Conditions.Abandoned), Is(item.Unit, Conditions.Captured))).Select(item => item.At with { Level = 0, Side = null }).ToHashSet();
             BoardLocation[] secured = [.. hexes.SelectMany(hex => HexLevels(state, hex).Select(level => hex with { Level = level })).Where(location => !bypassed.Contains(location))];
             Add("building-mopped-up", new BuildingMoppedUp(building!, side!, ids, secured));
             reasons.Add(ScenarioA1MoppingUp.SecuredSummary(phrase, side!));
@@ -242,16 +239,27 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// The buildings of a game's card that may be Mopped Up, by id, with their hexes (A12.153; ruling R24.2): those of more than one hex or level, for the
-    /// Play page's Mopping Up.
+    /// The active units in the Locations of a set of hexes at or above ground, each with its Location, and the PRC of a vehicle there with it (rulings R70.24,
+    /// R70.25): one pass over the index's occupied stacks, never a lookup per Location.
     /// </summary>
-    public IReadOnlyList<(string Id, IReadOnlyList<BoardLocation> Hexes)> MopUpBuildings(GameState state)
+    private static List<(UnitInstance Unit, BoardLocation At)> UnitsInHexes(ObjectIndex index, IEnumerable<BoardLocation> hexes)
     {
-        ArgumentNullException.ThrowIfNull(state);
-        return CardOf(state) is { } card
-            ? [.. card.Sides.SelectMany(side => side.Groups).SelectMany(group => group.Areas).Where(area => area.Kind == "building").Select(area => area.Id)
-                .Distinct(StringComparer.Ordinal).Select(id => (id, ScenarioCards.BuildingHexes(card, id)!))
-                .Where(item => ScenarioA1MoppingUp.MopUpBuilding(item.Item2.Count, item.Item2.Any(hex => HexLevels(state, hex).Any(level => level > 0))))]
-            : [];
+        var wanted = hexes.Select(hex => (hex.Board, hex.Hex)).ToHashSet();
+        var found = new List<(UnitInstance Unit, BoardLocation At)>();
+        foreach (var (at, stack) in index.Occupied)
+        {
+            if (at.Level < 0 || !wanted.Contains((at.Board, at.Hex)))
+            {
+                continue;
+            }
+
+            foreach (var unit in stack.OfType<UnitInstance>())
+            {
+                found.Add((unit, at));
+                found.AddRange(index.Aboard(unit.Id).Select(riding => (riding, at)));
+            }
+        }
+
+        return found;
     }
 }

@@ -53,34 +53,23 @@ public sealed class CardMaps(MapService maps)
             : null;
     }
 
-    /// <summary>The hexes of the building a hex is in, the hex first (ruling R17.8): joined across hexsides of building terrain; empty when the hex is no building.</summary>
+    /// <summary>
+    /// The hexes of the building a hex is in, the hex first (ruling R17.8): joined across hexsides of building terrain, within the hex's board; empty when the
+    /// hex is no building. Pass 70 (ruling R70.25): the fill is Play's, which the game's map reads too, so the editor and the game find the same building
+    /// (Rowhouses apart, B23.71; Factories apart across their outside walls, B23.74).
+    /// </summary>
     public static IReadOnlyList<string> Building(StudioBoard map, CardHex start)
     {
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(start);
-        if (Index(map, start) is not { } first || map.Facts[first].Center.Terrain is not { IsBuilding: true })
+        if (Index(map, start) is not { } first)
         {
             return [];
         }
 
-        var geometry = map.Facts.Geometry;
-        var found = new HashSet<HexIndex> { first };
-        var open = new Stack<HexIndex>([first]);
-        while (open.TryPop(out var hex))
-        {
-            // Referee, pass 28: Rowhouses are separate buildings (B23.71), and so are Factories butted across their outside walls; a Factory's interior
-            // walls stay within it (B23.74).
-            foreach (var side in map.Facts[hex].Hexsides.Where(side => side.OnMap && side.Terrain is { IsBuilding: true } && !Divides(side.Terrain) && !Divides(side.HexsideTerrain)))
-            {
-                if (geometry.Neighbor(hex, side.Side) is { } next && map.Facts[next].Center.Terrain is { IsBuilding: true }
-                    && map.Composition!.Map.OwnerOf(next)?.Board.Value == start.Board && found.Add(next))
-                {
-                    open.Push(next);
-                }
-            }
-        }
-
-        return [start.Hex, .. found.Where(hex => hex != first).Select(hex => map.Composition!.Map.OwnerOf(hex)!.Value.Hex.ToString()).Order(StringComparer.Ordinal)];
+        var found = MapBuildings.Building(map.Facts, first, next => map.Composition!.Map.OwnerOf(next)?.Board.Value == start.Board);
+        return found.Count == 0 ? []
+            : [start.Hex, .. found.Where(hex => hex != first).Select(hex => map.Composition!.Map.OwnerOf(hex)!.Value.Hex.ToString()).Order(StringComparer.Ordinal)];
     }
 
     /// <summary>Whether a hex lies on an edge of the map (top, bottom, left, or right): no hex beyond it on that side.</summary>
@@ -117,9 +106,6 @@ public sealed class CardMaps(MapService maps)
 
         return false;
     }
-
-    private static bool Divides(LimboDancer.Domains.Asl.Maps.Terrain.TerrainType? terrain) =>
-        terrain is { } wall && (wall.Name.StartsWith("Rowhouse Wall", StringComparison.Ordinal) || wall.Name == "Breach" || wall.IsOutsideFactoryWall);
 
     /// <summary>
     /// The card's areas and hexes checked against its drawn map (ruling R28.3): every hex named is on its board, a building area is one whole building,

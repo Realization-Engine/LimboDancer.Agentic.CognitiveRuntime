@@ -204,9 +204,6 @@ public sealed partial class GamePlanner
         // The side whose units rout: the side last asked for its enemies. Every scan and search asks for them before it reads a cover.
         private string? routingSide;
 
-        // The building a rout starts in (ruling R70.13), read for the first Location the scan is asked about.
-        private (BoardLocation Start, IReadOnlySet<(BoardRef Board, HexName Hex)> Hexes)? building;
-
         public RoutScan(GamePlanner planner, GameState state)
         {
             this.planner = planner;
@@ -299,18 +296,8 @@ public sealed partial class GamePlanner
 
         public double? Bearing(int fromLocation, int toLocation) => planner.Bearing(state, locations[fromLocation], locations[toLocation]);
 
-        /// <summary>A10.51's EXC (ruling R70.13): the building of the first Location is read once a scan, then each other Location's hex is looked up in it.</summary>
-        public bool SameBuilding(int one, int two)
-        {
-            var start = locations[one];
-            if (building is null || building.Value.Start != start)
-            {
-                building = (start, planner.BuildingHexes(state, start));
-            }
-
-            var other = locations[two];
-            return building.Value.Hexes.Contains((other.Board, other.Hex));
-        }
+        /// <summary>A10.51's EXC (ruling R70.13): both hexes are looked up in the board's buildings, found once per board handle (ruling R70.25).</summary>
+        public bool SameBuilding(int one, int two) => planner.SameMapBuilding(state, locations[one], locations[two]);
     }
 
     /// <summary>A Known enemy unit (A10.51, A10.533): not a Dummy, concealed, hidden, or a prisoner.</summary>
@@ -383,40 +370,6 @@ public sealed partial class GamePlanner
             definition?.CoaxialMg is not null && !Is(vehicle, Conditions.CmgMalfunctioned) && !Is(vehicle, Conditions.CmgDisabled),
             definition?.AntiAircraftMg is not null && !(main == "aamg" && mainOut), main == "mg" && !mainOut,
             gun is not null && main is not ("aamg" or "mg") && !mainOut, gun?.RangeMaximum, definition?.MaType);
-    }
-
-    /// <summary>
-    /// The hexes of the building a Location is in (A10.51's EXC, p. 67; pass 70, ruling R70.13), found as the card editor finds a building (ruling R17.8):
-    /// from its hex, across each hexside into a hex of building terrain where Rules says the building goes on; empty when the Location is in no building.
-    /// Read once a rout scan; increment 3g's building read per board handle (ruling R70.25) may stand in for it.
-    /// </summary>
-    private HashSet<(BoardRef Board, HexName Hex)> BuildingHexes(GameState state, BoardLocation start)
-    {
-        var found = new HashSet<(BoardRef Board, HexName Hex)>();
-        var ground = new BoardLocation(start.Board, start.Hex, 0);
-        if (ReadLocation(state, ground) is not { Hex.Center.Terrain.IsBuilding: true })
-        {
-            return found;
-        }
-
-        found.Add((ground.Board, ground.Hex));
-        var open = new Stack<BoardLocation>([ground]);
-        while (open.TryPop(out var hex))
-        {
-            foreach (var next in Neighbors(state, hex).Where(next => !found.Contains((next.Board, next.Hex))))
-            {
-                var (_, to, adjacent, crossed) = Step(state, hex, next);
-                if (adjacent && crossed is { } side && ScenarioA1RoutCalculator.BuildingGoesOn(side.OnMap && side.Terrain?.IsBuilding == true,
-                    to?.Hex.Center.Terrain?.IsBuilding == true, side.Terrain?.Name, side.Terrain?.IsOutsideFactoryWall == true, side.HexsideTerrain?.Name,
-                    side.HexsideTerrain?.IsOutsideFactoryWall == true))
-                {
-                    found.Add((next.Board, next.Hex));
-                    open.Push(next);
-                }
-            }
-        }
-
-        return found;
     }
 
     /// <summary>A unit's own printed range as the rout counts it (a leader's is none), and the ranges of the functioning SW it possesses (A10.532).</summary>

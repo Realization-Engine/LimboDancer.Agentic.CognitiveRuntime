@@ -53,6 +53,9 @@ public static class ScenarioA1SequenceCalculator
         ["asl.game.place-hidden"] = ["unitIds"],
         ["asl.game.mop-up"] = ["unitIds"],
 
+        // A12.152 (pass 70, ruling R70.24): the moving stack's members Search.
+        ["asl.game.search"] = ["unitIds"],
+
         // A10.41 (pass 70, ruling R70.11): the owner breaks his own units.
         ["asl.game.voluntary-break"] = ["unitIds"],
 

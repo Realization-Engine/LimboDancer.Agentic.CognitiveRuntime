@@ -2902,6 +2902,26 @@
       ]
     },
     {
+      "name": "SearchAction",
+      "path": "Components/Play/SearchAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: Search",
+          "dynamic": false,
+          "id": "propose-search",
+          "status": "needed",
+          "strip": "SearchAction"
+        }
+      ]
+    },
+    {
       "name": "SetupBar",
       "path": "Components/Play/SetupBar.razor",
       "pages": [

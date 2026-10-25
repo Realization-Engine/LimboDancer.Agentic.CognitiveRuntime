@@ -737,6 +737,11 @@ else if (state is not null)
                             {
                                 <BerserkRetainedWeaponsField Value="@moveKeep" OnChange="@(keep => moveKeep = keep)" />
                             }
+                            @* Pass 70 (A12.152; ruling R70.24): as the stack ends its move, once the DEFENDER's window is closed, it may Search. *@
+                            @if (state.Movement is { Vehicle: false, WindowOpen: false, Members.Count: > 0 } searching)
+                            {
+                                <SearchAction Hexes="@SearchChoices(searching.Location)" Own="@PlaceOf(new BoardLocation(searching.Location.Board, searching.Location.Hex, 0))" OnPropose="@ProposeSearch" />
+                            }
                             <MovementWindowActions WindowOpen="@state.Movement?.WindowOpen" EndingSome="@EndingSome" MayPass="@(Viewer.IsAdjudicator && MandatoryNow is null)"
                                 OnPass='@(() => ProposeSimple(GameActions.PassFire, "pass"))' OnEnd="@ProposeEndMove" />
                         </div>
@@ -5964,8 +5969,9 @@ else if (state is not null)
         }));
 
     /// <summary>
-    /// The card's buildings the side may Mop Up now (A12.153; ruling R24.2): each not Mopped Up this Player Turn, with the side's MMC in it free to become
-    /// TI and the units there that may guard a surrender, read through the view (ruling R23.1). The planner decides range, enemies, and the rest.
+    /// The buildings the side may Mop Up now (A12.153; rulings R24.2, R70.25): each holding the side's units, not Mopped Up this Player Turn, with the side's
+    /// MMC in it free to become TI and the units there that may guard a surrender, read through the view (ruling R23.1). The side's units are read in one pass
+    /// and mapped hex to building by the planner; it decides range, enemies, and the rest.
     /// </summary>
     private IReadOnlyList<MoppingUpAction.Choice> MopUpChoices(string side)
     {
@@ -5976,17 +5982,19 @@ else if (state is not null)
 
         string[] barred = [Conditions.Broken, Conditions.Berserk, Conditions.Pinned, Conditions.Captured, Conditions.Unarmed, Conditions.Melee, "asl:ti", Conditions.PrepFire];
         var choices = new List<MoppingUpAction.Choice>();
-        foreach (var (id, hexes) in Live.Planner.MopUpBuildings(current).Where(item => !current.MoppedUpThisPlayerTurn.Contains(item.Id, StringComparer.Ordinal)))
+        var own = SeenOnly(current.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side))
+            .Select(unit => (Unit: unit, At: Live.Planner.LocationOf(current, unit.Id)?.Location)).Where(item => item.At is { Level: >= 0 }).ToArray();
+        foreach (var (id, hexes) in Live.Planner.MopUpBuildings(current, own.Select(item => item.At!)).Where(item => !current.MoppedUpThisPlayerTurn.Contains(item.Id, StringComparer.Ordinal)))
         {
-            var inside = SeenOnly(current.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && current.Location(unit.Id)?.Location is { Level: >= 0 } at
-                && hexes.Any(hex => hex.Board == at.Board && hex.Hex == at.Hex))).OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
+            var placed = own.Where(item => hexes.Any(hex => hex.Board == item.At!.Board && hex.Hex == item.At.Hex)).OrderBy(item => item.Unit.Id, StringComparer.Ordinal).ToArray();
+            var inside = placed.Select(item => item.Unit).ToArray();
             string[] moppers = [.. inside.Where(unit => (unit.Kind is "asl:squad" or "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind))
                 && !barred.Any(name => GameState.Condition(unit, name) == ConditionState.True)).Select(unit => unit.Id)];
             if (moppers.Length > 0)
             {
                 choices.Add(new MoppingUpAction.Choice(id, moppers, [.. inside.Where(unit => unit.Kind != UnitKinds.Dummy
                     && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => unit.Id)],
-                    inside.ToDictionary(unit => unit.Id, unit => current.Location(unit.Id)!.Location is var at && at.Level == 0 ? $"{at.Board.Value}:{at.Hex}" : $"{at.Board.Value}:{at.Hex} level {at.Level}",
+                    placed.ToDictionary(item => item.Unit.Id, item => item.At!.Level == 0 ? $"{item.At.Board.Value}:{item.At.Hex}" : $"{item.At.Board.Value}:{item.At.Hex} level {item.At.Level}",
                         StringComparer.Ordinal)));
             }
         }
@@ -6170,6 +6178,35 @@ else if (state is not null)
     /// <summary>Whether the checked units are some, not all, of the moving stack's members, so ending the move ends only theirs (A4.2).</summary>
     private bool EndingSome => state?.Movement is { Members.Count: > 0 } movement && moveUnits.Count > 0
         && moveUnits.All(movement.Members.Contains) && moveUnits.Count < movement.Members.Count;
+
+    // Pass 70 (ruling R70.24): the Accessible hexes of the moving stack's Location, read once a state and Location, not at each render.
+    private (GameState? State, BoardLocation? At, IReadOnlyList<SearchAction.Choice> Hexes) searchHexes = (null, null, []);
+
+    /// <summary>The hexes the moving stack may Search besides its own (A12.152; ruling R70.24), in map order and in the view's words.</summary>
+    private IReadOnlyList<SearchAction.Choice> SearchChoices(BoardLocation at)
+    {
+        if (state is not { } current)
+        {
+            return [];
+        }
+
+        if (!ReferenceEquals(searchHexes.State, current) || searchHexes.At != at)
+        {
+            searchHexes = (current, at, [.. Live.Planner.SearchHexes(current, at).Select(hex => new SearchAction.Choice(hex.ToString(), PlaceOf(hex)))]);
+        }
+
+        return searchHexes.Hexes;
+    }
+
+    /// <summary>The Search of the moving stack's members (A12.152): the checked ones when only some are checked, as the end of the move takes them, else all.</summary>
+    private Task ProposeSearch(IReadOnlyList<string> hexes) => Propose(GameActions.Search, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["gameId"] = gameId,
+        ["attemptId"] = Attempt("search"),
+        ["expectedRevision"] = (long)history!.Events.Count,
+        ["unitIds"] = EndingSome ? moveUnits.Order(StringComparer.Ordinal).ToArray() : state!.Movement!.Members.ToArray(),
+        ["hexes"] = hexes.ToArray(),
+    }));
 
     private Task ProposeEndMove()
     {
@@ -9135,6 +9172,7 @@ else if (state is not null)
                     RoutStepped { With: not null } led => $"A leader routed with a broken unit to {PlaceOf(led.To)}.",
                     RoutStepped rout => $"A broken unit routed to {PlaceOf(rout.To)}.",
                     VoluntaryBreak voluntary => voluntary.Units.Count == 1 ? "A unit broke voluntarily." : "Units broke voluntarily.",
+                    UnitsSearched search => $"A stack Searched from {PlaceOf(search.Location)}.",
                     FireResolved fire when fire.Resolution.Deserialize<FireResolution>(LiveFire.Json) is { Arithmetic: { } arithmetic }
                         => $"Fire from {PublicLocation(fire.FirerLocation)} at {PublicLocation(fire.TargetLocation)}: {arithmetic.Result}.",
                     FireReported report when report.Arithmetic.Deserialize<FireArithmetic>(LiveFire.Json) is { } reported

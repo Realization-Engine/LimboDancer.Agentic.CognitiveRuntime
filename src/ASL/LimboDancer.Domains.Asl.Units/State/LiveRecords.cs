@@ -666,6 +666,14 @@ public sealed record RoutInterdicted(string Unit, BoardLocation At, string Roll,
 public sealed record VoluntaryBreak(IReadOnlyList<string> Units) : EventPayload;
 
 /// <summary>
+/// <c>units-searched</c>: members of the moving stack Search as it ends its move (A12.152; pass 70, ruling R70.24): the units, their Location, the Search dr's
+/// roll and drm, how many Accessible hexes other than its own the stack has, and the hexes searched, its own first, each at ground level (every Location of a
+/// hex above ground is searched). The searchers spend one more MF there and become TI for the rest of the Player Turn; the DEFENDER's window opens on that MF
+/// (A8.1), and their move ends when it closes. The reveals and any Casualty dr (A12.154) follow as their own records. A new event: no older record holds one.
+/// </summary>
+public sealed record UnitsSearched(IReadOnlyList<string> Units, BoardLocation Location, string Roll, int Drm, int Accessible, IReadOnlyList<BoardLocation> Searched) : EventPayload;
+
+/// <summary>
 /// <c>deployment-attempted</c>: a squad's attempt to Deploy in its RPh (A1.31; ruling R13.4): the directing leader (none for Guards), the NTC roll,
 /// the squad's Morale Level, the leadership DRM, and whether it passed; a passed attempt's lineage follows.
 /// </summary>

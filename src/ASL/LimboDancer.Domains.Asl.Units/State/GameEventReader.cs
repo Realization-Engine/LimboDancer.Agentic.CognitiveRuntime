@@ -741,6 +741,29 @@ public static class GameEventReader
             case "voluntary-break":
                 var breaking = fields.StringList(payload, "units", path);
                 return breaking.Count == 0 ? Missing(diagnostics, "A Voluntary Break names its units.", path) : new VoluntaryBreak(breaking);
+            case "units-searched":
+                var searchers = fields.StringList(payload, "units", path);
+                var searchedFrom = ReadLocation(payload, "location", path, fields, diagnostics);
+                var searchRoll = fields.RequiredString(payload, "roll", path);
+                var searchDrm = fields.OptionalInteger(payload, "drm", path);
+                var searchAccessible = fields.OptionalInteger(payload, "accessible", path);
+                var searchedHexes = new List<BoardLocation>();
+                if (payload.TryGetProperty("searched", out var searchedNode) && searchedNode.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in searchedNode.EnumerateArray())
+                    {
+                        if (item.ValueKind != JsonValueKind.String || !BoardLocation.TryParse(item.GetString()!, out var searchedAt))
+                        {
+                            return Missing(diagnostics, "A Search lists the hexes it searched, such as bd01:E4:0.", path + ".searched");
+                        }
+
+                        searchedHexes.Add(searchedAt);
+                    }
+                }
+
+                return searchers.Count == 0 || searchedFrom is null || searchRoll is null || searchDrm is null || searchAccessible is null || searchedHexes.Count == 0
+                    ? Missing(diagnostics, "A Search names its units, Location, roll, drm, Accessible count, and the hexes searched.", path)
+                    : new UnitsSearched(searchers, searchedFrom, searchRoll, searchDrm.Value, searchAccessible.Value, searchedHexes);
             case "concealment-verified":
                 var verifying = fields.StringList(payload, "units", path);
                 return verifying.Count == 0 ? Missing(diagnostics, "A momentary forfeiture of \"?\" names its units.", path) : new ConcealmentVerified(verifying);

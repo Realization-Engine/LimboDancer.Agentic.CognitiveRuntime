@@ -85,6 +85,16 @@ public sealed class BacklogPass70Tests : IDisposable
         Category = LosCategory.Building,
     };
 
+    // Increment 3g: the hexsides a test reads as a Rowhouse wall (B23.71), which divide one building from the next.
+    private readonly HashSet<(string Hex, HexsideDirection Side)> rowhouseWalls = [];
+
+    private static TerrainType RowhouseWall() => new()
+    {
+        Code = 4,
+        Name = "Rowhouse Wall",
+        Category = LosCategory.Building,
+    };
+
     /// <summary>Board 01's grid, all Open Ground at level 0 but the hexes a test reads as woods.</summary>
     private BoardHandle Board()
     {
@@ -96,8 +106,8 @@ public sealed class BacklogPass70Tests : IDisposable
             Assert.True(geometry.TryGetIndex(name, out var index));
             var type = woods.Contains(text) ? Woods() : stone.Contains(text) ? Stone() : Open();
             var center = new LocationFacts(0, type, null);
-            HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, openSides.Contains((text, side)) ? Open() : type, null, false, false,
-                false, false, null))];
+            HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, openSides.Contains((text, side)) ? Open() : type,
+                rowhouseWalls.Contains((text, side)) ? RowhouseWall() : null, false, false, false, false, null))];
             hexes.Add(new HexFacts(name, index, 0, false, center, [center], hexsides, null, CenterTerrainSource.CenterSample));
         }
 
@@ -1118,5 +1128,170 @@ public sealed class BacklogPass70Tests : IDisposable
         Assert.False(Is(Current.Unit("r1")!, Conditions.Concealed));
         Assert.True(Is(Current.Unit("r2")!, Conditions.Hidden));
         NoReplayErrors();
+    }
+
+    // Increment 3g (task 70.9): Searching (A12.152, A12.154; ruling R70.24) and Mopping Up in any building (A12.153; ruling R70.25).
+    private static readonly string[] SquadAndLeader = ["g1", "l1"];
+    private static readonly string[] Searched = [L("E6"), L("E7"), L(N("E6", HexsideDirection.NorthEast))];
+    private static readonly string[] SearchedOwnAndE7 = [L("E6"), L("E7")];
+    private static readonly string[] RussianOwner = ["russian"];
+    private static readonly string[] BuildingE5 = ["bd01:E5"];
+    private static readonly string[] RowOfThree = ["E5", "E6", "E7"];
+    private static readonly string[] E5AndE6 = ["E5", "E6"];
+    private static readonly string[] E7Alone = ["E7"];
+
+    /// <summary>The stone hexes E5, E6, and E7, with a Rowhouse wall between E6 and E7 (B23.71).</summary>
+    private void RowhouseAtE7()
+    {
+        stone.UnionWith(RowOfThree);
+        rowhouseWalls.Add(("E6", HexsideDirection.South));
+        rowhouseWalls.Add(("E7", HexsideDirection.North));
+    }
+
+    private async Task MoveAndClose(string[] units, string hex)
+    {
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = units,
+            to = L(hex)
+        }));
+        await PassFire();
+    }
+
+    [Fact]
+    public async Task ASquadAndItsLeaderEndingTheirMoveSearchAndRevealAConcealedAndAHiddenSquad()
+    {
+        // A12.152 (p. 79; ruling R70.24): the German 4-6-7 and 8-1 move from E5 to E6 and, the Russian having passed, Search it and the two hexes named,
+        // E7 and the hex north-east of E6. The dr is 1 with -1 for two HS-equivalents and -1 leadership: a Final dr of -1 leaves none of the six Accessible
+        // hexes unsearched, so both named are searched; the unnamed hex north-west keeps its concealed squad. r1 loses its "?", the hidden r2 is placed
+        // beneath "?" (the record the Russian's alone), and r3 stays concealed. The DEFENDER's Casualty dr (A12.154), -3 for four concealed HS-equivalents,
+        // is a 6: no casualty. The searchers are TI, spend one more MF, and end their move when the Russian passes.
+        var east = N("E6", HexsideDirection.NorthEast);
+        await SetupAt(2, "german", Squad("g1", "E5", "german"), Unit("l1", "asl:leader", "attacker-leader-8-1", "E5", "german"),
+            Squad("r1", "E7", "russian", Conditions.Concealed), Squad("r2", east, "russian", Conditions.Hidden), Squad("r3", N("E6", HexsideDirection.NorthWest), "russian", Conditions.Concealed));
+        await MoveAndClose(SquadAndLeader, "E6");
+        var spent = Current.Unit("g1")!.MfSpent;
+        var before = Revision;
+        var result = await Do(GameActions.Search, Once(1, 6), new
+        {
+            unitIds = SquadAndLeader,
+            hexes = new[] { L("E7"), L(east) },
+        });
+        Committed(result);
+        Assert.Contains(result.Reasons, reason => reason.StartsWith("play.search: g1, l1 Search from bd01:E6:0", StringComparison.Ordinal));
+        var search = Assert.Single(Since(before).Select(item => item.Payload).OfType<UnitsSearched>());
+        Assert.Equal((-2, 6), (search.Drm, search.Accessible));
+        Assert.Equal(Searched, search.Searched.Select(hex => hex.ToString()));
+        Assert.False(Is(Current.Unit("r1")!, Conditions.Concealed));
+        Assert.True(Is(Current.Unit("r2")!, Conditions.Concealed));
+        Assert.False(Is(Current.Unit("r2")!, Conditions.Hidden));
+        Assert.Equal(RussianOwner, Since(before).Single(item => item.Type == "hidden-placed").Visibility);
+        Assert.True(Is(Current.Unit("r3")!, Conditions.Concealed));
+        Assert.True(Is(Current.Unit("g1")!, "asl:ti"));
+        Assert.True(Is(Current.Unit("l1")!, "asl:ti"));
+        Assert.Equal(spent + 1, Current.Unit("g1")!.MfSpent);
+        Assert.True(Current.Movement is { WindowOpen: true });
+        await PassFire();
+        Assert.True(Current.Unit("g1")!.MovementEnded);
+        Assert.True(Current.Unit("l1")!.MovementEnded);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ASearchCasualtyDrReducesTheSearchingSquad()
+    {
+        // A12.154 (p. 79): the German 4-6-7 alone Searches from E6 with a dr of 1 (-1 for two HS-equivalents), searching E7, where the concealed Russian
+        // squad loses its "?". As an armed Good Order DEFENDER unit is there, his Casualty dr is made at once: 2 - 1 for its two HS-equivalents is 1, and the
+        // searcher is Reduced to a HS, which stays TI.
+        await SetupAt(2, "german", Squad("g1", "E5", "german"), Squad("r1", "E7", "russian", Conditions.Concealed));
+        await MoveAndClose(GermanSquad, "E6");
+        var before = Revision;
+        Committed(await Do(GameActions.Search, Once(1, 2), new
+        {
+            unitIds = GermanSquad,
+            hexes = new[] { L("E7") },
+        }));
+        Assert.Equal(SearchedOwnAndE7, Assert.Single(Since(before).Select(item => item.Payload).OfType<UnitsSearched>()).Searched.Select(hex => hex.ToString()));
+        Assert.False(Is(Current.Unit("r1")!, Conditions.Concealed));
+        Assert.NotEqual(InstanceStatus.Active, Current.Unit("g1")!.Status);
+        var half = Current.Units.Single(unit => unit.Kind == "asl:half-squad" && unit.Status == InstanceStatus.Active && unit.Side == "german");
+        Assert.True(Is(half, "asl:ti"));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ASearchWaitsForTheDefendersWindowOnTheLastMfToClose()
+    {
+        // A12.152, A8.1 (ruling R70.24): the stack Searches as it ends its move, once the DEFENDER's window on its last MF is closed.
+        await SetupAt(2, "german", Squad("g1", "E5", "german"), Squad("r1", "E7", "russian", Conditions.Concealed));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = GermanSquad,
+            to = L("E6")
+        }));
+        var open = await Do(GameActions.Search, NoRoll(), new
+        {
+            unitIds = GermanSquad,
+        });
+        Assert.Contains(open.Reasons, reason => reason.StartsWith("play.search-move: the DEFENDER's window", StringComparison.Ordinal));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public void TheMapsFloodFillSplitsARowhouseAtItsWall()
+    {
+        // B23.71 (ruling R17.8; pass 70, ruling R70.25): the stone hexes E5, E6, and E7, with a Rowhouse wall between E6 and E7, are two buildings: E5 and
+        // E6, and E7 alone. The game's map and the Studio's card editor read this one fill.
+        RowhouseAtE7();
+        var board = Board();
+        var geometry = board.Geometry;
+        string[] Fill(string hex) => [.. MapBuildings.Building(board.Facts, geometry.IndexOf(HexName.Parse(hex)), _ => true).Select(index => geometry.NameOf(index).ToString()).Order(StringComparer.Ordinal)];
+        Assert.Equal(E5AndE6, Fill("E6"));
+        Assert.Equal(E7Alone, Fill("E7"));
+        Assert.Empty(Fill("E8"));
+    }
+
+    [Fact]
+    public async Task AStoneBuildingNoCardNamesIsMoppedUpAndItsBrokenEnemySurrenders()
+    {
+        // A12.153 (p. 79; ruling R70.25): the game has no card; the stone building E5-E6 is the map's, named "bd01:E5" after its board and lowest hex, and
+        // E7, a Rowhouse of one hex and one level beyond its wall, is no building to Mop Up. The German 4-6-7 in E5 Mops it Up in his PFPh: no concealed
+        // enemy unit is left, so the German side Controls it, and the broken Russian squad in E6 surrenders to it.
+        RowhouseAtE7();
+        await SetupAt(1, "german", Squad("g1", "E5", "german"), Squad("g2", "E7", "german"), Squad("r1", "E6", "russian", Conditions.Broken));
+        Assert.Equal(BuildingE5, Planner().MopUpBuildings(Current, [BoardLocation.Parse(L("E5")), BoardLocation.Parse(L("E7"))]).Select(item => item.Id));
+        var refused = await Do(GameActions.MopUp, NoRoll(), new
+        {
+            building = "bd01:E6",
+            unitIds = GermanSquad,
+        });
+        Assert.Contains(refused.Reasons, reason => reason.StartsWith("play.mop-up-building: 'bd01:E6' is not a building of the map", StringComparison.Ordinal));
+        Committed(await Do(GameActions.MopUp, NoRoll(), new
+        {
+            building = "bd01:E5",
+            unitIds = GermanSquad,
+        }));
+        Assert.Contains(Current.Secured, item => item.Building == "bd01:E5" && item.Side == "german" && item.Locations.Count == 2);
+        Assert.Contains("bd01:E5", Current.MoppedUpThisPlayerTurn);
+        Assert.Equal("g1", Current.Unit("r1")!.Custodian);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public void AnOlderRecordedMoppingUpOfACardsBuildingReplaysAsItDid()
+    {
+        // Ruling R70.25: a building a card names keeps the card's id; the Guards Counterattack as it was played (the fixture guards-dl-01) holds a Mopping
+        // Up of a card building, which the projector replays as before: the building is Mopped Up for its Player Turn under the card's id.
+        var tenant = Guid.Parse("5a7d1f00-0000-4000-8000-0000000057d0");
+        var file = Path.Combine(root, tenant.ToString("N"), "guards-dl-01.game.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "guards-dl-01.game.json"), file);
+        var planner = new GamePlanner(store, new InMemoryBoardCatalog([Board01Fixture.Handle()]), Vocabulary, [Catalog], fireLos: new PairLos(blocked));
+        var history = planner.Replay(store.Read(new GameScope(tenant, "guards-dl-01"))!.Events);
+        Assert.False(history.HasErrors);
+        var mopped = history.Events.Single(item => item.Payload is BuildingMoppedUp);
+        var building = ((BuildingMoppedUp)mopped.Payload).Building;
+        Assert.DoesNotContain(':', building);
+        Assert.Contains(building, history.At(mopped.Revision)!.MoppedUpThisPlayerTurn);
     }
 }

@@ -74,6 +74,21 @@ public sealed class PlayRecords
     private static string From(GameState? before, string? id) => id is not null && before?.Location(id)?.Location is { } at ? $" from {at}" : string.Empty;
 
     /// <summary>
+    /// A Search's line (A12.152; pass 70, ruling R70.24), public to both sides: what the same attempt revealed after it, a "?" placed over hidden units said
+    /// by its Location alone, since its record is the owner's.
+    /// </summary>
+    private string SearchText(string eventId, UnitsSearched search, GameState? before, int? dr)
+    {
+        var attempt = AttemptOf(eventId);
+        GameEvent[] later = [.. events.Where(other => AttemptOf(other.EventId) == attempt).SkipWhile(other => other.EventId != eventId).Skip(1)];
+        string[] placedIn = [.. later.Where(other => other.Type == "hidden-placed" && other.Payload is ConditionsChanged)
+            .Select(other => before?.Location(((ConditionsChanged)other.Payload).Id)?.Location.ToString()).OfType<string>().Distinct(StringComparer.Ordinal)];
+        return ScenarioA1Searching.RecordText(search.Units, search.Location.ToString(), dr, search.Drm, [.. search.Searched.Select(hex => hex.ToString())],
+            later.Count(other => other.Type == "concealment-lost"), placedIn,
+            later.Count(other => other.Payload is InstanceEliminated gone && before?.Unit(gone.Id)?.Kind == UnitKinds.Dummy));
+    }
+
+    /// <summary>
     /// A record's text in the view's words (design D11): the one place a record's identifiers become names, so no record is worded twice and none
     /// misses the view check (plan section 15.9).
     /// </summary>
@@ -382,6 +397,8 @@ public sealed class PlayRecords
                 SurrenderRejected refused => $"The surrender of {refused.Unit} is refused (A20.3)",
                 InstanceCaptured taken => $"{taken.Id}{In(before, taken.Id)} is captured, guarded by {taken.Custodian} (A20.2)",
                 PrisonerFreed freed => $"{freed.Unit}{In(before, freed.Unit)} is no longer guarded (A20.5)",
+                // A12.152 (pass 70, ruling R70.24): a Search, its dr, the hexes searched, and what it found, said to both sides.
+                UnitsSearched search => SearchText(item.EventId, search, before, dice.TryGetValue(search.Roll, out var searchDice) ? (int?)searchDice[0] : null),
                 BuildingMoppedUp mopped => DisplayText.Hexes($"The {DisplayText.Side(mopped.Side)} side Mops Up building {mopped.Building} (A12.153)", history.States.Count > 0 ? history.States[0].Map.Boards.Count : 1),
                 PhaseChanged phase => $"The {DisplayText.Side(phase.PhasingSide)} {GameText.PhaseLabel(phase.Phase)} of Turn {phase.Turn} begins",
                 GameEnded => "The game ends",

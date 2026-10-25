@@ -153,6 +153,7 @@ public static class GameProjector
                 RoutStepped routed => Rout(previous, routed),
                 RoutInterdicted interdicted => Interdict(previous, interdicted),
                 VoluntaryBreak voluntary => BreakVoluntarily(previous, voluntary),
+                UnitsSearched search => Search(previous, search),
                 ConcealmentVerified verified => VerifyConcealment(previous, verified),
                 DeploymentAttempted deployment => AttemptDeployment(previous, deployment),
                 RallyPhaseActionTaken rphAction => TakeRallyPhaseAction(previous, rphAction),
@@ -3299,6 +3300,54 @@ public static class GameProjector
             }
 
             return state;
+        }
+
+        /// <summary>
+        /// A Search (A12.152; pass 70, ruling R70.24): members of the moving stack in its Location, its DEFENDER's window closed, each spend one more MF there
+        /// and become TI for the rest of the Player Turn; the window opens on that MF (A8.1), and their move ends when it closes. Rules checks the record against
+        /// its Search dr.
+        /// </summary>
+        private GameState? Search(GameState state, UnitsSearched search)
+        {
+            var movement = state.Movement;
+            UnitInstance?[] units = [.. search.Units.Select(id => Active(state, id) as UnitInstance)];
+            var finalDr = rolls.TryGetValue(search.Roll, out var roll) && roll.Count == 1 && roll.Sides == 6 ? roll.Values[0] + search.Drm : (int?)null;
+            var inLocation = movement is { Vehicle: false } && search.Location == movement.Location
+                && units.All(unit => unit is not null && movement.Members.Contains(unit.Id, StringComparer.Ordinal) && state.Location(unit.Id)?.Location == movement.Location);
+            var ownFirst = search.Searched.Count > 0 && search.Searched[0].Board == search.Location.Board && search.Searched[0].Hex == search.Location.Hex;
+            // A record whose roll is not a recorded dr is checked as one out of its phase, and refused.
+            if (Rules.ScenarioA1Searching.VerifySearched(finalDr is null ? null : state.Phase, inLocation, movement is { WindowOpen: false }, ownFirst, search.Accessible, finalDr ?? 0,
+                search.Searched.Count - 1) is { } refused)
+            {
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
+            var next = state;
+            foreach (var unit in units)
+            {
+                var spent = (unit!.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0) + 2;
+                next = Replace(next, unit with
+                {
+                    MfSpent = spent / 2,
+                    HalfMfSpent = spent % 2 == 1,
+                    Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { ["asl:ti"] = ConditionState.True },
+                })!;
+            }
+
+            return next with
+            {
+                Movement = movement! with
+                {
+                    Movers = search.Units,
+                    HalfMfInLocation = 2,
+                    Step = movement.Step + 1,
+                    WindowOpen = true,
+                    EndingMembers = search.Units,
+                    MinimumMove = false,
+                    RoadRate = false,
+                    Dash = null,
+                },
+            };
         }
 
         /// <summary>A Deployment attempt (A1.31; ruling R13.4): in the RPh, its NTC agreeing with its result; the squad and leader spend their RPh action.</summary>

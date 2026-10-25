@@ -897,6 +897,14 @@ public static class GameEventWriter
             case VoluntaryBreak voluntary:
                 Strings(writer, "units", voluntary.Units);
                 break;
+            case UnitsSearched search:
+                Strings(writer, "units", search.Units);
+                writer.WriteString("location", search.Location.ToString());
+                writer.WriteString("roll", search.Roll);
+                writer.WriteNumber("drm", search.Drm);
+                writer.WriteNumber("accessible", search.Accessible);
+                Strings(writer, "searched", [.. search.Searched.Select(location => location.ToString())]);
+                break;
             case ConcealmentVerified verified:
                 Strings(writer, "units", verified.Units);
                 break;

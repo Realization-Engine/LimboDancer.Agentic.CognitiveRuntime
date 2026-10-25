@@ -371,6 +371,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.place-hidden" => PlanPlaceHidden(scope, arguments, existing, attemptId, expected, label),
             "asl.game.remove-concealment" => PlanRemoveConcealment(scope, arguments, existing, attemptId, expected, label),
             "asl.game.mop-up" => PlanMopUp(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.search" => PlanSearch(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
 

@@ -748,8 +748,23 @@ public static class GameActions
         }
         """);
 
+    public static readonly ActionDescriptor Search = Descriptor("asl.game.search", "Search",
+        "In the MPh, as the moving stack ends its move, its Good Order Infantry members (with at least one MMC, none pinned or using Assault Movement) spend one more MF to Search their own hex and the Accessible hexes named in order of preference: a Search dr leaves its Final dr of them unsearched; concealed enemy units in the hexes searched lose \"?\", hidden ones are placed beneath \"?\", Dummies are removed, and an armed Good Order enemy unit there draws a Casualty dr; the searchers become TI, and the DEFENDER may fire at that MF (A12.152, A12.154, A8.1; pass 70, ruling R70.24).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitIds"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "hexes": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+        """);
+
     public static readonly ActionDescriptor MopUp = Descriptor("asl.game.mop-up", "Mop Up a building",
-        "In their side's PFPh, Infantry MMC in a building of the card become TI to secure it: hidden enemy units there are placed beneath \"?\" and Dummies removed; with no concealed enemy unit left, the side Controls every Location of the building and its broken enemy units surrender to the guard chosen (A12.153, A12.154, A26.11; pass 24, ruling R24.2).",
+        "In their side's PFPh, Infantry MMC in a multi-hex or multi-level building become TI to secure it (a building the card names by its id, any other by its board and lowest hex): hidden enemy units there are placed beneath \"?\" and Dummies removed; with no concealed enemy unit left, the side Controls every Location of the building and its broken enemy units surrender to the guard chosen (A12.153, A12.154, A26.11; pass 24, ruling R24.2; pass 70, ruling R70.25).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -815,7 +830,7 @@ public static class GameActions
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
             Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp,
-            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle, Scrounge, VoluntaryBreak, RemoveConcealment];
+            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle, Scrounge, VoluntaryBreak, RemoveConcealment, Search];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

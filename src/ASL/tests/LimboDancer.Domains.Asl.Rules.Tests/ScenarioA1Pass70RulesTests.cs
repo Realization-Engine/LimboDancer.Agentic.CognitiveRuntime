@@ -1099,4 +1099,108 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.Equal(ConcealedOne, reveal.Revealed);
         Assert.Equal(DummyThere, reveal.DummiesRemoved);
     }
+
+    // Increment 3g (task 70.9): Searching (A12.152, A12.154; ruling R70.24) and Mopping Up in any building (A12.153; ruling R70.25).
+    private static SearcherFacts Searcher(string id = "g1", bool mmc = true, bool leader = false, int halfSquads = 2, int? leadership = null, bool member = true, bool pinned = false,
+        bool broken = false, bool infantry = true, bool hero = false, bool lax = false, bool cx = false, bool wounded = false) =>
+        new(id, true, true, member, infantry, mmc, leader, broken, false, pinned, false, false, hero, false, halfSquads, leadership, wounded, lax, cx);
+
+    private static readonly string[] TwoHexes = ["bd01:L4:0", "bd01:M4:0"];
+    private static readonly string[] SameHexTwice = ["bd01:L4:0", "bd01:L4:0"];
+    private static readonly string[] SquadAndLeaderNotes = ["-1 for 2 HS-equivalents", "-1 leadership"];
+    private static readonly string[] OwnAndL4 = ["bd01:M5:0", "bd01:L4:0"];
+    private static readonly string[] NoPlace = [];
+
+    [Fact]
+    public void TheSearchDrTakesStealthHalfSquadsTheBestLeaderLaxAndCx()
+    {
+        // A12.152 (p. 79): -1 per Stealthy Searching unit, -1 per HS equivalent > one HS, + the best participating leader's leadership, +1 per Lax or CX
+        // Searching unit (per each condition). A squad and an 8-1 leader: -1 for two HS-equivalents and -1 leadership.
+        var (drm, notes) = ScenarioA1Searching.Drm([Searcher(), Searcher("l1", mmc: false, leader: true, halfSquads: 0, leadership: -1)]);
+        Assert.Equal(-2, drm);
+        Assert.Equal(SquadAndLeaderNotes, notes);
+        Assert.True(ScenarioA1Searching.LeadershipApplied([Searcher("l1", mmc: false, leader: true, halfSquads: 0, leadership: -1)]));
+
+        // A Lax CX HS adds one for each condition; a hero is Stealthy; a wounded 8-0 leader's leadership is +1, the best when he is the only one.
+        Assert.Equal(2, ScenarioA1Searching.Drm([Searcher(halfSquads: 1, lax: true, cx: true)]).Drm);
+        Assert.Equal(-1, ScenarioA1Searching.Drm([Searcher(halfSquads: 1), Searcher("h1", mmc: false, halfSquads: 0, hero: true)]).Drm);
+        Assert.Equal(1, ScenarioA1Searching.Drm([Searcher(halfSquads: 1), Searcher("l1", mmc: false, leader: true, halfSquads: 0, leadership: 0, wounded: true)]).Drm);
+        Assert.False(ScenarioA1Searching.LeadershipApplied([Searcher(), Searcher("l1", mmc: false, leader: true, halfSquads: 0, leadership: 0)]));
+    }
+
+    [Fact]
+    public void TheFinalDrLeavesThatManyAccessibleHexesUnsearched()
+    {
+        // A12.152: "The Final dr indicates the number of Accessible hexes other than its own of the ATTACKER's choice which the unit/stack may not Search";
+        // ruling R70.24: the first of those he named, in his order of preference, are searched, never more than he named.
+        Assert.Equal(4, ScenarioA1Searching.SearchedCount(5, 1, 5));
+        Assert.Equal(2, ScenarioA1Searching.SearchedCount(5, 1, 2));
+        Assert.Equal(0, ScenarioA1Searching.SearchedCount(5, 6, 5));
+        Assert.Equal(3, ScenarioA1Searching.SearchedCount(5, -1, 3));
+        Assert.Null(ScenarioA1Searching.VerifySearched("mph", true, true, true, 5, 1, 4));
+        Assert.Equal("UNIT-STATE-051", ScenarioA1Searching.VerifySearched("mph", true, true, true, 5, 2, 4)?.Code);
+        Assert.NotNull(ScenarioA1Searching.VerifySearched("mph", true, false, true, 5, 1, 1));
+        Assert.NotNull(ScenarioA1Searching.VerifySearched("mph", true, true, false, 5, 1, 1));
+        Assert.Null(ScenarioA1Searching.HexesBar(TwoHexes, _ => true));
+        Assert.StartsWith("play.search-hexes: bd01:M4:0 is not an Accessible hex", ScenarioA1Searching.HexesBar(TwoHexes, hex => hex == "bd01:L4:0"), StringComparison.Ordinal);
+        Assert.StartsWith("play.search-hexes: a Search names each hex", ScenarioA1Searching.HexesBar(SameHexTwice, _ => true), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void OnlyGoodOrderInfantryOfTheMovingStackWithAMmcNotPinnedNorUsingAssaultMovementSearches()
+    {
+        // A12.152: "each Good Order Infantry/Cavalry MMC, or moving stack that contains >= one MMC, ends its move ... provided that all units making the
+        // attempt are neither Pinned nor using Assault Movement"; ruling R70.24: once the DEFENDER's window on its last MF is closed.
+        Assert.Null(ScenarioA1Searching.UnitBar(Searcher()));
+        Assert.StartsWith("play.search-units: g1 is pinned", ScenarioA1Searching.UnitBar(Searcher(pinned: true)), StringComparison.Ordinal);
+        Assert.StartsWith("play.search-units: g1 is not a Good Order", ScenarioA1Searching.UnitBar(Searcher(broken: true)), StringComparison.Ordinal);
+        Assert.StartsWith("play.search-units: 'g1' is not a member", ScenarioA1Searching.UnitBar(Searcher(member: false)), StringComparison.Ordinal);
+        Assert.StartsWith("play.search-units: g1 is not Infantry", ScenarioA1Searching.UnitBar(Searcher(infantry: false)), StringComparison.Ordinal);
+        Assert.NotNull(ScenarioA1Searching.MmcBar([Searcher("l1", mmc: false, leader: true, halfSquads: 0, leadership: -1)]));
+        Assert.Null(ScenarioA1Searching.MmcBar([Searcher(), Searcher("l1", mmc: false, leader: true, halfSquads: 0, leadership: -1)]));
+        Assert.StartsWith("play.search-assault", ScenarioA1Searching.MoveBar(true, false, false, true), StringComparison.Ordinal);
+        Assert.StartsWith("play.search-move: the DEFENDER's window", ScenarioA1Searching.MoveBar(true, false, true, false), StringComparison.Ordinal);
+        Assert.NotNull(ScenarioA1Searching.MoveBar(false, false, false, false));
+        Assert.NotNull(ScenarioA1Searching.MoveBar(true, true, false, false));
+        Assert.Null(ScenarioA1Searching.MoveBar(true, false, false, false));
+        Assert.NotNull(ScenarioA1Searching.PhaseBar("aph"));
+    }
+
+    [Fact]
+    public void ASearchRevealsConcealedPlacesHiddenRemovesDummiesAndAnArmedGoodOrderDefenderDrawsTheCasualtyDr()
+    {
+        // A12.152: "All enemy concealed units revealed lose their '?' (or if hidden are placed on board with a '?')"; Searched hexes reveal their contents,
+        // so Dummies go. A12.154: a Location Searched that holds an armed Good Order unit draws the DEFENDER's Casualty dr, with the drm of the concealed
+        // ones: a concealed squad's -1 for its two HS-equivalents makes an Original 2 Reduce a searcher, a 3 not.
+        Assert.Equal("revealed", ScenarioA1Searching.Reveal(false, true, false));
+        Assert.Equal("placed", ScenarioA1Searching.Reveal(false, false, true));
+        Assert.Equal("removed", ScenarioA1Searching.Reveal(true, true, false));
+        Assert.Null(ScenarioA1Searching.Reveal(false, false, false));
+        Assert.True(ScenarioA1Searching.CasualtyTrigger(false, false, false, false, false));
+        Assert.False(ScenarioA1Searching.CasualtyTrigger(false, false, true, false, false));
+        Assert.False(ScenarioA1Searching.CasualtyTrigger(true, false, false, false, false));
+        Assert.False(ScenarioA1Searching.CasualtyTrigger(false, true, false, false, false));
+        Assert.True(ScenarioA1Searching.CasualtyDue(false, true));
+        Assert.False(ScenarioA1Searching.CasualtyDue(false, false));
+        var (drm, _) = ScenarioA1MoppingUp.CasualtyDrm([new MopUpDefenderFacts(false, false, false, 2, null, false, false)]);
+        Assert.True(ScenarioA1MoppingUp.CasualtyReduces(2, drm));
+        Assert.False(ScenarioA1MoppingUp.CasualtyReduces(3, drm));
+        Assert.Equal("searching", ScenarioA1MoraleCheck.Searching);
+        Assert.Equal("g1 Searches from bd01:M5:0 and becomes TI: the Search dr 3 - 2 = 1; bd01:M5:0, bd01:L4:0 are searched: nothing is found (A12.152)",
+            ScenarioA1Searching.RecordText(OneMover, "bd01:M5:0", 3, -2, OwnAndL4, 0, NoPlace, 0));
+    }
+
+    [Fact]
+    public void MoppingUpIsBarredOnlyForANameThatIsNoBuildingAndABlazeIsNoPartOfOne()
+    {
+        // A12.153 (ruling R70.25): any multi-hex or multi-level building of the map, named by the card's id or by its board and lowest hex; a Blazing
+        // building Location is not part of the building.
+        Assert.Null(ScenarioA1MoppingUp.BuildingBar("bd03:M2", true));
+        Assert.StartsWith("play.mop-up-building: 'bd03:X9' is not a building of the map", ScenarioA1MoppingUp.BuildingBar("bd03:X9", false), StringComparison.Ordinal);
+        Assert.True(ScenarioA1MoppingUp.MopUpBuilding(3, false));
+        Assert.False(ScenarioA1MoppingUp.MopUpBuilding(1, false));
+        Assert.True(ScenarioA1MoppingUp.MopUpBuilding(1, true));
+        Assert.False(ScenarioA1MoppingUp.PartOfBuilding(true));
+        Assert.True(ScenarioA1MoppingUp.PartOfBuilding(false));
+    }
 }

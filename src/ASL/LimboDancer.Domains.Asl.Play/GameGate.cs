@@ -143,6 +143,9 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         : plan.Events.Select(item => item.Payload).OfType<VoluntaryBreak>().FirstOrDefault() is { } voluntary
         // A Voluntary Break (A10.41; pass 70, ruling R70.11): its units are broken.
         ? voluntary.Units.All(id => state.Unit(id) is { } unit && GameState.Condition(unit, Conditions.Broken) == ConditionState.True)
+        : plan.Events.Select(item => item.Payload).OfType<UnitsSearched>().FirstOrDefault() is not null
+        // A Search (A12.152; pass 70, ruling R70.24): the DEFENDER's window is open on the searchers' MF.
+        ? state.Movement is { WindowOpen: true }
         : plan.Events.Select(item => item.Payload).OfType<DeploymentAttempted>().FirstOrDefault() is { } deployment
         // A Deployment attempt (A1.31; ruling R13.4): the squad has spent its RPh action.
         ? state.RallyPhaseActions.Contains(deployment.Squad)

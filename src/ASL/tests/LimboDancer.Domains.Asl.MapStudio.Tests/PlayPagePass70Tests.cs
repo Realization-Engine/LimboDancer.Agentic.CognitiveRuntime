@@ -249,4 +249,43 @@ public sealed class PlayPagePass70Tests : IDisposable
         var lines = new PlayRecords(live.History(Game)!, new Perspective("german"), long.MaxValue).Since(0).Select(line => line.Text).ToArray();
         Assert.DoesNotContain(lines, line => line.Contains("A12.14; ruling R70.21", StringComparison.Ordinal));
     }
+
+    private static readonly string[] Searcher = ["de-1"];
+
+    [Fact]
+    public async Task TheMovementPanelOffersASearchOfTheHexesTickedAndBothSidesReadIt()
+    {
+        // Increment 3g (A12.152; ruling R70.24): the German 4-6-7 moves to the fourth column in his MPh and the Russian passes; the movement panel then offers
+        // a Search of the hexes it could enter, each in brackets. Ticked, the hex of the concealed Russian squad is searched with a dr of 1 (-1 for two
+        // HS-equivalents): the squad loses its "?", the Casualty dr of 6 does nothing, and both sides read the record. The Russian view offers no Search.
+        await Start(Squad("de-1", "attacker-squad", WideBoards.At(3), "german"), Concealed(Squad("ru-c", "defender-squad", WideBoards.At(5), "russian")));
+        await Do(GameActions.AdvancePhase, new
+        {
+        });
+        await Do(GameActions.Move, new
+        {
+            unitIds = Searcher,
+            to = WideBoards.At(4),
+        });
+        await Do(GameActions.PassFire, new
+        {
+        });
+        Assert.Empty(Open("russian").FindAll("#search"));
+        var page = Open("german");
+        var box = page.Find($"input.search-hex[data-hex='{WideBoards.At(5)}']");
+        Assert.StartsWith("[", box.ParentElement!.TextContent.Trim(), StringComparison.Ordinal);
+        box.Change(true);
+        dice.Enqueue([1]);
+        dice.Enqueue([6]);
+        page.Find("#propose-search").Click();
+        page.WaitForAssertion(() => Assert.True(page.Find("#play-outcome").TextContent.Contains("Confirm to commit", StringComparison.Ordinal), page.Find("#play-proposal").TextContent));
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.NotEqual(ConditionState.True, GameState.Condition(live.History(Game)!.Current!.Unit("ru-c")!, Conditions.Concealed));
+        foreach (var view in new[] { new Perspective("german"), new Perspective("russian") })
+        {
+            var lines = new PlayRecords(live.History(Game)!, view, long.MaxValue).Since(0).Select(line => line.Text).ToArray();
+            Assert.Contains(lines, line => line.Contains("de-1 Searches from", StringComparison.Ordinal) && line.Contains("1 concealed enemy unit loses its \"?\" (A12.152)", StringComparison.Ordinal));
+        }
+    }
 }

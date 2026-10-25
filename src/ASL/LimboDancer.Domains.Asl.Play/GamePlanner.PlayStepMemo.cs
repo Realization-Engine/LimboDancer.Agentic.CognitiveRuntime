@@ -327,6 +327,12 @@ public sealed partial class GamePlanner
         /// <summary>The active objects in a Location, as <see cref="GameState.At"/> reads them.</summary>
         public IReadOnlyList<IGameObject> At(BoardLocation location) => at.TryGetValue(location, out var stack) ? stack : [];
 
+        /// <summary>
+        /// The occupied Locations and their active objects, as <see cref="At"/> holds them (pass 70, ruling R70.25): built with the index, so Searching and
+        /// Mopping Up read the stacks of a set of hexes in one pass over them, never with a lookup per Location.
+        /// </summary>
+        public IEnumerable<KeyValuePair<BoardLocation, IGameObject[]>> Occupied => at;
+
         /// <summary>Where an object is, as <see cref="GameState.Location"/> reads it; null for an id the state does not hold.</summary>
         public MapPosition? Location(string id) => locations.GetValueOrDefault(id);
     }

@@ -4,17 +4,18 @@ namespace LimboDancer.Domains.Asl.Rules;
 public sealed record MopUpDefenderFacts(bool Hero, bool Leader, bool Heroic, int HalfSquads, int? Leadership, bool Wounded, bool Lax);
 
 /// <summary>
-/// Mopping Up (A12.153, A12.154; pass 24 of the Card Play and Map Studio Redesign Plan, ruling R24.2; pass 32.g, S6): the bars in their order, who Mops Up,
-/// what is found, the secured building, the surrenders, and the DEFENDER's Casualty dr. Play reads the card, the state, and the map, hands the facts over,
-/// and writes the events.
+/// Mopping Up (A12.153, A12.154; pass 24 of the Card Play and Map Studio Redesign Plan, ruling R24.2; pass 32.g, S6; pass 70, ruling R70.25: any building of
+/// the map): the bars in their order, who Mops Up, what is found, the secured building, the surrenders, and the DEFENDER's Casualty dr. Play reads the card,
+/// the state, and the map, hands the facts over, and writes the events.
 /// </summary>
 public static class ScenarioA1MoppingUp
 {
-    /// <summary>A12.153 (ruling R24.2): Mopping Up secures a building of the game's card.</summary>
-    public static string? CardBar(bool hasCard) => hasCard ? null : "play.mop-up-card: Mopping Up secures a building of the game's card; this game has none (A12.153; ruling R24.2)";
-
-    /// <summary>A12.153 (ruling R24.2): the building named is one of the card's, with hexes.</summary>
-    public static string? BuildingBar(string? building, bool found) => found ? null : $"play.mop-up-building: '{building}' is not a building of the card (A12.153; ruling R24.2)";
+    /// <summary>
+    /// A12.153 (rulings R24.2, R70.25): the building named is one of the map's, by the card's id where the card names it and otherwise by its board and its
+    /// lowest hex, such as "bd03:M2"; a building of no card is Mopped Up as a card's is.
+    /// </summary>
+    public static string? BuildingBar(string? building, bool found) => found ? null
+        : $"play.mop-up-building: '{building}' is not a building of the map; a building is named by the card's id, or by its board and its lowest hex, such as bd03:M2 (A12.153; ruling R70.25)";
 
     /// <summary>A12.153: Mopping Up is declared in its side's PFPh.</summary>
     public static string? PhaseBar(string? phase) => phase != "pfph" ? "play.mop-up-phase: Mopping Up is declared in its side's PFPh (A12.153)" : null;
@@ -182,6 +183,12 @@ public static class ScenarioA1MoppingUp
         return $"{summary}; the DEFENDER's Casualty dr ({(notes.Count == 0 ? "no drm" : string.Join(", ", notes))}) Reduces a Mopping-Up unit on a Final dr of 1 or less (A12.154; ruling R24.2)";
     }
 
-    /// <summary>A12.153 (ruling R24.2): a building of the card that may be Mopped Up: more than one hex, or more than one level.</summary>
+    /// <summary>A12.153 (rulings R24.2, R70.25): a building that may be Mopped Up: more than one hex, or more than one level.</summary>
     public static bool MopUpBuilding(int hexCount, bool anyUpperLevel) => hexCount > 1 || anyUpperLevel;
+
+    /// <summary>
+    /// A12.153 (p. 79; ruling R70.25): "A rubbled/Blazing building Location is not considered part of a building for Mopping-Up purposes": a hex with a Blaze
+    /// is left out; a rubbled one has no building terrain, so the map never finds it in a building.
+    /// </summary>
+    public static bool PartOfBuilding(bool blaze) => !blaze;
 }
