@@ -979,8 +979,14 @@ public sealed class ScenarioA1Pass70RulesTests
         }).Single().Drm);
         Assert.Equal(0, Gains(10, false, Candidate("de-h", "asl:hero")).Single().Drm);
         Assert.Equal(3, Gains(10, false, Candidate("de-s")).Single().Drm);
-        Assert.True((Candidate("de-l", "asl:leader") with { Heroic = true }).Stealthy);
-        Assert.False((Candidate("de-s") with { Heroic = true }).Stealthy);
+        Assert.True((Candidate("de-l", "asl:leader") with
+        {
+            Heroic = true
+        }).Stealthy);
+        Assert.False((Candidate("de-s") with
+        {
+            Heroic = true
+        }).Stealthy);
     }
 
     private static readonly string?[] OrchardRoad = ["Orchard", "Dirt Road", null, "Orchard", "Orchard", "Dirt Road"];
