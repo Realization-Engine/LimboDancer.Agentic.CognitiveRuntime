@@ -1302,7 +1302,7 @@ public sealed partial class GamePlanner
     /// not (a Recall eliminates him, as before the pass).
     /// </summary>
     private void AddSmcCrewSeverity(GameScope scope, string attemptId, long expected, string actor, string? package, List<GameEvent> events, Func<RollRequest, RollResult> draw,
-        GameState state, EventPayload payload)
+        GameState state, EventPayload payload, IReadOnlyList<string>? visibility = null)
     {
         if (payload is not ConditionsChanged change || state.Unit(change.Id) is not { TemporaryCrew.Manning: ScenarioA1CapturedVehicleRules.Smc } vehicle
             || MemoOf(state).Objects(state).CrewOf(vehicle.Id) is not { } crew)
@@ -1320,7 +1320,7 @@ public sealed partial class GamePlanner
 
         var drawn = draw(new RollRequest(1, 6));
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
-            new DiceRolled(rollId, ScenarioA1Wounds.SeverityPurpose, 1, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
+            new DiceRolled(rollId, ScenarioA1Wounds.SeverityPurpose, 1, 6, drawn.Values, DiceRolled.SystemSource, actor), package, visibility));
     }
 
     /// <summary>The conditions a vehicle result that does not wreck it sets, with the "?" it loses.</summary>

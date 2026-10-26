@@ -156,6 +156,44 @@ public sealed class PlayPagePass71Tests : IDisposable
         }
     }
 
+    private static Dictionary<string, bool> Concealed => new() { ["asl:broken"] = false, ["asl:concealed"] = true, ["asl:hidden"] = false };
+
+    [Fact]
+    public async Task AConcealedTargetThatKeepsItsQuestionMarkIsOneNeutralLineToTheEnemyAndNamedToItsOwner()
+    {
+        // The hidden-information fixes (A12.14, A14.23; rulings R71.21, R71.22): as above, but the Russian 4-4-7 is concealed (the German fire at it, IFT DR
+        // 3 + 3, has no effect), so no unconcealed Russian unit sees the concealed German 4-6-7 the Sniper's dr 2 pins, and it keeps its "?". The Russian view
+        // reads one neutral line that names no unit; the German view reads it and its own line, which names the squad and the pin.
+        var stackAt = WideBoards.At(9);
+        var sniperAt = GameMaps.LocationOf(WideBoards.Board, new HexIndex(9, 4))!.ToString();
+        await Start(Squad("de-1", "attacker-squad", WideBoards.At(3), "german"),
+            Placed("ru-1", "asl:squad", "defender-squad", WideBoards.At(5), "russian", Concealed),
+            Placed("de-c", "asl:squad", "attacker-squad", stackAt, "german", Concealed),
+            Placed("rs", "asl:sniper", null, sniperAt, "russian", new Dictionary<string, bool>()));
+        dice.Enqueue([3, 3, 2, 1, 1]);
+        await Do(GameActions.Fire, new
+        {
+            firers = GermanFirer,
+            target = WideBoards.At(5),
+        });
+        await Attack();
+        var history = live.History(Game)!;
+        Assert.Equal(ConditionState.True, GameState.Condition(history.Current!.Unit("de-c")!, Conditions.Concealed));
+        string[] Lines(string side)
+        {
+            var view = new Perspective(side);
+            return [.. new PlayRecords(history, view, long.MaxValue, UnitNames.For(history, view, [.. live.Catalogs])).Snipers.Select(item => item.Text)];
+        }
+
+        var russian = Assert.Single(Lines("russian"));
+        Assert.EndsWith(": a concealed target is attacked and keeps its \"?\" (A12.14, A14.23)", russian, StringComparison.Ordinal);
+        Assert.DoesNotContain("squad", russian, StringComparison.Ordinal);
+        var german = Lines("german");
+        Assert.Equal(2, german.Length);
+        Assert.Contains(german, line => line.Contains("is pinned", StringComparison.Ordinal)
+            && line.EndsWith("the enemy reads only that a concealed target was attacked (A12.14, A14.23)", StringComparison.Ordinal));
+    }
+
     private IRenderedComponent<PlayPage> Open(string view)
     {
         var page = context.Render<PlayPage>();

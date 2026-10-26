@@ -277,13 +277,11 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// A Sniper target (A14.2 EXC, A14.22, A14.31; pass 71, ruling R71.3): a unit (on foot or a Vulnerable PRC), a vehicle's Inherent crew or the unarmored
-    /// vehicle itself (the vehicle as the item, by <see cref="Role"/>), or the enemy Sniper counter, with the Location it is attacked in.
+    /// vehicle itself (the vehicle as the item, by <see cref="Role"/>), or the enemy Sniper counter, with the Location it is attacked in. <see cref="Stacked"/>:
+    /// part of the Location's concealed stack, which Random Selection counts as one (A14.23): a concealed unit or a Dummy, and the PRC, crew, and vehicle of
+    /// a concealed vehicle (A12.2; ruling R71.20), as Rules decides.
     /// </summary>
-    private readonly record struct SniperTarget(IGameObject Item, string Role, BoardLocation At)
-    {
-        /// <summary>A14.23: a concealed unit or a Dummy, which Random Selection counts as one stack; a crew or vehicle of a concealed vehicle too.</summary>
-        public bool ConcealedOrDummy => Item is UnitInstance unit && (Is(unit, Conditions.Concealed) || unit.Kind == UnitKinds.Dummy);
-    }
+    private readonly record struct SniperTarget(IGameObject Item, string Role, BoardLocation At, bool Stacked);
 
     /// <summary>
     /// What a Sniper attack resumed after its Sniper player's answer reads again (A14.2; pass 71, ruling R71.12): the counter's Location when the attack began
@@ -331,8 +329,8 @@ public sealed partial class GamePlanner
         // A roll of this commit, or one a resumed attack recorded before its Sniper player's answer.
         IReadOnlyList<int> Values(string rollId) => (events.Select(item => item.Payload).OfType<DiceRolled>().FirstOrDefault(item => item.Roll == rollId)
             ?? existing.Select(item => item.Payload).OfType<DiceRolled>().Last(item => item.Roll == rollId)).Values;
-        void Record(string rollId, int dr, BoardLocation? at, string? unit, string result) =>
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "sniper-attacked", new SniperAttacked(sniper.Id, trigger, rollId, dr, at, unit, result), package, null));
+        void Record(string rollId, int dr, BoardLocation? at, string? unit, string result, IReadOnlyList<string>? owner) =>
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "sniper-attacked", new SniperAttacked(sniper.Id, trigger, rollId, dr, at, unit, result), package, owner));
 
         var answers = resumed?.Answers ?? new Dictionary<string, string>(StringComparer.Ordinal);
         var (locationRoll, selectionRoll, moved) = (resumed?.LocationRoll, resumed?.SelectionRoll, resumed?.Moved ?? false);
@@ -340,13 +338,13 @@ public sealed partial class GamePlanner
         var dr = Values(sniperRoll)[0];
         if (!ScenarioA1Sniper.Effective(dr))
         {
-            Record(sniperRoll, dr, null, null, ScenarioA1Sniper.NoEffect);
+            Record(sniperRoll, dr, null, null, ScenarioA1Sniper.NoEffect, null);
             return false;
         }
 
         // Ruling R71.12: the attack stops at the Sniper player's choice, public as the dr is; its resume keeps what the attack has recorded, and the attacks
-        // still to resolve.
-        bool Pause(string step, IReadOnlyList<string> options, BoardLocation? place)
+        // still to resolve. Ruling R71.19: the reposition hexes are the Sniper side's alone (its own hidden units shape them, A12.3).
+        bool Pause(string step, IReadOnlyList<string> options, BoardLocation? place, IReadOnlyList<string>? visibility = null)
         {
             var answered = new JsonObject();
             foreach (var (name, value) in answers)
@@ -385,7 +383,7 @@ public sealed partial class GamePlanner
             }
 
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending", new ChoicePending($"{ChoicePending.Sniper}:{sniper.Id}:{step}", ChoicePending.Sniper,
-                sniperSide, options, JsonSerializer.SerializeToElement(resume)), null, null));
+                sniperSide, options, JsonSerializer.SerializeToElement(resume)), null, visibility));
             return true;
         }
 
@@ -404,12 +402,14 @@ public sealed partial class GamePlanner
             if (forfeit == ScenarioA1Sniper.Reposition)
             {
                 var to = answers.TryGetValue(ScenarioA1Sniper.RepositionStep, out var picked) ? BoardLocation.Parse(picked) : elsewhere.Length == 1 ? elsewhere[0] : null;
+                // Ruling R71.19: the choice of hex is recorded for the Sniper side only; the other side reads the public answer to forfeit and reposition,
+                // the description of the step on the page, and then the counter's new hex.
                 if (to is null)
                 {
-                    return Pause(ScenarioA1Sniper.RepositionStep, [.. elsewhere.Select(at => at.ToString())], null);
+                    return Pause(ScenarioA1Sniper.RepositionStep, [.. elsewhere.Select(at => at.ToString())], null, [sniperSide]);
                 }
 
-                Record(sniperRoll, dr, to, null, ScenarioA1Sniper.Forfeited);
+                Record(sniperRoll, dr, to, null, ScenarioA1Sniper.Forfeited, null);
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-moved", new InstanceMoved(sniper.Id, new MapPosition(to)), package, null));
                 return false;
             }
@@ -428,7 +428,7 @@ public sealed partial class GamePlanner
         var eligible = SniperTargets(state, index, attacked);
         if (eligible.Count == 0)
         {
-            Record(sniperRoll, dr, null, null, ScenarioA1Sniper.NoTarget);
+            Record(sniperRoll, dr, null, null, ScenarioA1Sniper.NoTarget, null);
             return false;
         }
 
@@ -483,9 +483,9 @@ public sealed partial class GamePlanner
         // A14.23: a concealed stack is one possible target; the others one each. A14.2 EXC (ruling R71.12): before Random Selection the Sniper player may
         // choose the enemy Sniper counter, a Vulnerable Inherent Crew, or an unarmored vehicle; of several targets Random Selection gives, he chooses which
         // takes the Sniper dr, and each other takes a new one.
-        bool[] concealedOrDummy = [.. here.Select(target => target.ConcealedOrDummy)];
+        bool[] concealedOrDummy = [.. here.Select(target => target.Stacked)];
         var candidates = ScenarioA1Sniper.Candidates(concealedOrDummy).Select(group => (IReadOnlyList<SniperTarget>)[.. group.Select(position => here[position])]).ToList();
-        static bool Concealed(IReadOnlyList<SniperTarget> stack) => stack.Count > 1 || stack[0].ConcealedOrDummy;
+        static bool Concealed(IReadOnlyList<SniperTarget> stack) => stack.Count > 1 || stack[0].Stacked;
         static string OptionOf(IReadOnlyList<SniperTarget> stack) => Concealed(stack) ? ScenarioA1Sniper.ConcealedStack : ScenarioA1Sniper.TargetOption(stack[0].Role, stack[0].Item.Id);
         var targets = new List<(IReadOnlyList<SniperTarget> Stack, string Roll, int Dr)>();
         int[] prior = [.. ScenarioA1Sniper.PriorTargets([.. candidates.Select(stack => new SniperCandidate(stack[0].Role, Concealed(stack)))])];
@@ -529,27 +529,32 @@ public sealed partial class GamePlanner
             }
         }
 
-        // A12.14 (ruling R71.8): whether a Good Order enemy ground unit has a LOS to a target's Location, read only when a concealed one keeps its "?" by it.
-        bool Seen(SniperTarget target) => target.Item.Side is { } side && NearestGoodOrderEnemyInLos(state, side, target.At) is not null;
+        // A12.14 (rulings R71.8, R71.21): whether an unconcealed Good Order enemy ground unit has a LOS to a target's Location, read only when a concealed one
+        // keeps its "?" by it; where every enemy seer is itself concealed, the "?" stays (A12.14's momentary forfeiture is not offered here: a deviation).
+        bool Seen(SniperTarget target) => target.Item.Side is { } side && NearestUnconcealedLossSeer(state, side, target.At) is not null;
+        // A12.2 (ruling R71.20): what else shares a target's "?", still concealed or hidden, which loses it with the target.
+        IReadOnlyList<string> Sharing(string id) => [.. ScenarioA1ConcealmentChoices.SharesConcealment(id, linked => ConcealmentLinks(state, index, linked))
+            .Where(other => other != id && state.Find(other) is { Status: InstanceStatus.Active } item && (Is(item, Conditions.Concealed) || Is(item, Conditions.Hidden)))];
         var lostLeaders = new List<(string Id, bool Eliminated)>();
         var replaced = new Dictionary<string, string?>(StringComparer.Ordinal);
         foreach (var (stack, rollId, value) in targets)
         {
             if (!ScenarioA1Sniper.Effective(value))
             {
-                Record(rollId, value, location, null, ScenarioA1Sniper.NoEffect);
+                Record(rollId, value, location, null, ScenarioA1Sniper.NoEffect, null);
                 continue;
             }
 
             var target = stack[0];
             if (stack.Count > 1 || concealedOrDummy[Array.IndexOf(here, stack[0])])
             {
-                // A14.23: a concealed stack reveals how many real units it holds: none is a Dummy stack, eliminated; one is the target; more are chosen by
-                // Random Selection.
-                SniperTarget[] real = [.. stack.Where(item => !(item.Item is UnitInstance unit && unit.Kind == UnitKinds.Dummy))];
-                if (real.Length == 0)
+                // A14.23: a concealed stack reveals how many eligible targets it holds: none is a Dummy stack, eliminated; one is the target; more are chosen
+                // by Random Selection. Ruling R71.20: a stack of real units with none, such as a concealed BU AFV, is attacked to no effect and keeps its "?",
+                // in public as every kept "?" is (ruling R71.22).
+                var (inStack, dummyStack) = ScenarioA1Sniper.StackTargets([.. stack.Select(item => (item.Role, item.Item is UnitInstance { Kind: UnitKinds.Dummy }))]);
+                if (dummyStack)
                 {
-                    Record(rollId, value, location, null, ScenarioA1Sniper.DummyStackEliminated);
+                    Record(rollId, value, location, null, ScenarioA1Sniper.DummyStackEliminated, null);
                     foreach (var dummy in stack)
                     {
                         events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(dummy.Item.Id), package, null));
@@ -558,28 +563,37 @@ public sealed partial class GamePlanner
                     continue;
                 }
 
-                if (real.Length == 1)
+                if (inStack.Count == 0)
                 {
-                    target = real[0];
+                    var holder = stack.First(item => item.Role == ScenarioA1Sniper.ConcealedVehicle).Item;
+                    Record(rollId, value, location, null, ScenarioA1Sniper.ConcealedKept, null);
+                    Record(rollId, value, location, holder.Id, ScenarioA1Sniper.NoEffect, [attacked]);
+                    continue;
+                }
+
+                if (inStack.Count == 1)
+                {
+                    target = stack[inStack[0]];
                 }
                 else
                 {
-                    var among = Roll(real.Length, "sniper-random-selection");
-                    target = real[ScenarioA1Sniper.Picked(Values(among))];
+                    var among = Roll(inStack.Count, "sniper-random-selection");
+                    target = stack[inStack[ScenarioA1Sniper.Picked(Values(among))]];
                 }
             }
 
             switch (target.Role)
             {
                 case ScenarioA1Sniper.CrewTarget or ScenarioA1Sniper.VehicleTarget:
-                    SnipeVehicle(scope, attemptId, expected, actor, events, draw, state, target, rollId, value, location, package, Record, () => Seen(target));
+                    SnipeVehicle(scope, attemptId, expected, actor, events, draw, state, target, rollId, value, location, package, Record, () => Seen(target), Sharing);
                     break;
                 case ScenarioA1Sniper.SniperTarget:
                     SnipeSniper(scope, attemptId, expected, events, state, (EntityInstance)target.Item, rollId, value, location, package, Record);
                     break;
                 default:
                     var unit = (UnitInstance)target.Item;
-                    var result = SnipeUnit(scope, attemptId, expected, events, unit, state.Phase, rollId, value, location, package, Roll, Values, Record, () => Seen(target));
+                    var result = SnipeUnit(scope, attemptId, expected, events, unit, target.Stacked, state.Phase, rollId, value, location, package, Roll, Values, Record,
+                        () => Seen(target), Sharing);
                     if (result == ScenarioA1Sniper.Eliminated)
                     {
                         replaced[unit.Id] = null;
@@ -619,10 +633,13 @@ public sealed partial class GamePlanner
         }
 
         // A14.4 (pass 71, ruling R71.10): the attack resolved, the attacked side's units in the target Location that may take a Sniper Check are offered it,
-        // read from the state after the attack only when the Location held a unit of that side on foot before it.
-        if (events.Any(item => item.Payload is ChoicePending)
-            || !index.At(location).OfType<UnitInstance>().Any(unit => unit.Side == attacked && index.VehicleOf(unit.Id) is null && !LiveFire.IsVehicle(unit))
-            || Replay([.. existing, .. events]).Current is not { } attackedState || SniperCheckers(attackedState, location, attacked).Count == 0)
+        // read from the state after the attack only when the Location held a unit of that side before it. Ruling R71.18: it is offered too whenever the
+        // Location still holds a unit of that side under "?", so the public offer tells nothing of the stack (A14.23, A12.141).
+        if (events.Any(item => item.Payload is ChoicePending) || !index.At(location).OfType<UnitInstance>().Any(unit => unit.Side == attacked)
+            || Replay([.. existing, .. events]).Current is not { } attackedState
+            || !ScenarioA1Sniper.SniperCheckOffered(SniperCheckers(attackedState, location, attacked).Count, MemoOf(attackedState).Objects(attackedState).At(location)
+                .OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == attacked && !Is(unit, Conditions.Hidden)
+                    && (Is(unit, Conditions.Concealed) || unit.Kind == UnitKinds.Dummy))))
         {
             return false;
         }
@@ -696,9 +713,12 @@ public sealed partial class GamePlanner
         };
         var sniper = answered.Find(sniperId) as EntityInstance;
         List<UnitInstance> units = option == ChoicePending.Take && sniper is { Status: InstanceStatus.Active } ? SniperCheckers(answered, at, pending.Side) : [];
+
+        // Ruling R71.18: a check taken where no unit may take it commits nothing of its own, and says so in the answering side's proposal only.
+        string[] reasons = option == ChoicePending.Take && units.Count == 0 ? [summary, ScenarioA1Sniper.NoSniperCheckerText($"[{at.Hex}]")] : [summary];
         if (units.Count == 0 && rest.Length == 0)
         {
-            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [made], [summary]);
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [made], reasons);
         }
 
         var (drm, causes) = ScenarioA1Sniper.SniperCheckDrm([.. units.Select(unit => new SniperCheckParticipant(unit.Kind,
@@ -709,17 +729,17 @@ public sealed partial class GamePlanner
             if (units.Count > 0 && sniper is not null)
             {
                 var package = ScenarioA1FirePackage.Identity.ToString();
+
+                // A12.141: the participants lose their "?" in the LOS of a Good Order enemy ground unit within 16 hexes, an unconcealed one (ruling R71.21);
+                // those that keep it are not named to the Sniper's side, nor is the record that names them, nor its DR (ruling R71.22).
+                var concealed = units.Any(unit => Is(unit, Conditions.Concealed));
+                var exposed = concealed && ScenarioA1Sight.SeenWithin(NearestUnconcealedLossSeer(answered, pending.Side, at), 16);
+                IReadOnlyList<string>? owner = concealed && !exposed ? [pending.Side] : null;
                 var rollId = $"{attemptId}-roll-1";
                 var dice = draw(new RollRequest(2, 6));
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled", new DiceRolled(rollId, "sniper-check", 2, 6, dice.Values, DiceRolled.SystemSource, actor),
-                    package, null));
+                    package, owner));
                 var result = ScenarioA1Sniper.SniperCheckResult(dice.Values.Sum() + drm, Is(sniper, Conditions.Pinned));
-
-                // A12.141: the participants lose their "?" in the LOS of a Good Order enemy ground unit within 16 hexes; those that keep it are not named to the
-                // Sniper's side, nor is the record that names them.
-                var concealed = units.Any(unit => Is(unit, Conditions.Concealed));
-                var exposed = concealed && EnemyGoodOrderInLosWithin16(answered, pending.Side, at);
-                IReadOnlyList<string>? owner = concealed && !exposed ? [pending.Side] : null;
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "sniper-checked", new SniperChecked(sniperId, at, [.. units.Select(unit => unit.Id)], rollId, drm, result),
                     package, owner));
                 foreach (var unit in units)
@@ -744,7 +764,7 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [summary, units.Count == 0 ? "play.sniper-check: the Sniper attacks still to resolve follow (A14.1)"
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [.. reasons, units.Count == 0 ? "play.sniper-check: the Sniper attacks still to resolve follow (A14.1)"
             : $"play.sniper-check: {string.Join(", ", units.Select(unit => unit.Id))} in {at} make one combined Sniper Check DR{(drm == 0 ? string.Empty : $", DRM {drm:+0;-0} ({string.Join(", ", causes)})")}: a Final DR of 2 or less eliminates the Sniper, a 3 pins it, and they become TI (A14.4)"])
         {
             Roll = new PlannedRoll("choice", Build),
@@ -809,7 +829,7 @@ public sealed partial class GamePlanner
             var at = index.Location(unit.Id)!.Location;
             if (!LiveFire.IsVehicle(unit))
             {
-                found.Add(new SniperTarget(unit, ScenarioA1Sniper.UnitTarget, at));
+                found.Add(new SniperTarget(unit, ScenarioA1Sniper.UnitTarget, at, ScenarioA1Sniper.InConcealedStack(Is(unit, Conditions.Concealed) || unit.Kind == UnitKinds.Dummy, false)));
                 continue;
             }
 
@@ -823,15 +843,26 @@ public sealed partial class GamePlanner
                 Is(prc, Conditions.Pinned) ? true : null), definition, crewExposed, impaired))];
             var manned = !Is(unit, Conditions.Abandoned) && !(index.CrewOf(unit.Id) is { } crew && Is(crew, Conditions.Broken));
             var targets = ScenarioA1Sniper.VehicleTargets(new SniperVehicleFacts(definition?.Unarmored == true, definition?.PartiallyArmored == true, crewExposed, manned, exposures));
-            found.AddRange(targets.Prc.Select(position => new SniperTarget(aboard[position], ScenarioA1Sniper.UnitTarget, at)));
+
+            // A12.2, A14.23 (ruling R71.20): the PRC, crew, and vehicle of a concealed vehicle are its concealed stack, and the vehicle is one "?" candidate
+            // whatever its state.
+            var concealed = Is(unit, Conditions.Concealed);
+            found.AddRange(targets.Prc.Select(position => new SniperTarget(aboard[position], ScenarioA1Sniper.UnitTarget, at,
+                ScenarioA1Sniper.InConcealedStack(Is(aboard[position], Conditions.Concealed), concealed))));
+            var ofVehicle = ScenarioA1Sniper.InConcealedStack(false, concealed);
             if (targets.Crew)
             {
-                found.Add(new SniperTarget(unit, ScenarioA1Sniper.CrewTarget, at));
+                found.Add(new SniperTarget(unit, ScenarioA1Sniper.CrewTarget, at, ofVehicle));
             }
 
             if (targets.Vehicle)
             {
-                found.Add(new SniperTarget(unit, ScenarioA1Sniper.VehicleTarget, at));
+                found.Add(new SniperTarget(unit, ScenarioA1Sniper.VehicleTarget, at, ofVehicle));
+            }
+
+            if (ScenarioA1Sniper.CountsAsConcealedVehicle(concealed, targets))
+            {
+                found.Add(new SniperTarget(unit, ScenarioA1Sniper.ConcealedVehicle, at, true));
             }
         }
 
@@ -840,7 +871,7 @@ public sealed partial class GamePlanner
         {
             if (entity.Kind == "asl:sniper" && entity.Side == attacked && entity.Status == InstanceStatus.Active && entity.Position is MapPosition position)
             {
-                found.Add(new SniperTarget(entity, ScenarioA1Sniper.SniperTarget, position.Location));
+                found.Add(new SniperTarget(entity, ScenarioA1Sniper.SniperTarget, position.Location, false));
             }
         }
 
@@ -851,14 +882,17 @@ public sealed partial class GamePlanner
     /// A14.3 (ruling R15.5): dr 1 eliminates a SMC and breaks a MMC, Casualty Reducing one that cannot break (broken or berserk); dr 2 wounds a SMC (its Wound
     /// Severity dr, A17.11) and pins a MMC not immune to Pin results. A concealed unit keeps its "?" out of every Good Order enemy LOS unless it breaks, is
     /// wounded, or is Reduced (A12.14; pass 71, ruling R71.8), and the record then names no unit. Rules decides the effect (pass 32.h). A SMC wounded in the MPh
-    /// after spending more than 3 MF is pinned too (A17.2; ruling R71.14). The result recorded.
+    /// after spending more than 3 MF is pinned too (A17.2; ruling R71.14). The result recorded. Since the hidden-information fixes (rulings R71.20 to
+    /// R71.22): <paramref name="concealed"/> is the target's place in the concealed stack (a PRC of a concealed vehicle too), a "?" lost is lost by what
+    /// shares it (<paramref name="sharing"/>), and a target that keeps it has a neutral public record, its real one and its effects for its owner alone.
     /// </summary>
-    private string SnipeUnit(GameScope scope, string attemptId, long expected, List<GameEvent> events, UnitInstance unit, string? phase, string rollId, int dr,
+    private string SnipeUnit(GameScope scope, string attemptId, long expected, List<GameEvent> events, UnitInstance unit, bool concealed, string? phase, string rollId, int dr,
         BoardLocation location, string package, Func<int, string, string> roll, Func<string, IReadOnlyList<int>> values,
-        Action<string, int, BoardLocation?, string?, string> record, Func<bool> seen)
+        Action<string, int, BoardLocation?, string?, string, IReadOnlyList<string>?> record, Func<bool> seen, Func<string, IReadOnlyList<string>> sharing)
     {
+        IReadOnlyList<string>? owner = null;
         void Change(IReadOnlyList<(UnitCondition Condition, bool Value)> conditions) =>
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(unit.Id, ConditionChanges(conditions)), package, null));
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(unit.Id, ConditionChanges(conditions)), package, owner));
         void Eliminate() => events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), package, null));
 
         var smc = unit.Kind is "asl:leader" or "asl:hero";
@@ -878,9 +912,9 @@ public sealed partial class GamePlanner
             SniperEffect.Pinned => ScenarioA1Sniper.Pinned,
             _ => ScenarioA1Sniper.NoEffect,
         };
-        var concealed = Is(unit, Conditions.Concealed);
         var keeps = ScenarioA1Sniper.KeepsConcealment(concealed, result, seen);
-        record(rollId, dr, location, keeps ? null : unit.Id, result);
+        RecordAttack(record, rollId, dr, location, unit.Id, unit.Side, result, keeps);
+        owner = keeps ? [unit.Side] : null;
         switch (effect)
         {
             case SniperEffect.Eliminated:
@@ -918,7 +952,36 @@ public sealed partial class GamePlanner
                 break;
         }
 
+        // A12.2 (ruling R71.20): "... so does its manning Infantry or PRC, and vice versa": what shares the lost "?" loses it too.
+        if (concealed && !keeps)
+        {
+            AddUnconcealed(scope, attemptId, expected, events, package, sharing(unit.Id));
+        }
+
         return result;
+    }
+
+    /// <summary>
+    /// The record of a Sniper attack on a target (A14.3): public, or, for a target that keeps its "?", the one neutral public result and its owner's twin with
+    /// the unit and the real result (A12.14, A14.23; ruling R71.22).
+    /// </summary>
+    private static void RecordAttack(Action<string, int, BoardLocation?, string?, string, IReadOnlyList<string>?> record, string rollId, int dr, BoardLocation location,
+        string unit, string side, string result, bool keeps)
+    {
+        record(rollId, dr, location, keeps ? null : unit, ScenarioA1Sniper.PublicResult(keeps, result), null);
+        if (keeps)
+        {
+            record(rollId, dr, location, unit, result, [side]);
+        }
+    }
+
+    /// <summary>The "?" and hidden status lost by each of <paramref name="ids"/>, in public (A12.2, A12.14).</summary>
+    private void AddUnconcealed(GameScope scope, string attemptId, long expected, List<GameEvent> events, string package, IReadOnlyList<string> ids)
+    {
+        foreach (var id in ids)
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(id, Unconcealed()), package, null));
+        }
     }
 
     /// <summary>
@@ -926,19 +989,22 @@ public sealed partial class GamePlanner
     /// Immobilization, or a crew's pin is the vehicle's <c>conditions-changed</c>, as the Fire path writes one, so the projector's Stun, Recall, BU, and SMC
     /// crew handling apply; a broken Inherent crew is placed broken inside and routs beneath it, as an Unprotected crew is (D5.311, whose "[EXC: Sniper attack]"
     /// leaves the break to A14.3). A concealed vehicle keeps its "?" as a unit does (A12.14; ruling R71.8). A SMC Temporary crew's Wound Severity dr comes before
-    /// a Stun (D5.343, A17.11; ruling R71.15).
+    /// a Stun (D5.343, A17.11; ruling R71.15). A vehicle that keeps its "?" has a neutral public record, and its real one, its conditions, and a crew's
+    /// Severity dr are its owner's (ruling R71.22); one that loses it loses it with its PRC and crew (A12.2; ruling R71.20).
     /// </summary>
     private void SnipeVehicle(GameScope scope, string attemptId, long expected, string actor, List<GameEvent> events, Func<RollRequest, RollResult> draw, GameState state,
-        SniperTarget target, string rollId, int dr, BoardLocation location, string package, Action<string, int, BoardLocation?, string?, string> record, Func<bool> seen)
+        SniperTarget target, string rollId, int dr, BoardLocation location, string package, Action<string, int, BoardLocation?, string?, string, IReadOnlyList<string>?> record,
+        Func<bool> seen, Func<string, IReadOnlyList<string>> sharing)
     {
         var vehicle = (UnitInstance)target.Item;
         var definition = VehicleDefinition(vehicle);
         var result = target.Role == ScenarioA1Sniper.CrewTarget
             ? ScenarioA1Sniper.CrewResult(dr, definition is not ({ Unarmored: true } or { PartiallyArmored: true }), Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Pinned))
             : ScenarioA1Sniper.VehicleResult(dr, Is(vehicle, Conditions.Immobilized));
-        var concealed = Is(vehicle, Conditions.Concealed);
+        var concealed = target.Stacked;
         var keeps = ScenarioA1Sniper.KeepsConcealment(concealed, result, seen);
-        record(rollId, dr, location, keeps ? null : vehicle.Id, result);
+        RecordAttack(record, rollId, dr, location, vehicle.Id, vehicle.Side, result, keeps);
+        IReadOnlyList<string>? owner = keeps ? [vehicle.Side] : null;
         var changed = VehicleConditionNames(ScenarioA1Sniper.VehicleConditions(result)) ?? new Dictionary<string, ConditionState>(StringComparer.Ordinal);
         if (concealed && !keeps)
         {
@@ -951,8 +1017,13 @@ public sealed partial class GamePlanner
         if (changed.Count > 0)
         {
             var change = new ConditionsChanged(vehicle.Id, changed);
-            AddSmcCrewSeverity(scope, attemptId, expected, actor, package, events, draw, state, change);
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", change, package, null));
+            AddSmcCrewSeverity(scope, attemptId, expected, actor, package, events, draw, state, change, owner);
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", change, package, owner));
+        }
+
+        if (concealed && !keeps)
+        {
+            AddUnconcealed(scope, attemptId, expected, events, package, sharing(vehicle.Id));
         }
 
         if (result == ScenarioA1Sniper.CrewBroken)
@@ -969,10 +1040,10 @@ public sealed partial class GamePlanner
     /// counter only below 2 (A14.4; ruling R71.9); dr 2 pins it until the CCPh's end (the projector clears the pin with the others).
     /// </summary>
     private void SnipeSniper(GameScope scope, string attemptId, long expected, List<GameEvent> events, GameState state, EntityInstance enemy, string rollId, int dr,
-        BoardLocation location, string package, Action<string, int, BoardLocation?, string?, string> record)
+        BoardLocation location, string package, Action<string, int, BoardLocation?, string?, string, IReadOnlyList<string>?> record)
     {
         var result = ScenarioA1Sniper.SniperResult(dr, Is(enemy, Conditions.Pinned));
-        record(rollId, dr, location, enemy.Id, result);
+        record(rollId, dr, location, enemy.Id, result, null);
         if (result == ScenarioA1Sniper.SniperEliminated)
         {
             ReduceSan(scope, attemptId, expected, events, state, enemy, ScenarioA1Sniper.SniperAttackCause, package);

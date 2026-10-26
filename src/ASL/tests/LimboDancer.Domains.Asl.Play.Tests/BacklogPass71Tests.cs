@@ -38,6 +38,10 @@ public sealed class BacklogPass71Tests : IDisposable
     private readonly HashSet<(string, string)> blocked = [];
     private readonly HashSet<string> upstairs = new(StringComparer.Ordinal);
 
+    // The hidden-information fixes: the hexes a test reads as Grain, in season in July, where a vehicle may set up under "?" (A12.2, B15.6; ruling R6.7).
+    private readonly HashSet<string> grain = new(StringComparer.Ordinal);
+    private static readonly TerrainType Grain = new() { Code = 3, Name = "Grain", Category = LosCategory.Open };
+
     // The scenario's year (increment 4e: Riders need 1943, D6.2).
     private int year = 1942;
 
@@ -61,7 +65,7 @@ public sealed class BacklogPass71Tests : IDisposable
         {
             var name = HexName.Parse(text);
             Assert.True(geometry.TryGetIndex(name, out var index));
-            var center = new LocationFacts(0, type, null);
+            var center = new LocationFacts(0, grain.Contains(text) ? Grain : type, null);
             HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, type, null, false, false, false, false, null))];
             LocationFacts[] locations = upstairs.Contains(text) ? [center, new LocationFacts(1, type, null)] : [center];
             hexes.Add(new HexFacts(name, index, 0, false, center, locations, hexsides, null, CenterTerrainSource.CenterSample));
@@ -336,19 +340,177 @@ public sealed class BacklogPass71Tests : IDisposable
     [InlineData(false)]
     public async Task AConcealedSquadPinnedByASniperKeepsItsQuestionMarkOnlyOutOfEveryGoodOrderEnemyLos(bool outOfLos)
     {
-        // A12.14 (p. 77; ruling R71.8): the concealed German 4-6-7 in E6 is pinned by the dr 2. Out of the 4-4-7's LOS it keeps its "?", and the record names
-        // no unit; in that LOS it loses it.
+        // A12.14 (p. 77; ruling R71.8): the concealed German 4-6-7 in E6 is pinned by the dr 2. Out of the 4-4-7's LOS it keeps its "?", and the public record
+        // names no unit (ruling R71.22: its result is the neutral one, and its owner's twin names it); in that LOS it loses it.
         if (outOfLos)
         {
             blocked.Add(("E4", "E6"));
         }
 
         await Setup(null, Squad("de-c", "E6", "german", Conditions.Concealed));
-        var sniped = Assert.Single(await FireCallingTheSniper(2, 1, 1));
-        Assert.Equal((outOfLos ? null : "de-c", "pinned"), (sniped.Unit, sniped.Result));
+        var sniped = await FireCallingTheSniper(2, 1, 1);
+        Assert.Equal(outOfLos ? KeptPin : LostPin, sniped.Select(item => (item.Unit, item.Result)));
         var squad = Current.Unit("de-c")!;
         Assert.True(Is(squad, Conditions.Pinned));
         Assert.Equal(outOfLos, Is(squad, Conditions.Concealed));
+    }
+
+    // The hidden-information fixes (rulings R71.18 to R71.22): each test reads the records as the side that must not see them.
+
+    private static readonly (string?, string)[] KeptPin = [(null, ScenarioA1Sniper.ConcealedKept), ("de-c", ScenarioA1Sniper.Pinned)];
+    private static readonly (string?, string)[] LostPin = [("de-c", ScenarioA1Sniper.Pinned)];
+    private static readonly (string?, string)[] KeptStun = [(null, ScenarioA1Sniper.ConcealedKept), ("de-tk", ScenarioA1Sniper.Stunned)];
+    private static readonly (string?, string)[] KeptNoTarget = [(null, ScenarioA1Sniper.ConcealedKept), ("de-ht", ScenarioA1Sniper.NoEffect)];
+    private static readonly string[] German = ["german"];
+    private static readonly string[] Russian = ["russian"];
+
+    /// <summary>Every event since <paramref name="before"/> the side given may read names none of <paramref name="ids"/> (its payload as JSON).</summary>
+    private void NothingNames(string side, long before, params string[] ids)
+    {
+        var perspective = Current.Perspectives.Single(item => item.Name == side);
+        foreach (var item in Since(before).Where(item => item.IsVisibleTo(perspective)))
+        {
+            var text = JsonSerializer.Serialize(item.Payload, item.Payload.GetType());
+            foreach (var id in ids)
+            {
+                Assert.False(text.Contains(id, StringComparison.Ordinal), $"The {side} side reads {id} in {item.Type}: {text}");
+            }
+        }
+    }
+
+    /// <summary>A German vehicle placed under "?" (A12.2), in a hex the test reads as Grain.</summary>
+    private static Dictionary<string, object> Concealed(Dictionary<string, object> vehicle, bool buttonedUp)
+    {
+        vehicle["conditions"] = new Dictionary<string, bool> { [Conditions.ButtonedUp] = buttonedUp, [Conditions.Concealed] = true };
+        return vehicle;
+    }
+
+    [Fact]
+    public async Task AConcealedTargetThatKeepsItsQuestionMarkIsNamedWithItsResultToItsOwnerAlone()
+    {
+        // A12.14, A14.23 (ruling R71.22): out of every enemy LOS the concealed 4-6-7 in E6 is pinned by the dr 2 and keeps its "?": the public record carries
+        // the neutral result; its twin, which names the unit and the pin, and the pin itself are the German side's. The Russian side reads nothing of de-c.
+        blocked.Add(("E4", "E6"));
+        await Setup(null, Squad("de-c", "E6", "german", Conditions.Concealed));
+        var before = Revision;
+        await FireCallingTheSniper(2, 1, 1);
+        var records = Since(before).Where(item => item.Payload is SniperAttacked).ToArray();
+        Assert.Equal(KeptPin, records.Select(item => (((SniperAttacked)item.Payload).Unit, ((SniperAttacked)item.Payload).Result)));
+        Assert.Null(records[0].Visibility);
+        Assert.Equal(German, records[1].Visibility);
+        Assert.Equal(German, Since(before).Single(item => item.Payload is ConditionsChanged { Id: "de-c" }).Visibility);
+        NothingNames("russian", before, "de-c");
+        Assert.True(Is(Current.Unit("de-c")!, Conditions.Pinned));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task AConcealedTanksStunKeepsItsQuestionMarkAndIsItsOwnersAlone()
+    {
+        // A12.14, A14.3, D5.34 (rulings R71.8, R71.22; R2's finding 11, 4a's known item): out of every enemy LOS the concealed CE PzKpfw IIIH in E6 is Stunned
+        // by the dr 2 and keeps its "?": its Stun is the German side's, and the Russian side reads only the neutral result.
+        blocked.Add(("E4", "E6"));
+        grain.Add("E6");
+        await Setup(null, Concealed(Vehicle("de-tk", "attacker-tank", "E6", buttonedUp: false), buttonedUp: false));
+        var before = Revision;
+        var sniped = await FireCallingTheSniper(2, 1, 1);
+        Assert.Equal(KeptStun, sniped.Select(item => (item.Unit, item.Result)));
+        Assert.Equal(German, Since(before).Single(item => item.Payload is ConditionsChanged { Id: "de-tk" }).Visibility);
+        Assert.True(Is(Current.Unit("de-tk")!, Conditions.Stunned));
+        Assert.True(Is(Current.Unit("de-tk")!, Conditions.Concealed));
+        NothingNames("russian", before, "de-tk");
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task TheSniperCheckIsOfferedWhileAQuestionMarkStaysThoughNoUnitThereMayTakeItAndTakingItRollsNothing()
+    {
+        // A14.4, A14.23, A12.141 (ruling R71.18): the pinned de-c may not take the Sniper Check, and E6 still holds its "?": the check is offered in public all
+        // the same, so the offer tells the Russian side nothing. Taken, nothing is rolled or changed, and only the German proposal says why.
+        blocked.Add(("E4", "E6"));
+        await Setup(null, Squad("de-c", "E6", "german", Conditions.Concealed));
+        await FireCallingTheSniper(2, 1, 1);
+        var choice = Current.Choice!;
+        Assert.Equal((ChoicePending.SniperCheck, "german"), (choice.Kind, choice.Side));
+        Assert.Null(store.Read(Scope)!.Events.Single(item => item.EventId == choice.Event).Visibility);
+        var before = Revision;
+        var taken = await Choose(ChoicePending.Take, NoRoll());
+        Committed(taken);
+        Assert.Contains(taken.Reasons, reason => reason.StartsWith("play.sniper-check: no unit in [E6] may take", StringComparison.Ordinal));
+        Assert.Equal("choice-made", Assert.Single(Since(before)).Type);
+        Assert.Null(Current.Choice);
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task OnlyAnUnconcealedEnemySeerCostsTheQuestionMarkInASniperAttack()
+    {
+        // A12.14 (p. 78; ruling R71.21): the 4-4-7 in E4 has no LOS to E6, and the concealed 4-4-7 r2 in E8 has one. Only an unconcealed Good Order enemy
+        // ground unit's LOS costs the "?", so the pinned de-c keeps it (A12.14's momentary forfeiture is not offered in a Sniper attack: a deviation).
+        blocked.Add(("E4", "E6"));
+        await Setup(null, Squad("de-c", "E6", "german", Conditions.Concealed), Squad("r2", "E8", "russian", Conditions.Concealed));
+        var sniped = await FireCallingTheSniper(2, 1, 1);
+        Assert.Equal(KeptPin, sniped.Select(item => (item.Unit, item.Result)));
+        Assert.True(Is(Current.Unit("de-c")!, Conditions.Concealed));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task ASniperCheckSeenOnlyByAConcealedEnemyKeepsItsQuestionMarkAndItsDiceAreItsOwners()
+    {
+        // A12.141 (p. 78; rulings R71.21, R71.22): Random Selection's 6, 1 gives the Sniper's dr 2 to the 2-4-7 de-h in E6 rather than the "?" stack, and pins
+        // it; the concealed de-c takes the Sniper Check. Only the concealed r2 in E8 sees E6, so de-c keeps its "?": the check's record, its DR, and its TI are
+        // the German side's, and the Russian side reads nothing of de-c.
+        blocked.Add(("E4", "E6"));
+        await Setup(null, Squad("de-c", "E6", "german", Conditions.Concealed), Unit("de-h", "asl:half-squad", "attacker-half-squad", "E6", "german"),
+            Squad("r2", "E8", "russian", Conditions.Concealed));
+        var sniped = Assert.Single(await FireCallingTheSniper(2, 1, 1, 6, 1));
+        Assert.Equal(("de-h", ScenarioA1Sniper.Pinned), (sniped.Unit, sniped.Result));
+        Assert.Equal(ChoicePending.SniperCheck, Current.Choice?.Kind);
+        var before = Revision;
+        Committed(await Choose(ChoicePending.Take, Then(3, 3, 3)));
+        Assert.Equal(German, Since(before).Single(item => item.Payload is DiceRolled { Purpose: "sniper-check" }).Visibility);
+        Assert.Equal(German, Since(before).Single(item => item.Payload is SniperChecked).Visibility);
+        var squad = Current.Unit("de-c")!;
+        Assert.True(Is(squad, Conditions.Concealed));
+        Assert.True(Is(squad, "asl:ti"));
+        NothingNames("russian", before, "de-c");
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task AConcealedTrucksPassengerCrewAndTruckAreOneQuestionMarkAndWhatOneLosesTheyAllLose()
+    {
+        // A12.2, A14.23 (pp. 79, 82; ruling R71.20): the concealed German truck in E6 and its 4-6-7 Passenger, not under a "?" of its own, are one "?"
+        // candidate: no choice before Random Selection, and the stack declares its three targets. Random Selection's 6, 1, 1 within it picks the Passenger,
+        // whose dr 1 breaks it; it loses its "?", and so does the truck.
+        grain.Add("E6");
+        await Setup(null, Concealed(Vehicle("de-t", "attacker-truck", "E6", buttonedUp: false), buttonedUp: false), Passenger("de-p", "de-t"));
+        var before = Revision;
+        var sniped = Assert.Single(await FireCallingTheSniper(1, 1, 1, 6, 1, 1));
+        Assert.Equal(("de-p", ScenarioA1Sniper.Broken), (sniped.Unit, sniped.Result));
+        Assert.Equal(3, Since(before).Select(item => item.Payload).OfType<DiceRolled>().Single(item => item.Purpose == "sniper-random-selection").Count);
+        Assert.True(Is(Current.Unit("de-p")!, Conditions.Broken));
+        Assert.False(Is(Current.Unit("de-t")!, Conditions.Concealed));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task AConcealedButtonedUpHalftrackIsStillOneQuestionMarkCandidateAndIsAttackedToNoEffect()
+    {
+        // A14.21, A14.23 (ruling R71.20): the BU SPW 251/1 in E6 holds no eligible target, which its "?" hides from the Russian side: E6 is the target hex, the
+        // stack declares none, and the attack has no effect; it keeps its "?", and g1 in E3 is not attacked. The public record is the neutral one, its twin
+        // the German side's, and the Russian side reads nothing of the halftrack or its Passenger.
+        grain.Add("E6");
+        await Setup(null, Concealed(Vehicle("de-ht", "attacker-halftrack", "E6", buttonedUp: true), buttonedUp: true), Passenger("de-p", "de-ht"));
+        var before = Revision;
+        var sniped = await FireCallingTheSniper(1, 1, 1);
+        Assert.Equal(KeptNoTarget, sniped.Select(item => (item.Unit, item.Result)));
+        Assert.Equal(L("E6"), Current.Location("rs")!.Location.ToString());
+        Assert.False(Is(Current.Unit("g1")!, Conditions.Broken));
+        Assert.True(Is(Current.Unit("de-ht")!, Conditions.Concealed));
+        NothingNames("russian", before, "de-ht", "de-p");
+        Assert.False(History.HasErrors);
     }
 
     // Increment 4b: the SAN as state and Sniper Check (A14.4, E1.76; rulings R71.9, R71.10).
@@ -784,6 +946,10 @@ public sealed class BacklogPass71Tests : IDisposable
         Committed(await Choose(ScenarioA1Sniper.Reposition, NoRoll()));
         var hexes = Current.Choice!;
         Assert.Equal(ScenarioA1Sniper.RepositionStep, hexes.Resume.GetProperty("step").GetString());
+
+        // Ruling R71.19: the hexes are the Russian side's alone, its own hidden units shaping them (A12.3); the German side reads that it forfeits and
+        // repositions (its public answer), and then the counter's new hex.
+        Assert.Equal(Russian, store.Read(Scope)!.Events.Single(item => item.EventId == hexes.Event).Visibility);
         Assert.Equal(Planner().SniperPlacements(Current, "russian").Where(at => at.Hex.ToString() != "E7").Select(at => at.ToString()), hexes.Options);
         var to = hexes.Options[^1];
         Committed(await Choose(to, NoRoll()));

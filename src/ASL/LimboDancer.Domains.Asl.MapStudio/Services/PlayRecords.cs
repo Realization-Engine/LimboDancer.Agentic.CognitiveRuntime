@@ -1639,10 +1639,14 @@ public sealed class PlayRecords
                     ? $"the {DisplayText.Side(reduced.Side)} SAN is now {san.ToString(System.Globalization.CultureInfo.InvariantCulture)}"
                         + (ScenarioA1Sniper.CounterRemoved(san) ? ", below 2, so its Sniper counter is removed (A14.1, A14.4)" : " (A14.4)")
                     : $"the {DisplayText.Side(reduced.Side)} SAN is one lower (A14.4)"),
-            _ => SniperAttackText((SniperAttacked)item.Payload),
+            _ => SniperAttackText((SniperAttacked)item.Payload, item.Visibility is { Count: > 0 }),
         }))];
 
-    private string SniperAttackText(SniperAttacked sniper)
+    /// <summary>
+    /// A Sniper attack's line. <paramref name="ownerOnly"/>: the owner's twin of a target that keeps its "?" (A12.14, A14.23; pass 71, ruling R71.22), which
+    /// names his unit and its result beside the public line that names neither.
+    /// </summary>
+    private string SniperAttackText(SniperAttacked sniper, bool ownerOnly)
     {
         var side = state?.Find(sniper.Sniper)?.Side ?? "a";
 
@@ -1654,7 +1658,8 @@ public sealed class PlayRecords
 
         return $"The {side} Sniper ({sniper.Sniper}) attacks after the SAN roll {sniper.Trigger}: dr {sniper.Dr}"
             + (sniper.Target is { } at ? $"; {at}: {SniperResultText(sniper.Unit, sniper.Result)}" : sniper.Result == ScenarioA1Sniper.NoTarget
-                ? ", no target in reach (A14.21, A14.22)" : ", no effect (A14.3)");
+                ? ", no target in reach (A14.21, A14.22)" : ", no effect (A14.3)")
+            + (ownerOnly ? "; it keeps its \"?\", and the enemy reads only that a concealed target was attacked (A12.14, A14.23)" : string.Empty);
     }
 
     /// <summary>A Sniper Check (A14.4; pass 71, ruling R71.10): its units, its DR and DRM, and its result.</summary>
@@ -1686,7 +1691,8 @@ public sealed class PlayRecords
         (_, ScenarioA1Sniper.DummyStackEliminated) => "a Dummy stack is eliminated (A14.23)",
         (null, ScenarioA1Sniper.NoEffect) => "no effect (A14.3)",
 
-        // A12.14 (ruling R71.8): a target that keeps its "?" is not named, nor is what it is.
+        // A12.14 (rulings R71.8, R71.22): a target that keeps its "?" is not named, nor is what it is, nor what the attack did: one sentence for every case.
+        (null, ScenarioA1Sniper.ConcealedKept) => "a concealed target is attacked and keeps its \"?\" (A12.14, A14.23)",
         (null, _) => "a concealed unit is attacked and keeps its \"?\", out of every Good Order enemy LOS (A12.14, A14.3)",
         (_, ScenarioA1Sniper.Stunned) => $"the crew of {unit} is Stunned (A14.3, D5.34)",
         (_, ScenarioA1Sniper.Recalled) => $"the crew of {unit} is Recalled (A14.3, D5.341)",

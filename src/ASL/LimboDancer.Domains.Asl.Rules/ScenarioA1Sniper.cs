@@ -95,6 +95,18 @@ public static class ScenarioA1Sniper
     public const string VehicleTarget = "vehicle";
     public const string SniperTarget = "sniper";
 
+    /// <summary>
+    /// A14.21, A14.23 (pass 71, ruling R71.20): a concealed vehicle that holds no eligible target is still one "?" candidate, whatever its state, which the
+    /// Sniper player cannot see; chosen, it is a stack holding no eligible target.
+    /// </summary>
+    public const string ConcealedVehicle = "concealed-vehicle";
+
+    /// <summary>
+    /// A12.14, A14.23 (pass 71, ruling R71.22): the public result of an attack on a target that keeps its "?", one for every case; the owner's twin record
+    /// carries the real one.
+    /// </summary>
+    public const string ConcealedKept = "concealed-kept";
+
     /// <summary>A14.1: Sniper attacks follow the DRs of the PFPh, MPh, DFPh, and AFPh.</summary>
     public static bool TriggerPhase(string? phase) => phase is "pfph" or "mph" or "dfph" or "afph";
 
@@ -327,6 +339,55 @@ public static class ScenarioA1Sniper
         var crew = facts.Manned && (facts.CrewExposed || facts.PartiallyArmored || facts.Unarmored);
         return new SniperVehicleTargets(prc, crew, facts.Unarmored && (facts.Manned || facts.PrcExposures.Count > 0));
     }
+
+    /// <summary>
+    /// A14.23, A12.2 (pp. 82, 79; pass 71, ruling R71.20): a target is part of its Location's concealed stack when it is itself concealed or a Dummy, or
+    /// belongs to a concealed vehicle (its PRC, its crew, the vehicle itself): "If a Gun, vehicle ... loses its hidden/concealed status ... so does its
+    /// manning Infantry or PRC, and vice versa".
+    /// </summary>
+    public static bool InConcealedStack(bool concealedOrDummy, bool vehicleConcealed) => concealedOrDummy || vehicleConcealed;
+
+    /// <summary>
+    /// A14.21, A14.23 (ruling R71.20): a concealed vehicle with no eligible target in or of it counts as one "?" candidate (<see cref="ConcealedVehicle"/>),
+    /// since whether it is CE or holds a Vulnerable PRC is beneath its "?".
+    /// </summary>
+    public static bool CountsAsConcealedVehicle(bool vehicleConcealed, SniperVehicleTargets targets)
+    {
+        ArgumentNullException.ThrowIfNull(targets);
+        return vehicleConcealed && targets.Prc.Count == 0 && !targets.Crew && !targets.Vehicle;
+    }
+
+    /// <summary>
+    /// A14.23 (p. 82): a concealed stack chosen as the target: "the sniper player's opponent must declare the number (only) of eligible possible targets that
+    /// stack contains. If it contains none (i.e., is a Dummy stack), it is automatically eliminated". The members, each by its role and whether it is a Dummy;
+    /// the indexes of the eligible targets (no Dummy, no <see cref="ConcealedVehicle"/>), and whether it is a Dummy stack. A stack of real units with no
+    /// eligible target is neither (ruling R71.20): the attack has no effect, and the stack keeps its "?".
+    /// </summary>
+    public static (IReadOnlyList<int> Eligible, bool DummyStack) StackTargets(IReadOnlyList<(string Role, bool Dummy)> members)
+    {
+        ArgumentNullException.ThrowIfNull(members);
+        int[] eligible = [.. Enumerable.Range(0, members.Count).Where(index => !members[index].Dummy && members[index].Role != ConcealedVehicle)];
+        return (eligible, members.All(member => member.Dummy));
+    }
+
+    /// <summary>
+    /// A12.14, A14.23 (ruling R71.22): the result the public record of an attack carries: the real one, or <see cref="ConcealedKept"/> for a target that
+    /// keeps its "?", whose real result goes to its owner alone.
+    /// </summary>
+    public static string PublicResult(bool keepsConcealment, string result) => keepsConcealment ? ConcealedKept : result;
+
+    /// <summary>
+    /// A14.4, A14.23, A12.141 (pp. 83, 82, 78; pass 71, ruling R71.18): the Sniper Check is offered when a unit of the attacked side may take it, and
+    /// whenever the target Location still holds one of its units under "?", so the offer tells the Sniper side nothing of what the "?" holds.
+    /// </summary>
+    public static bool SniperCheckOffered(int eligible, bool concealedLeft) => eligible > 0 || concealedLeft;
+
+    /// <summary>
+    /// Ruling R71.18: a Sniper Check taken where no unit may take it makes no DR and changes nothing; the line is the owner's alone (the proposal of the
+    /// side that answers).
+    /// </summary>
+    public static string NoSniperCheckerText(string hex) =>
+        $"play.sniper-check: no unit in {hex} may take the Sniper Check, so none is made and nothing is rolled (A14.4; ruling R71.18)";
 
     /// <summary>The TEM of a target hex's terrain, for the tie between hexes (A14.21).</summary>
     public static int TargetTem(string? terrain) => terrain is not null ? ScenarioA1FireReference.Tem.GetValueOrDefault(terrain) : 0;

@@ -181,6 +181,56 @@ public sealed class ScenarioA1Pass71RulesTests
         Assert.Equal([(UnitCondition.Pinned, true), (UnitCondition.Concealed, false), (UnitCondition.Hidden, false)], ScenarioA1Sniper.PinnedConditions(keepsConcealment: false));
     }
 
+    // The hidden-information fixes (rulings R71.18 to R71.22).
+    private static readonly int[] TheSquadAndTheCrew = [0, 2];
+
+    [Fact]
+    public void AConcealedVehiclesPrcCrewAndItselfAreItsStackAndOneWithNoEligibleTargetIsStillOneCandidate()
+    {
+        // A12.2, A14.23 (pp. 79, 82; ruling R71.20): a PRC of a concealed vehicle shares its "?", so it is in the concealed stack though not concealed itself.
+        Assert.True(ScenarioA1Sniper.InConcealedStack(concealedOrDummy: false, vehicleConcealed: true));
+        Assert.True(ScenarioA1Sniper.InConcealedStack(concealedOrDummy: true, vehicleConcealed: false));
+        Assert.False(ScenarioA1Sniper.InConcealedStack(concealedOrDummy: false, vehicleConcealed: false));
+
+        // A concealed BU AFV holds no eligible target, and still counts as one "?" candidate; unconcealed, it is no target, and one with a target is that target.
+        var buttoned = ScenarioA1Sniper.VehicleTargets(Vehicle(OneButtoned));
+        Assert.True(ScenarioA1Sniper.CountsAsConcealedVehicle(true, buttoned));
+        Assert.False(ScenarioA1Sniper.CountsAsConcealedVehicle(false, buttoned));
+        Assert.False(ScenarioA1Sniper.CountsAsConcealedVehicle(true, ScenarioA1Sniper.VehicleTargets(Vehicle(OneButtoned, crewExposed: true))));
+
+        // A14.23: the owner declares the eligible targets only: neither a Dummy nor such a vehicle; a stack of Dummies alone is a Dummy stack, and one holding
+        // the vehicle is not.
+        var (eligible, dummyStack) = ScenarioA1Sniper.StackTargets([(ScenarioA1Sniper.UnitTarget, false), (ScenarioA1Sniper.UnitTarget, true), (ScenarioA1Sniper.CrewTarget, false),
+            (ScenarioA1Sniper.ConcealedVehicle, false)]);
+        Assert.Equal(TheSquadAndTheCrew, eligible);
+        Assert.False(dummyStack);
+        Assert.True(ScenarioA1Sniper.StackTargets([(ScenarioA1Sniper.UnitTarget, true), (ScenarioA1Sniper.UnitTarget, true)]).DummyStack);
+        var vehicleOnly = ScenarioA1Sniper.StackTargets([(ScenarioA1Sniper.ConcealedVehicle, false), (ScenarioA1Sniper.UnitTarget, true)]);
+        Assert.Empty(vehicleOnly.Eligible);
+        Assert.False(vehicleOnly.DummyStack);
+    }
+
+    [Fact]
+    public void ATargetThatKeepsItsQuestionMarkHasOneNeutralPublicResult()
+    {
+        // A12.14, A14.23 (ruling R71.22): a pin, a Stun, or no effect on a target that keeps its "?" reads the same in public.
+        Assert.Equal(ScenarioA1Sniper.ConcealedKept, ScenarioA1Sniper.PublicResult(true, ScenarioA1Sniper.Pinned));
+        Assert.Equal(ScenarioA1Sniper.ConcealedKept, ScenarioA1Sniper.PublicResult(true, ScenarioA1Sniper.Stunned));
+        Assert.Equal(ScenarioA1Sniper.ConcealedKept, ScenarioA1Sniper.PublicResult(true, ScenarioA1Sniper.NoEffect));
+        Assert.Equal(ScenarioA1Sniper.Pinned, ScenarioA1Sniper.PublicResult(false, ScenarioA1Sniper.Pinned));
+    }
+
+    [Fact]
+    public void TheSniperCheckIsOfferedWheneverAUnitMayTakeItOrAQuestionMarkStaysInTheLocation()
+    {
+        // A14.4, A14.23, A12.141 (ruling R71.18): the offer tells the Sniper side nothing of a "?" stack.
+        Assert.True(ScenarioA1Sniper.SniperCheckOffered(1, concealedLeft: false));
+        Assert.True(ScenarioA1Sniper.SniperCheckOffered(0, concealedLeft: true));
+        Assert.False(ScenarioA1Sniper.SniperCheckOffered(0, concealedLeft: false));
+        Assert.Equal("play.sniper-check: no unit in [E6] may take the Sniper Check, so none is made and nothing is rolled (A14.4; ruling R71.18)",
+            ScenarioA1Sniper.NoSniperCheckerText("[E6]"));
+    }
+
     // Increment 4b: the SAN as state and Sniper Check (A14.4, E1.76; rulings R71.9, R71.10).
     private static SniperCheckCandidate Candidate(bool onFoot = true, bool goodOrder = true, bool pinned = false, bool ti = false, bool unarmed = false, bool hidden = false,
         bool firedOrMoved = false) => new(onFoot, goodOrder, pinned, ti, unarmed, hidden, firedOrMoved);
