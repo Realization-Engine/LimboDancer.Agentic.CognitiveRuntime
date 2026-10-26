@@ -1814,3 +1814,4 @@ One session under the user's word of 2026-10-26 ("Run Pass 71 without my interve
 | Fix Round D: the page and the record lines | 15:54 | 16:29 | 0:35 | | Agent. The fix rounds A to D: 14:23 to now |
 | The whole-pass check: 12 games replayed, the wound pin, a kept "?" from the side that must not see, 1024 and 320, real Enter keys, the hex audit, the measurement; the strict stage again (passed) | 16:29 | 16:42 | 0:13 | | Strict 16:31 to 16:34 |
 | The documents by an agent (the design's sections 8 to 17, the review, R71.1 to R71.28, backlog 74, the plan, 33 inventory rows, the coverage), checked; SKIP_JSON checked and set | 16:43 | 17:05 | 0:22 | | The pass to the gate: 08:21 to now by the clock |
+| The merge gate: baseline, build, proofs (passed; every differing line named) | 17:08 | 17:14 | 0:06 | | Baseline 17:08, build 17:08 to 17:11, proofs 17:11 to 17:13 |
