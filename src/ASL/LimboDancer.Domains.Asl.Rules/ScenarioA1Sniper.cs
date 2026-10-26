@@ -546,11 +546,15 @@ public static class ScenarioA1Sniper
             : [.. Enumerable.Range(0, candidates.Count).Where(index => !candidates[index].Concealed && candidates[index].Role is CrewTarget or VehicleTarget or SniperTarget)];
     }
 
-    /// <summary>The words of the Sniper player's pending choice (A14.2, A14.21; ruling R71.12), by its step, his side, the place it concerns, and the Sniper dr.</summary>
+    /// <summary>
+    /// The words of the Sniper player's pending choice (A14.2, A14.21; ruling R71.12), by its step, his side, the place it concerns, and the Sniper dr. For the
+    /// equidistant hexes the place is the hex the Random Location DR landed in (R4's finding 5); a choice recorded before the fixes names none.
+    /// </summary>
     public static string ChoiceText(string step, string side, string? place, int dr) => step switch
     {
         ForfeitStep => $"the {side} Sniper's dr of {dr} is effective: it attacks, or forfeits the attack and its counter is repositioned within the setup's placement requirements (A14.2)",
         RepositionStep => $"the {side} Sniper forfeits its attack of dr {dr}: its counter is repositioned to an unoccupied hex within six hexes of the most enemy-occupied hexes (A14.2)",
+        HexStep when place is not null => $"the {side} Sniper's Random Location DR lands in {place}, which holds no eligible target: of the closest hexes that do, equidistant and of the lowest TEM, the {side} side chooses which to attack (A14.21)",
         HexStep => $"the {side} Sniper's Random Location finds no target: of the equidistant hexes with the lowest TEM, the {side} side chooses which to attack (A14.21)",
         LocationStep => $"the {side} Sniper attacks {place}: the {side} side chooses which of its Locations holding an eligible target to attack (A14.2)",
         TargetStep => $"the {side} Sniper attacks {place}: before Random Selection it may choose the enemy Sniper counter, a Vulnerable Inherent Crew, or an unarmored vehicle as its target (A14.2)",
@@ -720,12 +724,15 @@ public static class ScenarioA1Sniper
         return new SniperPlacementVerdict([.. Enumerable.Range(0, candidates).Where(hex => counts[hex] >= tier)], tier);
     }
 
-    /// <summary>Why a hex is refused for a side's Sniper counter (A14.2; ruling R71.11); null when it is legal.</summary>
-    public static string? PlacementBar(bool legal, string side, string hex, int tier) =>
+    /// <summary>
+    /// Why a hex is refused for a side's Sniper counter (A14.2; ruling R71.11); null when it is legal. <paramref name="setupStep"/>: the card's Sniper step,
+    /// which offers the legal hexes; a counter placed by hand is moved to one (the table player's note on 4c).
+    /// </summary>
+    public static string? PlacementBar(bool legal, string side, string hex, int tier, bool setupStep = true) =>
         legal ? null
         : $"play.sniper-placement: {hex} is no hex for the {side} Sniper counter: it goes in "
             + (tier == 0 ? "any unoccupied hex, since no enemy unit is on the board" : $"an unoccupied hex within six hexes of {tier} or more enemy-occupied hexes, the most any unoccupied hex has")
-            + "; choose a hex the setup offers (A14.2; ruling R71.11)";
+            + (setupStep ? "; choose a hex the setup offers" : "; place it in such a hex") + " (A14.2; ruling R71.11)";
 
     /// <summary>
     /// A14.01, A14.2 (p. 82; ruling R71.11): the sides that still owe their Sniper counter before play starts, those with a SAN of 2 or more and no counter
@@ -787,11 +794,15 @@ public static class ScenarioA1Sniper
         return [.. sides.Where(side => side.San is >= 2 && !side.Placed).Select(side => side.Side)];
     }
 
-    /// <summary>The sides of <see cref="NoCounter"/> in words, by the names given (A14.01); null for none.</summary>
+    /// <summary>
+    /// The sides of <see cref="NoCounter"/> in words, by the names given; null for none. A14.01 gives every side with a SAN a counter, so the line cites the
+    /// ruling that withholds it (ruling R71.11; R4's finding 8).
+    /// </summary>
     public static string? NoCounterText(IReadOnlyList<string> names)
     {
         ArgumentNullException.ThrowIfNull(names);
         return names.Count == 0 ? null
-            : $"The {string.Join(" and the ", names)} {(names.Count == 1 ? "side has a SAN but no Sniper counter in this game, so it makes" : "sides have a SAN but no Sniper counter in this game, so they make")} no Sniper attacks (A14.01).";
+            : $"The {string.Join(" and the ", names)} {(names.Count == 1 ? "side has a SAN but no Sniper counter in this game" : "sides have a SAN but no Sniper counter in this game")}: its play began before "
+                + $"Sniper counters were given, so {(names.Count == 1 ? "it makes" : "they make")} no Sniper attacks (ruling R71.11).";
     }
 }

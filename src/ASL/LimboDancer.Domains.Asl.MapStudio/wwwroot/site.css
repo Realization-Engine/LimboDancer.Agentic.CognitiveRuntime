@@ -2513,7 +2513,8 @@ details.advanced > summary {
     white-space: normal;
 }
 
-.setup-non-ob button {
+.setup-non-ob button,
+.setup-sniper button {
     height: auto;
     min-height: 2.1rem;
     white-space: normal;
@@ -2721,13 +2722,20 @@ details.advanced > summary {
     font-size: 0.85rem;
 }
 
-/* Ruling R23.6: the non-OB "?" a side may place once both sides have set up. */
-.setup-non-ob {
+/* Ruling R23.6: the non-OB "?" a side may place once both sides have set up; pass 71 (ruling R71.11): the Sniper counter, placed the same way. */
+.setup-non-ob,
+.setup-sniper {
     margin: 0.75rem 0;
 }
 
-.setup-non-ob label {
+.setup-non-ob label,
+.setup-sniper label {
     margin-right: 0.75rem;
+}
+
+/* Pass 71 (ruling R71.12): a long list of answers, such as the hexes a Sniper counter may be repositioned to, keeps within the pane at any width. */
+#play-choice-select {
+    max-width: 100%;
 }
 
 /* Ruling R24.2, pass 25: the units Mopping Up, moving, or advancing on a row of their own, one label each, kept whole when the list wraps. */

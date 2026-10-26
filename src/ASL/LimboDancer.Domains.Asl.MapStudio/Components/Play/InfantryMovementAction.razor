@@ -17,10 +17,8 @@
     <label title="A4.42: one leader adds his IPC to one laden MMC that starts the phase with him and moves with him. With one laden MMC it goes there by itself; with several, name the one. The choice holds for the whole move.">Leader's IPC to
         <select id="move-ipc" value="@Draft.IpcTo" @onchange="@(args => Changed(Draft with { IpcTo = args.Value as string ?? string.Empty }))">
             <option value="">the only laden MMC</option>
-            @foreach (var row in Movers.Where(row => Selected.Contains(row.Id)))
-            {
-                <option value="@row.Id">@row.Label</option>
-            }
+            @* Pass 71's fixes (Round D; the hex UI rule): each mover "[hex]: name", as every list that offers a counter. *@
+            <UnitOptions Units="@([.. Movers.Where(row => Selected.Contains(row.Id)).Select(row => new PlayChoice(row.Id, row.Id))])" Text="@(label => label)" />
         </select>
     </label>
 }

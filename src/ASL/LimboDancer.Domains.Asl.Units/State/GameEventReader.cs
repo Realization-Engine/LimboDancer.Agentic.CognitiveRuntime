@@ -1027,7 +1027,10 @@ public static class GameEventReader
                 var checkedResult = fields.RequiredString(payload, "result", path);
                 return checkedSniper is null || checkedAt is null || checkedRoll is null || checkedDrm is null || checkedResult is null
                     ? Missing(diagnostics, "A Sniper Check names its Sniper, Location, units, roll, DRM, and result.", path)
-                    : new SniperChecked(checkedSniper, checkedAt, fields.StringList(payload, "units", path), checkedRoll, checkedDrm.Value, checkedResult);
+                    : new SniperChecked(checkedSniper, checkedAt, fields.StringList(payload, "units", path), checkedRoll, checkedDrm.Value, checkedResult)
+                    {
+                        DrmCauses = payload.TryGetProperty("drmCauses", out _) ? fields.StringList(payload, "drmCauses", path) : null,
+                    };
             case "wind-changed":
                 var windRoll = fields.RequiredString(payload, "roll", path);
                 return windRoll is null

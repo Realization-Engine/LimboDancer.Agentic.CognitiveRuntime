@@ -117,12 +117,15 @@ public sealed partial class GamePlanner
     /// <summary>A hex of a Location, at ground level: the Sniper counter is placed in a hex (A14.2).</summary>
     private static BoardLocation SniperHex(BoardLocation at) => new(at.Board, at.Hex, 0);
 
-    /// <summary>Why a side's Sniper counter may not be placed in a hex (A14.2; ruling R71.11); null when it may.</summary>
-    private string? SniperPlacementBar(GameState state, string side, BoardLocation at)
+    /// <summary>
+    /// Why a side's Sniper counter may not be placed in a hex (A14.2; ruling R71.11); null when it may. <paramref name="setupStep"/>: placed in the card's Sniper
+    /// step, not by hand.
+    /// </summary>
+    private string? SniperPlacementBar(GameState state, string side, BoardLocation at, bool setupStep)
     {
         var (hexes, tier) = SniperPlacement(state, side);
         var hex = SniperHex(at);
-        return ScenarioA1Sniper.PlacementBar(hexes.Contains(hex), side, SniperHexText(state, hex), tier);
+        return ScenarioA1Sniper.PlacementBar(hexes.Contains(hex), side, SniperHexText(state, hex), tier, setupStep);
     }
 
     /// <summary>
@@ -138,7 +141,7 @@ public sealed partial class GamePlanner
                 return cardBar;
             }
 
-            if (MemoOf(after).Objects(after).Location(sniper.Id) is { } position && SniperPlacementBar(after, sniper.Side!, position.Location) is { } bar)
+            if (MemoOf(after).Objects(after).Location(sniper.Id) is { } position && SniperPlacementBar(after, sniper.Side!, position.Location, setupStep: false) is { } bar)
             {
                 return bar;
             }
@@ -174,7 +177,7 @@ public sealed partial class GamePlanner
         }
 
         var hex = SniperHex(at);
-        if (SniperPlacementBar(state, side, hex) is { } bar)
+        if (SniperPlacementBar(state, side, hex, setupStep: true) is { } bar)
         {
             return Refused(scope, label, expected, bar);
         }

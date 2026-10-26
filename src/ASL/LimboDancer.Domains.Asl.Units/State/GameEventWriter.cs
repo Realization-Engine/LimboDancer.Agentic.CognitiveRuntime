@@ -1235,6 +1235,11 @@ public static class GameEventWriter
                 writer.WriteString("roll", check.Roll);
                 writer.WriteNumber("drm", check.Drm);
                 writer.WriteString("result", check.Result);
+                if (check.DrmCauses is { Count: > 0 } causes)
+                {
+                    Strings(writer, "drmCauses", causes);
+                }
+
                 break;
             case PrisonersMassacred massacre:
                 Strings(writer, "units", massacre.Units);

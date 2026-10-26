@@ -12,7 +12,8 @@
                 <option value="@option.Value">@option.Text</option>
             }
         </select>
-        <button class="choose" id="play-choice-propose" disabled="@(picked.Length == 0)" @onclick="@(() => OnChoose.InvokeAsync(picked))">Propose the answer</button>
+        <button class="choose" id="play-choice-propose" disabled="@(picked.Length == 0)" title="@(picked.Length == 0 ? "Choose the answer from the list first." : null)"
+                @onclick="@(() => OnChoose.InvokeAsync(picked))">Propose the answer</button>
     }
     else if (MayAnswer)
     {
@@ -35,19 +36,26 @@
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
 
     // The choice ended by the ruling every pending choice is under; a choice that ends with a ruling of its own, "(A12.14; ruling R70.21)", names both in
-    // that one citation, "(A12.14; rulings R70.21, R5.8)" (pass 70's fixes), so no sentence ends with two.
+    // that one citation, "(A12.14; rulings R70.21, R5.8)" (pass 70's fixes), so no sentence ends with two. Pass 71's fixes (Round D): one that ends with
+    // its rules alone, "(A14.4)", takes the ruling in that citation too, "(A14.4; ruling R5.8)"; a parenthesis that cites no rule keeps its own.
     private string Described
     {
         get
         {
             var said = Say(Description);
             var core = said.EndsWith(").", StringComparison.Ordinal) ? said[..^1] : said;
+            var open = core.LastIndexOf('(');
             var ruling = core.LastIndexOf("ruling R", StringComparison.Ordinal);
-            return core.EndsWith(')') && ruling > core.LastIndexOf('(') && core[(ruling + "ruling R".Length)..^1].All(letter => char.IsAsciiDigit(letter) || letter is '.' or 'b')
-                ?$"{core[..ruling]}rulings {core[(ruling + "ruling ".Length)..^1]}, R5.8)."
+            return core.EndsWith(')') && ruling > open && core[(ruling + "ruling R".Length)..^1].All(letter => char.IsAsciiDigit(letter) || letter is '.' or 'b')
+                ? $"{core[..ruling]}rulings {core[(ruling + "ruling ".Length)..^1]}, R5.8)."
+                : core.EndsWith(')') && open >= 0 && CitesRules(core[(open + 1)..^1]) ? $"{core[..^1]}; ruling R5.8)."
                 : $"{said} (ruling R5.8).";
         }
     }
+
+    // A citation of rules alone, "A14.4" or "A14.2, A14.23": each part a chapter letter and a rule number.
+    private static bool CitesRules(string inside) => inside.Length > 0 && inside.Split(", ").All(part => part.Length > 1 && part[0] is >= 'A' and <= 'H'
+        && char.IsAsciiDigit(part[1]) && part.Skip(1).All(letter => char.IsAsciiDigit(letter) || letter is '.'));
 
     // Up to this many options are buttons; more are one list.
     private const int ListedAsButtons = 6;

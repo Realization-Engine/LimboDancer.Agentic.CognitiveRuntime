@@ -1811,3 +1811,4 @@ One session under the user's word of 2026-10-26 ("Run Pass 71 without my interve
 | Fix Round A: hidden information (R71.18 to R71.22) | 14:23 | 14:53 | 0:30 | | Agent; no Studio game (owed to the whole-pass check) |
 | Fix Round B: the Sniper's and the wound's rules (the choice keys, R71.25 to R71.28) | 14:53 | 15:40 | 0:47 | | Agent |
 | Fix Round C: the Rules boundary | 15:40 | 15:54 | 0:14 | | Agent; no behavior changed |
+| Fix Round D: the page and the record lines | 15:54 | 16:29 | 0:35 | | Agent. The fix rounds A to D: 14:23 to now |

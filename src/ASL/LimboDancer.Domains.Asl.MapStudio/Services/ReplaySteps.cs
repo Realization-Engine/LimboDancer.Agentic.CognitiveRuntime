@@ -497,7 +497,9 @@ public static class ReplaySteps
 
         if (First<SanReduced>(payloads) is { } reduced)
         {
-            return ("other", reduced.Side, $"{The(reduced.Side, "Sniper")} is eliminated, and the {DisplayText.Side(reduced.Side)} SAN falls{end}", false);
+            // E1.76 (R4's finding 4): at night the SAN never falls below the printed one.
+            return ("other", reduced.Side, $"{The(reduced.Side, "Sniper")} is eliminated, and the {DisplayText.Side(reduced.Side)} SAN "
+                + (PlayRecords.SanUnchanged(before, reduced.Side) ? "stays at the printed SAN at night" : "falls") + end, false);
         }
 
         if (First<ChoicePending>(payloads) is { } waiting)

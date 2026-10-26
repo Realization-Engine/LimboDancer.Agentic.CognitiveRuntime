@@ -528,6 +528,9 @@ public sealed class BacklogPass71Tests : IDisposable
     private static readonly int[] PinsTheHalfSquad = [2, 1, 1, 6, 1, 1];
     private static readonly string[] TheLeaderAndTheSquad = ["de-l", "de-s"];
 
+    // CA1861: the causes of the 8-1's and the 4-6-7's Sniper Check DRM of -3 (A14.4).
+    private static readonly string[] TheCheckCauses = ["leadership -1", "2 HS equivalents -2"];
+
     private Task<PlayResult> Choose(string option, DiceRoller roller) => Do(GameActions.Choose, roller, new
     {
         key = Current.Choice!.Key,
@@ -575,11 +578,18 @@ public sealed class BacklogPass71Tests : IDisposable
         // and the counter stays. Both participants are TI; the pinned HS took no part.
         await Setup(null, TheGermansInE6());
         await FireCallingTheSniper(PinsTheHalfSquad);
+
+        // R4's finding 2: the answering side is offered the check with its takers and its DRM's causes, as the record then carries them (R4's finding 3).
+        var offer = Planner().SniperCheckOffer(Current, Current.Choice!);
+        Assert.Equal(TheLeaderAndTheSquad, offer.Units);
+        Assert.Equal(-3, offer.Drm);
+        Assert.Equal(TheCheckCauses, offer.Causes);
         var before = Revision;
         Committed(await Choose(ChoicePending.Take, Then(3, 3, 2)));
         var check = Assert.Single(Since(before).Select(item => item.Payload).OfType<SniperChecked>());
         Assert.Equal(TheLeaderAndTheSquad, check.Units);
         Assert.Equal((-3, ScenarioA1Sniper.SniperEliminated), (check.Drm, check.Result));
+        Assert.Equal(TheCheckCauses, check.DrmCauses);
         Assert.Equal(new SanReduced("russian", ScenarioA1Sniper.SniperCheckCause), Assert.Single(Since(before).Select(item => item.Payload).OfType<SanReduced>()));
         Assert.Equal(1, Current.Side("russian")!.SanReductions);
         Assert.Equal(InstanceStatus.Active, Current.Find("rs")!.Status);
@@ -844,8 +854,11 @@ public sealed class BacklogPass71Tests : IDisposable
         // A14.2 (ruling R71.11): the German 4-6-7 in E3 is the one enemy unit, so the Russian counter goes within six hexes of it: E4 holds the Russian
         // 4-4-7, and L3 is seven hexes from E3; E7 is the hex every other test of this class uses.
         Dictionary<string, object>[] units = [Squad("g1", "E3", "german"), Squad("r1", "E4", "russian")];
-        Assert.StartsWith("play.sniper-placement: [E4] is no hex for the russian Sniper counter",
-            Assert.Single((await FirstSetup(null, 6, [], [.. units, Sniper("rs", "E4", "russian")])).Reasons), StringComparison.Ordinal);
+        var byHand = Assert.Single((await FirstSetup(null, 6, [], [.. units, Sniper("rs", "E4", "russian")])).Reasons);
+        Assert.StartsWith("play.sniper-placement: [E4] is no hex for the russian Sniper counter", byHand, StringComparison.Ordinal);
+
+        // The table player's note on 4c: placed by hand, the counter is moved to such a hex; no setup step offers one.
+        Assert.EndsWith("; place it in such a hex (A14.2; ruling R71.11)", byHand, StringComparison.Ordinal);
         Assert.StartsWith("play.sniper-placement: [L3] is no hex for the russian Sniper counter: it goes in an unoccupied hex within six hexes of 1 or more enemy-occupied hexes",
             Assert.Single((await FirstSetup(null, 6, [], [.. units, Sniper("rs", "L3", "russian")])).Reasons), StringComparison.Ordinal);
         Committed(await FirstSetup(null, 6, [], [.. units, Sniper("rs", "E7", "russian")]));
@@ -1000,6 +1013,10 @@ public sealed class BacklogPass71Tests : IDisposable
         Assert.Equal((ChoicePending.Sniper, ScenarioA1Sniper.HexStep), (choice.Kind, choice.Resume.GetProperty("step").GetString()));
         Assert.Equal(new[] { L(east), L(west) }.Order(StringComparer.Ordinal), choice.Options);
         Assert.Contains(Since(0).Select(item => item.Payload).OfType<DiceRolled>(), item => item.Purpose == "sniper-location");
+
+        // R4's finding 5: the choice says where the Random Location DR landed.
+        Assert.Equal(L("E6"), choice.Resume.GetProperty("place").GetString());
+        Assert.Contains("Random Location DR lands in [E6], which holds no eligible target", GamePlanner.DescribeChoice(choice), StringComparison.Ordinal);
         Assert.Equal(L("E7"), Current.Location("rs")!.Location.ToString());
 
         var refused = await Do(GameActions.RemoveConcealment, NoRoll(), new

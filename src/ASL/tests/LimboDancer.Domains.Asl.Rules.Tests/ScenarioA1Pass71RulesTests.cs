@@ -365,6 +365,10 @@ public sealed class ScenarioA1Pass71RulesTests
         Assert.Null(ScenarioA1Sniper.PlacementBar(five.Legal.Contains(6), "russian", "[F6]", five.Tier));
         Assert.StartsWith("play.sniper-placement: [F7] is no hex for the russian Sniper counter: it goes in an unoccupied hex within six hexes of 5 or more enemy-occupied hexes",
             ScenarioA1Sniper.PlacementBar(five.Legal.Contains(7), "russian", "[F7]", five.Tier), StringComparison.Ordinal);
+
+        // The table player's note on 4c: the setup's step offers the hexes; a counter placed by hand is moved to one.
+        Assert.EndsWith("; choose a hex the setup offers (A14.2; ruling R71.11)", ScenarioA1Sniper.PlacementBar(false, "russian", "[F7]", five.Tier), StringComparison.Ordinal);
+        Assert.EndsWith("; place it in such a hex (A14.2; ruling R71.11)", ScenarioA1Sniper.PlacementBar(false, "russian", "[F7]", five.Tier, setupStep: false), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -422,8 +426,10 @@ public sealed class ScenarioA1Pass71RulesTests
         // A14.01 (p. 82; ruling R71.11): a game whose play started before the counter was given is never given one.
         Assert.Equal(["german"], ScenarioA1Sniper.NoCounter([new("german", 3, false), new("russian", 2, true)]));
         Assert.Empty(ScenarioA1Sniper.NoCounter([new("german", 1, false), new("russian", 2, true)]));
-        Assert.Equal("The German side has a SAN but no Sniper counter in this game, so it makes no Sniper attacks (A14.01).", ScenarioA1Sniper.NoCounterText(["German"]));
-        Assert.Equal("The German and the Russian sides have a SAN but no Sniper counter in this game, so they make no Sniper attacks (A14.01).",
+        // R4's finding 8: A14.01 gives every such side a counter, so the line cites the ruling that withholds it.
+        Assert.Equal("The German side has a SAN but no Sniper counter in this game: its play began before Sniper counters were given, so it makes no Sniper attacks (ruling R71.11).",
+            ScenarioA1Sniper.NoCounterText(["German"]));
+        Assert.Equal("The German and the Russian sides have a SAN but no Sniper counter in this game: its play began before Sniper counters were given, so they make no Sniper attacks (ruling R71.11).",
             ScenarioA1Sniper.NoCounterText(["German", "Russian"]));
         Assert.Null(ScenarioA1Sniper.NoCounterText([]));
     }
@@ -464,6 +470,10 @@ public sealed class ScenarioA1Pass71RulesTests
         Assert.Equal("the german Sniper's dr of 2 is effective: it attacks, or forfeits the attack and its counter is repositioned within the setup's placement requirements (A14.2)",
             ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.ForfeitStep, "german", null, 2));
         Assert.EndsWith("(A14.21)", ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.HexStep, "german", null, 1), StringComparison.Ordinal);
+
+        // R4's finding 5: the equidistant hexes' choice names where the Random Location DR landed.
+        Assert.StartsWith("the german Sniper's Random Location DR lands in [M4], which holds no eligible target", ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.HexStep, "german", "[M4]", 1),
+            StringComparison.Ordinal);
         Assert.Contains("attacks [M5]: the german side chooses which of its Locations", ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.LocationStep, "german", "[M5]", 1), StringComparison.Ordinal);
         Assert.Contains("before Random Selection", ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.TargetStep, "german", "[M5], level 1", 1), StringComparison.Ordinal);
         Assert.Contains("chooses which takes the dr of 1", ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.FirstStep, "german", "[M5]", 1), StringComparison.Ordinal);
@@ -604,6 +614,9 @@ public sealed class ScenarioA1Pass71RulesTests
         // A man carried earlier in the move moves on only with his carrier: without it he was set down.
         Assert.Null(ScenarioA1Wounds.CarriedMoveBar([("de-l", "de-s")], TheSquadAndTheLeader));
         Assert.Contains("set down", ScenarioA1Wounds.CarriedMoveBar([("de-l", "de-s")], TheLeaderAlone), StringComparison.Ordinal);
+
+        // R4's finding 9: the set-down is a ruling, and its refusal cites it as one.
+        Assert.EndsWith("(A17.2; ruling R71.16)", ScenarioA1Wounds.CarriedMoveBar([("de-l", "de-s")], TheLeaderAlone), StringComparison.Ordinal);
     }
 
     [Fact]

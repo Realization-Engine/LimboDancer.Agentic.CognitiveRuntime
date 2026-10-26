@@ -108,7 +108,17 @@ public sealed record SanReduced(string Side, string Cause) : EventPayload;
 /// Location, the units that took it, the roll of its one combined DR, its DRM, and the result (<c>sniper-eliminated</c>, <c>sniper-pinned</c>, or
 /// <c>none</c>). The events after it apply it.
 /// </summary>
-public sealed record SniperChecked(string Sniper, BoardLocation Location, IReadOnlyList<string> Units, string Roll, int Drm, string Result) : EventPayload;
+public sealed record SniperChecked(string Sniper, BoardLocation Location, IReadOnlyList<string> Units, string Roll, int Drm, string Result) : EventPayload
+{
+    /// <summary>
+    /// The DRM's causes in words, as Rules gave them (JSON <c>drmCauses</c>; pass 71, R4's finding 3), for the record line alone; null on a check recorded
+    /// before the fixes, whose line gives the DRM without them. The projector does not read it.
+    /// </summary>
+    public IReadOnlyList<string>? DrmCauses
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// <c>wind-changed</c>: the Wind Change DR <paramref name="Roll"/> made at the start of a RPh (B25.65; backlog pass 16, ruling R16.10), and what it

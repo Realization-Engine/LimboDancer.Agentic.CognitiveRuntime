@@ -86,7 +86,7 @@ public static class ScenarioA1Wounds
         ArgumentNullException.ThrowIfNull(earlier);
         ArgumentNullException.ThrowIfNull(movers);
         return earlier.FirstOrDefault(carry => movers.Contains(carry.Man) && !movers.Contains(carry.Carrier)) is { Man: { } man } set
-            ? $"play.move-carry: {man} was carried by {set.Carrier} in this move and was set down without it, so he moves no farther this MPh; end his move (A17.2)"
+            ? $"play.move-carry: {man} was carried by {set.Carrier} in this move and was set down without it, so he moves no farther this MPh; end his move (A17.2; ruling R71.16)"
             : null;
     }
 

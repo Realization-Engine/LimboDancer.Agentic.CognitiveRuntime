@@ -495,9 +495,10 @@ public sealed partial class GamePlanner
         var chosen = equidistant[0];
         if (ScenarioA1Sniper.ChoiceOffered(equidistant.Length))
         {
+            // R4's finding 5: the choice names the hex the Random Location DR landed in, which holds no eligible target.
             if (!answers.TryGetValue(ScenarioA1Sniper.HexStep, out var picked))
             {
-                return Pause(ScenarioA1Sniper.HexStep, [.. equidistant.Select(at => at.ToString())], null);
+                return Pause(ScenarioA1Sniper.HexStep, [.. equidistant.Select(at => at.ToString())], new BoardLocation(board, hex, 0));
             }
 
             chosen = equidistant.First(at => at.ToString() == picked);
@@ -808,6 +809,33 @@ public sealed partial class GamePlanner
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
     }
 
+    /// <summary>The Sniper Check DRM of the units that take it, with its causes, as Rules gives it (A14.4, A15.21, A17.3; rulings R71.10, R5's finding 7).</summary>
+    private static (int Drm, IReadOnlyList<string> Causes) SniperCheckDrmOf(IReadOnlyList<UnitInstance> units) =>
+        ScenarioA1Sniper.SniperCheckDrm([.. units.Select(unit => new SniperCheckParticipant(unit.Kind,
+            DefinitionOf(unit) is { IsLeader: true, Leadership: { } leadership } ? leadership : null, Is(unit, Conditions.Heroic))
+        {
+            Wounded = Is(unit, Conditions.Wounded)
+        })]);
+
+    /// <summary>
+    /// The Sniper Check a pending choice offers, as the answering side's view reads it before it answers (A14.4; pass 71, R4's finding 2): the units of the
+    /// target Location that would take it, in id order, and their DRM with its causes; none when no unit may take it (ruling R71.18). The units are the
+    /// answering side's own, so the page gives this to that side's view and the adjudicator only. One read of the state's index.
+    /// </summary>
+    public (IReadOnlyList<string> Units, int Drm, IReadOnlyList<string> Causes) SniperCheckOffer(GameState state, PendingChoice choice)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(choice);
+        if (choice.Kind != ChoicePending.SniperCheck || !choice.Resume.TryGetProperty("location", out var at) || !BoardLocation.TryParse(at.GetString() ?? string.Empty, out var location))
+        {
+            return ([], 0, []);
+        }
+
+        var units = SniperCheckers(state, location, choice.Side);
+        var (drm, causes) = SniperCheckDrmOf(units);
+        return ([.. units.Select(unit => unit.Id)], drm, causes);
+    }
+
     /// <summary>
     /// A Sniper eliminated (A14.4, p. 83; pass 71, ruling R71.9): "reduces that side's SAN by one for the duration of the scenario", and "If the SAN is reduced
     /// to 1, remove the Sniper Target Selection counter from the game"; Rules gives the actual SAN, never below the printed one at night (E1.76). A side with
@@ -854,11 +882,7 @@ public sealed partial class GamePlanner
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [made], reasons);
         }
 
-        var (drm, causes) = ScenarioA1Sniper.SniperCheckDrm([.. units.Select(unit => new SniperCheckParticipant(unit.Kind,
-            DefinitionOf(unit) is { IsLeader: true, Leadership: { } leadership } ? leadership : null, Is(unit, Conditions.Heroic))
-        {
-            Wounded = Is(unit, Conditions.Wounded)
-        })]);
+        var (drm, causes) = SniperCheckDrmOf(units);
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var events = new List<GameEvent> { made };
@@ -876,8 +900,11 @@ public sealed partial class GamePlanner
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled", new DiceRolled(rollId, "sniper-check", 2, 6, dice.Values, DiceRolled.SystemSource, actor),
                     package, owner));
                 var result = ScenarioA1Sniper.SniperCheckResult(dice.Values.Sum() + drm, Is(sniper, Conditions.Pinned));
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "sniper-checked", new SniperChecked(sniperId, at, [.. units.Select(unit => unit.Id)], rollId, drm, result),
-                    package, owner));
+                // R4's finding 3: the DRM's causes ride on the record for its line.
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "sniper-checked", new SniperChecked(sniperId, at, [.. units.Select(unit => unit.Id)], rollId, drm, result)
+                {
+                    DrmCauses = causes.Count > 0 ? causes : null
+                }, package, owner));
                 foreach (var unit in units)
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",

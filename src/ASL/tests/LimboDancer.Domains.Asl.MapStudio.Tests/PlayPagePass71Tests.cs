@@ -150,10 +150,41 @@ public sealed class PlayPagePass71Tests : IDisposable
         {
             var history = live.History(Game)!;
             var line = Assert.Single(new PlayRecords(history, view, long.MaxValue, UnitNames.For(history, view, [.. live.Catalogs])).Snipers).Text;
-            Assert.StartsWith("The Russian Sniper (", line, StringComparison.Ordinal);
-            Assert.Matches(@": dr 2; \[[A-Z]{1,2}\d{1,2}\]: the crew of .+ is Stunned \(A14\.3, D5\.34\)$", line);
+
+            // Pass 71's fixes (Round D): the counter and the DR that called it in words, not by their ids; the tank's hex said once.
+            Assert.StartsWith("The Russian Sniper attacks after the IFT DR 3 + 3 = 6, equal to the Russian SAN (A14.1): dr 2; [", line, StringComparison.Ordinal);
+            Assert.Matches(@": dr 2; \[[A-Z]{1,2}\d{1,2}\]: the crew of [^\[]+ is Stunned \(A14\.3, D5\.34\)$", line);
             Assert.DoesNotContain("ab-wide:", line, StringComparison.Ordinal);
+            Assert.DoesNotContain("(rs)", line, StringComparison.Ordinal);
+            Assert.DoesNotContain("-roll-", line, StringComparison.Ordinal);
         }
+    }
+
+    [Fact]
+    public async Task TheSnipersOptionsBeforeRandomSelectionNameTheHexFirstAndTellTheTruckFromItsCrew()
+    {
+        // Pass 71's fixes (R5's finding 2, R4's finding 15; A14.2 EXC, A14.33): as above, onto a manned German truck, two candidates, its Inherent crew and
+        // itself. The Russian view offers both before Random Selection, each hex first, the truck itself told apart; the German view offers none.
+        var sniperAt = GameMaps.LocationOf(WideBoards.Board, new HexIndex(9, 4))!.ToString();
+        await Start(Squad("de-1", "attacker-squad", WideBoards.At(3), "german"), Squad("ru-1", "defender-squad", WideBoards.At(5), "russian"),
+            Placed("de-tr", "asl:vehicle", "attacker-truck", WideBoards.At(9), "german", new Dictionary<string, bool>()),
+            Placed("rs", "asl:sniper", null, sniperAt, "russian", new Dictionary<string, bool>()));
+        dice.Enqueue([3, 3, 3, 3, 2, 1, 1]);
+        await Do(GameActions.Fire, new
+        {
+            firers = GermanFirer,
+            target = WideBoards.At(5),
+        });
+        await Attack();
+        var choice = live.History(Game)!.Current!.Choice!;
+        Assert.Equal(Rules.ScenarioA1Sniper.TargetStep, choice.Resume.GetProperty("step").GetString());
+
+        string[] answers = [.. Open("russian").FindAll("#play-choice button.choose").Select(button => button.TextContent.Trim())];
+        Assert.Equal(3, answers.Length);
+        Assert.Matches(@"^Propose: \[[A-Z]{1,2}\d{1,2}\]: the Inherent crew of [^\[]+$", answers[0]);
+        Assert.Matches(@"^Propose: \[[A-Z]{1,2}\d{1,2}\]: [^\[]+, the vehicle itself \(A14\.33\)$", answers[1]);
+        Assert.Equal("Propose: Random Selection among the targets (A14.2)", answers[2]);
+        Assert.Empty(Open("german").FindAll("#play-choice button.choose"));
     }
 
     private static Dictionary<string, bool> Concealed => new() { ["asl:broken"] = false, ["asl:concealed"] = true, ["asl:hidden"] = false };
@@ -229,7 +260,14 @@ public sealed class PlayPagePass71Tests : IDisposable
         var german = Open("german");
         Assert.Equal(2, german.FindAll("#play-choice button.choose").Count);
         Assert.Contains("take the Sniper Check", german.Find("#play-choice").TextContent, StringComparison.Ordinal);
-        Assert.Empty(Open("russian").FindAll("#play-choice button.choose"));
+
+        // Pass 71's fixes (R4's finding 2): the German answer names its takers, hex first, and their DRM with its causes; the choice cites A14.4 and R5.8 in one.
+        Assert.Matches(@"^Propose: take the Sniper Check: \[[A-Z]{1,2}\d{1,2}\]: 8-1 leader \w+, 4-6-7 squad \w+, DRM -3 \(leadership -1, 2 HS equivalents -2\)$",
+            german.FindAll("#play-choice button.choose")[0].TextContent.Trim());
+        Assert.EndsWith("(A14.4; ruling R5.8).", german.Find("#play-choice p").TextContent, StringComparison.Ordinal);
+        var russianView = Open("russian");
+        Assert.Empty(russianView.FindAll("#play-choice button.choose"));
+        Assert.DoesNotContain("leader", russianView.Find("#play-choice").TextContent, StringComparison.Ordinal);
 
         dice.Enqueue([3, 2]);
         await Do(GameActions.Choose, new
@@ -242,6 +280,9 @@ public sealed class PlayPagePass71Tests : IDisposable
         var lines = new PlayRecords(history, view, long.MaxValue, UnitNames.For(history, view, [.. live.Catalogs])).Snipers.Select(item => item.Text).ToArray();
         Assert.Contains(lines, line => line.Contains("Sniper Check against the Russian Sniper", StringComparison.Ordinal) && line.Contains("= 2, the Sniper is eliminated", StringComparison.Ordinal)
             && line.Contains(" in [", StringComparison.Ordinal));
+
+        // R4's finding 3: the record line gives the DRM's causes.
+        Assert.Contains(lines, line => line.Contains("DR 3, 2 = 5 - 3 (leadership -1, 2 HS equivalents -2) = 2", StringComparison.Ordinal));
         Assert.Contains(lines, line => line.EndsWith("the Russian SAN is now 5 (A14.4)", StringComparison.Ordinal));
         Assert.DoesNotContain(lines, line => line.Contains("ab-wide:", StringComparison.Ordinal));
     }
@@ -316,6 +357,7 @@ public sealed class PlayPagePass71Tests : IDisposable
         Assert.NotEmpty(options);
         Assert.All(options, option => Assert.Matches(@"^\[[A-Z]{1,2}\d{1,2}\]$", option.TextContent.Trim()));
         Assert.True(russian.Find("#propose-sniper-russian").HasAttribute("disabled"));
+        Assert.Equal("Choose a hex the setup offers (A14.2).", russian.Find("#propose-sniper-russian").GetAttribute("title"));
         Assert.Contains("The German side places its own next", russian.Find("#sniper-next").TextContent, StringComparison.Ordinal);
 
         var german = Open("german");
@@ -324,10 +366,19 @@ public sealed class PlayPagePass71Tests : IDisposable
 
         var at = options[0].GetAttribute("value")!;
         russian.Find("#sniper-hex-russian").Change(at);
-        russian.Find("#propose-sniper-russian").Click();
-        russian.WaitForAssertion(() => Assert.Contains("Confirm to commit", russian.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        russian.Find("#play-confirm").Click();
-        russian.WaitForAssertion(() => Assert.Equal(at, live.History(Game)!.Current!.Location("sniper-russian")?.Location.ToString()));
+        Assert.Equal(at, russian.Find("#sniper-hex-russian").GetAttribute("value"));
+        Assert.False(russian.Find("#propose-sniper-russian").HasAttribute("title"));
+
+        // R5's finding 15: the adjudicator places both counters on one page; once the Russian one commits, the German list starts with no hex chosen.
+        var adjudicator = Open(Perspective.AdjudicatorName);
+        adjudicator.Find("#sniper-hex-russian").Change(at);
+        adjudicator.Find("#propose-sniper-russian").Click();
+        adjudicator.WaitForAssertion(() => Assert.Contains("Confirm to commit", adjudicator.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        adjudicator.Find("#play-confirm").Click();
+        adjudicator.WaitForAssertion(() => Assert.Equal(at, live.History(Game)!.Current!.Location("sniper-russian")?.Location.ToString()));
+        adjudicator.WaitForAssertion(() => Assert.NotEmpty(adjudicator.FindAll("#sniper-hex-german option")));
+        Assert.True(string.IsNullOrEmpty(adjudicator.Find("#sniper-hex-german").GetAttribute("value")));
+        Assert.True(adjudicator.Find("#propose-sniper-german").HasAttribute("disabled"));
         Assert.NotEmpty(Open("german").FindAll("#sniper-hex-german option"));
     }
 
@@ -338,7 +389,7 @@ public sealed class PlayPagePass71Tests : IDisposable
         await Start(Squad("de-1", "attacker-squad", WideBoards.At(3), "german"), Squad("ru-1", "defender-squad", WideBoards.At(5), "russian"));
         foreach (var view in SideViews)
         {
-            Assert.Equal("The Russian side has a SAN but no Sniper counter in this game, so it makes no Sniper attacks (A14.01).",
+            Assert.Equal("The Russian side has a SAN but no Sniper counter in this game: its play began before Sniper counters were given, so it makes no Sniper attacks (ruling R71.11).",
                 Assert.Single(Open(view).FindAll("#play-sniper-missing")).TextContent.Trim());
         }
     }
@@ -384,6 +435,8 @@ public sealed class PlayPagePass71Tests : IDisposable
         Assert.All(hexes, option => Assert.Matches(@"^\[[A-Z]{1,2}\d{1,2}\]$", option.TextContent.Trim()));
         Assert.Empty(Open("german").FindAll("#play-choice-select"));
 
+        // R5's finding 3: the disabled proposal says why.
+        Assert.Equal("Choose the answer from the list first.", russian.Find("#play-choice-propose").GetAttribute("title"));
         var to = hexes[0].GetAttribute("value")!;
         russian.Find("#play-choice-select").Change(to);
         russian.Find("#play-choice-propose").Click();
@@ -479,8 +532,14 @@ public sealed class PlayPagePass71Tests : IDisposable
         foreach (var view in new[] { Perspective.Adjudicator, new Perspective("german"), new Perspective("russian") })
         {
             var wound = Assert.Single(new PlayRecords(live.History(Game)!, view, long.MaxValue).RallyAndRepair, record => record.Kind == "wound");
-            Assert.StartsWith("Wound Severity dr 1 for de-l: a wound, not mortal", wound.Text, StringComparison.Ordinal);
+            Assert.StartsWith($"Wound Severity dr 1 for de-l in {tankAt}: a wound, not mortal", wound.Text, StringComparison.Ordinal);
         }
+
+        // Pass 71's fixes (Round D): in the German view's words he is named, with his hex in brackets.
+        var history = live.History(Game)!;
+        var german = new Perspective("german");
+        var named = Assert.Single(new PlayRecords(history, german, long.MaxValue, UnitNames.For(history, german, [.. live.Catalogs])).RallyAndRepair, record => record.Kind == "wound");
+        Assert.Matches(@"^Wound Severity dr 1 for 8-1 leader \w+ in \[[A-Z]{1,2}\d{1,2}\]: a wound, not mortal", named.Text);
     }
 
     // Increment 4g: carrying a wounded man (A17.2; ruling R71.16).
@@ -508,11 +567,21 @@ public sealed class PlayPagePass71Tests : IDisposable
         Assert.Equal("de-s", Assert.Single(carriers).GetAttribute("value"));
         Assert.Matches(@"^\[[A-Z]{1,2}\d{1,2}\]: ", carriers[0].TextContent.Trim());
 
+        // Pass 71's fixes (Round D; the hex UI rule): the leader's IPC list names its movers hex first too, not "id (Location)".
+        var ipc = page.FindAll("#move-ipc option").Skip(1).ToArray();
+        Assert.Equal(2, ipc.Length);
+        Assert.All(ipc, option => Assert.Matches(@"^\[[A-Z]{1,2}\d{1,2}\]: [^(]+$", option.TextContent.Trim()));
+
         page.Find("#move-carry").Change("de-l");
         page.Find("#move-carrier").Change("de-s");
         page.Find("#move-to").Change(WideBoards.At(4));
         page.Find("#propose-move").Click();
         page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+
+        // The proposal names the carry in the view's words, never by the units' ids.
+        var proposal = string.Join(" ", page.FindAll(".play-review-body").Select(review => review.TextContent));
+        Assert.Contains("carries the wounded 8-1 leader", proposal, StringComparison.Ordinal);
+        Assert.DoesNotContain("de-l", proposal, StringComparison.Ordinal);
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.NotEmpty(Events.Select(item => item.Payload).OfType<MovementStepped>()));
         var step = Events.Select(item => item.Payload).OfType<MovementStepped>().Single();
@@ -565,7 +634,8 @@ public sealed class PlayPagePass71Tests : IDisposable
         {
             var history = live.History(Game)!;
             var line = Assert.Single(new PlayRecords(history, view, long.MaxValue, UnitNames.For(history, view, [.. live.Catalogs])).Snipers).Text;
-            Assert.EndsWith(" is wounded and pinned (A14.3, A17.2)", line, StringComparison.Ordinal);
+            // R4's finding 6: the line gives his Wound Severity dr and why the wound pins.
+            Assert.EndsWith(" is wounded, Wound Severity dr 1, not mortal, and pinned: wounded after more than 3 MF (A14.3, A17.11, A17.2)", line, StringComparison.Ordinal);
         }
     }
 
@@ -578,7 +648,7 @@ public sealed class PlayPagePass71Tests : IDisposable
     {
         // A17.2 (ruling R71.14): the Fire path's "pinned-wound" reads as one result with its rule; a pin by a check and a wound beside it read as before.
         static Rules.FireUnitEffect Effect(string[] events) => new("de-l", "attacker-leader-8-1", "attacker-leader-8-1", null, false, false, true, true, false, false, events, []);
-        Assert.Equal("wounded and pinned (A17.2)", FireText.EffectText(Effect(WoundPins)));
+        Assert.Equal("wounded, and pinned: wounded after more than 3 MF (A17.2)", FireText.EffectText(Effect(WoundPins)));
         Assert.Equal("pinned, wounded", FireText.EffectText(Effect(CheckPins)));
     }
 }

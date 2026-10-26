@@ -172,7 +172,9 @@ else
                             }
                         </select>
                     </label>
-                    <button type="button" class="propose-sniper" id="@($"propose-sniper-{sniperSide}")" disabled="@(!sniperHexes.Any(at => at.ToString() == sniperHex))"
+                    var sniperChosen = sniperHexes.Any(at => at.ToString() == sniperHex);
+                    <button type="button" class="propose-sniper" id="@($"propose-sniper-{sniperSide}")" disabled="@(!sniperChosen)"
+                            title="@(sniperChosen ? null : "Choose a hex the setup offers (A14.2).")"
                             @onclick="@(() => ProposeSniper(sniperSide))">Propose: place @DisplayText.Side(sniperSide)'s Sniper counter</button>
                 }
                 else
@@ -1760,8 +1762,8 @@ else if (state is not null)
             $"{definition.Id} ({definition.Nationality} {DisplayText.Kind(definition.Kind)})")),
         .. new[] { firstSide, secondSide }.Distinct(StringComparer.Ordinal).SelectMany(side => new[]
         {
-            new SetupPlacementEditor.Choice(DummyPrefix + side, $"a Dummy ({side})"),
-            new SetupPlacementEditor.Choice(SniperPrefix + side, $"the Sniper counter ({side})"),
+            new SetupPlacementEditor.Choice(DummyPrefix + side, $"a Dummy ({DisplayText.Side(side)})"),
+            new SetupPlacementEditor.Choice(SniperPrefix + side, $"the Sniper counter ({DisplayText.Side(side)})"),
         }),
     ];
 
@@ -1797,7 +1799,8 @@ else if (state is not null)
         var onMap = OnMap(placement);
         var holders = HolderChoices(placement);
         return new SetupPlacementList.Item(placement.Key,
-            $"{placement.Id}: {placement.Definition ?? "a Dummy"}{(placement.Group is { } inGroup ? $" ({inGroup})" : string.Empty)}"
+            // Pass 71's fixes (Round D): a Sniper counter has no definition either, and is no Dummy.
+            $"{placement.Id}: {placement.Definition ?? (placement.Kind == "asl:sniper" ? $"the {DisplayText.Side(placement.Side)} Sniper counter" : "a Dummy")}{(placement.Group is { } inGroup ? $" ({inGroup})" : string.Empty)}"
             + (placement.OffBoard ? $", off board, to enter{(placement.Entry is { } entry ? $" by {entry}" : string.Empty)}" : string.Empty)
             + (placement.Hidden ? ", hidden" : string.Empty) + (placement.Broken ? ", broken" : string.Empty)
             + (placement.BoreSighted is { } sighted ? $", Bore Sighted on {PlaceOf(sighted)}" : string.Empty))
@@ -2816,6 +2819,12 @@ else if (state is not null)
                 // The rule code goes, and a Location reads as a player says it.
                 var text = reason.IndexOf(": ", StringComparison.Ordinal) is var cut and > 0 && reason.StartsWith("play.", StringComparison.Ordinal) ? reason[(cut + 2)..] : reason;
                 text = System.Text.RegularExpressions.Regex.Replace(text, @"\bbd\w+:[A-Z]{1,2}\d{1,2}:-?\d\b", found => PlaceOf(found.Value));
+
+                // Pass 71's fixes (Round D): a side reads as its counters name it, "the Russian Sniper counter", not by its id.
+                foreach (var sideId in new[] { firstSide, secondSide }.Concat(state?.Sides.Select(side => side.Id) ?? []).Where(id => id.Length > 2 && char.IsLower(id[0])).Distinct(StringComparer.Ordinal))
+                {
+                    text = System.Text.RegularExpressions.Regex.Replace(text, $@"(?<![A-Za-z0-9-]){System.Text.RegularExpressions.Regex.Escape(sideId)}(?![A-Za-z0-9-])", DisplayText.Side(sideId));
+                }
                 var carried = rows.SelectMany(row => placements.Where(other => other.Holder == row.Id && other.Role != "manned" && refused.Contains(other.Id))).ToArray();
                 problems.Add((rows.Length > 0
                     ? $"{PrintedLabel(rows[0])}: {text}" + (carried.Length > 0 ? $" The same holds for what it carries: {string.Join(", ", carried.Select(row => $"{PrintedLabel(row)} {row.Id}"))}." : string.Empty)
@@ -5164,7 +5173,8 @@ else if (state is not null)
     /// <summary>A pending choice's options in words (plan C08), given only to a view that may answer.</summary>
     private IReadOnlyList<PendingChoicePanel.Option> ChoiceOptions(PendingChoice choice) => MayAnswer(choice.Side)
         ? [.. choice.Options.Select(option => new PendingChoicePanel.Option(option,
-            choice.Kind == ChoicePending.OverrunEvade ? $"into {PlaceOf(option)}" : choice.Kind == ChoicePending.Sniper ? SniperOptionText(choice, option) : ChoiceOptionText(choice, option)))]
+            choice.Kind == ChoicePending.OverrunEvade ? $"into {PlaceOf(option)}" : choice.Kind == ChoicePending.Sniper ? SniperOptionText(choice, option)
+            : choice is { Kind: ChoicePending.SniperCheck } && option == ChoicePending.Take ? SniperCheckTake(choice) : ChoiceOptionText(choice, option)))]
         : [];
 
     /// <summary>
@@ -5181,13 +5191,42 @@ else if (state is not null)
             (ScenarioA1Sniper.Attack, _) => "attack: make the Random Location DR (A14.2)",
             (ScenarioA1Sniper.Reposition, _) => "forfeit the attack and reposition the Sniper counter (A14.2)",
             (ScenarioA1Sniper.RandomSelection, _) => "Random Selection among the targets (A14.2)",
-            (ScenarioA1Sniper.ConcealedStack, _) => $"a \"?\" stack in {place}",
+            // Pass 71's fixes (R5's finding 2, R4's finding 15): every option hex first, and the vehicle itself told apart from its crew.
+            (ScenarioA1Sniper.ConcealedStack, _) => $"{place}: a \"?\" stack",
             (_, ScenarioA1Sniper.ConcealedStack) => $"{place}: tied target {id} beneath the \"?\" (A14.23)",
             (_, ScenarioA1Sniper.SniperTarget) => $"{place}: the {DisplayText.Side(state?.Find(id)?.Side)} Sniper counter",
-            (_, ScenarioA1Sniper.CrewTarget) => $"the Inherent crew of {UnitAt(id)}",
-            (_, ScenarioA1Sniper.UnitTarget or ScenarioA1Sniper.VehicleTarget) => UnitAt(id),
+            (_, ScenarioA1Sniper.CrewTarget) => UnitPlaceOf(id) is { } crewAt ? $"{crewAt.Where}: the Inherent crew of {UnitGrouping.WithoutPlace(Words(id), crewAt.Where)}" : $"the Inherent crew of {Words(id)}",
+            (_, ScenarioA1Sniper.VehicleTarget) => $"{UnitAt(id)}, the vehicle itself (A14.33)",
+            (_, ScenarioA1Sniper.UnitTarget) => UnitAt(id),
             _ => PlaceOf(option),
         };
+    }
+
+    // The Sniper Check its answering side would take, read once a state (the Memory and Performance Guidelines: page projections by state and viewer).
+    private (GameState? State, string Key, string Text) sniperCheckOffer;
+
+    /// <summary>
+    /// "take the Sniper Check" for the answering side's view, with the units that would take it, hex first, and their DRM with its causes (A14.4; pass 71,
+    /// R4's finding 2). The public choice names none of them (ruling R71.18); only a view that may answer is given the options.
+    /// </summary>
+    private string SniperCheckTake(PendingChoice choice)
+    {
+        if (state is null)
+        {
+            return "take the Sniper Check";
+        }
+
+        var key = $"{choice.Key}|{Viewer.Name}";
+        if (!ReferenceEquals(sniperCheckOffer.State, state) || sniperCheckOffer.Key != key)
+        {
+            var (units, drm, causes) = Live.Planner.SniperCheckOffer(state, choice);
+            var text = units.Count == 0 ? "take the Sniper Check: no unit here may take it, so none is made (A14.4)"
+                : $"take the Sniper Check: {UnitAt(units[0])}{string.Concat(units.Skip(1).Select(id => ", " + UnitGrouping.WithoutPlace(Words(id), UnitPlaceOf(id)?.Where)))}, "
+                    + (drm == 0 ? "DRM 0" : $"DRM {drm.ToString("+0;-0", System.Globalization.CultureInfo.InvariantCulture)} ({string.Join(", ", causes)})");
+            sniperCheckOffer = (state, key, text);
+        }
+
+        return sniperCheckOffer.Text;
     }
 
     /// <summary>
@@ -6700,14 +6739,38 @@ else if (state is not null)
     /// The checked movers the view sees that may be carried (A17.2; pass 71, ruling R71.16): wounded, and not already carried in this move; the planner
     /// decides the rest of the carry (Good Order, no SW).
     /// </summary>
-    private IReadOnlyList<PlayChoice> CarryMen => state is null || moveUnits.Count < 2 ? []
-        : [.. SeenOnly(moveUnits.Select(id => state.Unit(id)).OfType<UnitInstance>().Where(unit => GameState.Condition(unit, Conditions.Wounded) == ConditionState.True
-            && state.Movement?.Carried?.Any(carry => carry.Man == unit.Id) != true)).OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => new PlayChoice(unit.Id, unit.Id))];
+    private IReadOnlyList<PlayChoice> CarryMen => CarryChoices.Men;
 
     /// <summary>The checked MMC that may carry a wounded man (A17.2): not already carrying one in this move.</summary>
-    private IReadOnlyList<PlayChoice> Carriers => state is null || moveUnits.Count < 2 ? []
-        : [.. SeenOnly(moveUnits.Select(id => state.Unit(id)).OfType<UnitInstance>().Where(unit => Library.Vocabulary.IsA(unit.Kind, "asl:mmc")
-            && state.Movement?.Carried?.Any(carry => carry.Carrier == unit.Id) != true)).OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => new PlayChoice(unit.Id, unit.Id))];
+    private IReadOnlyList<PlayChoice> Carriers => CarryChoices.Carriers;
+
+    // Pass 71's fixes (R5's finding 16; the Memory and Performance Guidelines, page projections by state and viewer): both lists built once for a state, a
+    // view, and the units checked, not at each render; the planner's index reads each unit.
+    private (GameState? State, string View, string Checked, IReadOnlyList<PlayChoice> Men, IReadOnlyList<PlayChoice> Carriers) carryCache = (null, string.Empty, string.Empty, [], []);
+
+    private (IReadOnlyList<PlayChoice> Men, IReadOnlyList<PlayChoice> Carriers) CarryChoices
+    {
+        get
+        {
+            if (state is null || moveUnits.Count < 2)
+            {
+                return ([], []);
+            }
+
+            var ticked = string.Join(',', moveUnits.Order(StringComparer.Ordinal));
+            if (!ReferenceEquals(carryCache.State, state) || carryCache.View != Viewer.Name || carryCache.Checked != ticked)
+            {
+                UnitInstance[] units = [.. SeenOnly(moveUnits.Select(id => Live.Planner.UnitOf(state, id)).OfType<UnitInstance>()).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
+                carryCache = (state, Viewer.Name, ticked,
+                    [.. units.Where(unit => GameState.Condition(unit, Conditions.Wounded) == ConditionState.True && state.Movement?.Carried?.Any(carry => carry.Man == unit.Id) != true)
+                        .Select(unit => new PlayChoice(unit.Id, unit.Id))],
+                    [.. units.Where(unit => Library.Vocabulary.IsA(unit.Kind, "asl:mmc") && state.Movement?.Carried?.Any(carry => carry.Carrier == unit.Id) != true)
+                        .Select(unit => new PlayChoice(unit.Id, unit.Id))]);
+            }
+
+            return (carryCache.Men, carryCache.Carriers);
+        }
+    }
 
     private Task ProposeSmoke()
     {
@@ -8374,6 +8437,8 @@ else if (state is not null)
 
             if (proposal.Action == GameActions.Setup)
             {
+                // Pass 71's fixes (R5's finding 15): the hex chosen for a Sniper counter is spent with its placement, so the next side's list starts empty.
+                sniperHex = string.Empty;
                 if (PlacesCounters(proposal))
                 {
                     ClearPlacements();
@@ -9555,7 +9620,8 @@ else if (state is not null)
                     InstanceCaptured taken when state.Unit(taken.Id) is { } prisoner => $"A {DisplayText.Side(prisoner.Side)} unit was captured.",
                     // Pass 71 (A14.4; rulings R71.9, R71.10): a Sniper Check made in public, and a Sniper eliminated, named by side only.
                     SniperChecked check => $"A Sniper Check was made in {PlaceOf(check.Location)}.",
-                    SanReduced reduced => $"The {DisplayText.Side(reduced.Side)} Sniper was eliminated, and its SAN is lower.",
+                    SanReduced reduced => $"The {DisplayText.Side(reduced.Side)} Sniper was eliminated, and its SAN "
+                        + (PlayRecords.SanUnchanged(history.At(item.Revision - 1), reduced.Side) ? "stays at the printed SAN at night (E1.76)." : "is lower."),
                     // Pass 71 (A14.2; ruling R71.12): the Sniper player forfeited an attack, and his counter was repositioned in public.
                     SniperAttacked { Result: ScenarioA1Sniper.Forfeited, Target: { } to } forfeited
                         => $"The {DisplayText.Side(state.Find(forfeited.Sniper)?.Side)} Sniper forfeited its attack and was repositioned to {PlaceOf(to)}.",
@@ -9919,7 +9985,8 @@ else if (state is not null)
     private Func<string, UnitPlace?> PlaceOfUnitNow => placeOfUnitField ??= UnitPlaceOf;
 
     /// <summary>A unit offered as a choice, named after its Location ("[AA6]: 5-2-7 squad R13"; the user, 2026-10-21); its name alone off the map.</summary>
-    private string UnitAt(string id) => UnitPlaceOf(id) is { } place ? $"{place.Where}: {Words(id)}" : Words(id);
+    // Pass 71's fixes (Round D): the other side's unit, named by its hex, is not given that hex twice ("[L4]: 4-4-7 squad", not "... in [L4]").
+    private string UnitAt(string id) => UnitPlaceOf(id) is { } place ? $"{place.Where}: {UnitGrouping.WithoutPlace(Words(id), place.Where)}" : Words(id);
 
     // The Memory and Performance Guidelines (page projections by state and viewer): each id's place is read once a state and view, not at each
     // render of each list that offers it.
