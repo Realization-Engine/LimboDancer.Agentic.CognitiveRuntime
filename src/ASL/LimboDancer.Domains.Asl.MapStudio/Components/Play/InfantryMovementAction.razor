@@ -17,10 +17,24 @@
     <label title="A4.42: one leader adds his IPC to one laden MMC that starts the phase with him and moves with him. With one laden MMC it goes there by itself; with several, name the one. The choice holds for the whole move.">Leader's IPC to
         <select id="move-ipc" value="@Draft.IpcTo" @onchange="@(args => Changed(Draft with { IpcTo = args.Value as string ?? string.Empty }))">
             <option value="">the only laden MMC</option>
-            @foreach (var row in Movers.Where(row => Selected.Contains(row.Id)))
-            {
-                <option value="@row.Id">@row.Label</option>
-            }
+            @* Pass 71's fixes (Round D; the hex UI rule): each mover "[hex]: name", as every list that offers a counter. *@
+            <UnitOptions Units="@([.. Movers.Where(row => Selected.Contains(row.Id)).Select(row => new PlayChoice(row.Id, row.Id))])" Text="@(label => label)" />
+        </select>
+    </label>
+}
+@if (CarryMen.Count > 0 && Carriers.Count > 0)
+{
+    @* Pass 71 (A17.2; ruling R71.16): a wounded man of the stack carried by one of its MMC at five PP; each choice "[hex]: name" (the hex UI rule). *@
+    <label title="A17.2: a Good Order wounded man who portages no SW may be carried by a Good Order MMC of the stack at five PP; he spends no MF of his own, and once set down moves no farther this MPh. The carry holds for the rest of the move.">Carry the wounded
+        <select id="move-carry" value="@Draft.CarryMan" @onchange="@(args => Changed(Draft with { CarryMan = args.Value as string ?? string.Empty }))">
+            <option value="">no one</option>
+            <UnitOptions Units="@CarryMen" Text="@(label => label)" />
+        </select>
+    </label>
+    <label>carried by
+        <select id="move-carrier" value="@Draft.CarryBy" @onchange="@(args => Changed(Draft with { CarryBy = args.Value as string ?? string.Empty }))">
+            <option value="">choose the MMC</option>
+            <UnitOptions Units="@Carriers" Text="@(label => label)" />
         </select>
     </label>
 }
@@ -46,13 +60,21 @@
 
     /// <summary>Whether a step is being drafted in the form, which then stays open.</summary>
     private bool StepDrafted => Draft.To.Trim().Length > 0 || Draft.Bypass.Trim().Length > 0 || Draft.Dash.Trim().Length > 0 || Draft.Minimum || Draft.Assault
-        || Draft.DoubleTime || Draft.TerrainRate || Draft.Overrun;
+        || Draft.DoubleTime || Draft.TerrainRate || Draft.Overrun || Draft.CarryMan.Length > 0;
 
     /// <summary>
     /// The step drafted: the Location typed, Minimum Move, the Bypass hexsides typed, Assault Movement, Double Time, the Gun pushed, whether the
     /// other terrain's cost is paid across a road hexside (A4.132), and the Location a Dash is declared to (A4.63).
     /// </summary>
-    public sealed record MoveDraft(string To, bool Minimum, string Bypass, bool Assault, bool DoubleTime, bool Push, bool TerrainRate = false, string Dash = "", string IpcTo = "", bool Overrun = false);
+    public sealed record MoveDraft(string To, bool Minimum, string Bypass, bool Assault, bool DoubleTime, bool Push, bool TerrainRate = false, string Dash = "", string IpcTo = "", bool Overrun = false,
+        string CarryMan = "", string CarryBy = "");
+
+    /// <summary>The wounded men checked who may be carried (A17.2; pass 71), and the MMC checked who may carry one; the planner decides the carry.</summary>
+    [Parameter]
+    public IReadOnlyList<PlayChoice> CarryMen { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<PlayChoice> Carriers { get; set; } = [];
 
     [Parameter, EditorRequired]
     public IReadOnlyList<UnitSelectionList.Row> Movers { get; set; } = [];

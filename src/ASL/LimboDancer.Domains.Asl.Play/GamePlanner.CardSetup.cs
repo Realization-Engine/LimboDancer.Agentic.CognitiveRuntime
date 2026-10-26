@@ -283,12 +283,16 @@ public sealed partial class GamePlanner
         return (edge, (HexsideDirection)side, reason);
     }
 
-    /// <summary>Why a game from a card may not start play yet (ruling R19.2): a group that sets up on board has not finished; null when it may.</summary>
+    /// <summary>
+    /// Why a game from a card may not start play yet (ruling R19.2): a group that sets up on board has not finished; since pass 71 (A14.01, A14.2; ruling
+    /// R71.11), a side with a SAN of 2 or more has not placed its Sniper counter, the DEFENDER first. Null when it may.
+    /// </summary>
     internal string? CardSetupIncomplete(GameState state, IReadOnlyList<GameEvent> existing) =>
         ScenarioA1SetupCalculator.SetupIncompleteBar(existing.Any(item => !GameState.IsSetupEvent(item.Payload)),
             () => state.Scenario is { } scenario && (!CardLibrary.Matches(scenario.Id, scenario.Sha256) || CardOf(state) is null),
             () => $"play.scenario: the card '{state.Scenario!.Id}' {Gone(state.Scenario.Id)}, so its setup cannot be checked (ruling R19.1)",
-            () => CardSetup(state, new HashSet<string>()) is { } report ? [.. report.Groups.Select(Verdict)] : null);
+            () => CardSetup(state, new HashSet<string>()) is { } report ? [.. report.Groups.Select(Verdict)] : null)
+        ?? (existing.Any(item => !GameState.IsSetupEvent(item.Payload)) ? null : ScenarioA1Sniper.PlacementDueBar(SniperPlacementsDue(state)));
 
     /// <summary>A group's standing as Rules reads it (pass 32.j).</summary>
     private static SetupGroupVerdict Verdict(SetupGroup group) => new(group.Side, group.Id, group.Name, group.Order, group.SetsUp, group.Complete,

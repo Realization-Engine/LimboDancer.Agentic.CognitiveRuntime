@@ -148,6 +148,27 @@ public sealed partial class GamePlanner
         /// </summary>
         public ConcurrentDictionary<string, IReadOnlySet<BoardLocation>?> Uninspected { get; } = new(StringComparer.Ordinal);
 
+        /// <summary>
+        /// The hexes a side's Sniper counter may be placed in at setup, and the count of enemy-occupied hexes they meet (A14.2; pass 71, ruling R71.11), by the
+        /// placing side: keyed by side, since the count reads that side's view (an enemy hidden unit is not counted, an enemy "?" is). Read at setup, and for a
+        /// forfeited Sniper attack's repositioning (A14.2; ruling R71.12), which reads it from the state of the moment inside the commit (the triggering step
+        /// may have moved units), so on a state the commit replayed and does not keep; the fill reads the map's handles and <see cref="Objects"/> and has no
+        /// side effect. Its cost is one pass over the playable hexes by the enemy-occupied hexes, distances only, at each effective dr while the choice to
+        /// forfeit is open.
+        /// </summary>
+        public ConcurrentDictionary<string, (IReadOnlyList<BoardLocation> Hexes, int Tier)> SniperPlacements { get; } = new(StringComparer.Ordinal);
+
+        // The active Sniper counters by side, read once for the state; two circuits may each build it, and either is kept.
+        private Dictionary<string, EntityInstance>? snipers;
+
+        /// <summary>
+        /// The active Sniper counters on the map, by their side (A14.1; pass 71, ruling R71.13): the trigger reader asks it once per planned step and returns at
+        /// once when it is empty. Keyed by side, the state's lifetime; view-independent, read only, and its fill reads the state's entities with no side effect.
+        /// </summary>
+        public Dictionary<string, EntityInstance> Snipers(GameState state) => Volatile.Read(ref snipers)
+            ?? (snipers = state.Entities.Where(item => item.Kind == "asl:sniper" && item.Status == InstanceStatus.Active && item.Side is not null)
+                .GroupBy(item => item.Side!, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal));
+
         // 1 once the ATTACKER's first unit owing a rout is kept (null kept too); written after the answer, read with a volatile read.
         private int attackerRoutKept;
         private UnitInstance? attackerRout;

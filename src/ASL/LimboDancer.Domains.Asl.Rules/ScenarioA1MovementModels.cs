@@ -294,7 +294,21 @@ public sealed record UnitAtTargetFacts(string Id, bool Active, string? Side, boo
 public sealed record MoveEnemiesVerdict(string? Refusal, bool RemoveDummies, string? Summary, IReadOnlyList<string> EnemiesThere, IReadOnlyList<string> HiddenEnemies);
 
 /// <summary>One mover against the MF it has left (A4.11, A4.42, A4.5, A4.12, B3.4): whether this is its first step, its Double Time MF, CX, off the road, and its leader bonus.</summary>
-public sealed record MfLeftMoverFacts(string Id, bool FirstStep, int DoubleTimeMf, bool Cx, bool OffRoad, bool LeaderBonus, int HalfMfSpent);
+public sealed record MfLeftMoverFacts(string Id, bool FirstStep, int DoubleTimeMf, bool Cx, bool OffRoad, bool LeaderBonus, int HalfMfSpent)
+{
+    /// <summary>Whether the mover is a wounded man carried with the step (A17.2; pass 71, ruling R71.16): he spends no MF of his own.</summary>
+    public bool Carried
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// A wounded man and the unit named to carry him with a step (A17.2; pass 71, ruling R71.16), as the planner or the projector reads them: each in the step's
+/// stack, the man wounded, in Good Order, and portaging a SW, the carrier a MMC in Good Order.
+/// </summary>
+public sealed record CarryFacts(string Man, string Carrier, bool ManMoving, bool ManWounded, bool ManGoodOrder, bool ManHoldsSw, bool CarrierMoving, bool CarrierMmc,
+    bool CarrierGoodOrder);
 
 /// <summary>A mover's MF allotment as the caller reads it (A4.11, A4.42; rulings R5.1, R5.4), by the mover's index, with the Double Time MF, CX, and the bonuses the rule names.</summary>
 public delegate int? MfAllotmentRead(int mover, int doubleTimeMf, bool cx, int bonusMf, int ipcBonus);

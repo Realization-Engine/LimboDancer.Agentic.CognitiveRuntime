@@ -123,6 +123,12 @@ public sealed record FireDefinition(
         get; init;
     }
 
+    /// <summary>Whether an AFV is Partially Armored (A14.22, p. 82; pass 71, ruling R71.3): its PRC and Inherent crew are Vulnerable to a Sniper.</summary>
+    public bool? PartiallyArmored
+    {
+        get; init;
+    }
+
     /// <summary>A vehicle's printed Passenger capacity in PP (D1.5, D6.1); null when it carries none.</summary>
     public int? PassengerCapacity
     {
@@ -726,6 +732,7 @@ public sealed class ScenarioA1FireReference
             QuickSetUp = Trait("front", "asl:qsu"),
             Unarmored = Trait("front", "asl:unarmored"),
             OpenTopped = Trait("front", "asl:open-topped"),
+            PartiallyArmored = Trait("front", "asl:partially-armored"),
             MainArmament = Text("front", "ma-weapon"),
             MaType = Text("front", "ma-type"),
             AntiAircraftMg = Value("front", "aamg"),

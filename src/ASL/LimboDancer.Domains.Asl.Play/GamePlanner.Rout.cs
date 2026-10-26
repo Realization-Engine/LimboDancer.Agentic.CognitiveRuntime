@@ -926,9 +926,10 @@ public sealed partial class GamePlanner
     private static bool WoundSeverityDue(UnitInstance unit) => ScenarioA1Wounds.SeverityDue(unit.Kind is "asl:leader" or "asl:hero");
 
     /// <summary>
-    /// Casualty Reduction (A7.302, A17.11): a squad becomes its HS; a SMC is wounded, mortally or not by its Wound Severity dr; anything else is eliminated.
+    /// Casualty Reduction (A7.302, A17.11): a squad becomes its HS; a SMC is wounded, mortally or not by its Wound Severity dr, and pinned too when
+    /// <paramref name="woundPins"/> says so (A17.2; pass 71, ruling R71.14); anything else is eliminated.
     /// </summary>
-    private static (string Type, EventPayload Payload) CasualtyReduction(UnitInstance unit, string attemptId, int? severityDr)
+    private static (string Type, EventPayload Payload) CasualtyReduction(UnitInstance unit, string attemptId, int? severityDr, bool woundPins = false)
     {
         var half = unit.Kind == "asl:squad" && unit.Definition is { } squad ? ScenarioA1FireReference.HalfSquadOf(squad.Definition) : null;
         return ScenarioA1RoutCalculator.CasualtyReduction(half is not null, unit.Kind is "asl:leader" or "asl:hero", Is(unit, Conditions.Wounded), severityDr) switch
@@ -936,7 +937,9 @@ public sealed partial class GamePlanner
             CasualtyOutcome.Reduced => ("lineage", new LineageRecorded(LineageAction.Reduced, [unit.Id],
                 [new NewInstance($"{attemptId}-{unit.Id}", "asl:half-squad", half!, unit.Side, unit.Position, null,
                     new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal))])),
-            CasualtyOutcome.Wounded => ("conditions-changed", new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.Wounded] = ConditionState.True })),
+            CasualtyOutcome.Wounded => ("conditions-changed", new ConditionsChanged(unit.Id, woundPins
+                ? new Dictionary<string, ConditionState> { [Conditions.Wounded] = ConditionState.True, [Conditions.Pinned] = ConditionState.True }
+                : new Dictionary<string, ConditionState> { [Conditions.Wounded] = ConditionState.True })),
             _ => ("instance-eliminated", new InstanceEliminated(unit.Id)),
         };
     }

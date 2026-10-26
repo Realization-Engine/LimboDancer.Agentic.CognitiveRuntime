@@ -612,6 +612,13 @@ public static class ScenarioA1MovementCalculator
         for (var index = 0; index < movers.Count; index++)
         {
             var unit = movers[index];
+
+            // A17.2 (pass 71, ruling R71.16): a wounded man carried spends no MF of his own.
+            if (unit.Carried)
+            {
+                continue;
+            }
+
             var extra = doubleTime ? (unit.FirstStep ? 2 : 1) : unit.DoubleTimeMf;
             var exhausted = doubleTime || unit.Cx;
             var bonus = (roadRate && !unit.OffRoad && !pushed && nvr != 0 ? 1 : 0) + (unit.LeaderBonus ? 2 : 0);
@@ -632,7 +639,7 @@ public static class ScenarioA1MovementCalculator
             least = Math.Min(least, left - halfMf);
         }
 
-        return (null, movers.Count == 0 ? null : least);
+        return (null, movers.Count == 0 || least == int.MaxValue ? null : least);
     }
 
     /// <summary>

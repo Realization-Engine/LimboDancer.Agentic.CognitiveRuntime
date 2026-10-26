@@ -1806,7 +1806,7 @@ Moved here from pass 75 (2026-10-25, at the user's word, after weighing whether 
 
 **Passes 71 to 75** were one pass, 75 (Infantry IV: the small sections, and Interrogation; 56 rows as planned, build 6:20, total 7:35), until the split of 2026-10-26 (section 4, which maps the old task numbers to the new). Each task keeps its estimate. The items earlier passes moved in keep the rule they came with, "no estimate moved", and each pass's frame estimates them. Pass 73's six tasks are new: the 18 rows passes 40 and 45 left to pass 75 belonged to no task.
 
-**Pass 71: Infantry IV: Snipers and wounds** (11 rows of the inventory). Counters: none. Needs first: 40.
+**Pass 71: Infantry IV: Snipers and wounds** (11 rows of the inventory). Counters: none. Needs first: 40. **Status, 2026-10-26: built to the merge gate on `feature/asl-backlog-pass-71`, cut from 5379e06f (main's 0b5b9a1d merged in at the user's word); the gate not run. The user's word of 2026-10-26 ("Run Pass 71 without my intervention up to the merge gate") ends at the gate, and the gate, the push, the pull request, and the merge are each the user's to start.** The two tasks are built, in seven increments (4a to 4g) in seven commits and four rounds of the reviews' fixes (d1c18a3a to efdc4dae); no increment was left out (ruling R71.1), so nothing went to pass 72. Of the 11 inventory rows, 7 are built (1 of them with a deviation) and the remainders of 4 went to the pass that takes what is left (pass 115 2, pass 135 1, pass 165 1); the three items moved in are built. The calibrated forecast was 5:41 of building (about 8:10 to the gate) against the plan's 1:20 (2:35 in all); the build took 5:29 by the clock (08:42 to 14:11). Rulings R71.1 to R71.28 are open to a veto. What the pass moved went to pass 90 (the captured MG's Sniper dr at night, with 90.6), pass 115 (Entrenching as a trigger; the Fortification TEM and hidden Fortifications in the Alternate Target comparison), pass 135 (Interior Building Locations as non-targets), pass 145 (subterranean Locations), passes 165, 170, and 175 (a wounded man's 4 MF on cavalry, boats, motorcycles, and wagons), and the backlog (a Sniper Check by a subset, the RtPh wound pin, an empty unarmored vehicle as eligible, a 1MT AFV's Stun, an Armor Leader's Recall LLMC, G.M.D. leaders, the early-DR order of one step, and the carry in the APh), each with its reason in the [design](<Passes/ASL Unit Backlog Pass 71 Design.md>), sections 2, 8.1 to 14.1, and 15, the [review](<Passes/Scenario A1 Backlog Pass 71 Review 2026-10-26.md>), and the backlog's section 74.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1904,6 +1904,8 @@ For the frame: a Set DC's destruction of a bridge or a building level (A23.71) n
 | Overhead | | 1:15 |
 | **Pass 90 total** (build 4:40) | | **5:55** |
 
+Moved here by pass 71 (2026-10-26), with no task renumbered: the captured MG's automatic Sniper dr at night (E1.76, with 90.6; ruling R71.2). The Sniper Check's floor at night is built (ruling R71.9).
+
 **Pass 95: Weather II** (new; 25 rows of the inventory). Counters: Winter Camouflage as a unit property; a Drift marker. Needs first: 85 (wind); 90 (Random Location).
 
 | Task | Rules | Estimate |
@@ -1995,6 +1997,8 @@ Moved here by pass 70 (2026-10-25), with no task renumbered: CC against a wreck,
 | Overhead | | 1:15 |
 | **Pass 115 total** (build 5:00) | | **6:15** |
 
+Moved here by pass 71 (2026-10-26), with no task renumbered: Entrenching as a Sniper trigger (A14.1, with 115.3); a Fortification's TEM in the Sniper's Alternate Target comparison, and the reveal of hidden Fortifications there (A14.21, with 115.1; rulings R71.2, R71.7).
+
 **Pass 120: Fortifications II** (planned at 3:15 of build; 42 rows of the inventory). Counters: Wire; minefields by strength; A-T mines; a Flail Tank. Needs first: 115.
 
 | Task | Rules | Estimate |
@@ -2065,6 +2069,8 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: a friendly Vehicula
 
 Moved here by pass 70 (2026-10-25), with no task renumbered: Withdrawal to another level of a building (A11.21; ruling R70.2); Mopping Up of rubbled Locations (A12.153).
 
+Moved here by pass 71 (2026-10-26), with no task renumbered: Interior Building Locations as Sniper non-targets, once Play knows an interior hex (A14.22, B25.63; ruling R71.2).
+
 **Pass 140: Terrain IV: bridges** (new; 18 rows of the inventory; pass 130 until 2026-10-16). Counters: pontoon and foot bridge counters; a bridge's weight limit as a state; vehicle weights. Needs first: 125 (the Location beneath a bridge); 135 (the rubble counter a destroyed bridge leaves at the level below it, B6.331); 75 (Set DC) for destruction.
 
 | Task | Rules | Estimate |
@@ -2090,6 +2096,8 @@ Moved here on 2026-10-16 from pass 125, with no estimate changed: the Sunken Lan
 | **Pass 145 total** (build 7:20) | | **8:35** |
 
 Moved out on 2026-10-16: graveyard roads (B3.41), to pass 130 with the graveyards; the DYO cost of a Prepared Fire Zone (B36.6), which the rulebook gives to DYO play only, is deferred with Chapter H in the inventory. Two rows here also wait on pass 185's Fire: a Blaze over a Manhole (B8.5) and Flame kept out of Debris (B37.8).
+
+Moved here by pass 71 (2026-10-26), with no task renumbered: subterranean Locations as Sniper non-targets (A14.22, with 145.2; Chapter G's caves with Chapter G; ruling R71.2).
 
 **Pass 150: Offboard artillery I** (planned at 3:30 of build; 36 rows of the inventory). Counters: a radio for each nationality; batteries by caliber; the OBA ACCESS and accuracy columns of the National Capabilities Chart. Needs first: 45 (Residual FP), 60 (Indirect Fire against vehicles).
 
@@ -2145,6 +2153,8 @@ Moved here by pass 60 (2026-10-15), with no task renumbered: Case A for an aircr
 
 Moved here by pass 65 (2026-10-24), with no task renumbered: Cavalry as Riders (D6.2).
 
+Moved here by pass 71 (2026-10-26), with no task renumbered: a wounded man's 4 MF when he mounts or dismounts cavalry (A17.2, with 165.1; ruling R71.2).
+
 **Pass 170: Airborne and waterborne** (new; 61 rows of the inventory). Counters: boats and rafts; gliders; parachute counters. Needs first: 125 (water), 160 (Light AA), 85 (wind).
 
 | Task | Rules | Estimate |
@@ -2156,6 +2166,8 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: Cavalry as Riders (
 | 170.5 The counters |  | 0:40 |
 | Overhead | | 1:15 |
 | **Pass 170 total** (build 4:00) | | **5:15** |
+
+Moved here by pass 71 (2026-10-26), with no task renumbered: a wounded man's 4 MF when he enters or leaves a boat (A17.2, with 170.1; ruling R71.2, "the water pass").
 
 **Pass 175: Transport and unusual vehicles** (new; 107 rows of the inventory). Counters: a wagon; motorcycles in three sizes and bicycles; an amphibian and a DD tank; an Aerosan; a trailer and a portee vehicle; an Ammo Supply counter. Needs first: 125 (water) for D16; 105 (Impulse Movement) for E11; 95 (snow terrain) for D17; 65 (Riders) for D15 and D17.
 
@@ -2173,6 +2185,8 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: Cavalry as Riders (
 | **Pass 175 total** (build 7:20) | | **8:35** |
 
 Moved here by pass 65 (2026-10-24), with no task renumbered: motorcycle Riders and a Rider's PP against a towed Gun's ammunition (D6.2); an armed unarmored vehicle's crew under a Specific Collateral Attack (D6.71).
+
+Moved here by pass 71 (2026-10-26), with no task renumbered: a wounded man's 4 MF when he mounts or dismounts a wagon or a motorcycle (A17.2, with 175.1 and 175.2; ruling R71.2).
 
 **Pass 180: Nationalities II: new formations and nations** (new; 54 rows of the inventory). Counters: SS, Volksgrenadier, and Assault Engineer MMC; U.S. paratroops and British Airborne; Partisans; Free French and Vichy; Allied Minor and Ethiopian sets; crews, SW, and a Gun for the nations that lack them. Needs first: 105 (Impulse Movement) for Human Wave; 115 (entrenching); 85 (WP); 110 (PF and PSK for other nations).
 

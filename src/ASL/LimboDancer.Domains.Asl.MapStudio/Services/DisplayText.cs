@@ -367,6 +367,13 @@ public static class DisplayText
         ["cc-vehicle-attack"] = "CC DR at a vehicle",
         ["cc-vehicle-unlikelyKill"] = "Unlikely Kill dr",
         ["vehicle-temporary-start"] = "Temporary crew's start dr",
+
+        // Pass 71 (R4's finding 12): the Sniper's rolls and the wounds' (A14.2, A14.4, A17.11).
+        ["sniper-check"] = "Sniper Check DR",
+        ["sniper-location"] = "Random Location DR",
+        ["sniper-random-selection"] = "Sniper Random Selection dr",
+        ["sniper-wound-severity"] = "Wound Severity dr",
+        ["wound-severity"] = "Wound Severity dr",
     };
 
     /// <summary>A roll's recorded purpose in words: "fire-ift" reads "IFT DR"; one with no words of its own reads with spaces for its hyphens.</summary>

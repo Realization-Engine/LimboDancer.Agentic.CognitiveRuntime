@@ -24,10 +24,10 @@ public sealed partial class GamePlanner
     /// since it abandons the others before it charges (A15.431). Null when the catalog does not decide it.
     /// </summary>
     private int? MfAllotment(GameState state, UnitInstance unit, int doubleTimeMf, bool cx, int bonusMf = 0, int ipcBonus = 0, int? allowance = null,
-        IReadOnlyCollection<string>? dropped = null) =>
+        IReadOnlyCollection<string>? dropped = null, IReadOnlyCollection<string>? carrying = null) =>
         ScenarioA1MovementCalculator.MfAllotment(
             new MfAllotmentFacts(unit.Kind == UnitKinds.Dummy, DefinitionOf(unit)?.Class, vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded), Is(unit, Conditions.Berserk)),
-            doubleTimeMf, cx, bonusMf, ipcBonus, () => allowance ?? Experience.MoveAllowance(state, unit, catalogs, vocabulary), () => Portage(state, unit, dropped));
+            doubleTimeMf, cx, bonusMf, ipcBonus, () => allowance ?? Experience.MoveAllowance(state, unit, catalogs, vocabulary), () => Portage(state, unit, dropped, carrying));
 
     /// <summary>One unit of a moving stack as Rules reads it for the leader bonus (pass 32.b).</summary>
     private MovingUnitFacts MovingUnit(UnitInstance unit) =>
@@ -37,9 +37,14 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The PP of each SW a unit possesses (A4.4), from the catalog; null when one is not recorded. <paramref name="dropped"/> leaves out the SW a withdrawal
-    /// drops before it moves (A11.21; pass 70, ruling R70.26).
+    /// drops before it moves (A11.21; pass 70, ruling R70.26). A wounded man carried in this move adds his five PP (A17.2; pass 71, ruling R71.16): one
+    /// the state's move holds, or one <paramref name="carrying"/> names for the step being planned.
     /// </summary>
-    private int[]? Portage(GameState state, UnitInstance unit, IReadOnlyCollection<string>? dropped = null)
+    private int[]? Portage(GameState state, UnitInstance unit, IReadOnlyCollection<string>? dropped = null, IReadOnlyCollection<string>? carrying = null) =>
+        ScenarioA1Wounds.Portage(WeaponPortage(state, unit, dropped),
+            carrying?.Contains(unit.Id) == true || state.Movement?.Carried?.Any(carry => carry.Carrier == unit.Id) == true);
+
+    private int[]? WeaponPortage(GameState state, UnitInstance unit, IReadOnlyCollection<string>? dropped)
     {
         // A4.4 (pass 40): with what it holds, what it portaged earlier in this phase and dropped: that portage cost is not recouped.
         EquipmentInstance[] held = [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id
@@ -47,6 +52,38 @@ public sealed partial class GamePlanner
         var values = held.Concat(state.PortagedThisPhase.Where(item => item.Unit == unit.Id && !held.Any(now => now.Id == item.Weapon))
             .Select(item => state.Find(item.Weapon)).OfType<EquipmentInstance>()).Select(PortageOf).ToArray();
         return values.Any(value => value is null) ? null : [.. values.Select(value => value!.Value)];
+    }
+
+    /// <summary>
+    /// The <c>carried</c> argument of a move (A17.2; pass 71, ruling R71.16): an array of {man, carrier}; none when it is absent. False when it is given
+    /// in another shape.
+    /// </summary>
+    private static bool CarriedArgument(JsonElement arguments, out CarriedMan[] carried)
+    {
+        carried = [];
+        if (!arguments.TryGetProperty("carried", out var list))
+        {
+            return true;
+        }
+
+        if (list.ValueKind != JsonValueKind.Array || list.EnumerateArray().Any(item => item.ValueKind != JsonValueKind.Object
+            || !item.TryGetProperty("man", out var man) || man.ValueKind != JsonValueKind.String || !item.TryGetProperty("carrier", out var carrier) || carrier.ValueKind != JsonValueKind.String))
+        {
+            return false;
+        }
+
+        carried = [.. list.EnumerateArray().Select(item => new CarriedMan(item.GetProperty("man").GetString()!, item.GetProperty("carrier").GetString()!))];
+        return true;
+    }
+
+    /// <summary>A carry named for a step as Rules checks it (A17.2; ruling R71.16), from the state before the step and the step's movers.</summary>
+    private CarryFacts CarryOf(GameState state, IReadOnlyCollection<string> movers, CarriedMan carry)
+    {
+        var man = state.Unit(carry.Man) is { Status: InstanceStatus.Active } found ? found : null;
+        var carrier = state.Unit(carry.Carrier) is { Status: InstanceStatus.Active } bearer ? bearer : null;
+        return new CarryFacts(carry.Man, carry.Carrier, man is not null && movers.Contains(man.Id), man is not null && Is(man, Conditions.Wounded), man is not null && GoodOrder(man),
+            man is not null && state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == man.Id),
+            carrier is not null && movers.Contains(carrier.Id), carrier is not null && vocabulary.IsA(carrier.Kind, "asl:mmc"), carrier is not null && GoodOrder(carrier));
     }
 
     /// <summary>The PP of one SW (A4.4), from the catalog; a dismantled weapon's are halved, FRU (A9.8; ruling R13.6). Null when none is recorded.</summary>
@@ -223,6 +260,24 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, twice);
         }
 
+        // A17.2 (pass 71, ruling R71.16): the wounded men carried with this step: those the move's earlier steps carried, whose carrier moves on with them,
+        // and those the mover names now. Rules decides each carry; the carriers' five PP enter their portage below.
+        if (!CarriedArgument(arguments, out var named))
+        {
+            return Refused(scope, label, expected, "play.invalid-arguments: a carry names each wounded man and the MMC of the stack carrying him, as [{\"man\": \"l1\", \"carrier\": \"s1\"}]");
+        }
+
+        IReadOnlyList<CarriedMan> earlier = current?.Carried ?? [];
+        CarriedMan[] carried = [.. earlier.Where(carry => ids.Contains(carry.Man) && ids.Contains(carry.Carrier)), .. named.Where(carry => !earlier.Contains(carry)).Distinct()];
+        (string Man, string Carrier)[] earlierPairs = [.. earlier.Select(carry => (carry.Man, carry.Carrier))];
+        if ((ScenarioA1Wounds.CarriedMoveBar(earlierPairs, ids) ?? (carried.Length == 0 ? null : ScenarioA1Wounds.CarryBar([.. carried.Select(carry => CarryOf(state, ids, carry))], earlierPairs)))
+            is { } carryBar)
+        {
+            return Refused(scope, label, expected, carryBar);
+        }
+
+        string[] carriers = [.. carried.Select(carry => carry.Carrier)];
+
         if (ScenarioA1MovementCalculator.MoveTiming(current is not null, current?.Assault == true, assault, doubleTime, state.Nvr,
             [.. movers.Select(unit => new MoveTimingUnitFacts(unit.Id, Is(unit, Conditions.Wounded), Is(unit, Conditions.Berserk), Is(unit, Conditions.Cx), state.NoDoubleTime.Contains(unit.Id),
                 vocabulary.IsA(unit.Kind, "asl:smc"), Portage(state, unit)?.Sum()))], current?.ChangedLocation == true, to != from) is { } badTiming)
@@ -338,7 +393,8 @@ public sealed partial class GamePlanner
         var (noCost, halfMf) = ScenarioA1MovementCalculator.EntryCost(
             new EntryCostFacts(entry, movers.Any(mover => Encircled(state, mover)), pushed is not null, bypassing is not null, occupy, minimumMove, assault, berserk, current is not null, doubleTime,
                 [.. movers.Select(unit => new EntryMoverFacts(unit.MfSpent != 0 || unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx)))], overstack),
-            (index, doubleTimeMf, cx) => MfAllotment(state, movers[index], doubleTimeMf, cx, allowance: ScenarioA1PassengerCalculator.ConveyedAllowance(conveyed.Contains(movers[index].Id))));
+            (index, doubleTimeMf, cx) => MfAllotment(state, movers[index], doubleTimeMf, cx, allowance: ScenarioA1PassengerCalculator.ConveyedAllowance(conveyed.Contains(movers[index].Id)),
+                carrying: carriers));
         if (noCost is not null)
         {
             return Refused(scope, label, expected, noCost);
@@ -383,18 +439,21 @@ public sealed partial class GamePlanner
         // A4.11, A4.42, A4.5, A4.12, B3.4, A4.61, A4.134, B16.4: the MF each mover has left, decided by Rules from each mover's facts and allotment.
         // A4.42 (pass 40, ruling R40.11): the laden MMC the mover names for the leader's IPC, kept for the whole move.
         var ipcChosen = Text(arguments, "ipcTo", out var ipcText) ? ipcText : null;
-        var leaderIpcTo = LeaderIpcRecipient(state, movers, ipcChosen ?? current?.IpcTo, doubleTime);
+        var leaderIpcTo = LeaderIpcRecipient(state, movers, ipcChosen ?? current?.IpcTo, doubleTime, carriers);
         if (ScenarioA1MovementCalculator.IpcChoiceBar(ipcChosen, current?.IpcTo, leaderIpcTo.Recipient) is { } ipcBar)
         {
             return Refused(scope, label, expected, ipcBar);
         }
 
         MfLeftMoverFacts[] mfMovers = [.. movers.Select(unit => new MfLeftMoverFacts(unit.Id, unit.MfSpent == 0 && !unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx), unit.OffRoad,
-            ScenarioA1PassengerCalculator.ConveyedLeaderBonus(LeaderBonus(state, unit, movers), conveyed.Contains(unit.Id)), (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0)))];
+            ScenarioA1PassengerCalculator.ConveyedLeaderBonus(LeaderBonus(state, unit, movers), conveyed.Contains(unit.Id)), (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0))
+        {
+            Carried = carried.Any(carry => carry.Man == unit.Id),
+        })];
         // The Play streamlining plan, S3: the same check gives what the stack has left after the step, shown as a route is plotted.
         var (noMf, halfMfLeft) = ScenarioA1MovementCalculator.MfCheck(mfMovers, minimumMove, entry.AllMf, doubleTime, entry.RoadRate, pushed is not null, state.Nvr, assault,
             halfMf + dashHalfMf, leaderIpcTo, (index, doubleTimeMf, cx, bonusMf, ipcBonus) => MfAllotment(state, movers[index], doubleTimeMf, cx, bonusMf, ipcBonus,
-                ScenarioA1PassengerCalculator.ConveyedAllowance(conveyed.Contains(movers[index].Id))));
+                ScenarioA1PassengerCalculator.ConveyedAllowance(conveyed.Contains(movers[index].Id)), carrying: carriers));
         if (noMf is not null)
         {
             return Refused(scope, label, expected, noMf);
@@ -432,8 +491,9 @@ public sealed partial class GamePlanner
             MinimumMove = minimumMove,
             Attempted = forcedBack ? to : null,
             Bypass = bypassing ?? (keepsLane ? current!.Bypass : null),
+            Carried = carried.Length > 0 ? carried : null,
         };
-        var summary = verdict.Summary + (keepsLane && obstacle.Attempt != ObstacleAttempt.ForcedBack ? ScenarioA1BypassDetection.LaneKeptText(from.ToString(), bypassReveal.Any)
+        var summary = verdict.Summary + string.Concat(carried.Select(carry => ScenarioA1Wounds.CarriedText(carry.Man, carry.Carrier))) + (keepsLane && obstacle.Attempt != ObstacleAttempt.ForcedBack ? ScenarioA1BypassDetection.LaneKeptText(from.ToString(), bypassReveal.Any)
             : obstacle.Attempt == ObstacleAttempt.Occupies && obstacle.Reveal.Any ? ScenarioA1BypassDetection.ObstacleDummiesText(to.ToString()) : string.Empty);
         var dummyWarning = verdict.DummyWarning;
         List<GameEvent> prefix = [.. abandoned.Select((item, index) => Event(scope, attemptId, index + 1, expected, "equipment-transferred",

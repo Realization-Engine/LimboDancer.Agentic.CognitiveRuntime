@@ -593,12 +593,14 @@ public sealed partial class GamePlanner
         }
 
         // A21.2 (pass 65, ruling R65.22): the declaration of a capture attempt. A11.8, A18.12 (pass 70, rulings R70.33, R70.34): in the CCPh, the attackers that
-        // qualify for Street Fighting, and the Leader Creation an Original 2 by a MMC draws.
+        // qualify for Street Fighting, and the Leader Creation an Original 2 by a MMC draws. A18.2 (pass 71, ruling R71.17): with it, whether the vehicle is
+        // an AFV, for the table's "-1 CC vs AFV".
         facts = WithInexperience(state, facts) with
         {
             Capture = capture ? true : null,
             StreetFighters = reaction ? null : StreetFighters(state, location, [.. units.Select(unit => unit.Id)]),
             LeaderCreation = reaction ? null : true,
+            AfvDrm = ScenarioA1VehicleCloseCombat.AfvDrmDeclared(!reaction, LiveFire.UnarmoredOf(vehicle.Definition?.Definition)),
         };
         var reference = CloseCombatReference.Value;
         var precheck = ScenarioA1VehicleCloseCombat.Precheck(facts, reference);

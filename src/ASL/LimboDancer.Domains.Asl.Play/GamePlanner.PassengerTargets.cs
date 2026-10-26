@@ -32,9 +32,10 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// An attack with the PRC of each vehicle in its target Location, and of the AFV it names (ruling R65.5). The units boarding with the expenditure the
-    /// attack answers are attacked on foot, not as PRC (D5.43; ruling R65.14). Pass 70 (ruling R70.7): each Unarmed target says so.
+    /// attack answers are attacked on foot, not as PRC (D5.43; ruling R65.14). Pass 70 (ruling R70.7): each Unarmed target says so. Pass 71 (ruling R71.14):
+    /// so does each SMC a wound would pin, having spent more than 3 MF in the MPh (A17.2; Rules decides).
     /// </summary>
-    internal FireAttack WithPrc(GameState state, FireAttack attack) => attack with
+    internal FireAttack WithPrc(GameState state, FireAttack attack) => WithWoundPins(state, attack with
     {
         Vehicles = attack.Vehicles is null ? null
             : [.. attack.Vehicles.Select(vehicle => state.Unit(vehicle.VehicleId ?? string.Empty) is { } unit
@@ -46,6 +47,16 @@ public sealed partial class GamePlanner
         } : attack.TargetVehicle,
         Targets = attack.Targets is null ? null
             : [.. attack.Targets.Select(target => target.UnitId is { } id && MemoOf(state).Objects(state).Unit(id) is { } unit && Is(unit, Conditions.Unarmed) ? target with { Unarmed = true } : target)],
+    });
+
+    /// <summary>
+    /// A17.2 (p. 85; pass 71, ruling R71.14): each target a wound would pin, a SMC that has spent more than 3 MF in the MPh, says so, as Rules reads it from
+    /// the unit in the state's index; never a broken one (A7.8; ruling R71.27).
+    /// </summary>
+    private FireAttack WithWoundPins(GameState state, FireAttack attack) => attack.Targets is null ? attack : attack with
+    {
+        Targets = [.. attack.Targets.Select(target => target.UnitId is { } id && MemoOf(state).Objects(state).Unit(id) is { } unit
+            && LiveFire.WoundPins(state, unit) ? target with { WoundPins = true } : target)],
     };
 
     /// <summary>

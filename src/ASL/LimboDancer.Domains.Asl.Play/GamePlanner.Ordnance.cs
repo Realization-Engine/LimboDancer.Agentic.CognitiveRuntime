@@ -1044,7 +1044,7 @@ public sealed partial class GamePlanner
             // AFVs whose TH# it reached, as an IFT attack's are.
             foreach (var vehicle in attack.VehicleEffects ?? [])
             {
-                VehicleEffectsAfterHit(state, vehicle, nestedFacts, scope, attemptId, expected, package, recordId, events);
+                VehicleEffectsAfterHit(state, vehicle, nestedFacts, scope, attemptId, expected, package, recordId, events, actor, draw);
             }
 
             effects.AddRange(attack.Effects);
@@ -1053,7 +1053,7 @@ public sealed partial class GamePlanner
         // D.8A (pass 60, ruling R60.7): the Specific Collateral Attack on the crew of the AFV the hit left standing.
         if (resolution.SpecificCollateral is { } collateral)
         {
-            VehicleEffectsAfterHit(state, collateral.Effect, facts.Hit!, scope, attemptId, expected, package, recordId, events);
+            VehicleEffectsAfterHit(state, collateral.Effect, facts.Hit!, scope, attemptId, expected, package, recordId, events, actor, draw);
         }
 
         // C2.28: the malfunction; A7.1, C2.24: the Gun and its crew carry the fire phase's marker from their first shot; A8.1, C2.241 (ruling R8.1):
@@ -1382,13 +1382,14 @@ public sealed partial class GamePlanner
     /// line's result or the crew's, and a Recalled AFV on its way off the map that is immobilized Abandoned by its crew (D5.341, D5.41).
     /// </summary>
     private void VehicleEffectsAfterHit(GameState state, FireVehicleEffect vehicle, FireAttack facts, GameScope scope, string attemptId, long expected, string package,
-        string recordId, List<GameEvent> events)
+        string recordId, List<GameEvent> events, string actor, Func<RollRequest, RollResult> draw)
     {
         // D.8, D6.9 (pass 65, rulings R65.7, R65.9): the PRC that survive are beneath the wreck before it is written; what a Collateral Attack did to the
-        // others follows the vehicle's own result.
+        // others follows the vehicle's own result. D5.343 (pass 71, ruling R71.15): a SMC crew's Wound Severity dr comes before a Stun.
         foreach (var payload in SurvivorEvents(state, vehicle.VehicleId, vehicle.PrcSurvival).Concat(VehicleEffectEvents(state, vehicle, facts, attemptId))
             .Concat(PrcEffectEvents(state, vehicle, attemptId)))
         {
+            AddSmcCrewSeverity(scope, attemptId, expected, actor, package, events, draw, state, payload.Payload);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [recordId]));
         }
 

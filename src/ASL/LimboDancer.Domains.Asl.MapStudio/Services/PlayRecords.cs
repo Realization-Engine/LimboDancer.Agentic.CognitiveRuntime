@@ -17,7 +17,7 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 /// revision and the Replay page at a step's, so no record is worded twice. A list holds only events the view is entitled to; a record names a unit to
 /// a side only when the side's view could name it just before the event. Each list is read once and kept.
 /// </summary>
-public sealed class PlayRecords
+public sealed partial class PlayRecords
 {
     private readonly GameHistory history;
     private readonly Perspective viewer;
@@ -217,7 +217,12 @@ public sealed class PlayRecords
 
     public IReadOnlyList<(string EventId, string Text)> Night => night ??= Said(NightRecords);
 
-    public IReadOnlyList<(string EventId, string Text)> Snipers => snipers ??= Said(SniperRecords);
+    // Pass 71's fixes (Round D): a line that names its Location first, "[L4]: ...", says the other side's unit there by its counter alone, not "in [L4]" again.
+    public IReadOnlyList<(string EventId, string Text)> Snipers => snipers ??= [.. Said(SniperRecords).Select(record => (record.EventId, HexFirstSaidAgain().Replace(record.Text, "${at}: ${said}")))];
+
+    // "[L4]: 4-4-7 squad in [L4] is broken": the clause's own hex said again after a unit; the same Location only ("[L4]" is not "[L4], level 1").
+    [System.Text.RegularExpressions.GeneratedRegex(@"(?<at>\[[A-Z]{1,2}\d{1,2}\](?:, level -?\d+)?): (?<said>[^;:]*?) in \k<at>(?!\d|, level)")]
+    private static partial System.Text.RegularExpressions.Regex HexFirstSaidAgain();
 
     public IReadOnlyList<(string EventId, string Kind, string Text)> RallyAndRepair =>
         rallyAndRepair ??= names is null ? RallyAndRepairRecords : [.. RallyAndRepairRecords.Select(record => (record.EventId, record.Kind, Say(record.EventId, record.Text)))];
@@ -422,7 +427,9 @@ public sealed class PlayRecords
                 // A12.15 (pass 70's fixes): a step forced back stays where it was, and says the Location it tried to enter, not "moves from [F5] to [F5]".
                 MovementStepped { Attempted: { } tried } forced => (forced.Movers.Count == 1 ? $"{forced.Movers[0]} tries" : $"{string.Join(", ", forced.Movers)} try")
                     + $" to enter {tried}{From(before, forced.Movers.Count > 0 ? forced.Movers[0] : null)} and {(forced.Movers.Count == 1 ? "is" : "are")} forced back (A12.15)",
-                MovementStepped step => Many(step.Movers, "moves", "move") + $"{From(before, step.Movers.Count > 0 ? step.Movers[0] : null)} to {step.To}{(step.Assault ? " by Assault Movement" : string.Empty)}",
+                MovementStepped step => Many(step.Movers, "moves", "move") + $"{From(before, step.Movers.Count > 0 ? step.Movers[0] : null)} to {step.To}{(step.Assault ? " by Assault Movement" : string.Empty)}"
+                    // A17.2 (pass 71, ruling R71.16): a carry is said to a view that may name the man, whose wound it tells.
+                    + string.Concat((step.Carried ?? []).Where(carry => Open(before, carry.Man)).Select(carry => $", {carry.Carrier} carrying the wounded {carry.Man} (A17.2)")),
                 // D2.17, D3.12 (pass 50): a Delay MP, and a turret turned with an MP expenditure.
                 VehicleStepped { Kind: VehicleStepped.Turn, Turret: { } turnTurret } turnedBoth => $"{turnedBoth.Vehicle} turns its turret to {UnitFacings.Name(turnTurret)} with its VCA change (D3.12)",
                 VehicleStepped { Kind: VehicleStepped.Delay } delay => $"{delay.Vehicle} spends a Delay MP in {delay.At} (D2.17)"
@@ -1198,14 +1205,17 @@ public sealed class PlayRecords
                 {
                     // Pass 35 (task 35.1; A17.11): the Wound Severity dr of a SMC's Casualty Reduction, said where it is made.
                     // The table player, pass 35: the man and the outcome are read from what the same action did next, a wound or an elimination.
+                    // Pass 71 (ruling R71.15): a dr rolled as "{attempt}-wound-{unit}" names its man; a SMC crew's is followed by his vehicle's Stun, not his wound.
                     var later = attempts[attempt].SkipWhile(other => other.EventId != item.EventId).Skip(1).Select(other => other.Payload);
-                    var man = later.Select(payload => payload switch
+                    var named = severity.Roll.StartsWith(attempt + "-wound-", StringComparison.Ordinal) ? severity.Roll[(attempt.Length + "-wound-".Length)..] : null;
+                    var man = named ?? later.Select(payload => payload switch
                     {
                         InstanceEliminated gone => gone.Id,
                         ConditionsChanged changed when changed.Conditions.ContainsKey(Conditions.Wounded) => changed.Id,
                         _ => null,
                     }).FirstOrDefault(id => id is not null);
-                    records.Add((item.EventId, "wound", ScenarioA1Wounds.SeverityText(severity.Values[0], man,
+                    // Pass 71's fixes (Round D): the man with his hex, as a record names the units that act.
+                    records.Add((item.EventId, "wound", ScenarioA1Wounds.SeverityText(severity.Values[0], man is null ? null : man + In(before, man),
                         man is not null && before?.Unit(man) is { } hurt && GameState.Condition(hurt, Conditions.Wounded) == ConditionState.True)));
                 }
                 else if (item.Payload is RoutInterdicted interdicted)
@@ -1625,16 +1635,174 @@ public sealed class PlayRecords
             _ => string.Empty,
         }))];
 
-    /// <summary>The Sniper attacks the viewer may see (A14; ruling R15.5), latest first.</summary>
-    private IReadOnlyList<(string EventId, string Text)> SniperRecords => [.. events.Where(item => item.IsVisibleTo(viewer) && item.Payload is SniperAttacked).Reverse().Select(item =>
+    /// <summary>The Sniper attacks, Sniper Checks, and SAN reductions the viewer may see (A14; ruling R15.5; pass 71, rulings R71.9, R71.10), latest first.</summary>
+    private IReadOnlyList<(string EventId, string Text)> SniperRecords => [.. events.Select((item, position) => (Item: item, Position: position))
+        .Where(pair => pair.Item.IsVisibleTo(viewer) && pair.Item.Payload is SniperAttacked or SniperChecked or SanReduced)
+        .Reverse().Select(pair => (pair.Item.EventId, pair.Item.Payload switch
         {
-            var sniper = (SniperAttacked)item.Payload;
-            var side = state?.Find(sniper.Sniper)?.Side ?? "a";
-            var text = $"The {side} Sniper ({sniper.Sniper}) attacks after the SAN roll {sniper.Trigger}: dr {sniper.Dr}"
-                + (sniper.Target is { } at ? $", at {at}" : string.Empty)
-                + (sniper.Unit is { } unit ? $": {unit} is {sniper.Result} (A14.3)" : sniper.Result == "none" ? ", no effect (A14.3)" : $": {sniper.Result} (A14.21, A14.23)");
-            return (item.EventId, text);
-        })];
+            SniperChecked check => SniperCheckText(check),
+            SanReduced reduced => $"The {DisplayText.Side(reduced.Side)} Sniper is eliminated by {(reduced.Cause == ScenarioA1Sniper.SniperCheckCause ? "a Sniper Check" : "the enemy Sniper")}: "
+                + (ActualSanAfter(pair.Item, reduced.Side) is { } san
+                    // E1.76 (p. 225; R4's finding 4): at night the actual SAN is never reduced below the printed one, so the reduction may leave it as it was.
+                    ? SanUnchanged(history.At(pair.Item.Revision - 1), reduced.Side)
+                        ? $"the {DisplayText.Side(reduced.Side)} SAN stays {san.ToString(CultureInfo.InvariantCulture)}, never below the printed SAN at night (A14.4, E1.76)"
+                        : $"the {DisplayText.Side(reduced.Side)} SAN is now {san.ToString(CultureInfo.InvariantCulture)}"
+                            + (ScenarioA1Sniper.CounterRemoved(san) ? ", below 2, so its Sniper counter is removed (A14.1, A14.4)" : " (A14.4)")
+                    : $"the {DisplayText.Side(reduced.Side)} SAN is one lower (A14.4)"),
+            SniperAttacked sniper => SniperAttackText(sniper, pair.Item.Visibility is { Count: > 0 }, pair.Position),
+            _ => string.Empty,
+        }))];
+
+    /// <summary>
+    /// Whether one more SAN reduction of <paramref name="side"/> leaves its actual SAN as it was in <paramref name="before"/>, the state before it (E1.76,
+    /// p. 225; pass 71, R4's finding 4): at night it is never reduced below the printed SAN. The Replay steps and the Play page's latest line read it too.
+    /// </summary>
+    public static bool SanUnchanged(GameState? before, string side) => before?.Side(side) is { San: { } printed } reduced
+        && ScenarioA1Sniper.ActualSan(printed, before.Night, reduced.SanReductions) == ScenarioA1Sniper.ActualSan(printed, before.Night, reduced.SanReductions + 1);
+
+    // The rolls of the history by id, for the Sniper lines' triggers and checks: read once.
+    private Dictionary<string, GameEvent>? dice;
+
+    private GameEvent? DiceOf(string roll)
+    {
+        dice ??= events.Where(item => item.Payload is DiceRolled).GroupBy(item => ((DiceRolled)item.Payload).Roll, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        return dice.GetValueOrDefault(roll);
+    }
+
+    /// <summary>
+    /// The DR that called a Sniper (A14.1; pass 71's fixes, Round D: no raw roll id): its purpose and dice where the view may see that roll; a roll withheld
+    /// from the view (a check of a unit under "?") is said only as a DR equal to the SAN, which the attack itself tells.
+    /// </summary>
+    private string TriggerText(string trigger, string side) => DiceOf(trigger) is { Payload: DiceRolled rolled } roll && roll.IsVisibleTo(viewer)
+        ? $"after the {DisplayText.RollPurpose(rolled.Purpose)} {string.Join(" + ", rolled.Values)} = {rolled.Values.Sum().ToString(CultureInfo.InvariantCulture)}, equal to the {side} SAN (A14.1)"
+        : $"after a DR equal to the {side} SAN (A14.1)";
+
+    /// <summary>
+    /// Whether a Sniper's wound pinned its man (A17.2; pass 71, ruling R71.14; R3's finding 5): the attack's own events after its record, in the same commit,
+    /// pin him with the wound. The record carries the result "wounded" either way, as every record before the pass does.
+    /// </summary>
+    private bool WoundPinned(int position, SniperAttacked sniper)
+    {
+        if (sniper is not { Result: ScenarioA1Sniper.Wounded, Unit: { } unit })
+        {
+            return false;
+        }
+
+        var attempt = AttemptOf(events[position].EventId);
+        for (var next = position + 1; next < events.Count && AttemptOf(events[next].EventId) == attempt; next++)
+        {
+            if (events[next].Payload is ConditionsChanged changed && changed.Id == unit && changed.Conditions.TryGetValue(Conditions.Wounded, out var wounded)
+                && wounded == ConditionState.True)
+            {
+                return changed.Conditions.TryGetValue(Conditions.Pinned, out var pinned) && pinned == ConditionState.True;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// A Sniper attack's line, by its side, the DR that called it (<see cref="TriggerText"/>), its dr, and what it did; the counter and the roll are never named
+    /// by their ids (pass 71's fixes, Round D). <paramref name="ownerOnly"/>: the owner's twin of a target that keeps its "?" (A12.14, A14.23; pass 71, ruling
+    /// R71.22), which names his unit and its result beside the public line that names neither. <paramref name="position"/>: the record's place in the events.
+    /// </summary>
+    private string SniperAttackText(SniperAttacked sniper, bool ownerOnly, int position)
+    {
+        var side = DisplayText.Side(state?.Find(sniper.Sniper)?.Side);
+        var after = TriggerText(sniper.Trigger, side);
+
+        // A14.2 (pass 71, ruling R71.12): the Sniper player forfeits an effective dr, and his counter is repositioned to the record's hex.
+        if (sniper.Result == ScenarioA1Sniper.Forfeited)
+        {
+            return $"The {side} Sniper forfeits its attack {after}: dr {sniper.Dr}; its counter is repositioned to {sniper.Target} (A14.2)";
+        }
+
+        // A14.3 (R4's finding 14): a dr of 3 or more makes no attack; one rolled again for a tied target names the Location it was rolled in.
+        if (!ScenarioA1Sniper.Effective(sniper.Dr))
+        {
+            return $"The {side} Sniper makes its dr {after}: {sniper.Dr}" + (sniper.Target is { } again ? $" for another target in {again}" : string.Empty) + ", no attack (A14.3)";
+        }
+
+        return $"The {side} Sniper attacks {after}: dr {sniper.Dr}"
+            + (sniper.Target is { } at ? $"; {at}: {SniperResultText(sniper, position)}" : sniper.Result == ScenarioA1Sniper.NoTarget
+                ? ", no target in reach (A14.21, A14.22)" : ", no effect (A14.3)")
+            + (ownerOnly ? "; it keeps its \"?\", and the enemy reads only that a concealed target was attacked (A12.14, A14.23)" : string.Empty);
+    }
+
+    /// <summary>
+    /// A Sniper Check (A14.4; pass 71, ruling R71.10): its units, its DR and DRM, and its result. The DRM's causes as the record carries them (R4's finding 3);
+    /// a check recorded before the fixes gives the DRM alone.
+    /// </summary>
+    private string SniperCheckText(SniperChecked check)
+    {
+        var rolled = (DiceOf(check.Roll)?.Payload as DiceRolled)?.Values;
+        var causes = check.DrmCauses is { Count: > 0 } named ? $" ({string.Join(", ", named)})" : string.Empty;
+        return $"{string.Join(", ", check.Units)} in {check.Location} make a Sniper Check against the {DisplayText.Side(state?.Find(check.Sniper)?.Side)} Sniper"
+            + (rolled is { Count: > 0 } ? $": DR {string.Join(", ", rolled)} = {rolled.Sum()}"
+                + (check.Drm != 0 ? $" {(check.Drm < 0 ? "-" : "+")} {Math.Abs(check.Drm)}{causes} = {rolled.Sum() + check.Drm}" : string.Empty)
+                : string.Empty)
+            + check.Result switch
+            {
+                ScenarioA1Sniper.SniperEliminated => ", the Sniper is eliminated",
+                ScenarioA1Sniper.SniperPinned => ", the Sniper is pinned and makes no further attack this Player Turn (A14.31)",
+                _ => ", no effect",
+            } + "; they are TI (A14.4)";
+    }
+
+    /// <summary>A side's actual SAN after a reduction (A14.4, E1.76; ruling R71.9), as Rules gives it from the state after the event.</summary>
+    private int? ActualSanAfter(GameEvent item, string side) => history.At(item.Revision) is { } after && after.Side(side) is { San: { } printed } reduced
+        ? ScenarioA1Sniper.ActualSan(printed, after.Night, reduced.SanReductions)
+        : null;
+
+    /// <summary>
+    /// What a Sniper attack did in its Location (A14.3; pass 71, the record lines): the unit by its id, which the view's names make "4-6-7 squad G1", or a
+    /// concealed unit that keeps its "?" (A12.14; ruling R71.8), which the record does not name. A wound that pins says so (A17.2; ruling R71.14). Pass 71's
+    /// fixes (Round D): a SMC's wound gives its Wound Severity dr, the roll the attack made just before its record (R4's finding 6); a SMC crew's Recall
+    /// eliminates him (D5.343; R4's finding 13); the enemy Sniper is named by its side.
+    /// </summary>
+    private string SniperResultText(SniperAttacked sniper, int position)
+    {
+        var (unit, result) = (sniper.Unit, sniper.Result);
+        var before = unit is null ? null : history.At(events[position].Revision - 1);
+        var severity = position > 0 && events[position - 1].Payload is DiceRolled { Purpose: "sniper-wound-severity", Values: [var dr, ..] }
+            && AttemptOf(events[position - 1].EventId) == AttemptOf(events[position].EventId) ? dr : (int?)null;
+        var rewounded = unit is not null && before?.Unit(unit) is { } hurt && GameState.Condition(hurt, Conditions.Wounded) == ConditionState.True;
+        string Severity(int value) => $"Wound Severity dr {value.ToString(CultureInfo.InvariantCulture)}" + (rewounded ? $" + 1 (already wounded) = {(value + 1).ToString(CultureInfo.InvariantCulture)}" : string.Empty);
+        string EnemySniper() => $"the {DisplayText.Side(unit is null ? null : state?.Find(unit)?.Side)} Sniper";
+        return (unit, result) switch
+        {
+            (not null, ScenarioA1Sniper.Wounded) when severity is { } value && WoundPinned(position, sniper) =>
+                $"{unit} is wounded, {Severity(value)}, not mortal, and pinned: wounded after more than 3 MF (A14.3, A17.11, A17.2)",
+            (not null, ScenarioA1Sniper.Wounded) when severity is { } value => $"{unit} is wounded, {Severity(value)}, not mortal (A14.3, A17.11)",
+            (not null, ScenarioA1Sniper.Eliminated) when severity is { } value => $"{unit} is mortally wounded, {Severity(value)}, and eliminated (A14.3, A17.11)",
+            (not null, ScenarioA1Sniper.Wounded) when WoundPinned(position, sniper) => $"{unit} is wounded and pinned (A14.3, A17.2)",
+            (not null, ScenarioA1Sniper.Recalled) when before?.Unit(unit)?.TemporaryCrew?.Manning == ScenarioA1CapturedVehicleRules.Smc =>
+                $"the crew of {unit} is Recalled; its SMC crew is eliminated (A14.3, D5.341, D5.343)",
+            (_, ScenarioA1Sniper.SniperEliminated) => $"{EnemySniper()} is eliminated (A14.3, A14.31)",
+            (_, ScenarioA1Sniper.SniperPinned) => $"{EnemySniper()} counter is pinned and makes no further attack this Player Turn (A14.31)",
+            _ => SniperResultText(unit, result),
+        };
+    }
+
+    /// <summary>The words of a Sniper result that need nothing but the unit and the result.</summary>
+    private static string SniperResultText(string? unit, string result) => (unit, result) switch
+    {
+        (_, ScenarioA1Sniper.DummyStackEliminated) => "a Dummy stack is eliminated (A14.23)",
+        (null, ScenarioA1Sniper.NoEffect) => "no effect (A14.3)",
+
+        // A12.14 (rulings R71.8, R71.22): a target that keeps its "?" is not named, nor is what it is, nor what the attack did: one sentence for every case.
+        (null, ScenarioA1Sniper.ConcealedKept) => "a concealed target is attacked and keeps its \"?\" (A12.14, A14.23)",
+        (null, _) => "a concealed unit is attacked and keeps its \"?\", out of every Good Order enemy LOS (A12.14, A14.3)",
+        (_, ScenarioA1Sniper.Stunned) => $"the crew of {unit} is Stunned (A14.3, D5.34)",
+        (_, ScenarioA1Sniper.Recalled) => $"the crew of {unit} is Recalled (A14.3, D5.341)",
+        (_, ScenarioA1Sniper.CrewBroken) => $"the Inherent crew of {unit} breaks (A14.3)",
+        (_, ScenarioA1Sniper.CrewPinned) => $"the Inherent crew of {unit} is pinned (A14.3)",
+        (_, ScenarioA1Sniper.Immobilized) => $"{unit} is immobilized (A14.33)",
+        (_, ScenarioA1Sniper.NoEffect) => $"{unit} is unaffected (A14.3)",
+        (_, ScenarioA1Sniper.CasualtyReduced) => $"{unit} is Casualty Reduced (A14.3)",
+        _ => $"{unit} is {result} (A14.3)",
+    };
 
     /// <summary>A change of DM alone, which the gate adds to any plan that leaves a broken unit ADJACENT to its enemy (A10.62; ruling R13.1).</summary>
     private static bool IsDmOnly(EventPayload payload) => payload is ConditionsChanged { Conditions: var changed } && changed.Keys.All(key => key == Conditions.DesperationMorale);

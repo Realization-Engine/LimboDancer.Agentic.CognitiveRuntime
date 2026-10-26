@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.State;
+using LimboDancer.Domains.Asl.Units.Vocabulary;
 
 namespace LimboDancer.Domains.Asl.Play;
 
@@ -14,6 +15,9 @@ namespace LimboDancer.Domains.Asl.Play;
 public static class LiveFire
 {
     private static readonly Lazy<ScenarioA1FireReference> CatalogReference = new(() => new ScenarioA1FirePackage().Reference);
+
+    /// <summary>The built-in vocabulary (embedded, read once), for the one SMC test the planner makes too, <c>IsA(kind, "asl:smc")</c> (R5's finding 10).</summary>
+    private static readonly Lazy<UnitVocabulary> Vocabulary = new(UnitVocabulary.Asl);
 
     /// <summary>The moving stack's Assault Movement as fire reads it (A4.61; pass 40): declared, and no mover broken or berserk since.</summary>
     private static bool AssaultOf(GameState state) => state.Movement is { } moving && ScenarioA1FireEligibility.AssaultHolds(moving.Assault,
@@ -462,6 +466,29 @@ public static class LiveFire
 
     /// <summary>Whether a unit is a vehicle (D1).</summary>
     public static bool IsVehicle(UnitInstance unit) => unit.Kind == "asl:vehicle";
+
+    /// <summary>
+    /// Whether a wound given the unit now pins it, as Rules reads it from the state (A17.2, A7.8; pass 71, rulings R71.14, R71.27): a SMC, unbroken, past 3 MF
+    /// in the MPh.
+    /// </summary>
+    public static bool WoundPins(GameState state, UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        return ScenarioA1Wounds.PinnedByWound(Vocabulary.Value.IsA(unit.Kind, "asl:smc"), GameState.Condition(unit, Conditions.Broken) == ConditionState.True, state.Phase,
+            unit.MfSpent, unit.HalfMfSpent);
+    }
+
+    /// <summary>
+    /// A target's recorded wound pin as a record check takes it (A17.2; pass 71, ruling R71.14): from the record, so a game replays as it was played; but a pin
+    /// the state's rule does not give (R3's finding 2: a broken SMC, ruling R71.27, or one not past 3 MF) is left out, so the record differs from the state's
+    /// facts and is refused. A record made before the pass carries none.
+    /// </summary>
+    public static bool? RecordedWoundPins(GameState state, string? unitId, bool? recorded)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return recorded == true && !(unitId is not null && state.Unit(unitId) is { } unit && WoundPins(state, unit)) ? null : recorded;
+    }
 
     /// <summary>
     /// Whether an AFV's crew is Crew Exposed: an OT AFV is CE unless under a BU, Stun, Shock, or Recall marker (D5.3, D5.34, C7.42); a CT AFV
@@ -1142,6 +1169,10 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
                     // Pass 70 (ruling R70.7): whether a target is Unarmed is written with the attack and taken from the record; an older one has none.
                     Unarmed = record.Unarmed,
+
+                    // Pass 71 (ruling R71.14): whether a wound pins the target (A17.2) is written with the attack and taken from the record; an older one has none.
+                    // A recorded pin the state does not give is refused (R3's finding 2).
+                    WoundPins = LiveFire.RecordedWoundPins(state, fact.UnitId, record.WoundPins),
                 })],
             // D3.52, C5.11 (pass 50): the hexspines a vehicle's MG must turn its CA, and its hex's terrain, are map reads recorded with the attack.
             VehicleFire = expected.VehicleFire is { Weapons: { } stateWeapons } armedVehicle && recorded.VehicleFire is { Weapons: { } recordedWeapons } recordedVehicle

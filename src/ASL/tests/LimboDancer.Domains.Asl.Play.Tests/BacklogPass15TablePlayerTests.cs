@@ -215,6 +215,17 @@ public sealed class BacklogPass15TablePlayerTests : IDisposable
 
     private static void Committed(PlayResult result) => Assert.True(result.Outcome == PlayOutcome.Committed, string.Join("; ", result.Reasons));
 
+    /// <summary>Pass 71 (A14.2; ruling R71.12): an effective Sniper dr waits for the Sniper player's choice; he attacks, with the attack's next dice given.</summary>
+    private async Task SniperAttacks(params int[] dice)
+    {
+        Assert.Equal(ChoicePending.Sniper, Current.Choice?.Kind);
+        Committed(await Do(GameActions.Choose, Then(6, dice), new
+        {
+            key = Current.Choice!.Key,
+            option = ScenarioA1Sniper.Attack,
+        }));
+    }
+
     private static void Refused(PlayResult result, string prefix)
     {
         Assert.NotEqual(PlayOutcome.Committed, result.Outcome);
@@ -730,12 +741,13 @@ public sealed class BacklogPass15TablePlayerTests : IDisposable
             Unit("g3", "attacker-squad", "E3", "german", "asl:concealed"), Dummy("gd", "E3", "german"), Unit("r1", "defender-squad", "E6", "russian"),
             Sniper("rs", "E7", "russian"));
         var before = Revision;
-        var result = await Try("fire DR 6", GameActions.Fire, Then(6, 3, 3, 1, 1, 1, 1, 1, 6), new
+        var result = await Try("fire DR 6", GameActions.Fire, Then(6, 3, 3, 1), new
         {
             firers = H1,
             target = L("E6")
         });
         Committed(result);
+        await SniperAttacks(1, 1, 1, 1, 6);
         var sniped = Since(before).Select(item => item.Payload).OfType<SniperAttacked>().ToArray();
         Assert.Contains(sniped, item => item.Unit == "g3" && item.Result == "broken");
         Assert.True(Is(Current.Unit("g3")!, Conditions.Broken));
@@ -749,12 +761,13 @@ public sealed class BacklogPass15TablePlayerTests : IDisposable
         await SetupAt(1, "german", [], Sides(russianSan: 6), Unit("h1", "attacker-half-squad", "E3", "german"), Dummy("gd", "E5", "german"),
             Unit("r1", "defender-squad", "E6", "russian"), Sniper("rs", "E7", "russian"));
         var before = Revision;
-        var result = await Try("fire DR 6", GameActions.Fire, Then(6, 3, 3, 2, 1, 1), new
+        var result = await Try("fire DR 6", GameActions.Fire, Then(6, 3, 3, 2), new
         {
             firers = H1,
             target = L("E6")
         });
         Committed(result);
+        await SniperAttacks(1, 1);
         Assert.Contains(Since(before).Select(item => item.Payload).OfType<SniperAttacked>(), item => item.Result == "dummy-stack-eliminated");
         Assert.NotEqual(InstanceStatus.Active, Current.Unit("gd")!.Status);
     }
@@ -1096,12 +1109,13 @@ public sealed class BacklogPass15TablePlayerTests : IDisposable
         await SetupAt(1, "german", [], Sides(germanSan: 7), Unit("g1", "attacker-squad", "E3", "german"), Unit("r1", "defender-squad", "E4", "russian"),
             Unit("r2", "defender-squad", "E6", "russian"), Sniper("gs", "E8", "german"));
         var before = Revision;
-        var result = await Try("fire, MC DR 7", GameActions.Fire, Then(6, 2, 3, 3, 4, 1, 1, 1), new
+        var result = await Try("fire, MC DR 7", GameActions.Fire, Then(6, 2, 3, 3, 4, 1), new
         {
             firers = G1,
             target = L("E4")
         });
         Committed(result);
+        await SniperAttacks(1, 1);
         Assert.Contains(Since(before).Select(item => item.Payload).OfType<SniperAttacked>(), item => item.Sniper == "gs");
     }
 

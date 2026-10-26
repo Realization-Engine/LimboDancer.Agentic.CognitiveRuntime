@@ -148,6 +148,13 @@ public sealed record GameState(
     /// <summary>The Guns and crews that may not move this Player Turn after a CA change in the PFPh (C3.22; ruling R8.9).</summary>
     public IReadOnlyList<string> NoMoveThisPlayerTurn { get; init; } = [];
 
+    /// <summary>
+    /// The units that have moved, or fired in an earlier phase, this Player Turn (A14.4; pass 71, ruling R71.10), which a Sniper Check reads: the movers of
+    /// each movement step and the units a vehicle loads or unloads, and, as each phase ends, its firers. Derived from the events, never recorded; cleared
+    /// when a new Player Turn starts. The fire markers and the phase's own firers say the rest.
+    /// </summary>
+    public IReadOnlyList<string> FiredOrMovedThisPlayerTurn { get; init; } = [];
+
     /// <summary>The Guns whose Emplacement is lost: they moved, were hooked up, or set up otherwise (C11.3; ruling R8.3).</summary>
     public IReadOnlyList<string> UnemplacedGuns { get; init; } = [];
 

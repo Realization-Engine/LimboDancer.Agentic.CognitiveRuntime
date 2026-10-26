@@ -100,12 +100,23 @@ public sealed class BacklogPass19Tests : IDisposable
         return await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(node));
     }
 
-    private async Task<PlayResult> Advance() => await Commit(Play(), GameActions.AdvancePhase, JsonSerializer.SerializeToElement(new
+    private async Task<PlayResult> Advance()
     {
-        gameId = Scope.Game,
-        attemptId = $"advance-{Revision}",
-        expectedRevision = Revision,
-    }));
+        // Pass 71 (A14.2; ruling R71.11): play starts from a card once each side that owes one has placed its Sniper counter.
+        await CardSnipers.PlaceDue(Planner, () => store.Read(Scope)?.Events, sniper => Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = $"sniper-{Revision}",
+            expectedRevision = Revision,
+            sniper = JsonSerializer.SerializeToElement(sniper).GetProperty("sniper"),
+        })));
+        return await Commit(Play(), GameActions.AdvancePhase, JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = $"advance-{Revision}",
+            expectedRevision = Revision,
+        }));
+    }
 
     private static void Committed(PlayResult result) => Assert.True(result.Outcome == PlayOutcome.Committed, string.Join("; ", result.Reasons));
 

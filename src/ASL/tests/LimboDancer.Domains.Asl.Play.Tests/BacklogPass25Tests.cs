@@ -152,6 +152,12 @@ public sealed class BacklogPass25Tests : IDisposable
 
     private async Task<PlayResult> Act(Abstractions.Actions.ActionDescriptor action, object? arguments = null)
     {
+        // Pass 71 (A14.2; ruling R71.11): nothing but setup happens in a card's game until each side that owes one has placed its Sniper counter.
+        if (action.Id != GameActions.Setup.Id)
+        {
+            await CardSnipers.PlaceDue(Planner, () => store.Read(Scope)?.Events, sniper => Act(GameActions.Setup, sniper));
+        }
+
         var node = arguments is null ? new System.Text.Json.Nodes.JsonObject() : JsonSerializer.SerializeToNode(arguments)!.AsObject();
         node["gameId"] = Scope.Game;
         node["attemptId"] = $"{action.Id.Value.Replace('.', '-')}-{Revision}";

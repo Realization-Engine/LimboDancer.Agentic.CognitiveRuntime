@@ -594,6 +594,21 @@ public static class GameEventWriter
                     writer.WriteEndArray();
                 }
 
+                // A17.2 (pass 71, ruling R71.16): the wounded men carried with the step; none in a step recorded before the pass.
+                if (moving.Carried is { Count: > 0 } carriedMen)
+                {
+                    writer.WriteStartArray("carried");
+                    foreach (var carry in carriedMen)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("man", carry.Man);
+                        writer.WriteString("carrier", carry.Carrier);
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndArray();
+                }
+
                 break;
             case BoreSighted sighted:
                 writer.WriteString("gun", sighted.Gun);
@@ -1208,6 +1223,23 @@ public static class GameEventWriter
                 }
 
                 writer.WriteString("result", sniper.Result);
+                break;
+            case SanReduced reduced:
+                writer.WriteString("side", reduced.Side);
+                writer.WriteString("cause", reduced.Cause);
+                break;
+            case SniperChecked check:
+                writer.WriteString("sniper", check.Sniper);
+                writer.WriteString("location", check.Location.ToString());
+                Strings(writer, "units", check.Units);
+                writer.WriteString("roll", check.Roll);
+                writer.WriteNumber("drm", check.Drm);
+                writer.WriteString("result", check.Result);
+                if (check.DrmCauses is { Count: > 0 } causes)
+                {
+                    Strings(writer, "drmCauses", causes);
+                }
+
                 break;
             case PrisonersMassacred massacre:
                 Strings(writer, "units", massacre.Units);

@@ -184,7 +184,19 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
     {
         get; init;
     }
+
+    /// <summary>
+    /// The wounded men carried with this step, each by a MMC of the stack at five PP (A17.2; pass 71, ruling R71.16): a man named spends no MF with the step.
+    /// Null when none is, as in every step recorded before the pass.
+    /// </summary>
+    public IReadOnlyList<CarriedMan>? Carried
+    {
+        get; init;
+    }
 }
+
+/// <summary>A wounded man carried by a MMC of his moving stack (A17.2; pass 71, ruling R71.16).</summary>
+public sealed record CarriedMan(string Man, string Carrier);
 
 /// <summary>
 /// A SMOKE grenade placement attempt (A24.1; ruling R9.5): a dr at most the exponent places a SMOKE counter in the Location named; a dr of 6 ends
@@ -798,6 +810,15 @@ public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation L
 
     /// <summary>The laden MMC the leader's IPC went to with an earlier step of this move, when the mover named it (A4.42; pass 40).</summary>
     public string? IpcTo
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The wounded men carried with this move's steps and their carriers (A17.2; pass 71, ruling R71.16), kept for the move: a carrier's five PP are not
+    /// recouped (A4.4), and a man set down moves no farther. Null when none was carried.
+    /// </summary>
+    public IReadOnlyList<CarriedMan>? Carried
     {
         get; init;
     }

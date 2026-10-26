@@ -199,7 +199,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
             // The Play streamlining plan, S3: a route's steps are planned on events never committed; they are applied to the kept projection and
             // not kept themselves, so the bounded list keeps the games' own projections.
-            if (plotting == 0)
+            if (plotting == 0 && inCommit == 0)
             {
                 Keep(continued);
             }
@@ -211,13 +211,34 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var chains = Chains(events);
         var projection = GameProjector.Begin(events, vocabulary, catalogs, chains, LiveGames.Sources, FireRecordVerifier.Shared, RallyRecordVerifier.Shared,
             CloseCombatRecordVerifier.Shared, OrdnanceRecordVerifier.Shared);
-        if (chains is not null && events.Count > 0 && plotting == 0)
+        if (chains is not null && events.Count > 0 && plotting == 0 && inCommit == 0)
         {
             Keep(projection);
         }
 
         return projection.History;
     }
+
+    /// <summary>
+    /// A replay of a commit's events so far, made while the commit is built (pass 71, R5's finding 13: a Sniper attack replays its commit up to four times):
+    /// the projection it continues is not kept, as a plotted route's are not (<see cref="plotting"/>), so the bounded list keeps the games' own projections.
+    /// </summary>
+    private GameHistory ReplayInCommit(IReadOnlyList<GameEvent> events)
+    {
+        inCommit++;
+        try
+        {
+            return Replay(events);
+        }
+        finally
+        {
+            inCommit--;
+        }
+    }
+
+    /// <summary>Above zero while <see cref="ReplayInCommit"/> replays on this thread; the build of a commit is synchronous, so the count is the thread's own.</summary>
+    [ThreadStatic]
+    private static int inCommit;
 
     /// <summary>
     /// Above zero while <see cref="Plot"/> plans a route on this thread (the Play streamlining plan, S3): the move's plan then reads the target
@@ -392,6 +413,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, surrenderPending);
         }
 
+        // A14.1 (pass 71, ruling R71.13): the Sniper attacks every DR of the step calls for, after the step's own effects and before the follow-ups below, in
+        // DR order; those Fire's own calls answered are not called again.
+        if (plan.Status == GamePlanStatus.Ready && plan.Roll is { } sniping)
+        {
+            plan = plan with
+            {
+                Roll = sniping with
+                {
+                    Build = draw => WithSniperAttacks(scope, attemptId, expected, actor ?? "unknown", existing, sniping.Build(draw), draw)
+                }
+            };
+        }
+
         // C6.5, C6.51 (ruling R5.13): an Acquisition follows the units it is on.
         plan = WithAcquisitions(plan, scope, existing, attemptId, expected);
 
@@ -463,6 +497,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         if (arguments.TryGetProperty("conceal", out var conceal))
         {
             return PlanNonObConcealment(scope, conceal, existing, attemptId, expected, label);
+        }
+
+        // A14.2 (pass 71, ruling R71.11): a side's Sniper counter, placed once both sides of a card have set up, the DEFENDER first.
+        if (arguments.TryGetProperty("sniper", out var sniper))
+        {
+            return PlanSniperPlacement(scope, sniper, existing, attemptId, expected, label);
         }
 
         var events = new JsonArray();
@@ -590,6 +630,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             {
                 return Refused(scope, label, expected, [.. setupReport.Reasons]);
             }
+        }
+
+        // A14.2 (pass 71, ruling R71.11): a Sniper counter placed by hand stands only in a game made without a card, in a hex A14.2 allows.
+        if (parsed.Events is { } sniping && sniping.Select(item => item.Payload).OfType<InstanceCreated>().Any(item => item.Instance.Kind == "asl:sniper")
+            && Replay([.. existing, .. sniping]).Current is { } snipingState
+            && HandSniperBar(snipingState, sniping.Select(item => item.Payload).OfType<InstanceCreated>().Select(item => item.Instance.Id).ToHashSet(StringComparer.Ordinal)) is { } sniperBar)
+        {
+            return Refused(scope, label, expected, sniperBar);
         }
 
         // Ruling R18.3: where a side's OB groups differ in ELR, each of its units names its group, since no side ELR stands in for it.

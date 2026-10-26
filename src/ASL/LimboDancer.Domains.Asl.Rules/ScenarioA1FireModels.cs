@@ -1308,6 +1308,17 @@ public sealed record FireTarget(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether a wound this attack gives the unit pins it (A17.2, p. 85; pass 71, ruling R71.14): a SMC that has spent more than 3 MF in the MPh, as
+    /// <see cref="ScenarioA1Wounds.PinnedByWound"/> reads it. Written only when true, by every attack planned since the pass, and taken from the record at
+    /// replay; null is false, as in every older record.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? WoundPins
+    {
+        get; init;
+    }
 }
 
 /// <summary>

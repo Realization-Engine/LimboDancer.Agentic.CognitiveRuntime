@@ -148,6 +148,46 @@ else
             }
         }
     </text>;
+    // Pass 71 (A14.2; ruling R71.11): once both sides of a card have set up, each side with a SAN of 2 or more places its Sniper counter, the DEFENDER first;
+    // the other side is told only that it does.
+    RenderFragment sniperBlock = @<text>
+        @if (state is not null && SetupOpen && history is { Events.Count: > 0 } && SetupView is { CurrentOrder: null } && SniperDue is [var sniperSide, ..])
+        {
+            <fieldset class="setup-sniper" id="setup-sniper" data-side="@sniperSide">
+                <legend>Sniper counter for @DisplayText.Side(sniperSide) (A14.2; ruling R71.11)</legend>
+                @if (Viewer.IsAdjudicator || sniperSide == viewAs)
+                {
+                    var sniperHexes = Live.Planner.SniperPlacements(state, sniperSide);
+                    <RuleHelp Id="sniper-help" Summary="Before play, each side with a SAN of 2 or more places its Sniper counter, the DEFENDER first (A14.2).">
+                        The counter goes in an unoccupied hex within six hexes of six or more enemy-occupied hexes, or of five if no hex has six, and so on; anywhere
+                        when no enemy unit is on the board. Enemy "?" count, hidden units and the enemy Sniper counter do not. The counter is seen by both sides.
+                    </RuleHelp>
+                    <label>
+                        Hex
+                        <select id="@($"sniper-hex-{sniperSide}")" class="sniper-hex" value="@sniperHex" @onchange="@(args => sniperHex = args.Value?.ToString() ?? string.Empty)">
+                            <option value="">Choose a hex (@sniperHexes.Count)</option>
+                            @foreach (var at in sniperHexes)
+                            {
+                                <option value="@at">@PlaceOf(at)</option>
+                            }
+                        </select>
+                    </label>
+                    var sniperChosen = sniperHexes.Any(at => at.ToString() == sniperHex);
+                    <button type="button" class="propose-sniper" id="@($"propose-sniper-{sniperSide}")" disabled="@(!sniperChosen)"
+                            title="@(sniperChosen ? null : "Choose a hex the setup offers (A14.2).")"
+                            @onclick="@(() => ProposeSniper(sniperSide))">Propose: place @DisplayText.Side(sniperSide)'s Sniper counter</button>
+                }
+                else
+                {
+                    <p class="muted" id="sniper-waiting">The @DisplayText.Side(sniperSide) side places its Sniper counter now (A14.2). Hand the screen over by choosing its view.</p>
+                }
+                @if (SniperDue.Count > 1)
+                {
+                    <p class="muted" id="sniper-next">The @DisplayText.Side(SniperDue[1]) side places its own next (A14.2: the DEFENDER first).</p>
+                }
+            </fieldset>
+        }
+    </text>;
     RenderFragment setupBlock = @<div id="play-setup" class="@(SetupMode ? "setup-mode" : null)">
         <h3>Setup</h3>
         @if (SetupMode && SetupView is { } modeReport)
@@ -221,6 +261,7 @@ else
                     <SetupCounters Model="@CounterModel" OnChange="@ChangePlacement" OnMove="@(key => (pickingKey, swapFrom) = (pickingKey == key ? null : key, null))" OnLevel="@SetStackLevel"
                                    OnSelect="@SelectStack" OnRemove="@RemovePlacement" OnSwap="@(location => (swapFrom, pickingKey, swapNote) = (swapFrom == SwapHex(location) ? null : SwapHex(location), null, null))" />
                     @nonObBlock
+                    @sniperBlock
                     <details id="setup-by-hand">
                         <summary>Add a counter by hand</summary>
                         <SetupPlacementEditor Draft="@PlaceDraft" Definitions="@DefinitionChoices" Groups="@GroupChoiceList" Entries="@EntryChoices"
@@ -240,6 +281,7 @@ else
                 <SetupPoolsTable Report="@setup" DefinitionLabel="@DefinitionLabel" OutOfSight="@Unseen" />
             }
             @nonObBlock
+            @sniperBlock
             @if (history is null && ChosenCard is { Minimal: false } startCard)
             {
                 @* Pass 30: the game may start with no counter placed, so each side sets up on the game's map, in its own view. *@
@@ -373,6 +415,11 @@ else if (state is not null)
                 <FireHistory Records="@FireRecords" When="@WhenOf" Replay="@ReplayFrom" />
                 <ActionRecordList Heading="Close Combat" ListId="play-close-combats" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(CloseCombatRecords, "cc")' />
                 <ActionRecordList Heading="Night and weather" ListId="play-night" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(NightRecords, "night")' />
+                @if (SniperMissing is { } sniperMissing)
+                {
+                    @* Pass 71 (A14.01; ruling R71.11): a game whose play started without a side's Sniper counter is never given one. *@
+                    <p class="muted" id="play-sniper-missing">@sniperMissing</p>
+                }
                 <ActionRecordList Heading="Snipers" ListId="play-snipers" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(SniperRecords, "sniper")' />
                 <ActionRecordList Heading="Rally, Rout, and other actions" ListId="play-rallies" When="@WhenOf" Replay="@ReplayFrom"
                                   Records="@([.. RallyAndRepairRecords.Select(item => new ActionRecordList.Entry(item.EventId, item.Kind, item.Text))])" />
@@ -694,7 +741,7 @@ else if (state is not null)
                         else
                         {
                         <div class="toolbar">
-                            <InfantryMovementAction Movers="@MoveRows" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id"
+                            <InfantryMovementAction Movers="@MoveRows" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id" CarryMen="@CarryMen" Carriers="@Carriers"
                                 OnToggle="@ToggleMover" OnDraftChanged="@SetMoveDraft" OnPropose="@ProposeMove" OnOverrunNtc="@ProposeOverrunNtc">
                                 <Route>
                                     @* The Play streamlining plan, S3 and S6: the route plotted on the map and made step by step; a plan that waits for the
@@ -1715,8 +1762,8 @@ else if (state is not null)
             $"{definition.Id} ({definition.Nationality} {DisplayText.Kind(definition.Kind)})")),
         .. new[] { firstSide, secondSide }.Distinct(StringComparer.Ordinal).SelectMany(side => new[]
         {
-            new SetupPlacementEditor.Choice(DummyPrefix + side, $"a Dummy ({side})"),
-            new SetupPlacementEditor.Choice(SniperPrefix + side, $"the Sniper counter ({side})"),
+            new SetupPlacementEditor.Choice(DummyPrefix + side, $"a Dummy ({DisplayText.Side(side)})"),
+            new SetupPlacementEditor.Choice(SniperPrefix + side, $"the Sniper counter ({DisplayText.Side(side)})"),
         }),
     ];
 
@@ -1752,7 +1799,8 @@ else if (state is not null)
         var onMap = OnMap(placement);
         var holders = HolderChoices(placement);
         return new SetupPlacementList.Item(placement.Key,
-            $"{placement.Id}: {placement.Definition ?? "a Dummy"}{(placement.Group is { } inGroup ? $" ({inGroup})" : string.Empty)}"
+            // Pass 71's fixes (Round D): a Sniper counter has no definition either, and is no Dummy.
+            $"{placement.Id}: {placement.Definition ?? (placement.Kind == "asl:sniper" ? $"the {DisplayText.Side(placement.Side)} Sniper counter" : "a Dummy")}{(placement.Group is { } inGroup ? $" ({inGroup})" : string.Empty)}"
             + (placement.OffBoard ? $", off board, to enter{(placement.Entry is { } entry ? $" by {entry}" : string.Empty)}" : string.Empty)
             + (placement.Hidden ? ", hidden" : string.Empty) + (placement.Broken ? ", broken" : string.Empty)
             + (placement.BoreSighted is { } sighted ? $", Bore Sighted on {PlaceOf(sighted)}" : string.Empty))
@@ -2771,6 +2819,12 @@ else if (state is not null)
                 // The rule code goes, and a Location reads as a player says it.
                 var text = reason.IndexOf(": ", StringComparison.Ordinal) is var cut and > 0 && reason.StartsWith("play.", StringComparison.Ordinal) ? reason[(cut + 2)..] : reason;
                 text = System.Text.RegularExpressions.Regex.Replace(text, @"\bbd\w+:[A-Z]{1,2}\d{1,2}:-?\d\b", found => PlaceOf(found.Value));
+
+                // Pass 71's fixes (Round D): a side reads as its counters name it, "the Russian Sniper counter", not by its id.
+                foreach (var sideId in new[] { firstSide, secondSide }.Concat(state?.Sides.Select(side => side.Id) ?? []).Where(id => id.Length > 2 && char.IsLower(id[0])).Distinct(StringComparer.Ordinal))
+                {
+                    text = System.Text.RegularExpressions.Regex.Replace(text, $@"(?<![A-Za-z0-9-]){System.Text.RegularExpressions.Regex.Escape(sideId)}(?![A-Za-z0-9-])", DisplayText.Side(sideId));
+                }
                 var carried = rows.SelectMany(row => placements.Where(other => other.Holder == row.Id && other.Role != "manned" && refused.Contains(other.Id))).ToArray();
                 problems.Add((rows.Length > 0
                     ? $"{PrintedLabel(rows[0])}: {text}" + (carried.Length > 0 ? $" The same holds for what it carries: {string.Join(", ", carried.Select(row => $"{PrintedLabel(row)} {row.Id}"))}." : string.Empty)
@@ -3858,6 +3912,10 @@ else if (state is not null)
     private bool moveTerrainRate;
     private string moveDash = string.Empty;
     private string moveIpcTo = string.Empty;
+
+    // Pass 71 (A17.2; ruling R71.16): the wounded man the step carries, and his carrier.
+    private string moveCarry = string.Empty;
+    private string moveCarryBy = string.Empty;
     private bool moveOverrun;
 
     private bool moveMinimum;
@@ -5098,6 +5156,9 @@ else if (state is not null)
         // A12.14 (pass 70, ruling R70.21): force the loss, showing a concealed unit for a moment, or let the stack keep its "?".
         (ChoicePending.ConcealmentLoss, ChoicePending.Take) => "force the loss of its \"?\"",
         (ChoicePending.ConcealmentLoss, _) => "decline: it keeps its \"?\"",
+        // A14.4 (pass 71, ruling R71.10): every unit that may take it makes the one combined Sniper Check, or none does.
+        (ChoicePending.SniperCheck, ChoicePending.Take) => "take the Sniper Check",
+        (ChoicePending.SniperCheck, _) => "decline: no Sniper Check",
         (_, ChoicePending.Take) => "take it",
         (_, ChoicePending.Decline) => "decline it",
         (ChoicePending.Acquisition, _) => $"keep it on {option}",
@@ -5112,8 +5173,61 @@ else if (state is not null)
     /// <summary>A pending choice's options in words (plan C08), given only to a view that may answer.</summary>
     private IReadOnlyList<PendingChoicePanel.Option> ChoiceOptions(PendingChoice choice) => MayAnswer(choice.Side)
         ? [.. choice.Options.Select(option => new PendingChoicePanel.Option(option,
-            choice.Kind == ChoicePending.OverrunEvade ? $"into {PlaceOf(option)}" : ChoiceOptionText(choice, option)))]
+            choice.Kind == ChoicePending.OverrunEvade ? $"into {PlaceOf(option)}" : choice.Kind == ChoicePending.Sniper ? SniperOptionText(choice, option)
+            : choice is { Kind: ChoicePending.SniperCheck } && option == ChoicePending.Take ? SniperCheckTake(choice) : ChoiceOptionText(choice, option)))]
         : [];
+
+    /// <summary>
+    /// An answer of the Sniper player in his view's words (A14.2, A14.21; pass 71, ruling R71.12): attack or reposition, a hex or Location in brackets, or a
+    /// target named after its hex, "[G4]: 4-6-7 squad"; a concealed stack only as a "?" stack in its hex.
+    /// </summary>
+    private string SniperOptionText(PendingChoice choice, string option)
+    {
+        var place = choice.Resume.TryGetProperty("place", out var at) ? PlaceOf(at.GetString() ?? string.Empty) : string.Empty;
+        var split = option.IndexOf(':', StringComparison.Ordinal);
+        var (role, id) = split > 0 && !BoardLocation.TryParse(option, out _) ? (option[..split], option[(split + 1)..]) : (string.Empty, option);
+        return (option, role) switch
+        {
+            (ScenarioA1Sniper.Attack, _) => "attack: make the Random Location DR (A14.2)",
+            (ScenarioA1Sniper.Reposition, _) => "forfeit the attack and reposition the Sniper counter (A14.2)",
+            (ScenarioA1Sniper.RandomSelection, _) => "Random Selection among the targets (A14.2)",
+            // Pass 71's fixes (R5's finding 2, R4's finding 15): every option hex first, and the vehicle itself told apart from its crew.
+            (ScenarioA1Sniper.ConcealedStack, _) => $"{place}: a \"?\" stack",
+            (_, ScenarioA1Sniper.ConcealedStack) => $"{place}: tied target {id} beneath the \"?\" (A14.23)",
+            (_, ScenarioA1Sniper.SniperTarget) => $"{place}: the {DisplayText.Side(state?.Find(id)?.Side)} Sniper counter",
+            (_, ScenarioA1Sniper.CrewTarget) => UnitPlaceOf(id) is { } crewAt ? $"{crewAt.Where}: the Inherent crew of {UnitGrouping.WithoutPlace(Words(id), crewAt.Where)}" : $"the Inherent crew of {Words(id)}",
+            (_, ScenarioA1Sniper.VehicleTarget) => $"{UnitAt(id)}, the vehicle itself (A14.33)",
+            (_, ScenarioA1Sniper.UnitTarget) => UnitAt(id),
+            _ => PlaceOf(option),
+        };
+    }
+
+    // The Sniper Check its answering side would take, read once a state (the Memory and Performance Guidelines: page projections by state and viewer).
+    private (GameState? State, string Key, string Text) sniperCheckOffer;
+
+    /// <summary>
+    /// "take the Sniper Check" for the answering side's view, with the units that would take it, hex first, and their DRM with its causes (A14.4; pass 71,
+    /// R4's finding 2). The public choice names none of them (ruling R71.18); only a view that may answer is given the options.
+    /// </summary>
+    private string SniperCheckTake(PendingChoice choice)
+    {
+        if (state is null)
+        {
+            return "take the Sniper Check";
+        }
+
+        var key = $"{choice.Key}|{Viewer.Name}";
+        if (!ReferenceEquals(sniperCheckOffer.State, state) || sniperCheckOffer.Key != key)
+        {
+            var (units, drm, causes) = Live.Planner.SniperCheckOffer(state, choice);
+            var text = units.Count == 0 ? "take the Sniper Check: no unit here may take it, so none is made (A14.4)"
+                : $"take the Sniper Check: {UnitAt(units[0])}{string.Concat(units.Skip(1).Select(id => ", " + UnitGrouping.WithoutPlace(Words(id), UnitPlaceOf(id)?.Where)))}, "
+                    + (drm == 0 ? "DRM 0" : $"DRM {drm.ToString("+0;-0", System.Globalization.CultureInfo.InvariantCulture)} ({string.Join(", ", causes)})");
+            sniperCheckOffer = (state, key, text);
+        }
+
+        return sniperCheckOffer.Text;
+    }
 
     /// <summary>
     /// The firing side's units that may offer a Massacre (A20.4): Russian or berserk personnel not in Melee sharing a Location with an enemy
@@ -5244,6 +5358,7 @@ else if (state is not null)
         placeHolder = string.Empty;
         placeEntry = string.Empty;
         nonObChosen.Clear();
+        sniperHex = string.Empty;
         retainDm.Clear();
         moveUnits.Clear();
         ResetDrafts(keepCloseCombat: true);
@@ -6178,6 +6293,43 @@ else if (state is not null)
             },
         }));
 
+    // Pass 71 (A14.2; ruling R71.11): the hex chosen for the Sniper counter, a Location's identifier.
+    private string sniperHex = string.Empty;
+
+    // The sides owing their Sniper counter and the old game's line, read once per state: the card is read from the library, which checks its file.
+    private (GameState? State, IReadOnlyList<string> Due, string? Missing) sniperCache = (null, [], null);
+
+    private (IReadOnlyList<string> Due, string? Missing) SniperReads
+    {
+        get
+        {
+            if (state is null)
+            {
+                return ([], null);
+            }
+
+            if (!ReferenceEquals(sniperCache.State, state))
+            {
+                sniperCache = (state, Live.Planner.SniperPlacementsDue(state), ScenarioA1Sniper.NoCounterText([.. GamePlanner.SniperCounterMissing(state).Select(DisplayText.Side)]));
+            }
+
+            return (sniperCache.Due, sniperCache.Missing);
+        }
+    }
+
+    /// <summary>The sides of a card game in setup that still place their Sniper counter, the DEFENDER first (A14.2; ruling R71.11).</summary>
+    private IReadOnlyList<string> SniperDue => SniperReads.Due;
+
+    /// <summary>Once play has started, the sides with a SAN of 2 or more and no Sniper counter, in words (A14.01; ruling R71.11).</summary>
+    private string? SniperMissing => SniperReads.Missing;
+
+    private Task ProposeSniper(string side) => Propose(GameActions.Setup,
+        JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("sniper"), ["expectedRevision"] = (long)history!.Events.Count, ["placements"] = Array.Empty<object>(),
+            ["sniper"] = new Dictionary<string, object> { ["side"] = side, ["at"] = sniperHex },
+        }));
+
     /// <summary>
     /// The buildings the side may Mop Up now (A12.153; rulings R24.2, R70.25): each holding the side's units, not Mopped Up this Player Turn, with the side's
     /// MMC in it free to become TI and the units there that may guard a surrender, read through the view (ruling R23.1). The side's units are read in one pass
@@ -6554,6 +6706,11 @@ else if (state is not null)
             moveIpcTo = string.Empty;
         }
 
+        if (!moveUnits.Contains(moveCarry) || !moveUnits.Contains(moveCarryBy))
+        {
+            (moveCarry, moveCarryBy) = (moveUnits.Contains(moveCarry) ? moveCarry : string.Empty, moveUnits.Contains(moveCarryBy) ? moveCarryBy : string.Empty);
+        }
+
         PruneMoveDrafts();
 
         // A route plotted for one stack is not another's.
@@ -6571,11 +6728,49 @@ else if (state is not null)
         PruneMoveDrafts();
     }
 
-    private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun);
+    private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun,
+        moveCarry, moveCarryBy);
 
     private void SetMoveDraft(InfantryMovementAction.MoveDraft draft) =>
-        (moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun) =
-            (draft.To, draft.Minimum, draft.Bypass, draft.Assault, draft.DoubleTime, draft.Push, draft.TerrainRate, draft.Dash, draft.IpcTo, draft.Overrun);
+        (moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun, moveCarry, moveCarryBy) =
+            (draft.To, draft.Minimum, draft.Bypass, draft.Assault, draft.DoubleTime, draft.Push, draft.TerrainRate, draft.Dash, draft.IpcTo, draft.Overrun, draft.CarryMan, draft.CarryBy);
+
+    /// <summary>
+    /// The checked movers the view sees that may be carried (A17.2; pass 71, ruling R71.16): wounded, and not already carried in this move; the planner
+    /// decides the rest of the carry (Good Order, no SW).
+    /// </summary>
+    private IReadOnlyList<PlayChoice> CarryMen => CarryChoices.Men;
+
+    /// <summary>The checked MMC that may carry a wounded man (A17.2): not already carrying one in this move.</summary>
+    private IReadOnlyList<PlayChoice> Carriers => CarryChoices.Carriers;
+
+    // Pass 71's fixes (R5's finding 16; the Memory and Performance Guidelines, page projections by state and viewer): both lists built once for a state, a
+    // view, and the units checked, not at each render; the planner's index reads each unit.
+    private (GameState? State, string View, string Checked, IReadOnlyList<PlayChoice> Men, IReadOnlyList<PlayChoice> Carriers) carryCache = (null, string.Empty, string.Empty, [], []);
+
+    private (IReadOnlyList<PlayChoice> Men, IReadOnlyList<PlayChoice> Carriers) CarryChoices
+    {
+        get
+        {
+            if (state is null || moveUnits.Count < 2)
+            {
+                return ([], []);
+            }
+
+            var ticked = string.Join(',', moveUnits.Order(StringComparer.Ordinal));
+            if (!ReferenceEquals(carryCache.State, state) || carryCache.View != Viewer.Name || carryCache.Checked != ticked)
+            {
+                UnitInstance[] units = [.. SeenOnly(moveUnits.Select(id => Live.Planner.UnitOf(state, id)).OfType<UnitInstance>()).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
+                carryCache = (state, Viewer.Name, ticked,
+                    [.. units.Where(unit => GameState.Condition(unit, Conditions.Wounded) == ConditionState.True && state.Movement?.Carried?.Any(carry => carry.Man == unit.Id) != true)
+                        .Select(unit => new PlayChoice(unit.Id, unit.Id))],
+                    [.. units.Where(unit => Library.Vocabulary.IsA(unit.Kind, "asl:mmc") && state.Movement?.Carried?.Any(carry => carry.Carrier == unit.Id) != true)
+                        .Select(unit => new PlayChoice(unit.Id, unit.Id))]);
+            }
+
+            return (carryCache.Men, carryCache.Carriers);
+        }
+    }
 
     private Task ProposeSmoke()
     {
@@ -6624,6 +6819,12 @@ else if (state is not null)
         if (moveIpcTo.Length > 0 && moveUnits.Count > 1 && moveUnits.Contains(moveIpcTo))
         {
             arguments["ipcTo"] = moveIpcTo;
+        }
+
+        // A17.2 (pass 71, ruling R71.16): the wounded man carried, and his carrier.
+        if (moveCarry.Length > 0 && moveCarryBy.Length > 0 && moveUnits.Contains(moveCarry) && moveUnits.Contains(moveCarryBy))
+        {
+            arguments["carried"] = new[] { new Dictionary<string, string> { ["man"] = moveCarry, ["carrier"] = moveCarryBy } };
         }
 
         // A4.134, A4.3 (rulings R10.7, R10.9): a Minimum Move, or the hexsides of a Bypass.
@@ -6984,6 +7185,7 @@ else if (state is not null)
         Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?> { ["game"] = gameId.Length > 0 ? gameId : null, ["hex"] = null }), replace: true);
         placeEntry = string.Empty;
         nonObChosen.Clear();
+        sniperHex = string.Empty;
         pending = null;
         shownPhase = null;
         ClearPlacements();
@@ -7003,7 +7205,7 @@ else if (state is not null)
         moveTerrainRate = false;
         moveDash = string.Empty;
         moveOverrun = false;
-        moveIpcTo = string.Empty;
+        moveIpcTo = moveCarry = moveCarryBy = string.Empty;
         moveBypass = string.Empty;
         advanceUnits.Clear();
         advanceTo = string.Empty;
@@ -7114,7 +7316,7 @@ else if (state is not null)
         moveTerrainRate = false;
         moveDash = string.Empty;
         moveOverrun = false;
-        moveIpcTo = string.Empty;
+        moveIpcTo = moveCarry = moveCarryBy = string.Empty;
         moveBypass = string.Empty;
         vehicleIntended = string.Empty;
         vehicleOverrun = false;
@@ -8235,6 +8437,8 @@ else if (state is not null)
 
             if (proposal.Action == GameActions.Setup)
             {
+                // Pass 71's fixes (R5's finding 15): the hex chosen for a Sniper counter is spent with its placement, so the next side's list starts empty.
+                sniperHex = string.Empty;
                 if (PlacesCounters(proposal))
                 {
                     ClearPlacements();
@@ -8281,7 +8485,7 @@ else if (state is not null)
                 moveTerrainRate = false;
                 moveDash = string.Empty;
                 moveOverrun = false;
-                moveIpcTo = string.Empty;
+                moveIpcTo = moveCarry = moveCarryBy = string.Empty;
                 moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.Move)
@@ -8292,7 +8496,7 @@ else if (state is not null)
                 moveTerrainRate = false;
                 moveDash = string.Empty;
                 moveOverrun = false;
-                moveIpcTo = string.Empty;
+                moveIpcTo = moveCarry = moveCarryBy = string.Empty;
                 moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.MoveVehicle)
@@ -9269,6 +9473,8 @@ else if (state is not null)
         : state.Perspectives.FirstOrDefault(perspective => perspective.Name == handOver) is { IsAdjudicator: true } ? "The adjudicator's view shows the whole game."
         : SetupOpen ? "A side sets up out of the other's sight."
         : !HandOverAwaited ? "The game does not wait on this side now; its view is opened to look."
+        // Pass 71 (ruling R71.12): a choice that waits, such as a Sniper player's in the MPh, is answered before the DEFENDER's window (ruling R5.8).
+        : state.Choice is { Kind: not ChoicePending.ConcealmentLoss } ? Awaiting(state).Note
         : state.Phase == "mph" && state.Movement is { WindowOpen: true } moving
             ? $"A {DisplayText.Side(state.PhasingSide)} stack {(moving.Members.Count == 0 ? "was stopped by fire" : "spent MF")} in {PlaceOf(moving.Location)}. The {DisplayText.Side(handOver)} side, as the DEFENDER, {(MandatoryNow is null ? "may fire at it or pass (A8.1)" : "must attack it from the Location it entered (A8.312)")}."
         : Awaiting(state).Note;
@@ -9412,6 +9618,13 @@ else if (state is not null)
                     InstanceEliminated gone when state.Unit(gone.Id) is { Kind: UnitKinds.Dummy } dummy
                         => dummyStacks.Add($"{ReplaySteps.AttemptOf(item.EventId)}|{history.At(item.Revision - 1)?.Location(dummy.Id)?.Location}|{dummy.Side}") ? $"{DisplayText.ASide(dummy.Side)} Dummy stack was removed." : null,
                     InstanceCaptured taken when state.Unit(taken.Id) is { } prisoner => $"A {DisplayText.Side(prisoner.Side)} unit was captured.",
+                    // Pass 71 (A14.4; rulings R71.9, R71.10): a Sniper Check made in public, and a Sniper eliminated, named by side only.
+                    SniperChecked check => $"A Sniper Check was made in {PlaceOf(check.Location)}.",
+                    SanReduced reduced => $"The {DisplayText.Side(reduced.Side)} Sniper was eliminated, and its SAN "
+                        + (PlayRecords.SanUnchanged(history.At(item.Revision - 1), reduced.Side) ? "stays at the printed SAN at night (E1.76)." : "is lower."),
+                    // Pass 71 (A14.2; ruling R71.12): the Sniper player forfeited an attack, and his counter was repositioned in public.
+                    SniperAttacked { Result: ScenarioA1Sniper.Forfeited, Target: { } to } forfeited
+                        => $"The {DisplayText.Side(state.Find(forfeited.Sniper)?.Side)} Sniper forfeited its attack and was repositioned to {PlaceOf(to)}.",
                     GameEnded => "The game ended.",
                     _ => null,
                 };
@@ -9772,7 +9985,8 @@ else if (state is not null)
     private Func<string, UnitPlace?> PlaceOfUnitNow => placeOfUnitField ??= UnitPlaceOf;
 
     /// <summary>A unit offered as a choice, named after its Location ("[AA6]: 5-2-7 squad R13"; the user, 2026-10-21); its name alone off the map.</summary>
-    private string UnitAt(string id) => UnitPlaceOf(id) is { } place ? $"{place.Where}: {Words(id)}" : Words(id);
+    // Pass 71's fixes (Round D): the other side's unit, named by its hex, is not given that hex twice ("[L4]: 4-4-7 squad", not "... in [L4]").
+    private string UnitAt(string id) => UnitPlaceOf(id) is { } place ? $"{place.Where}: {UnitGrouping.WithoutPlace(Words(id), place.Where)}" : Words(id);
 
     // The Memory and Performance Guidelines (page projections by state and viewer): each id's place is read once a state and view, not at each
     // render of each list that offers it.

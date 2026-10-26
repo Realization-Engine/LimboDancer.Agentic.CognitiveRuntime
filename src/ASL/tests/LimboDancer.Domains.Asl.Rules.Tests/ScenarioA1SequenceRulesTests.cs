@@ -126,8 +126,8 @@ public sealed class ScenarioA1SequenceRulesTests
         Assert.Null(ScenarioA1Sniper.RollMaker("checks", "german", () => ("russian", true)));
         Assert.True(ScenarioA1Sniper.Triggers(7, 5, night: true));
         Assert.False(ScenarioA1Sniper.Triggers(8, 6, night: true));
-        Assert.Equal(2, ScenarioA1Sniper.TargetHex([new SniperTargetHex(0, null, 0, "A1"), new SniperTargetHex(1, 2, 1, "C1"), new SniperTargetHex(2, 2, 1, "B1")]));
-        Assert.Equal(1, ScenarioA1Sniper.TargetLocation([new SniperTargetLocation(0, 1, 0), new SniperTargetLocation(1, 2, 1)]));
+        // Pass 71 (ruling R71.12): hexes still tied after distance and TEM are the Sniper player's choice, offered by name.
+        Assert.Equal([2, 1], ScenarioA1Sniper.TargetHexes([new SniperTargetHex(0, null, 0, "A1"), new SniperTargetHex(1, 2, 1, "C1"), new SniperTargetHex(2, 2, 1, "B1")]));
         var candidates = ScenarioA1Sniper.Candidates([false, true, false, true]);
         Assert.Equal(3, candidates.Count);
         Assert.Equal([0], candidates[0]);

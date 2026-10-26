@@ -489,8 +489,33 @@ public static class ReplaySteps
             return ("other", null, $"{A(SideOf(surrender.Unit), "unit")} offers to surrender{end}", false);
         }
 
+        // A14.4 (pass 71, rulings R71.9, R71.10): a Sniper Check, and a Sniper eliminated, which lowers its side's SAN.
+        if (First<SniperChecked>(payloads) is { } check)
+        {
+            return ("other", SideOf(Head(check.Units)), $"A Sniper Check against {A(SideOf(check.Sniper), "Sniper")} in {Place(before, check.Location)}{end}", false);
+        }
+
+        if (First<SanReduced>(payloads) is { } reduced)
+        {
+            // E1.76 (R4's finding 4): at night the SAN never falls below the printed one.
+            return ("other", reduced.Side, $"{The(reduced.Side, "Sniper")} is eliminated, and the {DisplayText.Side(reduced.Side)} SAN "
+                + (PlayRecords.SanUnchanged(before, reduced.Side) ? "stays at the printed SAN at night" : "falls") + end, false);
+        }
+
         if (First<ChoicePending>(payloads) is { } waiting)
         {
+            // A14.4 (pass 71, ruling R71.10): the attacked side may take a Sniper Check.
+            if (waiting.Kind == ChoicePending.SniperCheck)
+            {
+                return ("other", waiting.Side, $"A Sniper attacks, and the {DisplayText.Side(waiting.Side)} side may take a Sniper Check", false);
+            }
+
+            // A14.2 (pass 71, ruling R71.12): the Sniper player chooses during his Sniper's attack.
+            if (waiting.Kind == ChoicePending.Sniper)
+            {
+                return ("other", waiting.Side, $"{The(waiting.Side, "Sniper")} attacks, and the {DisplayText.Side(waiting.Side)} side chooses how", false);
+            }
+
             // C2.2401 (pass 55): the DEFENDER's shot is declared and not yet rolled.
             if (waiting.Kind == ChoicePending.GunDuel)
             {
@@ -514,6 +539,12 @@ public static class ReplaySteps
 
         if (First<SniperAttacked>(payloads) is { } sniper)
         {
+            // A14.2 (pass 71, ruling R71.12): a forfeited attack's hex is the one its counter is repositioned to.
+            if (sniper.Result == ScenarioA1Sniper.Forfeited)
+            {
+                return ("other", SideOf(sniper.Sniper), $"{A(SideOf(sniper.Sniper), "Sniper")} forfeits its attack and is repositioned" + (sniper.Target is { } to ? $" to {Place(before, to)}" : string.Empty) + end, false);
+            }
+
             return ("other", SideOf(sniper.Sniper), "A Sniper attacks" + (sniper.Target is { } target ? $" in {Place(before, target)}" : string.Empty) + end, false);
         }
 
@@ -715,6 +746,9 @@ public static class ReplaySteps
 
                 // Pass 70 (ruling R70.4): a morale check made outside an attack is seen in its Location, within the step of what caused it.
                 MoraleCheckResolved check => BoardLocation.TryParse(check.Location, out var checkedAt) ? checkedAt : null,
+
+                // Pass 71 (ruling R71.10): a Sniper Check is seen in its Location.
+                SniperChecked sniperCheck => sniperCheck.Location,
                 _ => null,
             };
             if (at is not null)

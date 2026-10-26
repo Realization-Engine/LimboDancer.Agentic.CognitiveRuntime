@@ -70,6 +70,9 @@ public static class GameProjector
         private MapLayout? layout;
         private string path = string.Empty;
 
+        // The id of the event being applied, set at each Apply and read only while it applies (pass 71, ruling R71.15): nothing carried between events.
+        private string eventId = string.Empty;
+
         /// <summary>
         /// A replay that carries what this one carries and writes to its own diagnostics (pass 31d, design D1): what it applies leaves this one as
         /// it is. Everything carried between events is one of these six fields.
@@ -99,6 +102,7 @@ public static class GameProjector
         public GameState? Apply(GameEvent gameEvent, GameState? previous)
         {
             path = $"revision {gameEvent.Revision} ({gameEvent.EventId})";
+            eventId = gameEvent.EventId;
             if (!CheckEnvelope(gameEvent, previous))
             {
                 return null;
@@ -172,6 +176,8 @@ public static class GameProjector
                 SurrenderRejected rejected => RejectSurrender(previous, rejected),
                 PrisonerFreed freed => FreePrisoner(previous, freed),
                 SniperAttacked sniper => Snipe(previous, sniper),
+                SanReduced reduced => ReduceSan(previous, reduced),
+                SniperChecked check => CheckSniper(previous, check),
                 WindChanged wind => ChangeWind(previous, wind),
                 StarshellFired starshell => FireStarshell(previous, starshell),
                 VehicleWrecked wreck => Wreck(previous, wreck),
@@ -218,6 +224,20 @@ public static class GameProjector
                 next = next with
                 {
                     MovedVehicles = [.. next.MovedVehicles, stepped.Vehicle]
+                };
+            }
+
+            // A14.4 (pass 71, ruling R71.10): the units that moved this Player Turn, for the Sniper Check; derived here, never recorded.
+            if ((gameEvent.Payload switch
+            {
+                MovementStepped step => step.Movers,
+                VehicleStepped { Units: { Count: > 0 } carried } => carried,
+                _ => null,
+            }) is { } movedNow && movedNow.Any(id => !next.FiredOrMovedThisPlayerTurn.Contains(id, StringComparer.Ordinal)))
+            {
+                next = next with
+                {
+                    FiredOrMovedThisPlayerTurn = [.. next.FiredOrMovedThisPlayerTurn, .. movedNow.Where(id => !next.FiredOrMovedThisPlayerTurn.Contains(id, StringComparer.Ordinal)).Distinct(StringComparer.Ordinal)]
                 };
             }
 
@@ -625,6 +645,9 @@ public static class GameProjector
                             Rules.ScenarioA1SequenceProjection.JoinsNoMoveList(state.NoMoveThisPlayerTurn.Contains(id), state.Unit(id) is not null,
                                 state.Unit(id) is { } fired && GameState.Condition(fired, Conditions.PrepFire) == ConditionState.True))]
                         : state.NoMoveThisPlayerTurn,
+                    // A14.4 (pass 71, ruling R71.10): the phase's firers have fired this Player Turn, for the Sniper Check of a later phase.
+                    FiredOrMovedThisPlayerTurn = newPlayerTurn ? [] : state.PhaseFirers.Count == 0 ? state.FiredOrMovedThisPlayerTurn : [.. state.FiredOrMovedThisPlayerTurn,
+                        .. state.PhaseFirers.Select(item => item.Unit).Distinct(StringComparer.Ordinal).Where(id => !state.FiredOrMovedThisPlayerTurn.Contains(id, StringComparer.Ordinal))],
                     OrdnanceShotsHere = [],
                     GunsTurnedThisPhase = [],
                     MotionAttempts = [],
@@ -645,9 +668,10 @@ public static class GameProjector
                     MoppedUpThisPlayerTurn = newPlayerTurn ? [] : state.MoppedUpThisPlayerTurn,
                     StarshellAttempts = [],
                     // E1.923 (ruling R16.8): Starshells are removed at the end of each CCPh.
-                    Entities = Rules.ScenarioA1SequenceProjection.RemovesSmokeGrenades(state.Phase) ? RemoveSmokeGrenades(state.Entities)
+                    // A14.31 (pass 71, ruling R71.6): a pinned Sniper counter's pin is removed with the others at the end of the CCPh.
+                    Entities = UnpinSnipers(Rules.ScenarioA1SequenceProjection.RemovesSmokeGrenades(state.Phase) ? RemoveSmokeGrenades(state.Entities)
                         : Rules.ScenarioA1SequenceProjection.RemovesStarshells(state.Phase) ? [.. state.Entities.Where(entity => !Rules.ScenarioA1SequenceProjection.Starshell(entity.Kind))]
-                        : state.Entities,
+                        : state.Entities, cleared),
                     Turn = change.Turn,
                     Phase = change.Phase,
                     PhasingSide = change.PhasingSide,
@@ -690,6 +714,16 @@ public static class GameProjector
         private int? SmokeExponent(UnitInstance unit) => unit.Definition is { } reference
             ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:smoke-exponent")?.Value?.Number
             : null;
+
+        /// <summary>
+        /// A14.31 (pass 71, ruling R71.6): the markers a phase's end removes are removed from the Sniper counters too, which only a Sniper's pin can be on.
+        /// Nothing in play pinned a Sniper before the pass, and the proof store holds no Sniper counter (the frame's scan), so no older record changes.
+        /// </summary>
+        private static IReadOnlyList<EntityInstance> UnpinSnipers(IReadOnlyList<EntityInstance> entities, string[] cleared) =>
+            entities.Any(entity => entity.Kind == "asl:sniper" && entity.Conditions.Keys.Any(cleared.Contains))
+                ? [.. entities.Select(entity => entity.Kind == "asl:sniper" && entity.Conditions.Keys.Any(cleared.Contains)
+                    ? entity with { Conditions = Without(entity.Conditions, cleared) } : entity)]
+                : entities;
 
         /// <summary>A24.11 (ruling R9.5): the 1/2" SMOKE counters of grenades leave at the end of the MPh they were placed in.</summary>
         private static IReadOnlyList<EntityInstance> RemoveSmokeGrenades(IReadOnlyList<EntityInstance> entities) =>
@@ -1475,7 +1509,7 @@ public static class GameProjector
         {
             if (Rules.ScenarioA1SequenceProjection.PendChoiceRefusal(state.Choice is not null, state.Side(pending.Side) is not null, pending.Options.Count,
                 pending.Kind is ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc
-                    or ChoicePending.OverrunEvade or ChoicePending.GunDuel or ChoicePending.ConcealmentLoss,
+                    or ChoicePending.OverrunEvade or ChoicePending.GunDuel or ChoicePending.ConcealmentLoss or ChoicePending.SniperCheck or ChoicePending.Sniper,
                 state.ChoicesMade.ContainsKey(pending.Key)) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);
@@ -1507,8 +1541,8 @@ public static class GameProjector
                 Choice = null
             };
             // A12.41 (ruling R11.12): the reveal or the PAATC follows the answer at once, as its own events; so does a forced "?" loss (A12.14; pass 70,
-            // ruling R70.21).
-            if (pending.Kind is ChoicePending.Paatc or ChoicePending.ConcealmentLoss)
+            // ruling R70.21), and so does a Sniper Check (A14.4; pass 71, ruling R71.10) and the Sniper player's choice (A14.2; ruling R71.12).
+            if (pending.Kind is ChoicePending.Paatc or ChoicePending.ConcealmentLoss or ChoicePending.SniperCheck or ChoicePending.Sniper)
             {
                 return next;
             }
@@ -2322,6 +2356,17 @@ public static class GameProjector
                 return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
+            // A17.2 (pass 71, ruling R71.16): the carries the step records, read from the record; a step recorded before the pass names none. A man the move's
+            // earlier steps carried moves on only with his carrier (R3's finding 3: the set-down is checked as the planner checks it); a move before the pass
+            // carried no one.
+            IReadOnlyList<CarriedMan> carried = moving.Carried ?? [];
+            (string Man, string Carrier)[] earlierCarries = [.. (current?.Carried ?? []).Select(carry => (carry.Man, carry.Carrier))];
+            if ((Rules.ScenarioA1Wounds.CarriedMoveBar(earlierCarries, moving.Movers)
+                ?? (carried.Count > 0 ? Rules.ScenarioA1Wounds.CarryBar([.. carried.Select(carry => CarryFacts(state, moving, carry))], earlierCarries) : null)) is { } badCarry)
+            {
+                return Fail<GameState>("UNIT-STATE-029", $"{badCarry.Replace("play.move-carry: ", string.Empty, StringComparison.Ordinal)}.");
+            }
+
             // A12.15, A2.51 (ruling R25.3): a stack entering from off board that is forced back stays off board, its MF spent and its move over; no fire
             // reaches it there, so no window opens.
             if (verdict.OffBoardForcedBack)
@@ -2368,7 +2413,8 @@ public static class GameProjector
             var next = state;
             foreach (var unit in movers)
             {
-                var update = Rules.ScenarioA1MovementCalculator.StepMover(unit!.MfSpent, unit.HalfMfSpent, unit.DoubleTimeMf, unit.OffRoad, unit.MovedWith, unit.Id, moving.HalfMf, moving.DoubleTime, moving.Road, leaders);
+                var update = Rules.ScenarioA1MovementCalculator.StepMover(unit!.MfSpent, unit.HalfMfSpent, unit.DoubleTimeMf, unit.OffRoad, unit.MovedWith, unit.Id,
+                    Rules.ScenarioA1Wounds.MoverHalfMf(carried.Any(carry => carry.Man == unit.Id), moving.HalfMf), moving.DoubleTime, moving.Road, leaders);
                 var conditions = update.SetCx
                     ? new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.Cx] = ConditionState.True }
                     : unit.Conditions;
@@ -2412,6 +2458,7 @@ public static class GameProjector
                     MinimumMove = Rules.ScenarioA1MovementCalculator.MinimumMoveEntered(moving.MinimumMove, moving.Attempted is not null),
                     RoadRate = moving.RoadRate,
                     IpcTo = moving.IpcTo ?? current?.IpcTo,
+                    Carried = carried.Count == 0 ? current?.Carried : [.. (current?.Carried ?? []).Union(carried)],
                     InfantryOverrun = moving.InfantryOverrun ? moving.To : null,
                     ChangedLocation = current?.ChangedLocation == true || (movers[0]!.Position is MapPosition stoodAt && stoodAt.Location != moving.To),
                     Bypass = moving.Bypass,
@@ -2429,6 +2476,19 @@ public static class GameProjector
                         .Select(item => new Rules.CarriedWeaponFacts(item.Id, vocabulary.IsA(item.Kind, "asl:light-mortar") || vocabulary.IsA(item.Kind, "asl:mg"), next.MovedWeapons.Contains(item.Id, StringComparer.Ordinal)))],
                     locationChanged)],
             };
+        }
+
+        /// <summary>A carry a step records against the state before it (A17.2; pass 71, ruling R71.16), as Rules checks it.</summary>
+        private Rules.CarryFacts CarryFacts(GameState state, MovementStepped moving, CarriedMan carry)
+        {
+            bool GoodOrder(UnitInstance unit) => Rules.ScenarioA1Definitions.GoodOrderOf(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken), Is(unit, Conditions.Berserk),
+                Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, Conditions.Stunned), Is(unit, Conditions.Shocked));
+            static bool Is(UnitInstance unit, string condition) => GameState.Condition(unit, condition) == ConditionState.True;
+            var man = Active(state, carry.Man) as UnitInstance;
+            var carrier = Active(state, carry.Carrier) as UnitInstance;
+            return new Rules.CarryFacts(carry.Man, carry.Carrier, man is not null && moving.Movers.Contains(man.Id), man is not null && Is(man, Conditions.Wounded),
+                man is not null && GoodOrder(man), man is not null && state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == man.Id),
+                carrier is not null && moving.Movers.Contains(carrier.Id), carrier is not null && vocabulary.IsA(carrier.Kind, "asl:mmc"), carrier is not null && GoodOrder(carrier));
         }
 
         /// <summary>
@@ -4355,9 +4415,14 @@ public static class GameProjector
                 return next;
             }
 
-            // A17.2 (the referee's review): a Wounded SMC Wounded again is eliminated.
+            // A17.2 (the referee's review): a Wounded SMC Wounded again is eliminated. A17.11 (pass 71, ruling R71.15): unless the planner rolled his Wound
+            // Severity dr before this change, in the same commit, by the roll id "{attempt}-wound-{crew}"; Rules then decides by it. A record made before the
+            // pass has no such roll and keeps its outcome.
+            var attempt = eventId.LastIndexOf('-') is > 0 and var cut ? eventId[..cut] : eventId;
+            int? severity = rolls.TryGetValue($"{attempt}-wound-{crew.Id}", out var drawn) && drawn is { Purpose: Rules.ScenarioA1Wounds.SeverityPurpose, Count: 1, Sides: 6 }
+                ? drawn.Values[0] : null;
             (wounded, eliminated) = Rules.ScenarioA1CapturedVehicleRules.SmcCrewOutcome(Now(Conditions.Stunned), Now(Conditions.Recalled), Now(Conditions.Disabled), false,
-                GameState.Condition(crew, Conditions.Wounded) == ConditionState.True);
+                GameState.Condition(crew, Conditions.Wounded) == ConditionState.True, severity);
 
             if (wounded)
             {
@@ -4870,9 +4935,41 @@ public static class GameProjector
         /// <summary>A Sniper attack (A14; ruling R15.5): its Sniper counter and roll are in play and recorded; the events after it apply it.</summary>
         private GameState? Snipe(GameState state, SniperAttacked sniper)
         {
-            // Pass 32.h: the record's reads are made here, and Rules decides (A14.1).
-            if (Rules.ScenarioA1Sniper.VerifySniperAttack(state.Find(sniper.Sniper) is EntityInstance { Kind: "asl:sniper", Status: InstanceStatus.Active }, rolls.ContainsKey(sniper.Roll),
-                rolls.ContainsKey(sniper.Trigger), sniper.Dr) is { } refusal)
+            // Pass 32.h: the record's reads are made here, and Rules decides (A14.1); pass 71 (A14.31): a pinned Sniper's record is refused.
+            var counter = state.Find(sniper.Sniper) as EntityInstance;
+            if (Rules.ScenarioA1Sniper.VerifySniperAttack(counter is { Kind: "asl:sniper", Status: InstanceStatus.Active }, rolls.ContainsKey(sniper.Roll),
+                rolls.ContainsKey(sniper.Trigger), sniper.Dr, counter is not null && GameState.Condition(counter, Conditions.Pinned) == ConditionState.True) is { } refusal)
+            {
+                return Fail<GameState>(refusal.Code, refusal.Text);
+            }
+
+            return state;
+        }
+
+        /// <summary>
+        /// A SAN reduction (A14.4; pass 71, ruling R71.9): the side's count of reductions grows by one; its printed SAN stays as recorded. A record before the
+        /// pass holds none, so every side of an older game keeps a count of 0.
+        /// </summary>
+        private GameState? ReduceSan(GameState state, SanReduced reduced)
+        {
+            if (Rules.ScenarioA1Sniper.VerifySanReduced(state.Side(reduced.Side) is { San: not null }, reduced.Cause) is { } refusal)
+            {
+                return Fail<GameState>(refusal.Code, refusal.Text);
+            }
+
+            return state with
+            {
+                Sides = [.. state.Sides.Select(side => side.Id == reduced.Side ? side with { SanReductions = side.SanReductions + 1 } : side)],
+            };
+        }
+
+        /// <summary>A Sniper Check (A14.4; pass 71, ruling R71.10): its Sniper and units are in play, and its result is its recorded DR's; the events after it apply it.</summary>
+        private GameState? CheckSniper(GameState state, SniperChecked check)
+        {
+            var sniper = state.Find(check.Sniper) as EntityInstance;
+            if (Rules.ScenarioA1Sniper.VerifySniperCheck(sniper is { Kind: "asl:sniper", Status: InstanceStatus.Active },
+                check.Units.Count > 0 && check.Units.All(id => Active(state, id) is UnitInstance), rolls.TryGetValue(check.Roll, out var roll) ? roll.Values : null, check.Drm,
+                sniper is not null && GameState.Condition(sniper, Conditions.Pinned) == ConditionState.True, check.Result) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);
             }

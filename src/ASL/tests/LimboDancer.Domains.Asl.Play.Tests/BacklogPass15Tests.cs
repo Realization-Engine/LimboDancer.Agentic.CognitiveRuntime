@@ -376,14 +376,20 @@ public sealed class BacklogPass15Tests : IDisposable
     public async Task ADrEqualToTheEnemySanCallsForASniperAttack()
     {
         // A14.1 (ruling R15.5): the German IFT DR of 6 equals the Russian SAN; the Sniper's dr 1 and Random Location DR (north, one hex) from E7 find E6,
-        // whose closest German unit, g1 in E3, is broken.
+        // whose closest German unit, g1 in E3, is broken. Since pass 71 (A14.2; ruling R71.12) the Russian side first chooses to attack rather than forfeit.
         await SetupAt(1, "german", [], Sides(russianSan: 6), Unit("g1", "attacker-squad", "E3", "german"), Unit("r1", "defender-squad", "E4", "russian"),
             Sniper("rs", "E7", "russian"));
         var before = Revision;
-        Committed(await Do(GameActions.Fire, Then(3, 3, 3, 3, 3, 1, 1, 1), new
+        Committed(await Do(GameActions.Fire, Then(3, 3, 3, 3, 3, 1), new
         {
             firers = G1,
             target = L("E4"),
+        }));
+        Assert.Equal(ChoicePending.Sniper, Current.Choice!.Kind);
+        Committed(await Do(GameActions.Choose, Then(3, 1, 1), new
+        {
+            key = Current.Choice!.Key,
+            option = ScenarioA1Sniper.Attack,
         }));
         var sniped = Since(before).Select(item => item.Payload).OfType<SniperAttacked>().Single();
         Assert.Equal("broken", sniped.Result);

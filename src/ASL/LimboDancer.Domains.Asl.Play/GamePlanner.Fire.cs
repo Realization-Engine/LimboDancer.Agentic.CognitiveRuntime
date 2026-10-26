@@ -1076,6 +1076,7 @@ public sealed partial class GamePlanner
             foreach (var payload in SurvivorEvents(state, vehicle.VehicleId, vehicle.PrcSurvival).Concat(VehicleEffectEvents(state, vehicle, facts, attemptId))
                 .Concat(PrcEffectEvents(state, vehicle, attemptId)))
             {
+                AddSmcCrewSeverity(scope, attemptId, expected, actor, package, events, draw, state, payload.Payload);
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
             }
 
@@ -1109,7 +1110,7 @@ public sealed partial class GamePlanner
 
             if (resolution.SpecificCollateral is { } collateral)
             {
-                VehicleEffectsAfterHit(state, collateral.Effect, facts, scope, attemptId, expected, package, fireId, events);
+                VehicleEffectsAfterHit(state, collateral.Effect, facts, scope, attemptId, expected, package, fireId, events, actor, draw);
             }
         }
 
@@ -1294,6 +1295,34 @@ public sealed partial class GamePlanner
         }
     }
 
+    /// <summary>
+    /// D5.343, A17.11 (pp. 204, 85; pass 71, ruling R71.15): a SMC that mans a vehicle as its Temporary crew "becomes Wounded if he suffers a Stun result", and
+    /// "Whenever a SMC is wounded, another dr must be immediately made": so his Wound Severity dr is rolled before the vehicle's change that Stuns it, under the
+    /// roll id "{attempt}-wound-{crew}", and the projector reads it. Nothing for any other event, a vehicle with no SMC crew, or a change Rules says wounds him
+    /// not (a Recall eliminates him, as before the pass).
+    /// </summary>
+    private void AddSmcCrewSeverity(GameScope scope, string attemptId, long expected, string actor, string? package, List<GameEvent> events, Func<RollRequest, RollResult> draw,
+        GameState state, EventPayload payload, IReadOnlyList<string>? visibility = null)
+    {
+        if (payload is not ConditionsChanged change || state.Unit(change.Id) is not { TemporaryCrew.Manning: ScenarioA1CapturedVehicleRules.Smc } vehicle
+            || MemoOf(state).Objects(state).CrewOf(vehicle.Id) is not { } crew)
+        {
+            return;
+        }
+
+        bool Now(string name) => change.Conditions.TryGetValue(name, out var value) && value == ConditionState.True && !Is(vehicle, name);
+        var rollId = $"{attemptId}-wound-{crew.Id}";
+        if (!ScenarioA1CapturedVehicleRules.SmcCrewSeverityDue(Now(Conditions.Stunned), Now(Conditions.Recalled), Now(Conditions.Disabled), false)
+            || events.Any(item => item.Payload is DiceRolled earlier && earlier.Roll == rollId))
+        {
+            return;
+        }
+
+        var drawn = draw(new RollRequest(1, 6));
+        events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
+            new DiceRolled(rollId, ScenarioA1Wounds.SeverityPurpose, 1, 6, drawn.Values, DiceRolled.SystemSource, actor), package, visibility));
+    }
+
     /// <summary>The conditions a vehicle result that does not wreck it sets, with the "?" it loses.</summary>
     private static IEnumerable<(string Type, EventPayload Payload)> VehicleConditionEvents(FireVehicleEffect effect, VehicleEffectVerdict verdict)
     {
@@ -1316,9 +1345,11 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>The conditions a vehicle result sets, as Rules decides them (pass 32.a), under Units' condition names; null when it sets none.</summary>
-    private static Dictionary<string, ConditionState>? VehicleConditions(FireVehicleEffect effect)
+    private static Dictionary<string, ConditionState>? VehicleConditions(FireVehicleEffect effect) => VehicleConditionNames(ScenarioA1ResultTables.VehicleConditions(effect));
+
+    /// <summary>Vehicle condition changes as Rules gives them, under Units' condition names (a Sniper's too, pass 71); null when there are none.</summary>
+    private static Dictionary<string, ConditionState>? VehicleConditionNames(IReadOnlyList<(VehicleCondition Condition, bool Value)> changes)
     {
-        var changes = ScenarioA1ResultTables.VehicleConditions(effect);
         if (changes.Count == 0)
         {
             return null;
@@ -1444,6 +1475,9 @@ public sealed partial class GamePlanner
         UnitCondition.StunRecovery => Conditions.StunRecovery,
         UnitCondition.BmgDisabled => Conditions.BmgDisabled,
         UnitCondition.CmgDisabled => Conditions.CmgDisabled,
+
+        // A14.4 (pass 71, ruling R71.10): a Sniper Check's participants become TI.
+        UnitCondition.Ti => "asl:ti",
         _ => Conditions.CmgMalfunctioned,
     };
 

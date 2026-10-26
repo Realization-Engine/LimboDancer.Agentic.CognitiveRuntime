@@ -366,10 +366,23 @@ public sealed class MovementPlans(LivePlay live)
             return new MovementPlanRun(MovementPlanTurn.Done, "No route is being moved.", []);
         }
 
-        return plan.Paused is not null || state.Choice is { Kind: ChoicePending.ConcealmentLoss } || live.Planner.DefenderMayFire(state, events, plan.From)
+        return Waiting(state, plan) ?? (plan.Paused is not null || live.Planner.DefenderMayFire(state, events, plan.From)
             ? new MovementPlanRun(MovementPlanTurn.Defender, StepNote(plan), [])
-            : await Run(game, stepFirst: false, toEnd: false, defenderView: true);
+            : await Run(game, stepFirst: false, toEnd: false, defenderView: true));
     });
+
+    /// <summary>
+    /// A choice the game waits on stops the plan, as the choosing side's turn (ruling R5.8). The viewer's option on the stack's "?" is the DEFENDER's, a step
+    /// like any other to the moving side, since the choice is his alone (A12.14; ruling R70.21); any other choice is public, as a Sniper player's is (A14.2;
+    /// pass 71, ruling R71.12), and the note says whose answer is awaited. Null when none waits.
+    /// </summary>
+    private static MovementPlanRun? Waiting(GameState? state, MovementPlan plan) => state?.Choice switch
+    {
+        null => null,
+        { Kind: ChoicePending.ConcealmentLoss } => new MovementPlanRun(MovementPlanTurn.Defender, StepNote(plan), []),
+        { } choice => new MovementPlanRun(choice.Side == plan.Defender ? MovementPlanTurn.Defender : MovementPlanTurn.Mover,
+            $"The move waits for the {DisplayText.Side(choice.Side)} side's answer to the choice before play goes on.", []),
+    };
 
     private async Task<MovementPlanRun> Locked(string game, Func<Task<MovementPlanRun>> work)
     {
@@ -405,6 +418,12 @@ public sealed class MovementPlans(LivePlay live)
         {
             if (pass)
             {
+                // Ruling R5.8: a choice that waits is answered first; the pass would be refused (pass 71: a Sniper's choice after the DEFENDER's fire).
+                if (Waiting(live.Planner.Replay(events).Current, plan) is { } answerFirst)
+                {
+                    return answerFirst;
+                }
+
                 var passed = await Commit(game, GameActions.PassFire, plan.Defender, $"{plan.Key}-pass-{plan.Next}", null);
                 if (passed.Outcome is not (PlayOutcome.Committed or PlayOutcome.Replay))
                 {
@@ -469,10 +488,11 @@ public sealed class MovementPlans(LivePlay live)
             plans[game] = plan;
 
             // A12.14 (ruling R70.21): the viewer's option on the stack's "?" waits for the DEFENDER: it is his turn at this step, as at any window he
-            // decides, with no reasons, and his pass for the phase is not tried (it would be refused, which would tell the moving side of the choice).
-            if (after?.Choice is { Kind: ChoicePending.ConcealmentLoss })
+            // decides, with no reasons, and his pass for the phase is not tried (it would be refused, which would tell the moving side of the choice). Any
+            // other choice the step left waiting is its side's turn (pass 71).
+            if (Waiting(after, plan) is { } waiting)
             {
-                return new MovementPlanRun(MovementPlanTurn.Defender, StepNote(plan), []);
+                return waiting;
             }
 
             // A step's own attack (Residual FP, a Fire Lane) or a reveal may have changed the stack: the DEFENDER decides at this step, and then the

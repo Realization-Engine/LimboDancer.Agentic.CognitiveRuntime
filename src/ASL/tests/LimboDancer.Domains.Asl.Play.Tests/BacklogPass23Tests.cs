@@ -134,20 +134,37 @@ public sealed class BacklogPass23Tests : IDisposable
         },
     }));
 
-    private async Task<PlayResult> PlaceHidden(params string[] unitIds) => await Commit(Play(), GameActions.PlaceHidden, JsonSerializer.SerializeToElement(new
+    private async Task<PlayResult> PlaceHidden(params string[] unitIds)
     {
-        gameId = Scope.Game,
-        attemptId = $"place-hidden-{Revision}",
-        expectedRevision = Revision,
-        unitIds,
-    }));
+        await PlaceSnipers();
+        return await Commit(Play(), GameActions.PlaceHidden, JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = $"place-hidden-{Revision}",
+            expectedRevision = Revision,
+            unitIds,
+        }));
+    }
 
-    private async Task<PlayResult> Advance() => await Commit(Play(), GameActions.AdvancePhase, JsonSerializer.SerializeToElement(new
+    /// <summary>Pass 71 (A14.2; ruling R71.11): nothing but setup happens in a card's game until each side that owes one has placed its Sniper counter.</summary>
+    private Task PlaceSnipers() => CardSnipers.PlaceDue(Planner, () => store.Read(Scope)?.Events, sniper => Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
     {
         gameId = Scope.Game,
-        attemptId = $"advance-{Revision}",
+        attemptId = $"sniper-{Revision}",
         expectedRevision = Revision,
-    }));
+        sniper = JsonSerializer.SerializeToElement(sniper).GetProperty("sniper"),
+    })));
+
+    private async Task<PlayResult> Advance()
+    {
+        await PlaceSnipers();
+        return await Commit(Play(), GameActions.AdvancePhase, JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = $"advance-{Revision}",
+            expectedRevision = Revision,
+        }));
+    }
 
     private static void Committed(PlayResult result) => Assert.True(result.Outcome == PlayOutcome.Committed, string.Join("; ", result.Reasons));
 

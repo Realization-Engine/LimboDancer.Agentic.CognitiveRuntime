@@ -459,6 +459,19 @@ public static class GameEventReader
                         fields.OptionalString(item, "hull", path)!, fields.OptionalString(item, "turret", path)))];
                 }
 
+                // A17.2 (pass 71, ruling R71.16): the wounded men carried with the step.
+                List<CarriedMan>? carried = null;
+                if (payload.TryGetProperty("carried", out var carriedList))
+                {
+                    if (carriedList.ValueKind != JsonValueKind.Array || carriedList.EnumerateArray().Any(item => item.ValueKind != JsonValueKind.Object
+                        || fields.OptionalString(item, "man", path) is null || fields.OptionalString(item, "carrier", path) is null))
+                    {
+                        return Missing(diagnostics, "A carry names each wounded man and the MMC carrying him.", path);
+                    }
+
+                    carried = [.. carriedList.EnumerateArray().Select(item => new CarriedMan(fields.OptionalString(item, "man", path)!, fields.OptionalString(item, "carrier", path)!))];
+                }
+
                 return stepTo is null || halfMf is null || step is null
                     ? Missing(diagnostics, "A movement step names its movers, destination, half MF, and step.", path)
                     : new MovementStepped(fields.StringList(payload, "movers", path), stepTo, halfMf.Value, fields.OptionalBoolean(payload, "assault", path), step.Value)
@@ -475,6 +488,7 @@ public static class GameEventReader
                         MinimumMove = fields.OptionalBoolean(payload, "minimumMove", path),
                         Attempted = attempted,
                         Bypass = bypass,
+                        Carried = carried,
                         Smoke = smokeBy is null ? null : new SmokeAttempt(smokeBy, smokeAt!, smokeRoll!, smokeDr!.Value, smokeExponent!.Value)
                         {
                             Cx = fields.OptionalBoolean(payload, "smokeCx", path),
@@ -999,6 +1013,24 @@ public static class GameEventReader
                 return sniperId is null || sniperTrigger is null || sniperRoll is null || sniperDr is null || sniperResult is null
                     ? Missing(diagnostics, "A Sniper attack names its Sniper, trigger, roll, dr, and result.", path)
                     : new SniperAttacked(sniperId, sniperTrigger, sniperRoll, sniperDr.Value, sniperTarget, fields.OptionalString(payload, "unit", path), sniperResult);
+            case "san-reduced":
+                var reducedSide = fields.RequiredString(payload, "side", path);
+                var reducedCause = fields.RequiredString(payload, "cause", path);
+                return reducedSide is null || reducedCause is null
+                    ? Missing(diagnostics, "A SAN reduction names its side and its cause.", path)
+                    : new SanReduced(reducedSide, reducedCause);
+            case "sniper-checked":
+                var checkedSniper = fields.RequiredString(payload, "sniper", path);
+                var checkedAt = ReadLocation(payload, "location", path, fields, diagnostics);
+                var checkedRoll = fields.RequiredString(payload, "roll", path);
+                var checkedDrm = fields.OptionalInteger(payload, "drm", path);
+                var checkedResult = fields.RequiredString(payload, "result", path);
+                return checkedSniper is null || checkedAt is null || checkedRoll is null || checkedDrm is null || checkedResult is null
+                    ? Missing(diagnostics, "A Sniper Check names its Sniper, Location, units, roll, DRM, and result.", path)
+                    : new SniperChecked(checkedSniper, checkedAt, fields.StringList(payload, "units", path), checkedRoll, checkedDrm.Value, checkedResult)
+                    {
+                        DrmCauses = payload.TryGetProperty("drmCauses", out _) ? fields.StringList(payload, "drmCauses", path) : null,
+                    };
             case "wind-changed":
                 var windRoll = fields.RequiredString(payload, "roll", path);
                 return windRoll is null

@@ -189,8 +189,11 @@ public static class FireText
             parts.Add($"now {effect.FinalDefinitionId}");
         }
 
-        foreach (var (applies, name) in new[] { (effect.Broken, brokenBefore ? "already broken" : "broken"), (effect.Pinned, pinnedBefore ? "already pinned" : "pinned"), (effect.Wounded, "wounded"), (effect.Disrupted, "Disrupted"),
-            (effect.Berserk == true, "berserk"), (effect.ConcealmentLost, "concealment lost") })
+        // A17.2 (pass 71, ruling R71.14; R3's finding 5): a wound that pins, the attack's "pinned-wound", is said once with its rule.
+        var woundPinned = effect.Wounded && effect.Pinned && !pinnedBefore && effect.Events.Contains("pinned-wound");
+        foreach (var (applies, name) in new[] { (effect.Broken, brokenBefore ? "already broken" : "broken"), (effect.Pinned && !woundPinned, pinnedBefore ? "already pinned" : "pinned"),
+            (effect.Wounded, woundPinned ? "wounded, and pinned: wounded after more than 3 MF (A17.2)" : "wounded"), (effect.Disrupted, "Disrupted"), (effect.Berserk == true, "berserk"),
+            (effect.ConcealmentLost, "concealment lost") })
         {
             if (applies)
             {
