@@ -108,7 +108,8 @@ public static class ScenarioA1VehicleProjection
     public static bool CaptureStands(bool ccph, bool vehicle, bool otherSide, bool inRecordedLocation, bool sideInGame, string cause, bool abandoned) =>
         ccph && vehicle && otherSide && inRecordedLocation && sideInGame
         && cause is ScenarioA1CapturedVehicleRules.Automatic or ScenarioA1CapturedVehicleRules.CloseCombat or ScenarioA1CapturedVehicleRules.Unarmed
-        && (cause == ScenarioA1CapturedVehicleRules.Unarmed || ScenarioA1CapturedVehicleRules.CaptureAttemptBar(string.Empty, true, abandoned) is null);
+            or ScenarioA1CapturedVehicleRules.Passengers
+        && (cause is ScenarioA1CapturedVehicleRules.Unarmed or ScenarioA1CapturedVehicleRules.Passengers || ScenarioA1CapturedVehicleRules.CaptureAttemptBar(string.Empty, true, abandoned) is null);
 
     /// <summary>
     /// A21.21: whether a recorded Temporary Driver stands: an unarmed vehicle's capture names him, a SMC of the captor's side on foot in its Location.

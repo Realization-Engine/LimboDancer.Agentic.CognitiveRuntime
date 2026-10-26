@@ -165,10 +165,11 @@ public static class ScenarioA1VehicleCloseCombatRules
 
     /// <summary>
     /// A11.52 (ruling R11.16): at the start of the CCPh an unarmed vehicle, not in Motion, with no Personnel of its side in its Location but enemy
-    /// Infantry there, is captured.
+    /// Infantry there, is captured. Since pass 70 (ruling R70.34) one carrying Passengers is not alone with them: it is captured with its Passengers (A11.52).
     /// </summary>
-    public static bool CapturedVehicle(bool active, bool vehicle, bool captured, bool motion, bool unarmed, bool located, bool friendlyPersonnel, bool enemyAttacker) =>
-        active && vehicle && !captured && !motion && unarmed && located && !friendlyPersonnel && enemyAttacker;
+    public static bool CapturedVehicle(bool active, bool vehicle, bool captured, bool motion, bool unarmed, bool located, bool friendlyPersonnel, bool enemyAttacker,
+        bool passengers = false) =>
+        active && vehicle && !captured && !motion && unarmed && located && !friendlyPersonnel && enemyAttacker && !passengers;
 
     /// <summary>A11.31: the Location holds no vehicle CC left this CCPh.</summary>
     public static string NoVehicleCcText(string locationText) => $"play.cc-vehicle: {locationText} holds no vehicle CC left this CCPh (A11.31)";
@@ -209,7 +210,8 @@ public static class ScenarioA1VehicleCloseCombatRules
     /// <summary>A11.12 (ruling R70.30): the defenders of an Infantry attack here are enemy Infantry no Infantry has attacked this CCPh.</summary>
     public static string? InfantryRoundDefendersBar(bool anyIneligible, string locationText) =>
         anyIneligible
-            ? $"play.cc-vehicle-defenders: Infantry attack enemy Infantry in {locationText}, a Rider among them, that no Infantry has attacked this CCPh; an attack by a vehicle is counted apart (A11.12)"
+            ? $"play.cc-vehicle-defenders: Infantry attack enemy Infantry in {locationText}, a Rider among them, that no Infantry has attacked this CCPh; an attack by a vehicle is counted apart (A11.12); "
+                + "a Passenger of an unarmored stationary vehicle is attacked only to capture it (A11.52)"
             : null;
 
     /// <summary>A11.31 (ruling R70.30): the words of one Infantry attack on Infantry in the sequential CC.</summary>
@@ -293,6 +295,9 @@ public static class ScenarioA1VehicleCloseCombatRules
         {
             "attack" => rolls with { Attack = values },
             "unlikelyKill" => rolls with { UnlikelyKill = values[0] },
+
+            // A18.12 (pass 70, ruling R70.34): the Leader Creation dr after a MMC's Original 2.
+            "leaderCreation" => rolls with { LeaderCreation = values[0] },
             _ => rolls with { WoundSeverity = With(rolls.WoundSeverity, rest, values[0]) },
         };
     }

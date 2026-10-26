@@ -71,7 +71,11 @@ public sealed class CloseCombatRecordTests
         var advanced = Project(With(8, Phase("p1", "aph"), Advance("a1", G1, E4)));
         Assert.False(advanced.HasErrors, string.Join(" ", advanced.Diagnostics));
         Assert.Equal(E4, advanced.Current!.Location("g1")!.Location);
-        Assert.Equal([new AdvanceRecord("g1", E4)], advanced.Current.Advances);
+        var record = Assert.Single(advanced.Current.Advances);
+        Assert.Equal(("g1", E4), (record.Unit, record.To));
+
+        // Pass 70 (ruling R70.33): the Location it advanced from, kept in the state for Street Fighting (A11.8).
+        Assert.Equal(Project(With(8, Phase("p1", "aph"))).Current!.Location("g1")!.Location, record.AdvancedFrom);
 
         // A4.7: once per APh, only in the APh, never a broken unit (A15.431: nor a berserk one).
         Refused(Project(With(8, Phase("p1", "aph"), Advance("a1", G1, E4), Advance("a2", G1, BoardLocation.Parse("bd01:D4:0")))), "UNIT-STATE-032");

@@ -442,6 +442,11 @@ public static class GameEventWriter
                     writer.WriteBoolean("cancelsFireLanes", true);
                 }
 
+                if (vehicleCombat.CreatedLeader is { } createdLeader)
+                {
+                    writer.WriteString("createdLeader", createdLeader);
+                }
+
                 break;
             case VehicleCloseCombatPassed passed:
                 writer.WriteString("location", passed.Location.ToString());
@@ -1046,6 +1051,12 @@ public static class GameEventWriter
                 if (combat.Closed)
                 {
                     writer.WriteBoolean("closed", true);
+                }
+
+                // A11.52 (pass 70, ruling R70.34): the attackers that tried to capture a vehicle's Passengers.
+                if (combat.Captors is { } captors)
+                {
+                    Strings(writer, "captors", captors);
                 }
 
                 break;

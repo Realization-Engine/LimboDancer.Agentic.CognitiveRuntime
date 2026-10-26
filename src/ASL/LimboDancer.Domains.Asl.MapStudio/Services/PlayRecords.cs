@@ -372,7 +372,8 @@ public sealed class PlayRecords
                 // A11.52, A21.2, A21.21 (pass 65, ruling R65.22): a capture names the captor's side.
                 // The table player: the hex said once, after the vehicle, so the other side's vehicle named by its hex does not say it twice.
                 VehicleCaptured captured => $"{captured.Vehicle} in {captured.At} is captured by the {DisplayText.Side(captured.Side)} side"
-                    + (captured.Cause != VehicleCaptured.Unarmed ? " (A21.2)"
+                    + (captured.Cause == VehicleCaptured.Passengers ? " with all its Passengers, and is unmanned until a captor enters it (A11.52, D5.42)"
+                        : captured.Cause != VehicleCaptured.Unarmed ? " (A21.2)"
                         : captured.Driver is { } driver ? $", {driver} removed into it as its Temporary Driver (A11.52, A21.21)" : ", a Temporary Driver running it for its captor (A11.52, A21.21)"),
                 // D6.83 (pass 65, the table player): a Carrier whose inherent HS unloads with the step is Abandoned by it.
                 VehicleStepped { Kind: VehicleStepped.Unload, Units: { Count: > 0 } leavers } leaving => $"{leaving.At}: " + Many(leavers, "unloads", "unload") + $" from {leaving.Vehicle} (D6.5)"
@@ -540,7 +541,10 @@ public sealed class PlayRecords
             + $"Kill Number {resolution.KillNumber}{(resolution.KillNumberModifiers.Count > 0 ? ", with" + ModifierText(resolution.KillNumberModifiers) : string.Empty)}; "
             + $"DR {string.Join(", ", resolution.Dice)} = {resolution.OriginalDr}{ModifierText(resolution.Drm)} = {resolution.FinalDr}"
             + (resolution.UnlikelyKillDr is { } unlikely ? $", Unlikely Kill dr {unlikely}" : string.Empty)
-            + $": {result} (A11.5{(capture ? ", A21.2" : string.Empty)})";
+            + $": {result} (A11.5{(capture ? ", A21.2" : string.Empty)})"
+            // A18.12 (pass 70, ruling R70.34): the Leader Creation dr after a MMC's Original 2, and the leader it created, by his definition.
+            + (resolution.LeaderCreation is { } creation ? $"; the Original 2 draws a Leader Creation dr {creation.Dr}, Final {creation.FinalDr}: "
+                + (creation.LeaderDefinitionId is { } leader ? $"a {leader} is created and joins the attack (A18.12)" : "no leader is created (A18.12)") : string.Empty);
     }
 
     private static string Sentence(string text) => DisplayText.Sentence(text.TrimEnd()) + (text.TrimEnd().EndsWith('.') ? string.Empty : ".");

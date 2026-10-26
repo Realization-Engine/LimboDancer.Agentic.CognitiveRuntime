@@ -95,6 +95,16 @@ public sealed class BacklogPass70Tests : IDisposable
         Category = LosCategory.Building,
     };
 
+    // Increment 3j: the hexsides a test reads as a road crossing them (A11.8).
+    private readonly HashSet<(string Hex, HexsideDirection Side)> roadSides = [];
+
+    private static TerrainType Road() => new()
+    {
+        Code = 5,
+        Name = "Dirt Road",
+        Category = LosCategory.Road,
+    };
+
     /// <summary>Board 01's grid, all Open Ground at level 0 but the hexes a test reads as woods.</summary>
     private BoardHandle Board()
     {
@@ -106,7 +116,8 @@ public sealed class BacklogPass70Tests : IDisposable
             Assert.True(geometry.TryGetIndex(name, out var index));
             var type = woods.Contains(text) ? Woods() : stone.Contains(text) ? Stone() : Open();
             var center = new LocationFacts(0, type, null);
-            HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, openSides.Contains((text, side)) ? Open() : type,
+            HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true,
+                roadSides.Contains((text, side)) ? Road() : openSides.Contains((text, side)) ? Open() : type,
                 rowhouseWalls.Contains((text, side)) ? RowhouseWall() : null, false, false, false, false, null))];
             hexes.Add(new HexFacts(name, index, 0, false, center, [center], hexsides, null, CenterTerrainSource.CenterSample));
         }
@@ -1706,5 +1717,191 @@ public sealed class BacklogPass70Tests : IDisposable
         var replayed = Planner().Replay(older);
         Assert.False(replayed.HasErrors);
         Assert.True(Is(replayed.Current!.Unit("de-r")!, Conditions.Melee));
+    }
+
+    // Increment 3j (task 70.7, part II): Street Fighting (A11.8; ruling R70.33), A11.52's Passengers, A18.12 against a vehicle, and D5.42's entry at a capture
+    // (ruling R70.34).
+    private static readonly string[] GermanPassenger = ["de-p"];
+    private static readonly string[] RussianHalfSquad = ["ru-h"];
+
+    /// <summary>A unit aboard a vehicle as a Passenger (D6.1).</summary>
+    private static Dictionary<string, object> Passenger(string id, string kind, string definition, string vehicle)
+    {
+        var unit = Unit(id, kind, definition, "B10", "german");
+        unit["position"] = new Dictionary<string, string> { ["in"] = vehicle, ["role"] = "passenger" };
+        return unit;
+    }
+
+    /// <summary>The neighbor of a hex of board 01 across a hexside, by the board's geometry.</summary>
+    private static string Beside(string hex, HexsideDirection side)
+    {
+        var geometry = BoardGeometry.StandardGeomorphic;
+        Assert.True(geometry.TryGetIndex(HexName.Parse(hex), out var index));
+        return geometry.NameOf(geometry.Neighbor(index, side)!.Value).ToString();
+    }
+
+    [Fact]
+    public async Task AVehicleInARoadHexBetweenBuildingsIsFoughtByStreetFightingAndTheSquadReturnsToItsBuilding()
+    {
+        // A11.8 (p. 76): the road runs through F5 across its north and south hexsides; the stone buildings NW and NE of it flank it on both sides. The Russian
+        // 4-4-7 advances from the building NW of F5 onto the German tank there (PAATC 3 + 4), and fights it with -1 (5 + 5 - 1 = 9 against CCV 5: no effect);
+        // the tank's attack on it takes +1. Once the CC is over the squad returns to its building (ruling R70.33).
+        var west = Beside("F5", HexsideDirection.NorthWest);
+        var east = Beside("F5", HexsideDirection.NorthEast);
+        stone.Add(west);
+        stone.Add(east);
+        roadSides.Add(("F5", HexsideDirection.North));
+        roadSides.Add(("F5", HexsideDirection.South));
+        var facts = Board().Facts;
+        Assert.True(BoardGeometry.StandardGeomorphic.TryGetIndex(HexName.Parse("F5"), out var f5));
+        var sides = RoadFlanks.Of(facts, f5);
+        Assert.Equal(2, sides.Count);
+        Assert.All(sides, side => Assert.Single(side));
+
+        await AdvanceOntoTheTank("F5", RussianOne, Squad("ru-1", west, "russian"), Vehicle("de-tank", "attacker-tank", "F5", "german", "east"));
+        Assert.Equal(L(west), Current.Advances.Single().AdvancedFrom!.ToString());
+        var before = Revision;
+        Committed(await VehicleCc(Once(5, 5), "F5", attackers: RussianOne, vehicle: "de-tank"));
+        var attack = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>());
+        Assert.Equal(RussianOne, attack.Facts.GetProperty("streetFighters").EnumerateArray().Select(item => item.GetString()));
+        Assert.Contains(attack.Resolution.GetProperty("drm").EnumerateArray(), item => item.GetProperty("name").GetString() == "street-fighting");
+        Assert.Empty(Planner().StreetFightingReturns(Current, "russian"));
+        before = Revision;
+        Committed(await VehicleCc(Once(5, 6), "F5", defenders: RussianOne, vehicle: "de-tank"));
+        var byTank = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>());
+        Assert.Contains(byTank.Resolution.GetProperty("defending")[0].GetProperty("drm").EnumerateArray(), item => item.GetProperty("name").GetString() == "vs-street-fighting");
+        Assert.True(byTank.Closed);
+
+        var returning = Assert.Single(Planner().StreetFightingReturns(Current, "russian"));
+        Assert.Equal(("ru-1", L(west)), (returning.Unit.Id, returning.From.ToString()));
+        Committed(await Do(GameActions.StreetFightingReturn, NoRoll(), new
+        {
+            unitId = "ru-1",
+        }));
+        Assert.Equal(L(west), Current.Location("ru-1")!.Location.ToString());
+        Assert.Empty(Planner().StreetFightingReturns(Current, "russian"));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ATrucksPassengerIsCapturedInCcAndTheTruckWithIt()
+    {
+        // A11.52 (p. 74): the German truck in E5 carries a 4-6-7 Passenger; the Russian 4-4-7 advances into its Location (no PAATC against an unarmored
+        // vehicle). Its Passenger is attacked only to capture it, at -2 with the capture's +1: 2 + 2 - 1 = 3, below the Kill Number, captures it. Every
+        // Passenger captured and no German Personnel left, the truck is captured too (ruling R70.34); the prisoner leaves the truck for its Guard's Location.
+        await SetupAt(6, "russian", Squad("ru-1", "E4", "russian"), Vehicle("de-t", "attacker-truck", "E5", "german", "east"),
+            Passenger("de-p", "asl:squad", "attacker-squad", "de-t"));
+        Committed(await Do(GameActions.Advance, NoRoll(), new
+        {
+            unitIds = RussianOne,
+            to = L("E5"),
+        }));
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        Assert.Equal("german", Current.Unit("de-t")!.Side);
+        Assert.Contains((await VehicleCc(NoRoll(), attackers: RussianOne, defenders: GermanPassenger)).Reasons,
+            reason => reason.StartsWith("play.cc-vehicle-defenders", StringComparison.Ordinal));
+        var before = Revision;
+        Committed(await Do(GameActions.VehicleCloseCombat, Once(2, 2), new
+        {
+            location = L("E5"),
+            attackers = RussianOne,
+            defenders = GermanPassenger,
+            capture = true,
+        }));
+        var round = Assert.Single(Since(before).Select(item => item.Payload).OfType<CloseCombatResolved>());
+        Assert.Equal(RussianOne, round.Captors);
+        Assert.Contains(round.Resolution.GetProperty("attacks")[0].GetProperty("defending")[0].GetProperty("drm").EnumerateArray(),
+            item => item.GetProperty("name").GetString() == "vs-passenger-capture");
+        var captured = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCaptured>());
+        Assert.Equal(("de-t", "russian"), (captured.Vehicle, captured.Side));
+        Assert.Equal("russian", Current.Unit("de-t")!.Side);
+        Assert.True(Is(Current.Unit("de-p")!, Conditions.Captured));
+        Assert.IsType<MapPosition>(Current.Unit("de-p")!.Position);
+        Assert.Equal(RussianOne, Current.CloseCombats.Single().Captors);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ASquadsOriginalTwoAgainstATankCreatesALeaderWhoJoinsTheAttack()
+    {
+        // A18.12 (p. 85): the Russian 4-4-7 rolls an Original 2 against the PzKpfw IIIH in E5; the Leader Creation dr 5, +1 Russian, is 6: a 6+1, who adds
+        // his +1 and one CCV (ruling R70.34). The record names him, and he attacks no more this CCPh.
+        await AdvanceOntoTheTank("E5", RussianOne, Squad("ru-1", "E4", "russian"), Vehicle("de-tank", "attacker-tank", "E5", "german", "east"));
+        var before = Revision;
+        Committed(await VehicleCc(Once(1, 1, 5), attackers: RussianOne, vehicle: "de-tank"));
+        var attack = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>());
+        Assert.True(attack.Facts.GetProperty("leaderCreation").GetBoolean());
+        Assert.Equal("defender-leader-6-plus-1", attack.Resolution.GetProperty("leaderCreation").GetProperty("leaderDefinitionId").GetString());
+        var leader = attack.CreatedLeader!;
+        Assert.Equal(("defender-leader-6-plus-1", "russian", L("E5")), (Current.Unit(leader)!.Definition!.Definition, Current.Unit(leader)!.Side, Current.Location(leader)!.Location.ToString()));
+        Assert.Contains(leader, Current.CloseCombats.Single().Attacking);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnOlderRecordedVehicleCcWithAnOriginalTwoReplaysWithNoLeader()
+    {
+        // The gating of A18.12 (ruling R70.34): a record made before the pass declares no Leader Creation, rolls none, and creates no leader; it replays as it did.
+        await AdvanceOntoTheTank("E5", RussianOne, Squad("ru-1", "E4", "russian"), Vehicle("de-tank", "attacker-tank", "E5", "german", "east"));
+        Committed(await VehicleCc(Once(1, 1, 5), attackers: RussianOne, vehicle: "de-tank"));
+        var events = store.Read(Scope)!.Events.ToList();
+        var index = events.FindIndex(item => item.Payload is VehicleCloseCombatResolved);
+        var record = (VehicleCloseCombatResolved)events[index].Payload;
+        var leader = record.CreatedLeader!;
+        var facts = record.Facts.Deserialize<Rules.VehicleCloseCombatFacts>(LiveFire.Json)! with
+        {
+            LeaderCreation = null
+        };
+        var resolution = Rules.ScenarioA1VehicleCloseCombat.Resolve(facts with
+        {
+            Rolls = new Rules.VehicleCloseCombatRolls(SnakeEyesRoll)
+        }, new Rules.ScenarioA1CloseCombatPackage().Reference);
+        Assert.Null(resolution.LeaderCreation);
+        events[index] = events[index] with
+        {
+            Payload = record with
+            {
+                Facts = JsonSerializer.SerializeToElement(facts, LiveFire.Json),
+                Rolls = record.Rolls.Where(item => item.Key != "leaderCreation").ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal),
+                Resolution = JsonSerializer.SerializeToElement(resolution, LiveFire.Json),
+                CreatedLeader = null,
+            }
+        };
+        // The record now reads as one made before the pass (its leader's own event left in place, as the verifier reads the record alone).
+        var older = Planner().Replay(events);
+        Assert.False(older.HasErrors, string.Join(" ", older.Diagnostics));
+        Assert.DoesNotContain(leader, older.Current!.CloseCombats.Single().Attacking);
+    }
+
+    private static readonly int[] SnakeEyesRoll = [1, 1];
+
+    [Fact]
+    public async Task AHalfSquadThatCapturedAnAbandonedTankEntersItAsItsCrewInThatCcph()
+    {
+        // D5.42 (p. 204): "[EXC: CCPh; A21.2]": the Russian HS captures the Abandoned PzKpfw IIIH in E5 by a capture attempt (1 + 2 - 3 against CCV 3, A21.2),
+        // and enters it as its Temporary crew in the same CCPh, its MF spent by the advance (ruling R70.34).
+        var tank = Vehicle("de-tank", "attacker-tank", "E5", "german", "east");
+        tank["conditions"] = new Dictionary<string, bool> { [Conditions.Abandoned] = true };
+        await AdvanceOntoTheTank("E5", RussianHalfSquad, Unit("ru-h", "asl:half-squad", "defender-half-squad", "E4", "russian"), tank);
+        Committed(await Do(GameActions.VehicleCloseCombat, Once(1, 2), new
+        {
+            location = L("E5"),
+            attackers = RussianHalfSquad,
+            vehicleId = "de-tank",
+            capture = true,
+        }));
+        Assert.Equal("russian", Current.Unit("de-tank")!.Side);
+        Assert.Contains("de-tank", Current.CapturedThisPhase);
+        Assert.Equal(RussianHalfSquad, Planner().RecrewCandidates(Current, Current.Unit("de-tank")!).Select(unit => unit.Id));
+        Committed(await Do(GameActions.RecrewVehicle, NoRoll(), new
+        {
+            unitId = "ru-h",
+            vehicleId = "de-tank",
+        }));
+        Assert.IsType<ContainedPosition>(Current.Unit("ru-h")!.Position);
+        Assert.False(Is(Current.Unit("de-tank")!, Conditions.Abandoned));
+        NoReplayErrors();
     }
 }

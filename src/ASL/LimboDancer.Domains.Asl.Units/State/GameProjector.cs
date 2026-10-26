@@ -612,6 +612,7 @@ public static class GameProjector
                 {
                     HiddenPlaced = placed,
                     CloseCombats = [],
+                    CapturedThisPhase = [],
                     OrdnanceShots = [],
                     Advances = newPlayerTurn ? [] : state.Advances,
                     MovedVehicles = newPlayerTurn ? [] : state.MovedVehicles,
@@ -888,9 +889,10 @@ public static class GameProjector
                 next = MovePrisoners(next, unit.Id, new MapPosition(advance.To));
             }
 
+            // A11.8 (pass 70, ruling R70.33): where each unit advanced from, which Street Fighting reads and returns it to; state only.
             return next with
             {
-                Advances = [.. next.Advances, .. advance.Units.Select(id => new AdvanceRecord(id, advance.To))],
+                Advances = [.. next.Advances, .. advance.Units.Select(id => new AdvanceRecord(id, advance.To) { AdvancedFrom = state.Location(id)?.Location })],
             };
         }
 
@@ -1087,7 +1089,8 @@ public static class GameProjector
             var updated = (current ?? new CloseCombatLocation(combat.Location, false, null, [], false)) with
             {
                 Rounds = [.. current?.Rounds ?? [], CloseCombatResolved.Simultaneous],
-                Attacking = [.. current?.Attacking ?? [], .. combat.Attackers],
+                // A18.12 (pass 70, ruling R70.34): a leader the attack created made it with his MMC, so he has attacked.
+                Attacking = [.. current?.Attacking ?? [], .. combat.Attackers, .. combat.CreatedLeader is { } leader ? [leader] : Array.Empty<string>()],
                 Attacked = [.. current?.Attacked ?? [], .. combat.Defenders],
                 Next = combat.Next,
                 Closed = combat.Closed,
@@ -1157,6 +1160,9 @@ public static class GameProjector
                     Rounds = [.. entry?.Rounds ?? [], combat.Round],
                     Attacking = [.. entry?.Attacking ?? [], .. combat.Attackers],
                     InfantryAttacked = [.. entry?.InfantryAttacked ?? [], .. combat.Defenders],
+
+                    // A11.52 (pass 70, ruling R70.34): the attackers that tried to capture Passengers, as the record names them among its attackers.
+                    Captors = [.. entry?.Captors ?? [], .. (combat.Captors ?? []).Where(combat.Attackers.Contains)],
                     Next = combat.Next,
                     Closed = combat.Closed,
                 };
@@ -2930,7 +2936,11 @@ public static class GameProjector
                 vehicleThere && state.Location(unit.Id)?.Location == recrewed.At, unit.MfSpent > 0 || unit.HalfMfSpent || unit.MovementEnded,
                 Rules.ScenarioA1CrewActsRules.RecrewReady(Has(unit, Conditions.Broken), Has(unit, Conditions.Pinned), Has(unit, Conditions.Berserk), Has(unit, Conditions.Melee),
                     Has(unit, Conditions.Captured), Has(unit, "asl:ti")),
-                state.AbandonedThisPlayerTurn.Contains(vehicle.Id, StringComparer.Ordinal), Rules.ScenarioA1CrewActsRules.IsOwnCrew(unit.Id, vehicle.Id), Has(vehicle, Conditions.Recalled));
+                state.AbandonedThisPlayerTurn.Contains(vehicle.Id, StringComparer.Ordinal), Rules.ScenarioA1CrewActsRules.IsOwnCrew(unit.Id, vehicle.Id), Has(vehicle, Conditions.Recalled))
+            {
+                // D5.42's EXC (pass 70, ruling R70.34): in the CCPh of its capture, by the side that captured it.
+                CapturedThisCcph = state.Phase == "ccph" && state.CapturedThisPhase.Contains(vehicle.Id, StringComparer.Ordinal),
+            };
             var returnedStands = recrewed.Returned is null || (returned is { Holding: { Role: HoldingRole.Possessed } holding } && holding.Holder == unit.Id
                 && recrewed.Mount is Rules.ScenarioA1CrewActsRules.MainArmament or Rules.ScenarioA1CrewActsRules.BowMg);
             if (!Rules.ScenarioA1VehicleProjection.RecrewStands(vocabulary.IsA(vehicle.Kind, "asl:vehicle"), state.Movement is not null, facts, returnedStands))
@@ -2994,7 +3004,11 @@ public static class GameProjector
                 return Fail<GameState>(Code, "A vehicle is captured in the CCPh, in its Location, by the other side: an AFV only when Abandoned (A11.52, A21.2).");
             }
 
-            var next = Replace(state, vehicle with
+            var next = Replace(state with
+            {
+                // D5.42's EXC (pass 70, ruling R70.34): a captor may enter it as its crew in this CCPh.
+                CapturedThisPhase = [.. state.CapturedThisPhase, vehicle.Id],
+            }, vehicle with
             {
                 Side = captured.Side,
                 TemporaryCrew = null,

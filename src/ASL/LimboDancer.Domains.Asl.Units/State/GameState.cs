@@ -94,6 +94,12 @@ public sealed record GameState(
     /// <summary>The CC Locations of the CCPh (A11.12; unit step 29); cleared at every phase change.</summary>
     public IReadOnlyList<CloseCombatLocation> CloseCombats { get; init; } = [];
 
+    /// <summary>
+    /// The vehicles captured in the current CCPh (A21.2, A11.52), which a captor may enter as its crew in that CCPh (D5.42's EXC; pass 70, ruling R70.34);
+    /// cleared at every phase change.
+    /// </summary>
+    public IReadOnlyList<string> CapturedThisPhase { get; init; } = [];
+
     /// <summary>The units that advanced this Player Turn and where (A4.7), which an Ambush reads (A11.4).</summary>
     public IReadOnlyList<AdvanceRecord> Advances { get; init; } = [];
 

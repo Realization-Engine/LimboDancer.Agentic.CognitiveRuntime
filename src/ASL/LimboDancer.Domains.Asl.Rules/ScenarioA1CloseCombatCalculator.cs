@@ -304,13 +304,14 @@ public static class ScenarioA1CloseCombatCalculator
 
     /// <summary>
     /// A side's stack in the CC Location, counted by <see cref="ScenarioA1Stacking"/> (A5.1, A5.5; rulings R14.10, R40.2, R40.3): prisoners never count
-    /// (A20.51) and a crew or HS manning a Gun is a squad. A leader or a hero is a SMC whatever kind its definition carries.
+    /// (A20.51) and a crew or HS manning a Gun is a squad. A leader or a hero is a SMC whatever kind its definition carries. A vehicle's Passenger is its
+    /// vehicle's, not the Location's (A11.52; pass 70, ruling R70.34).
     /// </summary>
     public static StackCount Overstack(IEnumerable<CloseCombatUnit> units, string side, ScenarioA1CloseCombatReference reference)
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(reference);
-        return ScenarioA1Stacking.Count(units.Where(unit => unit.Side == side).Select(unit =>
+        return ScenarioA1Stacking.Count(units.Where(unit => unit.Side == side && unit.PassengerOf is null).Select(unit =>
         {
             var definition = reference.Definitions[unit.DefinitionId!];
             return new StackUnitFacts(definition.IsLeader || definition.IsHero ? StackUnitKind.Smc : ScenarioA1Stacking.KindOf(definition.Kind), unit.Manning == true, unit.Captured == true);
@@ -453,6 +454,13 @@ public static class ScenarioA1CloseCombatCalculator
                 outside.Add($"asl.a1.cc.capture-outside:{index}");
             }
 
+            // A11.52 (p. 74; pass 70, ruling R70.34): the Passengers of an unarmored stationary vehicle are engaged in Infantry against Infantry CC only to
+            // capture them ("must capture any Passengers"), and make no Infantry attack of their own there (A11.62: they join their vehicle's).
+            if (attackers.Any(id => byId[id].PassengerOf is not null) || (attack.Capture != true && defenders.Any(id => byId[id].PassengerOf is not null)))
+            {
+                outside.Add($"asl.a1.cc.passenger-outside:{index}");
+            }
+
             // A11.141: the director is a Good Order, unpinned leader of the attack (ruling R29.8).
             if (attack.Director is { } director && (!attackers.Contains(director) || !reference.Definitions[byId[director].DefinitionId!].IsLeader
                 || byId[director].Berserk == true || byId[director].Pinned == true))
@@ -581,7 +589,7 @@ public static class ScenarioA1CloseCombatCalculator
     private static int Size(FireDefinition definition) => ScenarioA1Definitions.UnitSize(definition.Kind);
 
     /// <summary>The Morale Level of a MMC as Leader Creation reads it (A18.2): berserk 10 (A15.42), one higher when Fanatic (A10.8), never beyond 10 (A.18).</summary>
-    private static int BaseMorale(CloseCombatUnit unit, ScenarioA1CloseCombatReference reference) =>
+    internal static int BaseMorale(CloseCombatUnit unit, ScenarioA1CloseCombatReference reference) =>
         ScenarioA1Definitions.MoraleCeiling((unit.Berserk == true ? 10 : reference.Definitions[unit.DefinitionId!].Morale!.Value) + (unit.Fanatic == true ? 1 : 0));
 
     /// <summary>
@@ -1016,6 +1024,12 @@ public static class ScenarioA1CloseCombatCalculator
                 if (attack.Capture == true)
                 {
                     own.Add(Inexperienced(defender.Facts, reference) ? new FireModifier("capture-vs-inexperienced", -1m, "A19.35") : new FireModifier("capture", 1m, "A20.22"));
+
+                    // A11.52 (p. 74; ruling R70.34): "a -2 DRM for his attacks vs these Passengers ... combined with the +1 DRM for attempting to capture".
+                    if (defender.Facts.PassengerOf is not null)
+                    {
+                        own.Add(new FireModifier("vs-passenger-capture", -2m, "A11.52"));
+                    }
                 }
 
                 var final = original + (int)drm.Concat(own).Sum(item => item.Value);

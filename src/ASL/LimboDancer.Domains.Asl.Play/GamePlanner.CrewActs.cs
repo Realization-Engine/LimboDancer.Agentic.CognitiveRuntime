@@ -27,9 +27,12 @@ public sealed partial class GamePlanner
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(vehicle);
         var index = MemoOf(state).Objects(state);
+
+        // D5.42's EXC (pass 70, ruling R70.34): in the CCPh of its capture a captor enters it whatever MF it spent.
+        var captor = state.Phase == "ccph" && state.CapturedThisPhase.Contains(vehicle.Id, StringComparer.Ordinal);
         return vehicle.Status == InstanceStatus.Active && Is(vehicle, Conditions.Abandoned) && vehicle.Position is MapPosition && index.Location(vehicle.Id) is { } at
             ? [.. index.At(at.Location).OfType<UnitInstance>().Where(unit => unit.Side == vehicle.Side && !LiveFire.IsVehicle(unit) && vocabulary.IsA(unit.Kind, "asl:personnel")
-                && unit.MfSpent == 0 && !unit.HalfMfSpent && !unit.MovementEnded)]
+                && (captor || (unit.MfSpent == 0 && !unit.HalfMfSpent && !unit.MovementEnded)))]
             : [];
     }
 
@@ -231,7 +234,11 @@ public sealed partial class GamePlanner
             at is not null && index.Location(unitId)?.Location == at, unit.MfSpent > 0 || unit.HalfMfSpent || unit.MovementEnded,
             ScenarioA1CrewActsRules.RecrewReady(Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee),
                 Is(unit, Conditions.Captured), Is(unit, "asl:ti")),
-            state.AbandonedThisPlayerTurn.Contains(vehicleId, StringComparer.Ordinal), ownCrew, Is(vehicle, Conditions.Recalled))) is { } bar)
+            state.AbandonedThisPlayerTurn.Contains(vehicleId, StringComparer.Ordinal), ownCrew, Is(vehicle, Conditions.Recalled))
+        {
+            // D5.42's EXC (pass 70, ruling R70.34): a captor enters the vehicle in the CCPh of its capture.
+            CapturedThisCcph = state.Phase == "ccph" && state.CapturedThisPhase.Contains(vehicleId, StringComparer.Ordinal),
+        }) is { } bar)
         {
             return Refused(scope, label, expected, bar);
         }

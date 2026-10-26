@@ -469,6 +469,20 @@ public static class GameActions
         }
         """);
 
+    public static readonly ActionDescriptor StreetFightingReturn = Descriptor("asl.game.street-fighting-return", "Street Fighting return",
+        "In the CCPh, once the CC of a vehicle's road Location is over, a unit that advanced there from the ground level of an ADJACENT building returns to that Location, unless broken or pinned; it may stay instead (A11.8).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }
+          }
+        }
+        """);
+
     public static readonly ActionDescriptor GuardPrisoners = Descriptor("asl.game.guard-prisoners", "Transfer or abandon prisoners",
         "In its side's RPh or APh, a Guard not in Melee transfers its prisoners to another armed unit of its side in its Location with Guard capacity, or abandons them as Unarmed units of their own side (A20.5).",
         PlayPermission, "asl.game.sequence-v1", """
@@ -608,7 +622,7 @@ public static class GameActions
         }));
 
     public static readonly ActionDescriptor VehicleCloseCombat = Descriptor("asl.game.vehicle-close-combat", "Close Combat with a vehicle",
-        "One CC attack in a Location holding a vehicle: Infantry attack the vehicle (one unit, or one with a SMC), to eliminate it or, with capture, to capture an Abandoned AFV (A21.2), or the vehicle attacks Infantry with its CC armament and any CE halftrack Passengers, one attack at a time, the non-vehicular side first, an ambusher first (A11.31, A11.34, A11.5, A11.62); or, with no vehicleId, Infantry attack enemy Infantry, a Rider among either, with the SMC stacking and director the attack declares (A11.31, A11.611; ruling R70.30); or a side passes; or, in the MPh, a DEFENDER unit's CC Reaction Fire at a vehicle in its Location, after any PAATC (D7.21; rulings R11.13 to R11.16, R65.22).",
+        "One CC attack in a Location holding a vehicle: Infantry attack the vehicle (one unit, or one with a SMC), to eliminate it or, with capture, to capture an Abandoned AFV (A21.2), or the vehicle attacks Infantry with its CC armament and any CE halftrack Passengers, one attack at a time, the non-vehicular side first, an ambusher first (A11.31, A11.34, A11.5, A11.62); or, with no vehicleId, Infantry attack enemy Infantry, a Rider among either, with the SMC stacking and director the attack declares (A11.31, A11.611; ruling R70.30), and with capture the Passengers of an unarmored stationary vehicle, to capture them and it (A11.52; ruling R70.34); or a side passes; or, in the MPh, a DEFENDER unit's CC Reaction Fire at a vehicle in its Location, after any PAATC (D7.21; rulings R11.13 to R11.16, R65.22).",
         PlayPermission, "asl.game.reviewed-close-combat-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -834,7 +848,7 @@ public static class GameActions
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
             Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp,
-            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle, Scrounge, VoluntaryBreak, RemoveConcealment, Search];
+            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle, Scrounge, VoluntaryBreak, RemoveConcealment, Search, StreetFightingReturn];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

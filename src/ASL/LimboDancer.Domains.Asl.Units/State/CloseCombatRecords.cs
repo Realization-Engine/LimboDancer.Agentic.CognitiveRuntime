@@ -56,6 +56,15 @@ public sealed record CloseCombatResolved(BoardLocation Location, string Round, I
     {
         get; init;
     }
+
+    /// <summary>
+    /// For a sequential round (A11.52; pass 70, ruling R70.34): the attackers whose attack tried to capture a vehicle's Passengers, who defend against the
+    /// Passengers' attack with +2; null for none, as in every record made before the pass.
+    /// </summary>
+    public IReadOnlyList<string>? Captors
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -82,6 +91,15 @@ public sealed record VehicleCloseCombatResolved(BoardLocation Location, string V
     /// from the pass on; a record made before it (false, not written) cancels no lane.
     /// </summary>
     public bool CancelsFireLanes
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The leader an attacking MMC's Original 2 created (A18.12; pass 70, ruling R70.34), whose <c>instance-created</c> follows: he made the attack with it, so
+    /// he attacks no more this CCPh. Null for none, as in every record made before the pass.
+    /// </summary>
+    public string? CreatedLeader
     {
         get; init;
     }
@@ -138,6 +156,9 @@ public sealed record CloseCombatLocation(BoardLocation Location, bool AmbushRoll
     /// </summary>
     public IReadOnlyList<string> InfantryAttacked { get; init; } = [];
 
+    /// <summary>The units that tried this CCPh to capture a vehicle's Passengers there (A11.52; pass 70, ruling R70.34), from the sequential rounds' records.</summary>
+    public IReadOnlyList<string> Captors { get; init; } = [];
+
     /// <summary>Whether the Location's CC is Hand-to-Hand this CCPh, as its first round declared (J2.31; ruling R14.1).</summary>
     public bool HandToHand
     {
@@ -146,7 +167,17 @@ public sealed record CloseCombatLocation(BoardLocation Location, bool AmbushRoll
 }
 
 /// <summary>A unit's advance this Player Turn and the Location it entered, which decides whether an Ambush can occur (A11.4).</summary>
-public sealed record AdvanceRecord(string Unit, BoardLocation To);
+public sealed record AdvanceRecord(string Unit, BoardLocation To)
+{
+    /// <summary>
+    /// The Location the unit advanced from (A11.8; pass 70, ruling R70.33), which Street Fighting reads and returns it to. State only, set by the projector
+    /// from the unit's Location before the advance; never recorded.
+    /// </summary>
+    public BoardLocation? AdvancedFrom
+    {
+        get; init;
+    }
+}
 
 /// <summary>A surrender awaiting its captor's choice (A15.5, A20.21).</summary>
 public sealed record PendingSurrender(string Unit, IReadOnlyList<string> Captors, string Event);

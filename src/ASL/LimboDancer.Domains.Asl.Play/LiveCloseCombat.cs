@@ -19,7 +19,7 @@ public static class LiveCloseCombat
     /// </summary>
     public static (IReadOnlyList<CloseCombatUnit>? Units, string? Reason) Units(GameState state, BoardLocation location,
         IReadOnlyDictionary<string, string>? stacking, IReadOnlyDictionary<string, string>? withdrawals = null, IReadOnlyDictionary<string, string>? infiltrations = null,
-        bool guns = false, bool riders = false)
+        bool guns = false, bool riders = false, bool passengers = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(location);
@@ -30,11 +30,14 @@ public static class LiveCloseCombat
 
         // A11.19 (ruling R14.2): Dummies are removed before any attack is declared, so they are never CC units. Pass 70 (ruling R70.30): nor is a vehicle,
         // whose CC is the vehicle package's; a Location holding one had no Infantry round or Ambush before the pass. With <paramref name="riders"/>, the
-        // Riders of its vehicles, attacked apart in Infantry against Infantry CC (A11.611; ruling R70.31).
+        // Riders of its vehicles, attacked apart in Infantry against Infantry CC (A11.611; ruling R70.31); with <paramref name="passengers"/>, the Passengers
+        // of its unarmored stationary vehicles, attacked there only to capture them (A11.52; ruling R70.34).
         var here = state.At(location).OfType<UnitInstance>().ToArray();
         UnitInstance[] units = [.. here.Where(unit => ScenarioA1CloseCombatFactBuilders.IsCcUnit(unit.Status == InstanceStatus.Active, unit.Kind == UnitKinds.Dummy) && !LiveFire.IsVehicle(unit))
             .Concat(riders ? here.Where(LiveFire.IsVehicle).SelectMany(vehicle => state.Passengers(vehicle.Id)).Where(unit => unit.Position is ContainedPosition { Role: ContainmentRole.Rider })
                 : [])
+            .Concat(passengers ? here.Where(vehicle => LiveFire.IsVehicle(vehicle) && PassengersCapturable(vehicle)).SelectMany(vehicle => state.Passengers(vehicle.Id))
+                .Where(unit => unit.Status == InstanceStatus.Active && unit.Position is ContainedPosition { Role: ContainmentRole.Passenger }) : [])
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         if (units.Any(unit => unit.Definition is null))
         {
@@ -53,10 +56,19 @@ public static class LiveCloseCombat
             !guns ? null : [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned } manned
                 && manned.Holder == unit.Id).Select(item => item.Id).Order(StringComparer.Ordinal)])))], null);
 
-        static CloseCombatUnit Marked(UnitInstance unit, CloseCombatUnit built) => unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? built with
+        static CloseCombatUnit Marked(UnitInstance unit, CloseCombatUnit built) => unit.Position switch
         {
-            Rider = true
-        } : built;
+            ContainedPosition { Role: ContainmentRole.Rider } => built with { Rider = true },
+            ContainedPosition { Role: ContainmentRole.Passenger } aboard => built with { PassengerOf = aboard.Container },
+            _ => built,
+        };
+    }
+
+    /// <summary>Whether a vehicle's Passengers may be attacked to capture them (A11.52; pass 70, ruling R70.34): Rules reads it unarmored and stationary.</summary>
+    public static bool PassengersCapturable(UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return ScenarioA1CapturedVehicleRules.PassengersCapturable(LiveFire.UnarmoredOf(vehicle.Definition?.Definition) == true, Is(vehicle, Conditions.Motion));
     }
 
     /// <summary>The Ambush facts of a Location, before the drs; <paramref name="terrain"/> is the planner's read.</summary>
@@ -89,7 +101,11 @@ public static class LiveCloseCombat
         ArgumentNullException.ThrowIfNull(attacks);
         // A11.31, A11.611 (pass 70, rulings R70.30, R70.31): a sequential round in a Location holding a vehicle reads its Riders too.
         var sequential = requested == CloseCombatFacts.Sequential;
-        var (units, reason) = Units(state, location, stacking, withdrawals, infiltrations, guns: true, riders: sequential);
+
+        // A11.52 (ruling R70.34): and its vehicles' Passengers when the attack names one, as no record before the pass did.
+        var passengers = sequential && attacks.Any(attack => (attack.Attackers ?? []).Concat(attack.Defenders ?? [])
+            .Any(id => state.Unit(id)?.Position is ContainedPosition { Role: ContainmentRole.Passenger }));
+        var (units, reason) = Units(state, location, stacking, withdrawals, infiltrations, guns: true, riders: sequential, passengers: passengers);
         if (units is null)
         {
             return (null, reason);
@@ -241,13 +257,18 @@ public static class LiveCloseCombat
         // (ruling R70.31): the vehicle's own attack takes the FP of the Passengers who join it, as Rules reads their part.
         var joining = byVehicle ? JoiningPassengers(vehicle, state.Passengers(vehicle.Id)) : [];
         var passengers = joining.Count == 0 ? null : PassengerUnits(state, joining);
+
+        // A11.52 (ruling R70.34): the defenders that tried this CCPh to capture Passengers there defend against the Passengers' attack with +2.
+        var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
+        string[] captors = passengers is null ? [] : [.. defenders.Where(id => entry?.Captors.Contains(id, StringComparer.Ordinal) == true)];
         return ((Is(vehicle, Conditions.Abandoned) && !byVehicle ? facts with
         {
             Unmanned = true
         } : facts) with
         {
-            Ambusher = state.CloseCombats.FirstOrDefault(item => item.Location == location)?.Ambusher,
+            Ambusher = entry?.Ambusher,
             Passengers = passengers,
+            Captors = captors.Length == 0 ? null : captors,
         }, null);
     }
 
@@ -284,6 +305,7 @@ public static class LiveCloseCombat
         ArgumentNullException.ThrowIfNull(rolls);
         IReadOnlyList<int>? attack = null;
         int? unlikely = null;
+        int? creation = null;
         var selection = new Dictionary<string, int>(StringComparer.Ordinal);
         var wounds = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var (key, id) in combat.Rolls)
@@ -302,6 +324,9 @@ public static class LiveCloseCombat
                     break;
                 case "unlikelyKill" when roll.Count == 1:
                     unlikely = roll.Values[0];
+                    break;
+                case "leaderCreation" when roll.Count == 1:
+                    creation = roll.Values[0];
                     break;
                 case "randomSelection":
                     var ids = rest.Split(',');
@@ -329,6 +354,7 @@ public static class LiveCloseCombat
             UnlikelyKill = unlikely,
             RandomSelection = selection.Count > 0 ? selection : null,
             WoundSeverity = wounds.Count > 0 ? wounds : null,
+            LeaderCreation = creation,
         };
     }
 
@@ -446,6 +472,11 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             // A11.62 (pass 70, ruling R70.31): a record made before the pass names no Passengers joining, and its attack is replayed with the vehicle's
             // armament alone; a record since must name the state's.
             Passengers = recorded.Passengers is null ? null : expected.Passengers,
+
+            // A11.8, A18.12 (pass 70, rulings R70.33, R70.34): the Street Fighters are the planner's map read and the Leader Creation a declaration of the
+            // attack, both taken as recorded; a record made before the pass has neither, and resolves as it did.
+            StreetFighters = recorded.StreetFighters,
+            LeaderCreation = recorded.LeaderCreation,
         };
         if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

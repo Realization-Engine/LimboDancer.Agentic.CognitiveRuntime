@@ -6,7 +6,10 @@
     until every unit has attacked or its side passes (A11.31); after an Ambush the ambusher makes all its attacks first (A11.34). Infantry attack
     a vehicle with their CCV as the Kill Number, one unit or one with a SMC (A11.5); a vehicle attacks Infantry with its CMG and CE AAMG on the
     CCT, a CE halftrack's Passengers adding their FP (A11.62). Infantry attack enemy Infantry there one attack at a time with no reply; a unit
-    attacked by a vehicle may still be attacked by Infantry (A11.12). A Rider is attacked apart, with -1, and attacks with +1 (A11.611).
+    attacked by a vehicle may still be attacked by Infantry (A11.12). A Rider is attacked apart, with -1, and attacks with +1 (A11.611). The Passengers
+    of an unarmored stationary vehicle are attacked only to capture them, at -2 with the capture's +1, their captors defending with +2; once all are
+    captured with no enemy Personnel left, the vehicle is too (A11.52). Infantry that advanced from an ADJACENT building into a road hex fight a vehicle there
+    with -1, its attack on them +1 (Street Fighting, A11.8).
     An Abandoned AFV may instead be the target of a capture attempt, at -1 and as if CE and Immobile; with no Personnel of its side there it is
     captured anyway as the CCPh ends (A21.2).
 </RuleHelp>
@@ -16,9 +19,10 @@
     var attacker = location.Attackers.Contains(Attacker, StringComparer.Ordinal) ? Attacker : string.Empty;
     var leader = location.Leaders.Contains(Leader, StringComparer.Ordinal) ? Leader : string.Empty;
     var chosen = location.Vehicles.Any(vehicle => vehicle.Id == Vehicle) ? Vehicle : string.Empty;
-    var anyDefender = location.Defenders.Any(unit => Defenders.Contains(unit) && !location.Riders.ContainsKey(unit));
-    // Pass 70 (ruling R70.30): an Infantry attack needs a checked defender no Infantry has attacked this CCPh.
-    var infantryReady = attacker.Length > 0 && location.Defenders.Any(unit => Defenders.Contains(unit) && !location.InfantryAttacked.Contains(unit));
+    var anyDefender = location.Defenders.Any(unit => Defenders.Contains(unit) && !location.Riders.ContainsKey(unit) && !location.Passengers.ContainsKey(unit));
+    // Pass 70 (rulings R70.30, R70.34): an Infantry attack needs a checked defender no Infantry has attacked this CCPh; a Passenger is attacked only to capture it.
+    var infantryReady = attacker.Length > 0 && location.Defenders.Any(unit => Defenders.Contains(unit) && !location.InfantryAttacked.Contains(unit) && !location.Passengers.ContainsKey(unit));
+    var passengerReady = attacker.Length > 0 && location.Defenders.Any(unit => Defenders.Contains(unit) && !location.InfantryAttacked.Contains(unit) && location.Passengers.ContainsKey(unit));
     <div @key="location.Location" class="toolbar vehicle-cc" data-location="@location.Location">
         <span>@Say(location.Location): the @location.NextSide side attacks next.</span>
         <label>
@@ -50,6 +54,12 @@
         }
         <button class="propose-vehicle-cc-infantry" disabled="@(!infantryReady)" title="@(infantryReady ? null : "Choose an attacker and check enemy Infantry no Infantry has attacked")"
             @onclick="@(() => OnProposeInfantry.InvokeAsync(location.Location))">Propose: the Infantry attack the checked enemy Infantry (A11.31)</button>
+        @* Pass 70 (ruling R70.34): the Passengers of an unarmored stationary vehicle are attacked only to capture them, and with them the vehicle (A11.52). *@
+        @if (location.Passengers.Count > 0)
+        {
+            <button class="propose-vehicle-cc-capture-passengers" disabled="@(!passengerReady)" title="@(passengerReady ? null : "Choose an attacker and check the Passengers to capture")"
+                @onclick="@(() => OnProposeCapturePassengers.InvokeAsync(location.Location))">Propose: the Infantry attempt to capture the checked Passengers (A11.52)</button>
+        }
         <button class="propose-vehicle-cc-attack" disabled="@(attacker.Length == 0 || chosen.Length == 0)" @onclick="@(() => OnProposeAttack.InvokeAsync(location.Location))">Propose: Infantry attack the vehicle</button>
         @* Pass 65 (ruling R65.22): an Abandoned AFV may be the target of a capture attempt, which captures it where an attack would eliminate it (A21.2). *@
         @if (location.Vehicles.Any(vehicle => vehicle.Abandoned))
@@ -86,10 +96,14 @@
 
         /// <summary>The units Infantry attacked there this CCPh, which no Infantry attacks again (A11.12; ruling R70.30).</summary>
         public IReadOnlyList<string> InfantryAttacked { get; init; } = [];
+
+        /// <summary>The Passengers of an unarmored stationary vehicle among the units offered, each with its vehicle, attacked only to capture them (A11.52; ruling R70.34).</summary>
+        public IReadOnlyDictionary<string, string> Passengers { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
     }
 
-    /// <summary>A unit's label: its id, and for a Rider the vehicle it rides, "4-4-7 squad, Rider on PzKpfw IIIH" in the page's words.</summary>
-    private static string Label(CcLocation location, string unit) => location.Riders.TryGetValue(unit, out var vehicle) ? $"{unit}, Rider on {vehicle}" : unit;
+    /// <summary>A unit's label: its id, and for a Rider or a Passenger the vehicle it is aboard, "4-4-7 squad, Rider on PzKpfw IIIH" in the page's words.</summary>
+    private static string Label(CcLocation location, string unit) => location.Riders.TryGetValue(unit, out var vehicle) ? $"{unit}, Rider on {vehicle}"
+        : location.Passengers.TryGetValue(unit, out var carrier) ? $"{unit}, Passenger in {carrier}" : unit;
 
     [Parameter, EditorRequired]
     public IReadOnlyList<CcLocation> Locations { get; set; } = [];
@@ -134,6 +148,10 @@
     /// <summary>The chosen Infantry attack the checked enemy Infantry in this Location (A11.31; pass 70, ruling R70.30).</summary>
     [Parameter]
     public EventCallback<string> OnProposeInfantry { get; set; }
+
+    /// <summary>The chosen Infantry attempt to capture the checked Passengers in this Location (A11.52; pass 70, ruling R70.34).</summary>
+    [Parameter]
+    public EventCallback<string> OnProposeCapturePassengers { get; set; }
 
     /// <summary>The next side passes in this Location.</summary>
     [Parameter]

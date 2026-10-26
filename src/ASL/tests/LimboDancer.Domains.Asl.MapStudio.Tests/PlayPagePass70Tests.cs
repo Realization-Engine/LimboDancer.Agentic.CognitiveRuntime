@@ -192,7 +192,7 @@ public sealed class PlayPagePass70Tests : IDisposable
         Assert.Contains(lines, line => line.Contains("breaks voluntarily at the start of the RtPh, under DM, so as to rout (A10.41, A10.62)", StringComparison.Ordinal));
 
         page.Find("#rout-unit").Change("ru-b");
-        var option = Assert.Single(page.FindAll("#rout-with-leader option").Where(item => item.GetAttribute("value") == "ru-l"));
+        var option = Assert.Single(page.FindAll("#rout-with-leader option"), item => item.GetAttribute("value") == "ru-l");
         Assert.StartsWith("[", option.TextContent.Trim(), StringComparison.Ordinal);
     }
 
@@ -409,5 +409,57 @@ public sealed class PlayPagePass70Tests : IDisposable
         Assert.Equal((CloseCombatResolved.SequentialRound, "ru-r"), (round.Round, Assert.Single(round.Defenders)));
         Assert.Contains(round.Resolution.GetProperty("attacks")[0].GetProperty("defending")[0].GetProperty("drm").EnumerateArray(),
             item => item.GetProperty("name").GetString() == "vs-rider");
+    }
+
+    [Fact]
+    public async Task TheVehicleCcPanelOffersTheCaptureOfATrucksPassengerNamedHexFirst()
+    {
+        // Increment 3j (A11.52; ruling R70.34): the German 4-6-7 advances into the Russian truck's Location (no PAATC against an unarmored vehicle). In the
+        // German CCPh the panel offers its Passenger squad, hex first and with its vehicle, to the capture button alone; 2 + 2 with -2 and the capture's +1
+        // captures it, and the truck with it.
+        var truck = new Dictionary<string, object>
+        {
+            ["id"] = "ru-truck",
+            ["kind"] = "asl:vehicle",
+            ["definition"] = "defender-truck",
+            ["side"] = "russian",
+            ["position"] = new Dictionary<string, string> { ["at"] = WideBoards.At(5), ["facing"] = "west" },
+            ["conditions"] = new Dictionary<string, bool>(),
+        };
+        var passenger = Squad("ru-p", "defender-squad", WideBoards.At(5), "russian");
+        passenger["position"] = new Dictionary<string, string> { ["in"] = "ru-truck", ["role"] = "passenger" };
+        await Start(Squad("de-1", "attacker-squad", WideBoards.At(4), "german"), truck, passenger);
+        for (var phase = 0; phase < 5; phase++)
+        {
+            await Do(GameActions.AdvancePhase, new
+            {
+            });
+        }
+
+        await Do(GameActions.Advance, new
+        {
+            unitIds = AdvancingSquad,
+            to = WideBoards.At(5),
+        });
+        await Do(GameActions.AdvancePhase, new
+        {
+        });
+        Assert.Equal("ccph", live.History(Game)!.Current!.Phase);
+
+        var page = Open("german");
+        string Here(string control) => $".vehicle-cc[data-location='{WideBoards.At(5)}'] {control}";
+        var label = page.Find(Here(".vehicle-cc-defender")).ParentElement!.TextContent.Trim();
+        Assert.StartsWith(DisplayText.Place(1, WideBoards.At(5)) + ": ", label, StringComparison.Ordinal);
+        Assert.Contains(", Passenger in ", label, StringComparison.Ordinal);
+        page.Find(Here(".vehicle-cc-attacker")).Change("de-1");
+        page.Find(Here(".vehicle-cc-defender")).Change(true);
+        Assert.True(page.Find(Here(".propose-vehicle-cc-infantry")).HasAttribute("disabled"));
+        Assert.False(page.Find(Here(".propose-vehicle-cc-capture-passengers")).HasAttribute("disabled"));
+        dice.Enqueue([2, 2]);
+        page.Find(Here(".propose-vehicle-cc-capture-passengers")).Click();
+        page.WaitForAssertion(() => Assert.True(page.Find("#play-outcome").TextContent.Contains("Confirm to commit", StringComparison.Ordinal), page.Find("#play-proposal").TextContent));
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.Equal("german", Assert.Single(Events.Select(item => item.Payload).OfType<VehicleCaptured>()).Side);
     }
 }

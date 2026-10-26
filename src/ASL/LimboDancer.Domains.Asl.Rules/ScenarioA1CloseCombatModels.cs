@@ -114,6 +114,17 @@ public sealed record CloseCombatUnit(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The unarmored, stationary vehicle the unit is a Passenger of (A11.52, p. 74; pass 70, ruling R70.34): the enemy may attack it only to capture it,
+    /// with -2 and the capture's +1, in Infantry against Infantry CC. It makes no attack of its own there (its attacks join its vehicle's, A11.62) and counts
+    /// for no stacking of the Location. Null for a unit on foot, and in every record made before the pass, which names no Passenger.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PassengerOf
+    {
+        get; init;
+    }
 }
 
 /// <summary>One declared CC attack (A11.12): the units attacking together, the units they attack, and the leader directing it.</summary>

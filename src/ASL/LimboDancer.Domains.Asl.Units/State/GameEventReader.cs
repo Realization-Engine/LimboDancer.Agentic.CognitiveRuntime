@@ -884,6 +884,9 @@ public static class GameEventReader
                         // A11.31 (pass 70, ruling R70.30): a sequential round's next side and close; absent on every other round.
                         Next = fields.OptionalString(payload, "next", path),
                         Closed = fields.OptionalBoolean(payload, "closed", path),
+
+                        // A11.52 (ruling R70.34): the attackers that tried to capture a vehicle's Passengers; absent before the pass.
+                        Captors = payload.TryGetProperty("captors", out _) ? fields.StringList(payload, "captors", path) : null,
                     };
             case "vehicle-close-combat-resolved":
                 var vehicleCombatAt = ReadLocation(payload, "location", path, fields, diagnostics);
@@ -900,6 +903,9 @@ public static class GameEventReader
                         Next = fields.OptionalString(payload, "next", path),
                         Closed = fields.OptionalBoolean(payload, "closed", path),
                         CancelsFireLanes = fields.OptionalBoolean(payload, "cancelsFireLanes", path),
+
+                        // A18.12 (ruling R70.34): the leader the attack created; absent before the pass.
+                        CreatedLeader = fields.OptionalString(payload, "createdLeader", path),
                     };
             case "vehicle-close-combat-passed":
                 var passedAt = ReadLocation(payload, "location", path, fields, diagnostics);

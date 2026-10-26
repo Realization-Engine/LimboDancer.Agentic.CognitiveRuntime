@@ -51,3 +51,12 @@ Each row: what is left, where it came from, the rule and page, the pass it goes 
 - A Rider's Infantry CC against a vehicle, and a vehicle's attack on a Rider | 3i (R70.31, a reading of A11.611) | A11.611, A11.62, pp. 75, 76 | Backlog | Refused by the package: a Rider fights in Infantry against Infantry CC alone.
 - The CC counter of R70.32 as a map badge of the side's view | 3i (frame C, Q4) | D6.5, D6.24, A7.211 | Backlog | The proposal and record lines say it; nothing is drawn.
 - TPBF at PRC: the record line (FireText) of R70.32 | 3i | A7.211, p. 55 | Backlog | The fire proposal says "the PRC that survive are in an enemy Location and not held in Melee until after the CCPh ... (A7.211, A11.71)"; the fire record line does not.
+
+## From 3j
+
+- Street Fighting's return: mines and FFE attacking the unit as it returns, and a unit on top of Wire kept in the road Location | 3j (R70.33) | A11.8, p. 76 | Backlog (with the passes of mines and Wire) | Not read: the return is a plain move back.
+- A squad Reduced to a HS in its Street Fighting CC: the HS returns to its building | 3j (R70.33) | A11.8 | Backlog | The HS has no advance record of its own, so it is offered no return.
+- A created leader in a sequential Infantry round of a Location holding a vehicle is not counted as having attacked | 3i (seen at 3j) | A18.12, A11.12 | For the reviews' fixes | The vehicle CC record names its created leader (createdLeader) and the projector counts him; the sequential Infantry round does not yet.
+- A11.52's +2 against the Passengers' attack applies to the whole attack of their vehicle, its own MG FP included | 3j (R70.34, a reading) | A11.52, A11.62, p. 74 | For the user's ruling | Passengers attack only within their vehicle's attack (A11.62), so the +2 is on that attack against each captor.
+- An armed unarmored vehicle captured with all its Passengers is marked Abandoned (unmanned) until a captor enters it | 3j (R70.34, a reading of A21.22) | A11.52, A21.22, D5.42 | For the user's ruling | As stated; an unarmed one takes its Temporary Driver (A21.21).
+- A capture attempt on Infantry on foot (A20.22) in an Infantry attack in a Location holding a vehicle | 3j | A20.22, A11.31 | Backlog | Built in the planner (the capture flag with no vehicle named applies to any defenders); the page offers it for Passengers only.

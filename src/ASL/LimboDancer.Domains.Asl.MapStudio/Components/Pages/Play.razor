@@ -836,7 +836,28 @@ else if (state is not null)
                         OnDefender="@(pick => Toggle(vehicleCcDefenders, pick.Id, pick.On))"
                         OnProposeAttack="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: false))" OnProposeCapture="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: false, capture: true))"
                         OnProposeVehicle="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: true))" OnProposeInfantry="@(at => ProposeInfantryCcAt(vehicleCc, at))"
+                        OnProposeCapturePassengers="@(at => ProposeInfantryCcAt(vehicleCc, at, capturePassengers: true))"
                         OnPass="@(at => ProposeVehicleCc(at, [], null, [], true))" />
+                }
+                @* Pass 70 (ruling R70.33): once a road Location's CC with a vehicle is over, a unit that fought it by Street Fighting returns to its building or stays (A11.8). *@
+                @if (state.Phase == "ccph" && StreetFightingReturnRows is { Count: > 0 } returning)
+                {
+                    <ActionSection Title="Street Fighting" Key="street-fighting">
+                        <div class="toolbar">
+                            @* The hex UI rule: the unit named after its hex, "[F4]: 4-4-7 squad R1 returns to [F3]". *@
+                            @foreach (var (unit, from, at) in returning)
+                            {
+                                <button @key="unit.Id" class="street-fighting-return" data-unit="@unit.Id" disabled="@busy" @onclick="@(() => ProposeStreetFightingReturn(unit.Id))">Propose: @Words(at.ToString()): @Words(unit.Id) returns to @Words(from.ToString()) (A11.8)</button>
+                            }
+                        </div>
+                    </ActionSection>
+                }
+                @* Pass 70 (ruling R70.34): a captor enters the vehicle its side captured this CCPh as its crew (D5.42's EXC, A21.2). *@
+                @if (state.Phase == "ccph" && CcphRecrewRows is { Count: > 0 } ccphRecrew)
+                {
+                    <VehicleCrewActions Abandonable="@([])" Recrewable="@ccphRecrew" Destroy="@abandonDestroy" RemoveMg="@abandonRemoveMg"
+                        Chosen="@recrewPicks" OnDestroy="@(choice => abandonDestroy = choice)" OnRemoveMg="@(remove => abandonRemoveMg = remove)"
+                        OnAbandon="@ProposeAbandon" OnUnit="@(pick => recrewPicks[pick.Vehicle] = pick.Unit)" OnRecrew="@(pick => ProposeRecrew(pick.Vehicle, pick.Unit))" Busy="@busy" />
                 }
                 @if (state.Phase == "ccph")
                 {
@@ -4037,21 +4058,24 @@ else if (state is not null)
         var (nextSide, _) = Live.Planner.VehicleCloseCombatTurn(state, location);
         var listed = Live.Planner.VehicleCloseCombatUnits(state, location);
         var seen = SeenOnly(listed.Select(item => item.Unit), aboardToo: true).Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
-        var rides = listed.Where(item => item.Rides is not null && seen.Contains(item.Unit.Id)).ToDictionary(item => item.Unit.Id, item => item.Rides!, StringComparer.Ordinal);
+        var rides = listed.Where(item => item.Rides is not null && !item.Passenger && seen.Contains(item.Unit.Id)).ToDictionary(item => item.Unit.Id, item => item.Rides!, StringComparer.Ordinal);
+        // Pass 70 (ruling R70.34): the Passengers of an unarmored stationary vehicle, which an attack may try to capture (A11.52), each with its vehicle.
+        var aboard = listed.Where(item => item.Passenger && seen.Contains(item.Unit.Id)).ToDictionary(item => item.Unit.Id, item => item.Rides!, StringComparer.Ordinal);
         var here = listed.Where(item => seen.Contains(item.Unit.Id)).Select(item => item.Unit).ToArray();
         var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location && !item.Closed);
         var attacked = entry?.Attacking ?? [];
         var infantryAttacked = entry?.InfantryAttacked ?? [];
         static bool Leader(UnitInstance unit) => unit.Kind is "asl:leader" or "asl:hero";
         return new VehicleCloseCombatPanel.CcLocation(location.ToString(), nextSide ?? string.Empty,
-            [.. here.Where(unit => unit.Side == nextSide && !LiveFire.IsVehicle(unit) && unit.Kind != UnitKinds.Dummy && !attacked.Contains(unit.Id)
+            [.. here.Where(unit => unit.Side == nextSide && !LiveFire.IsVehicle(unit) && unit.Kind != UnitKinds.Dummy && !attacked.Contains(unit.Id) && !aboard.ContainsKey(unit.Id)
                 && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => unit.Id)],
-            [.. here.Where(unit => unit.Side == nextSide && Leader(unit) && !rides.ContainsKey(unit.Id)).Select(unit => unit.Id)],
+            [.. here.Where(unit => unit.Side == nextSide && Leader(unit) && !rides.ContainsKey(unit.Id) && !aboard.ContainsKey(unit.Id)).Select(unit => unit.Id)],
             // A21.2 (pass 65, the UI review): the planner says, by the plan's own Rules bar, which vehicle a capture attempt may take.
             [.. here.Where(LiveFire.IsVehicle).Select(unit => new VehicleCloseCombatPanel.VehicleChoice(unit.Id, unit.Side, GamePlanner.MayBeCaptureAttempted(unit)))],
             [.. here.Where(unit => !LiveFire.IsVehicle(unit) && unit.Side != nextSide).OrderBy(unit => Leader(unit) ? 0 : 1).Select(unit => unit.Id)])
         {
             Riders = rides,
+            Passengers = aboard,
             InfantryAttacked = [.. infantryAttacked],
         };
     })];
@@ -4069,8 +4093,8 @@ else if (state is not null)
 
         string[] attackers = byVehicle || !row.Attackers.Contains(vehicleCcAttacker, StringComparer.Ordinal) ? []
             : [vehicleCcAttacker, .. (row.Leaders.Contains(vehicleCcLeader, StringComparer.Ordinal) && vehicleCcLeader != vehicleCcAttacker ? new[] { vehicleCcLeader } : [])];
-        // Pass 70 (ruling R70.31): a vehicle attacks the Infantry on foot; a Rider is attacked by Infantry alone (A11.611).
-        string[] defenders = byVehicle ? [.. row.Defenders.Where(id => vehicleCcDefenders.Contains(id) && !row.Riders.ContainsKey(id))] : [];
+        // Pass 70 (rulings R70.31, R70.34): a vehicle attacks the Infantry on foot; a Rider or a Passenger is attacked by Infantry alone (A11.611, A11.52).
+        string[] defenders = byVehicle ? [.. row.Defenders.Where(id => vehicleCcDefenders.Contains(id) && !row.Riders.ContainsKey(id) && !row.Passengers.ContainsKey(id))] : [];
         return attackers.Length == 0 && defenders.Length == 0 ? Task.CompletedTask : ProposeVehicleCc(at, attackers, vehicleCcVehicle, defenders, false, capture);
     }
 
@@ -4078,7 +4102,7 @@ else if (state is not null)
     /// Pass 70 (rulings R70.30, R70.31): the chosen Infantry, with the SMC stacked with it and directing, attack the checked enemy Infantry that no Infantry has
     /// attacked this CCPh, a Rider among either (A11.31, A11.14, A11.141, A11.611). No vehicle is named.
     /// </summary>
-    private Task ProposeInfantryCcAt(IReadOnlyList<VehicleCloseCombatPanel.CcLocation> rows, string at)
+    private Task ProposeInfantryCcAt(IReadOnlyList<VehicleCloseCombatPanel.CcLocation> rows, string at, bool capturePassengers = false)
     {
         if (rows.FirstOrDefault(row => row.Location == at) is not { } row || !row.Attackers.Contains(vehicleCcAttacker, StringComparer.Ordinal))
         {
@@ -4087,7 +4111,9 @@ else if (state is not null)
 
         var leader = row.Leaders.Contains(vehicleCcLeader, StringComparer.Ordinal) && vehicleCcLeader != vehicleCcAttacker ? vehicleCcLeader : null;
         string[] attackers = [vehicleCcAttacker, .. leader is null ? Array.Empty<string>() : [leader]];
-        string[] defenders = [.. row.Defenders.Where(id => vehicleCcDefenders.Contains(id) && !row.InfantryAttacked.Contains(id, StringComparer.Ordinal))];
+        // Pass 70 (ruling R70.34): the Passengers are attacked only to capture them (A11.52), and the other Infantry by the plain attack.
+        string[] defenders = [.. row.Defenders.Where(id => vehicleCcDefenders.Contains(id) && !row.InfantryAttacked.Contains(id, StringComparer.Ordinal)
+            && row.Passengers.ContainsKey(id) == capturePassengers)];
         if (defenders.Length == 0)
         {
             return Task.CompletedTask;
@@ -4102,6 +4128,10 @@ else if (state is not null)
             ["attackers"] = attackers,
             ["defenders"] = defenders,
         };
+        if (capturePassengers)
+        {
+            arguments["capture"] = true;
+        }
 
         // A11.14, A11.141: a SMC attacking with the MMC is stacked with it, and a leader directs the attack.
         if (leader is not null)
@@ -4266,6 +4296,31 @@ else if (state is not null)
                     .Where(row => row.Units.Count > 0)]);
         }
     }
+
+    /// <summary>
+    /// Pass 70 (ruling R70.34): each vehicle captured this CCPh with its captors' units that may enter it as its crew (D5.42's EXC, A21.2), read from the
+    /// planner's index; the view that may act for the captors' side sees it, and its own units only.
+    /// </summary>
+    private IReadOnlyList<VehicleCrewActions.Recrewing>? CcphRecrewRows => state is null || state.Phase != "ccph" || state.CapturedThisPhase.Count == 0 ? null
+        : [.. state.CapturedThisPhase.Select(id => Live.Planner.UnitOf(state, id)).OfType<UnitInstance>().Where(vehicle => MayAnswer(vehicle.Side)
+                && GameState.Condition(vehicle, Conditions.Abandoned) == ConditionState.True)
+            .Select(vehicle => new VehicleCrewActions.Recrewing(vehicle.Id, [.. SeenOnly(Live.Planner.RecrewCandidates(state, vehicle)).Select(unit => new PlayChoice(unit.Id, unit.Id))]))
+            .Where(row => row.Units.Count > 0)];
+
+    /// <summary>
+    /// Pass 70 (ruling R70.33): the units of each side this view may act for that may return to the building they advanced from by Street Fighting (A11.8),
+    /// as the planner reads them once a render.
+    /// </summary>
+    private IReadOnlyList<(UnitInstance Unit, BoardLocation From, BoardLocation At)>? StreetFightingReturnRows => state is null || state.Phase != "ccph" ? null
+        : [.. state.Sides.Select(side => side.Id).Where(MayAnswer).SelectMany(side => Live.Planner.StreetFightingReturns(state, side))];
+
+    private Task ProposeStreetFightingReturn(string unit) => Propose(GameActions.StreetFightingReturn, JsonSerializer.SerializeToElement(new
+    {
+        gameId,
+        attemptId = Attempt("street-fighting"),
+        expectedRevision = (long)history!.Events.Count,
+        unitId = unit,
+    }));
 
     private Task ProposeAbandon(string vehicle)
     {

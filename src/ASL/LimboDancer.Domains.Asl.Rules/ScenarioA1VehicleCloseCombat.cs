@@ -58,6 +58,13 @@ public sealed record VehicleCloseCombatRolls(IReadOnlyList<int>? Attack)
     {
         get; init;
     }
+
+    /// <summary>The Leader Creation dr after a MMC's Original 2 (A18.12; pass 70, ruling R70.34); null when none was rolled.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? LeaderCreation
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -122,6 +129,37 @@ public sealed record VehicleCloseCombatFacts(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The Infantry of the Location that qualify for Street Fighting (A11.8, p. 76; pass 70, ruling R70.33): each advanced this APh into the vehicle's road
+    /// Location from the ground level of a building hex ADJACENT to it on either side of the road. Their attack on the vehicle takes -1, the vehicle's on them
+    /// +1, unless an actual Ambush occurred. The planner's map read, taken as recorded; null for none, as in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? StreetFighters
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// A18.12 (p. 85; ruling R70.34): the attack was planned since the pass, so a MMC's Original 2 draws a Leader Creation dr. A declaration of the record,
+    /// taken from it; null for every record made before, whose Original 2 created no leader.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? LeaderCreation
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// A11.52 (p. 74; ruling R70.34): the defenders of the vehicle's attack that attempted this CCPh to capture its Passengers, who defend against the
+    /// Passengers' attack with +2. Null for none, as before the pass, when no attack could capture a Passenger.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? Captors
+    {
+        get; init;
+    }
 }
 
 /// <summary>The answer to one CC attack with a vehicle: its arithmetic, what it did to the vehicle, and the effects on Infantry.</summary>
@@ -148,6 +186,13 @@ public sealed record VehicleCloseCombatResolution(
     /// <summary>The Unlikely Kill dr after an Original 2 (A11.501); null when none was rolled.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? UnlikelyKillDr
+    {
+        get; init;
+    }
+
+    /// <summary>The Leader Creation after a MMC's Original 2 (A18.12; pass 70, ruling R70.34), with the leader created if any; null when none was rolled.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LeaderCreationOutcome? LeaderCreation
     {
         get; init;
     }
@@ -333,12 +378,41 @@ public static class ScenarioA1VehicleCloseCombat
 
         var smc = attackers.FirstOrDefault(item => item.Facts != main.Facts);
 
-        // A11.5: the CCV, +1 for a combining SMC, -1 Inexperienced, and -1 for each halving penalty: pinned, and D7.213's fire counter.
+        // A18.12 (p. 85; pass 70, ruling R70.34): "Anytime a MMC attacking in CC rolls an Original 2 DR, the player makes an immediate dr on the Leader
+        // Creation Table", with the Infantry CC's table drm (no odds column against a vehicle); A25.71: the Finns create none. An attack planned before the
+        // pass rolls none.
+        var original = dice[0] + dice[1];
+        LeaderCreationOutcome? creation = null;
+        if (original == 2 && facts.LeaderCreation == true && !IsSmc(main.Definition) && ScenarioA1FieldPromotion.Applicable(main.Definition.Nationality))
+        {
+            if (facts.Rolls!.LeaderCreation is not int creationDr || creationDr is < 1 or > 6)
+            {
+                return Refused(CloseCombatResolution.Indeterminate, ["asl.a1.cc-vehicle.roll-missing:leaderCreation"]);
+            }
+
+            var (outcome, undecided) = ScenarioA1FieldPromotion.Create(main.Definition, ScenarioA1CloseCombatCalculator.BaseMorale(main.Facts, reference), creationDr, [],
+                reference.Definitions, "asl.a1.cc-vehicle", main.Facts.Fanatic == true);
+            if (outcome is null)
+            {
+                return Refused(CloseCombatResolution.Indeterminate, [undecided!]);
+            }
+
+            creation = outcome;
+        }
+
+        var created = creation?.LeaderDefinitionId is { } createdId ? reference.Definitions[createdId] : null;
+
+        // A11.5: the CCV, +1 for a combining SMC, -1 Inexperienced, and -1 for each halving penalty: pinned, and D7.213's fire counter. A18.12: a created
+        // leader combines as a SMC, "just as if he had been there all along", only where no SMC already does (A11.5: "No more than two units").
         var ccv = BaseCcv(main.Definition);
         var modifiers = new List<FireModifier>();
         if (smc.Facts is not null)
         {
             modifiers.Add(new FireModifier("smc-combining:" + smc.Facts.UnitId, 1m, "A11.5"));
+        }
+        else if (created is not null)
+        {
+            modifiers.Add(new FireModifier("created-leader-combining:" + created.Id, 1m, "A18.12"));
         }
 
         if (main.Facts.Inexperienced == true)
@@ -412,10 +486,23 @@ public static class ScenarioA1VehicleCloseCombat
             drm.Add(attackers[0].Facts.Side == ambusher ? new FireModifier("ambush", -1m, "A11.51") : new FireModifier("vs-ambush", 1m, "A11.51"));
         }
 
+        // A11.8 (p. 76; pass 70, ruling R70.33): Infantry advancing into the road Location from the ground level of an ADJACENT building "qualify for a
+        // Streetfighting Ambush -1/+1 DRM in CC vs the vehicle (not cumulative with the normal -1/+1 CC DRM for Ambush)"; every attacker qualifies.
+        else if (StreetFighting(facts, attackers.Select(item => item.Facts.UnitId!)))
+        {
+            drm.Add(new FireModifier("street-fighting", -1m, "A11.8"));
+        }
+
         // A11.5: a leader's DRM only when he combines; A15.24: a hero's -1; A4.51 (ruling R5.2): +1 when a CX unit attacks.
         if (smc.Facts is not null && smc.Definition.IsLeader && smc.Definition.Leadership is { } leadership)
         {
             drm.Add(new FireModifier("leadership:" + smc.Facts.UnitId, leadership + (smc.Facts.Wounded == true ? 1 : 0), "A11.51"));
+        }
+
+        // A18.12: the created leader "must add his leadership to the Original 2 CC DR that created him (even if the modifier is a +1)".
+        if (created is not null)
+        {
+            drm.Add(new FireModifier("created-leader:" + created.Id, created.Leadership ?? 0, "A18.12"));
         }
 
         foreach (var hero in attackers.Where(item => item.Definition.IsHero || (item.Definition.IsLeader && item.Facts.Heroic == true)))
@@ -428,7 +515,6 @@ public static class ScenarioA1VehicleCloseCombat
             drm.Add(new FireModifier("cx:" + exhausted.UnitId, 1m, "A4.51"));
         }
 
-        var original = dice[0] + dice[1];
         var final = original + (int)drm.Sum(item => item.Value);
         // D5.7, C7.7 note A (pass 65, ruling R65.21): a red CS# burns on a Final DR one lower, for the burn alone.
         var result = final * 2 <= kill || (final < kill && ScenarioA1CrewSurvivalRules.BurnsRed(definition.CsRed == true, final, lower => lower * 2 <= kill))
@@ -482,8 +568,11 @@ public static class ScenarioA1VehicleCloseCombat
         return new VehicleCloseCombatResolution(CloseCombatResolution.Resolved, [], kill, modifiers, drm, [.. dice], original, final, result, effects)
         {
             UnlikelyKillDr = unlikely,
+            LeaderCreation = creation,
         };
     }
+
+    private static bool StreetFighting(VehicleCloseCombatFacts facts, IEnumerable<string> units) => ScenarioA1StreetFighting.Applies(facts.Ambusher, facts.StreetFighters, units);
 
     private static int Severity(string result) => result switch
     {
@@ -571,6 +660,19 @@ public static class ScenarioA1VehicleCloseCombat
             if (facts.Ambusher is { } ambusher)
             {
                 own.Add(facts.Vehicle.Side == ambusher ? new FireModifier("ambush", -1m, "A11.51") : new FireModifier("vs-ambush", 1m, "A11.51"));
+            }
+
+            // A11.8 (pass 70, ruling R70.33): the vehicle's attack on a unit that qualifies for Street Fighting takes +1 (the I5 example, p. 75).
+            else if (StreetFighting(facts, [defender.UnitId!]))
+            {
+                own.Add(new FireModifier("vs-street-fighting", 1m, "A11.8"));
+            }
+
+            // A11.52 (p. 74; ruling R70.34): a unit that attempted to capture the Passengers is "eligible for ... a +2 DRM in defending against attacks from
+            // those Passengers", whose attack is their vehicle's (A11.62).
+            if (facts.Passengers is { Count: > 0 } && facts.Captors?.Contains(defender.UnitId!) == true)
+            {
+                own.Add(new FireModifier("vs-passenger-captor", 2m, "A11.52"));
             }
 
             var final = original + (int)own.Sum(item => item.Value);

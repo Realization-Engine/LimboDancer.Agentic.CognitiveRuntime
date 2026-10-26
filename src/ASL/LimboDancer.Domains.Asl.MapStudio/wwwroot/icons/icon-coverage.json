@@ -1372,6 +1372,13 @@
         },
         {
           "kind": "button",
+          "label": "Propose: @Words(at.ToString()): @Words(unit.Id) returns to @Words(from.ToStri...",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play toolbar"
+        },
+        {
+          "kind": "button",
           "label": "Propose: @WordsAt(unit.Id) massacres @Words(prisoner.Id)",
           "dynamic": true,
           "status": "needed",
@@ -3287,6 +3294,13 @@
         {
           "kind": "button",
           "label": "Propose: the Infantry attack the checked enemy Infantry (A11.31)",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "VehicleCloseCombatPanel vehicle-cc"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: the Infantry attempt to capture the checked Passengers (A11.52)",
           "dynamic": false,
           "status": "needed",
           "strip": "VehicleCloseCombatPanel vehicle-cc"

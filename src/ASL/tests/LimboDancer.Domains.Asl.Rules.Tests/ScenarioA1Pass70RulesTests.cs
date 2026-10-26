@@ -1402,7 +1402,10 @@ public sealed class ScenarioA1Pass70RulesTests
         {
             Rolls = new Dictionary<string, int>(StringComparer.Ordinal) { ["russian"] = 1, ["german"] = 4 }
         }, CloseCombat).Ambusher);
-        Assert.Empty(ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with { Vehicles = null }, CloseCombat).Sides.Single(side => side.Side == "german").Drm);
+        Assert.Empty(ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with
+        {
+            Vehicles = null
+        }, CloseCombat).Sides.Single(side => side.Side == "german").Drm);
 
         // The builder counts each side's AFV that is BU or Stunned; an unarmored vehicle, or a CE AFV, adds only the +2.
         var built = ScenarioA1CloseCombatFactBuilders.AmbushVehicles([("german", true, false, false), ("german", false, false, false), ("russian", true, true, false)])!;
@@ -1420,11 +1423,17 @@ public sealed class ScenarioA1Pass70RulesTests
         // A11.51 (p. 74): "An Ambush DRM (11.4/11.8) ... can also apply to CC vs a vehicle"; the I5 example (p. 75): the T34/85 "attacks with its CMG ... with
         // +1 DRM for Street Fighting Ambush". Ruling R70.30: the ambusher's attacks -1, attacks against it +1, either way.
         CloseCombatUnit[] units = [CcUnit("ru-1", "defender-squad", "russian")];
-        VehicleCloseCombatFacts On(string? ambusher) => new("CCPh", "bd03:F8:0", CcTank(), units, ["ru-1"], [], false, false, new VehicleCloseCombatRolls(Sevens)) { Ambusher = ambusher };
+        VehicleCloseCombatFacts On(string? ambusher) => new("CCPh", "bd03:F8:0", CcTank(), units, ["ru-1"], [], false, false, new VehicleCloseCombatRolls(Sevens))
+        {
+            Ambusher = ambusher
+        };
         Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(On("russian"), CloseCombat).Drm, item => item.Name == "ambush" && item.Value == -1m);
         Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(On("german"), CloseCombat).Drm, item => item.Name == "vs-ambush" && item.Value == 1m);
         Assert.DoesNotContain(ScenarioA1VehicleCloseCombat.Resolve(On(null), CloseCombat).Drm, item => item.Name.Contains("ambush", StringComparison.Ordinal));
-        VehicleCloseCombatFacts By(string? ambusher) => new("CCPh", "bd03:F8:0", CcTank(), units, [], ["ru-1"], true, false, new VehicleCloseCombatRolls(Sevens)) { Ambusher = ambusher };
+        VehicleCloseCombatFacts By(string? ambusher) => new("CCPh", "bd03:F8:0", CcTank(), units, [], ["ru-1"], true, false, new VehicleCloseCombatRolls(Sevens))
+        {
+            Ambusher = ambusher
+        };
         Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By("german"), CloseCombat).Defending!).Drm, item => item.Name == "ambush" && item.Value == -1m);
         Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By("russian"), CloseCombat).Defending!).Drm, item => item.Name == "vs-ambush" && item.Value == 1m);
     }
@@ -1437,8 +1446,17 @@ public sealed class ScenarioA1Pass70RulesTests
         CloseCombatUnit[] units = [CcUnit("ru-1", "defender-squad", "russian")];
         var halftrack = new VehicleCloseCombatVehicle("de-ht", "attacker-halftrack", "german", true, false, false, false, false, false, false, false, false);
         VehicleCloseCombatFacts Facts(IReadOnlyList<CloseCombatUnit>? passengers) =>
-            new("CCPh", "bd03:F8:0", halftrack, units, [], ["ru-1"], true, false, new VehicleCloseCombatRolls(Sevens)) { Passengers = passengers };
-        Assert.Contains("asl.a1.cc-vehicle.no-cc-armament", ScenarioA1VehicleCloseCombat.Precheck(Facts(null) with { Vehicle = halftrack with { CrewExposed = false } }, CloseCombat));
+            new("CCPh", "bd03:F8:0", halftrack, units, [], ["ru-1"], true, false, new VehicleCloseCombatRolls(Sevens))
+            {
+                Passengers = passengers
+            };
+        Assert.Contains("asl.a1.cc-vehicle.no-cc-armament", ScenarioA1VehicleCloseCombat.Precheck(Facts(null) with
+        {
+            Vehicle = halftrack with
+            {
+                CrewExposed = false
+            }
+        }, CloseCombat));
         var joined = ScenarioA1VehicleCloseCombat.Resolve(Facts([CcUnit("de-p", "attacker-squad", "german")]), CloseCombat);
         Assert.Equal(CloseCombatResolution.Resolved, joined.Disposition);
         var withPassenger = joined.AttackFirepower!.Value - ScenarioA1VehicleCloseCombat.Resolve(Facts(null), CloseCombat).AttackFirepower!.Value;
@@ -1490,5 +1508,158 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.Null(ScenarioA1CloseCombatProjection.SequentialRoundRefusal("ccph", false, "russian", "russian", false, false, false));
         Assert.NotNull(ScenarioA1CloseCombatProjection.SequentialRoundRefusal("ccph", false, "german", "russian", false, false, false));
         Assert.NotNull(ScenarioA1CloseCombatProjection.SequentialRoundRefusal("ccph", false, "russian", "russian", false, true, false));
+    }
+
+    // Increment 3j (task 70.7, part II): Street Fighting (A11.8; ruling R70.33), A11.52's Passengers, A18.12 against a vehicle, and D5.42's entry at a capture
+    // (ruling R70.34).
+    private static readonly string[] F3Side = ["F3"];
+    private static readonly string[] G3Side = ["G3"];
+    private static readonly string[] NoBuilding = [];
+    private static readonly string[] RussianSquad = ["ru-1"];
+    private static readonly string[] SquadAndLeader = ["ru-1", "ru-l"];
+
+    [Fact]
+    public void ARoadHexFlankedByBuildingsOnBothSidesQualifiesTheInfantryThatAdvancedFromTheirGroundLevel()
+    {
+        // A11.8 (p. 76): "Any vehicle in a road hex and ADJACENT to a building hex on both sides of that road ... All Infantry advancing into that road
+        // Location from ground level of one or more of those adjacent building hexes qualify". A side of the road with no building does not flank it.
+        IReadOnlyList<string>[] both = [F3Side, G3Side];
+        IReadOnlyList<string>[] one = [F3Side, NoBuilding];
+        Assert.True(ScenarioA1StreetFighting.Flanked(both));
+        Assert.False(ScenarioA1StreetFighting.Flanked(one));
+        Assert.True(ScenarioA1StreetFighting.Qualifies(both, true, true, "F3", 0));
+        Assert.False(ScenarioA1StreetFighting.Qualifies(both, true, true, "F3", 1));
+        Assert.False(ScenarioA1StreetFighting.Qualifies(both, true, true, "E3", 0));
+        Assert.False(ScenarioA1StreetFighting.Qualifies(both, true, false, "F3", 0));
+        Assert.False(ScenarioA1StreetFighting.Qualifies(one, true, true, "F3", 0));
+        Assert.False(ScenarioA1StreetFighting.Qualifies(both, false, true, "F3", 0));
+    }
+
+    [Fact]
+    public void StreetFightingGivesMinusOneAgainstTheVehicleAndPlusOneToItsAttackButNotWithAnActualAmbush()
+    {
+        // A11.8: "a Streetfighting Ambush -1/+1 DRM in CC vs the vehicle (not cumulative with the normal -1/+1 CC DRM for Ambush)"; the I5 example (p. 75):
+        // "DRM are -2 (-1 Street Fighting Ambush, -1 CE)" and the T34/85 attacks "with +1 DRM for Street Fighting Ambush".
+        CloseCombatUnit[] units = [CcUnit("ru-1", "defender-squad", "russian")];
+        VehicleCloseCombatFacts On(string? ambusher) => new("CCPh", "bd03:F4:0", CcTank(), units, RussianSquad, [], false, false, new VehicleCloseCombatRolls(Sevens))
+        {
+            Ambusher = ambusher,
+            StreetFighters = RussianSquad,
+        };
+        Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(On(null), CloseCombat).Drm, item => item.Name == "street-fighting" && item.Value == -1m && item.Rule == "A11.8");
+        var ambushed = ScenarioA1VehicleCloseCombat.Resolve(On("russian"), CloseCombat).Drm;
+        Assert.DoesNotContain(ambushed, item => item.Name == "street-fighting");
+        Assert.Contains(ambushed, item => item.Name == "ambush");
+        Assert.DoesNotContain(ScenarioA1VehicleCloseCombat.Resolve(On(null) with
+        {
+            StreetFighters = null
+        }, CloseCombat).Drm, item => item.Name == "street-fighting");
+        VehicleCloseCombatFacts By(IReadOnlyList<string>? fighters) => new("CCPh", "bd03:F4:0", CcTank(), units, [], RussianSquad, true, false, new VehicleCloseCombatRolls(Sevens))
+        {
+            StreetFighters = fighters,
+        };
+        Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By(RussianSquad), CloseCombat).Defending!).Drm, item => item.Name == "vs-street-fighting" && item.Value == 1m);
+        Assert.Empty(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By(null), CloseCombat).Defending!).Drm);
+    }
+
+    [Fact]
+    public void AStreetFighterReturnsOnceTheCcIsOverUnlessBrokenOrPinned()
+    {
+        // A11.8: "following any CC attack returned to the same Locations they came from ... or at their option remain in the road Location. If broken or
+        // pinned ... they would not be returned"; the I5 example: "Since the 2-3-8 is pinned, it cannot return to its building Location".
+        Assert.Null(ScenarioA1StreetFighting.ReturnBar("ru-1", "ccph", true, true, true, false, false, false));
+        Assert.Contains("pinned", ScenarioA1StreetFighting.ReturnBar("ru-1", "ccph", true, true, true, false, true, false), StringComparison.Ordinal);
+        Assert.Contains("broken", ScenarioA1StreetFighting.ReturnBar("ru-1", "ccph", true, true, true, true, false, false), StringComparison.Ordinal);
+        Assert.Contains("is not over", ScenarioA1StreetFighting.ReturnBar("ru-1", "ccph", true, true, false, false, false, false), StringComparison.Ordinal);
+        Assert.NotNull(ScenarioA1StreetFighting.ReturnBar("ru-1", "ccph", false, true, true, false, false, false));
+        Assert.NotNull(ScenarioA1StreetFighting.ReturnBar("ru-1", "mph", true, true, true, false, false, false));
+    }
+
+    [Fact]
+    public void PassengersAreAttackedOnlyToCaptureThemAtMinusTwoAndTheirCaptorsDefendAtPlusTwo()
+    {
+        // A11.52 (p. 74): "The attacker must engage these Passengers in normal Infantry vs Infantry CC, but is eligible for both a -2 DRM for his attacks vs these
+        // Passengers and a +2 DRM in defending against attacks from those Passengers. This -2 DRM is combined with the +1 DRM for attempting to capture".
+        CloseCombatUnit[] units = [CcUnit("ru-1", "defender-squad", "russian"), CcUnit("de-p", "attacker-squad", "german") with { PassengerOf = "de-t" }];
+        var capture = new CloseCombatDeclaration(RussianSquad, ["de-p"]) { Capture = true };
+        var resolved = ScenarioA1CloseCombatCalculator.Resolve(Sequential(units, [capture]), CloseCombat);
+        Assert.Equal(CloseCombatResolution.Resolved, resolved.Disposition);
+        Assert.Equal([("capture", 1m), ("vs-passenger-capture", -2m)], Assert.Single(resolved.Attacks[0].Defending).Drm.Select(item => (item.Name, item.Value)));
+        Assert.Contains("asl.a1.cc.passenger-outside:0", ScenarioA1CloseCombatCalculator.Precheck(Sequential(units, [new(RussianSquad, ["de-p"])]), CloseCombat));
+        Assert.Contains("asl.a1.cc.passenger-outside:0", ScenarioA1CloseCombatCalculator.Precheck(Sequential(units, [new(["de-p"], RussianSquad)]), CloseCombat));
+
+        // The truck has no CC armament; its Passenger's attack is its attack (A11.62), at +2 against a captor.
+        var truck = new VehicleCloseCombatVehicle("de-t", "attacker-truck", "german", false, false, false, false, false, false, false, false, false);
+        VehicleCloseCombatFacts ByTruck(IReadOnlyList<string>? captors) =>
+            new("CCPh", "bd03:F4:0", truck, [units[0]], [], RussianSquad, true, false, new VehicleCloseCombatRolls(Sevens))
+            {
+                Passengers = [units[1] with { PassengerOf = null }],
+                Captors = captors
+            };
+        Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(ByTruck(RussianSquad), CloseCombat).Defending!).Drm, item => item.Name == "vs-passenger-captor" && item.Value == 2m);
+        Assert.Empty(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(ByTruck(null), CloseCombat).Defending!).Drm);
+
+        // "If all the Passengers are captured, so is the vehicle", once no enemy Personnel is left; an unarmored stationary vehicle's only.
+        Assert.True(ScenarioA1CapturedVehicleRules.CapturedWithPassengers(1, false, 0, false));
+        Assert.False(ScenarioA1CapturedVehicleRules.CapturedWithPassengers(1, false, 1, false));
+        Assert.False(ScenarioA1CapturedVehicleRules.CapturedWithPassengers(1, true, 0, false));
+        Assert.False(ScenarioA1CapturedVehicleRules.CapturedWithPassengers(1, false, 0, true));
+        Assert.False(ScenarioA1CapturedVehicleRules.CapturedWithPassengers(0, false, 0, false));
+        Assert.True(ScenarioA1CapturedVehicleRules.PassengersCapturable(true, false));
+        Assert.False(ScenarioA1CapturedVehicleRules.PassengersCapturable(true, true));
+        Assert.False(ScenarioA1CapturedVehicleRules.PassengersCapturable(false, false));
+        Assert.True(ScenarioA1VehicleProjection.CaptureStands(true, true, true, true, true, ScenarioA1CapturedVehicleRules.Passengers, false));
+    }
+
+    [Fact]
+    public void AMmcsOriginalTwoAgainstAVehicleCreatesALeaderWhoAddsHisLeadershipAndACcvOnlyWithoutASmc()
+    {
+        // A18.12 (p. 85): "Anytime a MMC attacking in CC rolls an Original 2 DR, the player makes an immediate dr on the Leader Creation Table. If this results
+        // in the creation of a leader, that leader must add his leadership to the Original 2 CC DR that created him (even if the modifier is a +1)". A Russian
+        // 4-4-7 (Morale 7) and a dr of 5, +1 Russian: Final 6, a 6+1. As a SMC combining he adds one to the CCV (A11.5): Kill Number 6, Final DR 2 + 1 = 3.
+        CloseCombatUnit[] units = [CcUnit("ru-1", "defender-squad", "russian"), CcUnit("ru-l", "defender-leader-7-0", "russian")];
+        VehicleCloseCombatFacts Attack(string[] attackers, int? creation, bool? planned = true) =>
+            new("CCPh", "bd03:F4:0", CcTank(), units, attackers, [], false, false, new VehicleCloseCombatRolls(SnakeEyes) { LeaderCreation = creation })
+            {
+                LeaderCreation = planned
+            };
+        Assert.Equal(["asl.a1.cc-vehicle.roll-missing:leaderCreation"], ScenarioA1VehicleCloseCombat.Resolve(Attack(RussianSquad, null), CloseCombat).Reasons);
+        var created = ScenarioA1VehicleCloseCombat.Resolve(Attack(RussianSquad, 5), CloseCombat);
+        Assert.Equal(("defender-leader-6-plus-1", 6), (created.LeaderCreation!.LeaderDefinitionId, created.LeaderCreation.FinalDr));
+        Assert.Equal((6, 3), (created.KillNumber!.Value, created.FinalDr));
+        Assert.Contains(created.KillNumberModifiers, item => item.Name.StartsWith("created-leader-combining:", StringComparison.Ordinal) && item.Rule == "A18.12");
+        Assert.Contains(created.Drm, item => item.Name == "created-leader:defender-leader-6-plus-1" && item.Value == 1m);
+
+        // With a SMC in the attack ("No more than two units") the created leader adds his leadership only; the Unlikely Kill still follows.
+        var withLeader = ScenarioA1VehicleCloseCombat.Resolve(Attack(SquadAndLeader, 5), CloseCombat);
+        Assert.DoesNotContain(withLeader.KillNumberModifiers, item => item.Name.StartsWith("created-leader", StringComparison.Ordinal));
+        Assert.Contains(withLeader.Drm, item => item.Name.StartsWith("created-leader:", StringComparison.Ordinal));
+
+        // A record made before the pass declares no Leader Creation: its Original 2 rolls none.
+        var older = ScenarioA1VehicleCloseCombat.Resolve(Attack(RussianSquad, null, null), CloseCombat);
+        Assert.Equal((CloseCombatResolution.Resolved, (LeaderCreationOutcome?)null), (older.Disposition, older.LeaderCreation));
+    }
+
+    [Fact]
+    public void ACaptorEntersTheVehicleItCapturedInThatCcphWhateverMfItSpent()
+    {
+        // D5.42 (p. 204): "only if it occupies that vehicle's Location at the start of its MPh (not APh) and expends all of its MF to do so [EXC: CCPh; A21.2]
+        // ... A vehicle may not be entered during the same Player Turn in which its previous crew left [EXC: CCPh; A21.2]."
+        var inCcph = new RecrewFacts("ru-1", "de-tank", false, true, true, true, true, true, true, true, false, false);
+        Assert.Contains("only in its own MPh", ScenarioA1CrewActsRules.RecrewBar(inCcph), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1CrewActsRules.RecrewBar(inCcph with
+        {
+            CapturedThisCcph = true
+        }));
+        Assert.Contains("Good Order", ScenarioA1CrewActsRules.RecrewBar(inCcph with
+        {
+            CapturedThisCcph = true,
+            GoodOrder = false
+        }), StringComparison.Ordinal);
+        Assert.Contains("only from its Location", ScenarioA1CrewActsRules.RecrewBar(inCcph with
+        {
+            CapturedThisCcph = true,
+            InLocation = false
+        }), StringComparison.Ordinal);
     }
 }

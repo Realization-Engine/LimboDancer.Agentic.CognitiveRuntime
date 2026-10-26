@@ -472,6 +472,9 @@ public sealed record VehicleCaptured(string Vehicle, BoardLocation At, string Si
     public const string CloseCombat = Rules.ScenarioA1CapturedVehicleRules.CloseCombat;
     public const string Unarmed = Rules.ScenarioA1CapturedVehicleRules.Unarmed;
 
+    /// <summary>A11.52 (pass 70, ruling R70.34): an armed unarmored vehicle captured with all its Passengers.</summary>
+    public const string Passengers = Rules.ScenarioA1CapturedVehicleRules.Passengers;
+
     /// <summary>A21.21: the SMC captor removed into an unarmed vehicle as its Temporary Driver; null for a MMC captor's driver, who costs nothing.</summary>
     public string? Driver
     {
