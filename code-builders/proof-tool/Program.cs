@@ -462,7 +462,10 @@ async Task ActInner(string game, ActionDescriptor action, long expected, Diction
             string rolled;
             try
             {
-                rolled = EventsDigest(roll.Build(Draw));
+                var built = roll.Build(Draw);
+                rolled = EventsDigest(built);
+                // Pass 70's gate: PROOF_DUMP_EVENTS also writes the events a plan writes after its dice, where a fire's record sits.
+                if (Environment.GetEnvironmentVariable("PROOF_DUMP_EVENTS") is { Length: > 0 } dumpRolled && built.Count > 0) { File.AppendAllText(dumpRolled, "ROLLED " + game + " " + key + Environment.NewLine + string.Join(Environment.NewLine, built.Select(item => Dump.Full(item))) + Environment.NewLine); }
             }
             catch (Exception exception)
             {
