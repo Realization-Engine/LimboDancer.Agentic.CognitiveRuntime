@@ -3926,3 +3926,26 @@ button[data-working]::after {
     transform-origin: center;
     transform: rotate(-90deg);
 }
+
+/* Acronym Search: reuse the Studio controls, surfaces, and typography. */
+.acronym-search { min-width: 0; }
+.acronym-search .library-filters { flex-wrap: wrap; }
+.acronym-search .library-filters label { min-width: 0; max-width: 100%; }
+.acronym-search .library-filters input[type="search"] { width: 24rem; max-width: 100%; min-width: 0; box-sizing: border-box; }
+.acronym-search .toolbar { flex-wrap: wrap; }
+.acronym-search-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 1.25rem; align-items: start; }
+.acronym-results { list-style: none; padding: 0; margin: 0; display: grid; gap: .5rem; }
+.acronym-search .acronym-result { display: grid; gap: .3rem; width: 100%; height: auto; padding: .8rem; text-align: left; white-space: normal; overflow-wrap: anywhere; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); font-family: var(--font-sans); text-transform: none; }
+.acronym-search .acronym-result:hover { background: var(--surface-2); border-color: var(--accent); }
+.acronym-search .acronym-result[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-tint); }
+.acronym-search .acronym-form { font-family: var(--font-mono); text-transform: none; font-size: 1rem; }
+.acronym-selected { color: var(--accent-ink); font-weight: 600; }
+.acronym-entry { min-width: 0; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow-wrap: anywhere; }
+.acronym-entry h3:first-child { margin-top: 0; }
+.acronym-evidence { margin-top: 1rem; border-top: 1px solid var(--line-soft); padding-top: .75rem; }
+.acronym-evidence summary { cursor: pointer; padding: .3rem 0; }
+.acronym-evidence dd { margin: .2rem 0 .6rem; }
+.acronym-evidence dt { font-weight: 600; }
+@media (max-width: 1023.98px) {
+    .acronym-search-layout { grid-template-columns: minmax(0, 1fr); }
+}

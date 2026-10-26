@@ -4,6 +4,7 @@
     <UserSecretsId>8d7ca00b-dd14-45f5-957a-b4c5553f24f6</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Data/acronyms.catalog.json" LogicalName="ASL.Acronyms.Catalog" Condition="Exists('Data/acronyms.catalog.json')" />
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps\LimboDancer.Domains.Asl.Maps.csproj" />
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps.Vasl\LimboDancer.Domains.Asl.Maps.Vasl.csproj" />
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps.Rendering\LimboDancer.Domains.Asl.Maps.Rendering.csproj" />

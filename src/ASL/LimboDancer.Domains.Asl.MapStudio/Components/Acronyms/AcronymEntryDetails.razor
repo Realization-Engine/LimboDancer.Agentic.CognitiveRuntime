@@ -1,0 +1,58 @@
+@using LimboDancer.Domains.Asl.MapStudio.Services.Acronyms
+
+<h3 class="acronym-form">@Entry.Form</h3>
+<p>@Plain(Entry.Definition)</p>
+<h4>Definition source</h4>
+<p>@Plain(Entry.Source)</p>
+<h4>Contributing rules and applications</h4>
+<p>@Plain(Entry.References)</p>
+<p class="muted">Page references are physical PDF pages, counted from 1. External module locators do not imply that the module text is included in this PDF.</p>
+<details class="acronym-evidence" @key="Entry.Id">
+    <summary>Search and review evidence</summary>
+    <p>Search hits are leads; not every hit defines this term.</p>
+    <dl>
+        <dt>Entry</dt><dd>@Entry.Id</dd>
+        <dt>Review</dt><dd>@Entry.Review.Status (@Entry.Review.Date)</dd>
+        <dt>Basis</dt><dd>@Plain(Entry.Review.Basis)</dd>
+        <dt>Changes</dt><dd>@Entry.Review.Changes</dd>
+        <dt>Short forms searched</dt><dd>@string.Join("; ", Entry.ShortForms)</dd>
+        <dt>Expanded/context searches</dt><dd>@Entry.ExpandedSearchText</dd>
+    </dl>
+    <details><summary>Short-form page hits (@Entry.ShortPages.Length pages)</summary>
+        <p>@PageText(Entry.ShortPagesText)</p>
+    </details>
+    <details><summary>Expanded/context page hits (@Entry.ExpandedPages.Length pages)</summary>
+        <p>@PageText(Entry.ExpandedPagesText)</p>
+    </details>
+    @foreach (var query in Entry.Queries)
+    {
+        <details>
+            <summary>@query.Text (@query.Pages.Length pages)</summary>
+            <p>@(query.Pages.IsEmpty ? "No hits recorded for this query." : "PDF pp. " + string.Join(", ", query.Pages))</p>
+        </details>
+    }
+</details>
+<details class="acronym-evidence">
+    <summary>Source conventions and context</summary>
+    <p>@Document.PdfName · @Document.PdfPages physical pages</p>
+    @foreach (var section in Document.Guidance)
+    {
+        <details>
+            <summary>@section.Heading</summary>
+            @foreach (var line in section.Text.Split('\n').Where(line => !string.IsNullOrWhiteSpace(line)))
+            {
+                @if (!line.StartsWith("|---", StringComparison.Ordinal))
+                {
+                    <p>@Plain(line.TrimStart('-', ' ').Trim('|').Replace(" | ", ": ", StringComparison.Ordinal))</p>
+                }
+            }
+        </details>
+    }
+</details>
+
+@code {
+    [Parameter, EditorRequired] public AcronymEntry Entry { get; set; } = default!;
+    [Parameter, EditorRequired] public AcronymDocument Document { get; set; } = default!;
+    private static string Plain(string text) => text.Replace(((char)96).ToString(), "", StringComparison.Ordinal);
+    private static string PageText(string text) => string.IsNullOrWhiteSpace(text) ? "No hits recorded." : "PDF pp. " + text;
+}

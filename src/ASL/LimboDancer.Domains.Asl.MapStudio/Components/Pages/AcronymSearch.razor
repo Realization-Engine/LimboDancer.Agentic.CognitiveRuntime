@@ -1,0 +1,36 @@
+@page "/acronyms"
+@using LimboDancer.Domains.Asl.MapStudio.Components.Acronyms
+@using LimboDancer.Domains.Asl.MapStudio.Services.Acronyms
+@inject NavigationManager Navigation
+@inject AcronymSearchService Search
+
+<PageTitle>Acronym Search - ASL Map Studio</PageTitle>
+<PageHeader Title="Acronym Search">
+    <p>Find an acronym, its meaning, and the rules or notes that explain it.</p>
+</PageHeader>
+<AcronymSearchPanel State="state" StateChanged="Changed" />
+
+@code {
+    // Strings let malformed external parameters fall back safely in FromUri.
+    [SupplyParameterFromQuery(Name = "q")] public string? Query { get; set; }
+    [SupplyParameterFromQuery(Name = "category")] public string? Category { get; set; }
+    [SupplyParameterFromQuery(Name = "case")] public string? MatchCase { get; set; }
+    [SupplyParameterFromQuery(Name = "audit")] public string? Audit { get; set; }
+    [SupplyParameterFromQuery(Name = "page")] public string? Page { get; set; }
+    [SupplyParameterFromQuery(Name = "entry")] public string? Entry { get; set; }
+    private AcronymSearchState state = new();
+
+    protected override void OnParametersSet()
+    {
+        state = AcronymSearchState.FromUri(Navigation.Uri);
+        state = state with { Page = Search.Search(state).Page };
+    }
+
+    private void Changed(AcronymSearchState next)
+    {
+        bool replace = next.Query != state.Query;
+        state = next with { Page = Search.Search(next).Page };
+        string uri = state.ToUri(Navigation.Uri);
+        if (uri != Navigation.Uri) Navigation.NavigateTo(uri, new NavigationOptions { ReplaceHistoryEntry = replace });
+    }
+}

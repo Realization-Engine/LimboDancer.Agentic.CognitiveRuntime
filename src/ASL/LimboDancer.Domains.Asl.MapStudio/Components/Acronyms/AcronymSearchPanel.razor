@@ -1,0 +1,137 @@
+@using LimboDancer.Domains.Asl.MapStudio.Services.Acronyms
+@implements IDisposable
+@inject AcronymCatalog Catalog
+@inject AcronymSearchService Search
+
+<section class="acronym-search" aria-label="Acronym search">
+@if (Catalog.Error is not null)
+{
+    <p role="alert">@Catalog.Error</p>
+}
+else
+{
+    <div class="library-filters" role="search" aria-label="Acronyms">
+        <label for="@(id + "-query")">Search acronym, meaning, or rule
+            <input id="@(id + "-query")" type="search" value="@typed" @oninput="Input" @onkeydown="KeyDown" />
+        </label>
+        <label for="@(id + "-category")">Category
+            <select id="@(id + "-category")" value="@State.Category" @onchange="CategoryChanged">
+                <option value="all">All categories</option>
+                <option value="main">Rules and counter codes</option>
+                <option value="equipment">Equipment and historical terms</option>
+            </select>
+        </label>
+        <label class="toggle"><input type="checkbox" checked="@State.MatchCase" @onchange="CaseChanged" /> Match acronym case</label>
+        <label class="toggle"><input type="checkbox" checked="@State.Audit" @onchange="AuditChanged" /> Include audit search terms</label>
+        <button class="link" @onclick="Clear">Clear</button>
+    </div>
+    <p class="muted">Case matching applies to acronym forms. Meanings and references remain case-insensitive.</p>
+    <div class="toolbar">
+        <span role="status" aria-live="polite">@result.Total @(result.Total == 1 ? "result" : "results"). Page @result.Page of @result.Pages.</span>
+        <button disabled="@(result.Page <= 1)" @onclick="() => PageChanged(result.Page - 1)">Previous</button>
+        <button disabled="@(result.Page >= result.Pages)" @onclick="() => PageChanged(result.Page + 1)">Next</button>
+    </div>
+    <div class="acronym-search-layout">
+        <div>
+            <h3>Results</h3>
+            @if (result.Total == 0)
+            {
+                <p>No entries match “@State.Query”. Try another term or clear the filters.</p>
+            }
+            <ul class="acronym-results">
+            @foreach (var hit in result.Hits)
+            {
+                <li @key="hit.Entry.Id">
+                    <button class="acronym-result" aria-pressed="@(State.Entry == hit.Entry.Id ? "true" : "false")" @onclick="() => Select(hit.Entry)">
+                        <strong class="acronym-form">@hit.Entry.Form</strong>
+                        <span class="muted">@hit.Reason · @(hit.Entry.Category == "main" ? "Rules and counter codes" : "Equipment and historical terms")</span>
+                        <span>@Excerpt(hit.Entry.Definition)</span>
+                        @if (State.Entry == hit.Entry.Id) { <span class="acronym-selected">Selected</span> }
+                    </button>
+                </li>
+            }
+            </ul>
+        </div>
+        <div class="acronym-entry" aria-label="Entry details">
+            @if (Catalog.Find(State.Entry) is { } entry)
+            {
+                @if (!Search.Includes(entry, State))
+                {
+                    <p class="muted">This selected entry is outside the current search filters.</p>
+                }
+                <AcronymEntryDetails Entry="entry" Document="Catalog.Document!" />
+            }
+            else if (State.Entry is not null)
+            {
+                <p role="status">Entry not found. Choose a result to view its definition.</p>
+            }
+            else
+            {
+                <h3>Entry details</h3>
+                <p class="muted">Select a result to read its full definition and sources.</p>
+            }
+        </div>
+    </div>
+}
+</section>
+
+@code {
+    [Parameter] public AcronymSearchState State { get; set; } = new();
+    [Parameter] public EventCallback<AcronymSearchState> StateChanged { get; set; }
+    [Parameter] public EventCallback<AcronymEntry> EntrySelected { get; set; }
+    // TimeProvider is an ordinary framework seam for deterministic debounce tests.
+    [Parameter] public TimeProvider Clock { get; set; } = TimeProvider.System;
+    private readonly string id = "acronyms-" + Guid.NewGuid().ToString("N");
+    private AcronymSearchState? previous;
+    private AcronymSearchResult result = new(0, 1, 1, []);
+    private CancellationTokenSource? pending;
+    private string typed = "";
+    private bool disposed;
+
+    protected override void OnParametersSet()
+    {
+        if (State != previous)
+        {
+            Cancel();
+            typed = State.Query;
+            previous = State;
+        }
+        result = Search.Search(State);
+    }
+
+    private async Task Input(ChangeEventArgs args)
+    {
+        Cancel();
+        typed = args.Value?.ToString() ?? "";
+        var source = new CancellationTokenSource();
+        pending = source;
+        try
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(200), Clock, source.Token);
+            if (!disposed && !source.IsCancellationRequested)
+                await StateChanged.InvokeAsync(State with { Query = typed, Page = 1 });
+        }
+        catch (OperationCanceledException) when (source.IsCancellationRequested) { }
+        finally
+        {
+            if (ReferenceEquals(pending, source)) pending = null;
+            source.Dispose();
+        }
+    }
+
+    private Task KeyDown(KeyboardEventArgs args) => args.Key == "Enter" ? Change(State with { Query = typed, Page = 1 }) : Task.CompletedTask;
+    private Task CategoryChanged(ChangeEventArgs args) => Change(State with { Query = typed, Category = args.Value?.ToString() ?? "all", Page = 1 });
+    private Task CaseChanged(ChangeEventArgs args) => Change(State with { Query = typed, MatchCase = args.Value is true, Page = 1 });
+    private Task AuditChanged(ChangeEventArgs args) => Change(State with { Query = typed, Audit = args.Value is true, Page = 1 });
+    private Task PageChanged(int page) => Change(State with { Page = page });
+    private Task Clear() { typed = ""; return Change(new()); }
+    private async Task Select(AcronymEntry entry)
+    {
+        await Change(State with { Entry = entry.Id });
+        await EntrySelected.InvokeAsync(entry);
+    }
+    private Task Change(AcronymSearchState state) { Cancel(); return StateChanged.InvokeAsync(state); }
+    private void Cancel() { pending?.Cancel(); pending = null; }
+    private static string Excerpt(string text) => text.Length <= 180 ? text : text[..180] + "…";
+    public void Dispose() { disposed = true; Cancel(); }
+}
