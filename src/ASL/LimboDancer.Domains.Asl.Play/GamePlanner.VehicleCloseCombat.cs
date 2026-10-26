@@ -600,7 +600,7 @@ public sealed partial class GamePlanner
             Capture = capture ? true : null,
             StreetFighters = reaction ? null : StreetFighters(state, location, [.. units.Select(unit => unit.Id)]),
             LeaderCreation = reaction ? null : true,
-            AfvDrm = reaction || LiveFire.UnarmoredOf(vehicle.Definition?.Definition) == true ? null : true,
+            AfvDrm = ScenarioA1VehicleCloseCombat.AfvDrmDeclared(!reaction, LiveFire.UnarmoredOf(vehicle.Definition?.Definition)),
         };
         var reference = CloseCombatReference.Value;
         var precheck = ScenarioA1VehicleCloseCombat.Precheck(facts, reference);

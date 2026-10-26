@@ -24,6 +24,16 @@ public static class ScenarioA1Wounds
     public static bool PinnedByWound(bool smc, bool broken, string? phase, int mfSpent, bool halfMfSpent) =>
         smc && !broken && phase == "mph" && (mfSpent > 3 || (mfSpent == 3 && halfMfSpent));
 
+    /// <summary>
+    /// As above, with <paramref name="extraHalfMf"/> half MF the wounding act itself costs added to those spent (pass 71, ruling R71.14; R3's finding 4): a
+    /// Search casualty counts the Search's MF among his (A12.152, p. 79).
+    /// </summary>
+    public static bool PinnedByWound(bool smc, bool broken, string? phase, int mfSpent, bool halfMfSpent, int extraHalfMf)
+    {
+        var halves = (mfSpent * 2) + (halfMfSpent ? 1 : 0) + extraHalfMf;
+        return PinnedByWound(smc, broken, phase, halves / 2, halves % 2 == 1);
+    }
+
     /// <summary>A17.2 (p. 85): "A Good Order wounded man who is not portaging a SW may be carried by any Good Order MMC at a cost of five PP".</summary>
     public const int CarriedManPp = 5;
 

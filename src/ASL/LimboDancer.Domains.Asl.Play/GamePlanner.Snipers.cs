@@ -183,16 +183,16 @@ public sealed partial class GamePlanner
 
         void Consider(string rollId, string kind, string unitId, string? firingSide, Func<string?> vehicleSide)
         {
-            if (!ScenarioA1Sniper.TriggerPhase(walk.Phase) || Dice(rollId) is not { Roll.Count: 2 } roll)
+            if (!ScenarioA1Sniper.TriggerPhase(walk.Phase) || Dice(rollId) is not { } roll)
             {
                 return;
             }
 
-            // A14.1: whose DR it is, never a prisoner's (Rules decides). E1.76 (ruling R16.7), A14.4 (ruling R71.9): the enemy's SAN is its actual one, less
-            // the reductions so far, never below the printed SAN at night.
+            // A14.1: whose DR it is, never a prisoner's, and only a DR of two dice calls (Rules decides both). E1.76 (ruling R16.7), A14.4 (ruling R71.9): the
+            // enemy's SAN is its actual one, less the reductions so far, never below the printed SAN at night.
             var maker = ScenarioA1Sniper.RollMaker(kind, unitId.Length > 0, firingSide, () => Checker(unitId), vehicleSide);
             if (maker is not null && before.Sides.FirstOrDefault(item => item.Id != maker) is { San: { } printed } enemy && walk.Snipers.TryGetValue(enemy.Id, out var sniper)
-                && ScenarioA1Sniper.Triggers(roll.Roll.Values.Sum(), printed, before.Night, enemy.SanReductions + walk.Reductions.GetValueOrDefault(enemy.Id)))
+                && ScenarioA1Sniper.Triggers(roll.Roll.Values, printed, before.Night, enemy.SanReductions + walk.Reductions.GetValueOrDefault(enemy.Id)))
             {
                 walk.Found.Add((rollId, sniper.Id, roll.Order));
             }
@@ -791,19 +791,20 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The units of the attacked side in a Sniper attack's target Location that may take the Sniper Check (A14.4; pass 71, ruling R71.10), read from the
-    /// state's index, in id order: Personnel on foot, in Good Order, unpinned, not TI, armed, not hidden, and neither fired nor moved this Player Turn (a fire
-    /// marker, a fire this phase, a Gun crew's shot, or the state's list of the units that moved or fired in an earlier phase).
+    /// state's index, in id order: Personnel on foot, in Good Order, unpinned, not TI, armed, not hidden, and neither fired nor moved this Player Turn, which
+    /// Rules decides from the unit's fire markers, its MF, this phase's firers, the Gun crews that fired, and the state's list of the units that moved or fired
+    /// in an earlier phase (R5's finding 6).
     /// </summary>
     private List<UnitInstance> SniperCheckers(GameState state, BoardLocation location, string attacked)
     {
         var index = MemoOf(state).Objects(state);
-        bool FiredOrMoved(UnitInstance unit) => Is(unit, Conditions.PrepFire) || Is(unit, Conditions.FirstFire) || Is(unit, Conditions.FinalFire) || Is(unit, Conditions.BoundingFire)
-            || unit.MfSpent > 0 || unit.HalfMfSpent || state.PhaseFirers.Any(item => item.Unit == unit.Id) || state.GunCrewsFired.Contains(unit.Id, StringComparer.Ordinal)
-            || state.FiredOrMovedThisPlayerTurn.Contains(unit.Id, StringComparer.Ordinal);
+        SniperCheckActivity Activity(UnitInstance unit) => new(Is(unit, Conditions.PrepFire), Is(unit, Conditions.FirstFire), Is(unit, Conditions.FinalFire),
+            Is(unit, Conditions.BoundingFire), unit.MfSpent, unit.HalfMfSpent, state.PhaseFirers.Any(item => item.Unit == unit.Id),
+            state.GunCrewsFired.Contains(unit.Id, StringComparer.Ordinal), state.FiredOrMovedThisPlayerTurn.Contains(unit.Id, StringComparer.Ordinal));
         return [.. index.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == attacked
                 && ScenarioA1Sniper.MayTakeSniperCheck(new SniperCheckCandidate(vocabulary.IsA(unit.Kind, "asl:personnel") && unit.Kind != UnitKinds.Dummy && index.VehicleOf(unit.Id) is null,
                     GameState.GoodOrder(unit, vocabulary) != ConditionState.False, Is(unit, Conditions.Pinned), Is(unit, "asl:ti"), Is(unit, Conditions.Unarmed), Is(unit, Conditions.Hidden),
-                    FiredOrMoved(unit))))
+                    Activity(unit))))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
     }
 
@@ -854,7 +855,10 @@ public sealed partial class GamePlanner
         }
 
         var (drm, causes) = ScenarioA1Sniper.SniperCheckDrm([.. units.Select(unit => new SniperCheckParticipant(unit.Kind,
-            DefinitionOf(unit) is { IsLeader: true, Leadership: { } leadership } ? leadership + (Is(unit, Conditions.Wounded) ? 1 : 0) : null, Is(unit, Conditions.Heroic)))]);
+            DefinitionOf(unit) is { IsLeader: true, Leadership: { } leadership } ? leadership : null, Is(unit, Conditions.Heroic))
+        {
+            Wounded = Is(unit, Conditions.Wounded)
+        })]);
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var events = new List<GameEvent> { made };
@@ -974,12 +978,12 @@ public sealed partial class GamePlanner
             // A14.22 (ruling R71.3): the PRC's exposure as a Collateral Attack reads it (D.8, D6.61, D6.62); a Stunned, Recalled, or Shocked AFV's Passengers spared.
             var definition = VehicleDefinition(unit);
             var crewExposed = LiveFire.CrewExposed(unit);
-            var impaired = Is(unit, Conditions.Stunned) || Is(unit, Conditions.Recalled) || Is(unit, Conditions.Shocked);
+            var impaired = ScenarioA1Sniper.CrewImpaired(Is(unit, Conditions.Stunned), Is(unit, Conditions.Recalled), Is(unit, Conditions.Shocked));
             UnitInstance[] aboard = [.. index.Aboard(unit.Id).Where(prc => !Is(prc, Conditions.Hidden) && !Is(prc, Conditions.Captured))];
             string[] exposures = definition is null ? [] : [.. aboard.Select(prc => ScenarioA1PrcRules.Exposure(new FirePrc(prc.Id, prc.Definition?.Definition,
                 prc.Position is ContainedPosition { Role: ContainmentRole.Rider } ? FirePrc.Rider : FirePrc.Passenger, Is(prc, Conditions.Broken) ? true : null,
                 Is(prc, Conditions.Pinned) ? true : null), definition, crewExposed, impaired))];
-            var manned = !Is(unit, Conditions.Abandoned) && !(index.CrewOf(unit.Id) is { } crew && Is(crew, Conditions.Broken));
+            var manned = ScenarioA1Sniper.Manned(Is(unit, Conditions.Abandoned), index.CrewOf(unit.Id) is { } crew && Is(crew, Conditions.Broken));
             var targets = ScenarioA1Sniper.VehicleTargets(new SniperVehicleFacts(definition?.Unarmored == true, definition?.PartiallyArmored == true, crewExposed, manned, exposures));
 
             // A12.2, A14.23 (ruling R71.20): the PRC, crew, and vehicle of a concealed vehicle are its concealed stack, and the vehicle is one "?" candidate
@@ -1034,7 +1038,7 @@ public sealed partial class GamePlanner
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(unit.Id, ConditionChanges(conditions)), package, owner));
         void Eliminate() => events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), package, null));
 
-        var smc = unit.Kind is "asl:leader" or "asl:hero";
+        var smc = vocabulary.IsA(unit.Kind, "asl:smc");
         var effect = ScenarioA1Sniper.UnitEffect(smc, dr, Is(unit, Conditions.Broken), Is(unit, Conditions.Berserk), Is(unit, Conditions.Pinned));
         var mortal = effect == SniperEffect.WoundSeverity && ScenarioA1Sniper.Mortal(values(roll(1, "sniper-wound-severity"))[0], Is(unit, Conditions.Wounded));
 

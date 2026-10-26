@@ -33,7 +33,13 @@ public sealed partial class GamePlanner
     public IReadOnlyList<string> SniperPlacementsDue(GameState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        return state.SetupClosed || CardOf(state) is not { Minimal: false } ? [] : ScenarioA1Sniper.PlacementsDue(SniperSetupSides(state), SniperDefender(state));
+        if (state.SetupClosed || CardOf(state) is not { Minimal: false })
+        {
+            return [];
+        }
+
+        var sides = SniperSetupSides(state);
+        return ScenarioA1Sniper.PlacementsDue(sides, ScenarioA1Sniper.PlacementDefender(state.ScenarioDefender, state.FirstSide, sides));
     }
 
     /// <summary>
@@ -48,9 +54,6 @@ public sealed partial class GamePlanner
 
     private static SniperSetupSide[] SniperSetupSides(GameState state) =>
         [.. state.Sides.Select(side => new SniperSetupSide(side.Id, side.San, state.Entities.Any(item => item.Kind == "asl:sniper" && item.Side == side.Id)))];
-
-    /// <summary>The DEFENDER of A14.2: the Scenario Defender when setup names it, else the side that does not move first.</summary>
-    private static string? SniperDefender(GameState state) => state.ScenarioDefender ?? state.Sides.FirstOrDefault(side => side.Id != state.FirstSide)?.Id;
 
     private (IReadOnlyList<BoardLocation> Hexes, int Tier) SniperPlacement(GameState state, string side) =>
         MemoOf(state).SniperPlacements.GetOrAdd(side, static (key, read) => read.Planner.ReadSniperPlacement(read.State, key), (Planner: this, State: state));

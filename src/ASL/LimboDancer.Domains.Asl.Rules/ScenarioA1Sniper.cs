@@ -42,15 +42,29 @@ public sealed record SniperVehicleTargets(IReadOnlyList<int> Prc, bool Crew, boo
 
 /// <summary>
 /// A unit in a Sniper attack's target Location as A14.4 reads it (pass 71, ruling R71.10): Personnel on foot (not a Dummy, not aboard a vehicle), in Good
-/// Order (A.7), pinned, TI, Unarmed, hidden, and whether it has fired or moved this Player Turn.
+/// Order (A.7), pinned, TI, Unarmed, hidden, and what it has done this Player Turn (<see cref="SniperCheckActivity"/>; R5's finding 6).
 /// </summary>
-public sealed record SniperCheckCandidate(bool PersonnelOnFoot, bool GoodOrder, bool Pinned, bool Ti, bool Unarmed, bool Hidden, bool FiredOrMoved);
+public sealed record SniperCheckCandidate(bool PersonnelOnFoot, bool GoodOrder, bool Pinned, bool Ti, bool Unarmed, bool Hidden, SniperCheckActivity Activity);
 
 /// <summary>
-/// A participant in a Sniper Check as its DRM reads it (A14.4; ruling R71.10): its kind, a leader's leadership modifier as it now applies (a wounded
-/// leader's one worse, A17.2), and whether a leader is heroic (A15.21).
+/// What a unit has done this Player Turn as A14.4's "has not yet fired/moved" reads it (pass 71, R5's finding 6), each fact as the state holds it: its
+/// Prep, First, Final, and Bounding Fire markers, the MF and half MF it has spent, whether it fired this phase, whether it is a Gun crew that fired, and
+/// whether the state lists it among the units that moved or fired in an earlier phase of the Player Turn.
 /// </summary>
-public sealed record SniperCheckParticipant(string Kind, int? Leadership, bool Heroic);
+public sealed record SniperCheckActivity(bool PrepFire, bool FirstFire, bool FinalFire, bool BoundingFire, int MfSpent, bool HalfMfSpent, bool FiredThisPhase,
+    bool GunCrewFired, bool FiredOrMovedEarlier);
+
+/// <summary>
+/// A participant in a Sniper Check as its DRM reads it (A14.4; ruling R71.10): its kind, a leader's printed leadership modifier, and whether a leader is
+/// heroic (A15.21). Pass 71 (R5's finding 7): whether he is wounded, which makes his leadership modifier one worse (A17.3).
+/// </summary>
+public sealed record SniperCheckParticipant(string Kind, int? Leadership, bool Heroic)
+{
+    public bool Wounded
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// A unit on the map as A14.2's setup placement reads it (pass 71, ruling R71.11): its hex as an index into the caller's table of hexes, whether it is an enemy
@@ -193,6 +207,16 @@ public static class ScenarioA1Sniper
     /// <summary>A14.1 (pass 71, ruling R71.9): a two-dice DR equal to the enemy's actual SAN, after its reductions, calls for the Sniper attack.</summary>
     public static bool Triggers(int sum, int printedSan, bool night, int reductions) => sum == ActualSan(printedSan, night, reductions);
 
+    /// <summary>
+    /// A14.1 (p. 82; R5's finding 10): a roll's dice as recorded call for the Sniper attack only when they are a DR, two dice, whose sum is the enemy's actual
+    /// SAN (<see cref="Triggers(int, int, bool, int)"/>); a dr or a roll of more dice never does.
+    /// </summary>
+    public static bool Triggers(IReadOnlyList<int> dice, int printedSan, bool night, int reductions)
+    {
+        ArgumentNullException.ThrowIfNull(dice);
+        return dice.Count == 2 && Triggers(dice[0] + dice[1], printedSan, night, reductions);
+    }
+
     /// <summary>The causes of a SAN reduction (A14.4; ruling R71.9): a Sniper Check, or an enemy Sniper's attack, that eliminates the Sniper.</summary>
     public const string SniperCheckCause = "sniper-check";
     public const string SniperAttackCause = "sniper-attack";
@@ -210,13 +234,25 @@ public static class ScenarioA1Sniper
     public static bool MayTakeSniperCheck(SniperCheckCandidate unit)
     {
         ArgumentNullException.ThrowIfNull(unit);
-        return unit.PersonnelOnFoot && unit.GoodOrder && !unit.Pinned && !unit.Ti && !unit.Unarmed && !unit.Hidden && !unit.FiredOrMoved;
+        return unit.PersonnelOnFoot && unit.GoodOrder && !unit.Pinned && !unit.Ti && !unit.Unarmed && !unit.Hidden && !FiredOrMoved(unit.Activity);
+    }
+
+    /// <summary>
+    /// A14.4 (p. 82; ruling R71.10, R5's finding 6): a unit "has ... fired/moved during that Player Turn" when it bears a fire marker, has spent MF (a half
+    /// MF too), fired this phase, is a Gun crew that fired, or moved or fired in an earlier phase of the Player Turn.
+    /// </summary>
+    public static bool FiredOrMoved(SniperCheckActivity activity)
+    {
+        ArgumentNullException.ThrowIfNull(activity);
+        return activity.PrepFire || activity.FirstFire || activity.FinalFire || activity.BoundingFire || activity.MfSpent > 0 || activity.HalfMfSpent || activity.FiredThisPhase
+            || activity.GunCrewFired || activity.FiredOrMovedEarlier;
     }
 
     /// <summary>
     /// The Sniper Check DRM (A14.4, p. 83; ruling R71.10), the most benefit the participants can have, with its causes: the leadership of one leader directing
     /// any unit other than himself, none for a leader alone ("a leader cannot modify his own DR", the EX); -1 each hero; -1 each crew or HS equivalent, a squad
-    /// two. A heroic leader gives his leadership or his hero's -1, never both (A15.21).
+    /// two. A heroic leader gives his leadership or his hero's -1, never both (A15.21). A wounded leader's leadership modifier is one worse, "a leadership
+    /// modifier of 0 becoming +1" (A17.3, p. 85; R5's finding 7), and his heroic DRM is not.
     /// </summary>
     public static (int Drm, IReadOnlyList<string> Causes) SniperCheckDrm(IReadOnlyList<SniperCheckParticipant> participants)
     {
@@ -224,15 +260,16 @@ public static class ScenarioA1Sniper
         var heroes = participants.Count(unit => unit.Kind == "asl:hero");
         var halfSquads = participants.Sum(unit => ScenarioA1OrdnanceProjection.HalfSquadEquivalents(unit.Kind));
         var heroicLeaders = participants.Count(unit => unit.Leadership is not null && unit.Heroic);
-        var (drm, director) = (-heroes - halfSquads - heroicLeaders, (SniperCheckParticipant?)null);
+        var (drm, director, directorLeadership) = (-heroes - halfSquads - heroicLeaders, (SniperCheckParticipant?)null, 0);
         if (participants.Count > 1)
         {
             foreach (var leader in participants.Where(unit => unit.Leadership is not null))
             {
-                var directed = -heroes - halfSquads - heroicLeaders + (leader.Heroic ? 1 : 0) + leader.Leadership!.Value;
+                var leadership = leader.Leadership!.Value + (leader.Wounded ? 1 : 0);
+                var directed = -heroes - halfSquads - heroicLeaders + (leader.Heroic ? 1 : 0) + leadership;
                 if (directed < drm)
                 {
-                    (drm, director) = (directed, leader);
+                    (drm, director, directorLeadership) = (directed, leader, leadership);
                 }
             }
         }
@@ -240,7 +277,7 @@ public static class ScenarioA1Sniper
         var causes = new List<string>();
         if (director is not null)
         {
-            causes.Add($"leadership {director.Leadership:+0;-0}");
+            causes.Add($"leadership {directorLeadership:+0;-0}");
         }
 
         if (heroes + heroicLeaders - (director?.Heroic == true ? 1 : 0) is > 0 and var heroic)
@@ -339,6 +376,18 @@ public static class ScenarioA1Sniper
         var crew = facts.Manned && (facts.CrewExposed || facts.PartiallyArmored || facts.Unarmored);
         return new SniperVehicleTargets(prc, crew, facts.Unarmored && (facts.Manned || facts.PrcExposures.Count > 0));
     }
+
+    /// <summary>
+    /// A14.22 (ruling R71.3; R5's finding 8): a vehicle is manned, so its Inherent crew a possible target and an unarmored one a target itself, unless it is
+    /// Abandoned or its crew is broken.
+    /// </summary>
+    public static bool Manned(bool abandoned, bool crewBroken) => !abandoned && !crewBroken;
+
+    /// <summary>
+    /// A14.22, D.8 (ruling R71.3; R5's finding 8): an AFV whose crew is Stunned, Recalled, or Shocked has its Passengers spared, as a Collateral Attack spares
+    /// them (<see cref="ScenarioA1PrcRules.Exposure"/>'s crew impaired).
+    /// </summary>
+    public static bool CrewImpaired(bool stunned, bool recalled, bool shocked) => stunned || recalled || shocked;
 
     /// <summary>
     /// A14.23, A12.2 (pp. 82, 79; pass 71, ruling R71.20): a target is part of its Location's concealed stack when it is itself concealed or a Dummy, or
@@ -686,6 +735,16 @@ public static class ScenarioA1Sniper
     {
         ArgumentNullException.ThrowIfNull(sides);
         return [.. sides.Where(side => side.San is >= 2 && !side.Placed).OrderBy(side => side.Side == defender ? 0 : 1).Select(side => side.Side)];
+    }
+
+    /// <summary>
+    /// The DEFENDER of A14.2 (p. 82; ruling R71.11, R5's finding 5): the Scenario Defender when the setup names it, else the first side that does not move
+    /// first; null when neither gives one.
+    /// </summary>
+    public static string? PlacementDefender(string? scenarioDefender, string? firstSide, IReadOnlyList<SniperSetupSide> sides)
+    {
+        ArgumentNullException.ThrowIfNull(sides);
+        return scenarioDefender ?? sides.FirstOrDefault(side => side.Side != firstSide)?.Side;
     }
 
     /// <summary>Why a game from a card does not start play yet (A14.01, A14.2; ruling R71.11): a side, the DEFENDER first, has not placed its Sniper counter.</summary>

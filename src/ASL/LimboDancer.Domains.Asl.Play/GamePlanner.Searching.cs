@@ -206,12 +206,12 @@ public sealed partial class GamePlanner
                     Push("dice-rolled", new DiceRolled($"{attemptId}-wound-{id}", ScenarioA1Wounds.SeverityPurpose, 1, 6, wound.Values, DiceRolled.SystemSource, actor));
                 }
 
-                // A17.2 (pass 71, ruling R71.14): a SMC wounded after spending more than 3 MF, the Search's own MF among them, is pinned.
-                var spent = (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0) + ScenarioA1Searching.HalfMfCost;
+                // A17.2 (pass 71, ruling R71.14): a SMC wounded after spending more than 3 MF, the Search's own MF among them, is pinned (Rules adds them up).
                 var (type, payload) = CasualtyReduction(unit with
                 {
                     Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { ["asl:ti"] = ConditionState.True }
-                }, attemptId, severity, ScenarioA1Wounds.PinnedByWound(unit.Kind is "asl:leader" or "asl:hero", Is(unit, Conditions.Broken), state.Phase, spent / 2, spent % 2 == 1));
+                }, attemptId, severity, ScenarioA1Wounds.PinnedByWound(vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Broken), state.Phase, unit.MfSpent,
+                    unit.HalfMfSpent, ScenarioA1Searching.HalfMfCost));
                 Push(type, payload);
             }
 

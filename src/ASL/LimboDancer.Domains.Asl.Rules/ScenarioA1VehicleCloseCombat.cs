@@ -258,6 +258,15 @@ public static class ScenarioA1VehicleCloseCombat
         return facts.ByVehicle == true ? ByVehicle(facts, reference, dice) : AgainstVehicle(facts, reference, dice);
     }
 
+    /// <summary>
+    /// A18.2 (p. 85; pass 71, ruling R71.17, R5's finding 10): the <see cref="VehicleCloseCombatFacts.AfvDrm"/> an attack's record declares: true with a
+    /// Leader Creation against an AFV, a vehicle the catalog does not print unarmored; null otherwise, as before the pass.
+    /// </summary>
+    public static bool? AfvDrmDeclared(bool leaderCreation, bool? unarmored) => leaderCreation && Afv(unarmored) ? true : null;
+
+    /// <summary>D1.1: a vehicle is an AFV unless the catalog prints it unarmored.</summary>
+    private static bool Afv(bool? unarmored) => unarmored != true;
+
     /// <summary>Why the attack is outside the review; empty when it is admitted.</summary>
     public static IReadOnlyList<string> Precheck(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference)
     {
@@ -402,7 +411,7 @@ public static class ScenarioA1VehicleCloseCombat
                 return Refused(CloseCombatResolution.Indeterminate, ["asl.a1.cc-vehicle.roll-missing:leaderCreation"]);
             }
 
-            List<FireModifier> afv = facts.AfvDrm == true && definition.Unarmored != true ? [new FireModifier("cc-vs-afv", -1m, "A18.2")] : [];
+            List<FireModifier> afv = facts.AfvDrm == true && Afv(definition.Unarmored) ? [new FireModifier("cc-vs-afv", -1m, "A18.2")] : [];
             var (outcome, undecided) = ScenarioA1FieldPromotion.Create(main.Definition, ScenarioA1CloseCombatCalculator.BaseMorale(main.Facts, reference), creationDr, afv,
                 reference.Definitions, "asl.a1.cc-vehicle", main.Facts.Fanatic == true);
             if (outcome is null)

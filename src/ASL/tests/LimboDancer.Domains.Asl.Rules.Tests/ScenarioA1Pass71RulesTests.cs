@@ -233,7 +233,11 @@ public sealed class ScenarioA1Pass71RulesTests
 
     // Increment 4b: the SAN as state and Sniper Check (A14.4, E1.76; rulings R71.9, R71.10).
     private static SniperCheckCandidate Candidate(bool onFoot = true, bool goodOrder = true, bool pinned = false, bool ti = false, bool unarmed = false, bool hidden = false,
-        bool firedOrMoved = false) => new(onFoot, goodOrder, pinned, ti, unarmed, hidden, firedOrMoved);
+        bool firedOrMoved = false) => new(onFoot, goodOrder, pinned, ti, unarmed, hidden, Activity(earlier: firedOrMoved));
+
+    private static SniperCheckActivity Activity(bool prepFire = false, bool firstFire = false, bool finalFire = false, bool boundingFire = false, int mfSpent = 0,
+        bool halfMfSpent = false, bool firedThisPhase = false, bool gunCrewFired = false, bool earlier = false) =>
+        new(prepFire, firstFire, finalFire, boundingFire, mfSpent, halfMfSpent, firedThisPhase, gunCrewFired, earlier);
 
     private static SniperCheckParticipant Leader(int leadership, bool heroic = false) => new("asl:leader", leadership, heroic);
 
@@ -717,5 +721,95 @@ public sealed class ScenarioA1Pass71RulesTests
         MovingUnitFacts squad = new("de-s", "german", false, true, false, false, false, false, "german", 2, false, WithTheLeader);
         MovingUnitFacts leader = new("de-l", "german", false, false, true, false, false, true, "german", 0, false, null);
         Assert.True(ScenarioA1MovementCalculator.LeaderBonus(squad, [squad, leader]));
+    }
+
+    // Fix round C: the Rules boundary (R5's findings 5 to 10, R1's 6, R2's 12, R3's 4).
+    private static readonly int[] TwoAndOne = [2, 1];
+    private static readonly int[] Three = [3];
+    private static readonly int[] OneOneOne = [1, 1, 1];
+
+    [Fact]
+    public void TheDefenderPlacesFirstTheScenarioDefenderOrElseTheSideThatDoesNotMoveFirst()
+    {
+        // A14.2 (p. 82; ruling R71.11, R5's finding 5): "each player (DEFENDER first)".
+        SniperSetupSide[] sides = [new("german", 3, false), new("russian", 2, false)];
+        Assert.Equal("german", ScenarioA1Sniper.PlacementDefender("german", "german", sides));
+        Assert.Equal("russian", ScenarioA1Sniper.PlacementDefender(null, "german", sides));
+        Assert.Equal("german", ScenarioA1Sniper.PlacementDefender(null, null, sides));
+        Assert.Null(ScenarioA1Sniper.PlacementDefender(null, null, []));
+    }
+
+    [Fact]
+    public void AUnitHasFiredOrMovedByAnyFireMarkerAnyMfAFireThisPhaseAGunShotOrAnEarlierPhase()
+    {
+        // A14.4 (p. 82; R5's finding 6): "which has not yet fired/moved during that Player Turn", each fact as the state holds it.
+        Assert.False(ScenarioA1Sniper.FiredOrMoved(Activity()));
+        Assert.True(ScenarioA1Sniper.FiredOrMoved(Activity(prepFire: true)));
+        Assert.True(ScenarioA1Sniper.FiredOrMoved(Activity(firstFire: true)));
+        Assert.True(ScenarioA1Sniper.FiredOrMoved(Activity(finalFire: true)));
+        Assert.True(ScenarioA1Sniper.FiredOrMoved(Activity(boundingFire: true)));
+        Assert.True(ScenarioA1Sniper.FiredOrMoved(Activity(mfSpent: 1)));
+        Assert.True(ScenarioA1Sniper.FiredOrMoved(Activity(halfMfSpent: true)));
+        Assert.True(ScenarioA1Sniper.FiredOrMoved(Activity(firedThisPhase: true)));
+        Assert.True(ScenarioA1Sniper.FiredOrMoved(Activity(gunCrewFired: true)));
+        Assert.True(ScenarioA1Sniper.FiredOrMoved(Activity(earlier: true)));
+        Assert.False(ScenarioA1Sniper.MayTakeSniperCheck(new SniperCheckCandidate(true, true, false, false, false, false, Activity(mfSpent: 2))));
+    }
+
+    [Fact]
+    public void AWoundedLeadersLeadershipIsOneWorseInTheSniperCheck()
+    {
+        // A17.3 (p. 85; R5's finding 7): "A wounded man has his ... leadership (not his heroic DRM) modifier reduced by one": a wounded 8-1 with a squad
+        // directs it at 0, so the squad's -2 alone counts; a wounded 9-2 directs at -1, -3 in all, and the cause names the modifier as it applies.
+        Assert.Equal(-2, ScenarioA1Sniper.SniperCheckDrm([Leader(-1) with { Wounded = true }, Squad]).Drm);
+        var (drm, causes) = ScenarioA1Sniper.SniperCheckDrm([Leader(-2) with { Wounded = true }, Squad]);
+        Assert.Equal(-3, drm);
+        Assert.Equal(["leadership -1", "2 HS equivalents -2"], causes);
+
+        // A wounded hero keeps his -1.
+        Assert.Equal(-1, ScenarioA1Sniper.SniperCheckDrm([Hero with { Wounded = true }]).Drm);
+    }
+
+    [Fact]
+    public void AVehicleIsMannedUnlessAbandonedOrItsCrewBrokenAndAStunnedRecalledOrShockedCrewSparesItsPassengers()
+    {
+        // A14.22 (ruling R71.3; R5's finding 8).
+        Assert.True(ScenarioA1Sniper.Manned(abandoned: false, crewBroken: false));
+        Assert.False(ScenarioA1Sniper.Manned(abandoned: true, crewBroken: false));
+        Assert.False(ScenarioA1Sniper.Manned(abandoned: false, crewBroken: true));
+        Assert.False(ScenarioA1Sniper.CrewImpaired(false, false, false));
+        Assert.True(ScenarioA1Sniper.CrewImpaired(stunned: true, recalled: false, shocked: false));
+        Assert.True(ScenarioA1Sniper.CrewImpaired(stunned: false, recalled: true, shocked: false));
+        Assert.True(ScenarioA1Sniper.CrewImpaired(stunned: false, recalled: false, shocked: true));
+    }
+
+    [Fact]
+    public void ASearchCasualtyCountsTheSearchsMfAmongHisForTheWoundPin()
+    {
+        // A17.2, A12.152 (pp. 85, 79; ruling R71.14, R3's finding 4): a leader who spent 2 MF and Searches (one more MF) has spent 3, no pin; 2 1/2 and the
+        // Search are 3 1/2, a pin; never a broken one (ruling R71.27).
+        Assert.False(ScenarioA1Wounds.PinnedByWound(true, false, "mph", 2, false, ScenarioA1Searching.HalfMfCost));
+        Assert.True(ScenarioA1Wounds.PinnedByWound(true, false, "mph", 2, true, ScenarioA1Searching.HalfMfCost));
+        Assert.True(ScenarioA1Wounds.PinnedByWound(true, false, "mph", 3, false, ScenarioA1Searching.HalfMfCost));
+        Assert.False(ScenarioA1Wounds.PinnedByWound(true, true, "mph", 3, false, ScenarioA1Searching.HalfMfCost));
+    }
+
+    [Fact]
+    public void OnlyARollOfTwoDiceCallsASniper()
+    {
+        // A14.1 (p. 82; R5's finding 10): a DR, two dice, equal to the enemy's actual SAN.
+        Assert.True(ScenarioA1Sniper.Triggers(TwoAndOne, 3, night: false, reductions: 0));
+        Assert.False(ScenarioA1Sniper.Triggers(Three, 3, night: false, reductions: 0));
+        Assert.False(ScenarioA1Sniper.Triggers(OneOneOne, 3, night: false, reductions: 0));
+    }
+
+    [Fact]
+    public void TheAfvsMinusOneIsDeclaredOnlyWithALeaderCreationAgainstAVehicleNotPrintedUnarmored()
+    {
+        // A18.2 (p. 85; ruling R71.17, R5's finding 10): Rules alone reads whether the vehicle is an AFV.
+        Assert.True(ScenarioA1VehicleCloseCombat.AfvDrmDeclared(true, false));
+        Assert.True(ScenarioA1VehicleCloseCombat.AfvDrmDeclared(true, null));
+        Assert.Null(ScenarioA1VehicleCloseCombat.AfvDrmDeclared(true, true));
+        Assert.Null(ScenarioA1VehicleCloseCombat.AfvDrmDeclared(false, false));
     }
 }

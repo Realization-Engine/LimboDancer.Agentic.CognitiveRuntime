@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.State;
+using LimboDancer.Domains.Asl.Units.Vocabulary;
 
 namespace LimboDancer.Domains.Asl.Play;
 
@@ -14,6 +15,9 @@ namespace LimboDancer.Domains.Asl.Play;
 public static class LiveFire
 {
     private static readonly Lazy<ScenarioA1FireReference> CatalogReference = new(() => new ScenarioA1FirePackage().Reference);
+
+    /// <summary>The built-in vocabulary (embedded, read once), for the one SMC test the planner makes too, <c>IsA(kind, "asl:smc")</c> (R5's finding 10).</summary>
+    private static readonly Lazy<UnitVocabulary> Vocabulary = new(UnitVocabulary.Asl);
 
     /// <summary>The moving stack's Assault Movement as fire reads it (A4.61; pass 40): declared, and no mover broken or berserk since.</summary>
     private static bool AssaultOf(GameState state) => state.Movement is { } moving && ScenarioA1FireEligibility.AssaultHolds(moving.Assault,
@@ -471,7 +475,7 @@ public static class LiveFire
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
-        return ScenarioA1Wounds.PinnedByWound(unit.Kind is "asl:leader" or "asl:hero", GameState.Condition(unit, Conditions.Broken) == ConditionState.True, state.Phase,
+        return ScenarioA1Wounds.PinnedByWound(Vocabulary.Value.IsA(unit.Kind, "asl:smc"), GameState.Condition(unit, Conditions.Broken) == ConditionState.True, state.Phase,
             unit.MfSpent, unit.HalfMfSpent);
     }
 
