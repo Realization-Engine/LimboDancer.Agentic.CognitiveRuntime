@@ -515,6 +515,67 @@ public sealed class ScenarioA1Pass71RulesTests
         Assert.False(ScenarioA1CapturedVehicleRules.SmcCrewSeverityDue(false, false, false, false));
     }
 
+    // Increment 4g: carrying a wounded man (A17.2); ruling R71.16.
+
+    private static CarryFacts Carry(bool manMoving = true, bool wounded = true, bool manGoodOrder = true, bool holdsSw = false, bool carrierMoving = true, bool mmc = true,
+        bool carrierGoodOrder = true, string man = "de-l", string carrier = "de-s") =>
+        new(man, carrier, manMoving, wounded, manGoodOrder, holdsSw, carrierMoving, mmc, carrierGoodOrder);
+
+    private static readonly (string Man, string Carrier)[] NoEarlierCarry = [];
+    private static readonly string[] TheSquadAndTheLeader = ["de-s", "de-l"];
+    private static readonly string[] TheLeaderAlone = ["de-l"];
+    private static readonly int[] One = [1];
+    private static readonly int[] OneAndFive = [1, 5];
+
+    [Fact]
+    public void AWoundedManIsCarriedOnlyInGoodOrderWithNoSwByAGoodOrderMmcOfHisStack()
+    {
+        // A17.2 (p. 85; ruling R71.16): "A Good Order wounded man who is not portaging a SW may be carried by any Good Order MMC at a cost of five PP".
+        Assert.Null(ScenarioA1Wounds.CarryBar([Carry()], NoEarlierCarry));
+        Assert.Contains("two units of the moving stack", ScenarioA1Wounds.CarryBar([Carry(carrierMoving: false)], NoEarlierCarry), StringComparison.Ordinal);
+        Assert.Contains("two units of the moving stack", ScenarioA1Wounds.CarryBar([Carry(manMoving: false)], NoEarlierCarry), StringComparison.Ordinal);
+        Assert.Contains("two units of the moving stack", ScenarioA1Wounds.CarryBar([Carry(carrier: "de-l")], NoEarlierCarry), StringComparison.Ordinal);
+        Assert.Contains("de-l is not wounded", ScenarioA1Wounds.CarryBar([Carry(wounded: false)], NoEarlierCarry), StringComparison.Ordinal);
+        Assert.Contains("de-l is not in Good Order", ScenarioA1Wounds.CarryBar([Carry(manGoodOrder: false)], NoEarlierCarry), StringComparison.Ordinal);
+        Assert.Contains("de-l portages a SW", ScenarioA1Wounds.CarryBar([Carry(holdsSw: true)], NoEarlierCarry), StringComparison.Ordinal);
+        Assert.Contains("de-s is no MMC", ScenarioA1Wounds.CarryBar([Carry(mmc: false)], NoEarlierCarry), StringComparison.Ordinal);
+        Assert.Contains("de-s is not in Good Order", ScenarioA1Wounds.CarryBar([Carry(carrierGoodOrder: false)], NoEarlierCarry), StringComparison.Ordinal);
+        Assert.StartsWith("play.move-carry: ", ScenarioA1Wounds.CarryBar([Carry(holdsSw: true)], NoEarlierCarry), StringComparison.Ordinal);
+
+        // One man to a carrier, one carrier to a man, the move's earlier carries counted; the same carry again stands.
+        Assert.Contains("carries one wounded man", ScenarioA1Wounds.CarryBar([Carry(), Carry(man: "de-h")], NoEarlierCarry), StringComparison.Ordinal);
+        Assert.Contains("carries one wounded man", ScenarioA1Wounds.CarryBar([Carry(carrier: "de-t")], [("de-l", "de-s")]), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1Wounds.CarryBar([Carry()], [("de-l", "de-s")]));
+
+        // A man carried earlier in the move moves on only with his carrier: without it he was set down.
+        Assert.Null(ScenarioA1Wounds.CarriedMoveBar([("de-l", "de-s")], TheSquadAndTheLeader));
+        Assert.Contains("set down", ScenarioA1Wounds.CarriedMoveBar([("de-l", "de-s")], TheLeaderAlone), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ACarriersFivePpReduceItsMfByThePortageRulesAndTheManSpendsNone()
+    {
+        // A17.2, A4.42 (p. 50): the five PP join the carrier's portage, so a squad's 4 MF fall to 2 (two PP beyond its IPC of 3); with a wounded leader's bonus,
+        // which still applies, to 4; a SW already carried adds its own PP.
+        var squad = new MfAllotmentFacts(false, null, false, false, false);
+        int[] none = [];
+        Assert.Equal(2, ScenarioA1MovementCalculator.MfAllotment(squad, 0, false, 0, 0, () => 4, () => ScenarioA1Wounds.Portage(none, true)));
+        Assert.Equal(4, ScenarioA1MovementCalculator.MfAllotment(squad, 0, false, 2, 0, () => 4, () => ScenarioA1Wounds.Portage(none, true)));
+        Assert.Equal(4, ScenarioA1MovementCalculator.MfAllotment(squad, 0, false, 0, 0, () => 4, () => ScenarioA1Wounds.Portage(none, false)));
+        Assert.Equal(OneAndFive, ScenarioA1Wounds.Portage(One, true));
+        Assert.True(ScenarioA1MovementCalculator.Laden(false, false, false, ScenarioA1Wounds.Portage(none, true)));
+        Assert.Null(ScenarioA1Wounds.Portage(null, true));
+
+        // The man carried spends no MF and is not held to his own 3 MF.
+        Assert.Equal(0, ScenarioA1Wounds.MoverHalfMf(true, 2));
+        Assert.Equal(2, ScenarioA1Wounds.MoverHalfMf(false, 2));
+        MfLeftMoverFacts[] movers = [new("de-s", false, 0, false, false, false, 4), new("de-l", false, 0, false, false, false, 6) { Carried = true }];
+        int?[] allotments = [4, 3];
+        var (refusal, left) = ScenarioA1MovementCalculator.MfCheck(movers, false, false, false, false, false, null, false, 2, (null, null), (index, _, _, _, _) => allotments[index]);
+        Assert.Null(refusal);
+        Assert.Equal(2, left);
+    }
+
     private static readonly ScenarioA1CloseCombatReference CloseCombat = new ScenarioA1CloseCombatPackage().Reference;
     private static readonly int[] SnakeEyes = [1, 1];
     private static readonly string[] RussianSquad = ["ru-1"];

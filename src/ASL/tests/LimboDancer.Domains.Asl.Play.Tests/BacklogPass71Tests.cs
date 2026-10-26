@@ -1452,4 +1452,120 @@ public sealed class BacklogPass71Tests : IDisposable
         Assert.Equal(!survives, Is(Current.Unit("de-tk")!, Conditions.Abandoned));
         Assert.False(History.HasErrors);
     }
+
+    // Increment 4g: carrying a wounded man (A17.2, A4.42); ruling R71.16.
+
+    private static readonly string[] TheSquadAndTheLeader = ["de-l", "de-s"];
+    private static readonly string[] TheCarrier = ["de-s"];
+
+    /// <summary>The Open Ground hexes from five hexes south-east of E6 to E6: the carrying stack's path, 1 MF a hex.</summary>
+    private static string[] CarryPath()
+    {
+        var path = new List<string> { "E6" };
+        for (var step = 0; step < 5; step++)
+        {
+            path.Insert(0, N(path[0], HexsideDirection.SouthEast));
+        }
+
+        return [.. path];
+    }
+
+    /// <summary>The German 4-6-7 de-s and the wounded 8-1 de-l at the start of <see cref="CarryPath"/>, with the placements given, in the German MPh.</summary>
+    private async Task<string[]> CarryGame(params Dictionary<string, object>[] placements)
+    {
+        var path = CarryPath();
+        await Setup(null, [Squad("de-s", path[0], "german"), Unit("de-l", "asl:leader", "attacker-leader-8-1", path[0], "german", Conditions.Wounded), .. placements]);
+        await Advance();
+        return path;
+    }
+
+    private Task<PlayResult> CarryStep(string to, bool name = false) => name
+        ? Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = TheSquadAndTheLeader,
+            to = L(to),
+            carried = new[] { new { man = "de-l", carrier = "de-s" } },
+        })
+        : Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = TheSquadAndTheLeader,
+            to = L(to),
+        });
+
+    [Fact]
+    public async Task ASquadCarriesAWoundedLeaderWhoSpendsNoMfAndItsOwnMfFallByFivePp()
+    {
+        // A17.2 (p. 85; ruling R71.16): the 4-6-7 carries the wounded 8-1 at five PP, named on the first step and kept for the move. Each step is 1 MF of Open
+        // Ground: the leader spends none of his 3 MF. The squad's 4 MF and the wounded leader's bonus of 2 (which still applies) less the 2 PP beyond its IPC
+        // of 3 (A4.42) leave it 4 MF, not 6: its fifth step is refused.
+        var path = await CarryGame();
+        var before = Revision;
+        Committed(await CarryStep(path[1], name: true));
+        await PassFire();
+        Committed(await CarryStep(path[2]));
+        var steps = Since(before).Select(item => item.Payload).OfType<MovementStepped>().ToArray();
+        Assert.All(steps, step => Assert.Equal(new CarriedMan("de-l", "de-s"), Assert.Single(step.Carried!)));
+        var (leader, squad) = (Current.Unit("de-l")!, Current.Unit("de-s")!);
+        Assert.Equal((0, false), (leader.MfSpent, leader.HalfMfSpent));
+        Assert.Equal(2, squad.MfSpent);
+        Assert.Equal(L(path[2]), Current.Location("de-l")!.Location.ToString());
+
+        for (var step = 3; step <= 4; step++)
+        {
+            await PassFire();
+            Committed(await CarryStep(path[step]));
+        }
+
+        await PassFire();
+        var refused = await CarryStep(path[5]);
+        Assert.NotEqual(PlayOutcome.Committed, refused.Outcome);
+        Assert.Contains(refused.Reasons, reason => reason.Contains("de-s has 0 MF left", StringComparison.Ordinal));
+        Assert.Equal(0, Current.Unit("de-l")!.MfSpent);
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task AWoundedLeaderWhoPortagesASwIsNotCarried()
+    {
+        // A17.2: "A Good Order wounded man who is not portaging a SW": the 8-1 holds the German LMG, so the carry is refused and says why.
+        Dictionary<string, object> lmg = new()
+        {
+            ["id"] = "dmg",
+            ["kind"] = "asl:mg",
+            ["definition"] = "attacker-lmg",
+            ["side"] = "german",
+            ["holding"] = new
+            {
+                holder = "de-l",
+                role = "possessed",
+            },
+            ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+        };
+        var path = await CarryGame(lmg);
+        var refused = await CarryStep(path[1], name: true);
+        Assert.NotEqual(PlayOutcome.Committed, refused.Outcome);
+        Assert.Contains(refused.Reasons, reason => reason.Contains("play.move-carry: de-l portages a SW", StringComparison.Ordinal));
+        Assert.Null(Current.Movement);
+    }
+
+    [Fact]
+    public async Task ACarriedManWhoseCarrierStopsIsSetDownAndMovesNoFarther()
+    {
+        // A17.2 (ruling R71.16): the squad carries the 8-1 one hex; the ATTACKER ends the squad's move, and the leader, set down, may not step on alone.
+        var path = await CarryGame();
+        Committed(await CarryStep(path[1], name: true));
+        await PassFire();
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+            unitIds = TheCarrier,
+        }));
+        var refused = await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = Leader,
+            to = L(path[2]),
+        });
+        Assert.NotEqual(PlayOutcome.Committed, refused.Outcome);
+        Assert.Contains(refused.Reasons, reason => reason.Contains("set down", StringComparison.Ordinal));
+        Assert.False(History.HasErrors);
+    }
 }

@@ -22,6 +22,65 @@ public static class ScenarioA1Wounds
     /// </summary>
     public static bool PinnedByWound(bool smc, string? phase, int mfSpent, bool halfMfSpent) => smc && phase == "mph" && (mfSpent > 3 || (mfSpent == 3 && halfMfSpent));
 
+    /// <summary>A17.2 (p. 85): "A Good Order wounded man who is not portaging a SW may be carried by any Good Order MMC at a cost of five PP".</summary>
+    public const int CarriedManPp = 5;
+
+    /// <summary>
+    /// The PP a unit portages (A4.4, A4.42) with a wounded man it carries in this move (A17.2; pass 71, ruling R71.16): his five PP join its SW's, and,
+    /// as a SW's, are not recouped once he is set down (A4.4). Null stays null: a SW whose PP are not recorded leaves the portage undecided.
+    /// </summary>
+    public static int[]? Portage(int[]? weapons, bool carriesMan) => weapons is null || !carriesMan ? weapons : [.. weapons, CarriedManPp];
+
+    /// <summary>The half MF a mover spends with a step (A17.2; ruling R71.16): none for a wounded man carried, who spends no MF of his own.</summary>
+    public static int MoverHalfMf(bool carried, int halfMf) => carried ? 0 : halfMf;
+
+    /// <summary>
+    /// The carries a step names (A17.2, p. 85; pass 71, ruling R71.16), as the planner proposes them and the projector checks the record: each man and his
+    /// carrier in the step's stack; the man wounded, in Good Order, and "not portaging a SW"; the carrier a Good Order MMC; one man to a carrier and one
+    /// carrier to a man, counting the carries of the move's earlier steps (<paramref name="earlier"/>). Null when every carry stands.
+    /// </summary>
+    public static string? CarryBar(IReadOnlyList<CarryFacts> carries, IReadOnlyList<(string Man, string Carrier)> earlier)
+    {
+        ArgumentNullException.ThrowIfNull(carries);
+        ArgumentNullException.ThrowIfNull(earlier);
+        (string Man, string Carrier)[] all = [.. earlier, .. carries.Select(carry => (carry.Man, carry.Carrier))];
+        foreach (var carry in carries)
+        {
+            var bar = carry.Man == carry.Carrier || !carry.ManMoving || !carry.CarrierMoving
+                    ? $"{carry.Man} and {carry.Carrier} must be two units of the moving stack for one to carry the other (A17.2)"
+                : !carry.ManWounded ? $"{carry.Man} is not wounded; only a wounded man is carried (A17.2)"
+                : !carry.ManGoodOrder ? $"{carry.Man} is not in Good Order; only a Good Order wounded man is carried (A17.2)"
+                : carry.ManHoldsSw ? $"{carry.Man} portages a SW, so he is not carried; he drops it first, at no MF cost (A17.2, A4.43)"
+                : !carry.CarrierMmc ? $"{carry.Carrier} is no MMC; only a MMC carries a wounded man (A17.2)"
+                : !carry.CarrierGoodOrder ? $"{carry.Carrier} is not in Good Order; only a Good Order MMC carries a wounded man (A17.2)"
+                : all.Any(other => (other.Carrier == carry.Carrier) != (other.Man == carry.Man))
+                    ? $"{carry.Carrier} carries one wounded man and {carry.Man} is carried by one MMC in a move (A17.2)"
+                : null;
+            if (bar is not null)
+            {
+                return $"play.move-carry: {bar}";
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// A17.2 (ruling R71.16): a man carried with the move's earlier steps moves on only with his carrier; without it (it broke, was pinned, or moves on
+    /// alone) he has been set down, and moves no farther in this MPh. Null when the step's movers keep that rule.
+    /// </summary>
+    public static string? CarriedMoveBar(IReadOnlyList<(string Man, string Carrier)> earlier, IReadOnlyCollection<string> movers)
+    {
+        ArgumentNullException.ThrowIfNull(earlier);
+        ArgumentNullException.ThrowIfNull(movers);
+        return earlier.FirstOrDefault(carry => movers.Contains(carry.Man) && !movers.Contains(carry.Carrier)) is { Man: { } man } set
+            ? $"play.move-carry: {man} was carried by {set.Carrier} in this move and was set down without it, so he moves no farther this MPh; end his move (A17.2)"
+            : null;
+    }
+
+    /// <summary>What a move's proposal says of a carry (A17.2): the man, his carrier, and the five PP.</summary>
+    public static string CarriedText(string man, string carrier) => $"; {carrier} carries the wounded {man} at five PP, and he spends no MF (A17.2)";
+
     /// <summary>
     /// What a record says of a Wound Severity dr (A17.11): the man when the record knows him, the dr with the +1 of a man already wounded, the
     /// Final dr, and what it comes to.

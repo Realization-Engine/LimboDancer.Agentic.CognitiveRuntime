@@ -739,7 +739,7 @@ else if (state is not null)
                         else
                         {
                         <div class="toolbar">
-                            <InfantryMovementAction Movers="@MoveRows" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id"
+                            <InfantryMovementAction Movers="@MoveRows" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id" CarryMen="@CarryMen" Carriers="@Carriers"
                                 OnToggle="@ToggleMover" OnDraftChanged="@SetMoveDraft" OnPropose="@ProposeMove" OnOverrunNtc="@ProposeOverrunNtc">
                                 <Route>
                                     @* The Play streamlining plan, S3 and S6: the route plotted on the map and made step by step; a plan that waits for the
@@ -3903,6 +3903,10 @@ else if (state is not null)
     private bool moveTerrainRate;
     private string moveDash = string.Empty;
     private string moveIpcTo = string.Empty;
+
+    // Pass 71 (A17.2; ruling R71.16): the wounded man the step carries, and his carrier.
+    private string moveCarry = string.Empty;
+    private string moveCarryBy = string.Empty;
     private bool moveOverrun;
 
     private bool moveMinimum;
@@ -6662,6 +6666,11 @@ else if (state is not null)
             moveIpcTo = string.Empty;
         }
 
+        if (!moveUnits.Contains(moveCarry) || !moveUnits.Contains(moveCarryBy))
+        {
+            (moveCarry, moveCarryBy) = (moveUnits.Contains(moveCarry) ? moveCarry : string.Empty, moveUnits.Contains(moveCarryBy) ? moveCarryBy : string.Empty);
+        }
+
         PruneMoveDrafts();
 
         // A route plotted for one stack is not another's.
@@ -6679,11 +6688,25 @@ else if (state is not null)
         PruneMoveDrafts();
     }
 
-    private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun);
+    private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun,
+        moveCarry, moveCarryBy);
 
     private void SetMoveDraft(InfantryMovementAction.MoveDraft draft) =>
-        (moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun) =
-            (draft.To, draft.Minimum, draft.Bypass, draft.Assault, draft.DoubleTime, draft.Push, draft.TerrainRate, draft.Dash, draft.IpcTo, draft.Overrun);
+        (moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun, moveCarry, moveCarryBy) =
+            (draft.To, draft.Minimum, draft.Bypass, draft.Assault, draft.DoubleTime, draft.Push, draft.TerrainRate, draft.Dash, draft.IpcTo, draft.Overrun, draft.CarryMan, draft.CarryBy);
+
+    /// <summary>
+    /// The checked movers the view sees that may be carried (A17.2; pass 71, ruling R71.16): wounded, and not already carried in this move; the planner
+    /// decides the rest of the carry (Good Order, no SW).
+    /// </summary>
+    private IReadOnlyList<PlayChoice> CarryMen => state is null || moveUnits.Count < 2 ? []
+        : [.. SeenOnly(moveUnits.Select(id => state.Unit(id)).OfType<UnitInstance>().Where(unit => GameState.Condition(unit, Conditions.Wounded) == ConditionState.True
+            && state.Movement?.Carried?.Any(carry => carry.Man == unit.Id) != true)).OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => new PlayChoice(unit.Id, unit.Id))];
+
+    /// <summary>The checked MMC that may carry a wounded man (A17.2): not already carrying one in this move.</summary>
+    private IReadOnlyList<PlayChoice> Carriers => state is null || moveUnits.Count < 2 ? []
+        : [.. SeenOnly(moveUnits.Select(id => state.Unit(id)).OfType<UnitInstance>().Where(unit => Library.Vocabulary.IsA(unit.Kind, "asl:mmc")
+            && state.Movement?.Carried?.Any(carry => carry.Carrier == unit.Id) != true)).OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => new PlayChoice(unit.Id, unit.Id))];
 
     private Task ProposeSmoke()
     {
@@ -6732,6 +6755,12 @@ else if (state is not null)
         if (moveIpcTo.Length > 0 && moveUnits.Count > 1 && moveUnits.Contains(moveIpcTo))
         {
             arguments["ipcTo"] = moveIpcTo;
+        }
+
+        // A17.2 (pass 71, ruling R71.16): the wounded man carried, and his carrier.
+        if (moveCarry.Length > 0 && moveCarryBy.Length > 0 && moveUnits.Contains(moveCarry) && moveUnits.Contains(moveCarryBy))
+        {
+            arguments["carried"] = new[] { new Dictionary<string, string> { ["man"] = moveCarry, ["carrier"] = moveCarryBy } };
         }
 
         // A4.134, A4.3 (rulings R10.7, R10.9): a Minimum Move, or the hexsides of a Bypass.
@@ -7112,7 +7141,7 @@ else if (state is not null)
         moveTerrainRate = false;
         moveDash = string.Empty;
         moveOverrun = false;
-        moveIpcTo = string.Empty;
+        moveIpcTo = moveCarry = moveCarryBy = string.Empty;
         moveBypass = string.Empty;
         advanceUnits.Clear();
         advanceTo = string.Empty;
@@ -7223,7 +7252,7 @@ else if (state is not null)
         moveTerrainRate = false;
         moveDash = string.Empty;
         moveOverrun = false;
-        moveIpcTo = string.Empty;
+        moveIpcTo = moveCarry = moveCarryBy = string.Empty;
         moveBypass = string.Empty;
         vehicleIntended = string.Empty;
         vehicleOverrun = false;
@@ -8390,7 +8419,7 @@ else if (state is not null)
                 moveTerrainRate = false;
                 moveDash = string.Empty;
                 moveOverrun = false;
-                moveIpcTo = string.Empty;
+                moveIpcTo = moveCarry = moveCarryBy = string.Empty;
                 moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.Move)
@@ -8401,7 +8430,7 @@ else if (state is not null)
                 moveTerrainRate = false;
                 moveDash = string.Empty;
                 moveOverrun = false;
-                moveIpcTo = string.Empty;
+                moveIpcTo = moveCarry = moveCarryBy = string.Empty;
                 moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.MoveVehicle)

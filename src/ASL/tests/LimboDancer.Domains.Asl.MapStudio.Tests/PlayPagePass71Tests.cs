@@ -444,4 +444,41 @@ public sealed class PlayPagePass71Tests : IDisposable
             Assert.StartsWith("Wound Severity dr 1 for de-l: a wound, not mortal", wound.Text, StringComparison.Ordinal);
         }
     }
+
+    // Increment 4g: carrying a wounded man (A17.2; ruling R71.16).
+
+    [Fact]
+    public async Task TheMovementPanelOffersToCarryAWoundedManOfTheStackByHexAndTheMoveRecordsIt()
+    {
+        // A17.2 (ruling R71.16): the German 4-6-7 and the wounded 8-1 in the third hex, the German MPh. Both checked, the panel offers the leader to carry and
+        // the squad to carry him, each "[hex]: name"; proposed, the step records the carry, and the leader spends no MF.
+        var stackAt = WideBoards.At(3);
+        await Start(Squad("de-s", "attacker-squad", stackAt, "german"),
+            Placed("de-l", "asl:leader", "attacker-leader-8-1", stackAt, "german", new Dictionary<string, bool> { ["asl:broken"] = false, ["asl:concealed"] = false, [Conditions.Wounded] = true }),
+            Squad("ru-1", "defender-squad", WideBoards.At(10), "russian"));
+        await Do(GameActions.AdvancePhase, new
+        {
+        });
+        var page = Open("german");
+        Assert.Empty(page.FindAll("#move-carry"));
+        page.Find(".move-unit[data-unit='de-s']").Change(true);
+        page.Find(".move-unit[data-unit='de-l']").Change(true);
+        var men = page.FindAll("#move-carry option").Skip(1).ToArray();
+        Assert.Equal("de-l", Assert.Single(men).GetAttribute("value"));
+        Assert.Matches(@"^\[[A-Z]{1,2}\d{1,2}\]: ", men[0].TextContent.Trim());
+        var carriers = page.FindAll("#move-carrier option").Skip(1).ToArray();
+        Assert.Equal("de-s", Assert.Single(carriers).GetAttribute("value"));
+        Assert.Matches(@"^\[[A-Z]{1,2}\d{1,2}\]: ", carriers[0].TextContent.Trim());
+
+        page.Find("#move-carry").Change("de-l");
+        page.Find("#move-carrier").Change("de-s");
+        page.Find("#move-to").Change(WideBoards.At(4));
+        page.Find("#propose-move").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.NotEmpty(Events.Select(item => item.Payload).OfType<MovementStepped>()));
+        var step = Events.Select(item => item.Payload).OfType<MovementStepped>().Single();
+        Assert.Equal(new CarriedMan("de-l", "de-s"), Assert.Single(step.Carried!));
+        Assert.Equal(0, live.History(Game)!.Current!.Unit("de-l")!.MfSpent);
+    }
 }

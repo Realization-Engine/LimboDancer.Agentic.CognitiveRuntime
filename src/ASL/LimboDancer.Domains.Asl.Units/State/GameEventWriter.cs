@@ -594,6 +594,21 @@ public static class GameEventWriter
                     writer.WriteEndArray();
                 }
 
+                // A17.2 (pass 71, ruling R71.16): the wounded men carried with the step; none in a step recorded before the pass.
+                if (moving.Carried is { Count: > 0 } carriedMen)
+                {
+                    writer.WriteStartArray("carried");
+                    foreach (var carry in carriedMen)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("man", carry.Man);
+                        writer.WriteString("carrier", carry.Carrier);
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndArray();
+                }
+
                 break;
             case BoreSighted sighted:
                 writer.WriteString("gun", sighted.Gun);

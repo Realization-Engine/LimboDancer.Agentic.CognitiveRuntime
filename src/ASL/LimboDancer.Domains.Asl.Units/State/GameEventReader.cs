@@ -459,6 +459,19 @@ public static class GameEventReader
                         fields.OptionalString(item, "hull", path)!, fields.OptionalString(item, "turret", path)))];
                 }
 
+                // A17.2 (pass 71, ruling R71.16): the wounded men carried with the step.
+                List<CarriedMan>? carried = null;
+                if (payload.TryGetProperty("carried", out var carriedList))
+                {
+                    if (carriedList.ValueKind != JsonValueKind.Array || carriedList.EnumerateArray().Any(item => item.ValueKind != JsonValueKind.Object
+                        || fields.OptionalString(item, "man", path) is null || fields.OptionalString(item, "carrier", path) is null))
+                    {
+                        return Missing(diagnostics, "A carry names each wounded man and the MMC carrying him.", path);
+                    }
+
+                    carried = [.. carriedList.EnumerateArray().Select(item => new CarriedMan(fields.OptionalString(item, "man", path)!, fields.OptionalString(item, "carrier", path)!))];
+                }
+
                 return stepTo is null || halfMf is null || step is null
                     ? Missing(diagnostics, "A movement step names its movers, destination, half MF, and step.", path)
                     : new MovementStepped(fields.StringList(payload, "movers", path), stepTo, halfMf.Value, fields.OptionalBoolean(payload, "assault", path), step.Value)
@@ -475,6 +488,7 @@ public static class GameEventReader
                         MinimumMove = fields.OptionalBoolean(payload, "minimumMove", path),
                         Attempted = attempted,
                         Bypass = bypass,
+                        Carried = carried,
                         Smoke = smokeBy is null ? null : new SmokeAttempt(smokeBy, smokeAt!, smokeRoll!, smokeDr!.Value, smokeExponent!.Value)
                         {
                             Cx = fields.OptionalBoolean(payload, "smokeCx", path),

@@ -2356,6 +2356,14 @@ public static class GameProjector
                 return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
+            // A17.2 (pass 71, ruling R71.16): the carries the step records, read from the record; a step recorded before the pass names none.
+            IReadOnlyList<CarriedMan> carried = moving.Carried ?? [];
+            if (carried.Count > 0 && Rules.ScenarioA1Wounds.CarryBar([.. carried.Select(carry => CarryFacts(state, moving, carry))],
+                [.. (current?.Carried ?? []).Select(carry => (carry.Man, carry.Carrier))]) is { } badCarry)
+            {
+                return Fail<GameState>("UNIT-STATE-029", $"{badCarry.Replace("play.move-carry: ", string.Empty, StringComparison.Ordinal)}.");
+            }
+
             // A12.15, A2.51 (ruling R25.3): a stack entering from off board that is forced back stays off board, its MF spent and its move over; no fire
             // reaches it there, so no window opens.
             if (verdict.OffBoardForcedBack)
@@ -2402,7 +2410,8 @@ public static class GameProjector
             var next = state;
             foreach (var unit in movers)
             {
-                var update = Rules.ScenarioA1MovementCalculator.StepMover(unit!.MfSpent, unit.HalfMfSpent, unit.DoubleTimeMf, unit.OffRoad, unit.MovedWith, unit.Id, moving.HalfMf, moving.DoubleTime, moving.Road, leaders);
+                var update = Rules.ScenarioA1MovementCalculator.StepMover(unit!.MfSpent, unit.HalfMfSpent, unit.DoubleTimeMf, unit.OffRoad, unit.MovedWith, unit.Id,
+                    Rules.ScenarioA1Wounds.MoverHalfMf(carried.Any(carry => carry.Man == unit.Id), moving.HalfMf), moving.DoubleTime, moving.Road, leaders);
                 var conditions = update.SetCx
                     ? new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.Cx] = ConditionState.True }
                     : unit.Conditions;
@@ -2446,6 +2455,7 @@ public static class GameProjector
                     MinimumMove = Rules.ScenarioA1MovementCalculator.MinimumMoveEntered(moving.MinimumMove, moving.Attempted is not null),
                     RoadRate = moving.RoadRate,
                     IpcTo = moving.IpcTo ?? current?.IpcTo,
+                    Carried = carried.Count == 0 ? current?.Carried : [.. (current?.Carried ?? []).Union(carried)],
                     InfantryOverrun = moving.InfantryOverrun ? moving.To : null,
                     ChangedLocation = current?.ChangedLocation == true || (movers[0]!.Position is MapPosition stoodAt && stoodAt.Location != moving.To),
                     Bypass = moving.Bypass,
@@ -2463,6 +2473,19 @@ public static class GameProjector
                         .Select(item => new Rules.CarriedWeaponFacts(item.Id, vocabulary.IsA(item.Kind, "asl:light-mortar") || vocabulary.IsA(item.Kind, "asl:mg"), next.MovedWeapons.Contains(item.Id, StringComparer.Ordinal)))],
                     locationChanged)],
             };
+        }
+
+        /// <summary>A carry a step records against the state before it (A17.2; pass 71, ruling R71.16), as Rules checks it.</summary>
+        private Rules.CarryFacts CarryFacts(GameState state, MovementStepped moving, CarriedMan carry)
+        {
+            bool GoodOrder(UnitInstance unit) => Rules.ScenarioA1Definitions.GoodOrderOf(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken), Is(unit, Conditions.Berserk),
+                Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, Conditions.Stunned), Is(unit, Conditions.Shocked));
+            static bool Is(UnitInstance unit, string condition) => GameState.Condition(unit, condition) == ConditionState.True;
+            var man = Active(state, carry.Man) as UnitInstance;
+            var carrier = Active(state, carry.Carrier) as UnitInstance;
+            return new Rules.CarryFacts(carry.Man, carry.Carrier, man is not null && moving.Movers.Contains(man.Id), man is not null && Is(man, Conditions.Wounded),
+                man is not null && GoodOrder(man), man is not null && state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == man.Id),
+                carrier is not null && moving.Movers.Contains(carrier.Id), carrier is not null && vocabulary.IsA(carrier.Kind, "asl:mmc"), carrier is not null && GoodOrder(carrier));
         }
 
         /// <summary>

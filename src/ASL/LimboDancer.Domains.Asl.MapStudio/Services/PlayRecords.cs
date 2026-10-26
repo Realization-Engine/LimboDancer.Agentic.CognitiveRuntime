@@ -422,7 +422,9 @@ public sealed class PlayRecords
                 // A12.15 (pass 70's fixes): a step forced back stays where it was, and says the Location it tried to enter, not "moves from [F5] to [F5]".
                 MovementStepped { Attempted: { } tried } forced => (forced.Movers.Count == 1 ? $"{forced.Movers[0]} tries" : $"{string.Join(", ", forced.Movers)} try")
                     + $" to enter {tried}{From(before, forced.Movers.Count > 0 ? forced.Movers[0] : null)} and {(forced.Movers.Count == 1 ? "is" : "are")} forced back (A12.15)",
-                MovementStepped step => Many(step.Movers, "moves", "move") + $"{From(before, step.Movers.Count > 0 ? step.Movers[0] : null)} to {step.To}{(step.Assault ? " by Assault Movement" : string.Empty)}",
+                MovementStepped step => Many(step.Movers, "moves", "move") + $"{From(before, step.Movers.Count > 0 ? step.Movers[0] : null)} to {step.To}{(step.Assault ? " by Assault Movement" : string.Empty)}"
+                    // A17.2 (pass 71, ruling R71.16): a carry is said to a view that may name the man, whose wound it tells.
+                    + string.Concat((step.Carried ?? []).Where(carry => Open(before, carry.Man)).Select(carry => $", {carry.Carrier} carrying the wounded {carry.Man} (A17.2)")),
                 // D2.17, D3.12 (pass 50): a Delay MP, and a turret turned with an MP expenditure.
                 VehicleStepped { Kind: VehicleStepped.Turn, Turret: { } turnTurret } turnedBoth => $"{turnedBoth.Vehicle} turns its turret to {UnitFacings.Name(turnTurret)} with its VCA change (D3.12)",
                 VehicleStepped { Kind: VehicleStepped.Delay } delay => $"{delay.Vehicle} spends a Delay MP in {delay.At} (D2.17)"
