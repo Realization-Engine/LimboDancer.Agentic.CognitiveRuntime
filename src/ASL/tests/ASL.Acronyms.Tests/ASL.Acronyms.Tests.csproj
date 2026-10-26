@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>ASL.Acronyms</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="bunit" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio"><PrivateAssets>all</PrivateAssets></PackageReference>
+    <ProjectReference Include="../../LimboDancer.Domains.Asl.MapStudio/LimboDancer.Domains.Asl.MapStudio.csproj" />
+    <ProjectReference Include="../../../../code-builders/asl-acronyms/AslAcronyms.csproj" />
+    <None Include="../../docs/ASL Rulebook Acronym Scan.md" Link="Fixtures/scan.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../docs/ASL Acronym Expanded-Term Search Ledger.csv" Link="Fixtures/ledger.csv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

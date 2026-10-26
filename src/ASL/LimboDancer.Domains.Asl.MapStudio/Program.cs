@@ -9,6 +9,9 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+        builder.Services.AddSingleton<Services.Acronyms.AcronymCatalog>(services =>
+            new(services.GetRequiredService<ILogger<Services.Acronyms.AcronymCatalog>>()));
+        builder.Services.AddSingleton<Services.Acronyms.AcronymSearchService>();
         var options = builder.Configuration.GetSection("AslMaps").Get<StudioOptions>() ?? new StudioOptions();
         builder.Services.AddSingleton(options);
         builder.Services.AddSingleton<VaslBoardProvider>();

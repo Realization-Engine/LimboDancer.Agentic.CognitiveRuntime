@@ -7,6 +7,10 @@ on:
       - main
     paths:
       - "src/ASL/**"
+      - "Directory.Packages.props"
+      - "global.json"
+      - "src/LimboDancer/LimboDancer.Abstractions/**"
+      - "src/LimboDancer/LimboDancer.Runtime/**"
       - "code-builders/**"
       - "src/LimboDancer/LimboDancer.Host/**"
       - "utils/pdf_to_markdown.py"
@@ -18,6 +22,10 @@ on:
   pull_request:
     paths:
       - "src/ASL/**"
+      - "Directory.Packages.props"
+      - "global.json"
+      - "src/LimboDancer/LimboDancer.Abstractions/**"
+      - "src/LimboDancer/LimboDancer.Runtime/**"
       - "code-builders/**"
       - "src/LimboDancer/LimboDancer.Host/**"
       - "utils/pdf_to_markdown.py"
@@ -31,9 +39,50 @@ permissions:
   contents: read
 
 jobs:
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      broad: ${{ steps.scope.outputs.broad }}
+      acronyms: ${{ steps.scope.outputs.acronyms }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: scope
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.sha }}
+        run: |
+          if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "broad=true" >> "$GITHUB_OUTPUT"
+            echo "acronyms=true" >> "$GITHUB_OUTPUT"
+          else
+            python3 code-builders/asl-acronyms/ci_scope.py "$BASE" "$HEAD" >> "$GITHUB_OUTPUT"
+          fi
+
+  acronyms:
+    needs: scope
+    if: needs.scope.outputs.acronyms == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Test only Acronym Search
+        run: dotnet test src/ASL/tests/ASL.Acronyms.Tests/ASL.Acronyms.Tests.csproj --configuration Release -p:RestoreLockedMode=true
+      - name: Verify packaged catalog
+        run: >-
+          dotnet run --project code-builders/asl-acronyms/AslAcronyms.csproj --configuration Release --no-build --
+          verify "src/ASL/docs/ASL Rulebook Acronym Scan.md"
+          "src/ASL/docs/ASL Acronym Expanded-Term Search Ledger.csv"
+          src/ASL/LimboDancer.Domains.Asl.MapStudio/Data/acronyms.catalog.json
+
   # The test projects run as parallel jobs, each on its own machine (2026-10-24): in one job the four large projects shared four cores, and
   # Authoring's 9:35 set the run's length. Each job builds the whole solution with warnings as errors, so every job also proves the strict build.
   source-conformance:
+    needs: scope
+    if: needs.scope.outputs.broad == 'true'
     name: source-conformance (${{ matrix.share }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
