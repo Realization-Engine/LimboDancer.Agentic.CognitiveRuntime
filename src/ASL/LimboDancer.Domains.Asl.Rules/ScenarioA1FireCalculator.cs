@@ -4492,10 +4492,12 @@ public static class ScenarioA1FireCalculator
             var passed = final <= morale && original != 12;
             string consequence;
 
-            // A20.54 (ruling R12.9): a prisoner is never broken; one that fails a MC suffers Casualty Reduction, and it takes no Heat of Battle.
-            if (unit.Target.GuardId is not null)
+            // A20.54 (ruling R12.9): a prisoner is never broken; one that fails a MC suffers Casualty Reduction, and it takes no Heat of Battle. Pass 70
+            // (ruling R70.47; A20.54, p. 88: "A prisoner/unarmed unit which fails a MC is not broken; it suffers Casualty Reduction instead"; A10.3's EXC):
+            // so does an Unarmed unit, where its facts carry R70.7's fact; an older record carries none, and its unit breaks as it did.
+            if (unit.Target.GuardId is not null || unit.Target.Unarmed == true)
             {
-                if (!passed && !Reduce(unit, "casualty-reduced-prisoner"))
+                if (!passed && !Reduce(unit, unit.Target.GuardId is not null ? "casualty-reduced-prisoner" : "casualty-reduced-unarmed"))
                 {
                     return;
                 }

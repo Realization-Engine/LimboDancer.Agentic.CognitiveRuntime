@@ -223,11 +223,16 @@ public sealed partial class GamePlanner
                 continue;
             }
 
+            // The units of the Location from the state's index, those on foot and those aboard its vehicles (PRC, and a unit that crews one, D5.42); Rules
+            // picks who takes the check (the Rules boundary review), none for a side with no ELR declared (A19.13).
             var gone = group.Select(item => item.Unit!.Id).ToHashSet(StringComparer.Ordinal);
-            UnitInstance[] here = [.. after.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && !gone.Contains(unit.Id) && !LiveFire.IsVehicle(unit)
-                && unit.Kind != UnitKinds.Dummy && !Is(unit, Conditions.Captured) && DefinitionOf(unit) is not null && afterIndex.Location(unit.Id)?.Location == at)];
-            // A19.13: a side with no ELR declared (a game Fire refuses to attack in) takes no LLMC here.
-            if (here.Length == 0 || after.Side(side)?.Elr is null)
+            UnitInstance[] present = [.. afterIndex.At(at).OfType<UnitInstance>().SelectMany(unit => LiveFire.IsVehicle(unit)
+                ? [unit, .. afterIndex.Aboard(unit.Id), .. afterIndex.CrewOf(unit.Id) is { } crew ? new[] { crew } : []] : new[] { unit })];
+            var picked = ScenarioA1MoraleCheck.LeaderLossSubjects([.. present.Select(unit => new LeaderLossUnitFacts(unit.Id, unit.Status == InstanceStatus.Active,
+                unit.Side == side, gone.Contains(unit.Id), LiveFire.IsVehicle(unit), unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Captured), DefinitionOf(unit) is not null))],
+                after.Side(side)?.Elr).ToHashSet(StringComparer.Ordinal);
+            UnitInstance[] here = [.. present.Where(unit => picked.Contains(unit.Id))];
+            if (here.Length == 0)
             {
                 continue;
             }

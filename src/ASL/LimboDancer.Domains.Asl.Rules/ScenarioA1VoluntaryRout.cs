@@ -14,6 +14,9 @@ public sealed record VoluntaryBreakFacts(string UnitId, bool OnMap, bool OfSide,
 public sealed record VoluntaryRoutLeaderFacts(string LeaderId, bool OnMap, bool OfSide, bool Leader, bool Broken, bool Pinned, bool Berserk, bool Melee, bool Captured,
     bool Aboard, bool StackedWith, bool RoutedThisPhase);
 
+/// <summary>A unit that breaks voluntarily, as its effects read it (A10.41, A7.83, A12.14): whether it is pinned, and whether it is concealed or hidden.</summary>
+public sealed record VoluntaryBreakUnit(string Id, bool Pinned, bool Concealed);
+
 /// <summary>
 /// Voluntary Break and Voluntary Rout (pass 70, task 70.1; rulings R70.11, R70.12). A10.41 (p. 66): "Units within both the LOS and Normal Range per A10.532
 /// of an armed, unbroken Known enemy ground--and/or ADJACENT to any unbroken enemy ground unit--may voluntarily break (even if pinned) at the start of the
@@ -50,24 +53,56 @@ public static class ScenarioA1VoluntaryRout
             : !unit.BrokenSide ? $"play.voluntary-break: {unit.UnitId} has no broken side, so breaking would eliminate it at once (A10.41)"
             : unit.Melee ? $"play.voluntary-break: {unit.UnitId} is in Melee, where a broken unit does not rout (A10.41, A10.5)"
             : unit.Aboard ? $"play.voluntary-break: {unit.UnitId} rides a vehicle; a Passenger's or Rider's Voluntary Break is not built"
-            : threat() is null ? $"play.voluntary-break: {unit.UnitId} is neither in the LOS and Normal Range of a Known armed unbroken enemy ground unit nor ADJACENT to a Known unbroken one, so it may not break voluntarily (A10.41)"
+            : threat() is null ? $"play.voluntary-break: {unit.UnitId} is neither in the LOS and Normal Range of a Known armed unbroken enemy ground unit nor ADJACENT to a Known unbroken one, so it may not break voluntarily (A10.41); a concealed or hidden enemy unit does not count (ruling R70.43)"
             : null;
     }
 
     /// <summary>
-    /// The Known enemy unit that lets a unit in a Location break voluntarily (A10.41, A10.532; ruling R70.11), or null: an unbroken one ADJACENT to it or in
-    /// its Location (a vehicle not Abandoned), or an armed unbroken one with a clear LOS to it within its Normal Range. The enemies are the Known ones the
-    /// rout reads (A10.533), so the answer tells the side nothing it does not hold. A vehicle's Normal Range is its weapons', and a Gun's crew's takes in the
-    /// Gun's, as the rout reads them (ruling R70.14, increment 3d).
+    /// The Known enemy unit that lets a unit in a Location break voluntarily (A10.41, A10.532; rulings R70.11, R70.43), or null: an unbroken one ADJACENT to
+    /// it or in its Location, armed or not ("ADJACENT to any unbroken enemy ground unit"; an Abandoned vehicle, with no crew, is no ground unit that counts),
+    /// or an armed unbroken one, not Unarmed Personnel, with a clear LOS to it within its Normal Range. The enemies are the Known ones the rout reads
+    /// (A10.533), so the answer tells the side nothing it does not hold; a concealed or hidden enemy does not allow the break, a deviation (ruling R70.43).
+    /// A vehicle's Normal Range is its weapons', and a Gun's crew's takes in the Gun's, as the rout reads them (ruling R70.14, increment 3d).
     /// </summary>
     public static string? Threat(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int at)
     {
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(enemies);
-        return ScenarioA1RoutCalculator.NearUnbrokenArmedEnemy(reader, enemies, at)
-            ?? enemies.Where(item => item.Armed && !item.Broken && item.NormalRange > 0).OrderBy(item => item.Id, StringComparer.Ordinal)
+        // RoutEnemyFacts.Armed is false only for an Abandoned vehicle (ScenarioA1RoutCalculator.Armed); Unarmed Personnel stay in the ADJACENT clause.
+        return enemies.Where(item => item.Armed && !item.Broken && ScenarioA1RoutCalculator.AdjacentOrSame(reader, item.Location, at))
+                .Select(item => item.Id).Order(StringComparer.Ordinal).FirstOrDefault()
+            ?? enemies.Where(item => item.Armed && item.Unarmed != true && !item.Broken && item.NormalRange > 0).OrderBy(item => item.Id, StringComparer.Ordinal)
                 .FirstOrDefault(item => reader.Los(item.Location, at) is { Clear: true } los && los.Range <= item.NormalRange)?.Id;
     }
+
+    /// <summary>
+    /// What a Voluntary Break does to its units (A10.41, p. 66; pass 70, ruling R70.11; the Rules boundary review): each is broken and under DM (A10.62:
+    /// "even if it breaks voluntarily"), a pinned one loses its pin (A7.83, and the pinned HS of the example on p. 69), and a concealed or hidden one loses
+    /// its "?" (A12.14: "When a concealed unit ... breaks it loses its '?', regardless of the range ... or even if out of the LOS of all enemy units"). The
+    /// units revealed and unpinned, in the order given, and each unit's condition changes in the record's order.
+    /// </summary>
+    public static (IReadOnlyList<string> Revealed, IReadOnlyList<string> Unpinned, IReadOnlyList<(string Id, IReadOnlyList<(UnitCondition Condition, bool Value)> Changes)> Changes)
+        BreakEffects(IReadOnlyList<VoluntaryBreakUnit> units)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        static IReadOnlyList<(UnitCondition Condition, bool Value)> Changes(bool pinned) => pinned
+            ? [(UnitCondition.Broken, true), (UnitCondition.DesperationMorale, true), (UnitCondition.Pinned, false)]
+            : [(UnitCondition.Broken, true), (UnitCondition.DesperationMorale, true)];
+        return ([.. units.Where(unit => unit.Concealed).Select(unit => unit.Id)], [.. units.Where(unit => unit.Pinned).Select(unit => unit.Id)],
+            [.. units.Select(unit => (unit.Id, Changes(unit.Pinned)))]);
+    }
+
+    /// <summary>
+    /// A10.711 (ruling R70.12): the half MF a rout with a Voluntary Rout leader may spend: the leader "must remain with the broken unit throughout the RtPh",
+    /// so the least of the unit's and his; the unit's alone with no leader.
+    /// </summary>
+    public static int RoutLimit(int unitHalfMf, int? leaderHalfMf) => leaderHalfMf is { } leader ? Math.Min(unitHalfMf, leader) : unitHalfMf;
+
+    /// <summary>
+    /// A12.14 (ruling R70.12): a Voluntary Rout leader still under "?" when the unit he routs with is Interdicted has moved into Open Ground in the LOS of
+    /// the unbroken Interdictor, and is named with his DRM, so he loses his "?".
+    /// </summary>
+    public static bool InterdictionRevealsLeader(bool concealedOrHidden) => concealedOrHidden;
 
     /// <summary>
     /// The proposal's lines of a Voluntary Break (A10.41, A10.62, A7.83, A12.14): the units break, under DM; a pinned one loses its pin; a concealed one

@@ -248,9 +248,12 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.False(ScenarioA1HeatOfBattle.Subject(Reference.Definitions["defender-squad"], false, false, unarmed: true));
         Assert.Null(Assert.Single(Resolved(new MoraleCheckFacts(MoraleCheckFacts.Nmc, [unarmed], 3, Rolls(Dice("ru-s", SnakeEyes)))).Effects).HeatOfBattle);
 
-        // An 11 fails a 7 by 4: an Unarmed squad is only broken, with no ELR asked for; the armed squad of ELR 2 is Replaced (A19.13).
-        var broken = Assert.Single(Resolved(new MoraleCheckFacts(MoraleCheckFacts.Nmc, [unarmed], null, Rolls(Dice("ru-s", FiveSix)))).Effects);
-        Assert.Equal((true, "defender-squad", false), (broken.Broken, broken.FinalDefinitionId, broken.Disrupted));
+        // An 11 fails a 7 by 4: an Unarmed squad is not broken but Casualty Reduced (A20.54, p. 88; ruling R70.47, at the fixes), with no ELR asked for; the
+        // armed squad of ELR 2 is Replaced (A19.13).
+        var reduced = Assert.Single(Resolved(new MoraleCheckFacts(MoraleCheckFacts.Nmc, [unarmed], null, Rolls(Dice("ru-s", FiveSix)))).Effects);
+        Assert.Equal((false, ScenarioA1FireReference.HalfSquadOf("defender-squad"), false, "casualty-reduced"),
+            (reduced.Broken, reduced.FinalDefinitionId, reduced.Disrupted, reduced.Checks[0].Consequence));
+        Assert.Contains("casualty-reduced-unarmed", reduced.Events);
         var armed = Assert.Single(Resolved(new MoraleCheckFacts(MoraleCheckFacts.Nmc, [unarmed with { Unarmed = null }], 2, Rolls(Dice("ru-s", FiveSix)))).Effects);
         Assert.True(armed.Broken);
         Assert.Equal(ScenarioA1FireReference.ReplacementOf("defender-squad") ?? "defender-squad", armed.FinalDefinitionId);
@@ -456,6 +459,14 @@ public sealed class ScenarioA1Pass70RulesTests
         var notDisrupted = Resolved(Bail(unreplaceable.Id, FiveSix)).Effects[0];
         Assert.Equal((true, false), (notDisrupted.Broken, notDisrupted.Disrupted));
         Assert.Contains("prc-not-disrupted", notDisrupted.Events);
+
+        // Ruling R70.47 (A20.54, p. 88): an Unarmed Rider that fails is Casualty Reduced, not broken, and the record's check agrees only with that.
+        var unarmedFailure = Resolved(new MoraleCheckFacts(MoraleCheckFacts.Nmc, [Unit("ru-r", "defender-squad", aboard: rider) with { Unarmed = true }], 2,
+            Rolls(Dice("ru-r", FiveSix)))).Effects[0];
+        var unarmedResult = ScenarioA1MoraleCheck.BailOutResult(unarmedFailure.Checks[0], false, false, unarmed: true);
+        Assert.Equal((ScenarioA1RiderRules.Reduced, false), (unarmedResult, unarmedFailure.Broken));
+        Assert.True(ScenarioA1RiderRules.CheckAgrees(5, 6, morale, false, unarmedResult, 0, 2, unarmed: true));
+        Assert.False(ScenarioA1RiderRules.CheckAgrees(5, 6, morale, false, ScenarioA1RiderRules.Broken, 0, 2, unarmed: true));
     }
 
     [Fact]
@@ -532,6 +543,57 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.Null(ScenarioA1VoluntaryRout.Threat(line, [Enemy(1, normalRange: 0, armed: false)], 0));
         Assert.Null(ScenarioA1VoluntaryRout.BreakUnitBar(Breaker(), () => "ru-1"));
         Assert.StartsWith("play.voluntary-break: de-h is neither in the LOS", ScenarioA1VoluntaryRout.BreakUnitBar(Breaker(), () => null), StringComparison.Ordinal);
+    }
+
+    private static readonly string[] HalfSquadAlone = ["de-h"];
+    private static readonly string[] SquadBeside = ["de-s"];
+
+    [Fact]
+    public void AnUnarmedEnemyAllowsAVoluntaryBreakOnlyAdjacentAndTheBreakIsDecidedInRules()
+    {
+        // A10.41 (p. 66; ruling R70.43, at the fixes): "ADJACENT to any unbroken enemy ground unit" asks for no arms; the LOS and Normal Range clause asks for
+        // an armed one, so an Unarmed squad three hexes off allows nothing. The refusal names the ruling's deviation: a "?" enemy does not count.
+        var line = new Line();
+        Assert.Equal("ru-1", ScenarioA1VoluntaryRout.Threat(line, [Enemy(1, normalRange: 0) with { Unarmed = true }], 0));
+        Assert.Null(ScenarioA1VoluntaryRout.Threat(line, [Enemy(3) with { Unarmed = true }], 0));
+        Assert.EndsWith("a concealed or hidden enemy unit does not count (ruling R70.43)", ScenarioA1VoluntaryRout.BreakUnitBar(Breaker(), () => null), StringComparison.Ordinal);
+
+        // A10.62, A7.83, A12.14 (the Rules boundary review): broken and under DM, a pin lost, a "?" lost; in the record's order.
+        var (revealed, unpinned, changes) = ScenarioA1VoluntaryRout.BreakEffects([new VoluntaryBreakUnit("de-h", true, true), new VoluntaryBreakUnit("de-s", false, false)]);
+        Assert.Equal(HalfSquadAlone, revealed);
+        Assert.Equal(HalfSquadAlone, unpinned);
+        Assert.Equal(((UnitCondition.Broken, true), (UnitCondition.DesperationMorale, true), (UnitCondition.Pinned, false)),
+            (changes[0].Changes[0], changes[0].Changes[1], changes[0].Changes[2]));
+        Assert.Equal(("de-s", 2), (changes[1].Id, changes[1].Changes.Count));
+        Assert.Empty(ScenarioA1VoluntaryRout.BreakEffects([new VoluntaryBreakUnit("de-s", false, false)]).Revealed);
+
+        // A10.711: the rout keeps within the Voluntary Rout leader's MF too; a leader under "?" when the unit is Interdicted loses it (A12.14).
+        Assert.Equal((6, 4, 6), (ScenarioA1VoluntaryRout.RoutLimit(6, null), ScenarioA1VoluntaryRout.RoutLimit(6, 4), ScenarioA1VoluntaryRout.RoutLimit(6, 8)));
+        Assert.True(ScenarioA1VoluntaryRout.InterdictionRevealsLeader(true));
+        Assert.False(ScenarioA1VoluntaryRout.InterdictionRevealsLeader(false));
+    }
+
+    [Fact]
+    public void ALeadersLossOutsideFireCallsOnTheOtherUnitsOfHisSideThereAndTheVoluntaryRoutLeadersLossSaysA10711()
+    {
+        // A10.2 (p. 65; rulings R70.3, R70.44, at the fixes): bystanders included, since a rout is not Defensive First Fire; a vehicle, a Dummy, a prisoner,
+        // a unit outside the catalog, the lost leader, and an enemy unit take none; a side with no ELR declared takes none (A19.13).
+        LeaderLossUnitFacts Here(string id, bool ofSide = true, bool lost = false, bool vehicle = false, bool dummy = false, bool captured = false, bool known = true) =>
+            new(id, true, ofSide, lost, vehicle, dummy, captured, known);
+        LeaderLossUnitFacts[] location = [Here("de-s"), Here("de-l", lost: true), Here("de-t", vehicle: true), Here("de-d", dummy: true), Here("de-p", captured: true),
+            Here("de-x", known: false), Here("ru-s", ofSide: false)];
+        Assert.Equal(SquadBeside, ScenarioA1MoraleCheck.LeaderLossSubjects(location, 3));
+        Assert.Empty(ScenarioA1MoraleCheck.LeaderLossSubjects(location, null));
+
+        // Ruling R70.5 after the LLMC: a unit no longer active, rallied, berserk, or waiting on a surrender routs no further.
+        Assert.False(ScenarioA1MoraleCheck.EndsRoutAfterLeaderLoss(true, true, false, false));
+        Assert.True(ScenarioA1MoraleCheck.EndsRoutAfterLeaderLoss(false, true, false, false));
+        Assert.True(ScenarioA1MoraleCheck.EndsRoutAfterLeaderLoss(true, false, false, false));
+        Assert.True(ScenarioA1MoraleCheck.EndsRoutAfterLeaderLoss(true, true, true, false));
+        Assert.True(ScenarioA1MoraleCheck.EndsRoutAfterLeaderLoss(true, true, false, true));
+
+        // A10.711 (the table player's finding): the Voluntary Rout leader is lost to the failed NMC of the unit he routed with, not to Interdiction itself.
+        Assert.Equal("the failed Interdiction NMC of the unit he routed with (A10.711)", ScenarioA1MoraleCheck.CauseText(ScenarioA1MoraleCheck.VoluntaryRout));
     }
 
     [Fact]
@@ -667,6 +729,29 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.False(ScenarioA1RoutCalculator.BuildingGoesOn(true, false, "Stone Building", false, null, false));
         Assert.False(ScenarioA1RoutCalculator.BuildingGoesOn(true, true, "Stone Building", false, "Rowhouse Wall", false));
         Assert.False(ScenarioA1RoutCalculator.BuildingGoesOn(true, true, "Stone Factory", true, null, false));
+    }
+
+    private static readonly Dictionary<int, int> OwnBuildingReach = new() { [0] = 0, [1] = 4 };
+    private static readonly string[] OwnBuildingPlace = ["[B1]"];
+
+    [Fact]
+    public void AUnitThatMayIgnoreEveryCoverWithinReachIsToldSoAndWhereItMayEnd()
+    {
+        // A10.51 EXC (p. 67) and the example on p. 69, S3 ("Able to ignore all rout destinations within 6 MF, the broken unit is free to rout anywhere it can
+        // legally reach"; the referee's finding at the reviews): the unit in 0 reaches only 1, of its own building, so no place binds it and 1 is named as
+        // ignorable; read as two buildings, 1 binds it and none is ignorable; with the other building in reach, it binds and none is named.
+        Assert.Equal(OwnHex, ScenarioA1RoutCalculator.RoutIgnoredCovers(new Street(true), [], 0, OwnBuildingReach));
+        Assert.Empty(ScenarioA1RoutCalculator.RoutTargets(new Street(true), [], 0, OwnBuildingReach));
+        Assert.Empty(ScenarioA1RoutCalculator.RoutIgnoredCovers(new Street(false), [], 0, OwnBuildingReach));
+        Assert.Empty(ScenarioA1RoutCalculator.RoutIgnoredCovers(new Street(true), [], 0, StreetReach));
+        var advice = ScenarioA1RoutCalculator.RoutEndAdvice(true, true, [], false, OwnBuildingPlace);
+        Assert.StartsWith(". It may ignore [B1], of the building it begins in", advice, StringComparison.Ordinal);
+        Assert.EndsWith("(A10.51 EXC; the example on p. 69, S3).", advice, StringComparison.Ordinal);
+        Assert.Equal(". No woods or building is within its reach, so any legal route will do.", ScenarioA1RoutCalculator.RoutEndAdvice(true, true, [], false, []));
+
+        // With no legal step it surrenders if it can, or fails to rout (A10.5, A20.21).
+        Assert.Contains("surrenders if it can (A20.21) or is eliminated for Failure to Rout (A10.5)", ScenarioA1RoutCalculator.RoutEndAdvice(false, true, [], false),
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1130,6 +1215,10 @@ public sealed class ScenarioA1Pass70RulesTests
     private static readonly string[] SquadAndLeaderNotes = ["-1 for 2 HS-equivalents", "-1 leadership"];
     private static readonly string[] OwnAndL4 = ["bd01:M5:0", "bd01:L4:0"];
     private static readonly string[] NoPlace = [];
+    private static readonly string[] FiveHexes = ["A", "B", "C", "D", "E"];
+    private static readonly string[] NamedTwo = ["C", "A"];
+    private static readonly string[] NamedThenOthers = ["C", "A", "B", "D"];
+    private static readonly string[] NamedFirst = ["C"];
 
     [Fact]
     public void TheSearchDrTakesStealthHalfSquadsTheBestLeaderLaxAndCx()
@@ -1152,11 +1241,11 @@ public sealed class ScenarioA1Pass70RulesTests
     public void TheFinalDrLeavesThatManyAccessibleHexesUnsearched()
     {
         // A12.152: "The Final dr indicates the number of Accessible hexes other than its own of the ATTACKER's choice which the unit/stack may not Search";
-        // ruling R70.24: the first of those he named, in his order of preference, are searched, never more than he named.
-        Assert.Equal(4, ScenarioA1Searching.SearchedCount(5, 1, 5));
-        Assert.Equal(2, ScenarioA1Searching.SearchedCount(5, 1, 2));
-        Assert.Equal(0, ScenarioA1Searching.SearchedCount(5, 6, 5));
-        Assert.Equal(3, ScenarioA1Searching.SearchedCount(5, -1, 3));
+        // ruling R70.42 (at the fixes, in place of R70.24's "never more than he named"): those he named, in his order, then the others in map order.
+        Assert.Equal(NamedThenOthers, ScenarioA1Searching.Searched(NamedTwo, FiveHexes, 1));
+        Assert.Equal(NamedFirst, ScenarioA1Searching.Searched(NamedTwo, FiveHexes, 4));
+        Assert.Empty(ScenarioA1Searching.Searched(NamedTwo, FiveHexes, 6));
+        Assert.Equal(FiveHexes, ScenarioA1Searching.Searched(NoPlace, FiveHexes, -1));
         Assert.Null(ScenarioA1Searching.VerifySearched("mph", true, true, true, 5, 1, 4));
         Assert.Equal("UNIT-STATE-051", ScenarioA1Searching.VerifySearched("mph", true, true, true, 5, 2, 4)?.Code);
         Assert.NotNull(ScenarioA1Searching.VerifySearched("mph", true, false, true, 5, 1, 1));
@@ -1707,5 +1796,11 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.StartsWith("play.mop-up: g1 Mops Up building bd01:E5 and becomes TI (A12.153; ruling R24.2)", text, StringComparison.Ordinal);
         Assert.DoesNotContain("no concealed enemy unit is left", text, StringComparison.Ordinal);
         Assert.DoesNotContain("HS-equivalents", text, StringComparison.Ordinal);
+
+        // Ruling R70.45 (at the fixes): the Casualty dr is always made when due, Mopping Up's and the Search's alike, and their proposals say so.
+        Assert.Contains("Casualty dr, which is always made,", text, StringComparison.Ordinal);
+        var search = ScenarioA1Searching.ProposalText(OneMover, "bd01:M5:0", 0, NoPlace, 6, NamedTwo);
+        Assert.Contains("then C, A in that order, then the others in map order (ruling R70.42)", search, StringComparison.Ordinal);
+        Assert.EndsWith("Casualty dr, which is always made (A12.154; rulings R70.24, R70.45)", search, StringComparison.Ordinal);
     }
 }

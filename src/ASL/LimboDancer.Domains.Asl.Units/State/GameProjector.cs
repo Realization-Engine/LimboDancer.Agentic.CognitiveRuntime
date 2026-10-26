@@ -2715,8 +2715,10 @@ public static class GameProjector
             }
 
             var broken = GameState.Condition(unit, Conditions.Broken) == ConditionState.True;
-            // Pass 70 (ruling R70.9): a record that carries the NMC's DRM is checked with it and its ELR; an older record as before.
-            if (bailed.Drm is { } drm ? !Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result, drm, bailed.Elr)
+            // Pass 70 (ruling R70.9): a record that carries the NMC's DRM is checked with it and its ELR, and (ruling R70.47) an Unarmed unit's failure as its
+            // Casualty Reduction; an older record as before.
+            if (bailed.Drm is { } drm ? !Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result, drm, bailed.Elr,
+                    GameState.Condition(unit, Conditions.Unarmed) == ConditionState.True)
                 : !Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result))
             {
                 return Fail<GameState>(refused.Code, refused.Text);

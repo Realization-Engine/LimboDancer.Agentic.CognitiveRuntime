@@ -28,8 +28,8 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// A12.152 (ruling R70.24): the moving stack's members named, as it ends its move, Search: each spends one more MF in its
-    /// hex and becomes TI for the rest of the Player Turn; the Search dr leaves its Final dr of the stack's Accessible hexes other than its own unsearched, the
-    /// last of those the ATTACKER named in his order of preference (and any he did not name). Every Location above ground of a searched hex shows its
+    /// hex and becomes TI for the rest of the Player Turn; the Search dr leaves its Final dr of the stack's Accessible hexes other than its own unsearched: those
+    /// the ATTACKER named are searched first in his order, then the others in map order (ruling R70.42). Every Location above ground of a searched hex shows its
     /// contents: concealed enemy units lose "?", hidden ones are placed beneath "?", and Dummies are removed. A Searched Location with an armed Good Order
     /// DEFENDER unit draws his Casualty dr at once (A12.154; ruling R24.2), which Reduces a searcher, by Random Selection among several, on a Final dr of 1
     /// or less. A leadership modifier applied to the Search costs the searchers' "?" (A12.141; ruling R70.17). The DEFENDER's window then opens on that MF
@@ -139,7 +139,8 @@ public sealed partial class GamePlanner
             var rolled = draw(new RollRequest(1, 6));
             var rollId = $"{attemptId}-roll-1";
             Push("dice-rolled", new DiceRolled(rollId, ScenarioA1Searching.Purpose, 1, 6, rolled.Values, DiceRolled.SystemSource, actor));
-            BoardLocation[] searched = [own, .. named.Take(ScenarioA1Searching.SearchedCount(accessible.Count, rolled.Values[0] + drm, named.Count))];
+            // Ruling R70.42: the hexes named in the ATTACKER's order, then the other Accessible hexes in map order, as many as the Final dr leaves.
+            BoardLocation[] searched = [own, .. ScenarioA1Searching.Searched(named, accessible, rolled.Values[0] + drm)];
             Push("units-searched", new UnitsSearched(ids, at, rollId, drm, accessible.Count, searched));
 
             // Ruling R70.25: the enemy units of the Searched Locations, read in one pass over the occupied stacks of their hexes.

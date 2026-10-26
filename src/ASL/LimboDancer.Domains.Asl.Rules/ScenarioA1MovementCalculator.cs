@@ -158,53 +158,14 @@ public static class ScenarioA1MovementCalculator
     }
 
     /// <summary>
-    /// The range to the nearest Good Order enemy ground unit with a clear LOS to a Location (A12.34); null when none has one. A Passenger is not counted:
-    /// its vehicle is (ruling R26.2). The units are read in the state's order.
-    /// </summary>
-    public static int? NearestGoodOrderEnemyInLos(IReadOnlyList<EnemyUnitFacts> units, string side, int at, ILosFactReader los)
-    {
-        ArgumentNullException.ThrowIfNull(units);
-        ArgumentNullException.ThrowIfNull(los);
-        // Pass 35 (task 35.3; A.7): Good Order, not merely unbroken. Pass 70 (ruling R70.16): the sight member's Loss seers, so a hidden unit is not
-        // counted (R35.5), as the two other scans read it.
-        return ScenarioA1Sight.NearestSeer(ScenarioA1Sight.SeerLocations(units.Select(SeerOf), side, SightPurpose.Loss), at, new EnemyLos(los), SightLosReading.Clear);
-    }
-
-    /// <summary>A unit of the older scans as the sight member reads it (pass 70, ruling R70.16): unbroken is not read for the Loss purpose.</summary>
-    private static SightSeerFacts SeerOf(EnemyUnitFacts unit) =>
-        new(unit.Active, unit.Side, unit.Dummy, unit.Hidden, unit.Aboard, unit.GoodOrder, unit.GoodOrder, false, false, unit.Location);
-
-    /// <summary>The older scans' LOS reader as the sight member reads it: clear or not, and its range.</summary>
-    private sealed class EnemyLos(ILosFactReader los) : ISightLosReader
-    {
-        public SightLosFacts? Los(int fromLocation, int toLocation) => los.Los(fromLocation, toLocation) is { } read ? new SightLosFacts(read.Clear, !read.Clear, read.Range) : null;
-    }
-
-    /// <summary>
     /// An attack with, for each concealed unit that fires or directs, whether a Good Order enemy ground unit within 16 hexes has a LOS to it (A12.14,
     /// read in the PDF, p. 77; pass 31d, ruling R31d.2). The Fire package sees the target Location alone, and refused fire by concealed units at a
     /// Location with no Good Order unit as undecided; a refusal marks no firer, so a side could try a "?" stack and read from the refusal that it
     /// held Dummies. With this read the attack is made, and the firer's "?" is lost or kept as the rule has it. A hidden unit, which would have to
-    /// show itself to force the loss, does not force it. At night the read is not given (E1.31), and the package decides as before.
-    /// <paramref name="subjects"/> gives each firer or director the state finds, by unit id.
-    /// </summary>
-    public static FireAttack WithSeen(FireAttack attack, bool night, IReadOnlyDictionary<string, SeenSubjectFacts> subjects, IReadOnlyList<EnemyUnitFacts> units, ILosFactReader los)
-    {
-        ArgumentNullException.ThrowIfNull(attack);
-        ArgumentNullException.ThrowIfNull(subjects);
-        ArgumentNullException.ThrowIfNull(units);
-        ArgumentNullException.ThrowIfNull(los);
-        var seers = units.Select(SeerOf).ToArray();
-        var reader = new EnemyLos(los);
-        return WithSeen(attack, night, unitId => subjects.GetValueOrDefault(unitId) is { Side: { } side, Location: { } at }
-            ? ScenarioA1Sight.SeenWithin(ScenarioA1Sight.NearestSeer(ScenarioA1Sight.SeerLocations(seers, side, SightPurpose.Loss), at, reader, SightLosReading.Clear), 16)
-            : null);
-    }
-
-    /// <summary>
-    /// <see cref="WithSeen(FireAttack, bool, IReadOnlyDictionary{string, SeenSubjectFacts}, IReadOnlyList{EnemyUnitFacts}, ILosFactReader)"/> with the
-    /// read given by the caller (pass 70, ruling R70.16): <paramref name="seenWithin16"/> says, for a concealed firer or director by unit id, whether a Loss seer
-    /// within 16 hexes has a LOS to it, or null when the state does not place it. It is asked only for a concealed unit, and not at night.
+    /// show itself to force the loss, does not force it. At night the read is not given (E1.31), and the package decides as before. Pass 70 (ruling
+    /// R70.16): the read is given by the caller through <see cref="ScenarioA1Sight"/>: <paramref name="seenWithin16"/> says, for a concealed firer or
+    /// director by unit id, whether a Loss seer within 16 hexes has a LOS to it, or null when the state does not place it. It is asked only for a
+    /// concealed unit, and not at night.
     /// </summary>
     public static FireAttack WithSeen(FireAttack attack, bool night, Func<string, bool?> seenWithin16)
     {
@@ -1174,17 +1135,5 @@ public static class ScenarioA1MovementCalculator
         }
 
         return null;
-    }
-
-    /// <summary>Whether any Good Order enemy ground unit within 16 hexes has a clear LOS to a Location (A12.14, A12.141). The units are read in the state's order.</summary>
-    public static bool EnemyGoodOrderInLosWithin16(IReadOnlyList<EnemyUnitFacts> units, string side, int at, ILosFactReader los)
-    {
-        ArgumentNullException.ThrowIfNull(units);
-        ArgumentNullException.ThrowIfNull(los);
-        // Pass 35 (task 35.3; A.7, A12.14; backlog section 51, the user's word of 2026-10-04): Good Order, not merely unbroken, and as fire reads it
-        // (WithSeen): not a hidden unit, which would have to show itself to force the loss, nor a Passenger, whose vehicle is counted. Pass 70 (ruling
-        // R70.16): the sight member's Loss seers, the nearest within 16.
-        return ScenarioA1Sight.SeenWithin(ScenarioA1Sight.NearestSeer(ScenarioA1Sight.SeerLocations(units.Select(SeerOf), side, SightPurpose.Loss), at, new EnemyLos(los),
-            SightLosReading.Clear), 16);
     }
 }

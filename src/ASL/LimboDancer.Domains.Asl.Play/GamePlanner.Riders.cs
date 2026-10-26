@@ -257,7 +257,7 @@ public sealed partial class GamePlanner
             var effect = resolution.Effects.First(item => item.UnitId == rider.Id);
             var check = effect.Checks.First(item => item.Kind == "MC");
             var replaced = effect.Events.Any(item => item is "replaced-elr" or "replaced-by-two-half-squads");
-            var result = ScenarioA1MoraleCheck.BailOutResult(check, rider.Broken, replaced);
+            var result = ScenarioA1MoraleCheck.BailOutResult(check, rider.Broken, replaced, subject.Unarmed == true);
             var carrierBroken = ScenarioA1RiderRules.LeavesBroken(result, rider.Broken);
             var weapons = new List<RiderWeapon>();
             foreach (var weapon in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding

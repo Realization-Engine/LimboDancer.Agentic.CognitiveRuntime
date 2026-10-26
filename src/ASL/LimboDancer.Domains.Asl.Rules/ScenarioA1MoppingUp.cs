@@ -101,7 +101,7 @@ public static class ScenarioA1MoppingUp
             : $"play.mop-up: {string.Join(", ", ids)} Mop Up building {building} and become TI (A12.153; ruling R24.2)")
             + "; hidden enemy units there are placed beneath \"?\" and enemy Dummies removed; with no concealed enemy unit left, the "
             + $"{side} side Controls the building and its Locations (A26.11) and its broken enemy units surrender to {guardId} (A20.5); otherwise the DEFENDER's "
-            + "Casualty dr Reduces a Mopping-Up unit on a Final dr of 1 or less (A12.154). What it finds is said when it is made";
+            + "Casualty dr, which is always made, Reduces a Mopping-Up unit on a Final dr of 1 or less (A12.154; ruling R70.45). What it finds is said when it is made";
     }
 
     /// <summary>A12.153: a concealed enemy unit left in the building: not a Dummy, concealed or hidden.</summary>

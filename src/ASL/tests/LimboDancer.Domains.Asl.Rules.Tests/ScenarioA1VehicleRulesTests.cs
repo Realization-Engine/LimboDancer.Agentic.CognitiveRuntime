@@ -115,23 +115,26 @@ public sealed class ScenarioA1VehicleRulesTests
         Assert.False(ScenarioA1VehicleSightRules.ConcealmentTerrain(null, () => throw new InvalidOperationException("terrain was read.")));
 
     [Fact]
-    public void AWatcherIsGoodOrderPersonnelOrAnUnstunnedVehicle()
+    public void AWatcherIsAnActiveGoodOrderUnitOnTheMapAndNoEmptyVehicle()
     {
-        Assert.True(ScenarioA1VehicleSightRules.Watching(true, true, false, false, false, false, false, Never("personnel"), true, true, true, true));
-        Assert.False(ScenarioA1VehicleSightRules.Watching(true, true, false, false, false, true, false, Never("personnel"), false, false, false, false));
-        Assert.True(ScenarioA1VehicleSightRules.Watching(true, false, false, false, false, false, false, () => true, false, false, false, false));
-        Assert.False(ScenarioA1VehicleSightRules.Watching(true, false, false, false, false, false, false, () => true, true, false, false, false));
-        Assert.False(ScenarioA1VehicleSightRules.Watching(true, false, false, false, false, false, false, () => false, false, false, false, false));
-        Assert.False(ScenarioA1VehicleSightRules.Watching(false, true, false, false, false, false, false, Never("personnel"), false, false, false, false));
+        // A12.2 through the sight member (pass 70, ruling R70.16; the Rules boundary review): Play reads Good Order (a vehicle's crew not Stunned or Recalled,
+        // A.7) and hands it over; an empty vehicle, an inactive unit, and one off the map see nothing.
+        static SightSeerFacts Seer(bool active = true, bool goodOrder = true, bool empty = false, int? at = 3) =>
+            new(active, "german", false, false, false, goodOrder, goodOrder, false, empty, at);
+        Assert.True(ScenarioA1Sight.Sees(Seer(), SightPurpose.Loss));
+        Assert.False(ScenarioA1Sight.Sees(Seer(goodOrder: false), SightPurpose.Loss));
+        Assert.False(ScenarioA1Sight.Sees(Seer(empty: true), SightPurpose.Loss));
+        Assert.False(ScenarioA1Sight.Sees(Seer(active: false), SightPurpose.Loss));
+        Assert.False(ScenarioA1Sight.Sees(Seer(at: null), SightPurpose.Loss));
     }
 
     [Fact]
-    public void TheRangeIsReadOnlyWhenALimitIsGiven()
+    public void AWatcherCountsWithinTheRangeGivenOrAtAnyRangeWithNone()
     {
-        Assert.True(ScenarioA1VehicleSightRules.WithinRange(null, () => throw new InvalidOperationException("range was read.")));
-        Assert.True(ScenarioA1VehicleSightRules.WithinRange(16, () => 16));
-        Assert.False(ScenarioA1VehicleSightRules.WithinRange(16, () => 17));
-        Assert.False(ScenarioA1VehicleSightRules.WithinRange(16, () => null));
+        Assert.True(ScenarioA1Sight.SeenWithin(20, null));
+        Assert.True(ScenarioA1Sight.SeenWithin(16, 16));
+        Assert.False(ScenarioA1Sight.SeenWithin(17, 16));
+        Assert.False(ScenarioA1Sight.SeenWithin(null, 16));
     }
 
     [Fact]

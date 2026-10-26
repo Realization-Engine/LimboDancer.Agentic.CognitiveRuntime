@@ -53,8 +53,8 @@ public sealed partial class GamePlanner
         /// <summary><c>RoutSurrender</c>'s answer per unit, with the Location it was asked from.</summary>
         public ConcurrentDictionary<UnitInstance, (BoardLocation Start, (string Cause, IReadOnlyList<string> Captors)? Surrender)> RoutSurrender { get; } = new(ReferenceEqualityComparer.Instance);
 
-        /// <summary><c>RoutAdvice</c>'s answer per unit.</summary>
-        public ConcurrentDictionary<UnitInstance, (IReadOnlyList<BoardLocation> Targets, bool CanRout, IReadOnlyDictionary<BoardLocation, IReadOnlyList<BoardLocation>> Routes)> RoutAdvice { get; } = new(ReferenceEqualityComparer.Instance);
+        /// <summary><c>RoutAdvice</c>'s answer per unit, with the woods and building Locations within reach it may all ignore (A10.51 EXC; pass 70, the fixes).</summary>
+        public ConcurrentDictionary<UnitInstance, (IReadOnlyList<BoardLocation> Targets, bool CanRout, IReadOnlyDictionary<BoardLocation, IReadOnlyList<BoardLocation>> Routes, IReadOnlyList<BoardLocation> Ignored)> RoutAdvice { get; } = new(ReferenceEqualityComparer.Instance);
 
         /// <summary>
         /// The map context (the A3 plan, W3): each board's handle at the version the state pins, looked up once; null when the board is not on the

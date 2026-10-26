@@ -57,6 +57,12 @@ public sealed record MoraleCheckFacts(string? Check, IReadOnlyList<FireTarget>? 
 }
 
 /// <summary>
+/// A unit of a lost leader's Location as the LLMC reads it (A10.2; pass 70, the Rules boundary review): active, of the leader's side, one of the leaders lost,
+/// a vehicle, a Dummy, a prisoner, and whether the catalog knows its definition.
+/// </summary>
+public sealed record LeaderLossUnitFacts(string Id, bool Active, bool OfSide, bool Lost, bool Vehicle, bool Dummy, bool Captured, bool InCatalog);
+
+/// <summary>
 /// One Morale Check member for every MC, NMC, PTC, LLMC, and LLTC made outside the Fire and Rally packages (pass 70, task 70.1; rulings R70.3 to R70.10):
 /// the rout Interdiction NMC's Heat of Battle, the LLMC after a leader lost outside fire, and the Bail Out NMC. It is the Fire calculator's own resolution of a
 /// check, with no IFT roll, so Heat of Battle (A15.1), ELR (A19.11 to A19.13), wounds (A17.11), and the Leader Loss cascade (A10.2) are decided once.
@@ -73,10 +79,14 @@ public static class ScenarioA1MoraleCheck
     public const string VoluntaryBreak = "voluntary-break";
     public const string Searching = "searching";
 
+    /// <summary>A Voluntary Rout leader eliminated because the unit he routed with failed its Interdiction NMC (A10.711; the table player's finding at the reviews of pass 70).</summary>
+    public const string VoluntaryRout = "voluntary-rout";
+
     /// <summary>The words of a check's cause, for its record line, such as "Interdiction (A10.53)".</summary>
     public static string CauseText(string cause) => cause switch
     {
         VoluntaryBreak => "a Voluntary Break (A10.41)",
+        VoluntaryRout => "the failed Interdiction NMC of the unit he routed with (A10.711)",
         Interdiction => "Interdiction (A10.53)",
         MoppingUp => "a Mopping Up's Casualty dr (A12.153)",
         Searching => "a Search's Casualty dr (A12.154)",
@@ -149,6 +159,25 @@ public static class ScenarioA1MoraleCheck
     }
 
     /// <summary>
+    /// Ruling R70.5, after a LLMC the Interdiction's loss of a leader called for: the routing unit, as the check left it, routs no further when it is no longer
+    /// active, no longer broken, berserk, or waiting on a captor's choice of its surrender (A15.5).
+    /// </summary>
+    public static bool EndsRoutAfterLeaderLoss(bool active, bool broken, bool berserk, bool surrenderPending) => !active || !broken || berserk || surrenderPending;
+
+    /// <summary>
+    /// The units of a lost leader's Location that take the LLMC or LLTC (A10.2, p. 65; pass 70, rulings R70.3, R70.44): the other active units of his side
+    /// there, Passengers and Riders included, but a vehicle, a Dummy, a prisoner, and a unit outside the catalog; none when the side has no ELR declared, as
+    /// Fire refuses such a game (A19.13; a backlog row). A rout is not Defensive First Fire, so A10.2's exception for a leader lost in DFF does not reach a
+    /// bystander (ruling R70.44). In the order given.
+    /// </summary>
+    public static IReadOnlyList<string> LeaderLossSubjects(IReadOnlyList<LeaderLossUnitFacts> units, int? sideElr)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        return sideElr is null ? [] : [.. units.Where(unit => unit.Active && unit.OfSide && !unit.Lost && !unit.Vehicle && !unit.Dummy && !unit.Captured && unit.InCatalog)
+            .Select(unit => unit.Id)];
+    }
+
+    /// <summary>
     /// The proposal's line for a leader's loss before the phase ends (A10.2; pass 70, ruling R70.3): it may call for a LLMC, decided and rolled at the commit,
     /// so the line tells nothing of the units under "?" there (A12.14; the referee's finding at the reviews).
     /// </summary>
@@ -196,12 +225,14 @@ public static class ScenarioA1MoraleCheck
     /// <summary>
     /// The result of a Bail Out NMC in the words of <c>rider-bailed-out</c> (D6.24; pass 70, ruling R70.9), from the member's check of the unit: an Original 12
     /// on a broken unit eliminates it, a failure Casualty Reduces it; on an unbroken unit an Original 12 Reduces it, a failure by more than its ELR Replaces it
-    /// (<paramref name="replaced"/>: the member Replaced it), another failure breaks it, the highest passing DR pins it.
+    /// (<paramref name="replaced"/>: the member Replaced it), another failure breaks it, the highest passing DR pins it. An Unarmed unit that fails is Casualty
+    /// Reduced, and one that passes is left as it was, as the member resolves it (ruling R70.47; A20.54, p. 88).
     /// </summary>
-    public static string BailOutResult(FireCheck check, bool broken, bool replaced)
+    public static string BailOutResult(FireCheck check, bool broken, bool replaced, bool unarmed = false)
     {
         ArgumentNullException.ThrowIfNull(check);
-        return broken ? check.OriginalDr == 12 ? ScenarioA1RiderRules.Eliminated : check.Passed ? ScenarioA1RiderRules.Passed : ScenarioA1RiderRules.Reduced
+        return unarmed ? check.Passed ? ScenarioA1RiderRules.Passed : ScenarioA1RiderRules.Reduced
+            : broken ? check.OriginalDr == 12 ? ScenarioA1RiderRules.Eliminated : check.Passed ? ScenarioA1RiderRules.Passed : ScenarioA1RiderRules.Reduced
             : check.OriginalDr == 12 ? ScenarioA1RiderRules.Reduced
             : !check.Passed ? replaced ? ScenarioA1RiderRules.Replaced : ScenarioA1RiderRules.Broken
             : check.FinalDr == check.MoraleLevel ? ScenarioA1RiderRules.Pinned

@@ -264,6 +264,7 @@ public sealed partial class GamePlanner
                 Is(unit, Conditions.Pinned), planner.Encircled(state, unit), normal, interdiction)
             {
                 ArcWeapons = arcs,
+                Unarmed = Is(unit, Conditions.Unarmed) ? true : null,
             };
         }
 
@@ -666,7 +667,7 @@ public sealed partial class GamePlanner
 
         // A10.51: each step, its cost, and the Known armed enemy units that have had the unit in their LOS; Rules walks the route over the scan (pass 32.f).
         // A10.711: the leader "must remain with the broken unit throughout the RtPh", so the rout keeps within his MF too.
-        var limit = leader is null ? RoutHalfMf(unit) : Math.Min(RoutHalfMf(unit), RoutHalfMf(leader));
+        var limit = ScenarioA1VoluntaryRout.RoutLimit(RoutHalfMf(unit), leader is null ? null : RoutHalfMf(leader));
         var encircled = Encircled(state, unit);
         var scan = new RoutScan(this, state);
         var enemies = scan.Enemies(unit.Side);
@@ -795,7 +796,7 @@ public sealed partial class GamePlanner
                 var drm = guide is null ? 0 : ScenarioA1VoluntaryRout.LeaderDrm(DefinitionOf(guide)?.Leadership, Is(guide, Conditions.Wounded));
 
                 // A12.14: a leader still concealed has moved into Open Ground in the LOS of the unbroken Interdictor; he is named with his DRM, so he loses his "?".
-                if (guide is not null && (Is(guide, Conditions.Concealed) || Is(guide, Conditions.Hidden)))
+                if (guide is not null && ScenarioA1VoluntaryRout.InterdictionRevealsLeader(Is(guide, Conditions.Concealed) || Is(guide, Conditions.Hidden)))
                 {
                     events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, [guide.Id]));
                 }
@@ -872,12 +873,13 @@ public sealed partial class GamePlanner
                     companion = null;
                 }
 
-                // A10.2 (pass 70, rulings R70.3, R70.12): a leader the Interdiction eliminates, a mortal wound and the Voluntary Rout leader included, causes a
-                // LLMC of the units in the Location; a HS the Casualty Reduction left takes it.
+                // A10.2 (pass 70, rulings R70.3, R70.12, R70.44): a leader the Interdiction eliminates, a mortal wound and the Voluntary Rout leader included,
+                // causes a LLMC of the units in the Location, bystanders too, since a rout is not the Defensive First Fire A10.2's exception names; a HS the
+                // Casualty Reduction left takes it. The Voluntary Rout leader's loss is A10.711's, and its record says so (the table player's finding).
                 if (lost.Count > 0)
                 {
                     AddLeaderLossChecks(scope, attemptId, expected, actor, events, draw, after, Replay([.. existing, .. events]).Current!, lost,
-                        ScenarioA1MoraleCheck.Interdiction, [record]);
+                        lost.Any(item => item.Id == leader?.Id) ? ScenarioA1MoraleCheck.VoluntaryRout : ScenarioA1MoraleCheck.Interdiction, [record]);
                     rolls = events.Count(item => item.Payload is DiceRolled);
                 }
 
@@ -891,8 +893,8 @@ public sealed partial class GamePlanner
                 routing = reduced.Unit(payload is LineageRecorded { Produced: [{ } half] } ? half.Id : routing.Id)!;
 
                 // Ruling R70.5: a LLMC that eliminated, rallied, or made berserk the unit left, or made it surrender, ends its rout here.
-                if (routing.Status != InstanceStatus.Active || !Is(routing, Conditions.Broken) || Is(routing, Conditions.Berserk)
-                    || reduced.PendingSurrenders.Any(item => item.Unit == routing.Id))
+                if (ScenarioA1MoraleCheck.EndsRoutAfterLeaderLoss(routing.Status == InstanceStatus.Active, Is(routing, Conditions.Broken), Is(routing, Conditions.Berserk),
+                    reduced.PendingSurrenders.Any(item => item.Unit == routing.Id)))
                 {
                     break;
                 }
@@ -1030,11 +1032,24 @@ public sealed partial class GamePlanner
     public (IReadOnlyList<BoardLocation> Targets, bool CanRout, IReadOnlyDictionary<BoardLocation, IReadOnlyList<BoardLocation>> Routes) RoutAdvice(GameState state,
         UnitInstance unit)
     {
+        var (targets, canRout, routes, _) = RoutAdviceRead(state, unit);
+        return (targets, canRout, routes);
+    }
+
+    /// <summary>
+    /// The woods and building Locations within a broken unit's reach that it may all ignore, when none binds its rout (A10.51 EXC, p. 67; the example on
+    /// p. 69, S3; the referee's finding at the reviews of pass 70), nearest first; empty when one binds it or none is in reach. Read with the rout advice.
+    /// </summary>
+    public IReadOnlyList<BoardLocation> RoutIgnoredCovers(GameState state, UnitInstance unit) => RoutAdviceRead(state, unit).Ignored;
+
+    private (IReadOnlyList<BoardLocation> Targets, bool CanRout, IReadOnlyDictionary<BoardLocation, IReadOnlyList<BoardLocation>> Routes, IReadOnlyList<BoardLocation> Ignored)
+        RoutAdviceRead(GameState state, UnitInstance unit)
+    {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
         if (state.Location(unit.Id)?.Location is not { } at)
         {
-            return ([], false, new Dictionary<BoardLocation, IReadOnlyList<BoardLocation>>());
+            return ([], false, new Dictionary<BoardLocation, IReadOnlyList<BoardLocation>>(), []);
         }
 
         // The Play Step Plan, task 2: kept for a state whose surrender window is closed (V6); asked for first, as the read's enemy list would.
@@ -1055,17 +1070,20 @@ public sealed partial class GamePlanner
         return advice;
     }
 
-    private (IReadOnlyList<BoardLocation> Targets, bool CanRout, IReadOnlyDictionary<BoardLocation, IReadOnlyList<BoardLocation>> Routes) ReadRoutAdvice(GameState state,
-        UnitInstance unit, BoardLocation at)
+    private (IReadOnlyList<BoardLocation> Targets, bool CanRout, IReadOnlyDictionary<BoardLocation, IReadOnlyList<BoardLocation>> Routes, IReadOnlyList<BoardLocation> Ignored)
+        ReadRoutAdvice(GameState state, UnitInstance unit, BoardLocation at)
     {
         // Pass 31d (design D3): one least-cost route to each place the rout may end, from the search's own steps. The search reads Known enemy
-        // units alone (A10.533), so a route tells the routing side nothing it does not hold. Rules decides which places are offered (pass 32.f).
+        // units alone (A10.533), so a route tells the routing side nothing it does not hold. Rules decides which places are offered (pass 32.f), and
+        // (pass 70, the fixes) which ignorable ones lie within reach when none binds the rout.
         var scan = new RoutScan(this, state);
         var found = new Dictionary<int, int[]>();
         var reach = ScenarioA1RoutCalculator.RoutReach(scan, scan.Enemies(unit.Side), scan.Index(at), SeenBy(state, unit.Side, at), 0, RoutHalfMf(unit), Encircled(state, unit),
             state.ScenarioMonth, routes: found);
         var (targets, canRout, routes) = ScenarioA1RoutCalculator.RoutAdvice(scan, scan.Enemies(unit.Side), scan.Index(at), reach, found);
-        return ([.. targets.Select(scan.At)], canRout, routes.ToDictionary(item => scan.At(item.Key), item => (IReadOnlyList<BoardLocation>)[.. item.Value.Select(scan.At)]));
+        int[] ignored = targets.Count == 0 ? ScenarioA1RoutCalculator.RoutIgnoredCovers(scan, scan.Enemies(unit.Side), scan.Index(at), reach) : [];
+        return ([.. targets.Select(scan.At)], canRout, routes.ToDictionary(item => scan.At(item.Key), item => (IReadOnlyList<BoardLocation>)[.. item.Value.Select(scan.At)]),
+            [.. ignored.Select(scan.At)]);
     }
 
     /// <summary>Whether a unit may keep its DM as the RPh ends (A10.62; ruling R13.1).</summary>

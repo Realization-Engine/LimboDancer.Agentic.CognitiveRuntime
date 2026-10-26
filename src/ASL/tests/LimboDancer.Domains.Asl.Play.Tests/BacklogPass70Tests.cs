@@ -744,7 +744,8 @@ public sealed class BacklogPass70Tests : IDisposable
     public async Task ALeaderRoutingWithASquadThatFailsItsInterdictionIsEliminatedAndTheHalfSquadTakesTheLlmc()
     {
         // A10.711, A10.2 (rulings R70.12, R70.3): the NMC is 5 + 4 - 1 = 8 against 7: the 4-4-7 is Reduced to a broken HS and the 8-1 eliminated. His loss
-        // calls on the HS (broken Morale Level 6, lower than his 8) for a LLMC with his -1 reversed: 2 + 2 + 1 = 5, passed; the HS routs on to E7.
+        // calls on the HS (broken Morale Level 6, lower than his 8) for a LLMC with his -1 reversed: 2 + 2 + 1 = 5, passed; the HS routs on to E7. The record's
+        // cause is A10.711's, the failed NMC of the unit he routed with (the table player's finding at the reviews).
         await VoluntaryRoutGame();
         var before = Revision;
         Committed(await Do(GameActions.Rout, Once(5, 4, 2, 2), new
@@ -756,7 +757,7 @@ public sealed class BacklogPass70Tests : IDisposable
         Assert.Equal(RoutInterdicted.Reduced, Assert.Single(Since(before).Select(item => item.Payload).OfType<RoutInterdicted>()).Result);
         Assert.Equal(InstanceStatus.Eliminated, Current.Unit("rl")!.Status);
         var check = Assert.Single(ChecksSince(before));
-        Assert.Equal("interdiction", check.Cause);
+        Assert.Equal("voluntary-rout", check.Cause);
         var effect = Assert.Single(ResolutionOf(check).Effects);
         Assert.Equal(("LLMC", 5, true), (effect.Checks[0].Kind, effect.Checks[0].FinalDr, effect.Checks[0].Passed));
         var half = Current.Unit(effect.UnitId)!;
@@ -857,6 +858,60 @@ public sealed class BacklogPass70Tests : IDisposable
             route = new[] { L("E6"), L("E7"), L("E8") },
         }));
         Assert.Equal(L("E8"), Current.Location("de-1")!.Location.ToString());
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ABrokenUnitWhoseOnlyCoverInReachIsItsOwnBuildingIsToldItMayIgnoreIt()
+    {
+        // A10.51 EXC (p. 67) and the example on p. 69, S3 (the referee's finding at the reviews): the broken 4-6-7 in E5, of the stone building E5-E6, ADJACENT
+        // to the Russian 4-4-7 in E4, must rout; E6 is the only cover within its reach, and of its own building, so nothing binds it and E6 is named as
+        // ignorable: any legal route will do, one ending in E6 included.
+        stone.Add("E5");
+        stone.Add("E6");
+        await SetupAt(5, "german", Squad("de-1", "E5", "german", Conditions.Broken), Squad("ru-1", "E4", "russian"));
+        var unit = Current.Unit("de-1")!;
+        var (targets, canRout, _) = Planner().RoutAdvice(Current, unit);
+        Assert.Equal((0, true), (targets.Count, canRout));
+        Assert.Equal(L("E6"), Assert.Single(Planner().RoutIgnoredCovers(Current, unit)).ToString());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task AnUnarmedEnemyAllowsAVoluntaryBreakOnlyWhenAdjacent(bool adjacent)
+    {
+        // A10.41 (p. 66; ruling R70.43, at the fixes): "ADJACENT to any unbroken enemy ground unit" asks for no arms; the LOS and Normal Range clause asks
+        // for an armed one. The Russian Unarmed 4-4-7 in E6 lets the HS in E5 break; in E7, in its LOS two hexes off, it does not.
+        await SetupAt(5, "german", Unit("de-h", "asl:half-squad", "attacker-half-squad", "E5", "german"), Squad("ru-1", adjacent ? "E6" : "E7", "russian", Conditions.Unarmed));
+        var result = await Do(GameActions.VoluntaryBreak, NoRoll(), new
+        {
+            unitIds = PinnedHalfSquad,
+        });
+        Assert.Equal(adjacent, result.Outcome == PlayOutcome.Committed);
+        Assert.Equal(adjacent, Is(Current.Unit("de-h")!, Conditions.Broken));
+        if (!adjacent)
+        {
+            Assert.Contains(result.Reasons, reason => reason.EndsWith("does not count (ruling R70.43)", StringComparison.Ordinal));
+        }
+    }
+
+    [Fact]
+    public async Task AnUnarmedSquadThatFailsItsLlmcIsCasualtyReducedNotBroken()
+    {
+        // A20.54 (p. 88; ruling R70.47, at the fixes): the broken 8-1 in E5 is eliminated for Failure to Rout as the RtPh ends; the Unarmed 4-4-7 with him
+        // takes its LLMC, 4 + 3 + 1 = 8 against 7, and fails: it is Casualty Reduced to a HS, which is not broken.
+        await SetupAt(5, "german", Squad("g1", "E2", "german"), Unit("rl", "asl:leader", "defender-leader-8-1", "E5", "russian", "asl:broken"),
+            Squad("r2", "E5", "russian", Conditions.Unarmed));
+        var before = Revision;
+        Committed(await Do(GameActions.AdvancePhase, Once(4, 3), new
+        {
+        }));
+        var effect = Assert.Single(ResolutionOf(Assert.Single(ChecksSince(before))).Effects);
+        Assert.Equal(("r2", "casualty-reduced", false), (effect.UnitId, effect.Checks[0].Consequence, effect.Broken));
+        Assert.NotEqual(InstanceStatus.Active, Current.Unit("r2")!.Status);
+        var half = Current.Units.Single(unit => unit.Kind == "asl:half-squad" && unit.Status == InstanceStatus.Active && unit.Side == "russian");
+        Assert.False(Is(half, Conditions.Broken));
         NoReplayErrors();
     }
 
@@ -1255,18 +1310,19 @@ public sealed class BacklogPass70Tests : IDisposable
     [Fact]
     public async Task ASquadAndItsLeaderEndingTheirMoveSearchAndRevealAConcealedAndAHiddenSquad()
     {
-        // A12.152 (p. 79; ruling R70.24): the German 4-6-7 and 8-1 move from E5 to E6 and, the Russian having passed, Search it and the two hexes named,
-        // E7 and the hex north-east of E6. The dr is 1 with -1 for two HS-equivalents and -1 leadership: a Final dr of -1 leaves none of the six Accessible
-        // hexes unsearched, so both named are searched; the unnamed hex north-west keeps its concealed squad. r1 loses its "?", the hidden r2 is placed
-        // beneath "?" (the record the Russian's alone), and r3 stays concealed. The DEFENDER's Casualty dr (A12.154), -3 for four concealed HS-equivalents,
-        // is a 6: no casualty. The searchers are TI, spend one more MF, and end their move when the Russian passes.
+        // A12.152 (p. 79; rulings R70.24, R70.42): the German 4-6-7 and 8-1 move from E5 to E6 and, the Russian having passed, Search it and the two hexes
+        // named, E7 and the hex north-east of E6. The dr is 6 with -1 for two HS-equivalents and -1 leadership: a Final dr of 4 leaves four of the six
+        // Accessible hexes unsearched, so the two named, first in his order, are the only others searched; the unnamed hex north-west keeps its concealed
+        // squad. r1 loses its "?", the hidden r2 is placed beneath "?" (the record the Russian's alone), and r3 stays concealed. The DEFENDER's Casualty dr
+        // (A12.154), -3 for four concealed HS-equivalents, is a 6: no casualty. The searchers are TI, spend one more MF, and end their move when the Russian
+        // passes. (Before the fixes the dr was a 1, a Final dr of -1, and only the named hexes were searched: ruling R70.42 searches all six on that.)
         var east = N("E6", HexsideDirection.NorthEast);
         await SetupAt(2, "german", Squad("g1", "E5", "german"), Unit("l1", "asl:leader", "attacker-leader-8-1", "E5", "german"),
             Squad("r1", "E7", "russian", Conditions.Concealed), Squad("r2", east, "russian", Conditions.Hidden), Squad("r3", N("E6", HexsideDirection.NorthWest), "russian", Conditions.Concealed));
         await MoveAndClose(SquadAndLeader, "E6");
         var spent = Current.Unit("g1")!.MfSpent;
         var before = Revision;
-        var result = await Do(GameActions.Search, Once(1, 6), new
+        var result = await Do(GameActions.Search, Once(6, 6), new
         {
             unitIds = SquadAndLeader,
             hexes = new[] { L("E7"), L(east) },
@@ -1294,9 +1350,10 @@ public sealed class BacklogPass70Tests : IDisposable
     [Fact]
     public async Task ASearchCasualtyDrReducesTheSearchingSquad()
     {
-        // A12.154 (p. 79): the German 4-6-7 alone Searches from E6 with a dr of 1 (-1 for two HS-equivalents), searching E7, where the concealed Russian
-        // squad loses its "?". As an armed Good Order DEFENDER unit is there, his Casualty dr is made at once: 2 - 1 for its two HS-equivalents is 1, and the
-        // searcher is Reduced to a HS, which stays TI.
+        // A12.154 (p. 79): the German 4-6-7 alone Searches from E6 with a dr of 1 (-1 for two HS-equivalents): a Final dr of 0 leaves none of its six
+        // Accessible hexes unsearched, so E7, named, is searched first and then the five others in map order (ruling R70.42, at the fixes; before them only
+        // E7 was). In E7 the concealed Russian squad loses its "?". As an armed Good Order DEFENDER unit is there, his Casualty dr is made at once (ruling
+        // R70.45): 2 - 1 for its two HS-equivalents is 1, and the searcher is Reduced to a HS, which stays TI.
         await SetupAt(2, "german", Squad("g1", "E5", "german"), Squad("r1", "E7", "russian", Conditions.Concealed));
         await MoveAndClose(GermanSquad, "E6");
         var before = Revision;
@@ -1305,7 +1362,9 @@ public sealed class BacklogPass70Tests : IDisposable
             unitIds = GermanSquad,
             hexes = new[] { L("E7") },
         }));
-        Assert.Equal(SearchedOwnAndE7, Assert.Single(Since(before).Select(item => item.Payload).OfType<UnitsSearched>()).Searched.Select(hex => hex.ToString()));
+        var searched = Assert.Single(Since(before).Select(item => item.Payload).OfType<UnitsSearched>()).Searched.Select(hex => hex.ToString()).ToArray();
+        Assert.Equal(SearchedOwnAndE7, searched.Take(2));
+        Assert.Equal(7, searched.Distinct().Count());
         Assert.False(Is(Current.Unit("r1")!, Conditions.Concealed));
         Assert.NotEqual(InstanceStatus.Active, Current.Unit("g1")!.Status);
         var half = Current.Units.Single(unit => unit.Kind == "asl:half-squad" && unit.Status == InstanceStatus.Active && unit.Side == "german");

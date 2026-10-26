@@ -16,6 +16,15 @@ public sealed record RoutEnemyFacts(string Id, int Location, bool Armed, bool Br
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the unit is Unarmed Personnel (A20.5; pass 70, ruling R70.43): read by the Voluntary Break alone, whose LOS clause asks for an armed enemy and
+    /// whose ADJACENT clause does not (A10.41). Null is false; the rout reads <see cref="RoutEnemyFacts.Armed"/> as before.
+    /// </summary>
+    public bool? Unarmed
+    {
+        get; init;
+    }
 }
 
 /// <summary>

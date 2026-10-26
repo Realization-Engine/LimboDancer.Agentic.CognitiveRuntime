@@ -129,10 +129,16 @@ public static class ScenarioA1Searching
     }
 
     /// <summary>
-    /// A12.152 (ruling R70.24): how many of the hexes named, in the ATTACKER's order of preference, are searched besides the stack's own: its Accessible hexes
-    /// other than its own less the Final dr, never fewer than none, never more than he named.
+    /// A12.152 (ruling R70.42): the hexes searched besides the stack's own: those the ATTACKER named, in his order, then the other Accessible hexes in the
+    /// order given (the map's), up to the Accessible count less the Final dr, never fewer than none. The rule lets him choose which hexes the dr leaves
+    /// unsearched; searching more costs nothing (one Casualty dr per Search dr), so no hex is given up that the dr does not take.
     /// </summary>
-    public static int SearchedCount(int accessible, int finalDr, int named) => Math.Max(0, Math.Min(named, accessible - finalDr));
+    public static IReadOnlyList<T> Searched<T>(IReadOnlyList<T> named, IReadOnlyList<T> accessible, int finalDr)
+    {
+        ArgumentNullException.ThrowIfNull(named);
+        ArgumentNullException.ThrowIfNull(accessible);
+        return [.. named.Concat(accessible.Where(hex => !named.Contains(hex))).Take(Math.Max(0, accessible.Count - finalDr))];
+    }
 
     /// <summary>
     /// A12.154: a unit of the DEFENDER in a Searched Location that calls for his Casualty dr: an armed Good Order unit, not a Dummy, a vehicle, a prisoner, or
@@ -150,7 +156,8 @@ public static class ScenarioA1Searching
     private static string Names(IReadOnlyList<string> ids) => ids.Count == 1 ? $"{ids[0]} Searches" : $"{string.Join(", ", ids)} Search";
 
     /// <summary>
-    /// A12.152 (ruling R70.24): the proposal's words, before the dr: who Searches from where, the drm, the hexes in the order named, and what the dr decides.
+    /// A12.152 (rulings R70.24, R70.42, R70.45): the proposal's words, before the dr: who Searches from where, the drm, the hexes in the order named and then
+    /// the others, what the dr decides, and the Casualty dr, always made when due.
     /// </summary>
     public static string ProposalText(IReadOnlyList<string> ids, string at, int drm, IReadOnlyList<string> notes, int accessible, IReadOnlyList<string> named)
     {
@@ -159,8 +166,8 @@ public static class ScenarioA1Searching
         ArgumentNullException.ThrowIfNull(named);
         return $"play.search: {Names(ids)} from {at}, spending one more MF there, and {(ids.Count == 1 ? "becomes" : "become")} TI for the rest of the Player Turn (A12.152): "
             + $"a Search dr ({(notes.Count == 0 ? "no drm" : string.Join(", ", notes))}) leaves that many of its {accessible} Accessible hexes other than its own unsearched; "
-            + (named.Count == 0 ? "no other hex is named, so only its own is searched" : $"the hexes are searched in the order {string.Join(", ", named)}")
-            + "; any Location Searched with an armed Good Order enemy unit draws the DEFENDER's Casualty dr (A12.154; ruling R70.24)";
+            + (named.Count == 0 ? "its own hex is searched, then the others in map order" : $"its own hex is searched, then {string.Join(", ", named)} in that order, then the others in map order")
+            + " (ruling R70.42); any Location Searched with an armed Good Order enemy unit draws the DEFENDER's Casualty dr, which is always made (A12.154; rulings R70.24, R70.45)";
     }
 
     /// <summary>

@@ -9,13 +9,19 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 /// </summary>
 public sealed class ScenarioA1Pass35RulesTests
 {
-    private sealed class ClearLos : ILosFactReader
+    private sealed class ClearLos : ISightLosReader
     {
-        public LosFacts? Los(int fromLocation, int toLocation) => new(true, Math.Abs(fromLocation - toLocation));
+        public SightLosFacts? Los(int fromLocation, int toLocation) => new(true, false, Math.Abs(fromLocation - toLocation));
     }
 
-    private static EnemyUnitFacts Enemy(int at, bool goodOrder = true, bool hidden = false, bool aboard = false, bool dummy = false) =>
-        new(true, "german", dummy, aboard, hidden, goodOrder, at);
+    // Pass 70 (ruling R70.16; the Rules boundary review): the scans read the sight member's Loss seers, as Play does.
+    private static SightSeerFacts Enemy(int at, bool goodOrder = true, bool hidden = false, bool aboard = false, bool dummy = false) =>
+        new(true, "german", dummy, hidden, aboard, goodOrder, goodOrder, false, false, at);
+
+    private static int? Nearest(SightSeerFacts[] units, ClearLos los) =>
+        ScenarioA1Sight.NearestSeer(ScenarioA1Sight.SeerLocations(units, "russian", SightPurpose.Loss), 0, los, SightLosReading.Clear);
+
+    private static bool SeenWithin16(SightSeerFacts[] units, ClearLos los) => ScenarioA1Sight.SeenWithin(Nearest(units, los), 16);
 
     [Fact]
     public void GoodOrderIsNotBrokenBerserkCapturedStunnedShockedOrInMelee()
@@ -43,16 +49,16 @@ public sealed class ScenarioA1Pass35RulesTests
 
         // A12.14 (backlog section 51): the move's read. An unbroken enemy that is not in Good Order (in Melee, say), a hidden one, and a Passenger do
         // not force the loss of a mover's "?"; a Good Order unit in the open does.
-        Assert.True(ScenarioA1MovementCalculator.EnemyGoodOrderInLosWithin16([Enemy(3)], "russian", 0, los));
-        Assert.False(ScenarioA1MovementCalculator.EnemyGoodOrderInLosWithin16([Enemy(3, goodOrder: false)], "russian", 0, los));
-        Assert.False(ScenarioA1MovementCalculator.EnemyGoodOrderInLosWithin16([Enemy(3, hidden: true)], "russian", 0, los));
-        Assert.False(ScenarioA1MovementCalculator.EnemyGoodOrderInLosWithin16([Enemy(3, aboard: true)], "russian", 0, los));
-        Assert.False(ScenarioA1MovementCalculator.EnemyGoodOrderInLosWithin16([Enemy(3, dummy: true)], "russian", 0, los));
-        Assert.False(ScenarioA1MovementCalculator.EnemyGoodOrderInLosWithin16([Enemy(17)], "russian", 0, los));
+        Assert.True(SeenWithin16([Enemy(3)], los));
+        Assert.False(SeenWithin16([Enemy(3, goodOrder: false)], los));
+        Assert.False(SeenWithin16([Enemy(3, hidden: true)], los));
+        Assert.False(SeenWithin16([Enemy(3, aboard: true)], los));
+        Assert.False(SeenWithin16([Enemy(3, dummy: true)], los));
+        Assert.False(SeenWithin16([Enemy(17)], los));
 
         // A12.34: the nearest Good Order enemy with a LOS.
-        Assert.Equal(5, ScenarioA1MovementCalculator.NearestGoodOrderEnemyInLos([Enemy(2, goodOrder: false), Enemy(5)], "russian", 0, los));
-        Assert.Null(ScenarioA1MovementCalculator.NearestGoodOrderEnemyInLos([Enemy(2, goodOrder: false)], "russian", 0, los));
+        Assert.Equal(5, Nearest([Enemy(2, goodOrder: false), Enemy(5)], los));
+        Assert.Null(Nearest([Enemy(2, goodOrder: false)], los));
     }
 
     [Fact]

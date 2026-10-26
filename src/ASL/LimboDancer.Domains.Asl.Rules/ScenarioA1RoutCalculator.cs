@@ -581,10 +581,8 @@ public static class ScenarioA1RoutCalculator
         ArgumentNullException.ThrowIfNull(enemies);
         ArgumentNullException.ThrowIfNull(reach);
         var inBuilding = InBuilding(reader, start);
-        bool Ignorable(int at) => (inBuilding && reader.SameBuilding(start, at))
-            || enemies.Any(enemy => reader.Distance(enemy.Location, at) is { } there && reader.Distance(enemy.Location, start) is { } here && there <= here);
         var covers = reach.Where(item => item.Key != start && RoutCover(reader.Location(item.Key))).ToArray();
-        var binding = covers.Where(item => !Ignorable(item.Key)).ToArray();
+        var binding = covers.Where(item => !Ignorable(reader, enemies, start, inBuilding, item.Key)).ToArray();
         if (binding.Length == 0)
         {
             return [];
@@ -593,6 +591,29 @@ public static class ScenarioA1RoutCalculator
         var nearest = binding.Min(item => item.Value);
         return [.. covers.Where(item => item.Value <= nearest).Select(item => item.Key)];
     }
+
+    /// <summary>
+    /// The woods and building Locations within a rout's reach that it may ignore when none binds it (A10.51 and its EXC, p. 67; the referee's finding at
+    /// the reviews of pass 70): of the building it begins in, or no farther from a Known enemy unit than its start; empty when one binds it or none is in
+    /// reach. "Able to ignore all rout destinations within 6 MF, the broken unit is free to rout anywhere it can legally reach" (the example on p. 69, S3).
+    /// </summary>
+    public static int[] RoutIgnoredCovers(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int start, IReadOnlyDictionary<int, int> reach)
+    {
+        ArgumentNullException.ThrowIfNull(reader);
+        ArgumentNullException.ThrowIfNull(enemies);
+        ArgumentNullException.ThrowIfNull(reach);
+        var inBuilding = InBuilding(reader, start);
+        int[] covers = [.. reach.Where(item => item.Key != start && RoutCover(reader.Location(item.Key))).OrderBy(item => item.Value).Select(item => item.Key)];
+        return covers.All(at => Ignorable(reader, enemies, start, inBuilding, at)) ? covers : [];
+    }
+
+    /// <summary>
+    /// A10.51's EXC (p. 67): a woods or building Location the rout need not make for: one of the building it begins in (ruling R70.13), or one no farther
+    /// from a Known enemy unit than its start.
+    /// </summary>
+    private static bool Ignorable(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int start, bool inBuilding, int at) =>
+        (inBuilding && reader.SameBuilding(start, at))
+            || enemies.Any(enemy => reader.Distance(enemy.Location, at) is { } there && reader.Distance(enemy.Location, start) is { } here && there <= here);
 
     /// <summary>
     /// Whether a building goes on across a hexside into the next hex (A10.51's EXC; pass 70, ruling R70.13), as the card editor joins a building (ruling
@@ -746,17 +767,20 @@ public static class ScenarioA1RoutCalculator
 
     /// <summary>
     /// What the Rout panel says of where a broken unit's rout may end (A10.5, A10.51; pass 35, the Rules boundary review): no legal step; places
-    /// within reach that all lie where it may not end, so that the route passes through them; the places it must end in; or none within reach.
-    /// The places come worded, each with the way to it.
+    /// within reach that all lie where it may not end, so that the route passes through them; the places it must end in; woods or building Locations within
+    /// reach that it may all ignore (<paramref name="ignored"/>, from <see cref="RoutIgnoredCovers"/>; the referee's finding at the reviews of pass 70); or
+    /// none within reach. The places come worded, each with the way to it.
     /// </summary>
-    public static string RoutEndAdvice(bool canRout, bool must, IReadOnlyList<string> places, bool anyPlaceMayEndTheRout)
+    public static string RoutEndAdvice(bool canRout, bool must, IReadOnlyList<string> places, bool anyPlaceMayEndTheRout, IReadOnlyList<string>? ignored = null)
     {
         ArgumentNullException.ThrowIfNull(places);
         return !canRout
-            ? must ? ". It has no legal rout step, so it is eliminated for Failure to Rout, or surrenders, when the RtPh ends (A10.5)." : ". It has no legal rout step, so it stays where it is."
+            ? must ? ". It has no legal rout step, so as the RtPh ends it surrenders if it can (A20.21) or is eliminated for Failure to Rout (A10.5)." : ". It has no legal rout step, so it stays where it is."
             : places.Count > 0 && !anyPlaceMayEndTheRout
                 ? $". It may not end its rout in or ADJACENT to the Location of the enemy unit it began with or beside (A10.5, A10.51): its route passes through {string.Join(" or ", places)} and ends in woods or a building beyond."
             : places.Count > 0 ? $". Its route must end in {string.Join(" or ", places)}."
+            : ignored is { Count: > 0 }
+                ? $". It may ignore {string.Join(" and ", ignored)}, of the building it begins in or no farther from a Known enemy unit than its start, and no other woods or building is within its reach, so any legal route will do, one ending there included (A10.51 EXC; the example on p. 69, S3)."
             : ". No woods or building is within its reach, so any legal route will do.";
     }
 

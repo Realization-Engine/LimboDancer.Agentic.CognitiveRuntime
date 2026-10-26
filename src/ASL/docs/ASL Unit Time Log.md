@@ -1782,4 +1782,6 @@ One session under the user's word of 2026-10-25 ("Start Pass 70 ... Run it witho
 | 3h, 70.6: Withdrawal completed, CC with a Gun's crew, a Carrier HS; R70.40 (units in an enemy's Location inspect it) after a read-only agent's answer | 17:35 | 18:36 | 1:01 | | Agent 17:35 to about 18:25, the rule question 18:26 to 18:27, R70.40 18:27 to 18:35; Studio check; estimate 1:35 |
 | 3i, 70.7 (I): Infantry against Infantry with a vehicle, its Ambush, PRC in CC; the reviews' brief | 18:37 | 19:27 | 0:50 | | Agent 18:37 to about 19:24; the review brief beside it; Studio check; estimate 3:00 |
 | 3j, 70.7 (II): Street Fighting, A11.52's Passengers, A18.12 against a vehicle, D5.42 | 19:28 | 20:24 | 0:56 | | Agent 19:28 to about 20:20; Studio check; estimate 2:00. The build of 3a to 3j: 11:52 to 20:24 by the clock against the frame's 33:05 |
-| The six reviews and the strict stage (passed), rulings R70.41 to R70.47, the fix brief | 20:25 | 21:13 | 0:48 | | Reviews 20:25 to 20:38; strict 20:25 to 20:29 |
+| The six reviews and the strict stage (passed), rulings R70.41 to R70.47, the fix brief | 20:25 | 20:41 | 0:16 | | Reviews 20:25 to 20:38; strict 20:25 to 20:29. (The row was first written at 21:13 by `timelog_row.py`, which takes the end from the clock; the end here is the notes' 20:41.) |
+| Fix Round A: hidden information | 20:41 | 21:13 | 0:32 | | Agent 20:41 to about 21:10; Studio check |
+| Fix Round B: morale, rout, and Searching | 21:14 | 21:39 | 0:25 | | Agent 21:14 to about 21:37; Studio check |

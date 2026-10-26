@@ -221,10 +221,12 @@ public static class ScenarioA1RiderRules
 
     /// <summary>
     /// D6.24 (UNIT-STATE-034; pass 70, ruling R70.9): a record that carries the pass's <paramref name="drm"/> agrees with its DR, Morale Level, DRM, and ELR;
-    /// a unit that could not be Replaced is only broken (A19.11, A19.12), which the record's lineage after it shows.
+    /// a unit that could not be Replaced is only broken (A19.11, A19.12), which the record's lineage after it shows. An <paramref name="unarmed"/> unit's failure
+    /// is a Casualty Reduction and its pass leaves it as it was (ruling R70.47; A20.54, p. 88).
     /// </summary>
-    public static bool CheckAgrees(int first, int second, int morale, bool broken, string result, int drm, int? elr) =>
-        Check(first, second, morale, broken, drm, elr, replaceable: true) == result || Check(first, second, morale, broken, drm, elr, replaceable: false) == result;
+    public static bool CheckAgrees(int first, int second, int morale, bool broken, string result, int drm, int? elr, bool unarmed = false) =>
+        unarmed ? result == (first + second + drm <= morale && first + second != 12 ? Passed : Reduced)
+            : Check(first, second, morale, broken, drm, elr, replaceable: true) == result || Check(first, second, morale, broken, drm, elr, replaceable: false) == result;
 
     /// <summary>D6.24 (UNIT-STATE-034): a SW's recorded fate agrees with its dr.</summary>
     public static bool WeaponAgrees(int? dr, bool removesOnBreakdown, bool carrierBroken, string fate) => WeaponFate(dr, removesOnBreakdown, carrierBroken) == fate;

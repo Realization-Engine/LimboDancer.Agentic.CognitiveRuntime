@@ -186,13 +186,6 @@ public sealed record MovingUnitFacts(
     IReadOnlyList<string>? MovedWith,
     bool Cx = false);
 
-/// <summary>
-/// One unit of the game as the scans for a seeing enemy read it (A12.14, A12.34): active, its side, a Dummy, aboard a vehicle, Broken as a
-/// three-valued fact, Hidden, Good Order as the planner reads it, and its Location as an index into the caller's table of Locations (null off
-/// the map).
-/// </summary>
-public sealed record EnemyUnitFacts(bool Active, string? Side, bool Dummy, bool Aboard, bool Hidden, bool GoodOrder, int? Location);
-
 /// <summary>The LOS between two Locations as the map gives it: whether it is clear, and its range.</summary>
 public sealed record LosFacts(bool Clear, int Range);
 
@@ -201,9 +194,6 @@ public interface ILosFactReader
 {
     public LosFacts? Los(int fromLocation, int toLocation);
 }
-
-/// <summary>A firer or director of an attack as the "seen" read finds it in the state: its side and its Location's index (null when it has none).</summary>
-public sealed record SeenSubjectFacts(string Side, int? Location);
 
 /// <summary>One unit a move names, as the state finds it: whether it is active, and its side (null when not found).</summary>
 public sealed record MoveStartUnitFacts(bool Active, string? Side);

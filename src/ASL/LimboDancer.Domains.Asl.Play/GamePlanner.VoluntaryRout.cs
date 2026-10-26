@@ -67,20 +67,15 @@ public sealed partial class GamePlanner
             }
         }
 
+        // Rules decides what the break does to each unit (the Rules boundary review); the plan writes it.
         UnitInstance[] units = [.. ids.Select(id => state.Unit(id)!)];
-        string[] revealed = [.. units.Where(unit => Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden)).Select(unit => unit.Id)];
-        string[] unpinned = [.. units.Where(unit => Is(unit, Conditions.Pinned)).Select(unit => unit.Id)];
+        var (revealed, unpinned, changes) = ScenarioA1VoluntaryRout.BreakEffects([.. units.Select(unit => new VoluntaryBreakUnit(unit.Id, Is(unit, Conditions.Pinned),
+            Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden)))]);
         var events = new List<GameEvent> { Event(scope, attemptId, 1, expected, "voluntary-break", new VoluntaryBreak(ids), null, null) };
         events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, revealed));
-        foreach (var unit in units)
+        foreach (var (id, change) in changes)
         {
-            var conditions = new Dictionary<string, ConditionState> { [Conditions.Broken] = ConditionState.True, [Conditions.DesperationMorale] = ConditionState.True };
-            if (Is(unit, Conditions.Pinned))
-            {
-                conditions[Conditions.Pinned] = ConditionState.False;
-            }
-
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(unit.Id, conditions), null, null));
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(id, ConditionChanges(change)), null, null));
         }
 
         var reasons = ScenarioA1VoluntaryRout.BreakSummary(ids, unpinned, revealed).ToList();

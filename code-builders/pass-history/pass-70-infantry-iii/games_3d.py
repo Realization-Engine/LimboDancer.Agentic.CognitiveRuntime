@@ -25,8 +25,12 @@ g.write()
 
 # A10.51's EXC (ruling R70.13). The German RtPh: the broken 4-6-7 g1 on level 1 of [M5], the Russian 4-4-7 r1 below it on [M5]'s ground level, ADJACENT by
 # the stairway, so g1 must rout. Before the pass the nearest cover, level 1 of [L4], bound it; now [L4] is of its own building, which it need not
-# consider: the Rout panel's destinations leave out [L4] (or offer none, and any legal route), and a route by [L4] level 1, [L4], and on out of the
-# building is not refused for leaving cover. Read back: the "rout-stepped" events of g1, the first into "bd03:L4:1".
+# consider. Corrected at fix Round B (the referee's and the table player's findings): g1's only legal step is to [L4] level 1. [M5] ground is r1's
+# Location, and [L4] ground is ADJACENT to r1 while g1 is not leaving r1's Location (A10.51), so it cannot leave the building. Level 1 of [L4] is not
+# ADJACENT to r1 and is the only cover within reach, of its own building, so nothing binds it (the example on p. 69, S3). The Rout panel should now read
+# "It may ignore bd03:L4:1, of the building it begins in or no farther from a Known enemy unit than its start, and no other woods or building is within
+# its reach, so any legal route will do, one ending there included (A10.51 EXC; the example on p. 69, S3)." A route of [L4] level 1 alone is legal; one
+# that goes on to [L4] ground is refused there, rightly. Read back: the "rout-stepped" event of g1 into "bd03:L4:1".
 g = GameFile("p70-rout-own-building", "pass 70, 3d: a broken squad routs out of its own building (A10.51 EXC)", phasing="german")
 g.unit("g1", "squad", "attacker-squad", "german", "bd03:M5:1", broken=True)
 g.unit("r1", "squad", "defender-squad", "russian", "bd03:M5:0")

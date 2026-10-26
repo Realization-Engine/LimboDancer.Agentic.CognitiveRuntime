@@ -7439,8 +7439,10 @@ else if (state is not null)
             targets = [.. targets.Where(routes.ContainsKey)];
         }
 
-        // Pass 35 (A.8, A10.51): every place within reach may lie where the rout may not end. Rules words which case it is.
-        return (ScenarioA1RoutCalculator.RoutEndAdvice(canRout, must, [.. targets.Select(Place)], targets.Any(routes.ContainsKey)),
+        // Pass 35 (A.8, A10.51): every place within reach may lie where the rout may not end. Rules words which case it is; pass 70 (the fixes): with no
+        // place that binds the rout, the ignorable ones within reach are named (A10.51 EXC; the example on p. 69, S3).
+        return (ScenarioA1RoutCalculator.RoutEndAdvice(canRout, must, [.. targets.Select(Place)], targets.Any(routes.ContainsKey),
+                targets.Count == 0 ? Live.Planner.RoutIgnoredCovers(state!, unit).Select(target => target.ToString()).ToArray() : null),
             [.. targets.Where(routes.ContainsKey).Select(target => new RoutActionPanel.Way(target.ToString(), string.Join(", ", routes[target])))]);
     }
 
