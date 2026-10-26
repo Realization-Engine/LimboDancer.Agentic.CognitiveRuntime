@@ -43,6 +43,7 @@ I am the session that briefs you. I review your diff, check the work in the Stud
   - The other edge: when you lift a refusal, rename a text, add an example, an id, an icon, a kind, a modifier name, a result string, or a vocabulary entry, grep the tests for the refusal's code and text and for registry lists, and run the methods that lean on them. The existing Sniper tests (`BacklogPass15Tests`, `BacklogPass15TablePlayerTests`, `EntityTests`, the Rules Sniper tests) are in the blast radius of any change to `ScenarioA1Sniper` or `GamePlanner.Snipers.cs`: grep them for the members and texts you change.
 - **Build:** `bash E:/Archive/GitHub/dlandi/LimboDancer.MCP/code-builders/build-and-test/build_studio.sh`. It builds MapStudio and everything under it outside the repository, with warnings as errors, in about 2 minutes, and prints the errors and "exit N". It must end with exit 0. My Studio is stopped while you build; if the build says a file is locked, stop and say so.
 - **Tests:** `bash E:/Archive/GitHub/dlandi/LimboDancer.MCP/code-builders/build-and-test/run_test_classes.sh <Rules|Play|Units|MapStudio> "<filter by method>"`.
+- **The strict build of each test project you changed, before reporting:** `bash E:/Archive/GitHub/dlandi/LimboDancer.MCP/code-builders/build-and-test/strict_test_build.sh <Rules|Play|Units|MapStudio>`, one at a time, each to `exit 0`. The filtered runs build with warnings not as errors, so CA1861 in 4a's and 4b's page tests reached the user's Visual Studio before anything strict compiled them (2026-10-26).
 - **Code analysis under warnings-as-errors:**
   - CA1716 rejects parameters named `to`/`from` and members named `Step`.
   - IDE0040 wants `public` on interface members.
@@ -69,6 +70,11 @@ I am the session that briefs you. I review your diff, check the work in the Stud
 - A proposal that names a unit the plan creates must name it by its definition, never its raw id.
 - A suggested route or LOS pair in a games script must be a legal one: read the panel's advice, or the board viewer's LOS tab, first.
 - Ask, for each new fact on a public record, whether the other side may know it.
+
+## Lessons of pass 71's increments (4a, 4b)
+- **A record line that withholds a name is not enough:** the events written beside it must withhold it too. 4a's pin of a concealed unit that keeps its "?" names no unit in `sniper-attacked`, but its public `conditions-changed` names the unit. For each event you write about a unit that keeps its "?", set its visibility to the owner, as `AddMoraleCheck` and 4b's `sniper-checked` do.
+- **Main moves under the branch** (Codex's acronym page was merged in as 00fd8894): read `git log --oneline -5` before you start, and never touch Codex's files.
+- **A dr 1 against an enemy Sniper reduces its side's SAN** and removes the counter only below 2 (A14.4, as 4b built it).
 
 ## Report (your closing message, under 900 words)
 1. What departs from the brief or a ruling, first: anything you left out, simplified, or decided yourself, each with its reason.
