@@ -63,8 +63,6 @@ Pass 71 completes the Sniper (A14) and the wound's movement rules (A17.2), with 
 | | Overhead | The reviews, their fixes, the Studio check of the whole pass, the documents (the plan's 1:15; pass 70's took 3:22). | 2:30 |
 | | **Forecast** | build 5:41 | **about 8:10** |
 
-(The frame agents' raw estimates, before calibration: 4a 5:45, 4b 4:30, 4c 4:00, 4d 5:30, 4e 1:35, 4f 2:45, 4g 2:30, a build of 26:35. They are kept for the calibration only; pass 70's ran about four times its build.)
-
 ## 3. The rows, by task and increment
 
 | Task | Rule (page) | What the row asks | Placed |
