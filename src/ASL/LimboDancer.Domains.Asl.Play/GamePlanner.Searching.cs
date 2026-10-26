@@ -211,7 +211,7 @@ public sealed partial class GamePlanner
                 var (type, payload) = CasualtyReduction(unit with
                 {
                     Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { ["asl:ti"] = ConditionState.True }
-                }, attemptId, severity, ScenarioA1Wounds.PinnedByWound(unit.Kind is "asl:leader" or "asl:hero", state.Phase, spent / 2, spent % 2 == 1));
+                }, attemptId, severity, ScenarioA1Wounds.PinnedByWound(unit.Kind is "asl:leader" or "asl:hero", Is(unit, Conditions.Broken), state.Phase, spent / 2, spent % 2 == 1));
                 Push(type, payload);
             }
 

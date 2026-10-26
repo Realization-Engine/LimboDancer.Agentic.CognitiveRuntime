@@ -84,7 +84,7 @@ public sealed partial class GamePlanner
     {
         var at = unit.Position is MapPosition ? index.Location(unit.Id)?.Location : null;
         var advance = at is null ? null : state.Advances.LastOrDefault(item => item.Unit == unit.Id && item.To == at);
-        var enemyVehicle = at is not null && (index.At(at).OfType<UnitInstance>().Any(other => LiveFire.IsVehicle(other) && other.Side != unit.Side) || index.Wrecks(at).Any());
+        var enemyVehicle = at is not null && (index.At(at).OfType<UnitInstance>().Any(other => LiveFire.IsVehicle(other) && other.Side != unit.Side) || index.Wrecks(at).Count > 0);
         var qualified = advance is not null && StreetFighter(state, RoadSides(state, at!), at!, unit.Id, enemyVehicle);
         return ScenarioA1StreetFighting.ReturnBar(unit.Id, state.Phase, qualified, advance is not null, state.CloseCombats.FirstOrDefault(item => item.Location == at) is { Closed: true },
             Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Captured));

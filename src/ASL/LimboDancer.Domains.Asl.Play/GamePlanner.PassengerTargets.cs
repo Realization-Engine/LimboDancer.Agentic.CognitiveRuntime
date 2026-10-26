@@ -51,12 +51,12 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// A17.2 (p. 85; pass 71, ruling R71.14): each target a wound would pin, a SMC that has spent more than 3 MF in the MPh, says so, as Rules reads it from
-    /// the unit in the state's index.
+    /// the unit in the state's index; never a broken one (A7.8; ruling R71.27).
     /// </summary>
     private FireAttack WithWoundPins(GameState state, FireAttack attack) => attack.Targets is null ? attack : attack with
     {
         Targets = [.. attack.Targets.Select(target => target.UnitId is { } id && MemoOf(state).Objects(state).Unit(id) is { } unit
-            && ScenarioA1Wounds.PinnedByWound(unit.Kind is "asl:leader" or "asl:hero", state.Phase, unit.MfSpent, unit.HalfMfSpent) ? target with { WoundPins = true } : target)],
+            && LiveFire.WoundPins(state, unit) ? target with { WoundPins = true } : target)],
     };
 
     /// <summary>

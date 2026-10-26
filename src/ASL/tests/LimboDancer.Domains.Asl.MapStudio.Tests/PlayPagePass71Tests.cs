@@ -519,4 +519,66 @@ public sealed class PlayPagePass71Tests : IDisposable
         Assert.Equal(new CarriedMan("de-l", "de-s"), Assert.Single(step.Carried!));
         Assert.Equal(0, live.History(Game)!.Current!.Unit("de-l")!.MfSpent);
     }
+
+    // Fix round B: a wound that pins, in words (A17.2; ruling R71.14; R3's finding 5).
+
+    private static readonly string[] Leader = ["de-l"];
+
+    [Fact]
+    public async Task ASniperWoundThatPinsIsSaidWoundedAndPinned()
+    {
+        // A14.3, A17.2 (ruling R71.14): the German 8-1 moves alone in the German MPh from the fourth row's fourth hex through the woods to its eighth, 5 MF;
+        // the Russian 4-4-7 in the eleventh hex First Fires at him there (4 + 4, cowering, with FFMO and FFNAM), a NMC his 3 + 3 passes and that equals the
+        // Russian SAN. The Russian Sniper below the eighth hex rolls dr 2 and a Random Location DR of 1, 1 (one hex north): the leader is wounded (Wound Severity
+        // dr 1) and pinned, and every view reads it so.
+        var sniperAt = GameMaps.LocationOf(WideBoards.Board, new HexIndex(8, 4))!.ToString();
+        await Start(Plain("de-l", "asl:leader", "attacker-leader-8-1", WideBoards.At(4), "german"), Squad("ru-1", "defender-squad", WideBoards.At(11), "russian"),
+            Placed("rs", "asl:sniper", null, sniperAt, "russian", new Dictionary<string, bool>()));
+        await Do(GameActions.AdvancePhase, new
+        {
+        });
+        for (var column = 5; column <= 8; column++)
+        {
+            await Do(GameActions.Move, new
+            {
+                unitIds = Leader,
+                to = WideBoards.At(column),
+            });
+            if (column < 8)
+            {
+                await Do(GameActions.PassFire, new
+                {
+                });
+            }
+        }
+
+        dice.Enqueue([4, 4, 3, 3, 2, 1, 1, 1]);
+        await Do(GameActions.Fire, new
+        {
+            firers = RussianFirer,
+            target = WideBoards.At(8),
+        });
+        await Attack();
+        Assert.Equal(Rules.ScenarioA1Sniper.Wounded, Assert.Single(Events.Select(item => item.Payload).OfType<SniperAttacked>()).Result);
+        Assert.Equal(ConditionState.True, GameState.Condition(live.History(Game)!.Current!.Unit("de-l")!, Conditions.Pinned));
+        foreach (var view in new[] { Perspective.Adjudicator, new Perspective("german"), new Perspective("russian") })
+        {
+            var history = live.History(Game)!;
+            var line = Assert.Single(new PlayRecords(history, view, long.MaxValue, UnitNames.For(history, view, [.. live.Catalogs])).Snipers).Text;
+            Assert.EndsWith(" is wounded and pinned (A14.3, A17.2)", line, StringComparison.Ordinal);
+        }
+    }
+
+    // CA1861: the events of a wound that pins, and of a pin by a check beside a wound.
+    private static readonly string[] WoundPins = ["wounded", "pinned-wound"];
+    private static readonly string[] CheckPins = ["wounded", "pinned"];
+
+    [Fact]
+    public void AFireAttacksWoundThatPinsIsSaidOnceWithItsRule()
+    {
+        // A17.2 (ruling R71.14): the Fire path's "pinned-wound" reads as one result with its rule; a pin by a check and a wound beside it read as before.
+        static Rules.FireUnitEffect Effect(string[] events) => new("de-l", "attacker-leader-8-1", "attacker-leader-8-1", null, false, false, true, true, false, false, events, []);
+        Assert.Equal("wounded and pinned (A17.2)", FireText.EffectText(Effect(WoundPins)));
+        Assert.Equal("pinned, wounded", FireText.EffectText(Effect(CheckPins)));
+    }
 }

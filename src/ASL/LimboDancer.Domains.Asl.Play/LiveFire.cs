@@ -464,6 +464,29 @@ public static class LiveFire
     public static bool IsVehicle(UnitInstance unit) => unit.Kind == "asl:vehicle";
 
     /// <summary>
+    /// Whether a wound given the unit now pins it, as Rules reads it from the state (A17.2, A7.8; pass 71, rulings R71.14, R71.27): a SMC, unbroken, past 3 MF
+    /// in the MPh.
+    /// </summary>
+    public static bool WoundPins(GameState state, UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        return ScenarioA1Wounds.PinnedByWound(unit.Kind is "asl:leader" or "asl:hero", GameState.Condition(unit, Conditions.Broken) == ConditionState.True, state.Phase,
+            unit.MfSpent, unit.HalfMfSpent);
+    }
+
+    /// <summary>
+    /// A target's recorded wound pin as a record check takes it (A17.2; pass 71, ruling R71.14): from the record, so a game replays as it was played; but a pin
+    /// the state's rule does not give (R3's finding 2: a broken SMC, ruling R71.27, or one not past 3 MF) is left out, so the record differs from the state's
+    /// facts and is refused. A record made before the pass carries none.
+    /// </summary>
+    public static bool? RecordedWoundPins(GameState state, string? unitId, bool? recorded)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return recorded == true && !(unitId is not null && state.Unit(unitId) is { } unit && WoundPins(state, unit)) ? null : recorded;
+    }
+
+    /// <summary>
     /// Whether an AFV's crew is Crew Exposed: an OT AFV is CE unless under a BU, Stun, Shock, or Recall marker (D5.3, D5.34, C7.42); a CT AFV
     /// only when its owner has removed its BU counter (D5.2; ruling R7.11); an unarmored
     /// vehicle has no crew to expose (D5.1). A Carrier's crew is always CE, stunned or shocked included (D6.84; pass 65, ruling R65.18).
@@ -1144,7 +1167,8 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                     Unarmed = record.Unarmed,
 
                     // Pass 71 (ruling R71.14): whether a wound pins the target (A17.2) is written with the attack and taken from the record; an older one has none.
-                    WoundPins = record.WoundPins,
+                    // A recorded pin the state does not give is refused (R3's finding 2).
+                    WoundPins = LiveFire.RecordedWoundPins(state, fact.UnitId, record.WoundPins),
                 })],
             // D3.52, C5.11 (pass 50): the hexspines a vehicle's MG must turn its CA, and its hex's terrain, are map reads recorded with the attack.
             VehicleFire = expected.VehicleFire is { Weapons: { } stateWeapons } armedVehicle && recorded.VehicleFire is { Weapons: { } recordedWeapons } recordedVehicle

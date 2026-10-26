@@ -5229,8 +5229,9 @@ public static class ScenarioA1FireCalculator
             ConcealmentLost = Hidden;
             events.Add("wounded");
 
-            // A17.2 (p. 85; pass 71, ruling R71.14): a SMC wounded after spending more than 3 MF is pinned, as the attack's record says of him.
-            if (Target.WoundPins == true && !Pinned)
+            // A17.2 (p. 85; pass 71, ruling R71.14): a SMC wounded after spending more than 3 MF is pinned, as the attack's record says of him; ruling R71.27
+            // (A7.8, p. 58): never one broken, before the attack or by it.
+            if (Target.WoundPins == true && !Pinned && !Broken)
             {
                 Pin("pinned-wound");
             }

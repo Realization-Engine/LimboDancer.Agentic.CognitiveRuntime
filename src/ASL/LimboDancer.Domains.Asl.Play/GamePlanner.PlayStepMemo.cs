@@ -150,8 +150,11 @@ public sealed partial class GamePlanner
 
         /// <summary>
         /// The hexes a side's Sniper counter may be placed in at setup, and the count of enemy-occupied hexes they meet (A14.2; pass 71, ruling R71.11), by the
-        /// placing side: keyed by side, since the count reads that side's view (an enemy hidden unit is not counted, an enemy "?" is). Read at setup only; the
-        /// fill reads the map's handles and <see cref="Objects"/> and has no side effect.
+        /// placing side: keyed by side, since the count reads that side's view (an enemy hidden unit is not counted, an enemy "?" is). Read at setup, and for a
+        /// forfeited Sniper attack's repositioning (A14.2; ruling R71.12), which reads it from the state of the moment inside the commit (the triggering step
+        /// may have moved units), so on a state the commit replayed and does not keep; the fill reads the map's handles and <see cref="Objects"/> and has no
+        /// side effect. Its cost is one pass over the playable hexes by the enemy-occupied hexes, distances only, at each effective dr while the choice to
+        /// forfeit is open.
         /// </summary>
         public ConcurrentDictionary<string, (IReadOnlyList<BoardLocation> Hexes, int Tier)> SniperPlacements { get; } = new(StringComparer.Ordinal);
 

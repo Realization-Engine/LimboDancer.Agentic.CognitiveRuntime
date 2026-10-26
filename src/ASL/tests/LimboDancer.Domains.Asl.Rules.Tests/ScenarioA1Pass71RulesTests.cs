@@ -529,14 +529,14 @@ public sealed class ScenarioA1Pass71RulesTests
     public void ASmcWoundedInTheMphAfterMoreThanThreeMfIsPinned()
     {
         // A17.2 (p. 85; ruling R71.14): "A SMC who becomes wounded (e.g., by Defensive First Fire) after already expending > 3 MF is pinned": 3 1/2 counts.
-        Assert.False(ScenarioA1Wounds.PinnedByWound(true, "mph", 3, false));
-        Assert.True(ScenarioA1Wounds.PinnedByWound(true, "mph", 3, true));
-        Assert.True(ScenarioA1Wounds.PinnedByWound(true, "mph", 4, false));
+        Assert.False(ScenarioA1Wounds.PinnedByWound(true, false, "mph", 3, false));
+        Assert.True(ScenarioA1Wounds.PinnedByWound(true, false, "mph", 3, true));
+        Assert.True(ScenarioA1Wounds.PinnedByWound(true, false, "mph", 4, false));
 
         // Only in the MPh (the RtPh's wound is the backlog's), and only a SMC.
-        Assert.False(ScenarioA1Wounds.PinnedByWound(true, "rtph", 4, false));
-        Assert.False(ScenarioA1Wounds.PinnedByWound(true, "dfph", 4, false));
-        Assert.False(ScenarioA1Wounds.PinnedByWound(false, "mph", 4, false));
+        Assert.False(ScenarioA1Wounds.PinnedByWound(true, false, "rtph", 4, false));
+        Assert.False(ScenarioA1Wounds.PinnedByWound(true, false, "dfph", 4, false));
+        Assert.False(ScenarioA1Wounds.PinnedByWound(false, false, "mph", 4, false));
 
         // A Sniper's wound pins him with it.
         Assert.Contains((UnitCondition.Pinned, true), ScenarioA1Sniper.WoundedConditions(true));
@@ -648,5 +648,74 @@ public sealed class ScenarioA1Pass71RulesTests
         var creation = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).LeaderCreation!;
         Assert.Equal(created, creation.LeaderDefinitionId);
         Assert.Equal(vehicle == "attacker-tank" && afv == true, creation.Drm.Any(item => item.Name == "cc-vs-afv" && item.Value == -1m && item.Rule == "A18.2"));
+    }
+
+    // Fix round B: the Sniper's and the wound's rules (rulings R71.25 to R71.28).
+
+    [Fact]
+    public void ABrokenSmcIsNeverPinnedByAWound()
+    {
+        // A7.8 (p. 58; ruling R71.27): "Pinning affects broken units only during Interdiction": a broken leader wounded after 4 MF in the MPh is not pinned.
+        Assert.False(ScenarioA1Wounds.PinnedByWound(true, true, "mph", 4, false));
+        Assert.True(ScenarioA1Wounds.PinnedByWound(true, false, "mph", 4, false));
+    }
+
+    [Fact]
+    public void ASmcTemporaryCrewOfAVehicleNotFullyArmoredIsAttackedAsTheSmcHeIs()
+    {
+        // A14.3 (p. 82; ruling R71.26): "Eliminates SMC ... breaks Inherent crew": a Temporary crew (A21.22) is no Inherent crew, so a SMC crewing a truck or a
+        // Partially Armored AFV is eliminated by dr 1 and wounded by dr 2; the CE SMC crew of a fully armored AFV keeps the crew results (D5.343).
+        Assert.True(ScenarioA1Sniper.CrewAttackedAsSmc(smcTemporaryCrew: true, fullyArmored: false));
+        Assert.False(ScenarioA1Sniper.CrewAttackedAsSmc(smcTemporaryCrew: true, fullyArmored: true));
+        Assert.False(ScenarioA1Sniper.CrewAttackedAsSmc(smcTemporaryCrew: false, fullyArmored: false));
+        Assert.Equal(SniperEffect.Eliminated, ScenarioA1Sniper.UnitEffect(true, 1, false, false, false));
+        Assert.Equal(SniperEffect.WoundSeverity, ScenarioA1Sniper.UnitEffect(true, 2, false, false, false));
+    }
+
+    private static readonly int[] TemsOneAndNone = [1, 0];
+    private static readonly int[] TheSecond = [1];
+    private static readonly int[] Both = [0, 1];
+
+    [Fact]
+    public void WhereTheTemComparedEquidistantHexesOnlyTheLowestTemLocationIsTheTarget()
+    {
+        // A14.21 (p. 82; R1's finding 5): "Should ≥ two such hexes be equidistant, the Location with the lowest TEM is the target": two hexes at distance 2
+        // decide the Location too; one hex alone, the Random Location's or the only closest, leaves A14.2's choice of its Locations.
+        Assert.True(ScenarioA1Sniper.TemDecidesLocation([new SniperTargetHex(0, 2, 0, "E5"), new SniperTargetHex(1, 2, 1, "F5")]));
+        Assert.False(ScenarioA1Sniper.TemDecidesLocation([new SniperTargetHex(0, 1, 0, "E5"), new SniperTargetHex(1, 2, 0, "F5")]));
+        Assert.False(ScenarioA1Sniper.TemDecidesLocation([new SniperTargetHex(0, 0, 0, "E5")]));
+        Assert.Equal(TheSecond, ScenarioA1Sniper.TargetLocations(TemsOneAndNone, temDecides: true));
+        Assert.Equal(Both, ScenarioA1Sniper.TargetLocations(TemsOneAndNone, temDecides: false));
+    }
+
+    [Fact]
+    public void ATiedTargetBeneathAQuestionMarkIsAnsweredByItsPlaceAlone()
+    {
+        // A14.23, A14.2 (R1's finding 4): the Sniper player chooses which tied target in a "?" stack takes the dr without seeing it: the answer names a place.
+        Assert.Equal("concealed:2", ScenarioA1Sniper.StackMemberOption(1));
+        Assert.Equal(1, ScenarioA1Sniper.StackMemberOf("concealed:2"));
+        Assert.Null(ScenarioA1Sniper.StackMemberOf(ScenarioA1Sniper.ConcealedStack));
+        Assert.Null(ScenarioA1Sniper.StackMemberOf("unit:de-a"));
+        Assert.Contains("unseen", ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.StackFirstStep, "russian", "[E6]", 2), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void APinnedSnipersRecordIsRefused()
+    {
+        // A14.31 (p. 82; R1's finding 7): a pinned Sniper "forfeits all further attack and repositioning (14.2) opportunities during that Player Turn".
+        Assert.Null(ScenarioA1Sniper.VerifySniperAttack(true, true, true, 2, sniperPinned: false));
+        Assert.Contains("A14.31", ScenarioA1Sniper.VerifySniperAttack(true, true, true, 2, sniperPinned: true)!.Text, StringComparison.Ordinal);
+    }
+
+    private static readonly string[] WithTheLeader = ["de-l"];
+
+    [Fact]
+    public void ACarriedWoundedLeaderStillGivesHisCarrierTheTwoMfBonus()
+    {
+        // A17.2 (p. 85; ruling R71.28): "A wounded leader's two MF bonus for accompaniment throughout the MPh still applies": the 4-6-7 carrying the wounded
+        // 8-1, who has spent no MF of his own, has moved with him at every step.
+        MovingUnitFacts squad = new("de-s", "german", false, true, false, false, false, false, "german", 2, false, WithTheLeader);
+        MovingUnitFacts leader = new("de-l", "german", false, false, true, false, false, true, "german", 0, false, null);
+        Assert.True(ScenarioA1MovementCalculator.LeaderBonus(squad, [squad, leader]));
     }
 }

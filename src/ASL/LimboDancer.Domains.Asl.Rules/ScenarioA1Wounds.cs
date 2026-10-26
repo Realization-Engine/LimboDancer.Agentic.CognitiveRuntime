@@ -18,9 +18,11 @@ public static class ScenarioA1Wounds
 
     /// <summary>
     /// A17.2 (p. 85; pass 71, ruling R71.14): "A SMC who becomes wounded (e.g., by Defensive First Fire) after already expending &gt; 3 MF is pinned": a SMC
-    /// wounded in the MPh past 3 MF, 3 1/2 counting. A routing SMC wounded in the RtPh is not read here (the backlog).
+    /// wounded in the MPh past 3 MF, 3 1/2 counting. A routing SMC wounded in the RtPh is not read here (the backlog). Ruling R71.27: never a broken SMC, A7.8
+    /// (p. 58): "Pinning affects broken units only during Interdiction ... there is no need to place Pin counters on broken units".
     /// </summary>
-    public static bool PinnedByWound(bool smc, string? phase, int mfSpent, bool halfMfSpent) => smc && phase == "mph" && (mfSpent > 3 || (mfSpent == 3 && halfMfSpent));
+    public static bool PinnedByWound(bool smc, bool broken, string? phase, int mfSpent, bool halfMfSpent) =>
+        smc && !broken && phase == "mph" && (mfSpent > 3 || (mfSpent == 3 && halfMfSpent));
 
     /// <summary>A17.2 (p. 85): "A Good Order wounded man who is not portaging a SW may be carried by any Good Order MMC at a cost of five PP".</summary>
     public const int CarriedManPp = 5;

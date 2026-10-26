@@ -1630,23 +1630,49 @@ public sealed class PlayRecords
         }))];
 
     /// <summary>The Sniper attacks, Sniper Checks, and SAN reductions the viewer may see (A14; ruling R15.5; pass 71, rulings R71.9, R71.10), latest first.</summary>
-    private IReadOnlyList<(string EventId, string Text)> SniperRecords => [.. events.Where(item => item.IsVisibleTo(viewer) && item.Payload is SniperAttacked or SniperChecked or SanReduced)
-        .Reverse().Select(item => (item.EventId, item.Payload switch
+    private IReadOnlyList<(string EventId, string Text)> SniperRecords => [.. events.Select((item, position) => (Item: item, Position: position))
+        .Where(pair => pair.Item.IsVisibleTo(viewer) && pair.Item.Payload is SniperAttacked or SniperChecked or SanReduced)
+        .Reverse().Select(pair => (pair.Item.EventId, pair.Item.Payload switch
         {
             SniperChecked check => SniperCheckText(check),
             SanReduced reduced => $"The {DisplayText.Side(reduced.Side)} Sniper is eliminated by {(reduced.Cause == ScenarioA1Sniper.SniperCheckCause ? "a Sniper Check" : "the enemy Sniper")}: "
-                + (ActualSanAfter(item, reduced.Side) is { } san
+                + (ActualSanAfter(pair.Item, reduced.Side) is { } san
                     ? $"the {DisplayText.Side(reduced.Side)} SAN is now {san.ToString(System.Globalization.CultureInfo.InvariantCulture)}"
                         + (ScenarioA1Sniper.CounterRemoved(san) ? ", below 2, so its Sniper counter is removed (A14.1, A14.4)" : " (A14.4)")
                     : $"the {DisplayText.Side(reduced.Side)} SAN is one lower (A14.4)"),
-            _ => SniperAttackText((SniperAttacked)item.Payload, item.Visibility is { Count: > 0 }),
+            SniperAttacked sniper => SniperAttackText(sniper, pair.Item.Visibility is { Count: > 0 }, WoundPinned(pair.Position, sniper)),
+            _ => string.Empty,
         }))];
 
     /// <summary>
-    /// A Sniper attack's line. <paramref name="ownerOnly"/>: the owner's twin of a target that keeps its "?" (A12.14, A14.23; pass 71, ruling R71.22), which
-    /// names his unit and its result beside the public line that names neither.
+    /// Whether a Sniper's wound pinned its man (A17.2; pass 71, ruling R71.14; R3's finding 5): the attack's own events after its record, in the same commit,
+    /// pin him with the wound. The record carries the result "wounded" either way, as every record before the pass does.
     /// </summary>
-    private string SniperAttackText(SniperAttacked sniper, bool ownerOnly)
+    private bool WoundPinned(int position, SniperAttacked sniper)
+    {
+        if (sniper is not { Result: ScenarioA1Sniper.Wounded, Unit: { } unit })
+        {
+            return false;
+        }
+
+        var attempt = AttemptOf(events[position].EventId);
+        for (var next = position + 1; next < events.Count && AttemptOf(events[next].EventId) == attempt; next++)
+        {
+            if (events[next].Payload is ConditionsChanged changed && changed.Id == unit && changed.Conditions.TryGetValue(Conditions.Wounded, out var wounded)
+                && wounded == ConditionState.True)
+            {
+                return changed.Conditions.TryGetValue(Conditions.Pinned, out var pinned) && pinned == ConditionState.True;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// A Sniper attack's line. <paramref name="ownerOnly"/>: the owner's twin of a target that keeps its "?" (A12.14, A14.23; pass 71, ruling R71.22), which
+    /// names his unit and its result beside the public line that names neither. <paramref name="woundPinned"/>: the wound pinned him (A17.2).
+    /// </summary>
+    private string SniperAttackText(SniperAttacked sniper, bool ownerOnly, bool woundPinned)
     {
         var side = state?.Find(sniper.Sniper)?.Side ?? "a";
 
@@ -1657,7 +1683,7 @@ public sealed class PlayRecords
         }
 
         return $"The {side} Sniper ({sniper.Sniper}) attacks after the SAN roll {sniper.Trigger}: dr {sniper.Dr}"
-            + (sniper.Target is { } at ? $"; {at}: {SniperResultText(sniper.Unit, sniper.Result)}" : sniper.Result == ScenarioA1Sniper.NoTarget
+            + (sniper.Target is { } at ? $"; {at}: {SniperResultText(sniper.Unit, sniper.Result, woundPinned)}" : sniper.Result == ScenarioA1Sniper.NoTarget
                 ? ", no target in reach (A14.21, A14.22)" : ", no effect (A14.3)")
             + (ownerOnly ? "; it keeps its \"?\", and the enemy reads only that a concealed target was attacked (A12.14, A14.23)" : string.Empty);
     }
@@ -1684,10 +1710,11 @@ public sealed class PlayRecords
 
     /// <summary>
     /// What a Sniper attack did in its Location (A14.3; pass 71, the record lines): the unit by its id, which the view's names make "4-6-7 squad G1", or a
-    /// concealed unit that keeps its "?" (A12.14; ruling R71.8), which the record does not name.
+    /// concealed unit that keeps its "?" (A12.14; ruling R71.8), which the record does not name. A wound that pins says so (A17.2; ruling R71.14).
     /// </summary>
-    private static string SniperResultText(string? unit, string result) => (unit, result) switch
+    private static string SniperResultText(string? unit, string result, bool woundPinned) => (unit, result) switch
     {
+        (not null, ScenarioA1Sniper.Wounded) when woundPinned => $"{unit} is wounded and pinned (A14.3, A17.2)",
         (_, ScenarioA1Sniper.DummyStackEliminated) => "a Dummy stack is eliminated (A14.23)",
         (null, ScenarioA1Sniper.NoEffect) => "no effect (A14.3)",
 

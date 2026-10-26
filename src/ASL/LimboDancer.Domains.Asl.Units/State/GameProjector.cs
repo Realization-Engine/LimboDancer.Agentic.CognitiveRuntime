@@ -2356,10 +2356,13 @@ public static class GameProjector
                 return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
-            // A17.2 (pass 71, ruling R71.16): the carries the step records, read from the record; a step recorded before the pass names none.
+            // A17.2 (pass 71, ruling R71.16): the carries the step records, read from the record; a step recorded before the pass names none. A man the move's
+            // earlier steps carried moves on only with his carrier (R3's finding 3: the set-down is checked as the planner checks it); a move before the pass
+            // carried no one.
             IReadOnlyList<CarriedMan> carried = moving.Carried ?? [];
-            if (carried.Count > 0 && Rules.ScenarioA1Wounds.CarryBar([.. carried.Select(carry => CarryFacts(state, moving, carry))],
-                [.. (current?.Carried ?? []).Select(carry => (carry.Man, carry.Carrier))]) is { } badCarry)
+            (string Man, string Carrier)[] earlierCarries = [.. (current?.Carried ?? []).Select(carry => (carry.Man, carry.Carrier))];
+            if ((Rules.ScenarioA1Wounds.CarriedMoveBar(earlierCarries, moving.Movers)
+                ?? (carried.Count > 0 ? Rules.ScenarioA1Wounds.CarryBar([.. carried.Select(carry => CarryFacts(state, moving, carry))], earlierCarries) : null)) is { } badCarry)
             {
                 return Fail<GameState>("UNIT-STATE-029", $"{badCarry.Replace("play.move-carry: ", string.Empty, StringComparison.Ordinal)}.");
             }
@@ -4932,9 +4935,10 @@ public static class GameProjector
         /// <summary>A Sniper attack (A14; ruling R15.5): its Sniper counter and roll are in play and recorded; the events after it apply it.</summary>
         private GameState? Snipe(GameState state, SniperAttacked sniper)
         {
-            // Pass 32.h: the record's reads are made here, and Rules decides (A14.1).
-            if (Rules.ScenarioA1Sniper.VerifySniperAttack(state.Find(sniper.Sniper) is EntityInstance { Kind: "asl:sniper", Status: InstanceStatus.Active }, rolls.ContainsKey(sniper.Roll),
-                rolls.ContainsKey(sniper.Trigger), sniper.Dr) is { } refusal)
+            // Pass 32.h: the record's reads are made here, and Rules decides (A14.1); pass 71 (A14.31): a pinned Sniper's record is refused.
+            var counter = state.Find(sniper.Sniper) as EntityInstance;
+            if (Rules.ScenarioA1Sniper.VerifySniperAttack(counter is { Kind: "asl:sniper", Status: InstanceStatus.Active }, rolls.ContainsKey(sniper.Roll),
+                rolls.ContainsKey(sniper.Trigger), sniper.Dr, counter is not null && GameState.Condition(counter, Conditions.Pinned) == ConditionState.True) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);
             }

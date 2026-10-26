@@ -199,7 +199,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
             // The Play streamlining plan, S3: a route's steps are planned on events never committed; they are applied to the kept projection and
             // not kept themselves, so the bounded list keeps the games' own projections.
-            if (plotting == 0)
+            if (plotting == 0 && inCommit == 0)
             {
                 Keep(continued);
             }
@@ -211,13 +211,34 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var chains = Chains(events);
         var projection = GameProjector.Begin(events, vocabulary, catalogs, chains, LiveGames.Sources, FireRecordVerifier.Shared, RallyRecordVerifier.Shared,
             CloseCombatRecordVerifier.Shared, OrdnanceRecordVerifier.Shared);
-        if (chains is not null && events.Count > 0 && plotting == 0)
+        if (chains is not null && events.Count > 0 && plotting == 0 && inCommit == 0)
         {
             Keep(projection);
         }
 
         return projection.History;
     }
+
+    /// <summary>
+    /// A replay of a commit's events so far, made while the commit is built (pass 71, R5's finding 13: a Sniper attack replays its commit up to four times):
+    /// the projection it continues is not kept, as a plotted route's are not (<see cref="plotting"/>), so the bounded list keeps the games' own projections.
+    /// </summary>
+    private GameHistory ReplayInCommit(IReadOnlyList<GameEvent> events)
+    {
+        inCommit++;
+        try
+        {
+            return Replay(events);
+        }
+        finally
+        {
+            inCommit--;
+        }
+    }
+
+    /// <summary>Above zero while <see cref="ReplayInCommit"/> replays on this thread; the build of a commit is synchronous, so the count is the thread's own.</summary>
+    [ThreadStatic]
+    private static int inCommit;
 
     /// <summary>
     /// Above zero while <see cref="Plot"/> plans a route on this thread (the Play streamlining plan, S3): the move's plan then reads the target

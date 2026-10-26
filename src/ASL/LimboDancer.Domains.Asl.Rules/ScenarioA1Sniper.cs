@@ -412,6 +412,28 @@ public static class ScenarioA1Sniper
         return [.. hexes.Where(item => (item.Distance ?? int.MaxValue) == closest && item.Tem == lowest).OrderBy(item => item.Hex, StringComparer.Ordinal).Select(item => item.Index)];
     }
 
+    /// <summary>
+    /// A14.21 (p. 82; pass 71, R1's finding 5): "Should ≥ two such hexes be equidistant, the Location with the lowest TEM is the target": whether the TEM
+    /// comparison decided the target, so the target hex's Location too, which A14.2's choice of Location then does not reopen.
+    /// </summary>
+    public static bool TemDecidesLocation(IReadOnlyList<SniperTargetHex> hexes)
+    {
+        ArgumentNullException.ThrowIfNull(hexes);
+        var closest = hexes.Min(item => item.Distance ?? int.MaxValue);
+        return hexes.Count(item => (item.Distance ?? int.MaxValue) == closest) > 1;
+    }
+
+    /// <summary>
+    /// The Locations of the target hex the attack may take, by index, from each one's lowest TEM (A14.2, A14.21; R1's finding 5): all of them, which the
+    /// Sniper player chooses among, or, when the TEM decided the target (<see cref="TemDecidesLocation"/>), only those of the lowest TEM.
+    /// </summary>
+    public static IReadOnlyList<int> TargetLocations(IReadOnlyList<int> tems, bool temDecides)
+    {
+        ArgumentNullException.ThrowIfNull(tems);
+        var lowest = tems.Count == 0 ? 0 : tems.Min();
+        return [.. Enumerable.Range(0, tems.Count).Where(index => !temDecides || tems[index] == lowest)];
+    }
+
     /// <summary>The kind of the Sniper player's pending choice (A14.2, A14.21; pass 71, ruling R71.12), which replaces ruling R15.5's game picks.</summary>
     public const string ChoiceKind = "sniper";
 
@@ -427,6 +449,12 @@ public static class ScenarioA1Sniper
     public const string TargetStep = "target";
     public const string FirstStep = "first";
 
+    /// <summary>
+    /// A14.23, A14.2 (pass 71, R1's finding 4): Random Selection among a concealed stack's eligible targets gives several, and the Sniper player chooses which
+    /// takes the dr; he cannot see beneath the "?", so each answer is a place in the stack (<see cref="StackMemberOption"/>).
+    /// </summary>
+    public const string StackFirstStep = "stack-first";
+
     /// <summary>The answers that are not a hex, a Location, or a target: attack, forfeit and reposition, Random Selection, and a concealed stack as one target (A14.23).</summary>
     public const string Attack = "attack";
     public const string Reposition = "reposition";
@@ -441,6 +469,21 @@ public static class ScenarioA1Sniper
 
     /// <summary>A target as an answer of the Sniper player names it: what it is and its id, "crew:t1"; a concealed stack is <see cref="ConcealedStack"/>.</summary>
     public static string TargetOption(string role, string id) => $"{role}:{id}";
+
+    /// <summary>
+    /// A tied target beneath a concealed stack's "?" as an answer of the Sniper player names it (A14.23; R1's finding 4): its place among the tied, from 1,
+    /// "concealed:2", which tells him nothing of the unit.
+    /// </summary>
+    public static string StackMemberOption(int position) => $"{ConcealedStack}:{(position + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+
+    /// <summary>The place among the tied, from 0, of an answer <see cref="StackMemberOption"/> wrote; null for any other answer.</summary>
+    public static int? StackMemberOf(string option)
+    {
+        ArgumentNullException.ThrowIfNull(option);
+        return option.StartsWith(ConcealedStack + ":", StringComparison.Ordinal)
+            && int.TryParse(option.AsSpan(ConcealedStack.Length + 1), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var place) && place > 0
+            ? place - 1 : null;
+    }
 
     /// <summary>
     /// A14.2 EXC (p. 82; ruling R71.12): "prior to Random Selection, the Sniper may choose one of the following (if present in that Location) as its target: the
@@ -462,6 +505,7 @@ public static class ScenarioA1Sniper
         HexStep => $"the {side} Sniper's Random Location finds no target: of the equidistant hexes with the lowest TEM, the {side} side chooses which to attack (A14.21)",
         LocationStep => $"the {side} Sniper attacks {place}: the {side} side chooses which of its Locations holding an eligible target to attack (A14.2)",
         TargetStep => $"the {side} Sniper attacks {place}: before Random Selection it may choose the enemy Sniper counter, a Vulnerable Inherent Crew, or an unarmored vehicle as its target (A14.2)",
+        StackFirstStep => $"the {side} Sniper attacks the \"?\" stack in {place}: Random Selection among its targets gives several, and the {side} side chooses which takes the dr of {dr}, unseen; each other takes a new Sniper dr (A14.2, A14.23)",
         _ => $"the {side} Sniper attacks {place}: Random Selection gives several targets, and the {side} side chooses which takes the dr of {dr}; each other takes a new Sniper dr (A14.2)",
     };
 
@@ -548,6 +592,13 @@ public static class ScenarioA1Sniper
         : dr == 1 ? CrewBroken
         : pinned ? NoEffect : CrewPinned;
 
+    /// <summary>
+    /// A14.3 (p. 82; pass 71, ruling R71.26): the SMC Temporary crew of an unarmored vehicle or Partially Armored AFV is attacked as the SMC he is, "Eliminates
+    /// SMC" on dr 1 and "Wounds SMC" on dr 2 (<see cref="UnitEffect"/>): a Temporary crew (A21.22) is no Inherent crew. The CE SMC crew of a fully armored AFV
+    /// keeps <see cref="CrewResult"/>, whose Stun wounds him (D5.343).
+    /// </summary>
+    public static bool CrewAttackedAsSmc(bool smcTemporaryCrew, bool fullyArmored) => smcTemporaryCrew && !fullyArmored;
+
     /// <summary>A14.33 (p. 82; ruling R71.5): a Sniper attack on an unarmored vehicle itself immobilizes it on dr 1 only, with no further effect if already immobilized.</summary>
     public static string VehicleResult(int dr, bool immobilized) => dr == 1 && !immobilized ? Immobilized : NoEffect;
 
@@ -568,10 +619,15 @@ public static class ScenarioA1Sniper
                 _ => FireVehicleEffect.None,
             }));
 
-    /// <summary>The projector's check of a recorded Sniper attack (A14; ruling R15.5): its Sniper counter is in play, its rolls recorded, and its dr 1 to 6; the events after it apply it.</summary>
-    public static RecordRefusal? VerifySniperAttack(bool sniperActive, bool rollRecorded, bool triggerRecorded, int dr) =>
+    /// <summary>
+    /// The projector's check of a recorded Sniper attack (A14; ruling R15.5): its Sniper counter is in play, its rolls recorded, and its dr 1 to 6; the events
+    /// after it apply it. Pass 71 (R1's finding 7): a pinned Sniper "forfeits all further attack and repositioning (14.2) opportunities during that Player
+    /// Turn" (A14.31, p. 82), so its record is refused; nothing pinned a Sniper before the pass.
+    /// </summary>
+    public static RecordRefusal? VerifySniperAttack(bool sniperActive, bool rollRecorded, bool triggerRecorded, int dr, bool sniperPinned) =>
         !sniperActive || !rollRecorded || !triggerRecorded || dr is < 1 or > 6
             ? new RecordRefusal("UNIT-STATE-042", "A Sniper attack names a Sniper counter in play and recorded rolls (A14.1).")
+            : sniperPinned ? new RecordRefusal("UNIT-STATE-042", "A pinned Sniper makes no attack and no repositioning until the Player Turn ends (A14.31).")
             : null;
 
     /// <summary>A14.3: an effective Sniper attack puts every broken unit of the attacked side in the Location under DM.</summary>

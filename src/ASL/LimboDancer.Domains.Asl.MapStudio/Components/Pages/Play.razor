@@ -5182,6 +5182,7 @@ else if (state is not null)
             (ScenarioA1Sniper.Reposition, _) => "forfeit the attack and reposition the Sniper counter (A14.2)",
             (ScenarioA1Sniper.RandomSelection, _) => "Random Selection among the targets (A14.2)",
             (ScenarioA1Sniper.ConcealedStack, _) => $"a \"?\" stack in {place}",
+            (_, ScenarioA1Sniper.ConcealedStack) => $"{place}: tied target {id} beneath the \"?\" (A14.23)",
             (_, ScenarioA1Sniper.SniperTarget) => $"{place}: the {DisplayText.Side(state?.Find(id)?.Side)} Sniper counter",
             (_, ScenarioA1Sniper.CrewTarget) => $"the Inherent crew of {UnitAt(id)}",
             (_, ScenarioA1Sniper.UnitTarget or ScenarioA1Sniper.VehicleTarget) => UnitAt(id),

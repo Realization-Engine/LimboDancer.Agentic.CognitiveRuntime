@@ -42,6 +42,10 @@ public sealed class BacklogPass71Tests : IDisposable
     private readonly HashSet<string> grain = new(StringComparer.Ordinal);
     private static readonly TerrainType Grain = new() { Code = 3, Name = "Grain", Category = LosCategory.Open };
 
+    // Fix round B: the hexes whose ground level a test reads as Woods, TEM +1 (B13.3), for A14.21's TEM comparison.
+    private readonly HashSet<string> woods = new(StringComparer.Ordinal);
+    private static readonly TerrainType Woods = new() { Code = 4, Name = "Woods", Category = LosCategory.Woods };
+
     // The scenario's year (increment 4e: Riders need 1943, D6.2).
     private int year = 1942;
 
@@ -65,7 +69,7 @@ public sealed class BacklogPass71Tests : IDisposable
         {
             var name = HexName.Parse(text);
             Assert.True(geometry.TryGetIndex(name, out var index));
-            var center = new LocationFacts(0, grain.Contains(text) ? Grain : type, null);
+            var center = new LocationFacts(0, grain.Contains(text) ? Grain : woods.Contains(text) ? Woods : type, null);
             HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, type, null, false, false, false, false, null))];
             LocationFacts[] locations = upstairs.Contains(text) ? [center, new LocationFacts(1, type, null)] : [center];
             hexes.Add(new HexFacts(name, index, 0, false, center, locations, hexsides, null, CenterTerrainSource.CenterSample));
@@ -326,10 +330,11 @@ public sealed class BacklogPass71Tests : IDisposable
     public async Task ALeaderTheSniperEliminatesStillCausesTheLlmcOfHisLocation()
     {
         // A10.2, A14.3 (pass 70, ruling R70.3; pass 71, the reads through the index): the German 8-0 and 4-6-7 in E6; Random Selection's 6, 1 picks the
-        // leader, whose dr 1 eliminates him, and the 4-6-7 takes its LLMC.
+        // leader, whose dr 1 eliminates him, and the 4-6-7 takes its LLMC. Its 3 + 3 calls the Sniper again, resolved at once (ruling R71.25): its dr 3 has no
+        // effect.
         await Setup(null, Unit("de-l", "asl:leader", "attacker-leader-8-0", "E6", "german"), Squad("de-s", "E6", "german"));
         var before = Revision;
-        var sniped = Assert.Single(await FireCallingTheSniper(1, 1, 1, 6, 1));
+        var sniped = (await FireCallingTheSniper(1, 1, 1, 6, 1))[0];
         Assert.Equal(("de-l", "eliminated"), (sniped.Unit, sniped.Result));
         Assert.NotEqual(InstanceStatus.Active, Current.Unit("de-l")!.Status);
         Assert.Single(Since(before).Select(item => item.Payload).OfType<MoraleCheckResolved>());
@@ -1446,11 +1451,12 @@ public sealed class BacklogPass71Tests : IDisposable
     }
 
     [Fact]
-    public async Task ASnipersOwnLlmcCallsTheNextAttackAfterTheSniperCheckItWaitsFor()
+    public async Task ASnipersOwnLlmcCallsTheNextAttackBeforeItsSniperCheck()
     {
-        // A14.1, A14.3 (p. 82; ruling R71.13): the Russian Sniper's dr 1 eliminates the German 8-0 in E6, and the 4-6-7's LLMC, 3 + 3, equals the Russian SAN
-        // of 6: it calls the Sniper again. The first attack offers the Sniper Check, which keeps the new trigger in its resume; declined, the second attack
-        // follows (its dr 4 has no effect).
+        // A14.1, A14.3 (p. 82; rulings R71.13, R71.25): the Russian Sniper's dr 1 eliminates the German 8-0 in E6, and the 4-6-7's LLMC, 3 + 3, equals the
+        // Russian SAN of 6: it calls the Sniper again. An attack "is considered resolved only after the full resolution of all further Sniper attacks generated
+        // by ... all LLMC", so the second attack (its dr 4 has no effect) comes before the first attack's Sniper Check (A14.4: "After resolving (14.3)"), which
+        // keeps nothing more to resolve. Before the fix round the check came first.
         await Setup(null, Unit("de-l", "asl:leader", "attacker-leader-8-0", "E6", "german"), Squad("de-s", "E6", "german"));
         var before = Revision;
         Committed(await Do(GameActions.Fire, Then(4, [3, 3, 3, 3, 1]), new
@@ -1458,18 +1464,20 @@ public sealed class BacklogPass71Tests : IDisposable
             firers = G1,
             target = L("E4"),
         }));
+        var first = Current.Choice!.Resume.GetProperty("trigger").GetString()!;
         Committed(await Choose(ScenarioA1Sniper.Attack, Then(4, 1, 1, 6, 1, 3, 3)));
         var llmc = Since(before).Select(item => item.Payload).OfType<MoraleCheckResolved>().Single();
         var trigger = llmc.Rolls.Single().Value;
-        Assert.Equal(("de-l", ScenarioA1Sniper.Eliminated), (Assert.Single(Sniped(before)).Unit, Sniped(before)[0].Result));
-        var check = Current.Choice!;
-        Assert.Equal(ChoicePending.SniperCheck, check.Kind);
-        Assert.Equal(trigger, check.Resume.GetProperty("rest")[0].GetProperty("roll").GetString());
-
-        Committed(await Choose(ChoicePending.Decline, Then(4)));
         var sniped = Sniped(before);
         Assert.Equal(2, sniped.Length);
+        Assert.Equal(("de-l", ScenarioA1Sniper.Eliminated), (sniped[0].Unit, sniped[0].Result));
         Assert.Equal(("rs", trigger, 4), (sniped[1].Sniper, sniped[1].Trigger, sniped[1].Dr));
+        var check = Current.Choice!;
+        Assert.Equal((ChoicePending.SniperCheck, $"{ChoicePending.SniperCheck}:rs:{first}"), (check.Kind, check.Key));
+        Assert.Equal(0, check.Resume.GetProperty("rest").GetArrayLength());
+
+        Committed(await Choose(ChoicePending.Decline, NoRoll()));
+        Assert.Equal(2, Sniped(before).Length);
         Assert.Null(Current.Choice);
         Assert.False(History.HasErrors);
     }
@@ -1733,5 +1741,307 @@ public sealed class BacklogPass71Tests : IDisposable
         Assert.NotEqual(PlayOutcome.Committed, refused.Outcome);
         Assert.Contains(refused.Reasons, reason => reason.Contains("set down", StringComparison.Ordinal));
         Assert.False(History.HasErrors);
+    }
+
+    // Fix round B: the Sniper's and the wound's rules (rulings R71.25 to R71.28; the reviews' findings R1's 1, 2, 4, 5, 7, R3's 1 to 3, 5, R5's 1).
+
+    /// <summary>The Sniper player's answer to a choice to forfeit: reposition, then the last hex offered when he is asked for one; the dice given drawn last.</summary>
+    private async Task Reposition(params int[] dice)
+    {
+        Committed(await Choose(ScenarioA1Sniper.Reposition, Then(3, dice)));
+        if (Current.Choice is { Kind: ChoicePending.Sniper } hexes && hexes.Resume.GetProperty("step").GetString() == ScenarioA1Sniper.RepositionStep)
+        {
+            Committed(await Choose(hexes.Options[^1], Then(3, dice)));
+        }
+    }
+
+    private static string ForfeitKey(string sniper, string trigger) => $"{ChoicePending.Sniper}:{sniper}:{trigger}:{ScenarioA1Sniper.ForfeitStep}";
+
+    [Fact]
+    public async Task TwoTriggersOfOneSniperInOneRecordReachTheForfeitEachUnderItsOwnKey()
+    {
+        // R5's finding 1 (A14.1, A14.2): g1's IFT DR of 3 + 3 at r1 and r2 in E4 gives each a MC, 3 + 3, equal to the German SAN of 6 (the Russian SAN is 7):
+        // two calls of the German Sniper in I4. Each dr 2 waits on the German side's choice to attack or forfeit, under a key that names its trigger; the
+        // second, after the first is answered with no fire record between, is not refused as a choice already answered.
+        await Setup(6, 7, [], Squad("r2", "E4", "russian"), Sniper("gs", "I4", "german"));
+        Committed(await Do(GameActions.Fire, Then(3, 3, 3, 3, 3, 3, 3, 2), new
+        {
+            firers = G1,
+            target = L("E4"),
+        }));
+        var fire = store.Read(Scope)!.Events.Select(item => item.Payload).OfType<FireResolved>().Last();
+        Assert.Equal(ForfeitKey("gs", fire.Rolls["checks:r1"]), Current.Choice?.Key);
+
+        await Reposition(2);
+        Assert.Equal(ForfeitKey("gs", fire.Rolls["checks:r2"]), Current.Choice?.Key);
+        Assert.Equal(ScenarioA1Sniper.Forfeited, Assert.Single(store.Read(Scope)!.Events.Select(item => item.Payload).OfType<SniperAttacked>()).Result);
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task ASnipersOwnLlmcAttackWaitsOnItsOwnForfeitThenTheFirstAttacksSniperCheckFollows()
+    {
+        // Ruling R71.25, R5's finding 1 (A14.3, A14.4): as above, the Russian Sniper's dr 1 eliminates the 8-0 and the 4-6-7's LLMC, 3 + 3, calls the Sniper
+        // again in the same commit; its dr 2 waits on the Russian side's choice under its own key (an answered Sniper choice and then a non-fire trigger), and
+        // keeps the first attack's Sniper Check, owed in E6, to follow. Forfeited and repositioned, the check is offered, keyed by the first attack's trigger.
+        await Setup(null, Unit("de-l", "asl:leader", "attacker-leader-8-0", "E6", "german"), Squad("de-s", "E6", "german"));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Then(4, [3, 3, 3, 3, 1]), new
+        {
+            firers = G1,
+            target = L("E4"),
+        }));
+        var first = Current.Choice!.Resume.GetProperty("trigger").GetString()!;
+        Committed(await Choose(ScenarioA1Sniper.Attack, Then(4, 1, 1, 6, 1, 3, 3, 2)));
+        var trigger = Since(before).Select(item => item.Payload).OfType<MoraleCheckResolved>().Single().Rolls.Single().Value;
+        var waiting = Current.Choice!;
+        Assert.Equal(ForfeitKey("rs", trigger), waiting.Key);
+        var owed = Assert.Single(waiting.Resume.GetProperty("rest").EnumerateArray());
+        Assert.Equal((first, L("E6")), (owed.GetProperty("roll").GetString(), owed.GetProperty("check").GetString()));
+        Assert.Equal(("de-l", ScenarioA1Sniper.Eliminated), (Assert.Single(Sniped(before)).Unit, Sniped(before)[0].Result));
+
+        await Reposition();
+        var check = Current.Choice!;
+        Assert.Equal((ChoicePending.SniperCheck, $"{ChoicePending.SniperCheck}:rs:{first}"), (check.Kind, check.Key));
+        Committed(await Choose(ChoicePending.Decline, NoRoll()));
+        Assert.Equal(ScenarioA1Sniper.Forfeited, Sniped(before)[^1].Result);
+        Assert.Null(Current.Choice);
+        Assert.False(History.HasErrors);
+    }
+
+    [Theory]
+    [InlineData(1, ScenarioA1Sniper.Eliminated)]
+    [InlineData(2, ScenarioA1Sniper.Wounded)]
+    public async Task ASmcTemporaryCrewOfATruckIsEliminatedOrWoundedAsTheSmcHeIs(int dr, string result)
+    {
+        // A14.3 (p. 82; ruling R71.26): the German 8-1 crews the Abandoned truck in E6 in the German MPh, a SMC Temporary crew, no Inherent crew. g1 moves to
+        // E2; r1's First Fire at it, 4 + 4 - 2, is a NMC, and g1's 3 + 3 equals the Russian SAN of 6. The Russian Sniper's Random Location DR of 1, 1 finds E6,
+        // and its side chooses the crew before Random Selection: the dr 1 eliminates him and leaves the truck Abandoned; the dr 2 wounds him (Wound Severity
+        // dr 1). Before the fix round he was broken or pinned as an Inherent crew.
+        var truck = Vehicle("de-t", "attacker-truck", "E6", buttonedUp: false);
+        truck["conditions"] = new Dictionary<string, bool> { [Conditions.Abandoned] = true };
+        await Setup(null, truck, Unit("de-l", "asl:leader", "attacker-leader-8-1", "E6", "german"));
+        await Advance();
+        Committed(await Do(GameActions.RecrewVehicle, NoRoll(), new
+        {
+            unitId = "de-l",
+            vehicleId = "de-t",
+        }));
+        Assert.Equal(ScenarioA1CapturedVehicleRules.Smc, Current.Unit("de-t")!.TemporaryCrew?.Manning);
+        if (Current.Movement is { WindowOpen: true })
+        {
+            await PassFire();
+        }
+
+        if (Current.Movement is not null)
+        {
+            Committed(await Do(GameActions.EndMove, NoRoll(), new
+            {
+            }));
+        }
+
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("E2"),
+        }));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Then(3, 4, 4, 3, 3, dr), new
+        {
+            firers = R1,
+            target = L("E2"),
+        }));
+        await Attack(1, 1);
+        Assert.Equal(ScenarioA1Sniper.TargetStep, Current.Choice!.Resume.GetProperty("step").GetString());
+        Committed(await Choose("crew:de-t", Then(3, 1)));
+        Assert.Equal(("de-l", result), (Assert.Single(Sniped(before)).Unit, Sniped(before)[0].Result));
+        var leader = Current.Unit("de-l")!;
+        Assert.Equal(dr == 2, leader.Status == InstanceStatus.Active && Is(leader, Conditions.Wounded));
+        Assert.Equal(dr == 1, leader.Status == InstanceStatus.Eliminated);
+        Assert.Equal(dr == 1, Is(Current.Unit("de-t")!, Conditions.Abandoned));
+        Assert.False(Is(Current.Unit("de-t")!, Conditions.Broken));
+        Assert.False(History.HasErrors);
+    }
+
+    private static readonly string[] TheFirstTwoBeneathTheQuestionMark = ["concealed:1", "concealed:2"];
+    private static readonly string[] TheSecondRussian = ["r2"];
+    private static readonly string[] TheSmoker = ["de-s"];
+
+    [Fact]
+    public async Task RandomSelectionInAConcealedStackGivesItsTieToTheSniperPlayerAndTheOtherANewDr()
+    {
+        // A14.23, A14.2 (p. 82; R1's finding 4): the three German 4-6-7s under "?" in E6 are one candidate; the stack holds three targets, and their Random
+        // Selection's 6, 6, 1 ties de-a and de-b. The Russian side chooses, unseen, the second place: de-b takes the dr 2 and is pinned, and de-a takes a new dr,
+        // 3, to no effect. The choice is public and names no unit. Before the fix round de-a took the dr.
+        await Setup(null, Squad("de-a", "E6", "german", Conditions.Concealed), Squad("de-b", "E6", "german", Conditions.Concealed),
+            Squad("de-c", "E6", "german", Conditions.Concealed));
+        var before = await FireToTheForfeit(2);
+        await Attack(1, 1, 6, 6, 1);
+        var choice = Current.Choice!;
+        Assert.Equal(ScenarioA1Sniper.StackFirstStep, choice.Resume.GetProperty("step").GetString());
+        Assert.Equal(TheFirstTwoBeneathTheQuestionMark, choice.Options);
+        Assert.Null(store.Read(Scope)!.Events.Single(item => item.EventId == choice.Event).Visibility);
+        Assert.DoesNotContain("de-", choice.Resume.ToString(), StringComparison.Ordinal);
+
+        Committed(await Choose("concealed:2", Then(3, 3)));
+        var sniped = Sniped(before);
+        Assert.Equal(2, sniped.Length);
+        Assert.Equal(("de-b", ScenarioA1Sniper.Pinned, 2), (sniped[0].Unit, sniped[0].Result, sniped[0].Dr));
+        Assert.Equal((3, ScenarioA1Sniper.NoEffect), (sniped[1].Dr, sniped[1].Result));
+        Assert.True(Is(Current.Unit("de-b")!, Conditions.Pinned));
+        Assert.False(Is(Current.Unit("de-a")!, Conditions.Pinned));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task WhereTheTemComparedEquidistantHexesTheLowestTemLocationIsTheTargetUnasked()
+    {
+        // A14.21 (p. 82; R1's finding 5): the Random Location DR finds E6, empty; the hexes beside it to the north-east and north-west are equidistant. The
+        // north-east hex is Woods at ground level, with de-a there and de-b on its level 1 (TEM 0); the north-west one Woods, with de-c. "The Location with the
+        // lowest TEM is the target": de-b's, so the dr 1 breaks de-b and no choice of Location is asked. Before the fix round the hex's two Locations were offered.
+        var (east, west) = (Beside(HexsideDirection.NorthEast), Beside(HexsideDirection.NorthWest));
+        woods.UnionWith([east, west]);
+        upstairs.Add(east);
+        var above = Squad("de-b", east, "german");
+        above["position"] = new
+        {
+            at = $"bd01:{east}:1"
+        };
+        await Setup(null, Squad("de-a", east, "german"), above, Squad("de-c", west, "german"));
+        var before = await FireToTheForfeit(1);
+        await Attack(1, 1);
+        Assert.Null(Current.Choice);
+        Assert.Equal(("de-b", ScenarioA1Sniper.Broken, $"bd01:{east}:1"), (Assert.Single(Sniped(before)).Unit, Sniped(before)[0].Result, Sniped(before)[0].Target?.ToString()));
+        Assert.False(Is(Current.Unit("de-a")!, Conditions.Broken));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task SmokeCountsInItsOwnLocationAloneInTheTemComparison()
+    {
+        // A14.21 (p. 82; R1's finding 5): "the lowest ... in-hex TEM/SMOKE DRM applicable to any eligible target". In the German MPh de-s enters the
+        // north-east hex beside E6 and places SMOKE in its ground level (A24.1, dr 1); de-b is on that hex's level 1, de-c in the north-west hex, all Open
+        // Ground. g1 then enters E2, and its check, 3 + 3, after r1's First Fire calls the Russian Sniper, whose Random Location DR finds E6, empty. The SMOKE
+        // does not raise de-b's TEM, so both hexes are of TEM 0 and the Russian side chooses. Before the fix round the SMOKE counted for the whole hex, and the
+        // north-west hex was the target unasked.
+        var (east, west) = (Beside(HexsideDirection.NorthEast), Beside(HexsideDirection.NorthWest));
+        upstairs.Add(east);
+        var above = Squad("de-b", east, "german");
+        above["position"] = new
+        {
+            at = $"bd01:{east}:1"
+        };
+        await Setup(null, Squad("de-s", N(east, HexsideDirection.NorthEast), "german"), above, Squad("de-c", west, "german"));
+        await Advance();
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = TheSmoker,
+            to = L(east),
+        }));
+        await PassFire();
+        Committed(await Do(GameActions.Move, Then(3, 1), new
+        {
+            unitIds = TheSmoker,
+            to = L(east),
+            smoke = L(east),
+            smokeBy = "de-s",
+        }));
+        Assert.Single(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
+        if (Current.Movement is { WindowOpen: true })
+        {
+            await PassFire();
+        }
+
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("E2"),
+        }));
+        Committed(await Do(GameActions.Fire, Then(3, 4, 4, 3, 3, 1), new
+        {
+            firers = R1,
+            target = L("E2"),
+        }));
+        await Attack(1, 1);
+        var choice = Current.Choice!;
+        Assert.Equal(ScenarioA1Sniper.HexStep, choice.Resume.GetProperty("step").GetString());
+        Assert.Equal(new[] { L(east), L(west) }.Order(StringComparer.Ordinal), choice.Options);
+    }
+
+    [Fact]
+    public async Task ABrokenLeaderWoundedAfterMoreThanThreeMfIsNotPinned()
+    {
+        // A7.8 (p. 58; ruling R71.27, R3's finding 1): the 8-1 ends his 4 MF; r1's First Fire, 5 + 3 - 2, gives him a check, which his 5 + 4 fails: he breaks. r2's
+        // First Fire, 2 + 2 - 2, is a K/2: his Wound Severity dr of 2 wounds him, and his 2MC, 2 + 2 + 2, passes. "There is no need to place Pin counters on
+        // broken units": the record carries no wound pin, and he is broken, wounded, and not pinned, so his rout is not barred.
+        var at = await LeaderMoves(4, Squad("r2", N("E4", HexsideDirection.SouthWest), "russian"));
+        Committed(await Do(GameActions.Fire, Then(4, 5, 3, 5, 4), new
+        {
+            firers = R1,
+            target = L(at),
+        }));
+        Assert.True(Is(Current.Unit("de-l")!, Conditions.Broken), store.Read(Scope)!.Events.Select(item => item.Payload).OfType<FireResolved>().Last().Resolution.ToString());
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Then(2), new
+        {
+            firers = TheSecondRussian,
+            target = L(at),
+        }));
+        var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.False(fire.Facts.GetProperty("targets")[0].TryGetProperty("woundPins", out _));
+        var leader = Current.Unit("de-l")!;
+        Assert.True(Is(leader, Conditions.Wounded), fire.Resolution.ToString());
+        Assert.True(Is(leader, Conditions.Broken));
+        Assert.False(Is(leader, Conditions.Pinned));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task ARecordedWoundPinTheStateDoesNotGiveIsRefused()
+    {
+        // R3's finding 2 (A17.2; ruling R71.14): after 3 MF the 8-1's wound by r1's K/2 does not pin him (as in the 4f test); a record that says it does is
+        // refused at replay.
+        var at = await LeaderMoves(3);
+        Committed(await Do(GameActions.Fire, Then(2), new
+        {
+            firers = R1,
+            target = L(at),
+        }));
+        var events = store.Read(Scope)!.Events;
+        Assert.False(Planner().Replay(events).HasErrors);
+        GameEvent[] forged = [.. events.Select(item =>
+        {
+            if (item.Payload is not FireResolved fired)
+            {
+                return item;
+            }
+
+            var facts = System.Text.Json.Nodes.JsonNode.Parse(fired.Facts.GetRawText())!.AsObject();
+            facts["targets"]![0]!["woundPins"] = true;
+            return item with { Payload = fired with { Facts = JsonSerializer.SerializeToElement(facts) } };
+        })];
+        Assert.True(Planner().Replay(forged).HasErrors);
+    }
+
+    [Fact]
+    public async Task AStepRecordedForACarriedManWithoutHisCarrierIsRefused()
+    {
+        // R3's finding 3 (A17.2; ruling R71.16): the 4-6-7 carries the wounded 8-1 two steps. A record of the second step that moves the man without his carrier
+        // is refused at replay as the planner refuses it: he was set down and moves no farther.
+        var path = await CarryGame();
+        Committed(await CarryStep(path[1], name: true));
+        await PassFire();
+        Committed(await CarryStep(path[2]));
+        var events = store.Read(Scope)!.Events;
+        Assert.False(Planner().Replay(events).HasErrors);
+        var second = events.Last(item => item.Payload is MovementStepped).EventId;
+        GameEvent[] forged = [.. events.Select(item => item.EventId == second && item.Payload is MovementStepped step
+            ? item with { Payload = step with { Movers = Leader, Carried = null } } : item)];
+        var replayed = Planner().Replay(forged);
+        Assert.True(replayed.HasErrors);
+        Assert.Contains(replayed.Diagnostics, diagnostic => diagnostic.Message.Contains("moves no farther this MPh", StringComparison.Ordinal));
     }
 }
