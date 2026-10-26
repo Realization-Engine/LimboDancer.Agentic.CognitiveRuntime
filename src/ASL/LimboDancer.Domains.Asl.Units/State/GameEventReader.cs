@@ -768,7 +768,10 @@ public static class GameEventReader
 
                 return searchers.Count == 0 || searchedFrom is null || searchRoll is null || searchDrm is null || searchAccessible is null || searchedHexes.Count == 0
                     ? Missing(diagnostics, "A Search names its units, Location, roll, drm, Accessible count, and the hexes searched.", path)
-                    : new UnitsSearched(searchers, searchedFrom, searchRoll, searchDrm.Value, searchAccessible.Value, searchedHexes);
+                    : new UnitsSearched(searchers, searchedFrom, searchRoll, searchDrm.Value, searchAccessible.Value, searchedHexes)
+                    {
+                        CasualtyDrm = fields.OptionalInteger(payload, "casualtyDrm", path),
+                    };
             case "concealment-verified":
                 var verifying = fields.StringList(payload, "units", path);
                 return verifying.Count == 0 ? Missing(diagnostics, "A momentary forfeiture of \"?\" names its units.", path) : new ConcealmentVerified(verifying);
@@ -1034,7 +1037,10 @@ public static class GameEventReader
                 }
 
                 return moppedBuilding is null || moppingSide is null ? null
-                    : new BuildingMoppedUp(moppedBuilding, moppingSide, fields.StringList(payload, "units", path), secured);
+                    : new BuildingMoppedUp(moppedBuilding, moppingSide, fields.StringList(payload, "units", path), secured)
+                    {
+                        CasualtyDrm = fields.OptionalInteger(payload, "casualtyDrm", path),
+                    };
             case "acquisition-changed":
                 var acquiringGun = fields.RequiredString(payload, "gun", path);
                 var acquiredAt = ReadLocation(payload, "location", path, fields, diagnostics);

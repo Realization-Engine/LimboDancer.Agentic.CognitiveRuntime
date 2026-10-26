@@ -5,9 +5,9 @@
     @foreach (var hex in Hexes)
     {
         var place = order.IndexOf(hex.Location);
-        <label><input type="checkbox" class="search-hex" data-hex="@hex.Location" checked="@(place >= 0)" @onchange="@(args => Toggle(hex.Location, args.Value is true))" /> @hex.Label@(place >= 0 ? $" ({place + 1})" : string.Empty)</label>
+        <label @key="hex.Location"><input type="checkbox" class="search-hex" data-hex="@hex.Location" checked="@(place >= 0)" @onchange="@(args => Toggle(hex.Location, args.Value is true))" /> @hex.Label@(place >= 0 ? $" ({place + 1})" : string.Empty)</label>
     }
-    <button id="propose-search" @onclick="Proposed">Propose: Search</button>
+    <button id="propose-search" disabled="@Busy" title="@(Busy ? "A proposal is being made; wait for it." : null)" @onclick="Proposed">Propose: Search</button>
 </fieldset>
 
 @code {
@@ -26,6 +26,11 @@
     [Parameter]
     public EventCallback<IReadOnlyList<string>> OnPropose { get; set; }
 
+    /// <summary>Whether the page is making a proposal, so a second Search is not sent meanwhile.</summary>
+    [Parameter]
+    public bool Busy { get; set; }
+
+    // The order of preference; the page keys this component on its game, view, and Location, so another of any starts it afresh.
     private readonly List<string> order = [];
 
     // A hex the stack no longer offers (it moved on) is dropped from the order.
@@ -40,5 +45,5 @@
         }
     }
 
-    private Task Proposed() => OnPropose.InvokeAsync([.. order]);
+    private Task Proposed() => Busy ? Task.CompletedTask : OnPropose.InvokeAsync([.. order]);
 }

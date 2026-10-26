@@ -167,7 +167,9 @@ public sealed class ScenarioA1CloseCombatRulesTests
         var row = new Row().Holding(1, new ChargeOccupantFacts(true, true));
         var (steps, _, undecided) = ScenarioA1ChargeCalculator.Steps(row, 0, [1], null, () => new ChargeNodeFacts(0, null, null));
         Assert.Empty(steps);
-        Assert.StartsWith("play.berserk-vehicle: a charge into bd01:B1:0", undecided, StringComparison.Ordinal);
+        // Pass 70's fixes: CC between Infantry beside a vehicle is built; the words no longer say it is not.
+        Assert.StartsWith("play.berserk-vehicle: a berserk charge into bd01:B1:0", undecided, StringComparison.Ordinal);
+        Assert.DoesNotContain("CC between Infantry beside a vehicle, which is not built", undecided, StringComparison.Ordinal);
     }
 
     [Fact]

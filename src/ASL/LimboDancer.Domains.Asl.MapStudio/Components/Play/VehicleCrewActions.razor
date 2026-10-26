@@ -2,6 +2,17 @@
    self-destruction (D5.411) and the MG Removal (D6.631) asked once for the proposal, and each Abandoned vehicle of the side with the units on foot in its
    Location that may enter it to crew it (D5.42). The planner decides what the records bar: the Player Turn the crew left, a Recalled crew. *@
 <ActionSection Title="Vehicle crews" Key="crew-acts">
+@* Pass 70 (ruling R70.34; the UI review): in the CCPh only the captors' entry is offered, under D5.42's EXC, so the MPh's help would mislead. *@
+@if (CloseCombat)
+{
+<RuleHelp Id="crew-acts-help" Summary="In the CCPh a unit that captured a vehicle this CCPh may enter it as its crew, even in the Player Turn its last crew left (D5.42 EXC: CCPh; A21.2).">
+    An Infantry unit enters an Abandoned vehicle as its Inherent crew only from its Location at the start of its MPh, spending all its MF, and not in the
+    Player Turn its previous crew left, except in the CCPh: a unit that captures a vehicle in CC may enter it then (D5.42 EXC; A21.2). A unit other than
+    a crew is a Temporary crew (A21.22).
+</RuleHelp>
+}
+else
+{
 <RuleHelp Id="crew-acts-help" Summary="In its own MPh a crew Abandons a vehicle that has not moved or fired this Player Turn, spending all its MF to be placed beneath it; it may destroy the vehicle or Remove a halftrack's or Carrier's MG as it leaves. Infantry in an Abandoned vehicle's Location at the start of its MPh enters it to crew it, spending all its MF (D5.41, D5.411, D6.631, D5.42).">
     In its own MPh the crew of an armed vehicle that has not moved or fired this Player Turn Abandons it, spending all its MF to be placed beneath it, and
     the DEFENDER may fire at it with FFNAM (D5.41, D5.43). An Inherent crew may leave the vehicle a non-burning wreck or malfunction its MA and every MG
@@ -9,6 +20,7 @@
     Infantry in Good Order in an Abandoned vehicle's Location at the start of its MPh enters it to crew it, spending all its MF, but not in the Player
     Turn its last crew left, and a Recalled crew never re-crews its own AFV (D5.42, D5.341). A unit other than a crew is a Temporary crew (A21.22).
 </RuleHelp>
+}
 <div class="toolbar">
     @if (Abandonable.Count > 0)
     {
@@ -87,6 +99,10 @@
     /// <summary>Whether the page is committing an action, so no proposal is made meanwhile.</summary>
     [Parameter]
     public bool Busy { get; set; }
+
+    /// <summary>Whether the panel is the CCPh's, which offers only the captors' entry (D5.42 EXC, A21.2; pass 70, ruling R70.34).</summary>
+    [Parameter]
+    public bool CloseCombat { get; set; }
 
     [Parameter]
     public EventCallback<string> OnDestroy { get; set; }

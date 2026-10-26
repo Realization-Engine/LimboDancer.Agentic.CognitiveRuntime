@@ -16,7 +16,8 @@
     <div class="toolbar" id="voluntary-break">
         <UnitSelectionList Rows="@BreakRows" Selected="@BreakSelected" CssClass="voluntary-break-unit" Legend="Voluntary Break" OnToggle="@OnBreakToggle" />
         <button id="propose-voluntary-break" disabled="@(BreakSelected.Count == 0 || Busy)"
-                title="Before any unit routs, a unit in the LOS and Normal Range of a Known armed unbroken enemy unit, or ADJACENT to one, may break so as to rout this RtPh; it is under DM, and a leader's break calls for a LLTC (A10.41, A10.62, A10.2)."
+                title="@(Busy ? "A proposal is being made; wait for it." : BreakSelected.Count == 0 ? "Tick the units that break first."
+                    : "Before any unit routs, a unit in the LOS and Normal Range of a Known armed unbroken enemy unit, or ADJACENT to one, may break so as to rout this RtPh; it is under DM, and a leader's break calls for a LLTC (A10.41, A10.62, A10.2).")"
                 @onclick="@(() => OnProposeBreak.InvokeAsync())">Propose: Voluntary Break</button>
     </div>
 }

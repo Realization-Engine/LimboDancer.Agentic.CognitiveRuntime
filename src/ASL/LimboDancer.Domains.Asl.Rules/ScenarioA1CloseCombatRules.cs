@@ -291,10 +291,11 @@ public static class ScenarioA1CloseCombatRules
 
     /// <summary>
     /// A15.431, A15.432 (rulings R10.15, R30.5; table player, pass 27): why a berserk unit may not step into a Location: it holds an enemy vehicle together
-    /// with enemy Infantry; null when the step is allowed. A Gun's crew no longer bars it (pass 70, ruling R70.27).
+    /// with enemy Infantry; null when the step is allowed. A Gun's crew no longer bars it (pass 70, ruling R70.27). CC between Infantry beside a vehicle is
+    /// built since pass 70 (ruling R70.30), but a berserk charge into such a Location is not (the backlog), and the words say so.
     /// </summary>
     public static string? ChargeBarred(bool enemyVehicleThere, bool enemyInfantryThere, string toText) =>
         enemyVehicleThere && enemyInfantryThere
-            ? $"play.berserk-vehicle: a charge into {toText}, which holds an enemy vehicle and enemy Infantry, needs CC between Infantry beside a vehicle, which is not built (R11.16); the charge ends in place (ruling R30.5)"
+            ? $"play.berserk-vehicle: a berserk charge into {toText}, which holds an enemy vehicle and enemy Infantry, is not built, though CC there is (A15.431, A11.31); the charge ends in place (ruling R30.5)"
             : null;
 }

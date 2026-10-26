@@ -162,18 +162,19 @@ public sealed partial class GamePlanner
                 return built;
             }
 
-            Push("building-mopped-up", new BuildingMoppedUp(building!, side!, ids, null));
             var defenders = concealed.Where(unit => ScenarioA1MoppingUp.Defender(Is(unit, Conditions.Broken), Is(unit, Conditions.Unarmed), Is(unit, Conditions.Captured))).ToArray();
             if (defenders.Length == 0)
             {
+                Push("building-mopped-up", new BuildingMoppedUp(building!, side!, ids, null));
                 return built;
             }
 
             // A12.154: -1 per Stealthy unit, -1 per HS-equivalent beyond one, the best leader's leadership unless alone, +1 per Lax unit; the catalog and the
-            // Inexperience are read here, and Rules counts (pass 32.g).
+            // Inexperience are read here, and Rules counts (pass 32.g). Pass 70's fixes: the record keeps the drm for the lines of the views that may know it.
             var (drm, _) = ScenarioA1MoppingUp.CasualtyDrm([.. defenders.Select(unit => new MopUpDefenderFacts(unit.Kind == "asl:hero", unit.Kind == "asl:leader", Is(unit, Conditions.Heroic),
                 ScenarioA1MoppingUp.HalfSquads(unit.Kind == "asl:squad", unit.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind)), DefinitionOf(unit)?.Leadership, Is(unit, Conditions.Wounded),
                 Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True))]);
+            Push("building-mopped-up", new BuildingMoppedUp(building!, side!, ids, null) { CasualtyDrm = drm });
             var drawn = draw(new RollRequest(1, 6));
             var rollId = $"{attemptId}-roll-1";
             Push("dice-rolled", new DiceRolled(rollId, "search-casualty", 1, 6, drawn.Values, DiceRolled.SystemSource, actor));

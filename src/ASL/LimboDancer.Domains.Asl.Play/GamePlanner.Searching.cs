@@ -141,10 +141,22 @@ public sealed partial class GamePlanner
             Push("dice-rolled", new DiceRolled(rollId, ScenarioA1Searching.Purpose, 1, 6, rolled.Values, DiceRolled.SystemSource, actor));
             // Ruling R70.42: the hexes named in the ATTACKER's order, then the other Accessible hexes in map order, as many as the Final dr leaves.
             BoardLocation[] searched = [own, .. ScenarioA1Searching.Searched(named, accessible, rolled.Values[0] + drm)];
-            Push("units-searched", new UnitsSearched(ids, at, rollId, drm, accessible.Count, searched));
 
             // Ruling R70.25: the enemy units of the Searched Locations, read in one pass over the occupied stacks of their hexes.
             (UnitInstance Unit, BoardLocation At)[] enemies = [.. UnitsInHexes(index, searched).Where(item => item.Unit.Side != side).OrderBy(item => item.Unit.Id, StringComparer.Ordinal)];
+
+            // A12.154: an armed Good Order DEFENDER unit, or Residual FP, in a Searched Location draws one Casualty dr, with the drm of the concealed units as
+            // the Search found them. Pass 70's fixes: the Search's record keeps that drm for the lines of the views that may know it.
+            UnitInstance[] defenders = [.. enemies.Select(item => item.Unit).Where(unit => ScenarioA1Searching.CasualtyTrigger(unit.Kind == UnitKinds.Dummy, LiveFire.IsVehicle(unit),
+                Is(unit, Conditions.Broken), Is(unit, Conditions.Unarmed), Is(unit, Conditions.Captured)))];
+            int? casualtyDrm = ScenarioA1Searching.CasualtyDue(defenders.Length > 0,
+                state.ResidualFire.Any(residual => residual.Location.Level >= 0 && searched.Any(hex => hex.Board == residual.Location.Board && hex.Hex == residual.Location.Hex)))
+                ? ScenarioA1MoppingUp.CasualtyDrm([.. defenders.Where(unit => Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden))
+                    .Select(unit => new MopUpDefenderFacts(unit.Kind == "asl:hero", unit.Kind == "asl:leader", Is(unit, Conditions.Heroic),
+                        ScenarioA1MoppingUp.HalfSquads(unit.Kind == "asl:squad", unit.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind)), DefinitionOf(unit)?.Leadership,
+                        Is(unit, Conditions.Wounded), Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True))]).Drm
+                : null;
+            Push("units-searched", new UnitsSearched(ids, at, rollId, drm, accessible.Count, searched) { CasualtyDrm = casualtyDrm });
             foreach (var (enemy, _) in enemies)
             {
                 switch (ScenarioA1Searching.Reveal(enemy.Kind == UnitKinds.Dummy, Is(enemy, Conditions.Concealed), Is(enemy, Conditions.Hidden)))
@@ -161,23 +173,14 @@ public sealed partial class GamePlanner
                 }
             }
 
-            // A12.154: an armed Good Order DEFENDER unit, or Residual FP, in a Searched Location draws one Casualty dr, with the drm of the concealed units as
-            // the Search found them.
-            UnitInstance[] defenders = [.. enemies.Select(item => item.Unit).Where(unit => ScenarioA1Searching.CasualtyTrigger(unit.Kind == UnitKinds.Dummy, LiveFire.IsVehicle(unit),
-                Is(unit, Conditions.Broken), Is(unit, Conditions.Unarmed), Is(unit, Conditions.Captured)))];
-            if (!ScenarioA1Searching.CasualtyDue(defenders.Length > 0,
-                state.ResidualFire.Any(residual => residual.Location.Level >= 0 && searched.Any(hex => hex.Board == residual.Location.Board && hex.Hex == residual.Location.Hex))))
+            if (casualtyDrm is not { } casualtyModifier)
             {
                 return built;
             }
 
-            var (casualtyDrm, _) = ScenarioA1MoppingUp.CasualtyDrm([.. defenders.Where(unit => Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden))
-                .Select(unit => new MopUpDefenderFacts(unit.Kind == "asl:hero", unit.Kind == "asl:leader", Is(unit, Conditions.Heroic),
-                    ScenarioA1MoppingUp.HalfSquads(unit.Kind == "asl:squad", unit.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind)), DefinitionOf(unit)?.Leadership,
-                    Is(unit, Conditions.Wounded), Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True))]);
             var casualty = draw(new RollRequest(1, 6));
             Push("dice-rolled", new DiceRolled($"{attemptId}-roll-2", "search-casualty", 1, 6, casualty.Values, DiceRolled.SystemSource, actor));
-            if (!ScenarioA1MoppingUp.CasualtyReduces(casualty.Values[0], casualtyDrm))
+            if (!ScenarioA1MoppingUp.CasualtyReduces(casualty.Values[0], casualtyModifier))
             {
                 return built;
             }

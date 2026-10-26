@@ -95,7 +95,83 @@ public sealed class PlayRecords
             .Select(other => before?.Location(((ConditionsChanged)other.Payload).Id)?.Location.ToString()).OfType<string>().Distinct(StringComparer.Ordinal)];
         return ScenarioA1Searching.RecordText(search.Units, search.Location.ToString(), dr, search.Drm, [.. search.Searched.Select(hex => hex.ToString())],
             later.Count(other => other.Type == "concealment-lost"), placedIn,
-            later.Count(other => other.Payload is InstanceEliminated gone && before?.Unit(gone.Id)?.Kind == UnitKinds.Dummy));
+            later.Count(other => other.Payload is InstanceEliminated gone && before?.Unit(gone.Id)?.Kind == UnitKinds.Dummy))
+            + CasualtyText(later, search.Units, search.CasualtyDrm, before);
+    }
+
+    // The events an action that costs a "?" holds besides its losses (A12.141; ruling R70.17): a transfer, a Recovery, a dismantling, a Deployment or a
+    // Recombination, a Gun hooked up, a Scrounging. A move, a fire, or a CC, which lose a "?" by other rules, holds others and is not said here.
+    private static readonly HashSet<string> LossActionTypes = new(StringComparer.Ordinal)
+    {
+        "equipment-transferred", "recovery-attempted", "conditions-changed", "dice-rolled", "rph-action-taken", "lineage", "deployment-attempted", "gun-hooked",
+        "instance-created", "vehicle-scrounged",
+    };
+
+    /// <summary>
+    /// The line of a "?" given up or lost by an action (pass 70's fixes; table player's finding 2), for the attempt of <paramref name="item"/>, its first loss:
+    /// the voluntary removal, an attempt of reveals and Dummies alone (A12.14, A12.31; ruling R70.20), or the units an action strips of their "?" (A12.141;
+    /// ruling R70.17), a Search's or a Mopping Up's searchers before it. Said in the words of the revision after the last loss, since the loss shows the units.
+    /// Null for any other attempt, whose own line or rule says it.
+    /// </summary>
+    private string? ConcealmentLossLine(GameEvent item, GameState? before)
+    {
+        var attempt = AttemptOf(item.EventId);
+        GameEvent[] ofAttempt = [.. events.Where(other => AttemptOf(other.EventId) == attempt)];
+        static bool Loss(GameEvent other) => other.Type == "concealment-lost" && other.Payload is ConditionsChanged;
+        string Said(GameEvent[] losses, string text) => names is null ? text : names.InText(text, losses[^1].Revision);
+        string Units(GameEvent[] losses) => string.Join(", ", losses.Select(loss => ((ConditionsChanged)loss.Payload).Id).Distinct(StringComparer.Ordinal).Select(id => id + In(before, id)));
+
+        if (ofAttempt.All(other => Loss(other) || (other.Payload is InstanceEliminated gone && before?.Unit(gone.Id)?.Kind == UnitKinds.Dummy)))
+        {
+            GameEvent[] given = [.. ofAttempt.Where(Loss)];
+            var hidden = given.Any(loss => before?.Find(((ConditionsChanged)loss.Payload).Id) is { } thing && thing.Conditions.TryGetValue(Conditions.Hidden, out var was) && was == ConditionState.True);
+            return Said(given, $"{Units(given)} {(given.Length == 1 ? "gives up its" : "give up their")} \"?\" (A12.14{(hidden ? ", A12.31" : string.Empty)})");
+        }
+
+        var anchor = Array.FindIndex(ofAttempt, other => other.Payload is UnitsSearched or BuildingMoppedUp);
+        GameEvent[] lost = anchor >= 0 ? [.. ofAttempt.Take(anchor).Where(Loss)]
+            : ofAttempt.All(other => Loss(other) || LossActionTypes.Contains(other.Type)) ? [.. ofAttempt.Where(Loss)] : [];
+        return lost.Length == 0 ? null
+            : Said(lost, $"{Units(lost)} {(lost.Length == 1 ? "loses its" : "lose their")} \"?\" by this action, in the LOS of a Good Order enemy ground unit within 16 hexes (A12.141)");
+    }
+
+    /// <summary>
+    /// A Mopping Up's line (A12.153, A12.154), public to both sides: the building, where hidden units were placed beneath "?" (by Location alone, since that
+    /// record is the owner's; pass 70's fixes), and the DEFENDER's Casualty dr. The hidden-placed records come before it in the attempt, the dr after it.
+    /// </summary>
+    private string MopUpText(string eventId, BuildingMoppedUp mopped, GameState? before)
+    {
+        var attempt = AttemptOf(eventId);
+        GameEvent[] ofAttempt = [.. events.Where(other => AttemptOf(other.EventId) == attempt)];
+        string[] placedIn = [.. ofAttempt.TakeWhile(other => other.EventId != eventId).Where(other => other.Type == "hidden-placed" && other.Payload is ConditionsChanged)
+            .Select(other => before?.Location(((ConditionsChanged)other.Payload).Id)?.Location.ToString()).OfType<string>().Distinct(StringComparer.Ordinal)];
+        return DisplayText.Hexes($"The {DisplayText.Side(mopped.Side)} side Mops Up building {mopped.Building} (A12.153)", history.States.Count > 0 ? history.States[0].Map.Boards.Count : 1)
+            + (placedIn.Length > 0 ? $"; hidden enemy units are placed beneath \"?\" in {string.Join(", ", placedIn)} (A12.153)" : string.Empty)
+            + CasualtyText([.. ofAttempt.SkipWhile(other => other.EventId != eventId).Skip(1)], mopped.Units, mopped.CasualtyDrm, before);
+    }
+
+    /// <summary>
+    /// The DEFENDER's Casualty dr after a Search or a Mopping Up, as "; the DEFENDER's Casualty dr 3 - 2 = 1: ... (A12.154)" (pass 70's fixes); empty when the
+    /// attempt made none. Its drm, read from the record (none on one made before the fixes), is said only to the DEFENDER and the adjudicator: it is made of
+    /// what his "?" hide. The units Reduced are the searchers the attempt's later events Reduce, wound, or eliminate.
+    /// </summary>
+    private string CasualtyText(IReadOnlyList<GameEvent> later, IReadOnlyList<string> units, int? drm, GameState? before)
+    {
+        if (later.Select(other => other.Payload).OfType<DiceRolled>().FirstOrDefault(roll => roll.Purpose == "search-casualty") is not { Values.Count: > 0 } casualty)
+        {
+            return string.Empty;
+        }
+
+        var searching = units.Count > 0 ? before?.Unit(units[0])?.Side : null;
+        var mayKnow = viewer.IsAdjudicator || (searching is not null && viewer.Name != searching);
+        string[] reduced = [.. units.Where(id => later.Any(other => other.Payload switch
+        {
+            LineageRecorded { Action: LineageAction.Reduced } lineage => lineage.Consumed.Contains(id, StringComparer.Ordinal),
+            ConditionsChanged changed => changed.Id == id && changed.Conditions.TryGetValue(Conditions.Wounded, out var wounded) && wounded == ConditionState.True,
+            InstanceEliminated gone => gone.Id == id,
+            _ => false,
+        }))];
+        return "; " + ScenarioA1MoppingUp.CasualtyRecordText(casualty.Values[0], mayKnow ? drm : null, reduced);
     }
 
     /// <summary>
@@ -297,6 +373,7 @@ public sealed class PlayRecords
         var abandoning = events.Where(item => item.Payload is ConditionsChanged changed && changed.Conditions.TryGetValue(Conditions.Abandoned, out var abandonedNow)
                 && abandonedNow == ConditionState.True)
             .Select(item => (AttemptOf(item.EventId), ((ConditionsChanged)item.Payload).Id)).ToHashSet();
+        var lossesSaid = new HashSet<string>(StringComparer.Ordinal);
         foreach (var item in events.Where(item => item.IsVisibleTo(viewer)))
         {
             var before = history.At(item.Revision - 1);
@@ -332,8 +409,19 @@ public sealed class PlayRecords
                     Add(item.EventId, Say(item.EventId, $"The {DisplayText.Side(gone.Key.Side)} Dummies in {gone.Key.At} are removed before Close Combat (A11.19)"));
                 }
             }
+
+            // Pass 70's fixes (A12.14, A12.141; rulings R70.17, R70.20): a "?" given up, or lost by an action, has a line, one an attempt.
+            if (item.Type == "concealment-lost" && item.Payload is ConditionsChanged && lossesSaid.Add(AttemptOf(item.EventId)) && ConcealmentLossLine(item, before) is { } loss)
+            {
+                Add(item.EventId, loss);
+                continue;
+            }
+
             var text = item.Payload switch
             {
+                // A12.15 (pass 70's fixes): a step forced back stays where it was, and says the Location it tried to enter, not "moves from [F5] to [F5]".
+                MovementStepped { Attempted: { } tried } forced => (forced.Movers.Count == 1 ? $"{forced.Movers[0]} tries" : $"{string.Join(", ", forced.Movers)} try")
+                    + $" to enter {tried}{From(before, forced.Movers.Count > 0 ? forced.Movers[0] : null)} and {(forced.Movers.Count == 1 ? "is" : "are")} forced back (A12.15)",
                 MovementStepped step => Many(step.Movers, "moves", "move") + $"{From(before, step.Movers.Count > 0 ? step.Movers[0] : null)} to {step.To}{(step.Assault ? " by Assault Movement" : string.Empty)}",
                 // D2.17, D3.12 (pass 50): a Delay MP, and a turret turned with an MP expenditure.
                 VehicleStepped { Kind: VehicleStepped.Turn, Turret: { } turnTurret } turnedBoth => $"{turnedBoth.Vehicle} turns its turret to {UnitFacings.Name(turnTurret)} with its VCA change (D3.12)",
@@ -353,8 +441,7 @@ public sealed class PlayRecords
                         + (weapon.Roll is { } weaponRoll && dice.TryGetValue(weaponRoll, out var weaponDice) ? $" on a dr of {weaponDice[0]}" : string.Empty)))
                     + " (D6.24)" + EnemyLocation(before, bailed.At, bailed.Unit, "D6.24, D6.5"),
                 // D5.41, D5.411, D6.631, D5.42 (pass 65, ruling R65.20): the crew's own acts, with their rules in one parenthesis (the table player).
-                // Pass 70 (rulings R70.3, R70.4): a morale check made outside an attack, its checks and what they did.
-                MoraleCheckResolved moraleCheck => MoraleCheckText(moraleCheck),
+                // Pass 70 (rulings R70.3, R70.4): a morale check made outside an attack is among the Rally, rout, and other actions above.
                 VehicleAbandoned abandoned => $"{abandoned.At}: {abandoned.Crew} Abandons {abandoned.Vehicle}"
                     + (abandoned.Destroyed == ScenarioA1CrewActsRules.Wreck ? ", leaving it a wreck"
                         : abandoned.Destroyed == ScenarioA1CrewActsRules.Malfunction ? ", malfunctioning its weapons" : string.Empty)
@@ -411,7 +498,7 @@ public sealed class PlayRecords
                 PrisonerFreed freed => $"{freed.Unit}{In(before, freed.Unit)} is no longer guarded (A20.5)",
                 // A12.152 (pass 70, ruling R70.24): a Search, its dr, the hexes searched, and what it found, said to both sides.
                 UnitsSearched search => SearchText(item.EventId, search, before, dice.TryGetValue(search.Roll, out var searchDice) ? (int?)searchDice[0] : null),
-                BuildingMoppedUp mopped => DisplayText.Hexes($"The {DisplayText.Side(mopped.Side)} side Mops Up building {mopped.Building} (A12.153)", history.States.Count > 0 ? history.States[0].Map.Boards.Count : 1),
+                BuildingMoppedUp mopped => MopUpText(item.EventId, mopped, before),
                 PhaseChanged phase => $"The {DisplayText.Side(phase.PhasingSide)} {GameText.PhaseLabel(phase.Phase)} of Turn {phase.Turn} begins",
                 GameEnded => "The game ends",
                 _ => null,
@@ -419,6 +506,27 @@ public sealed class PlayRecords
             if (text is not null)
             {
                 Add(item.EventId, Say(item.EventId, text), item.Payload is PhaseChanged or ChoiceMade);
+            }
+        }
+
+        // Pass 70's fixes (A12.32, A12.34): hidden units placed beneath "?" outside a Search or a Mopping Up, whose lines say it. The record is the owner's;
+        // the line, public, says only where a "?" appears, as the map shows it: one a Location and attempt.
+        foreach (var group in events.Where(item => item.Type == "hidden-placed" && item.Payload is ConditionsChanged)
+            .GroupBy(item => AttemptOf(item.EventId), StringComparer.Ordinal))
+        {
+            if (events.Any(other => AttemptOf(other.EventId) == group.Key && other.Payload is UnitsSearched or BuildingMoppedUp))
+            {
+                continue;
+            }
+
+            foreach (var placed in group.Select(item => (Event: item, Before: history.At(item.Revision - 1), Id: ((ConditionsChanged)item.Payload).Id))
+                .Select(item => (item.Event, Thing: item.Before?.Find(item.Id), At: item.Before?.Location(item.Id)?.Location))
+                .Where(item => item.Thing is not null && item.At is not null).GroupBy(item => item.At!.ToString(), StringComparer.Ordinal))
+            {
+                var (first, _, at) = placed.First();
+                var gun = placed.Any(item => item.Thing is EquipmentInstance { Kind: "asl:gun" });
+                var side = placed.Select(item => item.Thing!.Side).FirstOrDefault(found => found is not null);
+                Add(first.EventId, Say(first.EventId, $"{DisplayText.ASide(side)} \"?\" is placed in {at} ({(gun ? "A12.34" : "A12.32")})"));
             }
         }
 
@@ -497,7 +605,8 @@ public sealed class PlayRecords
                 // Pass 70 (ruling R70.11): a leader who broke and was not lost is said to have broken.
                 ? $"{effect.UnitId} takes {string.Join(" and ", leaderLoss.Select(item => item.Kind))} after the {(facts.LostLeaders is { Count: > 0 } ? "loss" : "break")} of {string.Join(", ", lost)} to {cause}: "
                     + string.Join(", ", leaderLoss.Select(FireText.CheckText)) + $", {FireText.EffectText(effect)} (A10.2)"
-                : $"{effect.UnitId}'s {(check.Cause == ScenarioA1MoraleCheck.Interdiction ? "Interdiction NMC" : "NMC")} is an Original 2, which calls for Heat of Battle (A15.1): {FireText.EffectText(effect)}");
+                // The Heat of Battle words end with their own rule (A15.1), so the clause before them does not cite it again (pass 70's fixes).
+                : $"{effect.UnitId}'s {(check.Cause == ScenarioA1MoraleCheck.Interdiction ? "Interdiction NMC" : "NMC")} is an Original 2, which calls for Heat of Battle: {FireText.EffectText(effect)}");
         }
 
         foreach (var effect in resolution.CompanionEffects ?? [])
@@ -1068,6 +1177,11 @@ public sealed class PlayRecords
                         records.Add((item.EventId, "rout", $"{routed.Unit} routs{how}{From(before, routed.Unit)} to {routed.To} for {mf} MF{rule}"));
                     }
                 }
+                else if (item.Payload is MoraleCheckResolved moraleCheck && MoraleCheckText(moraleCheck) is { } checkText)
+                {
+                    // Pass 70 (rulings R70.3, R70.4; the fixes): a morale check made outside an attack, a LLMC among them, in the Records tab's list too.
+                    records.Add((item.EventId, "morale-check", checkText));
+                }
                 else if (item.Payload is VoluntaryBreak voluntary)
                 {
                     // Pass 70 (ruling R70.11): the units a side breaks at the start of the RtPh so as to rout.
@@ -1143,7 +1257,8 @@ public sealed class PlayRecords
                     records.Add((item.EventId, "drop", $"{dropped.Id} is left in {left.Location} (A4.43)"));
                 }
                 else if (item.Payload is EquipmentTransferred { Holding: { Role: HoldingRole.Possessed } receiver } passed
-                    && attempts[attempt].Count(other => !IsDmOnly(other.Payload)) == 1
+                    // Pass 70's fixes: the "?" the transfer costs (A12.141) has its own line and does not hide this one.
+                    && attempts[attempt].Count(other => !IsDmOnly(other.Payload) && other.Type != "concealment-lost") == 1
                     && before?.Find(passed.Id) is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } held } && held.Holder != receiver.Holder
                     && Open(before, held.Holder) && Open(before, receiver.Holder))
                 {

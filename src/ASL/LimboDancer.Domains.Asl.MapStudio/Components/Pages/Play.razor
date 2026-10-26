@@ -513,15 +513,20 @@ else if (state is not null)
                 }
                 @* Pass 70 (A12.14; ruling R70.20): the owner gives up a "?" at any time of either side's Player Turn; his own units under "?", hidden, or
                    Dummies, by hex. *@
+                @* Pass 70's fixes: in a section of its own, which starts closed, and refused while an answer waits (ruling R5.8). *@
                 @if (!SetupOpen && RemoveConcealmentRows.Count > 0)
                 {
+                    <ActionSection Title="Give up &quot;?&quot;" Key="remove-concealment">
                     <div class="toolbar" id="play-remove-concealment">
                         <UnitSelectionList Rows="@RemoveConcealmentRows" Selected="@removeConcealment" CssClass="remove-concealment-unit" Legend="Give up &quot;?&quot;"
                             OnToggle="@(toggle => { if (toggle.On) { removeConcealment.Add(toggle.Id); } else { removeConcealment.Remove(toggle.Id); } })" />
-                        <button id="propose-remove-concealment" disabled="@(removeConcealment.Count == 0 || busy)"
-                                title="The owner may remove any concealment at any time of his or his opponent's Player Turn: a concealed unit is revealed, a hidden one placed and revealed in full, a Dummy removed (A12.14, A12.31, A12.11)."
+                        <button id="propose-remove-concealment" disabled="@(removeConcealment.Count == 0 || busy || WaitsOnAnswer)"
+                                title="@(WaitsOnAnswer ? "Every other action waits until the answer above is given (ruling R5.8)." : busy ? "A proposal is being made; wait for it."
+                                    : removeConcealment.Count == 0 ? "Tick the units that give up their \"?\" first."
+                                    : "The owner may remove any concealment at any time of his or his opponent's Player Turn: a concealed unit is revealed, a hidden one placed and revealed in full, a Dummy removed (A12.14, A12.31, A12.11).")"
                                 @onclick="ProposeRemoveConcealment">Propose: give up "?"</button>
                     </div>
+                    </ActionSection>
                 }
                 @* The Play streamlining plan, S7 (ruling R-PS.1): no separate building-entry form; a one-unit step into a building goes to the same
                    entry plan through the Movement form. *@
@@ -740,7 +745,8 @@ else if (state is not null)
                             @* Pass 70 (A12.152; ruling R70.24): as the stack ends its move, once the DEFENDER's window is closed, it may Search. *@
                             @if (state.Movement is { Vehicle: false, WindowOpen: false, Members.Count: > 0 } searching)
                             {
-                                <SearchAction Hexes="@SearchChoices(searching.Location)" Own="@PlaceOf(new BoardLocation(searching.Location.Board, searching.Location.Hex, 0))" OnPropose="@ProposeSearch" />
+                                <SearchAction @key="@($"{gameId}|{Viewer.Name}|{searching.Location}")" Hexes="@SearchChoices(searching.Location)" Own="@PlaceOf(new BoardLocation(searching.Location.Board, searching.Location.Hex, 0))"
+                                    Busy="@busy" OnPropose="@ProposeSearch" />
                             }
                             <MovementWindowActions WindowOpen="@state.Movement?.WindowOpen" EndingSome="@EndingSome" MayPass="@(Viewer.IsAdjudicator && MandatoryNow is null)"
                                 OnPass='@(() => ProposeSimple(GameActions.PassFire, "pass"))' OnEnd="@ProposeEndMove" />
@@ -847,7 +853,8 @@ else if (state is not null)
                             @* The hex UI rule: the unit named after its hex, "[F4]: 4-4-7 squad R1 returns to [F3]". *@
                             @foreach (var (unit, from, at) in returning)
                             {
-                                <button @key="unit.Id" class="street-fighting-return" data-unit="@unit.Id" disabled="@busy" @onclick="@(() => ProposeStreetFightingReturn(unit.Id))">Propose: @Words(at.ToString()): @Words(unit.Id) returns to @Words(from.ToString()) (A11.8)</button>
+                                <button @key="unit.Id" class="street-fighting-return" data-unit="@unit.Id" disabled="@busy"
+                                        title="@(busy ? "A proposal is being made; wait for it." : "Following its CC attack it returns to the Location it came from, or at its option remains in the road Location (A11.8).")" @onclick="@(() => ProposeStreetFightingReturn(unit.Id))">Propose: @Words(at.ToString()): @Words(unit.Id) returns to @Words(from.ToString()) (A11.8)</button>
                             }
                         </div>
                     </ActionSection>
@@ -855,7 +862,7 @@ else if (state is not null)
                 @* Pass 70 (ruling R70.34): a captor enters the vehicle its side captured this CCPh as its crew (D5.42's EXC, A21.2). *@
                 @if (state.Phase == "ccph" && CcphRecrewRows is { Count: > 0 } ccphRecrew)
                 {
-                    <VehicleCrewActions Abandonable="@([])" Recrewable="@ccphRecrew" Destroy="@abandonDestroy" RemoveMg="@abandonRemoveMg"
+                    <VehicleCrewActions CloseCombat="true" Abandonable="@([])" Recrewable="@ccphRecrew" Destroy="@abandonDestroy" RemoveMg="@abandonRemoveMg"
                         Chosen="@recrewPicks" OnDestroy="@(choice => abandonDestroy = choice)" OnRemoveMg="@(remove => abandonRemoveMg = remove)"
                         OnAbandon="@ProposeAbandon" OnUnit="@(pick => recrewPicks[pick.Vehicle] = pick.Unit)" OnRecrew="@(pick => ProposeRecrew(pick.Vehicle, pick.Unit))" Busy="@busy" />
                 }
@@ -4783,9 +4790,16 @@ else if (state is not null)
     private IReadOnlyList<CloseCombatAttackBuilder.DeclaringSide> DeclaringSides => [.. CloseCombatSides.Where(side => Viewer.IsAdjudicator || viewAs == side)
         .Select(side => new CloseCombatAttackBuilder.DeclaringSide(side, side == state!.PhasingSide,
             [.. CloseCombatUnits.Where(unit => unit.Side == side && Prisoner(unit) == (ccRound == CloseCombatResolved.PrisonersRound) && !Declared(unit, attacking: true))
-                .Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, $"{PlaceOf(ccLocation)}: {UnitLabel(unit)}", IsBroken(unit)))],
+                .Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, CcLabel(unit), IsBroken(unit)))],
             [.. CloseCombatUnits.Where(unit => unit.Side != side && !Prisoner(unit) && !Declared(unit, attacking: false))
-                .Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, $"{PlaceOf(ccLocation)}: {UnitLabel(unit)}", IsBroken(unit)))]))];
+                .Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, CcLabel(unit), IsBroken(unit)))]))];
+
+    // Pass 70's fixes (the hex UI rule): the other side's unit reads "4-4-7 squad in [N5]", so under "[N5]: " it does not say the hex again.
+    private string CcLabel(UnitInstance unit)
+    {
+        var place = PlaceOf(ccLocation);
+        return $"{place}: {UnitGrouping.WithoutPlace(Words(unit.Id), place)}{UnitLabel(unit)[unit.Id.Length..]}";
+    }
 
     /// <summary>
     /// The units the view may declare an infiltration for (plan N08; A11.22): not berserk or Disrupted, with somewhere to go. Read only while attacks
@@ -9744,7 +9758,7 @@ else if (state is not null)
         "mph" => new HashSet<string>(StringComparer.Ordinal) { "movement", "defensive-first-fire", "motion-attempt", "fire", "vehicle-movement", "cc-reaction-fire" },
         "rtph" => new HashSet<string>(StringComparer.Ordinal) { "rout" },
         "aph" => new HashSet<string>(StringComparer.Ordinal) { "advance" },
-        "ccph" => new HashSet<string>(StringComparer.Ordinal) { "close-combat", "close-combat-with-vehicles" },
+        "ccph" => new HashSet<string>(StringComparer.Ordinal) { "close-combat", "close-combat-with-vehicles", "crew-acts", "street-fighting" },
         _ => NoSections,
     };
 

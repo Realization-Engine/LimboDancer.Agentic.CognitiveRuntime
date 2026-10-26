@@ -674,7 +674,17 @@ public sealed record VoluntaryBreak(IReadOnlyList<string> Units) : EventPayload;
 /// hex above ground is searched). The searchers spend one more MF there and become TI for the rest of the Player Turn; the DEFENDER's window opens on that MF
 /// (A8.1), and their move ends when it closes. The reveals and any Casualty dr (A12.154) follow as their own records. A new event: no older record holds one.
 /// </summary>
-public sealed record UnitsSearched(IReadOnlyList<string> Units, BoardLocation Location, string Roll, int Drm, int Accessible, IReadOnlyList<BoardLocation> Searched) : EventPayload;
+public sealed record UnitsSearched(IReadOnlyList<string> Units, BoardLocation Location, string Roll, int Drm, int Accessible, IReadOnlyList<BoardLocation> Searched) : EventPayload
+{
+    /// <summary>
+    /// The drm of the DEFENDER's Casualty dr that follows, from his concealed and hidden units as they were at the Search dr (A12.154; pass 70's fixes), for
+    /// the record line of the views that may know it; null when no Casualty dr is made, and on a record made before the fixes. No rule reads it at replay.
+    /// </summary>
+    public int? CasualtyDrm
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// <c>deployment-attempted</c>: a squad's attempt to Deploy in its RPh (A1.31; ruling R13.4): the directing leader (none for Guards), the NTC roll,

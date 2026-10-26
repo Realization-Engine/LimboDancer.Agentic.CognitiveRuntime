@@ -1390,6 +1390,9 @@ public sealed class BacklogPass70Tests : IDisposable
         var search = Assert.Single(Since(before).Select(item => item.Payload).OfType<UnitsSearched>());
         Assert.Equal((-2, 6), (search.Drm, search.Accessible));
         Assert.Equal(Searched, search.Searched.Select(hex => hex.ToString()));
+
+        // Pass 70's fixes: the record keeps the Casualty dr's drm, -3, for the lines of the views that may know it, read back from the store.
+        Assert.Equal(-3, search.CasualtyDrm);
         Assert.False(Is(Current.Unit("r1")!, Conditions.Concealed));
         Assert.True(Is(Current.Unit("r2")!, Conditions.Concealed));
         Assert.False(Is(Current.Unit("r2")!, Conditions.Hidden));
@@ -1420,7 +1423,9 @@ public sealed class BacklogPass70Tests : IDisposable
             unitIds = GermanSquad,
             hexes = new[] { L("E7") },
         }));
-        var searched = Assert.Single(Since(before).Select(item => item.Payload).OfType<UnitsSearched>()).Searched.Select(hex => hex.ToString()).ToArray();
+        var record = Assert.Single(Since(before).Select(item => item.Payload).OfType<UnitsSearched>());
+        var searched = record.Searched.Select(hex => hex.ToString()).ToArray();
+        Assert.Equal(-1, record.CasualtyDrm);
         Assert.Equal(SearchedOwnAndE7, searched.Take(2));
         Assert.Equal(7, searched.Distinct().Count());
         Assert.False(Is(Current.Unit("r1")!, Conditions.Concealed));
@@ -1490,6 +1495,9 @@ public sealed class BacklogPass70Tests : IDisposable
         Assert.Contains(Current.Secured, item => item.Building == "bd01:E5" && item.Side == "german" && item.Locations.Count == 2);
         Assert.Contains("bd01:E5", Current.MoppedUpThisPlayerTurn);
         Assert.Equal("g1", Current.Unit("r1")!.Custodian);
+
+        // Pass 70's fixes: no concealed enemy unit, so no Casualty dr and no drm on the record.
+        Assert.Null(Assert.Single(Since(0).Select(item => item.Payload).OfType<BuildingMoppedUp>()).CasualtyDrm);
         NoReplayErrors();
     }
 

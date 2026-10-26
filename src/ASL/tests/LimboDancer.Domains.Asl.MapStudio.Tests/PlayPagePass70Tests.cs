@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Bunit;
+using LimboDancer.Domains.Asl.MapStudio.Components.Play;
 using LimboDancer.Domains.Asl.MapStudio.Services;
 using LimboDancer.Domains.Asl.Play;
 using LimboDancer.Domains.Asl.Units.Catalog;
@@ -217,12 +218,23 @@ public sealed class PlayPagePass70Tests : IDisposable
         var page = Open("german");
         Assert.Equal(2, page.FindAll("#play-remove-concealment .unit-group-hex").Count);
         Assert.True(page.Find("#propose-remove-concealment").HasAttribute("disabled"));
+
+        // Pass 70's fixes (the UI review's findings 6 and 10): a section of its own, closed outside the phases it is about, whose button says why it waits.
+        Assert.False(page.Find("details.play-section[data-section='remove-concealment']").HasAttribute("open"));
+        Assert.Equal("Tick the units that give up their \"?\" first.", page.Find("#propose-remove-concealment").GetAttribute("title"));
         page.Find("input.remove-concealment-unit[data-unit='de-c']").Change(true);
         page.Find("#propose-remove-concealment").Click();
         page.WaitForAssertion(() => Assert.True(page.Find("#play-outcome").TextContent.Contains("Confirm to commit", StringComparison.Ordinal), page.Find("#play-proposal").TextContent));
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.NotEqual(ConditionState.True, GameState.Condition(live.History(Game)!.Current!.Unit("de-c")!, Conditions.Concealed));
+
+        // Pass 70's fixes (the table player's finding 2): both sides read that the squad gave up its "?", and the Replay step is titled by it.
+        foreach (var view in new[] { new Perspective("german"), new Perspective("russian") })
+        {
+            var lines = new PlayRecords(live.History(Game)!, view, long.MaxValue).Since(0).Select(line => line.Text).ToArray();
+            Assert.Contains(lines, line => line.StartsWith("de-c in ", StringComparison.Ordinal) && line.EndsWith("gives up its \"?\" (A12.14)", StringComparison.Ordinal));
+        }
     }
 
     [Fact]
@@ -290,6 +302,60 @@ public sealed class PlayPagePass70Tests : IDisposable
             var lines = new PlayRecords(live.History(Game)!, view, long.MaxValue).Since(0).Select(line => line.Text).ToArray();
             Assert.Contains(lines, line => line.Contains("de-1 Searches from", StringComparison.Ordinal) && line.Contains("1 concealed enemy unit loses its \"?\" (A12.152)", StringComparison.Ordinal));
         }
+
+        // Pass 70's fixes: the line gives the DEFENDER's Casualty dr; its drm, -1 for the concealed squad's two HS-equivalents, only to the Russian.
+        string Search(string side) => new PlayRecords(live.History(Game)!, new Perspective(side), long.MaxValue).Since(0).Select(line => line.Text)
+            .Single(line => line.Contains("de-1 Searches from", StringComparison.Ordinal));
+        Assert.EndsWith("(A12.152); the DEFENDER's Casualty dr 6 - 1 = 5: no casualty (A12.154)", Search("russian"), StringComparison.Ordinal);
+        Assert.EndsWith("(A12.152); the DEFENDER's Casualty dr 6: no casualty (A12.154)", Search("german"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ALoneUnitInAListKeepsItsHexAndTheClosedLineNamesItAfterIt()
+    {
+        // Pass 70's fixes (the UI review's finding 1): a list of one unit still says its hex, and the closed line of a named group names a unit after it.
+        var place = new UnitPlace("[F5]", "[F5]", (1, "F", 5), false);
+        var list = context.Render<UnitSelectionList>(parameters => parameters
+            .Add(item => item.Rows, [new UnitSelectionList.Row("ru-s", "4-4-7 squad in [F5]")])
+            .Add(item => item.Selected, new HashSet<string> { "ru-s" }).Add(item => item.CssClass, "voluntary-break-unit").Add(item => item.Legend, "Voluntary Break")
+            .AddCascadingValue("PlaceOfUnit", (Func<string, UnitPlace?>)(id => id == "ru-s" ? place : null)));
+        Assert.Equal("[F5]", list.Find(".unit-group-hex").TextContent);
+        Assert.Equal("[F5]: 4-4-7 squad", list.Find(".unit-dropdown-chosen").TextContent);
+    }
+
+    [Fact]
+    public void TheSearchButtonWaitsWhileAProposalIsMade()
+    {
+        // Pass 70's fixes (the UI review's finding 4): while the page makes a proposal the Search is not offered again, and the button says why.
+        IReadOnlyList<string>? proposed = null;
+        var search = context.Render<SearchAction>(parameters => parameters
+            .Add(item => item.Hexes, [new SearchAction.Choice("bd01:L4:0", "[L4]")]).Add(item => item.Busy, true)
+            .Add(item => item.OnPropose, hexes => proposed = hexes));
+        Assert.True(search.Find("#propose-search").HasAttribute("disabled"));
+        Assert.Equal("A proposal is being made; wait for it.", search.Find("#propose-search").GetAttribute("title"));
+        search.Render(parameters => parameters.Add(item => item.Busy, false));
+        Assert.False(search.Find("#propose-search").HasAttribute("disabled"));
+        search.Find("#propose-search").Click();
+        Assert.NotNull(proposed);
+    }
+
+    [Fact]
+    public void TheCcphReCrewSaysTheCcphsRuleAndAChoiceEndingWithItsRulingCitesR58Once()
+    {
+        // Pass 70's fixes (the UI review's finding 8): in the CCPh the crew panel's help is D5.42's EXC, not the MPh's; and a pending choice that ends with a
+        // ruling of its own names R5.8 in that citation, not in a second one.
+        var crew = context.Render<VehicleCrewActions>(parameters => parameters.Add(item => item.CloseCombat, true)
+            .Add(item => item.Recrewable, [new VehicleCrewActions.Recrewing("ru-truck",
+                [new PlayChoice("de-1", "de-1")])]));
+        Assert.Contains("D5.42 EXC: CCPh", crew.Find("#crew-acts-help-summary").TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("In its own MPh", crew.Find("#crew-acts-help-summary").TextContent, StringComparison.Ordinal);
+        Assert.NotNull(crew.Find(".vehicle-recrew[data-vehicle='ru-truck']"));
+
+        var choice = context.Render<PendingChoicePanel>(parameters => parameters.Add(item => item.Key, "k")
+            .Add(item => item.Side, "russian").Add(item => item.Description, "Take or decline (A12.14; ruling R70.21)"));
+        Assert.EndsWith("Take or decline (A12.14; rulings R70.21, R5.8).", choice.Find("#play-choice p").TextContent, StringComparison.Ordinal);
+        choice.Render(parameters => parameters.Add(item => item.Description, "Gun Duel DRM: +6 (Case A +4, Case H +2)"));
+        Assert.EndsWith("Gun Duel DRM: +6 (Case A +4, Case H +2) (ruling R5.8).", choice.Find("#play-choice p").TextContent, StringComparison.Ordinal);
     }
 
     private static Dictionary<string, object> Held(string id, string definition, string holder) => new()

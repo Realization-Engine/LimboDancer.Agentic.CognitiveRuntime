@@ -559,6 +559,15 @@ public static class ReplaySteps
             return ("end", null, "The game ends" + (ended.Result is { } final ? $": {ResultText(final)}" : string.Empty), false);
         }
 
+        // Pass 70's fixes (A12.14; ruling R70.20): a voluntary removal of "?" holds only its reveals and the Dummies it removes, and is titled by what the
+        // side did, not by its first Dummy.
+        if (readable.Any(item => item.Type == "concealment-lost") && readable.All(item => item.Type == "concealment-lost"
+            || (item.Payload is InstanceEliminated dummy && before.Unit(dummy.Id) is { Kind: UnitKinds.Dummy })))
+        {
+            var side = readable[0].Payload is ConditionsChanged first ? SideOf(first.Id) : SideOf(((InstanceEliminated)readable[0].Payload).Id);
+            return ("other", side, $"{The(side, "side")} gives up \"?\"", false);
+        }
+
         if (First<InstanceEliminated>(payloads) is { } gone)
         {
             // Pass 31d (design D5): a Dummy is no unit; its stack is removed.

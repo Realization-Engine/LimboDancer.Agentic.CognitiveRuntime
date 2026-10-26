@@ -230,6 +230,8 @@ New events: `morale-check-resolved`, `voluntary-break`, `units-searched`, and th
 - **R70.46:** in vehicle CC, a leader created by a MMC's Original 2 adds his leadership in place of a combining leader's; when a SMC that is no leader (a hero) combines, he adds none; with no SMC he adds his leadership and the +1 CCV (R29.12's reading of A18.12, p. 85, with A11.5's "No more than two units"). The referee's finding; the three cases worded at fix Round C.
 - **R70.47:** an Unarmed unit that fails a MC suffers Casualty Reduction instead of breaking (A20.54, p. 88: "A prisoner/unarmed unit which fails a MC is not broken; it suffers Casualty Reduction instead"; A10.3's EXC), where the attack or check carries R70.7's `unarmed` fact.
 
+- **R70.48** (added at fix Round E): a Search's or a Mopping Up's Casualty dr is recorded with its drm (`casualtyDrm`); the record lines give the drm to the DEFENDER's and the adjudicator's views only, the ATTACKER's line the dr and its effect. For a Search the DEFENDER's units in a Searched hex are revealed anyway (A12.152, p. 79); for Mopping Up the drm may tell a Stealthy unit or a leader beneath a "?". The fact stays on a public record, since an owner-only record would need a new event type; a backlog row holds the rest.
+
 ## 7. Memory and performance
 
 **The checklist** (the guidelines' section "Design and review checklist").

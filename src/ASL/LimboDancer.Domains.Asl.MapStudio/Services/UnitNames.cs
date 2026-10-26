@@ -220,6 +220,13 @@ public sealed partial class UnitNames
             {
                 named = UninspectedRun().Replace(named, match => $"{match.Value.Split(", ").Length} uninspected units");
             }
+            // Pass 70's fixes (the table player): a counter that reads with a vowel sound takes "an", "an 8-0 leader"; the pattern runs only on a text that
+            // may hold one.
+            if (named.Contains("a 8", StringComparison.Ordinal) || named.Contains("a 1", StringComparison.Ordinal))
+            {
+                named = AnBeforeVowel().Replace(named, "${a}n ");
+            }
+
             var boards = history.States.Count > 0 ? history.States[0].Map.Boards.Count : 1;
             named = LocationPattern().Replace(named, match => DisplayText.Place(boards, match.Value));
 
@@ -264,10 +271,21 @@ public sealed partial class UnitNames
             "asl:ft" => "FT",
             "asl:dc" => "DC",
             "asl:light-mortar" or "asl:latw" => ScenarioCards.Describe(definition),
+
+            // Pass 70's fixes: a vehicle reads its printed designation, "PzKpfw IIIH", not its kind; the catalog's own note on a stand-in is left out.
+            "asl:vehicle" when definition.Printed("front", "asl:designation")?.Value?.Text is { Length: > 0 } designation =>
+                designation.EndsWith(GameDefault, StringComparison.Ordinal) ? designation[..^GameDefault.Length] : designation,
             _ when Value("asl:firepower") is { } firepower && Value("asl:range") is { } range && Value("asl:morale") is { } level => $"{firepower}-{range}-{level} {kind}",
             _ => kind,
         };
     }
+
+    // "a 8-0 leader", "a 11 ..." or "a 18 ...": the article before a number said with a vowel sound (eight, eleven, eighteen).
+    [GeneratedRegex(@"(?<![A-Za-z0-9-])(?<a>[Aa]) (?=(?:8|11|18)(?![0-9]))")]
+    private static partial Regex AnBeforeVowel();
+
+    // The catalog's mark on a definition it gives in place of a printed counter, "Sherman 75 (game default)".
+    private const string GameDefault = " (game default)";
 
     [GeneratedRegex(@"\b(?:bd\w+|ab-[a-z0-9-]+):[A-Z]{1,2}\d{1,2}:-?\d\b")]
     private static partial Regex LocationPattern();

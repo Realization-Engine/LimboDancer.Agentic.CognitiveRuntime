@@ -1310,6 +1310,17 @@ public sealed class ScenarioA1Pass70RulesTests
     }
 
     [Fact]
+    public void TheCasualtyDrsRecordLineGivesItsDrmOnlyToTheViewThatMayKnowIt()
+    {
+        // A12.154 (pass 70's fixes): the DEFENDER's Casualty dr is said in the Search's and the Mopping Up's lines; its drm is made of what his "?" hide, so a
+        // view that may not know it reads the dr and what it did, and his own the drm and the Final dr too.
+        Assert.Equal("the DEFENDER's Casualty dr 2 - 1 = 1: g1 is Casualty Reduced (A12.154)", ScenarioA1MoppingUp.CasualtyRecordText(2, -1, OneMover));
+        Assert.Equal("the DEFENDER's Casualty dr 2: g1 is Casualty Reduced (A12.154)", ScenarioA1MoppingUp.CasualtyRecordText(2, null, OneMover));
+        Assert.Equal("the DEFENDER's Casualty dr 6 + 1 = 7: no casualty (A12.154)", ScenarioA1MoppingUp.CasualtyRecordText(6, 1, NoPlace));
+        Assert.Equal("the DEFENDER's Casualty dr 4: no casualty (A12.154)", ScenarioA1MoppingUp.CasualtyRecordText(4, 0, NoPlace));
+    }
+
+    [Fact]
     public void MoppingUpIsBarredOnlyForANameThatIsNoBuildingAndABlazeIsNoPartOfOne()
     {
         // A12.153 (ruling R70.25): any multi-hex or multi-level building of the map, named by the card's id or by its board and lowest hex; a Blazing

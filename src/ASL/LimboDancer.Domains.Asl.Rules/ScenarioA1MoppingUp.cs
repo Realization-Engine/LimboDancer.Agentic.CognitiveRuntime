@@ -163,6 +163,18 @@ public static class ScenarioA1MoppingUp
     /// <summary>A12.154 (ruling R24.2): a Final dr of 1 or less Reduces a Mopping-Up unit.</summary>
     public static bool CasualtyReduces(int dr, int drm) => dr + drm <= 1;
 
+    /// <summary>
+    /// A12.154 (rulings R24.2, R70.45; pass 70's fixes): a record's words for the DEFENDER's Casualty dr of a Search or a Mopping Up: the dr, its drm and Final dr
+    /// where the reading view may know them (null otherwise, since the drm tells what his "?" hide), and the units it Reduced, or none.
+    /// </summary>
+    public static string CasualtyRecordText(int dr, int? drm, IReadOnlyList<string> reduced)
+    {
+        ArgumentNullException.ThrowIfNull(reduced);
+        var roll = drm is { } value && value != 0 ? $"{dr} {(value < 0 ? "-" : "+")} {Math.Abs(value)} = {dr + value}" : $"{dr}";
+        return $"the DEFENDER's Casualty dr {roll}: "
+            + (reduced.Count == 0 ? "no casualty" : $"{string.Join(", ", reduced)} {(reduced.Count == 1 ? "is" : "are")} Casualty Reduced") + " (A12.154)";
+    }
+
     /// <summary>A12.154 (ruling R24.2): the units struck, by Random Selection among several: the highest dr, ties all.</summary>
     public static IReadOnlyList<string> Struck(IReadOnlyList<string> ids, IReadOnlyList<int> selection)
     {

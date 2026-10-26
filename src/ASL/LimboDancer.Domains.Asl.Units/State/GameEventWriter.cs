@@ -922,6 +922,11 @@ public static class GameEventWriter
                 writer.WriteNumber("drm", search.Drm);
                 writer.WriteNumber("accessible", search.Accessible);
                 Strings(writer, "searched", [.. search.Searched.Select(location => location.ToString())]);
+                if (search.CasualtyDrm is { } searchCasualtyDrm)
+                {
+                    writer.WriteNumber("casualtyDrm", searchCasualtyDrm);
+                }
+
                 break;
             case ConcealmentVerified verified:
                 Strings(writer, "units", verified.Units);
@@ -1220,6 +1225,11 @@ public static class GameEventWriter
                 if (mopped.Secured is { } secured)
                 {
                     Strings(writer, "secured", [.. secured.Select(location => location.ToString())]);
+                }
+
+                if (mopped.CasualtyDrm is { } mopCasualtyDrm)
+                {
+                    writer.WriteNumber("casualtyDrm", mopCasualtyDrm);
                 }
 
                 break;

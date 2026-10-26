@@ -3328,7 +3328,7 @@
         },
         {
           "kind": "button",
-          "label": "Propose: the @location.NextSide side passes",
+          "label": "Propose: the @DisplayText.Side(location.NextSide) side passes",
           "dynamic": true,
           "status": "needed",
           "strip": "VehicleCloseCombatPanel vehicle-cc"

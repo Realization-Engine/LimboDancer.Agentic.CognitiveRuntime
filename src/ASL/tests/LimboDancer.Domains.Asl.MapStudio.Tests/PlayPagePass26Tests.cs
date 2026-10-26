@@ -115,7 +115,8 @@ public sealed class PlayPagePass26Tests : IDisposable
         // Ruling R26.2: a Passenger is not offered as a mover; its vehicle's row names it, and only for its own side's view.
         Assert.Empty(page.FindAll(".move-unit[data-unit='gs']"));
         Assert.Contains("Passengers 4-6-7 squad G1", page.Find("#play-units tr[data-unit='ght']").TextContent, StringComparison.Ordinal);
-        Assert.Contains("aboard vehicle G1", page.Find("#play-units tr[data-unit='gs']").TextContent, StringComparison.Ordinal);
+        // Pass 70's fixes: a vehicle reads its printed designation, not its kind.
+        Assert.Contains("aboard SPW 251/1 G1", page.Find("#play-units tr[data-unit='gs']").TextContent, StringComparison.Ordinal);
         page.ViewAs("russian");
         Assert.All(page.FindAll("#play-units tr[data-unit='ght']"), row => Assert.DoesNotContain("Passengers", row.TextContent, StringComparison.Ordinal));
         page.ViewAs("german");
@@ -125,9 +126,9 @@ public sealed class PlayPagePass26Tests : IDisposable
         Assert.True(page.Find("#vehicle-unload").HasAttribute("disabled"));
         page.Find(".vehicle-unload[value='gs']").Change(true);
         Commit(page, "#vehicle-unload");
-        page.WaitForAssertion(() => Assert.DoesNotContain("aboard vehicle G1", page.Find("#play-units tr[data-unit='gs']").TextContent, StringComparison.Ordinal));
+        page.WaitForAssertion(() => Assert.DoesNotContain("aboard SPW 251/1 G1", page.Find("#play-units tr[data-unit='gs']").TextContent, StringComparison.Ordinal));
 
         // Pass 65 (ruling R65.15): the record names who got off, not "moves to" (D6.5).
-        Assert.Contains("4-6-7 squad G1 unloads from vehicle G1 (D6.5)", page.Find("#play-latest").TextContent, StringComparison.Ordinal);
+        Assert.Contains("4-6-7 squad G1 unloads from SPW 251/1 G1 (D6.5)", page.Find("#play-latest").TextContent, StringComparison.Ordinal);
     }
 }
