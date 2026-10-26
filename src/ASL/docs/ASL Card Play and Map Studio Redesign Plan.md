@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-30
 
-**Scope:** twenty passes in one order, followed by pass 32, the Rules migration (section 22.2), by the 31 rule passes, 35 to 185 in steps of five (Part VI, sections 22.1 and 23). The legacy card track, deferred on 2026-10-05 (the display batches D1 to D18), is the [ASL Scenario Card Implementation Plan](<Plans/ASL Scenario Card Implementation Plan.md>) since 2026-10-16. Ten game passes, 23 to 28, 30, 30b, 190, and 195, close three groups of open backlog rows: card-driven play (backlog sections 27 to 32), rules deferred by earlier passes (entry and exit, the Heat of Battle, Leader Creation, and berserk gaps), and the Chapter H DYO purchase, which generates a scenario card. Passes 31 and 31c, the play-test UI, change the Play page and the game together, from the findings of a played game; pass 31b, between them, adds the Replay page; pass 31d, added at the user's word on 2026-10-04, takes the leftovers of 31c. Six Studio passes, 22b to 22d, 28b, 28c, and 29, carry out the Map Studio redesign: the supplied theme, grouped navigation, shared components, every page's markup extracted into Blazor components, and the map-centered Play workspace. The game passes also extract the Play components they change.
+**Scope:** twenty passes in one order, followed by pass 32, the Rules migration (section 22.2), by the 35 rule passes, 35 to 185 in steps of five with 71 to 74 between 70 and 75 (Part VI, sections 22.1 and 23; pass 75 split on 2026-10-26, section 4). The legacy card track, deferred on 2026-10-05 (the display batches D1 to D18), is the [ASL Scenario Card Implementation Plan](<Plans/ASL Scenario Card Implementation Plan.md>) since 2026-10-16. Ten game passes, 23 to 28, 30, 30b, 190, and 195, close three groups of open backlog rows: card-driven play (backlog sections 27 to 32), rules deferred by earlier passes (entry and exit, the Heat of Battle, Leader Creation, and berserk gaps), and the Chapter H DYO purchase, which generates a scenario card. Passes 31 and 31c, the play-test UI, change the Play page and the game together, from the findings of a played game; pass 31b, between them, adds the Replay page; pass 31d, added at the user's word on 2026-10-04, takes the leftovers of 31c. Six Studio passes, 22b to 22d, 28b, 28c, and 29, carry out the Map Studio redesign: the supplied theme, grouped navigation, shared components, every page's markup extracted into Blazor components, and the map-centered Play workspace. The game passes also extract the Play components they change.
 
 Section 1 of the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>) (how a pass is run, the standing rules, and the merge gate) applies unchanged to every pass here, including its visual check in the Studio before the costly tests (section 17.2).
 
@@ -104,7 +104,7 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 - **31 after 30b,** the play-test UI: the problems a played game of The Guards Counterattack found (added 2026-10-04), in two passes at the user's word: 31 for what blocks play, the result, the rules, and the hand-over screen, and 31c for the page's words, layout, map, and records. Between them comes 31b, the Replay page, which the user added the same day in the number first given to 31c.
 - **31d after 31c,** a short pass on what The Tractor Works left (added 2026-10-04 at the user's word, before passes 50 and 190): a phase's end in seconds on a large card, a laden unit's rout, and the referee's items.
 - **32 after 31d,** the Rules migration: every ASL rule moved into the Rules project, changing no behavior, in sub-passes 32.a, 32.b, and on (the user, 2026-10-05; section 19, decision 7; section 22.2).
-- **35 to 185 after 32,** the 31 rule passes of section 23 in the order they run, numbered in steps of five (the renumbering of 2026-10-09), as rules only (the user, 2026-10-05); the legacy card track is deferred.
+- **35 to 185 after 32,** the 35 rule passes of section 23 in the order they run, numbered in steps of five (the renumbering of 2026-10-09), with 71 to 74 taken from pass 75 (the split of 2026-10-26), as rules only (the user, 2026-10-05); the legacy card track is deferred.
 - **190 and 195 last,** the DYO page built from the shared components from the start.
 
 **Separable groups.** The game passes alone are 23 to 28, 30, 30b, 190, and 195, without their component tasks; within them, card play alone is passes 23, 24, 26, and 28 (pass 26 then takes pass 25's entry tasks it needs), the deferred rules alone are passes 25 and 27, and DYO needs pass 28 only for opening a DYO card in forms, so it could follow pass 22 directly with the JSON editor. The Studio passes alone are 22b, 22c, 22d, 28b, 28c, and 29; without the game passes, the card pages' components of task 28.5 move into 22c and the Play components of tasks 23.5 to 27.5 into 28b, which then follows 22d.
@@ -211,6 +211,20 @@ A pass added later takes a number between its neighbours (36 to 39 between passe
 | 140 | 135 | Terrain III: buildings and rubble (was Terrain II) |
 | 130 | 140 | Terrain IV: bridges (was Terrain III) |
 | 145 | 145 | Terrain V: bocage, sewers, and the village |
+
+**Split of 2026-10-26.** Pass 75 had grown as passes 40, 45, 60, 65, and 70 moved work into it: the inventory gave it 75 rows against the 56 it was planned with, and 18 of them, left by passes 40 and 45, belonged to no task and carried no estimate. At the user's word ("write this split into the plan, inventory, and backlog") it is five passes, 71 to 75, cut where the code divides: Snipers and wounds; morale and Unit Substitution, which change the same movement allowance; the movement and fire leftovers; prisoners with the Interrogation their capture triggers; and MOL and DC. Pass 75 keeps its number for the MOL and DC, the largest single task. The five run in order: 72 after 71 (A15.431, A17.2, and A19.31 all change the unit's movement allowance), and 73 after 72 (A8.221's Residual FP with a malfunctioned weapon reads Ammunition Shortage). Documents written before this date keep the task numbers they were written with; read them with this table.
+
+| Until 2026-10-26 | From 2026-10-26 | Task |
+|---|---|---|
+| 75.1 | 71.1 | Snipers completed |
+| 75.3 | 71.2 | Wounds; Field Promotions' remainder |
+| 75.2 | 72.1 | Heat of Battle and berserk remainder |
+| 75.4 | 72.2 | Unit Substitution |
+| (no task: the rows passes 40 and 45 left) | 73.1 to 73.6 | Movement and fire leftovers |
+| 75.5 | 74.1 | Prisoners |
+| 75.7 | 74.2 | Control of any hex or Location a card names |
+| 75.8 | 74.3 | Interrogation, and civilians by SSR |
+| 75.6 | 75.1 | MOL by a leader; a DC at another level; Set DC and its Clearance |
 
 ## 5. The passes
 
@@ -1621,7 +1635,11 @@ Passes 90, 125, 135, and 165 lose part of their titles: 90 is night alone, 125 i
 | 60 | Armored combat III: other attacks on vehicles and Guns | 37 | none | 50; 45 (Residual FP from ordnance) | 4:40 | 5:55 | 2:58 |
 | 65 | Passengers, Riders, and crews | 63 | vehicle-crew counters (new, manufactured); Carrier and Rider data on existing vehicles (D6.2, D6.81, D6.82: a Carrier's HS crew uses the existing HS counters) | 50, 60 (Collateral Attacks) | 7:00 | 8:15 | 4:08 |
 | 70 | Infantry III: morale, Close Combat, and concealment | 35 | none | 40 (Infantry OVR, ADJACENT) | 7:20 | 8:35 | 4:18 |
-| 75 | Infantry IV: the small sections, and Interrogation | 56 | none | 40; 45 for DC between levels | 6:20 | 7:35 | 3:48 |
+| 71 | Infantry IV: Snipers and wounds | 11 | none | 40 | 1:20 | 2:35 | 1:18 |
+| 72 | Infantry V: Heat of Battle and Unit Substitution | 10 | none | 40; 71 (the movement allowance) | 1:40 | 2:55 | 1:28 |
+| 73 | Infantry VI: the movement and fire leftovers | 18 | none | 40, 45; 72 (Ammunition Shortage) | 4:00 | 5:15 | 2:38 |
+| 74 | Infantry VII: prisoners, Interrogation, and Control | 24 | none | 40; 70 (capture, concealment, and HIP) | 1:40 | 2:55 | 1:28 |
+| 75 | Infantry VIII: MOL and DC | 12 | none | 45 for DC between levels; 65 (Passengers); 70 (Searching, for Set DC) | 1:40 | 2:55 | 1:28 |
 | 80 | Nationalities I: the catalog's counters | 14 | none | 35 | 1:25 | 2:40 | 1:20 |
 | 85 | SMOKE, wind, and Environmental Conditions | 33 | s# and WP# on Guns and mortars (the British mortar's s7 is already in the catalog, unread); a smoke dispenser value on each vehicle whose counter prints one (the audit says the PzKpfw IIIH does; not checked against the Vehicle Listing) | 35 | 4:20 | 5:35 | 2:48 |
 | 95 | Weather II | 25 | Winter Camouflage as a unit property; a Drift marker | 85 (wind); 90 (Random Location) | 3:20 | 4:35 | 2:18 |
@@ -1635,7 +1653,9 @@ Passes 90, 125, 135, and 165 lose part of their titles: 90 is night alone, 125 i
 | 170 | Airborne and waterborne | 61 | boats and rafts; gliders; parachute counters | 125 (water), 160 (Light AA), 85 (wind) | 4:00 | 5:15 | 2:38 |
 | 175 | Transport and unusual vehicles | 107 | a wagon; motorcycles in three sizes and bicycles; an amphibian and a DD tank; an Aerosan; a trailer and a portee vehicle; an Ammo Supply counter | 125 (water) for D16; 105 (Impulse Movement) for E11; 95 (snow terrain) for D17; 65 (Riders) for D15 and D17 | 7:20 | 8:35 | 4:18 |
 | 180 | Nationalities II: new formations and nations | 54 | SS, Volksgrenadier, and Assault Engineer MMC; U.S. paratroops and British Airborne; Partisans; Free French and Vichy; Allied Minor and Ethiopian sets; crews, SW, and a Gun for the nations that lack them | 105 (Impulse Movement) for Human Wave; 115 (entrenching); 85 (WP); 110 (PF and PSK for other nations) | 7:00 | 8:15 | 4:08 |
-| | **20 new passes** | **1030** | | | **109:35** | **134:35** | **67:18** |
+| | **24 new passes** | **1049** | | | **113:35** | **143:35** | **71:48** |
+
+Passes 71 to 75 were one pass, 75 (Infantry IV: the small sections, and Interrogation; 56 rows, build 6:20, total 7:35), until the split of 2026-10-26 (section 4). Their rows are the inventory's on that date, 75 in all; the other rows of this table are as planned. The build grew by 4:00, all of it pass 73's six new tasks, which the rows left by passes 40 and 45 had never had.
 
 **(c) Each pass's tasks.** In the order of (f). The rules are cited with the physical page of the PDF each is printed on; a task names its leading rules, and the inventory lists every row the pass takes. Counters and dependencies for the planned passes are given here; for the new passes they are in (b).
 
@@ -1784,26 +1804,68 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: PRC in CC, decided 
 
 Moved here from pass 75 (2026-10-25, at the user's word, after weighing whether to combine passes 70 and 75: the passes stay separate), with no task renumbered and no estimate moved, so that the morale check outside fire and CC with a vehicle are each changed in one pass: Heat of Battle's Unarmed and PRC exemptions and its DR in the MCs outside Fire and Rally (A15.1), the wound procedure in every Casualty Reduction (A17.1), and the Unarmed unit's ELR immunity (A19.11), all with 70.1; Leader Creation in CC against a vehicle (A18.12) and A11.52's capture of Passengers, with 70.7. The inventory now gives pass 70 48 rows and pass 75 74; the frame of pass 70 estimates them.
 
-**Pass 75: Infantry IV: the small sections, and Interrogation** (new; 56 rows of the inventory). Counters: none. Needs first: 40; 45 for DC between levels.
+**Passes 71 to 75** were one pass, 75 (Infantry IV: the small sections, and Interrogation; 56 rows as planned, build 6:20, total 7:35), until the split of 2026-10-26 (section 4, which maps the old task numbers to the new). Each task keeps its estimate. The items earlier passes moved in keep the rule they came with, "no estimate moved", and each pass's frame estimates them. Pass 73's six tasks are new: the 18 rows passes 40 and 45 left to pass 75 belonged to no task.
+
+**Pass 71: Infantry IV: Snipers and wounds** (11 rows of the inventory). Counters: none. Needs first: 40.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 75.1 Snipers completed: the counter at setup, placement, the Sniper player's choices, attacks on vehicles and on the enemy Sniper, Sniper Check, LLMC after a hit | A14.01 (p. 82), A14.1 (p. 82), A14.2 (p. 82), A14.21 (p. 82), A14.22 (p. 82), A14.3 (p. 82), A14.31 (p. 82), A14.33 (p. 82), A14.4 (p. 82) | 1:00 |
-| 75.2 Heat of Battle and berserk remainder: a hero's weapons, the next nearest target, the return to normal (A15.1's exemptions moved to pass 70, 2026-10-25) | A15.23 (p. 83), A15.43 (p. 84), A15.431 (p. 84), A15.432 (p. 84), A15.45 (p. 84), A15.46 (p. 84) | 1:00 |
-| 75.3 Wounds: the pin after more than 3 MF, a carried man; Field Promotions' remainder (A17.1 and A18.12 moved to pass 70, 2026-10-25) | A17.2 (p. 85), A18.2 (p. 85) | 0:20 |
-| 75.4 Unit Substitution: Ammunition Shortage, an SSR ELR for underscored units, a MG's B# for Inexperienced users (A19.11's Unarmed exemption moved to pass 70, 2026-10-25) | A19.131 (p. 86), A19.132 (p. 86), A19.31 (p. 86), A19.32 (p. 86) | 0:40 |
-| 75.5 Prisoners: Commissars and stacks at surrender, the exchange, Massacre of any Unarmed unit, a Guard's Deployment, escape by nationality, rearming, Scrounging, the double VP | A20.21 (p. 86), A20.221 (p. 87), A20.4 (p. 87), A20.5 (p. 87), A20.51 (p. 87), A20.53 (p. 87), A20.55 (p. 88), A20.551 (p. 88), A20.552 (p. 88), A26.222 (p. 100) | 0:40 |
-| 75.6 MOL by a leader; a DC at another level; Set DC and its Clearance | A22.611 (p. 89), A22.62 (p. 90), A23.3 (p. 90), A23.6 (p. 91), A23.61 (p. 91), A23.7 (p. 91), A23.71 (p. 91), A23.72 (p. 91), B24.75 (p. 142) | 1:40 |
-| 75.7 Control of any hex or Location a card names | A26.13 (p. 99) | 0:20 |
-| 75.8 Interrogation, and civilians by SSR | E2.1 (p. 228), E2.2 (p. 228), E2.3 (p. 228), E2.4 (p. 228) | 0:40 |
+| 71.1 (was 75.1) Snipers completed: the counter at setup, placement, the Sniper player's choices, attacks on vehicles and on the enemy Sniper, Sniper Check, LLMC after a hit | A14.01 (p. 82), A14.1 (p. 82), A14.2 (p. 82), A14.21 (p. 82), A14.22 (p. 82), A14.3 (p. 82), A14.31 (p. 82), A14.33 (p. 82), A14.4 (p. 82) | 1:00 |
+| 71.2 (was 75.3) Wounds: the pin after more than 3 MF, a carried man; Field Promotions' remainder (A17.1 and A18.12 moved to pass 70, 2026-10-25) | A17.2 (p. 85), A18.2 (p. 85) | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 75 total** (build 6:20) | | **7:35** |
+| **Pass 71 total** (build 1:20) | | **2:35** |
 
-Moved here by pass 60 (2026-10-15), with no task renumbered: a MOL at an unarmored vehicle, a leader's MOL, and a MOL in a FG (A22.612, C11.51, with 75.6).
+Moved in, with no estimate: Stun of an AFV by a Sniper (D5.34, from pass 65, with 71.1); the voluntary removal's Sniper exception (A12.14, A14.2, from pass 70, with 71.1); the SMC crew's Stun wound in the projector, with no Wound Severity dr and a second wound eliminating (D5.34, A17.11, from pass 70, with 71.2).
 
-Moved here by pass 65 (2026-10-24), with no task renumbered: A11.52's capture of Passengers (moved on to pass 70 on 2026-10-25); rearming with scrounged small arms (A20.552, D10.5, with 75.5); captured vehicles' VP (A21.2); a DC thrown or Placed by a Passenger (D6.72, with 75.6).
+**Pass 72: Infantry V: Heat of Battle and Unit Substitution** (10 rows of the inventory). Counters: none. Needs first: 40; 71, since a berserk unit (A15.431), a wounded SMC (A17.2), and an Inexperienced unit (A19.31) all change the same movement allowance, and the two passes run one after the other.
 
-Moved here by pass 70 (2026-10-25), with no task renumbered: naming an AFV in a Location that also holds concealed or hidden units or a Dummy (A22.34, A22.612, A23.5, with 75.6; ruling R70.2); the SMC crew's Stun wound in the projector, with no Wound Severity dr and a second wound eliminating (D5.34, A17.11, with 75.3); an Infantry OVR offered on a lone SMC revealed outside the reviewed building case (A12.15); the voluntary removal's Sniper exception (A12.14, A14.2, with 75.1); a berserk charge into a Location holding an enemy vehicle and Infantry (A15.431, A15.432, with 75.2); the rout's reading of Unarmed Personnel as armed (A10.5, A20.54, with 75.5).
+| Task | Rules | Estimate |
+|---|---|---|
+| 72.1 (was 75.2) Heat of Battle and berserk remainder: a hero's weapons, the next nearest target, the return to normal (A15.1's exemptions moved to pass 70, 2026-10-25) | A15.23 (p. 83), A15.43 (p. 84), A15.431 (p. 84), A15.432 (p. 84), A15.45 (p. 84), A15.46 (p. 84) | 1:00 |
+| 72.2 (was 75.4) Unit Substitution: Ammunition Shortage, an SSR ELR for underscored units, a MG's B# for Inexperienced users (A19.11's Unarmed exemption moved to pass 70, 2026-10-25) | A19.131 (p. 86), A19.132 (p. 86), A19.31 (p. 86), A19.32 (p. 86) | 0:40 |
+| Overhead | | 1:15 |
+| **Pass 72 total** (build 1:40) | | **2:55** |
+
+Moved in, with no estimate: a berserk charge into a Location holding an enemy vehicle and enemy Infantry (A15.431, A15.432, from pass 70, with 72.1).
+
+**Pass 73: Infantry VI: the movement and fire leftovers** (18 rows of the inventory; new tasks). Counters: none. Needs first: 40, 45; 72, since a malfunctioned weapon's Residual FP (A8.221) reads Ammunition Shortage.
+
+| Task | Rules | Estimate |
+|---|---|---|
+| 73.1 Infantry OVR and entry: a second Infantry OVR against a SMC already in Melee, a SMC in an AFV, the Disrupted exception; the OVR offered on a lone SMC revealed outside the reviewed building case | A4.14 (p. 49), A4.15 (p. 49), A4.151 (p. 49), A4.152 (p. 49), A12.15 (p. 78) | 0:40 |
+| 73.2 Portage and Recovery: a hero lending his IPC, and the leader's IPC as a choice in the APh with the unasked default kept in the record; a SMC's Recovery at once when a unit is eliminated, surrenders, or routs away | A4.42 (p. 50), A4.44 (p. 50) | 0:40 |
+| 73.3 Assault Movement and Dash: a break ends Assault Movement for the unit, not the stack; the overstack MF and the lost Road Bonus of the Location Dashed to | A4.61 (p. 51), A4.63 (p. 51) | 0:20 |
+| 73.4 Fire direction: only the firers a leader directed in First Fire for his later direction; Field of Fire for a MMG or HMG; Mandatory Fire Direction beyond 16 hexes, with broken, berserk, or overstacked Infantry at 17 hexes and more | A7.53 (p. 57), A9.21 (p. 62), A9.4 (p. 64) | 1:00 |
+| 73.5 Residual FP and Spraying Fire in the MPh: a Residual FP attack on an Infantry MF expenditure inside the Location, the malfunctioned weapon's FP left out, a spray at a moving unit and at an empty Location; the CC counter on the co-occupants after a TPBF FPF | A8.22 (p. 60), A8.221 (p. 60), A8.24 (p. 60), A9.52 (p. 64), A8.31 (p. 61) | 0:40 |
+| 73.6 SW Self-Destruction; starting a scenario dismantled, a captor dismantling, and the fire panel's label for a dismantled HMG; Disruption's SS against Russians exception | A9.73 (p. 65), A9.8 (p. 65), A19.12 (p. 86) | 0:40 |
+| Overhead | | 1:15 |
+| **Pass 73 total** (build 4:00) | | **5:15** |
+
+For the frame: Human Wave's entry (A4.14) needs Impulse Movement and waits with Human Wave (pass 180); the SMC's move away into minefields, an FFE, or Wire (A4.151) waits for passes 115, 120, and 150; the SS against Russians (A19.12) needs the SS MMC that pass 180 adds. The frame decides whether each moves to that pass or stays refused until then. A9.8's row stays with pass 110 for its other parts, and A8.31's row with no pass: 73.6 and 73.5 take only the backlog's items from them.
+
+**Pass 74: Infantry VII: prisoners, Interrogation, and Control** (24 rows of the inventory). Counters: none. Needs first: 40; 70 (the capture of Passengers, and the concealment and HIP that Interrogation reveals). Interrogation (E2.1) is rolled on a capture or a surrender, so it is built with the prisoners.
+
+| Task | Rules | Estimate |
+|---|---|---|
+| 74.1 (was 75.5) Prisoners: Commissars and stacks at surrender, the exchange, Massacre of any Unarmed unit, a Guard's Deployment, escape by nationality, rearming, Scrounging, the double VP | A20.21 (p. 86), A20.221 (p. 87), A20.4 (p. 87), A20.5 (p. 87), A20.51 (p. 87), A20.53 (p. 87), A20.55 (p. 88), A20.551 (p. 88), A20.552 (p. 88), A26.222 (p. 100) | 0:40 |
+| 74.2 (was 75.7) Control of any hex or Location a card names | A26.13 (p. 99) | 0:20 |
+| 74.3 (was 75.8) Interrogation, and civilians by SSR | E2.1 (p. 228), E2.2 (p. 228), E2.3 (p. 228), E2.4 (p. 228) | 0:40 |
+| Overhead | | 1:15 |
+| **Pass 74 total** (build 1:40) | | **2:55** |
+
+Moved in, with no estimate: a Guard's attack on a unit that enters its Location (A8.312, A20.5, from pass 40, with 74.1); rearming with scrounged small arms (A20.552, D10.5, from pass 65, with 74.1); captured vehicles' VP (A21.2, from pass 65, with 74.1); the rout's reading of Unarmed Personnel as armed (A10.5, A20.54, from pass 70, with 74.1).
+
+**Pass 75: Infantry VIII: MOL and DC** (12 rows of the inventory). Counters: none. Needs first: 45 for DC between levels; 65 (Passengers); 70 (Searching, which Set DC Clearance reads).
+
+| Task | Rules | Estimate |
+|---|---|---|
+| 75.1 (was 75.6) MOL by a leader; a DC at another level; Set DC and its Clearance | A22.611 (p. 89), A22.62 (p. 90), A23.3 (p. 90), A23.6 (p. 91), A23.61 (p. 91), A23.7 (p. 91), A23.71 (p. 91), A23.72 (p. 91), B24.75 (p. 142) | 1:40 |
+| Overhead | | 1:15 |
+| **Pass 75 total** (build 1:40) | | **2:55** |
+
+Moved in, with no estimate: a MOL at an unarmored vehicle, a leader's MOL, and a MOL in a FG (A22.612, C11.51, from pass 60); a DC Placed where an unarmored or a friendly vehicle is (A23.3, from pass 60); a DC thrown or Placed by a Passenger (D6.72, from pass 65); naming an AFV in a Location that also holds concealed or hidden units or a Dummy, which rebuilds the FT, MOL, and DC records (A22.34, A22.612, A23.5, from pass 70; ruling R70.2).
+
+For the frame: a Set DC's destruction of a bridge or a building level (A23.71) needs rubble made (B24.11, pass 135) and bridges (pass 140). The frame decides whether that part stays refused until then.
 
 **Pass 80: Nationalities I: the catalog's counters** (new; 14 rows of the inventory). Counters: none. Needs first: 35.
 
@@ -2161,8 +2223,10 @@ The 212 rows marked not applicable in the inventory need no ruling: they are hea
 |---|---:|---|---|---|
 | The eleven planned passes, as first planned (section 22) | 11 | 42:25 | 56:10 | |
 | The eleven, from their task lists (a) | 11 | 47:45 | 61:30 | 30:45 |
-| The new passes (b) | 20 | 109:35 | 134:35 | 67:18 |
-| **Complete coverage of A to E** | **31** | **157:20** | **196:05** | **98:02** |
+| The new passes (b) | 24 | 113:35 | 143:35 | 71:48 |
+| **Complete coverage of A to E** | **35** | **161:20** | **205:05** | **102:32** |
+
+Until the split of pass 75 on 2026-10-26 (section 4) the new passes were 20, at 109:35 of build and 134:35 in all, and the whole 31 passes at 157:20 and 196:05 (98:02 likely). The split adds 4:00 of build, pass 73's new tasks, and four passes' overhead, 5:00.
 
 The first version of this section gave 107:50 for 19 passes. The difference is what the reading found: the planned passes held more than their figures (pass 55 alone held three passes' work), the faults in rules already built make a pass of their own, and terrain is five passes, not three. The likely figure, about 98 hours on the clock, is half of the total and no better than the week's pace is as a guide; armored combat and offboard artillery are still the areas least touched, and 22 of the 31 passes need counters or data the catalog lacks.
 
@@ -2172,7 +2236,7 @@ The first version of this section gave 107:50 for 19 passes. The difference is w
 |---|---|---|---|---|
 | 1. Repairs and the ground under everything | 35, 40, 45 | 21:30 | 10:45 | Pass 35 ends the wrong results. Pass 40 gives ADJACENT, the road state, and entry into enemy Locations; pass 45 gives fire between levels and Residual FP as the rule has it. Rout, armor, and artillery all read these. |
 | 2. Armor | 50, 55, 60, 65 | 25:20 | 12:40 | As the user moved it forward. Each builds on the last. |
-| 3. The rest of Chapter A | 70, 75, 80 | 18:50 | 9:25 | No counters. These could change places with block 2 for the shortest road to a complete Chapter A. |
+| 3. The rest of Chapter A | 70, 71, 72, 73, 74, 75, 80 | 27:50 | 13:55 | No counters. These could change places with block 2 for the shortest road to a complete Chapter A. Passes 71 to 75 were pass 75 until 2026-10-26 (18:50 and 9:25 for the block then). |
 | 4. SMOKE, night, and weather | 85, 90, 95 | 16:05 | 8:02 | Wind and EC come first: SMOKE, Fog, Drifts, gliders, and Fire all read them. |
 | 5. Position, equipment, and Guns | 100, 105, 110 | 24:05 | 12:02 | Pass 100's vertex LOS and Wall Advantage are needed by Rowhouses and bocage; pass 105's Impulse Movement by Human Wave and Convoys. |
 | 6. Fortifications | 115, 120 | 11:30 | 5:45 |  |
@@ -2197,7 +2261,7 @@ The first version of this section gave 107:50 for 19 passes. The difference is w
 - **The short pass is not short.** It held two faults. Pass 35 takes 45 rows of the inventory and is 7:40.
 - **The additions to pass 50 were two passes.** FT, MOL, and DC against an AFV, mixed Locations, and Guns as targets are pass 60, with the Collateral Attacks and HE Equivalency they need; Abandonment, Crew Survival, and Brew Ups are pass 65, with Passengers.
 - **Pass 55 held three passes.** Ordnance SMOKE cannot be built before SMOKE has strength, height, and Drift, which need wind (pass 85); Passengers as units are the largest single piece of Chapter D (pass 65).
-- **The draft's pass 51, in its own numbering (night and weather II) had no centre and is gone.** Jitter Fire is built on Straying (pass 90). EC and wind must come before SMOKE, Fog, and Drifts, not after Fire (pass 85). Illuminating Rounds need OBA (pass 155). Trip flares are a Pacific rule. Interrogation goes with prisoners (pass 75) and Swimming with boats (pass 170).
+- **The draft's pass 51, in its own numbering (night and weather II) had no centre and is gone.** Jitter Fire is built on Straying (pass 90). EC and wind must come before SMOKE, Fog, and Drifts, not after Fire (pass 85). Illuminating Rounds need OBA (pass 155). Trip flares are a Pacific rule. Interrogation goes with prisoners (pass 75; pass 74 since the split of 2026-10-26) and Swimming with boats (pass 170).
 - **Three foundations were scattered or late.** The vertex LOS serves Infantry Bypass, Snap Shots, fire at a vehicle in Bypass, Underbelly hits, and Rowhouses; the draft had it in three passes. Wall Advantage as a kept state is needed by Hull Down and by bocage; the draft built it after both. Impulse Movement (D14.3) drives Platoon Movement, Human Wave, and Convoys; the draft had them in three passes with no order. Passes 100 and 105 now hold them.
 - **Terrain was three passes and is five.** Planned passes 125 and 135 and the draft's 49 each held two or three passes' work: gullies and streams with Crest Status, water, bridges, Climbing, rubble made and falling, Rowhouses, Factories, bocage, sewers, Narrow Streets, and railroads are each large by the rules' own length.
 - **The nationality rules were spread over passes 120, 135, and 165 for the cards' sake.** With the cards deferred they are two passes, and the first (63) is not new work but the missing half of rules on counters the catalog holds: non-elite Italians may Deploy and take the capture DRM, Finns pay Captured Use on a Russian MG.
@@ -2243,7 +2307,7 @@ With 1:15 of overhead for each of the ten sub-passes the whole is **235:40 on th
 
 ## 23. Schedule and duration
 
-**Rewritten 2026-10-09** from section 22.1 at the user's word: the 31 rule passes of 22.1 (a) and (b), in the order of 22.1 (f), with 22.1's figures. Until that date this section listed the eleven planned passes alone, 33 first, at 56:10. Pass 32, the Rules migration, is complete (32.a to 32.j, merged 2026-10-06 to 2026-10-09; section 22.2), so every pass below writes its rules in the Rules project.
+**Rewritten 2026-10-09** from section 22.1 at the user's word: the 31 rule passes of 22.1 (a) and (b), in the order of 22.1 (f), with 22.1's figures. Since the split of 2026-10-26 (section 4) they are 35: pass 75 is passes 71 to 75. Until that date this section listed the eleven planned passes alone, 33 first, at 56:10. Pass 32, the Rules migration, is complete (32.a to 32.j, merged 2026-10-06 to 2026-10-09; section 22.2), so every pass below writes its rules in the Rules project.
 
 The rule passes run in this order, one pass at a time on the user's go-ahead. **The next pass is 35.** The numbers follow the order in steps of five (the renumbering of 2026-10-09, section 4), so a pass added later takes a free number between two others. "Build" is from the pass's task list in 22.1 (c); "Total" adds 1:15 of overhead; "Likely" is half the total, the pace the week review found for rule passes. "Needs first" names the passes a pass reads; a script checked that none runs before one it names.
 
@@ -2259,9 +2323,13 @@ The rule passes run in this order, one pass at a time on the user's go-ahead. **
 | 2 | 65 | Passengers, Riders, and crews | 63 | 50, 60 | 7:00 | 8:15 | 4:08 |
 | | **2. Armor** | | **153** | | **20:20** | **25:20** | **12:40** |
 | 3 | 70 | Infantry III: morale, Close Combat, and concealment | 35 | 40 | 7:20 | 8:35 | 4:18 |
-| 3 | 75 | Infantry IV: the small sections, and Interrogation | 56 | 40, 45 | 6:20 | 7:35 | 3:48 |
+| 3 | 71 | Infantry IV: Snipers and wounds | 11 | 40 | 1:20 | 2:35 | 1:18 |
+| 3 | 72 | Infantry V: Heat of Battle and Unit Substitution | 10 | 40, 71 | 1:40 | 2:55 | 1:28 |
+| 3 | 73 | Infantry VI: the movement and fire leftovers | 18 | 40, 45, 72 | 4:00 | 5:15 | 2:38 |
+| 3 | 74 | Infantry VII: prisoners, Interrogation, and Control | 24 | 40, 70 | 1:40 | 2:55 | 1:28 |
+| 3 | 75 | Infantry VIII: MOL and DC | 12 | 45, 65, 70 | 1:40 | 2:55 | 1:28 |
 | 3 | 80 | Nationalities I: the catalog's counters | 14 | 35 | 1:25 | 2:40 | 1:20 |
-| | **3. The rest of Chapter A** | | **105** | | **15:05** | **18:50** | **9:25** |
+| | **3. The rest of Chapter A** | | **124** | | **19:05** | **27:50** | **13:55** |
 | 4 | 85 | SMOKE, wind, and Environmental Conditions | 33 | 35 | 4:20 | 5:35 | 2:48 |
 | 4 | 90 | Night | 43 | 35 | 4:40 | 5:55 | 2:58 |
 | 4 | 95 | Weather II | 25 | 85, 90 | 3:20 | 4:35 | 2:18 |
@@ -2290,9 +2358,9 @@ The rule passes run in this order, one pass at a time on the user's go-ahead. **
 | | **9. Units and vehicles** | | **258** | | **21:20** | **26:20** | **13:10** |
 | 10 | 185 | Fire | 32 | 85, 135, 75 | 3:40 | 4:55 | 2:28 |
 | | **10. Fire** | | **32** | | **3:40** | **4:55** | **2:28** |
-| | **The rule passes (31)** | | **1484** | | **157:20** | **196:05** | **98:02** |
+| | **The rule passes (35)** | | **1503** | | **161:20** | **205:05** | **102:32** |
 
-The rule passes total 196:05 (build 157:20), about 98 hours likely: the eleven planned passes at 61:30 from their task lists (56:10 as first planned) and the twenty new passes at 134:35 (section 22.1 (e)). Deferred: the DYO passes 190 and 195 (8:15, in section 4's total). With the passes of section 4 (138:05, pass 31d's 9:30 included) the whole plan is 334:10, of which 8:15 is deferred; pass 32 stands outside that figure, as it did before. The legacy card track (85:49, deferred) left this plan on 2026-10-16 for the [ASL Scenario Card Implementation Plan](<Plans/ASL Scenario Card Implementation Plan.md>); until then the whole was given as 419:59, of which 94:04 was deferred. The [week review of 2026-10-05](<ASL Week Review 2026-09-28 to 2026-10-04.md>) has the pace of the actuals.
+The rule passes total 205:05 (build 161:20), about 102 hours likely: the eleven planned passes at 61:30 from their task lists (56:10 as first planned) and the twenty-four new passes at 143:35 (section 22.1 (e)). Rows for passes 71 to 75 are the inventory's of 2026-10-26; the others are as planned. Until the split of pass 75 on 2026-10-26 (section 4) the rule passes were 31, at 196:05 (build 157:20), with 1484 rows, and the whole plan 334:10. Deferred: the DYO passes 190 and 195 (8:15, in section 4's total). With the passes of section 4 (138:05, pass 31d's 9:30 included) the whole plan is 343:10, of which 8:15 is deferred; pass 32 stands outside that figure, as it did before. The legacy card track (85:49, deferred) left this plan on 2026-10-16 for the [ASL Scenario Card Implementation Plan](<Plans/ASL Scenario Card Implementation Plan.md>); until then the whole was given as 419:59, of which 94:04 was deferred. The [week review of 2026-10-05](<ASL Week Review 2026-09-28 to 2026-10-04.md>) has the pace of the actuals.
 
 **Order.** The rule passes come first and build rules only (the user, 2026-10-05); the card track waits. Pass 35 comes first of all: it ends the wrong results in rules already built, and passes 40, 50, 80, 85, 90, 110, 115, 125, and 130 read what it repairs. Passes 40 and 45 give ADJACENT, the road state, entry into enemy Locations, fire between levels, and Residual FP as the rule has it, which rout, armor, and artillery all read. Armor is the second block, as the user moved it forward; block 3 could change places with it for the shortest road to a complete Chapter A. Section 22.1 (f) gives the reason for each block's place.
 
