@@ -38,7 +38,7 @@ Pass 71 completes the Sniper (A14) and the wound's movement rules (A17.2), with 
 
 **What departs from the plan's entry, first:**
 
-- **The pass is many times the plan's size by the agents' estimates.** The plan gives 1:20 of building. The agents' estimates sum to about 28:45 (section 6, F1). Pass 70 built in 8:07 against its frame's 33:05, so the build may run seven to nine hours. The pass stays one pass (ruling R71.1), built in the order of the table below; the last increment (carrying a wounded man) is the one a session's end would leave out, to pass 72.
+- **The forecast: about 8 hours to the gate, of which about 5:40 is building, against the plan's 1:20 of building (2:35 in all).** The estimates below are calibrated: the frame agents' raw estimates divided by 4.5, between pass 70's ratio (its frame estimated 33:05, the build took 8:07, 4.1) and 4a's (estimated 5:45, built in 1:01, 5.7); 4a's row is its time by the clock. The rest of the forecast is the reviews, their fixes, the Studio check of the whole pass, and the documents, about 2:30 (pass 70's took 3:22 for ten increments; the plan's 1:15 has been short in every pass since 55). The pass stays one pass (ruling R71.1), built in the order of the table below; the last increment (carrying a wounded man) is the one a session's end would leave out, to pass 72.
 - **Moved out of the pass** (ruling R71.2), each with a backlog row in the documents step:
   - to pass 115 (Fortifications I): Entrenching as a Sniper trigger (Entrenching is not built), and the Fortification TEM and the reveal of hidden Fortifications in A14.21's comparison;
   - to pass 90 (Night and winter, task 90.6): the captured MG's automatic Sniper dr at night (E1.76, backlog 26);
@@ -53,15 +53,17 @@ Pass 71 completes the Sniper (A14) and the wound's movement rules (A17.2), with 
 | Increment | Tasks | What | Estimate |
 |---|---|---|---|
 | 1 | The frame | This document. | |
-| 4a | 71.1 (I) | The Sniper's targets and results: the eligibility fix, Vulnerable PRC and crews, unarmored vehicles, the enemy Sniper as a target, Stun and Recall (D5.34), SMOKE in the TEM comparison, A12.14's LOS clause, the record's leak, the reads through the index, the record lines' hexes. | 5:45 |
-| 4b | 71.1 (II) | The SAN as state (`san-reduced`, E1.76's floor) and Sniper Check (A14.4). | 4:30 |
-| 4c | 71.1 (III) | The counter given at setup and placed by A14.2. | 4:00 |
-| 4d | 71.1 (IV) | The Sniper player's choices: forfeit and reposition, the equidistant hex, the Location, the prior target, the first tied target; A12.14's exception. | 5:30 |
-| 4e | 71.1 (V) | Every A14.1 trigger: one reader for every record that carries a qualifying roll, called once per planned step; ordnance included; a Sniper's own checks chaining. | 1:35 |
-| 4f | 71.2 (I) | The pin after more than 3 MF; the SMC crew's Stun wound and its Severity dr; A18.2's -1 against an AFV. | 2:45 |
-| 4g | 71.2 (II) | Carrying a wounded man for 5 PP. | 2:30 |
-| | Overhead | The reviews, the Studio check, the documents (the plan's 1:15). | 1:15 |
-| | **Total** | build 26:35 | **27:50** |
+| 4a | 71.1 (I) | The Sniper's targets and results: the eligibility fix, Vulnerable PRC and crews, unarmored vehicles, the enemy Sniper as a target, Stun and Recall (D5.34), SMOKE in the TEM comparison, A12.14's LOS clause, the record's leak, the reads through the index, the record lines' hexes. | 1:01 (built) |
+| 4b | 71.1 (II) | The SAN as state (`san-reduced`, E1.76's floor) and Sniper Check (A14.4). | 1:00 |
+| 4c | 71.1 (III) | The counter given at setup and placed by A14.2. | 0:55 |
+| 4d | 71.1 (IV) | The Sniper player's choices: forfeit and reposition, the equidistant hex, the Location, the prior target, the first tied target; A12.14's exception. | 1:15 |
+| 4e | 71.1 (V) | Every A14.1 trigger: one reader for every record that carries a qualifying roll, called once per planned step; ordnance included; a Sniper's own checks chaining. | 0:20 |
+| 4f | 71.2 (I) | The pin after more than 3 MF; the SMC crew's Stun wound and its Severity dr; A18.2's -1 against an AFV. | 0:35 |
+| 4g | 71.2 (II) | Carrying a wounded man for 5 PP. | 0:35 |
+| | Overhead | The reviews, their fixes, the Studio check of the whole pass, the documents (the plan's 1:15; pass 70's took 3:22). | 2:30 |
+| | **Forecast** | build 5:41 | **about 8:10** |
+
+(The frame agents' raw estimates, before calibration: 4a 5:45, 4b 4:30, 4c 4:00, 4d 5:30, 4e 1:35, 4f 2:45, 4g 2:30, a build of 26:35. They are kept for the calibration only; pass 70's ran about four times its build.)
 
 ## 3. The rows, by task and increment
 
@@ -124,7 +126,7 @@ Each to be checked against the store's older records before it enters `SKIP_JSON
 
 ## 6. The frame's questions, each with its ruling
 
-**F1. Is the pass kept whole?** The agents' estimates sum to about 28:45 of building (A 1:35 with ordnance, B 14:40, C 7:45, D 5:25, less what is moved out and what two agents counted twice) against the plan's 1:20.
+**F1. Is the pass kept whole?** The forecast is about 8 hours to the gate, about 5:40 of it building, against the plan's 1:20 of building (section 2: the frame agents' estimates divided by 4.5, between pass 70's ratio of 4.1 and 4a's of 5.7).
 - **R71.1:** the pass stays one pass, as R70.1 kept pass 70. The increments run in the table's order; whatever a session's end leaves out is the last increment's (4g, carrying a wounded man), and it goes to pass 72 with its row.
 
 **F2. What leaves the pass?**
