@@ -1763,7 +1763,7 @@ Moved here by pass 55 (2026-10-13), with no task renumbered: the FG of a CE half
 
 Moved here by pass 60 (2026-10-15), with no task renumbered: more unarmored vehicles in a Location than the column's highest KIA#, on the Infantry and Area Target Types (A7.308, C1.55, C3.32, with 65.1); the Specific Collateral Attack on Passengers, Riders, and an unarmored vehicle's Vulnerable PRC, and after an Abandonment (D.8A, with 65.1); an AFV in positive TEM under other IFT attacks (A7.307, D5.31); an OT AFV's crew under Air Bursts (D5.311); the Immobilization Task Check after a mortar's hit, and Crew Survival's +1 for a Shocked or Abandoned vehicle (D5.5, D5.6, with 65.7).
 
-**Pass 70: Infantry III: morale, Close Combat, and concealment** (new; 35 rows of the inventory). Counters: none. Needs first: 40 (Infantry OVR, ADJACENT).
+**Pass 70: Infantry III: morale, Close Combat, and concealment** (new; 35 rows of the inventory). Counters: none. Needs first: 40 (Infantry OVR, ADJACENT). **Status, 2026-10-25: built to the merge gate on `feature/asl-backlog-pass-70`, cut from 25aa97fd; the gate not run. The user's word of 2026-10-25 ("Run it without my intervention, up to the merge gate") ends at the gate, and the gate, the push, the pull request, and the merge are each the user's to start.** The ten tasks are built, in ten increments (3a to 3j) in ten commits and five rounds of the reviews' fixes (8f92714a to 4d53f29f); no increment was left out (ruling R70.1). The plan names 35 inventory rows; with the items moved here (the paragraphs after the table) the inventory named 48: 29 are built (6 of them with a deviation) and the remainders of 19 went to the pass that takes what is left (passes 75, 80, 100, 105, 115, 120, 135, 165, and 180). The frame's estimate, made from the code, was 33:05 of building against the plan's 7:20 (34:20 in all against 8:35); the build took 8:07 by the clock. Rulings R70.1 to R70.48 are open to a veto. What the pass moved went to pass 75 (naming an AFV in a mixed Location, with 75.6; the SMC crew's Stun wound, with 75.3; an Infantry OVR on a lone SMC revealed), pass 110 (CC against a wreck, with the rest of D10.1), pass 135 (Withdrawal to another level of a building), and the backlog (5/8" Dummies and Cavalry under concealment, a vehicle's secret Target Size and Smoke Dispenser, the actions not yet built that cost a "?", Searching for mines and Booby Traps, and the rout's fortification and Blaze options), each with its reason in the [design](<Passes/ASL Unit Backlog Pass 70 Design.md>), sections 2, 8.1 to 17.1, and 18, the [review](<Passes/Scenario A1 Backlog Pass 70 Review 2026-10-25.md>), and the backlog's section 72.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1802,6 +1802,8 @@ Moved here from pass 75 (2026-10-25, at the user's word, after weighing whether 
 Moved here by pass 60 (2026-10-15), with no task renumbered: a MOL at an unarmored vehicle, a leader's MOL, and a MOL in a FG (A22.612, C11.51, with 75.6).
 
 Moved here by pass 65 (2026-10-24), with no task renumbered: A11.52's capture of Passengers (moved on to pass 70 on 2026-10-25); rearming with scrounged small arms (A20.552, D10.5, with 75.5); captured vehicles' VP (A21.2); a DC thrown or Placed by a Passenger (D6.72, with 75.6).
+
+Moved here by pass 70 (2026-10-25), with no task renumbered: naming an AFV in a Location that also holds concealed or hidden units or a Dummy (A22.34, A22.612, A23.5, with 75.6; ruling R70.2); the SMC crew's Stun wound in the projector, with no Wound Severity dr and a second wound eliminating (D5.34, A17.11, with 75.3); an Infantry OVR offered on a lone SMC revealed outside the reviewed building case (A12.15); the voluntary removal's Sniper exception (A12.14, A14.2, with 75.1); a berserk charge into a Location holding an enemy vehicle and Infantry (A15.431, A15.432, with 75.2); the rout's reading of Unarmed Personnel as armed (A10.5, A20.54, with 75.5).
 
 **Pass 80: Nationalities I: the catalog's counters** (new; 14 rows of the inventory). Counters: none. Needs first: 35.
 
@@ -1914,6 +1916,8 @@ Moved here by pass 60 (2026-10-15), with no task renumbered: a hit on another ve
 
 Moved here by pass 65 (2026-10-24), with no task renumbered: A7.308's Random Selection on the ordnance Infantry Target Type and a mortar's hit (A7.308, C1.55, C3.32); Ordnance First Fire at (un)loaders (D6.5); a wreck under the IFT beside other vehicles or of the other side, and under Infantry Target Type and mortar hits (D10.1); the American exemption and A21.22's squad exchange for a HS (D10.52, A21.22, with 110.6); unhooking a towed Gun as its vehicle's crew Abandons (D5.41, with 110.2); the Specific Collateral Attack after a Gun's HEAT with no HE FP (D.8A).
 
+Moved here by pass 70 (2026-10-25), with no task renumbered: CC against a wreck, with the rest of D10.1 (D10.1, A11; ruling R70.2); a mortar's minimum range in Interdiction (A10.532); a crew manning a Gun that is not Emplaced, under concealment, and a non-Emplaced Gun's Case H loss (A12.2).
+
 **Pass 115: Fortifications I** (planned at 3:35 of build; 74 rows of the inventory). Counters: foxholes 1S, 2S, 3S; trenches; roadblocks; pillboxes by strength (the vocabulary has the kinds, the catalog no definitions). Needs first: 35.
 
 | Task | Rules | Estimate |
@@ -1996,6 +2000,8 @@ Moved here by pass 60 (2026-10-15), with no task renumbered: Interior Building H
 Moved here by pass 45 (2026-10-12), with no task renumbered: an upper level's way to the ground for Encirclement (A7.72), by Scaling once pass 130 builds it; a Blaze on that way waits on pass 185.
 
 Moved here by pass 65 (2026-10-24), with no task renumbered: a friendly Vehicular-Sized Entrance for a Rider's Bail Out (D6.21); a CE crew entering a building (D5.3).
+
+Moved here by pass 70 (2026-10-25), with no task renumbered: Withdrawal to another level of a building (A11.21; ruling R70.2); Mopping Up of rubbled Locations (A12.153).
 
 **Pass 140: Terrain IV: bridges** (new; 18 rows of the inventory; pass 130 until 2026-10-16). Counters: pontoon and foot bridge counters; a bridge's weight limit as a state; vehicle weights. Needs first: 125 (the Location beneath a bridge); 135 (the rubble counter a destroyed bridge leaves at the level below it, B6.331); 75 (Set DC) for destruction.
 
