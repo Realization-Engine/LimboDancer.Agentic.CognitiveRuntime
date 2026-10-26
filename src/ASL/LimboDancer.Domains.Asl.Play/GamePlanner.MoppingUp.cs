@@ -234,11 +234,10 @@ public sealed partial class GamePlanner
     /// </summary>
     private static List<(UnitInstance Unit, BoardLocation At)> UnitsInHexes(ObjectIndex index, IEnumerable<BoardLocation> hexes)
     {
-        var wanted = hexes.Select(hex => (hex.Board, hex.Hex)).ToHashSet();
         var found = new List<(UnitInstance Unit, BoardLocation At)>();
-        foreach (var (at, stack) in index.Occupied)
+        foreach (var (at, stack) in index.OccupiedIn(hexes))
         {
-            if (at.Level < 0 || !wanted.Contains((at.Board, at.Hex)))
+            if (at.Level < 0)
             {
                 continue;
             }

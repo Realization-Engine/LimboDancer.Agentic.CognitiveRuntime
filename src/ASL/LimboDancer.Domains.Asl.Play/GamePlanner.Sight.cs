@@ -29,9 +29,12 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>The table of the state's seers, built at its first use in one pass over the units, from the state's index (ruling R70.16).</summary>
-    private SightTable SightOf(GameState state) => MemoOf(state).Sight(() =>
+    private SightTable SightOf(GameState state) => SightOf(state, MemoOf(state));
+
+    /// <summary>The table of the state's seers, kept in <paramref name="memo"/>: the state's own, or a history view's transient one.</summary>
+    private static SightTable SightOf(GameState state, PlayStepMemo memo) => memo.Sight(() =>
     {
-        var index = MemoOf(state).Objects(state);
+        var index = memo.Objects(state);
         var locations = new List<BoardLocation>();
         var indexes = new Dictionary<BoardLocation, int>();
         var units = new SightSeerFacts[state.Units.Count];
@@ -58,24 +61,24 @@ public sealed partial class GamePlanner
     });
 
     /// <summary>
-    /// One unit's facts as a seer (ruling R70.16), from the state's index. An empty vehicle is one Abandoned (its inherent crew gone, D5.4), with no crew
-    /// inside and no Passenger or Rider: "broken" for "?" gain and loss (A12.1, p. 76).
+    /// One unit's facts as a seer (ruling R70.16), from the state's index. Rules decides whether a vehicle is empty, "broken" for "?" gain and loss (A12.1,
+    /// p. 76), from whether it is Abandoned, has a crew inside, and carries PRC.
     /// </summary>
     private static SightSeerFacts SeerFactsOf(ObjectIndex index, UnitInstance unit, int? at) =>
         new(unit.Status == InstanceStatus.Active, unit.Side, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden), index.VehicleOf(unit.Id) is not null, GoodOrder(unit),
             !Is(unit, Conditions.Broken), Is(unit, Conditions.Captured),
-            LiveFire.IsVehicle(unit) && Is(unit, Conditions.Abandoned) && index.CrewOf(unit.Id) is null && index.Aboard(unit.Id).Count == 0, at)
+            ScenarioA1Sight.EmptyVehicle(LiveFire.IsVehicle(unit), Is(unit, Conditions.Abandoned), index.CrewOf(unit.Id) is not null, index.Aboard(unit.Id).Count), at)
         {
             // Pass 70 (A12.14; ruling R70.21): a concealed Loss seer forces a loss only by forfeiting its "?" for a moment.
             Concealed = Is(unit, Conditions.Concealed),
         };
 
     /// <summary>The LOS between two Locations of the sight table, the index past its end being the Location asked about, as the sight reads take it.</summary>
-    private sealed class SightLos(GamePlanner planner, GameState state, SightTable table, BoardLocation at) : ISightLosReader
+    private sealed class SightLos(GamePlanner planner, GameState state, PlayStepMemo memo, SightTable table, BoardLocation at) : ISightLosReader
     {
         private BoardLocation LocationOf(int index) => index < table.Locations.Length ? table.Locations[index] : at;
 
-        public SightLosFacts? Los(int fromLocation, int toLocation) => planner.Los(state, LocationOf(fromLocation), LocationOf(toLocation)) is { } result
+        public SightLosFacts? Los(int fromLocation, int toLocation) => planner.Los(state, memo, LocationOf(fromLocation), LocationOf(toLocation)) is { } result
             ? new SightLosFacts(result.Status == LosStatus.Clear, result.IsBlocked, result.Range)
             : null;
     }
@@ -93,7 +96,7 @@ public sealed partial class GamePlanner
         {
             var table = read.Planner.SightOf(read.State);
             return ScenarioA1Sight.NearestSeer(read.Planner.SeerLocations(read.State, key.Side, key.Purpose), table.IndexOf(key.At),
-                new SightLos(read.Planner, read.State, table, key.At), key.Reading);
+                new SightLos(read.Planner, read.State, read.Planner.MemoOf(read.State), table, key.At), key.Reading);
         }, (Planner: this, State: state));
 
     /// <summary>The range to the nearest Good Order enemy ground unit with a clear LOS to a Location (A12.34); null when none has one (ruling R70.16's Loss seers).</summary>
@@ -183,15 +186,16 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        return MemoOf(state).Uninspected.GetOrAdd(viewer.Name, static (name, read) => read.Planner.UninspectedOf(read.State, name), (Planner: this, State: state));
+        var memo = MemoOf(state);
+        return memo.Uninspected.GetOrAdd(viewer.Name, static (name, read) => read.Planner.UninspectedOf(read.State, name, read.Memo), (Planner: this, State: state, Memo: memo));
     }
 
-    /// <summary>The fill of <see cref="Uninspected"/> for one viewer: reads the sight table and the LOS cache only.</summary>
-    private HashSet<BoardLocation> UninspectedOf(GameState state, string name)
+    /// <summary>The fill of <see cref="Uninspected"/> for one viewer: reads the sight table and the LOS cache only, through <paramref name="memo"/>.</summary>
+    private HashSet<BoardLocation> UninspectedOf(GameState state, string name, PlayStepMemo memo)
     {
-        var table = SightOf(state);
+        var table = SightOf(state, memo);
         var seers = ScenarioA1Sight.OwnSeerLocations(table.Units, name, SightPurpose.Inspection);
-        var index = MemoOf(state).Objects(state);
+        var index = memo.Objects(state);
         var stacks = new HashSet<BoardLocation>();
         foreach (var unit in state.Units)
         {
@@ -210,7 +214,7 @@ public sealed partial class GamePlanner
             // Ruling R70.40: any unit of the viewer's own in the Location inspects it, whatever its state, but a prisoner and a Dummy.
             if (!ScenarioA1Sight.Inspectable(state.SetupClosed, index.At(at).Any(item => item is UnitInstance { Status: InstanceStatus.Active } own && own.Side == name
                     && ScenarioA1Sight.InspectsByPresence(own.Kind == UnitKinds.Dummy, Is(own, Conditions.Captured))),
-                () => ScenarioA1Sight.AnySeerInLos(seers, table.IndexOf(at), new SightLos(this, state, table, at), SightLosReading.NotShownBlocked)))
+                () => ScenarioA1Sight.AnySeerInLos(seers, table.IndexOf(at), new SightLos(this, state, memo, table, at), SightLosReading.NotShownBlocked)))
             {
                 uninspected.Add(at);
             }
@@ -237,5 +241,23 @@ public sealed partial class GamePlanner
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(perspective);
         return GameView.Of(state, perspective, events, OutOfSight(state, perspective), Uninspected(state, perspective));
+    }
+
+    /// <summary>
+    /// A perspective's view of a state with no events, as <see cref="ViewOf(GameState, Perspective, IReadOnlyList{GameEvent})"/> builds it, for a reader that
+    /// walks a whole history once (the names of a game's units, <c>UnitNames</c>; the boundary review of pass 70, finding 1): a state that has no memo yet
+    /// is read through a transient one, dropped with the view, so the walk keeps no index, sight table, or map context per revision. A state that has a memo
+    /// (the one in play, a revision a page shows) is read through it, as every other view of it is. The view is the same either way.
+    /// </summary>
+    public GameView HistoryViewOf(GameState state, Perspective perspective)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(perspective);
+        if (perspective.IsAdjudicator || !state.SetupClosed || playStepMemos.TryGetValue(state, out _))
+        {
+            return ViewOf(state, perspective, []);
+        }
+
+        return GameView.Of(state, perspective, [], OutOfSight(state, perspective), UninspectedOf(state, perspective.Name, new PlayStepMemo()));
     }
 }

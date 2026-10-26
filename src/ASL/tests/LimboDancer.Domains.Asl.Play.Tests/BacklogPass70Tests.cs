@@ -361,6 +361,30 @@ public sealed class BacklogPass70Tests : IDisposable
     }
 
     [Fact]
+    public async Task AHistoryViewShowsWhatThePlannersViewShowsWithOrWithoutAMemo()
+    {
+        // The boundary review (finding 1): the names of a game's units read every revision through the planner's history view, which keeps no memo for a
+        // state that has none. Out of ru-1's LOS the German stack in E5 shows its top only, by a planner that has read nothing of the state and by one whose
+        // memo holds it, as the planner's view does (A12.16; ruling R70.18).
+        blocked.Add(("E2", "E5"));
+        await SetupAt(1, "german", Squad("de-1", "E5", "german"), Squad("de-2", "E5", "german"), Squad("ru-1", "E2", "russian"));
+        var state = Current;
+        var russian = state.Perspectives.Single(item => item.Name == "russian");
+        var fresh = Planner().HistoryViewOf(state, russian);
+        Assert.Equal(TopGerman, fresh.Units.Where(unit => unit.Side == "german").Select(unit => unit.Id));
+        Assert.Single(fresh.Sealed, item => item.Side == "german" && item.OutOfLos);
+
+        var planner = Planner();
+        var view = planner.ViewOf(state, russian, []);
+        var kept = planner.HistoryViewOf(state, russian);
+        Assert.Equal(view.Units.Select(unit => unit.Id), kept.Units.Select(unit => unit.Id));
+        Assert.Equal(view.Sealed, kept.Sealed);
+        Assert.Equal(view.Units.Select(unit => unit.Id), fresh.Units.Select(unit => unit.Id));
+        Assert.Equal(BothGermans, planner.HistoryViewOf(state, Perspective.Adjudicator).Units.Where(unit => unit.Side == "german").Select(unit => unit.Id));
+        NoReplayErrors();
+    }
+
+    [Fact]
     public async Task ARussianDummyInTheStacksLocationInspectsNothing()
     {
         // Ruling R70.40 (the referee's finding at the reviews): a Dummy is no unit (A12.11) and takes no part in CC, so a Russian Dummy in E5 with the German
@@ -985,6 +1009,40 @@ public sealed class BacklogPass70Tests : IDisposable
         Assert.False(Is(Current.Unit("de-gc")!, Conditions.Hidden));
         Assert.False(Is(Current.Find("de-gun")!, Conditions.Hidden));
         Assert.Contains(ViewAs("russian").Units, unit => unit.Id == "de-c");
+        NoReplayErrors();
+    }
+
+    private static readonly string[] RiderOnly = ["de-r"];
+    private static readonly string[] TankOnly = ["de-tank"];
+
+    [Fact]
+    public async Task ATankGivingUpItsQuestionMarkRevealsItsRiderAndTheRiderMayNotGiveItsUpAlone()
+    {
+        // A12.2 (the boundary review, finding 10): "If a Gun, vehicle ... loses its hidden/concealed status ... so does its manning Infantry or PRC, and vice
+        // versa." The German tank in E5 and its Rider gain "?" as the German Player Turn ends (Case K, as above). In the Russian RPh the Rider may not give up
+        // its "?" alone, acting only with its vehicle (ruling R26.2); the tank gives up its own (A12.14; ruling R70.20), and the Rider loses its "?" with it,
+        // as Rules walks what shares it.
+        year = 1943;
+        blocked.Add(("E2", "E5"));
+        await SetupAt(7, "german", Vehicle("de-tank", "attacker-tank", "E5", "german", "east"), Rider("de-r", "asl:squad", "attacker-squad", "de-tank"),
+            Squad("ru-1", "E2", "russian"));
+        Committed(await Do(GameActions.AdvancePhase, Once(1), new
+        {
+        }));
+        Assert.True(Is(Current.Unit("de-r")!, Conditions.Concealed));
+        var refused = await Do(GameActions.RemoveConcealment, NoRoll(), new
+        {
+            unitIds = RiderOnly
+        });
+        Assert.Contains(refused.Reasons, reason => reason.StartsWith("play.aboard: de-r rides de-tank as a Rider", StringComparison.Ordinal));
+
+        var before = Revision;
+        Committed(await Do(GameActions.RemoveConcealment, NoRoll(), new
+        {
+            unitIds = TankOnly
+        }));
+        Assert.Equal(TankAndRider, Since(before).Where(item => item.Type == "concealment-lost").Select(item => ((ConditionsChanged)item.Payload).Id));
+        Assert.False(Is(Current.Unit("de-r")!, Conditions.Concealed));
         NoReplayErrors();
     }
 

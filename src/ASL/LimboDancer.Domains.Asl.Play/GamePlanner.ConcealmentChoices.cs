@@ -20,8 +20,8 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The voluntary removal of "?" (A12.14, A12.11, A12.31, A12.2; ruling R70.20): units of one side on the map, each concealed, hidden, or a Dummy, once
-    /// play has begun, in either side's Player Turn. A Dummy is removed; a concealed or hidden unit is revealed in full, the Gun it mans and the PRC of a
-    /// vehicle with it. The events are public: the removal shows the unit.
+    /// play has begun, in either side's Player Turn. A Dummy is removed; a concealed or hidden unit is revealed in full, with what shares its "?" (A12.2): the
+    /// Gun it mans, a vehicle's PRC and crew, and the vehicle a PRC rides. The events are public: the removal shows the unit.
     /// </summary>
     private GamePlan PlanRemoveConcealment(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
     {
@@ -53,15 +53,46 @@ public sealed partial class GamePlanner
                 continue;
             }
 
-            // A12.2: "If a Gun, vehicle ... loses its hidden/concealed status ... so does its manning Infantry or PRC, and vice versa."
-            IEnumerable<IGameObject> sharing = [unit, .. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun"
-                && item.Holding is { Role: HoldingRole.Manned } manned && manned.Holder == unit.Id), .. index.Aboard(unit.Id)];
-            events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, [.. sharing.Where(item => Is(item, Conditions.Concealed) || Is(item, Conditions.Hidden))
-                .Select(item => item.Id).Distinct(StringComparer.Ordinal)]));
+            // A12.2: "If a Gun, vehicle ... loses its hidden/concealed status ... so does its manning Infantry or PRC, and vice versa": Rules walks the links.
+            var sharing = ScenarioA1ConcealmentChoices.SharesConcealment(unit.Id, id => ConcealmentLinks(state, index, id));
+            events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, [.. sharing.Where(id => state.Find(id) is { Status: InstanceStatus.Active } item
+                && (Is(item, Conditions.Concealed) || Is(item, Conditions.Hidden)))]));
             named.Add(unit.Id);
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [ScenarioA1ConcealmentChoices.RemovalText(named, dummies)]);
+    }
+
+    /// <summary>
+    /// The objects an object's "?" is linked to (A12.2), as the state holds them: the Guns a unit mans and the Gun's manning unit; a vehicle's PRC and the
+    /// crew inside it, and the vehicle a unit rides or crews. Read from the state's index and its Guns by crew.
+    /// </summary>
+    private IEnumerable<string> ConcealmentLinks(GameState state, ObjectIndex index, string id)
+    {
+        foreach (var gun in MemoOf(state).MannedGuns(state).GetValueOrDefault(id) ?? [])
+        {
+            yield return gun.Id;
+        }
+
+        if (state.Find(id) is EquipmentInstance { Holding: { Role: HoldingRole.Manned } manned })
+        {
+            yield return manned.Holder;
+        }
+
+        foreach (var rider in index.Aboard(id))
+        {
+            yield return rider.Id;
+        }
+
+        if (index.CrewOf(id) is { } crew)
+        {
+            yield return crew.Id;
+        }
+
+        if (index.Unit(id) is not null && index.VehicleOf(id) is { } vehicle)
+        {
+            yield return vehicle;
+        }
     }
 
     /// <summary>
@@ -85,28 +116,8 @@ public sealed partial class GamePlanner
     private string[] ConcealedLossSeers(GameState state, string watchedSide, BoardLocation at)
     {
         var table = SightOf(state);
-        var los = new SightLos(this, state, table, at);
-        var target = table.IndexOf(at);
-        int? nearest = null;
-        var found = new List<(int Range, string Id)>();
-        var position = 0;
-        foreach (var unit in state.Units)
-        {
-            var facts = table.Units[position++];
-            if (facts.Side == watchedSide || !facts.Concealed || !ScenarioA1Sight.Sees(facts, SightPurpose.Loss))
-            {
-                continue;
-            }
-
-            var range = facts.Location == target ? 0 : los.Los(facts.Location!.Value, target) is { } read && ScenarioA1Sight.InLos(read, SightLosReading.Clear) ? read.Range : (int?)null;
-            if (range is { } seen && seen <= 16)
-            {
-                found.Add((seen, unit.Id));
-                nearest = nearest is null ? seen : Math.Min(nearest.Value, seen);
-            }
-        }
-
-        return [.. found.Where(item => item.Range == nearest).Select(item => item.Id).Order(StringComparer.Ordinal)];
+        return [.. ScenarioA1Sight.ConcealedLossSeers(table.Units, watchedSide, table.IndexOf(at), new SightLos(this, state, MemoOf(state), table, at))
+            .Select(position => state.Units[position].Id).Order(StringComparer.Ordinal)];
     }
 
     /// <summary>
@@ -154,7 +165,7 @@ public sealed partial class GamePlanner
 
         foreach (var unit in movers)
         {
-            events.Add(unit.Kind == UnitKinds.Dummy
+            events.Add(ScenarioA1ConcealmentChoices.RemovalEliminates(unit.Kind == UnitKinds.Dummy)
                 ? Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), null, null, [made.EventId])
                 : RevealEvents(scope, attemptId, expected, events.Count + 1, [unit.Id]).Single());
         }

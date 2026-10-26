@@ -3391,12 +3391,12 @@ public static class GameProjector
             var next = state;
             foreach (var unit in units)
             {
-                var spent = (unit!.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0) + 2;
+                var spent = (unit!.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0) + Rules.ScenarioA1Searching.HalfMfCost;
                 next = Replace(next, unit with
                 {
                     MfSpent = spent / 2,
                     HalfMfSpent = spent % 2 == 1,
-                    Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { ["asl:ti"] = ConditionState.True },
+                    Conditions = WithChanges(unit.Conditions, Rules.ScenarioA1Searching.SearcherConditions()),
                 })!;
             }
 
@@ -3405,7 +3405,7 @@ public static class GameProjector
                 Movement = movement! with
                 {
                     Movers = search.Units,
-                    HalfMfInLocation = 2,
+                    HalfMfInLocation = Rules.ScenarioA1Searching.HalfMfCost,
                     Step = movement.Step + 1,
                     WindowOpen = true,
                     EndingMembers = search.Units,

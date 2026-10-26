@@ -61,12 +61,15 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
             && !record.Events.Any(item => item.Payload is GameEnded);
     }
 
-    /// <summary>The names a view reads for a game's units (pass 31c, design D11), with the planner's view of each state (ruling R70.18).</summary>
+    /// <summary>
+    /// The names a view reads for a game's units (pass 31c, design D11), with the planner's view of each state (ruling R70.18), read through its history view,
+    /// which keeps nothing per revision (the boundary review of pass 70, finding 1).
+    /// </summary>
     public UnitNames NamesOf(GameHistory history, Perspective viewer)
     {
         ArgumentNullException.ThrowIfNull(viewer);
         var planner = live?.Planner;
-        return UnitNames.For(history, viewer, Catalogs, planner is null ? null : state => planner.ViewOf(state, viewer, []));
+        return UnitNames.For(history, viewer, Catalogs, planner is null ? null : state => planner.HistoryViewOf(state, viewer));
     }
 
     private string GamesRoot => Path.Combine(units.UnitsRoot, "games");

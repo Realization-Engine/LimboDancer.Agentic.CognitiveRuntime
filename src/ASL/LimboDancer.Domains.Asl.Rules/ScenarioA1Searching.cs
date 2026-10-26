@@ -22,6 +22,15 @@ public static class ScenarioA1Searching
     /// <summary>The purpose of the Search dr's record.</summary>
     public const string Purpose = "search";
 
+    /// <summary>A12.152: what a Search costs each searcher, "one additional MF in its present hex", in half MF as the projector counts them.</summary>
+    public const int HalfMfCost = 2;
+
+    /// <summary>
+    /// A12.152: what a Search makes of each searcher, TI for the rest of the Player Turn; the projector applies it (the boundary review of pass 70, finding 12:
+    /// it wrote the MF and the TI itself).
+    /// </summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> SearcherConditions() => [(UnitCondition.Ti, true)];
+
     /// <summary>A12.152: a Search is made in the MPh.</summary>
     public static string? PhaseBar(string? phase) => phase != "mph" ? "play.search-phase: a stack Searches in its MPh, as it ends its move (A12.152)" : null;
 

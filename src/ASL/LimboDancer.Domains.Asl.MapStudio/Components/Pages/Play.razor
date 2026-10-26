@@ -4748,12 +4748,35 @@ else if (state is not null)
         }
     }
 
-    /// <summary>The units that may withdraw from Melee (plan C05), as a player reads them, with whether each must try.</summary>
-    private IReadOnlyList<CloseCombatWithdrawals.Withdrawer> Withdrawers => [.. WithdrawalUnits.Select(item => new CloseCombatWithdrawals.Withdrawer(item.Unit.Id, UnitLabel(item.Unit),
-        Live.Planner.MustWithdraw(state!, item.Unit), [.. item.Destinations.Select(to => to.ToString())])
+    // The Memory and Performance Guidelines (page projections by state and viewer; the UI review of pass 70, finding 3): the CC panels' withdrawers and
+    // infiltrators, each read once a state, view, CC Location, and set of SW ticked to drop, since each scans the SW of every unit there and its destinations.
+    private (GameState? State, string Viewer, string? As, string Location, string Drops, IReadOnlyList<CloseCombatWithdrawals.Withdrawer> Rows) withdrawersCache;
+    private (GameState? State, string Viewer, string? As, string Location, string Drops, IReadOnlyList<CloseCombatInfiltrationChoices.Infiltrator>? Rows) infiltratorsCache;
+
+    // The SW ticked to drop, as the CC caches above key them.
+    private string DropsKey => ccDrops.Count == 0 ? string.Empty : string.Join('|', ccDrops.Order(StringComparer.Ordinal));
+
+    /// <summary>The units that may withdraw from Melee (plan C05), as a player reads them, with whether each must try; read once a state, view, Location, and drops.</summary>
+    private IReadOnlyList<CloseCombatWithdrawals.Withdrawer> Withdrawers
     {
-        Drops = DropChoices(item.Unit),
-    })];
+        get
+        {
+            var drops = DropsKey;
+            if (ReferenceEquals(withdrawersCache.State, state) && withdrawersCache.Rows is not null && withdrawersCache.Viewer == Viewer.Name && withdrawersCache.As == viewAs
+                && withdrawersCache.Location == ccLocation && withdrawersCache.Drops == drops)
+            {
+                return withdrawersCache.Rows;
+            }
+
+            IReadOnlyList<CloseCombatWithdrawals.Withdrawer> rows = [.. WithdrawalUnits.Select(item => new CloseCombatWithdrawals.Withdrawer(item.Unit.Id, UnitLabel(item.Unit),
+                Live.Planner.MustWithdraw(state!, item.Unit), [.. item.Destinations.Select(to => to.ToString())])
+            {
+                Drops = DropChoices(item.Unit),
+            })];
+            withdrawersCache = (state, Viewer.Name, viewAs, ccLocation, drops, rows);
+            return rows;
+        }
+    }
 
     /// <summary>The sides the view may declare attacks for (plan C06; ruling R23.1), each with its units and the other sides' units.</summary>
     // Pass 70 (the hex UI rule; ruling R70.27): each unit hex first, "[D10]: 2-2-8 crew R1", a Gun's crew among them.
@@ -4766,17 +4789,32 @@ else if (state is not null)
 
     /// <summary>
     /// The units the view may declare an infiltration for (plan N08; A11.22): not berserk or Disrupted, with somewhere to go. Read only while attacks
-    /// may be declared; null when the Location cannot be read.
+    /// may be declared; null when the Location cannot be read. Read once a state, view, Location, and drops.
     /// </summary>
-    private IReadOnlyList<CloseCombatInfiltrationChoices.Infiltrator>? Infiltrators => state is not null && !AmbushDue && BoardLocation.TryParse(ccLocation, out var at)
-        ? [.. CloseCombatUnits.Where(unit => (Viewer.IsAdjudicator || viewAs == unit.Side) && !Prisoner(unit)
-                && GameState.Condition(unit, Conditions.Berserk) != ConditionState.True && GameState.Condition(unit, Conditions.Disrupted) != ConditionState.True)
-            .Select(unit => (unit, Choice: new CloseCombatInfiltrationChoices.Infiltrator(unit.Id, [.. Live.Planner.WithdrawalDestinations(state, unit, at, DropsTicked(unit)).Select(to => to.ToString())])
+    private IReadOnlyList<CloseCombatInfiltrationChoices.Infiltrator>? Infiltrators
+    {
+        get
+        {
+            var drops = DropsKey;
+            if (ReferenceEquals(infiltratorsCache.State, state) && state is not null && infiltratorsCache.Viewer == Viewer.Name && infiltratorsCache.As == viewAs
+                && infiltratorsCache.Location == ccLocation && infiltratorsCache.Drops == drops)
             {
-                Drops = DropChoices(unit),
-            }))
-            .Where(item => item.Choice.Destinations.Count > 0 || MayWithdrawByDropping(item.unit, at)).Select(item => item.Choice)]
-        : null;
+                return infiltratorsCache.Rows;
+            }
+
+            IReadOnlyList<CloseCombatInfiltrationChoices.Infiltrator>? rows = state is not null && !AmbushDue && BoardLocation.TryParse(ccLocation, out var at)
+                ? [.. CloseCombatUnits.Where(unit => (Viewer.IsAdjudicator || viewAs == unit.Side) && !Prisoner(unit)
+                        && GameState.Condition(unit, Conditions.Berserk) != ConditionState.True && GameState.Condition(unit, Conditions.Disrupted) != ConditionState.True)
+                    .Select(unit => (unit, Choice: new CloseCombatInfiltrationChoices.Infiltrator(unit.Id, [.. Live.Planner.WithdrawalDestinations(state, unit, at, DropsTicked(unit)).Select(to => to.ToString())])
+                    {
+                        Drops = DropChoices(unit),
+                    }))
+                    .Where(item => item.Choice.Destinations.Count > 0 || MayWithdrawByDropping(item.unit, at)).Select(item => item.Choice)]
+                : null;
+            infiltratorsCache = (state, Viewer.Name, viewAs, ccLocation, drops, rows);
+            return rows;
+        }
+    }
 
     private void SetStacking(string smc, string? mmc)
     {
@@ -6129,7 +6167,8 @@ else if (state is not null)
     /// <summary>
     /// The buildings the side may Mop Up now (A12.153; rulings R24.2, R70.25): each holding the side's units, not Mopped Up this Player Turn, with the side's
     /// MMC in it free to become TI and the units there that may guard a surrender, read through the view (ruling R23.1). The side's units are read in one pass
-    /// and mapped hex to building by the planner; it decides range, enemies, and the rest.
+    /// and mapped hex to building by the planner; it decides range, enemies, and the rest. Read once a state, view, and side (the UI review of pass 70,
+    /// finding 12: rebuilt at every PFPh render).
     /// </summary>
     private IReadOnlyList<MoppingUpAction.Choice> MopUpChoices(string side)
     {
@@ -6138,6 +6177,21 @@ else if (state is not null)
             return [];
         }
 
+        if (ReferenceEquals(mopUpCache.State, current) && mopUpCache.Viewer == Viewer.Name && mopUpCache.Side == side && mopUpCache.Choices is { } kept)
+        {
+            return kept;
+        }
+
+        var choices = ReadMopUpChoices(current, side);
+        mopUpCache = (current, Viewer.Name, side, choices);
+        return choices;
+    }
+
+    // The Memory and Performance Guidelines (page projections by state and viewer): the buildings the side may Mop Up, read once a state, view, and side.
+    private (GameState? State, string Viewer, string Side, IReadOnlyList<MoppingUpAction.Choice>? Choices) mopUpCache;
+
+    private List<MoppingUpAction.Choice> ReadMopUpChoices(GameState current, string side)
+    {
         string[] barred = [Conditions.Broken, Conditions.Berserk, Conditions.Pinned, Conditions.Captured, Conditions.Unarmed, Conditions.Melee, "asl:ti", Conditions.PrepFire];
         var choices = new List<MoppingUpAction.Choice>();
         var own = SeenOnly(current.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side))

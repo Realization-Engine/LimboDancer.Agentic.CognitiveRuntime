@@ -1786,3 +1786,4 @@ One session under the user's word of 2026-10-25 ("Start Pass 70 ... Run it witho
 | Fix Round A: hidden information | 20:41 | 21:13 | 0:32 | | Agent 20:41 to about 21:10; Studio check |
 | Fix Round B: morale, rout, and Searching | 21:14 | 21:39 | 0:25 | | Agent 21:14 to about 21:37; Studio check |
 | Fix Round C: Close Combat | 21:39 | 22:08 | 0:29 | | Agent 21:39 to about 22:05; Studio check |
+| Fix Round D: the boundary, memory and performance; the memory measured before and after; the proof tool's view line | 22:08 | 22:35 | 0:27 | | Memory before 22:09 to 22:13; agent 22:14 to about 22:30; memory after; tool check |

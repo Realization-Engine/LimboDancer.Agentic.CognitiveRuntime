@@ -103,6 +103,23 @@ public sealed partial class GamePlanner
             ?? (custodians = state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian is not null)
                 .Select(prisoner => prisoner.Custodian!).ToHashSet(StringComparer.Ordinal));
 
+        // The active Guns each unit mans, read once for the state; two circuits may each build it, and either is kept.
+        private Dictionary<string, EquipmentInstance[]>? mannedGuns;
+
+        /// <summary>
+        /// The active Guns each unit mans, by the unit's id (pass 70, the boundary review, finding 7): the rout's Known enemy units and the "?" a removal
+        /// shares read it, where each scanned every weapon of the state per unit. View-independent; read only.
+        /// </summary>
+        public Dictionary<string, EquipmentInstance[]> MannedGuns(GameState state) => Volatile.Read(ref mannedGuns)
+            ?? (mannedGuns = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned })
+                .GroupBy(item => item.Holding!.Holder, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal));
+
+        /// <summary>
+        /// The sides of the road through a Location (A11.8; ruling R70.33), by the Location, read from the board's handle the state keeps (pass 70, the
+        /// boundary review, finding 20): the Close Combat page asked it per advance per render. View-independent; the fill reads the map only.
+        /// </summary>
+        public ConcurrentDictionary<BoardLocation, IReadOnlyList<IReadOnlyList<string>>> RoadSides { get; } = new();
+
         // The state's units as seers (pass 70, ruling R70.16), built at its first use from the index; two circuits may each build it, and either is kept.
         private SightTable? sight;
 
@@ -164,7 +181,7 @@ public sealed partial class GamePlanner
                 return composed;
             }
 
-            var made = planner.ComposedOf(state);
+            var made = planner.ComposedOf(state, this);
             composed = made;
             Volatile.Write(ref composedKept, 1);
             return made;
@@ -328,10 +345,23 @@ public sealed partial class GamePlanner
         public IReadOnlyList<IGameObject> At(BoardLocation location) => at.TryGetValue(location, out var stack) ? stack : [];
 
         /// <summary>
-        /// The occupied Locations and their active objects, as <see cref="At"/> holds them (pass 70, ruling R70.25): built with the index, so Searching and
-        /// Mopping Up read the stacks of a set of hexes in one pass over them, never with a lookup per Location.
+        /// The occupied Locations of a set of hexes, every level, with their active objects as <see cref="At"/> holds them (pass 70, ruling R70.25): one pass
+        /// over the index's stacks, so Searching and Mopping Up never look up each Location. The stacks are read only (the boundary review, finding 18).
         /// </summary>
-        public IEnumerable<KeyValuePair<BoardLocation, IGameObject[]>> Occupied => at;
+        public List<(BoardLocation At, IReadOnlyList<IGameObject> Stack)> OccupiedIn(IEnumerable<BoardLocation> hexes)
+        {
+            var wanted = hexes.Select(hex => (hex.Board, hex.Hex)).ToHashSet();
+            var found = new List<(BoardLocation At, IReadOnlyList<IGameObject> Stack)>();
+            foreach (var (location, stack) in at)
+            {
+                if (wanted.Contains((location.Board, location.Hex)))
+                {
+                    found.Add((location, stack));
+                }
+            }
+
+            return found;
+        }
 
         /// <summary>Where an object is, as <see cref="GameState.Location"/> reads it; null for an id the state does not hold.</summary>
         public MapPosition? Location(string id) => locations.GetValueOrDefault(id);

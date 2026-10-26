@@ -216,8 +216,6 @@ public sealed partial class GamePlanner
             held.TryAdd(gun.Holding!.Holder, gun);
         }
 
-        bool Phasing(UnitInstance unit) => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide;
-        bool Large(string? size) => size is "large" or "very-large";
         ConcealmentCandidateFacts Candidate(UnitInstance unit, int position)
         {
             var gun = held.GetValueOrDefault(unit.Id);
@@ -226,7 +224,7 @@ public sealed partial class GamePlanner
             return new ConcealmentCandidateFacts(unit.Id, unit.Kind, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide, vehicle,
                 vocabulary.IsA(unit.Kind, "asl:personnel"), unit.Kind == UnitKinds.Dummy, unit.Definition is not null, vocabulary.IsA(unit.Kind, "asl:squad"),
                 vocabulary.IsA(unit.Kind, "asl:half-squad"), LocationIndex(unit), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden),
-                // A12.1: a vehicle with neither an inherent crew nor PRC is "broken" for "?" gain.
+                // A12.1: a vehicle with neither an inherent crew nor PRC is "broken" for "?" gain, as Rules reads it into the sight table.
                 Is(unit, Conditions.Broken) || (vehicle && sight.Units[position].EmptyVehicle),
                 Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), Is(unit, Conditions.Captured),
                 () => gun is not null,
@@ -241,11 +239,11 @@ public sealed partial class GamePlanner
                 HoldsEmplacedGun = emplaced,
                 VehicleConcealmentTerrain = vehicle ? () => VehicleConcealmentTerrain(state, index.Location(unit.Id)!.Location) : null,
                 Aboard = index.VehicleOf(unit.Id) is not null,
-                Large = vehicle ? Large(FireReference.Value.Armor.GetValueOrDefault(unit.Definition?.Definition ?? string.Empty)?.TargetSize)
-                    : emplaced && Large(OrdnanceReference.Value.Guns.GetValueOrDefault(gun!.Definition?.Definition ?? string.Empty)?.TargetSize),
-                // A19.36, A15.24, A15.21: Lax and Stealthy, read only for a unit of the phasing side.
-                Lax = Phasing(unit) && !vehicle && Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True,
-                Stealthy = unit.Kind == "asl:hero" || (unit.Kind == "asl:leader" && Is(unit, Conditions.Heroic)),
+                // A1.6, A19.36, A15.21: the sizes, Inexperience, and heroism Rules reads for the US#, Lax, and Stealthy (the boundary review, finding 4).
+                VehicleSize = vehicle ? FireReference.Value.Armor.GetValueOrDefault(unit.Definition?.Definition ?? string.Empty)?.TargetSize : null,
+                GunSize = gun is null ? null : OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty)?.TargetSize,
+                Inexperienced = () => Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True,
+                Heroic = Is(unit, Conditions.Heroic),
                 Shared = vehicle ? () => [.. index.Aboard(unit.Id).Select(rider => (rider.Id, GoodOrder(rider)))]
                     : emplaced ? () => [(gun!.Id, true)]
                     : null,

@@ -344,10 +344,11 @@ public sealed partial class GamePlanner
 
         var normal = NormalRange(state, unit);
         var interdiction = InterdictionRange(state, unit, at);
-        var guns = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned } manned
-            && manned.Holder == unit.Id).Select(gun => (Gun: gun, Definition: OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty)))
-            .Select(item => (Works: item.Definition is not null && !Is(item.Gun, Conditions.Malfunctioned) && !Is(item.Gun, Conditions.Disabled), item.Definition?.RangeMaximum,
-                Facing: (int?)(item.Gun.Position as MapPosition)?.Facing)).ToArray();
+        // The Guns it mans, from the state's Guns by crew (the boundary review, finding 7: each Known enemy unit scanned every weapon); Rules says which work.
+        var guns = (MemoOf(state).MannedGuns(state).GetValueOrDefault(unit.Id) ?? [])
+            .Select(gun => (Gun: gun, Definition: OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty)))
+            .Select(item => (Works: ScenarioA1RoutCalculator.GunWorks(item.Definition is not null, Is(item.Gun, Conditions.Malfunctioned), Is(item.Gun, Conditions.Disabled)),
+                item.Definition?.RangeMaximum, Facing: (int?)(item.Gun.Position as MapPosition)?.Facing)).ToArray();
         if (guns.Length == 0)
         {
             return (normal, interdiction, null);
@@ -362,15 +363,12 @@ public sealed partial class GamePlanner
     {
         var definition = VehicleDefinition(vehicle);
         var gun = vehicle.Definition is { } named ? OrdnanceReference.Value.Guns.GetValueOrDefault(named.Definition) : null;
-        var mainOut = Is(vehicle, Conditions.Malfunctioned) || Is(vehicle, Conditions.Disabled);
-        var main = definition?.MainArmament;
+        var (bmg, cmg, aamg, mainMg, mainGun) = ScenarioA1RoutCalculator.VehicleWeapons(definition?.BowMg is not null, Is(vehicle, Conditions.BmgMalfunctioned),
+            Is(vehicle, Conditions.BmgDisabled), definition?.CoaxialMg is not null, Is(vehicle, Conditions.CmgMalfunctioned), Is(vehicle, Conditions.CmgDisabled),
+            definition?.AntiAircraftMg is not null, definition?.MainArmament, gun is not null, Is(vehicle, Conditions.Malfunctioned), Is(vehicle, Conditions.Disabled));
         return new RoutVehicleFacts(Is(vehicle, Conditions.Abandoned), Is(vehicle, Conditions.Motion), Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Shocked),
             definition?.Unarmored == true, definition?.OpenTopped == true, LiveFire.CrewExposed(vehicle), (int?)(vehicle.Position as MapPosition)?.Facing,
-            (int?)LiveOrdnance.TurretFacing(state, vehicle),
-            definition?.BowMg is not null && !Is(vehicle, Conditions.BmgMalfunctioned) && !Is(vehicle, Conditions.BmgDisabled),
-            definition?.CoaxialMg is not null && !Is(vehicle, Conditions.CmgMalfunctioned) && !Is(vehicle, Conditions.CmgDisabled),
-            definition?.AntiAircraftMg is not null && !(main == "aamg" && mainOut), main == "mg" && !mainOut,
-            gun is not null && main is not ("aamg" or "mg") && !mainOut, gun?.RangeMaximum, definition?.MaType);
+            (int?)LiveOrdnance.TurretFacing(state, vehicle), bmg, cmg, aamg, mainMg, mainGun, gun?.RangeMaximum, definition?.MaType);
     }
 
     /// <summary>A unit's own printed range as the rout counts it (a leader's is none), and the ranges of the functioning SW it possesses (A10.532).</summary>

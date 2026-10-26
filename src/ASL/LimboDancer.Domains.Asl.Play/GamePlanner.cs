@@ -2149,14 +2149,17 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     /// The composed read of a placed map at the versions in play, or null when the map is not placed or a board cannot be read. Built once a state,
     /// from the state's kept handles, and kept with the state (the A3 plan, W3): it was built anew on every map read.
     /// </summary>
-    private ComposedMapRead? Composed(GameState state) => state.Map.IsPlaced ? MemoOf(state).Composed(this, state) : null;
+    private ComposedMapRead? Composed(GameState state) => Composed(state, MemoOf(state));
 
-    private ComposedMapRead? ComposedOf(GameState state)
+    /// <summary>The composed read of a placed map, kept in <paramref name="memo"/> (the state's, or a history view's transient one).</summary>
+    private ComposedMapRead? Composed(GameState state, PlayStepMemo memo) => state.Map.IsPlaced ? memo.Composed(this, state) : null;
+
+    private ComposedMapRead? ComposedOf(GameState state, PlayStepMemo memo)
     {
         var placed = new List<(BoardPlacement, BoardHandle)>();
         foreach (var placement in state.Map.Placements())
         {
-            if (Handle(state, placement.Board) is not { } handle)
+            if (Handle(state, memo, placement.Board) is not { } handle)
             {
                 return null;
             }
@@ -2172,8 +2175,11 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     /// kept in its map context (the A3 plan, W3). The catalog returns the same handle object for a loaded board, so the LOS caches keyed by a handle
     /// keep hitting.
     /// </summary>
-    private BoardHandle? Handle(GameState state, BoardRef board) =>
-        MemoOf(state).Handles.GetOrAdd(board, static (key, read) => read.State.Map.Board(key) is { } placed ? read.Catalog.TryGetBoard(key, placed.Version).Board : null,
+    private BoardHandle? Handle(GameState state, BoardRef board) => Handle(state, MemoOf(state), board);
+
+    /// <summary>A board's handle, kept in <paramref name="memo"/> (the state's, or a history view's transient one).</summary>
+    private BoardHandle? Handle(GameState state, PlayStepMemo memo, BoardRef board) =>
+        memo.Handles.GetOrAdd(board, static (key, read) => read.State.Map.Board(key) is { } placed ? read.Catalog.TryGetBoard(key, placed.Version).Board : null,
             (State: state, Catalog: boards));
 
     private List<BoardHandle>? BoardsOf(IReadOnlyList<GameEvent> events)

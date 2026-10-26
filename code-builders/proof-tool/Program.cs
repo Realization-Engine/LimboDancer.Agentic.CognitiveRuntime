@@ -83,6 +83,8 @@ var cards = new ScenarioCardLibrary(Path.Combine(boardsRoot, "cards"));
 var planner = new GamePlanner(store, new StudioBoardCatalog(boards), units.Vocabulary, catalogs, cardLibrary: cards);
 // Pass 70 (ruling R70.19): the planner's view entry, read by reflection since the tool compiles against the baseline too, which lacks it.
 var viewOf = typeof(GamePlanner).GetMethod("ViewOf", [typeof(GameHistory), typeof(long), typeof(Perspective)])?.CreateDelegate<Func<GameHistory, long, Perspective, GameView>>(planner);
+// Pass 70's boundary review (finding 19): say on the log which view the sweep builds, so a renamed entry cannot fall back unseen.
+Console.Error.WriteLine(viewOf is not null ? "sweep view: GamePlanner.ViewOf" : "sweep view: GameView.Of (no planner entry in this build)");
 var vocabulary = units.Vocabulary;
 var lines = new List<string>();
 // The user (2026-10-05): the sweep runs over one game of each implemented scenario card, named on the command line.

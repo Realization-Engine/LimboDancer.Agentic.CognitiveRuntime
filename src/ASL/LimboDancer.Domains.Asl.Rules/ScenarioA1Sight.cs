@@ -90,6 +90,41 @@ public static class ScenarioA1Sight
     }
 
     /// <summary>
+    /// A12.1 (p. 76): an empty vehicle, one "with neither an inherent crew nor PRC", is "broken" for "?" gain and loss: a vehicle Abandoned (its inherent crew
+    /// gone, D5.4) with no crew inside (D5.42) and no Passenger or Rider (the boundary review of pass 70: the planner defined it).
+    /// </summary>
+    public static bool EmptyVehicle(bool vehicle, bool abandoned, bool crewInside, int prc) => vehicle && abandoned && !crewInside && prc == 0;
+
+    /// <summary>
+    /// A12.14 (p. 78; ruling R70.21): the concealed Loss seers of the viewing side that would forfeit their "?" for a moment to force a loss: those at the
+    /// nearest range within 16 hexes with a clear LOS to the Location (a seer in it is at range 0), by their positions in <paramref name="units"/>, in order;
+    /// none when no such seer sees it (the boundary review of pass 70: the planner chose them).
+    /// </summary>
+    public static IReadOnlyList<int> ConcealedLossSeers(IReadOnlyList<SightSeerFacts> units, string watchedSide, int at, ISightLosReader los)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        ArgumentNullException.ThrowIfNull(los);
+        var found = new List<(int Range, int Position)>();
+        for (var position = 0; position < units.Count; position++)
+        {
+            var facts = units[position];
+            if (facts.Side == watchedSide || !facts.Concealed || !Sees(facts, SightPurpose.Loss))
+            {
+                continue;
+            }
+
+            var range = facts.Location == at ? 0 : los.Los(facts.Location!.Value, at) is { } read && InLos(read, SightLosReading.Clear) ? read.Range : (int?)null;
+            if (range is { } seen && SeenWithin(seen, 16))
+            {
+                found.Add((seen, position));
+            }
+        }
+
+        var nearest = found.Count == 0 ? 0 : found.Min(item => item.Range);
+        return [.. found.Where(item => item.Range == nearest).Select(item => item.Position)];
+    }
+
+    /// <summary>
     /// A12.14 (p. 78; pass 70, ruling R70.21): the viewing side's option not to force a "?" loss, open when a Loss seer within 16 has a LOS to the unit
     /// but none of them is unconcealed ("If the only Good Order enemy ground unit in LOS is itself concealed ... if it opts to force"). Never for a loss
     /// that needs no seer (a forced back, A12.15; a break or a Reduction, which the rule excepts). The unconcealed seers are read only when a seer is near.

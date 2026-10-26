@@ -30,9 +30,36 @@ public static class ScenarioA1ConcealmentChoices
 
     /// <summary>
     /// What a voluntary removal does to one unit (A12.14, A12.11, A12.31; ruling R70.20): a Dummy is removed, being nothing beneath its "?"; a concealed
-    /// unit loses its "?"; a hidden unit is placed and revealed in full ("A revealed hidden unit is totally discovered", A12.31).
+    /// unit loses its "?"; a hidden unit is placed and revealed in full ("A revealed hidden unit is totally discovered", A12.31). The same for a loss the
+    /// viewing side forces at its answer (A12.14; ruling R70.21).
     /// </summary>
     public static bool RemovalEliminates(bool dummy) => dummy;
+
+    /// <summary>
+    /// A12.2: "If a Gun, vehicle ... loses its hidden/concealed status (regardless of range) so does its manning Infantry or PRC, and vice versa." Every
+    /// object that shares a "?" with <paramref name="id"/>: itself first, then each reached through the links the caller reads (a Gun and its manning
+    /// Infantry, a vehicle and its PRC and the crew inside, each way), once each, in the order reached (the boundary review of pass 70, finding 10: the
+    /// planner shared it one way only).
+    /// </summary>
+    public static IReadOnlyList<string> SharesConcealment(string id, Func<string, IEnumerable<string>> linked)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        ArgumentNullException.ThrowIfNull(linked);
+        var found = new List<string> { id };
+        var seen = new HashSet<string>(StringComparer.Ordinal) { id };
+        for (var next = 0; next < found.Count; next++)
+        {
+            foreach (var other in linked(found[next]))
+            {
+                if (seen.Add(other))
+                {
+                    found.Add(other);
+                }
+            }
+        }
+
+        return found;
+    }
 
     /// <summary>A voluntary removal of "?", in words: the units by their names, each with its hex.</summary>
     public static string RemovalText(IReadOnlyList<string> named, int dummies)

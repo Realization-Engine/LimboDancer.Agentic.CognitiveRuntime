@@ -13,10 +13,14 @@ namespace LimboDancer.Domains.Asl.Play;
 public sealed partial class GamePlanner
 {
     /// <summary>
-    /// The sides of the road through a ground-level Location, each as the names of the building hexes ADJACENT to it (A11.8): read from the board's hex facts,
-    /// a few hexsides per call, so no cache; empty off the map, above ground level, or where no road crosses the hex.
+    /// The sides of the road through a ground-level Location, each as the names of the building hexes ADJACENT to it (A11.8): read from the board's hex facts
+    /// once a state and Location (the boundary review, finding 20: the page asked it per advance per render); empty off the map, above ground level, or where
+    /// no road crosses the hex.
     /// </summary>
-    private IReadOnlyList<IReadOnlyList<string>> RoadSides(GameState state, BoardLocation location)
+    private IReadOnlyList<IReadOnlyList<string>> RoadSides(GameState state, BoardLocation location) =>
+        MemoOf(state).RoadSides.GetOrAdd(location, static (key, read) => read.Planner.RoadSidesOnce(read.State, key), (Planner: this, State: state));
+
+    private IReadOnlyList<IReadOnlyList<string>> RoadSidesOnce(GameState state, BoardLocation location)
     {
         if (location.Level != 0 || Handle(state, location.Board) is not { } handle || !handle.Geometry.TryGetIndex(location.Hex, out var index) || !handle.Facts.Contains(index))
         {

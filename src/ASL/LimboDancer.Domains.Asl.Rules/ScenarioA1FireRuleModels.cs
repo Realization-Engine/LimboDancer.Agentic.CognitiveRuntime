@@ -418,23 +418,41 @@ public sealed record ConcealmentCandidateFacts(
         get; init;
     }
 
-    /// <summary>Whether it, or the Gun it holds, is a large or very large 5/8" counter, US# 5 (A1.6).</summary>
-    public bool Large
+    /// <summary>A vehicle's target size as its catalog entry prints it ("large", "very-large", ...); null for none or for a unit not a vehicle.</summary>
+    public string? VehicleSize
     {
         get; init;
     }
 
-    /// <summary>Whether it is Lax: an Inexperienced unit (A19.36), +1 to its Concealment dr (A12.122; ruling R70.22).</summary>
-    public bool Lax
+    /// <summary>The target size of the Gun it holds, as the catalog prints it; null for none.</summary>
+    public string? GunSize
     {
         get; init;
     }
+
+    /// <summary>Whether it is Inexperienced (A19.2, A19.36), read when asked; null for not.</summary>
+    public Func<bool>? Inexperienced
+    {
+        get; init;
+    }
+
+    /// <summary>Whether it is heroic (A15.21).</summary>
+    public bool Heroic
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether it, or the Emplaced Gun it holds, is a large or very large 5/8" counter, US# 5 (A1.6): a vehicle by its own size, a crew by its Gun's (the
+    /// boundary review of pass 70, finding 4: the planner decided it).
+    /// </summary>
+    public bool Large => (Vehicle ? VehicleSize : HoldsEmplacedGun ? GunSize : null) is "large" or "very-large";
+
+    /// <summary>Whether it is Lax: an Inexperienced unit (A19.36), not a vehicle, +1 to its Concealment dr (A12.122; ruling R70.22).</summary>
+    public bool Lax => !Vehicle && Inexperienced?.Invoke() == true;
 
     /// <summary>Whether it is Stealthy: a hero or a heroic leader (A15.24, A15.21), -1 to its Concealment dr (A12.122; ruling R70.22).</summary>
-    public bool Stealthy
-    {
-        get; init;
-    }
+    public bool Stealthy => Kind == "asl:hero" || (Kind == "asl:leader" && Heroic);
 
     /// <summary>
     /// What shares its "?" (A12.2: "If a Gun, vehicle ... loses its hidden/concealed status ... so does its manning Infantry or PRC, and vice versa"; ruling

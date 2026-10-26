@@ -305,6 +305,22 @@ public static class ScenarioA1RoutCalculator
     }
 
     /// <summary>
+    /// Which of a vehicle's weapons work for the rout (A10.532, D1.8; ruling R70.14; the boundary review of pass 70, finding 7: the planner decided
+    /// them): a BMG, CMG, or AAMG it carries, neither malfunctioned nor disabled, and its MA, a MG or a Gun, unless malfunctioned or disabled. An AAMG that is
+    /// the MA is out with it.
+    /// </summary>
+    public static (bool Bmg, bool Cmg, bool Aamg, bool MainMg, bool MainGun) VehicleWeapons(bool hasBmg, bool bmgMalfunctioned, bool bmgDisabled, bool hasCmg,
+        bool cmgMalfunctioned, bool cmgDisabled, bool hasAamg, string? mainArmament, bool hasMainGun, bool mainMalfunctioned, bool mainDisabled)
+    {
+        var mainOut = mainMalfunctioned || mainDisabled;
+        return (hasBmg && !bmgMalfunctioned && !bmgDisabled, hasCmg && !cmgMalfunctioned && !cmgDisabled, hasAamg && !(mainArmament == "aamg" && mainOut),
+            mainArmament == "mg" && !mainOut, hasMainGun && mainArmament is not ("aamg" or "mg") && !mainOut);
+    }
+
+    /// <summary>Whether a manned Gun works for the rout (A10.532; ruling R70.14): one the catalog knows, neither malfunctioned nor disabled.</summary>
+    public static bool GunWorks(bool known, bool malfunctioned, bool disabled) => known && !malfunctioned && !disabled;
+
+    /// <summary>
     /// A Gun's Normal Range for the rout (A10.5, A10.532; pass 70, ruling R70.14): "No weapon is effective for Interdiction purposes beyond its Normal Range or
     /// 16 hexes (whichever is less)"; ordnance prints no Normal Range, so its printed maximum range or 16. A Gun that does not work has none.
     /// </summary>

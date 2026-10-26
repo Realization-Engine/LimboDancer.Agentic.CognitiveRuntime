@@ -99,7 +99,13 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>The LOS result between two Locations, or null when the map has no LOS data to read.</summary>
-    private LosResult? Los(GameState state, BoardLocation from, BoardLocation to)
+    private LosResult? Los(GameState state, BoardLocation from, BoardLocation to) => Los(state, MemoOf(state), from, to);
+
+    /// <summary>
+    /// The LOS result between two Locations, its map context (the board handles, the composed read) read through <paramref name="memo"/>: the state's own
+    /// memo, or a transient one a history's view keeps for no longer than its read (the boundary review of pass 70, finding 1).
+    /// </summary>
+    private LosResult? Los(GameState state, PlayStepMemo memo, BoardLocation from, BoardLocation to)
     {
         if (fireLos is not null)
         {
@@ -109,11 +115,11 @@ public sealed partial class GamePlanner
         LosMap? map;
         if (state.Map.IsPlaced)
         {
-            map = Composed(state) is { } composed ? LosMap.ForPlacedMap(composed).Map : null;
+            map = Composed(state, memo) is { } composed ? LosMap.ForPlacedMap(composed).Map : null;
         }
         else
         {
-            map = state.Map.Boards is [{ } placed] && Handle(state, placed.Board) is { } handle
+            map = state.Map.Boards is [{ } placed] && Handle(state, memo, placed.Board) is { } handle
                 ? BoardLosMaps.GetValue(handle, board => new LosMapHolder(LosMap.ForBoard(board).Map)).Map : null;
         }
 

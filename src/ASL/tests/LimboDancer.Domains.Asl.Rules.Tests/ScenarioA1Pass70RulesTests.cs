@@ -954,7 +954,17 @@ public sealed class ScenarioA1Pass70RulesTests
             }));
         Assert.Equal(5, Gains(10, false, truck with
         {
-            Large = true
+            VehicleSize = "large"
+        }).Single().Drm);
+
+        // The boundary review (finding 4): Rules reads the sizes. A crew's Emplaced Gun's size counts, a vehicle's own size only for a vehicle.
+        Assert.Equal(5, Gains(10, false, crew with
+        {
+            GunSize = "very-large"
+        }).Single().Drm);
+        Assert.Equal(3, Gains(10, false, Candidate("de-s") with
+        {
+            VehicleSize = "large"
         }).Single().Drm);
     }
 
@@ -962,15 +972,15 @@ public sealed class ScenarioA1Pass70RulesTests
     public void TheConcealmentDrTakesLaxAndStealthy()
     {
         // A12.122 (p. 77): +1 Lax, -1 Stealthy, with the US# (the example's Hero: "6 [dr] +1 [US#] -1 [Leadership] -1 [Stealthy] = 5").
+        // The boundary review (finding 4): Rules reads Lax from Inexperience and Stealthy from the kind and the heroic state.
         Assert.Equal(4, Gains(10, false, Candidate("de-s") with
         {
-            Lax = true
+            Inexperienced = () => true
         }).Single().Drm);
-        Assert.Equal(0, Gains(10, false, Candidate("de-h", "asl:hero") with
-        {
-            Stealthy = true
-        }).Single().Drm);
+        Assert.Equal(0, Gains(10, false, Candidate("de-h", "asl:hero")).Single().Drm);
         Assert.Equal(3, Gains(10, false, Candidate("de-s")).Single().Drm);
+        Assert.True((Candidate("de-l", "asl:leader") with { Heroic = true }).Stealthy);
+        Assert.False((Candidate("de-s") with { Heroic = true }).Stealthy);
     }
 
     private static readonly string?[] OrchardRoad = ["Orchard", "Dirt Road", null, "Orchard", "Orchard", "Dirt Road"];
@@ -1878,5 +1888,48 @@ public sealed class ScenarioA1Pass70RulesTests
         var search = ScenarioA1Searching.ProposalText(OneMover, "bd01:M5:0", 0, NoPlace, 6, NamedTwo);
         Assert.Contains("then C, A in that order, then the others in map order (ruling R70.42)", search, StringComparison.Ordinal);
         Assert.EndsWith("Casualty dr, which is always made (A12.154; rulings R70.24, R70.45)", search, StringComparison.Ordinal);
+    }
+
+    private static readonly int[] NearestConcealedSeer = [0];
+    private static readonly int[] BothNearestConcealedSeers = [0, 5];
+    private static readonly string[] RiderAndAllItsVehicleHolds = ["rider", "truck", "p2", "crew-in"];
+    private static readonly string[] RiderLinks = ["truck"];
+    private static readonly string[] TruckLinks = ["rider", "p2", "crew-in"];
+    private static readonly string[] CrewInLinks = ["truck"];
+
+    [Fact]
+    public void TheReadsTheBoundaryReviewMovedIntoRulesDecideAsThePlannerDid()
+    {
+        // A12.1 (p. 76): a vehicle "with neither an inherent crew nor PRC" is empty: Abandoned, no crew inside, no Passenger or Rider (finding 3).
+        Assert.True(ScenarioA1Sight.EmptyVehicle(true, true, false, 0));
+        Assert.False(ScenarioA1Sight.EmptyVehicle(true, true, true, 0));
+        Assert.False(ScenarioA1Sight.EmptyVehicle(true, true, false, 1));
+        Assert.False(ScenarioA1Sight.EmptyVehicle(true, false, false, 0));
+        Assert.False(ScenarioA1Sight.EmptyVehicle(false, true, false, 0));
+
+        // A12.14 (ruling R70.21; finding 9): the viewing side's concealed Loss seers at the nearest range within 16 hexes with a clear LOS; not the watched
+        // side's, not one under no "?", not one beyond 16.
+        SightSeerFacts[] seers = [Seer(at: 3) with { Concealed = true }, Seer(at: 5) with { Concealed = true }, Seer(at: 3), Seer(at: 3, side: "russian") with { Concealed = true },
+            Seer(at: 20) with { Concealed = true }, Seer(at: 3) with { Concealed = true }];
+        Assert.Equal(BothNearestConcealedSeers, ScenarioA1Sight.ConcealedLossSeers(seers, "russian", 0, new RangeLos()));
+        Assert.Equal(NearestConcealedSeer, ScenarioA1Sight.ConcealedLossSeers(seers[..5], "russian", 0, new RangeLos()));
+        Assert.Empty(ScenarioA1Sight.ConcealedLossSeers(seers[1..2], "russian", 0, new RangeLos(blocked: Five)));
+
+        // A12.2 (finding 10): "... so does its manning Infantry or PRC, and vice versa": a Rider's "?" goes with its truck's, and so the truck's other PRC and
+        // the crew inside, each once.
+        var links = new Dictionary<string, string[]> { ["rider"] = RiderLinks, ["truck"] = TruckLinks, ["crew-in"] = CrewInLinks };
+        Assert.Equal(RiderAndAllItsVehicleHolds, ScenarioA1ConcealmentChoices.SharesConcealment("rider", id => links.GetValueOrDefault(id) ?? []));
+
+        // A10.532 (ruling R70.14; finding 7): which of a vehicle's weapons work, and whether a manned Gun does.
+        Assert.Equal((true, false, false, false, false), ScenarioA1RoutCalculator.VehicleWeapons(true, false, false, true, true, false, true, "aamg", false, true, false));
+        Assert.Equal((false, false, false, false, true), ScenarioA1RoutCalculator.VehicleWeapons(false, false, false, false, false, false, false, null, true, false, false));
+        Assert.Equal((false, false, true, true, false), ScenarioA1RoutCalculator.VehicleWeapons(false, false, false, false, false, false, true, "mg", false, false, false));
+        Assert.True(ScenarioA1RoutCalculator.GunWorks(true, false, false));
+        Assert.False(ScenarioA1RoutCalculator.GunWorks(false, false, false));
+        Assert.False(ScenarioA1RoutCalculator.GunWorks(true, false, true));
+
+        // A12.152 (finding 12): a Search costs one more MF and makes each searcher TI.
+        Assert.Equal(2, ScenarioA1Searching.HalfMfCost);
+        Assert.Equal((UnitCondition.Ti, true), Assert.Single(ScenarioA1Searching.SearcherConditions()));
     }
 }
