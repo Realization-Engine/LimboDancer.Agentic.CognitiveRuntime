@@ -30,12 +30,15 @@ public static class UnitGrouping
     /// <summary>One hex's units, or, with no hex, the items that stand on none, after the hexes.</summary>
     public sealed record Group<T>(string? Hex, IReadOnlyList<T> Items);
 
+    /// <summary>
+    /// The items by hex. A lone unit with a place keeps its hex's group too (pass 70's fixes), so a list of one still says where it is.
+    /// </summary>
     public static IReadOnlyList<Group<T>> Groups<T>(IEnumerable<T> items, Func<T, string> id, Func<string, UnitPlace?>? place)
     {
         ArgumentNullException.ThrowIfNull(items);
         ArgumentNullException.ThrowIfNull(id);
         var list = items as IReadOnlyList<T> ?? [.. items];
-        if (place is null || list.Count < 2)
+        if (place is null || list.Count == 0)
         {
             return [new Group<T>(null, list)];
         }

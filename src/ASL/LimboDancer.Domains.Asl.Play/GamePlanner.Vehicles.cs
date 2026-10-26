@@ -452,7 +452,7 @@ public sealed partial class GamePlanner
                         }
 
                         return events;
-                    }, true, at.Location, step, delayText + BailOutPreview(delayBailing));
+                    }, true, at.Location, step, delayText + BailOutPreview(state, delayBailing));
                 }
 
                 return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
@@ -615,7 +615,7 @@ public sealed partial class GamePlanner
 
         // D6.21, B13.43 (pass 65, ruling R65.17): terrain Riders may not ride through, or a turreted AFV's TCA change, makes them Bail Out.
         var bailing = kind is VehicleStepped.Exit ? null : StepBailOut(state, vehicle, kind, at.Location, entry, turret);
-        summary += BailOutPreview(bailing);
+        summary += BailOutPreview(state, bailing);
 
         // D5.341 (ruling R5.17): a leaving AFV keeps to a shortest route in MP to its Friendly Board Edge.
         if (leaving && !ScenarioA1RecallCalculator.StopsToUnload(kind, Riding(state, id).Count > 0))
@@ -733,6 +733,8 @@ public sealed partial class GamePlanner
                 events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, lost));
             }
 
+            // A12.34 (pass 70, ruling R70.22): the vehicle's step may bring a hidden Emplaced Gun out of Concealment Terrain into its LOS.
+            AddEmplacedHipLoss(scope, attemptId, expected, existing, events);
             return events;
         }
 
@@ -965,18 +967,28 @@ public sealed partial class GamePlanner
         var (spent, allotment) = HalfMp(vehicle);
         var left = allotment - spent;
         var inMotion = movement.Started && !movement.Stopped && !Halted(vehicle);
+
+        // A12.42 (pass 70, ruling R70.23): a vehicle in Bypass ending its MPh reveals the concealed enemy units of its Location, unless it is "broken".
+        var reveal = VehicleBypassReveal(state, vehicle);
+        var revealText = reveal.Any && state.Location(vehicle.Id) is { } bypassed ? ScenarioA1BypassDetection.VehicleRevealText(vehicle.Id, bypassed.Location.ToString()) : string.Empty;
         if (left > 0 && !Halted(vehicle) && state.Location(vehicle.Id) is { } at)
         {
-            List<GameEvent> Build(Func<RollRequest, RollResult>? draw) =>
-                [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(vehicle.Id, VehicleStepped.Remain, at.Location, null, left, movement.Step + 1), null, null)];
+            List<GameEvent> Build(Func<RollRequest, RollResult>? draw)
+            {
+                List<GameEvent> built = [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(vehicle.Id, VehicleStepped.Remain, at.Location, null, left, movement.Step + 1), null, null)];
+                AddBypassReveal(scope, attemptId, expected, built, reveal);
+                return built;
+            }
+
             return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, Build, false, at.Location, movement.Step + 1,
                 $"play.end-move: {vehicle.Id} spends its {Mp(left)} MP left in {at.Location} (D2.1); the DEFENDER may fire, and its move ends when he passes"
-                    + (inMotion ? ", in Motion (D2.4)" : string.Empty));
+                    + (inMotion ? ", in Motion (D2.4)" : string.Empty) + revealText);
         }
 
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-            [Event(scope, attemptId, 1, expected, "movement-ended", new MovementEnded([vehicle.Id]), null, null)],
-            [$"play.end-move: {vehicle.Id} ends its move" + (inMotion ? " in Motion (D2.4)" : string.Empty)]);
+        List<GameEvent> ended = [Event(scope, attemptId, 1, expected, "movement-ended", new MovementEnded([vehicle.Id]), null, null)];
+        AddBypassReveal(scope, attemptId, expected, ended, reveal);
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, ended,
+            [$"play.end-move: {vehicle.Id} ends its move" + (inMotion ? " in Motion (D2.4)" : string.Empty) + revealText]);
     }
 
     /// <summary>

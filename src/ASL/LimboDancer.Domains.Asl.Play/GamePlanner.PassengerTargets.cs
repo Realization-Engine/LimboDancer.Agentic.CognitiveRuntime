@@ -17,39 +17,46 @@ public sealed partial class GamePlanner
     /// </summary>
     internal IReadOnlyList<FirePrc>? PrcOf(GameState state, UnitInstance vehicle) =>
         Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden) ? null
-            : [.. Riding(state, vehicle.Id).Select(unit => new FirePrc(unit.Id, unit.Definition?.Definition,
-                unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? FirePrc.Rider : FirePrc.Passenger, Is(unit, Conditions.Broken) ? true : null,
-                Is(unit, Conditions.Pinned) ? true : null)
+            : [.. Riding(state, vehicle.Id).Select(unit => (Unit: unit, Aboard: AboardFacts(state, unit))).Select(item => new FirePrc(item.Unit.Id, item.Unit.Definition?.Definition,
+                item.Unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? FirePrc.Rider : FirePrc.Passenger, Is(item.Unit, Conditions.Broken) ? true : null,
+                Is(item.Unit, Conditions.Pinned) ? true : null)
             {
-                Wounded = Is(unit, Conditions.Wounded) ? true : null,
-                Fanatic = Is(unit, Conditions.Fanatic) ? true : null,
-                Elr = unit.Group is not null ? state.ElrOf(unit) : state.Side(unit.Side)?.Elr,
+                Wounded = Is(item.Unit, Conditions.Wounded) ? true : null,
+                Fanatic = Is(item.Unit, Conditions.Fanatic) ? true : null,
+                Elr = item.Unit.Group is not null ? state.ElrOf(item.Unit) : state.Side(item.Unit.Side)?.Elr,
+
+                // Pass 70 (ruling R70.8): whether the vehicle moved this phase, and a Passenger CE in an unmoved armored halftrack, for D6.651's reach.
+                VehicleMoving = item.Aboard?.VehicleMoving ?? VehicleMoved(state, vehicle, false),
+                CeInUnmovedHalftrack = item.Aboard?.CeInUnmovedHalftrack,
             })];
 
     /// <summary>
     /// An attack with the PRC of each vehicle in its target Location, and of the AFV it names (ruling R65.5). The units boarding with the expenditure the
-    /// attack answers are attacked on foot, not as PRC (D5.43; ruling R65.14).
+    /// attack answers are attacked on foot, not as PRC (D5.43; ruling R65.14). Pass 70 (ruling R70.7): each Unarmed target says so.
     /// </summary>
     internal FireAttack WithPrc(GameState state, FireAttack attack) => attack with
     {
         Vehicles = attack.Vehicles is null ? null
             : [.. attack.Vehicles.Select(vehicle => state.Unit(vehicle.VehicleId ?? string.Empty) is { } unit
-                ? WithCrewState(vehicle with { Prc = OnFoot(PrcOf(state, unit), attack.Embarking?.Units) }, unit)
+                ? WithCrewState(state, vehicle with { Prc = OnFoot(PrcOf(state, unit), attack.Embarking?.Units) }, unit)
                 : vehicle)],
         TargetVehicle = attack.TargetVehicle is { VehicleId: { } named } aimed && state.Unit(named) is { } target ? aimed with
         {
             Prc = PrcOf(state, target)
         } : attack.TargetVehicle,
+        Targets = attack.Targets is null ? null
+            : [.. attack.Targets.Select(target => target.UnitId is { } id && MemoOf(state).Objects(state).Unit(id) is { } unit && Is(unit, Conditions.Unarmed) ? target with { Unarmed = true } : target)],
     };
 
     /// <summary>
     /// A vehicle's Shock and Abandonment, written with its PRC for its crew's TC and Crew Survival (D5.5, D5.6; pass 65, ruling R65.21): nothing when the
-    /// vehicle carries no PRC fact, so that its attack reads as before the pass.
+    /// vehicle carries no PRC fact, so that its attack reads as before the pass. Pass 70 (ruling R70.10): so is a crew inside already broken (D5.311).
     /// </summary>
-    private static FireVehicle WithCrewState(FireVehicle vehicle, UnitInstance unit) => vehicle.Prc is null ? vehicle : vehicle with
+    private FireVehicle WithCrewState(GameState state, FireVehicle vehicle, UnitInstance unit) => vehicle.Prc is null ? vehicle : vehicle with
     {
         Shocked = Is(unit, Conditions.Shocked) || Is(unit, Conditions.UnconfirmedKill) ? true : null,
         Abandoned = Is(unit, Conditions.Abandoned) ? true : null,
+        CrewBroken = MemoOf(state).Objects(state).CrewOf(unit.Id) is { } crew && Is(crew, Conditions.Broken) ? true : null,
     };
 
     private static IReadOnlyList<FirePrc>? OnFoot(IReadOnlyList<FirePrc>? prc, IReadOnlyList<string>? loaders) =>

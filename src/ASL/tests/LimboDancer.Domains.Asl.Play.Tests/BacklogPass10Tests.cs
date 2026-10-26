@@ -577,8 +577,10 @@ public sealed class BacklogPass10Tests : IDisposable
         Assert.Equal("rtph", Current.Phase);
         var (targets, canRout, routes) = Planner().RoutAdvice(Current, Current.Unit("g1")!);
         Assert.True(canRout);
-        // The ground floor, the floor above, and D4's level 1 are each one MF away (B23.4, B23.421), and none is offered as a place to end in.
-        Assert.Equal([L("D4", 1), L("D5"), L("D5", 2)], targets.Select(target => target.ToString()));
+        // The ground floor, the floor above, and D4's level 1 are each one MF away (B23.4, B23.421), and none is offered as a place to end in. Pass 70
+        // (ruling R70.13, A10.51's EXC): all are of the building it begins in, which it need not consider, so no cover binds it and it may rout to any hex
+        // the rules allow ("If no non-ignorable building/woods Location can be reached ...").
+        Assert.Empty(targets);
         Assert.Empty(routes);
         Refused(await Do(GameActions.Rout, NoRoll(), new
         {
@@ -750,8 +752,9 @@ public sealed class BacklogPass10Tests : IDisposable
     [Fact]
     public async Task BypassRefusesWallsFriendsSplitsAndEnemyObstacles()
     {
-        // Table player, pass 10: no Bypass of a hex with a hedge or with friendly units; a stack in Bypass moves together; it does not occupy an
-        // obstacle holding enemy units; marsh is never entered by Assault Movement.
+        // Table player, pass 10: no Bypass of a hex with a hedge or with friendly units; a stack in Bypass moves together; marsh is never entered by
+        // Assault Movement. Pass 70 (A12.151, A12.15; ruling R70.23): the attempt to occupy the obstacle holding the concealed r1 reveals it and forces the
+        // stack back into its lane, the MF spent and its move over.
         board.Terrain["D4"] = "Woods";
         board.Terrain["F4"] = "Woods";
         board.Terrain["H4"] = "Woods";
@@ -772,8 +775,14 @@ public sealed class BacklogPass10Tests : IDisposable
         Assert.True(Is(Current.Unit("r1")!, Conditions.Concealed));
         await Pass();
         Refused(await Move(G1, L(Pass10Board.N("D4", HexsideDirection.North))), "play.move-bypass");
-        Refused(await Move(["g1", "g2"], L("D4")), "play.move-bypass");
-        Committed(await Move(["g1", "g2"], L(Pass10Board.N("D4", HexsideDirection.North))));
+        var before = Revision;
+        Committed(await Move(["g1", "g2"], L("D4")));
+        var step = LastStep(before);
+        Assert.Equal((At("D4"), At("D4"), 2), (step.To, step.Attempted!, step.Bypass?.Count));
+        Assert.False(Is(Current.Unit("r1")!, Conditions.Concealed));
+        await Pass();
+        Assert.True(Current.Unit("g1")!.MovementEnded);
+        Assert.Null(Current.Movement);
         NoReplayErrors();
     }
 

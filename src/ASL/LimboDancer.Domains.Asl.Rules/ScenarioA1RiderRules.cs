@@ -43,6 +43,9 @@ public static class ScenarioA1RiderRules
 
     public const string Eliminated = "eliminated";
 
+    /// <summary>Failed by more than its ELR and Replaced by a broken unit of lesser quality (A19.13; pass 70, ruling R70.9); never Disrupted (A19.12).</summary>
+    public const string Replaced = "replaced";
+
     /// <summary>The fate of a SW a Bailing Out Rider carries (D6.24).</summary>
     public const string Kept = "kept";
 
@@ -185,8 +188,23 @@ public static class ScenarioA1RiderRules
             : dr > morale ? dr == 12 ? Reduced : Broken : dr == morale ? Pinned : Passed;
     }
 
-    /// <summary>Whether a Bail Out's NMC leaves the unit broken, reduced, or eliminated: it then keeps no SW (D6.24).</summary>
-    public static bool LeavesBroken(string result, bool broken) => broken || result is Broken or Reduced or Eliminated;
+    /// <summary>
+    /// D6.24, A10.7 EXC, A19.13 (pp. 205, 68, 86; pass 70, ruling R70.9): the result of a Bail Out's NMC with a Rider leader's <paramref name="drm"/> and the
+    /// unit's <paramref name="elr"/>, as <see cref="ScenarioA1MoraleCheck"/> resolves it: an unbroken unit that fails by more than its ELR is Replaced when it can
+    /// be (<paramref name="replaceable"/>), and only broken otherwise.
+    /// </summary>
+    public static string Check(int first, int second, int morale, bool broken, int drm, int? elr, bool replaceable)
+    {
+        var dr = first + second;
+        var final = dr + drm;
+        return broken ? dr == 12 ? Eliminated : final > morale ? Reduced : Passed
+            : dr == 12 ? Reduced
+            : final > morale ? replaceable && elr is { } limit && final - morale > limit ? Replaced : Broken
+            : final == morale ? Pinned : Passed;
+    }
+
+    /// <summary>Whether a Bail Out's NMC leaves the unit broken, reduced, replaced, or eliminated: it then keeps no SW (D6.24).</summary>
+    public static bool LeavesBroken(string result, bool broken) => broken || result is Broken or Reduced or Eliminated or Replaced;
 
     /// <summary>
     /// D6.24 (p. 205; ruling R65.17): the fate of a SW a Bailing Out Rider carries: eliminated if the unit breaks or is eliminated, before or after the
@@ -200,6 +218,15 @@ public static class ScenarioA1RiderRules
 
     /// <summary>D6.24 (UNIT-STATE-034): a <c>rider-bailed-out</c> record's NMC result agrees with its DR and Morale Level.</summary>
     public static bool CheckAgrees(int first, int second, int morale, bool broken, string result) => Check(first, second, morale, broken) == result;
+
+    /// <summary>
+    /// D6.24 (UNIT-STATE-034; pass 70, ruling R70.9): a record that carries the pass's <paramref name="drm"/> agrees with its DR, Morale Level, DRM, and ELR;
+    /// a unit that could not be Replaced is only broken (A19.11, A19.12), which the record's lineage after it shows. An <paramref name="unarmed"/> unit's failure
+    /// is a Casualty Reduction and its pass leaves it as it was (ruling R70.47; A20.54, p. 88).
+    /// </summary>
+    public static bool CheckAgrees(int first, int second, int morale, bool broken, string result, int drm, int? elr, bool unarmed = false) =>
+        unarmed ? result == (first + second + drm <= morale && first + second != 12 ? Passed : Reduced)
+            : Check(first, second, morale, broken, drm, elr, replaceable: true) == result || Check(first, second, morale, broken, drm, elr, replaceable: false) == result;
 
     /// <summary>D6.24 (UNIT-STATE-034): a SW's recorded fate agrees with its dr.</summary>
     public static bool WeaponAgrees(int? dr, bool removesOnBreakdown, bool carrierBroken, string fate) => WeaponFate(dr, removesOnBreakdown, carrierBroken) == fate;

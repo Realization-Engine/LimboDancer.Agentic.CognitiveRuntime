@@ -1,7 +1,7 @@
 @* Plan C08 (pass 27): a choice the game waits on before play goes on (ruling R5.8). The page passes the options only to the answering side's view
    and the adjudicator; any other view gets none and reads that it waits. *@
 <div id="play-choice" class="fail" data-key="@Key">
-    <p>The @DisplayText.Side(Side) side answers before play goes on: @Say(Description) (ruling R5.8).</p>
+    <p>The @DisplayText.Side(Side) side answers before play goes on: @Described</p>
     @if (MayAnswer)
     {
         @foreach (var option in Options)
@@ -21,6 +21,21 @@
     public Func<string, string>? Words { get; set; }
 
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    // The choice ended by the ruling every pending choice is under; a choice that ends with a ruling of its own, "(A12.14; ruling R70.21)", names both in
+    // that one citation, "(A12.14; rulings R70.21, R5.8)" (pass 70's fixes), so no sentence ends with two.
+    private string Described
+    {
+        get
+        {
+            var said = Say(Description);
+            var core = said.EndsWith(").", StringComparison.Ordinal) ? said[..^1] : said;
+            var ruling = core.LastIndexOf("ruling R", StringComparison.Ordinal);
+            return core.EndsWith(')') && ruling > core.LastIndexOf('(') && core[(ruling + "ruling R".Length)..^1].All(letter => char.IsAsciiDigit(letter) || letter is '.' or 'b')
+                ?$"{core[..ruling]}rulings {core[(ruling + "ruling ".Length)..^1]}, R5.8)."
+                : $"{said} (ruling R5.8).";
+        }
+    }
 
     /// <summary>An option and how it reads, such as "take it".</summary>
     public sealed record Option(string Value, string Text);

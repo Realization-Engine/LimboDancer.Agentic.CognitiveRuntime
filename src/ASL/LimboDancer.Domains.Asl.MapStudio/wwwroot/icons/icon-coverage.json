@@ -1349,6 +1349,14 @@
         },
         {
           "kind": "button",
+          "label": "Propose: give up \u0022?\u0022",
+          "dynamic": false,
+          "id": "propose-remove-concealment",
+          "status": "needed",
+          "strip": "Play play-remove-concealment"
+        },
+        {
+          "kind": "button",
           "label": "Propose: @WordsAt(guard) Deploys",
           "dynamic": true,
           "status": "needed",
@@ -1361,6 +1369,13 @@
           "id": "phase-pass-withdraw",
           "status": "needed",
           "strip": "Play phase-pass-standing"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @Words(at.ToString()): @Words(unit.Id) returns to @Words(from.ToStri...",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play toolbar"
         },
         {
           "kind": "button",
@@ -2828,6 +2843,14 @@
       "controls": [
         {
           "kind": "button",
+          "label": "Propose: Voluntary Break",
+          "dynamic": false,
+          "id": "propose-voluntary-break",
+          "status": "needed",
+          "strip": "RoutActionPanel voluntary-break"
+        },
+        {
+          "kind": "button",
           "label": "Rout @At(item.Unit) beneath @Say(vehicle)",
           "dynamic": true,
           "status": "needed",
@@ -2882,6 +2905,26 @@
           "id": "scripted-dice-clear",
           "status": "needed",
           "strip": "ScriptedDicePanel scripted-dice"
+        }
+      ]
+    },
+    {
+      "name": "SearchAction",
+      "path": "Components/Play/SearchAction.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose: Search",
+          "dynamic": false,
+          "id": "propose-search",
+          "status": "needed",
+          "strip": "SearchAction"
         }
       ]
     },
@@ -3250,6 +3293,20 @@
       "controls": [
         {
           "kind": "button",
+          "label": "Propose: the Infantry attack the checked enemy Infantry (A11.31)",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "VehicleCloseCombatPanel vehicle-cc"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: the Infantry attempt to capture the checked Passengers (A11.52)",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "VehicleCloseCombatPanel vehicle-cc"
+        },
+        {
+          "kind": "button",
           "label": "Propose: Infantry attack the vehicle",
           "dynamic": false,
           "status": "needed",
@@ -3271,7 +3328,7 @@
         },
         {
           "kind": "button",
-          "label": "Propose: the @location.NextSide side passes",
+          "label": "Propose: the @DisplayText.Side(location.NextSide) side passes",
           "dynamic": true,
           "status": "needed",
           "strip": "VehicleCloseCombatPanel vehicle-cc"

@@ -172,7 +172,7 @@ public static class ScenarioA1ChargeCalculator
             {
                 // A step the model cannot take leaves the charge undecided, so it may end in place (ruling R30.5).
                 var occupants = reader.Occupants(move.To);
-                if (ScenarioA1CloseCombatRules.ChargeBarred(occupants.Crew, occupants.EnemyVehicle, occupants.EnemyInfantry, reader.Name(move.To)) is { } barred)
+                if (ScenarioA1CloseCombatRules.ChargeBarred(occupants.EnemyVehicle, occupants.EnemyInfantry, reader.Name(move.To)) is { } barred)
                 {
                     undecided.Add(barred);
                     continue;

@@ -459,7 +459,7 @@ else if (state is not null)
                     </div>
                 }
                 @* Table player, pass 28c: what play waits on comes first. *@
-                @if (state.Choice is { } choice)
+                @if (state.Choice is { } choice && ChoiceShown(choice))
                 {
                     <PendingChoicePanel Key="@choice.Key" Side="@choice.Side" Description="@GamePlanner.DescribeChoice(choice)" MayAnswer="@MayAnswer(choice.Side)"
                         Options="@ChoiceOptions(choice)" OnChoose="@(option => ProposeChoose(choice.Key, option))" />
@@ -511,17 +511,37 @@ else if (state is not null)
                         }
                     </div>
                 }
+                @* Pass 70 (A12.14; ruling R70.20): the owner gives up a "?" at any time of either side's Player Turn; his own units under "?", hidden, or
+                   Dummies, by hex. *@
+                @* Pass 70's fixes: in a section of its own, which starts closed, and refused while an answer waits (ruling R5.8). *@
+                @if (!SetupOpen && RemoveConcealmentRows.Count > 0)
+                {
+                    <ActionSection Title="Give up &quot;?&quot;" Key="remove-concealment">
+                    <div class="toolbar" id="play-remove-concealment">
+                        <UnitSelectionList Rows="@RemoveConcealmentRows" Selected="@removeConcealment" CssClass="remove-concealment-unit" Legend="Give up &quot;?&quot;"
+                            OnToggle="@(toggle => { if (toggle.On) { removeConcealment.Add(toggle.Id); } else { removeConcealment.Remove(toggle.Id); } })" />
+                        <button id="propose-remove-concealment" disabled="@(removeConcealment.Count == 0 || busy || WaitsOnAnswer)"
+                                title="@(WaitsOnAnswer ? "Every other action waits until the answer above is given (ruling R5.8)." : busy ? "A proposal is being made; wait for it."
+                                    : removeConcealment.Count == 0 ? "Tick the units that give up their \"?\" first."
+                                    : "The owner may remove any concealment at any time of his or his opponent's Player Turn: a concealed unit is revealed, a hidden one placed and revealed in full, a Dummy removed (A12.14, A12.31, A12.11).")"
+                                @onclick="ProposeRemoveConcealment">Propose: give up "?"</button>
+                    </div>
+                    </ActionSection>
+                }
                 @* The Play streamlining plan, S7 (ruling R-PS.1): no separate building-entry form; a one-unit step into a building goes to the same
                    entry plan through the Movement form. *@
                 @* A10.5 (the user, 2026-10-22): the DEFENDER's routs wait for the ATTACKER's, so his Rout panel is not offered meanwhile; the waiting
                    callout above says why. *@
-                @if (state.Phase == "rtph" && !DefenderRoutsWait && (RoutObligations.Count > 0 || RoutChoices.Count > 0))
+                @* Pass 70 (ruling R70.11): the Voluntary Break is offered to either side at the RtPh's start, before any unit routs, the DEFENDER's too. *@
+                @if (state.Phase == "rtph" && ((!DefenderRoutsWait && (RoutObligations.Count > 0 || RoutChoices.Count > 0)) || VoluntaryBreakRows.Count > 0))
                 {
                     <RoutActionPanel Obligations="@RoutObligations" Units="@RoutChoices" Unit="@routUnit" Route="@routRoute" LowCrawl="@routLowCrawl"
                         Load="@RoutLoadText" Loads="@RoutLoads" Keep="@string.Join(",", RoutKept)" OnKeep="@(keep => routKeep = keep)"
-                        OnUseRoute="@(way => (routUnit, routRoute, routKeep, routLowCrawl) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty, routLowCrawl && !way.Route.Contains(',')))"
-                        OnUnit="@(id => (routUnit, routKeep, routRoute) = (id, string.Empty, id == routUnit ? routRoute : string.Empty))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout"
-                        OnRoutGroup="@ProposeRoutGroup" OnBeneath="@ProposeRoutBeneath" Busy="@busy" />
+                        OnUseRoute="@(way => (routUnit, routRoute, routKeep, routLowCrawl, routLeader) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty, routLowCrawl && !way.Route.Contains(','), way.Unit == routUnit ? routLeader : string.Empty))"
+                        OnUnit="@(id => (routUnit, routKeep, routRoute, routLeader) = (id, string.Empty, id == routUnit ? routRoute : string.Empty, id == routUnit ? routLeader : string.Empty))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout"
+                        OnRoutGroup="@ProposeRoutGroup" OnBeneath="@ProposeRoutBeneath" Busy="@busy"
+                        RoutsOffered="@(!DefenderRoutsWait)" BreakRows="@VoluntaryBreakRows" BreakSelected="@voluntaryBreak" OnBreakToggle="@(toggle => { if (toggle.On) { voluntaryBreak.Add(toggle.Id); } else { voluntaryBreak.Remove(toggle.Id); } })"
+                        OnProposeBreak="@ProposeVoluntaryBreak" Leaders="@RoutLeaders" Leader="@routLeader" OnLeader="@(id => routLeader = id)" />
                 }
                 @* The Play streamlining plan, S7 (ruling R-PS.3): the panel and each of its actions only when the phase allows it to the view; in the RtPh
                    the Rout form chooses what a broken unit keeps. *@
@@ -722,6 +742,12 @@ else if (state is not null)
                             {
                                 <BerserkRetainedWeaponsField Value="@moveKeep" OnChange="@(keep => moveKeep = keep)" />
                             }
+                            @* Pass 70 (A12.152; ruling R70.24): as the stack ends its move, once the DEFENDER's window is closed, it may Search. *@
+                            @if (state.Movement is { Vehicle: false, WindowOpen: false, Members.Count: > 0 } searching)
+                            {
+                                <SearchAction @key="@($"{gameId}|{Viewer.Name}|{searching.Location}")" Hexes="@SearchChoices(searching.Location)" Own="@PlaceOf(new BoardLocation(searching.Location.Board, searching.Location.Hex, 0))"
+                                    Busy="@busy" OnPropose="@ProposeSearch" />
+                            }
                             <MovementWindowActions WindowOpen="@state.Movement?.WindowOpen" EndingSome="@EndingSome" MayPass="@(Viewer.IsAdjudicator && MandatoryNow is null)"
                                 OnPass='@(() => ProposeSimple(GameActions.PassFire, "pass"))' OnEnd="@ProposeEndMove" />
                         </div>
@@ -815,7 +841,30 @@ else if (state is not null)
                         OnAttacker="@(id => vehicleCcAttacker = id)" OnLeader="@(id => vehicleCcLeader = id)" OnVehicle="@(id => vehicleCcVehicle = id)"
                         OnDefender="@(pick => Toggle(vehicleCcDefenders, pick.Id, pick.On))"
                         OnProposeAttack="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: false))" OnProposeCapture="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: false, capture: true))"
-                        OnProposeVehicle="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: true))" OnPass="@(at => ProposeVehicleCc(at, [], null, [], true))" />
+                        OnProposeVehicle="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: true))" OnProposeInfantry="@(at => ProposeInfantryCcAt(vehicleCc, at))"
+                        OnProposeCapturePassengers="@(at => ProposeInfantryCcAt(vehicleCc, at, capturePassengers: true))"
+                        OnPass="@(at => ProposeVehicleCc(at, [], null, [], true))" />
+                }
+                @* Pass 70 (ruling R70.33): once a road Location's CC with a vehicle is over, a unit that fought it by Street Fighting returns to its building or stays (A11.8). *@
+                @if (state.Phase == "ccph" && StreetFightingReturnRows is { Count: > 0 } returning)
+                {
+                    <ActionSection Title="Street Fighting" Key="street-fighting">
+                        <div class="toolbar">
+                            @* The hex UI rule: the unit named after its hex, "[F4]: 4-4-7 squad R1 returns to [F3]". *@
+                            @foreach (var (unit, from, at) in returning)
+                            {
+                                <button @key="unit.Id" class="street-fighting-return" data-unit="@unit.Id" disabled="@busy"
+                                        title="@(busy ? "A proposal is being made; wait for it." : "Following its CC attack it returns to the Location it came from, or at its option remains in the road Location (A11.8).")" @onclick="@(() => ProposeStreetFightingReturn(unit.Id))">Propose: @Words(at.ToString()): @Words(unit.Id) returns to @Words(from.ToString()) (A11.8)</button>
+                            }
+                        </div>
+                    </ActionSection>
+                }
+                @* Pass 70 (ruling R70.34): a captor enters the vehicle its side captured this CCPh as its crew (D5.42's EXC, A21.2). *@
+                @if (state.Phase == "ccph" && CcphRecrewRows is { Count: > 0 } ccphRecrew)
+                {
+                    <VehicleCrewActions CloseCombat="true" Abandonable="@([])" Recrewable="@ccphRecrew" Destroy="@abandonDestroy" RemoveMg="@abandonRemoveMg"
+                        Chosen="@recrewPicks" OnDestroy="@(choice => abandonDestroy = choice)" OnRemoveMg="@(remove => abandonRemoveMg = remove)"
+                        OnAbandon="@ProposeAbandon" OnUnit="@(pick => recrewPicks[pick.Vehicle] = pick.Unit)" OnRecrew="@(pick => ProposeRecrew(pick.Vehicle, pick.Unit))" Busy="@busy" />
                 }
                 @if (state.Phase == "ccph")
                 {
@@ -828,6 +877,7 @@ else if (state is not null)
                         Infiltrators="@Infiltrators" Infiltrations="@ccInfiltrations" Attacks="@ccAttacks" OnLocation="@ChooseCloseCombatLocation" OnRound="@ChooseRound"
                         OnHandToHand="@(on => ccHandToHand = on)" OnProposeAmbush="@ProposeAmbush" OnAmbushWithdraw="@(item => ProposeAmbushWithdrawal(item.Units, item.To))"
                         OnStacking="@(pick => SetStacking(pick.Unit, pick.Value))" OnWithdrawal="@(pick => SetWithdrawal(pick.Unit, pick.To))"
+                        Dropped="@ccDrops" OnDrop="@(pick => Toggle(ccDrops, pick.Id, pick.On))"
                         OnAttacker="@(pick => ToggleAttacker(pick.Id, pick.On))" OnDefender="@(pick => ToggleDefender(pick.Id, pick.On))" MayRemove="@MayRemoveAttack" OnDirector="@(id => ccDirector = id)"
                         OnCapture="@(on => ccCapture = on)" OnGuard="@(id => ccGuard = id)" OnYield="@(text => ccYield = text)" OnAddAttack="@AddAttack"
                         OnInfiltration="@(pick => SetInfiltration(pick.Unit, pick.To))" OnRemoveAttack="@(attack => ccAttacks.Remove(attack))" OnPropose="@ProposeCloseCombat" />
@@ -2320,7 +2370,7 @@ else if (state is not null)
             draftCache = (key, UnitOverlayBuilder.Build(UnitLibrary.TargetFor(board), committed.SetId, [.. committed.Units.Select(unit => unit.Document), .. drafts], renderer,
                 Library.Fragments, unit => DisplayText.Place(MapBoards, unit.Location)
                     + (draftNames.TryGetValue(unit.Document.Id, out var counter) ? $": {counter}. "
-                        : names?.Held(unit.Document.Id, state.Revision) is { } held && held != unit.Document.Id && held != UnitNames.Unnamed ? $": {held}. " : ": ")));
+                        : names?.Held(unit.Document.Id, state.Revision) is { } held && held != unit.Document.Id && !UnitNames.IsUnnamed(held) ? $": {held}. " : ": ")));
         }
 
         return draftCache.Overlay;
@@ -3919,6 +3969,13 @@ else if (state is not null)
     private string routRoute = string.Empty;
     private bool routLowCrawl;
 
+    // Pass 70 (rulings R70.11, R70.12): the leader who routs with the chosen unit, and the units ticked to break voluntarily.
+    private string routLeader = string.Empty;
+    private readonly HashSet<string> voluntaryBreak = new(StringComparer.Ordinal);
+
+    // Pass 70 (ruling R70.20): the units ticked to give up their "?".
+    private readonly HashSet<string> removeConcealment = new(StringComparer.Ordinal);
+
     // Pass 31d (design D2): the load a laden unit keeps as it routs, as its SW ids joined by commas; empty for the first of its best loads.
     private string routKeep = string.Empty;
     private string swWeapon = string.Empty;
@@ -4002,18 +4059,32 @@ else if (state is not null)
             .OrderBy(location => location.ToString(), StringComparer.Ordinal);
 
     /// <summary>Each open vehicle CC Location as the panel reads it (plan C01): the side that attacks next and the units it offers.</summary>
+    // Pass 70 (rulings R70.30, R70.31): the units come from the planner's index, Riders with their vehicles, and pass through the side's view.
     private IReadOnlyList<VehicleCloseCombatPanel.CcLocation> VehicleCcRows => state is null ? [] : [.. VehicleCcLocations.Select(location =>
     {
         var (nextSide, _) = Live.Planner.VehicleCloseCombatTurn(state, location);
-        var here = SeenOnly(state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active)).ToArray();
-        var attacked = state.CloseCombats.FirstOrDefault(item => item.Location == location && !item.Closed)?.Attacking ?? [];
+        var listed = Live.Planner.VehicleCloseCombatUnits(state, location);
+        var seen = SeenOnly(listed.Select(item => item.Unit), aboardToo: true).Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
+        var rides = listed.Where(item => item.Rides is not null && !item.Passenger && seen.Contains(item.Unit.Id)).ToDictionary(item => item.Unit.Id, item => item.Rides!, StringComparer.Ordinal);
+        // Pass 70 (ruling R70.34): the Passengers of an unarmored stationary vehicle, which an attack may try to capture (A11.52), each with its vehicle.
+        var aboard = listed.Where(item => item.Passenger && seen.Contains(item.Unit.Id)).ToDictionary(item => item.Unit.Id, item => item.Rides!, StringComparer.Ordinal);
+        var here = listed.Where(item => seen.Contains(item.Unit.Id)).Select(item => item.Unit).ToArray();
+        var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location && !item.Closed);
+        var attacked = entry?.Attacking ?? [];
+        var infantryAttacked = entry?.InfantryAttacked ?? [];
+        static bool Leader(UnitInstance unit) => unit.Kind is "asl:leader" or "asl:hero";
         return new VehicleCloseCombatPanel.CcLocation(location.ToString(), nextSide ?? string.Empty,
-            [.. here.Where(unit => unit.Side == nextSide && !LiveFire.IsVehicle(unit) && unit.Kind != UnitKinds.Dummy && !attacked.Contains(unit.Id)
+            [.. here.Where(unit => unit.Side == nextSide && !LiveFire.IsVehicle(unit) && unit.Kind != UnitKinds.Dummy && !attacked.Contains(unit.Id) && !aboard.ContainsKey(unit.Id)
                 && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => unit.Id)],
-            [.. here.Where(unit => unit.Side == nextSide && unit.Kind is "asl:leader" or "asl:hero").Select(unit => unit.Id)],
+            [.. here.Where(unit => unit.Side == nextSide && Leader(unit) && !rides.ContainsKey(unit.Id) && !aboard.ContainsKey(unit.Id)).Select(unit => unit.Id)],
             // A21.2 (pass 65, the UI review): the planner says, by the plan's own Rules bar, which vehicle a capture attempt may take.
             [.. here.Where(LiveFire.IsVehicle).Select(unit => new VehicleCloseCombatPanel.VehicleChoice(unit.Id, unit.Side, GamePlanner.MayBeCaptureAttempted(unit)))],
-            [.. here.Where(unit => !LiveFire.IsVehicle(unit) && unit.Side != nextSide).Select(unit => unit.Id)]);
+            [.. here.Where(unit => !LiveFire.IsVehicle(unit) && unit.Side != nextSide).OrderBy(unit => Leader(unit) ? 0 : 1).Select(unit => unit.Id)])
+        {
+            Riders = rides,
+            Passengers = aboard,
+            InfantryAttacked = [.. infantryAttacked],
+        };
     })];
 
     /// <summary>
@@ -4029,8 +4100,57 @@ else if (state is not null)
 
         string[] attackers = byVehicle || !row.Attackers.Contains(vehicleCcAttacker, StringComparer.Ordinal) ? []
             : [vehicleCcAttacker, .. (row.Leaders.Contains(vehicleCcLeader, StringComparer.Ordinal) && vehicleCcLeader != vehicleCcAttacker ? new[] { vehicleCcLeader } : [])];
-        string[] defenders = byVehicle ? [.. row.Defenders.Where(vehicleCcDefenders.Contains)] : [];
+        // Pass 70 (rulings R70.31, R70.34): a vehicle attacks the Infantry on foot; a Rider or a Passenger is attacked by Infantry alone (A11.611, A11.52).
+        string[] defenders = byVehicle ? [.. row.Defenders.Where(id => vehicleCcDefenders.Contains(id) && !row.Riders.ContainsKey(id) && !row.Passengers.ContainsKey(id))] : [];
         return attackers.Length == 0 && defenders.Length == 0 ? Task.CompletedTask : ProposeVehicleCc(at, attackers, vehicleCcVehicle, defenders, false, capture);
+    }
+
+    /// <summary>
+    /// Pass 70 (rulings R70.30, R70.31): the chosen Infantry, with the SMC stacked with it and directing, attack the checked enemy Infantry that no Infantry has
+    /// attacked this CCPh, a Rider among either (A11.31, A11.14, A11.141, A11.611). No vehicle is named.
+    /// </summary>
+    private Task ProposeInfantryCcAt(IReadOnlyList<VehicleCloseCombatPanel.CcLocation> rows, string at, bool capturePassengers = false)
+    {
+        if (rows.FirstOrDefault(row => row.Location == at) is not { } row || !row.Attackers.Contains(vehicleCcAttacker, StringComparer.Ordinal))
+        {
+            return Task.CompletedTask;
+        }
+
+        var leader = row.Leaders.Contains(vehicleCcLeader, StringComparer.Ordinal) && vehicleCcLeader != vehicleCcAttacker ? vehicleCcLeader : null;
+        string[] attackers = [vehicleCcAttacker, .. leader is null ? Array.Empty<string>() : [leader]];
+        // Pass 70 (ruling R70.34): the Passengers are attacked only to capture them (A11.52), and the other Infantry by the plain attack.
+        string[] defenders = [.. row.Defenders.Where(id => vehicleCcDefenders.Contains(id) && !row.InfantryAttacked.Contains(id, StringComparer.Ordinal)
+            && row.Passengers.ContainsKey(id) == capturePassengers)];
+        if (defenders.Length == 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId,
+            ["attemptId"] = Attempt("vehicle-cc"),
+            ["expectedRevision"] = (long)history!.Events.Count,
+            ["location"] = at,
+            ["attackers"] = attackers,
+            ["defenders"] = defenders,
+        };
+        if (capturePassengers)
+        {
+            arguments["capture"] = true;
+        }
+
+        // A11.14, A11.141: a SMC attacking with the MMC is stacked with it, and a leader directs the attack.
+        if (leader is not null)
+        {
+            arguments["stacking"] = new Dictionary<string, string> { [leader] = vehicleCcAttacker };
+            if (Live.Planner.UnitOf(state!, leader)?.Kind == "asl:leader")
+            {
+                arguments["director"] = leader;
+            }
+        }
+
+        return Propose(GameActions.VehicleCloseCombat, JsonSerializer.SerializeToElement(arguments));
     }
 
     /// <summary>Pass 35: the vehicle CC and CC Reaction Fire drafts, cleared with the other panel choices and after a committed attack or pass.</summary>
@@ -4184,6 +4304,31 @@ else if (state is not null)
         }
     }
 
+    /// <summary>
+    /// Pass 70 (ruling R70.34): each vehicle captured this CCPh with its captors' units that may enter it as its crew (D5.42's EXC, A21.2), read from the
+    /// planner's index; the view that may act for the captors' side sees it, and its own units only.
+    /// </summary>
+    private IReadOnlyList<VehicleCrewActions.Recrewing>? CcphRecrewRows => state is null || state.Phase != "ccph" || state.CapturedThisPhase.Count == 0 ? null
+        : [.. state.CapturedThisPhase.Select(id => Live.Planner.UnitOf(state, id)).OfType<UnitInstance>().Where(vehicle => MayAnswer(vehicle.Side)
+                && GameState.Condition(vehicle, Conditions.Abandoned) == ConditionState.True)
+            .Select(vehicle => new VehicleCrewActions.Recrewing(vehicle.Id, [.. SeenOnly(Live.Planner.RecrewCandidates(state, vehicle)).Select(unit => new PlayChoice(unit.Id, unit.Id))]))
+            .Where(row => row.Units.Count > 0)];
+
+    /// <summary>
+    /// Pass 70 (ruling R70.33): the units of each side this view may act for that may return to the building they advanced from by Street Fighting (A11.8),
+    /// as the planner reads them once a render.
+    /// </summary>
+    private IReadOnlyList<(UnitInstance Unit, BoardLocation From, BoardLocation At)>? StreetFightingReturnRows => state is null || state.Phase != "ccph" ? null
+        : [.. state.Sides.Select(side => side.Id).Where(MayAnswer).SelectMany(side => Live.Planner.StreetFightingReturns(state, side))];
+
+    private Task ProposeStreetFightingReturn(string unit) => Propose(GameActions.StreetFightingReturn, JsonSerializer.SerializeToElement(new
+    {
+        gameId,
+        attemptId = Attempt("street-fighting"),
+        expectedRevision = (long)history!.Events.Count,
+        unitId = unit,
+    }));
+
     private Task ProposeAbandon(string vehicle)
     {
         var arguments = new Dictionary<string, object>
@@ -4292,6 +4437,9 @@ else if (state is not null)
     private readonly Dictionary<string, string> ccInfiltrations = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> ccStacking = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> ccWithdrawals = new(StringComparer.Ordinal);
+
+    // A11.21 (pass 70, ruling R70.26): the SW the view's units above their IPC drop to withdraw or infiltrate.
+    private readonly HashSet<string> ccDrops = new(StringComparer.Ordinal);
     private readonly List<CloseCombatPanel.DeclaredAttack> ccAttacks = [];
 
     /// <summary>
@@ -4362,13 +4510,38 @@ else if (state is not null)
         return Value("asl:firepower") is { } firepower && Value("asl:range") is { } range && Value("asl:morale") is { } level ? $"{firepower}-{range}-{level}" : null;
     }
 
-    /// <summary>The units held in Melee in the CC Location that may withdraw (A11.2: not pinned, berserk, Disrupted, or a prisoner), with their destinations.</summary>
+    /// <summary>
+    /// The units held in Melee in the CC Location that may withdraw (A11.2: not pinned, berserk, Disrupted, or a prisoner), with their destinations: no
+    /// Location of a Known enemy unit, as the planner reads it from what the side may know (pass 70, ruling R70.26), after the SW ticked to drop. A unit
+    /// above its IPC is listed with no destination until enough SW are ticked, so that its drop boxes show (fix round C: the proposal reads the SW ticked).
+    /// </summary>
     private IEnumerable<(UnitInstance Unit, IReadOnlyList<BoardLocation> Destinations)> WithdrawalUnits => state is null || ccLocation.Length == 0
         || !BoardLocation.TryParse(ccLocation, out var at) || CloseCombatEntry is not null
         ? []
         : CloseCombatUnits.Where(unit => GameState.Condition(unit, Conditions.Melee) == ConditionState.True
                 && !new[] { Conditions.Pinned, Conditions.Berserk, Conditions.Disrupted, Conditions.Captured }.Any(name => GameState.Condition(unit, name) == ConditionState.True))
-            .Select(unit => (unit, Live.Planner.WithdrawalDestinations(state, unit, at))).Where(item => item.Item2.Count > 0);
+            .Select(unit => (unit, Live.Planner.WithdrawalDestinations(state, unit, at, DropsTicked(unit)))).Where(item => item.Item2.Count > 0 || MayWithdrawByDropping(item.unit, at));
+
+    /// <summary>
+    /// The SW of a unit ticked to drop, none when none is: what the proposal sends (A11.21; ruling R70.26), so that a unit above its IPC is offered no
+    /// destination it would be refused (fix round C).
+    /// </summary>
+    private IReadOnlyCollection<string> DropsTicked(UnitInstance unit) =>
+        state is null ? [] : [.. GamePlanner.PossessedSw(state, unit).Where(ccDrops.Contains)];
+
+    /// <summary>
+    /// Whether a unit above its IPC with too few SW ticked could withdraw or infiltrate from a Location once it drops enough (A11.21; ruling R70.26): the
+    /// planner reads no drops named as dropping all it possesses. Read only for a unit that has SW to drop.
+    /// </summary>
+    private bool MayWithdrawByDropping(UnitInstance unit, BoardLocation at) =>
+        DropChoices(unit).Count > 0 && Live.Planner.WithdrawalDestinations(state!, unit, at).Count > 0;
+
+    /// <summary>
+    /// The SW a unit above its IPC may drop to withdraw or infiltrate (A11.21; pass 70, ruling R70.26), each named with its hex first; none for a unit
+    /// within its IPC.
+    /// </summary>
+    private IReadOnlyList<PlayChoice> DropChoices(UnitInstance unit) => state is null || !Live.Planner.Laden(state, unit, []) ? []
+        : [.. GamePlanner.PossessedSw(state, unit).Select(id => new PlayChoice(id, $"{PlaceOf(ccLocation)}: {id}"))];
 
     /// <summary>The leaders who may direct the attack being declared: attackers, Good Order, not pinned or berserk (A11.141, A7.831).</summary>
     private IEnumerable<UnitInstance> CloseCombatDirectors => CloseCombatUnits.Where(unit => unit.Kind == "asl:leader" && ccAttackers.Contains(unit.Id)
@@ -4545,7 +4718,8 @@ else if (state is not null)
     private IReadOnlyList<AmbushWithdrawalActions.Withdrawal>? AmbushWithdrawals => state is not null && CloseCombatEntry is { Ambusher: { } ambushing } withdrawing
         && (withdrawing.Rounds.Count == 0 || withdrawing.Closed) && (Viewer.IsAdjudicator || viewAs == ambushing) && BoardLocation.TryParse(ccLocation, out var ambushAt)
         ? [.. CloseCombatUnits.Where(unit => unit.Side == ambushing && GameState.Condition(unit, Conditions.Captured) != ConditionState.True)
-            .SelectMany(unit => Live.Planner.WithdrawalDestinations(state, unit, ambushAt).Select(to => new AmbushWithdrawalActions.Withdrawal(unit.Id, to.ToString())))]
+            // Pass 70 (ruling R70.26): with no SW dropped, as this list offers none to drop; a unit above its IPC withdraws in a CC round instead.
+            .SelectMany(unit => Live.Planner.WithdrawalDestinations(state, unit, ambushAt, []).Select(to => new AmbushWithdrawalActions.Withdrawal(unit.Id, to.ToString())))]
         : null;
 
     /// <summary>The SMC the view may declare stacking for (plan C04; ruling R23.1), each with the MMC of its side in the Location.</summary>
@@ -4581,28 +4755,80 @@ else if (state is not null)
         }
     }
 
-    /// <summary>The units that may withdraw from Melee (plan C05), as a player reads them, with whether each must try.</summary>
-    private IReadOnlyList<CloseCombatWithdrawals.Withdrawer> Withdrawers => [.. WithdrawalUnits.Select(item => new CloseCombatWithdrawals.Withdrawer(item.Unit.Id, UnitLabel(item.Unit),
-        Live.Planner.MustWithdraw(state!, item.Unit), [.. item.Destinations.Select(to => to.ToString())]))];
+    // The Memory and Performance Guidelines (page projections by state and viewer; the UI review of pass 70, finding 3): the CC panels' withdrawers and
+    // infiltrators, each read once a state, view, CC Location, and set of SW ticked to drop, since each scans the SW of every unit there and its destinations.
+    private (GameState? State, string Viewer, string? As, string Location, string Drops, IReadOnlyList<CloseCombatWithdrawals.Withdrawer> Rows) withdrawersCache;
+    private (GameState? State, string Viewer, string? As, string Location, string Drops, IReadOnlyList<CloseCombatInfiltrationChoices.Infiltrator>? Rows) infiltratorsCache;
+
+    // The SW ticked to drop, as the CC caches above key them.
+    private string DropsKey => ccDrops.Count == 0 ? string.Empty : string.Join('|', ccDrops.Order(StringComparer.Ordinal));
+
+    /// <summary>The units that may withdraw from Melee (plan C05), as a player reads them, with whether each must try; read once a state, view, Location, and drops.</summary>
+    private IReadOnlyList<CloseCombatWithdrawals.Withdrawer> Withdrawers
+    {
+        get
+        {
+            var drops = DropsKey;
+            if (ReferenceEquals(withdrawersCache.State, state) && withdrawersCache.Rows is not null && withdrawersCache.Viewer == Viewer.Name && withdrawersCache.As == viewAs
+                && withdrawersCache.Location == ccLocation && withdrawersCache.Drops == drops)
+            {
+                return withdrawersCache.Rows;
+            }
+
+            IReadOnlyList<CloseCombatWithdrawals.Withdrawer> rows = [.. WithdrawalUnits.Select(item => new CloseCombatWithdrawals.Withdrawer(item.Unit.Id, UnitLabel(item.Unit),
+                Live.Planner.MustWithdraw(state!, item.Unit), [.. item.Destinations.Select(to => to.ToString())])
+            {
+                Drops = DropChoices(item.Unit),
+            })];
+            withdrawersCache = (state, Viewer.Name, viewAs, ccLocation, drops, rows);
+            return rows;
+        }
+    }
 
     /// <summary>The sides the view may declare attacks for (plan C06; ruling R23.1), each with its units and the other sides' units.</summary>
+    // Pass 70 (the hex UI rule; ruling R70.27): each unit hex first, "[D10]: 2-2-8 crew R1", a Gun's crew among them.
     private IReadOnlyList<CloseCombatAttackBuilder.DeclaringSide> DeclaringSides => [.. CloseCombatSides.Where(side => Viewer.IsAdjudicator || viewAs == side)
         .Select(side => new CloseCombatAttackBuilder.DeclaringSide(side, side == state!.PhasingSide,
             [.. CloseCombatUnits.Where(unit => unit.Side == side && Prisoner(unit) == (ccRound == CloseCombatResolved.PrisonersRound) && !Declared(unit, attacking: true))
-                .Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, UnitLabel(unit), IsBroken(unit)))],
+                .Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, CcLabel(unit), IsBroken(unit)))],
             [.. CloseCombatUnits.Where(unit => unit.Side != side && !Prisoner(unit) && !Declared(unit, attacking: false))
-                .Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, UnitLabel(unit), IsBroken(unit)))]))];
+                .Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, CcLabel(unit), IsBroken(unit)))]))];
+
+    // Pass 70's fixes (the hex UI rule): the other side's unit reads "4-4-7 squad in [N5]", so under "[N5]: " it does not say the hex again.
+    private string CcLabel(UnitInstance unit)
+    {
+        var place = PlaceOf(ccLocation);
+        return $"{place}: {UnitGrouping.WithoutPlace(Words(unit.Id), place)}{UnitLabel(unit)[unit.Id.Length..]}";
+    }
 
     /// <summary>
     /// The units the view may declare an infiltration for (plan N08; A11.22): not berserk or Disrupted, with somewhere to go. Read only while attacks
-    /// may be declared; null when the Location cannot be read.
+    /// may be declared; null when the Location cannot be read. Read once a state, view, Location, and drops.
     /// </summary>
-    private IReadOnlyList<CloseCombatInfiltrationChoices.Infiltrator>? Infiltrators => state is not null && !AmbushDue && BoardLocation.TryParse(ccLocation, out var at)
-        ? [.. CloseCombatUnits.Where(unit => (Viewer.IsAdjudicator || viewAs == unit.Side) && !Prisoner(unit)
-                && GameState.Condition(unit, Conditions.Berserk) != ConditionState.True && GameState.Condition(unit, Conditions.Disrupted) != ConditionState.True)
-            .Select(unit => new CloseCombatInfiltrationChoices.Infiltrator(unit.Id, [.. Live.Planner.WithdrawalDestinations(state, unit, at).Select(to => to.ToString())]))
-            .Where(item => item.Destinations.Count > 0)]
-        : null;
+    private IReadOnlyList<CloseCombatInfiltrationChoices.Infiltrator>? Infiltrators
+    {
+        get
+        {
+            var drops = DropsKey;
+            if (ReferenceEquals(infiltratorsCache.State, state) && state is not null && infiltratorsCache.Viewer == Viewer.Name && infiltratorsCache.As == viewAs
+                && infiltratorsCache.Location == ccLocation && infiltratorsCache.Drops == drops)
+            {
+                return infiltratorsCache.Rows;
+            }
+
+            IReadOnlyList<CloseCombatInfiltrationChoices.Infiltrator>? rows = state is not null && !AmbushDue && BoardLocation.TryParse(ccLocation, out var at)
+                ? [.. CloseCombatUnits.Where(unit => (Viewer.IsAdjudicator || viewAs == unit.Side) && !Prisoner(unit)
+                        && GameState.Condition(unit, Conditions.Berserk) != ConditionState.True && GameState.Condition(unit, Conditions.Disrupted) != ConditionState.True)
+                    .Select(unit => (unit, Choice: new CloseCombatInfiltrationChoices.Infiltrator(unit.Id, [.. Live.Planner.WithdrawalDestinations(state, unit, at, DropsTicked(unit)).Select(to => to.ToString())])
+                    {
+                        Drops = DropChoices(unit),
+                    }))
+                    .Where(item => item.Choice.Destinations.Count > 0 || MayWithdrawByDropping(item.unit, at)).Select(item => item.Choice)]
+                : null;
+            infiltratorsCache = (state, Viewer.Name, viewAs, ccLocation, drops, rows);
+            return rows;
+        }
+    }
 
     private void SetStacking(string smc, string? mmc)
     {
@@ -4653,6 +4879,7 @@ else if (state is not null)
         ccRound = string.Empty;
         ccStacking.Clear();
         ccWithdrawals.Clear();
+        ccDrops.Clear();
         ccAttacks.Clear();
         ccInfiltrations.Clear();
         ccHandToHand = false;
@@ -4697,7 +4924,10 @@ else if (state is not null)
 
         Live.Declarations.Declare(gameId, new CloseCombatSideDeclaration(viewAs, ccLocation, history.Events.Count, ccRound, [.. ccAttacks],
             new Dictionary<string, string>(ccStacking, StringComparer.Ordinal), new Dictionary<string, string>(ccWithdrawals, StringComparer.Ordinal),
-            new Dictionary<string, string>(ccInfiltrations, StringComparer.Ordinal), ccHandToHand));
+            new Dictionary<string, string>(ccInfiltrations, StringComparer.Ordinal), ccHandToHand)
+        {
+            Drops = [.. ccDrops.Order(StringComparer.Ordinal)],
+        });
         status = $"The {DisplayText.Side(first)} side has declared its CC attacks in {PlaceOf(ccLocation)}; the {DisplayText.Side(second)} side declares its own next (A11.11).";
         ChangeView(second);
     }
@@ -4733,11 +4963,15 @@ else if (state is not null)
         }
 
         string[] declared = kept is null ? [.. CloseCombatSides] : [kept.Side, viewAs];
-        return ProposeCloseCombat(attacks, stacking, withdrawals, infiltrations, kept?.HandToHand ?? ccHandToHand, kept?.Round ?? ccRound, declared);
+
+        // A11.21 (ruling R70.26): the SW dropped by the units that withdraw or infiltrate, of both declarations.
+        string[] dropped = [.. ccDrops.Concat(kept?.Drops ?? []).Distinct(StringComparer.Ordinal).Where(weapon => state?.Find(weapon) is EquipmentInstance { Holding: { } holder }
+            && (withdrawals.ContainsKey(holder.Holder) || infiltrations.ContainsKey(holder.Holder))).Order(StringComparer.Ordinal)];
+        return ProposeCloseCombat(attacks, stacking, withdrawals, infiltrations, kept?.HandToHand ?? ccHandToHand, kept?.Round ?? ccRound, declared, dropped);
     }
 
     private Task ProposeCloseCombat(IReadOnlyList<CloseCombatPanel.DeclaredAttack> declaredAttacks, Dictionary<string, string> stacking, Dictionary<string, string> withdrawals,
-        Dictionary<string, string> infiltrations, bool handToHand, string round, string[] declaredSides) => Propose(GameActions.CloseCombat, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        Dictionary<string, string> infiltrations, bool handToHand, string round, string[] declaredSides, string[]? dropped = null) => Propose(GameActions.CloseCombat, JsonSerializer.SerializeToElement(new Dictionary<string, object>
     {
         ["gameId"] = gameId,
         ["attemptId"] = Attempt("cc"),
@@ -4772,6 +5006,9 @@ else if (state is not null)
         ["stacking"] = stacking,
         ["withdrawals"] = withdrawals,
         ["infiltrations"] = infiltrations,
+
+        // A11.21 (pass 70, ruling R70.26): the SW the units that withdraw drop; an empty list drops none.
+        ["drops"] = dropped ?? [],
         ["handToHand"] = handToHand,
         ["round"] = round,
     }));
@@ -4858,6 +5095,9 @@ else if (state is not null)
         // C2.2401 (pass 55): the moving vehicle's MA fires first, or the declared shot resolves.
         (ChoicePending.GunDuel, ChoicePending.Duel) => "fire first (Gun Duel)",
         (ChoicePending.GunDuel, _) => "decline: the declared shot resolves",
+        // A12.14 (pass 70, ruling R70.21): force the loss, showing a concealed unit for a moment, or let the stack keep its "?".
+        (ChoicePending.ConcealmentLoss, ChoicePending.Take) => "force the loss of its \"?\"",
+        (ChoicePending.ConcealmentLoss, _) => "decline: it keeps its \"?\"",
         (_, ChoicePending.Take) => "take it",
         (_, ChoicePending.Decline) => "decline it",
         (ChoicePending.Acquisition, _) => $"keep it on {option}",
@@ -4908,7 +5148,8 @@ else if (state is not null)
 
             if (viewCache.View is null || !ReferenceEquals(viewCache.History, history) || viewCache.Revision != state.Revision || viewCache.Viewer != Viewer.Name)
             {
-                viewCache = (history, state.Revision, Viewer.Name, GameView.Of(history, state.Revision, Viewer, Unseen));
+                // Pass 70 (ruling R70.18): the planner's one entry, with the groups out of sight and the stacks the viewer may not inspect (A12.16).
+                viewCache = (history, state.Revision, Viewer.Name, Live.Planner.ViewOf(history, state.Revision, Viewer));
             }
 
             return viewCache.View;
@@ -5938,8 +6179,10 @@ else if (state is not null)
         }));
 
     /// <summary>
-    /// The card's buildings the side may Mop Up now (A12.153; ruling R24.2): each not Mopped Up this Player Turn, with the side's MMC in it free to become
-    /// TI and the units there that may guard a surrender, read through the view (ruling R23.1). The planner decides range, enemies, and the rest.
+    /// The buildings the side may Mop Up now (A12.153; rulings R24.2, R70.25): each holding the side's units, not Mopped Up this Player Turn, with the side's
+    /// MMC in it free to become TI and the units there that may guard a surrender, read through the view (ruling R23.1). The side's units are read in one pass
+    /// and mapped hex to building by the planner; it decides range, enemies, and the rest. Read once a state, view, and side (the UI review of pass 70,
+    /// finding 12: rebuilt at every PFPh render).
     /// </summary>
     private IReadOnlyList<MoppingUpAction.Choice> MopUpChoices(string side)
     {
@@ -5948,19 +6191,36 @@ else if (state is not null)
             return [];
         }
 
+        if (ReferenceEquals(mopUpCache.State, current) && mopUpCache.Viewer == Viewer.Name && mopUpCache.Side == side && mopUpCache.Choices is { } kept)
+        {
+            return kept;
+        }
+
+        var choices = ReadMopUpChoices(current, side);
+        mopUpCache = (current, Viewer.Name, side, choices);
+        return choices;
+    }
+
+    // The Memory and Performance Guidelines (page projections by state and viewer): the buildings the side may Mop Up, read once a state, view, and side.
+    private (GameState? State, string Viewer, string Side, IReadOnlyList<MoppingUpAction.Choice>? Choices) mopUpCache;
+
+    private List<MoppingUpAction.Choice> ReadMopUpChoices(GameState current, string side)
+    {
         string[] barred = [Conditions.Broken, Conditions.Berserk, Conditions.Pinned, Conditions.Captured, Conditions.Unarmed, Conditions.Melee, "asl:ti", Conditions.PrepFire];
         var choices = new List<MoppingUpAction.Choice>();
-        foreach (var (id, hexes) in Live.Planner.MopUpBuildings(current).Where(item => !current.MoppedUpThisPlayerTurn.Contains(item.Id, StringComparer.Ordinal)))
+        var own = SeenOnly(current.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side))
+            .Select(unit => (Unit: unit, At: Live.Planner.LocationOf(current, unit.Id)?.Location)).Where(item => item.At is { Level: >= 0 }).ToArray();
+        foreach (var (id, hexes) in Live.Planner.MopUpBuildings(current, own.Select(item => item.At!)).Where(item => !current.MoppedUpThisPlayerTurn.Contains(item.Id, StringComparer.Ordinal)))
         {
-            var inside = SeenOnly(current.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && current.Location(unit.Id)?.Location is { Level: >= 0 } at
-                && hexes.Any(hex => hex.Board == at.Board && hex.Hex == at.Hex))).OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
+            var placed = own.Where(item => hexes.Any(hex => hex.Board == item.At!.Board && hex.Hex == item.At.Hex)).OrderBy(item => item.Unit.Id, StringComparer.Ordinal).ToArray();
+            var inside = placed.Select(item => item.Unit).ToArray();
             string[] moppers = [.. inside.Where(unit => (unit.Kind is "asl:squad" or "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind))
                 && !barred.Any(name => GameState.Condition(unit, name) == ConditionState.True)).Select(unit => unit.Id)];
             if (moppers.Length > 0)
             {
                 choices.Add(new MoppingUpAction.Choice(id, moppers, [.. inside.Where(unit => unit.Kind != UnitKinds.Dummy
                     && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => unit.Id)],
-                    inside.ToDictionary(unit => unit.Id, unit => current.Location(unit.Id)!.Location is var at && at.Level == 0 ? $"{at.Board.Value}:{at.Hex}" : $"{at.Board.Value}:{at.Hex} level {at.Level}",
+                    placed.ToDictionary(item => item.Unit.Id, item => item.At!.Level == 0 ? $"{item.At.Board.Value}:{item.At.Hex}" : $"{item.At.Board.Value}:{item.At.Hex} level {item.At.Level}",
                         StringComparer.Ordinal)));
             }
         }
@@ -6144,6 +6404,35 @@ else if (state is not null)
     /// <summary>Whether the checked units are some, not all, of the moving stack's members, so ending the move ends only theirs (A4.2).</summary>
     private bool EndingSome => state?.Movement is { Members.Count: > 0 } movement && moveUnits.Count > 0
         && moveUnits.All(movement.Members.Contains) && moveUnits.Count < movement.Members.Count;
+
+    // Pass 70 (ruling R70.24): the Accessible hexes of the moving stack's Location, read once a state and Location, not at each render.
+    private (GameState? State, BoardLocation? At, IReadOnlyList<SearchAction.Choice> Hexes) searchHexes = (null, null, []);
+
+    /// <summary>The hexes the moving stack may Search besides its own (A12.152; ruling R70.24), in map order and in the view's words.</summary>
+    private IReadOnlyList<SearchAction.Choice> SearchChoices(BoardLocation at)
+    {
+        if (state is not { } current)
+        {
+            return [];
+        }
+
+        if (!ReferenceEquals(searchHexes.State, current) || searchHexes.At != at)
+        {
+            searchHexes = (current, at, [.. Live.Planner.SearchHexes(current, at).Select(hex => new SearchAction.Choice(hex.ToString(), PlaceOf(hex)))]);
+        }
+
+        return searchHexes.Hexes;
+    }
+
+    /// <summary>The Search of the moving stack's members (A12.152): the checked ones when only some are checked, as the end of the move takes them, else all.</summary>
+    private Task ProposeSearch(IReadOnlyList<string> hexes) => Propose(GameActions.Search, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["gameId"] = gameId,
+        ["attemptId"] = Attempt("search"),
+        ["expectedRevision"] = (long)history!.Events.Count,
+        ["unitIds"] = EndingSome ? moveUnits.Order(StringComparer.Ordinal).ToArray() : state!.Movement!.Members.ToArray(),
+        ["hexes"] = hexes.ToArray(),
+    }));
 
     private Task ProposeEndMove()
     {
@@ -6540,7 +6829,7 @@ else if (state is not null)
 
         if (sideViewCache.View is null || !ReferenceEquals(sideViewCache.History, history) || sideViewCache.Revision != state.Revision || sideViewCache.Side != side)
         {
-            sideViewCache = (history, state.Revision, side, GameView.Of(history, state.Revision, perspective, Live.Planner.OutOfSight(state, perspective)));
+            sideViewCache = (history, state.Revision, side, Live.Planner.ViewOf(history, state.Revision, perspective));
         }
 
         return sideViewCache.View;
@@ -6853,8 +7142,10 @@ else if (state is not null)
         rallyUnit = rallyLeader = repairWeapon = string.Empty;
         ordnanceGun = ordnanceTarget = ordnanceVehicle = string.Empty;
         ordnanceTurn = "east";
-        routUnit = routRoute = routKeep = string.Empty;
+        routUnit = routRoute = routKeep = routLeader = string.Empty;
         routLowCrawl = false;
+        voluntaryBreak.Clear();
+        removeConcealment.Clear();
         swWeapon = swUnit = string.Empty;
         deploySquad = deployLeader = string.Empty;
         deployWeapons.Clear();
@@ -7227,8 +7518,10 @@ else if (state is not null)
             targets = [.. targets.Where(routes.ContainsKey)];
         }
 
-        // Pass 35 (A.8, A10.51): every place within reach may lie where the rout may not end. Rules words which case it is.
-        return (ScenarioA1RoutCalculator.RoutEndAdvice(canRout, must, [.. targets.Select(Place)], targets.Any(routes.ContainsKey)),
+        // Pass 35 (A.8, A10.51): every place within reach may lie where the rout may not end. Rules words which case it is; pass 70 (the fixes): with no
+        // place that binds the rout, the ignorable ones within reach are named (A10.51 EXC; the example on p. 69, S3).
+        return (ScenarioA1RoutCalculator.RoutEndAdvice(canRout, must, [.. targets.Select(Place)], targets.Any(routes.ContainsKey),
+                targets.Count == 0 ? Live.Planner.RoutIgnoredCovers(state!, unit).Select(target => target.ToString()).ToArray() : null),
             [.. targets.Where(routes.ContainsKey).Select(target => new RoutActionPanel.Way(target.ToString(), string.Join(", ", routes[target])))]);
     }
 
@@ -7331,7 +7624,83 @@ else if (state is not null)
     {
         gameId, attemptId = Attempt("rout"), expectedRevision = (long)history!.Events.Count, unitId = routUnit, route = RouteLocations(routRoute), lowCrawl = routLowCrawl,
         keep = RoutLoadNow is null ? null : RoutKept,
+        withLeader = RoutLeaders.Any(item => item.Id == routLeader) ? routLeader : null,
     }));
+
+    /// <summary>Pass 70 (ruling R70.11): the units ticked break voluntarily, at the start of the RtPh.</summary>
+    private Task ProposeVoluntaryBreak() => Propose(GameActions.VoluntaryBreak, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("voluntary-break"), expectedRevision = (long)history!.Events.Count,
+        unitIds = VoluntaryBreakRows.Select(row => row.Id).Where(voluntaryBreak.Contains).ToArray(),
+    }));
+
+    /// <summary>Pass 70 (ruling R70.20): the units ticked give up their "?" (A12.14).</summary>
+    private Task ProposeRemoveConcealment() => Propose(GameActions.RemoveConcealment, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("remove-concealment"), expectedRevision = (long)history!.Events.Count,
+        unitIds = RemoveConcealmentRows.Select(row => row.Id).Where(removeConcealment.Contains).ToArray(),
+    }));
+
+    // The Memory and Performance Guidelines (page projections by state and viewer): the units that may give up their "?", read once a state and view.
+    private (GameState? State, string Viewer, IReadOnlyList<UnitSelectionList.Row> Rows) removeConcealmentCache;
+
+    /// <summary>
+    /// Pass 70 (A12.14; ruling R70.20): the view's own units on the map under a "?", hidden, or Dummies, which their owner may strip of it at any time of
+    /// either side's Player Turn; none during setup. The adjudicator is offered both sides', one side a proposal. Read once a state and view.
+    /// </summary>
+    private IReadOnlyList<UnitSelectionList.Row> RemoveConcealmentRows
+    {
+        get
+        {
+            if (ReferenceEquals(removeConcealmentCache.State, state) && removeConcealmentCache.Viewer == Viewer.Name)
+            {
+                return removeConcealmentCache.Rows;
+            }
+
+            IReadOnlyList<UnitSelectionList.Row> rows = state is { SetupClosed: true }
+                ? [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && PlaceOfUnitNow(unit.Id) is not null
+                        && (unit.Kind == UnitKinds.Dummy || GameState.Condition(unit, Conditions.Concealed) == ConditionState.True
+                            || GameState.Condition(unit, Conditions.Hidden) == ConditionState.True))
+                    .Select(unit => new UnitSelectionList.Row(unit.Id, unit.Id))]
+                : [];
+            removeConcealmentCache = (state, Viewer.Name, rows);
+            return rows;
+        }
+    }
+
+    /// <summary>
+    /// Pass 70 (ruling R70.12): the leaders who may rout with the unit chosen to rout, by Voluntary Rout (A10.711), as the planner allows them, each named
+    /// after his hex; none for no unit chosen.
+    /// </summary>
+    private IReadOnlyList<PlayChoice> RoutLeaders => state is not null && RoutChoices.Any(item => item.Id == routUnit) && state.Unit(routUnit) is { } routing
+        ? [.. Live.Planner.VoluntaryRoutLeaders(state, routing).Select(id => new PlayChoice(id, id))]
+        : [];
+
+    // The Memory and Performance Guidelines (page projections by state and viewer): the units that may break voluntarily, read once a state and view.
+    private (GameState? State, string Viewer, IReadOnlyList<UnitSelectionList.Row> Rows) voluntaryBreakCache;
+
+    /// <summary>
+    /// Pass 70 (ruling R70.11): the view's own units that may break voluntarily now (A10.41): in the RtPh before any unit routs, units on foot the planner
+    /// allows, read once a state and view. The adjudicator is offered both sides', one side a proposal.
+    /// </summary>
+    private IReadOnlyList<UnitSelectionList.Row> VoluntaryBreakRows
+    {
+        get
+        {
+            if (ReferenceEquals(voluntaryBreakCache.State, state) && voluntaryBreakCache.Viewer == Viewer.Name)
+            {
+                return voluntaryBreakCache.Rows;
+            }
+
+            IReadOnlyList<UnitSelectionList.Row> rows = state is { Phase: "rtph", RoutedThisPhase.Count: 0 } shown
+                ? [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit)
+                        && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && Live.Planner.VoluntaryBreakBar(shown, unit, unit.Id) is null)
+                    .Select(unit => new UnitSelectionList.Row(unit.Id, unit.Id))]
+                : [];
+            voluntaryBreakCache = (state, Viewer.Name, rows);
+            return rows;
+        }
+    }
 
     // The Memory and Performance Guidelines (page projections by state and viewer): the SW panel's weapons and the actions the phase allows them,
     // read once a state and view, not at each render.
@@ -7754,7 +8123,13 @@ else if (state is not null)
     }
 
     /// <summary>Pass 31 (ruling R5.8): a choice or a surrender waits for its answer, and nothing else is proposed until it has one.</summary>
-    private bool WaitsOnAnswer => state is { } waiting && (waiting.Choice is not null || waiting.PendingSurrenders.Count > 0);
+    private bool WaitsOnAnswer => state is { } waiting && ((waiting.Choice is { } choice && ChoiceShown(choice)) || waiting.PendingSurrenders.Count > 0);
+
+    /// <summary>
+    /// Pass 70 (A12.14; ruling R70.21): the viewer's option not to force a "?" loss is shown to its own side and the adjudicator only; to the moving side
+    /// the step waits as on any DEFENDER's window.
+    /// </summary>
+    private bool ChoiceShown(PendingChoice choice) => choice.Kind != ChoicePending.ConcealmentLoss || Viewer.IsAdjudicator || viewAs == choice.Side;
 
     /// <summary>
     /// Lets the busy state be drawn before the gate is asked (pass 29). A component test that registers <see cref="ImmediateProposals"/> skips the
@@ -7974,6 +8349,15 @@ else if (state is not null)
                 routRoute = string.Empty;
                 routKeep = string.Empty;
                 routLowCrawl = false;
+                routLeader = string.Empty;
+            }
+            else if (proposal.Action == GameActions.VoluntaryBreak)
+            {
+                voluntaryBreak.Clear();
+            }
+            else if (proposal.Action == GameActions.RemoveConcealment)
+            {
+                removeConcealment.Clear();
             }
             else if (proposal.Action == GameActions.Deploy || proposal.Action == GameActions.Recombine)
             {
@@ -8819,7 +9203,7 @@ else if (state is not null)
     private (string? Side, string Note) Awaiting(GameState shown)
     {
         var defender = shown.Sides.FirstOrDefault(side => side.Id != shown.PhasingSide)?.Id;
-        if (shown.Choice is { } choice)
+        if (shown.Choice is { } choice && ChoiceShown(choice))
         {
             return (choice.Side, $"The {DisplayText.Side(choice.Side)} side has a choice to make before play goes on.");
         }
@@ -8906,7 +9290,8 @@ else if (state is not null)
 
             var phase = Games.PhaseLabel(state.Phase);
             var ends = GamePlanner.PhaseEndedBy(state, next) == next;
-            return state.Choice is not null ? ["Answer the choice the game waits on; nothing else is proposed until it is answered."]
+            return state.Choice is { } choice && (choice.Kind != ChoicePending.ConcealmentLoss || choice.Side == next)
+                ? ["Answer the choice the game waits on; nothing else is proposed until it is answered."]
                 : state.PendingSurrenders.Count > 0 ? ["Take the surrendering unit prisoner, refuse it, or free it (A20.21)."]
                 : state.Phase == "mph" && state.Movement is { WindowOpen: true } moving
                     ? [MandatoryNow is null ? $"Fire at the moving stack in {PlaceOf(moving.Location)} with your units that see it, or pass." : ScenarioA1MandatoryFire.HandOverText(PlaceOf(moving.Location)),
@@ -9012,7 +9397,10 @@ else if (state is not null)
                     PhaseChanged phase => $"{DisplayText.Side(phase.PhasingSide)} {Games.PhaseLabel(phase.Phase)}, Turn {phase.Turn}.",
                     MovementStepped step => $"A stack moved into {PlaceOf(step.To)}.",
                     AdvanceMoved advance => $"Units advanced into {PlaceOf(advance.To)}.",
+                    // The UI review (A10.711, A12.14): the hand-over names no unit, and a Voluntary Rout leader may be under "?" out of every enemy LOS.
                     RoutStepped rout => $"A broken unit routed to {PlaceOf(rout.To)}.",
+                    VoluntaryBreak voluntary => voluntary.Units.Count == 1 ? "A unit broke voluntarily." : "Units broke voluntarily.",
+                    UnitsSearched search => $"A stack Searched from {PlaceOf(search.Location)}.",
                     FireResolved fire when fire.Resolution.Deserialize<FireResolution>(LiveFire.Json) is { Arithmetic: { } arithmetic }
                         => $"Fire from {PublicLocation(fire.FirerLocation)} at {PublicLocation(fire.TargetLocation)}: {arithmetic.Result}.",
                     FireReported report when report.Arithmetic.Deserialize<FireArithmetic>(LiveFire.Json) is { } reported
@@ -9370,7 +9758,7 @@ else if (state is not null)
         "mph" => new HashSet<string>(StringComparer.Ordinal) { "movement", "defensive-first-fire", "motion-attempt", "fire", "vehicle-movement", "cc-reaction-fire" },
         "rtph" => new HashSet<string>(StringComparer.Ordinal) { "rout" },
         "aph" => new HashSet<string>(StringComparer.Ordinal) { "advance" },
-        "ccph" => new HashSet<string>(StringComparer.Ordinal) { "close-combat", "close-combat-with-vehicles" },
+        "ccph" => new HashSet<string>(StringComparer.Ordinal) { "close-combat", "close-combat-with-vehicles", "crew-acts", "street-fighting" },
         _ => NoSections,
     };
 

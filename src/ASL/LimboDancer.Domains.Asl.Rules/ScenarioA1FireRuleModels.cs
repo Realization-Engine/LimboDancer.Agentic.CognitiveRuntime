@@ -392,10 +392,83 @@ public sealed record ConcealmentCandidateFacts(
     Func<bool> EnemyInLocation,
     Func<string?> TerrainKey,
     Func<bool> SmokeInHex,
-    Func<int> BestLeadership);
+    Func<int> BestLeadership)
+{
+    /// <summary>
+    /// Whether the Gun it holds is Emplaced (pass 70, ruling R70.22): its crew gains "?" by the Emplaced Gun's row of the Concealment Table. False, as
+    /// before the pass, leaves a Gun's crew out of the gain.
+    /// </summary>
+    public bool HoldsEmplacedGun
+    {
+        get; init;
+    }
 
-/// <summary>A unit of the game as the concealment gain's enemy scan reads it: its index (for its NVR), whether it is active, of the enemy side, broken, captured, and its Location's index (null off the map).</summary>
-public sealed record WatchingEnemyFacts(int Index, bool Active, bool Enemy, bool Broken, bool Captured, int? Location);
+    /// <summary>
+    /// For a vehicle, whether its Location is Concealment Terrain as a vehicle reads it in play (A12.2; ruling R6.7: grain in season), read in place of
+    /// the terrain's own list (pass 70, ruling R70.22). Null reads the list.
+    /// </summary>
+    public Func<bool>? VehicleConcealmentTerrain
+    {
+        get; init;
+    }
+
+    /// <summary>Whether it is a Passenger or Rider (A12.2; ruling R70.22): it gains "?" with its vehicle, not on its own.</summary>
+    public bool Aboard
+    {
+        get; init;
+    }
+
+    /// <summary>A vehicle's target size as its catalog entry prints it ("large", "very-large", ...); null for none or for a unit not a vehicle.</summary>
+    public string? VehicleSize
+    {
+        get; init;
+    }
+
+    /// <summary>The target size of the Gun it holds, as the catalog prints it; null for none.</summary>
+    public string? GunSize
+    {
+        get; init;
+    }
+
+    /// <summary>Whether it is Inexperienced (A19.2, A19.36), read when asked; null for not.</summary>
+    public Func<bool>? Inexperienced
+    {
+        get; init;
+    }
+
+    /// <summary>Whether it is heroic (A15.21).</summary>
+    public bool Heroic
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether it, or the Emplaced Gun it holds, is a large or very large 5/8" counter, US# 5 (A1.6): a vehicle by its own size, a crew by its Gun's (the
+    /// boundary review of pass 70, finding 4: the planner decided it).
+    /// </summary>
+    public bool Large => (Vehicle ? VehicleSize : HoldsEmplacedGun ? GunSize : null) is "large" or "very-large";
+
+    /// <summary>Whether it is Lax: an Inexperienced unit (A19.36), not a vehicle, +1 to its Concealment dr (A12.122; ruling R70.22).</summary>
+    public bool Lax => !Vehicle && Inexperienced?.Invoke() == true;
+
+    /// <summary>Whether it is Stealthy: a hero or a heroic leader (A15.24, A15.21), -1 to its Concealment dr (A12.122; ruling R70.22).</summary>
+    public bool Stealthy => Kind == "asl:hero" || (Kind == "asl:leader" && Heroic);
+
+    /// <summary>
+    /// What shares its "?" (A12.2: "If a Gun, vehicle ... loses its hidden/concealed status ... so does its manning Infantry or PRC, and vice versa"; ruling
+    /// R70.22): a vehicle's PRC, each with whether it is in Good Order, or the Gun a crew holds. Null, as before the pass, shares nothing.
+    /// </summary>
+    public Func<IReadOnlyList<(string Id, bool GoodOrder)>>? Shared
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// A unit of the game as the concealment gain's enemy scan reads it: its index (for its NVR), whether it is of the enemy side, and its facts as a seer
+/// (pass 70, ruling R70.16), whose Location is an index into the gain search's table (null off the map).
+/// </summary>
+public sealed record WatchingEnemyFacts(int Index, bool Enemy, SightSeerFacts Seer);
 
 /// <summary>A fact reader for the concealment gain's search over the enemies that may see a Location (A12.12, E1.101; the pass 32 design, D4): Locations are indexes into the caller's table, units into its list.</summary>
 public interface IConcealmentFactReader
@@ -414,7 +487,11 @@ public interface IConcealmentFactReader
 }
 
 /// <summary>A unit that gains "?" as its Player Turn ends, with the Final Concealment dr modifier it needs, or null when it gains "?" with no dr.</summary>
-public sealed record ConcealmentGain(string Id, int? Drm);
+public sealed record ConcealmentGain(string Id, int? Drm)
+{
+    /// <summary>What gains "?" with it (A12.2; pass 70, ruling R70.22): a vehicle's PRC, or a crew's Gun.</summary>
+    public IReadOnlyList<string> With { get; init; } = [];
+}
 
 /// <summary>A unit's condition as the fire effects set it (pass 32.c); the caller maps each to its own name. The order of a verdict's conditions is the order the record writes them.</summary>
 public enum UnitCondition

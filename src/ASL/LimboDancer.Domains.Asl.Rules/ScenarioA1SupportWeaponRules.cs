@@ -26,9 +26,11 @@ public static class ScenarioA1SupportWeaponRules
 
     /// <summary>
     /// A1.31, A1.32 (p. 45; pass 40): "Guards ... [and] unarmed units (20.5) ... do not require leader direction to Deploy", nor "leader presence to
-    /// Recombine". The Guards are the Guards of prisoners (ruling R31.4). Finns, Carrier HS, and U.S.M.C. 7-6-8s are not in the catalog.
+    /// Recombine". The Guards are the Guards of prisoners (ruling R31.4). Pass 70 (ruling R70.28): A1.32 names "Carrier HS" too, and D6.82 (p. 206) lets
+    /// them "recombine after Dismounting" with no TC and no leader (<see cref="ScenarioA1CarrierRules.CarrierHalfSquad"/>). Finns and U.S.M.C. 7-6-8s are
+    /// not in the catalog.
     /// </summary>
-    public static bool NeedsNoLeader(bool guard, bool unarmed) => guard || unarmed;
+    public static bool NeedsNoLeader(bool guard, bool unarmed, bool carrierHalfSquad = false) => guard || unarmed || carrierHalfSquad;
 
     /// <summary>
     /// A20.5 (p. 88; pass 40): "An unbroken Guard squad can Deploy into HS automatically at any time, regardless of nationality or leader

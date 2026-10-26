@@ -23,10 +23,11 @@ public sealed partial class GamePlanner
     /// carries beyond its IPC (three for a MMC, one for a SMC, none for a wounded SMC; one less while CX). A berserk unit counts only its 1PP SW,
     /// since it abandons the others before it charges (A15.431). Null when the catalog does not decide it.
     /// </summary>
-    private int? MfAllotment(GameState state, UnitInstance unit, int doubleTimeMf, bool cx, int bonusMf = 0, int ipcBonus = 0, int? allowance = null) =>
+    private int? MfAllotment(GameState state, UnitInstance unit, int doubleTimeMf, bool cx, int bonusMf = 0, int ipcBonus = 0, int? allowance = null,
+        IReadOnlyCollection<string>? dropped = null) =>
         ScenarioA1MovementCalculator.MfAllotment(
             new MfAllotmentFacts(unit.Kind == UnitKinds.Dummy, DefinitionOf(unit)?.Class, vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded), Is(unit, Conditions.Berserk)),
-            doubleTimeMf, cx, bonusMf, ipcBonus, () => allowance ?? Experience.MoveAllowance(state, unit, catalogs, vocabulary), () => Portage(state, unit));
+            doubleTimeMf, cx, bonusMf, ipcBonus, () => allowance ?? Experience.MoveAllowance(state, unit, catalogs, vocabulary), () => Portage(state, unit, dropped));
 
     /// <summary>One unit of a moving stack as Rules reads it for the leader bonus (pass 32.b).</summary>
     private MovingUnitFacts MovingUnit(UnitInstance unit) =>
@@ -34,11 +35,15 @@ public sealed partial class GamePlanner
             Is(unit, Conditions.Berserk), Is(unit, Conditions.Broken), Is(unit, Conditions.Wounded), Nationality(unit), unit.MfSpent, unit.HalfMfSpent, unit.MovedWith,
             Is(unit, Conditions.Cx) || unit.DoubleTimeMf > 0);
 
-    /// <summary>The PP of each SW a unit possesses (A4.4), from the catalog; null when one is not recorded.</summary>
-    private int[]? Portage(GameState state, UnitInstance unit)
+    /// <summary>
+    /// The PP of each SW a unit possesses (A4.4), from the catalog; null when one is not recorded. <paramref name="dropped"/> leaves out the SW a withdrawal
+    /// drops before it moves (A11.21; pass 70, ruling R70.26).
+    /// </summary>
+    private int[]? Portage(GameState state, UnitInstance unit, IReadOnlyCollection<string>? dropped = null)
     {
         // A4.4 (pass 40): with what it holds, what it portaged earlier in this phase and dropped: that portage cost is not recouped.
-        EquipmentInstance[] held = [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)];
+        EquipmentInstance[] held = [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id
+            && dropped?.Contains(item.Id) != true)];
         var values = held.Concat(state.PortagedThisPhase.Where(item => item.Unit == unit.Id && !held.Any(now => now.Id == item.Weapon))
             .Select(item => state.Find(item.Weapon)).OfType<EquipmentInstance>()).Select(PortageOf).ToArray();
         return values.Any(value => value is null) ? null : [.. values.Select(value => value!.Value)];
@@ -350,18 +355,25 @@ public sealed partial class GamePlanner
         var there = state.At(to).OfType<UnitInstance>().Where(unit => plotting == 0 || unit.Side == movers[0].Side || KnownEnemy(unit)).ToArray();
         var enemies = ScenarioA1MovementCalculator.EnemiesAtTarget(
             [.. there.Select(unit => new UnitAtTargetFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, Is(unit, Conditions.Captured), KnownEnemy(unit), unit.Kind == UnitKinds.Dummy))],
-            state.PhasingSide, charge is not null, occupy, bypassing is not null, movers.All(unit => unit.Kind == UnitKinds.Dummy), minimumMove, string.Join(", ", ids), to.ToString(),
+            state.PhasingSide, charge is not null, occupy, bypassing is not null, movers.All(unit => unit.Kind == UnitKinds.Dummy), string.Join(", ", ids), to.ToString(),
             overrunDeclared || recapture);
         if (enemies.Refusal is { } occupied)
         {
             return Refused(scope, label, expected, occupied);
         }
 
-        if (enemies.RemoveDummies)
+        // A12.15, A12.151 (pass 70, ruling R70.23): a step from Bypass into the obstacle attempts the Location of the concealed and hidden enemy units
+        // there; Rules decides whether the stack occupies it, its Dummies are removed, or it is forced back into its lane. A plotted route reads the
+        // obstacle as the moving side knows it (above).
+        var obstacle = occupy
+            ? ScenarioA1BypassDetection.Occupy([.. there.Select(BypassFacts)], movers[0].Side, ids, movers.All(unit => unit.Kind == UnitKinds.Dummy))
+            : new ObstacleVerdict(ObstacleAttempt.Occupies, BypassRevealVerdict.None);
+        if (enemies.RemoveDummies || obstacle.Attempt == ObstacleAttempt.MoversRemoved)
         {
             List<GameEvent> removed = [.. movers.Select((unit, index) => Event(scope, attemptId, index + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id),
                 ScenarioA1FirePackage.Identity.ToString(), null))];
-            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, removed, [enemies.Summary!]);
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, removed,
+                [enemies.Summary ?? ScenarioA1BypassDetection.MoversRemovedText(string.Join(", ", ids), to.ToString())]);
         }
 
         var byId = there.ToDictionary(unit => unit.Id, StringComparer.Ordinal);
@@ -397,8 +409,17 @@ public sealed partial class GamePlanner
             bypassing is null ? null : [.. bypassing.Select(side => side.ToString().ToLowerInvariant())], halfMf, assault, doubleTime, minimumMove,
             [.. abandoned.Select(item => item.Id)], entry.RoadRate, pushed is not null, state.Night, movers.Length > 0 && movers.All(unit => unit.Kind == UnitKinds.Dummy),
             [.. enemiesThere.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))],
-            [.. hiddenEnemies.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))], overstack, entry.OnRoad, dashTo?.ToString(), overrunDeclared, recapture));
+            [.. hiddenEnemies.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))], overstack, entry.OnRoad, dashTo?.ToString(), overrunDeclared, recapture,
+            obstacle.Attempt == ObstacleAttempt.ForcedBack));
         var forcedBack = verdict.ForcedBack;
+
+        // A12.151 (pass 70, ruling R70.23): a stack forced back from its Bypass exit, or from the obstacle, stays in its lane; with a concealed enemy unit in
+        // that Location every "?" there is lost (the movers' with the forced back itself, A12.15). The lane is recorded on the step: a step recorded before
+        // the pass carries none, and the stack is in the obstacle as it was.
+        var keepsLane = ScenarioA1BypassDetection.KeepsLane(forcedBack, current is { Bypass.Count: > 0 } && current.Location == from);
+        var bypassReveal = obstacle.Reveal.Any ? obstacle.Reveal
+            : keepsLane && plotting == 0 ? ScenarioA1BypassDetection.AllConcealmentLost(BypassLocation(state, from), movers[0].Side, false, ids)
+            : BypassRevealVerdict.None;
         var moved = new MovementStepped(ids, forcedBack ? from : to, halfMf, assault, step)
         {
             Charge = charge,
@@ -410,9 +431,10 @@ public sealed partial class GamePlanner
             InfantryOverrun = (overrunDeclared || recapture) && !forcedBack,
             MinimumMove = minimumMove,
             Attempted = forcedBack ? to : null,
-            Bypass = bypassing,
+            Bypass = bypassing ?? (keepsLane ? current!.Bypass : null),
         };
-        var summary = verdict.Summary;
+        var summary = verdict.Summary + (keepsLane && obstacle.Attempt != ObstacleAttempt.ForcedBack ? ScenarioA1BypassDetection.LaneKeptText(from.ToString(), bypassReveal.Any)
+            : obstacle.Attempt == ObstacleAttempt.Occupies && obstacle.Reveal.Any ? ScenarioA1BypassDetection.ObstacleDummiesText(to.ToString()) : string.Empty);
         var dummyWarning = verdict.DummyWarning;
         List<GameEvent> prefix = [.. abandoned.Select((item, index) => Event(scope, attemptId, index + 1, expected, "equipment-transferred",
             new EquipmentTransferred(item.Id, null, new MapPosition(from)), package, null))];
@@ -451,8 +473,12 @@ public sealed partial class GamePlanner
             }
         }
 
+        // Pass 70 (A12.14, p. 78; ruling R70.21): the movers whose "?" the viewing side may decline to take, every Loss seer within 16 being concealed.
+        // Offered by day on a step that needs no roll; elsewhere the loss is forced, as before (ruling R31d.2's deviation, kept for the rest).
+        string[] optioned = [];
+
         // A12.14, A12.15, E1.31 (rulings R10.10, R16.4): the movers that lose their "?" are decided by Rules; the LOS scan and the illumination are read when it asks.
-        void Unmask(List<GameEvent> events)
+        void Unmask(List<GameEvent> events, bool mayOffer)
         {
             // The Play streamlining plan, S3: whether the movers lose their "?" reads the enemy's LOS, which a plotted route may not know.
             if (plotting > 0)
@@ -460,8 +486,16 @@ public sealed partial class GamePlanner
                 return;
             }
 
-            foreach (var unit in ScenarioA1MovementCalculator.Unmasked([.. movers.Select(mover => new MoverConcealmentFacts(mover.Id, mover.Kind == UnitKinds.Dummy, Is(mover, Conditions.Concealed)))],
-                forcedBack, assault, state.Night, terrain, () => EnemyGoodOrderInLosWithin16(state, state.PhasingSide!, landed), () => Illuminated(state, landed)))
+            var unmasked = ScenarioA1MovementCalculator.Unmasked([.. movers.Select(mover => new MoverConcealmentFacts(mover.Id, mover.Kind == UnitKinds.Dummy, Is(mover, Conditions.Concealed)))],
+                forcedBack, assault, state.Night, terrain, () => EnemyGoodOrderInLosWithin16(state, state.PhasingSide!, landed), () => Illuminated(state, landed));
+            if (mayOffer && !state.Night && unmasked.Count > 0 && ScenarioA1Sight.ViewerMayDecline(forcedBack, NearestGoodOrderEnemyInLos(state, state.PhasingSide!, landed),
+                () => NearestUnconcealedLossSeer(state, state.PhasingSide!, landed)))
+            {
+                optioned = [.. unmasked.Select(unit => unit.Id)];
+                return;
+            }
+
+            foreach (var unit in unmasked)
             {
                 events.Add(unit.Dummy
                     ? Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), package, null)
@@ -469,7 +503,7 @@ public sealed partial class GamePlanner
             }
         }
 
-        List<GameEvent> Stepped(IReadOnlyList<int>? dice, Func<RollRequest, RollResult>? draw)
+        List<GameEvent> Stepped(IReadOnlyList<int>? dice, Func<RollRequest, RollResult>? draw, bool mayOffer = false)
         {
             var events = new List<GameEvent>(prefix);
             if (needsSelection && draw is not null)
@@ -491,19 +525,34 @@ public sealed partial class GamePlanner
                 Reveal(events, dice);
             }
 
-            Unmask(events);
+            Unmask(events, mayOffer);
+
+            // A12.151, A12.15 (pass 70, ruling R70.23): the Bypass Location's "?" lost with a forced back into the lane, or the Dummies of an obstacle occupied.
+            AddBypassReveal(scope, attemptId, expected, events, bypassReveal);
             return events;
         }
 
         if (gate.ReadyWithoutRoll)
         {
-            var events = Stepped(null, null);
+            var events = Stepped(null, null, mayOffer: true);
 
             // A12.2 Case H (ruling R6.7): the step may bring a concealed vehicle out of Concealment Terrain into the movers' LOS.
             if (!offMap && plotting == 0 && Replay([.. existing, .. events]).Current is { } stepped && VehicleConcealmentLost(stepped, null, false) is { Count: > 0 } lost)
             {
                 events = [.. events, .. RevealEvents(scope, attemptId, expected, events.Count + 1, lost)];
                 summary += $"; {string.Join(", ", lost)} loses its \"?\" (A12.2)";
+            }
+
+            // A12.34 (pass 70, ruling R70.22): the step may bring a hidden Emplaced Gun out of Concealment Terrain into a Good Order enemy's LOS.
+            if (!offMap && plotting == 0)
+            {
+                AddEmplacedHipLoss(scope, attemptId, expected, existing, events);
+            }
+
+            // A12.14 (ruling R70.21): the viewing side's option waits on its answer; the proposal says nothing of it to the moving side.
+            if (optioned.Length > 0)
+            {
+                events.Add(LossChoiceEvent(scope, attemptId, events.Count + 1, expected, state, state.PhasingSide!, landed, optioned));
             }
 
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary, .. dummyWarning]) { HalfMf = halfMf + dashHalfMf, HalfMfLeft = halfMfLeft };
@@ -547,6 +596,12 @@ public sealed partial class GamePlanner
             foreach (var (lane, entry) in lanes)
             {
                 AddFireLaneAttack(scope, attemptId, expected, actor, existing, events, lane, entry, landed, step, draw);
+            }
+
+            // A12.34 (pass 70, ruling R70.22): as on a step that needs no roll.
+            if (!offMap)
+            {
+                AddEmplacedHipLoss(scope, attemptId, expected, existing, events);
             }
 
             return events;
@@ -644,6 +699,15 @@ public sealed partial class GamePlanner
         if (gone)
         {
             events.Add(Event(scope, attemptId, 2, expected, "movement-ended", new MovementEnded([.. movement.Movers]), null, null));
+        }
+
+        // A12.151 (pass 70, ruling R70.23): a Bypass member broken or pinned by the DEFENDER's fire ends its MPh in the Bypass Location; with a concealed
+        // enemy unit there, every "?" of the Location is lost.
+        var reveal = EndedInBypassReveal(state, movement);
+        AddBypassReveal(scope, attemptId, expected, events, reveal);
+        if (reveal.Any)
+        {
+            summary += ScenarioA1BypassDetection.LaneRevealText(movement.Location.ToString());
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary]);

@@ -194,11 +194,12 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The concealed or hidden enemy Personnel, and Dummies, a vehicle's entry subjects to the A12.41 choice (ruling R11.12): none exempt from a PAATC, and
-    /// none when the vehicle's crew cannot see (Stunned, Shocked, or Abandoned; A12.41's "unbroken" vehicle).
+    /// none when the vehicle is no Loss seer (pass 70, ruling R70.16: Stunned or Shocked, not Good Order; hidden; or Abandoned with nobody aboard, A12.1;
+    /// A12.41's "unbroken" vehicle).
     /// </summary>
     private IReadOnlyList<string> PaatcSubjects(GameState state, UnitInstance vehicle, BoardLocation at)
     {
-        if (!Watching(vehicle))
+        if (!SeesForLoss(state, vehicle))
         {
             return [];
         }

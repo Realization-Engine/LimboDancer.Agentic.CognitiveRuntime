@@ -231,9 +231,11 @@ public static class ScenarioA1TerrainCosts
                 return new MoveEntryVerdict("play.move-bypass: a stack in Bypass leaves it or occupies the obstacle together; splitting it there is not built (A4.3; ruling R10.7)", null, false, false);
             }
 
-            if (facts.ToIsFrom && facts.EnemyAtFrom)
+            // Pass 70 (A12.151; ruling R70.23): an obstacle that holds only concealed or hidden enemy units may be attempted, and the step's reveal decides
+            // it (ScenarioA1BypassDetection.Occupy); a Known enemy unit there still bars it.
+            if (facts.ToIsFrom && facts.KnownEnemyAtFrom)
             {
-                return new MoveEntryVerdict("play.move-bypass: occupying an obstacle that holds enemy units is not built (A4.14, A12.15; ruling R10.7)", null, false, false);
+                return new MoveEntryVerdict("play.move-bypass: Infantry may not occupy an obstacle that holds a Known enemy unit in the MPh; leave the hex instead (A4.14, A12.151; ruling R10.7)", null, false, false);
             }
 
             if (facts.BypassGiven)

@@ -1763,3 +1763,31 @@ One session under the user's word of 2026-10-23 ("start on Pass 65 without my in
 | Fix Round D: the page and the record lines | 07:56 | 08:35 | 0:39 |  | The four rounds: 2:07 |
 | The whole-pass Studio check and the measurement (bisect at Rounds B and C, a dotnet-trace sample) | 08:36 | 08:49 | 0:13 |  | The seeming 6x was three Studios and a profiler on one audit file; alone, level with the base |
 | The rule to stop Studios when done, the strict stage again (passed), the documents by an agent (the design's sections 7 to 20, the review, R65.1 to R65.33, backlog 71, the plan, 99 inventory rows, the coverage), read and corrected | 08:50 | 09:20 | 0:30 | | The base stage reused; baseline and build run beside the documents |
+
+## Pass 70: Infantry III: morale, Close Combat, and concealment, 2026-10-25
+
+One session under the user's word of 2026-10-25 ("Start Pass 70 ... Run it without my intervention, up to the merge gate"). The ends of the first rows are the clock reads of the pass's notes (`code-builders/pass-history/pass-70-infantry-iii/notes.md`); later rows are written by `timelog_row.py`.
+
+| Task | Start | End | Duration | Estimate | Note |
+|---|---|---|---|---|---|
+| The frame: the prompt and standing rules read, the state checked against main, the branch cut and `base` (11:52 to 11:57), four read-only frame agents, the design's sections 1 to 7 with R70.1 to R70.34 (R70.17 corrected on the page), the build brief and ten increment briefs | 11:51 | 12:14 | 0:23 | | Frame agents 11:54 to about 12:12 |
+| The base measurement (main's build, alone) | 12:14 | 12:17 | 0:03 | | |
+| 3a, 70.3 and 70.10: one read of who sees, the Right of Inspection by LOS | 12:17 | 13:04 | 0:47 | 4:30 | Agent 12:17 to about 12:55; then the test-game library repaired (its template game was retired by PR 38), the Studio check, the measurement again (the open re-measured from fresh processes), the proof tool built and run small on both sides, the commit |
+| 3b, 70.1 (I): one Morale Check member for every check outside fire | 13:04 | 14:20 | 1:16 | | Agent 13:04 to about 14:16; the Studio check and the commit (65ebcec8) |
+| 3c, 70.1 (II): Voluntary Break and Voluntary Rout | 14:20 | 14:56 | 0:36 | | Agent 14:20 to about 14:53; Studio check; estimate 2:00 |
+| 3d, 70.2: rout from a building, Interdiction by vehicles and Guns, Fanaticism by SSR | 14:57 | 15:27 | 0:30 | | Agent 14:57 to about 15:24; Studio check; estimate 2:25 |
+| 3e, 70.4 and 70.5: the owner's choices on a ?, concealment for crews and vehicles (R70.35, R70.36 added) | 15:28 | 16:19 | 0:51 | | Agent 15:28 to about 16:08, then R70.35 16:09 to 16:13; Studio check; estimate 5:30 |
+| 3f, 70.8: Bypass endings and detection (R70.37, R70.38 added) | 16:19 | 16:52 | 0:33 | | Agent 16:19 to about 16:48; Studio check; estimate 1:45 |
+| 3g, 70.9: Searching, Mopping Up in any building (R70.39 added), and the measurement after it | 16:53 | 17:35 | 0:42 | | Agent 16:53 to about 17:27; Studio check; the base measured again under the user's Studio's load; estimate 4:15 |
+| 3h, 70.6: Withdrawal completed, CC with a Gun's crew, a Carrier HS; R70.40 (units in an enemy's Location inspect it) after a read-only agent's answer | 17:35 | 18:36 | 1:01 | | Agent 17:35 to about 18:25, the rule question 18:26 to 18:27, R70.40 18:27 to 18:35; Studio check; estimate 1:35 |
+| 3i, 70.7 (I): Infantry against Infantry with a vehicle, its Ambush, PRC in CC; the reviews' brief | 18:37 | 19:27 | 0:50 | | Agent 18:37 to about 19:24; the review brief beside it; Studio check; estimate 3:00 |
+| 3j, 70.7 (II): Street Fighting, A11.52's Passengers, A18.12 against a vehicle, D5.42 | 19:28 | 20:24 | 0:56 | | Agent 19:28 to about 20:20; Studio check; estimate 2:00. The build of 3a to 3j: 11:52 to 20:24 by the clock against the frame's 33:05 |
+| The six reviews and the strict stage (passed), rulings R70.41 to R70.47, the fix brief | 20:25 | 20:41 | 0:16 | | Reviews 20:25 to 20:38; strict 20:25 to 20:29. (The row was first written at 21:13 by `timelog_row.py`, which takes the end from the clock; the end here is the notes' 20:41.) |
+| Fix Round A: hidden information | 20:41 | 21:13 | 0:32 | | Agent 20:41 to about 21:10; Studio check |
+| Fix Round B: morale, rout, and Searching | 21:14 | 21:39 | 0:25 | | Agent 21:14 to about 21:37; Studio check |
+| Fix Round C: Close Combat | 21:39 | 22:08 | 0:29 | | Agent 21:39 to about 22:05; Studio check |
+| Fix Round D: the boundary, memory and performance; the memory measured before and after; the proof tool's view line | 22:08 | 22:35 | 0:27 | | Memory before 22:09 to 22:13; agent 22:14 to about 22:30; memory after; tool check |
+| Fix Round E: the page and the record lines (R70.48 added); the documents brief and the replay script beside it | 22:36 | 23:11 | 0:35 | | Agent 22:36 to about 23:10. The fix rounds A to E: 20:41 to 23:11 |
+| The whole-pass check: 41 games replayed, the hidden-information view, 1024 and 320, the hex audit, the measurement; the strict stage again (passed) | 23:11 | 23:20 | 0:09 | | Strict 23:12 to 23:16; the keyboard not exercised (the pane hidden) |
+| The documents by an agent (the design's sections 8 to 20, the review, R70.1 to R70.48, backlog 72, the plan, 80 inventory rows, the coverage, the prompt), checked | 23:20 | 23:47 | 0:27 | | Agent 23:20 to about 23:45; the checkers and strict-check run by me. The pass to the gate: 11:51 to 23:47 by the clock |
+| The merge gate: baseline, build, proofs; the early check's stop named (SKIP_JSON keys older records write), the proof tool's rolled-events dump, the stop put into gate.sh; every differing line named | 23:47 | 00:03 | 0:16 | | Baseline 23:48 to 23:49, build 23:50 to 23:52, proofs 23:53 (stopped at the early check), again 23:59 to 00:01; the rest after midnight (2026-10-26) |

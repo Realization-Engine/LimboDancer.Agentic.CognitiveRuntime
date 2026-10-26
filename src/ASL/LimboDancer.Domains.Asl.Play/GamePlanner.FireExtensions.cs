@@ -198,28 +198,62 @@ public sealed partial class GamePlanner
     /// Concealment dr modifier it needs, or null when it gains "?" with no dr. Rules decides it (pass 32.c) as a search through a fact reader over the
     /// map (the design, D4); the units cross as facts, their costlier reads made when asked.
     /// </summary>
-    private List<(UnitInstance Unit, int? Drm)> ConcealmentGains(GameState state)
+    private List<(UnitInstance Unit, int? Drm, IReadOnlyList<string> With)> ConcealmentGains(GameState state)
     {
         var map = new ConcealmentMap(this, state);
         UnitInstance[] units = [.. state.Units];
-        int? LocationIndex(UnitInstance unit) => state.Location(unit.Id) is { } at ? map.Index(at.Location) : null;
-        var gains = ScenarioA1FireFollowUps.ConcealmentGains(
-            units.Select(unit => new ConcealmentCandidateFacts(unit.Id, unit.Kind, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide, LiveFire.IsVehicle(unit),
+        // Pass 70 (ruling R70.16; the memory guideline): every Location and stack from the state's index, and the watchers as the sight table holds them.
+        var index = MemoOf(state).Objects(state);
+        var sight = SightOf(state);
+        int? LocationIndex(UnitInstance unit) => index.Location(unit.Id) is { } at ? map.Index(at.Location) : null;
+        IEnumerable<UnitInstance> Stack(UnitInstance unit) => index.At(index.Location(unit.Id)!.Location).OfType<UnitInstance>();
+
+        // Pass 70 (A12.2, A12.122, A12.34; ruling R70.22): the Gun each unit holds, read once for the state (it was a scan per unit), and what a candidate
+        // brings to its dr.
+        var held = new Dictionary<string, EquipmentInstance>(StringComparer.Ordinal);
+        foreach (var gun in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is not null))
+        {
+            held.TryAdd(gun.Holding!.Holder, gun);
+        }
+
+        ConcealmentCandidateFacts Candidate(UnitInstance unit, int position)
+        {
+            var gun = held.GetValueOrDefault(unit.Id);
+            var emplaced = gun is { Holding.Role: HoldingRole.Manned } && LiveOrdnance.Emplaced(state, gun, nonCrewManning: true);
+            var vehicle = LiveFire.IsVehicle(unit);
+            return new ConcealmentCandidateFacts(unit.Id, unit.Kind, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide, vehicle,
                 vocabulary.IsA(unit.Kind, "asl:personnel"), unit.Kind == UnitKinds.Dummy, unit.Definition is not null, vocabulary.IsA(unit.Kind, "asl:squad"),
-                vocabulary.IsA(unit.Kind, "asl:half-squad"), LocationIndex(unit), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), Is(unit, Conditions.Broken),
+                vocabulary.IsA(unit.Kind, "asl:half-squad"), LocationIndex(unit), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden),
+                // A12.1: a vehicle with neither an inherent crew nor PRC is "broken" for "?" gain, as Rules reads it into the sight table.
+                Is(unit, Conditions.Broken) || (vehicle && sight.Units[position].EmptyVehicle),
                 Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), Is(unit, Conditions.Captured),
-                () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { } holding && holding.Holder == unit.Id),
-                () => state.At(state.Location(unit.Id)!.Location).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)),
-                () => ReadLocation(state, state.Location(unit.Id)!.Location) is { } read ? TerrainKey(read) : null,
-                () => SmokeSources(state).Any(place => place.Board == state.Location(unit.Id)!.Location.Board && place.Hex == state.Location(unit.Id)!.Location.Hex),
-                () => state.At(state.Location(unit.Id)!.Location).OfType<UnitInstance>().Where(other => other != unit && other.Status == InstanceStatus.Active
+                () => gun is not null,
+                () => Stack(unit).Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)),
+                () => ReadLocation(state, index.Location(unit.Id)!.Location) is { } read ? TerrainKey(read) : null,
+                () => SmokeSources(state).Any(place => place.Board == index.Location(unit.Id)!.Location.Board && place.Hex == index.Location(unit.Id)!.Location.Hex),
+                () => Stack(unit).Where(other => other != unit && other.Status == InstanceStatus.Active
                         && other.Side == unit.Side && other.Kind == "asl:leader" && !Is(other, Conditions.Broken) && !Is(other, Conditions.Pinned)
                         && other.Definition is { } definition && FireReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.Leadership is not null)
-                    .Select(other => FireReference.Value.Definitions[other.Definition!.Definition].Leadership!.Value).DefaultIfEmpty(0).Min())),
-            units.Select((unit, index) => new WatchingEnemyFacts(index, unit.Status == InstanceStatus.Active, unit.Side != state.PhasingSide, Is(unit, Conditions.Broken),
-                Is(unit, Conditions.Captured), LocationIndex(unit))),
+                    .Select(other => FireReference.Value.Definitions[other.Definition!.Definition].Leadership!.Value).DefaultIfEmpty(0).Min())
+            {
+                HoldsEmplacedGun = emplaced,
+                VehicleConcealmentTerrain = vehicle ? () => VehicleConcealmentTerrain(state, index.Location(unit.Id)!.Location) : null,
+                Aboard = index.VehicleOf(unit.Id) is not null,
+                // A1.6, A19.36, A15.21: the sizes, Inexperience, and heroism Rules reads for the US#, Lax, and Stealthy (the boundary review, finding 4).
+                VehicleSize = vehicle ? FireReference.Value.Armor.GetValueOrDefault(unit.Definition?.Definition ?? string.Empty)?.TargetSize : null,
+                GunSize = gun is null ? null : OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty)?.TargetSize,
+                Inexperienced = () => Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True,
+                Heroic = Is(unit, Conditions.Heroic),
+                Shared = vehicle ? () => [.. index.Aboard(unit.Id).Select(rider => (rider.Id, GoodOrder(rider)))]
+                    : emplaced ? () => [(gun!.Id, true)]
+                    : null,
+            };
+        }
+
+        var gains = ScenarioA1FireFollowUps.ConcealmentGains(units.Select(Candidate),
+            units.Select((unit, position) => new WatchingEnemyFacts(position, unit.Side != state.PhasingSide, sight.Units[position] with { Location = LocationIndex(unit) })),
             state.Night, state.ScenarioMonth, map);
-        return [.. gains.Select(gain => (units.First(unit => unit.Id == gain.Id), gain.Drm))];
+        return [.. gains.Select(gain => (index.Unit(gain.Id)!, gain.Drm, gain.With))];
     }
 
     /// <summary>The map and the night as the concealment gain's search reads them: a table of Locations by index, the hex distance and LOS between two, a unit's NVR, and Illumination.</summary>
@@ -251,10 +285,10 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>The events of the concealment gained as a Player Turn ends (ruling R12.5): each dr needed, then each unit's "?"; Rules reads each dr (pass 32.c).</summary>
-    private void AddConcealmentGains(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<(UnitInstance Unit, int? Drm)> gains,
+    private void AddConcealmentGains(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<(UnitInstance Unit, int? Drm, IReadOnlyList<string> With)> gains,
         List<GameEvent> events, Func<RollRequest, RollResult>? draw, List<string> reasons)
     {
-        foreach (var (unit, drm) in gains)
+        foreach (var (unit, drm, with) in gains)
         {
             if (drm is { } modifier)
             {
@@ -279,8 +313,12 @@ public sealed partial class GamePlanner
                 reasons.Add(ScenarioA1FireFollowUps.ConcealmentWithoutDr(unit.Id));
             }
 
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "concealment-gained",
-                new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.Concealed] = ConditionState.True }), null, null));
+            // Pass 70 (A12.2; ruling R70.22): a vehicle's PRC and a crew's Gun gain the "?" with it.
+            foreach (var id in (IEnumerable<string>)[unit.Id, .. with])
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "concealment-gained",
+                    new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.Concealed] = ConditionState.True }), null, null));
+            }
         }
     }
 }

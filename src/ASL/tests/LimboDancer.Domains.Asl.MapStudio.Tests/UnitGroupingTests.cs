@@ -33,11 +33,14 @@ public sealed class UnitGroupingTests
     }
 
     [Fact]
-    public void WithNoPlacesOrOneItemTheListIsOneGroupInTheCallersOrder()
+    public void WithNoPlacesTheListIsOneGroupInTheCallersOrderAndALoneUnitKeepsItsHex()
     {
         string[] items = ["b", "a"];
         Assert.Equal(["b", "a"], Assert.Single(UnitGrouping.Groups(items, id => id, null)).Items);
-        Assert.Null(Assert.Single(UnitGrouping.Groups(["a"], id => id, _ => Place("A", 1))).Hex);
+
+        // Pass 70's fixes: a list of one unit still says its hex.
+        Assert.Equal("[A1]", Assert.Single(UnitGrouping.Groups(["a"], id => id, _ => Place("A", 1))).Hex);
+        Assert.Null(Assert.Single(UnitGrouping.Groups(["w"], id => id, _ => null)).Hex);
     }
 
     [Fact]

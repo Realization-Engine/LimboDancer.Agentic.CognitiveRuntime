@@ -70,4 +70,7 @@ public sealed class HexFactSet
     public HexFacts this[HexIndex hex] => byIndex[hex];
 
     public HexFacts this[HexName hex] => byIndex[Geometry.IndexOf(hex)];
+
+    /// <summary>Whether the set holds facts for the hex.</summary>
+    public bool Contains(HexIndex hex) => byIndex.ContainsKey(hex);
 }

@@ -41,7 +41,20 @@ public sealed record ChoicePending(string Key, string Kind, string Side, IReadOn
     /// <summary>The answers to a yes-or-no choice: take the option, or decline it.</summary>
     public const string Take = "take";
     public const string Decline = "decline";
+
+    /// <summary>
+    /// A12.14 (pass 70, ruling R70.21): a concealed stack has done something that loses its "?" in the LOS of the viewing side's concealed units only; that
+    /// side forces the loss (<see cref="Take"/>, one of them forfeiting its own "?" for a moment) or declines it (<see cref="Decline"/>). The choice and its
+    /// answer are recorded for the viewing side only.
+    /// </summary>
+    public const string ConcealmentLoss = Rules.ScenarioA1ConcealmentChoices.ConcealmentLossChoice;
 }
+
+/// <summary>
+/// <c>concealment-verified</c>: the viewing side's concealed units that forced a "?" loss forfeit their own "?" for a moment, shown to the moving side
+/// only, and are concealed again at once (A12.14: "to prove that it is not a Dummy"; pass 70, ruling R70.21). It changes nothing in the state.
+/// </summary>
+public sealed record ConcealmentVerified(IReadOnlyList<string> Units) : EventPayload;
 
 /// <summary><c>choice-made</c>: the choosing side's answer to the pending choice (ruling R5.8).</summary>
 public sealed record ChoiceMade(string Key, string Option) : EventPayload;

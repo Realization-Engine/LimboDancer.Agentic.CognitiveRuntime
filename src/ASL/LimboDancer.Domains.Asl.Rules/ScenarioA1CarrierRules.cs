@@ -61,6 +61,18 @@ public static class ScenarioA1CarrierRules
         : null;
 
     /// <summary>
+    /// D6.82 (p. 206), A1.32 (p. 45; pass 70, ruling R70.28): a Carrier HS is a HS whose creation recorded the Carrier it left (<paramref name="crewOf"/>);
+    /// it Recombines with no TC and no leader present. An ordinary HS, and every HS of a record made before the pass, has none.
+    /// </summary>
+    public static bool CarrierHalfSquad(bool halfSquad, string? crewOf) => halfSquad && crewOf is not null;
+
+    /// <summary>
+    /// Whether a leaving crew's creation records the vehicle it left (pass 70, ruling R70.28): only a Carrier's inherent HS, which may later Recombine as a
+    /// Carrier HS; a crew counter re-crews by its own rule (D5.42).
+    /// </summary>
+    public static bool RecordsCarrier(string leavingKind) => leavingKind == "asl:half-squad";
+
+    /// <summary>
     /// The counter a crew that leaves its vehicle is placed as (D5.1, D6.82; rulings R65.18, R65.19), as its definition and kind: a Carrier's inherent HS
     /// is the nationality's 2-4-7 HS, not elite (an elite Carrier HS waits for a scenario that names one); any other crew, or a Carrier HS of a
     /// nationality with no 2-4-7 HS in the catalog, is the nationality's vehicle crew. Null when the catalog has neither.

@@ -864,6 +864,10 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             Hit = merged.Hit! with
             {
                 Vehicles = LiveFire.WithRecordedPrc(merged.Hit.Vehicles, recorded.Hit.Vehicles),
+
+                // Pass 70 (ruling R70.7): whether a target is Unarmed is taken from the record; an older one has none.
+                Targets = merged.Hit.Targets is null || recorded.Hit.Targets is null || merged.Hit.Targets.Count != recorded.Hit.Targets.Count ? merged.Hit.Targets
+                    : [.. merged.Hit.Targets.Zip(recorded.Hit.Targets, (fact, record) => fact with { Unarmed = record.Unarmed })],
             },
         };
 

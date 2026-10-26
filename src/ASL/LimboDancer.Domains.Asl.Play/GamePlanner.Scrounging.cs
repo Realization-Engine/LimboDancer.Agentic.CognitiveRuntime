@@ -88,6 +88,8 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.scrounge: the catalog has no SW of {nationality} for {vehicleId}'s {ScenarioA1WreckRules.MountText(missing)} to become (D10.52)");
         }
 
+        // A12.141 (p. 78; ruling R70.17): Scrounging is an activity, and costs a "?" in the LOS of a Good Order enemy within 16 hexes.
+        var lost = ActionLosesConcealment(state, [unit]);
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var dr = draw(new RollRequest(1, 6)).Values[0];
@@ -135,11 +137,12 @@ public sealed partial class GamePlanner
                 Taken = taken.Count > 0 ? taken : null,
                 Mounts = mounts.Count > 0 ? mounts : null,
             }, null, null, [EventId(attemptId, 1)]));
+            events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, lost));
             return events;
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [ScenarioA1WreckRules.ScroungeText(unitId, vehicleId, at!.ToString(), mounts)])
+            [ScenarioA1WreckRules.ScroungeText(unitId, vehicleId, at!.ToString(), mounts), .. ConcealmentLossNote(lost)])
         {
             Roll = new PlannedRoll(ScenarioA1WreckRules.Purpose, Build),
             FirstEventId = EventId(attemptId, 1),

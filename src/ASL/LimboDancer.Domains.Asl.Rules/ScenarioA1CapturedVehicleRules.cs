@@ -16,6 +16,36 @@ public static class ScenarioA1CapturedVehicleRules
     public const string CloseCombat = "cc";
     public const string Unarmed = "unarmed";
 
+    /// <summary>A11.52 (pass 70, ruling R70.34): an armed unarmored vehicle taken with all its Passengers; an unarmed one so taken is <see cref="Unarmed"/>'s.</summary>
+    public const string Passengers = "passengers";
+
+    /// <summary>
+    /// A11.52 (p. 74): "If an unarmored stationary vehicle has Passengers and the attacker wishes to capture (rather than eliminate) the vehicle ... he must
+    /// capture any Passengers." Whether a vehicle's Passengers may be attacked to capture them in Infantry against Infantry CC (ruling R70.34): it is
+    /// unarmored and stationary ("Infantry may not attempt to capture ... a Motion/non-stopped vehicle (or its PRC)").
+    /// </summary>
+    public static bool PassengersCapturable(bool unarmored, bool motion) => unarmored && !motion;
+
+    /// <summary>
+    /// A11.52: "he must first attack and eliminate/capture all enemy Personnel in the Location, but must capture any Passengers. If all the Passengers are
+    /// captured, so is the vehicle." Whether the attack just made captures the vehicle (ruling R70.34): it captured a Passenger and eliminated none, no
+    /// Passenger is left uncaptured aboard, and no enemy Personnel uncaptured is left in the Location.
+    /// </summary>
+    public static bool CapturedWithPassengers(int capturedNow, bool passengerEliminatedNow, int passengersLeft, bool enemyPersonnelLeft) =>
+        capturedNow > 0 && !passengerEliminatedNow && passengersLeft == 0 && !enemyPersonnelLeft;
+
+    /// <summary>
+    /// A11.52, A21.21, A21.22 (ruling R70.34): how a vehicle taken with all its Passengers is recorded: an unarmed one as <see cref="Unarmed"/>'s, with its
+    /// Temporary Driver; an armed one as <see cref="Passengers"/>', marked Abandoned (unmanned) until a crew enters it, unless it already is (fix round C:
+    /// the planner's choice made here).
+    /// </summary>
+    public static (string Cause, bool MarkAbandoned) PassengerCapture(bool armed, bool abandoned) => armed ? (Passengers, !abandoned) : (Unarmed, false);
+
+    /// <summary>The proposal's words for an attack to capture Passengers (A11.52; ruling R70.34).</summary>
+    public static string PassengerCaptureText() =>
+        "; an attempt to capture the Passengers of an unarmored stationary vehicle, at -2 with the capture's +1; its captors defend against the Passengers' attack "
+        + "with +2, and once every Passenger is captured with no enemy Personnel left, so is the vehicle (A11.52, A20.22)";
+
     /// <summary>A21.22: how a Temporary crew mans a vehicle, as the <c>vehicle-recrewed</c> record names it.</summary>
     public const string VehicleCrew = "vehicle-crew";
     public const string InfantryCrew = "infantry-crew";
@@ -167,6 +197,8 @@ public static class ScenarioA1CapturedVehicleRules
         Unarmed => $"play.vehicle-captured: {vehicle} in {at} is unarmed and alone with the {side} side's Infantry, so it is captured (A11.52); "
             + (driver is null ? "a Temporary Driver runs it for its MMC captor at no cost (A21.21)" : $"{driver} is removed into it as its Temporary Driver until it takes on a new crew or is Abandoned (A21.21)"),
         CloseCombat => $"play.vehicle-captured: {vehicle} in {at} is captured by the {side} side's capture attempt (A21.2); it stays Abandoned until a crew enters it (D5.42, A21.22)",
+        Passengers => $"play.vehicle-captured: {vehicle} in {at} is captured with all its Passengers by the {side} side (A11.52); it is Abandoned until a crew enters it, "
+            + "which a captor may do this CCPh (D5.42, A21.22)",
         _ => $"play.vehicle-captured: {vehicle} in {at} is captured by the {side} side at the end of the CCPh, with no Personnel of its own side there (A21.2); it stays "
             + "Abandoned until a crew enters it (D5.42, A21.22)",
     };

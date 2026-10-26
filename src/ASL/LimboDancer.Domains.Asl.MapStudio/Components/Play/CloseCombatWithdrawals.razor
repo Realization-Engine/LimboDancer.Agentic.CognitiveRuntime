@@ -1,5 +1,6 @@
-@* Plan C05 (pass 27): units held in Melee withdraw to an ADJACENT Location with no enemy unit (A11.2), and a broken one must try (A11.16). The planner
-   supplies each unit's destinations and whether it must try; the page keeps the declarations and submits them with the round. *@
+@* Plan C05 (pass 27): units held in Melee withdraw to an ADJACENT Location with no Known enemy unit (A11.2, A11.21), and a broken one must try (A11.16). The
+   planner supplies each unit's destinations, as the side sees them (pass 70, ruling R70.26), and whether it must try; a unit above its IPC offers its SW to
+   drop, which stay unpossessed in the Location (A11.21). The page keeps the declarations and submits them with the round. *@
 <div class="toolbar" id="cc-withdrawals">
     @foreach (var unit in Units)
     {
@@ -13,6 +14,14 @@
                 }
             </select>
         </label>
+        @if (unit.Drops.Count > 0)
+        {
+            <span class="toolbar-note">@(unit.Destinations.Count == 0 ? "above its IPC, it withdraws once it drops enough (A11.21):" : "above its IPC, it drops (A11.21):")</span>
+            @foreach (var weapon in unit.Drops)
+            {
+                <label><input class="cc-drop" type="checkbox" data-unit="@unit.Id" data-weapon="@weapon.Id" checked="@Dropped.Contains(weapon.Id)" @onchange="@(args => OnDrop.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @Say(weapon.Label)</label>
+            }
+        }
     }
 </div>
 
@@ -23,8 +32,14 @@
 
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
 
-    /// <summary>A unit that may withdraw: its id, how it reads, whether it must try, and where it may go.</summary>
-    public sealed record Withdrawer(string Id, string Label, bool MustTry, IReadOnlyList<string> Destinations);
+    /// <summary>
+    /// A unit that may withdraw: its id, how it reads, whether it must try, where it may go, and, above its IPC, the SW it may drop to withdraw (pass 70,
+    /// ruling R70.26; empty otherwise).
+    /// </summary>
+    public sealed record Withdrawer(string Id, string Label, bool MustTry, IReadOnlyList<string> Destinations)
+    {
+        public IReadOnlyList<PlayChoice> Drops { get; init; } = [];
+    }
 
     /// <summary>A unit's declaration: where it withdraws to, or none when it stays.</summary>
     public sealed record Choice(string Unit, string? To);
@@ -37,4 +52,11 @@
 
     [Parameter]
     public EventCallback<Choice> OnWithdrawal { get; set; }
+
+    /// <summary>The SW ticked to drop (A11.21; ruling R70.26).</summary>
+    [Parameter]
+    public IReadOnlySet<string> Dropped { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnDrop { get; set; }
 }

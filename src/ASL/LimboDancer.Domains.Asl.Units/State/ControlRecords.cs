@@ -8,7 +8,17 @@ namespace LimboDancer.Domains.Asl.Units.State;
 /// enemy unit is left there, <paramref name="Secured"/> lists every Location of the building the side now Controls (A26.11); null when it is not secured.
 /// A building is Mopped Up once per Player Turn.
 /// </summary>
-public sealed record BuildingMoppedUp(string Building, string Side, IReadOnlyList<string> Units, IReadOnlyList<BoardLocation>? Secured) : EventPayload;
+public sealed record BuildingMoppedUp(string Building, string Side, IReadOnlyList<string> Units, IReadOnlyList<BoardLocation>? Secured) : EventPayload
+{
+    /// <summary>
+    /// The drm of the DEFENDER's Casualty dr that follows, from his concealed units as they were (A12.154; pass 70's fixes), for the record line of the
+    /// views that may know it; null when no Casualty dr is made, and on every record made before pass 70's fixes. No rule reads it at replay.
+    /// </summary>
+    public int? CasualtyDrm
+    {
+        get; init;
+    }
+}
 
 /// <summary>A building secured by Mopping Up (A12.153, A26.11; ruling R24.2): the side that secured it and the Locations it Controls from then on.</summary>
 public sealed record SecuredBuilding(string Building, string Side, IReadOnlyList<BoardLocation> Locations);

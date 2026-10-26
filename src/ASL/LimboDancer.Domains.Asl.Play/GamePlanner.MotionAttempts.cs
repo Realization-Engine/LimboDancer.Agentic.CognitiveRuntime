@@ -232,7 +232,7 @@ public sealed partial class GamePlanner
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
             [ScenarioA1MotionAttempts.Summary(id, mover.Id, halfPoints, state.Movement!.Vehicle, facing is { } vca ? UnitFacings.Name(vca) : null,
-                turret is { } tca ? UnitFacings.Name(tca) : null, unreliable, bogDrm, hexspines) + (bailing is null ? string.Empty : BailOutPreview(bailing) + ", if it passes")])
+                turret is { } tca ? UnitFacings.Name(tca) : null, unreliable, bogDrm, hexspines) + (bailing is null ? string.Empty : BailOutPreview(state, bailing) + ", if it passes")])
         {
             Roll = new PlannedRoll(ScenarioA1MotionAttempts.Purpose, Build),
             FirstEventId = EventId(attemptId, 1),

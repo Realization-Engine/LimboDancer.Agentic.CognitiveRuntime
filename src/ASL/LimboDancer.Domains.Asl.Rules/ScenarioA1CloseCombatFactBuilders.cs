@@ -21,11 +21,12 @@ public static class ScenarioA1CloseCombatFactBuilders
 
     /// <summary>
     /// A unit of a CC Location as the package reads it (rulings R14.3, R14.5, R14.8): concealed or hidden counts as concealed, TI, Unarmed, and CX are set
-    /// only when true, a prisoner's Guard is its custodian, and its SW are the possessed ones (none when it has none).
+    /// only when true, a prisoner's Guard is its custodian, its SW are the possessed ones (none when it has none), and its Guns the ones it mans (A11.13;
+    /// pass 70, ruling R70.27; none when it mans none).
     /// </summary>
     public static CloseCombatUnit Unit(string id, string definition, string side, bool broken, bool pinned, bool wounded, bool disrupted, bool berserk, bool fanatic, bool heroic,
         bool concealed, bool hidden, bool captured, bool advanced, bool melee, string? stackedWith, string? withdrawingTo, bool cx, bool ti, bool unarmed, string? custodian,
-        string? infiltrateTo, IReadOnlyList<string> weapons, bool manning = false)
+        string? infiltrateTo, IReadOnlyList<string> weapons, bool manning = false, IReadOnlyList<string>? guns = null)
     {
         ArgumentNullException.ThrowIfNull(weapons);
         return new CloseCombatUnit(id, definition, side, broken, pinned, wounded, disrupted, berserk, fanatic, heroic, concealed || hidden, captured, advanced, melee)
@@ -39,6 +40,7 @@ public static class ScenarioA1CloseCombatFactBuilders
             GuardId = captured ? custodian : null,
             InfiltrateTo = infiltrateTo,
             Weapons = weapons.Count > 0 ? weapons : null,
+            Guns = guns is { Count: > 0 } ? guns : null,
         };
     }
 
@@ -54,6 +56,20 @@ public static class ScenarioA1CloseCombatFactBuilders
         {
             HiddenPlaced = hiddenPlaced ? true : null,
         };
+
+    /// <summary>
+    /// A11.4's table (pass 70, ruling R70.30): each side's vehicles in the Location that are neither Abandoned nor captured (fix round C: the filter is
+    /// Rules'), from each vehicle's side and whether it is an AFV that is BU (not CE) or Stunned; null where no such vehicle stands, so a record made before
+    /// the pass reads as it did.
+    /// </summary>
+    public static IReadOnlyList<AmbushVehicleFacts>? AmbushVehicles(IReadOnlyList<(string Side, bool Afv, bool CrewExposed, bool Stunned, bool Abandoned, bool Captured)> vehicles)
+    {
+        ArgumentNullException.ThrowIfNull(vehicles);
+        var counted = vehicles.Where(item => !item.Abandoned && !item.Captured).ToArray();
+        return counted.Length == 0 ? null
+            : [.. counted.GroupBy(item => item.Side, StringComparer.Ordinal).OrderBy(group => group.Key, StringComparer.Ordinal)
+                .Select(group => new AmbushVehicleFacts(group.Key, group.Count(item => item.Afv && (!item.CrewExposed || item.Stunned))))];
+    }
 
     /// <summary>A4.152 (ruling R27.3): the CC of an Infantry OVR follows its entry at once in the MPh, as one simultaneous round with no Ambush.</summary>
     public static CloseCombatFacts Overrun(string locationText, string? terrain, string? phasingSide, IReadOnlyList<CloseCombatUnit> units, IReadOnlyList<CloseCombatDeclaration> attacks) =>
@@ -76,7 +92,10 @@ public static class ScenarioA1CloseCombatFactBuilders
         ArgumentNullException.ThrowIfNull(recorded);
         var rounds = recorded.Count(item => item != CloseCombatFacts.PrisonersRound);
         var ambushers = ambusher is not null && ambusherPresent;
-        var round = requested == CloseCombatFacts.PrisonersRound && recorded.Count == 0 ? CloseCombatFacts.PrisonersRound
+
+        // A11.31 (pass 70, ruling R70.30): an Infantry attack on Infantry in a Location holding a vehicle is one sequential attack, asked for by name.
+        var round = requested == CloseCombatFacts.Sequential ? CloseCombatFacts.Sequential
+            : requested == CloseCombatFacts.PrisonersRound && recorded.Count == 0 ? CloseCombatFacts.PrisonersRound
             : ambusher is null ? CloseCombatFacts.Simultaneous
             : ambushers && (rounds == 0 || requested == CloseCombatFacts.AmbusherRound) ? CloseCombatFacts.AmbusherRound
             : CloseCombatFacts.AmbushedRound;

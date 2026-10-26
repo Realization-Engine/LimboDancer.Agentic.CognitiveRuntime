@@ -53,8 +53,8 @@ public sealed partial class GamePlanner
         /// <summary><c>RoutSurrender</c>'s answer per unit, with the Location it was asked from.</summary>
         public ConcurrentDictionary<UnitInstance, (BoardLocation Start, (string Cause, IReadOnlyList<string> Captors)? Surrender)> RoutSurrender { get; } = new(ReferenceEqualityComparer.Instance);
 
-        /// <summary><c>RoutAdvice</c>'s answer per unit.</summary>
-        public ConcurrentDictionary<UnitInstance, (IReadOnlyList<BoardLocation> Targets, bool CanRout, IReadOnlyDictionary<BoardLocation, IReadOnlyList<BoardLocation>> Routes)> RoutAdvice { get; } = new(ReferenceEqualityComparer.Instance);
+        /// <summary><c>RoutAdvice</c>'s answer per unit, with the woods and building Locations within reach it may all ignore (A10.51 EXC; pass 70, the fixes).</summary>
+        public ConcurrentDictionary<UnitInstance, (IReadOnlyList<BoardLocation> Targets, bool CanRout, IReadOnlyDictionary<BoardLocation, IReadOnlyList<BoardLocation>> Routes, IReadOnlyList<BoardLocation> Ignored)> RoutAdvice { get; } = new(ReferenceEqualityComparer.Instance);
 
         /// <summary>
         /// The map context (the A3 plan, W3): each board's handle at the version the state pins, looked up once; null when the board is not on the
@@ -103,6 +103,51 @@ public sealed partial class GamePlanner
             ?? (custodians = state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian is not null)
                 .Select(prisoner => prisoner.Custodian!).ToHashSet(StringComparer.Ordinal));
 
+        // The active Guns each unit mans, read once for the state; two circuits may each build it, and either is kept.
+        private Dictionary<string, EquipmentInstance[]>? mannedGuns;
+
+        /// <summary>
+        /// The active Guns each unit mans, by the unit's id (pass 70, the boundary review, finding 7): the rout's Known enemy units and the "?" a removal
+        /// shares read it, where each scanned every weapon of the state per unit. View-independent; read only.
+        /// </summary>
+        public Dictionary<string, EquipmentInstance[]> MannedGuns(GameState state) => Volatile.Read(ref mannedGuns)
+            ?? (mannedGuns = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned })
+                .GroupBy(item => item.Holding!.Holder, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal));
+
+        /// <summary>
+        /// The sides of the road through a Location (A11.8; ruling R70.33), by the Location, read from the board's handle the state keeps (pass 70, the
+        /// boundary review, finding 20): the Close Combat page asked it per advance per render. View-independent; the fill reads the map only.
+        /// </summary>
+        public ConcurrentDictionary<BoardLocation, IReadOnlyList<IReadOnlyList<string>>> RoadSides { get; } = new();
+
+        // The state's units as seers (pass 70, ruling R70.16), built at its first use from the index; two circuits may each build it, and either is kept.
+        private SightTable? sight;
+
+        /// <summary>
+        /// Every unit's facts as a seer and the table of their Locations (ruling R70.16), built once from <see cref="Objects"/> in one pass over the units.
+        /// View-independent: it holds every side's units, hidden ones too, and is read only by the sight reads below, never shown.
+        /// </summary>
+        public SightTable Sight(Func<SightTable> build) => Volatile.Read(ref sight) ?? (sight = build());
+
+        /// <summary>
+        /// The distinct seer Locations by watched side and purpose (ruling R70.16), indexes into <see cref="Sight"/>'s table: the units of every side but
+        /// the watched one that see for the purpose (an Inspection key holds the viewer's own seers). The fill reads the table only.
+        /// </summary>
+        public ConcurrentDictionary<(string Side, SightPurpose Purpose), int[]> SeerLocations { get; } = new();
+
+        /// <summary>
+        /// The range to the nearest seer with a LOS (ruling R70.16), by watched side, purpose, LOS reading, and Location; null when none has one. It reads the
+        /// seeing side's units as the state holds them, so it is read for decisions and proposals, never shown to the watched side. The fill reads the
+        /// planner's LOS cache and has no side effect.
+        /// </summary>
+        public ConcurrentDictionary<(string Side, SightPurpose Purpose, SightLosReading Reading, BoardLocation At), int?> NearestSeers { get; } = new();
+
+        /// <summary>
+        /// The Locations of the enemy stacks a viewer may not inspect (A12.16; ruling R70.18), by the viewer's name; null before setup closes and for the
+        /// adjudicator. Keyed by viewer, since it reads the viewer's own seers (hidden ones too): it is that viewer's to know.
+        /// </summary>
+        public ConcurrentDictionary<string, IReadOnlySet<BoardLocation>?> Uninspected { get; } = new(StringComparer.Ordinal);
+
         // 1 once the ATTACKER's first unit owing a rout is kept (null kept too); written after the answer, read with a volatile read.
         private int attackerRoutKept;
         private UnitInstance? attackerRout;
@@ -136,7 +181,7 @@ public sealed partial class GamePlanner
                 return composed;
             }
 
-            var made = planner.ComposedOf(state);
+            var made = planner.ComposedOf(state, this);
             composed = made;
             Volatile.Write(ref composedKept, 1);
             return made;
@@ -298,6 +343,25 @@ public sealed partial class GamePlanner
 
         /// <summary>The active objects in a Location, as <see cref="GameState.At"/> reads them.</summary>
         public IReadOnlyList<IGameObject> At(BoardLocation location) => at.TryGetValue(location, out var stack) ? stack : [];
+
+        /// <summary>
+        /// The occupied Locations of a set of hexes, every level, with their active objects as <see cref="At"/> holds them (pass 70, ruling R70.25): one pass
+        /// over the index's stacks, so Searching and Mopping Up never look up each Location. The stacks are read only (the boundary review, finding 18).
+        /// </summary>
+        public List<(BoardLocation At, IReadOnlyList<IGameObject> Stack)> OccupiedIn(IEnumerable<BoardLocation> hexes)
+        {
+            var wanted = hexes.Select(hex => (hex.Board, hex.Hex)).ToHashSet();
+            var found = new List<(BoardLocation At, IReadOnlyList<IGameObject> Stack)>();
+            foreach (var (location, stack) in at)
+            {
+                if (wanted.Contains((location.Board, location.Hex)))
+                {
+                    found.Add((location, stack));
+                }
+            }
+
+            return found;
+        }
 
         /// <summary>Where an object is, as <see cref="GameState.Location"/> reads it; null for an id the state does not hold.</summary>
         public MapPosition? Location(string id) => locations.GetValueOrDefault(id);

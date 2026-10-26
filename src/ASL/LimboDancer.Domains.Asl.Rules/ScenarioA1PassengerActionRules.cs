@@ -316,7 +316,38 @@ public static class ScenarioA1PassengerActionRules
     /// armored halftrack attacks only while CE; others attack. A Passenger of a Mobile vehicle that survives the first round is not held in Melee.
     /// </summary>
     public static (string Part, bool HeldInMelee) CloseCombat(string role, bool armored, bool exposed, bool vehicleMobile) =>
-        (role == FirePrc.Rider ? Apart : armored && !exposed ? Idle : Attacks, !vehicleMobile);
+        (role == FirePrc.Rider ? Apart : armored && !exposed ? Idle : Attacks, HeldInMelee(vehicleMobile));
+
+    /// <summary>
+    /// A11.71 (p. 76: "Passengers/Riders of Immobile vehicles are held in Melee"; pass 70, ruling R70.31): whether a PRC is held in Melee at the CCPh's end,
+    /// read by the projector from its vehicle's own state.
+    /// </summary>
+    public static bool HeldInMelee(bool vehicleMobile) => !vehicleMobile;
+
+    /// <summary>
+    /// A11.71 (ruling R70.31): a vehicle is Mobile, for its PRC's part in CC, while neither Immobilized nor Bogged (fix round C: one reading for Play and the
+    /// projector).
+    /// </summary>
+    public static bool VehicleMobile(bool immobilized, bool bogged) => !immobilized && !bogged;
+
+    /// <summary>
+    /// D6.5, D6.24, A7.211 (pp. 205, 55; pass 70, ruling R70.32): PRC that unload, Bail Out, or survive TPBF in a Location holding a Known enemy unit are in
+    /// an enemy Location and not held in Melee; the CC counter that shows it is no stored condition, since units are held in Melee only at the CCPh's end.
+    /// </summary>
+    public static string EnemyLocationText(string locationText, string rule) =>
+        $"; {locationText} holds a Known enemy unit, so they are in an enemy Location and not held in Melee until the CCPh ends ({rule})";
+
+    /// <summary>
+    /// D6.5, D6.24 (ruling R70.32): whether a unit makes a Location an enemy Location for PRC of another side that unload or Bail Out there: an active enemy
+    /// unit, not a vehicle, Known (<see cref="ScenarioA1PrisonerCalculator.KnownEnemy"/>: no Dummy, "?", hidden unit, or prisoner), which every view may know.
+    /// One reading for the proposals and the record lines (fix round C).
+    /// </summary>
+    public static bool MakesEnemyLocation(bool active, bool enemy, bool vehicle, bool dummy, bool concealed, bool hidden, bool captured) =>
+        active && enemy && !vehicle && ScenarioA1PrisonerCalculator.KnownEnemy(dummy, concealed, hidden, captured);
+
+    /// <summary>A7.211 (p. 55; ruling R70.32): PRC attacked by TPBF in their own Location that survive are in an enemy Location, not held in Melee until after the CCPh.</summary>
+    public static string TpbfPrcText() =>
+        "; the PRC that survive are in an enemy Location and not held in Melee until after the CCPh, those of a Mobile vehicle never (A7.211, A11.71)";
 
     /// <summary>
     /// D6.31 (p. 205; ruling R65.10): why a SW may not pass between these units, or null. A PRC passes a SW it possesses to friendly Infantry in its

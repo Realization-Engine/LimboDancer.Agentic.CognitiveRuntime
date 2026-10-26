@@ -457,6 +457,9 @@ public static class LiveFire
     /// <summary>A vehicle definition's class (catalog 1.18.0; pass 65, ruling R65.3), such as <c>halftrack</c> or <c>carrier</c>; null when it prints none.</summary>
     public static string? VehicleClassOf(string? definition) => definition is null ? null : CatalogReference.Value.Definitions.GetValueOrDefault(definition)?.VehicleClass;
 
+    /// <summary>Whether a vehicle definition is unarmored (D1.1), as the catalog prints it; null when it prints none.</summary>
+    public static bool? UnarmoredOf(string? definition) => definition is null ? null : CatalogReference.Value.Definitions.GetValueOrDefault(definition)?.Unarmored;
+
     /// <summary>Whether a unit is a vehicle (D1).</summary>
     public static bool IsVehicle(UnitInstance unit) => unit.Kind == "asl:vehicle";
 
@@ -495,8 +498,8 @@ public static class LiveFire
     internal static IReadOnlyList<FireVehicle>? WithRecordedPrc(IReadOnlyList<FireVehicle>? state, IReadOnlyList<FireVehicle>? recorded) =>
         state is null || recorded is null ? state
             : [.. state.Select(vehicle => recorded.FirstOrDefault(item => item.VehicleId == vehicle.VehicleId) is { } record
-                // Pass 65 (ruling R65.21): so are its Shock and Abandonment, written with the PRC.
-                ? vehicle with { Prc = record.Prc, Shocked = record.Shocked, Abandoned = record.Abandoned }
+                // Pass 65 (ruling R65.21): so are its Shock and Abandonment, written with the PRC; pass 70 (ruling R70.10): and a crew already broken.
+                ? vehicle with { Prc = record.Prc, Shocked = record.Shocked, Abandoned = record.Abandoned, CrewBroken = record.CrewBroken }
                 : vehicle with { Prc = null })];
 
     /// <summary>
@@ -931,6 +934,90 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
     public static FireRecordVerifier Shared => Instance.Value;
 
+    /// <summary>
+    /// Replays a morale check made outside an attack (pass 70, ruling R70.4): each unit it names is active in its Location with the facts the state gives (the
+    /// map reads, the vehicle a unit rides, and the leaders lost before it are taken as recorded), its ELR is its side's, and the Morale Check member gives
+    /// the recorded resolution from the facts and the recorded dice.
+    /// </summary>
+    public string? VerifyMoraleCheck(GameState state, MoraleCheckResolved check, IReadOnlyDictionary<string, DiceRolled> rolls)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(check);
+        ArgumentNullException.ThrowIfNull(rolls);
+        MoraleCheckFacts? recorded;
+        try
+        {
+            recorded = check.Facts.Deserialize<MoraleCheckFacts>(LiveFire.StrictJson);
+        }
+        catch (JsonException exception)
+        {
+            return "The morale check record's facts cannot be read: " + exception.Message;
+        }
+
+        if (recorded?.Subjects is null || recorded.Rolls is not null || !BoardLocation.TryParse(check.Location, out var at))
+        {
+            return "The morale check record's facts are incomplete.";
+        }
+
+        FireTarget[] named = [.. recorded.Subjects, .. recorded.Others ?? []];
+        if (!named.Select(item => item.UnitId).SequenceEqual(check.Units))
+        {
+            return "The morale check record names other units than its facts.";
+        }
+
+        string? side = null;
+        foreach (var target in named)
+        {
+            if (state.Unit(target.UnitId ?? string.Empty) is not { Status: InstanceStatus.Active } unit || state.Location(unit.Id)?.Location != at)
+            {
+                return $"The morale check record names {target.UnitId}, which is not in {at}.";
+            }
+
+            side ??= unit.Side;
+            var expected = LiveFire.Target(state, unit, at) with
+            {
+                Unarmed = GameState.Condition(unit, Conditions.Unarmed) == ConditionState.True ? true : null,
+                Encircled = state.Encircled(unit) ? true : target.Encircled,
+                Aboard = target.Aboard,
+                SeenByGoodOrderEnemy = target.SeenByGoodOrderEnemy,
+                KnownEnemyInLos = target.KnownEnemyInLos,
+                Captors = target.Captors,
+            };
+            if (unit.Side != side || JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(target, LiveFire.Json))
+            {
+                return $"The morale check record's facts of {unit.Id} do not match the game state.";
+            }
+        }
+
+        if (side is not null && recorded.TargetSideElr != state.Side(side)?.Elr)
+        {
+            return "The morale check record's ELR is not its side's.";
+        }
+
+        var dice = new FireRolls(null, null, null, null, null);
+        foreach (var (key, id) in check.Rolls)
+        {
+            var kind = key.Split(':')[0];
+            if (!rolls.TryGetValue(id, out var roll) || roll.Sides != 6 || kind is not ("checks" or "leaderLoss" or "heatOfBattle" or "berserkCheck" or "woundSeverity")
+                || roll.Count != (kind == "woundSeverity" ? 1 : 2) || !key.Contains(':', StringComparison.Ordinal))
+            {
+                return "The morale check record names a roll of the wrong shape.";
+            }
+
+            dice = GamePlanner.ApplyFireRoll(dice, key, roll.Values);
+        }
+
+        var resolution = ScenarioA1MoraleCheck.Resolve(recorded with
+        {
+            Rolls = dice
+        }, reference);
+        return resolution.Disposition != FireResolution.Resolved
+            ? "The morale check record's facts and rolls do not resolve: " + string.Join("; ", resolution.Reasons)
+            : !JsonElement.DeepEquals(JsonSerializer.SerializeToElement(resolution, LiveFire.Json), check.Resolution)
+                ? "The morale check record's resolution differs from what its facts and rolls give."
+                : null;
+    }
+
     public string? Verify(GameState state, FireResolved fire, IReadOnlyDictionary<string, DiceRolled> rolls)
     {
         ArgumentNullException.ThrowIfNull(state);
@@ -1052,6 +1139,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                     KnownEnemyInLos = record.KnownEnemyInLos,
                     Captors = record.Captors,
                     Encircled = fact.Encircled ?? record.Encircled,
+
+                    // Pass 70 (ruling R70.7): whether a target is Unarmed is written with the attack and taken from the record; an older one has none.
+                    Unarmed = record.Unarmed,
                 })],
             // D3.52, C5.11 (pass 50): the hexspines a vehicle's MG must turn its CA, and its hex's terrain, are map reads recorded with the attack.
             VehicleFire = expected.VehicleFire is { Weapons: { } stateWeapons } armedVehicle && recorded.VehicleFire is { Weapons: { } recordedWeapons } recordedVehicle

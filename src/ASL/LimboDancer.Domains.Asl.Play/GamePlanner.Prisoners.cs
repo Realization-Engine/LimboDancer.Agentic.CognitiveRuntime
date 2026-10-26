@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.State;
@@ -37,6 +38,14 @@ public sealed partial class GamePlanner
 
         var ambusher = entry!.Ambusher!;
 
+        // A11.21, A4.43 (pass 70, ruling R70.26): a unit above its IPC withdraws by dropping SW, which stay unpossessed in the Location.
+        var (drops, dropBar) = WithdrawalDrops(state, arguments, ids);
+        if (dropBar is not null)
+        {
+            return Refused(scope, label, expected, dropBar);
+        }
+
+        IReadOnlyList<string> DropsOf(string unitId) => drops.GetValueOrDefault(unitId) ?? [];
         var tiring = new List<string>();
         foreach (var id in ids)
         {
@@ -46,32 +55,70 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, ScenarioA1PrisonerCalculator.AmbushWithdrawerText(id, location.ToString()));
             }
 
-            if (ScenarioA1PrisonerCalculator.AmbushWithdrawalToBar(id, WithdrawalDestinations(state, unit, location).Contains(to)) is { } toBar)
+            if (ScenarioA1CloseCombatRules.WithdrawalPortageBar(id, Laden(state, unit, DropsOf(id))) is { } portageBar)
+            {
+                return Refused(scope, label, expected, portageBar);
+            }
+
+            if (ScenarioA1PrisonerCalculator.AmbushWithdrawalToBar(id, WithdrawalDestinations(state, unit, location, DropsOf(id)).Contains(to)) is { } toBar)
             {
                 return Refused(scope, label, expected, toBar);
             }
 
-            if (WithdrawalTires(state, unit, location, to))
+            if (WithdrawalTires(state, unit, location, to, DropsOf(id)))
             {
                 tiring.Add(id);
             }
         }
 
+        // A11.21 (ruling R70.26): what the Location withdrawn into holds is read before the withdrawal; a Random Selection among several concealed units
+        // there is rolled at the commit.
+        var verdict = WithdrawalEntries(state, ids.Select(id => (id, (string?)to.ToString()))).GetValueOrDefault(to.ToString()) ?? WithdrawalEntryVerdict.None;
         var package = ScenarioA1CloseCombatPackage.Identity.ToString();
-        var events = new List<GameEvent>();
-        foreach (var id in ids)
+        IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-moved", new InstanceMoved(id, new MapPosition(to)), package, null));
+            var events = new List<GameEvent>();
+            foreach (var dummy in verdict.DummiesRemoved)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(dummy), package, null));
+            }
+
+            foreach (var id in ids)
+            {
+                // A11.21, A4.43 (ruling R70.26): the SW dropped to withdraw stay in the Location left, also when the unit dies on entry (fix round C).
+                foreach (var weapon in DropsOf(id))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "equipment-transferred", new EquipmentTransferred(weapon, null, new MapPosition(location)), package, null));
+                }
+
+                if (verdict.Eliminated)
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(id), package, null));
+                    continue;
+                }
+
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-moved", new InstanceMoved(id, new MapPosition(to)), package, null));
+            }
+
+            foreach (var id in verdict.Eliminated ? [] : tiring)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                    new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.Cx] = ConditionState.True }), package, null, [EventId(attemptId, 1)]));
+            }
+
+            AddWithdrawalReveals(scope, attemptId, expected, "system", events, new Dictionary<string, WithdrawalEntryVerdict>(StringComparer.Ordinal) { [to.ToString()] = verdict }, draw, package);
+            return events;
         }
 
-        foreach (var id in tiring)
+        // A11.21, A12.11 (the referee's finding at the reviews): the plan is always rolled, its events built at the commit, so neither its shape nor its
+        // events tell the withdrawing side what is under the "?" there (or hidden) before it commits; a Random Selection is drawn only when it is due.
+        string[] dropping = [.. drops.Values.SelectMany(item => item).Order(StringComparer.Ordinal)];
+        string[] messages = [ScenarioA1PrisonerCalculator.AmbushWithdrawalSummary(ids, location.ToString(), to.ToString(), tiring), .. dropping.Length > 0 ? [ScenarioA1Withdrawal.DropsText(dropping)] : Array.Empty<string>()];
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], messages)
         {
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.Cx] = ConditionState.True }), package, null, [EventId(attemptId, 1)]));
-        }
-
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-            [ScenarioA1PrisonerCalculator.AmbushWithdrawalSummary(ids, location.ToString(), to.ToString(), tiring)]);
+            Roll = new PlannedRoll(ScenarioA1Withdrawal.SelectionPurpose, Build),
+            FirstEventId = EventId(attemptId, 1),
+        };
     }
 
     /// <summary>

@@ -99,7 +99,13 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>The LOS result between two Locations, or null when the map has no LOS data to read.</summary>
-    private LosResult? Los(GameState state, BoardLocation from, BoardLocation to)
+    private LosResult? Los(GameState state, BoardLocation from, BoardLocation to) => Los(state, MemoOf(state), from, to);
+
+    /// <summary>
+    /// The LOS result between two Locations, its map context (the board handles, the composed read) read through <paramref name="memo"/>: the state's own
+    /// memo, or a transient one a history's view keeps for no longer than its read (the boundary review of pass 70, finding 1).
+    /// </summary>
+    private LosResult? Los(GameState state, PlayStepMemo memo, BoardLocation from, BoardLocation to)
     {
         if (fireLos is not null)
         {
@@ -109,11 +115,11 @@ public sealed partial class GamePlanner
         LosMap? map;
         if (state.Map.IsPlaced)
         {
-            map = Composed(state) is { } composed ? LosMap.ForPlacedMap(composed).Map : null;
+            map = Composed(state, memo) is { } composed ? LosMap.ForPlacedMap(composed).Map : null;
         }
         else
         {
-            map = state.Map.Boards is [{ } placed] && Handle(state, placed.Board) is { } handle
+            map = state.Map.Boards is [{ } placed] && Handle(state, memo, placed.Board) is { } handle
                 ? BoardLosMaps.GetValue(handle, board => new LosMapHolder(LosMap.ForBoard(board).Map)).Map : null;
         }
 
@@ -182,86 +188,4 @@ public sealed partial class GamePlanner
     /// <summary>Whether Infantry could advance from one Location into the other (A.8, A4.7, B16.4), enemy presence ignored.</summary>
     private bool AdvanceStep(GameState state, BoardLocation from, BoardLocation to) =>
         InfantryStep(state, from, to).Entry is { } entry && ScenarioA1AdvanceCalculator.MarshBar(entry.AllMf) is null;
-
-    /// <summary>
-    /// The units of the game as the scans for a seeing enemy read them (pass 32.b), with a table of their Locations by index, and the LOS between two
-    /// Locations of the table as Rules asks for it (the pass 32 design, D4).
-    /// </summary>
-    private sealed class EnemyScan : ILosFactReader
-    {
-        private readonly GamePlanner planner;
-        private readonly GameState state;
-        private readonly List<BoardLocation> locations = [];
-        private readonly Dictionary<BoardLocation, int> indexes = [];
-
-        public EnemyScan(GamePlanner planner, GameState state)
-        {
-            this.planner = planner;
-            this.state = state;
-            Units = [.. state.Units.Select(unit => new EnemyUnitFacts(unit.Status == InstanceStatus.Active, unit.Side, unit.Kind == UnitKinds.Dummy, state.Aboard(unit.Id) is not null,
-                Is(unit, Conditions.Hidden), GoodOrder(unit), state.Location(unit.Id)?.Location is { } at ? Index(at) : null))];
-        }
-
-        public IReadOnlyList<EnemyUnitFacts> Units
-        {
-            get;
-        }
-
-        /// <summary>The index of a Location in the table, added when it is new.</summary>
-        public int Index(BoardLocation location)
-        {
-            if (!indexes.TryGetValue(location, out var index))
-            {
-                index = locations.Count;
-                locations.Add(location);
-                indexes[location] = index;
-            }
-
-            return index;
-        }
-
-        public LosFacts? Los(int fromLocation, int toLocation) =>
-            planner.Los(state, locations[fromLocation], locations[toLocation]) is { } result ? new LosFacts(result.Status == LosStatus.Clear, result.Range) : null;
-    }
-
-    /// <summary>
-    /// The range to the nearest Good Order enemy ground unit with a clear LOS to a Location (A12.34); null when none has one. A Passenger is not counted:
-    /// its vehicle is (ruling R26.2).
-    /// </summary>
-    private int? NearestGoodOrderEnemyInLos(GameState state, string side, BoardLocation at)
-    {
-        var scan = new EnemyScan(this, state);
-        return ScenarioA1MovementCalculator.NearestGoodOrderEnemyInLos(scan.Units, side, scan.Index(at), scan);
-    }
-
-    /// <summary>
-    /// An attack with, for each concealed unit that fires or directs, whether a Good Order enemy ground unit within 16 hexes has a LOS to it (A12.14,
-    /// read in the PDF, p. 77; pass 31d, ruling R31d.2). The Fire package sees the target Location alone, and refused fire by concealed units at a
-    /// Location with no Good Order unit as undecided; a refusal marks no firer, so a side could try a "?" stack and read from the refusal that it
-    /// held Dummies. With this read the attack is made, and the firer's "?" is lost or kept as the rule has it. A hidden unit, which would have to
-    /// show itself to force the loss, does not force it. At night the read is not given (E1.31), and the package decides as before.
-    /// </summary>
-    private FireAttack WithSeen(GameState state, FireAttack attack)
-    {
-        // Pass 32.b: the attack's firers and directors are found in the state here, the units and their LOS read through the scan, and Rules decides.
-        var scan = new EnemyScan(this, state);
-        var subjects = new Dictionary<string, SeenSubjectFacts>(StringComparer.Ordinal);
-        foreach (var unitId in (attack.Firers ?? []).Select(item => item.UnitId).Append(attack.Director?.UnitId).Concat((attack.OtherDirectors ?? []).Select(item => item.UnitId)))
-        {
-            if (unitId is not null && !subjects.ContainsKey(unitId) && state.Unit(unitId) is { } unit)
-            {
-                subjects[unitId] = new SeenSubjectFacts(unit.Side, state.Location(unit.Id)?.Location is { } at ? scan.Index(at) : null);
-            }
-        }
-
-        return ScenarioA1MovementCalculator.WithSeen(attack, state.Night, subjects, scan.Units, scan);
-    }
-
-    /// <summary>Whether any Good Order enemy ground unit within 16 hexes has a clear LOS to a Location (A12.14, A12.141).</summary>
-
-    private bool EnemyGoodOrderInLosWithin16(GameState state, string side, BoardLocation at)
-    {
-        var scan = new EnemyScan(this, state);
-        return ScenarioA1MovementCalculator.EnemyGoodOrderInLosWithin16(scan.Units, side, scan.Index(at), scan);
-    }
 }

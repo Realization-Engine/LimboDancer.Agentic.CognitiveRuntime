@@ -173,6 +173,7 @@ internal static class UnitFragmentKey
             .Append('t').Append(document.TurretFacing is { } turret ? ((int)turret).ToString(CultureInfo.InvariantCulture) : "-")
             .Append('h').Append(document.Hexside is { } hexside ? ((int)hexside).ToString(CultureInfo.InvariantCulture) : "-")
             .Append(document.Uninspected ? "u" : "-")
+            .Append(document.OutOfLos ? "l" : "-")
             .Append(document.Dummy ? "d" : "-")
             .Append('}');
     }

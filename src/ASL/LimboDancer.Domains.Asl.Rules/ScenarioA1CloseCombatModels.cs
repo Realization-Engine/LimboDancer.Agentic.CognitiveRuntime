@@ -44,6 +44,16 @@ public sealed record CloseCombatUnit(
     }
 
     /// <summary>
+    /// The Guns the unit mans (A11.13; pass 70, ruling R70.27): never used in CC, each lost with the unit on a colored dr of 1 and a dr at most the black
+    /// Kill Number. Null in a record made before the pass, whose Gun loss is not rolled, and when the unit mans none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? Guns
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The ADJACENT Location a unit held in Melee attempts to Withdraw to (A11.2, A11.21), declared before the attacks; null when it
     /// stands.
     /// </summary>
@@ -91,6 +101,27 @@ public sealed record CloseCombatUnit(
     /// <summary>The Location the unit withdraws to by Infiltration after an Original 2 by its attack or 12 against it (A11.22; ruling R14.8); null declines.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InfiltrateTo
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the unit is a Rider of a vehicle in the Location (A11.611, p. 75; pass 70, ruling R70.31): it is attacked apart in Infantry against Infantry
+    /// CC, with +1 to its own attacks and -1 to attacks against it. Null is false, as in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Rider
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The unarmored, stationary vehicle the unit is a Passenger of (A11.52, p. 74; pass 70, ruling R70.34): the enemy may attack it only to capture it,
+    /// with -2 and the capture's +1, in Infantry against Infantry CC. It makes no attack of its own there (its attacks join its vehicle's, A11.62) and counts
+    /// for no stacking of the Location. Null for a unit on foot, and in every record made before the pass, which names no Passenger.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PassengerOf
     {
         get; init;
     }
@@ -197,6 +228,12 @@ public sealed record CloseCombatFacts(
 
     /// <summary>The prisoners' escape attacks, resolved before any other CC in the Location (A11.33, A20.55; ruling R14.6).</summary>
     public const string PrisonersRound = "prisoners";
+
+    /// <summary>
+    /// One Infantry attack on Infantry in a Location holding a vehicle (A11.31, p. 73, the H3 example, p. 74; pass 70, ruling R70.30): one attack by the
+    /// side named next, with no simultaneous reply.
+    /// </summary>
+    public const string Sequential = "sequential";
 
     /// <summary>Whether the Location's CC is Hand-to-Hand this CCPh, with the red Kill Numbers (J2.31, A11.11; ruling R14.1); null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -344,7 +381,7 @@ public sealed record CloseCombatCreatedLeader(int Attack, string UnitId, string 
     public const string PlaceholderPrefix = "created-leader:";
 }
 
-/// <summary>A SW of a unit eliminated in CC with an Original colored dr of 1: its loss dr against the black Kill Number (A11.13).</summary>
+/// <summary>A SW or Gun of a unit eliminated in CC with an Original colored dr of 1: its loss dr against the black Kill Number (A11.13).</summary>
 public sealed record CloseCombatWeaponEffect(string EquipmentId, string HolderId, int Dr, bool Eliminated);
 
 /// <summary>A prisoner's escape NTC (A20.55; ruling R14.6): its DR against its Morale Level.</summary>
@@ -396,7 +433,20 @@ public sealed record AmbushFacts(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The vehicles of each side in the Location (A11.4's table, p. 73; pass 70, ruling R70.30): a side with one takes +2, and +1 for each BU or Stunned
+    /// AFV. Null where no vehicle stands, as in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<AmbushVehicleFacts>? Vehicles
+    {
+        get; init;
+    }
 }
+
+/// <summary>A side's vehicles in an Ambush Location (A11.4; pass 70, ruling R70.30): the side, and how many of its AFV are BU or Stunned.</summary>
+public sealed record AmbushVehicleFacts(string Side, int ButtonedOrStunnedAfvs);
 
 /// <summary>One side's Ambush dr, its drm, and its Final dr.</summary>
 public sealed record AmbushSide(string Side, int Dr, IReadOnlyList<FireModifier> Drm, int FinalDr);

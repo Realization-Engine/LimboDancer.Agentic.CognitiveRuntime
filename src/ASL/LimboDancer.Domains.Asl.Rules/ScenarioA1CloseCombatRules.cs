@@ -12,7 +12,7 @@ public sealed record CloseCombatNextStep(bool Resolved, string? Kind, string? Re
 /// package itself does not grow.
 /// </summary>
 /// <summary>A unit of a Location as the CC-required read sees it (A15.43, A11.15): berserk with a Known enemy there, or reinforcing a Melee this APh.</summary>
-public sealed record RequiredCcUnitFacts(string Id, string Side, bool Berserk, bool Melee, bool Broken, bool Known, bool AdvancedHere, bool Crew, bool Vehicle);
+public sealed record RequiredCcUnitFacts(string Id, string Side, bool Berserk, bool Melee, bool Broken, bool Known, bool AdvancedHere, bool Vehicle);
 
 public static class ScenarioA1CloseCombatRules
 {
@@ -58,9 +58,14 @@ public static class ScenarioA1CloseCombatRules
     public static string? OpenElsewhereBar(string? openLocationText) =>
         openLocationText is { } open ? $"play.cc-order: CC is resolved one Location at a time: finish the CC in {open} first (A11.12)" : null;
 
-    /// <summary>A11.31 (ruling R11.16): CC in a Location holding a vehicle is sequential, one attack at a time, with the vehicle CC action.</summary>
+    /// <summary>
+    /// A11.31 (ruling R11.16): CC in a Location holding a vehicle is sequential, one attack at a time, with the vehicle CC action; since pass 70 (ruling
+    /// R70.30) Infantry attack Infantry there with it too.
+    /// </summary>
     public static string? VehiclePresentBar(string? vehicleId, string locationText) =>
-        vehicleId is { } present ? $"play.cc-vehicle: {present} is in {locationText}, so its CC is sequential, one attack at a time (asl.game.vehicle-close-combat; A11.31)" : null;
+        vehicleId is { } present
+            ? $"play.cc-vehicle: {present} is in {locationText}, so its CC is sequential, one attack at a time, Infantry against Infantry too (asl.game.vehicle-close-combat; A11.31)"
+            : null;
 
     /// <summary>
     /// A15.432 (ruling R27.3): in the OVR's CC every berserk unit attacks the SMC together, and the SMC may attack them; at most two attacks, no capture,
@@ -74,9 +79,16 @@ public static class ScenarioA1CloseCombatRules
     /// <summary>A11.14: the ambushed side's round keeps the first round's SMC stacking once a round has been resolved in the Location.</summary>
     public static bool KeepsFirstRoundStacking(int roundsResolved) => roundsResolved > 0;
 
-    /// <summary>A11.21, A4.43 (ruling R5.5): a withdrawing unit carries no more than its IPC; dropping the SW beyond it is not built.</summary>
+    /// <summary>
+    /// A11.21, A4.43 (ruling R5.5): a withdrawing unit carries no more than its IPC. Since pass 70 (ruling R70.26) it may drop SW to withdraw; the bar is
+    /// for a unit still above its IPC after the SW it drops (<paramref name="laden"/>).
+    /// </summary>
     public static string? WithdrawalPortageBar(string unitId, bool laden) =>
-        laden ? $"play.cc-withdrawal-portage: {unitId} carries more than its IPC and may not withdraw with it; dropping a SW is not built (A11.21, A4.43)" : null;
+        laden ? $"play.cc-withdrawal-portage: {unitId} carries more than its IPC, so it withdraws only by dropping SW down to its IPC, which stay unpossessed in its Location (A11.21, A4.43)" : null;
+
+    /// <summary>A11.21 (pass 70, ruling R70.26): a dropped SW is one a unit that withdraws possesses.</summary>
+    public static string DropBarText(string weaponId) =>
+        $"play.cc-withdrawal-drop: {weaponId} is not a SW possessed by a unit that withdraws; a unit drops only its own SW to withdraw (A11.21, A4.43)";
 
     /// <summary>A11.2, A11.21: a withdrawal is from Melee, to an ADJACENT Location the unit could advance into that holds no Known enemy unit.</summary>
     public static string? WithdrawalBar(string unitId, bool allowed) =>
@@ -162,10 +174,11 @@ public static class ScenarioA1CloseCombatRules
 
     /// <summary>
     /// A11.21 (A4.72; ruling R5.5): an ADJACENT Location a unit held in Melee may withdraw to: playable, enterable by an advance (not for all MF), not Difficult
-    /// Terrain for a CX unit, and holding no enemy unit other than a prisoner.
+    /// Terrain for a CX unit, and "not ... currently occupied by a Known enemy unit" (p. 73). Since pass 70 (ruling R70.26) only a Known enemy unit bars it, as
+    /// the withdrawing side sees the Location: a "?" or a hidden unit there does not (<see cref="ScenarioA1Withdrawal.Entry"/> decides what it meets).
     /// </summary>
-    public static bool WithdrawalDestination(bool playable, bool enterable, bool? difficult, bool cx, bool enemyThere) =>
-        playable && enterable && difficult is { } hard && !(hard && cx) && !enemyThere;
+    public static bool WithdrawalDestination(bool playable, bool enterable, bool? difficult, bool cx, bool knownEnemyThere) =>
+        playable && enterable && difficult is { } hard && !(hard && cx) && !knownEnemyThere;
 
     /// <summary>A11.21, A4.72 (ruling R5.5): a withdrawal an advance could make only by becoming CX makes the unit CX.</summary>
     public static bool WithdrawalTires(bool enterable, bool? difficult) => enterable && difficult == true;
@@ -178,29 +191,24 @@ public static class ScenarioA1CloseCombatRules
         return broken && melee && !disrupted && !captured && !guard() && hasDestination();
     }
 
-    /// <summary>A15.43, A11.31 (ruling R27.2): a berserk unit owing an attack on a Known enemy vehicle attacks it in the Location's sequential CC first.</summary>
-    public static string CcRequiredVehicleText(string unitId, string locationText) =>
-        $"play.cc-required: {unitId} is berserk with a Known enemy vehicle in {locationText}, so it attacks the vehicle in CC before the CCPh ends (A15.43, A11.31)";
-
     /// <summary>
-    /// Whether a unit is a Gun's crew for CC and the advance (C11; ruling R24.3): a crew that mans a Gun, whose CC is not reviewed. A crew that mans no
-    /// Gun is advanced against and fights in CC as ordinary Infantry (A1.123, p. 44; pass 65, ruling R65.29). The caller reads the Gun only for a crew.
+    /// A15.43, A11.31 (ruling R27.2): a berserk unit owing an attack on a Known enemy vehicle attacks it in the Location's sequential CC first; since pass 70
+    /// (fix round C) one owing an attack on enemy Infantry there, or a unit that advanced into the Melee there (A11.15), does too. <paramref name="target"/> is
+    /// <see cref="ScenarioA1VehicleCloseCombatRules.OwingAttack"/>'s.
     /// </summary>
-    public static bool GunCrew(bool crew, Func<bool> mansGun)
-    {
-        ArgumentNullException.ThrowIfNull(mansGun);
-        return crew && mansGun();
-    }
+    public static string CcRequiredVehicleText(string unitId, string locationText, bool berserk, string target) => berserk
+        ? $"play.cc-required: {unitId} is berserk with {target} in {locationText}, so it attacks in CC before the CCPh ends (A15.43, A11.31)"
+        : $"play.cc-required: {unitId} advanced into the Melee in {locationText}, so it attacks {target} in CC before the CCPh ends (A11.15, A11.31)";
 
     /// <summary>
     /// A15.43, A11.15: the unit whose CC the Location still requires: a berserk unit with a Known enemy there, else, where a Melee is held, an unbroken unit
-    /// that advanced in this APh; null when a Gun's crew (<see cref="GunCrew"/>) or a vehicle is there (CC with them is not reviewed or is sequential) or
-    /// none qualifies. The flag says which rule.
+    /// that advanced in this APh; null when a vehicle is there (its CC is sequential) or none qualifies. The flag says which rule. A Gun's crew no longer
+    /// voids it (pass 70, ruling R70.27: it fights in CC as Infantry, A1.123).
     /// </summary>
     public static (string Id, bool Berserk)? RequiredUnit(IReadOnlyList<RequiredCcUnitFacts> here)
     {
         ArgumentNullException.ThrowIfNull(here);
-        if (here.Any(unit => unit.Crew || unit.Vehicle))
+        if (here.Any(unit => unit.Vehicle))
         {
             return null;
         }
@@ -251,8 +259,11 @@ public static class ScenarioA1CloseCombatRules
             : null;
     }
 
-    /// <summary>A11.4 (ruling R11.16): Ambush drs may be due in the CCPh where no CC has begun and no vehicle is present; the package then decides.</summary>
-    public static bool AmbushDueCandidate(string? phase, bool ccBegun, bool vehicleThere) => phase == "ccph" && !ccBegun && !vehicleThere;
+    /// <summary>
+    /// A11.4: Ambush drs may be due in the CCPh where no CC has begun; the package then decides. Since pass 70 (ruling R70.30; A11.34 and its example, p. 73)
+    /// a vehicle there no longer bars them, and the vehicle's side takes its drm.
+    /// </summary>
+    public static bool AmbushDueCandidate(string? phase, bool ccBegun) => phase == "ccph" && !ccBegun;
 
     /// <summary>Why the Close Combat package would refuse a Location's Ambush drs, each reason as its sentence (pass 31d, design D9).</summary>
     public static string AmbushUndecidedText(IReadOnlyList<string> reasons, Func<string, string> explain)
@@ -279,12 +290,12 @@ public static class ScenarioA1CloseCombatRules
     public static string DueWithdrawLine(string locationText, string unitId) => $"{locationText}: {unitId} is broken in Melee and must attempt to withdraw (A11.16)";
 
     /// <summary>
-    /// A15.431, A15.432 (rulings R10.15, R24.3, R30.5; table player, pass 27): why a berserk unit may not step into a Location: it holds a Gun's crew, or an
-    /// enemy vehicle together with enemy Infantry; null when the step is allowed.
+    /// A15.431, A15.432 (rulings R10.15, R30.5; table player, pass 27): why a berserk unit may not step into a Location: it holds an enemy vehicle together
+    /// with enemy Infantry; null when the step is allowed. A Gun's crew no longer bars it (pass 70, ruling R70.27). CC between Infantry beside a vehicle is
+    /// built since pass 70 (ruling R70.30), but a berserk charge into such a Location is not (the backlog), and the words say so.
     /// </summary>
-    public static string? ChargeBarred(bool crewThere, bool enemyVehicleThere, bool enemyInfantryThere, string toText) =>
-        crewThere ? $"play.berserk-crew: a charge into {toText}, which holds a Gun's crew, is CC with a crew, which is not reviewed (C11, R24.3); the charge ends in place (ruling R30.5)"
-            : enemyVehicleThere && enemyInfantryThere
-                ? $"play.berserk-vehicle: a charge into {toText}, which holds an enemy vehicle and enemy Infantry, needs CC between Infantry beside a vehicle, which is not built (R11.16); the charge ends in place (ruling R30.5)"
-                : null;
+    public static string? ChargeBarred(bool enemyVehicleThere, bool enemyInfantryThere, string toText) =>
+        enemyVehicleThere && enemyInfantryThere
+            ? $"play.berserk-vehicle: a berserk charge into {toText}, which holds an enemy vehicle and enemy Infantry, is not built, though CC there is (A15.431, A11.31); the charge ends in place (ruling R30.5)"
+            : null;
 }

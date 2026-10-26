@@ -224,7 +224,7 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary
     private static Func<PlacedUnit, string> Named(UnitNames names, long revision, int boards) => unit =>
     {
         var name = names.Held(unit.Document.Id, revision);
-        return DisplayText.Place(boards, unit.Location) + (name == unit.Document.Id || name == UnitNames.Unnamed ? ": " : $": {name}. ");
+        return DisplayText.Place(boards, unit.Location) + (name == unit.Document.Id || UnitNames.IsUnnamed(name) ? ": " : $": {name}. ");
     };
 
     /// <summary>A point inside a hex near its top or its foot, where a small mark stands clear of the counters at its centre.</summary>

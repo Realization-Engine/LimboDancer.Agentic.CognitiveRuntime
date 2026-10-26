@@ -183,9 +183,10 @@ public static class ScenarioA1RoutCalculator
     }
 
     /// <summary>
-    /// The enemy unit able to Interdict a routing unit entering an Open Ground Location (A10.53, A10.532, A10.533; ruling R13.3), or null: Known unbroken
-    /// Infantry not CX, pinned, Encircled, in Melee, or a prisoner, that could apply the FFMO DRM there (<see cref="CouldApplyFfmo"/>) within the range
-    /// it may Interdict at (<see cref="InterdictionRange"/>). Vehicles, and units whose FP is halved for other reasons, are not read (backlog).
+    /// The enemy unit able to Interdict a routing unit entering an Open Ground Location (A10.53, A10.532, A10.533; ruling R13.3), or null: a Known unbroken
+    /// unit not CX, pinned, Encircled, in Melee, or a prisoner, that could apply the FFMO DRM there (<see cref="CouldApplyFfmo"/>) within the range it may
+    /// Interdict that Location at (<see cref="InterdictionReach"/>). Vehicles and manned Guns Interdict since pass 70 (ruling R70.14); units whose FP is
+    /// halved for other reasons are not read (backlog).
     /// </summary>
     public static string? Interdictor(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int at, int? scenarioMonth, int? steppedFrom = null)
     {
@@ -196,10 +197,10 @@ public static class ScenarioA1RoutCalculator
             return null;
         }
 
-        foreach (var enemy in enemies.Where(item => !item.Vehicle && !item.Broken && !item.Cx && !item.Pinned && !item.Melee && !item.Encircled)
+        foreach (var enemy in enemies.Where(item => !item.Broken && !item.Cx && !item.Pinned && !item.Melee && !item.Encircled)
             .OrderBy(item => item.Id, StringComparer.Ordinal))
         {
-            if ((enemy.InterdictionRange ?? enemy.NormalRange) is > 0 and var range && CouldApplyFfmo(reader, enemy.Location, at, range, steppedFrom))
+            if (InterdictionReach(reader, enemy, at) is > 0 and var range && CouldApplyFfmo(reader, enemy.Location, at, range, steppedFrom))
             {
                 return enemy.Id;
             }
@@ -207,6 +208,127 @@ public static class ScenarioA1RoutCalculator
 
         return null;
     }
+
+    /// <summary>
+    /// The range within which an enemy unit may Interdict a Location (A10.532, pp. 67 and 68; pass 70, ruling R70.14): the range it Interdicts at with its
+    /// own FP and SW (<see cref="InterdictionRange"/>; none for a vehicle), or farther with a weapon held to a Covered Arc whose arc already holds the
+    /// Location. "If a Gun would have to change its CA in order to fire ... a positive DRM would usually come into effect and thereby disallow its
+    /// Interdiction"; "An AFV cannot Interdict if it would have to change its VCA/TCA". The bearing is read once, only for such a weapon that reaches farther.
+    /// </summary>
+    public static int InterdictionReach(IRoutFactReader reader, RoutEnemyFacts enemy, int at)
+    {
+        ArgumentNullException.ThrowIfNull(reader);
+        ArgumentNullException.ThrowIfNull(enemy);
+        var range = enemy.InterdictionRange ?? (enemy.Vehicle ? 0 : enemy.NormalRange);
+        double? bearing = null;
+        var read = false;
+        foreach (var weapon in enemy.ArcWeapons ?? [])
+        {
+            if (weapon.Range <= range)
+            {
+                continue;
+            }
+
+            if (!read)
+            {
+                (bearing, read) = (reader.Bearing(enemy.Location, at), true);
+            }
+
+            if (bearing is { } toward && ScenarioA1OrdnanceMapRules.CoveredArcTurn(weapon.Facing, toward).Steps == 0)
+            {
+                range = weapon.Range;
+            }
+        }
+
+        return range;
+    }
+
+    /// <summary>
+    /// A vehicle's Normal Range for the rout (A10.5, A10.532; D1.81 to D1.83; pass 70, ruling R70.14): the longest of its working weapons', at most 16 hexes:
+    /// eight for a BMG, an AAMG, and a MA MG, twelve for a CMG, and its MA Gun's printed maximum range or 16. An Abandoned vehicle has no crew to fire, so none.
+    /// </summary>
+    public static int VehicleNormalRange(RoutVehicleFacts vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        int[] ranges =
+        [
+            vehicle.Bmg ? ScenarioA1FireCalculator.VehicleWeaponRange(FireVehicleWeapon.BowMg) : 0,
+            vehicle.Cmg ? ScenarioA1FireCalculator.VehicleWeaponRange(FireVehicleWeapon.CoaxialMg) : 0,
+            vehicle.Aamg || vehicle.MainMg ? ScenarioA1FireCalculator.VehicleWeaponRange(null) : 0,
+            vehicle.MainGun ? GunNormalRange(true, vehicle.MainGunRange) : 0,
+        ];
+        return vehicle.Abandoned ? 0 : Math.Min(16, ranges.Max());
+    }
+
+    /// <summary>
+    /// What a vehicle Interdicts with (A10.532, p. 68; D3.44, D5.2, D5.3, C5.9; pass 70, ruling R70.14): the range of its weapons that fire in any direction,
+    /// and the weapons held to a Covered Arc. None at all when Abandoned, Shocked, in Motion ("Any unit whose FP is halved ... Motion ... may not
+    /// Interdict"), or Stunned ("armament which is currently penalized by the +1 BU or +1 Stun DRM"). The BMG fires through the VCA; the CMG through the
+    /// TCA, never from a RST or 1MT AFV whose crew is CE (D1.321, D1.322); the MA Gun through the TCA when turreted, else the VCA, only with a CE crew,
+    /// since a BU CT AFV's MA takes Case I's +1 (C5.9: "prevents Interdiction") and a RST or 1MT AFV fires its MA only BU; the MA MG through the VCA. An
+    /// open-topped AFV uses no weapon but its BMG unless CE (D5.3), and an AFV's AAMG, which fires in any direction, needs a CE crew (D1.83). An Armor
+    /// Leader's DRM is not read: negating a positive DRM does not let his vehicle Interdict (D3.44).
+    /// </summary>
+    public static (int Range, IReadOnlyList<RoutArcWeapon> ArcWeapons) VehicleInterdiction(RoutVehicleFacts vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        if (vehicle.Abandoned || vehicle.Shocked || vehicle.Motion || vehicle.Stunned)
+        {
+            return (0, []);
+        }
+
+        var exposed = vehicle.Unarmored || vehicle.CrewExposed;
+        var notBow = exposed || !vehicle.OpenTopped;
+        var turret = vehicle.Turret ?? vehicle.Hull;
+        var weapons = new List<RoutArcWeapon>();
+        if (vehicle.Bmg && vehicle.Hull is { } hull)
+        {
+            weapons.Add(new RoutArcWeapon(ScenarioA1FireCalculator.VehicleWeaponRange(FireVehicleWeapon.BowMg), hull));
+        }
+
+        if (vehicle.Cmg && notBow && !(vehicle.MaType is "rst" or "1mt" && vehicle.CrewExposed) && turret is { } tca)
+        {
+            weapons.Add(new RoutArcWeapon(ScenarioA1FireCalculator.VehicleWeaponRange(FireVehicleWeapon.CoaxialMg), tca));
+        }
+
+        if (vehicle.MainMg && notBow && vehicle.Hull is { } vca)
+        {
+            weapons.Add(new RoutArcWeapon(ScenarioA1FireCalculator.VehicleWeaponRange(null), vca));
+        }
+
+        if (vehicle.MainGun && exposed && vehicle.MaType is not ("rst" or "1mt") && (vehicle.MaType is "t" or "st" ? turret : vehicle.Hull) is { } arc)
+        {
+            weapons.Add(new RoutArcWeapon(GunNormalRange(true, vehicle.MainGunRange), arc));
+        }
+
+        return (vehicle.Aamg && exposed ? ScenarioA1FireCalculator.VehicleWeaponRange(null) : 0, weapons);
+    }
+
+    /// <summary>
+    /// Which of a vehicle's weapons work for the rout (A10.532, D1.8; ruling R70.14; the boundary review of pass 70, finding 7: the planner decided
+    /// them): a BMG, CMG, or AAMG it carries, neither malfunctioned nor disabled, and its MA, a MG or a Gun, unless malfunctioned or disabled. An AAMG that is
+    /// the MA is out with it.
+    /// </summary>
+    public static (bool Bmg, bool Cmg, bool Aamg, bool MainMg, bool MainGun) VehicleWeapons(bool hasBmg, bool bmgMalfunctioned, bool bmgDisabled, bool hasCmg,
+        bool cmgMalfunctioned, bool cmgDisabled, bool hasAamg, string? mainArmament, bool hasMainGun, bool mainMalfunctioned, bool mainDisabled)
+    {
+        var mainOut = mainMalfunctioned || mainDisabled;
+        return (hasBmg && !bmgMalfunctioned && !bmgDisabled, hasCmg && !cmgMalfunctioned && !cmgDisabled, hasAamg && !(mainArmament == "aamg" && mainOut),
+            mainArmament == "mg" && !mainOut, hasMainGun && mainArmament is not ("aamg" or "mg") && !mainOut);
+    }
+
+    /// <summary>Whether a manned Gun works for the rout (A10.532; ruling R70.14): one the catalog knows, neither malfunctioned nor disabled.</summary>
+    public static bool GunWorks(bool known, bool malfunctioned, bool disabled) => known && !malfunctioned && !disabled;
+
+    /// <summary>
+    /// A Gun's Normal Range for the rout (A10.5, A10.532; pass 70, ruling R70.14): "No weapon is effective for Interdiction purposes beyond its Normal Range or
+    /// 16 hexes (whichever is less)"; ordnance prints no Normal Range, so its printed maximum range or 16. A Gun that does not work has none.
+    /// </summary>
+    public static int GunNormalRange(bool functioning, int? rangeMaximum) => functioning ? Math.Min(16, rangeMaximum ?? 16) : 0;
+
+    /// <summary>A manned Gun as a weapon held to its CA (A10.532; ruling R70.14), or null when it does not work or its CA is not known.</summary>
+    public static RoutArcWeapon? GunArcWeapon(bool functioning, int? rangeMaximum, int? facing) =>
+        functioning && facing is { } ca ? new RoutArcWeapon(GunNormalRange(true, rangeMaximum), ca) : null;
 
     /// <summary>
     /// Why a rout step from one Location to an ADJACENT one is not allowed (A10.5, A10.51; ruling R13.3), or null: it enters a Location holding a Known
@@ -465,17 +587,18 @@ public static class ScenarioA1RoutCalculator
     }
 
     /// <summary>
-    /// The woods and building Locations a rout may make for (A10.51, A10.532 EXC): the nearest in MF within its allowance, calculated at the start of its
-    /// rout, and any no nearer than that which is no farther from a Known enemy unit than the start, which the unit may prefer; empty when none is reached.
+    /// The woods and building Locations a rout may make for (A10.51 and its EXC, p. 67): the nearest in MF within its allowance, calculated at the start of
+    /// its rout, and any no nearer than that which the unit may ignore, and so prefer: one no farther from a Known enemy unit than the start, or (pass 70,
+    /// ruling R70.13) one of the building the unit begins the RtPh in; empty when none is reached.
     /// </summary>
     public static int[] RoutTargets(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int start, IReadOnlyDictionary<int, int> reach)
     {
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(enemies);
         ArgumentNullException.ThrowIfNull(reach);
-        bool Ignorable(int at) => enemies.Any(enemy => reader.Distance(enemy.Location, at) is { } there && reader.Distance(enemy.Location, start) is { } here && there <= here);
+        var inBuilding = InBuilding(reader, start);
         var covers = reach.Where(item => item.Key != start && RoutCover(reader.Location(item.Key))).ToArray();
-        var binding = covers.Where(item => !Ignorable(item.Key)).ToArray();
+        var binding = covers.Where(item => !Ignorable(reader, enemies, start, inBuilding, item.Key)).ToArray();
         if (binding.Length == 0)
         {
             return [];
@@ -483,6 +606,57 @@ public static class ScenarioA1RoutCalculator
 
         var nearest = binding.Min(item => item.Value);
         return [.. covers.Where(item => item.Value <= nearest).Select(item => item.Key)];
+    }
+
+    /// <summary>
+    /// The woods and building Locations within a rout's reach that it may ignore when none binds it (A10.51 and its EXC, p. 67; the referee's finding at
+    /// the reviews of pass 70): of the building it begins in, or no farther from a Known enemy unit than its start; empty when one binds it or none is in
+    /// reach. "Able to ignore all rout destinations within 6 MF, the broken unit is free to rout anywhere it can legally reach" (the example on p. 69, S3).
+    /// </summary>
+    public static int[] RoutIgnoredCovers(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int start, IReadOnlyDictionary<int, int> reach)
+    {
+        ArgumentNullException.ThrowIfNull(reader);
+        ArgumentNullException.ThrowIfNull(enemies);
+        ArgumentNullException.ThrowIfNull(reach);
+        var inBuilding = InBuilding(reader, start);
+        int[] covers = [.. reach.Where(item => item.Key != start && RoutCover(reader.Location(item.Key))).OrderBy(item => item.Value).Select(item => item.Key)];
+        return covers.All(at => Ignorable(reader, enemies, start, inBuilding, at)) ? covers : [];
+    }
+
+    /// <summary>
+    /// A10.51's EXC (p. 67): a woods or building Location the rout need not make for: one of the building it begins in (ruling R70.13), or one no farther
+    /// from a Known enemy unit than its start.
+    /// </summary>
+    private static bool Ignorable(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int start, bool inBuilding, int at) =>
+        (inBuilding && reader.SameBuilding(start, at))
+            || enemies.Any(enemy => reader.Distance(enemy.Location, at) is { } there && reader.Distance(enemy.Location, start) is { } here && there <= here);
+
+    /// <summary>
+    /// Whether a building goes on across a hexside into the next hex (A10.51's EXC; pass 70, ruling R70.13), as the card editor joins a building (ruling
+    /// R17.8; the referee of pass 28): the hexside and the next hex are building terrain, and no Rowhouse wall or Breach divides them (Rowhouses are separate
+    /// buildings, B23.71), nor a Factory's outside wall (B23.74); a Factory's interior walls stay within it.
+    /// </summary>
+    public static bool BuildingGoesOn(bool hexsideBuilding, bool nextBuilding, string? sideTerrain, bool sideOutsideFactoryWall, string? hexsideTerrain,
+        bool hexsideOutsideFactoryWall)
+    {
+        static bool Divides(string? name, bool outsideFactoryWall) => outsideFactoryWall || name == "Breach" || name?.StartsWith("Rowhouse Wall", StringComparison.Ordinal) == true;
+        return hexsideBuilding && nextBuilding && !Divides(sideTerrain, sideOutsideFactoryWall) && !Divides(hexsideTerrain, hexsideOutsideFactoryWall);
+    }
+
+    /// <summary>Whether a Location is in a building (A10.51's EXC; ruling R70.13): its terrain is a wooden or stone building.</summary>
+    private static bool InBuilding(IRoutFactReader reader, int at) => ScenarioA1Definitions.IsBuildingTerrain(reader.Location(at)?.TerrainKey);
+
+    /// <summary>
+    /// Where a route first reaches the cover it makes for (A10.51 and its EXC, p. 67; pass 70, ruling R70.13): its first target Location outside the building
+    /// it begins in, since a unit that prefers "to rout out of that building altogether" may cross "Open Ground or another building hex of the same
+    /// building to do so"; failing that, its first target Location; -1 when it reaches none.
+    /// </summary>
+    private static int Reached(IRoutFactReader reader, int start, IReadOnlyList<int> route, IReadOnlyCollection<int> targets)
+    {
+        var inBuilding = InBuilding(reader, start);
+        var steps = route.ToList();
+        var outside = steps.FindIndex(step => targets.Contains(step) && !(inBuilding && reader.SameBuilding(start, step)));
+        return outside >= 0 ? outside : steps.FindIndex(targets.Contains);
     }
 
     /// <summary>Whether a broken unit has any legal rout step (A10.5): the search reaches a Location beyond its own.</summary>
@@ -514,7 +688,7 @@ public static class ScenarioA1RoutCalculator
         var near = ArmedEnemiesNear(reader, enemies, at).ToArray();
         // A least-cost way to one place may run through another and out into the open again, which a rout may not do once it has reached woods or a
         // building (A10.51): such a way is not offered (found by the sweep of The Tractor Works, pass 31d).
-        bool Holds(int[] route) => Array.FindIndex(route, targets.Contains) is var reached && route.Skip(reached + 1).All(step => RoutCover(reader.Location(step)));
+        bool Holds(int[] route) => Reached(reader, at, route, targets) is var reached && route.Skip(reached + 1).All(step => RoutCover(reader.Location(step)));
         return (targets, CanRout(reach.Count), targets.Where(target => found.TryGetValue(target, out var route) && Holds(route) && !near.Any(item => AdjacentOrSame(reader, item.Location, target)))
             .ToDictionary(target => target, target => (IReadOnlyList<int>)found[target]));
     }
@@ -609,17 +783,20 @@ public static class ScenarioA1RoutCalculator
 
     /// <summary>
     /// What the Rout panel says of where a broken unit's rout may end (A10.5, A10.51; pass 35, the Rules boundary review): no legal step; places
-    /// within reach that all lie where it may not end, so that the route passes through them; the places it must end in; or none within reach.
-    /// The places come worded, each with the way to it.
+    /// within reach that all lie where it may not end, so that the route passes through them; the places it must end in; woods or building Locations within
+    /// reach that it may all ignore (<paramref name="ignored"/>, from <see cref="RoutIgnoredCovers"/>; the referee's finding at the reviews of pass 70); or
+    /// none within reach. The places come worded, each with the way to it.
     /// </summary>
-    public static string RoutEndAdvice(bool canRout, bool must, IReadOnlyList<string> places, bool anyPlaceMayEndTheRout)
+    public static string RoutEndAdvice(bool canRout, bool must, IReadOnlyList<string> places, bool anyPlaceMayEndTheRout, IReadOnlyList<string>? ignored = null)
     {
         ArgumentNullException.ThrowIfNull(places);
         return !canRout
-            ? must ? ". It has no legal rout step, so it is eliminated for Failure to Rout, or surrenders, when the RtPh ends (A10.5)." : ". It has no legal rout step, so it stays where it is."
+            ? must ? ". It has no legal rout step, so as the RtPh ends it surrenders if it can (A20.21) or is eliminated for Failure to Rout (A10.5)." : ". It has no legal rout step, so it stays where it is."
             : places.Count > 0 && !anyPlaceMayEndTheRout
                 ? $". It may not end its rout in or ADJACENT to the Location of the enemy unit it began with or beside (A10.5, A10.51): its route passes through {string.Join(" or ", places)} and ends in woods or a building beyond."
             : places.Count > 0 ? $". Its route must end in {string.Join(" or ", places)}."
+            : ignored is { Count: > 0 }
+                ? $". It may ignore {string.Join(" and ", ignored)}, of the building it begins in or no farther from a Known enemy unit than its start, and no other woods or building is within its reach, so any legal route will do, one ending there included (A10.51 EXC; the example on p. 69, S3)."
             : ". No woods or building is within its reach, so any legal route will do.";
     }
 
@@ -753,7 +930,7 @@ public static class ScenarioA1RoutCalculator
             }
             else
             {
-                var reached = route.ToList().FindIndex(targets.Contains);
+                var reached = Reached(reader, start, route, targets);
                 if (reached < 0)
                 {
                     return $"play.rout-destination: {unitId} must rout to the nearest woods or building Location, {string.Join(" or ", targets.Select(reader.Name))} (A10.51)";

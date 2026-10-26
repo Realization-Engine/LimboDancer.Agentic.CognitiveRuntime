@@ -5,7 +5,17 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// state, the unit's, and when and how the vehicle's last crew left it.
 /// </summary>
 public sealed record RecrewFacts(string Unit, string Vehicle, bool OwnMph, bool VehicleAbandoned, bool SameSide, bool Infantry, bool InLocation, bool MovedThisPhase,
-    bool GoodOrder, bool LeftThisPlayerTurn, bool OwnCrew, bool Recalled);
+    bool GoodOrder, bool LeftThisPlayerTurn, bool OwnCrew, bool Recalled)
+{
+    /// <summary>
+    /// D5.42's EXC (p. 204; pass 70, ruling R70.34): it is the CCPh, and the unit's side captured the vehicle in it (A21.2), so a captor may enter it then,
+    /// though its MF are spent and in the Player Turn its crew left it. False in every other phase, and for a vehicle captured before this CCPh.
+    /// </summary>
+    public bool CapturedThisCcph
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// The crew's own acts (D5.4 to D5.43, D5.411, D5.8, D6.631, D3.43, pp. 200, 204, 206; pass 65, ruling R65.20): a crew Abandons its vehicle in its own MPh,
@@ -209,16 +219,33 @@ public static class ScenarioA1CrewActsRules
     {
         ArgumentNullException.ThrowIfNull(facts);
         var (unit, vehicle) = (facts.Unit, facts.Vehicle);
-        return !facts.OwnMph ? $"play.recrew: {unit} enters an Abandoned vehicle to crew it only in its own MPh (D5.42)"
+        // D5.42's EXC: "[EXC: CCPh; A21.2]": a captor enters the vehicle captured this CCPh in that CCPh, from its Location, whatever MF it spent.
+        var captor = facts.CapturedThisCcph;
+        return !facts.OwnMph && !captor ? $"play.recrew: {unit} enters an Abandoned vehicle to crew it only in its own MPh, or as its captor in the CCPh of its capture (D5.42, A21.2)"
             : !facts.VehicleAbandoned ? $"play.recrew: {vehicle} is not an Abandoned vehicle on the map; only such a vehicle is entered to crew it (D5.42)"
             : !facts.SameSide ? $"play.recrew: {vehicle} is the enemy's; it is captured first, at the end of a CCPh or by a capture attempt in CC, and then crewed (A21.2)"
             : !facts.Infantry ? $"play.recrew: {unit} is not Infantry on foot, which alone enters a vehicle to crew it (D5.42)"
-            : !facts.InLocation || facts.MovedThisPhase ? $"play.recrew: {unit} enters {vehicle} only from its Location, where it is at the start of its MPh, before it spends any MF (D5.42)"
+            : !facts.InLocation ? $"play.recrew: {unit} enters {vehicle} only from its Location (D5.42)"
+            : MovedBars(facts) ? $"play.recrew: {unit} enters {vehicle} only from its Location, where it is at the start of its MPh, before it spends any MF (D5.42)"
             : !facts.GoodOrder ? $"play.recrew: {unit} enters {vehicle} only unpinned and in Good Order (D5.43)"
-            : facts.LeftThisPlayerTurn ? $"play.recrew: {vehicle}'s crew left it this Player Turn, so it may not be entered until a later one (D5.42)"
+            : facts.LeftThisPlayerTurn && !captor ? $"play.recrew: {vehicle}'s crew left it this Player Turn, so it may not be entered until a later one (D5.42)"
             : facts.OwnCrew && facts.Recalled ? $"play.recrew: {unit} is {vehicle}'s Recalled crew, which may not re-crew that AFV (D5.341)"
             : null;
     }
+
+    /// <summary>
+    /// D5.42 (fix round C): whether a unit is among those the Play page offers to enter the vehicle, by <see cref="RecrewBar"/>'s own reading of the side,
+    /// Infantry on foot, the Location, and the MF spent (with D5.42's EXC for a captor in the CCPh of its capture); the page shows the plan's refusal for
+    /// the rest.
+    /// </summary>
+    public static bool RecrewCandidate(RecrewFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        return facts.SameSide && facts.Infantry && facts.InLocation && !MovedBars(facts);
+    }
+
+    /// <summary>D5.42 and its EXC ("[EXC: CCPh; A21.2]"): a unit that spent MF this phase may not enter, unless a captor in the CCPh of the capture.</summary>
+    private static bool MovedBars(RecrewFacts facts) => facts.MovedThisPhase && !facts.CapturedThisCcph;
 
     /// <summary>
     /// D5.1, A21.22 (pp. 88, 203): a vehicle crew or an infantry crew re-crews as an Inherent crew; a vehicle's own crew is its Inherent crew whatever its

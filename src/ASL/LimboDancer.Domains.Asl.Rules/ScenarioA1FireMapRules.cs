@@ -54,10 +54,11 @@ public static class ScenarioA1FireMapRules
 
     /// <summary>
     /// The terrain of a Bypassing stack (A4.34; ruling R10.7): the highest-TEM terrain of the hexsides it moves along, a road as Open Ground; refused
-    /// when a hexside's terrain is not reviewed, for fire from within the hex or a Snap Shot at a Bypass step, and in a hex with a wall or hedge
-    /// (the vertex LOS is not built).
+    /// when a hexside's terrain is not reviewed, for a Snap Shot at a Bypass step, and in a hex with a wall or hedge (the vertex LOS is not built). Pass 70
+    /// (A12.151, p. 79; ruling R70.23): "The previously concealed DEFENDING unit(s) may use TPBF against any units in the same Location", the Bypassing
+    /// stack taking no TEM of the obstacle and FFNAM and FFMO as the lane's terrain gives them ("unless the Bypass is through other than Open Ground").
     /// </summary>
-    public static (string? Refusal, string? Terrain) BypassTerrain(IReadOnlyList<BypassHexsideFacts> hexsides, bool direct, bool firerInTarget, bool snapShot, bool wallOrHedgeOnHex)
+    public static (string? Refusal, string? Terrain) BypassTerrain(IReadOnlyList<BypassHexsideFacts> hexsides, bool direct, bool snapShot, bool wallOrHedgeOnHex)
     {
         ArgumentNullException.ThrowIfNull(hexsides);
         string?[] laneTerrain = [.. hexsides.Select(side => side.TerrainName is { } name ? ScenarioA1Definitions.FireTerrain.GetValueOrDefault(name) ?? (side.Road ? "open-ground" : null) : null)];
@@ -68,11 +69,10 @@ public static class ScenarioA1FireMapRules
 
         var terrain = laneTerrain.OrderByDescending(key => ScenarioA1FireReference.Tem[key!]).First()!;
 
-        // Table player, pass 10: whether units in the obstacle and a stack Bypassing it share a Location for TPBF is not built, nor a Snap Shot at
-        // a Bypass step.
-        if (direct && (firerInTarget || snapShot))
+        // Table player, pass 10: a Snap Shot at a Bypass step is not built.
+        if (direct && snapShot)
         {
-            return ("play.fire-bypass: fire from within the Bypassed hex, and a Snap Shot at a Bypass step, are not built (A4.34, A8.15; ruling R10.7)", null);
+            return ("play.fire-bypass: a Snap Shot at a Bypass step is not built (A4.34, A8.15; ruling R10.7)", null);
         }
 
         // A4.34 (referee, pass 10): a wall or hedge of the hex applies when the LOS crosses it, which the center LOS cannot tell.

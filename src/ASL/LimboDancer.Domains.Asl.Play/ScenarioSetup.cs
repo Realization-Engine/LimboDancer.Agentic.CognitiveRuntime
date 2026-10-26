@@ -111,10 +111,11 @@ public static class ScenarioSetup
     }
 
     /// <summary>A Location as the setup's facts, with the other board's name for a butted half-hex (A2.3; pass 40).</summary>
-    private static SetupLocationFacts LocationFacts(BoardLocation at, Func<BoardLocation, BoardLocation?>? otherHalf) =>
+    private static SetupLocationFacts LocationFacts(BoardLocation at, Func<BoardLocation, BoardLocation?>? otherHalf, Func<BoardLocation, bool>? roadConcealment) =>
         new(at.ToString(), at.Board.Value, at.Hex.ToString(), at.Hex.RowNumber)
         {
             OtherHalf = otherHalf?.Invoke(at) is { } other ? new SetupLocationFacts(other.ToString(), other.Board.Value, other.Hex.ToString(), other.Hex.RowNumber) : null,
+            RoadConcealment = roadConcealment?.Invoke(at) == true,
         };
 
     /// <summary>Whether a Location lies in a setup area of the card (R17.8, R19.3): a building's hexes, or a board's hex numbers.</summary>
@@ -129,10 +130,12 @@ public static class ScenarioSetup
 
     /// <summary>
     /// The setup's state and why it is refused. <paramref name="terrain"/> gives a Location's terrain key (as the planner reads it), and
-    /// <paramref name="enterable"/> whether Infantry could enter that terrain in play; <paramref name="halfSquadOf"/> names a squad's HS.
+    /// <paramref name="enterable"/> whether Infantry could enter that terrain in play; <paramref name="halfSquadOf"/> names a squad's HS;
+    /// <paramref name="roadConcealment"/> whether a hex is a woods-, orchard-, brush-, or grain-road hex (A12.2; pass 70, ruling R70.22).
     /// </summary>
     public static SetupReport Check(ScenarioCard card, IReadOnlyList<SetupCounter> counters, Func<BoardLocation, string?> terrain, Func<string?, bool> enterable,
-        Func<string, string?> halfSquadOf, int? month, string? balance = null, Func<BoardLocation, BoardLocation?>? otherHalf = null)
+        Func<string, string?> halfSquadOf, int? month, string? balance = null, Func<BoardLocation, BoardLocation?>? otherHalf = null,
+        Func<BoardLocation, bool>? roadConcealment = null)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(counters);
@@ -150,7 +153,7 @@ public static class ScenarioSetup
             card.PlayableArea is { Enforced: true, Hexrows: not null }, card.PlayableArea?.Hexrows?.From, card.PlayableArea?.Hexrows?.To, card.PlayableArea?.Hexrows?.Board,
             card.PlayableArea?.Text, card.Tokens);
         var verdict = ScenarioA1SetupCalculator.Check(facts, [.. counters.Select(counter => new SetupCounterFacts(counter.Id, counter.Side, counter.Group, counter.Definition, counter.Kind,
-                counter.At is { } at ? LocationFacts(at, otherHalf) : null, counter.Concealed, counter.Hidden, counter.Dummy,
+                counter.At is { } at ? LocationFacts(at, otherHalf, roadConcealment) : null, counter.Concealed, counter.Hidden, counter.Dummy,
                 counter.Equipment, counter.New, counter.OffBoard, counter.Broken, counter.NonOb, counter.Entry, counter.Aboard, counter.Manning, counter.Towed))],
             text => terrain(located[text]), enterable, halfSquadOf, month, balance);
         var areas = card.Sides.SelectMany(side => side.Groups.Select((group, index) => (side.Side, Id: ScenarioCards.GroupId(side.Side, index), group.Areas)))

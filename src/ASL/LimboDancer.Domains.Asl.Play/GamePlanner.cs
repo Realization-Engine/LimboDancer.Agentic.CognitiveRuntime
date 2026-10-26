@@ -354,6 +354,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.massacre" => PlanMassacre(scope, arguments, existing, attemptId, expected, label),
             "asl.game.opportunity-fire" => PlanOpportunityFire(scope, arguments, existing, attemptId, expected, label),
             "asl.game.rout" => PlanRout(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.voluntary-break" => PlanVoluntaryBreak(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.deploy" => PlanDeploy(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.recombine" => PlanRecombine(scope, arguments, existing, attemptId, expected, label),
             "asl.game.transfer" => PlanTransfer(scope, arguments, existing, attemptId, expected, label),
@@ -361,6 +362,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.recover" => PlanRecover(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.dismantle" => PlanDismantle(scope, arguments, existing, attemptId, expected, label),
             "asl.game.ambush-withdraw" => PlanAmbushWithdrawal(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.street-fighting-return" => PlanStreetFightingReturn(scope, arguments, existing, attemptId, expected, label),
             "asl.game.guard-prisoners" => PlanGuardPrisoners(scope, arguments, existing, attemptId, expected, label),
             "asl.game.throw-dc" => HeldBehindMandatoryFire(scope, arguments, existing, expected, label, "thrown DC")
                 ?? PlanThrowDc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
@@ -368,15 +370,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 ?? PlanStarshell(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.detonate-dc" => PlanDetonateDc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.place-hidden" => PlanPlaceHidden(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.remove-concealment" => PlanRemoveConcealment(scope, arguments, existing, attemptId, expected, label),
             "asl.game.mop-up" => PlanMopUp(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.search" => PlanSearch(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
 
-        // Ruling R5.8: a pending choice is answered before anything else happens in the game.
+        // Ruling R5.8: a pending choice is answered before anything else happens in the game. A12.14 (ruling R70.21): the viewer's option is refused to
+        // the other side as the open window refuses it.
         if (ScenarioA1SequenceCalculator.ChoicePendingBar(plan.Status == GamePlanStatus.Ready, action.Id.Value,
-            () => Replay(existing).Current is { Choice: { } choice } ? (choice.Side, DescribeChoice(choice)) : null) is { } choicePending)
+            () => Replay(existing).Current is { Choice: { } choice } ? (choice.Side, RefusalWordsOf(choice)) : null) is { } choicePending)
         {
-            return Refused(scope, label, expected, choicePending);
+            var waiting = Replay(existing).Current!.Choice!;
+            return Refused(scope, label, expected, ScenarioA1ConcealmentChoices.PendingLossBar(choicePending, waiting.Kind == ChoicePending.ConcealmentLoss, waiting.Side, proposer)!);
         }
 
         // A15.5: a surrender waits for its captor before anything else happens in the game.
@@ -463,6 +469,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var sides = new Dictionary<string, string>(StringComparer.Ordinal);
         var boreSights = new List<(string Gun, BoardLocation At)>();
         StartRolls? startRolls = null;
+
+        // A10.8 (pass 70, ruling R70.15): the SSRs in force, from the game's start, which may make a side's Personnel Fanatic as they set up.
+        var ssrs = new List<string>(existing.Select(item => item.Payload).OfType<GameStarted>().FirstOrDefault()?.SpecialRules ?? []);
         if (existing.Count == 0)
         {
             if (!arguments.TryGetProperty("start", out var start) || start.ValueKind != JsonValueKind.Object)
@@ -489,6 +498,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
             label = startLabel;
             events.Add(EventNode(1, "game-started", payload!, visibility: null));
+            if (payload!["specialRules"] is JsonArray rules)
+            {
+                ssrs.AddRange(rules.OfType<JsonValue>().Select(item => item.TryGetValue<string>(out var rule) ? rule : null).OfType<string>());
+            }
         }
 
         if (!arguments.TryGetProperty("placements", out var placements) || placements.ValueKind != JsonValueKind.Array)
@@ -519,6 +532,22 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
             var hidden = IsTrue(placement, Conditions.Hidden) || IsTrue(placement, Conditions.Concealed);
             var side = placement.TryGetProperty("side", out var sideElement) && sideElement.ValueKind == JsonValueKind.String ? sideElement.GetString() : null;
+
+            // A10.8 (pass 70, ruling R70.15): a Personnel unit of the side, or the OB group, a fanatic: SSR names sets up Fanatic; Rules decides.
+            var kind = placement.TryGetProperty("kind", out var kindElement) && kindElement.ValueKind == JsonValueKind.String ? kindElement.GetString() : null;
+            var group = placement.TryGetProperty("group", out var groupElement) && groupElement.ValueKind == JsonValueKind.String ? groupElement.GetString() : null;
+            if (ssrs.Count > 0 && ScenarioA1GameStart.FanaticBySsr(ssrs, side, group, kind is not null && vocabulary.IsA(kind, "asl:personnel"), kind == UnitKinds.Dummy))
+            {
+                if (node["conditions"] is JsonObject conditions)
+                {
+                    conditions[Conditions.Fanatic] = true;
+                }
+                else
+                {
+                    node["conditions"] = new JsonObject { [Conditions.Fanatic] = true };
+                }
+            }
+
             events.Add(EventNode(events.Count + 1, "instance-created", new JsonObject { ["instance"] = node }, hidden && side is not null ? [side] : null));
         }
 
@@ -726,6 +755,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         // A10.5, A20.21 (ruling R13.3): as the RtPh ends, a broken unit that failed to rout is eliminated, or surrenders to its captors first.
+        // A10.2 (pass 70, ruling R70.3): a leader so eliminated causes a LLMC of the units in his Location, rolled before the phase ends.
+        (string Id, bool Eliminated)[] routLost = [];
+        GameState? routAfter = null;
         if (ScenarioA1SequenceCalculator.FailuresToRoutDue(state.Phase))
         {
             var failed = FailureToRout(state, existing);
@@ -745,6 +777,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), null, null));
                 reasons.Add(ScenarioA1SequenceCalculator.FailureToRoutText(unit.Id, why));
+            }
+
+            // A12.14, A12.3 (the referee's finding at the reviews): either side may end the RtPh, so whether a LLMC is due is decided at the commit; the plan
+            // rolls whenever a leader is lost, and its line says only that one may be due.
+            if (failed.Any(item => item.Unit.Kind == "asl:leader") && Replay([.. existing, .. events]).Current is { } eliminatedAfter)
+            {
+                (routLost, routAfter) = ([.. failed.Select(item => (item.Unit.Id, true))], eliminatedAfter);
+                reasons.Add(ScenarioA1MoraleCheck.LeaderLossDueText([.. failed.Where(item => item.Unit.Kind == "asl:leader").Select(item => item.Unit.Id)]));
             }
         }
         if (ScenarioA1SequenceCalculator.BerserkChargeBar(state.Phase, () => MustCharge(state) is [{ } charging, ..] ? charging.Id : null) is { } berserkCharge)
@@ -824,12 +864,17 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var gains = ScenarioA1SequenceCalculator.ConcealmentGainsDue(ending, state.Phase, phasing != state.PhasingSide) ? ConcealmentGains(state) : [];
         // B25.65 (backlog pass 16, rulings R16.1, R16.10): the Wind Change DR at the start of a RPh.
         var wind = !ending && WindChangeDue(state, phase, turn, phasing);
-        if (gains.Any(item => item.Drm is not null) || wind)
+        if (gains.Any(item => item.Drm is not null) || wind || routAfter is not null)
         {
             var prefix = events.ToList();
             IReadOnlyList<GameEvent> Rolled(Func<RollRequest, RollResult> draw)
             {
                 var built = new List<GameEvent>(prefix);
+                if (routAfter is not null)
+                {
+                    AddLeaderLossChecks(scope, attemptId, expected, actor, built, draw, state, routAfter, routLost, ScenarioA1MoraleCheck.FailureToRout, null);
+                }
+
                 AddConcealmentGains(scope, attemptId, expected, actor, gains, built, draw, []);
                 Finish(built, [], draw);
                 return built;
@@ -842,7 +887,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                         : Array.Empty<string>(),
                     .. wind ? [ScenarioA1SequenceCalculator.WindChangeDueText()] : Array.Empty<string>()])
             {
-                Roll = new PlannedRoll(wind ? "wind-change" : "concealment", Rolled),
+                Roll = new PlannedRoll(wind ? "wind-change" : routAfter is not null ? "leader-loss" : "concealment", Rolled),
                 FirstEventId = EventId(attemptId, 1),
             };
         }
@@ -869,7 +914,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 return;
             }
 
-            var payload = new PhaseChanged(turn, phase, phasing);
+            // A11.71 (p. 76; pass 70, ruling R70.31): on the record that ends a CCPh the projector holds in Melee the PRC of an Immobile vehicle, read from
+            // the vehicle; the public record names no unit aboard (A12.2, A12.3; the referee's finding at the reviews).
+            var payload = new PhaseChanged(turn, phase, phasing)
+            {
+                PrcMelee = state.Phase == "ccph" ? true : null,
+            };
             var changed = EventId(attemptId, events.Count + 1);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "phase-changed", payload, rulePackage: null, visibility: null));
             if (wind && draw is not null)
@@ -944,6 +994,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
                 reasons.Add(ScenarioA1SequenceCalculator.RecallAbandonedText(vehicle.Id, Is(vehicle, Conditions.Bogged) && !Is(vehicle, Conditions.Immobilized)));
             }
+
+            // A12.34 (pass 70, ruling R70.22): at each phase, a hidden Emplaced Gun out of Concealment Terrain that a Good Order enemy ground unit has a LOS
+            // to is placed beneath "?" ("e.g., at the start of the first RPh").
+            AddEmplacedHipLoss(scope, attemptId, expected, existing, events);
         }
     }
 
@@ -2095,14 +2149,17 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     /// The composed read of a placed map at the versions in play, or null when the map is not placed or a board cannot be read. Built once a state,
     /// from the state's kept handles, and kept with the state (the A3 plan, W3): it was built anew on every map read.
     /// </summary>
-    private ComposedMapRead? Composed(GameState state) => state.Map.IsPlaced ? MemoOf(state).Composed(this, state) : null;
+    private ComposedMapRead? Composed(GameState state) => Composed(state, MemoOf(state));
 
-    private ComposedMapRead? ComposedOf(GameState state)
+    /// <summary>The composed read of a placed map, kept in <paramref name="memo"/> (the state's, or a history view's transient one).</summary>
+    private ComposedMapRead? Composed(GameState state, PlayStepMemo memo) => state.Map.IsPlaced ? memo.Composed(this, state) : null;
+
+    private ComposedMapRead? ComposedOf(GameState state, PlayStepMemo memo)
     {
         var placed = new List<(BoardPlacement, BoardHandle)>();
         foreach (var placement in state.Map.Placements())
         {
-            if (Handle(state, placement.Board) is not { } handle)
+            if (Handle(state, memo, placement.Board) is not { } handle)
             {
                 return null;
             }
@@ -2118,8 +2175,11 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     /// kept in its map context (the A3 plan, W3). The catalog returns the same handle object for a loaded board, so the LOS caches keyed by a handle
     /// keep hitting.
     /// </summary>
-    private BoardHandle? Handle(GameState state, BoardRef board) =>
-        MemoOf(state).Handles.GetOrAdd(board, static (key, read) => read.State.Map.Board(key) is { } placed ? read.Catalog.TryGetBoard(key, placed.Version).Board : null,
+    private BoardHandle? Handle(GameState state, BoardRef board) => Handle(state, MemoOf(state), board);
+
+    /// <summary>A board's handle, kept in <paramref name="memo"/> (the state's, or a history view's transient one).</summary>
+    private BoardHandle? Handle(GameState state, PlayStepMemo memo, BoardRef board) =>
+        memo.Handles.GetOrAdd(board, static (key, read) => read.State.Map.Board(key) is { } placed ? read.Catalog.TryGetBoard(key, placed.Version).Board : null,
             (State: state, Catalog: boards));
 
     private List<BoardHandle>? BoardsOf(IReadOnlyList<GameEvent> events)

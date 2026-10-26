@@ -230,6 +230,19 @@ public static class GameEventWriter
                 writer.WriteNumber("turn", phase.Turn);
                 writer.WriteString("phase", phase.Phase);
                 writer.WriteString("phasingSide", phase.PhasingSide);
+
+                // A11.71 (pass 70, ruling R70.31): written on a CCPh's ending record since the pass, even when empty.
+                if (phase.PrcHeldInMelee is { } held)
+                {
+                    Strings(writer, "prcHeldInMelee", held);
+                }
+
+                // A11.71 (ruling R70.31; the reviews of pass 70): the projector reads the PRC held from the vehicles, written only when true.
+                if (phase.PrcMelee == true)
+                {
+                    writer.WriteBoolean("prcMelee", true);
+                }
+
                 break;
             case InstanceCreated created:
                 writer.WritePropertyName("instance");
@@ -433,6 +446,11 @@ public static class GameEventWriter
                 if (vehicleCombat.CancelsFireLanes)
                 {
                     writer.WriteBoolean("cancelsFireLanes", true);
+                }
+
+                if (vehicleCombat.CreatedLeader is { } createdLeader)
+                {
+                    writer.WriteString("createdLeader", createdLeader);
                 }
 
                 break;
@@ -723,6 +741,32 @@ public static class GameEventWriter
                     writer.WriteEndArray();
                 }
 
+                if (bailed.Drm is { } bailDrm)
+                {
+                    writer.WriteNumber("drm", bailDrm);
+                }
+
+                if (bailed.Elr is { } bailElr)
+                {
+                    writer.WriteNumber("elr", bailElr);
+                }
+
+                break;
+            case MoraleCheckResolved check:
+                Strings(writer, "units", check.Units);
+                writer.WriteString("location", check.Location);
+                writer.WriteString("cause", check.Cause);
+                writer.WriteStartObject("rolls");
+                foreach (var (key, roll) in check.Rolls.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+                {
+                    writer.WriteString(key, roll);
+                }
+
+                writer.WriteEndObject();
+                writer.WritePropertyName("facts");
+                check.Facts.WriteTo(writer);
+                writer.WritePropertyName("resolution");
+                check.Resolution.WriteTo(writer);
                 break;
             case VehicleAbandoned abandoned:
                 writer.WriteString("vehicle", abandoned.Vehicle);
@@ -844,6 +888,11 @@ public static class GameEventWriter
                     writer.WriteString("attempted", repulsedFrom.ToString());
                 }
 
+                if (routed.With is { } routedWith)
+                {
+                    writer.WriteString("with", routedWith);
+                }
+
                 break;
             case RoutInterdicted interdicted:
                 writer.WriteString("unit", interdicted.Unit);
@@ -856,6 +905,31 @@ public static class GameEventWriter
                 {
                     writer.WriteString("interdictor", interdictor);
                 }
+
+                if (interdicted.Leader is { } interdictedLeader)
+                {
+                    writer.WriteString("leader", interdictedLeader);
+                }
+
+                break;
+            case VoluntaryBreak voluntary:
+                Strings(writer, "units", voluntary.Units);
+                break;
+            case UnitsSearched search:
+                Strings(writer, "units", search.Units);
+                writer.WriteString("location", search.Location.ToString());
+                writer.WriteString("roll", search.Roll);
+                writer.WriteNumber("drm", search.Drm);
+                writer.WriteNumber("accessible", search.Accessible);
+                Strings(writer, "searched", [.. search.Searched.Select(location => location.ToString())]);
+                if (search.CasualtyDrm is { } searchCasualtyDrm)
+                {
+                    writer.WriteNumber("casualtyDrm", searchCasualtyDrm);
+                }
+
+                break;
+            case ConcealmentVerified verified:
+                Strings(writer, "units", verified.Units);
                 break;
             case DeploymentAttempted deployment:
                 writer.WriteString("squad", deployment.Squad);
@@ -978,6 +1052,24 @@ public static class GameEventWriter
                 combat.Facts.WriteTo(writer);
                 writer.WritePropertyName("resolution");
                 combat.Resolution.WriteTo(writer);
+
+                // A11.31 (pass 70, ruling R70.30): a sequential round names the side next and whether the Location's CC is over; no other round does.
+                if (combat.Next is { } sequentialNext)
+                {
+                    writer.WriteString("next", sequentialNext);
+                }
+
+                if (combat.Closed)
+                {
+                    writer.WriteBoolean("closed", true);
+                }
+
+                // A11.52 (pass 70, ruling R70.34): the attackers that tried to capture a vehicle's Passengers.
+                if (combat.Captors is { } captors)
+                {
+                    Strings(writer, "captors", captors);
+                }
+
                 break;
             case OrdnanceFired ordnance:
                 writer.WriteString("gun", ordnance.Gun);
@@ -1135,6 +1227,11 @@ public static class GameEventWriter
                     Strings(writer, "secured", [.. secured.Select(location => location.ToString())]);
                 }
 
+                if (mopped.CasualtyDrm is { } mopCasualtyDrm)
+                {
+                    writer.WriteNumber("casualtyDrm", mopCasualtyDrm);
+                }
+
                 break;
             case AcquisitionChanged acquisition:
                 writer.WriteString("gun", acquisition.Gun);
@@ -1181,6 +1278,12 @@ public static class GameEventWriter
             writer.WriteNumber("morale", armorLeader.Morale);
             writer.WriteNumber("leadership", armorLeader.Leadership);
             writer.WriteEndObject();
+        }
+
+        // Pass 70 (ruling R70.28): the Carrier a Carrier HS left.
+        if (instance.CrewOf is { } crewOf)
+        {
+            writer.WriteString("crewOf", crewOf);
         }
 
         writer.WriteEndObject();

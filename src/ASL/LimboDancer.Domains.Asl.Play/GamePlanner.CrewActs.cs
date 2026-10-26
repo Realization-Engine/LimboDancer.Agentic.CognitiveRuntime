@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.State;
 
@@ -27,11 +28,30 @@ public sealed partial class GamePlanner
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(vehicle);
         var index = MemoOf(state).Objects(state);
+
+        // D5.42 and its EXC (pass 70, ruling R70.34; fix round C): Rules picks them, by the bar's own reading (a captor in the CCPh of its capture
+        // enters whatever MF it spent).
         return vehicle.Status == InstanceStatus.Active && Is(vehicle, Conditions.Abandoned) && vehicle.Position is MapPosition && index.Location(vehicle.Id) is { } at
-            ? [.. index.At(at.Location).OfType<UnitInstance>().Where(unit => unit.Side == vehicle.Side && !LiveFire.IsVehicle(unit) && vocabulary.IsA(unit.Kind, "asl:personnel")
-                && unit.MfSpent == 0 && !unit.HalfMfSpent && !unit.MovementEnded)]
+            ? [.. index.At(at.Location).OfType<UnitInstance>().Where(unit => ScenarioA1CrewActsRules.RecrewCandidate(RecrewFactsOf(state, index, unit, vehicle, at.Location)))]
             : [];
     }
+
+    /// <summary>
+    /// The facts of a unit entering an Abandoned vehicle to crew it (D5.42, D5.43, D5.341), from the state and its index. D5.42 (the boundary review): Rules
+    /// knows the vehicle's own crew by the id it gave the counter, and when its crew left it by the state's list; D5.42's EXC (pass 70, ruling R70.34): a
+    /// captor enters the vehicle in the CCPh of its capture.
+    /// </summary>
+    private RecrewFacts RecrewFactsOf(GameState state, ObjectIndex index, UnitInstance unit, UnitInstance vehicle, BoardLocation? at) =>
+        new(unit.Id, vehicle.Id, state.Phase == "mph" && unit.Side == state.PhasingSide,
+            at is not null && Is(vehicle, Conditions.Abandoned), unit.Side == vehicle.Side,
+            vocabulary.IsA(unit.Kind, "asl:personnel") && !LiveFire.IsVehicle(unit) && unit.Position is MapPosition,
+            at is not null && index.Location(unit.Id)?.Location == at, unit.MfSpent > 0 || unit.HalfMfSpent || unit.MovementEnded,
+            ScenarioA1CrewActsRules.RecrewReady(Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee),
+                Is(unit, Conditions.Captured), Is(unit, "asl:ti")),
+            state.AbandonedThisPlayerTurn.Contains(vehicle.Id, StringComparer.Ordinal), ScenarioA1CrewActsRules.IsOwnCrew(unit.Id, vehicle.Id), Is(vehicle, Conditions.Recalled))
+        {
+            CapturedThisCcph = state.Phase == "ccph" && state.CapturedThisPhase.Contains(vehicle.Id, StringComparer.Ordinal),
+        };
 
     /// <summary>
     /// D5.311 (ruling R65.31): why a vehicle whose crew is broken inside it neither moves nor fires, or null. One scan of the state's units, made only when a
@@ -223,15 +243,8 @@ public sealed partial class GamePlanner
         var index = MemoOf(state).Objects(state);
         var at = vehicle.Position is MapPosition ? index.Location(vehicleId)?.Location : null;
 
-        // D5.42 (the boundary review): Rules knows the vehicle's own crew by the id it gave the counter, and when its crew left it by the state's list.
         var ownCrew = ScenarioA1CrewActsRules.IsOwnCrew(unitId, vehicleId);
-        if (ScenarioA1CrewActsRules.RecrewBar(new RecrewFacts(unitId, vehicleId, state.Phase == "mph" && unit.Side == state.PhasingSide,
-            at is not null && Is(vehicle, Conditions.Abandoned), unit.Side == vehicle.Side,
-            vocabulary.IsA(unit.Kind, "asl:personnel") && !LiveFire.IsVehicle(unit) && unit.Position is MapPosition,
-            at is not null && index.Location(unitId)?.Location == at, unit.MfSpent > 0 || unit.HalfMfSpent || unit.MovementEnded,
-            ScenarioA1CrewActsRules.RecrewReady(Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee),
-                Is(unit, Conditions.Captured), Is(unit, "asl:ti")),
-            state.AbandonedThisPlayerTurn.Contains(vehicleId, StringComparer.Ordinal), ownCrew, Is(vehicle, Conditions.Recalled))) is { } bar)
+        if (ScenarioA1CrewActsRules.RecrewBar(RecrewFactsOf(state, index, unit, vehicle, at)) is { } bar)
         {
             return Refused(scope, label, expected, bar);
         }

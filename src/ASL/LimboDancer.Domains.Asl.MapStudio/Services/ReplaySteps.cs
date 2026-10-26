@@ -293,6 +293,9 @@ public static class ReplaySteps
             {
                 CloseCombatResolved.AmbusherRound => ", the ambusher's round",
                 CloseCombatResolved.AmbushedRound => ", the ambushed side's round",
+
+                // A11.31 (pass 70, ruling R70.30): one Infantry attack on Infantry in a Location holding a vehicle.
+                CloseCombatResolved.SequentialRound => ", one attack of the sequence with a vehicle there",
                 _ => string.Empty,
             };
             return ("cc", null, $"Close Combat in {Place(before, combat.Location)}{round}{end}", false);
@@ -362,6 +365,13 @@ public static class ReplaySteps
         {
             var side = SideOf(Head(advanced.Units));
             return ("advance", side, $"{A(side, advanced.Units.Count == 1 ? "unit advances" : "stack advances")} into {Place(before, advanced.To)}{end}", false);
+        }
+
+        // Pass 70 (ruling R70.11): units broken voluntarily at the start of the RtPh, so as to rout.
+        if (First<VoluntaryBreak>(payloads) is { } voluntary)
+        {
+            var side = SideOf(Head(voluntary.Units));
+            return ("rout", side, voluntary.Units.Count == 1 ? $"{A(side, "unit")} breaks voluntarily{end}" : $"{DisplayText.Side(side)} units break voluntarily{end}", false);
         }
 
         // The table player, pass 35: a rout repulsed after a step it made is titled by the repulse, not by its first step.
@@ -442,6 +452,13 @@ public static class ReplaySteps
             return ("fire", side, $"{DisplayText.Side(side)} units are held for Opportunity Fire", false);
         }
 
+        // Pass 70 (ruling R70.24): a Search as the stack ends its move.
+        if (First<UnitsSearched>(payloads) is { } searched)
+        {
+            var side = SideOf(Head(searched.Units)) ?? before.PhasingSide;
+            return ("move", side, $"{A(side, searched.Units.Count == 1 ? "unit" : "stack")} Searches from {Place(before, searched.Location)}{end}", false);
+        }
+
         if (First<BuildingMoppedUp>(payloads) is { } mopped)
         {
             return ("other", mopped.Side, DisplayText.Hexes($"{The(mopped.Side, "side")} Mops Up building {mopped.Building}", before.Map.Boards.Count) + end, false);
@@ -486,6 +503,13 @@ public static class ReplaySteps
         if (First<ChoiceMade>(payloads) is not null)
         {
             return ("other", null, $"A choice is answered{end}", false);
+        }
+
+        // Pass 70 (A12.14; ruling R70.21): a concealed enemy unit shows itself for a moment to force a "?" loss; the record is the moving side's alone.
+        if (First<ConcealmentVerified>(payloads) is { } verified)
+        {
+            var side = SideOf(Head(verified.Units));
+            return ("other", side, $"{A(side, "concealed unit")} shows itself for a moment to force the loss of a \"?\"{end}", false);
         }
 
         if (First<SniperAttacked>(payloads) is { } sniper)
@@ -533,6 +557,15 @@ public static class ReplaySteps
         if (ended is not null)
         {
             return ("end", null, "The game ends" + (ended.Result is { } final ? $": {ResultText(final)}" : string.Empty), false);
+        }
+
+        // Pass 70's fixes (A12.14; ruling R70.20): a voluntary removal of "?" holds only its reveals and the Dummies it removes, and is titled by what the
+        // side did, not by its first Dummy.
+        if (readable.Any(item => item.Type == "concealment-lost") && readable.All(item => item.Type == "concealment-lost"
+            || (item.Payload is InstanceEliminated dummy && before.Unit(dummy.Id) is { Kind: UnitKinds.Dummy })))
+        {
+            var side = readable[0].Payload is ConditionsChanged first ? SideOf(first.Id) : SideOf(((InstanceEliminated)readable[0].Payload).Id);
+            return ("other", side, $"{The(side, "side")} gives up \"?\"", false);
         }
 
         if (First<InstanceEliminated>(payloads) is { } gone)
@@ -670,6 +703,18 @@ public static class ReplaySteps
                 AmbushRolled ambush => ambush.Location,
                 OrdnanceFired ordnance => ordnance.Target,
                 RallyAttempted rally => before.Location(rally.Unit)?.Location,
+
+                // Pass 70 (ruling R70.11): a Voluntary Break is seen where its first unit stands.
+                VoluntaryBreak voluntary => voluntary.Units.Count > 0 ? before.Location(voluntary.Units[0])?.Location : null,
+
+                // Pass 70 (ruling R70.21): a momentary forfeiture of "?" is seen where its first unit stands (shown to the moving side only).
+                ConcealmentVerified verified => verified.Units.Count > 0 ? before.Location(verified.Units[0])?.Location : null,
+
+                // Pass 70 (ruling R70.24): a Search is seen in the Location it is made from.
+                UnitsSearched search => search.Location,
+
+                // Pass 70 (ruling R70.4): a morale check made outside an attack is seen in its Location, within the step of what caused it.
+                MoraleCheckResolved check => BoardLocation.TryParse(check.Location, out var checkedAt) ? checkedAt : null,
                 _ => null,
             };
             if (at is not null)

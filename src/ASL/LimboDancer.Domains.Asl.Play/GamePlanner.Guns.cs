@@ -207,8 +207,12 @@ public sealed partial class GamePlanner
             events.Add(Event(scope, attemptId, 4, expected, "conditions-changed", new ConditionsChanged(vehicle.Id, ti), package, null));
         }
 
+        // A12.141 (p. 78; ruling R70.17): hooking up or unhooking is an activity of the crew, and costs its "?" in the LOS of a Good Order enemy within 16
+        // hexes (the vehicle's own "?" goes by A12.2 as it moves).
+        var lost = AddActionConcealmentLoss(scope, attemptId, expected, events, state, crew);
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
             [$"play.hook-gun: {vehicle.Id} {(hook ? "hooks up" : "unhooks")} {gun.Id} for {cost} MP"
-                + (boards ? $"; {crew.Id} boards it as a Passenger" : !hook && crew.Position is ContainedPosition ? $"; {crew.Id} disembarks to man it" : string.Empty) + " (C10.11, C10.12)"]);
+                + (boards ? $"; {crew.Id} boards it as a Passenger" : !hook && crew.Position is ContainedPosition ? $"; {crew.Id} disembarks to man it" : string.Empty) + " (C10.11, C10.12)",
+                .. ConcealmentLossNote(lost)]);
     }
 }

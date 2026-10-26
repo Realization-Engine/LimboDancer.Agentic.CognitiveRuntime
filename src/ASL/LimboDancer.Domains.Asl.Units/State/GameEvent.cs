@@ -53,6 +53,15 @@ public sealed record NewInstance(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The vehicle a Carrier's inherent HS left (D6.82; pass 70, ruling R70.28), written as <c>"crewOf": "gb-carrier"</c>: such a HS Recombines with no
+    /// leader (A1.32). Null for any other unit, which is every record made before pass 70.
+    /// </summary>
+    public string? CrewOf
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -97,7 +106,27 @@ public sealed record GameStarted(
 }
 
 /// <summary><c>phase-changed</c>.</summary>
-public sealed record PhaseChanged(int Turn, string Phase, string PhasingSide) : EventPayload;
+public sealed record PhaseChanged(int Turn, string Phase, string PhasingSide) : EventPayload
+{
+    /// <summary>
+    /// On the record that ends a CCPh (A11.71, p. 76; pass 70, ruling R70.31): the Passengers and Riders held in Melee, those of an Immobile vehicle; the
+    /// others aboard are not. Null on every record before the pass, which held every unit aboard as one on foot.
+    /// </summary>
+    public IReadOnlyList<string>? PrcHeldInMelee
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// On the record that ends a CCPh since the reviews of pass 70 (A11.71; ruling R70.31; the referee's finding): true, and the projector holds in Melee the
+    /// Passengers and Riders of each Immobile vehicle, read from the vehicle's own state, so the public record names no unit aboard. A record that names
+    /// <see cref="PrcHeldInMelee"/> is read by its list; one with neither holds every unit aboard as one on foot, as before the pass.
+    /// </summary>
+    public bool? PrcMelee
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// <c>game-ended</c>: the Turn counter reached END (A3.9; ruling R20.1), after the last Player Turn of the given Game Turn, or a Victory Condition was met at

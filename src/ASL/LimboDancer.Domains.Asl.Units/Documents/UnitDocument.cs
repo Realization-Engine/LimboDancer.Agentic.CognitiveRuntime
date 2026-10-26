@@ -73,6 +73,15 @@ public sealed record UnitDocument(
     }
 
     /// <summary>
+    /// An <see cref="Uninspected"/> placeholder after play begins: a counter of an enemy stack out of the LOS of all the viewing side's Good Order ground
+    /// units, which may not be inspected (A12.16, p. 79; pass 70, ruling R70.18); named for that.
+    /// </summary>
+    public bool OutOfLos
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// A Dummy (A12.11): a "?" with no unit beneath it, shown to its own side only (pass 30). It is drawn as a concealed placeholder and named for
     /// what it is; the other side is given a sealed presence instead, which says nothing of what is beneath.
     /// </summary>

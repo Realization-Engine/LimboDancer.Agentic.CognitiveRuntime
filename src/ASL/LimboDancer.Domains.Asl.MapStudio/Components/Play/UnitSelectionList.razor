@@ -50,13 +50,16 @@ else
     [Parameter]
     public string Empty { get; set; } = "none may be chosen now.";
 
-    // The closed line: the units ticked, by name while they fit, or how many.
-    private string Chosen => Rows.Where(row => Selected.Contains(row.Id)).Select(row => Say(row.Label)).ToArray() switch
+    // The closed line: the units ticked, by name after their Location while they fit (the hex UI rule), or how many.
+    private string Chosen => Rows.Where(row => Selected.Contains(row.Id)).Select(Named).ToArray() switch
     {
         [] => $"choose ({Rows.Count} offered)",
         { Length: <= 2 } few => string.Join("; ", few),
         var many => $"{many.Length} of {Rows.Count} chosen",
     };
+
+    private string Named(Row row) => PlaceOfUnit?.Invoke(row.Id) is { } place
+        ? $"{place.Where}: {UnitGrouping.WithoutPlace(Say(row.Label), place.Where)}" : Say(row.Label);
 
     [Parameter]
     public EventCallback<Toggle> OnToggle { get; set; }
@@ -78,7 +81,7 @@ else
             }
             @foreach (var row in group.Items)
             {
-                <label><input class="@CssClass" type="checkbox" data-unit="@row.Id" checked="@Selected.Contains(row.Id)" @onchange="@(args => OnToggle.InvokeAsync(new Toggle(row.Id, args.Value is true)))" /> @UnitGrouping.WithoutPlace(Say(row.Label), PlaceOfUnit?.Invoke(row.Id)?.Where)</label>
+                <label @key="row.Id"><input class="@CssClass" type="checkbox" data-unit="@row.Id" checked="@Selected.Contains(row.Id)" @onchange="@(args => OnToggle.InvokeAsync(new Toggle(row.Id, args.Value is true)))" /> @UnitGrouping.WithoutPlace(Say(row.Label), PlaceOfUnit?.Invoke(row.Id)?.Where)</label>
             }
         }
     </text>;

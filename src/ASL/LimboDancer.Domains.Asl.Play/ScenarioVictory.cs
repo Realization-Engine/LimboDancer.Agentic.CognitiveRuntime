@@ -186,16 +186,37 @@ public static class ScenarioVictory
     }
 
     /// <summary>
-    /// The Control of each Location of a building of the card as its states leave it (A26.11, A12.153; ruling R24.1), with no view: what Mopping Up reads
-    /// for the ground-level Locations its side does not Control.
+    /// The Control of each Location of a building as its states leave it (A26.11, A12.153; rulings R24.1, R70.25), with no view: what Mopping Up reads for
+    /// the ground-level Locations its side does not Control. A building the card does not name is folded with the map's hexes <paramref name="buildingHexes"/>,
+    /// and in a game with no card no side Controls it at the start.
     /// </summary>
-    public static IReadOnlyDictionary<BoardLocation, string?> LocationControl(ScenarioCard card, IReadOnlyList<GameState> states, string building,
-        Func<BoardLocation, IReadOnlyList<int>> levels)
+    public static IReadOnlyDictionary<BoardLocation, string?> LocationControl(ScenarioCard? card, IReadOnlyList<GameState> states, string building,
+        IReadOnlyList<BoardLocation> buildingHexes, Func<BoardLocation, IReadOnlyList<int>> levels)
     {
-        ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(states);
+        ArgumentNullException.ThrowIfNull(buildingHexes);
         var hexes = new Dictionary<string, BoardLocation>(StringComparer.Ordinal);
-        return ScenarioA1VictoryCalculator.LocationControl(CardFacts(card, levels, hexes), new StateReader(states, _ => 0, _ => [], null), building)
+        var facts = card is null
+            ? new VictoryCardFacts([], null, null, _ => null, [], 0, null, _ => null, null)
+            : CardFacts(card, levels, hexes);
+        IReadOnlyList<VictoryHexFacts> MapHexes()
+        {
+            foreach (var hex in buildingHexes)
+            {
+                hexes[HexId(hex)] = hex;
+            }
+
+            return [.. buildingHexes.Select(hex => new VictoryHexFacts(HexId(hex), hex.Board.Value, hex.Hex.ToString(), hex.Hex.RowNumber))];
+        }
+
+        // Ruling R70.25: the map's building is read by its own id, the card's by the card's.
+        var cardHexes = facts.BuildingHexes;
+        facts = facts with
+        {
+            BuildingHexes = id => cardHexes(id) ?? (id == building ? MapHexes() : null),
+            Levels = id => levels(hexes[id]),
+        };
+        return ScenarioA1VictoryCalculator.LocationControl(facts, new StateReader(states, _ => 0, _ => [], null), building)
             .ToDictionary(item => hexes[item.Key.HexId] with { Level = item.Key.Level }, item => item.Value);
     }
 

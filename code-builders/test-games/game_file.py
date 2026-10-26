@@ -12,7 +12,8 @@ the live folder, where the Studio finds it; the folder is not committed.
     game.write()
 
 Never build a game from one that has been played: it carries the played events and does not replay. The game-started payload alone is
-taken from TEMPLATE, a live game of board 3.
+taken from TEMPLATE, the payload of a game of board 3 kept beside this file (p35-rst-cc's; the game itself was retired when the proof games
+were trimmed, PR 38, so since pass 70 the payload no longer comes from the live folder).
 """
 import hashlib
 import json
@@ -24,7 +25,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 from paths import REPO, VASL_ROOT  # noqa: E402
 
 LIVE = REPO + "/src/ASL/boards/units/live/5a7d1f000000400080000000000057d0/"
-TEMPLATE = "p35-rst-cc.game.json"
+TEMPLATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "game_started_template.json")
 CATALOG = "asl-scenario-a1@1.18.0"
 CLEAR = {"asl:broken": False, "asl:berserk": False, "asl:captured": False, "asl:melee": False, "asl:ti": False,
          "asl:disrupted": False, "asl:concealed": False, "asl:hidden": False}
@@ -65,10 +66,10 @@ class GameFile:
     def __init__(self, game, label, phasing="german", board="03", other="russian", year=1942, month=7, defender=None, special=None, catalog=CATALOG,
                  boards=None):
         self.game, self.label, self.phasing, self.other = game, label, phasing, other
-        with open(LIVE + TEMPLATE, encoding="utf-8") as source:
+        with open(TEMPLATE, encoding="utf-8") as source:
             template = json.load(source)
         self.tenant = template["tenant"]
-        started = dict(template["events"][0]["payload"])
+        started = dict(template["payload"])
         if boards:
             started["map"] = placed_map(boards)
         else:

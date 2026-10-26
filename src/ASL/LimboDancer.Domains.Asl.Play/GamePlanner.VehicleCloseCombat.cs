@@ -25,44 +25,72 @@ public sealed partial class GamePlanner
         Is(unit, Conditions.Broken), Is(unit, Conditions.Captured), unit.Kind == UnitKinds.Dummy);
 
     /// <summary>
-    /// A unit of a Location holding a vehicle as Rules reads it (pass 32.g): its CC armament, attacker status, Personnel, prisoner, berserk, Known, and
-    /// Gun's crew flags (a crew that mans no Gun is ordinary Infantry, pass 65, ruling R65.29).
+    /// A unit of a Location holding a vehicle as Rules reads it (pass 32.g): its CC armament, attacker status, Personnel, prisoner, berserk, and Known
+    /// flags (a Gun's crew is ordinary Infantry since pass 70, ruling R70.27).
     /// </summary>
-    private VehicleCcUnitFacts VehicleCcUnit(GameState state, UnitInstance unit) => new(unit.Id, unit.Side, LiveFire.IsVehicle(unit), VehicleCcArmament(unit), CcAttacker(unit),
-        vocabulary.IsA(unit.Kind, "asl:personnel"), Is(unit, Conditions.Captured), Is(unit, Conditions.Berserk), KnownEnemy(unit), GunCrew(state, unit));
+    private VehicleCcUnitFacts VehicleCcUnit(UnitInstance unit) => new(unit.Id, unit.Side, LiveFire.IsVehicle(unit), VehicleCcArmament(unit), CcAttacker(unit),
+        vocabulary.IsA(unit.Kind, "asl:personnel"), Is(unit, Conditions.Captured), Is(unit, Conditions.Berserk), KnownEnemy(unit));
 
     /// <summary>
-    /// The sides with an attack left in a CC Location holding a vehicle (ruling R11.16): Infantry that have not attacked and face an enemy vehicle, and
-    /// vehicles with CC armament that have not attacked and face enemy Infantry; a side that passed has none.
+    /// The units of a Location holding a vehicle as the sequential CC reads them (pass 70, rulings R70.30, R70.31), from the planner's index: the active
+    /// units on foot and the vehicles, each vehicle armed also by the Passengers who join its attack (A11.62), and the Riders of each vehicle, which attack
+    /// and are attacked in Infantry against Infantry CC (A11.611).
     /// </summary>
-    private HashSet<string> SidesWithAttacks(GameState state, BoardLocation location, IReadOnlyCollection<string> attacked, IReadOnlyCollection<string> passed)
+    private VehicleCcUnitFacts[] VehicleCcUnits(GameState state, BoardLocation location)
     {
-        return ScenarioA1VehicleCloseCombatRules.SidesWithAttacks([.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).Select(unit => VehicleCcUnit(state, unit))], attacked, passed);
+        var index = MemoOf(state).Objects(state);
+        var here = index.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
+        return [.. here.Select(unit => LiveFire.IsVehicle(unit) && !VehicleCcArmament(unit) && PassengersJoin(index, unit) ? VehicleCcUnit(unit) with { Armed = true } : VehicleCcUnit(unit)),
+            .. here.Where(LiveFire.IsVehicle).SelectMany(vehicle => index.Aboard(vehicle.Id, ContainmentRole.Rider)).Select(rider => VehicleCcUnit(rider) with { Rider = true })];
     }
 
     /// <summary>
-    /// The side that attacks first in a CC Location holding a vehicle (A11.31): the non-vehicular side, or with vehicles on both sides the ATTACKER.
+    /// Whether Passengers join a vehicle's CC attack on Infantry (A11.62; pass 70, ruling R70.31), read from the planner's index: some do, as Rules reads each
+    /// one's part, and the vehicle is neither Stunned, Shocked, Abandoned, nor captured.
+    /// </summary>
+    private static bool PassengersJoin(ObjectIndex index, UnitInstance vehicle) =>
+        ScenarioA1VehicleCloseCombatRules.PassengersJoin(Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.Abandoned), Is(vehicle, Conditions.Captured),
+            LiveCloseCombat.JoiningPassengers(vehicle, index.Aboard(vehicle.Id)).Count);
+
+    /// <summary>
+    /// The sides with an attack left in a CC Location holding a vehicle (ruling R11.16): Infantry that have not attacked and face an enemy vehicle, and
+    /// vehicles with CC armament that have not attacked and face enemy Infantry; a side that passed has none. Since pass 70 (ruling R70.30), Infantry facing
+    /// enemy Infantry no Infantry has attacked (<paramref name="infantryAttacked"/>) have one too.
+    /// </summary>
+    private HashSet<string> SidesWithAttacks(GameState state, BoardLocation location, IReadOnlyCollection<string> attacked, IReadOnlyCollection<string> passed,
+        IReadOnlyCollection<string> infantryAttacked)
+    {
+        return ScenarioA1VehicleCloseCombatRules.SidesWithAttacks(VehicleCcUnits(state, location), attacked, passed, infantryAttacked);
+    }
+
+    /// <summary>
+    /// The side that attacks first in a CC Location holding a vehicle (A11.31): the non-vehicular side, or with vehicles on both sides the ATTACKER; after an
+    /// Ambush there the ambusher (A11.34; pass 70, ruling R70.30).
     /// </summary>
     private static string FirstCcSide(GameState state, BoardLocation location)
     {
         return ScenarioA1VehicleCloseCombatRules.FirstCcSide([.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured))
-            .Select(unit => (unit.Side, LiveFire.IsVehicle(unit)))], state.PhasingSide!);
+            .Select(unit => (unit.Side, LiveFire.IsVehicle(unit)))], state.PhasingSide!, state.CloseCombats.FirstOrDefault(item => item.Location == location)?.Ambusher);
     }
 
     /// <summary>
     /// After an attack or a pass (A11.31; ruling R11.16): the side to attack next, the other side while it has attacks left, else the same side, and
-    /// whether the Location's CC is over.
+    /// whether the Location's CC is over; after an Ambush the ambusher while it has attacks left (A11.32, A11.34; pass 70, ruling R70.30).
     /// </summary>
-    private (string? Next, bool Closed) NextCcSide(GameState after, BoardLocation location, string moved, IReadOnlyCollection<string> attacked, IReadOnlyCollection<string> passed)
+    private (string? Next, bool Closed) NextCcSide(GameState after, BoardLocation location, string moved, IReadOnlyCollection<string> attacked, IReadOnlyCollection<string> passed,
+        IReadOnlyCollection<string> infantryAttacked)
     {
-        return ScenarioA1VehicleCloseCombatRules.NextCcSide(SidesWithAttacks(after, location, attacked, passed), moved);
+        return ScenarioA1VehicleCloseCombatRules.NextCcSide(SidesWithAttacks(after, location, attacked, passed, infantryAttacked), moved,
+            after.CloseCombats.FirstOrDefault(item => item.Location == location)?.Ambusher);
     }
 
     /// <summary>
-    /// A berserk unit (of <paramref name="side"/>, or of either side) that still owes an attack on a Known enemy vehicle in a Location's sequential CC
-    /// this CCPh (A15.43, A11.31; ruling R27.2): it may attack, has not, and the Location holds no Gun's crew, whose CC is not built. Null when none does.
+    /// The unit (of <paramref name="side"/>, or of either side) that still owes an attack in a Location's sequential CC this CCPh, as Rules decides it
+    /// (<see cref="ScenarioA1VehicleCloseCombatRules.OwingAttack"/>): a berserk unit with a Known enemy vehicle (A15.43, A11.31; ruling R27.2), or with Known
+    /// enemy Infantry no Infantry has attacked, or a unit that advanced into the Melee there (A11.15; pass 70, fix round C). The units are the planner's
+    /// index's, Riders among them. Null when none does.
     /// </summary>
-    private UnitInstance? BerserkOwingVehicleAttack(GameState state, BoardLocation location, string? side)
+    private (string Id, bool Berserk, string Target)? OwingSequentialAttack(GameState state, BoardLocation location, string? side)
     {
         var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
         if (!ScenarioA1VehicleCloseCombatRules.OwingPossible(state.Phase, entry is { Closed: true }, VehicleCloseCombatTurn(state, location).Open))
@@ -70,8 +98,13 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        var here = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
-        return ScenarioA1VehicleCloseCombatRules.BerserkOwingVehicleAttack([.. here.Select(unit => VehicleCcUnit(state, unit))], side, entry?.Attacking ?? []) is { } owing ? here.First(unit => unit.Id == owing) : null;
+        var objects = MemoOf(state).Objects(state);
+        return ScenarioA1VehicleCloseCombatRules.OwingAttack([.. VehicleCcUnits(state, location).Select(unit => objects.Unit(unit.Id) is { } found ? unit with
+        {
+            AdvancedHere = state.Advances.Any(item => item.Unit == unit.Id && item.To == location),
+            Melee = Is(found, Conditions.Melee),
+            Concealed = Is(found, Conditions.Concealed),
+        } : unit)], side, entry?.Attacking ?? [], entry?.InfantryAttacked ?? []);
     }
 
     /// <summary>
@@ -135,6 +168,22 @@ public sealed partial class GamePlanner
         return ScenarioA1VehicleCloseCombatRules.OverrunAttacks(berserk, smc.Id, CcAttacker(smc));
     }
 
+    /// <summary>
+    /// The units of a Location holding a vehicle that its sequential CC reads, for the Play page's panel (pass 70, rulings R70.30, R70.31): the active units
+    /// there and the vehicles, then each vehicle's Riders with the vehicle each rides, and the Passengers of each unarmored stationary vehicle, which an attack
+    /// may try to capture (A11.52; ruling R70.34), from the planner's index (no scan of the state per render). The page reads its side's view of them.
+    /// </summary>
+    public IReadOnlyList<(UnitInstance Unit, string? Rides, bool Passenger)> VehicleCloseCombatUnits(GameState state, BoardLocation location)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var index = MemoOf(state).Objects(state);
+        var here = index.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
+        return [.. here.Select(unit => (unit, (string?)null, false)),
+            .. here.Where(LiveFire.IsVehicle).SelectMany(vehicle => index.Aboard(vehicle.Id, ContainmentRole.Rider).Select(rider => (rider, (string?)vehicle.Id, false))),
+            .. here.Where(vehicle => LiveFire.IsVehicle(vehicle) && LiveCloseCombat.PassengersCapturable(vehicle))
+                .SelectMany(vehicle => index.Aboard(vehicle.Id, ContainmentRole.Passenger).Where(unit => !Is(unit, Conditions.Captured)).Select(passenger => (passenger, (string?)vehicle.Id, true)))];
+    }
+
     /// <summary>The sides and units a CC Location holding a vehicle waits for, for the Play page (ruling R11.16).</summary>
     public (string? Next, bool Open) VehicleCloseCombatTurn(GameState state, BoardLocation location)
     {
@@ -145,7 +194,8 @@ public sealed partial class GamePlanner
             return (null, false);
         }
 
-        return ScenarioA1VehicleCloseCombatRules.Turn(SidesWithAttacks(state, location, entry?.Attacking ?? [], entry?.Passed ?? []), entry?.Next ?? FirstCcSide(state, location));
+        return ScenarioA1VehicleCloseCombatRules.Turn(SidesWithAttacks(state, location, entry?.Attacking ?? [], entry?.Passed ?? [], entry?.InfantryAttacked ?? []),
+            entry?.Next ?? FirstCcSide(state, location));
     }
 
     private GamePlan PlanVehicleCloseCombat(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
@@ -185,9 +235,20 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, captureBar);
         }
 
-        return state.Phase == "mph"
-            ? PlanReactionFire(scope, existing, attemptId, expected, label, actor, state, location, attackers, vehicleId)
-            : PlanSequentialCloseCombat(scope, existing, attemptId, expected, label, actor, state, location, attackers, defenders, vehicleId, pass, capture);
+        if (state.Phase == "mph")
+        {
+            return PlanReactionFire(scope, existing, attemptId, expected, label, actor, state, location, attackers, vehicleId);
+        }
+
+        // A11.31, A11.14, A11.141 (pass 70, ruling R70.30): with no vehicle named, Infantry attack enemy Infantry there, with the SMC stacking and director
+        // the attack declares; A11.52, A20.22 (ruling R70.34): a capture attempt, the one way to attack a vehicle's Passengers there.
+        if (vehicleId is null && !pass && attackers.Length > 0 && defenders.Length > 0)
+        {
+            return PlanInfantrySequential(scope, attemptId, expected, label, actor, state, location, attackers, defenders, Map(arguments, "stacking"),
+                Text(arguments, "director", out var director) ? director : null, capture);
+        }
+
+        return PlanSequentialCloseCombat(scope, existing, attemptId, expected, label, actor, state, location, attackers, defenders, vehicleId, pass, capture);
     }
 
     /// <summary>
@@ -247,12 +308,14 @@ public sealed partial class GamePlanner
         Is(vehicle, Conditions.Captured), Is(vehicle, Conditions.Motion), VehicleDefinition(vehicle) is { MainArmament: null, AntiAircraftMg: null, CoaxialMg: null, BowMg: null },
         state.Location(vehicle.Id)?.Location is not null,
         state.Location(vehicle.Id)?.Location is { } at && state.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == vehicle.Side && !LiveFire.IsVehicle(unit) && !Is(unit, Conditions.Captured)),
-        state.Location(vehicle.Id)?.Location is { } there && state.At(there).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && CcAttacker(unit))))
+        state.Location(vehicle.Id)?.Location is { } there && state.At(there).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && CcAttacker(unit)),
+        // A11.52 (pass 70, ruling R70.34): a vehicle carrying Passengers is captured only with them, by CC.
+        MemoOf(state).Objects(state).Aboard(vehicle.Id, ContainmentRole.Passenger).Any(unit => !Is(unit, Conditions.Captured))))
         .OrderBy(vehicle => vehicle.Id, StringComparer.Ordinal);
 
     /// <summary>
     /// The CCPh in a Location holding a vehicle (A11.31; rulings R11.14 to R11.16): the side named attacks once, Infantry against an enemy vehicle or a
-    /// vehicle against enemy Infantry, or passes. Infantry against Infantry there is not built.
+    /// vehicle against enemy Infantry, or passes. Infantry against Infantry there is <see cref="PlanInfantrySequential"/>'s (pass 70, ruling R70.30).
     /// </summary>
     private GamePlan PlanSequentialCloseCombat(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor,
         GameState state, BoardLocation location, string[] attackers, string[] defenders, string? vehicleId, bool pass, bool capture)
@@ -273,13 +336,14 @@ public sealed partial class GamePlanner
         var passed = entry?.Passed ?? [];
         if (pass)
         {
-            // A15.43 (ruling R27.2): a side with a berserk unit facing a Known enemy vehicle there does not pass; the berserk unit attacks.
-            if (BerserkOwingVehicleAttack(state, location, next) is { } owing)
+            // A15.43 (ruling R27.2): a side with a berserk unit facing a Known enemy vehicle there does not pass; the berserk unit attacks. Since pass 70 (fix
+            // round C) nor one owing an attack on enemy Infantry there, or holding a unit that advanced into the Melee (A11.15).
+            if (OwingSequentialAttack(state, location, next) is { } owing)
             {
-                return Refused(scope, label, expected, ScenarioA1VehicleCloseCombatRules.BerserkNoPassText(owing.Id, location.ToString()));
+                return Refused(scope, label, expected, ScenarioA1VehicleCloseCombatRules.OwingNoPassText(owing.Id, location.ToString(), owing.Berserk, owing.Target));
             }
 
-            var (following, closed) = NextCcSide(state, location, next, attacked, [.. passed, next]);
+            var (following, closed) = NextCcSide(state, location, next, attacked, [.. passed, next], entry?.InfantryAttacked ?? []);
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
                 [Event(scope, attemptId, 1, expected, "vehicle-close-combat-passed", new VehicleCloseCombatPassed(location, next, following, closed), null, null)],
                 [ScenarioA1VehicleCloseCombatRules.PassSummary(next, location.ToString())]);
@@ -312,6 +376,198 @@ public sealed partial class GamePlanner
         return PlanVehicleAttack(scope, existing, attemptId, expected, label, actor, state, location, vehicle!, [.. units.Select(unit => unit!)], false, capture);
     }
 
+    /// <summary>
+    /// One Infantry attack on Infantry in a Location holding a vehicle (A11.31, A11.12 and its EXC, the H3 example, pp. 72 to 74; pass 70, rulings R70.30,
+    /// R70.31): the side named next attacks, with units that have not attacked this CCPh, enemy Infantry that no Infantry has attacked, a Rider of a vehicle
+    /// there among either (A11.611) and no other PRC; there is no simultaneous reply. The Close Combat package resolves it as a sequential round, with the
+    /// Ambush of the Location if one occurred (A11.34), and the record names the side that attacks next.
+    /// </summary>
+    private GamePlan PlanInfantrySequential(GameScope scope, string attemptId, long expected, string label, string actor, GameState state, BoardLocation location,
+        string[] attackers, string[] defenders, IReadOnlyDictionary<string, string>? stacking, string? director, bool capture)
+    {
+        var (next, open) = VehicleCloseCombatTurn(state, location);
+        if (!open || next is null)
+        {
+            return Refused(scope, label, expected, ScenarioA1VehicleCloseCombatRules.NoVehicleCcText(location.ToString()));
+        }
+
+        if (ScenarioA1VehicleCloseCombatRules.OtherOpenBar(state.CloseCombats.Any(item => !item.Closed && item.Location != location)) is { } otherBar)
+        {
+            return Refused(scope, label, expected, otherBar);
+        }
+
+        var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
+        var attacked = entry?.Attacking ?? [];
+        var infantryAttacked = entry?.InfantryAttacked ?? [];
+        var objects = MemoOf(state).Objects(state);
+
+        // A11.611: of the PRC only a Rider fights apart; a Passenger or a crew inside shares its vehicle's fate.
+        bool Here(UnitInstance unit) => objects.Location(unit.Id)?.Location == location && (objects.VehicleOf(unit.Id) is null || unit.Position is ContainedPosition { Role: ContainmentRole.Rider });
+        var units = attackers.Select(objects.Unit).ToArray();
+        if (ScenarioA1VehicleCloseCombatRules.InfantryRoundAttackersBar(attackers.Distinct(StringComparer.Ordinal).Count() != attackers.Length
+            || units.Any(unit => !ScenarioA1VehicleCloseCombatRules.InfantryRoundAttacker(unit is { Status: InstanceStatus.Active }, unit is not null && CcAttacker(unit), unit?.Side == next,
+                unit is not null && Here(unit), unit is not null && attacked.Contains(unit.Id))), next, location.ToString()) is { } attackersBar)
+        {
+            return Refused(scope, label, expected, attackersBar);
+        }
+
+        // A11.52 (ruling R70.34): an attack to capture may name the Passengers of an unarmored stationary vehicle there.
+        UnitInstance? CapturableVehicle(UnitInstance unit) => unit.Position is ContainedPosition { Role: ContainmentRole.Passenger } aboard && objects.Unit(aboard.Container) is { } vehicle
+            && objects.Location(vehicle.Id)?.Location == location && LiveCloseCombat.PassengersCapturable(vehicle) ? vehicle : null;
+        var targets = defenders.Select(objects.Unit).ToArray();
+        if (ScenarioA1VehicleCloseCombatRules.InfantryRoundDefendersBar(defenders.Distinct(StringComparer.Ordinal).Count() != defenders.Length
+            || targets.Any(unit => !ScenarioA1VehicleCloseCombatRules.InfantryRoundDefender(unit is { Status: InstanceStatus.Active }, unit is not null && unit.Side != next,
+                unit is not null && vocabulary.IsA(unit.Kind, "asl:personnel"), unit is not null && LiveFire.IsVehicle(unit), unit is not null && Is(unit, Conditions.Captured),
+                unit is not null && (Here(unit) || (capture && CapturableVehicle(unit) is not null)), unit is not null && infantryAttacked.Contains(unit.Id))), location.ToString()) is { } defendersBar)
+        {
+            return Refused(scope, label, expected, defendersBar);
+        }
+
+        var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
+        var declaration = new CloseCombatDeclaration(attackers, defenders)
+        {
+            Director = director,
+
+            // A20.22: a capture attempt; with several defenders the defender's choice at the Kill Number is read in the order named (a reading of the page).
+            Capture = capture ? true : null,
+            Yield = capture && defenders.Length > 1 ? defenders : null,
+        };
+        var passengerVehicles = capture ? targets.OfType<UnitInstance>().Select(CapturableVehicle).OfType<UnitInstance>().DistinctBy(vehicle => vehicle.Id).ToArray() : [];
+        var (facts, reason) = LiveCloseCombat.FromState(state, location, terrain, [declaration], stacking, null, CloseCombatFacts.Sequential);
+        if (facts is null)
+        {
+            return Refused(scope, label, expected, reason!);
+        }
+
+        var reference = CloseCombatReference.Value;
+        var precheck = ScenarioA1CloseCombatCalculator.Precheck(facts, reference);
+        if (precheck.Count != 0)
+        {
+            return Refused(scope, label, expected, RefusalReasons.Refusal("play.cc-refused", "Close Combat", "round", precheck));
+        }
+
+        var package = ScenarioA1CloseCombatPackage.Identity.ToString();
+        IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
+        {
+            var events = new List<GameEvent>();
+            var rollIds = new Dictionary<string, string>(StringComparer.Ordinal);
+            var rolls = new CloseCombatRolls(null);
+            CloseCombatResolution resolution;
+            while ((resolution = ScenarioA1CloseCombatCalculator.Resolve(facts with
+            {
+                Rolls = rolls
+            }, reference)).Disposition != CloseCombatResolution.Resolved)
+            {
+                var step = ScenarioA1CloseCombatRules.NextStep(resolution.Disposition, resolution.Reasons);
+                if (step.Undecided is { } undecided)
+                {
+                    throw new InvalidOperationException("The Close Combat package left a sequential attack it had accepted undecided: " + undecided);
+                }
+
+                var (kind, rest, selected, count, purpose) = (step.Kind!, step.Rest!, step.Selected, step.Count, step.Purpose!);
+                var drawn = draw(new RollRequest(count, 6));
+                var rollId = $"{attemptId}-roll-{(rollIds.Count + 1).ToString(CultureInfo.InvariantCulture)}";
+                rollIds[kind + ":" + rest] = rollId;
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
+                    new DiceRolled(rollId, purpose, count, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
+                rolls = kind switch
+                {
+                    "attack" => rolls with { Attacks = With(rolls.Attacks, rest, (IReadOnlyList<int>)drawn.Values) },
+                    "randomSelection" => rolls with
+                    {
+                        RandomSelection = selected.Select((id, index) => (id, index)).Aggregate(rolls.RandomSelection,
+                            (map, pair) => With(map, ScenarioA1CloseCombatRules.SelectionKey(rest, pair.id), drawn.Values[pair.index]))
+                    },
+                    "woundSeverity" => rolls with { WoundSeverity = With(rolls.WoundSeverity, rest, drawn.Values[0]) },
+                    "leaderCreation" => rolls with { LeaderCreation = With(rolls.LeaderCreation, rest, drawn.Values[0]) },
+                    "leaderStack" => rolls with
+                    {
+                        LeaderStack = selected.Select((id, index) => (id, index)).Aggregate(rolls.LeaderStack,
+                            (map, pair) => With(map, ScenarioA1CloseCombatRules.SelectionKey(rest, pair.id), drawn.Values[pair.index]))
+                    },
+                    _ => rolls with { WeaponLoss = With(rolls.WeaponLoss, rest, drawn.Values[0]) },
+                };
+            }
+
+            // A11.52 (ruling R70.34): a vehicle whose Passengers this attack tried to capture is captured once every one is, with no enemy Personnel left.
+            var taken = passengerVehicles.Where(vehicle => CapturedWithPassengers(state, location, vehicle, resolution.Effects)).ToArray();
+
+            // A11.31: the side that attacks next, read with the units this attack eliminated or captured gone, and a vehicle it captured the attackers'.
+            var gone = resolution.Effects.Where(effect => effect.Eliminated || effect.Captured == true).Select(effect => effect.UnitId).ToHashSet(StringComparer.Ordinal);
+            var after = gone.Count == 0 && taken.Length == 0 ? state : state with
+            {
+                Units = [.. state.Units.Select(unit => gone.Contains(unit.Id) ? unit with { Status = InstanceStatus.Eliminated }
+                    : taken.Any(vehicle => vehicle.Id == unit.Id) ? unit with { Side = next } : unit)],
+            };
+            var (following, closed) = NextCcSide(after, location, next, [.. attacked, .. attackers], entry?.Passed ?? [], [.. infantryAttacked, .. defenders]);
+            var recordId = EventId(attemptId, events.Count + 1);
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "close-combat-resolved",
+                new CloseCombatResolved(location, CloseCombatFacts.Sequential, attackers, defenders, rollIds,
+                    JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
+                {
+                    Next = following,
+                    Closed = closed,
+                    Captors = passengerVehicles.Length > 0 ? attackers : null,
+                }, package, null));
+            foreach (var (type, payload) in CloseCombatEffects(state, location, resolution, attemptId, []))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [recordId]));
+            }
+
+            // A20.5 (ruling R70.34): a Passenger captured leaves its vehicle for its Guard's Location.
+            foreach (var effect in resolution.Effects.Where(effect => effect.Captured == true && objects.Unit(effect.UnitId)?.Position is ContainedPosition { Role: ContainmentRole.Passenger }))
+            {
+                var (captiveHalf, _) = ScenarioA1PrisonerCalculator.CapturedHalfIds(attemptId, effect.UnitId);
+                var captive = effect.CapturedHalf == true ? captiveHalf : effect.UnitId;
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-moved", new InstanceMoved(captive, new MapPosition(location)) { Ended = true }, package, null, [recordId]));
+            }
+
+            // A11.52, A21.21 (ruling R70.34): an unarmed vehicle so captured takes its Temporary Driver as one captured alone with the captors' Infantry does; an
+            // armed one is the captors', unmanned, until a crew enters it (A21.22), which a captor may do this CCPh (D5.42).
+            foreach (var vehicle in taken)
+            {
+                var (cause, markAbandoned) = ScenarioA1CapturedVehicleRules.PassengerCapture(Armed(VehicleDefinition(vehicle)), Is(vehicle, Conditions.Abandoned));
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "vehicle-captured", cause == ScenarioA1CapturedVehicleRules.Unarmed ? UnarmedCapture(state, vehicle)
+                    : new VehicleCaptured(vehicle.Id, location, next, cause), package, null, [recordId]));
+                if (markAbandoned)
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                        new ConditionsChanged(vehicle.Id, new Dictionary<string, ConditionState> { [Conditions.Abandoned] = ConditionState.True }), package, null, [recordId]));
+                }
+            }
+
+            return events;
+        }
+
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
+            [ScenarioA1VehicleCloseCombatRules.InfantryRoundSummary(attackers, defenders, location.ToString(), entry?.Ambusher)
+                + (passengerVehicles.Length > 0 ? ScenarioA1CapturedVehicleRules.PassengerCaptureText() : string.Empty)])
+        {
+            Roll = new PlannedRoll("cc", Build),
+            FirstEventId = EventId(attemptId, 1),
+        };
+    }
+
+    /// <summary>
+    /// Whether an attack to capture a vehicle's Passengers captures the vehicle (A11.52; pass 70, ruling R70.34), as Rules reads it from the planner's index and
+    /// the attack's effects: the Passengers it captured and eliminated, those left aboard (a squad captured at the Kill Number leaves its other HS), and the
+    /// vehicle side's Personnel left in the Location, on foot or as Riders.
+    /// </summary>
+    private bool CapturedWithPassengers(GameState state, BoardLocation location, UnitInstance vehicle, IReadOnlyList<CloseCombatUnitEffect> effects)
+    {
+        var index = MemoOf(state).Objects(state);
+        var aboard = index.Aboard(vehicle.Id).Where(unit => unit.Status == InstanceStatus.Active && unit.Position is ContainedPosition { Role: ContainmentRole.Passenger }
+            && !Is(unit, Conditions.Captured)).ToArray();
+        var outcome = aboard.Select(unit => effects.FirstOrDefault(effect => effect.UnitId == unit.Id)).ToArray();
+        var captured = outcome.Count(effect => effect?.Captured == true);
+        var left = outcome.Count(effect => effect is null || (!effect.Eliminated && effect.Captured != true)) + outcome.Count(effect => effect?.CapturedHalf == true);
+        var here = index.At(location).OfType<UnitInstance>().Where(unit => !LiveFire.IsVehicle(unit))
+            .Concat(index.At(location).OfType<UnitInstance>().Where(LiveFire.IsVehicle).SelectMany(other => index.Aboard(other.Id, ContainmentRole.Rider)));
+        var enemyLeft = here.Any(unit => unit.Status == InstanceStatus.Active && unit.Side == vehicle.Side && vocabulary.IsA(unit.Kind, "asl:personnel") && !Is(unit, Conditions.Captured)
+            && effects.FirstOrDefault(effect => effect.UnitId == unit.Id) is not ({ Eliminated: true } or { Captured: true }));
+        return ScenarioA1CapturedVehicleRules.CapturedWithPassengers(captured, outcome.Any(effect => effect?.Eliminated == true), left, enemyLeft);
+    }
+
     /// <summary>The Infantry of a CC attack on a vehicle, with each unit's Inexperience as A19.2 reads it (ruling R11.14).</summary>
     private VehicleCloseCombatFacts WithInexperience(GameState state, VehicleCloseCombatFacts facts) => ScenarioA1VehicleCloseCombatRules.WithInexperience(facts,
         id => (state.Unit(id) is { } found ? Experience.Inexperienced(state, found, catalogs, vocabulary) : ConditionState.Unknown) switch
@@ -336,10 +592,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, reason!);
         }
 
-        // A21.2 (pass 65, ruling R65.22): the declaration of a capture attempt.
+        // A21.2 (pass 65, ruling R65.22): the declaration of a capture attempt. A11.8, A18.12 (pass 70, rulings R70.33, R70.34): in the CCPh, the attackers that
+        // qualify for Street Fighting, and the Leader Creation an Original 2 by a MMC draws.
         facts = WithInexperience(state, facts) with
         {
             Capture = capture ? true : null,
+            StreetFighters = reaction ? null : StreetFighters(state, location, [.. units.Select(unit => unit.Id)]),
+            LeaderCreation = reaction ? null : true,
         };
         var reference = CloseCombatReference.Value;
         var precheck = ScenarioA1VehicleCloseCombat.Precheck(facts, reference);
@@ -388,7 +647,10 @@ public sealed partial class GamePlanner
 
             var destroyed = ScenarioA1VehicleCloseCombatRules.Destroyed(resolution.VehicleResult);
             var captured = resolution.VehicleResult == VehicleCloseCombatResolution.Captured;
-            var (following, closed) = reaction ? (null, false) : NextAfter(state, location, vehicle, units, destroyed, entry, captured);
+
+            // A18.12 (pass 70, ruling R70.34): the leader an Original 2 created made the attack with his MMC, so he has attacked.
+            var leader = resolution.LeaderCreation?.LeaderDefinitionId is not null ? ScenarioA1PrisonerCalculator.CreatedLeaderId(attemptId, 0) : null;
+            var (following, closed) = reaction ? (null, false) : NextAfter(state, location, vehicle, units, destroyed, entry, captured, leader);
             var recordId = EventId(attemptId, events.Count + 1);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "vehicle-close-combat-resolved",
                 new VehicleCloseCombatResolved(location, vehicle.Id, [.. units.Select(unit => unit.Id)], [], false, reaction, rollIds,
@@ -399,7 +661,17 @@ public sealed partial class GamePlanner
 
                     // A9.223 (pass 60, rulings R60.3, R60.20): a reaction planned from the pass on carries the Fire Lane's cancellation.
                     CancelsFireLanes = reaction,
+                    CreatedLeader = leader,
                 }, package, null));
+
+            // A18.12: the created leader is placed in the Location, as the CC of Infantry places one (Good Order, unconcealed, Fanatic with a Fanatic MMC).
+            if (leader is not null)
+            {
+                var founder = units.FirstOrDefault(unit => !vocabulary.IsA(unit.Kind, "asl:smc")) ?? units[0];
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-created", new InstanceCreated(new NewInstance(leader, "asl:leader",
+                    resolution.LeaderCreation!.LeaderDefinitionId, founder.Side, new MapPosition(location), null,
+                    ConditionChanges(ScenarioA1PrisonerCalculator.CreatedCcLeaderConditions(Is(founder, Conditions.Fanatic))))), package, null, [recordId]));
+            }
             if (destroyed)
             {
                 var burning = resolution.VehicleResult == VehicleCloseCombatResolution.BurningWreck;
@@ -456,7 +728,8 @@ public sealed partial class GamePlanner
         var paatc = ScenarioA1VehicleCloseCombatRules.PaatcText([.. testing.Select(unit => unit.Id)]);
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
             [ScenarioA1VehicleCloseCombatRules.VehicleAttackSummary([.. units.Select(unit => unit.Id)], vehicle.Id, reaction, paatc)
-                + (capture ? $" as a capture attempt: a result that would eliminate or burn {vehicle.Id} captures it (A21.2)" : string.Empty)])
+                + (capture ? $" as a capture attempt: a result that would eliminate or burn {vehicle.Id} captures it (A21.2)" : string.Empty)
+                + (ScenarioA1StreetFighting.Applies(facts.Ambusher, facts.StreetFighters, units.Select(unit => unit.Id)) ? ScenarioA1StreetFighting.DrmText(false) : string.Empty)])
         {
             Roll = new PlannedRoll("cc-vehicle", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -468,13 +741,14 @@ public sealed partial class GamePlanner
     /// ruling R65.22).
     /// </summary>
     private (string? Next, bool Closed) NextAfter(GameState state, BoardLocation location, UnitInstance vehicle, IReadOnlyList<UnitInstance> attackers, bool destroyed,
-        CloseCombatLocation? entry, bool captured)
+        CloseCombatLocation? entry, bool captured, string? createdLeader)
     {
         var after = destroyed || captured ? state with
         {
             Units = [.. state.Units.Select(unit => unit.Id != vehicle.Id ? unit : destroyed ? unit with { Status = InstanceStatus.Wrecked } : unit with { Side = attackers[0].Side })]
         } : state;
-        return NextCcSide(after, location, attackers[0].Side, [.. entry?.Attacking ?? [], .. attackers.Select(unit => unit.Id)], entry?.Passed ?? []);
+        return NextCcSide(after, location, attackers[0].Side, [.. entry?.Attacking ?? [], .. attackers.Select(unit => unit.Id), .. createdLeader is null ? [] : new[] { createdLeader }],
+            entry?.Passed ?? [], entry?.InfantryAttacked ?? []);
     }
 
     /// <summary>
@@ -489,7 +763,11 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, reason!);
         }
 
-        facts = WithInexperience(state, facts);
+        // A11.8 (pass 70, ruling R70.33): the defenders that qualify for Street Fighting, against whom the vehicle's attack takes +1.
+        facts = WithInexperience(state, facts) with
+        {
+            StreetFighters = StreetFighters(state, location, defenders),
+        };
         var reference = CloseCombatReference.Value;
         var precheck = ScenarioA1VehicleCloseCombat.Precheck(facts, reference);
         if (precheck.Count != 0)
@@ -529,7 +807,8 @@ public sealed partial class GamePlanner
             {
                 Units = [.. state.Units.Select(unit => resolution.Effects.FirstOrDefault(effect => effect.UnitId == unit.Id) is { Eliminated: true } ? unit with { Status = InstanceStatus.Eliminated } : unit)],
             };
-            var (following, closed) = NextCcSide(after, location, vehicle.Side, [.. attacked, vehicle.Id], passed);
+            var (following, closed) = NextCcSide(after, location, vehicle.Side, [.. attacked, vehicle.Id], passed,
+                state.CloseCombats.FirstOrDefault(item => item.Location == location)?.InfantryAttacked ?? []);
             var recordId = EventId(attemptId, events.Count + 1);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "vehicle-close-combat-resolved",
                 new VehicleCloseCombatResolved(location, vehicle.Id, [vehicle.Id], defenders, true, false, rollIds,
@@ -547,7 +826,9 @@ public sealed partial class GamePlanner
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [ScenarioA1VehicleCloseCombatRules.VehicleAttacksInfantrySummary(vehicle.Id, defenders)])
+            [ScenarioA1VehicleCloseCombatRules.VehicleAttacksInfantrySummary(vehicle.Id, defenders)
+                + ScenarioA1VehicleCloseCombatRules.PassengersJoinText([.. (facts.Passengers ?? []).Select(unit => unit.UnitId!)])
+                + (defenders.Any(id => ScenarioA1StreetFighting.Applies(facts.Ambusher, facts.StreetFighters, [id])) ? ScenarioA1StreetFighting.DrmText(true) : string.Empty)])
         {
             Roll = new PlannedRoll("cc-vehicle", Build),
             FirstEventId = EventId(attemptId, 1),

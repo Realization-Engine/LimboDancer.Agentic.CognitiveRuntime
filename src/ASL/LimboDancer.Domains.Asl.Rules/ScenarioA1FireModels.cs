@@ -605,6 +605,17 @@ public sealed record FireVehicle(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the vehicle's inherent crew is already broken (D5.311, p. 203; pass 70, ruling R70.10): an Unprotected crew so broken that fails a MC is
+    /// eliminated by Casualty Reduction (A7.302), and a PTC does nothing to it. Written only when true, with <see cref="Prc"/>, by every attack planned
+    /// since the pass, and taken from the record at replay; null is every older record, whose crew is checked as before.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CrewBroken
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -634,6 +645,25 @@ public sealed record FirePrc(string? UnitId, string? DefinitionId, string? Role,
     /// <summary>The unit's ELR (A19.1): its OB group's, or its side's.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? Elr
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the vehicle has entered a new hex or hexside or been in Motion this phase (C.8, D6.651; pass 70, ruling R70.8). Written for every PRC by
+    /// every attack planned since the pass, and taken from the record at replay: with it, a leader's MC modifier reaches the PRC as D6.651 has it, a
+    /// Passenger leader's loss checks his fellow Passengers (A10.2), and a PRC is never Disrupted (A19.12). Null on every older record, whose PRC take
+    /// no leadership and no LLMC, as before.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? VehicleMoving
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a Passenger is CE in a halftrack that has not moved this phase (D6.651; pass 70, ruling R70.8): such a leader reaches the Location's other units. Null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CeInUnmovedHalftrack
     {
         get; init;
     }
@@ -1247,7 +1277,45 @@ public sealed record FireTarget(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the unit is Unarmed (A20.5; pass 70, ruling R70.7): it is not subject to Heat of Battle (A15.1, p. 83) and never Replaced for an ELR
+    /// failure (A19.11, p. 86). Written only when true, by every attack and morale check planned since the pass; null is false, as in every older record.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Unarmed
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The vehicle the unit rides as a Passenger or Rider, for a morale check made outside an attack (D6.651, A10.2, A10.7; pass 70, ruling R70.8): whose
+    /// leadership reaches it and whose loss it takes a LLMC for. Null for a unit on foot, and in every fire record.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireAboard? Aboard
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// For a concealed or hidden unit in a morale check made outside an attack (A12.141, p. 78; pass 70, ruling R70.17): whether a Good Order enemy ground
+    /// unit within 16 hexes has a LOS to it, the planner's read. A LLMC or LLTC it takes, or its leadership applied to another unit's MC, then costs its
+    /// "?". Null for a unit not concealed, and in every fire record.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? SeenByGoodOrderEnemy
+    {
+        get; init;
+    }
 }
+
+/// <summary>
+/// A unit aboard a vehicle (D6.1, D6.2, D6.651; pass 70, ruling R70.8): the vehicle, its role (<see cref="FirePrc.Passenger"/> or
+/// <see cref="FirePrc.Rider"/>), whether the vehicle has entered a new hex or hexside or been in Motion this phase (C.8), and, for a Passenger, whether
+/// it is CE in a halftrack that has not (D6.651: such a leader reaches the other units of the Location).
+/// </summary>
+public sealed record FireAboard(string? VehicleId, string? Role, bool? VehicleMoving, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? CeInUnmovedHalftrack);
 
 /// <summary>
 /// Recorded rolls. <see cref="Attack"/> is the IFT DR; <see cref="RandomSelection"/> holds one dr per target unit;

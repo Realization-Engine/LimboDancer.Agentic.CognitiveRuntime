@@ -224,7 +224,12 @@ public static class GameEventReader
                 var nextTurn = fields.OptionalInteger(payload, "turn", path);
                 var nextPhase = fields.RequiredString(payload, "phase", path);
                 var nextPhasing = fields.RequiredString(payload, "phasingSide", path);
-                return nextTurn is null || nextPhase is null || nextPhasing is null ? null : new PhaseChanged(nextTurn.Value, nextPhase, nextPhasing);
+                // A11.71 (pass 70, ruling R70.31): the PRC held in Melee, on a record since the pass that ends a CCPh; absent on every other.
+                return nextTurn is null || nextPhase is null || nextPhasing is null ? null : new PhaseChanged(nextTurn.Value, nextPhase, nextPhasing)
+                {
+                    PrcHeldInMelee = payload.TryGetProperty("prcHeldInMelee", out _) ? fields.StringList(payload, "prcHeldInMelee", path) : null,
+                    PrcMelee = fields.OptionalBoolean(payload, "prcMelee", path),
+                };
             case "instance-created":
                 return payload.TryGetProperty("instance", out var created) && ReadNew(created, path + ".instance", fields, diagnostics) is { } instance
                     ? new InstanceCreated(instance) { Creator = fields.OptionalString(payload, "creator", path) }
@@ -588,7 +593,31 @@ public static class GameEventReader
                     : new RiderBailedOut(bailedUnit, bailedFrom, bailedAt, bailedCause, bailedRoll, bailedMorale.Value, bailedResult)
                     {
                         Weapons = bailedWeapons,
+                        Drm = fields.OptionalInteger(payload, "drm", path),
+                        Elr = fields.OptionalInteger(payload, "elr", path),
                     };
+            case "morale-check-resolved":
+                var checkLocation = fields.RequiredString(payload, "location", path);
+                var checkCause = fields.RequiredString(payload, "cause", path);
+                var checkRolls = new Dictionary<string, string>(StringComparer.Ordinal);
+                if (payload.TryGetProperty("rolls", out var checkRollMap) && checkRollMap.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (var entry in checkRollMap.EnumerateObject())
+                    {
+                        if (entry.Value.ValueKind != JsonValueKind.String)
+                        {
+                            return Missing(diagnostics, "Each morale check roll names its roll id.", path + ".rolls");
+                        }
+
+                        checkRolls[entry.Name] = entry.Value.GetString()!;
+                    }
+                }
+
+                return checkLocation is null || checkCause is null
+                    || !payload.TryGetProperty("facts", out var checkFacts) || checkFacts.ValueKind != JsonValueKind.Object
+                    || !payload.TryGetProperty("resolution", out var checkResolution) || checkResolution.ValueKind != JsonValueKind.Object
+                    ? Missing(diagnostics, "A morale check record names its Location, cause, facts, and resolution.", path)
+                    : new MoraleCheckResolved(fields.StringList(payload, "units", path), checkLocation, checkCause, checkRolls, checkFacts.Clone(), checkResolution.Clone());
             case "vehicle-abandoned":
                 var abandonedVehicle = fields.RequiredString(payload, "vehicle", path);
                 var abandonedAt = ReadLocation(payload, "at", path, fields, diagnostics);
@@ -698,6 +727,7 @@ public static class GameEventReader
                     : new RoutStepped(routUnit, routTo, routMf.Value, fields.OptionalBoolean(payload, "lowCrawl", path))
                     {
                         Attempted = payload.TryGetProperty("attempted", out _) ? ReadLocation(payload, "attempted", path, fields, diagnostics) : null,
+                        With = fields.OptionalString(payload, "with", path),
                     };
             case "rout-interdicted":
                 var interdictedUnit = fields.RequiredString(payload, "unit", path);
@@ -711,7 +741,40 @@ public static class GameEventReader
                     : new RoutInterdicted(interdictedUnit, interdictedAt, interdictedRoll, interdictedMorale.Value, interdictedDrm.Value, interdictedResult)
                     {
                         Interdictor = fields.OptionalString(payload, "interdictor", path),
+                        Leader = fields.OptionalString(payload, "leader", path),
                     };
+            case "voluntary-break":
+                var breaking = fields.StringList(payload, "units", path);
+                return breaking.Count == 0 ? Missing(diagnostics, "A Voluntary Break names its units.", path) : new VoluntaryBreak(breaking);
+            case "units-searched":
+                var searchers = fields.StringList(payload, "units", path);
+                var searchedFrom = ReadLocation(payload, "location", path, fields, diagnostics);
+                var searchRoll = fields.RequiredString(payload, "roll", path);
+                var searchDrm = fields.OptionalInteger(payload, "drm", path);
+                var searchAccessible = fields.OptionalInteger(payload, "accessible", path);
+                var searchedHexes = new List<BoardLocation>();
+                if (payload.TryGetProperty("searched", out var searchedNode) && searchedNode.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in searchedNode.EnumerateArray())
+                    {
+                        if (item.ValueKind != JsonValueKind.String || !BoardLocation.TryParse(item.GetString()!, out var searchedAt))
+                        {
+                            return Missing(diagnostics, "A Search lists the hexes it searched, such as bd01:E4:0.", path + ".searched");
+                        }
+
+                        searchedHexes.Add(searchedAt);
+                    }
+                }
+
+                return searchers.Count == 0 || searchedFrom is null || searchRoll is null || searchDrm is null || searchAccessible is null || searchedHexes.Count == 0
+                    ? Missing(diagnostics, "A Search names its units, Location, roll, drm, Accessible count, and the hexes searched.", path)
+                    : new UnitsSearched(searchers, searchedFrom, searchRoll, searchDrm.Value, searchAccessible.Value, searchedHexes)
+                    {
+                        CasualtyDrm = fields.OptionalInteger(payload, "casualtyDrm", path),
+                    };
+            case "concealment-verified":
+                var verifying = fields.StringList(payload, "units", path);
+                return verifying.Count == 0 ? Missing(diagnostics, "A momentary forfeiture of \"?\" names its units.", path) : new ConcealmentVerified(verifying);
             case "deployment-attempted":
                 var deploySquad = fields.RequiredString(payload, "squad", path);
                 var deployRoll = fields.RequiredString(payload, "roll", path);
@@ -820,7 +883,15 @@ public static class GameEventReader
                     || !payload.TryGetProperty("resolution", out var combatResolution) || combatResolution.ValueKind != JsonValueKind.Object
                     ? Missing(diagnostics, "A CC record names its Location, round, rolls, facts, and resolution.", path)
                     : new CloseCombatResolved(combatAt, round, fields.StringList(payload, "attackers", path), fields.StringList(payload, "defenders", path), combatRolls,
-                        combatFacts.Clone(), combatResolution.Clone());
+                        combatFacts.Clone(), combatResolution.Clone())
+                    {
+                        // A11.31 (pass 70, ruling R70.30): a sequential round's next side and close; absent on every other round.
+                        Next = fields.OptionalString(payload, "next", path),
+                        Closed = fields.OptionalBoolean(payload, "closed", path),
+
+                        // A11.52 (ruling R70.34): the attackers that tried to capture a vehicle's Passengers; absent before the pass.
+                        Captors = payload.TryGetProperty("captors", out _) ? fields.StringList(payload, "captors", path) : null,
+                    };
             case "vehicle-close-combat-resolved":
                 var vehicleCombatAt = ReadLocation(payload, "location", path, fields, diagnostics);
                 var vehicleCombatVehicle = fields.RequiredString(payload, "vehicle", path);
@@ -836,6 +907,9 @@ public static class GameEventReader
                         Next = fields.OptionalString(payload, "next", path),
                         Closed = fields.OptionalBoolean(payload, "closed", path),
                         CancelsFireLanes = fields.OptionalBoolean(payload, "cancelsFireLanes", path),
+
+                        // A18.12 (ruling R70.34): the leader the attack created; absent before the pass.
+                        CreatedLeader = fields.OptionalString(payload, "createdLeader", path),
                     };
             case "vehicle-close-combat-passed":
                 var passedAt = ReadLocation(payload, "location", path, fields, diagnostics);
@@ -963,7 +1037,10 @@ public static class GameEventReader
                 }
 
                 return moppedBuilding is null || moppingSide is null ? null
-                    : new BuildingMoppedUp(moppedBuilding, moppingSide, fields.StringList(payload, "units", path), secured);
+                    : new BuildingMoppedUp(moppedBuilding, moppingSide, fields.StringList(payload, "units", path), secured)
+                    {
+                        CasualtyDrm = fields.OptionalInteger(payload, "casualtyDrm", path),
+                    };
             case "acquisition-changed":
                 var acquiringGun = fields.RequiredString(payload, "gun", path);
                 var acquiredAt = ReadLocation(payload, "location", path, fields, diagnostics);
@@ -1028,6 +1105,9 @@ public static class GameEventReader
             {
                 Group = fields.OptionalString(item, "group", path),
                 ArmorLeader = armorLeader,
+
+                // Pass 70 (ruling R70.28): the Carrier a Carrier HS left.
+                CrewOf = fields.OptionalString(item, "crewOf", path),
             };
     }
 

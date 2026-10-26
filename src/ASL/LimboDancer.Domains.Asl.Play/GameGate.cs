@@ -140,6 +140,12 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         : plan.Events.Select(item => item.Payload).OfType<RoutStepped>().ToArray() is { Length: > 0 } routed
         // A rout (A10.5; ruling R13.3): every unit that stepped is listed as routed this RtPh.
         ? routed.All(step => state.RoutedThisPhase.Contains(step.Unit))
+        : plan.Events.Select(item => item.Payload).OfType<VoluntaryBreak>().FirstOrDefault() is { } voluntary
+        // A Voluntary Break (A10.41; pass 70, ruling R70.11): its units are broken.
+        ? voluntary.Units.All(id => state.Unit(id) is { } unit && GameState.Condition(unit, Conditions.Broken) == ConditionState.True)
+        : plan.Events.Select(item => item.Payload).OfType<UnitsSearched>().FirstOrDefault() is not null
+        // A Search (A12.152; pass 70, ruling R70.24): the DEFENDER's window is open on the searchers' MF.
+        ? state.Movement is { WindowOpen: true }
         : plan.Events.Select(item => item.Payload).OfType<DeploymentAttempted>().FirstOrDefault() is { } deployment
         // A Deployment attempt (A1.31; ruling R13.4): the squad has spent its RPh action.
         ? state.RallyPhaseActions.Contains(deployment.Squad)
@@ -202,6 +208,10 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             && !(item.Payload is InstanceEliminated && plan.Events.Any(step => step.Payload is VehicleStepped))
             && !(item.Payload is VehicleCheckRolled or DiceRolled && plan.Events.Any(step => step.Payload is VehicleStepped))
             && !(item.Payload is ConditionsChanged && plan.Events.Any(step => step.Payload is PhaseChanged))
+            // D6.24 (pass 70): a Bail Out, and what its NMC did to a Rider, follow the step or the shot that caused it, which is read instead.
+            && !(item.Payload is ConditionsChanged or LineageRecorded or RiderBailedOut && plan.Events.Any(step => step.Payload is RiderBailedOut))
+            // A12.34 (pass 70, ruling R70.22): a hidden Emplaced Gun placed beneath a "?" by an enemy's LOS follows the step that gave the LOS.
+            && !(item.Type == "hidden-placed" && plan.Events.Any(step => step.Payload is MovementStepped or VehicleStepped))
             // E1.921 (table player, pass 16): a hidden Starshell firer placed beneath a "?" follows the Starshell's own record.
             && !(item.Payload is ConditionsChanged && plan.Events.Any(step => step.Payload is StarshellFired))
             // A10.62 (ruling R13.1): the DM an action gives broken units follows its own effect.
@@ -224,7 +234,8 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             // Pass 21 (ruling R21.5): an exit leaves the movers Exited, with no moving stack.
             MovementStepped { Exit: not null } left => state.Movement is null && left.Movers.All(id => state.Unit(id) is { Status: InstanceStatus.Exited }),
             // Ruling R25.3: a stack forced back off board stays there, its move over, with no window.
-            MovementStepped { Attempted: { } attempted } offBoard when attempted == offBoard.To => state.Movement is null
+            // Pass 70 (A12.151; ruling R70.23): a stack forced back from the obstacle it attempted keeps its Bypass lane, its window open, as any step.
+            MovementStepped { Attempted: { } attempted, Bypass: null } offBoard when attempted == offBoard.To => state.Movement is null
                 && offBoard.Movers.All(id => state.Unit(id) is { MovementEnded: true } && state.Location(id) is null) && Revealed(state, plan),
             MovementStepped moved => state.Movement is { WindowOpen: true } movement && movement.Step == moved.Step && movement.Location == moved.To,
             // A vehicle's MP expenditure: its window is open at this step, and the vehicle is where the step put it.

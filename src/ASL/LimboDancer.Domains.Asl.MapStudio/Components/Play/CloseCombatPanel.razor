@@ -73,7 +73,7 @@
     <CloseCombatStacking Smcs="@Smcs" Stacking="@Stacking" OnStacking="@OnStacking" />
     @if (Withdrawers.Count > 0)
     {
-        <CloseCombatWithdrawals Units="@Withdrawers" Withdrawals="@Withdrawals" OnWithdrawal="@OnWithdrawal" />
+        <CloseCombatWithdrawals Units="@Withdrawers" Withdrawals="@Withdrawals" OnWithdrawal="@OnWithdrawal" Dropped="@Dropped" OnDrop="@OnDrop" />
     }
     @if (AmbushDue)
     {
@@ -86,7 +86,7 @@
     {
         @if (Infiltrators is { } infiltrators)
         {
-            <CloseCombatInfiltrationChoices Units="@infiltrators" Infiltrations="@Infiltrations" OnInfiltration="@OnInfiltration" />
+            <CloseCombatInfiltrationChoices Units="@infiltrators" Infiltrations="@Infiltrations" OnInfiltration="@OnInfiltration" Dropped="@Dropped" OnDrop="@OnDrop" />
         }
         @* The user, 2026-10-22 (A11.11): both sides declare before a simultaneous round is resolved, the first side's attacks read here by the second. *@
         @if (OtherDeclared)
@@ -238,6 +238,13 @@
 
     [Parameter]
     public EventCallback<CloseCombatWithdrawals.Choice> OnWithdrawal { get; set; }
+
+    /// <summary>The SW the view's units above their IPC drop to withdraw or infiltrate (A11.21; pass 70, ruling R70.26).</summary>
+    [Parameter]
+    public IReadOnlySet<string> Dropped { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnDrop { get; set; }
 
     [Parameter]
     public EventCallback<UnitSelectionList.Toggle> OnAttacker { get; set; }

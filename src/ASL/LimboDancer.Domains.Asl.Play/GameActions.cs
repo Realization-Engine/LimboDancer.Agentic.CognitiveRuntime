@@ -45,7 +45,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor Rout = Descriptor("asl.game.rout", "Rout",
-        "In the RtPh, rout a broken unit that must or may rout along a route of ADJACENT Locations to the nearest woods or building Location, within six MF (three for a wounded SMC), or by Low Crawl one Location; entering Open Ground in the LOS and Normal Range of an unbroken enemy unit is Interdicted by a NMC (A10.5 to A10.533; ruling R13.3). A broken Passenger names no route and routs beneath its Stopped vehicle with all its MF (beneath; D6.1, pass 65).",
+        "In the RtPh, rout a broken unit that must or may rout along a route of ADJACENT Locations to the nearest woods or building Location, within six MF (three for a wounded SMC), or by Low Crawl one Location; entering Open Ground in the LOS and Normal Range of an unbroken enemy unit is Interdicted by a NMC (A10.5 to A10.533; ruling R13.3). A broken Passenger names no route and routs beneath its Stopped vehicle with all its MF (beneath; D6.1, pass 65). An unbroken, unpinned, non-berserk leader stacked with the unit may rout with it (withLeader): he takes no NMC, adds his leadership DRM to its Interdiction NMC, and is eliminated if it fails (A10.711; pass 70).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -57,7 +57,22 @@ public static class GameActions
             "route": { "type": "array", "items": { "type": "string" } },
             "lowCrawl": { "type": "boolean" },
             "keep": { "type": "array", "items": { "type": "string" } },
-            "beneath": { "type": "boolean" }
+            "beneath": { "type": "boolean" },
+            "withLeader": { "type": "string" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor VoluntaryBreak = Descriptor("asl.game.voluntary-break", "Break units voluntarily",
+        "At the start of the RtPh, before any unit routs, the owner breaks units of his side (even pinned ones) in the LOS and Normal Range of a Known armed unbroken enemy ground unit, or ADJACENT to a Known unbroken one, so that they may rout: each is broken and under DM, loses a pin and its \"?\"; not a unit already broken, a hero, a berserk or Unarmed unit, or one with no broken side; a leader's break calls for a LLTC (A10.41, A10.62, A10.2; pass 70).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitIds"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
           }
         }
         """);
@@ -430,6 +445,7 @@ public static class GameActions
             "stacking": { "type": "object", "additionalProperties": { "type": "string" } },
             "withdrawals": { "type": "object", "additionalProperties": { "type": "string" } },
             "infiltrations": { "type": "object", "additionalProperties": { "type": "string" } },
+            "drops": { "type": "array", "items": { "type": "string" } },
             "round": { "type": "string" }, "handToHand": { "type": "boolean" }
           }
         }
@@ -447,7 +463,22 @@ public static class GameActions
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
-            "location": { "type": "string" }, "unitIds": { "type": "array", "items": { "type": "string" } }, "to": { "type": "string" }
+            "location": { "type": "string" }, "unitIds": { "type": "array", "items": { "type": "string" } }, "to": { "type": "string" },
+            "drops": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor StreetFightingReturn = Descriptor("asl.game.street-fighting-return", "Street Fighting return",
+        "In the CCPh, once the CC of a vehicle's road Location is over, a unit that advanced there from the ground level of an ADJACENT building returns to that Location, unless broken or pinned; it may stay instead (A11.8).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }
           }
         }
         """);
@@ -591,7 +622,7 @@ public static class GameActions
         }));
 
     public static readonly ActionDescriptor VehicleCloseCombat = Descriptor("asl.game.vehicle-close-combat", "Close Combat with a vehicle",
-        "One CC attack in a Location holding a vehicle: Infantry attack the vehicle (one unit, or one with a SMC), to eliminate it or, with capture, to capture an Abandoned AFV (A21.2), or the vehicle attacks Infantry with its CC armament, one attack at a time, the non-vehicular side first (A11.31, A11.5, A11.62; CC between Infantry there is not built); or a side passes; or, in the MPh, a DEFENDER unit's CC Reaction Fire at a vehicle in its Location, after any PAATC (D7.21; rulings R11.13 to R11.16, R65.22).",
+        "One CC attack in a Location holding a vehicle: Infantry attack the vehicle (one unit, or one with a SMC), to eliminate it or, with capture, to capture an Abandoned AFV (A21.2), or the vehicle attacks Infantry with its CC armament and any CE halftrack Passengers, one attack at a time, the non-vehicular side first, an ambusher first (A11.31, A11.34, A11.5, A11.62); or, with no vehicleId, Infantry attack enemy Infantry, a Rider among either, with the SMC stacking and director the attack declares (A11.31, A11.611; ruling R70.30), and with capture the Passengers of an unarmored stationary vehicle, to capture them and it (A11.52; ruling R70.34); or a side passes; or, in the MPh, a DEFENDER unit's CC Reaction Fire at a vehicle in its Location, after any PAATC (D7.21; rulings R11.13 to R11.16, R65.22).",
         PlayPermission, "asl.game.reviewed-close-combat-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -604,7 +635,9 @@ public static class GameActions
             "defenders": { "type": "array", "items": { "type": "string" } },
             "vehicleId": { "type": "string" },
             "pass": { "type": "boolean" },
-            "capture": { "type": "boolean" }
+            "capture": { "type": "boolean" },
+            "stacking": { "type": "object", "additionalProperties": { "type": "string" } },
+            "director": { "type": "string" }
           }
         }
         """, JsonSerializer.SerializeToElement(new
@@ -719,8 +752,37 @@ public static class GameActions
         }
         """);
 
+    public static readonly ActionDescriptor RemoveConcealment = Descriptor("asl.game.remove-concealment", "Remove \"?\" voluntarily",
+        "Once play has begun, in either side's Player Turn, the owner gives up the \"?\" of units of one side on the map: a concealed unit is revealed, a hidden one placed and revealed in full, a Dummy removed, and a crew's Gun or a vehicle's PRC with it (A12.14, A12.11, A12.31, A12.2; pass 70, ruling R70.20).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitIds"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor Search = Descriptor("asl.game.search", "Search",
+        "In the MPh, as the moving stack ends its move, its Good Order Infantry members (with at least one MMC, none pinned or using Assault Movement) spend one more MF to Search their own hex and the Accessible hexes named in order of preference: a Search dr leaves its Final dr of them unsearched; concealed enemy units in the hexes searched lose \"?\", hidden ones are placed beneath \"?\", Dummies are removed, and an armed Good Order enemy unit there draws a Casualty dr; the searchers become TI, and the DEFENDER may fire at that MF (A12.152, A12.154, A8.1; pass 70, ruling R70.24).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitIds"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "hexes": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+        """);
+
     public static readonly ActionDescriptor MopUp = Descriptor("asl.game.mop-up", "Mop Up a building",
-        "In their side's PFPh, Infantry MMC in a building of the card become TI to secure it: hidden enemy units there are placed beneath \"?\" and Dummies removed; with no concealed enemy unit left, the side Controls every Location of the building and its broken enemy units surrender to the guard chosen (A12.153, A12.154, A26.11; pass 24, ruling R24.2).",
+        "In their side's PFPh, Infantry MMC in a multi-hex or multi-level building become TI to secure it (a building the card names by its id, any other by its board and lowest hex): hidden enemy units there are placed beneath \"?\" and Dummies removed; with no concealed enemy unit left, the side Controls every Location of the building and its broken enemy units surrender to the guard chosen (A12.153, A12.154, A26.11; pass 24, ruling R24.2; pass 70, ruling R70.25).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -786,7 +848,7 @@ public static class GameActions
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
             Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp,
-            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle, Scrounge];
+            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle, Scrounge, VoluntaryBreak, RemoveConcealment, Search, StreetFightingReturn];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

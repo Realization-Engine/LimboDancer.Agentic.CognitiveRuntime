@@ -61,12 +61,15 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
             && !record.Events.Any(item => item.Payload is GameEnded);
     }
 
-    /// <summary>The names a view reads for a game's units (pass 31c, design D11), with the planner's reading of who sets up out of sight.</summary>
+    /// <summary>
+    /// The names a view reads for a game's units (pass 31c, design D11), with the planner's view of each state (ruling R70.18), read through its history view,
+    /// which keeps nothing per revision (the boundary review of pass 70, finding 1).
+    /// </summary>
     public UnitNames NamesOf(GameHistory history, Perspective viewer)
     {
         ArgumentNullException.ThrowIfNull(viewer);
         var planner = live?.Planner;
-        return UnitNames.For(history, viewer, Catalogs, planner is null ? null : state => planner.OutOfSight(state, viewer));
+        return UnitNames.For(history, viewer, Catalogs, planner is null ? null : state => planner.HistoryViewOf(state, viewer));
     }
 
     private string GamesRoot => Path.Combine(units.UnitsRoot, "games");
@@ -125,12 +128,15 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
         return new GameProjection(entry, view, set);
     }
 
-    /// <summary>A perspective's view at a revision (pass 23, ruling R23.3): a side setting up now is out of the other side's sight (A12.12).</summary>
+    /// <summary>
+    /// A perspective's view at a revision (pass 23, ruling R23.3): a side setting up now is out of the other side's sight (A12.12); and an enemy stack out
+    /// of the LOS of all its Good Order ground units is not inspected (A12.16; pass 70, ruling R70.18). The planner's one entry builds it.
+    /// </summary>
     public GameView ViewOf(GameHistory history, long revision, Perspective perspective)
     {
         ArgumentNullException.ThrowIfNull(history);
         ArgumentNullException.ThrowIfNull(perspective);
-        return GameView.Of(history, revision, perspective, history.At(revision) is { } state && live is not null ? live.Planner.OutOfSight(state, perspective) : null);
+        return live is not null && history.At(revision) is not null ? live.Planner.ViewOf(history, revision, perspective) : GameView.Of(history, revision, perspective);
     }
 
     /// <summary>
@@ -147,7 +153,8 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
 
         var history = GameProjector.Project([.. entry.Record.Events.Take((int)asOf)], units.Vocabulary, Catalogs, Chains(entry.Record), fire: FireRecordVerifier.Shared, rally: RallyRecordVerifier.Shared,
             closeCombat: CloseCombatRecordVerifier.Shared, ordnance: OrdnanceRecordVerifier.Shared);
-        var reader = new CaseReader(new HistoryGameSource([history]), new StudioBoardCatalog(boards), units.Vocabulary, Catalogs);
+        // A12.16 (ruling R70.18; the referee's finding at the reviews): a side's case read shows a stack it may not inspect as its view does.
+        var reader = new CaseReader(new HistoryGameSource([history]), new StudioBoardCatalog(boards), units.Vocabulary, Catalogs, live is null ? null : live.Planner.ViewOf);
         return reader.Read(new CaseRequest(entry.Record.Events[0].Scope, "map-studio-game-states", attacker, location, expectedRevision, perspective));
     }
 

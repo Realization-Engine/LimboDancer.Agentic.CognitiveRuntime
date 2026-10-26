@@ -21,13 +21,16 @@ public static class ScenarioA1MandatoryFire
     /// change the stack's Location, or when no Infantry or Cavalry MMC of the stack stands there. "[EXC: A SMC with a MG/IFE already marked with a
     /// First Fire counter may not use Subsequent First Fire or FPF because it cannot use Sustained Fire; 9.3]". A unit the fire rules give no attack
     /// now is not held to one: <paramref name="mayAttack"/> is asked last, and only of a unit that would otherwise owe the attack.
+    /// Pass 70 (A12.151, p. 78; ruling R70.23): a stack moving in Bypass owes the units of the obstacle no attack. "A unit concealed in woods/building
+    /// terrain does not necessarily lose that status due to an opposing Infantry unit using Bypass in that hex", and its TPBF at the Bypassing stack is
+    /// its option ("may use TPBF"); A4.3 bars Bypass of an obstacle holding an armed non-Disrupted Known enemy unit.
     /// </summary>
     public static IReadOnlyList<string> Owed(bool mph, bool windowOpen, bool enteredThisStep, bool mmcEntered, IReadOnlyList<MandatoryDefenderFacts> defenders,
-        Func<string, bool> mayAttack)
+        Func<string, bool> mayAttack, bool inBypass = false)
     {
         ArgumentNullException.ThrowIfNull(defenders);
         ArgumentNullException.ThrowIfNull(mayAttack);
-        if (!mph || !windowOpen || !enteredThisStep || !mmcEntered)
+        if (!mph || !windowOpen || !enteredThisStep || !mmcEntered || inBypass)
         {
             return [];
         }

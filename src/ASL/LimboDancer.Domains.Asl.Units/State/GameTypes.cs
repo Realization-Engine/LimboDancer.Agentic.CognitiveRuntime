@@ -551,6 +551,15 @@ public sealed record UnitInstance(
     }
 
     /// <summary>
+    /// The Carrier a Carrier HS left (D6.82; pass 70, ruling R70.28), taken from its creation's record: such a HS Recombines with no leader (A1.32). Null
+    /// for every other unit.
+    /// </summary>
+    public string? CrewOf
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The Temporary crew that mans a vehicle (A21.22, D5.343, pp. 88 and 204; pass 65, ruling R65.22), as its <c>vehicle-recrewed</c> record names it.
     /// Null for its own or a qualified crew, and for every vehicle of a game recorded before the pass.
     /// </summary>

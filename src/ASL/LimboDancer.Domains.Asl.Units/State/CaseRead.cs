@@ -126,9 +126,12 @@ public sealed class HistoryGameSource(IEnumerable<GameHistory> histories) : IGam
 
 /// <summary>
 /// Answers <see cref="CaseRequest"/>s (ASL-UNIT-060, 061) from a game source, the map read API, and the catalogs. It
-/// is read-only. Every failure is an explicit nondefinitive result with a code, never an exception or a partial answer.
+/// is read-only. Every failure is an explicit nondefinitive result with a code, never an exception or a partial answer. <c>viewOf</c> builds a
+/// perspective's view at a revision as the host's one entry does (the OB groups out of sight, ruling R23.3; the stacks it may not inspect, A12.16, ruling
+/// R70.18); without it the view is the state's alone, every stack after play shown in full.
 /// </summary>
-public sealed class CaseReader(IGameSource games, IBoardCatalog boards, Vocabulary.UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs)
+public sealed class CaseReader(IGameSource games, IBoardCatalog boards, Vocabulary.UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
+    Func<GameHistory, long, Perspective, GameView>? viewOf = null)
 {
     public CaseReadResult Read(CaseRequest request)
     {
@@ -159,7 +162,7 @@ public sealed class CaseReader(IGameSource games, IBoardCatalog boards, Vocabula
             return Fail(CaseReadStatus.Stale, "CASE-005", $"The read expected revision {request.ExpectedRevision}; the game is at revision {state.Revision}.");
         }
 
-        var view = GameView.Of(history, state.Revision, request.Perspective);
+        var view = viewOf?.Invoke(history, state.Revision, request.Perspective) ?? GameView.Of(history, state.Revision, request.Perspective);
         if (view.Units.FirstOrDefault(unit => unit.Id == request.Attacker) is not { } attacker)
         {
             // An attacker the perspective cannot see is reported exactly like one that does not exist.

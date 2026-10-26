@@ -2,9 +2,34 @@ namespace LimboDancer.Domains.Asl.Rules;
 
 /// <summary>
 /// A unit of a Location holding a vehicle, as the sequential CC reads it (A11.31; ruling R11.16): its side, whether it is a vehicle, armed for CC (a
-/// vehicle's CC armament), an Infantry CC attacker, Personnel, a prisoner, berserk, Known, or a Gun's crew.
+/// vehicle's CC armament), an Infantry CC attacker, Personnel, a prisoner, berserk, or Known.
 /// </summary>
-public sealed record VehicleCcUnitFacts(string Id, string Side, bool Vehicle, bool Armed, bool Attacker, bool Personnel, bool Captured, bool Berserk, bool Known, bool Crew);
+public sealed record VehicleCcUnitFacts(string Id, string Side, bool Vehicle, bool Armed, bool Attacker, bool Personnel, bool Captured, bool Berserk, bool Known)
+{
+    /// <summary>Whether the unit is a Rider of a vehicle there, which attacks and is attacked only in Infantry against Infantry CC (A11.611; pass 70, ruling R70.31).</summary>
+    public bool Rider
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the unit advanced into the Location in this APh (A11.15), for <see cref="ScenarioA1VehicleCloseCombatRules.OwingAttack"/>.</summary>
+    public bool AdvancedHere
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the unit is held in Melee (A11.15), for <see cref="ScenarioA1VehicleCloseCombatRules.OwingAttack"/>.</summary>
+    public bool Melee
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the unit is concealed: a concealed reinforcement may decline to keep its "?" (ruling R14.2).</summary>
+    public bool Concealed
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// CC with vehicles as the planner decides it around <see cref="ScenarioA1VehicleCloseCombat"/> (backlog pass 11, rulings R11.13 to R11.16; pass 32.g,
@@ -20,14 +45,23 @@ public static class ScenarioA1VehicleCloseCombatRules
         fromCatalog && !stunned && !shocked && !unconfirmedKill && !abandoned && !recalled && !captured
         && ((coaxialMg && !cmgMalfunctioned) || (antiAircraftMg && crewExposed && !(mainArmamentAamg && (malfunctioned || disabled))));
 
+    /// <summary>
+    /// Whether Passengers join a vehicle's CC attack on Infantry (A11.62; pass 70, ruling R70.31): some do (<paramref name="joining"/>, as
+    /// <see cref="ScenarioA1PassengerActionRules.CloseCombat"/> reads each one's part), and the vehicle is neither Stunned, Shocked, Abandoned, nor captured.
+    /// </summary>
+    public static bool PassengersJoin(bool stunned, bool shocked, bool abandoned, bool captured, int joining) => !stunned && !shocked && !abandoned && !captured && joining > 0;
+
     /// <summary>Whether an Infantry unit may make a CC attack in the CCPh (A11.16, A20.5): active, Personnel, unbroken, not a prisoner, and not a Dummy.</summary>
     public static bool CcAttacker(bool active, bool vehicle, bool personnel, bool broken, bool captured, bool dummy) => active && !vehicle && personnel && !broken && !captured && !dummy;
 
     /// <summary>
     /// The sides with an attack left in a CC Location holding a vehicle (ruling R11.16): Infantry that have not attacked and face an enemy vehicle, and
-    /// vehicles with CC armament that have not attacked and face enemy Infantry; a side that passed has none.
+    /// vehicles with CC armament that have not attacked and face enemy Infantry; a side that passed has none. Since pass 70 (ruling R70.30), with
+    /// <paramref name="infantryAttacked"/>, Infantry (a Rider among them) facing enemy Infantry that no Infantry has attacked this CCPh has one too, since
+    /// being attacked by Infantry and by a vehicle are counted apart (A11.12's EXC, p. 72).
     /// </summary>
-    public static HashSet<string> SidesWithAttacks(IReadOnlyList<VehicleCcUnitFacts> here, IReadOnlyCollection<string> attacked, IReadOnlyCollection<string> passed)
+    public static HashSet<string> SidesWithAttacks(IReadOnlyList<VehicleCcUnitFacts> here, IReadOnlyCollection<string> attacked, IReadOnlyCollection<string> passed,
+        IReadOnlyCollection<string>? infantryAttacked = null)
     {
         ArgumentNullException.ThrowIfNull(here);
         ArgumentNullException.ThrowIfNull(attacked);
@@ -36,8 +70,9 @@ public static class ScenarioA1VehicleCloseCombatRules
         foreach (var unit in here.Where(unit => !attacked.Contains(unit.Id) && !passed.Contains(unit.Side)))
         {
             var enemies = here.Where(other => other.Side != unit.Side && !other.Captured).ToArray();
-            if (unit.Vehicle ? unit.Armed && enemies.Any(other => (!other.Vehicle && other.Attacker) || (!other.Vehicle && other.Personnel))
-                : unit.Attacker && enemies.Any(other => other.Vehicle))
+            if (unit.Vehicle ? unit.Armed && enemies.Any(other => !other.Vehicle && !other.Rider && (other.Attacker || other.Personnel))
+                : unit.Attacker && ((!unit.Rider && enemies.Any(other => other.Vehicle))
+                    || (infantryAttacked is not null && enemies.Any(other => !other.Vehicle && other.Personnel && !infantryAttacked.Contains(other.Id)))))
             {
                 sides.Add(unit.Side);
             }
@@ -46,18 +81,35 @@ public static class ScenarioA1VehicleCloseCombatRules
         return sides;
     }
 
-    /// <summary>The side that attacks first in a CC Location holding a vehicle (A11.31): the non-vehicular side, or with vehicles on both sides the ATTACKER.</summary>
-    public static string FirstCcSide(IReadOnlyList<(string Side, bool Vehicle)> uncaptured, string phasingSide)
+    /// <summary>
+    /// The side that attacks first in a CC Location holding a vehicle (A11.31): the non-vehicular side, or with vehicles on both sides the ATTACKER. After an
+    /// Ambush there the ambusher attacks first (A11.34, p. 73; pass 70, ruling R70.30).
+    /// </summary>
+    public static string FirstCcSide(IReadOnlyList<(string Side, bool Vehicle)> uncaptured, string phasingSide, string? ambusher = null)
     {
         ArgumentNullException.ThrowIfNull(uncaptured);
+        if (ambusher is not null && uncaptured.Any(unit => unit.Side == ambusher))
+        {
+            return ambusher;
+        }
+
         var vehicular = uncaptured.Where(unit => unit.Vehicle).Select(unit => unit.Side).Distinct(StringComparer.Ordinal).ToArray();
         return vehicular.Length == 1 ? uncaptured.Select(unit => unit.Side).FirstOrDefault(side => side != vehicular[0]) ?? phasingSide : phasingSide;
     }
 
-    /// <summary>After an attack or a pass (A11.31; ruling R11.16): the other side while it has attacks left, else the same side, else the CC is over.</summary>
-    public static (string? Next, bool Closed) NextCcSide(HashSet<string> left, string moved)
+    /// <summary>
+    /// After an attack or a pass (A11.31; ruling R11.16): the other side while it has attacks left, else the same side, else the CC is over. After an
+    /// Ambush the ambusher "resolves all of its CC attacks in that Location first" (A11.32, A11.34 and its example, p. 73; pass 70, ruling R70.30): it attacks
+    /// while it has attacks left.
+    /// </summary>
+    public static (string? Next, bool Closed) NextCcSide(HashSet<string> left, string moved, string? ambusher = null)
     {
         ArgumentNullException.ThrowIfNull(left);
+        if (ambusher is not null && left.Contains(ambusher))
+        {
+            return (ambusher, false);
+        }
+
         var other = left.FirstOrDefault(side => side != moved);
         return other is not null ? (other, false) : left.Contains(moved) ? (moved, false) : (null, true);
     }
@@ -66,17 +118,31 @@ public static class ScenarioA1VehicleCloseCombatRules
     public static bool OwingPossible(string? phase, bool closed, bool open) => !(phase != "ccph" || closed || !open);
 
     /// <summary>
-    /// A berserk unit (of <paramref name="side"/>, or of either side) that still owes an attack on a Known enemy vehicle in a Location's sequential CC
-    /// this CCPh (A15.43, A11.31; ruling R27.2): it may attack, has not, and the Location holds no Gun's crew, whose CC is not built. Null when none does.
+    /// The unit (of <paramref name="side"/>, or of either side) that still owes an attack in a Location's sequential CC this CCPh, and the target it owes it
+    /// against: a berserk unit with a Known enemy vehicle (A15.43, A11.31; ruling R27.2; a Gun's crew there no longer voids it, pass 70, ruling R70.27), or
+    /// since pass 70 (fix round C) with Known enemy Infantry that no Infantry has attacked (<paramref name="infantryAttacked"/>; A15.43, A11.12, ruling
+    /// R70.30); else, where a Melee is held, an unbroken unit, not concealed (ruling R14.2), that advanced into the Location in this APh and has such a
+    /// target (A11.15, p. 72). A Rider attacks Infantry alone (A11.611; ruling R70.31). It may attack and has not. Null when none does.
     /// </summary>
-    public static string? BerserkOwingVehicleAttack(IReadOnlyList<VehicleCcUnitFacts> here, string? side, IReadOnlyList<string> attacking)
+    public static (string Id, bool Berserk, string Target)? OwingAttack(IReadOnlyList<VehicleCcUnitFacts> here, string? side, IReadOnlyList<string> attacking,
+        IReadOnlyCollection<string>? infantryAttacked)
     {
         ArgumentNullException.ThrowIfNull(here);
         ArgumentNullException.ThrowIfNull(attacking);
-        return here.Any(unit => unit.Crew) ? null
-            : here.Where(unit => (side is null || unit.Side == side) && unit.Berserk && unit.Attacker && !attacking.Contains(unit.Id)
-                && here.Any(other => other.Side != unit.Side && other.Vehicle && other.Known && !other.Captured))
-                .OrderBy(unit => unit.Id, StringComparer.Ordinal).FirstOrDefault()?.Id;
+        var melee = here.Any(unit => unit.Melee);
+        foreach (var unit in here.Where(unit => (side is null || unit.Side == side) && unit.Attacker && !attacking.Contains(unit.Id)
+            && (unit.Berserk || (melee && unit.AdvancedHere && !unit.Concealed))).OrderBy(unit => !unit.Berserk).ThenBy(unit => unit.Id, StringComparer.Ordinal))
+        {
+            var enemies = here.Where(other => other.Side != unit.Side && other.Known && !other.Captured).ToArray();
+            var vehicle = !unit.Rider && enemies.Any(other => other.Vehicle);
+            var infantry = infantryAttacked is not null && enemies.Any(other => !other.Vehicle && other.Personnel && !infantryAttacked.Contains(other.Id));
+            if (vehicle || infantry)
+            {
+                return (unit.Id, unit.Berserk, vehicle && infantry ? "the enemy vehicle or enemy Infantry" : vehicle ? "the enemy vehicle" : "enemy Infantry");
+            }
+        }
+
+        return null;
     }
 
     /// <summary>A4.152, A15.432 (ruling R27.3): a berserk Infantry OVR's CC may be pending in the MPh once the charging stack has entered the charged Location, the window on that entry has closed, and no CC is there yet.</summary>
@@ -137,10 +203,11 @@ public static class ScenarioA1VehicleCloseCombatRules
 
     /// <summary>
     /// A11.52 (ruling R11.16): at the start of the CCPh an unarmed vehicle, not in Motion, with no Personnel of its side in its Location but enemy
-    /// Infantry there, is captured.
+    /// Infantry there, is captured. Since pass 70 (ruling R70.34) one carrying Passengers is not alone with them: it is captured with its Passengers (A11.52).
     /// </summary>
-    public static bool CapturedVehicle(bool active, bool vehicle, bool captured, bool motion, bool unarmed, bool located, bool friendlyPersonnel, bool enemyAttacker) =>
-        active && vehicle && !captured && !motion && unarmed && located && !friendlyPersonnel && enemyAttacker;
+    public static bool CapturedVehicle(bool active, bool vehicle, bool captured, bool motion, bool unarmed, bool located, bool friendlyPersonnel, bool enemyAttacker,
+        bool passengers = false) =>
+        active && vehicle && !captured && !motion && unarmed && located && !friendlyPersonnel && enemyAttacker && !passengers;
 
     /// <summary>A11.31: the Location holds no vehicle CC left this CCPh.</summary>
     public static string NoVehicleCcText(string locationText) => $"play.cc-vehicle: {locationText} holds no vehicle CC left this CCPh (A11.31)";
@@ -148,16 +215,64 @@ public static class ScenarioA1VehicleCloseCombatRules
     /// <summary>A11.12: one Location's CC at a time.</summary>
     public static string? OtherOpenBar(bool otherOpen) => otherOpen ? "play.cc-vehicle: another Location's CC is open; one Location at a time (A11.12)" : null;
 
-    /// <summary>A15.43 (ruling R27.2): a side with a berserk unit facing a Known enemy vehicle there does not pass.</summary>
-    public static string BerserkNoPassText(string owingId, string locationText) =>
-        $"play.cc-vehicle-berserk: {owingId} is berserk and attacks the enemy vehicle in {locationText}; its side does not pass (A15.43)";
+    /// <summary>
+    /// A15.43 (ruling R27.2): a side with a berserk unit facing a Known enemy vehicle there does not pass; nor, since pass 70 (fix round C), one whose berserk
+    /// unit faces Known enemy Infantry not yet attacked by Infantry, or whose unit advanced into the Melee there (A11.15). <paramref name="target"/> is
+    /// <see cref="OwingAttack"/>'s.
+    /// </summary>
+    public static string OwingNoPassText(string owingId, string locationText, bool berserk, string target) => berserk
+        ? $"play.cc-vehicle-berserk: {owingId} is berserk and attacks {target} in {locationText}; its side does not pass (A15.43)"
+        : $"play.cc-vehicle-reinforcement: {owingId} advanced into the Melee in {locationText} and attacks {target} there; its side does not pass (A11.15)";
 
     /// <summary>A11.31: the pass's words.</summary>
     public static string PassSummary(string side, string locationText) => $"play.cc-vehicle: the {side} side passes in {locationText} and makes no more attacks there (A11.31)";
 
-    /// <summary>Ruling R11.16: a CC attack here names the vehicle attacking or attacked.</summary>
+    /// <summary>Ruling R11.16: a CC attack here names the vehicle attacking or attacked, or (pass 70, ruling R70.30) Infantry attacking enemy Infantry.</summary>
     public static string? VehicleNamedBar(bool named) =>
-        named ? null : "play.cc-vehicle: a CC attack here names the vehicle attacking or attacked; CC between Infantry in a Location holding a vehicle is not built (ruling R11.16)";
+        named ? null : "play.cc-vehicle: a CC attack here names the vehicle attacking or attacked, or names Infantry attackers and the enemy Infantry they attack (A11.31; ruling R70.30)";
+
+    /// <summary>
+    /// A11.31, A11.12 (pass 70, ruling R70.30): an Infantry attacker of Infantry in the sequential CC: a CC attacker of the side named next in the Location
+    /// (a Rider of a vehicle there among them, A11.611), that has not attacked this CCPh.
+    /// </summary>
+    public static bool InfantryRoundAttacker(bool found, bool attacker, bool ofNext, bool atLocation, bool attacked) => found && attacker && ofNext && atLocation && !attacked;
+
+    /// <summary>A11.31, A11.12 (ruling R70.30): the side named next attacks Infantry with its own eligible Infantry.</summary>
+    public static string? InfantryRoundAttackersBar(bool anyIneligible, string next, string locationText) =>
+        anyIneligible
+            ? $"play.cc-vehicle-order: the {next} side attacks next, with its unbroken Infantry in {locationText}, a Rider among them, that have not attacked this CCPh (A11.31, A11.12)"
+            : null;
+
+    /// <summary>
+    /// A11.12 and its EXC, A11.611 (pass 70, ruling R70.30): an Infantry defender in the sequential CC: an enemy unit of the attackers, Personnel, not a
+    /// prisoner, in the Location (a Rider of a vehicle there among them), that no Infantry has attacked this CCPh; an attack by a vehicle is counted apart.
+    /// </summary>
+    public static bool InfantryRoundDefender(bool found, bool enemy, bool personnel, bool vehicle, bool captured, bool atLocation, bool attackedByInfantry) =>
+        found && enemy && personnel && !vehicle && !captured && atLocation && !attackedByInfantry;
+
+    /// <summary>A11.12 (ruling R70.30): the defenders of an Infantry attack here are enemy Infantry no Infantry has attacked this CCPh.</summary>
+    public static string? InfantryRoundDefendersBar(bool anyIneligible, string locationText) =>
+        anyIneligible
+            ? $"play.cc-vehicle-defenders: Infantry attack enemy Infantry in {locationText}, a Rider among them, that no Infantry has attacked this CCPh; an attack by a vehicle is counted apart (A11.12); "
+                + "a Passenger of an unarmored stationary vehicle is attacked only to capture it (A11.52)"
+            : null;
+
+    /// <summary>A11.31 (ruling R70.30): the words of one Infantry attack on Infantry in the sequential CC.</summary>
+    public static string InfantryRoundSummary(IReadOnlyList<string> attackers, IReadOnlyList<string> defenders, string locationText, string? ambusher)
+    {
+        ArgumentNullException.ThrowIfNull(attackers);
+        ArgumentNullException.ThrowIfNull(defenders);
+        return $"play.cc-vehicle: {string.Join(" and ", attackers)} attack{(attackers.Count == 1 ? "s" : string.Empty)} {string.Join(", ", defenders)} in CC in {locationText}, "
+            + "one attack of the sequence with no simultaneous reply (A11.31)"
+            + (ambusher is { } side ? $"; the {side} side ambushed, so its attacks take -1 and attacks against it +1 (A11.4, A11.34)" : string.Empty);
+    }
+
+    /// <summary>A11.62 (pass 70, ruling R70.31): the Passengers who join a vehicle's attack, in its words.</summary>
+    public static string PassengersJoinText(IReadOnlyList<string> passengers)
+    {
+        ArgumentNullException.ThrowIfNull(passengers);
+        return passengers.Count == 0 ? string.Empty : $"; {string.Join(", ", passengers)} {(passengers.Count == 1 ? "adds its" : "add their")} FP to the attack as Passengers (A11.62)";
+    }
 
     /// <summary>A11.31: the vehicle attacks when its side is next and it has not attacked.</summary>
     public static string? VehicleAttackOrderBar(string next, bool vehicleIsNext, bool vehicleAttacked) =>
@@ -223,6 +338,9 @@ public static class ScenarioA1VehicleCloseCombatRules
         {
             "attack" => rolls with { Attack = values },
             "unlikelyKill" => rolls with { UnlikelyKill = values[0] },
+
+            // A18.12 (pass 70, ruling R70.34): the Leader Creation dr after a MMC's Original 2.
+            "leaderCreation" => rolls with { LeaderCreation = values[0] },
             _ => rolls with { WoundSeverity = With(rolls.WoundSeverity, rest, values[0]) },
         };
     }

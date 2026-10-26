@@ -158,43 +158,25 @@ public static class ScenarioA1MovementCalculator
     }
 
     /// <summary>
-    /// The range to the nearest Good Order enemy ground unit with a clear LOS to a Location (A12.34); null when none has one. A Passenger is not counted:
-    /// its vehicle is (ruling R26.2). The units are read in the state's order.
-    /// </summary>
-    public static int? NearestGoodOrderEnemyInLos(IReadOnlyList<EnemyUnitFacts> units, string side, int at, ILosFactReader los)
-    {
-        ArgumentNullException.ThrowIfNull(units);
-        ArgumentNullException.ThrowIfNull(los);
-        // Pass 35 (task 35.3; A.7): Good Order, not merely unbroken, as the two other scans read it.
-        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && !unit.Aboard && unit.GoodOrder)
-            .Select(unit => unit.Location).OfType<int>().Distinct()
-            .Select(location => los.Los(location, at) is { Clear: true } result ? result.Range : (int?)null).Where(range => range is not null).Min();
-    }
-
-    /// <summary>
     /// An attack with, for each concealed unit that fires or directs, whether a Good Order enemy ground unit within 16 hexes has a LOS to it (A12.14,
     /// read in the PDF, p. 77; pass 31d, ruling R31d.2). The Fire package sees the target Location alone, and refused fire by concealed units at a
     /// Location with no Good Order unit as undecided; a refusal marks no firer, so a side could try a "?" stack and read from the refusal that it
     /// held Dummies. With this read the attack is made, and the firer's "?" is lost or kept as the rule has it. A hidden unit, which would have to
-    /// show itself to force the loss, does not force it. At night the read is not given (E1.31), and the package decides as before.
-    /// <paramref name="subjects"/> gives each firer or director the state finds, by unit id.
+    /// show itself to force the loss, does not force it. At night the read is not given (E1.31), and the package decides as before. Pass 70 (ruling
+    /// R70.16): the read is given by the caller through <see cref="ScenarioA1Sight"/>: <paramref name="seenWithin16"/> says, for a concealed firer or
+    /// director by unit id, whether a Loss seer within 16 hexes has a LOS to it, or null when the state does not place it. It is asked only for a
+    /// concealed unit, and not at night.
     /// </summary>
-    public static FireAttack WithSeen(FireAttack attack, bool night, IReadOnlyDictionary<string, SeenSubjectFacts> subjects, IReadOnlyList<EnemyUnitFacts> units, ILosFactReader los)
+    public static FireAttack WithSeen(FireAttack attack, bool night, Func<string, bool?> seenWithin16)
     {
         ArgumentNullException.ThrowIfNull(attack);
-        ArgumentNullException.ThrowIfNull(subjects);
-        ArgumentNullException.ThrowIfNull(units);
-        ArgumentNullException.ThrowIfNull(los);
+        ArgumentNullException.ThrowIfNull(seenWithin16);
         if (night)
         {
             return attack;
         }
 
-        bool? Seen(string? unitId, bool? concealed) => concealed == true && unitId is not null && subjects.GetValueOrDefault(unitId) is { Side: { } side, Location: { } at }
-            ? units.Where(other => other.Side != side && !other.Dummy && other.GoodOrder && !other.Hidden && !other.Aboard)
-                .Select(other => other.Location).OfType<int>().Distinct()
-                .Any(location => location == at || los.Los(location, at) is { Clear: true, Range: <= 16 })
-            : null;
+        bool? Seen(string? unitId, bool? concealed) => concealed == true && unitId is not null ? seenWithin16(unitId) : null;
         FireFirer Firer(FireFirer item) => Seen(item.UnitId, item.Concealed) is not { } seen ? item : item with
         {
             SeenByGoodOrderEnemy = seen
@@ -574,9 +556,10 @@ public static class ScenarioA1MovementCalculator
     /// <summary>
     /// A4.14, A12.15 (rulings R10.11, R10.15): a Location with a Known enemy unit is not entered in the MPh, but by a berserk charge; one with only
     /// concealed or hidden enemy units or Dummies reveals one, forcing the stack back unless it charges or they were all Dummies. A12.15 (referee,
-    /// pass 10): a moving stack of Dummies that tries to enter concealed enemy units is asked to show a real unit, and is removed.
+    /// pass 10): a moving stack of Dummies that tries to enter concealed enemy units is asked to show a real unit, and is removed. A Minimum Move into
+    /// concealed units is forced back as any entry is (A4.134, A12.15; pass 70, ruling R70.23).
     /// </summary>
-    public static MoveEnemiesVerdict EnemiesAtTarget(IReadOnlyList<UnitAtTargetFacts> there, string? phasingSide, bool charge, bool occupy, bool bypassing, bool allDummies, bool minimumMove,
+    public static MoveEnemiesVerdict EnemiesAtTarget(IReadOnlyList<UnitAtTargetFacts> there, string? phasingSide, bool charge, bool occupy, bool bypassing, bool allDummies,
         string idsText, string toText, bool knownEntered = false)
     {
         ArgumentNullException.ThrowIfNull(there);
@@ -596,11 +579,6 @@ public static class ScenarioA1MovementCalculator
         if (enemiesThere.Length > 0 && allDummies)
         {
             return new MoveEnemiesVerdict(null, true, $"play.move: {idsText} attempt {toText}, holding concealed enemy units; the moving stack shows no real unit, so its Dummies are removed (A12.15)", enemiesThere, hiddenEnemies);
-        }
-
-        if (enemiesThere.Length > 0 && minimumMove)
-        {
-            return new MoveEnemiesVerdict("play.move-occupied: a Minimum Move into concealed enemy units is not reviewed (A4.134, A12.15)", false, null, enemiesThere, hiddenEnemies);
         }
 
         return new MoveEnemiesVerdict(null, false, null, enemiesThere, hiddenEnemies);
@@ -755,9 +733,12 @@ public static class ScenarioA1MovementCalculator
         var ids = facts.Ids;
         var revealing = facts.EnemiesThere.Count > 0 ? facts.EnemiesThere : facts.HiddenEnemies;
         string[] realOnes = [.. revealing.Where(unit => !unit.Dummy).OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => unit.Id)];
-        var forcedBack = facts.EnemiesThere.Count > 0 && realOnes.Length > 0;
+        // Pass 70 (A12.151; ruling R70.23): an attempt to occupy an obstacle that holds concealed enemy units forces the stack back into its lane.
+        var forcedBack = (facts.EnemiesThere.Count > 0 && realOnes.Length > 0) || facts.ObstacleHeld;
         var charge = facts.ChargeText is not null;
-        var summary = $"{(facts.Entering ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (forcedBack ? $"{(ids.Count == 1 ? "attempts" : "attempt")} {facts.ToText}" : facts.Occupy ? $"{(ids.Count == 1 ? "occupies" : "occupy")} the obstacle of {facts.ToText}" : $"{(ids.Count == 1 ? "enters" : "enter")} {facts.ToText}")
+        var attempts = ids.Count == 1 ? "attempts" : "attempt";
+        var summary = $"{(facts.Entering ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (facts.ObstacleHeld ? $"{attempts} to occupy the obstacle of {facts.ToText}"
+            : forcedBack ? $"{attempts} {facts.ToText}" : facts.Occupy ? $"{(ids.Count == 1 ? "occupies" : "occupy")} the obstacle of {facts.ToText}" : $"{(ids.Count == 1 ? "enters" : "enter")} {facts.ToText}")
             + $" ({facts.Terrain}{(facts.BypassTexts is not null ? " in Bypass along " + string.Join(", ", facts.BypassTexts) : string.Empty)}) for {facts.HalfMf / 2m} MF"
             + (facts.OnRoad ? ", at the road rate: on the road, not in the hex's other terrain (A4.132)" : string.Empty)
             + (facts.DashText is { } dashed && !forcedBack ? ScenarioA1Dash.DeclaredText(dashed) : string.Empty)
@@ -765,7 +746,7 @@ public static class ScenarioA1MovementCalculator
             + (facts.OverstackExcess > 0 ? $", {facts.OverstackExcess} of them for a Location overstacked by {facts.OverstackExcess} squad-equivalent(s) (A5.11)" : string.Empty)
             + (facts.Assault ? ", by Assault Movement" : string.Empty)
             + (facts.DoubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty)
-            + (facts.MinimumMove ? ", a Minimum Move: pinned and CX once the DEFENDER's fire is done (A4.134)" : string.Empty)
+            + (facts.MinimumMove ? forcedBack ? ", a Minimum Move (A4.134)" : ", a Minimum Move: pinned and CX once the DEFENDER's fire is done (A4.134)" : string.Empty)
             + (charge ? $", charging {facts.ChargeText} (A15.43)" : string.Empty)
             + (facts.AbandonedIds.Count > 0 ? $"; {string.Join(", ", facts.AbandonedIds)} abandoned before the charge (A15.431)" : string.Empty);
 
@@ -801,6 +782,10 @@ public static class ScenarioA1MovementCalculator
                 ? $"; a concealed unit at {facts.ToText} is revealed and the stack stays in {facts.FromText} with the MF spent, its move ending (A12.15)"
                 : charge ? $"; the charge enters {facts.ToText} and draws among the counters there by Random Selection: each Dummy drawn before a real unit is eliminated (A15.431, A12.15, A.9)"
                 : $"; only Dummies were at {facts.ToText}, and they are removed (A12.15)";
+        }
+        else if (facts.ObstacleHeld)
+        {
+            summary += $"; concealed enemy units hold it, so the stack stays in Bypass in {facts.FromText} with the MF spent, its move ending, and every \"?\" there is lost (A12.15, A12.151)";
         }
 
         return new MoveStepVerdict(revealing, realOnes, forcedBack, offMap, facts.RoadRate && !facts.Pushed && !forcedBack, summary, pushSummary, dummyWarning, pool, needsSelection,
@@ -958,9 +943,10 @@ public static class ScenarioA1MovementCalculator
             return new StepRecordVerdict(null, true);
         }
 
-        // A4.134 (ruling R10.9): a Minimum Move is a stack's first and only step; A12.15 (ruling R10.11): a forced-back stack stays in its Location.
+        // A4.134 (ruling R10.9): a Minimum Move is a stack's first and only step; A12.15 (ruling R10.11): a forced-back stack stays in its Location. Pass 70
+        // (A12.151; ruling R70.23): a stack forced back from the obstacle it attempted to occupy names its own Location and keeps its Bypass lane.
         if ((facts.MinimumMove && (facts.CurrentExists || movers.Any(unit => unit.MfSpent != 0 || unit.HalfMfSpent)))
-            || (facts.AttemptedText is { } attempted && (attempted == facts.ToText || movers.Any(unit => unit.LocationText != facts.ToText)))
+            || (facts.AttemptedText is { } attempted && ((attempted == facts.ToText && facts.BypassCount is null) || movers.Any(unit => unit.LocationText != facts.ToText)))
             || (facts.BypassCount is < 1 or > 2))
         {
             return new StepRecordVerdict(new RecordRefusal("UNIT-STATE-029", "A Minimum Move is a stack's only step, a forced back leaves the stack in its Location, and a Bypass follows one or two hexsides (A4.134, A12.15, A4.31)."), false);
@@ -1048,6 +1034,13 @@ public static class ScenarioA1MovementCalculator
 
     /// <summary>A4.134 (ruling R10.9): once all First Fire at a Minimum Move is done, each unbroken survivor among its movers is pinned and CX.</summary>
     public static bool MinimumMoveSurvivorPinned(bool active, bool broken) => active && !broken;
+
+    /// <summary>
+    /// A4.134 (p. 48): "After a unit has entered a hex by Minimum Move and undergone all First Fire, all unbroken survivors become both pinned and CX". A
+    /// stack forced back by concealed units (A12.15; pass 70, ruling R70.23) has entered no hex, so its Minimum Move pins none; its MF are spent and its MPh
+    /// ends as any forced back's.
+    /// </summary>
+    public static bool MinimumMoveEntered(bool minimumMove, bool forcedBack) => minimumMove && !forcedBack;
 
     /// <summary>The ATTACKER ends the move of some or all of the stack's members once the DEFENDER's window closes (A4.2, A8.11; UNIT-STATE-029).</summary>
     public static RecordRefusal? VerifyEndMovement(bool movementExists, bool windowOpen, IReadOnlyList<string> ended, IReadOnlyList<string> members, IReadOnlyList<string> movers)
@@ -1142,17 +1135,5 @@ public static class ScenarioA1MovementCalculator
         }
 
         return null;
-    }
-
-    /// <summary>Whether any Good Order enemy ground unit within 16 hexes has a clear LOS to a Location (A12.14, A12.141). The units are read in the state's order.</summary>
-    public static bool EnemyGoodOrderInLosWithin16(IReadOnlyList<EnemyUnitFacts> units, string side, int at, ILosFactReader los)
-    {
-        ArgumentNullException.ThrowIfNull(units);
-        ArgumentNullException.ThrowIfNull(los);
-        // Pass 35 (task 35.3; A.7, A12.14; backlog section 51, the user's word of 2026-10-04): Good Order, not merely unbroken, and as fire reads it
-        // (WithSeen): not a hidden unit, which would have to show itself to force the loss, nor a Passenger, whose vehicle is counted.
-        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && unit.GoodOrder && !unit.Hidden && !unit.Aboard)
-            .Select(unit => unit.Location).OfType<int>().Distinct()
-            .Any(location => los.Los(location, at) is { Clear: true, Range: <= 16 });
     }
 }

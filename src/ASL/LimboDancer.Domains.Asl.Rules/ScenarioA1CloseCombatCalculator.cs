@@ -75,6 +75,18 @@ public static class ScenarioA1CloseCombatCalculator
             }
 
             var drm = AmbushDrm([.. units.Where(unit => unit.Side == side)], reference);
+
+            // A11.4's table (p. 73; pass 70, ruling R70.30): +2 for a side with a vehicle there, and +1 for each of its BU or Stunned AFV, as the H3 example
+            // (p. 74) counts them.
+            if (facts.Vehicles?.FirstOrDefault(item => item.Side == side) is { } vehicles)
+            {
+                drm.Add(new FireModifier("vehicle", 2m, "A11.4"));
+                if (vehicles.ButtonedOrStunnedAfvs > 0)
+                {
+                    drm.Add(new FireModifier("bu-or-stunned-afv", vehicles.ButtonedOrStunnedAfvs, "A11.4"));
+                }
+            }
+
             results.Add(new AmbushSide(side, dr, drm, dr + (int)drm.Sum(item => item.Value)));
         }
 
@@ -266,9 +278,10 @@ public static class ScenarioA1CloseCombatCalculator
             outside.Add("asl.a1.cc.unit-listed-twice");
         }
 
-        // A1.123 (p. 44; pass 65, ruling R65.29): a crew that mans no Gun fights in CC as an MMC; a Gun's crew stays outside (ruling R24.3).
+        // A1.123 (p. 44; pass 65, ruling R65.29): a crew fights in CC as an MMC with its inherent FP; since pass 70 (ruling R70.27) a Gun's crew too, the
+        // Gun never used in CC (A11.13, p. 72).
         if (units.Any(unit => reference.Definitions.GetValueOrDefault(unit.DefinitionId ?? string.Empty) is not { } definition
-            || !(definition.IsMmc || definition.IsLeader || definition.IsHero || (ScenarioA1Definitions.IsCrew(definition.Kind) && unit.Manning != true))))
+            || !(definition.IsMmc || definition.IsLeader || definition.IsHero || ScenarioA1Definitions.IsCrew(definition.Kind))))
         {
             outside.Add("asl.a1.cc.unit-outside");
             return outside;
@@ -291,13 +304,14 @@ public static class ScenarioA1CloseCombatCalculator
 
     /// <summary>
     /// A side's stack in the CC Location, counted by <see cref="ScenarioA1Stacking"/> (A5.1, A5.5; rulings R14.10, R40.2, R40.3): prisoners never count
-    /// (A20.51) and a crew or HS manning a Gun is a squad. A leader or a hero is a SMC whatever kind its definition carries.
+    /// (A20.51) and a crew or HS manning a Gun is a squad. A leader or a hero is a SMC whatever kind its definition carries. A vehicle's Passenger is its
+    /// vehicle's, not the Location's (A11.52; pass 70, ruling R70.34).
     /// </summary>
     public static StackCount Overstack(IEnumerable<CloseCombatUnit> units, string side, ScenarioA1CloseCombatReference reference)
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(reference);
-        return ScenarioA1Stacking.Count(units.Where(unit => unit.Side == side).Select(unit =>
+        return ScenarioA1Stacking.Count(units.Where(unit => unit.Side == side && unit.PassengerOf is null).Select(unit =>
         {
             var definition = reference.Definitions[unit.DefinitionId!];
             return new StackUnitFacts(definition.IsLeader || definition.IsHero ? StackUnitKind.Smc : ScenarioA1Stacking.KindOf(definition.Kind), unit.Manning == true, unit.Captured == true);
@@ -323,7 +337,9 @@ public static class ScenarioA1CloseCombatCalculator
 
         var byId = units.ToDictionary(unit => unit.UnitId!, StringComparer.Ordinal);
         var round = facts.Round;
-        if (round is not (CloseCombatFacts.Simultaneous or CloseCombatFacts.AmbusherRound or CloseCombatFacts.AmbushedRound or CloseCombatFacts.PrisonersRound)
+        // A11.31 (pass 70, ruling R70.30): a sequential round is one attack.
+        if (round is not (CloseCombatFacts.Simultaneous or CloseCombatFacts.AmbusherRound or CloseCombatFacts.AmbushedRound or CloseCombatFacts.PrisonersRound or CloseCombatFacts.Sequential)
+            || (round == CloseCombatFacts.Sequential && facts.Attacks!.Count != 1)
             || (round == CloseCombatFacts.AmbusherRound && !units.Any(unit => unit.Side == facts.Ambusher))
             || (round == CloseCombatFacts.AmbushedRound && facts.Ambusher is null)
             || (round == CloseCombatFacts.PrisonersRound && (facts.AttackingBefore!.Count > 0 || facts.AttackedBefore!.Count > 0)))
@@ -438,6 +454,13 @@ public static class ScenarioA1CloseCombatCalculator
                 outside.Add($"asl.a1.cc.capture-outside:{index}");
             }
 
+            // A11.52 (p. 74; pass 70, ruling R70.34): the Passengers of an unarmored stationary vehicle are engaged in Infantry against Infantry CC only to
+            // capture them ("must capture any Passengers"), and make no Infantry attack of their own there (A11.62: they join their vehicle's).
+            if (attackers.Any(id => byId[id].PassengerOf is not null) || (attack.Capture != true && defenders.Any(id => byId[id].PassengerOf is not null)))
+            {
+                outside.Add($"asl.a1.cc.passenger-outside:{index}");
+            }
+
             // A11.141: the director is a Good Order, unpinned leader of the attack (ruling R29.8).
             if (attack.Director is { } director && (!attackers.Contains(director) || !reference.Definitions[byId[director].DefinitionId!].IsLeader
                 || byId[director].Berserk == true || byId[director].Pinned == true))
@@ -468,8 +491,10 @@ public static class ScenarioA1CloseCombatCalculator
         }
 
         // The ambusher's attacks are sequential (A11.3), so its units that must attack are checked when the ambushed side's round begins.
-        // The prisoners' round comes before the others, which check the units that must attack (ruling R14.6).
-        string[] mustSides = round is CloseCombatFacts.AmbusherRound or CloseCombatFacts.PrisonersRound ? [] : [.. units.Select(unit => unit.Side!).Distinct(StringComparer.Ordinal)];
+        // The prisoners' round comes before the others, which check the units that must attack (ruling R14.6). A sequential attack is one of many
+        // (A11.31; ruling R70.30), so the units that must attack are not checked in it.
+        string[] mustSides = round is CloseCombatFacts.AmbusherRound or CloseCombatFacts.PrisonersRound or CloseCombatFacts.Sequential ? []
+            : [.. units.Select(unit => unit.Side!).Distinct(StringComparer.Ordinal)];
 
         // A11.15: a unit that advanced this APh into a Location already in Melee engages in CC: it attacks in its side's round; a concealed one
         // may decline to keep its "?" (ruling R14.2).
@@ -564,7 +589,7 @@ public static class ScenarioA1CloseCombatCalculator
     private static int Size(FireDefinition definition) => ScenarioA1Definitions.UnitSize(definition.Kind);
 
     /// <summary>The Morale Level of a MMC as Leader Creation reads it (A18.2): berserk 10 (A15.42), one higher when Fanatic (A10.8), never beyond 10 (A.18).</summary>
-    private static int BaseMorale(CloseCombatUnit unit, ScenarioA1CloseCombatReference reference) =>
+    internal static int BaseMorale(CloseCombatUnit unit, ScenarioA1CloseCombatReference reference) =>
         ScenarioA1Definitions.MoraleCeiling((unit.Berserk == true ? 10 : reference.Definitions[unit.DefinitionId!].Morale!.Value) + (unit.Fanatic == true ? 1 : 0));
 
     /// <summary>
@@ -863,13 +888,14 @@ public static class ScenarioA1CloseCombatCalculator
             }
 
             // A11.13: each SW of a unit eliminated in CC is lost too on an Original colored dr of 1 and a dr at most the attack's black Kill Number;
-            // any other stays in the Location unpossessed, as do a captured unit's (A20.24).
+            // any other stays in the Location unpossessed, as do a captured unit's (A20.24). Pass 70 (ruling R70.27): so is each Gun it mans, when the
+            // record lists them.
             var weaponEffects = new List<CloseCombatWeaponEffect>();
             foreach (var attack in arithmetic.Where(item => item.Dice[0] == 1))
             {
                 foreach (var defender in attack.Defending.Where(item => units[item.UnitId].Eliminated))
                 {
-                    foreach (var weapon in units[defender.UnitId].Facts.Weapons ?? [])
+                    foreach (var weapon in (units[defender.UnitId].Facts.Weapons ?? []).Concat(units[defender.UnitId].Facts.Guns ?? []))
                     {
                         if (rolls.WeaponLoss?.TryGetValue(weapon, out var dr) != true)
                         {
@@ -971,6 +997,12 @@ public static class ScenarioA1CloseCombatCalculator
                     own.Add(new FireModifier("vs-ti", -1m, "A4.8"));
                 }
 
+                // A11.611 (p. 75; pass 70, ruling R70.31): "Riders are susceptible to ... a -1 CC DRM when defending".
+                if (defender.Facts.Rider == true)
+                {
+                    own.Add(new FireModifier("vs-rider", -1m, "A11.611"));
+                }
+
                 if (defender.Facts.WithdrawingTo is not null)
                 {
                     own.Add(new FireModifier("vs-withdrawing", -2m, "A11.2"));
@@ -992,6 +1024,12 @@ public static class ScenarioA1CloseCombatCalculator
                 if (attack.Capture == true)
                 {
                     own.Add(Inexperienced(defender.Facts, reference) ? new FireModifier("capture-vs-inexperienced", -1m, "A19.35") : new FireModifier("capture", 1m, "A20.22"));
+
+                    // A11.52 (p. 74; ruling R70.34): "a -2 DRM for his attacks vs these Passengers ... combined with the +1 DRM for attempting to capture".
+                    if (defender.Facts.PassengerOf is not null)
+                    {
+                        own.Add(new FireModifier("vs-passenger-capture", -2m, "A11.52"));
+                    }
                 }
 
                 var final = original + (int)drm.Concat(own).Sum(item => item.Value);
@@ -1077,13 +1115,21 @@ public static class ScenarioA1CloseCombatCalculator
         {
             var drm = new List<FireModifier>();
             var side = units[attack.Attackers![0]].Facts.Side;
-            if (facts.Ambusher is { } ambusher && facts.Round is CloseCombatFacts.AmbusherRound or CloseCombatFacts.AmbushedRound)
+
+            // A11.34 (p. 73; pass 70, ruling R70.30): the Ambush stands in the sequential CC of a Location holding a vehicle too.
+            if (facts.Ambusher is { } ambusher && facts.Round is CloseCombatFacts.AmbusherRound or CloseCombatFacts.AmbushedRound or CloseCombatFacts.Sequential)
             {
                 drm.Add(side == ambusher ? new FireModifier("ambush", -1m, "A11.4") : new FireModifier("vs-ambush", 1m, "A11.4"));
             }
 
             var attackers = attackerIds.Select(id => units[id]).ToArray();
             var berserk = attackers.Any(unit => unit.Facts.Berserk == true);
+
+            // A11.611 (p. 75; pass 70, ruling R70.31): "Riders are susceptible to a +1 CC DRM when attacking".
+            if (attackers.FirstOrDefault(unit => unit.Facts.Rider == true) is { } rider)
+            {
+                drm.Add(new FireModifier("rider:" + rider.Id, 1m, "A11.611"));
+            }
 
             // A10.7: leadership modifiers are not cumulative, so a leader created by the attack's Original 2, whose modifier A18.12 makes
             // mandatory, takes the director's place (ruling R29.12); A11.141, A15.42: no leadership DRM with a berserk attacker.
@@ -1179,7 +1225,7 @@ public static class ScenarioA1CloseCombatCalculator
         {
             foreach (var attack in arithmetic)
             {
-                var ambushing = facts.Ambusher == attack.Side && facts.Round is CloseCombatFacts.AmbusherRound or CloseCombatFacts.AmbushedRound;
+                var ambushing = facts.Ambusher == attack.Side && facts.Round is CloseCombatFacts.AmbusherRound or CloseCombatFacts.AmbushedRound or CloseCombatFacts.Sequential;
                 var clean = attack.Defending.All(item => units[item.UnitId].Eliminated || units[item.UnitId].Captured);
                 if (ambushing && clean)
                 {

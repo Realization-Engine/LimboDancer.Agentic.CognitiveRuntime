@@ -95,9 +95,6 @@ public static class ScenarioA1AdvanceCalculator
     public static string? UnarmedBar(bool knownEnemyThere, string? unarmedId) =>
         knownEnemyThere && unarmedId is { } id ? $"play.advance-unarmed: {id} is Unarmed and may not enter a Location of a Known enemy unit (A20.54)" : null;
 
-    /// <summary>C11 (ruling R24.3): CC with a Gun's crew is not reviewed.</summary>
-    public static string? CrewBar(bool crewThere) => crewThere ? "play.advance-crew: CC with a Gun's crew is not reviewed (C11, ruling R24.3)" : null;
-
     /// <summary>A19.12 (ruling R14.11), E1.54 (ruling R16.6): a Disrupted enemy there surrenders by day unless its side is under No Quarter.</summary>
     public static bool Surrenders(bool night, bool disrupted, bool noQuarter) => !night && disrupted && !noQuarter;
 

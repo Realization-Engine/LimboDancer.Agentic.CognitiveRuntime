@@ -195,6 +195,8 @@ baseline)
   echo "[$(now)] store before: $(ls "$S/store/$T/"*.game.json | wc -l) games"
   for g in $OWN; do cp "$R/src/ASL/boards/units/live/$T/$g.game.json" "$S/store/$T/" || stop "no live game $g"; done
   echo "[$(now)] store after: $(ls "$S/store/$T/"*.game.json | wc -l) games"
+  # Pass 70's gate: a SKIP_JSON key an older record already writes makes its lines differ by hash alone on the gate's side only.
+  if [ -n "$SKIP_JSON" ]; then python "$G/skip_json_collisions.py" "$S/store/$T" "$SKIP_JSON" "$OWN" < /dev/null || stop "a SKIP_JSON key is an older record's (above)"; fi
   base
   rm -rf "$BEFORE"; mkdir -p "$BEFORE"
   cp "$CACHE/textlist.txt" "$CACHE/replay.txt" "$CACHE/sweep.txt" "$BEFORE/"

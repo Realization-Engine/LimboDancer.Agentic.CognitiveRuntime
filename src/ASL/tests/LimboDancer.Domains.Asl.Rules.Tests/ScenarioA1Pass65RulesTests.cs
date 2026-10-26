@@ -1389,10 +1389,7 @@ public sealed class ScenarioA1Pass65RulesTests
         Assert.Contains(unreviewed, ScenarioA1FireCalculator.Precheck(AtGun(AtTargets(gunCrew, squad)), Ordnance.Fire));
         Assert.Contains(unreviewed, ScenarioA1FireCalculator.Precheck(vehicleFire, Ordnance.Fire));
 
-        // R65.29: only a Gun's crew bars an advance and is left out of CC; the Gun is read only for a crew.
-        Assert.True(ScenarioA1CloseCombatRules.GunCrew(true, () => true));
-        Assert.False(ScenarioA1CloseCombatRules.GunCrew(true, () => false));
-        Assert.False(ScenarioA1CloseCombatRules.GunCrew(false, () => throw new InvalidOperationException("No Gun is read for a squad.")));
+        // R65.29 left a Gun's crew out of CC; pass 70 (ruling R70.27) lifts it, so no Gun's crew test is left here (ScenarioA1Pass70RulesTests has it).
     }
 
     private static readonly int[] TruckDice = [1, 2];

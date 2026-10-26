@@ -364,6 +364,21 @@ public sealed record RiderBailedOut(string Unit, string Vehicle, BoardLocation A
     {
         get; init;
     }
+
+    /// <summary>
+    /// The NMC's DRM: a Rider leader's modifier (A10.7 EXC; pass 70, ruling R70.9), 0 with none. Written by every Bail Out planned since the pass, whose NMC the
+    /// Morale Check member resolves; null on every older record, checked as before.
+    /// </summary>
+    public int? Drm
+    {
+        get; init;
+    }
+
+    /// <summary>The ELR the NMC was taken against (A19.13; pass 70, ruling R70.9), written with <see cref="Drm"/>; null with it, or for a unit with no ELR.</summary>
+    public int? Elr
+    {
+        get; init;
+    }
 }
 
 /// <summary>A SW a Bailing Out Rider carries (D6.24): its dr's roll, null when the carrier breaks, and its fate: <c>kept</c>, <c>malfunctioned</c>, or <c>eliminated</c>.</summary>
@@ -456,6 +471,9 @@ public sealed record VehicleCaptured(string Vehicle, BoardLocation At, string Si
     public const string Automatic = Rules.ScenarioA1CapturedVehicleRules.Automatic;
     public const string CloseCombat = Rules.ScenarioA1CapturedVehicleRules.CloseCombat;
     public const string Unarmed = Rules.ScenarioA1CapturedVehicleRules.Unarmed;
+
+    /// <summary>A11.52 (pass 70, ruling R70.34): an armed unarmored vehicle captured with all its Passengers.</summary>
+    public const string Passengers = Rules.ScenarioA1CapturedVehicleRules.Passengers;
 
     /// <summary>A21.21: the SMC captor removed into an unarmed vehicle as its Temporary Driver; null for a MMC captor's driver, who costs nothing.</summary>
     public string? Driver
@@ -603,6 +621,15 @@ public sealed record RoutStepped(string Unit, BoardLocation To, int HalfMf, bool
     {
         get; init;
     }
+
+    /// <summary>
+    /// The broken unit an unbroken leader routs with by Voluntary Rout (A10.711; pass 70, ruling R70.12), whose step just before is his; null for a
+    /// broken unit's own step, as every older record has it.
+    /// </summary>
+    public string? With
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -622,8 +649,41 @@ public sealed record RoutInterdicted(string Unit, BoardLocation At, string Roll,
         get; init;
     }
 
+    /// <summary>
+    /// The leader who routs with the unit by Voluntary Rout and whose leadership is the <see cref="Drm"/> (A10.711; pass 70, ruling R70.12); null with no
+    /// such leader, as every older record has it.
+    /// </summary>
+    public string? Leader
+    {
+        get; init;
+    }
+
     /// <summary>The result of an Interdiction NMC (A10.53, A10.31): an Original 12 eliminates, a Final DR above the Morale Level reduces, equal pins.</summary>
     public static string For(int original, int final, int morale) => Rules.ScenarioA1ResultTables.RoutInterdiction(original, final, morale);
+}
+
+/// <summary>
+/// <c>voluntary-break</c>: units that break voluntarily at the start of the RtPh so as to rout (A10.41; pass 70, ruling R70.11). The events after it
+/// break them, under DM (A10.62), and clear a pin (A7.83); a leader's break may call for a LLTC (A10.2).
+/// </summary>
+public sealed record VoluntaryBreak(IReadOnlyList<string> Units) : EventPayload;
+
+/// <summary>
+/// <c>units-searched</c>: members of the moving stack Search as it ends its move (A12.152; pass 70, ruling R70.24): the units, their Location, the Search dr's
+/// roll and drm, how many Accessible hexes other than its own the stack has, and the hexes searched, its own first, each at ground level (every Location of a
+/// hex above ground is searched). The searchers spend one more MF there and become TI for the rest of the Player Turn; the DEFENDER's window opens on that MF
+/// (A8.1), and their move ends when it closes. The reveals and any Casualty dr (A12.154) follow as their own records. A new event: no older record holds one.
+/// </summary>
+public sealed record UnitsSearched(IReadOnlyList<string> Units, BoardLocation Location, string Roll, int Drm, int Accessible, IReadOnlyList<BoardLocation> Searched) : EventPayload
+{
+    /// <summary>
+    /// The drm of the DEFENDER's Casualty dr that follows, from his concealed and hidden units as they were at the Search dr (A12.154; pass 70's fixes), for
+    /// the record line of the views that may know it; null when no Casualty dr is made, and on a record made before the fixes. No rule reads it at replay.
+    /// </summary>
+    public int? CasualtyDrm
+    {
+        get; init;
+    }
 }
 
 /// <summary>

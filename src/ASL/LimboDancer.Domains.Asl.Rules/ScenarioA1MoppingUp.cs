@@ -4,17 +4,18 @@ namespace LimboDancer.Domains.Asl.Rules;
 public sealed record MopUpDefenderFacts(bool Hero, bool Leader, bool Heroic, int HalfSquads, int? Leadership, bool Wounded, bool Lax);
 
 /// <summary>
-/// Mopping Up (A12.153, A12.154; pass 24 of the Card Play and Map Studio Redesign Plan, ruling R24.2; pass 32.g, S6): the bars in their order, who Mops Up,
-/// what is found, the secured building, the surrenders, and the DEFENDER's Casualty dr. Play reads the card, the state, and the map, hands the facts over,
-/// and writes the events.
+/// Mopping Up (A12.153, A12.154; pass 24 of the Card Play and Map Studio Redesign Plan, ruling R24.2; pass 32.g, S6; pass 70, ruling R70.25: any building of
+/// the map): the bars in their order, who Mops Up, what is found, the secured building, the surrenders, and the DEFENDER's Casualty dr. Play reads the card,
+/// the state, and the map, hands the facts over, and writes the events.
 /// </summary>
 public static class ScenarioA1MoppingUp
 {
-    /// <summary>A12.153 (ruling R24.2): Mopping Up secures a building of the game's card.</summary>
-    public static string? CardBar(bool hasCard) => hasCard ? null : "play.mop-up-card: Mopping Up secures a building of the game's card; this game has none (A12.153; ruling R24.2)";
-
-    /// <summary>A12.153 (ruling R24.2): the building named is one of the card's, with hexes.</summary>
-    public static string? BuildingBar(string? building, bool found) => found ? null : $"play.mop-up-building: '{building}' is not a building of the card (A12.153; ruling R24.2)";
+    /// <summary>
+    /// A12.153 (rulings R24.2, R70.25): the building named is one of the map's, by the card's id where the card names it and otherwise by its board and its
+    /// lowest hex, such as "bd03:M2"; a building of no card is Mopped Up as a card's is.
+    /// </summary>
+    public static string? BuildingBar(string? building, bool found) => found ? null
+        : $"play.mop-up-building: '{building}' is not a building of the map; a building is named by the card's id, or by its board and its lowest hex, such as bd03:M2 (A12.153; ruling R70.25)";
 
     /// <summary>A12.153: Mopping Up is declared in its side's PFPh.</summary>
     public static string? PhaseBar(string? phase) => phase != "pfph" ? "play.mop-up-phase: Mopping Up is declared in its side's PFPh (A12.153)" : null;
@@ -88,15 +89,19 @@ public static class ScenarioA1MoppingUp
     /// <summary>A12.153 (ruling R24.2): a hidden enemy unit is placed beneath "?", in the record's order.</summary>
     public static IReadOnlyList<(UnitCondition Condition, bool Value)> HiddenPlacedConditions() => [(UnitCondition.Hidden, false), (UnitCondition.Concealed, true)];
 
-    /// <summary>A12.153 (table player, pass 24): what the Mopping Up did and found, in words.</summary>
-    public static string Phrase(IReadOnlyList<string> ids, string building, int found, int dummies)
+    /// <summary>
+    /// A12.153, A12.154 (rulings R24.2, R70.25; the referee's finding at the reviews of pass 70): the proposal's words, from what the declaring side knows:
+    /// what the Mopping Up finds under the "?" there is decided at the commit and said by the records.
+    /// </summary>
+    public static string ProposalText(IReadOnlyList<string> ids, string building, string side, string guardId)
     {
         ArgumentNullException.ThrowIfNull(ids);
         return (ids.Count == 1
-            ? $"{ids[0]} Mops Up building {building} and becomes TI (A12.153; ruling R24.2)"
-            : $"{string.Join(", ", ids)} Mop Up building {building} and become TI (A12.153; ruling R24.2)")
-            + (found > 0 ? $"; {found} hidden enemy unit{(found == 1 ? " is" : "s are")} placed beneath \"?\"" : string.Empty)
-            + (dummies > 0 ? $"; {dummies} enemy Dumm{(dummies == 1 ? "y is" : "ies are")} removed" : string.Empty);
+            ? $"play.mop-up: {ids[0]} Mops Up building {building} and becomes TI (A12.153; ruling R24.2)"
+            : $"play.mop-up: {string.Join(", ", ids)} Mop Up building {building} and become TI (A12.153; ruling R24.2)")
+            + "; hidden enemy units there are placed beneath \"?\" and enemy Dummies removed; with no concealed enemy unit left, the "
+            + $"{side} side Controls the building and its Locations (A26.11) and its broken enemy units surrender to {guardId} (A20.5); otherwise the DEFENDER's "
+            + "Casualty dr, which is always made, Reduces a Mopping-Up unit on a Final dr of 1 or less (A12.154; ruling R70.45). What it finds is said when it is made";
     }
 
     /// <summary>A12.153: a concealed enemy unit left in the building: not a Dummy, concealed or hidden.</summary>
@@ -105,9 +110,6 @@ public static class ScenarioA1MoppingUp
     /// <summary>A26.11: an armed enemy vehicle in Bypass keeps its ground level out of the secured set.</summary>
     public static bool BypassedVehicle(bool active, bool enemy, bool vehicle, bool straddling, bool abandoned, bool captured) => active && enemy && vehicle && straddling && !abandoned && !captured;
 
-    /// <summary>A26.11: the secured building's words.</summary>
-    public static string SecuredSummary(string phrase, string side) => $"play.mop-up: {phrase}; no concealed enemy unit is left, so the {side} side Controls the building and its Locations (A26.11)";
-
     /// <summary>A12.153: a broken enemy unit in the secured building surrenders: not a Dummy, broken, not already a prisoner.</summary>
     public static bool Surrenders(bool dummy, bool broken, bool captured) => !dummy && broken && !captured;
 
@@ -115,14 +117,8 @@ public static class ScenarioA1MoppingUp
     public static IReadOnlyList<(UnitCondition Condition, bool Value)> SurrenderConditions() =>
         [(UnitCondition.Broken, false), (UnitCondition.Disrupted, false), (UnitCondition.Pinned, false), (UnitCondition.DesperationMorale, false)];
 
-    /// <summary>A12.153, A20.5: the surrender's words.</summary>
-    public static string SurrenderText(string brokenId, string guardId) => $"play.mop-up-surrender: {brokenId} surrenders to {guardId} (A12.153, A20.5)";
-
     /// <summary>A12.154: a concealed enemy unit that defends with the Casualty dr: unbroken, armed, not a prisoner.</summary>
     public static bool Defender(bool broken, bool unarmed, bool captured) => !broken && !unarmed && !captured;
-
-    /// <summary>A12.153: the words when concealed enemy units remain.</summary>
-    public static string NotSecuredSummary(string phrase) => $"play.mop-up: {phrase}; concealed enemy units remain, so the building is not secured";
 
     /// <summary>A12.154: the Casualty dr's drm and its notes: -1 per Stealthy unit, -1 per HS-equivalent beyond one, the best leader's leadership unless alone, +1 per Lax unit.</summary>
     public static (int Drm, IReadOnlyList<string> Notes) CasualtyDrm(IReadOnlyList<MopUpDefenderFacts> defenders)
@@ -167,6 +163,18 @@ public static class ScenarioA1MoppingUp
     /// <summary>A12.154 (ruling R24.2): a Final dr of 1 or less Reduces a Mopping-Up unit.</summary>
     public static bool CasualtyReduces(int dr, int drm) => dr + drm <= 1;
 
+    /// <summary>
+    /// A12.154 (rulings R24.2, R70.45; pass 70's fixes): a record's words for the DEFENDER's Casualty dr of a Search or a Mopping Up: the dr, its drm and Final dr
+    /// where the reading view may know them (null otherwise, since the drm tells what his "?" hide), and the units it Reduced, or none.
+    /// </summary>
+    public static string CasualtyRecordText(int dr, int? drm, IReadOnlyList<string> reduced)
+    {
+        ArgumentNullException.ThrowIfNull(reduced);
+        var roll = drm is { } value && value != 0 ? $"{dr} {(value < 0 ? "-" : "+")} {Math.Abs(value)} = {dr + value}" : $"{dr}";
+        return $"the DEFENDER's Casualty dr {roll}: "
+            + (reduced.Count == 0 ? "no casualty" : $"{string.Join(", ", reduced)} {(reduced.Count == 1 ? "is" : "are")} Casualty Reduced") + " (A12.154)";
+    }
+
     /// <summary>A12.154 (ruling R24.2): the units struck, by Random Selection among several: the highest dr, ties all.</summary>
     public static IReadOnlyList<string> Struck(IReadOnlyList<string> ids, IReadOnlyList<int> selection)
     {
@@ -175,13 +183,12 @@ public static class ScenarioA1MoppingUp
         return [.. ids.Where((_, index) => selection[index] == selection.Max())];
     }
 
-    /// <summary>A12.154 (ruling R24.2): the Casualty dr's words.</summary>
-    public static string CasualtyText(string summary, IReadOnlyList<string> notes)
-    {
-        ArgumentNullException.ThrowIfNull(notes);
-        return $"{summary}; the DEFENDER's Casualty dr ({(notes.Count == 0 ? "no drm" : string.Join(", ", notes))}) Reduces a Mopping-Up unit on a Final dr of 1 or less (A12.154; ruling R24.2)";
-    }
-
-    /// <summary>A12.153 (ruling R24.2): a building of the card that may be Mopped Up: more than one hex, or more than one level.</summary>
+    /// <summary>A12.153 (rulings R24.2, R70.25): a building that may be Mopped Up: more than one hex, or more than one level.</summary>
     public static bool MopUpBuilding(int hexCount, bool anyUpperLevel) => hexCount > 1 || anyUpperLevel;
+
+    /// <summary>
+    /// A12.153 (p. 79; ruling R70.25): "A rubbled/Blazing building Location is not considered part of a building for Mopping-Up purposes": a hex with a Blaze
+    /// is left out; a rubbled one has no building terrain, so the map never finds it in a building.
+    /// </summary>
+    public static bool PartOfBuilding(bool blaze) => !blaze;
 }

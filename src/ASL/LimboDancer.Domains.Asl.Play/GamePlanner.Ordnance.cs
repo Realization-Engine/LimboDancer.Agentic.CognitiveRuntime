@@ -61,7 +61,7 @@ public sealed partial class GamePlanner
         }
 
         // D6.21 (pass 65, the referee's review): a turret turn makes the AFV's Riders Bail Out.
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [OrdnanceSummary(facts, facing) + BailOutPreview(TurretTurnBailOut(state, facts.Gun!.GunId, facing))])
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [OrdnanceSummary(facts, facing) + BailOutPreview(state, TurretTurnBailOut(state, facts.Gun!.GunId, facing))])
         {
             Roll = new PlannedRoll("ordnance", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -948,9 +948,18 @@ public sealed partial class GamePlanner
                         wound.Values, DiceRolled.SystemSource, actor), package, null, [recordId]));
             }
 
+            var firerGone = false;
             foreach (var (type, payload) in FirerEffectEvents(shooter, firerEffect, attemptId, phaseMarker, severity))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [recordId]));
+                firerGone |= payload is InstanceEliminated gone && gone.Id == shooter.Id;
+            }
+
+            // A10.2 (pass 70, ruling R70.3): a leader firer the check's Casualty Reduction eliminates causes a LLMC of the units in his Location, and an unbroken
+            // one it breaks a LLTC; the attempt left them as they were.
+            if (firerGone || (firerEffect == OrdnancePanzerfaustCheck.Broken && !Is(shooter, Conditions.Broken)))
+            {
+                AddLeaderLossChecks(scope, attemptId, expected, actor, events, draw, state, state, [(shooter.Id, firerGone)], ScenarioA1MoraleCheck.Panzerfaust, [recordId]);
             }
         }
 
@@ -1485,6 +1494,9 @@ public sealed partial class GamePlanner
             new MapPosition(position.Location), null, conditions)
         {
             ArmorLeader = armorLeader,
+
+            // Pass 70 (ruling R70.28): a Carrier's inherent HS records the Carrier it left, so it Recombines as a Carrier HS (A1.32, D6.82).
+            CrewOf = ScenarioA1CarrierRules.RecordsCarrier(crew.Kind) ? vehicle.Id : null,
         });
     }
 
@@ -1583,7 +1595,7 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>A Fire package roll added to its rolls under its key.</summary>
-    private static FireRolls ApplyFireRoll(FireRolls rolls, string key, IReadOnlyList<int> values)
+    internal static FireRolls ApplyFireRoll(FireRolls rolls, string key, IReadOnlyList<int> values)
     {
         var split = key.IndexOf(':', StringComparison.Ordinal);
         var (kind, unit) = split < 0 ? (key, string.Empty) : (key[..split], key[(split + 1)..]);

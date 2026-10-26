@@ -128,6 +128,7 @@ public static class GameProjector
                 TaskCheck check => Check(previous, check),
                 FireResolved fire => Fire(previous, fire, gameEvent),
                 FireReported report => Report(previous, report, gameEvent),
+                MoraleCheckResolved check => MoraleCheck(previous, check),
                 ResidualFirePlaced residual => PlaceResidual(previous, residual),
                 RallyAttempted rally => Rally(previous, rally, gameEvent),
                 RepairAttempted repair => Repair(previous, repair),
@@ -151,6 +152,9 @@ public static class GameProjector
                 OpportunityFireDeclared opportunity => DeclareOpportunityFire(previous, opportunity),
                 RoutStepped routed => Rout(previous, routed),
                 RoutInterdicted interdicted => Interdict(previous, interdicted),
+                VoluntaryBreak voluntary => BreakVoluntarily(previous, voluntary),
+                UnitsSearched search => Search(previous, search),
+                ConcealmentVerified verified => VerifyConcealment(previous, verified),
                 DeploymentAttempted deployment => AttemptDeployment(previous, deployment),
                 RallyPhaseActionTaken rphAction => TakeRallyPhaseAction(previous, rphAction),
                 RecoveryAttempted recovery => AttemptRecovery(previous, recovery),
@@ -574,7 +578,7 @@ public static class GameProjector
             string[] cleared = [.. Rules.ScenarioA1SequenceProjection.ClearedMarkers(state.Phase, state.Night).Concat(Rules.ScenarioA1SequenceProjection.PhaseMarkers)
                 .Select(ConditionName)];
             var newPlayerTurn = change.PhasingSide != state.PhasingSide;
-            var melee = state.Phase == "ccph" ? InMelee(state) : null;
+            var melee = state.Phase == "ccph" ? InMelee(state, change.PrcHeldInMelee, change.PrcMelee == true) : null;
 
             // D5.34, D5.341: at the end of the Player Turn in which it was placed, a Stun becomes Stun +1, and a Recall becomes Recall; +1,
             // after which the AFV must leave by its Friendly Board Edge (ruling R5.17).
@@ -608,6 +612,7 @@ public static class GameProjector
                 {
                     HiddenPlaced = placed,
                     CloseCombats = [],
+                    CapturedThisPhase = [],
                     OrdnanceShots = [],
                     Advances = newPlayerTurn ? [] : state.Advances,
                     MovedVehicles = newPlayerTurn ? [] : state.MovedVehicles,
@@ -791,13 +796,25 @@ public static class GameProjector
         /// A11.15: at the end of the CCPh, Infantry of both sides that remain in one Location are held in Melee; prisoners are
         /// neither held nor hold (A20.5). The units are those of Locations that still hold units of both sides.
         /// </summary>
-        private HashSet<string> InMelee(GameState state)
+        private HashSet<string> InMelee(GameState state, IReadOnlyList<string>? prcHeld, bool prcFromVehicles)
         {
             // A11.7 (ruling R11.16): a vehicle is never held in Melee, and holds the enemy Infantry in its Location unless it is Abandoned or in Motion.
             // A11.15 EXC (ruling R14.2): a unit that keeps its "?" is neither held in Melee nor holds an enemy unit in Melee.
+            // A11.71 (pass 70, ruling R70.31): a unit aboard is read only when the record names it among the PRC held, or, on a record since the reviews
+            // (prcMelee), when its vehicle is Immobile, read from the vehicle; a record before the pass names none, and every unit aboard is read as before
+            // (Aboard is asked only of a unit whose position is a container's).
+            var recorded = prcHeld is not null || prcFromVehicles;
+            // A crew inside is its vehicle's, never held (A11.7).
+            bool Held(UnitInstance unit, string vehicle) => prcHeld?.Contains(unit.Id, StringComparer.Ordinal)
+                ?? (unit.Position is ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider } && state.Unit(vehicle) is { } carrier
+                    && Rules.ScenarioA1PassengerActionRules.HeldInMelee(Rules.ScenarioA1PassengerActionRules.VehicleMobile(GameState.Condition(carrier, Conditions.Immobilized) == ConditionState.True,
+                        GameState.Condition(carrier, Conditions.Bogged) == ConditionState.True)));
             var units = state.Units.Where(unit => Rules.ScenarioA1CloseCombatProjection.MeleeCandidate(unit.Status == InstanceStatus.Active, GameState.Condition(unit, Conditions.Captured) == ConditionState.True,
                 GameState.Condition(unit, Conditions.Concealed) == ConditionState.True, GameState.Condition(unit, Conditions.Hidden) == ConditionState.True,
-                unit.Kind == "asl:dummy", state.Location(unit.Id) is not null)).ToArray();
+                unit.Kind == "asl:dummy", state.Location(unit.Id) is not null)
+                && (recorded && unit.Position is ContainedPosition && state.Aboard(unit.Id) is { } vehicle
+                    ? Rules.ScenarioA1CloseCombatProjection.PrcMeleeCandidate(true, true, Held(unit, vehicle))
+                    : Rules.ScenarioA1CloseCombatProjection.PrcMeleeCandidate(false, recorded, false))).ToArray();
             return units.GroupBy(unit => state.Location(unit.Id)!.Location)
                 .SelectMany(group => Rules.ScenarioA1CloseCombatProjection.InMelee([.. group.Select(unit => new Rules.MeleeUnitFacts(unit.Id, unit.Side, vocabulary.IsA(unit.Kind, "asl:vehicle"), HoldsInMelee(unit),
                     GameState.Condition(unit, Conditions.Concealed) == ConditionState.True, GameState.Condition(unit, Conditions.Hidden) == ConditionState.True))]))
@@ -880,9 +897,10 @@ public static class GameProjector
                 next = MovePrisoners(next, unit.Id, new MapPosition(advance.To));
             }
 
+            // A11.8 (pass 70, ruling R70.33): where each unit advanced from, which Street Fighting reads and returns it to; state only.
             return next with
             {
-                Advances = [.. next.Advances, .. advance.Units.Select(id => new AdvanceRecord(id, advance.To))],
+                Advances = [.. next.Advances, .. advance.Units.Select(id => new AdvanceRecord(id, advance.To) { AdvancedFrom = state.Location(id)?.Location })],
             };
         }
 
@@ -1079,7 +1097,8 @@ public static class GameProjector
             var updated = (current ?? new CloseCombatLocation(combat.Location, false, null, [], false)) with
             {
                 Rounds = [.. current?.Rounds ?? [], CloseCombatResolved.Simultaneous],
-                Attacking = [.. current?.Attacking ?? [], .. combat.Attackers],
+                // A18.12 (pass 70, ruling R70.34): a leader the attack created made it with his MMC, so he has attacked.
+                Attacking = [.. current?.Attacking ?? [], .. combat.Attackers, .. combat.CreatedLeader is { } leader ? [leader] : Array.Empty<string>()],
                 Attacked = [.. current?.Attacked ?? [], .. combat.Defenders],
                 Next = combat.Next,
                 Closed = combat.Closed,
@@ -1125,6 +1144,41 @@ public static class GameProjector
             }
 
             var entry = state.CloseCombats.FirstOrDefault(item => item.Location == combat.Location);
+
+            // A11.31, A11.12 (pass 70, ruling R70.30): an Infantry attack on Infantry in a Location holding a vehicle is one attack of its sequence, by the side
+            // named next, recording the side that follows as the planner read it; the units Infantry attacked are counted apart from a vehicle's.
+            if (combat.Round == CloseCombatResolved.SequentialRound)
+            {
+                var attacker = combat.Attackers.Select(id => Active(state, id) as UnitInstance).FirstOrDefault();
+                if (Rules.ScenarioA1CloseCombatProjection.SequentialRoundRefusal(state.Phase, entry is { Closed: true }, attacker?.Side, entry?.Next,
+                    combat.Attackers.Any(id => entry?.Attacking.Contains(id) == true), combat.Defenders.Any(id => entry?.InfantryAttacked.Contains(id) == true),
+                    state.CloseCombats.Any(item => !item.Closed && item.Location != combat.Location)) is { } sequential)
+                {
+                    return Fail<GameState>(sequential.Code, sequential.Text);
+                }
+
+                if (closeCombatVerifier.Verify(state, combat, rolls) is { } sequentialReason)
+                {
+                    var verifier = Rules.ScenarioA1CloseCombatProjection.VerifierRefusal(sequentialReason);
+                    return Fail<GameState>(verifier.Code, verifier.Text);
+                }
+
+                var sequenced = (entry ?? new CloseCombatLocation(combat.Location, false, null, [], false)) with
+                {
+                    Rounds = [.. entry?.Rounds ?? [], combat.Round],
+                    Attacking = [.. entry?.Attacking ?? [], .. combat.Attackers],
+                    InfantryAttacked = [.. entry?.InfantryAttacked ?? [], .. combat.Defenders],
+
+                    // A11.52 (pass 70, ruling R70.34): the attackers that tried to capture Passengers, as the record names them among its attackers.
+                    Captors = [.. entry?.Captors ?? [], .. (combat.Captors ?? []).Where(combat.Attackers.Contains)],
+                    Next = combat.Next,
+                    Closed = combat.Closed,
+                };
+                return state with
+                {
+                    CloseCombats = [.. state.CloseCombats.Where(item => item.Location != combat.Location), sequenced],
+                };
+            }
 
             // A4.152 (ruling R27.3): or at once in the MPh, the CC of a berserk Infantry OVR, once the DEFENDER's window on the entry has closed.
             var overrun = Rules.ScenarioA1CloseCombatProjection.OverrunRecord(state.Phase, combat.Facts.ValueKind == JsonValueKind.Object && combat.Facts.TryGetProperty("infantryOverrun", out var flag)
@@ -1421,7 +1475,7 @@ public static class GameProjector
         {
             if (Rules.ScenarioA1SequenceProjection.PendChoiceRefusal(state.Choice is not null, state.Side(pending.Side) is not null, pending.Options.Count,
                 pending.Kind is ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc
-                    or ChoicePending.OverrunEvade or ChoicePending.GunDuel,
+                    or ChoicePending.OverrunEvade or ChoicePending.GunDuel or ChoicePending.ConcealmentLoss,
                 state.ChoicesMade.ContainsKey(pending.Key)) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);
@@ -1452,8 +1506,9 @@ public static class GameProjector
             {
                 Choice = null
             };
-            // A12.41 (ruling R11.12): the reveal or the PAATC follows the answer at once, as its own events.
-            if (pending.Kind == ChoicePending.Paatc)
+            // A12.41 (ruling R11.12): the reveal or the PAATC follows the answer at once, as its own events; so does a forced "?" loss (A12.14; pass 70,
+            // ruling R70.21).
+            if (pending.Kind is ChoicePending.Paatc or ChoicePending.ConcealmentLoss)
             {
                 return next;
             }
@@ -1791,6 +1846,25 @@ public static class GameProjector
 
         private static Dictionary<string, ConditionState> Without(IReadOnlyDictionary<string, ConditionState> conditions, string[] removed) =>
             conditions.Where(item => !removed.Contains(item.Key)).ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
+
+        /// <summary>
+        /// A morale check made outside an attack (pass 70, ruling R70.4): its rolls are recorded before it, and it reproduces through the Morale Check member
+        /// from its facts, which agree with the state, as a fire record does. It changes nothing itself; its effects are the records after it.
+        /// </summary>
+        private GameState? MoraleCheck(GameState state, MoraleCheckResolved check)
+        {
+            if (fireVerifier is null)
+            {
+                return Fail<GameState>("UNIT-STATE-023", "A morale check record can be replayed only with the Fire verifier.");
+            }
+
+            if (check.Rolls.Values.FirstOrDefault(roll => !rolls.ContainsKey(roll)) is { } missing)
+            {
+                return Fail<GameState>("UNIT-STATE-023", $"The morale check record's roll '{missing}' is not recorded before it.");
+            }
+
+            return fireVerifier.VerifyMoraleCheck(state, check, rolls) is { } reason ? Fail<GameState>("UNIT-STATE-024", reason) : state;
+        }
 
         private GameState? Fire(GameState state, FireResolved fire, GameEvent gameEvent)
         {
@@ -2335,7 +2409,7 @@ public static class GameProjector
                     EndingMembers = Rules.ScenarioA1MovementCalculator.EndingMembers(moving.MinimumMove, moving.Attempted is not null, moving.Movers, moving.Smoke?.Unit, moving.Smoke?.Dr,
                         current?.Dash is { } dashedTo && dashedTo == moving.To && moving.Attempted is null),
                     Dash = moving.Dash,
-                    MinimumMove = moving.MinimumMove,
+                    MinimumMove = Rules.ScenarioA1MovementCalculator.MinimumMoveEntered(moving.MinimumMove, moving.Attempted is not null),
                     RoadRate = moving.RoadRate,
                     IpcTo = moving.IpcTo ?? current?.IpcTo,
                     InfantryOverrun = moving.InfantryOverrun ? moving.To : null,
@@ -2641,7 +2715,11 @@ public static class GameProjector
             }
 
             var broken = GameState.Condition(unit, Conditions.Broken) == ConditionState.True;
-            if (!Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result))
+            // Pass 70 (ruling R70.9): a record that carries the NMC's DRM is checked with it and its ELR, and (ruling R70.47) an Unarmed unit's failure as its
+            // Casualty Reduction; an older record as before.
+            if (bailed.Drm is { } drm ? !Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result, drm, bailed.Elr,
+                    GameState.Condition(unit, Conditions.Unarmed) == ConditionState.True)
+                : !Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result))
             {
                 return Fail<GameState>(refused.Code, refused.Text);
             }
@@ -2868,7 +2946,11 @@ public static class GameProjector
                 vehicleThere && state.Location(unit.Id)?.Location == recrewed.At, unit.MfSpent > 0 || unit.HalfMfSpent || unit.MovementEnded,
                 Rules.ScenarioA1CrewActsRules.RecrewReady(Has(unit, Conditions.Broken), Has(unit, Conditions.Pinned), Has(unit, Conditions.Berserk), Has(unit, Conditions.Melee),
                     Has(unit, Conditions.Captured), Has(unit, "asl:ti")),
-                state.AbandonedThisPlayerTurn.Contains(vehicle.Id, StringComparer.Ordinal), Rules.ScenarioA1CrewActsRules.IsOwnCrew(unit.Id, vehicle.Id), Has(vehicle, Conditions.Recalled));
+                state.AbandonedThisPlayerTurn.Contains(vehicle.Id, StringComparer.Ordinal), Rules.ScenarioA1CrewActsRules.IsOwnCrew(unit.Id, vehicle.Id), Has(vehicle, Conditions.Recalled))
+            {
+                // D5.42's EXC (pass 70, ruling R70.34): in the CCPh of its capture, by the side that captured it.
+                CapturedThisCcph = state.Phase == "ccph" && state.CapturedThisPhase.Contains(vehicle.Id, StringComparer.Ordinal),
+            };
             var returnedStands = recrewed.Returned is null || (returned is { Holding: { Role: HoldingRole.Possessed } holding } && holding.Holder == unit.Id
                 && recrewed.Mount is Rules.ScenarioA1CrewActsRules.MainArmament or Rules.ScenarioA1CrewActsRules.BowMg);
             if (!Rules.ScenarioA1VehicleProjection.RecrewStands(vocabulary.IsA(vehicle.Kind, "asl:vehicle"), state.Movement is not null, facts, returnedStands))
@@ -2927,12 +3009,22 @@ public static class GameProjector
             const string Code = "UNIT-STATE-034";
             if (Active(state, captured.Vehicle) is not UnitInstance vehicle || !Rules.ScenarioA1VehicleProjection.CaptureStands(state.Phase == "ccph",
                 vocabulary.IsA(vehicle.Kind, "asl:vehicle"), vehicle.Side != captured.Side, state.Location(vehicle.Id)?.Location == captured.At,
-                state.Sides.Any(side => side.Id == captured.Side), captured.Cause, GameState.Condition(vehicle, Conditions.Abandoned) == ConditionState.True))
+                state.Sides.Any(side => side.Id == captured.Side), captured.Cause, GameState.Condition(vehicle, Conditions.Abandoned) == ConditionState.True,
+                // A11.52 (pass 70, fix round C): a capture with its Passengers, read only for that cause (a pass 70 record), with none of them left aboard.
+                captured.Cause == Rules.ScenarioA1CapturedVehicleRules.Passengers && state.Units.Any(unit => unit is
+                {
+                    Status: InstanceStatus.Active,
+                    Position: ContainedPosition { Role: ContainmentRole.Passenger } aboard
+                } && aboard.Container == vehicle.Id && GameState.Condition(unit, Conditions.Captured) != ConditionState.True)))
             {
-                return Fail<GameState>(Code, "A vehicle is captured in the CCPh, in its Location, by the other side: an AFV only when Abandoned (A11.52, A21.2).");
+                return Fail<GameState>(Code, "A vehicle is captured in the CCPh, in its Location, by the other side: an AFV only when Abandoned, one with Passengers only once every one is captured (A11.52, A21.2).");
             }
 
-            var next = Replace(state, vehicle with
+            var next = Replace(state with
+            {
+                // D5.42's EXC (pass 70, ruling R70.34): a captor may enter it as its crew in this CCPh.
+                CapturedThisPhase = [.. state.CapturedThisPhase, vehicle.Id],
+            }, vehicle with
             {
                 Side = captured.Side,
                 TemporaryCrew = null,
@@ -3168,8 +3260,26 @@ public static class GameProjector
         /// </summary>
         private GameState? Rout(GameState state, RoutStepped routed)
         {
-            if (!Rules.ScenarioA1RoutRallyProjection.RoutPhase(state.Phase) || Active(state, routed.Unit) is not UnitInstance unit
-                || !Rules.ScenarioA1RoutRallyProjection.RoutStepAllowed(GameState.Condition(unit, Conditions.Broken) == ConditionState.True, GameState.Condition(unit, Conditions.Melee) == ConditionState.True,
+            if (!Rules.ScenarioA1RoutRallyProjection.RoutPhase(state.Phase) || Active(state, routed.Unit) is not UnitInstance unit)
+            {
+                var refused = Rules.ScenarioA1RoutRallyProjection.RoutStepRefusal();
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
+            // A10.711 (pass 70, ruling R70.12): a Voluntary Rout leader's step follows the broken unit he routs with into the Location it has just entered.
+            if (routed.With is { } companion)
+            {
+                if (!Rules.ScenarioA1VoluntaryRout.LeaderStepAllowed(GameState.Condition(unit, Conditions.Broken) == ConditionState.True,
+                    GameState.Condition(unit, Conditions.Pinned) == ConditionState.True, GameState.Condition(unit, Conditions.Berserk) == ConditionState.True,
+                    GameState.Condition(unit, Conditions.Melee) == ConditionState.True,
+                    Active(state, companion) is UnitInstance broken && GameState.Condition(broken, Conditions.Broken) == ConditionState.True && state.Location(companion)?.Location == routed.To,
+                    routed.HalfMf, routed.LowCrawl, unit.MfSpent, unit.HalfMfSpent, RoutHalfMf(unit), state.RoutedThisPhase.Contains(unit.Id, StringComparer.Ordinal)))
+                {
+                    var refused = Rules.ScenarioA1VoluntaryRout.Refusal();
+                    return Fail<GameState>(refused.Code, refused.Text);
+                }
+            }
+            else if (!Rules.ScenarioA1RoutRallyProjection.RoutStepAllowed(GameState.Condition(unit, Conditions.Broken) == ConditionState.True, GameState.Condition(unit, Conditions.Melee) == ConditionState.True,
                     GameState.Condition(unit, Conditions.Pinned) == ConditionState.True, routed.HalfMf, routed.LowCrawl, unit.MfSpent, unit.HalfMfSpent, RoutHalfMf(unit),
                     state.RoutedThisPhase.Contains(unit.Id, StringComparer.Ordinal)))
             {
@@ -3213,7 +3323,97 @@ public static class GameProjector
                 return Fail<GameState>(refused.Code, refused.Text);
             }
 
+            // A10.711 (pass 70, ruling R70.12): the Voluntary Rout leader whose leadership is the DRM stands with the unit, unbroken, and routed with it; an
+            // older record names none.
+            if (interdicted.Leader is { } leader && !Rules.ScenarioA1VoluntaryRout.InterdictionLeaderAgrees(Active(state, leader) is UnitInstance,
+                Active(state, leader) is UnitInstance { } named && GameState.Condition(named, Conditions.Broken) == ConditionState.True,
+                state.Location(leader)?.Location == interdicted.At, state.RoutedThisPhase.Contains(leader, StringComparer.Ordinal)))
+            {
+                var refused = Rules.ScenarioA1VoluntaryRout.Refusal();
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
             return state;
+        }
+
+        /// <summary>
+        /// A viewer's momentary forfeiture of "?" (A12.14; pass 70, ruling R70.21): active units of one side, each concealed, which stay concealed. It changes
+        /// nothing in the state.
+        /// </summary>
+        private GameState? VerifyConcealment(GameState state, ConcealmentVerified verified)
+        {
+            if (!Rules.ScenarioA1ConcealmentChoices.VerifiedAllowed(verified.Units.Select(id => Active(state, id) is UnitInstance unit
+                ? (unit.Side, GameState.Condition(unit, Conditions.Concealed) == ConditionState.True) : ((string?)null, false))))
+            {
+                var refused = Rules.ScenarioA1ConcealmentChoices.VerifiedRefusal();
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
+            return state;
+        }
+
+        /// <summary>
+        /// A Voluntary Break (A10.41; pass 70, ruling R70.11): in the RtPh, before any unit routs, of active units not broken. It changes nothing itself; the
+        /// conditions changed after it break the units.
+        /// </summary>
+        private GameState? BreakVoluntarily(GameState state, VoluntaryBreak voluntary)
+        {
+            if (!Rules.ScenarioA1VoluntaryRout.BreakRecordAllowed(state.Phase, state.RoutedThisPhase.Count > 0,
+                voluntary.Units.Select(id => (Active(state, id) is UnitInstance, Active(state, id) is UnitInstance { } unit && GameState.Condition(unit, Conditions.Broken) == ConditionState.True))))
+            {
+                var refused = Rules.ScenarioA1VoluntaryRout.Refusal();
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
+            return state;
+        }
+
+        /// <summary>
+        /// A Search (A12.152; pass 70, ruling R70.24): members of the moving stack in its Location, its DEFENDER's window closed, each spend one more MF there
+        /// and become TI for the rest of the Player Turn; the window opens on that MF (A8.1), and their move ends when it closes. Rules checks the record against
+        /// its Search dr.
+        /// </summary>
+        private GameState? Search(GameState state, UnitsSearched search)
+        {
+            var movement = state.Movement;
+            UnitInstance?[] units = [.. search.Units.Select(id => Active(state, id) as UnitInstance)];
+            var finalDr = rolls.TryGetValue(search.Roll, out var roll) && roll.Count == 1 && roll.Sides == 6 ? roll.Values[0] + search.Drm : (int?)null;
+            var inLocation = movement is { Vehicle: false } && search.Location == movement.Location
+                && units.All(unit => unit is not null && movement.Members.Contains(unit.Id, StringComparer.Ordinal) && state.Location(unit.Id)?.Location == movement.Location);
+            var ownFirst = search.Searched.Count > 0 && search.Searched[0].Board == search.Location.Board && search.Searched[0].Hex == search.Location.Hex;
+            // A record whose roll is not a recorded dr is checked as one out of its phase, and refused.
+            if (Rules.ScenarioA1Searching.VerifySearched(finalDr is null ? null : state.Phase, inLocation, movement is { WindowOpen: false }, ownFirst, search.Accessible, finalDr ?? 0,
+                search.Searched.Count - 1) is { } refused)
+            {
+                return Fail<GameState>(refused.Code, refused.Text);
+            }
+
+            var next = state;
+            foreach (var unit in units)
+            {
+                var spent = (unit!.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0) + Rules.ScenarioA1Searching.HalfMfCost;
+                next = Replace(next, unit with
+                {
+                    MfSpent = spent / 2,
+                    HalfMfSpent = spent % 2 == 1,
+                    Conditions = WithChanges(unit.Conditions, Rules.ScenarioA1Searching.SearcherConditions()),
+                })!;
+            }
+
+            return next with
+            {
+                Movement = movement! with
+                {
+                    Movers = search.Units,
+                    HalfMfInLocation = Rules.ScenarioA1Searching.HalfMfCost,
+                    Step = movement.Step + 1,
+                    WindowOpen = true,
+                    EndingMembers = search.Units,
+                    MinimumMove = false,
+                    RoadRate = false,
+                    Dash = null,
+                },
+            };
         }
 
         /// <summary>A Deployment attempt (A1.31; ruling R13.4): in the RPh, its NTC agreeing with its result; the squad and leader spend their RPh action.</summary>
@@ -3754,6 +3954,9 @@ public static class GameProjector
 
                 // The record never says he is revealed: a record that carries his modifier or his morale does that (D3.41).
                 ArmorLeader = instance.ArmorLeader is { } assigned ? new ArmorLeader(assigned.Morale, assigned.Leadership) : null,
+
+                // Pass 70 (ruling R70.28): a Carrier HS keeps the Carrier it left, as recorded; absent in an older record.
+                CrewOf = instance.CrewOf,
             };
             return state with
             {
@@ -4317,6 +4520,20 @@ public static class GameProjector
                     CloseCombats = [.. next.CloseCombats.Select(item => item.Attacking.Any(ids.Contains) ? item with
                     {
                         Attacking = [.. item.Attacking, .. produced]
+                    } : item)],
+                };
+            }
+
+            // A11.12 (pass 70, ruling R70.30): so a HS a unit Infantry attacked is Reduced to has been attacked by Infantry there; only sequential rounds
+            // since the pass fill the list.
+            if (next.CloseCombats.Any(item => item.InfantryAttacked.Any(ids.Contains)))
+            {
+                var produced = lineage.Produced.Select(item => item.Id).ToArray();
+                next = next with
+                {
+                    CloseCombats = [.. next.CloseCombats.Select(item => item.InfantryAttacked.Any(ids.Contains) ? item with
+                    {
+                        InfantryAttacked = [.. item.InfantryAttacked, .. produced]
                     } : item)],
                 };
             }

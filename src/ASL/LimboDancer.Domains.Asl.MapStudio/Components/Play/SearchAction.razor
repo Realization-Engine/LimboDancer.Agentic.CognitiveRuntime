@@ -1,0 +1,49 @@
+@* Pass 70 (A12.152, A12.154; ruling R70.24): the moving stack Searches as it ends its move. Its Accessible hexes are offered in map order; the order they
+   are ticked in is the ATTACKER's order of preference, the first ticked searched first, and the hexes left unticked are the last he would search. *@
+<fieldset class="search-hexes" id="search">
+    <legend>Search (A12.152): one more MF; its own hex @Own is searched, and these in the order ticked</legend>
+    @foreach (var hex in Hexes)
+    {
+        var place = order.IndexOf(hex.Location);
+        <label @key="hex.Location"><input type="checkbox" class="search-hex" data-hex="@hex.Location" checked="@(place >= 0)" @onchange="@(args => Toggle(hex.Location, args.Value is true))" /> @hex.Label@(place >= 0 ? $" ({place + 1})" : string.Empty)</label>
+    }
+    <button id="propose-search" disabled="@Busy" title="@(Busy ? "A proposal is being made; wait for it." : null)" @onclick="Proposed">Propose: Search</button>
+</fieldset>
+
+@code {
+    /// <summary>An Accessible hex the stack may Search: its Location's identifier and its words, such as "[L4]".</summary>
+    public sealed record Choice(string Location, string Label);
+
+    /// <summary>The stack's Accessible hexes other than its own, in map order.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Choice> Hexes { get; set; } = [];
+
+    /// <summary>The stack's own hex in words.</summary>
+    [Parameter]
+    public string Own { get; set; } = string.Empty;
+
+    /// <summary>The Search proposed, with the hexes in the order of preference.</summary>
+    [Parameter]
+    public EventCallback<IReadOnlyList<string>> OnPropose { get; set; }
+
+    /// <summary>Whether the page is making a proposal, so a second Search is not sent meanwhile.</summary>
+    [Parameter]
+    public bool Busy { get; set; }
+
+    // The order of preference; the page keys this component on its game, view, and Location, so another of any starts it afresh.
+    private readonly List<string> order = [];
+
+    // A hex the stack no longer offers (it moved on) is dropped from the order.
+    protected override void OnParametersSet() => order.RemoveAll(hex => !Hexes.Any(item => item.Location == hex));
+
+    private void Toggle(string hex, bool on)
+    {
+        order.Remove(hex);
+        if (on)
+        {
+            order.Add(hex);
+        }
+    }
+
+    private Task Proposed() => Busy ? Task.CompletedTask : OnPropose.InvokeAsync([.. order]);
+}

@@ -9,7 +9,8 @@ namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 /// Pass 31c (design D11; design section 9, "Names"): the names a view reads for a game's units (<see cref="UnitNames"/>), on the game of The Guards
 /// Counterattack played to its end through the Play page (613 revisions, the fixture <c>guards-dl-01.game.json</c>). A side's own tags go by entry
 /// and kind and are kept through a Replacement, a Reduction, and a Battle Hardening; the other side's units carry no tag and read by counter and
-/// Location (the user's ruling of 2026-10-22); a unit the view may not name reads "a concealed unit"; the adjudicator reads each unit's own-side tag;
+/// Location (the user's ruling of 2026-10-22); a unit the view may not name reads "a concealed unit", or "an uninspected unit" beneath an uninspected
+/// stack's top; the adjudicator reads each unit's own-side tag;
 /// and no text a view reads of the game holds a unit's id or a Location's identifier.
 /// </summary>
 public sealed partial class UnitNamesTests : IDisposable
@@ -168,7 +169,7 @@ public sealed partial class UnitNamesTests : IDisposable
 
             Assert.True(named > 50);
             Assert.All(enemy.Where(unit => !everHeld.Contains(unit.Id) && !games.ViewOf(History, History.States.Count, perspective).Units.Any(seen => seen.Id == unit.Id)),
-                unit => Assert.Equal(UnitNames.Unnamed, names.Of(unit.Id, 1)));
+                unit => Assert.True(UnitNames.IsUnnamed(names.Of(unit.Id, 1))));
         }
 
         // The German view names r-squad-2 by where it stands; the Russian view by its own tag.
@@ -201,18 +202,28 @@ public sealed partial class UnitNamesTests : IDisposable
         {
             var perspective = new Perspective(side);
             var names = Names(side);
-            var (named, unnamed) = (0, 0);
+            var (named, unnamed, uninspected) = (0, 0, 0);
             for (var revision = 1; revision <= History.States.Count; revision += 3)
             {
-                var held = games.ViewOf(History, revision, perspective).Units.Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
-                foreach (var unit in History.States[revision - 1].Units.Where(unit => unit.Side != side && entered[unit.Id] <= revision))
+                var view = games.ViewOf(History, revision, perspective);
+                var held = view.Units.Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
+                var stacks = view.Sealed.Where(item => item.Uninspected).Select(item => (item.Side, item.Location)).ToHashSet();
+                var state = History.States[revision - 1];
+                foreach (var unit in state.Units.Where(unit => unit.Side != side && entered[unit.Id] <= revision))
                 {
                     var said = names.Of(unit.Id, revision);
                     if (held.Contains(unit.Id))
                     {
-                        Assert.NotEqual(UnitNames.Unnamed, said);
+                        Assert.False(UnitNames.IsUnnamed(said));
                         Assert.Null(names.Tag(unit.Id));
                         named++;
+                    }
+                    else if (unit.Status == InstanceStatus.Active && unit.Kind != UnitKinds.Dummy && GameState.Condition(unit, Conditions.Concealed) != ConditionState.True
+                        && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True && state.Location(unit.Id) is { } at && stacks.Contains((unit.Side!, at.Location)))
+                    {
+                        // A2.9, A12.16 (rulings R23.3, R70.18): a counter beneath an uninspected stack's top is under no "?" (the referee's finding at the reviews).
+                        Assert.Equal(UnitNames.UninspectedUnit, said);
+                        uninspected++;
                     }
                     else
                     {
@@ -222,17 +233,20 @@ public sealed partial class UnitNamesTests : IDisposable
                 }
             }
 
-            Assert.True(named > 0 && unnamed > 0);
+            Assert.True(named > 0 && unnamed > 0 && uninspected > 0);
 
             // Its own units are named whatever their state.
-            Assert.All(History.States[^1].Units.Where(unit => unit.Side == side), unit => Assert.NotEqual(UnitNames.Unnamed, names.Of(unit.Id, 1)));
+            Assert.All(History.States[^1].Units.Where(unit => unit.Side == side), unit => Assert.False(UnitNames.IsUnnamed(names.Of(unit.Id, 1))));
         }
 
-        // r-squad-2 sets up under "?": the German side reads a concealed unit until the revision at which it first holds the squad by name.
+        // r-squad-2 sets up beneath the top of a stack under no "?", which may not be inspected before play (A2.9; ruling R23.3): the German side reads an
+        // uninspected unit (the referee's finding at the reviews of pass 70, which found "a concealed unit" false) until the revision at which it first holds
+        // the squad by name. r-squad-20 sets up under "?" and reads a concealed unit.
         var german = Names("german");
-        Assert.Equal(UnitNames.Unnamed, german.Of("r-squad-2", 56));
+        Assert.Equal(UnitNames.UninspectedUnit, german.Of("r-squad-2", 56));
+        Assert.Equal(UnitNames.Unnamed, german.Of("r-squad-20", 56));
         Assert.Equal($"4-4-7 squad in {At("r-squad-2", 57)}", german.Of("r-squad-2", 57));
-        Assert.Equal("a concealed unit moves, and 4-6-7 squad G4 fires", german.InText("r-squad-2 moves, and g-squad-4 fires", 56));
+        Assert.Equal("an uninspected unit moves, and 4-6-7 squad G4 fires", german.InText("r-squad-2 moves, and g-squad-4 fires", 56));
         Assert.Equal($"4-4-7 squad in {At("r-squad-2", 57)} moves to [K4], level 1", german.InText("r-squad-2 moves to bd01:K4:1", 57));
 
         // A weapon reads beside its holder and alone, and one the view does not hold is not counted.
@@ -244,10 +258,12 @@ public sealed partial class UnitNamesTests : IDisposable
     public void ARunOfConcealedUnitsReadsAsTheirCount()
     {
         // The user, 2026-10-21: "a concealed unit, a concealed unit, ..." reads as "3 concealed units"; one alone, or two apart, read as before.
+        // So does a run of uninspected units (the reviews of pass 70).
         var german = Names("german");
-        Assert.Equal("3 concealed units fire at 4-6-7 squad G4", german.InText("r-squad-2, r-squad-2, r-squad-2 fire at g-squad-4", 56));
-        Assert.Equal("2 concealed units and 4-6-7 squad G4", german.InText("r-squad-2, r-squad-2 and g-squad-4", 56));
-        Assert.Equal("a concealed unit and a concealed unit", german.InText("r-squad-2 and r-squad-2", 56));
+        Assert.Equal("3 concealed units fire at 4-6-7 squad G4", german.InText("r-squad-20, r-squad-20, r-squad-20 fire at g-squad-4", 56));
+        Assert.Equal("2 concealed units and 4-6-7 squad G4", german.InText("r-squad-20, r-squad-20 and g-squad-4", 56));
+        Assert.Equal("a concealed unit and a concealed unit", german.InText("r-squad-20 and r-squad-20", 56));
+        Assert.Equal("2 uninspected units and 4-6-7 squad G4", german.InText("r-squad-2, r-squad-2 and g-squad-4", 56));
         Assert.Equal($"4-4-7 squad, 4-4-7 squad in {At("r-squad-2", 57)}", german.InText("r-squad-2, r-squad-2", 57));
     }
 
