@@ -343,6 +343,34 @@ public sealed class BacklogPass70Tests : IDisposable
         NoReplayErrors();
     }
 
+    [Fact]
+    public async Task ACaseReadShowsAStackItMayNotInspectAsTheViewDoes()
+    {
+        // A12.16 (ruling R70.18; the referee's finding at the reviews): a Russian case read at the German stack in E5, out of ru-1's LOS, built through the
+        // planner's entry, holds its top counter and a count, as the Russian view does; without the entry it holds both, as before the pass.
+        blocked.Add(("E2", "E5"));
+        await SetupAt(1, "german", Squad("de-1", "E5", "german"), Squad("de-2", "E5", "german"), Squad("ru-1", "E2", "russian"));
+        var history = History;
+        var request = new CaseRequest(Scope, "scenario-a1", "ru-1", BoardLocation.Parse(L("E5")), history.Current!.Revision, new Perspective("russian"));
+        var planner = Planner();
+        var read = new CaseReader(new HistoryGameSource([history]), new InMemoryBoardCatalog([Board()]), Vocabulary, [Catalog], planner.ViewOf).Read(request);
+        Assert.Equal(TopGerman, read.Snapshot!.Occupancy.Units.Select(unit => unit.Id));
+        Assert.Contains(read.Snapshot.Occupancy.Sealed, item => item.Side == "german");
+        var plain = new CaseReader(new HistoryGameSource([history]), new InMemoryBoardCatalog([Board()]), Vocabulary, [Catalog]).Read(request);
+        Assert.Equal(BothGermans, plain.Snapshot!.Occupancy.Units.Select(unit => unit.Id));
+    }
+
+    [Fact]
+    public async Task ARussianDummyInTheStacksLocationInspectsNothing()
+    {
+        // Ruling R70.40 (the referee's finding at the reviews): a Dummy is no unit (A12.11) and takes no part in CC, so a Russian Dummy in E5 with the German
+        // stack, out of ru-1's LOS, does not open it to the Russian: he sees its top only.
+        blocked.Add(("E2", "E5"));
+        await SetupAt(1, "german", Squad("de-1", "E5", "german"), Squad("de-2", "E5", "german"), Dummy("ru-d", "E5", "russian"), Squad("ru-1", "E2", "russian"));
+        Assert.Equal(TopGerman, ViewAs("russian").Units.Where(unit => unit.Side == "german").Select(unit => unit.Id));
+        NoReplayErrors();
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, true)]
@@ -495,6 +523,45 @@ public sealed class BacklogPass70Tests : IDisposable
         var check = Assert.Single(ChecksSince(before));
         Assert.Equal("failure-to-rout", check.Cause);
         Assert.True(Is(Current.Unit("r2")!, Conditions.Broken));
+        NoReplayErrors();
+    }
+
+    private static readonly string[] SquadChecked = ["r2"];
+
+    [Fact]
+    public async Task AConcealedUnitThatTakesNoLlmcIsNotNamedInThePublicRecord()
+    {
+        // A12.14, A12.3 (the referee's findings at the reviews): beside the 4-4-7 r2, the concealed 6-2-8 rc (Morale Level 8, not lower than the lost 8-1's)
+        // takes no LLMC, so the record both sides read names r2 alone, and its dice are as public as the record.
+        await SetupAt(5, "german", Squad("g1", "E2", "german"), Unit("rl", "asl:leader", "defender-leader-8-1", "E5", "russian", "asl:broken"), Squad("r2", "E5", "russian"),
+            Unit("rc", "asl:squad", "defender-elite-squad", "E5", "russian", "asl:concealed"));
+        var before = Revision;
+        Committed(await Do(GameActions.AdvancePhase, Once(4, 3), new
+        {
+        }));
+        var check = Assert.Single(ChecksSince(before));
+        Assert.Equal(SquadChecked, check.Units);
+        Assert.Null(Since(before).Single(item => item.Payload is MoraleCheckResolved).Visibility);
+        Assert.All(Since(before).Where(item => item.Payload is DiceRolled), item => Assert.Null(item.Visibility));
+        Assert.True(Is(Current.Unit("rc")!, Conditions.Concealed));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ALeaderLostWithOnlyAConcealedUnitBesideHimStillRollsAndNamesNoVerdict()
+    {
+        // A12.14 (the referee's finding at the reviews): either side may end the RtPh, so the plan rolls for the LLMC whenever a leader is lost, and its line
+        // says only that one may be due; beside the lost 8-1 the concealed 6-2-8 takes none, and nothing is recorded of it.
+        await SetupAt(5, "german", Squad("g1", "E2", "german"), Unit("rl", "asl:leader", "defender-leader-8-1", "E5", "russian", "asl:broken"),
+            Unit("rc", "asl:squad", "defender-elite-squad", "E5", "russian", "asl:concealed"));
+        var before = Revision;
+        var result = await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        });
+        Committed(result);
+        Assert.Contains(result.Reasons, reason => reason.StartsWith("play.leader-loss: the loss of rl may call for a LLMC", StringComparison.Ordinal));
+        Assert.Empty(ChecksSince(before));
+        Assert.True(Is(Current.Unit("rc")!, Conditions.Concealed));
         NoReplayErrors();
     }
 
@@ -885,6 +952,22 @@ public sealed class BacklogPass70Tests : IDisposable
         Assert.True(Is(Current.Unit("r1")!, Conditions.Concealed));
         Assert.DoesNotContain(EventsOf("russian"), item => item.Payload is ChoicePending);
         Assert.Contains(EventsOf("german"), item => item.Payload is ChoicePending);
+
+        // The referee's finding at the reviews: the mover's next action meets the open window's refusal, code and words, so it tells him nothing of the
+        // choice; the viewing side's own reads R5.8's.
+        var waiting = await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = ConcealedRussian,
+            to = L("E7"),
+            proposedBy = "russian",
+        });
+        Assert.Contains("play.move-window: the DEFENDER may still fire at the stack's last MF expenditure (A8.1, A8.11)", waiting.Reasons);
+        Assert.DoesNotContain(waiting.Reasons, reason => reason.Contains("choice", StringComparison.Ordinal) || reason.Contains("answer", StringComparison.Ordinal));
+        var viewing = await Do(GameActions.PassFire, NoRoll(), new
+        {
+            proposedBy = "german",
+        });
+        Assert.Contains(viewing.Reasons, reason => reason.StartsWith("play.choice-pending: the german side answers first", StringComparison.Ordinal));
 
         Committed(await Do(GameActions.Choose, NoRoll(), new
         {
@@ -1277,11 +1360,16 @@ public sealed class BacklogPass70Tests : IDisposable
             unitIds = GermanSquad,
         });
         Assert.Contains(refused.Reasons, reason => reason.StartsWith("play.mop-up-building: 'bd01:E6' is not a building of the map", StringComparison.Ordinal));
-        Committed(await Do(GameActions.MopUp, NoRoll(), new
+        var mopped = await Do(GameActions.MopUp, NoRoll(), new
         {
             building = "bd01:E5",
             unitIds = GermanSquad,
-        }));
+        });
+        Committed(mopped);
+
+        // The referee's finding at the reviews: the proposal says only what the declarer knows; the records say what it found.
+        Assert.Contains(mopped.Reasons, reason => reason.EndsWith("What it finds is said when it is made", StringComparison.Ordinal));
+        Assert.DoesNotContain(mopped.Reasons, reason => reason.Contains("surrenders to", StringComparison.Ordinal));
         Assert.Contains(Current.Secured, item => item.Building == "bd01:E5" && item.Side == "german" && item.Locations.Count == 2);
         Assert.Contains("bd01:E5", Current.MoppedUpThisPlayerTurn);
         Assert.Equal("g1", Current.Unit("r1")!.Custodian);
@@ -1706,14 +1794,23 @@ public sealed class BacklogPass70Tests : IDisposable
         Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
         {
         }));
+        // The public record names no unit aboard (A12.2, A12.3; the referee's finding at the reviews): the projector reads the vehicle's own state.
         var ended = Assert.Single(Since(before).Select(item => item.Payload).OfType<PhaseChanged>());
-        Assert.Equal(immobile ? GermanRider : Array.Empty<string>(), ended.PrcHeldInMelee);
+        Assert.True(ended.PrcMelee);
+        Assert.Null(ended.PrcHeldInMelee);
         Assert.True(Is(Current.Unit("ru-1")!, Conditions.Melee));
         Assert.Equal(immobile, Is(Current.Unit("de-r")!, Conditions.Melee));
         NoReplayErrors();
 
+        // A record of the pass's builds names the PRC held, and replays as it did.
+        GameEvent[] listed = [.. store.Read(Scope)!.Events.Select(item => item.Payload is PhaseChanged { PrcMelee: true } change
+            ? item with { Payload = change with { PrcMelee = null, PrcHeldInMelee = immobile ? GermanRider : [] } } : item)];
+        var fromList = Planner().Replay(listed);
+        Assert.False(fromList.HasErrors);
+        Assert.Equal(immobile, Is(fromList.Current!.Unit("de-r")!, Conditions.Melee));
+
         // A record made before the pass names no PRC held, and the projector reads the Rider for Melee as it did: held, beside the Russian squad.
-        GameEvent[] older = [.. store.Read(Scope)!.Events.Select(item => item.Payload is PhaseChanged { PrcHeldInMelee: not null } change ? item with { Payload = change with { PrcHeldInMelee = null } } : item)];
+        GameEvent[] older = [.. store.Read(Scope)!.Events.Select(item => item.Payload is PhaseChanged { PrcMelee: true } change ? item with { Payload = change with { PrcMelee = null } } : item)];
         var replayed = Planner().Replay(older);
         Assert.False(replayed.HasErrors);
         Assert.True(Is(replayed.Current!.Unit("de-r")!, Conditions.Melee));

@@ -116,6 +116,16 @@ public sealed record PhaseChanged(int Turn, string Phase, string PhasingSide) : 
     {
         get; init;
     }
+
+    /// <summary>
+    /// On the record that ends a CCPh since the reviews of pass 70 (A11.71; ruling R70.31; the referee's finding): true, and the projector holds in Melee the
+    /// Passengers and Riders of each Immobile vehicle, read from the vehicle's own state, so the public record names no unit aboard. A record that names
+    /// <see cref="PrcHeldInMelee"/> is read by its list; one with neither holds every unit aboard as one on foot, as before the pass.
+    /// </summary>
+    public bool? PrcMelee
+    {
+        get; init;
+    }
 }
 
 /// <summary>

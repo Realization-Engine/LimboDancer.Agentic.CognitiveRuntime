@@ -125,6 +125,11 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.True(ScenarioA1Sight.Inspectable(true, true, () => throw new InvalidOperationException("the seers were read.")));
         Assert.False(ScenarioA1Sight.Inspectable(true, false, () => false));
         Assert.False(ScenarioA1Sight.Inspectable(false, true, () => true));
+
+        // A prisoner (A20.5) and a Dummy (A12.11) of the viewer's in the Location inspect nothing (the referee's finding at the reviews).
+        Assert.True(ScenarioA1Sight.InspectsByPresence(false, false));
+        Assert.False(ScenarioA1Sight.InspectsByPresence(false, true));
+        Assert.False(ScenarioA1Sight.InspectsByPresence(true, false));
     }
 
     [Fact]
@@ -1039,6 +1044,9 @@ public sealed class ScenarioA1Pass70RulesTests
 
         // With no concealed enemy unit in the Location nothing is lost, the moving side's own "?" neither.
         Assert.False(ScenarioA1BypassDetection.AllConcealmentLost([AtBypass("g2", "german"), AtBypass("rh", concealed: false, hidden: true)], "german", false, OneMover).Any);
+
+        // Nor with enemy Dummies alone: "with a concealed enemy unit", and a Dummy is no unit (A12.11; the referee's finding at the reviews).
+        Assert.False(ScenarioA1BypassDetection.AllConcealmentLost([AtBypass("g2", "german"), AtBypass("rd", dummy: true)], "german", false, OneMover).Any);
     }
 
     [Fact]
@@ -1661,5 +1669,43 @@ public sealed class ScenarioA1Pass70RulesTests
             CapturedThisCcph = true,
             InLocation = false
         }), StringComparison.Ordinal);
+    }
+
+    // The fixes of the reviews, round A (hidden information).
+    private static readonly (string Id, bool ConcealedToEnemy, bool Aboard)[] RiderOnTop = [("de-r", false, true), ("de-tank", false, false), ("de-s", false, false)];
+
+    [Fact]
+    public void TheViewersPendingOptionIsRefusedToTheMoverAsTheOpenWindowIs()
+    {
+        // A12.14 (ruling R70.21; the referee's finding): another side's action meets the open window's refusal, code and words; the viewing side, and a
+        // proposal of no side, read R5.8's; a choice of another kind is unchanged.
+        const string Bar = "play.choice-pending: the german side answers first: the moving stack waits for the DEFENDER's answer at its step (A8.1)";
+        Assert.Equal("play.move-window: the DEFENDER may still fire at the stack's last MF expenditure (A8.1, A8.11)",
+            ScenarioA1ConcealmentChoices.PendingLossBar(Bar, true, "german", "russian"));
+        Assert.Equal(Bar, ScenarioA1ConcealmentChoices.PendingLossBar(Bar, true, "german", "german"));
+        Assert.Equal(Bar, ScenarioA1ConcealmentChoices.PendingLossBar(Bar, true, "german", null));
+        Assert.Equal(Bar, ScenarioA1ConcealmentChoices.PendingLossBar(Bar, false, "german", "russian"));
+        Assert.Null(ScenarioA1ConcealmentChoices.PendingLossBar(null, true, "german", "russian"));
+    }
+
+    [Fact]
+    public void AStacksTopIsNeverAUnitAboardAndOnlyAnImmobileVehiclesPrcAreHeld()
+    {
+        // Rulings R23.3, R70.18 (the referee's finding): a Rider listed first is not the stack's top; its vehicle is. A11.71 (p. 76): the PRC of an Immobile
+        // vehicle are held in Melee, a Mobile one's not.
+        Assert.Equal("de-tank", ScenarioA1Visibility.TopCounter(RiderOnTop));
+        Assert.True(ScenarioA1PassengerActionRules.HeldInMelee(false));
+        Assert.False(ScenarioA1PassengerActionRules.HeldInMelee(true));
+        Assert.Equal(ScenarioA1PassengerActionRules.HeldInMelee(false), ScenarioA1PassengerActionRules.CloseCombat(FirePrc.Rider, true, false, false).HeldInMelee);
+    }
+
+    [Fact]
+    public void TheMoppingUpProposalSaysOnlyWhatTheDeclarerKnows()
+    {
+        // A12.153, A12.154 (the referee's finding): the proposal names no result: what the Mopping Up finds is said when it is made.
+        var text = ScenarioA1MoppingUp.ProposalText(["g1"], "bd01:E5", "german", "g1");
+        Assert.StartsWith("play.mop-up: g1 Mops Up building bd01:E5 and becomes TI (A12.153; ruling R24.2)", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("no concealed enemy unit is left", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("HS-equivalents", text, StringComparison.Ordinal);
     }
 }

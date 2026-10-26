@@ -228,6 +228,7 @@ public static class GameEventReader
                 return nextTurn is null || nextPhase is null || nextPhasing is null ? null : new PhaseChanged(nextTurn.Value, nextPhase, nextPhasing)
                 {
                     PrcHeldInMelee = payload.TryGetProperty("prcHeldInMelee", out _) ? fields.StringList(payload, "prcHeldInMelee", path) : null,
+                    PrcMelee = fields.OptionalBoolean(payload, "prcMelee", path),
                 };
             case "instance-created":
                 return payload.TryGetProperty("instance", out var created) && ReadNew(created, path + ".instance", fields, diagnostics) is { } instance

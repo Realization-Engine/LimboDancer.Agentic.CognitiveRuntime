@@ -251,7 +251,7 @@ public sealed partial class GamePlanner
             Others = others.Length > 0 ? others : null,
             NoQuarter = state.NoQuarter.Contains(riders[0].Source.Side ?? string.Empty, StringComparer.Ordinal) ? true : null,
         };
-        var (resolution, _) = ResolveMoraleCheck(scope, attemptId, expected, actor, events, draw, facts, null, causes);
+        var (resolution, _, _) = ResolveMoraleCheck(scope, attemptId, expected, actor, events, draw, facts, null, causes);
         foreach (var (rider, subject) in riders.Zip(subjects))
         {
             var effect = resolution.Effects.First(item => item.UnitId == rider.Id);

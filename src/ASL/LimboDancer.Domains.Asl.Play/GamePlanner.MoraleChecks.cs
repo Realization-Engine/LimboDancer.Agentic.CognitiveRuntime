@@ -55,7 +55,7 @@ public sealed partial class GamePlanner
     /// Draws the rolls the Morale Check member asks for, one at a time, each as a <c>dice-rolled</c> event, and returns its resolution and the rolls by key
     /// (ruling R70.3). A check that reaches an option is resolved with every option taken (the facts carry no choices).
     /// </summary>
-    private (FireResolution Resolution, Dictionary<string, string> RollIds) ResolveMoraleCheck(GameScope scope, string attemptId, long expected, string actor,
+    private (FireResolution Resolution, Dictionary<string, string> RollIds, FireRolls Rolls) ResolveMoraleCheck(GameScope scope, string attemptId, long expected, string actor,
         List<GameEvent> events, Func<RollRequest, RollResult> draw, MoraleCheckFacts facts, IReadOnlyDictionary<string, string>? preset, IReadOnlyList<string>? causes)
     {
         var package = ScenarioA1FirePackage.Identity.ToString();
@@ -70,7 +70,7 @@ public sealed partial class GamePlanner
             var next = ScenarioA1FireFollowUps.NextFireStep(resolution);
             if (next.Resolved)
             {
-                return (resolution, rollIds);
+                return (resolution, rollIds, rolls);
             }
 
             if (next.RollKey is not { } key)
@@ -90,20 +90,61 @@ public sealed partial class GamePlanner
     /// <summary>
     /// A morale check made outside an attack, resolved and written (ruling R70.4): its dice, the <c>morale-check-resolved</c> record, its effects as a fire
     /// record's are written, and a pending surrender last. Nothing is written when the check holds no check at all. A check of a concealed unit that keeps its
-    /// "?" is its side's own business: the record and its effects are withheld from the other side (A12.14). The resolution, or null when nothing was written.
+    /// "?" is its side's own business: the record, its dice, and its effects are withheld from the other side (A12.14). A concealed or hidden unit that took
+    /// no check is left out of the record, or, when the check would resolve otherwise without it, the record and its dice are withheld (A12.14, A12.3; the
+    /// referee's finding at the reviews). The resolution, or null when nothing was written.
     /// </summary>
     private FireResolution? AddMoraleCheck(GameScope scope, string attemptId, long expected, string actor, List<GameEvent> events, Func<RollRequest, RollResult> draw,
         GameState state, MoraleCheckFacts facts, IReadOnlyDictionary<string, string>? preset, string side, BoardLocation at, string cause, IReadOnlyList<string>? causes)
     {
-        var (resolution, rollIds) = ResolveMoraleCheck(scope, attemptId, expected, actor, events, draw, facts, preset, causes);
+        var firstDie = events.Count;
+        var (resolution, rollIds, rolls) = ResolveMoraleCheck(scope, attemptId, expected, actor, events, draw, facts, preset, causes);
         if (!ScenarioA1MoraleCheck.AnyCheck(resolution))
         {
             return null;
         }
 
         var package = ScenarioA1FirePackage.Identity.ToString();
+        var withheld = false;
+        if (ScenarioA1MoraleCheck.Unnamed(resolution, facts.Others ?? []) is { Count: > 0 } unnamed)
+        {
+            var reduced = facts with
+            {
+                Others = [.. facts.Others!.Where(unit => !unnamed.Contains(unit.UnitId!))]
+            };
+            var without = ScenarioA1MoraleCheck.Resolve(reduced with
+            {
+                Rolls = rolls
+            }, FireReference.Value);
+            var expectedWithout = resolution with
+            {
+                Effects = [.. resolution.Effects.Where(effect => !unnamed.Contains(effect.UnitId))]
+            };
+            if (JsonSerializer.Serialize(without, LiveFire.Json) == JsonSerializer.Serialize(expectedWithout, LiveFire.Json))
+            {
+                (facts, resolution) = (reduced, without);
+            }
+            else
+            {
+                withheld = true;
+            }
+        }
+
         FireTarget[] named = [.. facts.Subjects ?? [], .. facts.Others ?? []];
-        var visibility = ScenarioA1MoraleCheck.Withheld(resolution, named) ? new[] { side } : null;
+        var visibility = withheld || ScenarioA1MoraleCheck.Withheld(resolution, named) ? new[] { side } : null;
+
+        // A12.14 (the referee's finding at the reviews): the check's own dice are as public as its record, since their number counts the units it checked.
+        if (visibility is not null)
+        {
+            for (var index = firstDie; index < events.Count; index++)
+            {
+                events[index] = events[index] with
+                {
+                    Visibility = visibility
+                };
+            }
+        }
+
         var recordId = EventId(attemptId, events.Count + 1);
         var recorded = facts with
         {

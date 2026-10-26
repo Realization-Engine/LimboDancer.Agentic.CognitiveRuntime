@@ -388,7 +388,7 @@ public sealed class PlayPagePass35Tests : IDisposable
                 var other = view == "german" ? "russian" : "german";
 
                 // What the view does not hold: the other side's units it cannot name, and whatever they hold.
-                var unheld = Current.Units.Where(unit => unit.Side == other && names.Held(unit.Id, Current.Revision) is var name && (name == unit.Id || name == UnitNames.Unnamed))
+                var unheld = Current.Units.Where(unit => unit.Side == other && names.Held(unit.Id, Current.Revision) is var name && (name == unit.Id || UnitNames.IsUnnamed(name)))
                     .Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
                 string[] secret = [.. unheld, .. Current.Equipment.Where(item => item.Holding is { } holding && unheld.Contains(holding.Holder)).Select(item => item.Id)];
                 Assert.True(secret.Length >= 3, $"{at}, {view} view: the sweep needs units the view does not hold, and found {string.Join(", ", secret)}");

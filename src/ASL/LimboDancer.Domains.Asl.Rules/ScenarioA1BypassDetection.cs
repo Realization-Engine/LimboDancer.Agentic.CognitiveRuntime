@@ -63,8 +63,10 @@ public static class ScenarioA1BypassDetection
     {
         ArgumentNullException.ThrowIfNull(there);
         ArgumentNullException.ThrowIfNull(already);
+        // "With a concealed enemy unit": a Dummy is no unit (A12.11), so enemy Dummies alone lose nothing (the referee's finding at the reviews); once a
+        // real one is there, the Dummies of the Location are removed with the rest.
         bool UnderQuestionMark(BypassLocationUnitFacts unit) => unit.Active && !unit.Captured && (unit.Hidden ? hiddenPlaced : unit.Concealed || unit.Dummy);
-        if (!there.Any(unit => unit.Side != bypassingSide && UnderQuestionMark(unit)))
+        if (!there.Any(unit => unit.Side != bypassingSide && !unit.Dummy && UnderQuestionMark(unit)))
         {
             return BypassRevealVerdict.None;
         }

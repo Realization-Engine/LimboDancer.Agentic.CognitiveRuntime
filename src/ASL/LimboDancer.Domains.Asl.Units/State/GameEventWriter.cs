@@ -237,6 +237,12 @@ public static class GameEventWriter
                     Strings(writer, "prcHeldInMelee", held);
                 }
 
+                // A11.71 (ruling R70.31; the reviews of pass 70): the projector reads the PRC held from the vehicles, written only when true.
+                if (phase.PrcMelee == true)
+                {
+                    writer.WriteBoolean("prcMelee", true);
+                }
+
                 break;
             case InstanceCreated created:
                 writer.WritePropertyName("instance");

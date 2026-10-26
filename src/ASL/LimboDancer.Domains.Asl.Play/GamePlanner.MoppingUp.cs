@@ -110,80 +110,70 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, ScenarioA1MoppingUp.GuardText(guardId, side!, building!));
         }
 
-        var events = new List<GameEvent>();
-        void Add(string type, EventPayload payload, IReadOnlyList<string>? visibility = null) =>
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, null, visibility));
+        // A12.153, A12.154 (the referee's finding at the reviews): what the Mopping Up finds under the "?" is the DEFENDER's until it is made, so the plan is
+        // always rolled and its line says only what the declarer knows; the hidden units placed, the Dummies removed, the building secured or not, the
+        // surrenders, and the Casualty dr are decided and written at the commit, and the records say them.
+        var proposal = new List<GameEvent>();
 
         // A12.141 (p. 78; ruling R70.17): the Mopping Up declaration is an activity of each declaring unit, and costs its "?" in the LOS of a Good Order
         // enemy ground unit within 16 hexes.
-        var lost = AddActionConcealmentLoss(scope, attemptId, expected, events, state, units);
-
-        foreach (var hidden in enemies.Where(unit => Is(unit, Conditions.Hidden)))
-        {
-            Add("hidden-placed", new ConditionsChanged(hidden.Id, ConditionChanges(ScenarioA1MoppingUp.HiddenPlacedConditions())), [hidden.Side]);
-        }
-
-        foreach (var dummy in enemies.Where(unit => unit.Kind == UnitKinds.Dummy))
-        {
-            Add("instance-eliminated", new InstanceEliminated(dummy.Id));
-        }
-
-        var concealed = enemies.Where(unit => ScenarioA1MoppingUp.Concealed(unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden))).ToArray();
-        var reasons = new List<string>();
-        var found = enemies.Count(unit => Is(unit, Conditions.Hidden));
-        var dummies = enemies.Count(unit => unit.Kind == UnitKinds.Dummy);
-
-        // Table player, pass 24: what the Mopping Up found is said.
-        var phrase = ScenarioA1MoppingUp.Phrase(ids, building!, found, dummies);
-        if (concealed.Length == 0)
-        {
-            // A26.11: every Location of the building, but a ground level holding an armed enemy vehicle in Bypass.
-            var bypassed = inside.Where(item => ScenarioA1MoppingUp.BypassedVehicle(true, item.Unit.Side != side, LiveFire.IsVehicle(item.Unit), item.Unit.Straddling is not null,
-                Is(item.Unit, Conditions.Abandoned), Is(item.Unit, Conditions.Captured))).Select(item => item.At with { Level = 0, Side = null }).ToHashSet();
-            BoardLocation[] secured = [.. hexes.SelectMany(hex => HexLevels(state, hex).Select(level => hex with { Level = level })).Where(location => !bypassed.Contains(location))];
-            Add("building-mopped-up", new BuildingMoppedUp(building!, side!, ids, secured));
-            reasons.Add(ScenarioA1MoppingUp.SecuredSummary(phrase, side!));
-            foreach (var broken in enemies.Where(unit => ScenarioA1MoppingUp.Surrenders(unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Broken), Is(unit, Conditions.Captured))))
-            {
-                var at = state.Location(broken.Id)!.Location;
-                foreach (var weapon in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == broken.Id).OrderBy(item => item.Id, StringComparer.Ordinal))
-                {
-                    Add("equipment-transferred", new EquipmentTransferred(weapon.Id, null, new MapPosition(at)));
-                }
-
-                if (at != guardAt)
-                {
-                    Add("instance-moved", new InstanceMoved(broken.Id, new MapPosition(guardAt)));
-                }
-
-                Add("conditions-changed", new ConditionsChanged(broken.Id, ConditionChanges(ScenarioA1MoppingUp.SurrenderConditions())));
-                Add("instance-captured", new InstanceCaptured(broken.Id, guard.Id));
-                reasons.Add(ScenarioA1MoppingUp.SurrenderText(broken.Id, guard.Id));
-            }
-
-            reasons.AddRange(ConcealmentLossNote(lost));
-            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, reasons);
-        }
-
-        Add("building-mopped-up", new BuildingMoppedUp(building!, side!, ids, null));
-        var defenders = concealed.Where(unit => ScenarioA1MoppingUp.Defender(Is(unit, Conditions.Broken), Is(unit, Conditions.Unarmed), Is(unit, Conditions.Captured))).ToArray();
-        var summary = ScenarioA1MoppingUp.NotSecuredSummary(phrase);
-        if (defenders.Length == 0)
-        {
-            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary, .. ConcealmentLossNote(lost)]);
-        }
-
-        // A12.154: -1 per Stealthy unit, -1 per HS-equivalent beyond one, the best leader's leadership unless alone, +1 per Lax unit; the catalog and the
-        // Inexperience are read here, and Rules counts (pass 32.g).
-        var (drm, notes) = ScenarioA1MoppingUp.CasualtyDrm([.. defenders.Select(unit => new MopUpDefenderFacts(unit.Kind == "asl:hero", unit.Kind == "asl:leader", Is(unit, Conditions.Heroic),
-            ScenarioA1MoppingUp.HalfSquads(unit.Kind == "asl:squad", unit.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind)), DefinitionOf(unit)?.Leadership, Is(unit, Conditions.Wounded),
-            Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True))]);
-
-        var before = events.ToArray();
+        var lost = AddActionConcealmentLoss(scope, attemptId, expected, proposal, state, units);
+        var before = proposal.ToArray();
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var built = new List<GameEvent>(before);
-            void Push(string type, EventPayload payload) => built.Add(Event(scope, attemptId, built.Count + 1, expected, type, payload, null, null));
+            void Push(string type, EventPayload payload, IReadOnlyList<string>? visibility = null) =>
+                built.Add(Event(scope, attemptId, built.Count + 1, expected, type, payload, null, visibility));
+            foreach (var hidden in enemies.Where(unit => Is(unit, Conditions.Hidden)))
+            {
+                Push("hidden-placed", new ConditionsChanged(hidden.Id, ConditionChanges(ScenarioA1MoppingUp.HiddenPlacedConditions())), [hidden.Side]);
+            }
+
+            foreach (var dummy in enemies.Where(unit => unit.Kind == UnitKinds.Dummy))
+            {
+                Push("instance-eliminated", new InstanceEliminated(dummy.Id));
+            }
+
+            var concealed = enemies.Where(unit => ScenarioA1MoppingUp.Concealed(unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden))).ToArray();
+            if (concealed.Length == 0)
+            {
+                // A26.11: every Location of the building, but a ground level holding an armed enemy vehicle in Bypass.
+                var bypassed = inside.Where(item => ScenarioA1MoppingUp.BypassedVehicle(true, item.Unit.Side != side, LiveFire.IsVehicle(item.Unit), item.Unit.Straddling is not null,
+                    Is(item.Unit, Conditions.Abandoned), Is(item.Unit, Conditions.Captured))).Select(item => item.At with { Level = 0, Side = null }).ToHashSet();
+                BoardLocation[] secured = [.. hexes.SelectMany(hex => HexLevels(state, hex).Select(level => hex with { Level = level })).Where(location => !bypassed.Contains(location))];
+                Push("building-mopped-up", new BuildingMoppedUp(building!, side!, ids, secured));
+                foreach (var broken in enemies.Where(unit => ScenarioA1MoppingUp.Surrenders(unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Broken), Is(unit, Conditions.Captured))))
+                {
+                    var at = state.Location(broken.Id)!.Location;
+                    foreach (var weapon in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == broken.Id).OrderBy(item => item.Id, StringComparer.Ordinal))
+                    {
+                        Push("equipment-transferred", new EquipmentTransferred(weapon.Id, null, new MapPosition(at)));
+                    }
+
+                    if (at != guardAt)
+                    {
+                        Push("instance-moved", new InstanceMoved(broken.Id, new MapPosition(guardAt)));
+                    }
+
+                    Push("conditions-changed", new ConditionsChanged(broken.Id, ConditionChanges(ScenarioA1MoppingUp.SurrenderConditions())));
+                    Push("instance-captured", new InstanceCaptured(broken.Id, guard.Id));
+                }
+
+                return built;
+            }
+
+            Push("building-mopped-up", new BuildingMoppedUp(building!, side!, ids, null));
+            var defenders = concealed.Where(unit => ScenarioA1MoppingUp.Defender(Is(unit, Conditions.Broken), Is(unit, Conditions.Unarmed), Is(unit, Conditions.Captured))).ToArray();
+            if (defenders.Length == 0)
+            {
+                return built;
+            }
+
+            // A12.154: -1 per Stealthy unit, -1 per HS-equivalent beyond one, the best leader's leadership unless alone, +1 per Lax unit; the catalog and the
+            // Inexperience are read here, and Rules counts (pass 32.g).
+            var (drm, _) = ScenarioA1MoppingUp.CasualtyDrm([.. defenders.Select(unit => new MopUpDefenderFacts(unit.Kind == "asl:hero", unit.Kind == "asl:leader", Is(unit, Conditions.Heroic),
+                ScenarioA1MoppingUp.HalfSquads(unit.Kind == "asl:squad", unit.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind)), DefinitionOf(unit)?.Leadership, Is(unit, Conditions.Wounded),
+                Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True))]);
             var drawn = draw(new RollRequest(1, 6));
             var rollId = $"{attemptId}-roll-1";
             Push("dice-rolled", new DiceRolled(rollId, "search-casualty", 1, 6, drawn.Values, DiceRolled.SystemSource, actor));
@@ -231,7 +221,7 @@ public sealed partial class GamePlanner
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [ScenarioA1MoppingUp.CasualtyText(summary, notes), .. ConcealmentLossNote(lost)])
+            [ScenarioA1MoppingUp.ProposalText(ids, building!, side!, guard.Id), .. ConcealmentLossNote(lost)])
         {
             Roll = new PlannedRoll("search-casualty", Build),
             FirstEventId = EventId(attemptId, 1),

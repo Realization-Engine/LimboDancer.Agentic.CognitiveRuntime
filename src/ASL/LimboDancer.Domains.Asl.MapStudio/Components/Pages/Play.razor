@@ -2363,7 +2363,7 @@ else if (state is not null)
             draftCache = (key, UnitOverlayBuilder.Build(UnitLibrary.TargetFor(board), committed.SetId, [.. committed.Units.Select(unit => unit.Document), .. drafts], renderer,
                 Library.Fragments, unit => DisplayText.Place(MapBoards, unit.Location)
                     + (draftNames.TryGetValue(unit.Document.Id, out var counter) ? $": {counter}. "
-                        : names?.Held(unit.Document.Id, state.Revision) is { } held && held != unit.Document.Id && held != UnitNames.Unnamed ? $": {held}. " : ": ")));
+                        : names?.Held(unit.Document.Id, state.Revision) is { } held && held != unit.Document.Id && !UnitNames.IsUnnamed(held) ? $": {held}. " : ": ")));
         }
 
         return draftCache.Overlay;
@@ -9316,7 +9316,7 @@ else if (state is not null)
                     PhaseChanged phase => $"{DisplayText.Side(phase.PhasingSide)} {Games.PhaseLabel(phase.Phase)}, Turn {phase.Turn}.",
                     MovementStepped step => $"A stack moved into {PlaceOf(step.To)}.",
                     AdvanceMoved advance => $"Units advanced into {PlaceOf(advance.To)}.",
-                    RoutStepped { With: not null } led => $"A leader routed with a broken unit to {PlaceOf(led.To)}.",
+                    // The UI review (A10.711, A12.14): the hand-over names no unit, and a Voluntary Rout leader may be under "?" out of every enemy LOS.
                     RoutStepped rout => $"A broken unit routed to {PlaceOf(rout.To)}.",
                     VoluntaryBreak voluntary => voluntary.Units.Count == 1 ? "A unit broke voluntarily." : "Units broke voluntarily.",
                     UnitsSearched search => $"A stack Searched from {PlaceOf(search.Location)}.",

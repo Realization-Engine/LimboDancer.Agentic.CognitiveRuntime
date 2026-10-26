@@ -12,13 +12,23 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 /// "4-6-7 squad G4" and "9-2 leader G2". A side's own units are numbered in the order they entered the game, and the adjudicator reads every unit by
 /// its owner's tag. A unit that takes another's place keeps its tag; a Deployed HS adds "a" or "b". The user's ruling of 2026-10-22 (option 2): the
 /// other side's units carry no tag in a side's view; one the view holds reads by its counter and its Location at that moment ("4-4-7 squad in
-/// [W4]"), so a unit has one name in every view and nothing follows it through concealment. A unit the view does not hold reads "a concealed unit".
+/// [W4]"), so a unit has one name in every view and nothing follows it through concealment. A unit the view does not hold reads "a concealed unit", or
+/// "an uninspected unit" beneath the top of a stack the view may not inspect.
 /// Play, Replay, and the records read the one instance kept for a game and a view; it grows with the game and what it has given is never changed.
 /// </summary>
 public sealed partial class UnitNames
 {
     /// <summary>What a view reads for a unit it may not name (rulings R23.1 and R19.8).</summary>
     public const string Unnamed = "a concealed unit";
+
+    /// <summary>
+    /// What a view reads for a counter beneath the top of an enemy stack it may not inspect, under no "?" (A2.9, A12.16; rulings R23.3, R70.18; the
+    /// referee's finding at the reviews of pass 70).
+    /// </summary>
+    public const string UninspectedUnit = "an uninspected unit";
+
+    /// <summary>Whether a name is one a view reads for a unit it may not name: <see cref="Unnamed"/> or <see cref="UninspectedUnit"/>.</summary>
+    public static bool IsUnnamed(string name) => name is Unnamed or UninspectedUnit;
 
     /// <summary>What a view reads for a weapon it does not hold.</summary>
     public const string UnseenWeapon = "a weapon not in view";
@@ -40,8 +50,9 @@ public sealed partial class UnitNames
     private readonly HashSet<string> seen = new(StringComparer.Ordinal);
     private readonly Dictionary<(string Side, string Group), int> enteredCount = [];
 
-    // The other side's units and weapons this view held at each revision.
+    // The other side's units and weapons this view held at each revision, and the units it counted beneath an uninspected stack's top (null for none).
     private readonly List<HashSet<string>> held = [];
+    private readonly List<HashSet<string>?> uninspected = [];
     private GameHistory history;
     private long through;
     private string lastEvent = string.Empty;
@@ -204,6 +215,11 @@ public sealed partial class UnitNames
             {
                 named = UnnamedRun().Replace(named, match => $"{match.Value.Split(", ").Length} concealed units");
             }
+
+            if (named.Contains(UninspectedPair, StringComparison.Ordinal))
+            {
+                named = UninspectedRun().Replace(named, match => $"{match.Value.Split(", ").Length} uninspected units");
+            }
             var boards = history.States.Count > 0 ? history.States[0].Map.Boards.Count : 1;
             named = LocationPattern().Replace(named, match => DisplayText.Place(boards, match.Value));
 
@@ -274,6 +290,12 @@ public sealed partial class UnitNames
     [GeneratedRegex(@"\ba concealed unit(?:, a concealed unit)+\b")]
     private static partial Regex UnnamedRun();
 
+    private const string UninspectedPair = UninspectedUnit + ", " + UninspectedUnit;
+
+    // Two or more "an uninspected unit" in a row, separated by commas.
+    [GeneratedRegex(@"\ban uninspected unit(?:, an uninspected unit)+\b")]
+    private static partial Regex UninspectedRun();
+
     private void Advance(GameHistory longer)
     {
         history = longer;
@@ -302,6 +324,7 @@ public sealed partial class UnitNames
             }
 
             var now = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string>? counted = null;
             if (!viewer.IsAdjudicator)
             {
                 // The view of this revision alone says which of the other side's units it holds by name; its events are not needed for that.
@@ -320,12 +343,45 @@ public sealed partial class UnitNames
                         See(weapon.Id);
                     }
                 }
+
+                counted = UninspectedOf(state, view, now);
             }
 
             held.Add(now);
+            uninspected.Add(counted);
             (through, lastEvent) = (revision, item.EventId);
         }
     }
+
+    /// <summary>
+    /// The other side's units a view counts beneath the top of a stack it may not inspect, at one revision (A2.9, A12.16; rulings R23.3, R70.18): under no
+    /// "?", not hidden, not a Dummy, not held by name, in a Location where the view seals an uninspected counter of their side. Null when it seals none.
+    /// </summary>
+    private HashSet<string>? UninspectedOf(GameState state, GameView view, HashSet<string> now)
+    {
+        if (!view.Sealed.Any(item => item.Uninspected))
+        {
+            return null;
+        }
+
+        var stacks = view.Sealed.Where(item => item.Uninspected).Select(item => (item.Side, item.Location)).ToHashSet();
+        var found = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var unit in state.Units)
+        {
+            if (unit.Status == InstanceStatus.Active && unit.Side is { } side && side != viewer.Name && !now.Contains(unit.Id) && unit.Kind != UnitKinds.Dummy
+                && GameState.Condition(unit, Conditions.Concealed) != ConditionState.True && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True
+                && state.Location(unit.Id) is { } place && stacks.Contains((side, place.Location)))
+            {
+                found.Add(unit.Id);
+            }
+        }
+
+        return found;
+    }
+
+    // A unit the view may not name at a revision: an uninspected stack's counter, or any other.
+    private string UnnamedAt(string id, long revision) =>
+        revision >= 1 && revision <= uninspected.Count && uninspected[(int)revision - 1]?.Contains(id) == true ? UninspectedUnit : Unnamed;
 
     private void Enter(string id, string? side, string kind, bool unit, long revision)
     {
@@ -417,7 +473,7 @@ public sealed partial class UnitNames
         var inView = mine || (check ? revision <= held.Count && held[(int)revision - 1].Contains(id) : seen.Contains(id));
         if (what.Unit)
         {
-            return inView && Instance(id, revision) is { } found ? Name(found.Unit, found.Revision) : Unnamed;
+            return inView && Instance(id, revision) is { } found ? Name(found.Unit, found.Revision) : UnnamedAt(id, revision);
         }
 
         if (!inView)
@@ -463,6 +519,6 @@ public sealed partial class UnitNames
             return PlaceAt(unit.Id, revision) is { } at ? $"{counter} in {at}" : counter;
         }
 
-        return Unnamed;
+        return UnnamedAt(unit.Id, revision);
     }
 }

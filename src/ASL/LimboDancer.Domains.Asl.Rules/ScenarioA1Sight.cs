@@ -189,4 +189,10 @@ public static class ScenarioA1Sight
         ArgumentNullException.ThrowIfNull(anySeerInLos);
         return setupClosed && (ownUnitThere || anySeerInLos());
     }
+
+    /// <summary>
+    /// Ruling R70.40 (the referee's finding at the reviews): which of the viewing side's own units in the Location inspect the stack: not a prisoner, which
+    /// follows its Guard and takes no part in CC (A20.5), and not a Dummy, which is no unit (A12.11).
+    /// </summary>
+    public static bool InspectsByPresence(bool dummy, bool captured) => !dummy && !captured;
 }

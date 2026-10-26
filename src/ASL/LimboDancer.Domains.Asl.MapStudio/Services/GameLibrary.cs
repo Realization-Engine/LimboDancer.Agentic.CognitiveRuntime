@@ -150,7 +150,8 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
 
         var history = GameProjector.Project([.. entry.Record.Events.Take((int)asOf)], units.Vocabulary, Catalogs, Chains(entry.Record), fire: FireRecordVerifier.Shared, rally: RallyRecordVerifier.Shared,
             closeCombat: CloseCombatRecordVerifier.Shared, ordnance: OrdnanceRecordVerifier.Shared);
-        var reader = new CaseReader(new HistoryGameSource([history]), new StudioBoardCatalog(boards), units.Vocabulary, Catalogs);
+        // A12.16 (ruling R70.18; the referee's finding at the reviews): a side's case read shows a stack it may not inspect as its view does.
+        var reader = new CaseReader(new HistoryGameSource([history]), new StudioBoardCatalog(boards), units.Vocabulary, Catalogs, live is null ? null : live.Planner.ViewOf);
         return reader.Read(new CaseRequest(entry.Record.Events[0].Scope, "map-studio-game-states", attacker, location, expectedRevision, perspective));
     }
 

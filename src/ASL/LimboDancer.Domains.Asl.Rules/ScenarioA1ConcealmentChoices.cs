@@ -88,6 +88,16 @@ public static class ScenarioA1ConcealmentChoices
         ? $"play.concealment: the viewing side forces the loss; {string.Join(", ", lost)} in {at} {(lost.Count == 1 ? "loses its" : "lose their")} \"?\" (A12.14; ruling R70.21)"
         : $"play.concealment: the viewing side declines to force the loss; the stack in {at} keeps its \"?\" (A12.14; ruling R70.21)";
 
+    /// <summary>
+    /// A12.14 (ruling R70.21; the referee's finding at the reviews): while the viewer's option on a moving stack's "?" waits, a side other than the viewing
+    /// one is refused every action as an open DEFENDER's window refuses the moving stack, with the same code and words, so a refusal tells it nothing of a
+    /// concealed enemy unit in LOS. <paramref name="choiceBar"/> is the refusal of R5.8; the viewing side, and a proposal of no side, read it as it is.
+    /// </summary>
+    public static string? PendingLossBar(string? choiceBar, bool concealmentLoss, string choiceSide, string? proposer) =>
+        choiceBar is not null && concealmentLoss && proposer is not null && proposer != choiceSide
+            ? "play.move-window: the DEFENDER may still fire at the stack's last MF expenditure (A8.1, A8.11)"
+            : choiceBar;
+
     /// <summary>A12.14 (ruling R70.21): the projector's check of a momentary forfeiture of "?": active units of one side, each concealed (they stay so).</summary>
     public static bool VerifiedAllowed(IEnumerable<(string? Side, bool Concealed)> units)
     {

@@ -366,7 +366,7 @@ public sealed class MovementPlans(LivePlay live)
             return new MovementPlanRun(MovementPlanTurn.Done, "No route is being moved.", []);
         }
 
-        return plan.Paused is not null || live.Planner.DefenderMayFire(state, events, plan.From)
+        return plan.Paused is not null || state.Choice is { Kind: ChoicePending.ConcealmentLoss } || live.Planner.DefenderMayFire(state, events, plan.From)
             ? new MovementPlanRun(MovementPlanTurn.Defender, StepNote(plan), [])
             : await Run(game, stepFirst: false, toEnd: false, defenderView: true);
     });
@@ -467,6 +467,13 @@ public sealed class MovementPlans(LivePlay live)
                 Revision = events.Count
             };
             plans[game] = plan;
+
+            // A12.14 (ruling R70.21): the viewer's option on the stack's "?" waits for the DEFENDER: it is his turn at this step, as at any window he
+            // decides, with no reasons, and his pass for the phase is not tried (it would be refused, which would tell the moving side of the choice).
+            if (after?.Choice is { Kind: ChoicePending.ConcealmentLoss })
+            {
+                return new MovementPlanRun(MovementPlanTurn.Defender, StepNote(plan), []);
+            }
 
             // A step's own attack (Residual FP, a Fire Lane) or a reveal may have changed the stack: the DEFENDER decides at this step, and then the
             // moving side decides again.

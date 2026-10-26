@@ -57,6 +57,16 @@ public static class ScenarioA1Visibility
     }
 
     /// <summary>
+    /// The top counter of a stack whose units aboard a vehicle are grouped with it (rulings R23.3, R70.18; the referee's finding at the reviews): a unit
+    /// aboard lies on or in its vehicle and is never the stack's top, so the vehicle, or another counter, is shown.
+    /// </summary>
+    public static string? TopCounter(IEnumerable<(string Id, bool ConcealedToEnemy, bool Aboard)> stack)
+    {
+        ArgumentNullException.ThrowIfNull(stack);
+        return TopCounter(stack.Where(counter => !counter.Aboard).Select(counter => (counter.Id, counter.ConcealedToEnemy)));
+    }
+
+    /// <summary>
     /// Whether an instance is withheld from the view: it, or anything it is inside or held by, is an enemy's hidden or concealed instance, belongs to
     /// a side setting up out of sight (ruling R23.3), or lies beneath the top of an enemy stack before play (A2.9). <paramref name="chain"/> is the
     /// instance first, then each holder or container outward. A concealed instance, or one beneath a top, is not withheld as the instance itself

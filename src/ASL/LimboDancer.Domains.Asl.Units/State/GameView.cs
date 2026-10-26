@@ -102,7 +102,8 @@ public sealed record GameView(
         // Ruling R23.3 (A2.9): before play starts, an enemy stack not under "?" shows only its top counter, so what its other counters hold is withheld too.
         // Ruling R70.18 (A12.16): after play, so does one the perspective may not inspect.
         var beforePlay = !state.SetupClosed;
-        var outOfInspection = beforePlay || uninspected is null ? null : uninspected;
+        // An empty set reads no Location (the boundary review): it is the usual case, and a Location is a scan of the state.
+        var outOfInspection = beforePlay || uninspected is not { Count: > 0 } ? null : uninspected;
         bool OutOfInspection(IGameObject item) => outOfInspection is not null && Enemy(item) && state.Location(item.Id) is { } at && outOfInspection.Contains(at.Location);
         var tops = new HashSet<string>(StringComparer.Ordinal);
         var stacked = new HashSet<(string Side, BoardLocation Location)>();
@@ -112,7 +113,7 @@ public sealed record GameView(
                 && state.Location(unit.Id) is not null && (beforePlay || OutOfInspection(unit))).GroupBy(unit => (unit.Side, state.Location(unit.Id)!.Location)))
             {
                 stacked.Add(stack.Key);
-                if (Rules.ScenarioA1Visibility.TopCounter(stack.Select(unit => (unit.Id, Concealed(unit)))) is { } top)
+                if (Rules.ScenarioA1Visibility.TopCounter(stack.Select(unit => (unit.Id, Concealed(unit), unit.Position is ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider or ContainmentRole.Crew }))) is { } top)
                 {
                     tops.Add(top);
                 }

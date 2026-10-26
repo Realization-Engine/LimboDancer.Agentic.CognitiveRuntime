@@ -148,11 +148,15 @@ public static class ScenarioA1MoraleCheck
         return !effect.Eliminated && (!effect.Broken || effect.Berserk == true || effect.Events.Contains("surrendered", StringComparer.Ordinal));
     }
 
-    /// <summary>The proposal's line for a leader's loss that calls for a LLMC or LLTC before the phase ends (A10.2; pass 70, ruling R70.3).</summary>
+    /// <summary>
+    /// The proposal's line for a leader's loss before the phase ends (A10.2; pass 70, ruling R70.3): it may call for a LLMC, decided and rolled at the commit,
+    /// so the line tells nothing of the units under "?" there (A12.14; the referee's finding at the reviews).
+    /// </summary>
     public static string LeaderLossDueText(IReadOnlyList<string> leaders)
     {
         ArgumentNullException.ThrowIfNull(leaders);
-        return $"play.leader-loss: the loss of {string.Join(", ", leaders)} calls for a LLMC of the units in {(leaders.Count == 1 ? "his Location" : "their Locations")}, rolled now (A10.2)";
+        return $"play.leader-loss: the loss of {string.Join(", ", leaders)} may call for a LLMC of the units in {(leaders.Count == 1 ? "his Location" : "their Locations")}, "
+            + "rolled at the commit if any is due (A10.2)";
     }
 
     /// <summary>Whether a resolved check holds any check at all: one with none (no LLMC owed, a Heat of Battle not reached) leaves nothing to record.</summary>
@@ -172,6 +176,21 @@ public static class ScenarioA1MoraleCheck
         ArgumentNullException.ThrowIfNull(units);
         return resolution.Effects.Any(effect => effect.Checks.Count > 0 && !effect.ConcealmentLost && !effect.Eliminated
             && units.FirstOrDefault(unit => unit.UnitId == effect.UnitId) is { } unit && (unit.Concealed == true || unit.Hidden == true));
+    }
+
+    /// <summary>
+    /// The other units of a check that its record leaves unnamed (A12.14, A12.3; the referee's finding at the reviews of pass 70): a concealed or hidden
+    /// unit that took no check, no Heat of Battle, and kept its "?", so a record both sides read says nothing of it. The caller names them only when the
+    /// check resolves the same without them (a leader among them may have lent his leadership); otherwise it withholds the record.
+    /// </summary>
+    public static IReadOnlySet<string> Unnamed(FireResolution resolution, IReadOnlyList<FireTarget> others)
+    {
+        ArgumentNullException.ThrowIfNull(resolution);
+        ArgumentNullException.ThrowIfNull(others);
+        bool Untouched(FireUnitEffect? effect) => effect is null || (effect.Checks.Count == 0 && effect.HeatOfBattle is null && !effect.ConcealmentLost && !effect.Eliminated);
+        return others.Where(unit => unit.UnitId is not null && (unit.Concealed == true || unit.Hidden == true)
+                && Untouched(resolution.Effects.FirstOrDefault(effect => effect.UnitId == unit.UnitId)))
+            .Select(unit => unit.UnitId!).ToHashSet(StringComparer.Ordinal);
     }
 
     /// <summary>

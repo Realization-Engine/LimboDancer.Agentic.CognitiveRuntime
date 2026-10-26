@@ -316,7 +316,13 @@ public static class ScenarioA1PassengerActionRules
     /// armored halftrack attacks only while CE; others attack. A Passenger of a Mobile vehicle that survives the first round is not held in Melee.
     /// </summary>
     public static (string Part, bool HeldInMelee) CloseCombat(string role, bool armored, bool exposed, bool vehicleMobile) =>
-        (role == FirePrc.Rider ? Apart : armored && !exposed ? Idle : Attacks, !vehicleMobile);
+        (role == FirePrc.Rider ? Apart : armored && !exposed ? Idle : Attacks, HeldInMelee(vehicleMobile));
+
+    /// <summary>
+    /// A11.71 (p. 76: "Passengers/Riders of Immobile vehicles are held in Melee"; pass 70, ruling R70.31): whether a PRC is held in Melee at the CCPh's end,
+    /// read by the projector from its vehicle's own state.
+    /// </summary>
+    public static bool HeldInMelee(bool vehicleMobile) => !vehicleMobile;
 
     /// <summary>
     /// D6.5, D6.24, A7.211 (pp. 205, 55; pass 70, ruling R70.32): PRC that unload, Bail Out, or survive TPBF in a Location holding a Known enemy unit are in

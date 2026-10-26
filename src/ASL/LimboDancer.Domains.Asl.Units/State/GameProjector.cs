@@ -578,7 +578,7 @@ public static class GameProjector
             string[] cleared = [.. Rules.ScenarioA1SequenceProjection.ClearedMarkers(state.Phase, state.Night).Concat(Rules.ScenarioA1SequenceProjection.PhaseMarkers)
                 .Select(ConditionName)];
             var newPlayerTurn = change.PhasingSide != state.PhasingSide;
-            var melee = state.Phase == "ccph" ? InMelee(state, change.PrcHeldInMelee) : null;
+            var melee = state.Phase == "ccph" ? InMelee(state, change.PrcHeldInMelee, change.PrcMelee == true) : null;
 
             // D5.34, D5.341: at the end of the Player Turn in which it was placed, a Stun becomes Stun +1, and a Recall becomes Recall; +1,
             // after which the AFV must leave by its Friendly Board Edge (ruling R5.17).
@@ -796,17 +796,25 @@ public static class GameProjector
         /// A11.15: at the end of the CCPh, Infantry of both sides that remain in one Location are held in Melee; prisoners are
         /// neither held nor hold (A20.5). The units are those of Locations that still hold units of both sides.
         /// </summary>
-        private HashSet<string> InMelee(GameState state, IReadOnlyList<string>? prcHeld)
+        private HashSet<string> InMelee(GameState state, IReadOnlyList<string>? prcHeld, bool prcFromVehicles)
         {
             // A11.7 (ruling R11.16): a vehicle is never held in Melee, and holds the enemy Infantry in its Location unless it is Abandoned or in Motion.
             // A11.15 EXC (ruling R14.2): a unit that keeps its "?" is neither held in Melee nor holds an enemy unit in Melee.
-            // A11.71 (pass 70, ruling R70.31): a unit aboard is read only when the record names it among the PRC held; a record before the pass names none,
-            // and every unit aboard is read as before (Aboard is asked only of a unit whose position is a container's).
+            // A11.71 (pass 70, ruling R70.31): a unit aboard is read only when the record names it among the PRC held, or, on a record since the reviews
+            // (prcMelee), when its vehicle is Immobile, read from the vehicle; a record before the pass names none, and every unit aboard is read as before
+            // (Aboard is asked only of a unit whose position is a container's).
+            var recorded = prcHeld is not null || prcFromVehicles;
+            // A crew inside is its vehicle's, never held (A11.7).
+            bool Held(UnitInstance unit, string vehicle) => prcHeld?.Contains(unit.Id, StringComparer.Ordinal)
+                ?? (unit.Position is ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider } && state.Unit(vehicle) is { } carrier
+                    && Rules.ScenarioA1PassengerActionRules.HeldInMelee(GameState.Condition(carrier, Conditions.Immobilized) != ConditionState.True
+                    && GameState.Condition(carrier, Conditions.Bogged) != ConditionState.True));
             var units = state.Units.Where(unit => Rules.ScenarioA1CloseCombatProjection.MeleeCandidate(unit.Status == InstanceStatus.Active, GameState.Condition(unit, Conditions.Captured) == ConditionState.True,
                 GameState.Condition(unit, Conditions.Concealed) == ConditionState.True, GameState.Condition(unit, Conditions.Hidden) == ConditionState.True,
                 unit.Kind == "asl:dummy", state.Location(unit.Id) is not null)
-                && Rules.ScenarioA1CloseCombatProjection.PrcMeleeCandidate(prcHeld is not null && unit.Position is ContainedPosition && state.Aboard(unit.Id) is not null, prcHeld is not null,
-                    prcHeld?.Contains(unit.Id, StringComparer.Ordinal) == true)).ToArray();
+                && (recorded && unit.Position is ContainedPosition && state.Aboard(unit.Id) is { } vehicle
+                    ? Rules.ScenarioA1CloseCombatProjection.PrcMeleeCandidate(true, true, Held(unit, vehicle))
+                    : Rules.ScenarioA1CloseCombatProjection.PrcMeleeCandidate(false, recorded, false))).ToArray();
             return units.GroupBy(unit => state.Location(unit.Id)!.Location)
                 .SelectMany(group => Rules.ScenarioA1CloseCombatProjection.InMelee([.. group.Select(unit => new Rules.MeleeUnitFacts(unit.Id, unit.Side, vocabulary.IsA(unit.Kind, "asl:vehicle"), HoldsInMelee(unit),
                     GameState.Condition(unit, Conditions.Concealed) == ConditionState.True, GameState.Condition(unit, Conditions.Hidden) == ConditionState.True))]))

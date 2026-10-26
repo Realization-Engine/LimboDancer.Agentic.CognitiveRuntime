@@ -542,20 +542,6 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// The PRC held in Melee as a CCPh ends (A11.71, p. 76; pass 70, ruling R70.31): the Passengers and Riders of each vehicle, as Rules reads their part in
-    /// CC, held only when it is Immobile; a crew inside is its vehicle's, never held (A11.7). Read once per plan from the planner's index; the projector reads
-    /// Melee for the others aboard no longer.
-    /// </summary>
-    private IReadOnlyList<string> PrcHeldInMelee(GameState state)
-    {
-        var index = MemoOf(state).Objects(state);
-        return [.. state.Units.Where(vehicle => vehicle.Status == InstanceStatus.Active && LiveFire.IsVehicle(vehicle))
-            .SelectMany(vehicle => index.Aboard(vehicle.Id).Where(unit => ScenarioA1PassengerActionRules.CloseCombat(unit.Position is ContainedPosition { Role: ContainmentRole.Rider } ? FirePrc.Rider
-                : FirePrc.Passenger, VehicleDefinition(vehicle)?.Unarmored != true, false, !Is(vehicle, Conditions.Immobilized) && !Is(vehicle, Conditions.Bogged)).HeldInMelee))
-            .Select(unit => unit.Id).Order(StringComparer.Ordinal)];
-    }
-
-    /// <summary>
     /// Whether an attack to capture a vehicle's Passengers captures the vehicle (A11.52; pass 70, ruling R70.34), as Rules reads it from the planner's index and
     /// the attack's effects: the Passengers it captured and eliminated, those left aboard (a squad captured at the Kill Number leaves its other HS), and the
     /// vehicle side's Personnel left in the Location, on foot or as Riders.

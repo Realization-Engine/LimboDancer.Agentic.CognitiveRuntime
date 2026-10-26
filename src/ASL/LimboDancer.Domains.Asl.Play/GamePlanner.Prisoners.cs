@@ -109,15 +109,15 @@ public sealed partial class GamePlanner
             return events;
         }
 
+        // A11.21, A12.11 (the referee's finding at the reviews): the plan is always rolled, its events built at the commit, so neither its shape nor its
+        // events tell the withdrawing side what is under the "?" there (or hidden) before it commits; a Random Selection is drawn only when it is due.
         string[] dropping = [.. drops.Values.SelectMany(item => item).Order(StringComparer.Ordinal)];
         string[] messages = [ScenarioA1PrisonerCalculator.AmbushWithdrawalSummary(ids, location.ToString(), to.ToString(), tiring), .. dropping.Length > 0 ? [ScenarioA1Withdrawal.DropsText(dropping)] : Array.Empty<string>()];
-        return ScenarioA1Withdrawal.SelectionRolled(verdict.Selection.Count)
-            ? new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], messages)
-            {
-                Roll = new PlannedRoll(ScenarioA1Withdrawal.SelectionPurpose, Build),
-                FirstEventId = EventId(attemptId, 1),
-            }
-            : new GamePlan(GamePlanStatus.Ready, scope, label, expected, Build(_ => throw new InvalidOperationException("An Ambush Withdrawal with no Random Selection rolls no dice.")), messages);
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], messages)
+        {
+            Roll = new PlannedRoll(ScenarioA1Withdrawal.SelectionPurpose, Build),
+            FirstEventId = EventId(attemptId, 1),
+        };
     }
 
     /// <summary>

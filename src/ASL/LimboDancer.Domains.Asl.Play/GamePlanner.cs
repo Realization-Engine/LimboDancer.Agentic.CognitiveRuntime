@@ -376,11 +376,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
 
-        // Ruling R5.8: a pending choice is answered before anything else happens in the game.
+        // Ruling R5.8: a pending choice is answered before anything else happens in the game. A12.14 (ruling R70.21): the viewer's option is refused to
+        // the other side as the open window refuses it.
         if (ScenarioA1SequenceCalculator.ChoicePendingBar(plan.Status == GamePlanStatus.Ready, action.Id.Value,
             () => Replay(existing).Current is { Choice: { } choice } ? (choice.Side, RefusalWordsOf(choice)) : null) is { } choicePending)
         {
-            return Refused(scope, label, expected, choicePending);
+            var waiting = Replay(existing).Current!.Choice!;
+            return Refused(scope, label, expected, ScenarioA1ConcealmentChoices.PendingLossBar(choicePending, waiting.Kind == ChoicePending.ConcealmentLoss, waiting.Side, proposer)!);
         }
 
         // A15.5: a surrender waits for its captor before anything else happens in the game.
@@ -777,8 +779,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 reasons.Add(ScenarioA1SequenceCalculator.FailureToRoutText(unit.Id, why));
             }
 
-            if (failed.Any(item => item.Unit.Kind == "asl:leader") && Replay([.. existing, .. events]).Current is { } eliminatedAfter
-                && LeaderLossDue(state, eliminatedAfter, [.. failed.Select(item => (item.Unit.Id, true))]))
+            // A12.14, A12.3 (the referee's finding at the reviews): either side may end the RtPh, so whether a LLMC is due is decided at the commit; the plan
+            // rolls whenever a leader is lost, and its line says only that one may be due.
+            if (failed.Any(item => item.Unit.Kind == "asl:leader") && Replay([.. existing, .. events]).Current is { } eliminatedAfter)
             {
                 (routLost, routAfter) = ([.. failed.Select(item => (item.Unit.Id, true))], eliminatedAfter);
                 reasons.Add(ScenarioA1MoraleCheck.LeaderLossDueText([.. failed.Where(item => item.Unit.Kind == "asl:leader").Select(item => item.Unit.Id)]));
@@ -911,10 +914,11 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 return;
             }
 
-            // A11.71 (p. 76; pass 70, ruling R70.31): the record that ends a CCPh names the PRC held in Melee, those of an Immobile vehicle.
+            // A11.71 (p. 76; pass 70, ruling R70.31): on the record that ends a CCPh the projector holds in Melee the PRC of an Immobile vehicle, read from
+            // the vehicle; the public record names no unit aboard (A12.2, A12.3; the referee's finding at the reviews).
             var payload = new PhaseChanged(turn, phase, phasing)
             {
-                PrcHeldInMelee = state.Phase == "ccph" ? PrcHeldInMelee(state) : null,
+                PrcMelee = state.Phase == "ccph" ? true : null,
             };
             var changed = EventId(attemptId, events.Count + 1);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "phase-changed", payload, rulePackage: null, visibility: null));
