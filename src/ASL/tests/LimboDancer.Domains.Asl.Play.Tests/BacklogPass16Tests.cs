@@ -535,12 +535,12 @@ public sealed class BacklogPass16Tests : IDisposable
         Assert.False(Is(Current.Unit("r1")!, Conditions.FirstFire));
     }
 
-    // R16.7 (E1.76): at night the SAN is two higher.
+    // R16.7 (E1.76): at night the SAN is two higher. The Sniper counter is in E8, within six hexes of the German in E3 (A14.2; pass 71, ruling R71.11).
     [Fact]
     public async Task AtNightTheSanIsTwoHigher()
     {
         await SetupAt(1, "german", ["night:3"], Sides(russianSan: 5), Unit("g1", "attacker-squad", "E3", "german"), Unit("r1", "defender-squad", "E5", "russian"),
-            Sniper("rs", "H8", "russian"));
+            Sniper("rs", "E8", "russian"));
         var before = Revision;
         Committed(await Do(GameActions.Fire, Then(3, 3, 4), new
         {

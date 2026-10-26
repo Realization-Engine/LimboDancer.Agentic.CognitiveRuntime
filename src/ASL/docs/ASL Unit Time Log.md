@@ -1802,3 +1802,4 @@ One session under the user's word of 2026-10-26 ("Run Pass 71 without my interve
 | The base measurement (main's build, alone); the briefs of 4b to 4g | 08:41 | 08:43 | 0:02 | | |
 | 4a, 71.1 (I): the Sniper's targets and results | 08:42 | 09:43 | 1:01 | | Agent 08:42 to about 09:23; Studio check; the measurement inconclusive (09:31 to 09:42, the page's harness); estimate 5:45 |
 | 4b, 71.1 (II): the SAN as state and Sniper Check | 09:43 | 10:27 | 0:44 | | Agent 09:43 to about 10:23 (beside the merge of main and the new baseline); Studio check; estimate 1:00 |
+| 4c, 71.1 (III): the Sniper counter at setup and its placement | 10:31 | 11:41 | 1:10 | | Agent 10:31 to about 11:37 (about 85 card-start methods reached); Studio check; estimate 0:55 |

@@ -148,6 +148,13 @@ public sealed partial class GamePlanner
         /// </summary>
         public ConcurrentDictionary<string, IReadOnlySet<BoardLocation>?> Uninspected { get; } = new(StringComparer.Ordinal);
 
+        /// <summary>
+        /// The hexes a side's Sniper counter may be placed in at setup, and the count of enemy-occupied hexes they meet (A14.2; pass 71, ruling R71.11), by the
+        /// placing side: keyed by side, since the count reads that side's view (an enemy hidden unit is not counted, an enemy "?" is). Read at setup only; the
+        /// fill reads the map's handles and <see cref="Objects"/> and has no side effect.
+        /// </summary>
+        public ConcurrentDictionary<string, (IReadOnlyList<BoardLocation> Hexes, int Tier)> SniperPlacements { get; } = new(StringComparer.Ordinal);
+
         // 1 once the ATTACKER's first unit owing a rout is kept (null kept too); written after the answer, read with a volatile read.
         private int attackerRoutKept;
         private UnitInstance? attackerRout;

@@ -1,6 +1,46 @@
 {
   "components": [
     {
+      "name": "AcronymSearchPanel",
+      "path": "Components/Acronyms/AcronymSearchPanel.razor",
+      "pages": [
+        "/acronyms"
+      ],
+      "usedBy": [
+        "AcronymSearch"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Clear",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "AcronymSearchPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Previous",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "AcronymSearchPanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Next",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "AcronymSearchPanel toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "@hit.Entry.Form @hit.Reason \u00B7 @(hit.Entry.Category == \u0022main\u0022 ? \u0022Rules and cou...",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "AcronymSearchPanel"
+        }
+      ]
+    },
+    {
       "name": "BoardEditorHeader",
       "path": "Components/Board/BoardEditorHeader.razor",
       "pages": [
@@ -1282,6 +1322,13 @@
         {
           "kind": "button",
           "label": "Propose: place @DisplayText.Side(side.Id)\u0027s non-OB \u0022?\u0022",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: place @DisplayText.Side(sniperSide)\u0027s Sniper counter",
           "dynamic": true,
           "status": "needed",
           "strip": "Play"

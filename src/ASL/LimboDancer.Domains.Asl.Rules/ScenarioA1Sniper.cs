@@ -50,6 +50,18 @@ public sealed record SniperCheckCandidate(bool PersonnelOnFoot, bool GoodOrder, 
 public sealed record SniperCheckParticipant(string Kind, int? Leadership, bool Heroic);
 
 /// <summary>
+/// A unit on the map as A14.2's setup placement reads it (pass 71, ruling R71.11): its hex as an index into the caller's table of hexes, whether it is an enemy
+/// of the placing side, and whether it is an enemy unit hidden from that side, so not on the board as it sees it (A12.3).
+/// </summary>
+public sealed record SniperPlacementUnit(int Hex, bool Enemy, bool Hidden);
+
+/// <summary>A14.2's placement (ruling R71.11): the indexes of the legal hexes, and how many enemy-occupied hexes within six hexes each has at least.</summary>
+public sealed record SniperPlacementVerdict(IReadOnlyList<int> Legal, int Tier);
+
+/// <summary>A side as A14.01's setup gate reads it (ruling R71.11): its id, its printed SAN, and whether its Sniper counter is placed.</summary>
+public sealed record SniperSetupSide(string Side, int? San, bool Placed);
+
+/// <summary>
 /// Snipers (A14; backlog pass 15, ruling R15.5; pass 32.h, S9): which DRs call for a Sniper attack, the Sniper dr, the Random Location and the target it finds,
 /// Random Selection among the targets, and the results. Play reads the records, the state, and the map, draws the dice, and writes the events.
 /// </summary>
@@ -395,4 +407,107 @@ public static class ScenarioA1Sniper
 
     /// <summary>A14.3: an effective Sniper attack puts every broken unit of the attacked side in the Location under DM.</summary>
     public static bool ComesUnderDm(bool active, bool attackedSide, bool broken, bool desperationMorale) => active && attackedSide && broken && !desperationMorale;
+
+    /// <summary>A14.2 (p. 82): the counter is placed "within six hexes of ≥ six enemy-occupied ... hexes if possible".</summary>
+    public const int PlacementRange = 6;
+
+    /// <summary>
+    /// A14.2 (p. 82; pass 71, ruling R71.11): each player places his Sniper counter "in an unoccupied hex within six hexes of ≥ six enemy-occupied (including
+    /// enemy "?", but excluding the enemy Sniper counter) hexes if possible. If this is not possible, ... ≥ five enemy-occupied hexes, etc., (thus it may be set
+    /// up anywhere if no enemy unit sets up onboard)". Counted from the placing side's view: a unit it sees occupies its hex, an enemy "?" and Dummy too, a
+    /// hidden unit does not; the Sniper counter is no unit (A14.01), so it is never among <paramref name="units"/>. The first <paramref name="candidates"/>
+    /// hexes of the caller's table are the ones it may be placed in; <paramref name="distance"/> reads the hexes between two of the table, null when unread.
+    /// </summary>
+    public static SniperPlacementVerdict Placements(int candidates, IReadOnlyList<SniperPlacementUnit> units, Func<int, int, int?> distance)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        ArgumentNullException.ThrowIfNull(distance);
+        var occupied = units.Where(unit => !unit.Hidden).Select(unit => unit.Hex).ToHashSet();
+        int[] enemy = [.. units.Where(unit => !unit.Hidden && unit.Enemy).Select(unit => unit.Hex).Distinct()];
+        var counts = new int?[candidates];
+        for (var hex = 0; hex < candidates; hex++)
+        {
+            if (!occupied.Contains(hex))
+            {
+                var near = 0;
+                foreach (var other in enemy)
+                {
+                    if (distance(hex, other) is { } hexes && hexes <= PlacementRange)
+                    {
+                        near++;
+                    }
+                }
+
+                counts[hex] = near;
+            }
+        }
+
+        var tier = Math.Min(PlacementRange, counts.Max() ?? 0);
+        return new SniperPlacementVerdict([.. Enumerable.Range(0, candidates).Where(hex => counts[hex] >= tier)], tier);
+    }
+
+    /// <summary>Why a hex is refused for a side's Sniper counter (A14.2; ruling R71.11); null when it is legal.</summary>
+    public static string? PlacementBar(bool legal, string side, string hex, int tier) =>
+        legal ? null
+        : $"play.sniper-placement: {hex} is no hex for the {side} Sniper counter: it goes in "
+            + (tier == 0 ? "any unoccupied hex, since no enemy unit is on the board" : $"an unoccupied hex within six hexes of {tier} or more enemy-occupied hexes, the most any unoccupied hex has")
+            + "; choose a hex the setup offers (A14.2; ruling R71.11)";
+
+    /// <summary>
+    /// A14.01, A14.2 (p. 82; ruling R71.11): the sides that still owe their Sniper counter before play starts, those with a SAN of 2 or more and no counter
+    /// placed, "DEFENDER first". Empty when none does.
+    /// </summary>
+    public static IReadOnlyList<string> PlacementsDue(IReadOnlyList<SniperSetupSide> sides, string? defender)
+    {
+        ArgumentNullException.ThrowIfNull(sides);
+        return [.. sides.Where(side => side.San is >= 2 && !side.Placed).OrderBy(side => side.Side == defender ? 0 : 1).Select(side => side.Side)];
+    }
+
+    /// <summary>Why a game from a card does not start play yet (A14.01, A14.2; ruling R71.11): a side, the DEFENDER first, has not placed its Sniper counter.</summary>
+    public static string? PlacementDueBar(IReadOnlyList<string> due)
+    {
+        ArgumentNullException.ThrowIfNull(due);
+        return due.Count == 0 ? null
+            : $"play.setup-incomplete: the {due[0]} side has a SAN of 2 or more and places its Sniper counter before play starts: propose its hex in the setup's Sniper step (A14.01, A14.2; ruling R71.11)";
+    }
+
+    /// <summary>
+    /// Why a side may not place its Sniper counter in the setup's Sniper step now (A14.2; ruling R71.11): the game is made without a card (its counters are
+    /// placed by hand, under the same check), a group of the card has not set up yet, the side owes none (a SAN below 2, or its counter placed), or the
+    /// DEFENDER places first; null when it may.
+    /// </summary>
+    public static string? PlacementTurnBar(string side, bool cardGame, bool setupOrderOpen, IReadOnlyList<string> due)
+    {
+        ArgumentNullException.ThrowIfNull(due);
+        return !cardGame ? "play.sniper-placement: in a game made without a card the Sniper counter is placed by hand with the other counters (A14.2; ruling R71.11)"
+            : setupOrderOpen ? "play.sniper-placement: a Sniper counter is placed once both sides have set up, before play starts (A14.2; ruling R71.11)"
+            : !due.Contains(side) ? $"play.sniper-placement: the {side} side has no Sniper counter to place: its SAN is below 2, or its counter is placed (A14.01, A14.2; ruling R71.11)"
+            : due[0] != side ? $"play.sniper-placement: the {due[0]} side, the DEFENDER, places its Sniper counter first (A14.2; ruling R71.11)"
+            : null;
+    }
+
+    /// <summary>A Sniper counter typed into a card game's placements (ruling R71.11): it is placed in the setup's Sniper step, which checks A14.2; null in any other game.</summary>
+    public static string? CardPlacementBar(bool cardGame) =>
+        cardGame ? "play.sniper-placement: in a game from a card the Sniper counter is placed in the setup's Sniper step once both sides have set up (A14.2; ruling R71.11)" : null;
+
+    /// <summary>The Sniper counter placed, in words (A14.2; ruling R71.11).</summary>
+    public static string PlacementText(string side, string hex) => $"play.sniper-placement: the {side} side places its Sniper counter in {hex} (A14.2; ruling R71.11)";
+
+    /// <summary>
+    /// A14.01 (p. 82; ruling R71.11): a game whose play started before its sides were given a Sniper counter is never given one, so a side with a SAN of 2 or
+    /// more and no counter makes no Sniper attacks. The sides so, in order; empty when every such side has one. The SAN and the counter are public.
+    /// </summary>
+    public static IReadOnlyList<string> NoCounter(IReadOnlyList<SniperSetupSide> sides)
+    {
+        ArgumentNullException.ThrowIfNull(sides);
+        return [.. sides.Where(side => side.San is >= 2 && !side.Placed).Select(side => side.Side)];
+    }
+
+    /// <summary>The sides of <see cref="NoCounter"/> in words, by the names given (A14.01); null for none.</summary>
+    public static string? NoCounterText(IReadOnlyList<string> names)
+    {
+        ArgumentNullException.ThrowIfNull(names);
+        return names.Count == 0 ? null
+            : $"The {string.Join(" and the ", names)} {(names.Count == 1 ? "side has a SAN but no Sniper counter in this game, so it makes" : "sides have a SAN but no Sniper counter in this game, so they make")} no Sniper attacks (A14.01).";
+    }
 }

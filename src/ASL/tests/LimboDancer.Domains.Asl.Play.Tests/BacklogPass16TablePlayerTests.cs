@@ -848,14 +848,15 @@ public sealed class BacklogPass16TablePlayerTests : IDisposable
         Assert.Null(((EquipmentInstance)Current.Find("gm")!).Holding);
     }
 
-    // 40. E1.76: SAN +2 at night to at most 7: a printed 6 activates on 7, not on 8.
+    // 40. E1.76: SAN +2 at night to at most 7: a printed 6 activates on 7, not on 8. The Sniper counter is in E8, within six hexes of the German in E3
+    // (A14.2; pass 71, ruling R71.11).
     [Theory]
     [InlineData(3, 4, true)]
     [InlineData(4, 4, false)]
     public async Task SanCappedAtSeven(int colored, int white, bool activates)
     {
         await SetupAt(1, "german", ["night:3"], Sides(russianSan: 6), Unit("g1", "attacker-squad", "E3", "german"), Unit("r1", "defender-squad", "E5", "russian"),
-            Sniper("rs", "H8", "russian"));
+            Sniper("rs", "E8", "russian"));
         var before = Revision;
         Committed(await FireAt(G1, "E5", Then(3, colored, white)));
         Assert.Equal(activates, Since(before).Select(item => item.Payload).OfType<SniperAttacked>().Any(item => item.Sniper == "rs"));

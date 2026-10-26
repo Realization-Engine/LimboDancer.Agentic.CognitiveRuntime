@@ -465,6 +465,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return PlanNonObConcealment(scope, conceal, existing, attemptId, expected, label);
         }
 
+        // A14.2 (pass 71, ruling R71.11): a side's Sniper counter, placed once both sides of a card have set up, the DEFENDER first.
+        if (arguments.TryGetProperty("sniper", out var sniper))
+        {
+            return PlanSniperPlacement(scope, sniper, existing, attemptId, expected, label);
+        }
+
         var events = new JsonArray();
         var sides = new Dictionary<string, string>(StringComparer.Ordinal);
         var boreSights = new List<(string Gun, BoardLocation At)>();
@@ -590,6 +596,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             {
                 return Refused(scope, label, expected, [.. setupReport.Reasons]);
             }
+        }
+
+        // A14.2 (pass 71, ruling R71.11): a Sniper counter placed by hand stands only in a game made without a card, in a hex A14.2 allows.
+        if (parsed.Events is { } sniping && sniping.Select(item => item.Payload).OfType<InstanceCreated>().Any(item => item.Instance.Kind == "asl:sniper")
+            && Replay([.. existing, .. sniping]).Current is { } snipingState
+            && HandSniperBar(snipingState, sniping.Select(item => item.Payload).OfType<InstanceCreated>().Select(item => item.Instance.Id).ToHashSet(StringComparer.Ordinal)) is { } sniperBar)
+        {
+            return Refused(scope, label, expected, sniperBar);
         }
 
         // Ruling R18.3: where a side's OB groups differ in ELR, each of its units names its group, since no side ELR stands in for it.

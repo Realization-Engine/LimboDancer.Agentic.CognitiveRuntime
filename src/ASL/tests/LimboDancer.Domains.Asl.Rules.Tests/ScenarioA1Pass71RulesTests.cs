@@ -289,4 +289,88 @@ public sealed class ScenarioA1Pass71RulesTests
         Assert.Equal([(UnitCondition.Ti, true)], ScenarioA1Sniper.SniperCheckConditions(losesConcealment: false));
         Assert.Equal([(UnitCondition.Ti, true), (UnitCondition.Concealed, false), (UnitCondition.Hidden, false)], ScenarioA1Sniper.SniperCheckConditions(losesConcealment: true));
     }
+
+    // Increment 4c: the Sniper counter at setup (A14.01, A14.2; ruling R71.11). The hexes lie on a line, so two are as many hexes apart as their indexes.
+    private static readonly Func<int, int, int?> Line = (one, two) => Math.Abs(one - two);
+
+    private static SniperPlacementUnit[] Enemies(params int[] hexes) => [.. hexes.Select(hex => new SniperPlacementUnit(hex, true, false))];
+
+    [Fact]
+    public void ASniperGoesWithinSixHexesOfSixEnemyHexesWhenItCanAndOfFiveWhenNoHexHasSix()
+    {
+        // A14.2 (p. 82): "in an unoccupied hex within six hexes of >= six enemy-occupied ... hexes if possible. If this is not possible, ... >= five
+        // enemy-occupied hexes, etc.". Seven enemy hexes, 0 to 6: only hex 7 is within six of six of them (1 to 6), and the count stops at six.
+        var six = ScenarioA1Sniper.Placements(20, Enemies(0, 1, 2, 3, 4, 5, 6), Line);
+        Assert.Equal(6, six.Tier);
+        Assert.Equal([7], six.Legal);
+
+        // Five enemy hexes, 0 to 4: hexes 5 and 6 are within six of all five; hex 7 is not (hex 0 is seven away).
+        var five = ScenarioA1Sniper.Placements(20, Enemies(0, 1, 2, 3, 4), Line);
+        Assert.Equal(5, five.Tier);
+        Assert.Equal([5, 6], five.Legal);
+        Assert.Null(ScenarioA1Sniper.PlacementBar(five.Legal.Contains(6), "russian", "[F6]", five.Tier));
+        Assert.StartsWith("play.sniper-placement: [F7] is no hex for the russian Sniper counter: it goes in an unoccupied hex within six hexes of 5 or more enemy-occupied hexes",
+            ScenarioA1Sniper.PlacementBar(five.Legal.Contains(7), "russian", "[F7]", five.Tier), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ASniperGoesInAnUnoccupiedHexAndAnywhereWhenNoEnemyIsOnTheBoard()
+    {
+        // A14.2 (p. 82): "an unoccupied hex": a friendly unit in hex 5 leaves hex 6 alone within six hexes of the five enemy hexes.
+        SniperPlacementUnit[] withFriend = [.. Enemies(0, 1, 2, 3, 4), new SniperPlacementUnit(5, false, false)];
+        Assert.Equal([6], ScenarioA1Sniper.Placements(20, withFriend, Line).Legal);
+
+        // "thus it may be set up anywhere if no enemy unit sets up onboard": every unoccupied hex, a hex whose distance is unread too.
+        var anywhere = ScenarioA1Sniper.Placements(4, [new SniperPlacementUnit(1, false, false)], (_, _) => null);
+        Assert.Equal(0, anywhere.Tier);
+        Assert.Equal([0, 2, 3], anywhere.Legal);
+    }
+
+    [Fact]
+    public void ASnipersPlacementCountsTheEnemyUnitsItsSideSeesAndNotTheHiddenOnes()
+    {
+        // A14.2 (p. 82; ruling R71.11): counted from the placing side's view. An enemy "?" is a unit it sees, so it occupies its hex and counts; a hidden
+        // enemy unit is not on the board as it sees it (A12.3): with one in hex 10, hex 10 is unoccupied and the tier stays five, met by hexes 5 and 6.
+        SniperPlacementUnit[] withHidden = [.. Enemies(0, 1, 2, 3, 4), new SniperPlacementUnit(10, true, true)];
+        var verdict = ScenarioA1Sniper.Placements(20, withHidden, Line);
+        Assert.Equal(5, verdict.Tier);
+        Assert.Equal([5, 6], verdict.Legal);
+
+        // Seen, the same unit in hex 10 makes hexes 5 and 6 within six of six enemy hexes, and hex 10 occupied.
+        Assert.Equal(6, ScenarioA1Sniper.Placements(20, Enemies(0, 1, 2, 3, 4, 10), Line).Tier);
+        Assert.Equal([5, 6], ScenarioA1Sniper.Placements(20, Enemies(0, 1, 2, 3, 4, 10), Line).Legal);
+    }
+
+    [Fact]
+    public void EverySideWithASanOfTwoOrMorePlacesItsSniperCounterBeforePlayTheDefenderFirst()
+    {
+        // A14.01, A14.2 (p. 82; ruling R71.11): "each player (DEFENDER first) places one friendly Sniper Counter"; a SAN below 2 gives none.
+        SniperSetupSide[] sides = [new("german", 3, false), new("russian", 2, false)];
+        Assert.Equal(["russian", "german"], ScenarioA1Sniper.PlacementsDue(sides, "russian"));
+        Assert.Equal(["german"], ScenarioA1Sniper.PlacementsDue([new("german", 3, false), new("russian", 2, true)], "russian"));
+        Assert.Empty(ScenarioA1Sniper.PlacementsDue([new("german", 1, false), new("russian", null, false)], "russian"));
+        Assert.StartsWith("play.setup-incomplete: the russian side has a SAN of 2 or more and places its Sniper counter before play starts",
+            ScenarioA1Sniper.PlacementDueBar(["russian", "german"]), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1Sniper.PlacementDueBar([]));
+
+        // The Sniper step: a card's game only, once both sides have set up, a side that owes one, the DEFENDER first.
+        string[] due = ["russian", "german"];
+        Assert.StartsWith("play.sniper-placement: in a game made without a card", ScenarioA1Sniper.PlacementTurnBar("russian", false, false, due), StringComparison.Ordinal);
+        Assert.StartsWith("play.sniper-placement: a Sniper counter is placed once both sides have set up", ScenarioA1Sniper.PlacementTurnBar("russian", true, true, due), StringComparison.Ordinal);
+        Assert.StartsWith("play.sniper-placement: the russian side, the DEFENDER, places its Sniper counter first", ScenarioA1Sniper.PlacementTurnBar("german", true, false, due), StringComparison.Ordinal);
+        Assert.StartsWith("play.sniper-placement: the german side has no Sniper counter to place", ScenarioA1Sniper.PlacementTurnBar("german", true, false, []), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1Sniper.PlacementTurnBar("russian", true, false, due));
+    }
+
+    [Fact]
+    public void AGameStartedWithoutASidesSniperCounterSaysItMakesNoSniperAttacks()
+    {
+        // A14.01 (p. 82; ruling R71.11): a game whose play started before the counter was given is never given one.
+        Assert.Equal(["german"], ScenarioA1Sniper.NoCounter([new("german", 3, false), new("russian", 2, true)]));
+        Assert.Empty(ScenarioA1Sniper.NoCounter([new("german", 1, false), new("russian", 2, true)]));
+        Assert.Equal("The German side has a SAN but no Sniper counter in this game, so it makes no Sniper attacks (A14.01).", ScenarioA1Sniper.NoCounterText(["German"]));
+        Assert.Equal("The German and the Russian sides have a SAN but no Sniper counter in this game, so they make no Sniper attacks (A14.01).",
+            ScenarioA1Sniper.NoCounterText(["German", "Russian"]));
+        Assert.Null(ScenarioA1Sniper.NoCounterText([]));
+    }
 }

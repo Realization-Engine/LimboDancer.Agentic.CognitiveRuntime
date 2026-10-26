@@ -171,7 +171,13 @@ public sealed class BacklogPass71Tests : IDisposable
     private async Task Setup(int? germanSan, int russianSan, string[] specialRules, params Dictionary<string, object>[] placements)
     {
         Dictionary<string, object>[] all = [Squad("g1", "E3", "german"), Squad("r1", "E4", "russian"), Sniper("rs", "E7", "russian"), .. placements];
-        Committed(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
+        Committed(await FirstSetup(germanSan, russianSan, specialRules, all));
+        await Advance();
+    }
+
+    /// <summary>The first setup of a game made without a card: the sides with the SANs given, and the placements given.</summary>
+    private async Task<PlayResult> FirstSetup(int? germanSan, int russianSan, string[] specialRules, Dictionary<string, object>[] placements) =>
+        await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
         {
             gameId = Scope.Game,
             attemptId = "setup-1",
@@ -191,10 +197,8 @@ public sealed class BacklogPass71Tests : IDisposable
                 ["scenarioMonth"] = 7,
                 ["scenarioYear"] = 1942,
             },
-            placements = all,
-        })));
-        await Advance();
-    }
+            placements,
+        }));
 
     private async Task Advance(int times = 1)
     {
@@ -446,5 +450,272 @@ public sealed class BacklogPass71Tests : IDisposable
         Assert.Equal(3, ScenarioA1Sniper.ActualSan(2, Current.Night, 1));
         Assert.Equal(InstanceStatus.Active, Current.Find("rs")!.Status);
         Assert.False(History.HasErrors);
+    }
+
+    // Increment 4c: the Sniper counter at setup (A14.01, A14.2; ruling R71.11). The card games are The Guards Counterattack on board 01 with its real terrain:
+    // the Germans set up first, the Russians move first, so the Germans are the DEFENDER; both SANs are 6.
+    private const string Guards = "guards-counterattack";
+
+    private GamePlanner CardPlanner() => new(store, new InMemoryBoardCatalog([Board01Fixture.Handle()]), Vocabulary, [Catalog]);
+
+    private GameState CardState => CardPlanner().Replay(store.Read(Scope)!.Events).Current!;
+
+    private async Task<PlayResult> CardAct(Abstractions.Actions.ActionDescriptor action, object arguments)
+    {
+        var node = JsonSerializer.SerializeToNode(arguments)!.AsObject();
+        node["gameId"] = Scope.Game;
+        node["attemptId"] = $"card-{Revision}";
+        node["expectedRevision"] = Revision;
+        if (Revision == 0)
+        {
+            node["start"] = JsonSerializer.SerializeToNode(new Dictionary<string, object?>
+            {
+                ["label"] = Guards,
+                ["catalog"] = $"asl-scenario-a1@{LiveFire.CatalogVersion}",
+                ["boards"] = Bd01,
+                ["firstSide"] = null,
+                ["sides"] = Array.Empty<object>(),
+                ["scenario"] = new
+                {
+                    id = Guards,
+                    sha256 = ScenarioCards.Sha256(Guards),
+                    title = Guards
+                },
+            });
+        }
+
+        return await Commit(new GamePlay(CardPlanner(), store, new NullAudit(), roller: Then(6)), action, JsonSerializer.SerializeToElement(node));
+    }
+
+    private Task<PlayResult> PlaceSniper(string side, string at) => CardAct(GameActions.Setup, new
+    {
+        sniper = new
+        {
+            side,
+            at
+        }
+    });
+
+    /// <summary>
+    /// A group's whole OB on board 01, as a player sets it up (pass 19's model): each line in its area, or the group's building areas, squads three to a hex,
+    /// SMC with the first squad, SW held by a squad of the area.
+    /// </summary>
+    private static Dictionary<string, object>[] Ob(ScenarioCard card, string side, int groupIndex)
+    {
+        var group = card.Sides.Single(item => item.Side == side).Groups[groupIndex];
+        var id = ScenarioCards.GroupId(side, groupIndex);
+        var placements = new List<Dictionary<string, object>>();
+        var squadsAt = new Dictionary<string, int>(StringComparer.Ordinal);
+        var holders = new Dictionary<string, string>(StringComparer.Ordinal);
+        var serial = 0;
+        foreach (var line in group.Units)
+        {
+            var areas = line.Area is { } named ? group.Areas.Where(area => area.Id == named).ToArray() : [.. group.Areas.Where(area => area.Kind == "building")];
+            var hexes = areas.SelectMany(area => area.Hexes!).ToArray();
+            var definition = Catalog.Definition(line.Definition)!;
+            for (var count = 0; count < line.Count; count++)
+            {
+                var unitId = $"{id}-{++serial}";
+                if (Vocabulary.IsA(definition.Kind, "asl:equipment"))
+                {
+                    placements.Add(new()
+                    {
+                        ["id"] = unitId,
+                        ["kind"] = definition.Kind,
+                        ["definition"] = line.Definition,
+                        ["side"] = side,
+                        ["holding"] = new
+                        {
+                            holder = holders[areas[0].Id],
+                            role = "possessed"
+                        },
+                        ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+                    });
+                    continue;
+                }
+
+                var hex = definition.Kind == "asl:squad" ? hexes.First(item => squadsAt.GetValueOrDefault(item) < 3) : hexes[0];
+                if (definition.Kind == "asl:squad")
+                {
+                    squadsAt[hex] = squadsAt.GetValueOrDefault(hex) + 1;
+                    holders.TryAdd(areas[0].Id, unitId);
+                }
+
+                var unit = Unit(unitId, definition.Kind, line.Definition, hex, side);
+                unit["group"] = id;
+                placements.Add(unit);
+            }
+        }
+
+        return [.. placements];
+    }
+
+    /// <summary>The Guards Counterattack with both sides set up: the Germans' OB, then the Russians' two groups.</summary>
+    private async Task GuardsSetUp()
+    {
+        var card = ScenarioCards.Read(Guards, Catalog)!.Card!;
+        Committed(await CardAct(GameActions.Setup, new
+        {
+            placements = Ob(card, "german", 0)
+        }));
+        Committed(await CardAct(GameActions.Setup, new
+        {
+            placements = (Dictionary<string, object>[])[.. Ob(card, "russian", 0), .. Ob(card, "russian", 1)]
+        }));
+        Assert.True(CardPlanner().CardSetup(CardState, new HashSet<string>())!.Complete);
+    }
+
+    [Fact]
+    public async Task ACardGameStartsPlayOnlyOnceEachSideHasPlacedItsSniperCounterTheDefenderFirst()
+    {
+        // A14.01, A14.2 (p. 82; ruling R71.11): every OB with a SAN of 2 or more has a Sniper; "Prior to the start of play, each player (DEFENDER first)
+        // places one friendly Sniper Counter". No counter is placed while a group still sets up.
+        var card = ScenarioCards.Read(Guards, Catalog)!.Card!;
+        Committed(await CardAct(GameActions.Setup, new
+        {
+            placements = Ob(card, "german", 0)
+        }));
+        Assert.StartsWith("play.sniper-placement: a Sniper counter is placed once both sides have set up",
+            Assert.Single((await PlaceSniper("german", L("A1"))).Reasons), StringComparison.Ordinal);
+        Committed(await CardAct(GameActions.Setup, new
+        {
+            placements = (Dictionary<string, object>[])[.. Ob(card, "russian", 0), .. Ob(card, "russian", 1)]
+        }));
+        Assert.Equal(["german", "russian"], CardPlanner().SniperPlacementsDue(CardState));
+
+        // Play waits for the German counter, and the Russians wait for the Germans; a counter typed into the placements is refused in a card's game.
+        Assert.StartsWith("play.setup-incomplete: the german side has a SAN of 2 or more and places its Sniper counter before play starts",
+            Assert.Single((await CardAct(GameActions.AdvancePhase, new
+            {
+            })).Reasons), StringComparison.Ordinal);
+        Assert.StartsWith("play.sniper-placement: the german side, the DEFENDER, places its Sniper counter first",
+            Assert.Single((await PlaceSniper("russian", L("A1"))).Reasons), StringComparison.Ordinal);
+        Assert.StartsWith("play.sniper-placement: in a game from a card the Sniper counter is placed in the setup's Sniper step",
+            Assert.Single((await CardAct(GameActions.Setup, new
+            {
+                placements = new[] { Sniper("gs", "A1", "german") }
+            })).Reasons), StringComparison.Ordinal);
+
+        // A hex a German unit holds is no hex for it ("an unoccupied hex").
+        var germanAt = CardState.Location("german-1-1")!.Location;
+        Assert.StartsWith($"play.sniper-placement: [{germanAt.Hex}] is no hex for the german Sniper counter",
+            Assert.Single((await PlaceSniper("german", germanAt.ToString())).Reasons), StringComparison.Ordinal);
+
+        // The German counter goes in a hex the planner offers, in public; then the Russians place theirs, and play starts.
+        var german = CardPlanner().SniperPlacements(CardState, "german")[0];
+        var before = Revision;
+        Committed(await PlaceSniper("german", german.ToString()));
+        var placed = Assert.Single(Since(before));
+        Assert.Null(placed.Visibility);
+        Assert.Equal(("asl:sniper", "german"), (((InstanceCreated)placed.Payload).Instance.Kind, ((InstanceCreated)placed.Payload).Instance.Side));
+        Assert.Equal(german, CardState.Location("sniper-german")!.Location);
+        Assert.StartsWith("play.setup-incomplete: the russian side", Assert.Single((await CardAct(GameActions.AdvancePhase, new
+        {
+        })).Reasons), StringComparison.Ordinal);
+        Assert.StartsWith("play.sniper-placement: the german side has no Sniper counter to place",
+            Assert.Single((await PlaceSniper("german", german.ToString())).Reasons), StringComparison.Ordinal);
+        Committed(await PlaceSniper("russian", CardPlanner().SniperPlacements(CardState, "russian")[0].ToString()));
+        Assert.Empty(CardPlanner().SniperPlacementsDue(CardState));
+        Committed(await CardAct(GameActions.AdvancePhase, new
+        {
+        }));
+        Assert.True(CardState.SetupClosed);
+        Assert.False(CardPlanner().Replay(store.Read(Scope)!.Events).HasErrors);
+        Assert.Empty(GamePlanner.SniperCounterMissing(CardState));
+    }
+
+    [Fact]
+    public async Task ACardsSniperHexesAreTheUnoccupiedPlayableHexesNearTheMostEnemyHexes()
+    {
+        // A14.2 (p. 82; ruling R71.11): the German counter goes in an unoccupied hex within six hexes of six or more Russian-occupied hexes, else five, and so
+        // on, inside the card's playable area (hexrows A to P). Each hex offered meets the best count any unoccupied playable hex has, at most six.
+        await GuardsSetUp();
+        var state = CardState;
+        var card = ScenarioCards.Read(Guards, Catalog)!.Card!;
+        var board = Board01Fixture.Handle();
+        var occupied = state.Units.Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id) is not null)
+            .Select(unit => state.Location(unit.Id)!.Location.Hex).ToHashSet();
+        HexName[] russian = [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == "russian" && state.Location(unit.Id) is not null)
+            .Select(unit => state.Location(unit.Id)!.Location.Hex).Distinct()];
+        var counts = board.Geometry.Hexes().Select(board.Geometry.NameOf).Where(hex => !occupied.Contains(hex) && ScenarioCards.Playable(card, new BoardLocation(BoardRef.Parse("bd01"), hex, 0)))
+            .ToDictionary(hex => hex, hex => russian.Count(other => board.Distance(hex, other) <= 6));
+        var tier = Math.Min(6, counts.Values.Max());
+        var offered = CardPlanner().SniperPlacements(state, "german");
+        Assert.Equal(counts.Where(item => item.Value >= tier).Select(item => item.Key.ToString()).Order(StringComparer.Ordinal),
+            offered.Select(at => at.Hex.ToString()).Order(StringComparer.Ordinal));
+        Assert.All(offered, at => Assert.Equal(0, at.Level));
+    }
+
+    [Fact]
+    public async Task AGameMadeWithoutACardPlacesItsSniperByHandUnderTheSameCheck()
+    {
+        // A14.2 (ruling R71.11): the German 4-6-7 in E3 is the one enemy unit, so the Russian counter goes within six hexes of it: E4 holds the Russian
+        // 4-4-7, and L3 is seven hexes from E3; E7 is the hex every other test of this class uses.
+        Dictionary<string, object>[] units = [Squad("g1", "E3", "german"), Squad("r1", "E4", "russian")];
+        Assert.StartsWith("play.sniper-placement: [E4] is no hex for the russian Sniper counter",
+            Assert.Single((await FirstSetup(null, 6, [], [.. units, Sniper("rs", "E4", "russian")])).Reasons), StringComparison.Ordinal);
+        Assert.StartsWith("play.sniper-placement: [L3] is no hex for the russian Sniper counter: it goes in an unoccupied hex within six hexes of 1 or more enemy-occupied hexes",
+            Assert.Single((await FirstSetup(null, 6, [], [.. units, Sniper("rs", "L3", "russian")])).Reasons), StringComparison.Ordinal);
+        Committed(await FirstSetup(null, 6, [], [.. units, Sniper("rs", "E7", "russian")]));
+        Assert.Empty(CardPlanner().SniperPlacementsDue(Current));
+
+        // The Sniper step is a card's: in this game the counter is placed by hand. Once play has started no counter is given (A14.01).
+        Assert.StartsWith("play.sniper-placement: in a game made without a card",
+            Assert.Single((await Do(GameActions.Setup, NoRoll(), new
+            {
+                sniper = new
+                {
+                    side = "german",
+                    at = L("E7")
+                }
+            })).Reasons), StringComparison.Ordinal);
+        await Advance();
+        Assert.StartsWith("play.setup-closed",
+            Assert.Single((await Do(GameActions.Setup, NoRoll(), new
+            {
+                sniper = new
+                {
+                    side = "german",
+                    at = L("E7")
+                }
+            })).Reasons), StringComparison.Ordinal);
+        Assert.Empty(GamePlanner.SniperCounterMissing(Current));
+    }
+
+    [Fact]
+    public async Task ASnipersHexesCountTheEnemyQuestionMarksItsSideSeesAndNotTheHiddenUnits()
+    {
+        // A14.2 (p. 82; ruling R71.11): "enemy-occupied (including enemy "?" ...) hexes", counted from the Russian view: the concealed German squad in J3 counts,
+        // so the counter goes within six hexes of both E3 and J3; the hidden German squad in G5 is not on the board as the Russians see it, so it neither
+        // counts nor occupies G5.
+        Committed(await FirstSetup(null, 6, [], [Squad("g1", "E3", "german"), Squad("g2", "J3", "german", Conditions.Concealed), Squad("g3", "G5", "german", Conditions.Hidden),
+            Squad("r1", "E4", "russian")]));
+        var board = Board();
+        HexName[] taken = [HexName.Parse("E3"), HexName.Parse("J3"), HexName.Parse("E4")];
+        var expected = board.Geometry.Hexes().Select(board.Geometry.NameOf)
+            .Where(hex => !taken.Contains(hex) && board.Distance(hex, HexName.Parse("E3")) <= 6 && board.Distance(hex, HexName.Parse("J3")) <= 6)
+            .Select(hex => hex.ToString()).Order(StringComparer.Ordinal).ToArray();
+        var offered = Planner().SniperPlacements(Current, "russian").Select(at => at.Hex.ToString()).Order(StringComparer.Ordinal).ToArray();
+        Assert.Equal(expected, offered);
+        Assert.Contains("G5", offered);
+    }
+
+    [Fact]
+    public async Task AGameWhoseSetupClosedBeforeThePassIsGivenNoSniperCounterAndSaysSo()
+    {
+        // A14.01 (ruling R71.11): The Guards Counterattack as it was played (the fixture guards-dl-01) started with no Sniper counter; it replays as it did, owes
+        // none, takes none in a setup step, and the page's line says both sides make no Sniper attacks.
+        var tenant = Guid.Parse("5a7d1f00-0000-4000-8000-0000000057d0");
+        var file = Path.Combine(root, tenant.ToString("N"), "guards-dl-01.game.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "guards-dl-01.game.json"), file);
+        var planner = CardPlanner();
+        var scope = new GameScope(tenant, "guards-dl-01");
+        var events = store.Read(scope)!.Events;
+        var history = planner.Replay(events);
+        Assert.False(history.HasErrors);
+        Assert.DoesNotContain(history.Current!.Entities, item => item.Kind == "asl:sniper");
+        Assert.Empty(planner.SniperPlacementsDue(history.Current!));
+        Assert.Equal(["german", "russian"], GamePlanner.SniperCounterMissing(history.Current!));
     }
 }

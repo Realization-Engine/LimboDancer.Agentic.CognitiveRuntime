@@ -148,6 +148,44 @@ else
             }
         }
     </text>;
+    // Pass 71 (A14.2; ruling R71.11): once both sides of a card have set up, each side with a SAN of 2 or more places its Sniper counter, the DEFENDER first;
+    // the other side is told only that it does.
+    RenderFragment sniperBlock = @<text>
+        @if (state is not null && SetupOpen && history is { Events.Count: > 0 } && SetupView is { CurrentOrder: null } && SniperDue is [var sniperSide, ..])
+        {
+            <fieldset class="setup-sniper" id="setup-sniper" data-side="@sniperSide">
+                <legend>Sniper counter for @DisplayText.Side(sniperSide) (A14.2; ruling R71.11)</legend>
+                @if (Viewer.IsAdjudicator || sniperSide == viewAs)
+                {
+                    var sniperHexes = Live.Planner.SniperPlacements(state, sniperSide);
+                    <RuleHelp Id="sniper-help" Summary="Before play, each side with a SAN of 2 or more places its Sniper counter, the DEFENDER first (A14.2).">
+                        The counter goes in an unoccupied hex within six hexes of six or more enemy-occupied hexes, or of five if no hex has six, and so on; anywhere
+                        when no enemy unit is on the board. Enemy "?" count, hidden units and the enemy Sniper counter do not. The counter is seen by both sides.
+                    </RuleHelp>
+                    <label>
+                        Hex
+                        <select id="@($"sniper-hex-{sniperSide}")" class="sniper-hex" value="@sniperHex" @onchange="@(args => sniperHex = args.Value?.ToString() ?? string.Empty)">
+                            <option value="">Choose a hex (@sniperHexes.Count)</option>
+                            @foreach (var at in sniperHexes)
+                            {
+                                <option value="@at">@PlaceOf(at)</option>
+                            }
+                        </select>
+                    </label>
+                    <button type="button" class="propose-sniper" id="@($"propose-sniper-{sniperSide}")" disabled="@(!sniperHexes.Any(at => at.ToString() == sniperHex))"
+                            @onclick="@(() => ProposeSniper(sniperSide))">Propose: place @DisplayText.Side(sniperSide)'s Sniper counter</button>
+                }
+                else
+                {
+                    <p class="muted" id="sniper-waiting">The @DisplayText.Side(sniperSide) side places its Sniper counter now (A14.2). Hand the screen over by choosing its view.</p>
+                }
+                @if (SniperDue.Count > 1)
+                {
+                    <p class="muted" id="sniper-next">The @DisplayText.Side(SniperDue[1]) side places its own next (A14.2: the DEFENDER first).</p>
+                }
+            </fieldset>
+        }
+    </text>;
     RenderFragment setupBlock = @<div id="play-setup" class="@(SetupMode ? "setup-mode" : null)">
         <h3>Setup</h3>
         @if (SetupMode && SetupView is { } modeReport)
@@ -221,6 +259,7 @@ else
                     <SetupCounters Model="@CounterModel" OnChange="@ChangePlacement" OnMove="@(key => (pickingKey, swapFrom) = (pickingKey == key ? null : key, null))" OnLevel="@SetStackLevel"
                                    OnSelect="@SelectStack" OnRemove="@RemovePlacement" OnSwap="@(location => (swapFrom, pickingKey, swapNote) = (swapFrom == SwapHex(location) ? null : SwapHex(location), null, null))" />
                     @nonObBlock
+                    @sniperBlock
                     <details id="setup-by-hand">
                         <summary>Add a counter by hand</summary>
                         <SetupPlacementEditor Draft="@PlaceDraft" Definitions="@DefinitionChoices" Groups="@GroupChoiceList" Entries="@EntryChoices"
@@ -240,6 +279,7 @@ else
                 <SetupPoolsTable Report="@setup" DefinitionLabel="@DefinitionLabel" OutOfSight="@Unseen" />
             }
             @nonObBlock
+            @sniperBlock
             @if (history is null && ChosenCard is { Minimal: false } startCard)
             {
                 @* Pass 30: the game may start with no counter placed, so each side sets up on the game's map, in its own view. *@
@@ -373,6 +413,11 @@ else if (state is not null)
                 <FireHistory Records="@FireRecords" When="@WhenOf" Replay="@ReplayFrom" />
                 <ActionRecordList Heading="Close Combat" ListId="play-close-combats" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(CloseCombatRecords, "cc")' />
                 <ActionRecordList Heading="Night and weather" ListId="play-night" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(NightRecords, "night")' />
+                @if (SniperMissing is { } sniperMissing)
+                {
+                    @* Pass 71 (A14.01; ruling R71.11): a game whose play started without a side's Sniper counter is never given one. *@
+                    <p class="muted" id="play-sniper-missing">@sniperMissing</p>
+                }
                 <ActionRecordList Heading="Snipers" ListId="play-snipers" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(SniperRecords, "sniper")' />
                 <ActionRecordList Heading="Rally, Rout, and other actions" ListId="play-rallies" When="@WhenOf" Replay="@ReplayFrom"
                                   Records="@([.. RallyAndRepairRecords.Select(item => new ActionRecordList.Entry(item.EventId, item.Kind, item.Text))])" />
@@ -5247,6 +5292,7 @@ else if (state is not null)
         placeHolder = string.Empty;
         placeEntry = string.Empty;
         nonObChosen.Clear();
+        sniperHex = string.Empty;
         retainDm.Clear();
         moveUnits.Clear();
         ResetDrafts(keepCloseCombat: true);
@@ -6181,6 +6227,43 @@ else if (state is not null)
             },
         }));
 
+    // Pass 71 (A14.2; ruling R71.11): the hex chosen for the Sniper counter, a Location's identifier.
+    private string sniperHex = string.Empty;
+
+    // The sides owing their Sniper counter and the old game's line, read once per state: the card is read from the library, which checks its file.
+    private (GameState? State, IReadOnlyList<string> Due, string? Missing) sniperCache = (null, [], null);
+
+    private (IReadOnlyList<string> Due, string? Missing) SniperReads
+    {
+        get
+        {
+            if (state is null)
+            {
+                return ([], null);
+            }
+
+            if (!ReferenceEquals(sniperCache.State, state))
+            {
+                sniperCache = (state, Live.Planner.SniperPlacementsDue(state), ScenarioA1Sniper.NoCounterText([.. GamePlanner.SniperCounterMissing(state).Select(DisplayText.Side)]));
+            }
+
+            return (sniperCache.Due, sniperCache.Missing);
+        }
+    }
+
+    /// <summary>The sides of a card game in setup that still place their Sniper counter, the DEFENDER first (A14.2; ruling R71.11).</summary>
+    private IReadOnlyList<string> SniperDue => SniperReads.Due;
+
+    /// <summary>Once play has started, the sides with a SAN of 2 or more and no Sniper counter, in words (A14.01; ruling R71.11).</summary>
+    private string? SniperMissing => SniperReads.Missing;
+
+    private Task ProposeSniper(string side) => Propose(GameActions.Setup,
+        JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("sniper"), ["expectedRevision"] = (long)history!.Events.Count, ["placements"] = Array.Empty<object>(),
+            ["sniper"] = new Dictionary<string, object> { ["side"] = side, ["at"] = sniperHex },
+        }));
+
     /// <summary>
     /// The buildings the side may Mop Up now (A12.153; rulings R24.2, R70.25): each holding the side's units, not Mopped Up this Player Turn, with the side's
     /// MMC in it free to become TI and the units there that may guard a surrender, read through the view (ruling R23.1). The side's units are read in one pass
@@ -6987,6 +7070,7 @@ else if (state is not null)
         Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?> { ["game"] = gameId.Length > 0 ? gameId : null, ["hex"] = null }), replace: true);
         placeEntry = string.Empty;
         nonObChosen.Clear();
+        sniperHex = string.Empty;
         pending = null;
         shownPhase = null;
         ClearPlacements();
