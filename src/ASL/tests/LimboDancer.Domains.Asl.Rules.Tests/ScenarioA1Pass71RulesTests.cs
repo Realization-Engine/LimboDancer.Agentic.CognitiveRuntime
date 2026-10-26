@@ -144,7 +144,7 @@ public sealed class ScenarioA1Pass71RulesTests
         Assert.Equal(First, candidates[0]);
 
         // A hex holding only the enemy Sniper counter is in the search with its distance like any other (A14.21).
-        Assert.Equal(1, ScenarioA1Sniper.TargetHex([new SniperTargetHex(0, 3, 0, "E3"), new SniperTargetHex(1, 1, 0, "E7")]));
+        Assert.Equal([1], ScenarioA1Sniper.TargetHexes([new SniperTargetHex(0, 3, 0, "E3"), new SniperTargetHex(1, 1, 0, "E7")]));
     }
 
     [Fact]
@@ -156,7 +156,7 @@ public sealed class ScenarioA1Pass71RulesTests
         Assert.Equal(4, ScenarioA1Sniper.TargetTem("woods", 2));
 
         // Two equidistant hexes: the woods (+1) is chosen over the Open Ground with a SMOKE grenade (+2).
-        Assert.Equal(1, ScenarioA1Sniper.TargetHex([new SniperTargetHex(0, 2, ScenarioA1Sniper.TargetTem("open-ground", 1), "B3"),
+        Assert.Equal([1], ScenarioA1Sniper.TargetHexes([new SniperTargetHex(0, 2, ScenarioA1Sniper.TargetTem("open-ground", 1), "B3"),
             new SniperTargetHex(1, 2, ScenarioA1Sniper.TargetTem("woods", 0), "C3")]));
     }
 
@@ -372,5 +372,47 @@ public sealed class ScenarioA1Pass71RulesTests
         Assert.Equal("The German and the Russian sides have a SAN but no Sniper counter in this game, so they make no Sniper attacks (A14.01).",
             ScenarioA1Sniper.NoCounterText(["German", "Russian"]));
         Assert.Null(ScenarioA1Sniper.NoCounterText([]));
+    }
+
+    // Increment 4d: the Sniper player's choices (A14.2, A14.21; ruling R71.12).
+
+    [Fact]
+    public void EquidistantHexesOfTheLowestTemAreTheSnipersChoiceAndAnyOtherTieIsNot()
+    {
+        // A14.21 (p. 82): "Should ≥ two such hexes be equidistant, the Location with the lowest TEM is the target ... If the target hex is still undetermined,
+        // the Sniper player chooses which of those equidistant hexes to attack": both Open Ground hexes at two, by name; the woods at two and the closer hex
+        // at one are not among them.
+        Assert.Equal([2, 0], ScenarioA1Sniper.TargetHexes([new SniperTargetHex(0, 2, 0, "M5"), new SniperTargetHex(1, 2, 1, "K5"), new SniperTargetHex(2, 2, 0, "L4")]));
+        Assert.Equal([3], ScenarioA1Sniper.TargetHexes([new SniperTargetHex(0, 2, 0, "M5"), new SniperTargetHex(3, 1, 3, "N5")]));
+        Assert.False(ScenarioA1Sniper.ChoiceOffered(1));
+        Assert.True(ScenarioA1Sniper.ChoiceOffered(2));
+    }
+
+    [Fact]
+    public void BeforeRandomSelectionTheSniperMayChooseTheEnemySniperACrewOrAnUnarmoredVehicleButNoConcealedStack()
+    {
+        // A14.2 EXC (p. 82): "prior to Random Selection, the Sniper may choose ... the enemy Sniper counter; a Vulnerable Inherent Crew; or an unarmored
+        // vehicle"; a unit is not among them, nor is a concealed stack (A14.23), whose contents the Sniper player does not know.
+        SniperCandidate[] candidates = [new(ScenarioA1Sniper.UnitTarget, false), new(ScenarioA1Sniper.CrewTarget, false), new(ScenarioA1Sniper.VehicleTarget, false),
+            new(ScenarioA1Sniper.SniperTarget, false), new(ScenarioA1Sniper.UnitTarget, true)];
+        Assert.Equal([1, 2, 3], ScenarioA1Sniper.PriorTargets(candidates));
+        Assert.Empty(ScenarioA1Sniper.PriorTargets([new(ScenarioA1Sniper.UnitTarget, false), new(ScenarioA1Sniper.CrewTarget, true)]));
+
+        // With one candidate there is no Random Selection, so nothing to choose before it.
+        Assert.Empty(ScenarioA1Sniper.PriorTargets([new(ScenarioA1Sniper.SniperTarget, false)]));
+        Assert.Equal("crew:de-tk", ScenarioA1Sniper.TargetOption(ScenarioA1Sniper.CrewTarget, "de-tk"));
+    }
+
+    [Fact]
+    public void TheSnipersChoicesAreWordedByTheirStepAndCiteTheRule()
+    {
+        // Ruling R71.12: each choice says what is chosen, with the dr where it matters, and cites A14.2 or A14.21.
+        Assert.Equal("the german Sniper's dr of 2 is effective: it attacks, or forfeits the attack and its counter is repositioned within the setup's placement requirements (A14.2)",
+            ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.ForfeitStep, "german", null, 2));
+        Assert.EndsWith("(A14.21)", ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.HexStep, "german", null, 1), StringComparison.Ordinal);
+        Assert.Contains("attacks [M5]: the german side chooses which of its Locations", ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.LocationStep, "german", "[M5]", 1), StringComparison.Ordinal);
+        Assert.Contains("before Random Selection", ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.TargetStep, "german", "[M5], level 1", 1), StringComparison.Ordinal);
+        Assert.Contains("chooses which takes the dr of 1", ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.FirstStep, "german", "[M5]", 1), StringComparison.Ordinal);
+        Assert.EndsWith("(A14.2)", ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.RepositionStep, "german", null, 1), StringComparison.Ordinal);
     }
 }

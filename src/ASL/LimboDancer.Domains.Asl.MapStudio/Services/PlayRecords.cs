@@ -1641,6 +1641,13 @@ public sealed class PlayRecords
     private string SniperAttackText(SniperAttacked sniper)
     {
         var side = state?.Find(sniper.Sniper)?.Side ?? "a";
+
+        // A14.2 (pass 71, ruling R71.12): the Sniper player forfeits an effective dr, and his counter is repositioned to the record's hex.
+        if (sniper.Result == ScenarioA1Sniper.Forfeited)
+        {
+            return $"The {side} Sniper ({sniper.Sniper}) forfeits its attack after the SAN roll {sniper.Trigger}: dr {sniper.Dr}; its counter is repositioned to {sniper.Target} (A14.2)";
+        }
+
         return $"The {side} Sniper ({sniper.Sniper}) attacks after the SAN roll {sniper.Trigger}: dr {sniper.Dr}"
             + (sniper.Target is { } at ? $"; {at}: {SniperResultText(sniper.Unit, sniper.Result)}" : sniper.Result == ScenarioA1Sniper.NoTarget
                 ? ", no target in reach (A14.21, A14.22)" : ", no effect (A14.3)");

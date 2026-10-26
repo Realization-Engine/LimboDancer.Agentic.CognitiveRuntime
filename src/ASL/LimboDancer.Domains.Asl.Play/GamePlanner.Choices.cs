@@ -101,6 +101,15 @@ public sealed partial class GamePlanner
             return ScenarioA1Sniper.SniperCheckChoiceText(choice.Side, sniperSide, hex);
         }
 
+        // A14.2, A14.21 (pass 71, ruling R71.12): the Sniper player's choice, by its step, the dr, and the hex or Location it concerns, all in the resume data.
+        if (choice.Kind == ChoicePending.Sniper)
+        {
+            var place = choice.Resume.TryGetProperty("place", out var placeAt) && BoardLocation.TryParse(placeAt.GetString() ?? string.Empty, out var placed)
+                ? placed.Level == 0 ? $"[{placed.Hex}]" : $"[{placed.Hex}], level {placed.Level.ToString(System.Globalization.CultureInfo.InvariantCulture)}" : null;
+            return ScenarioA1Sniper.ChoiceText(choice.Resume.TryGetProperty("step", out var step) ? step.GetString() ?? string.Empty : string.Empty, choice.Side, place,
+                choice.Resume.TryGetProperty("dr", out var dr) ? dr.GetInt32() : 0);
+        }
+
         // A12.14 (pass 70, ruling R70.21): the viewing side's option, by the stack's hex.
         if (choice.Kind == ChoicePending.ConcealmentLoss)
         {
@@ -151,6 +160,12 @@ public sealed partial class GamePlanner
         if (pending.Kind == ChoicePending.SniperCheck)
         {
             return PlanSniperCheckAnswer(scope, existing, attemptId, expected, label, actor, state, pending, made, option, summary);
+        }
+
+        // A14.2, A14.21 (pass 71, ruling R71.12): the Sniper player's answer, then the rest of the attack and the attacks still to resolve.
+        if (pending.Kind == ChoicePending.Sniper)
+        {
+            return PlanSniperAnswer(scope, existing, attemptId, expected, label, actor, pending, made, option, summary);
         }
 
         if (pending.Kind == ChoicePending.Acquisition)

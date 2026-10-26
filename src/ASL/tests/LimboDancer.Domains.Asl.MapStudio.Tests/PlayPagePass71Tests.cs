@@ -88,8 +88,23 @@ public sealed class PlayPagePass71Tests : IDisposable
         Assert.True(result.Outcome == PlayOutcome.Committed, string.Join("; ", result.Reasons));
     }
 
+    /// <summary>Increment 4d (A14.2; ruling R71.12): an effective Sniper dr waits for the Sniper player's choice, here answered "attack"; the dice come from the queue.</summary>
+    private async Task Attack()
+    {
+        var choice = live.History(Game)!.Current!.Choice!;
+        Assert.Equal(ChoicePending.Sniper, choice.Kind);
+        await Do(GameActions.Choose, new
+        {
+            key = choice.Key,
+            option = Rules.ScenarioA1Sniper.Attack,
+        });
+    }
+
     /// <summary>A game named after this class on the wide board, the Russian SAN 6, gone on to the German PFPh, where setup has closed.</summary>
-    private async Task Start(params Dictionary<string, object>[] placements)
+    private Task Start(params Dictionary<string, object>[] placements) => Start(null, placements);
+
+    /// <summary>As above, with a German SAN when given.</summary>
+    private async Task Start(int? germanSan, params Dictionary<string, object>[] placements)
     {
         var catalog = live.Catalogs.First(item => item.Publication == CatalogPublication.Published);
         await Do(GameActions.Setup, new
@@ -102,7 +117,7 @@ public sealed class PlayPagePass71Tests : IDisposable
                 firstSide = "german",
                 scenarioMonth = 7,
                 scenarioYear = 1942,
-                sides = new object[] { new { id = "german", nationality = "german", elr = 3 }, new { id = "russian", nationality = "russian", elr = 3, san = 6 } },
+                sides = new object[] { new { id = "german", nationality = "german", elr = 3, san = germanSan }, new { id = "russian", nationality = "russian", elr = 3, san = 6 } },
             },
             placements,
         });
@@ -128,6 +143,7 @@ public sealed class PlayPagePass71Tests : IDisposable
             firers = GermanFirer,
             target = WideBoards.At(5),
         });
+        await Attack();
         var sniped = Assert.Single(Events.Select(item => item.Payload).OfType<SniperAttacked>());
         Assert.Equal(("de-tk", "stunned", tankAt), (sniped.Unit, sniped.Result, sniped.Target?.ToString()));
         foreach (var view in new[] { Perspective.Adjudicator, new Perspective("german"), new Perspective("russian") })
@@ -168,6 +184,7 @@ public sealed class PlayPagePass71Tests : IDisposable
             firers = GermanFirer,
             target = WideBoards.At(5),
         });
+        await Attack();
         var choice = live.History(Game)!.Current!.Choice!;
         Assert.Equal((ChoicePending.SniperCheck, "german"), (choice.Kind, choice.Side));
 
@@ -286,5 +303,86 @@ public sealed class PlayPagePass71Tests : IDisposable
             Assert.Equal("The Russian side has a SAN but no Sniper counter in this game, so it makes no Sniper attacks (A14.01).",
                 Assert.Single(Open(view).FindAll("#play-sniper-missing")).TextContent.Trim());
         }
+    }
+
+    // Increment 4d: the Sniper player's choices (A14.2; ruling R71.12).
+
+    // CA1861: the two answers to the choice to forfeit, as the Sniper side's view words them.
+    private static readonly string[] TheForfeitAnswers = ["Propose: attack: make the Random Location DR (A14.2)", "Propose: forfeit the attack and reposition the Sniper counter (A14.2)"];
+
+    [Fact]
+    public async Task TheSnipersChoiceIsTheRussianViewsToAnswerTheGermanViewReadsItAndTheHexesToRepositionToAreOneList()
+    {
+        // A14.2 (p. 82): the Russian Sniper's dr 2 waits on the Russian side's choice to attack or to forfeit and reposition. The Russian view offers both in
+        // words; the German view reads the same choice, with the dr, and has nothing to answer. Forfeited, the hexes offered are many, so they are one list,
+        // each "[hex]", and the hex proposed from it takes the counter.
+        var sniperAt = GameMaps.LocationOf(WideBoards.Board, new HexIndex(9, 4))!.ToString();
+        await Start(Squad("de-1", "attacker-squad", WideBoards.At(3), "german"), Squad("ru-1", "defender-squad", WideBoards.At(5), "russian"),
+            Placed("rs", "asl:sniper", null, sniperAt, "russian", new Dictionary<string, bool>()));
+        dice.Enqueue([3, 3, 3, 3, 2]);
+        await Do(GameActions.Fire, new
+        {
+            firers = GermanFirer,
+            target = WideBoards.At(5),
+        });
+        var choice = live.History(Game)!.Current!.Choice!;
+        Assert.Equal((ChoicePending.Sniper, "russian"), (choice.Kind, choice.Side));
+
+        var russian = Open("russian");
+        string[] answers = [.. russian.FindAll("#play-choice button.choose").Select(button => button.TextContent.Trim())];
+        Assert.Equal(TheForfeitAnswers, answers);
+        var german = Open("german");
+        Assert.Contains("dr of 2 is effective", german.Find("#play-choice").TextContent, StringComparison.Ordinal);
+        Assert.Empty(german.FindAll("#play-choice button.choose"));
+
+        await Do(GameActions.Choose, new
+        {
+            key = choice.Key,
+            option = Rules.ScenarioA1Sniper.Reposition,
+        });
+        russian = Open("russian");
+        var hexes = russian.FindAll("#play-choice-select option").Skip(1).ToArray();
+        Assert.True(hexes.Length > 6);
+        Assert.All(hexes, option => Assert.Matches(@"^\[[A-Z]{1,2}\d{1,2}\]$", option.TextContent.Trim()));
+        Assert.Empty(Open("german").FindAll("#play-choice-select"));
+
+        var to = hexes[0].GetAttribute("value")!;
+        russian.Find("#play-choice-select").Change(to);
+        russian.Find("#play-choice-propose").Click();
+        russian.WaitForAssertion(() => Assert.Contains("Confirm to commit", russian.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        russian.Find("#play-confirm").Click();
+        russian.WaitForAssertion(() => Assert.Equal(to, live.History(Game)!.Current!.Location("rs")?.Location.ToString()));
+        Assert.Equal(Rules.ScenarioA1Sniper.Forfeited, Assert.Single(Events.Select(item => item.Payload).OfType<SniperAttacked>()).Result);
+    }
+
+    // CA1861: the moving German squad.
+    private static readonly string[] Mover = ["de-1"];
+    private static readonly string[] RussianFirer = ["ru-1"];
+
+    [Fact]
+    public async Task AMovementPlanWaitsForTheSnipersChoiceAsTheChoosingSidesTurn()
+    {
+        // Ruling R5.8 (pass 71, ruling R71.12): the German squad's plan steps beside the Russian 4-4-7, which fires at it: its IFT DR of 3 + 3 equals the German
+        // SAN, and the German Sniper's dr 2 waits on the German side's choice. The plan, reviewed, is the German side's turn, and says whose answer it awaits.
+        var sniperAt = GameMaps.LocationOf(WideBoards.Board, new HexIndex(9, 4))!.ToString();
+        await Start(6, Squad("de-1", "attacker-squad", WideBoards.At(3), "german"), Squad("ru-1", "defender-squad", WideBoards.At(5), "russian"),
+            Placed("gs", "asl:sniper", null, sniperAt, "german", new Dictionary<string, bool>()));
+        await Do(GameActions.AdvancePhase, new
+        {
+        });
+        Assert.Equal("mph", live.History(Game)!.Current!.Phase);
+        await live.Plans.Start(new MovementPlan(Game, Mover, [LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation.Parse(WideBoards.At(4))], false, false, "german", "russian",
+            "plan-71"));
+        dice.Enqueue([3, 3, 3, 3, 2]);
+        await Do(GameActions.Fire, new
+        {
+            firers = RussianFirer,
+            target = WideBoards.At(4),
+        });
+        Assert.Equal((ChoicePending.Sniper, "german"), (live.History(Game)!.Current!.Choice?.Kind, live.History(Game)!.Current!.Choice?.Side));
+
+        var run = await live.Plans.Review(Game);
+        Assert.Equal(MovementPlanTurn.Mover, run.Turn);
+        Assert.Equal("The move waits for the German side's answer to the choice before play goes on.", run.Note);
     }
 }

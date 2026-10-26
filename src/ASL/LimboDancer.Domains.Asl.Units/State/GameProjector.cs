@@ -1505,7 +1505,7 @@ public static class GameProjector
         {
             if (Rules.ScenarioA1SequenceProjection.PendChoiceRefusal(state.Choice is not null, state.Side(pending.Side) is not null, pending.Options.Count,
                 pending.Kind is ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc
-                    or ChoicePending.OverrunEvade or ChoicePending.GunDuel or ChoicePending.ConcealmentLoss or ChoicePending.SniperCheck,
+                    or ChoicePending.OverrunEvade or ChoicePending.GunDuel or ChoicePending.ConcealmentLoss or ChoicePending.SniperCheck or ChoicePending.Sniper,
                 state.ChoicesMade.ContainsKey(pending.Key)) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);
@@ -1537,8 +1537,8 @@ public static class GameProjector
                 Choice = null
             };
             // A12.41 (ruling R11.12): the reveal or the PAATC follows the answer at once, as its own events; so does a forced "?" loss (A12.14; pass 70,
-            // ruling R70.21), and so does a Sniper Check (A14.4; pass 71, ruling R71.10).
-            if (pending.Kind is ChoicePending.Paatc or ChoicePending.ConcealmentLoss or ChoicePending.SniperCheck)
+            // ruling R70.21), and so does a Sniper Check (A14.4; pass 71, ruling R71.10) and the Sniper player's choice (A14.2; ruling R71.12).
+            if (pending.Kind is ChoicePending.Paatc or ChoicePending.ConcealmentLoss or ChoicePending.SniperCheck or ChoicePending.Sniper)
             {
                 return next;
             }

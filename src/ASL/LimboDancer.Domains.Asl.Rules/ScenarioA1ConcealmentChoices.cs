@@ -13,8 +13,9 @@ public static class ScenarioA1ConcealmentChoices
     /// <summary>
     /// Why a voluntary removal of "?" is refused (A12.14, p. 78: "The owning player can voluntarily remove any concealment at any time during his or his
     /// opponent's Player Turn"; ruling R70.20); null when it may be made: once play has begun, of active units of one side on the map, each under a "?"
-    /// or hidden, or a Dummy. The rule's exception, between a Sniper's Random Location DR and the Sniper's relocation (A14.2), is not built: the game
-    /// keeps no state between the two.
+    /// or hidden, or a Dummy. The rule's exception, "[EXC: between when a Sniper target hex Random Location DR (14.2) is made and the Sniper counter is
+    /// relocated]" (p. 78; pass 71, ruling R71.12), holds without a bar of its own: the two are made in one commit, or the Sniper player's pending choice
+    /// comes between them, and while a choice waits nothing else may happen (ruling R5.8).
     /// </summary>
     public static string? RemovalBar(bool setupOnly, int ids, bool anyNotActiveOnMapUnderQuestionMark, int sides)
     {

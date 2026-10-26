@@ -28,6 +28,7 @@ public sealed class BacklogPass71Tests : IDisposable
     private static readonly UnitCatalog Catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary)!.Catalog!;
     private static readonly string[] Bd01 = ["bd01"];
     private static readonly string[] G1 = ["g1"];
+    private static readonly string[] TheCrewTheTruckOrRandomSelection = ["crew:de-t", "vehicle:de-t", ScenarioA1Sniper.RandomSelection];
 
     private static readonly LimboDancer.Abstractions.Execution.RuntimePrincipal Player =
         GamePlay.Principal("player", Tenant, GameActions.SetupPermission, GameActions.PlayPermission);
@@ -35,6 +36,7 @@ public sealed class BacklogPass71Tests : IDisposable
     private readonly string root = Path.Combine(Path.GetTempPath(), "asl-pass71-" + Guid.NewGuid().ToString("N"));
     private readonly FileGameStore store;
     private readonly HashSet<(string, string)> blocked = [];
+    private readonly HashSet<string> upstairs = new(StringComparer.Ordinal);
 
     public BacklogPass71Tests() => store = new FileGameStore(root);
 
@@ -46,8 +48,8 @@ public sealed class BacklogPass71Tests : IDisposable
         }
     }
 
-    /// <summary>Board 01's grid, all Open Ground at level 0.</summary>
-    private static BoardHandle Board()
+    /// <summary>Board 01's grid, all Open Ground at level 0, with a level 1 in the hexes a test names (increment 4d: a hex of two Locations).</summary>
+    private BoardHandle Board()
     {
         var geometry = BoardGeometry.StandardGeomorphic;
         var type = new TerrainType { Code = 1, Name = "Open Ground", Category = LosCategory.Open };
@@ -58,7 +60,8 @@ public sealed class BacklogPass71Tests : IDisposable
             Assert.True(geometry.TryGetIndex(name, out var index));
             var center = new LocationFacts(0, type, null);
             HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, type, null, false, false, false, false, null))];
-            hexes.Add(new HexFacts(name, index, 0, false, center, [center], hexsides, null, CenterTerrainSource.CenterSample));
+            LocationFacts[] locations = upstairs.Contains(text) ? [center, new LocationFacts(1, type, null)] : [center];
+            hexes.Add(new HexFacts(name, index, 0, false, center, locations, hexsides, null, CenterTerrainSource.CenterSample));
         }
 
         return new BoardHandle(BoardCatalogTerrainEvidence.Board, "authored", BoardReadStatus.Verified, "pass 71 test board", new HexFactSet(geometry, "pass71", hexes));
@@ -219,17 +222,30 @@ public sealed class BacklogPass71Tests : IDisposable
         return await Commit(Play(roller), action, JsonSerializer.SerializeToElement(node));
     }
 
-    /// <summary>The German fire that calls the Russian Sniper: IFT DR 3 + 3 (the Russian SAN), the 4-4-7's MC 3 + 3, then the Sniper's dice given.</summary>
+    /// <summary>
+    /// The German fire that calls the Russian Sniper: IFT DR 3 + 3 (the Russian SAN), the 4-4-7's MC 3 + 3, then the Sniper's dr; an effective one stops at the
+    /// Sniper player's choice (increment 4d, ruling R71.12), answered "attack" with the rest of the Sniper's dice given.
+    /// </summary>
     private async Task<SniperAttacked[]> FireCallingTheSniper(params int[] sniperDice)
     {
         var before = Revision;
-        Committed(await Do(GameActions.Fire, Then(3, [3, 3, 3, 3, .. sniperDice]), new
+        Committed(await Do(GameActions.Fire, Then(3, [3, 3, 3, 3, sniperDice[0]]), new
         {
             firers = G1,
             target = L("E4"),
         }));
+        await Attack(sniperDice[1..]);
         Assert.False(History.HasErrors);
         return [.. Since(before).Select(item => item.Payload).OfType<SniperAttacked>()];
+    }
+
+    /// <summary>The Sniper player's answer to the choice to forfeit, when it waits: "attack", the attack's next dice given (A14.2; ruling R71.12).</summary>
+    private async Task Attack(params int[] dice)
+    {
+        if (Current.Choice is { Kind: ChoicePending.Sniper } choice && choice.Options.Contains(ScenarioA1Sniper.Attack))
+        {
+            Committed(await Choose(ScenarioA1Sniper.Attack, Then(3, dice)));
+        }
     }
 
     private static void Committed(PlayResult result) => Assert.True(result.Outcome == PlayOutcome.Committed, string.Join("; ", result.Reasons));
@@ -267,10 +283,14 @@ public sealed class BacklogPass71Tests : IDisposable
     {
         // A14.22, A14.33 (rulings R71.3, R71.5): the German truck in E6 with a 4-6-7 Passenger is three candidates for Random Selection, the Passenger, the
         // Inherent crew, and the truck (in id order: de-p, then de-t's crew and de-t); the dice 1, 1, 6 pick the truck, and the dr 1 immobilizes it. The
-        // Passenger takes no dr: a vehicle and its PRC are never attacked by the same one.
+        // Passenger takes no dr: a vehicle and its PRC are never attacked by the same one. Increment 4d (A14.2 EXC; ruling R71.12): the Russian side might
+        // have chosen the crew or the truck before Random Selection, and asks for Random Selection instead.
         await Setup(null, Vehicle("de-t", "attacker-truck", "E6", buttonedUp: false), Passenger("de-p", "de-t"));
         var before = Revision;
-        var sniped = Assert.Single(await FireCallingTheSniper(1, 1, 1, 1, 1, 6));
+        Assert.Empty(await FireCallingTheSniper(1, 1, 1));
+        Assert.Equal(TheCrewTheTruckOrRandomSelection, Current.Choice!.Options);
+        Committed(await Choose(ScenarioA1Sniper.RandomSelection, Then(3, 1, 1, 6)));
+        var sniped = Assert.Single(Since(before).Select(item => item.Payload).OfType<SniperAttacked>());
         Assert.Equal(("de-t", "immobilized"), (sniped.Unit, sniped.Result));
         var selection = Since(before).Select(item => item.Payload).OfType<DiceRolled>().Single(item => item.Purpose == "sniper-random-selection");
         Assert.Equal(3, selection.Count);
@@ -417,7 +437,8 @@ public sealed class BacklogPass71Tests : IDisposable
         // A14.1, A14.4 (pp. 82, 83; ruling R71.9): the Russian SAN is 2; g1's IFT DR 1 + 1 calls the Sniper (r1's K/ result and its MC, 1 + 2, come first).
         // The Sniper Check eliminates the Sniper: the SAN is 1, and its counter is removed. g2's later IFT DR of 2 calls no Sniper.
         await Setup(null, 2, [], [.. TheGermansInE6(), Squad("g2", "E2", "german")]);
-        await Fire("g1", [1, 1, 1, 2, .. PinsTheHalfSquad]);
+        await Fire("g1", [1, 1, 1, 2, PinsTheHalfSquad[0]]);
+        await Attack(PinsTheHalfSquad[1..]);
         Assert.Equal(ChoicePending.SniperCheck, Current.Choice?.Kind);
         Committed(await Choose(ChoicePending.Take, Then(3, 3, 2)));
         Assert.Equal(InstanceStatus.Eliminated, Current.Find("rs")!.Status);
@@ -443,7 +464,8 @@ public sealed class BacklogPass71Tests : IDisposable
         // E1.76 (p. 225): at night the Russian printed SAN of 2 is 4 (g1's IFT DR 1 + 3 calls it; r1's MC, 1 + 2, comes first). The Sniper Check eliminates the
         // Sniper: the SAN is 3, never below the printed 2, and the counter stays, where by day it would leave.
         await Setup(null, 2, ["night:3"], TheGermansInE6());
-        await Fire("g1", [1, 3, 1, 2, .. PinsTheHalfSquad]);
+        await Fire("g1", [1, 3, 1, 2, PinsTheHalfSquad[0]]);
+        await Attack(PinsTheHalfSquad[1..]);
         Assert.Equal(ChoicePending.SniperCheck, Current.Choice?.Kind);
         Committed(await Choose(ChoicePending.Take, Then(3, 3, 2)));
         Assert.Equal(1, Current.Side("russian")!.SanReductions);
@@ -717,5 +739,198 @@ public sealed class BacklogPass71Tests : IDisposable
         Assert.DoesNotContain(history.Current!.Entities, item => item.Kind == "asl:sniper");
         Assert.Empty(planner.SniperPlacementsDue(history.Current!));
         Assert.Equal(["german", "russian"], GamePlanner.SniperCounterMissing(history.Current!));
+    }
+
+    // Increment 4d: the Sniper player's choices (A14.2, A14.21, A12.14; ruling R71.12). In each game the German fire's IFT DR of 6 calls the Russian Sniper in E7.
+
+    private static readonly string[] DeC = ["de-c"];
+
+    /// <summary>A hex beside E6, across one of its hexsides, by the board's geometry.</summary>
+    private static string Beside(HexsideDirection side) => Board01Fixture.Handle().Neighbor(HexName.Parse("E6"), side)!.Value.ToString();
+
+    /// <summary>The German fire with the Sniper's dr given; the game then waits on the Russian side's choice to attack or forfeit.</summary>
+    private async Task<long> FireToTheForfeit(int dr)
+    {
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Then(3, 3, 3, 3, 3, dr), new
+        {
+            firers = G1,
+            target = L("E4"),
+        }));
+        Assert.Equal((ChoicePending.Sniper, "russian", ScenarioA1Sniper.ForfeitStep), (Current.Choice?.Kind, Current.Choice?.Side, Current.Choice?.Resume.GetProperty("step").GetString()));
+        return before;
+    }
+
+    private static readonly string[] AttackOrReposition = [ScenarioA1Sniper.Attack, ScenarioA1Sniper.Reposition];
+
+    [Fact]
+    public async Task AnEffectiveDrAsksTheSniperPlayerToAttackOrToForfeitAndRepositionHisCounterInPublic()
+    {
+        // A14.2 (p. 82; ruling R71.12): "it may be repositioned by the Sniper player (within the same placement requirements) if he forfeits an effective
+        // Sniper attack dr ... prior to selecting the hex": the dr 2 stops before the Random Location DR, at the Russian side's public choice, which names no
+        // German unit. Forfeited, the hexes offered are A14.2's placements of the moment, E7 aside; the counter moves to the one chosen, and no die is rolled.
+        await Setup(null);
+        var before = await FireToTheForfeit(2);
+        var choice = Current.Choice!;
+        Assert.Equal(AttackOrReposition, choice.Options);
+        Assert.Null(store.Read(Scope)!.Events.Single(item => item.EventId == choice.Event).Visibility);
+        Assert.Contains("dr of 2", GamePlanner.DescribeChoice(choice), StringComparison.Ordinal);
+        Assert.DoesNotContain("g1", choice.Resume.ToString(), StringComparison.Ordinal);
+        Assert.Empty(Since(before).Select(item => item.Payload).OfType<SniperAttacked>());
+
+        Committed(await Choose(ScenarioA1Sniper.Reposition, NoRoll()));
+        var hexes = Current.Choice!;
+        Assert.Equal(ScenarioA1Sniper.RepositionStep, hexes.Resume.GetProperty("step").GetString());
+        Assert.Equal(Planner().SniperPlacements(Current, "russian").Where(at => at.Hex.ToString() != "E7").Select(at => at.ToString()), hexes.Options);
+        var to = hexes.Options[^1];
+        Committed(await Choose(to, NoRoll()));
+        var forfeited = Assert.Single(Since(before).Select(item => item.Payload).OfType<SniperAttacked>());
+        Assert.Equal((ScenarioA1Sniper.Forfeited, to, (string?)null), (forfeited.Result, forfeited.Target?.ToString(), forfeited.Unit));
+        Assert.Equal(to, Current.Location("rs")!.Location.ToString());
+        Assert.DoesNotContain(Since(before).Select(item => item.Payload).OfType<DiceRolled>(), item => item.Purpose == "sniper-location");
+        Assert.Null(Current.Choice);
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task APinnedSniperNeitherAttacksNorRepositions()
+    {
+        // A14.31 (p. 82): a pinned Sniper "forfeits all further attack and repositioning (14.2) opportunities during that Player Turn": no dr, no choice.
+        var pinned = Sniper("rs", "E7", "russian");
+        pinned["conditions"] = new Dictionary<string, bool> { [Conditions.Pinned] = true };
+        Committed(await FirstSetup(null, 6, [], [Squad("g1", "E3", "german"), Squad("r1", "E4", "russian"), pinned]));
+        await Advance();
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Then(3, 3, 3, 3, 3, 1), new
+        {
+            firers = G1,
+            target = L("E4"),
+        }));
+        Assert.Null(Current.Choice);
+        Assert.Empty(Since(before).Select(item => item.Payload).OfType<SniperAttacked>());
+        Assert.Equal(L("E7"), Current.Location("rs")!.Location.ToString());
+    }
+
+    [Fact]
+    public async Task EquidistantHexesOfEqualTemAreTheSniperPlayersChoiceAndNoQuestionMarkIsRemovedWhileItWaits()
+    {
+        // A14.21 (p. 82): the Random Location DR finds E6, empty; the German squads beside it to the north-east and north-west are equidistant, both Open
+        // Ground, so "the Sniper player chooses which of those equidistant hexes to attack". A12.14 (p. 78): the owner may remove a "?" at any time "[EXC:
+        // between when a Sniper target hex Random Location DR (14.2) is made and the Sniper counter is relocated]": the German "?" in E2 stays while the choice
+        // waits. The north-west squad chosen, the dr 1 breaks it.
+        var (east, west) = (Beside(HexsideDirection.NorthEast), Beside(HexsideDirection.NorthWest));
+        await Setup(null, Squad("de-a", east, "german"), Squad("de-b", west, "german"), Squad("de-c", "E2", "german", Conditions.Concealed));
+        await FireToTheForfeit(1);
+        await Attack(1, 1);
+        var choice = Current.Choice!;
+        Assert.Equal((ChoicePending.Sniper, ScenarioA1Sniper.HexStep), (choice.Kind, choice.Resume.GetProperty("step").GetString()));
+        Assert.Equal(new[] { L(east), L(west) }.Order(StringComparer.Ordinal), choice.Options);
+        Assert.Contains(Since(0).Select(item => item.Payload).OfType<DiceRolled>(), item => item.Purpose == "sniper-location");
+        Assert.Equal(L("E7"), Current.Location("rs")!.Location.ToString());
+
+        var refused = await Do(GameActions.RemoveConcealment, NoRoll(), new
+        {
+            unitIds = DeC,
+        });
+        Assert.NotEqual(PlayOutcome.Committed, refused.Outcome);
+        Assert.Contains(refused.Reasons, reason => reason.StartsWith("play.choice-pending: the russian side answers first", StringComparison.Ordinal));
+        Assert.True(Is(Current.Unit("de-c")!, Conditions.Concealed));
+
+        var before = Revision;
+        Committed(await Choose(L(west), Then(3)));
+        var sniped = Assert.Single(Since(before).Select(item => item.Payload).OfType<SniperAttacked>());
+        Assert.Equal(("de-b", ScenarioA1Sniper.Broken, L(west)), (sniped.Unit, sniped.Result, sniped.Target?.ToString()));
+        Assert.False(Is(Current.Unit("de-a")!, Conditions.Broken));
+        Assert.Equal(L(west), Current.Location("rs")!.Location.ToString());
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task TheSniperPlayerChoosesTheLocationOfAHexOfTwo()
+    {
+        // A14.2 (p. 82): "If that new target hex Contains > one Location occupied by an eligible (14.22) enemy unit(s), the Sniper player selects which of
+        // those Locations to attack": German squads at both levels of E6; the level 1 chosen, the dr 1 breaks the squad there, and not the one below.
+        upstairs.Add("E6");
+        var above = Squad("de-b", "E6", "german");
+        above["position"] = new
+        {
+            at = "bd01:E6:1"
+        };
+        await Setup(null, Squad("de-a", "E6", "german"), above);
+        await FireToTheForfeit(1);
+        await Attack(1, 1);
+        var choice = Current.Choice!;
+        Assert.Equal(ScenarioA1Sniper.LocationStep, choice.Resume.GetProperty("step").GetString());
+        Assert.Equal([L("E6"), "bd01:E6:1"], choice.Options);
+        Assert.Contains("attacks [E6]", GamePlanner.DescribeChoice(choice), StringComparison.Ordinal);
+
+        var before = Revision;
+        Committed(await Choose("bd01:E6:1", NoRoll()));
+        var sniped = Assert.Single(Since(before).Select(item => item.Payload).OfType<SniperAttacked>());
+        Assert.Equal(("de-b", ScenarioA1Sniper.Broken, "bd01:E6:1"), (sniped.Unit, sniped.Result, sniped.Target?.ToString()));
+        Assert.False(Is(Current.Unit("de-a")!, Conditions.Broken));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task BeforeRandomSelectionTheSniperPlayerMayChooseAnUnarmoredVehicle()
+    {
+        // A14.2 EXC (p. 82): "prior to Random Selection, the Sniper may choose ... a Vulnerable Inherent Crew; or an unarmored vehicle": the manned German truck
+        // in E6 is two candidates, its crew and itself. The truck chosen, no Random Selection is rolled, and the dr 1 immobilizes it.
+        await Setup(null, Vehicle("de-t", "attacker-truck", "E6", buttonedUp: false));
+        var before = await FireToTheForfeit(1);
+        await Attack(1, 1);
+        Assert.Equal(TheCrewTheTruckOrRandomSelection, Current.Choice!.Options);
+        Committed(await Choose("vehicle:de-t", NoRoll()));
+        var sniped = Assert.Single(Since(before).Select(item => item.Payload).OfType<SniperAttacked>());
+        Assert.Equal(("de-t", ScenarioA1Sniper.Immobilized), (sniped.Unit, sniped.Result));
+        Assert.DoesNotContain(Since(before).Select(item => item.Payload).OfType<DiceRolled>(), item => item.Purpose == "sniper-random-selection");
+        Assert.True(Is(Current.Unit("de-t")!, Conditions.Immobilized));
+    }
+
+    private static readonly string[] TheHalfSquadOrTheLeader = ["unit:de-h", "unit:de-l"];
+
+    [Fact]
+    public async Task TheSniperPlayerChoosesWhichTiedTargetTakesTheDrAndTheOtherTakesANewOne()
+    {
+        // A14.2 (p. 82): "If the Random Selection results in multiple targets, only one (Sniper's choice) is attacked by the initial Sniper attack dr; the others
+        // are each subject to a new Sniper dr": Random Selection's 6, 6, 1 ties the 2-4-7 and the 8-1. The leader chosen takes the dr 2 and is wounded (Wound
+        // Severity dr 1); the HS's own dr 3 has no effect.
+        await Setup(null, TheGermansInE6());
+        var before = await FireToTheForfeit(2);
+        var sniperRoll = Since(before).Select(item => item.Payload).OfType<DiceRolled>().Single(item => item.Purpose == "sniper").Roll;
+        await Attack(1, 1, 6, 6, 1);
+        var choice = Current.Choice!;
+        Assert.Equal(ScenarioA1Sniper.FirstStep, choice.Resume.GetProperty("step").GetString());
+        Assert.Equal(TheHalfSquadOrTheLeader, choice.Options);
+
+        Committed(await Choose("unit:de-l", Then(3, 3, 1)));
+        var sniped = Since(before).Select(item => item.Payload).OfType<SniperAttacked>().ToArray();
+        Assert.Equal(2, sniped.Length);
+        Assert.Equal(("de-l", ScenarioA1Sniper.Wounded, sniperRoll, 2), (sniped[0].Unit, sniped[0].Result, sniped[0].Roll, sniped[0].Dr));
+        Assert.Equal((3, ScenarioA1Sniper.NoEffect), (sniped[1].Dr, sniped[1].Result));
+        Assert.NotEqual(sniperRoll, sniped[1].Roll);
+        Assert.True(Is(Current.Unit("de-l")!, Conditions.Wounded));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task OfTwoSniperAttacksInOneStepTheSecondResolvesOnlyAfterTheFirstsChoice()
+    {
+        // A14.1 (p. 82): "The Sniper attack occurs ... not before resolving (14.3) all (if any) Sniper attacks made prior to it": g1's IFT DR of 6 calls the
+        // Russian Sniper and r1's MC DR of 6 the German Sniper in I4 (both SANs are 6). The Russian dr 2 waits on its side's choice, and the German attack with
+        // it; answered, the Russian Sniper pins g1 in E3, the closest German unit to E6, and then the German Sniper's dr 3 has no effect.
+        await Setup(6, Sniper("gs", "I4", "german"));
+        var before = await FireToTheForfeit(2);
+        Assert.Empty(Since(before).Select(item => item.Payload).OfType<SniperAttacked>());
+        Assert.Equal("gs", Current.Choice!.Resume.GetProperty("rest")[0].GetProperty("sniper").GetString());
+
+        Committed(await Choose(ScenarioA1Sniper.Attack, Then(3, 1, 1, 3)));
+        var sniped = Since(before).Select(item => item.Payload).OfType<SniperAttacked>().ToArray();
+        Assert.Equal(["rs", "gs"], sniped.Select(item => item.Sniper));
+        Assert.Equal(("g1", ScenarioA1Sniper.Pinned), (sniped[0].Unit, sniped[0].Result));
+        Assert.Equal((3, ScenarioA1Sniper.NoEffect), (sniped[1].Dr, sniped[1].Result));
+        Assert.Null(Current.Choice);
+        Assert.False(History.HasErrors);
     }
 }

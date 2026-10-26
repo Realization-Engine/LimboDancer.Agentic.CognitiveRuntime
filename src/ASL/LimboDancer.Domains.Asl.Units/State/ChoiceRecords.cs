@@ -55,6 +55,14 @@ public sealed record ChoicePending(string Key, string Kind, string Side, IReadOn
     /// attacks still to resolve, never a unit.
     /// </summary>
     public const string SniperCheck = "sniper-check";
+
+    /// <summary>
+    /// A14.2, A14.21 (pass 71, ruling R71.12): the Sniper player's choice during his Sniper's attack: to attack or to forfeit it and reposition the counter, the
+    /// equidistant hex, the Location of a hex of several, the target chosen before Random Selection, or which target Random Selection gave takes the first dr.
+    /// Its <see cref="Resume"/> holds the step, the Sniper, the rolls already recorded, the answers so far, and the Sniper attacks still to resolve; it is
+    /// public, as the dr is, and names no unit under a "?".
+    /// </summary>
+    public const string Sniper = Rules.ScenarioA1Sniper.ChoiceKind;
 }
 
 /// <summary>

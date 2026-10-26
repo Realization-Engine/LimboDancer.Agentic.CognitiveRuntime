@@ -2,7 +2,19 @@
    and the adjudicator; any other view gets none and reads that it waits. *@
 <div id="play-choice" class="fail" data-key="@Key">
     <p>The @DisplayText.Side(Side) side answers before play goes on: @Described</p>
-    @if (MayAnswer)
+    @if (MayAnswer && Options.Count > ListedAsButtons)
+    {
+        @* Pass 71 (A14.2; ruling R71.12): a long list, such as the hexes a Sniper counter may be repositioned to, is one list and one proposal. *@
+        <select id="play-choice-select" aria-label="The answer" @bind="picked">
+            <option value="">Choose the answer</option>
+            @foreach (var option in Options)
+            {
+                <option value="@option.Value">@option.Text</option>
+            }
+        </select>
+        <button class="choose" id="play-choice-propose" disabled="@(picked.Length == 0)" @onclick="@(() => OnChoose.InvokeAsync(picked))">Propose the answer</button>
+    }
+    else if (MayAnswer)
     {
         @foreach (var option in Options)
         {
@@ -34,6 +46,21 @@
             return core.EndsWith(')') && ruling > core.LastIndexOf('(') && core[(ruling + "ruling R".Length)..^1].All(letter => char.IsAsciiDigit(letter) || letter is '.' or 'b')
                 ?$"{core[..ruling]}rulings {core[(ruling + "ruling ".Length)..^1]}, R5.8)."
                 : $"{said} (ruling R5.8).";
+        }
+    }
+
+    // Up to this many options are buttons; more are one list.
+    private const int ListedAsButtons = 6;
+
+    // The answer chosen from the list, its option's value, for the choice it was chosen in.
+    private string picked = string.Empty;
+    private string pickedFor = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        if (pickedFor != Key)
+        {
+            (picked, pickedFor) = (string.Empty, Key);
         }
     }
 

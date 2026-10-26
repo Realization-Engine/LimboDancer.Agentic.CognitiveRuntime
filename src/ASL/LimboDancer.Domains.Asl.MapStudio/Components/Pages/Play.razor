@@ -5160,8 +5160,30 @@ else if (state is not null)
     /// <summary>A pending choice's options in words (plan C08), given only to a view that may answer.</summary>
     private IReadOnlyList<PendingChoicePanel.Option> ChoiceOptions(PendingChoice choice) => MayAnswer(choice.Side)
         ? [.. choice.Options.Select(option => new PendingChoicePanel.Option(option,
-            choice.Kind == ChoicePending.OverrunEvade ? $"into {PlaceOf(option)}" : ChoiceOptionText(choice, option)))]
+            choice.Kind == ChoicePending.OverrunEvade ? $"into {PlaceOf(option)}" : choice.Kind == ChoicePending.Sniper ? SniperOptionText(choice, option) : ChoiceOptionText(choice, option)))]
         : [];
+
+    /// <summary>
+    /// An answer of the Sniper player in his view's words (A14.2, A14.21; pass 71, ruling R71.12): attack or reposition, a hex or Location in brackets, or a
+    /// target named after its hex, "[G4]: 4-6-7 squad"; a concealed stack only as a "?" stack in its hex.
+    /// </summary>
+    private string SniperOptionText(PendingChoice choice, string option)
+    {
+        var place = choice.Resume.TryGetProperty("place", out var at) ? PlaceOf(at.GetString() ?? string.Empty) : string.Empty;
+        var split = option.IndexOf(':', StringComparison.Ordinal);
+        var (role, id) = split > 0 && !BoardLocation.TryParse(option, out _) ? (option[..split], option[(split + 1)..]) : (string.Empty, option);
+        return (option, role) switch
+        {
+            (ScenarioA1Sniper.Attack, _) => "attack: make the Random Location DR (A14.2)",
+            (ScenarioA1Sniper.Reposition, _) => "forfeit the attack and reposition the Sniper counter (A14.2)",
+            (ScenarioA1Sniper.RandomSelection, _) => "Random Selection among the targets (A14.2)",
+            (ScenarioA1Sniper.ConcealedStack, _) => $"a \"?\" stack in {place}",
+            (_, ScenarioA1Sniper.SniperTarget) => $"{place}: the {DisplayText.Side(state?.Find(id)?.Side)} Sniper counter",
+            (_, ScenarioA1Sniper.CrewTarget) => $"the Inherent crew of {UnitAt(id)}",
+            (_, ScenarioA1Sniper.UnitTarget or ScenarioA1Sniper.VehicleTarget) => UnitAt(id),
+            _ => PlaceOf(option),
+        };
+    }
 
     /// <summary>
     /// The firing side's units that may offer a Massacre (A20.4): Russian or berserk personnel not in Melee sharing a Location with an enemy
@@ -9356,6 +9378,8 @@ else if (state is not null)
         : state.Perspectives.FirstOrDefault(perspective => perspective.Name == handOver) is { IsAdjudicator: true } ? "The adjudicator's view shows the whole game."
         : SetupOpen ? "A side sets up out of the other's sight."
         : !HandOverAwaited ? "The game does not wait on this side now; its view is opened to look."
+        // Pass 71 (ruling R71.12): a choice that waits, such as a Sniper player's in the MPh, is answered before the DEFENDER's window (ruling R5.8).
+        : state.Choice is { Kind: not ChoicePending.ConcealmentLoss } ? Awaiting(state).Note
         : state.Phase == "mph" && state.Movement is { WindowOpen: true } moving
             ? $"A {DisplayText.Side(state.PhasingSide)} stack {(moving.Members.Count == 0 ? "was stopped by fire" : "spent MF")} in {PlaceOf(moving.Location)}. The {DisplayText.Side(handOver)} side, as the DEFENDER, {(MandatoryNow is null ? "may fire at it or pass (A8.1)" : "must attack it from the Location it entered (A8.312)")}."
         : Awaiting(state).Note;
@@ -9502,6 +9526,9 @@ else if (state is not null)
                     // Pass 71 (A14.4; rulings R71.9, R71.10): a Sniper Check made in public, and a Sniper eliminated, named by side only.
                     SniperChecked check => $"A Sniper Check was made in {PlaceOf(check.Location)}.",
                     SanReduced reduced => $"The {DisplayText.Side(reduced.Side)} Sniper was eliminated, and its SAN is lower.",
+                    // Pass 71 (A14.2; ruling R71.12): the Sniper player forfeited an attack, and his counter was repositioned in public.
+                    SniperAttacked { Result: ScenarioA1Sniper.Forfeited, Target: { } to } forfeited
+                        => $"The {DisplayText.Side(state.Find(forfeited.Sniper)?.Side)} Sniper forfeited its attack and was repositioned to {PlaceOf(to)}.",
                     GameEnded => "The game ended.",
                     _ => null,
                 };

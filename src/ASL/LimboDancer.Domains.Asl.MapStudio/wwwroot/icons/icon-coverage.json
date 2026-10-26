@@ -2548,6 +2548,14 @@
       "controls": [
         {
           "kind": "button",
+          "label": "Propose the answer",
+          "dynamic": false,
+          "id": "play-choice-propose",
+          "status": "needed",
+          "strip": "PendingChoicePanel"
+        },
+        {
+          "kind": "button",
           "label": "Propose: @option.Text",
           "dynamic": true,
           "status": "needed",

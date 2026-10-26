@@ -25,8 +25,11 @@ public enum SniperEffect
 /// <summary>A hex holding eligible Sniper targets as the target choice reads it (A14.21): its index in the caller's list, its distance from the Random Location (null when unread), its lowest TEM, and its name.</summary>
 public sealed record SniperTargetHex(int Index, int? Distance, int Tem, string Hex);
 
-/// <summary>A Location of the chosen hex as the Location choice reads it (ruling R15.5): its index, how many eligible targets it holds, and its level.</summary>
-public sealed record SniperTargetLocation(int Index, int Count, int Level);
+/// <summary>
+/// A possible target of Random Selection in the Location attacked as the Sniper player's choice reads it (A14.2 EXC, A14.23; pass 71, ruling R71.12): what it
+/// is (<see cref="ScenarioA1Sniper.UnitTarget"/> and the others), and whether it is a concealed stack, whose contents the Sniper player does not know.
+/// </summary>
+public sealed record SniperCandidate(string Role, bool Concealed);
 
 /// <summary>
 /// A vehicle of the attacked side as A14.22 reads it (pass 71, ruling R71.3): unarmored or Partially Armored, whether its crew is CE, whether it is manned
@@ -287,19 +290,71 @@ public static class ScenarioA1Sniper
     public static int TargetTem(string? terrain, int smokeSources) =>
         Math.Max(0, TargetTem(terrain) + (smokeSources > 0 ? ScenarioA1VehicleSightRules.SmokeDrm(smokeSources, false, true, static () => false) : 0));
 
-    /// <summary>A14.21: the target hex, or the closest hex holding an eligible target; ties go to the lowest TEM, then the first hex by name; an unread distance is the farthest.</summary>
-    public static int TargetHex(IReadOnlyList<SniperTargetHex> hexes)
+    /// <summary>
+    /// A14.21 (p. 82; pass 71, ruling R71.12): the target hex, or the closest hex holding an eligible target; "Should ≥ two such hexes be equidistant, the
+    /// Location with the lowest TEM is the target ... If the target hex is still undetermined, the Sniper player chooses which of those equidistant hexes to
+    /// attack". The hexes left, by name; more than one is the Sniper player's choice. An unread distance is the farthest.
+    /// </summary>
+    public static IReadOnlyList<int> TargetHexes(IReadOnlyList<SniperTargetHex> hexes)
     {
         ArgumentNullException.ThrowIfNull(hexes);
-        return hexes.OrderBy(item => item.Distance ?? int.MaxValue).ThenBy(item => item.Tem).ThenBy(item => item.Hex, StringComparer.Ordinal).First().Index;
+        var closest = hexes.Min(item => item.Distance ?? int.MaxValue);
+        var lowest = hexes.Where(item => (item.Distance ?? int.MaxValue) == closest).Min(item => item.Tem);
+        return [.. hexes.Where(item => (item.Distance ?? int.MaxValue) == closest && item.Tem == lowest).OrderBy(item => item.Hex, StringComparer.Ordinal).Select(item => item.Index)];
     }
 
-    /// <summary>Ruling R15.5: of several Locations in the hex, the one holding the most eligible targets, then the lowest.</summary>
-    public static int TargetLocation(IReadOnlyList<SniperTargetLocation> locations)
+    /// <summary>The kind of the Sniper player's pending choice (A14.2, A14.21; pass 71, ruling R71.12), which replaces ruling R15.5's game picks.</summary>
+    public const string ChoiceKind = "sniper";
+
+    /// <summary>
+    /// The five points of a Sniper attack at which the Sniper player chooses (A14.2, A14.21; ruling R71.12): to attack or to forfeit the attack (and then the hex
+    /// the counter is repositioned to), the equidistant hex, the Location of a hex of several, the target chosen before Random Selection, and which of the
+    /// targets Random Selection gives takes the first dr.
+    /// </summary>
+    public const string ForfeitStep = "forfeit";
+    public const string RepositionStep = "reposition";
+    public const string HexStep = "hex";
+    public const string LocationStep = "location";
+    public const string TargetStep = "target";
+    public const string FirstStep = "first";
+
+    /// <summary>The answers that are not a hex, a Location, or a target: attack, forfeit and reposition, Random Selection, and a concealed stack as one target (A14.23).</summary>
+    public const string Attack = "attack";
+    public const string Reposition = "reposition";
+    public const string RandomSelection = "random";
+    public const string ConcealedStack = "concealed";
+
+    /// <summary>A forfeited attack (A14.2; ruling R71.12): the record's hex is the one its counter is repositioned to.</summary>
+    public const string Forfeited = "forfeited";
+
+    /// <summary>Ruling R71.12: the Sniper player is asked only where the rule gives him more than one option.</summary>
+    public static bool ChoiceOffered(int options) => options > 1;
+
+    /// <summary>A target as an answer of the Sniper player names it: what it is and its id, "crew:t1"; a concealed stack is <see cref="ConcealedStack"/>.</summary>
+    public static string TargetOption(string role, string id) => $"{role}:{id}";
+
+    /// <summary>
+    /// A14.2 EXC (p. 82; ruling R71.12): "prior to Random Selection, the Sniper may choose one of the following (if present in that Location) as its target: the
+    /// enemy Sniper counter; a Vulnerable Inherent Crew; or an unarmored vehicle"; "if any eligible target is concealed, see 14.23", so a concealed stack, which
+    /// he cannot see into, is none of them. The candidates he may so choose, by index; none when Random Selection is not needed.
+    /// </summary>
+    public static IReadOnlyList<int> PriorTargets(IReadOnlyList<SniperCandidate> candidates)
     {
-        ArgumentNullException.ThrowIfNull(locations);
-        return locations.OrderByDescending(item => item.Count).ThenBy(item => item.Level).First().Index;
+        ArgumentNullException.ThrowIfNull(candidates);
+        return candidates.Count < 2 ? []
+            : [.. Enumerable.Range(0, candidates.Count).Where(index => !candidates[index].Concealed && candidates[index].Role is CrewTarget or VehicleTarget or SniperTarget)];
     }
+
+    /// <summary>The words of the Sniper player's pending choice (A14.2, A14.21; ruling R71.12), by its step, his side, the place it concerns, and the Sniper dr.</summary>
+    public static string ChoiceText(string step, string side, string? place, int dr) => step switch
+    {
+        ForfeitStep => $"the {side} Sniper's dr of {dr} is effective: it attacks, or forfeits the attack and its counter is repositioned within the setup's placement requirements (A14.2)",
+        RepositionStep => $"the {side} Sniper forfeits its attack of dr {dr}: its counter is repositioned to an unoccupied hex within six hexes of the most enemy-occupied hexes (A14.2)",
+        HexStep => $"the {side} Sniper's Random Location finds no target: of the equidistant hexes with the lowest TEM, the {side} side chooses which to attack (A14.21)",
+        LocationStep => $"the {side} Sniper attacks {place}: the {side} side chooses which of its Locations holding an eligible target to attack (A14.2)",
+        TargetStep => $"the {side} Sniper attacks {place}: before Random Selection it may choose the enemy Sniper counter, a Vulnerable Inherent Crew, or an unarmored vehicle as its target (A14.2)",
+        _ => $"the {side} Sniper attacks {place}: Random Selection gives several targets, and the {side} side chooses which takes the dr of {dr}; each other takes a new Sniper dr (A14.2)",
+    };
 
     /// <summary>A14.23: a concealed stack is one possible target; the others one each. The targets come in id order, each with whether it is concealed or a Dummy.</summary>
     public static IReadOnlyList<IReadOnlyList<int>> Candidates(IReadOnlyList<bool> concealedOrDummy)

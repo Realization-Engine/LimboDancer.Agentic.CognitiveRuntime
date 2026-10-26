@@ -13,12 +13,14 @@ namespace LimboDancer.Domains.Asl.Play;
 /// Snipers (backlog pass 15, ruling R15.5): after a fire record, each IFT, MC, or TC Original DR a side made in the PFPh, MPh, DFPh, or AFPh that equals the
 /// other side's SAN calls for that side's Sniper attack, in the order the DRs were made, resolved in the same commit (A14.1). The Sniper dr decides it (1 or 2;
 /// A14.3); a Random Location DR from the Sniper counter's hex finds the target hex, or the closest hex holding an eligible target or the enemy Sniper counter,
-/// ties to the lowest TEM and SMOKE and then the first hex by name (A14.2, A14.21); the Location there with the most targets is attacked, and Random Selection
-/// picks among them, a concealed stack counting as one (A14.23). Since pass 71 (rulings R71.3 to R71.8) the targets are the units on foot, the Vulnerable PRC,
+/// ties to the lowest TEM and SMOKE (A14.2, A14.21), and Random Selection picks among the targets of the Location attacked, a concealed stack counting as one
+/// (A14.23). Since pass 71 (rulings R71.3 to R71.8) the targets are the units on foot, the Vulnerable PRC,
 /// Inherent crews, unarmored vehicles, and the enemy Sniper counter (A14.22, A14.31), each with its own results (A14.3, A14.33, D5.34, D5.341). Since pass 71's
 /// increment 4b (rulings R71.9, R71.10) a SAN falls when its Sniper is eliminated, and the attacked side's units in the target Location may take a Sniper
-/// Check, a pending choice the attacks still to resolve wait for (A14.4). The Sniper player never forfeits an attack, so never repositions (backlog). The
-/// rules are <see cref="ScenarioA1Sniper"/>'s (pass 32.h); this file reads the records, the state, and the map, draws the dice, and writes the events.
+/// Check, a pending choice the attacks still to resolve wait for (A14.4). Since increment 4d (ruling R71.12, which replaces R15.5's picks) the Sniper player
+/// decides where the rule lets him, by a pending choice of his own: to attack or to forfeit and reposition, the equidistant hex, the Location, the target
+/// before Random Selection, and which target Random Selection gave takes the dr; an older record's picks are its recorded events. The rules are
+/// <see cref="ScenarioA1Sniper"/>'s (pass 32.h); this file reads the records, the state, and the map, draws the dice, and writes the events.
 /// </summary>
 public sealed partial class GamePlanner
 {
@@ -68,8 +70,8 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// The Sniper attacks called for, in the order their DRs were made (A14.1), until one stops at a Sniper Check (A14.4; pass 71, ruling R71.10): the
-    /// attacks after it are kept in the choice and resolve after the answer, in the same order.
+    /// The Sniper attacks called for, in the order their DRs were made (A14.1), until one stops at a choice, the Sniper player's (A14.2; pass 71, ruling
+    /// R71.12) or a Sniper Check (A14.4; ruling R71.10): the attacks after it are kept in the choice and resolve after the answer, in the same order.
     /// </summary>
     private void SnipeInOrder(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing, List<GameEvent> events,
         Func<RollRequest, RollResult> draw, (string Roll, string Sniper)[] triggers)
@@ -102,11 +104,18 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// One Sniper attack (A14.2, A14.3); true when it stops at the attacked side's Sniper Check (A14.4; pass 71, ruling R71.10), whose choice keeps
-    /// <paramref name="rest"/>, the attacks still to resolve.
+    /// What a Sniper attack resumed after its Sniper player's answer reads again (A14.2; pass 71, ruling R71.12): the counter's Location when the attack began
+    /// (it may have moved to the Location attacked since), the rolls already recorded, whether the counter has moved, and the answers so far by step.
+    /// </summary>
+    private sealed record SniperResume(BoardLocation From, string SniperRoll, string? LocationRoll, string? SelectionRoll, bool Moved, IReadOnlyDictionary<string, string> Answers);
+
+    /// <summary>
+    /// One Sniper attack (A14.2, A14.3); true when it stops at a choice whose resume keeps <paramref name="rest"/>, the attacks still to resolve: the Sniper
+    /// player's (A14.2, A14.21; pass 71, ruling R71.12), or the attacked side's Sniper Check (A14.4; ruling R71.10). <paramref name="resumed"/> continues
+    /// an attack from the Sniper player's answers and the rolls it recorded.
     /// </summary>
     private bool Snipe(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing, List<GameEvent> events,
-        Func<RollRequest, RollResult> draw, string sniperId, string trigger, IReadOnlyList<(string Roll, string Sniper)> rest)
+        Func<RollRequest, RollResult> draw, string sniperId, string trigger, IReadOnlyList<(string Roll, string Sniper)> rest, SniperResume? resumed = null)
     {
         // Pass 71 (design section 5, item 4): the state after the commit's events so far is taken once, and every Location is read from its index.
         if (Replay([.. existing, .. events]).Current is not { } state || state.Find(sniperId) is not EntityInstance { Status: InstanceStatus.Active } sniper
@@ -116,12 +125,12 @@ public sealed partial class GamePlanner
         }
 
         var index = MemoOf(state).Objects(state);
-        if (index.Location(sniper.Id) is not { } sniperAt)
+        if ((resumed?.From ?? index.Location(sniper.Id)?.Location) is not { } sniperAt)
         {
             return false;
         }
 
-        // A14.31: a pinned Sniper makes no further attack this Player Turn.
+        // A14.31: a pinned Sniper makes no further attack, nor repositioning, this Player Turn.
         if (!ScenarioA1Sniper.Attacks(Is(sniper, Conditions.Pinned)))
         {
             return false;
@@ -137,11 +146,15 @@ public sealed partial class GamePlanner
             return rollId;
         }
 
-        IReadOnlyList<int> Values(string rollId) => events.Select(item => item.Payload).OfType<DiceRolled>().First(item => item.Roll == rollId).Values;
+        // A roll of this commit, or one a resumed attack recorded before its Sniper player's answer.
+        IReadOnlyList<int> Values(string rollId) => (events.Select(item => item.Payload).OfType<DiceRolled>().FirstOrDefault(item => item.Roll == rollId)
+            ?? existing.Select(item => item.Payload).OfType<DiceRolled>().Last(item => item.Roll == rollId)).Values;
         void Record(string rollId, int dr, BoardLocation? at, string? unit, string result) =>
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "sniper-attacked", new SniperAttacked(sniper.Id, trigger, rollId, dr, at, unit, result), package, null));
 
-        var sniperRoll = Roll(1, "sniper");
+        var answers = resumed?.Answers ?? new Dictionary<string, string>(StringComparer.Ordinal);
+        var (locationRoll, selectionRoll, moved) = (resumed?.LocationRoll, resumed?.SelectionRoll, resumed?.Moved ?? false);
+        var sniperRoll = resumed?.SniperRoll ?? Roll(1, "sniper");
         var dr = Values(sniperRoll)[0];
         if (!ScenarioA1Sniper.Effective(dr))
         {
@@ -149,10 +162,81 @@ public sealed partial class GamePlanner
             return false;
         }
 
+        // Ruling R71.12: the attack stops at the Sniper player's choice, public as the dr is; its resume keeps what the attack has recorded, and the attacks
+        // still to resolve.
+        bool Pause(string step, IReadOnlyList<string> options, BoardLocation? place)
+        {
+            var answered = new JsonObject();
+            foreach (var (name, value) in answers)
+            {
+                answered[name] = value;
+            }
+
+            var rolls = new JsonObject { ["sniper"] = sniperRoll };
+            if (locationRoll is not null)
+            {
+                rolls["location"] = locationRoll;
+            }
+
+            if (selectionRoll is not null)
+            {
+                rolls["selection"] = selectionRoll;
+            }
+
+            var resume = new JsonObject
+            {
+                ["record"] = ChoicePending.Sniper,
+                ["step"] = step,
+                ["sniper"] = sniper.Id,
+                ["sniperSide"] = sniperSide,
+                ["trigger"] = trigger,
+                ["dr"] = dr,
+                ["from"] = sniperAt.ToString(),
+                ["moved"] = moved,
+                ["rolls"] = rolls,
+                ["answers"] = answered,
+                ["rest"] = new JsonArray([.. rest.Select(item => (JsonNode)new JsonObject { ["roll"] = item.Roll, ["sniper"] = item.Sniper })]),
+            };
+            if (place is not null)
+            {
+                resume["place"] = place.ToString();
+            }
+
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending", new ChoicePending($"{ChoicePending.Sniper}:{sniper.Id}:{step}", ChoicePending.Sniper,
+                sniperSide, options, JsonSerializer.SerializeToElement(resume)), null, null));
+            return true;
+        }
+
+        // A14.2 (p. 82; ruling R71.12): "it may be repositioned by the Sniper player (within the same placement requirements) if he forfeits an effective
+        // Sniper attack dr ... prior to selecting the hex for that forfeited Sniper attack": asked only when the placement check of the moment (4c's) allows a
+        // hex other than its own.
+        var forfeit = answers.GetValueOrDefault(ScenarioA1Sniper.ForfeitStep);
+        if (forfeit != ScenarioA1Sniper.Attack)
+        {
+            BoardLocation[] elsewhere = [.. SniperPlacements(state, sniperSide).Where(at => at.Board != sniperAt.Board || at.Hex != sniperAt.Hex)];
+            if (forfeit is null && ScenarioA1Sniper.ChoiceOffered(elsewhere.Length + 1))
+            {
+                return Pause(ScenarioA1Sniper.ForfeitStep, [ScenarioA1Sniper.Attack, ScenarioA1Sniper.Reposition], null);
+            }
+
+            if (forfeit == ScenarioA1Sniper.Reposition)
+            {
+                var to = answers.TryGetValue(ScenarioA1Sniper.RepositionStep, out var picked) ? BoardLocation.Parse(picked) : elsewhere.Length == 1 ? elsewhere[0] : null;
+                if (to is null)
+                {
+                    return Pause(ScenarioA1Sniper.RepositionStep, [.. elsewhere.Select(at => at.ToString())], null);
+                }
+
+                Record(sniperRoll, dr, to, null, ScenarioA1Sniper.Forfeited);
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-moved", new InstanceMoved(sniper.Id, new MapPosition(to)), package, null));
+                return false;
+            }
+        }
+
         // A14.2 (ruling R15.5): the Random Location DR: the colored dr a hexside direction, the white dr the hexes along it, stopping at the last hex on the map.
-        var locationRoll = Roll(2, "sniper-location");
+        locationRoll ??= Roll(2, "sniper-location");
         var (direction, extent) = ScenarioA1Sniper.RandomLocation(Values(locationRoll)[0], Values(locationRoll)[1]);
-        var (board, hex) = (sniperAt.Location.Board, sniperAt.Location.Hex);
+        var (board, hex) = (sniperAt.Board, sniperAt.Hex);
         for (var step = 0; step < extent && Next(state, board, hex, (HexsideDirection)direction) is { } next; step++)
         {
             (board, hex) = next;
@@ -167,42 +251,92 @@ public sealed partial class GamePlanner
         }
 
         // A14.21 (ruling R71.7): the target hex, or the closest hex holding an eligible target or the enemy Sniper counter; ties go to the lowest TEM with the
-        // hex's SMOKE, then the first hex by name (Rules orders them).
+        // hex's SMOKE (Rules orders them), and the equidistant hexes still tied are the Sniper player's choice (ruling R71.12).
         var smoke = SmokeSources(state).GroupBy(place => (place.Board, place.Hex)).ToDictionary(group => group.Key, group => group.Count());
         int Tem(BoardLocation location) => ScenarioA1Sniper.TargetTem(ReadLocation(state, location) is { } read ? TerrainKey(read) : null,
             smoke.GetValueOrDefault((location.Board, location.Hex)));
         var hexes = eligible.GroupBy(target => (target.At.Board, target.At.Hex))
-            .Select((group, position) => (group.Key.Board, group.Key.Hex, Facts: new SniperTargetHex(position, Distance(state, board, hex, group.Key.Board, group.Key.Hex),
+            .Select((group, position) => (At: new BoardLocation(group.Key.Board, group.Key.Hex, 0), Facts: new SniperTargetHex(position, Distance(state, board, hex, group.Key.Board, group.Key.Hex),
                 group.Min(target => Tem(target.At)), group.Key.Hex.ToString()))).ToArray();
-        var chosen = hexes[ScenarioA1Sniper.TargetHex([.. hexes.Select(item => item.Facts)])];
+        BoardLocation[] equidistant = [.. ScenarioA1Sniper.TargetHexes([.. hexes.Select(item => item.Facts)]).Select(position => hexes[position].At)];
+        var chosen = equidistant[0];
+        if (ScenarioA1Sniper.ChoiceOffered(equidistant.Length))
+        {
+            if (!answers.TryGetValue(ScenarioA1Sniper.HexStep, out var picked))
+            {
+                return Pause(ScenarioA1Sniper.HexStep, [.. equidistant.Select(at => at.ToString())], null);
+            }
 
-        // Ruling R15.5: of several Locations in the hex, the one holding the most eligible targets, then the lowest; the enemy Sniper counter is part of every
-        // Location of its hex (A14.31), so it is in each one's count, and its own Location is attacked when it is alone there.
+            chosen = equidistant.First(at => at.ToString() == picked);
+        }
+
+        // A14.2 (ruling R71.12): "If that new target hex Contains > one Location occupied by an eligible (14.22) enemy unit(s), the Sniper player selects which
+        // of those Locations to attack"; the enemy Sniper counter is part of every Location of its hex (A14.31), so it is attacked in its own Location when it
+        // is alone there, and joins the Location chosen otherwise.
         SniperTarget[] inChosen = [.. eligible.Where(target => target.At.Board == chosen.Board && target.At.Hex == chosen.Hex)];
         SniperTarget[] snipers = [.. inChosen.Where(target => target.Role == ScenarioA1Sniper.SniperTarget)];
         SniperTarget[] placed = [.. inChosen.Where(target => target.Role != ScenarioA1Sniper.SniperTarget)];
-        var inHex = (placed.Length > 0 ? placed : snipers).GroupBy(target => target.At)
-            .Select((group, position) => (group.Key, Facts: new SniperTargetLocation(position, group.Count() + (placed.Length > 0 ? snipers.Length : 0), group.Key.Level))).ToArray();
-        var location = inHex[ScenarioA1Sniper.TargetLocation([.. inHex.Select(item => item.Facts)])].Key;
+        BoardLocation[] locations = [.. (placed.Length > 0 ? placed : snipers).Select(target => target.At).Distinct().OrderBy(at => at.Level)];
+        var location = locations[0];
+        if (ScenarioA1Sniper.ChoiceOffered(locations.Length))
+        {
+            if (!answers.TryGetValue(ScenarioA1Sniper.LocationStep, out var picked))
+            {
+                return Pause(ScenarioA1Sniper.LocationStep, [.. locations.Select(at => at.ToString())], chosen);
+            }
+
+            location = locations.First(at => at.ToString() == picked);
+        }
+
         SniperTarget[] here = [.. placed.Where(target => target.At == location).Concat(snipers).OrderBy(target => target.Item.Id, StringComparer.Ordinal)
             .ThenBy(target => target.Role, StringComparer.Ordinal)];
 
-        // Ruling R15.5: the Sniper counter moves to the Location attacked.
-        events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-moved", new InstanceMoved(sniper.Id, new MapPosition(location)), package, null));
+        // Ruling R15.5: the Sniper counter moves to the Location attacked, once (an attack resumed after a later choice has moved it).
+        if (!moved)
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-moved", new InstanceMoved(sniper.Id, new MapPosition(location)), package, null));
+            moved = true;
+        }
 
-        // A14.23: a concealed stack is one possible target; the others one each (pass 71: a Vulnerable Inherent Crew, an unarmored vehicle, and the enemy
-        // Sniper counter simply join Random Selection; the Sniper player's choice of them is increment 4d's).
+        // A14.23: a concealed stack is one possible target; the others one each. A14.2 EXC (ruling R71.12): before Random Selection the Sniper player may
+        // choose the enemy Sniper counter, a Vulnerable Inherent Crew, or an unarmored vehicle; of several targets Random Selection gives, he chooses which
+        // takes the Sniper dr, and each other takes a new one.
         bool[] concealedOrDummy = [.. here.Select(target => target.ConcealedOrDummy)];
         var candidates = ScenarioA1Sniper.Candidates(concealedOrDummy).Select(group => (IReadOnlyList<SniperTarget>)[.. group.Select(position => here[position])]).ToList();
+        static bool Concealed(IReadOnlyList<SniperTarget> stack) => stack.Count > 1 || stack[0].ConcealedOrDummy;
+        static string OptionOf(IReadOnlyList<SniperTarget> stack) => Concealed(stack) ? ScenarioA1Sniper.ConcealedStack : ScenarioA1Sniper.TargetOption(stack[0].Role, stack[0].Item.Id);
         var targets = new List<(IReadOnlyList<SniperTarget> Stack, string Roll, int Dr)>();
-        if (candidates.Count == 1)
+        int[] prior = [.. ScenarioA1Sniper.PriorTargets([.. candidates.Select(stack => new SniperCandidate(stack[0].Role, Concealed(stack)))])];
+        string? first = null;
+        if (prior.Length > 0)
         {
-            targets.Add((candidates[0], sniperRoll, dr));
+            if (!answers.TryGetValue(ScenarioA1Sniper.TargetStep, out var picked))
+            {
+                return Pause(ScenarioA1Sniper.TargetStep, [.. prior.Select(position => OptionOf(candidates[position])), ScenarioA1Sniper.RandomSelection], location);
+            }
+
+            first = picked == ScenarioA1Sniper.RandomSelection ? null : picked;
+        }
+
+        if (candidates.Count == 1 || first is not null)
+        {
+            targets.Add((first is null ? candidates[0] : candidates.First(stack => OptionOf(stack) == first), sniperRoll, dr));
         }
         else
         {
-            var selection = Roll(candidates.Count, "sniper-random-selection");
-            var tied = ScenarioA1Sniper.Tied(Values(selection)).Select(position => candidates[position]).ToArray();
+            selectionRoll ??= Roll(candidates.Count, "sniper-random-selection");
+            var tied = ScenarioA1Sniper.Tied(Values(selectionRoll)).Select(position => candidates[position]).ToList();
+            if (ScenarioA1Sniper.ChoiceOffered(tied.Count))
+            {
+                if (!answers.TryGetValue(ScenarioA1Sniper.FirstStep, out var picked))
+                {
+                    return Pause(ScenarioA1Sniper.FirstStep, [.. tied.Select(OptionOf)], location);
+                }
+
+                var head = tied.First(stack => OptionOf(stack) == picked);
+                tied.Remove(head);
+                tied.Insert(0, head);
+            }
 
             // A14.2: the first selected takes the Sniper dr; each other one takes a new Sniper dr of its own (A14.33: so a vehicle and its PRC never share one).
             targets.Add((tied[0], sniperRoll, dr));
@@ -430,6 +564,41 @@ public sealed partial class GamePlanner
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [summary, units.Count == 0 ? "play.sniper-check: the Sniper attacks still to resolve follow (A14.1)"
             : $"play.sniper-check: {string.Join(", ", units.Select(unit => unit.Id))} in {at} make one combined Sniper Check DR{(drm == 0 ? string.Empty : $", DRM {drm:+0;-0} ({string.Join(", ", causes)})")}: a Final DR of 2 or less eliminates the Sniper, a 3 pins it, and they become TI (A14.4)"])
+        {
+            Roll = new PlannedRoll("choice", Build),
+            FirstEventId = EventId(attemptId, 1),
+        };
+    }
+
+    /// <summary>
+    /// The Sniper player's answer (A14.2, A14.21; pass 71, ruling R71.12): the attack resumes from the rolls it recorded and the answers so far, draws its next
+    /// dice in this commit, and may stop at a later choice; then the Sniper attacks still to resolve follow, in the order of their DRs (A14.1).
+    /// </summary>
+    private GamePlan PlanSniperAnswer(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor,
+        PendingChoice pending, GameEvent made, string option, string summary)
+    {
+        var resume = pending.Resume;
+        var answers = resume.GetProperty("answers").EnumerateObject().ToDictionary(item => item.Name, item => item.Value.GetString()!, StringComparer.Ordinal);
+        answers[resume.GetProperty("step").GetString()!] = option;
+        var rolls = resume.GetProperty("rolls");
+        string? RollOf(string name) => rolls.TryGetProperty(name, out var roll) ? roll.GetString() : null;
+        var resumed = new SniperResume(BoardLocation.Parse(resume.GetProperty("from").GetString()!), RollOf("sniper")!, RollOf("location"), RollOf("selection"),
+            resume.GetProperty("moved").GetBoolean(), answers);
+        var sniperId = resume.GetProperty("sniper").GetString()!;
+        var trigger = resume.GetProperty("trigger").GetString()!;
+        (string Roll, string Sniper)[] rest = [.. resume.GetProperty("rest").EnumerateArray().Select(item => (item.GetProperty("roll").GetString()!, item.GetProperty("sniper").GetString()!))];
+        IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
+        {
+            var events = new List<GameEvent> { made };
+            if (!Snipe(scope, attemptId, expected, actor, existing, events, draw, sniperId, trigger, rest, resumed))
+            {
+                SnipeInOrder(scope, attemptId, expected, actor, existing, events, draw, rest);
+            }
+
+            return events;
+        }
+
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [summary])
         {
             Roll = new PlannedRoll("choice", Build),
             FirstEventId = EventId(attemptId, 1),
