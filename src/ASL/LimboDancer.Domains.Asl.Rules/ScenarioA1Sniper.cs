@@ -29,6 +29,15 @@ public sealed record SniperTargetHex(int Index, int? Distance, int Tem, string H
 public sealed record SniperTargetLocation(int Index, int Count, int Level);
 
 /// <summary>
+/// A vehicle of the attacked side as A14.22 reads it (pass 71, ruling R71.3): unarmored or Partially Armored, whether its crew is CE, whether it is manned
+/// (not Abandoned, its crew not broken), and the exposure of each Passenger and Rider aboard (<see cref="ScenarioA1PrcRules.Exposure"/>).
+/// </summary>
+public sealed record SniperVehicleFacts(bool Unarmored, bool PartiallyArmored, bool CrewExposed, bool Manned, IReadOnlyList<string> PrcExposures);
+
+/// <summary>Who in or of a vehicle is a Sniper target (A14.22, A14.33): the indexes of its Vulnerable PRC, its Inherent crew, and the vehicle itself.</summary>
+public sealed record SniperVehicleTargets(IReadOnlyList<int> Prc, bool Crew, bool Vehicle);
+
+/// <summary>
 /// Snipers (A14; backlog pass 15, ruling R15.5; pass 32.h, S9): which DRs call for a Sniper attack, the Sniper dr, the Random Location and the target it finds,
 /// Random Selection among the targets, and the results. Play reads the records, the state, and the map, draws the dice, and writes the events.
 /// </summary>
@@ -42,6 +51,22 @@ public static class ScenarioA1Sniper
     public const string Broken = "broken";
     public const string CasualtyReduced = "casualty-reduced";
     public const string Pinned = "pinned";
+
+    // Pass 71 (ruling R71.5, R71.6): the results against a vehicle's crew, an unarmored vehicle, and the enemy Sniper counter (A14.3, A14.31, A14.33, D5.34,
+    // D5.341, D5.342).
+    public const string Stunned = "stunned";
+    public const string Recalled = "recalled";
+    public const string CrewBroken = "crew-broken";
+    public const string CrewPinned = "crew-pinned";
+    public const string Immobilized = "immobilized";
+    public const string SniperEliminated = "sniper-eliminated";
+    public const string SniperPinned = "sniper-pinned";
+
+    /// <summary>What a Sniper target is (A14.2 EXC, A14.22; ruling R71.3): a unit, a vehicle's Inherent crew, an unarmored vehicle itself, or the enemy Sniper counter.</summary>
+    public const string UnitTarget = "unit";
+    public const string CrewTarget = "crew";
+    public const string VehicleTarget = "vehicle";
+    public const string SniperTarget = "sniper";
 
     /// <summary>A14.1: Sniper attacks follow the DRs of the PFPh, MPh, DFPh, and AFPh.</summary>
     public static bool TriggerPhase(string? phase) => phase is "pfph" or "mph" or "dfph" or "afph";
@@ -110,11 +135,36 @@ public static class ScenarioA1Sniper
     /// <summary>A14.2 (ruling R15.5): the Random Location DR: the colored dr a hexside direction (1 the top hexside, clockwise, as 0 to 5), the white dr the hexes along it.</summary>
     public static (int Direction, int Extent) RandomLocation(int colored, int white) => (colored - 1, white);
 
-    /// <summary>A14.22 (ruling R15.5): the eligible targets are the attacked side's Personnel and Dummies on the map, not hidden, not prisoners.</summary>
-    public static bool Eligible(bool active, bool attackedSide, bool vehicle, bool hidden, bool captured, bool onMap) => active && attackedSide && !vehicle && !hidden && !captured && onMap;
+    /// <summary>
+    /// A14.22 (ruling R15.5; pass 71, ruling R71.3): who may be a target at all: the attacked side's units and vehicles on the map, not hidden, not prisoners.
+    /// A unit on foot is then a target; a vehicle, and a unit inside one, as <see cref="VehicleTargets"/> says.
+    /// </summary>
+    public static bool Eligible(bool active, bool attackedSide, bool hidden, bool captured, bool onMap) => active && attackedSide && !hidden && !captured && onMap;
+
+    /// <summary>
+    /// A14.22, A14.33 (p. 82; pass 71, rulings R71.3, R71.4): "All units are eligible Sniper targets except AFV with no Vulnerable PRC"; PRC "are Vulnerable
+    /// to Sniper attack if they are CE and/or occupy a Partially Armored AFV or unarmored vehicle": a Passenger or Rider whose exposure is open or exposed,
+    /// or any aboard a Partially Armored AFV; the Inherent crew of a manned vehicle when CE, Partially Armored, or unarmored; and a manned or loaded unarmored
+    /// vehicle itself, a separate target, so it and its PRC are never attacked by the same dr. An empty unarmored vehicle is no target (R71.4).
+    /// </summary>
+    public static SniperVehicleTargets VehicleTargets(SniperVehicleFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        int[] prc = [.. Enumerable.Range(0, facts.PrcExposures.Count)
+            .Where(index => facts.PartiallyArmored || facts.PrcExposures[index] is ScenarioA1PrcRules.Open or ScenarioA1PrcRules.Exposed)];
+        var crew = facts.Manned && (facts.CrewExposed || facts.PartiallyArmored || facts.Unarmored);
+        return new SniperVehicleTargets(prc, crew, facts.Unarmored && (facts.Manned || facts.PrcExposures.Count > 0));
+    }
 
     /// <summary>The TEM of a target hex's terrain, for the tie between hexes (A14.21).</summary>
     public static int TargetTem(string? terrain) => terrain is not null ? ScenarioA1FireReference.Tem.GetValueOrDefault(terrain) : 0;
+
+    /// <summary>
+    /// A14.21 (p. 82; pass 71, ruling R71.7): "the lowest (to a minimum of zero) in-hex TEM/SMOKE DRM applicable to any eligible target": a target's TEM
+    /// plus the in-hex SMOKE DRM of its hex, +2 a source to at most +3 (A24.2).
+    /// </summary>
+    public static int TargetTem(string? terrain, int smokeSources) =>
+        Math.Max(0, TargetTem(terrain) + (smokeSources > 0 ? ScenarioA1VehicleSightRules.SmokeDrm(smokeSources, false, true, static () => false) : 0));
 
     /// <summary>A14.21: the target hex, or the closest hex holding an eligible target; ties go to the lowest TEM, then the first hex by name; an unread distance is the farthest.</summary>
     public static int TargetHex(IReadOnlyList<SniperTargetHex> hexes)
@@ -184,8 +234,49 @@ public static class ScenarioA1Sniper
     public static IReadOnlyList<(UnitCondition Condition, bool Value)> BrokenConditions() =>
         [(UnitCondition.Broken, true), (UnitCondition.Pinned, false), (UnitCondition.DesperationMorale, true), (UnitCondition.Concealed, false), (UnitCondition.Hidden, false)];
 
-    /// <summary>A unit the attack pins loses its "?" and hidden status.</summary>
-    public static IReadOnlyList<(UnitCondition Condition, bool Value)> PinnedConditions() => [(UnitCondition.Pinned, true), (UnitCondition.Concealed, false), (UnitCondition.Hidden, false)];
+    /// <summary>A unit the attack pins loses its "?" and hidden status, but one that keeps its "?" by A12.14 (pass 71, ruling R71.8).</summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> PinnedConditions(bool keepsConcealment) =>
+        keepsConcealment ? [(UnitCondition.Pinned, true)] : [(UnitCondition.Pinned, true), (UnitCondition.Concealed, false), (UnitCondition.Hidden, false)];
+
+    /// <summary>
+    /// A12.14 (p. 77; pass 71, ruling R71.8): a concealed unit "is attacked by a Sniper (dr 1 or 2; 14.3)" loses its "?" only "while in the LOS of a Good
+    /// Order enemy ground unit"; one that "breaks or becomes Wounded/Reduced" loses it "even if out of the LOS of all enemy units". Whether it keeps it.
+    /// </summary>
+    public static bool KeepsConcealment(bool concealed, string result, Func<bool> inGoodOrderEnemyLos)
+    {
+        ArgumentNullException.ThrowIfNull(inGoodOrderEnemyLos);
+        return concealed && result is not (Broken or Wounded or CasualtyReduced or Eliminated or CrewBroken) && !inGoodOrderEnemyLos();
+    }
+
+    /// <summary>
+    /// A14.3, D5.34, D5.341, D5.342 (pp. 82, 203, 204; pass 71, ruling R71.5): the CE crew of a fully armored AFV is Recalled by dr 1 and Stunned by dr 2,
+    /// Recalled instead when already under Stun +1; the Inherent crew of an unarmored vehicle or Partially Armored AFV breaks on dr 1 and is pinned on dr 2
+    /// (no effect on a crew already pinned).
+    /// </summary>
+    public static string CrewResult(int dr, bool fullyArmored, bool stunRecovery, bool pinned) =>
+        fullyArmored ? dr == 1 || stunRecovery ? Recalled : Stunned
+        : dr == 1 ? CrewBroken
+        : pinned ? NoEffect : CrewPinned;
+
+    /// <summary>A14.33 (p. 82; ruling R71.5): a Sniper attack on an unarmored vehicle itself immobilizes it on dr 1 only, with no further effect if already immobilized.</summary>
+    public static string VehicleResult(int dr, bool immobilized) => dr == 1 && !immobilized ? Immobilized : NoEffect;
+
+    /// <summary>A14.3, A14.31 (p. 82; ruling R71.6): dr 1 eliminates the enemy Sniper; dr 2 pins it (no effect on one already pinned).</summary>
+    public static string SniperResult(int dr, bool pinned) => dr == 1 ? SniperEliminated : pinned ? NoEffect : SniperPinned;
+
+    /// <summary>
+    /// The conditions a crew or vehicle result sets (ruling R71.5), as the Fire path's vehicle results set them (D.7, D5.34, D5.341): a Stun, a Recall, an
+    /// Immobilization, or a crew's pin; empty for any other result.
+    /// </summary>
+    public static IReadOnlyList<(VehicleCondition Condition, bool Value)> VehicleConditions(string result) =>
+        ScenarioA1ResultTables.VehicleConditions(new FireVehicleEffect(string.Empty, string.Empty, result == Immobilized ? FireVehicleEffect.Immobilized : FireVehicleEffect.None,
+            null, [], 0, null, null, result switch
+            {
+                Stunned => FireVehicleEffect.Stunned,
+                Recalled => FireVehicleEffect.Recalled,
+                CrewPinned => FireVehicleEffect.Pinned,
+                _ => FireVehicleEffect.None,
+            }));
 
     /// <summary>The projector's check of a recorded Sniper attack (A14; ruling R15.5): its Sniper counter is in play, its rolls recorded, and its dr 1 to 6; the events after it apply it.</summary>
     public static RecordRefusal? VerifySniperAttack(bool sniperActive, bool rollRecorded, bool triggerRecorded, int dr) =>

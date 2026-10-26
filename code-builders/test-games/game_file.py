@@ -117,6 +117,21 @@ class GameFile:
                                                     "position": {"at": at, "facing": facing}, "holding": {"holder": crew, "role": "manned"},
                                                     "conditions": marks({"asl:malfunctioned": False}, conditions)}})
 
+    def passenger(self, identifier, kind, definition, side, vehicle, role="passenger", **conditions):
+        """An Infantry counter aboard a vehicle as a Passenger (D6.1), or as a Rider with role="rider" (D6.2)."""
+        self.add("instance-created", {"instance": {"id": identifier, "kind": "asl:" + kind, "definition": definition, "side": side,
+                                                    "position": {"in": vehicle, "role": role}, "conditions": marks(CLEAR, conditions)}})
+
+    def san(self, side, value):
+        """A side's SAN (A14.1), on the game-started payload's side."""
+        started = self.events[0]["payload"]
+        started["sides"] = [dict(item, san=value) if item["id"] == side else dict(item) for item in started["sides"]]
+
+    def sniper(self, identifier, side, at, **conditions):
+        """A side's Sniper counter (A14.01), an entity with no definition, as a setup placement makes it. Conditions: pinned=True."""
+        self.add("instance-created", {"instance": {"id": identifier, "kind": "asl:sniper", "side": side, "position": {"at": at},
+                                                    "conditions": marks({}, conditions)}})
+
     def phases(self, *names, turn=1, side=None):
         """The phase changes, in order, to the phase wanted."""
         for name in names:

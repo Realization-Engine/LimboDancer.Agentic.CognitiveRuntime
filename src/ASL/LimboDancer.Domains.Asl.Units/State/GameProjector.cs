@@ -645,9 +645,10 @@ public static class GameProjector
                     MoppedUpThisPlayerTurn = newPlayerTurn ? [] : state.MoppedUpThisPlayerTurn,
                     StarshellAttempts = [],
                     // E1.923 (ruling R16.8): Starshells are removed at the end of each CCPh.
-                    Entities = Rules.ScenarioA1SequenceProjection.RemovesSmokeGrenades(state.Phase) ? RemoveSmokeGrenades(state.Entities)
+                    // A14.31 (pass 71, ruling R71.6): a pinned Sniper counter's pin is removed with the others at the end of the CCPh.
+                    Entities = UnpinSnipers(Rules.ScenarioA1SequenceProjection.RemovesSmokeGrenades(state.Phase) ? RemoveSmokeGrenades(state.Entities)
                         : Rules.ScenarioA1SequenceProjection.RemovesStarshells(state.Phase) ? [.. state.Entities.Where(entity => !Rules.ScenarioA1SequenceProjection.Starshell(entity.Kind))]
-                        : state.Entities,
+                        : state.Entities, cleared),
                     Turn = change.Turn,
                     Phase = change.Phase,
                     PhasingSide = change.PhasingSide,
@@ -690,6 +691,16 @@ public static class GameProjector
         private int? SmokeExponent(UnitInstance unit) => unit.Definition is { } reference
             ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:smoke-exponent")?.Value?.Number
             : null;
+
+        /// <summary>
+        /// A14.31 (pass 71, ruling R71.6): the markers a phase's end removes are removed from the Sniper counters too, which only a Sniper's pin can be on.
+        /// Nothing in play pinned a Sniper before the pass, and the proof store holds no Sniper counter (the frame's scan), so no older record changes.
+        /// </summary>
+        private static IReadOnlyList<EntityInstance> UnpinSnipers(IReadOnlyList<EntityInstance> entities, string[] cleared) =>
+            entities.Any(entity => entity.Kind == "asl:sniper" && entity.Conditions.Keys.Any(cleared.Contains))
+                ? [.. entities.Select(entity => entity.Kind == "asl:sniper" && entity.Conditions.Keys.Any(cleared.Contains)
+                    ? entity with { Conditions = Without(entity.Conditions, cleared) } : entity)]
+                : entities;
 
         /// <summary>A24.11 (ruling R9.5): the 1/2" SMOKE counters of grenades leave at the end of the MPh they were placed in.</summary>
         private static IReadOnlyList<EntityInstance> RemoveSmokeGrenades(IReadOnlyList<EntityInstance> entities) =>

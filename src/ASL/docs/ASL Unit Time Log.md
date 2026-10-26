@@ -1791,3 +1791,13 @@ One session under the user's word of 2026-10-25 ("Start Pass 70 ... Run it witho
 | The whole-pass check: 41 games replayed, the hidden-information view, 1024 and 320, the hex audit, the measurement; the strict stage again (passed) | 23:11 | 23:20 | 0:09 | | Strict 23:12 to 23:16; the keyboard not exercised (the pane hidden) |
 | The documents by an agent (the design's sections 8 to 20, the review, R70.1 to R70.48, backlog 72, the plan, 80 inventory rows, the coverage, the prompt), checked | 23:20 | 23:47 | 0:27 | | Agent 23:20 to about 23:45; the checkers and strict-check run by me. The pass to the gate: 11:51 to 23:47 by the clock |
 | The merge gate: baseline, build, proofs; the early check's stop named (SKIP_JSON keys older records write), the proof tool's rolled-events dump, the stop put into gate.sh; every differing line named | 23:47 | 00:03 | 0:16 | | Baseline 23:48 to 23:49, build 23:50 to 23:52, proofs 23:53 (stopped at the early check), again 23:59 to 00:01; the rest after midnight (2026-10-26) |
+
+## Pass 71: Infantry IV: Snipers and wounds, 2026-10-26
+
+One session under the user's word of 2026-10-26 ("Run Pass 71 without my intervention up to the merge gate"). The ends of the first rows are the clock reads of the pass's notes (`code-builders/pass-history/pass-71-snipers-wounds/notes.md`); later rows are written by `timelog_row.py`.
+
+| Task | Start | End | Duration | Estimate | Note |
+|---|---|---|---|---|---|
+| The frame: the prompt and standing rules read, the state checked against main, the branch cut, pass 65's games retired, `base` (08:24 to 08:28), four read-only frame agents, the design's sections 1 to 7 with R71.1 to R71.17, the build brief and the 4a brief | 08:21 | 08:41 | 0:20 | | Frame agents 08:25 to about 08:36 |
+| The base measurement (main's build, alone); the briefs of 4b to 4g | 08:41 | 08:43 | 0:02 | | |
+| 4a, 71.1 (I): the Sniper's targets and results | 08:42 | 09:43 | 1:01 | | Agent 08:42 to about 09:23; Studio check; the measurement inconclusive (09:31 to 09:42, the page's harness); estimate 5:45 |

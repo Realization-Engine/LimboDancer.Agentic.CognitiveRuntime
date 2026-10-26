@@ -1631,10 +1631,33 @@ public sealed class PlayRecords
             var sniper = (SniperAttacked)item.Payload;
             var side = state?.Find(sniper.Sniper)?.Side ?? "a";
             var text = $"The {side} Sniper ({sniper.Sniper}) attacks after the SAN roll {sniper.Trigger}: dr {sniper.Dr}"
-                + (sniper.Target is { } at ? $", at {at}" : string.Empty)
-                + (sniper.Unit is { } unit ? $": {unit} is {sniper.Result} (A14.3)" : sniper.Result == "none" ? ", no effect (A14.3)" : $": {sniper.Result} (A14.21, A14.23)");
+                + (sniper.Target is { } at ? $"; {at}: {SniperResultText(sniper.Unit, sniper.Result)}" : sniper.Result == ScenarioA1Sniper.NoTarget
+                    ? ", no target in reach (A14.21, A14.22)" : ", no effect (A14.3)");
             return (item.EventId, text);
         })];
+
+    /// <summary>
+    /// What a Sniper attack did in its Location (A14.3; pass 71, the record lines): the unit by its id, which the view's names make "4-6-7 squad G1", or a
+    /// concealed unit that keeps its "?" (A12.14; ruling R71.8), which the record does not name.
+    /// </summary>
+    private static string SniperResultText(string? unit, string result) => (unit, result) switch
+    {
+        (_, ScenarioA1Sniper.DummyStackEliminated) => "a Dummy stack is eliminated (A14.23)",
+        (null, ScenarioA1Sniper.NoEffect) => "no effect (A14.3)",
+
+        // A12.14 (ruling R71.8): a target that keeps its "?" is not named, nor is what it is.
+        (null, _) => "a concealed unit is attacked and keeps its \"?\", out of every Good Order enemy LOS (A12.14, A14.3)",
+        (_, ScenarioA1Sniper.Stunned) => $"the crew of {unit} is Stunned (A14.3, D5.34)",
+        (_, ScenarioA1Sniper.Recalled) => $"the crew of {unit} is Recalled (A14.3, D5.341)",
+        (_, ScenarioA1Sniper.CrewBroken) => $"the Inherent crew of {unit} breaks (A14.3)",
+        (_, ScenarioA1Sniper.CrewPinned) => $"the Inherent crew of {unit} is pinned (A14.3)",
+        (_, ScenarioA1Sniper.Immobilized) => $"{unit} is immobilized (A14.33)",
+        (_, ScenarioA1Sniper.SniperEliminated) => $"the enemy Sniper counter ({unit}) is eliminated (A14.3, A14.31)",
+        (_, ScenarioA1Sniper.SniperPinned) => $"the enemy Sniper counter ({unit}) is pinned and makes no further attack this Player Turn (A14.31)",
+        (_, ScenarioA1Sniper.NoEffect) => $"{unit} is unaffected (A14.3)",
+        (_, ScenarioA1Sniper.CasualtyReduced) => $"{unit} is Casualty Reduced (A14.3)",
+        _ => $"{unit} is {result} (A14.3)",
+    };
 
     /// <summary>A change of DM alone, which the gate adds to any plan that leaves a broken unit ADJACENT to its enemy (A10.62; ruling R13.1).</summary>
     private static bool IsDmOnly(EventPayload payload) => payload is ConditionsChanged { Conditions: var changed } && changed.Keys.All(key => key == Conditions.DesperationMorale);

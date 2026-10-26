@@ -1316,9 +1316,11 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>The conditions a vehicle result sets, as Rules decides them (pass 32.a), under Units' condition names; null when it sets none.</summary>
-    private static Dictionary<string, ConditionState>? VehicleConditions(FireVehicleEffect effect)
+    private static Dictionary<string, ConditionState>? VehicleConditions(FireVehicleEffect effect) => VehicleConditionNames(ScenarioA1ResultTables.VehicleConditions(effect));
+
+    /// <summary>Vehicle condition changes as Rules gives them, under Units' condition names (a Sniper's too, pass 71); null when there are none.</summary>
+    private static Dictionary<string, ConditionState>? VehicleConditionNames(IReadOnlyList<(VehicleCondition Condition, bool Value)> changes)
     {
-        var changes = ScenarioA1ResultTables.VehicleConditions(effect);
         if (changes.Count == 0)
         {
             return null;
