@@ -807,8 +807,8 @@ public static class GameProjector
             // A crew inside is its vehicle's, never held (A11.7).
             bool Held(UnitInstance unit, string vehicle) => prcHeld?.Contains(unit.Id, StringComparer.Ordinal)
                 ?? (unit.Position is ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider } && state.Unit(vehicle) is { } carrier
-                    && Rules.ScenarioA1PassengerActionRules.HeldInMelee(GameState.Condition(carrier, Conditions.Immobilized) != ConditionState.True
-                    && GameState.Condition(carrier, Conditions.Bogged) != ConditionState.True));
+                    && Rules.ScenarioA1PassengerActionRules.HeldInMelee(Rules.ScenarioA1PassengerActionRules.VehicleMobile(GameState.Condition(carrier, Conditions.Immobilized) == ConditionState.True,
+                        GameState.Condition(carrier, Conditions.Bogged) == ConditionState.True)));
             var units = state.Units.Where(unit => Rules.ScenarioA1CloseCombatProjection.MeleeCandidate(unit.Status == InstanceStatus.Active, GameState.Condition(unit, Conditions.Captured) == ConditionState.True,
                 GameState.Condition(unit, Conditions.Concealed) == ConditionState.True, GameState.Condition(unit, Conditions.Hidden) == ConditionState.True,
                 unit.Kind == "asl:dummy", state.Location(unit.Id) is not null)
@@ -3009,9 +3009,15 @@ public static class GameProjector
             const string Code = "UNIT-STATE-034";
             if (Active(state, captured.Vehicle) is not UnitInstance vehicle || !Rules.ScenarioA1VehicleProjection.CaptureStands(state.Phase == "ccph",
                 vocabulary.IsA(vehicle.Kind, "asl:vehicle"), vehicle.Side != captured.Side, state.Location(vehicle.Id)?.Location == captured.At,
-                state.Sides.Any(side => side.Id == captured.Side), captured.Cause, GameState.Condition(vehicle, Conditions.Abandoned) == ConditionState.True))
+                state.Sides.Any(side => side.Id == captured.Side), captured.Cause, GameState.Condition(vehicle, Conditions.Abandoned) == ConditionState.True,
+                // A11.52 (pass 70, fix round C): a capture with its Passengers, read only for that cause (a pass 70 record), with none of them left aboard.
+                captured.Cause == Rules.ScenarioA1CapturedVehicleRules.Passengers && state.Units.Any(unit => unit is
+                {
+                    Status: InstanceStatus.Active,
+                    Position: ContainedPosition { Role: ContainmentRole.Passenger } aboard
+                } && aboard.Container == vehicle.Id && GameState.Condition(unit, Conditions.Captured) != ConditionState.True)))
             {
-                return Fail<GameState>(Code, "A vehicle is captured in the CCPh, in its Location, by the other side: an AFV only when Abandoned (A11.52, A21.2).");
+                return Fail<GameState>(Code, "A vehicle is captured in the CCPh, in its Location, by the other side: an AFV only when Abandoned, one with Passengers only once every one is captured (A11.52, A21.2).");
             }
 
             var next = Replace(state with

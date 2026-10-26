@@ -83,8 +83,9 @@ public static class LiveCloseCombat
             units.Any(unit => state.HiddenPlaced.Contains(unit.UnitId!, StringComparer.Ordinal))) with
         {
             Vehicles = ScenarioA1CloseCombatFactBuilders.AmbushVehicles([.. state.At(location).OfType<UnitInstance>()
-                .Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && !Is(unit, Conditions.Abandoned) && !Is(unit, Conditions.Captured))
-                .Select(unit => (unit.Side, LiveFire.UnarmoredOf(unit.Definition?.Definition) != true, LiveFire.CrewExposed(unit), Is(unit, Conditions.Stunned)))]),
+                .Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit))
+                .Select(unit => (unit.Side, LiveFire.UnarmoredOf(unit.Definition?.Definition) != true, LiveFire.CrewExposed(unit), Is(unit, Conditions.Stunned),
+                    Is(unit, Conditions.Abandoned), Is(unit, Conditions.Captured)))]),
         }, null);
     }
 
@@ -282,7 +283,7 @@ public static class LiveCloseCombat
         ArgumentNullException.ThrowIfNull(aboard);
         var unarmored = LiveFire.UnarmoredOf(vehicle.Definition?.Definition) == true;
         var exposed = ScenarioA1PassengerActionRules.PassengersExposed(unarmored, LiveFire.CrewExposed(vehicle));
-        var mobile = !Is(vehicle, Conditions.Immobilized) && !Is(vehicle, Conditions.Bogged);
+        var mobile = ScenarioA1PassengerActionRules.VehicleMobile(Is(vehicle, Conditions.Immobilized), Is(vehicle, Conditions.Bogged));
         return [.. aboard.Where(passenger => passenger.Status == InstanceStatus.Active && !Is(passenger, Conditions.Broken) && !Is(passenger, Conditions.Captured)
                 && ScenarioA1PassengerActionRules.CloseCombat(passenger.Position is ContainedPosition { Role: ContainmentRole.Rider } ? FirePrc.Rider : FirePrc.Passenger, !unarmored, exposed,
                     mobile).Part == ScenarioA1PassengerActionRules.Attacks)

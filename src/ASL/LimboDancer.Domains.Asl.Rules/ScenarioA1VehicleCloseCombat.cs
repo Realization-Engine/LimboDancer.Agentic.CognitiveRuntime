@@ -494,15 +494,17 @@ public static class ScenarioA1VehicleCloseCombat
         }
 
         // A11.5: a leader's DRM only when he combines; A15.24: a hero's -1; A4.51 (ruling R5.2): +1 when a CX unit attacks.
-        if (smc.Facts is not null && smc.Definition.IsLeader && smc.Definition.Leadership is { } leadership)
-        {
-            drm.Add(new FireModifier("leadership:" + smc.Facts.UnitId, leadership + (smc.Facts.Wounded == true ? 1 : 0), "A11.51"));
-        }
-
-        // A18.12: the created leader "must add his leadership to the Original 2 CC DR that created him (even if the modifier is a +1)".
-        if (created is not null)
+        // A18.12: the created leader "must add his leadership to the Original 2 CC DR that created him (even if the modifier is a +1)". A10.7: leadership
+        // modifiers are not cumulative, so he takes a combining leader's place; A11.5's "No more than two units" leaves him out where a SMC that is no
+        // leader combines (pass 70, ruling R70.46, R29.12's reading).
+        var combiningLeader = smc.Facts is not null && smc.Definition.IsLeader;
+        if (created is not null && (smc.Facts is null || combiningLeader))
         {
             drm.Add(new FireModifier("created-leader:" + created.Id, created.Leadership ?? 0, "A18.12"));
+        }
+        else if (combiningLeader && smc.Facts is { } leaderFacts && smc.Definition.Leadership is { } leadership)
+        {
+            drm.Add(new FireModifier("leadership:" + leaderFacts.UnitId, leadership + (leaderFacts.Wounded == true ? 1 : 0), "A11.51"));
         }
 
         foreach (var hero in attackers.Where(item => item.Definition.IsHero || (item.Definition.IsLeader && item.Facts.Heroic == true)))

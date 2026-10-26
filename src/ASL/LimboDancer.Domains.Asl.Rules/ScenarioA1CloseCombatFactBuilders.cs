@@ -58,14 +58,16 @@ public static class ScenarioA1CloseCombatFactBuilders
         };
 
     /// <summary>
-    /// A11.4's table (pass 70, ruling R70.30): each side's vehicles in the Location, from each vehicle's side and whether it is an AFV that is BU (not CE) or
-    /// Stunned; null where no vehicle stands, so a record made before the pass reads as it did.
+    /// A11.4's table (pass 70, ruling R70.30): each side's vehicles in the Location that are neither Abandoned nor captured (fix round C: the filter is
+    /// Rules'), from each vehicle's side and whether it is an AFV that is BU (not CE) or Stunned; null where no such vehicle stands, so a record made before
+    /// the pass reads as it did.
     /// </summary>
-    public static IReadOnlyList<AmbushVehicleFacts>? AmbushVehicles(IReadOnlyList<(string Side, bool Afv, bool CrewExposed, bool Stunned)> vehicles)
+    public static IReadOnlyList<AmbushVehicleFacts>? AmbushVehicles(IReadOnlyList<(string Side, bool Afv, bool CrewExposed, bool Stunned, bool Abandoned, bool Captured)> vehicles)
     {
         ArgumentNullException.ThrowIfNull(vehicles);
-        return vehicles.Count == 0 ? null
-            : [.. vehicles.GroupBy(item => item.Side, StringComparer.Ordinal).OrderBy(group => group.Key, StringComparer.Ordinal)
+        var counted = vehicles.Where(item => !item.Abandoned && !item.Captured).ToArray();
+        return counted.Length == 0 ? null
+            : [.. counted.GroupBy(item => item.Side, StringComparer.Ordinal).OrderBy(group => group.Key, StringComparer.Ordinal)
                 .Select(group => new AmbushVehicleFacts(group.Key, group.Count(item => item.Afv && (!item.CrewExposed || item.Stunned))))];
     }
 

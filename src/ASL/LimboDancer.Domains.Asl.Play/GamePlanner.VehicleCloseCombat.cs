@@ -49,8 +49,8 @@ public sealed partial class GamePlanner
     /// one's part, and the vehicle is neither Stunned, Shocked, Abandoned, nor captured.
     /// </summary>
     private static bool PassengersJoin(ObjectIndex index, UnitInstance vehicle) =>
-        !Is(vehicle, Conditions.Stunned) && !Is(vehicle, Conditions.Shocked) && !Is(vehicle, Conditions.Abandoned) && !Is(vehicle, Conditions.Captured)
-        && LiveCloseCombat.JoiningPassengers(vehicle, index.Aboard(vehicle.Id)).Count > 0;
+        ScenarioA1VehicleCloseCombatRules.PassengersJoin(Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.Abandoned), Is(vehicle, Conditions.Captured),
+            LiveCloseCombat.JoiningPassengers(vehicle, index.Aboard(vehicle.Id)).Count);
 
     /// <summary>
     /// The sides with an attack left in a CC Location holding a vehicle (ruling R11.16): Infantry that have not attacked and face an enemy vehicle, and
@@ -85,11 +85,12 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// A berserk unit (of <paramref name="side"/>, or of either side) that still owes an attack on a Known enemy vehicle in a Location's sequential CC
-    /// this CCPh (A15.43, A11.31; ruling R27.2): it may attack and has not (a Gun's crew there no longer voids it, pass 70, ruling R70.27). Null when none
-    /// does.
+    /// The unit (of <paramref name="side"/>, or of either side) that still owes an attack in a Location's sequential CC this CCPh, as Rules decides it
+    /// (<see cref="ScenarioA1VehicleCloseCombatRules.OwingAttack"/>): a berserk unit with a Known enemy vehicle (A15.43, A11.31; ruling R27.2), or with Known
+    /// enemy Infantry no Infantry has attacked, or a unit that advanced into the Melee there (A11.15; pass 70, fix round C). The units are the planner's
+    /// index's, Riders among them. Null when none does.
     /// </summary>
-    private UnitInstance? BerserkOwingVehicleAttack(GameState state, BoardLocation location, string? side)
+    private (string Id, bool Berserk, string Target)? OwingSequentialAttack(GameState state, BoardLocation location, string? side)
     {
         var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
         if (!ScenarioA1VehicleCloseCombatRules.OwingPossible(state.Phase, entry is { Closed: true }, VehicleCloseCombatTurn(state, location).Open))
@@ -97,8 +98,13 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        var here = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
-        return ScenarioA1VehicleCloseCombatRules.BerserkOwingVehicleAttack([.. here.Select(VehicleCcUnit)], side, entry?.Attacking ?? []) is { } owing ? here.First(unit => unit.Id == owing) : null;
+        var objects = MemoOf(state).Objects(state);
+        return ScenarioA1VehicleCloseCombatRules.OwingAttack([.. VehicleCcUnits(state, location).Select(unit => objects.Unit(unit.Id) is { } found ? unit with
+        {
+            AdvancedHere = state.Advances.Any(item => item.Unit == unit.Id && item.To == location),
+            Melee = Is(found, Conditions.Melee),
+            Concealed = Is(found, Conditions.Concealed),
+        } : unit)], side, entry?.Attacking ?? [], entry?.InfantryAttacked ?? []);
     }
 
     /// <summary>
@@ -330,10 +336,11 @@ public sealed partial class GamePlanner
         var passed = entry?.Passed ?? [];
         if (pass)
         {
-            // A15.43 (ruling R27.2): a side with a berserk unit facing a Known enemy vehicle there does not pass; the berserk unit attacks.
-            if (BerserkOwingVehicleAttack(state, location, next) is { } owing)
+            // A15.43 (ruling R27.2): a side with a berserk unit facing a Known enemy vehicle there does not pass; the berserk unit attacks. Since pass 70 (fix
+            // round C) nor one owing an attack on enemy Infantry there, or holding a unit that advanced into the Melee (A11.15).
+            if (OwingSequentialAttack(state, location, next) is { } owing)
             {
-                return Refused(scope, label, expected, ScenarioA1VehicleCloseCombatRules.BerserkNoPassText(owing.Id, location.ToString()));
+                return Refused(scope, label, expected, ScenarioA1VehicleCloseCombatRules.OwingNoPassText(owing.Id, location.ToString(), owing.Berserk, owing.Target));
             }
 
             var (following, closed) = NextCcSide(state, location, next, attacked, [.. passed, next], entry?.InfantryAttacked ?? []);
@@ -519,10 +526,10 @@ public sealed partial class GamePlanner
             // armed one is the captors', unmanned, until a crew enters it (A21.22), which a captor may do this CCPh (D5.42).
             foreach (var vehicle in taken)
             {
-                var unarmed = !Armed(VehicleDefinition(vehicle));
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "vehicle-captured", unarmed ? UnarmedCapture(state, vehicle)
-                    : new VehicleCaptured(vehicle.Id, location, next, ScenarioA1CapturedVehicleRules.Passengers), package, null, [recordId]));
-                if (!unarmed && !Is(vehicle, Conditions.Abandoned))
+                var (cause, markAbandoned) = ScenarioA1CapturedVehicleRules.PassengerCapture(Armed(VehicleDefinition(vehicle)), Is(vehicle, Conditions.Abandoned));
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "vehicle-captured", cause == ScenarioA1CapturedVehicleRules.Unarmed ? UnarmedCapture(state, vehicle)
+                    : new VehicleCaptured(vehicle.Id, location, next, cause), package, null, [recordId]));
+                if (markAbandoned)
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
                         new ConditionsChanged(vehicle.Id, new Dictionary<string, ConditionState> { [Conditions.Abandoned] = ConditionState.True }), package, null, [recordId]));

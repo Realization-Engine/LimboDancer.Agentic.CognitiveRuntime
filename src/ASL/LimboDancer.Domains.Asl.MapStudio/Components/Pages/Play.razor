@@ -4505,18 +4505,29 @@ else if (state is not null)
 
     /// <summary>
     /// The units held in Melee in the CC Location that may withdraw (A11.2: not pinned, berserk, Disrupted, or a prisoner), with their destinations: no
-    /// Location of a Known enemy unit, as the planner reads it from what the side may know (pass 70, ruling R70.26), after the SW ticked to drop.
+    /// Location of a Known enemy unit, as the planner reads it from what the side may know (pass 70, ruling R70.26), after the SW ticked to drop. A unit
+    /// above its IPC is listed with no destination until enough SW are ticked, so that its drop boxes show (fix round C: the proposal reads the SW ticked).
     /// </summary>
     private IEnumerable<(UnitInstance Unit, IReadOnlyList<BoardLocation> Destinations)> WithdrawalUnits => state is null || ccLocation.Length == 0
         || !BoardLocation.TryParse(ccLocation, out var at) || CloseCombatEntry is not null
         ? []
         : CloseCombatUnits.Where(unit => GameState.Condition(unit, Conditions.Melee) == ConditionState.True
                 && !new[] { Conditions.Pinned, Conditions.Berserk, Conditions.Disrupted, Conditions.Captured }.Any(name => GameState.Condition(unit, name) == ConditionState.True))
-            .Select(unit => (unit, Live.Planner.WithdrawalDestinations(state, unit, at, DropsTicked(unit)))).Where(item => item.Item2.Count > 0);
+            .Select(unit => (unit, Live.Planner.WithdrawalDestinations(state, unit, at, DropsTicked(unit)))).Where(item => item.Item2.Count > 0 || MayWithdrawByDropping(item.unit, at));
 
-    /// <summary>The SW of a unit ticked to drop, or null when none is, for the planner's reading of a unit above its IPC (A11.21; ruling R70.26).</summary>
-    private IReadOnlyCollection<string>? DropsTicked(UnitInstance unit) =>
-        state is not null && GamePlanner.PossessedSw(state, unit).Where(ccDrops.Contains).ToArray() is { Length: > 0 } ticked ? ticked : null;
+    /// <summary>
+    /// The SW of a unit ticked to drop, none when none is: what the proposal sends (A11.21; ruling R70.26), so that a unit above its IPC is offered no
+    /// destination it would be refused (fix round C).
+    /// </summary>
+    private IReadOnlyCollection<string> DropsTicked(UnitInstance unit) =>
+        state is null ? [] : [.. GamePlanner.PossessedSw(state, unit).Where(ccDrops.Contains)];
+
+    /// <summary>
+    /// Whether a unit above its IPC with too few SW ticked could withdraw or infiltrate from a Location once it drops enough (A11.21; ruling R70.26): the
+    /// planner reads no drops named as dropping all it possesses. Read only for a unit that has SW to drop.
+    /// </summary>
+    private bool MayWithdrawByDropping(UnitInstance unit, BoardLocation at) =>
+        DropChoices(unit).Count > 0 && Live.Planner.WithdrawalDestinations(state!, unit, at).Count > 0;
 
     /// <summary>
     /// The SW a unit above its IPC may drop to withdraw or infiltrate (A11.21; pass 70, ruling R70.26), each named with its hex first; none for a unit
@@ -4760,11 +4771,11 @@ else if (state is not null)
     private IReadOnlyList<CloseCombatInfiltrationChoices.Infiltrator>? Infiltrators => state is not null && !AmbushDue && BoardLocation.TryParse(ccLocation, out var at)
         ? [.. CloseCombatUnits.Where(unit => (Viewer.IsAdjudicator || viewAs == unit.Side) && !Prisoner(unit)
                 && GameState.Condition(unit, Conditions.Berserk) != ConditionState.True && GameState.Condition(unit, Conditions.Disrupted) != ConditionState.True)
-            .Select(unit => new CloseCombatInfiltrationChoices.Infiltrator(unit.Id, [.. Live.Planner.WithdrawalDestinations(state, unit, at, DropsTicked(unit)).Select(to => to.ToString())])
+            .Select(unit => (unit, Choice: new CloseCombatInfiltrationChoices.Infiltrator(unit.Id, [.. Live.Planner.WithdrawalDestinations(state, unit, at, DropsTicked(unit)).Select(to => to.ToString())])
             {
                 Drops = DropChoices(unit),
-            })
-            .Where(item => item.Destinations.Count > 0)]
+            }))
+            .Where(item => item.Choice.Destinations.Count > 0 || MayWithdrawByDropping(item.unit, at)).Select(item => item.Choice)]
         : null;
 
     private void SetStacking(string smc, string? mmc)

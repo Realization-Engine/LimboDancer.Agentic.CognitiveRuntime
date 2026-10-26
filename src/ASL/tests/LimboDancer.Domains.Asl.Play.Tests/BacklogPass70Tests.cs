@@ -1568,6 +1568,25 @@ public sealed class BacklogPass70Tests : IDisposable
         NoReplayErrors();
     }
 
+    [Fact]
+    public async Task AnMmgDroppedToWithdrawStaysBehindWhenItsUnitDiesOnEntry()
+    {
+        // A11.21, A4.43 (ruling R70.26; fix round C): de-1 drops its MMG to withdraw into E6, where a concealed Russian squad is, and is eliminated on entry;
+        // the MMG was dropped before it went, so it lies unpossessed in E5.
+        await SetupAt(7, "german", Squad("ru-1", "E5", "russian", Conditions.Melee), Squad("de-1", "E5", "german", Conditions.Melee), Sw("de-mmg", "attacker-mmg", "de-1"),
+            Sw("de-lmg", "attacker-lmg", "de-1"), Squad("ru-2", "E6", "russian", Conditions.Concealed));
+        var before = Revision;
+        Committed(await Withdraw(NoRoll(), "de-1", "E6", DroppedMmg));
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("de-1")!.Status);
+        var events = Since(before).ToArray();
+        var drop = Array.FindIndex(events, item => item.Payload is EquipmentTransferred { Id: "de-mmg" });
+        var death = Array.FindIndex(events, item => item.Payload is InstanceEliminated { Id: "de-1" });
+        Assert.True(drop >= 0 && drop < death);
+        var mmg = (EquipmentInstance)Current.Find("de-mmg")!;
+        Assert.Equal(((Holding?)null, L("E5")), (mmg.Holding, Current.Location(mmg.Id)!.Location.ToString()));
+        NoReplayErrors();
+    }
+
     /// <summary>The German HS in E4 advance onto the Russian Gun's crew in E5 in their APh, and the CCPh begins.</summary>
     private async Task AdvanceOntoTheGun()
     {
@@ -1755,6 +1774,25 @@ public sealed class BacklogPass70Tests : IDisposable
         before = Revision;
         Committed(await VehicleCc(Once(5, 6), defenders: BothRussianSquads, vehicle: "de-tank"));
         Assert.True(Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>()).Closed);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ABerserkSquadBesideItsTankOwesItsAttackOnTheEnemyInfantryThere()
+    {
+        // A15.43 (p. 84; fix round C): the berserk German 4-6-7 beside its tank in E5 must attack the Russian squad that advanced in (A11.31, A11.12; ruling
+        // R70.30): after the Russian attack on the tank (4 + 4 + 2, no effect), the German side may not pass, nor the CCPh end, until it has.
+        await AdvanceOntoTheTank("E5", RussianOne, Squad("ru-1", "E4", "russian"), Vehicle("de-tank", "attacker-tank", "E5", "german", "east"),
+            Squad("de-1", "E5", "german", Conditions.Berserk));
+        Committed(await VehicleCc(Once(4, 4), attackers: RussianOne, vehicle: "de-tank"));
+        Assert.Equal("german", Current.CloseCombats.Single().Next);
+        var pass = await VehicleCc(NoRoll(), pass: true);
+        Assert.Contains(pass.Reasons, reason => reason.StartsWith("play.cc-vehicle-berserk: de-1 is berserk and attacks enemy Infantry", StringComparison.Ordinal));
+        Assert.Contains((await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        })).Reasons, reason => reason.StartsWith("play.cc-required: de-1 is berserk with enemy Infantry", StringComparison.Ordinal));
+        Committed(await VehicleCc(Once(6, 6), attackers: GermanOne, defenders: RussianOne));
+        Assert.Null(Planner().CloseCombatDue(Current).FirstOrDefault(line => line.Contains("de-1 is berserk", StringComparison.Ordinal)));
         NoReplayErrors();
     }
 

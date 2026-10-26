@@ -34,6 +34,13 @@ public static class ScenarioA1CapturedVehicleRules
     public static bool CapturedWithPassengers(int capturedNow, bool passengerEliminatedNow, int passengersLeft, bool enemyPersonnelLeft) =>
         capturedNow > 0 && !passengerEliminatedNow && passengersLeft == 0 && !enemyPersonnelLeft;
 
+    /// <summary>
+    /// A11.52, A21.21, A21.22 (ruling R70.34): how a vehicle taken with all its Passengers is recorded: an unarmed one as <see cref="Unarmed"/>'s, with its
+    /// Temporary Driver; an armed one as <see cref="Passengers"/>', marked Abandoned (unmanned) until a crew enters it, unless it already is (fix round C:
+    /// the planner's choice made here).
+    /// </summary>
+    public static (string Cause, bool MarkAbandoned) PassengerCapture(bool armed, bool abandoned) => armed ? (Passengers, !abandoned) : (Unarmed, false);
+
     /// <summary>The proposal's words for an attack to capture Passengers (A11.52; ruling R70.34).</summary>
     public static string PassengerCaptureText() =>
         "; an attempt to capture the Passengers of an unarmored stationary vehicle, at -2 with the capture's +1; its captors defend against the Passengers' attack "

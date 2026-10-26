@@ -1505,9 +1505,18 @@ public sealed class ScenarioA1Pass70RulesTests
         }, CloseCombat).Sides.Single(side => side.Side == "german").Drm);
 
         // The builder counts each side's AFV that is BU or Stunned; an unarmored vehicle, or a CE AFV, adds only the +2.
-        var built = ScenarioA1CloseCombatFactBuilders.AmbushVehicles([("german", true, false, false), ("german", false, false, false), ("russian", true, true, false)])!;
+        var built = ScenarioA1CloseCombatFactBuilders.AmbushVehicles([("german", true, false, false, false, false), ("german", false, false, false, false, false),
+            ("russian", true, true, false, false, false)])!;
         Assert.Equal([("german", 1), ("russian", 0)], built.Select(item => (item.Side, item.ButtonedOrStunnedAfvs)));
         Assert.Null(ScenarioA1CloseCombatFactBuilders.AmbushVehicles([]));
+
+        // Fix round C: an Abandoned or captured vehicle is not counted, by Rules' own filter.
+        Assert.Null(ScenarioA1CloseCombatFactBuilders.AmbushVehicles([("german", true, false, false, true, false), ("russian", true, false, false, false, true)]));
+        Assert.True(ScenarioA1PassengerActionRules.VehicleMobile(false, false));
+        Assert.False(ScenarioA1PassengerActionRules.VehicleMobile(false, true));
+        Assert.True(ScenarioA1VehicleCloseCombatRules.PassengersJoin(false, false, false, false, 1));
+        Assert.False(ScenarioA1VehicleCloseCombatRules.PassengersJoin(false, false, true, false, 1));
+        Assert.False(ScenarioA1VehicleCloseCombatRules.PassengersJoin(false, false, false, false, 0));
         Assert.True(ScenarioA1CloseCombatRules.AmbushDueCandidate("ccph", false));
         Assert.False(ScenarioA1CloseCombatRules.AmbushDueCandidate("ccph", true));
     }
@@ -1605,6 +1614,35 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.Null(ScenarioA1CloseCombatProjection.SequentialRoundRefusal("ccph", false, "russian", "russian", false, false, false));
         Assert.NotNull(ScenarioA1CloseCombatProjection.SequentialRoundRefusal("ccph", false, "german", "russian", false, false, false));
         Assert.NotNull(ScenarioA1CloseCombatProjection.SequentialRoundRefusal("ccph", false, "russian", "russian", false, true, false));
+    }
+
+    [Fact]
+    public void ABerserkOrReinforcingUnitOwesItsAttackOnEnemyInfantryWhereAVehicleStands()
+    {
+        // A15.43 (p. 84): a berserk unit charges to attack the enemy in CC; A11.15 (p. 72): a unit that advanced into a Melee engages in CC. Where a vehicle
+        // stands the CC is sequential (A11.31), and since ruling R70.30 Infantry attack Infantry there: the German squad beside its tank owes its attack on the
+        // Russian squad until it makes it, or until Infantry has attacked the Russian squad (A11.12).
+        VehicleCcUnitFacts[] here =
+        [
+            new("de-v", "german", true, true, false, false, false, false, true), new("de-1", "german", false, false, true, true, false, true, true),
+            new("ru-1", "russian", false, false, true, true, false, false, true),
+        ];
+        Assert.Equal(("de-1", true, "enemy Infantry"), ScenarioA1VehicleCloseCombatRules.OwingAttack(here, "german", [], []));
+        Assert.Null(ScenarioA1VehicleCloseCombatRules.OwingAttack(here, "german", ["de-1"], []));
+        Assert.Null(ScenarioA1VehicleCloseCombatRules.OwingAttack(here, "german", [], ["ru-1"]));
+        Assert.Null(ScenarioA1VehicleCloseCombatRules.OwingAttack(here, "russian", [], []));
+        Assert.Contains("attacks enemy Infantry", ScenarioA1VehicleCloseCombatRules.OwingNoPassText("de-1", "[F4]", true, "enemy Infantry"), StringComparison.Ordinal);
+
+        // A Known enemy unit only: a concealed Russian squad is no target of the berserk squad's.
+        VehicleCcUnitFacts[] concealed = [here[0], here[1], here[2] with { Known = false }];
+        Assert.Null(ScenarioA1VehicleCloseCombatRules.OwingAttack(concealed, "german", [], []));
+
+        // A11.15: the unberserk German squad that advanced into the Melee there owes an attack; a concealed one may decline to keep its "?" (ruling R14.2).
+        VehicleCcUnitFacts[] reinforcing = [here[0], here[1] with { Berserk = false, AdvancedHere = true }, here[2] with { Melee = true }];
+        Assert.Equal(("de-1", false, "enemy Infantry"), ScenarioA1VehicleCloseCombatRules.OwingAttack(reinforcing, null, [], []));
+        Assert.Null(ScenarioA1VehicleCloseCombatRules.OwingAttack([reinforcing[0], reinforcing[1] with { Concealed = true }, reinforcing[2]], null, [], []));
+        Assert.Null(ScenarioA1VehicleCloseCombatRules.OwingAttack([reinforcing[0], reinforcing[1], here[2]], null, [], []));
+        Assert.Contains("advanced into the Melee", ScenarioA1CloseCombatRules.CcRequiredVehicleText("de-1", "[F4]", false, "enemy Infantry"), StringComparison.Ordinal);
     }
 
     // Increment 3j (task 70.7, part II): Street Fighting (A11.8; ruling R70.33), A11.52's Passengers, A18.12 against a vehicle, and D5.42's entry at a capture
@@ -1706,6 +1744,13 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.False(ScenarioA1CapturedVehicleRules.PassengersCapturable(true, true));
         Assert.False(ScenarioA1CapturedVehicleRules.PassengersCapturable(false, false));
         Assert.True(ScenarioA1VehicleProjection.CaptureStands(true, true, true, true, true, ScenarioA1CapturedVehicleRules.Passengers, false));
+
+        // The record of such a capture stands at replay only with no uncaptured Passenger left aboard (fix round C).
+        Assert.False(ScenarioA1VehicleProjection.CaptureStands(true, true, true, true, true, ScenarioA1CapturedVehicleRules.Passengers, false, passengerLeft: true));
+        Assert.True(ScenarioA1VehicleProjection.CaptureStands(true, true, true, true, true, ScenarioA1CapturedVehicleRules.Unarmed, false, passengerLeft: true));
+        Assert.Equal((ScenarioA1CapturedVehicleRules.Passengers, true), ScenarioA1CapturedVehicleRules.PassengerCapture(true, false));
+        Assert.Equal((ScenarioA1CapturedVehicleRules.Passengers, false), ScenarioA1CapturedVehicleRules.PassengerCapture(true, true));
+        Assert.Equal((ScenarioA1CapturedVehicleRules.Unarmed, false), ScenarioA1CapturedVehicleRules.PassengerCapture(false, false));
     }
 
     [Fact]
@@ -1727,14 +1772,38 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.Contains(created.KillNumberModifiers, item => item.Name.StartsWith("created-leader-combining:", StringComparison.Ordinal) && item.Rule == "A18.12");
         Assert.Contains(created.Drm, item => item.Name == "created-leader:defender-leader-6-plus-1" && item.Value == 1m);
 
-        // With a SMC in the attack ("No more than two units") the created leader adds his leadership only; the Unlikely Kill still follows.
+        // With a leader in the attack ("No more than two units") the created leader adds his leadership only, in the combining leader's place (A10.7;
+        // ruling R70.46); the Unlikely Kill still follows.
         var withLeader = ScenarioA1VehicleCloseCombat.Resolve(Attack(SquadAndLeader, 5), CloseCombat);
         Assert.DoesNotContain(withLeader.KillNumberModifiers, item => item.Name.StartsWith("created-leader", StringComparison.Ordinal));
         Assert.Contains(withLeader.Drm, item => item.Name.StartsWith("created-leader:", StringComparison.Ordinal));
+        Assert.DoesNotContain(withLeader.Drm, item => item.Name.StartsWith("leadership:", StringComparison.Ordinal));
+
+        // With a hero combining (a SMC that is no leader) the created leader adds nothing: he would be a third unit (R70.46); the hero keeps his -1.
+        CloseCombatUnit[] withHero = [units[0], CcUnit("ru-l", "defender-hero", "russian")];
+        var heroic = ScenarioA1VehicleCloseCombat.Resolve(new VehicleCloseCombatFacts("CCPh", "bd03:F4:0", CcTank(), withHero, SquadAndLeader, [], false, false,
+            new VehicleCloseCombatRolls(SnakeEyes) { LeaderCreation = 5 })
+        {
+            LeaderCreation = true
+        }, CloseCombat);
+        Assert.DoesNotContain(heroic.Drm, item => item.Name.StartsWith("created-leader", StringComparison.Ordinal));
+        Assert.Contains(heroic.Drm, item => item.Name == "heroic:ru-l");
 
         // A record made before the pass declares no Leader Creation: its Original 2 rolls none.
         var older = ScenarioA1VehicleCloseCombat.Resolve(Attack(RussianSquad, null, null), CloseCombat);
         Assert.Equal((CloseCombatResolution.Resolved, (LeaderCreationOutcome?)null), (older.Disposition, older.LeaderCreation));
+    }
+
+    [Fact]
+    public void AKnownEnemyUnitOnFootMakesTheLocationOfAnUnloadOrABailOutAnEnemyLocation()
+    {
+        // D6.5, D6.24 (ruling R70.32; fix round C): one reading for the proposals and the record lines: an active Known enemy unit, not a vehicle.
+        Assert.True(ScenarioA1PassengerActionRules.MakesEnemyLocation(true, true, false, false, false, false, false));
+        Assert.False(ScenarioA1PassengerActionRules.MakesEnemyLocation(true, true, true, false, false, false, false));
+        Assert.False(ScenarioA1PassengerActionRules.MakesEnemyLocation(true, true, false, true, false, false, false));
+        Assert.False(ScenarioA1PassengerActionRules.MakesEnemyLocation(true, true, false, false, true, false, false));
+        Assert.False(ScenarioA1PassengerActionRules.MakesEnemyLocation(true, true, false, false, false, false, true));
+        Assert.False(ScenarioA1PassengerActionRules.MakesEnemyLocation(true, false, false, false, false, false, false));
     }
 
     [Fact]
@@ -1744,6 +1813,13 @@ public sealed class ScenarioA1Pass70RulesTests
         // ... A vehicle may not be entered during the same Player Turn in which its previous crew left [EXC: CCPh; A21.2]."
         var inCcph = new RecrewFacts("ru-1", "de-tank", false, true, true, true, true, true, true, true, false, false);
         Assert.Contains("only in its own MPh", ScenarioA1CrewActsRules.RecrewBar(inCcph), StringComparison.Ordinal);
+
+        // Fix round C: the Play page's candidates are read through the bar's own clauses: a captor that spent MF is offered in the CCPh of its capture.
+        Assert.False(ScenarioA1CrewActsRules.RecrewCandidate(inCcph));
+        Assert.True(ScenarioA1CrewActsRules.RecrewCandidate(inCcph with
+        {
+            CapturedThisCcph = true
+        }));
         Assert.Null(ScenarioA1CrewActsRules.RecrewBar(inCcph with
         {
             CapturedThisCcph = true

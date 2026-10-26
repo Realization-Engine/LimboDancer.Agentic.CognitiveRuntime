@@ -477,8 +477,7 @@ public sealed partial class GamePlanner
 
         // D6.5, A4.14: "PRC may unload ... in an enemy-occupied hex with no special rules or consequences"; a CC counter shows they are not held in Melee.
         // Pass 70 (ruling R70.32): the counter is no stored condition, and the line names only a Known enemy unit, which the unloading side may see.
-        var enemyThere = index.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && !LiveFire.IsVehicle(unit)
-            && !Is(unit, Conditions.Captured) && KnownEnemy(unit));
+        var enemyThere = EnemyLocation(index.At(at), vehicle.Side);
         var mf = ScenarioA1PassengerCalculator.UnloadMf(spent, printed);
         List<string> leavers = [.. ids];
         List<string> named = [.. ids];

@@ -191,9 +191,14 @@ public static class ScenarioA1CloseCombatRules
         return broken && melee && !disrupted && !captured && !guard() && hasDestination();
     }
 
-    /// <summary>A15.43, A11.31 (ruling R27.2): a berserk unit owing an attack on a Known enemy vehicle attacks it in the Location's sequential CC first.</summary>
-    public static string CcRequiredVehicleText(string unitId, string locationText) =>
-        $"play.cc-required: {unitId} is berserk with a Known enemy vehicle in {locationText}, so it attacks the vehicle in CC before the CCPh ends (A15.43, A11.31)";
+    /// <summary>
+    /// A15.43, A11.31 (ruling R27.2): a berserk unit owing an attack on a Known enemy vehicle attacks it in the Location's sequential CC first; since pass 70
+    /// (fix round C) one owing an attack on enemy Infantry there, or a unit that advanced into the Melee there (A11.15), does too. <paramref name="target"/> is
+    /// <see cref="ScenarioA1VehicleCloseCombatRules.OwingAttack"/>'s.
+    /// </summary>
+    public static string CcRequiredVehicleText(string unitId, string locationText, bool berserk, string target) => berserk
+        ? $"play.cc-required: {unitId} is berserk with {target} in {locationText}, so it attacks in CC before the CCPh ends (A15.43, A11.31)"
+        : $"play.cc-required: {unitId} advanced into the Melee in {locationText}, so it attacks {target} in CC before the CCPh ends (A11.15, A11.31)";
 
     /// <summary>
     /// A15.43, A11.15: the unit whose CC the Location still requires: a berserk unit with a Known enemy there, else, where a Melee is held, an unbroken unit

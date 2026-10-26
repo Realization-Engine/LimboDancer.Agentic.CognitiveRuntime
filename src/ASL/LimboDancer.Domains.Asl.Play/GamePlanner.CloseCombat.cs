@@ -719,10 +719,11 @@ public sealed partial class GamePlanner
             && state.Location(unit.Id) is not null).ToArray();
         foreach (var location in active.Select(unit => state.Location(unit.Id)!.Location).Distinct().OrderBy(item => item.ToString(), StringComparer.Ordinal))
         {
-            // A15.43, A11.31 (ruling R27.2): a berserk unit that charged a vehicle attacks it in the Location's sequential CC.
-            if (BerserkOwingVehicleAttack(state, location, null) is { } owing)
+            // A15.43, A11.31 (ruling R27.2): a berserk unit that charged a vehicle attacks it in the Location's sequential CC; since pass 70 (fix round C) a
+            // berserk unit owing an attack on enemy Infantry there, or a unit that advanced into the Melee there (A11.15), does too.
+            if (OwingSequentialAttack(state, location, null) is { } owing)
             {
-                return ScenarioA1CloseCombatRules.CcRequiredVehicleText(owing.Id, location.ToString());
+                return ScenarioA1CloseCombatRules.CcRequiredVehicleText(owing.Id, location.ToString(), owing.Berserk, owing.Target);
             }
 
             if (state.CloseCombats.Any(item => item.Location == location))
@@ -1047,17 +1048,18 @@ public sealed partial class GamePlanner
         // (A11.21, A4.72; ruling R5.5); A11.22 (ruling R14.8): so does an infiltrating unit.
         foreach (var (effect, moved) in resolution.Effects.Select(item => (item, ScenarioA1PrisonerCalculator.MovesAfterRound(item.WithdrewTo, item.InfiltratedTo, item.RearmedAs))).Where(pair => pair.Item2 is not null))
         {
+            // A11.21, A4.43 (ruling R70.26): the SW it drops to withdraw stay unpossessed in the Location it leaves, dropped before it goes, so also when it
+            // dies on entry (fix round C).
+            foreach (var weapon in drops?.GetValueOrDefault(effect.UnitId) ?? [])
+            {
+                yield return ("equipment-transferred", new EquipmentTransferred(weapon, null, new MapPosition(location)));
+            }
+
             // A11.21 (ruling R70.26): one that withdraws into a concealed or hidden enemy's Location is eliminated automatically.
             if (entries?.GetValueOrDefault(moved!) is { Eliminated: true })
             {
                 yield return ("instance-eliminated", new InstanceEliminated(effect.UnitId));
                 continue;
-            }
-
-            // A11.21, A4.43 (ruling R70.26): the SW it drops to withdraw stay unpossessed in the Location it leaves.
-            foreach (var weapon in drops?.GetValueOrDefault(effect.UnitId) ?? [])
-            {
-                yield return ("equipment-transferred", new EquipmentTransferred(weapon, null, new MapPosition(location)));
             }
 
             yield return ("instance-moved", new InstanceMoved(effect.UnitId, new MapPosition(BoardLocation.Parse(moved!))));

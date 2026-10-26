@@ -342,13 +342,19 @@ public sealed class PlayPagePass70Tests : IDisposable
         var page = Open("german");
         page.Find("#cc-location").Change(WideBoards.At(5));
         Assert.Equal(2, page.FindAll(".cc-drop[data-unit='de-1']").Count);
-        string?[] destinations = [.. page.FindAll(".cc-withdraw[data-unit='de-1'] option").Select(option => option.GetAttribute("value"))];
-        Assert.Contains(WideBoards.At(4), destinations);
-        Assert.DoesNotContain(WideBoards.At(6), destinations);
+
+        // Fix round C: with nothing ticked the squad is still above its IPC, so it is offered no destination (its proposal would be refused); dropping the MMG
+        // (4 PP of 5) brings it within its IPC of 3, and the destinations follow.
+        string?[] none = [.. page.FindAll(".cc-withdraw[data-unit='de-1'] option").Select(option => option.GetAttribute("value"))];
+        Assert.Equal(string.Empty, Assert.Single(none));
+        Assert.Contains("once it drops enough", page.Find("#cc-withdrawals").TextContent, StringComparison.Ordinal);
         var target = page.Find(".cc-defender[data-unit='ru-gc']");
         Assert.StartsWith(DisplayText.Place(1, WideBoards.At(5)) + ": ", target.ParentElement!.TextContent.Trim(), StringComparison.Ordinal);
         page.Find(".cc-drop[data-weapon='de-mmg']").Change(true);
         Assert.True(page.Find(".cc-drop[data-weapon='de-mmg']").HasAttribute("checked"));
+        string?[] destinations = [.. page.FindAll(".cc-withdraw[data-unit='de-1'] option").Select(option => option.GetAttribute("value"))];
+        Assert.Contains(WideBoards.At(4), destinations);
+        Assert.DoesNotContain(WideBoards.At(6), destinations);
     }
 
     private static readonly string[] AdvancingSquad = ["de-1"];

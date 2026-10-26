@@ -85,15 +85,16 @@ public sealed partial class GamePlanner
 
             foreach (var id in ids)
             {
+                // A11.21, A4.43 (ruling R70.26): the SW dropped to withdraw stay in the Location left, also when the unit dies on entry (fix round C).
+                foreach (var weapon in DropsOf(id))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "equipment-transferred", new EquipmentTransferred(weapon, null, new MapPosition(location)), package, null));
+                }
+
                 if (verdict.Eliminated)
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(id), package, null));
                     continue;
-                }
-
-                foreach (var weapon in DropsOf(id))
-                {
-                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "equipment-transferred", new EquipmentTransferred(weapon, null, new MapPosition(location)), package, null));
                 }
 
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-moved", new InstanceMoved(id, new MapPosition(to)), package, null));

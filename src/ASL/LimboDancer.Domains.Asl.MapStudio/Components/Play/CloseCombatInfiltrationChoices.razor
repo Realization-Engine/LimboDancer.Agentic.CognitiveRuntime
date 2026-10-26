@@ -17,7 +17,7 @@
         </label>
         @if (unit.Drops.Count > 0)
         {
-            <span class="toolbar-note">above its IPC, it drops (A11.21):</span>
+            <span class="toolbar-note">@(unit.Destinations.Count == 0 ? "above its IPC, it infiltrates once it drops enough (A11.21):" : "above its IPC, it drops (A11.21):")</span>
             @foreach (var weapon in unit.Drops)
             {
                 <label><input class="cc-infiltration-drop" type="checkbox" data-unit="@unit.Id" data-weapon="@weapon.Id" checked="@Dropped.Contains(weapon.Id)" @onchange="@(args => OnDrop.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @Say(weapon.Label)</label>
@@ -33,7 +33,10 @@
 
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
 
-    /// <summary>A unit that may infiltrate, with the Locations it may go to (never empty), and, above its IPC, the SW it may drop (pass 70, ruling R70.26).</summary>
+    /// <summary>
+    /// A unit that may infiltrate, with the Locations it may go to, and, above its IPC, the SW it may drop (pass 70, ruling R70.26); the Locations are empty
+    /// only for a unit above its IPC until enough SW are ticked (fix round C).
+    /// </summary>
     public sealed record Infiltrator(string Id, IReadOnlyList<string> Destinations)
     {
         public IReadOnlyList<PlayChoice> Drops { get; init; } = [];

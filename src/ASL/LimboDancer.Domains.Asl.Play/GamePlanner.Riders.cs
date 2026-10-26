@@ -303,14 +303,24 @@ public sealed partial class GamePlanner
         }
 
         var index = MemoOf(state).Objects(state);
-        var side = index.Unit(bail.Riders[0].Id)?.Side;
-        var enemyThere = index.At(bail.At).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != side && !LiveFire.IsVehicle(unit)
-            && !Is(unit, Conditions.Captured) && KnownEnemy(unit));
+        var enemyThere = index.Unit(bail.Riders[0].Id)?.Side is { } side && EnemyLocation(index.At(bail.At), side);
         return $"; {string.Join(", ", bail.Riders.Select(rider => rider.Id))} Bail{(bail.Riders.Count == 1 ? "s" : string.Empty)} Out in {bail.At}, since "
             + ScenarioA1RiderRules.CauseText(bail.Riders[0].Cause).Replace("its AFV", "the AFV", StringComparison.Ordinal)
             // D6.21 (the table player): Riders thrown off by terrain stay in the hex the AFV left, not beneath it.
             + (bail.Riders[0].Cause == ScenarioA1RiderRules.Terrain ? $", each taking a NMC in {bail.At}, the hex the AFV left," : ", each taking a NMC beneath it")
             + " with its move ended, its SW checked for malfunction (D6.24)"
             + (enemyThere ? ScenarioA1PassengerActionRules.EnemyLocationText(bail.At.ToString(), "D6.24, D6.5") : string.Empty);
+    }
+
+    /// <summary>
+    /// Whether the units of a Location make it an enemy Location for PRC of <paramref name="side"/> that unload or Bail Out there (D6.5, D6.24; ruling
+    /// R70.32), as Rules reads each unit (<see cref="ScenarioA1PassengerActionRules.MakesEnemyLocation"/>): the proposals and the Studio's record lines read
+    /// this one member (fix round C).
+    /// </summary>
+    public static bool EnemyLocation(IEnumerable<IGameObject> here, string side)
+    {
+        ArgumentNullException.ThrowIfNull(here);
+        return here.OfType<UnitInstance>().Any(unit => ScenarioA1PassengerActionRules.MakesEnemyLocation(unit.Status == InstanceStatus.Active, unit.Side != side, LiveFire.IsVehicle(unit),
+            unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), Is(unit, Conditions.Captured)));
     }
 }

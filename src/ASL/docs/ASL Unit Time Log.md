@@ -1785,3 +1785,4 @@ One session under the user's word of 2026-10-25 ("Start Pass 70 ... Run it witho
 | The six reviews and the strict stage (passed), rulings R70.41 to R70.47, the fix brief | 20:25 | 20:41 | 0:16 | | Reviews 20:25 to 20:38; strict 20:25 to 20:29. (The row was first written at 21:13 by `timelog_row.py`, which takes the end from the clock; the end here is the notes' 20:41.) |
 | Fix Round A: hidden information | 20:41 | 21:13 | 0:32 | | Agent 20:41 to about 21:10; Studio check |
 | Fix Round B: morale, rout, and Searching | 21:14 | 21:39 | 0:25 | | Agent 21:14 to about 21:37; Studio check |
+| Fix Round C: Close Combat | 21:39 | 22:08 | 0:29 | | Agent 21:39 to about 22:05; Studio check |

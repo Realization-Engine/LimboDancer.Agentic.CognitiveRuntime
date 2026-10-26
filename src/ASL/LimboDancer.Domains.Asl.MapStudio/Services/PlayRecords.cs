@@ -76,12 +76,11 @@ public sealed class PlayRecords
 
     /// <summary>
     /// D6.5, D6.24 (pass 70, ruling R70.32): units that unload or Bail Out where a Known enemy unit stands are in an enemy Location and not held in Melee; the
-    /// CC counter is no stored condition, so the line says it. Only an unconcealed enemy unit is read, which every view may know.
+    /// CC counter is no stored condition, so the line says it. Only a Known enemy unit is read, which every view may know, by the planner's one member that
+    /// the proposals read too (fix round C); one stack read per such line.
     /// </summary>
     private static string EnemyLocation(GameState? before, BoardLocation at, string ownId, string rule) =>
-        before?.Unit(ownId)?.Side is { } side && before.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != side && unit.Kind != "asl:vehicle"
-            && GameState.Condition(unit, Conditions.Concealed) != ConditionState.True && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True
-            && GameState.Condition(unit, Conditions.Captured) != ConditionState.True)
+        before?.Unit(ownId)?.Side is { } side && GamePlanner.EnemyLocation(before.At(at), side)
             ? ScenarioA1PassengerActionRules.EnemyLocationText(at.ToString(), rule) : string.Empty;
 
     /// <summary>

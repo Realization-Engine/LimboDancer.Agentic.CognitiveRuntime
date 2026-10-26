@@ -103,12 +103,14 @@ public static class ScenarioA1VehicleProjection
     /// A11.52, A21.2, A21.21 (pass 65, ruling R65.22; the boundary review): whether a recorded capture stands (UNIT-STATE-034): in the CCPh, a vehicle in
     /// its recorded Location passes to another side in the game, by a cause Rules names; an AFV only when Abandoned, as the planner's
     /// <see cref="ScenarioA1CapturedVehicleRules.CaptureAttemptBar"/> has it. The projector holds no fire definition, so whether the vehicle is armed, and
-    /// which units share its Location, are the planner's checks alone.
+    /// which units share its Location, are the planner's checks alone. A capture with its Passengers (A11.52, p. 74: "If all the Passengers are captured, so is
+    /// the vehicle"; pass 70, ruling R70.34) stands only with no uncaptured Passenger left aboard (<paramref name="passengerLeft"/>; fix round C).
     /// </summary>
-    public static bool CaptureStands(bool ccph, bool vehicle, bool otherSide, bool inRecordedLocation, bool sideInGame, string cause, bool abandoned) =>
+    public static bool CaptureStands(bool ccph, bool vehicle, bool otherSide, bool inRecordedLocation, bool sideInGame, string cause, bool abandoned, bool passengerLeft = false) =>
         ccph && vehicle && otherSide && inRecordedLocation && sideInGame
         && cause is ScenarioA1CapturedVehicleRules.Automatic or ScenarioA1CapturedVehicleRules.CloseCombat or ScenarioA1CapturedVehicleRules.Unarmed
             or ScenarioA1CapturedVehicleRules.Passengers
+        && !(cause == ScenarioA1CapturedVehicleRules.Passengers && passengerLeft)
         && (cause is ScenarioA1CapturedVehicleRules.Unarmed or ScenarioA1CapturedVehicleRules.Passengers || ScenarioA1CapturedVehicleRules.CaptureAttemptBar(string.Empty, true, abandoned) is null);
 
     /// <summary>

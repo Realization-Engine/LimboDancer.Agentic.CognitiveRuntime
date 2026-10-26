@@ -299,8 +299,8 @@ public sealed class ScenarioA1CloseCombatRulesTests
         Assert.Equal(("russian", false), ScenarioA1VehicleCloseCombatRules.NextCcSide(["german", "russian"], "german"));
         Assert.Equal(("german", false), ScenarioA1VehicleCloseCombatRules.NextCcSide(["german"], "german"));
         Assert.Equal(((string?)null, true), ScenarioA1VehicleCloseCombatRules.NextCcSide([], "german"));
-        Assert.Equal("g1", ScenarioA1VehicleCloseCombatRules.BerserkOwingVehicleAttack([here[0] with { Berserk = true }, here[1]], null, []));
-        Assert.Null(ScenarioA1VehicleCloseCombatRules.BerserkOwingVehicleAttack([here[0] with { Berserk = true }, here[1]], null, ["g1"]));
+        Assert.Equal(("g1", true, "the enemy vehicle"), ScenarioA1VehicleCloseCombatRules.OwingAttack([here[0] with { Berserk = true }, here[1]], null, [], null));
+        Assert.Null(ScenarioA1VehicleCloseCombatRules.OwingAttack([here[0] with { Berserk = true }, here[1]], null, ["g1"], null));
     }
 
     [Fact]
