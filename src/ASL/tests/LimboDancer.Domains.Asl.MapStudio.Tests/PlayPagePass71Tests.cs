@@ -385,4 +385,63 @@ public sealed class PlayPagePass71Tests : IDisposable
         Assert.Equal(MovementPlanTurn.Mover, run.Turn);
         Assert.Equal("The move waits for the German side's answer to the choice before play goes on.", run.Note);
     }
+
+    // Increment 4f: the SMC crew's Stun wound (D5.343, A17.11; ruling R71.15).
+
+    [Fact]
+    public async Task TheWoundLineOfASmcCrewsStunNamesHim()
+    {
+        // D5.343, A17.11 (ruling R71.15): the German 8-1 crews the Abandoned CE tank in the fourth row in the German MPh; de-1 moves to the second hex, and the
+        // Russian 4-4-7's First Fire at it (4 + 4) gives it a check, whose 3 + 3 equals the Russian SAN. The Russian Sniper's dr 2 and Random Location DR of
+        // 1, 1 find the tank, whose crew is Stunned: his Wound Severity dr of 1 is rolled before the Stun, and its line names him, in every view.
+        var tankAt = WideBoards.At(9);
+        var sniperAt = GameMaps.LocationOf(WideBoards.Board, new HexIndex(9, 4))!.ToString();
+        await Start(Squad("de-1", "attacker-squad", WideBoards.At(3), "german"), Squad("ru-1", "defender-squad", WideBoards.At(5), "russian"),
+            Placed("de-tk", "asl:vehicle", "attacker-tank", tankAt, "german", new Dictionary<string, bool> { [Conditions.ButtonedUp] = false, [Conditions.Abandoned] = true }),
+            Plain("de-l", "asl:leader", "attacker-leader-8-1", tankAt, "german"), Placed("rs", "asl:sniper", null, sniperAt, "russian", new Dictionary<string, bool>()));
+        await Do(GameActions.AdvancePhase, new
+        {
+        });
+        await Do(GameActions.RecrewVehicle, new
+        {
+            unitId = "de-l",
+            vehicleId = "de-tk",
+        });
+        if (live.History(Game)!.Current!.Movement is { WindowOpen: true })
+        {
+            await Do(GameActions.PassFire, new
+            {
+            });
+        }
+
+        if (live.History(Game)!.Current!.Movement is not null)
+        {
+            await Do(GameActions.EndMove, new
+            {
+            });
+        }
+
+        await Do(GameActions.Move, new
+        {
+            unitIds = Mover,
+            to = WideBoards.At(2),
+        });
+        dice.Enqueue([4, 4, 3, 3, 2, 1, 1, 1]);
+        await Do(GameActions.Fire, new
+        {
+            firers = RussianFirer,
+            target = WideBoards.At(2),
+        });
+        if (live.History(Game)!.Current!.Choice is { Kind: ChoicePending.Sniper })
+        {
+            await Attack();
+        }
+
+        Assert.Equal("stunned", Assert.Single(Events.Select(item => item.Payload).OfType<SniperAttacked>()).Result);
+        foreach (var view in new[] { Perspective.Adjudicator, new Perspective("german"), new Perspective("russian") })
+        {
+            var wound = Assert.Single(new PlayRecords(live.History(Game)!, view, long.MaxValue).RallyAndRepair, record => record.Kind == "wound");
+            Assert.StartsWith("Wound Severity dr 1 for de-l: a wound, not mortal", wound.Text, StringComparison.Ordinal);
+        }
+    }
 }

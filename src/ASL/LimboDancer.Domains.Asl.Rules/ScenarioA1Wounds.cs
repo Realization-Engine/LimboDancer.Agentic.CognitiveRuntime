@@ -17,6 +17,12 @@ public static class ScenarioA1Wounds
     public static bool Mortal(int severityDr, bool alreadyWounded) => severityDr + (alreadyWounded ? 1 : 0) >= 5;
 
     /// <summary>
+    /// A17.2 (p. 85; pass 71, ruling R71.14): "A SMC who becomes wounded (e.g., by Defensive First Fire) after already expending &gt; 3 MF is pinned": a SMC
+    /// wounded in the MPh past 3 MF, 3 1/2 counting. A routing SMC wounded in the RtPh is not read here (the backlog).
+    /// </summary>
+    public static bool PinnedByWound(bool smc, string? phase, int mfSpent, bool halfMfSpent) => smc && phase == "mph" && (mfSpent > 3 || (mfSpent == 3 && halfMfSpent));
+
+    /// <summary>
     /// What a record says of a Wound Severity dr (A17.11): the man when the record knows him, the dr with the +1 of a man already wounded, the
     /// Final dr, and what it comes to.
     /// </summary>

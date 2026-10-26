@@ -2086,17 +2086,44 @@ public sealed class BacklogPass70Tests : IDisposable
     [Fact]
     public async Task ASquadsOriginalTwoAgainstATankCreatesALeaderWhoJoinsTheAttack()
     {
-        // A18.12 (p. 85): the Russian 4-4-7 rolls an Original 2 against the PzKpfw IIIH in E5; the Leader Creation dr 5, +1 Russian, is 6: a 6+1, who adds
-        // his +1 and one CCV (ruling R70.34). The record names him, and he attacks no more this CCPh.
+        // A18.12 (p. 85): the Russian 4-4-7 rolls an Original 2 against the PzKpfw IIIH in E5; the Leader Creation dr 6, +1 Russian, -1 against an AFV (pass
+        // 71, ruling R71.17), is 6: a 6+1, who adds his +1 and one CCV (ruling R70.34). The record names him, and he attacks no more this CCPh.
         await AdvanceOntoTheTank("E5", RussianOne, Squad("ru-1", "E4", "russian"), Vehicle("de-tank", "attacker-tank", "E5", "german", "east"));
         var before = Revision;
-        Committed(await VehicleCc(Once(1, 1, 5), attackers: RussianOne, vehicle: "de-tank"));
+        Committed(await VehicleCc(Once(1, 1, 6), attackers: RussianOne, vehicle: "de-tank"));
         var attack = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>());
         Assert.True(attack.Facts.GetProperty("leaderCreation").GetBoolean());
+        Assert.True(attack.Facts.GetProperty("afvDrm").GetBoolean());
+        Assert.Contains(attack.Resolution.GetProperty("leaderCreation").GetProperty("drm").EnumerateArray(), item => item.GetProperty("name").GetString() == "cc-vs-afv");
         Assert.Equal("defender-leader-6-plus-1", attack.Resolution.GetProperty("leaderCreation").GetProperty("leaderDefinitionId").GetString());
         var leader = attack.CreatedLeader!;
         Assert.Equal(("defender-leader-6-plus-1", "russian", L("E5")), (Current.Unit(leader)!.Definition!.Definition, Current.Unit(leader)!.Side, Current.Location(leader)!.Location.ToString()));
         Assert.Contains(leader, Current.CloseCombats.Single().Attacking);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ASquadsOriginalTwoAgainstATruckTakesNoAfvDrmForItsLeader()
+    {
+        // A18.2 (p. 85; pass 71, ruling R71.17): "-1: CC vs AFV" is the AFV's alone. The Russian 4-4-7 rolls an Original 2 against the German truck in E5 (its
+        // Passenger keeps it from capture as the CCPh begins, A11.52); the Leader Creation dr 5, +1 Russian, is 6: a 6+1, with no AFV drm.
+        await SetupAt(6, "russian", Squad("ru-1", "E4", "russian"), Vehicle("de-t", "attacker-truck", "E5", "german", "east"),
+            Passenger("de-p", "asl:squad", "attacker-squad", "de-t"));
+        Committed(await Do(GameActions.Advance, NoRoll(), new
+        {
+            unitIds = RussianOne,
+            to = L("E5"),
+        }));
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        var before = Revision;
+        Committed(await VehicleCc(Once(1, 1, 5), attackers: RussianOne, vehicle: "de-t"));
+        var attack = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>());
+        Assert.False(attack.Facts.TryGetProperty("afvDrm", out _));
+        var creation = attack.Resolution.GetProperty("leaderCreation");
+        Assert.DoesNotContain(creation.GetProperty("drm").EnumerateArray(), item => item.GetProperty("name").GetString() == "cc-vs-afv");
+        Assert.Equal("defender-leader-6-plus-1", creation.GetProperty("leaderDefinitionId").GetString());
         NoReplayErrors();
     }
 
@@ -2112,7 +2139,8 @@ public sealed class BacklogPass70Tests : IDisposable
         var leader = record.CreatedLeader!;
         var facts = record.Facts.Deserialize<Rules.VehicleCloseCombatFacts>(LiveFire.Json)! with
         {
-            LeaderCreation = null
+            LeaderCreation = null,
+            AfvDrm = null,
         };
         var resolution = Rules.ScenarioA1VehicleCloseCombat.Resolve(facts with
         {

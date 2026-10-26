@@ -1198,8 +1198,10 @@ public sealed class PlayRecords
                 {
                     // Pass 35 (task 35.1; A17.11): the Wound Severity dr of a SMC's Casualty Reduction, said where it is made.
                     // The table player, pass 35: the man and the outcome are read from what the same action did next, a wound or an elimination.
+                    // Pass 71 (ruling R71.15): a dr rolled as "{attempt}-wound-{unit}" names its man; a SMC crew's is followed by his vehicle's Stun, not his wound.
                     var later = attempts[attempt].SkipWhile(other => other.EventId != item.EventId).Skip(1).Select(other => other.Payload);
-                    var man = later.Select(payload => payload switch
+                    var named = severity.Roll.StartsWith(attempt + "-wound-", StringComparison.Ordinal) ? severity.Roll[(attempt.Length + "-wound-".Length)..] : null;
+                    var man = named ?? later.Select(payload => payload switch
                     {
                         InstanceEliminated gone => gone.Id,
                         ConditionsChanged changed when changed.Conditions.ContainsKey(Conditions.Wounded) => changed.Id,

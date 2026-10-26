@@ -182,14 +182,30 @@ public static class ScenarioA1CapturedVehicleRules
     /// D5.343 (p. 204): "A SMC acting as a Temporary crew (A21.22) also becomes Wounded if he suffers a Stun result (even while in a 1MT AFV). If he suffers
     /// Recall [EXC: due to Disabled MA (3.7); Stunned in a 1MT AFV (5.341)] he is eliminated." What a Stun or Recall the vehicle just took does to its SMC
     /// crew; an eliminated SMC leaves the vehicle Abandoned, unmanned. A17.2 (the referee's review): a SMC already Wounded that is Wounded again is
-    /// eliminated.
+    /// eliminated. Pass 71 (ruling R71.15): "Whenever a SMC is wounded, another dr must be immediately made to determine the severity of the wound" (A17.11,
+    /// p. 85): with the Wound Severity dr the planner rolled before the Stun, a 5 or more (+1 if already wounded) eliminates him and any other leaves him
+    /// wounded; a record with no such dr keeps the outcome of before the pass.
     /// </summary>
-    public static (bool Wounded, bool Eliminated) SmcCrewOutcome(bool stunned, bool recalled, bool byDisabledMa, bool oneManTurret, bool alreadyWounded = false)
+    public static (bool Wounded, bool Eliminated) SmcCrewOutcome(bool stunned, bool recalled, bool byDisabledMa, bool oneManTurret, bool alreadyWounded = false,
+        int? severityDr = null)
     {
         var eliminated = recalled && !byDisabledMa && !(stunned && oneManTurret);
         var wounded = !eliminated && (stunned || (recalled && oneManTurret && !byDisabledMa));
+        if (wounded && severityDr is { } dr)
+        {
+            var mortal = ScenarioA1Wounds.Mortal(dr, alreadyWounded);
+            return (!mortal, mortal);
+        }
+
         return (wounded && !alreadyWounded, eliminated || (wounded && alreadyWounded));
     }
+
+    /// <summary>
+    /// D5.343, A17.11 (pass 71, ruling R71.15): whether a vehicle result wounds its SMC Temporary crew, so that his Wound Severity dr is rolled before it; a
+    /// Recall that eliminates him calls for none.
+    /// </summary>
+    public static bool SmcCrewSeverityDue(bool stunned, bool recalled, bool byDisabledMa, bool oneManTurret) =>
+        SmcCrewOutcome(stunned, recalled, byDisabledMa, oneManTurret).Wounded;
 
     /// <summary>The record's text for a capture (A21.2, A21.21): "[G4]: the PzKpfw IIIH is captured by the Russian side (A21.2)".</summary>
     public static string CapturedText(string vehicle, string side, string at, string cause, string? driver) => cause switch

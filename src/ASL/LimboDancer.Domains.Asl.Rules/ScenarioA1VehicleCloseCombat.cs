@@ -152,6 +152,17 @@ public sealed record VehicleCloseCombatFacts(
     }
 
     /// <summary>
+    /// A18.2 (p. 85; pass 71, ruling R71.17): the vehicle attacked is an AFV, so a Leader Creation dr takes the table's "-1 CC vs AFV". A declaration of the
+    /// record written beside <see cref="LeaderCreation"/>, taken from it; null for an unarmored vehicle and for every record made before the pass, whose
+    /// Leader Creation dr took no such drm.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? AfvDrm
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// A11.52 (p. 74; ruling R70.34): the defenders of the vehicle's attack that attempted this CCPh to capture its Passengers, who defend against the
     /// Passengers' attack with +2. Null for none, as before the pass, when no attack could capture a Passenger.
     /// </summary>
@@ -380,7 +391,8 @@ public static class ScenarioA1VehicleCloseCombat
 
         // A18.12 (p. 85; pass 70, ruling R70.34): "Anytime a MMC attacking in CC rolls an Original 2 DR, the player makes an immediate dr on the Leader
         // Creation Table", with the Infantry CC's table drm (no odds column against a vehicle); A25.71: the Finns create none. An attack planned before the
-        // pass rolls none.
+        // pass rolls none. A18.2 (pass 71, ruling R71.17): "-1: CC vs AFV", when the record declares the vehicle an AFV; the NKVD's table has the same cell
+        // (A25.25, p. 96).
         var original = dice[0] + dice[1];
         LeaderCreationOutcome? creation = null;
         if (original == 2 && facts.LeaderCreation == true && !IsSmc(main.Definition) && ScenarioA1FieldPromotion.Applicable(main.Definition.Nationality))
@@ -390,7 +402,8 @@ public static class ScenarioA1VehicleCloseCombat
                 return Refused(CloseCombatResolution.Indeterminate, ["asl.a1.cc-vehicle.roll-missing:leaderCreation"]);
             }
 
-            var (outcome, undecided) = ScenarioA1FieldPromotion.Create(main.Definition, ScenarioA1CloseCombatCalculator.BaseMorale(main.Facts, reference), creationDr, [],
+            List<FireModifier> afv = facts.AfvDrm == true && definition.Unarmored != true ? [new FireModifier("cc-vs-afv", -1m, "A18.2")] : [];
+            var (outcome, undecided) = ScenarioA1FieldPromotion.Create(main.Definition, ScenarioA1CloseCombatCalculator.BaseMorale(main.Facts, reference), creationDr, afv,
                 reference.Definitions, "asl.a1.cc-vehicle", main.Facts.Fanatic == true);
             if (outcome is null)
             {

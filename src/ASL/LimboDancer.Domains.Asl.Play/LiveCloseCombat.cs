@@ -478,6 +478,9 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             // attack, both taken as recorded; a record made before the pass has neither, and resolves as it did.
             StreetFighters = recorded.StreetFighters,
             LeaderCreation = recorded.LeaderCreation,
+
+            // A18.2 (pass 71, ruling R71.17): the AFV's -1 to Leader Creation is a declaration of the attack too, taken as recorded; an older record has none.
+            AfvDrm = recorded.AfvDrm,
         };
         if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

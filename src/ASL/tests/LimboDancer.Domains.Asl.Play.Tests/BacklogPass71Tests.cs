@@ -1307,4 +1307,149 @@ public sealed class BacklogPass71Tests : IDisposable
         Assert.Null(Current.Choice);
         Assert.False(History.HasErrors);
     }
+
+    // Increment 4f: wounds (A17.2, A17.11, D5.343); rulings R71.14, R71.15.
+
+    private static readonly string[] Leader = ["de-l"];
+
+    /// <summary>The Open Ground hexes from four hexes south-east of E6 to E6, by board 01's geometry: the German 8-1's path, 1 MF a hex.</summary>
+    private static string[] PathToE6()
+    {
+        var path = new List<string> { "E6" };
+        for (var step = 0; step < 4; step++)
+        {
+            path.Insert(0, N(path[0], HexsideDirection.SouthEast));
+        }
+
+        return [.. path];
+    }
+
+    /// <summary>
+    /// The German 8-1 de-l, set up at the start of <see cref="PathToE6"/> with the placements given, moves alone in the German MPh along it for the steps
+    /// given, the Russian passing his fire after each step but the last; the hex he ends in.
+    /// </summary>
+    private async Task<string> LeaderMoves(int steps, params Dictionary<string, object>[] placements)
+    {
+        var path = PathToE6();
+        await Setup(null, [Unit("de-l", "asl:leader", "attacker-leader-8-1", path[0], "german"), .. placements]);
+        await Advance();
+        for (var step = 1; step <= steps; step++)
+        {
+            Committed(await Do(GameActions.Move, NoRoll(), new
+            {
+                unitIds = Leader,
+                to = L(path[step]),
+            }));
+            if (step < steps)
+            {
+                await PassFire();
+            }
+        }
+
+        Assert.Equal(steps, Current.Unit("de-l")!.MfSpent);
+        return path[steps];
+    }
+
+    [Theory]
+    [InlineData(3, false)]
+    [InlineData(4, true)]
+    public async Task ALeaderWoundedByDefensiveFirstFireAfterMoreThanThreeMfIsPinned(int steps, bool pinned)
+    {
+        // A17.2 (p. 85; ruling R71.14): "A SMC who becomes wounded (e.g., by Defensive First Fire) after already expending > 3 MF is pinned". r1 First Fires
+        // at the moving 8-1 in the Open: 4 FP, DR 2 + 2 with -1 FFMO and -1 FFNAM is a Final 2, K/2; the Random Selection die and the Wound Severity dr of
+        // 2 leave him wounded, and his 2MC, 2 + 2 + 2 against his wounded 7, passes. After 4 MF he is pinned; after 3 he is not.
+        var at = await LeaderMoves(steps);
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Then(2), new
+        {
+            firers = R1,
+            target = L(at),
+        }));
+        var fire = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        var target = fire.Facts.GetProperty("targets")[0];
+        Assert.Equal(pinned, target.TryGetProperty("woundPins", out var pins) && pins.GetBoolean());
+        var leader = Current.Unit("de-l")!;
+        Assert.True(Is(leader, Conditions.Wounded), fire.Resolution.ToString());
+        Assert.Equal(pinned, Is(leader, Conditions.Pinned));
+        Assert.False(Is(leader, Conditions.Broken));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task ASniperWoundInTheMphAfterMoreThanThreeMfPins()
+    {
+        // A14.3, A17.2 (ruling R71.14): the 8-1 ends his 4 MF in E6; r1's First Fire at him, 4 + 4 - 2, is a NMC, and his DR of 3 + 3 passes it and equals the
+        // Russian SAN of 6. The Russian Sniper in E7 rolls dr 2 and a Random Location DR of 1, 1 (one hex north, E6): the leader, its one target, is
+        // wounded (Wound Severity dr 1) and pinned.
+        await LeaderMoves(4);
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Then(1, 4, 4, 3, 3, 2), new
+        {
+            firers = R1,
+            target = L("E6"),
+        }));
+        await Attack(1, 1, 1);
+        var sniped = Assert.Single(Sniped(before));
+        Assert.Equal(("de-l", ScenarioA1Sniper.Wounded), (sniped.Unit, sniped.Result));
+        var leader = Current.Unit("de-l")!;
+        Assert.True(Is(leader, Conditions.Wounded));
+        Assert.True(Is(leader, Conditions.Pinned));
+        Assert.False(History.HasErrors);
+    }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(5, false)]
+    public async Task ASniperStunOfATankCrewedByASmcRollsHisWoundSeverityDr(int severity, bool survives)
+    {
+        // D5.343 (p. 204), A17.11 (p. 85; ruling R71.15): the German 8-1 crews the Abandoned PzKpfw IIIH in E6 in the German MPh, CE, a SMC Temporary crew.
+        // g1 moves to E2; r1's First Fire at it, 4 + 4 - 2, is a NMC, and g1's 3 + 3 equals the Russian SAN of 6. The Russian Sniper's dr 2 and Random
+        // Location DR of 1, 1 find E6, where the CE crew is the one target: the tank is Stunned, and the leader's Wound Severity dr is rolled before it: 1
+        // wounds him, 5 eliminates him and leaves the tank Abandoned.
+        var tank = Vehicle("de-tk", "attacker-tank", "E6", buttonedUp: false);
+        tank["conditions"] = new Dictionary<string, bool> { [Conditions.ButtonedUp] = false, [Conditions.Abandoned] = true };
+        await Setup(null, tank, Unit("de-l", "asl:leader", "attacker-leader-8-1", "E6", "german"));
+        await Advance();
+        Committed(await Do(GameActions.RecrewVehicle, NoRoll(), new
+        {
+            unitId = "de-l",
+            vehicleId = "de-tk",
+        }));
+        Assert.Equal(ScenarioA1CapturedVehicleRules.Smc, Current.Unit("de-tk")!.TemporaryCrew?.Manning);
+        if (Current.Movement is { WindowOpen: true })
+        {
+            await PassFire();
+        }
+
+        if (Current.Movement is not null)
+        {
+            Committed(await Do(GameActions.EndMove, NoRoll(), new
+            {
+            }));
+        }
+
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("E2"),
+        }));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Then(3, 4, 4, 3, 3, 2, 1, 1, severity), new
+        {
+            firers = R1,
+            target = L("E2"),
+        }));
+        await Attack(1, 1, severity);
+        Assert.Equal(("de-tk", ScenarioA1Sniper.Stunned), (Assert.Single(Sniped(before)).Unit, Sniped(before)[0].Result));
+        var events = Since(before).ToList();
+        var roll = events.FindIndex(item => item.Payload is DiceRolled { Purpose: ScenarioA1Wounds.SeverityPurpose } rolled && rolled.Roll.EndsWith("-wound-de-l", StringComparison.Ordinal));
+        var stun = events.FindIndex(item => item.Payload is ConditionsChanged { Id: "de-tk" } changed && changed.Conditions.ContainsKey(Conditions.Stunned));
+        Assert.True(roll >= 0 && roll < stun, $"{roll} {stun}");
+        Assert.Equal([severity], ((DiceRolled)events[roll].Payload).Values);
+        var leader = Current.Unit("de-l")!;
+        Assert.Equal(survives, leader.Status == InstanceStatus.Active);
+        Assert.Equal(survives, Is(leader, Conditions.Wounded));
+        Assert.Equal(!survives, Is(Current.Unit("de-tk")!, Conditions.Abandoned));
+        Assert.False(History.HasErrors);
+    }
 }

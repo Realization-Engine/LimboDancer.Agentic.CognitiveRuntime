@@ -572,14 +572,14 @@ public sealed partial class GamePlanner
             switch (target.Role)
             {
                 case ScenarioA1Sniper.CrewTarget or ScenarioA1Sniper.VehicleTarget:
-                    SnipeVehicle(scope, attemptId, expected, events, state, target, rollId, value, location, package, Record, () => Seen(target));
+                    SnipeVehicle(scope, attemptId, expected, actor, events, draw, state, target, rollId, value, location, package, Record, () => Seen(target));
                     break;
                 case ScenarioA1Sniper.SniperTarget:
                     SnipeSniper(scope, attemptId, expected, events, state, (EntityInstance)target.Item, rollId, value, location, package, Record);
                     break;
                 default:
                     var unit = (UnitInstance)target.Item;
-                    var result = SnipeUnit(scope, attemptId, expected, events, unit, rollId, value, location, package, Roll, Values, Record, () => Seen(target));
+                    var result = SnipeUnit(scope, attemptId, expected, events, unit, state.Phase, rollId, value, location, package, Roll, Values, Record, () => Seen(target));
                     if (result == ScenarioA1Sniper.Eliminated)
                     {
                         replaced[unit.Id] = null;
@@ -850,9 +850,10 @@ public sealed partial class GamePlanner
     /// <summary>
     /// A14.3 (ruling R15.5): dr 1 eliminates a SMC and breaks a MMC, Casualty Reducing one that cannot break (broken or berserk); dr 2 wounds a SMC (its Wound
     /// Severity dr, A17.11) and pins a MMC not immune to Pin results. A concealed unit keeps its "?" out of every Good Order enemy LOS unless it breaks, is
-    /// wounded, or is Reduced (A12.14; pass 71, ruling R71.8), and the record then names no unit. Rules decides the effect (pass 32.h). The result recorded.
+    /// wounded, or is Reduced (A12.14; pass 71, ruling R71.8), and the record then names no unit. Rules decides the effect (pass 32.h). A SMC wounded in the MPh
+    /// after spending more than 3 MF is pinned too (A17.2; ruling R71.14). The result recorded.
     /// </summary>
-    private string SnipeUnit(GameScope scope, string attemptId, long expected, List<GameEvent> events, UnitInstance unit, string rollId, int dr,
+    private string SnipeUnit(GameScope scope, string attemptId, long expected, List<GameEvent> events, UnitInstance unit, string? phase, string rollId, int dr,
         BoardLocation location, string package, Func<int, string, string> roll, Func<string, IReadOnlyList<int>> values,
         Action<string, int, BoardLocation?, string?, string> record, Func<bool> seen)
     {
@@ -889,7 +890,7 @@ public sealed partial class GamePlanner
                 Eliminate();
                 break;
             case SniperEffect.WoundSeverity:
-                Change(ScenarioA1Sniper.WoundedConditions());
+                Change(ScenarioA1Sniper.WoundedConditions(ScenarioA1Wounds.PinnedByWound(smc, phase, unit.MfSpent, unit.HalfMfSpent)));
                 break;
             case SniperEffect.Broken:
                 Change(ScenarioA1Sniper.BrokenConditions());
@@ -924,10 +925,11 @@ public sealed partial class GamePlanner
     /// A14.3, A14.33, D5.34, D5.341, D5.342 (ruling R71.5): a Sniper attack on a vehicle's Inherent crew or on an unarmored vehicle itself. A Stun, a Recall, an
     /// Immobilization, or a crew's pin is the vehicle's <c>conditions-changed</c>, as the Fire path writes one, so the projector's Stun, Recall, BU, and SMC
     /// crew handling apply; a broken Inherent crew is placed broken inside and routs beneath it, as an Unprotected crew is (D5.311, whose "[EXC: Sniper attack]"
-    /// leaves the break to A14.3). A concealed vehicle keeps its "?" as a unit does (A12.14; ruling R71.8).
+    /// leaves the break to A14.3). A concealed vehicle keeps its "?" as a unit does (A12.14; ruling R71.8). A SMC Temporary crew's Wound Severity dr comes before
+    /// a Stun (D5.343, A17.11; ruling R71.15).
     /// </summary>
-    private void SnipeVehicle(GameScope scope, string attemptId, long expected, List<GameEvent> events, GameState state, SniperTarget target, string rollId, int dr,
-        BoardLocation location, string package, Action<string, int, BoardLocation?, string?, string> record, Func<bool> seen)
+    private void SnipeVehicle(GameScope scope, string attemptId, long expected, string actor, List<GameEvent> events, Func<RollRequest, RollResult> draw, GameState state,
+        SniperTarget target, string rollId, int dr, BoardLocation location, string package, Action<string, int, BoardLocation?, string?, string> record, Func<bool> seen)
     {
         var vehicle = (UnitInstance)target.Item;
         var definition = VehicleDefinition(vehicle);
@@ -948,7 +950,9 @@ public sealed partial class GamePlanner
 
         if (changed.Count > 0)
         {
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(vehicle.Id, changed), package, null));
+            var change = new ConditionsChanged(vehicle.Id, changed);
+            AddSmcCrewSeverity(scope, attemptId, expected, actor, package, events, draw, state, change);
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", change, package, null));
         }
 
         if (result == ScenarioA1Sniper.CrewBroken)

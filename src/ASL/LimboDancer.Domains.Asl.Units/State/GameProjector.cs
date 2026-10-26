@@ -70,6 +70,9 @@ public static class GameProjector
         private MapLayout? layout;
         private string path = string.Empty;
 
+        // The id of the event being applied, set at each Apply and read only while it applies (pass 71, ruling R71.15): nothing carried between events.
+        private string eventId = string.Empty;
+
         /// <summary>
         /// A replay that carries what this one carries and writes to its own diagnostics (pass 31d, design D1): what it applies leaves this one as
         /// it is. Everything carried between events is one of these six fields.
@@ -99,6 +102,7 @@ public static class GameProjector
         public GameState? Apply(GameEvent gameEvent, GameState? previous)
         {
             path = $"revision {gameEvent.Revision} ({gameEvent.EventId})";
+            eventId = gameEvent.EventId;
             if (!CheckEnvelope(gameEvent, previous))
             {
                 return null;
@@ -4385,9 +4389,14 @@ public static class GameProjector
                 return next;
             }
 
-            // A17.2 (the referee's review): a Wounded SMC Wounded again is eliminated.
+            // A17.2 (the referee's review): a Wounded SMC Wounded again is eliminated. A17.11 (pass 71, ruling R71.15): unless the planner rolled his Wound
+            // Severity dr before this change, in the same commit, by the roll id "{attempt}-wound-{crew}"; Rules then decides by it. A record made before the
+            // pass has no such roll and keeps its outcome.
+            var attempt = eventId.LastIndexOf('-') is > 0 and var cut ? eventId[..cut] : eventId;
+            int? severity = rolls.TryGetValue($"{attempt}-wound-{crew.Id}", out var drawn) && drawn is { Purpose: Rules.ScenarioA1Wounds.SeverityPurpose, Count: 1, Sides: 6 }
+                ? drawn.Values[0] : null;
             (wounded, eliminated) = Rules.ScenarioA1CapturedVehicleRules.SmcCrewOutcome(Now(Conditions.Stunned), Now(Conditions.Recalled), Now(Conditions.Disabled), false,
-                GameState.Condition(crew, Conditions.Wounded) == ConditionState.True);
+                GameState.Condition(crew, Conditions.Wounded) == ConditionState.True, severity);
 
             if (wounded)
             {

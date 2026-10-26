@@ -451,8 +451,13 @@ public static class ScenarioA1Sniper
     /// <summary>A7.302: a squad with a HS definition is Reduced to it; any other unit is eliminated.</summary>
     public static string ReductionResult(bool squadWithHalfSquad) => squadWithHalfSquad ? CasualtyReduced : Eliminated;
 
-    /// <summary>A unit the attack wounds loses its "?" and hidden status (A12.14).</summary>
-    public static IReadOnlyList<(UnitCondition Condition, bool Value)> WoundedConditions() => [(UnitCondition.Wounded, true), (UnitCondition.Concealed, false), (UnitCondition.Hidden, false)];
+    /// <summary>
+    /// A unit the attack wounds loses its "?" and hidden status (A12.14), and is pinned when <paramref name="pinned"/> says the wound pins it (A17.2, p. 85;
+    /// pass 71, ruling R71.14: <see cref="ScenarioA1Wounds.PinnedByWound"/>).
+    /// </summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> WoundedConditions(bool pinned = false) =>
+        pinned ? [(UnitCondition.Wounded, true), (UnitCondition.Pinned, true), (UnitCondition.Concealed, false), (UnitCondition.Hidden, false)]
+            : [(UnitCondition.Wounded, true), (UnitCondition.Concealed, false), (UnitCondition.Hidden, false)];
 
     /// <summary>A unit the attack breaks goes under DM, is no longer pinned, and loses its "?" and hidden status.</summary>
     public static IReadOnlyList<(UnitCondition Condition, bool Value)> BrokenConditions() =>

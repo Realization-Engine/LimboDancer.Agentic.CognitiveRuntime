@@ -472,4 +472,70 @@ public sealed class ScenarioA1Pass71RulesTests
         Assert.Equal("russian", ScenarioA1Sniper.RollMaker("checks", "german", () => ("russian", false)));
         Assert.Null(ScenarioA1Sniper.RollMaker("collateralCheck", "german", Unread));
     }
+
+    // Increment 4f: wounds (A17.2, A17.11, D5.343) and Field Promotions (A18.2); rulings R71.14, R71.15, R71.17.
+
+    [Fact]
+    public void ASmcWoundedInTheMphAfterMoreThanThreeMfIsPinned()
+    {
+        // A17.2 (p. 85; ruling R71.14): "A SMC who becomes wounded (e.g., by Defensive First Fire) after already expending > 3 MF is pinned": 3 1/2 counts.
+        Assert.False(ScenarioA1Wounds.PinnedByWound(true, "mph", 3, false));
+        Assert.True(ScenarioA1Wounds.PinnedByWound(true, "mph", 3, true));
+        Assert.True(ScenarioA1Wounds.PinnedByWound(true, "mph", 4, false));
+
+        // Only in the MPh (the RtPh's wound is the backlog's), and only a SMC.
+        Assert.False(ScenarioA1Wounds.PinnedByWound(true, "rtph", 4, false));
+        Assert.False(ScenarioA1Wounds.PinnedByWound(true, "dfph", 4, false));
+        Assert.False(ScenarioA1Wounds.PinnedByWound(false, "mph", 4, false));
+
+        // A Sniper's wound pins him with it.
+        Assert.Contains((UnitCondition.Pinned, true), ScenarioA1Sniper.WoundedConditions(true));
+        Assert.DoesNotContain((UnitCondition.Pinned, true), ScenarioA1Sniper.WoundedConditions());
+    }
+
+    [Fact]
+    public void ASmcCrewsStunWoundTakesItsSeverityDrAndARecallStillEliminatesHim()
+    {
+        // D5.343 (p. 204), A17.11 (p. 85; ruling R71.15): a Stun wounds a SMC Temporary crew; his Wound Severity dr of 5 or 6 is mortal, +1 when already
+        // wounded, and any other leaves him wounded.
+        Assert.Equal((true, false), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(true, false, false, false, severityDr: 1));
+        Assert.Equal((false, true), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(true, false, false, false, severityDr: 5));
+        Assert.Equal((true, false), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(true, false, false, false, alreadyWounded: true, severityDr: 3));
+        Assert.Equal((false, true), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(true, false, false, false, alreadyWounded: true, severityDr: 4));
+
+        // With no dr in the record, the outcome of before the pass: a second wound eliminates him.
+        Assert.Equal((false, true), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(true, false, false, false, alreadyWounded: true));
+        Assert.Equal((true, false), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(true, false, false, false));
+
+        // A Recall eliminates him with no dr; one with a Disabled MA leaves him (D5.343 EXC). The dr is due only for a wound.
+        Assert.Equal((false, true), ScenarioA1CapturedVehicleRules.SmcCrewOutcome(false, true, false, false, severityDr: 1));
+        Assert.True(ScenarioA1CapturedVehicleRules.SmcCrewSeverityDue(true, false, false, false));
+        Assert.False(ScenarioA1CapturedVehicleRules.SmcCrewSeverityDue(false, true, false, false));
+        Assert.False(ScenarioA1CapturedVehicleRules.SmcCrewSeverityDue(false, true, true, false));
+        Assert.False(ScenarioA1CapturedVehicleRules.SmcCrewSeverityDue(false, false, false, false));
+    }
+
+    private static readonly ScenarioA1CloseCombatReference CloseCombat = new ScenarioA1CloseCombatPackage().Reference;
+    private static readonly int[] SnakeEyes = [1, 1];
+    private static readonly string[] RussianSquad = ["ru-1"];
+
+    [Theory]
+    [InlineData("attacker-tank", true, "defender-leader-7-0")]
+    [InlineData("attacker-tank", null, "defender-leader-6-plus-1")]
+    [InlineData("attacker-truck", true, "defender-leader-6-plus-1")]
+    public void LeaderCreationInCcAgainstAnAfvTakesMinusOne(string vehicle, bool? afv, string created)
+    {
+        // A18.2 (p. 85; ruling R71.17): "-1: CC vs AFV". A Russian 4-4-7's Original 2 against the PzKpfw IIIH and a Leader Creation dr of 5: +1 Russian, -1
+        // against the AFV, Final 5, a 7-0. A record that does not declare the AFV (made before the pass) takes no -1: Final 6, a 6+1; nor does a truck.
+        CloseCombatUnit[] units = [new("ru-1", "defender-squad", "russian", false, false, false, false, false, false, false, false, false, false, false)];
+        var facts = new VehicleCloseCombatFacts("CCPh", "bd03:F4:0", new VehicleCloseCombatVehicle("de-v", vehicle, "german", false, false, false, false, false, false, false, false, false),
+            units, RussianSquad, [], false, false, new VehicleCloseCombatRolls(SnakeEyes) { LeaderCreation = 5 })
+        {
+            LeaderCreation = true,
+            AfvDrm = afv,
+        };
+        var creation = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).LeaderCreation!;
+        Assert.Equal(created, creation.LeaderDefinitionId);
+        Assert.Equal(vehicle == "attacker-tank" && afv == true, creation.Drm.Any(item => item.Name == "cc-vs-afv" && item.Value == -1m && item.Rule == "A18.2"));
+    }
 }

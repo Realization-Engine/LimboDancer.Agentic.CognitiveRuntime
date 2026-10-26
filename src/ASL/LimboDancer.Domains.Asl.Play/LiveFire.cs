@@ -1142,6 +1142,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
                     // Pass 70 (ruling R70.7): whether a target is Unarmed is written with the attack and taken from the record; an older one has none.
                     Unarmed = record.Unarmed,
+
+                    // Pass 71 (ruling R71.14): whether a wound pins the target (A17.2) is written with the attack and taken from the record; an older one has none.
+                    WoundPins = record.WoundPins,
                 })],
             // D3.52, C5.11 (pass 50): the hexspines a vehicle's MG must turn its CA, and its hex's terrain, are map reads recorded with the attack.
             VehicleFire = expected.VehicleFire is { Weapons: { } stateWeapons } armedVehicle && recorded.VehicleFire is { Weapons: { } recordedWeapons } recordedVehicle

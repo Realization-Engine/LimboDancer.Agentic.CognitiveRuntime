@@ -1805,3 +1805,4 @@ One session under the user's word of 2026-10-26 ("Run Pass 71 without my interve
 | 4c, 71.1 (III): the Sniper counter at setup and its placement | 10:31 | 11:41 | 1:10 | | Agent 10:31 to about 11:37 (about 85 card-start methods reached); Studio check; estimate 0:55 |
 | 4d, 71.1 (IV): the Sniper player's choices | 11:44 | 12:24 | 0:40 | | Agent 11:44 to about 12:20; Studio check (the games' dice plan missed a die, rewritten); estimate 1:15 |
 | 4e, 71.1 (V): every A14.1 trigger through one reader; the measurement after 4e | 12:24 | 13:08 | 0:44 | | Agent 12:24 to about 13:03; Studio check; measurement 13:05 to 13:07 (level or faster); estimate 0:20 |
+| 4f, 71.2 (I): the pin after more than 3 MF, the SMC crew's Stun wound, A18.2 against an AFV | 13:08 | 13:43 | 0:35 | | Agent 13:08 to about 13:38; the Studio game owed to the whole-pass check (the script's hex was off the board); estimate 0:35 |
