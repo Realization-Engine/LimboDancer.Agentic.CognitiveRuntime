@@ -19,54 +19,229 @@ namespace LimboDancer.Domains.Asl.Play;
 /// increment 4b (rulings R71.9, R71.10) a SAN falls when its Sniper is eliminated, and the attacked side's units in the target Location may take a Sniper
 /// Check, a pending choice the attacks still to resolve wait for (A14.4). Since increment 4d (ruling R71.12, which replaces R15.5's picks) the Sniper player
 /// decides where the rule lets him, by a pending choice of his own: to attack or to forfeit and reposition, the equidistant hex, the Location, the target
-/// before Random Selection, and which target Random Selection gave takes the dr; an older record's picks are its recorded events. The rules are
+/// before Random Selection, and which target Random Selection gave takes the dr; an older record's picks are its recorded events. Since increment 4e (ruling
+/// R71.13) every record of a planned step that carries a TH, MC, TC, or IFT DR is read, ordnance's included, and a Sniper's own LLMC calls the next. The rules are
 /// <see cref="ScenarioA1Sniper"/>'s (pass 32.h); this file reads the records, the state, and the map, draws the dice, and writes the events.
 /// </summary>
 public sealed partial class GamePlanner
 {
+    /// <summary>
+    /// The trigger reader (A14.1, p. 82; pass 71, ruling R71.13, which supersedes R55.30): every TH, MC, TC, or IFT Original DR of the step's records that equals
+    /// the enemy's SAN, in the PFPh, MPh, DFPh, or AFPh, calls for that enemy's Sniper attack, resolved after the step's own effects, in the order the DRs were
+    /// made. The records are the fire records (with a vehicle crew's checks), the ordnance records (To Hit, Canister, the HE hit's IFT and checks, the crew
+    /// checks), <c>morale-check-resolved</c>, the Bail Out, PAATC, and both OVR NTCs; Rules names each roll's maker. A Sniper attack's own LLMC DRs call the
+    /// next attacks, each after the ones before it (A14.3). The planner runs it once per planned step, after Fire's own calls: a trigger already answered by a
+    /// <c>sniper-attacked</c> record, or whose Sniper is gone or pinned, is not called again. A pending choice of the step stops it (its resume runs it); one
+    /// of a Sniper attack keeps the triggers still to resolve in its resume.
+    /// </summary>
     private void AddSniperAttacks(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing, List<GameEvent> events,
         Func<RollRequest, RollResult> draw)
     {
-        if (events.Any(item => item.Payload is ChoicePending) || Replay(existing).Current is not { } before || !ScenarioA1Sniper.TriggerPhase(before.Phase))
+        // Design section 7: a step with no active Sniper counter on the map returns at once, read from the state's memo.
+        if (Replay(existing).Current is not { } before || MemoOf(before).Snipers(before) is not { Count: > 0 } snipers)
         {
             return;
         }
 
-        // Table player, pass 27: an attack resumed after an owner's choice drew its dice in an earlier commit; its record is in this one.
-        var dice = existing.Concat(events).Select(item => item.Payload).OfType<DiceRolled>().ToDictionary(item => item.Roll, StringComparer.Ordinal);
-        var order = existing.Concat(events).Select(item => item.Payload).OfType<DiceRolled>().Select(item => item.Roll).ToList();
-        var triggers = new List<(string Roll, string Sniper)>();
-        foreach (var fire in events.Select(item => item.Payload).OfType<FireResolved>())
+        var walk = new SniperTriggerWalk(before, snipers);
+        var from = 0;
+        while (true)
         {
-            var firingSide = FiringSideOf(before, fire);
-            foreach (var (key, rollId) in fire.Rolls)
+            ReadTriggers(before, existing, events, from, walk);
+            from = events.Count;
+            var pending = events.FindLastIndex(item => item.Payload is ChoicePending);
+            if (pending >= 0)
             {
-                if (!dice.TryGetValue(rollId, out var roll) || roll.Count != 2)
+                // Ruling R71.12: a Sniper attack that waits for a choice keeps in its resume the triggers its own LLMC made (A14.1, A14.3).
+                if (events[pending].Payload is ChoicePending { Kind: ChoicePending.Sniper or ChoicePending.SniperCheck } choice)
                 {
-                    continue;
+                    KeepTriggers(events, pending, choice, walk.Unresolved());
                 }
 
-                var (kind, unitId) = ScenarioA1Sniper.RollKey(key);
+                return;
+            }
 
-                // A14.1: an IFT DR is its firing side's; a MC or TC DR its unit's, never a prisoner's (Rules decides, pass 32.h).
-                var maker = ScenarioA1Sniper.RollMaker(kind, firingSide,
-                    () => before.Unit(unitId) is { } checker ? (checker.Side, Is(checker, Conditions.Captured)) : null);
-                // E1.76 (backlog pass 16, ruling R16.7): at night each side's SAN is two higher, to at most 7; A14.4 (pass 71, ruling R71.9): less its
-                // reductions, never below the printed SAN at night.
-                if (maker is null || before.Sides.FirstOrDefault(item => item.Id != maker) is not { San: { } printed } enemy
-                    || !ScenarioA1Sniper.Triggers(roll.Values.Sum(), printed, before.Night, enemy.SanReductions))
-                {
-                    continue;
-                }
+            if (walk.Unresolved() is not { Length: > 0 } triggers)
+            {
+                return;
+            }
 
-                if (before.Entities.FirstOrDefault(item => item.Kind == "asl:sniper" && item.Side == enemy.Id && item.Status == InstanceStatus.Active) is { } sniper)
+            SnipeInOrder(scope, attemptId, expected, actor, existing, events, draw, triggers);
+            walk.Answered.UnionWith(triggers.Select(item => item.Roll));
+        }
+    }
+
+    /// <summary>A planned step's events with the Sniper attacks its DRs call for (ruling R71.13), drawn after the step's own dice.</summary>
+    private List<GameEvent> WithSniperAttacks(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing,
+        IReadOnlyList<GameEvent> built, Func<RollRequest, RollResult> draw)
+    {
+        var events = built as List<GameEvent> ?? [.. built];
+        AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
+        return events;
+    }
+
+    /// <summary>A pending Sniper choice's resume with the triggers still to resolve added after its own, those it already keeps or answers left out.</summary>
+    private static void KeepTriggers(List<GameEvent> events, int at, ChoicePending choice, (string Roll, string Sniper)[] triggers)
+    {
+        var resume = JsonNode.Parse(choice.Resume.GetRawText())!.AsObject();
+        var rest = resume["rest"]!.AsArray();
+        var kept = rest.Select(item => item!["roll"]!.GetValue<string>()).Append(resume["trigger"]?.GetValue<string>()).ToHashSet(StringComparer.Ordinal);
+        var added = false;
+        foreach (var (roll, sniper) in triggers.Where(item => !kept.Contains(item.Roll)))
+        {
+            rest.Add(new JsonObject { ["roll"] = roll, ["sniper"] = sniper });
+            added = true;
+        }
+
+        if (added)
+        {
+            events[at] = events[at] with
+            {
+                Payload = choice with
                 {
-                    triggers.Add((rollId, sniper.Id));
+                    Resume = JsonSerializer.SerializeToElement(resume)
                 }
+            };
+        }
+    }
+
+    /// <summary>
+    /// What the trigger reader knows as it walks a step's events once (ruling R71.13): the phase and phasing side (a step may change the phase), each side's
+    /// SAN reductions so far, the Sniper counters gone or pinned, the dice by roll, the triggers found in DR order, and those a <c>sniper-attacked</c> record
+    /// has answered.
+    /// </summary>
+    private sealed class SniperTriggerWalk(GameState before, Dictionary<string, EntityInstance> snipers)
+    {
+        public string? Phase { get; set; } = before.Phase;
+
+        public string? PhasingSide { get; set; } = before.PhasingSide;
+
+        public Dictionary<string, int> Reductions { get; } = new(StringComparer.Ordinal);
+
+        public Dictionary<string, bool> Pinned { get; } = snipers.Values.ToDictionary(item => item.Id, item => Is(item, Conditions.Pinned), StringComparer.Ordinal);
+
+        public HashSet<string> Gone { get; } = new(StringComparer.Ordinal);
+
+        public Dictionary<string, (DiceRolled Roll, int Order)> Dice { get; } = new(StringComparer.Ordinal);
+
+        public List<(string Roll, string Sniper, int Order)> Found { get; } = [];
+
+        public HashSet<string> Answered { get; } = new(StringComparer.Ordinal);
+
+        public Dictionary<string, EntityInstance> Snipers { get; } = snipers;
+
+        /// <summary>The triggers no record has answered whose Sniper is still active and unpinned, once each, in the order their DRs were made.</summary>
+        public (string Roll, string Sniper)[] Unresolved() =>
+            [.. Found.Where(item => !Answered.Contains(item.Roll) && !Gone.Contains(item.Sniper) && !Pinned.GetValueOrDefault(item.Sniper)).DistinctBy(item => item.Roll)
+                .OrderBy(item => item.Order).Select(item => (item.Roll, item.Sniper))];
+    }
+
+    /// <summary>
+    /// Walks the step's events from <paramref name="from"/> (ruling R71.13): each record that carries a roll gives Rules the roll's kind and the reads its maker
+    /// needs, and a two-dice roll its maker made equal to the enemy's actual SAN, in a trigger phase, is a trigger of the enemy's Sniper counter.
+    /// </summary>
+    private void ReadTriggers(GameState before, IReadOnlyList<GameEvent> existing, List<GameEvent> events, int from, SniperTriggerWalk walk)
+    {
+        var index = MemoOf(before).Objects(before);
+        (string? Side, bool Captured)? Checker(string unitId) => index.Unit(unitId) is { } unit ? (unit.Side, Is(unit, Conditions.Captured)) : null;
+        string? SideOf(string? unitId) => unitId is null ? null : index.Unit(unitId)?.Side;
+
+        // Table player, pass 27: a record resumed after an owner's choice uses dice drawn in an earlier commit, which come before this step's.
+        (DiceRolled Roll, int Order)? Dice(string rollId)
+        {
+            if (walk.Dice.TryGetValue(rollId, out var found))
+            {
+                return found;
+            }
+
+            for (var position = existing.Count - 1; position >= 0; position--)
+            {
+                if (existing[position].Payload is DiceRolled earlier && earlier.Roll == rollId)
+                {
+                    return (earlier, position - existing.Count);
+                }
+            }
+
+            return null;
+        }
+
+        void Consider(string rollId, string kind, string unitId, string? firingSide, Func<string?> vehicleSide)
+        {
+            if (!ScenarioA1Sniper.TriggerPhase(walk.Phase) || Dice(rollId) is not { Roll.Count: 2 } roll)
+            {
+                return;
+            }
+
+            // A14.1: whose DR it is, never a prisoner's (Rules decides). E1.76 (ruling R16.7), A14.4 (ruling R71.9): the enemy's SAN is its actual one, less
+            // the reductions so far, never below the printed SAN at night.
+            var maker = ScenarioA1Sniper.RollMaker(kind, unitId.Length > 0, firingSide, () => Checker(unitId), vehicleSide);
+            if (maker is not null && before.Sides.FirstOrDefault(item => item.Id != maker) is { San: { } printed } enemy && walk.Snipers.TryGetValue(enemy.Id, out var sniper)
+                && ScenarioA1Sniper.Triggers(roll.Roll.Values.Sum(), printed, before.Night, enemy.SanReductions + walk.Reductions.GetValueOrDefault(enemy.Id)))
+            {
+                walk.Found.Add((rollId, sniper.Id, roll.Order));
             }
         }
 
-        SnipeInOrder(scope, attemptId, expected, actor, existing, events, draw, [.. triggers.OrderBy(item => order.IndexOf(item.Roll))]);
+        void Keyed(IReadOnlyDictionary<string, string> rolls, string? firingSide, Func<string?> vehicleSide)
+        {
+            foreach (var (key, rollId) in rolls)
+            {
+                var (kind, unitId) = ScenarioA1Sniper.RollKey(key);
+                Consider(rollId, kind, unitId, firingSide, vehicleSide);
+            }
+        }
+
+        static string? VehicleIn(JsonElement facts, string name) =>
+            facts.ValueKind == JsonValueKind.Object && facts.TryGetProperty(name, out var vehicle) && vehicle.ValueKind == JsonValueKind.Object
+                && vehicle.TryGetProperty("vehicleId", out var id) ? id.GetString() : null;
+
+        for (var position = from; position < events.Count; position++)
+        {
+            switch (events[position].Payload)
+            {
+                case DiceRolled rolled:
+                    walk.Dice[rolled.Roll] = (rolled, position);
+                    break;
+                case PhaseChanged phase:
+                    (walk.Phase, walk.PhasingSide) = (phase.Phase, phase.PhasingSide);
+                    break;
+                case SanReduced reduced:
+                    walk.Reductions[reduced.Side] = walk.Reductions.GetValueOrDefault(reduced.Side) + 1;
+                    break;
+                case InstanceEliminated gone when walk.Pinned.ContainsKey(gone.Id):
+                    walk.Gone.Add(gone.Id);
+                    break;
+                case ConditionsChanged changed when walk.Pinned.ContainsKey(changed.Id) && changed.Conditions.TryGetValue(Conditions.Pinned, out var pin):
+                    walk.Pinned[changed.Id] = pin == ConditionState.True;
+                    break;
+                case SniperAttacked attacked:
+                    walk.Answered.Add(attacked.Trigger);
+                    break;
+
+                // A14.1: an IFT DR is its firing side's; a MC or TC its unit's; a vehicle crew's check that names no unit the target vehicle's side's.
+                case FireResolved fire:
+                    Keyed(fire.Rolls, FiringSideOf(before, index, fire, walk.PhasingSide), () => SideOf(VehicleIn(fire.Facts, "targetVehicle")));
+                    break;
+                case OrdnanceFired shot:
+                    Keyed(shot.Rolls, SideOf(shot.Crew) ?? SideOf(shot.Gun), () => SideOf(VehicleIn(shot.Facts, "vehicleTarget")));
+                    break;
+                case MoraleCheckResolved check:
+                    Keyed(check.Rolls, null, static () => null);
+                    break;
+                case RiderBailedOut bailed:
+                    Consider(bailed.Roll, ScenarioA1Sniper.BailOutRoll, bailed.Unit, null, static () => null);
+                    break;
+                case PaatcTaken paatc when paatc.Units.Count > 0:
+                    Consider(paatc.Roll, ScenarioA1Sniper.PaatcRoll, paatc.Units[0], null, static () => null);
+                    break;
+                case TaskCheck task:
+                    Consider(task.Roll, ScenarioA1Sniper.NtcRoll, task.Id, null, static () => null);
+                    break;
+                case InfantryOverrunNtc ntc:
+                    Consider(ntc.Roll, ScenarioA1Sniper.NtcRoll, ntc.Taker, null, static () => null);
+                    break;
+            }
+        }
     }
 
     /// <summary>
@@ -85,13 +260,20 @@ public sealed partial class GamePlanner
         }
     }
 
-    /// <summary>The side that made a fire record's IFT DR: its firers', a DC's user's, or the DEFENDER's for Residual FP (A8.2); the record's reads are made as Rules asks.</summary>
-    private static string? FiringSideOf(GameState state, FireResolved fire) =>
-        ScenarioA1Sniper.FiringSide(fire.Firers.Count > 0, () => state.Unit(fire.Firers[0])?.Side,
+    /// <summary>
+    /// The side that made a fire record's IFT DR: its firers', a DC's user's, a Canister shot's Gun's (its vehicle's, or the Gun's crew's), or the DEFENDER's
+    /// for Residual FP (A8.2), the side not phasing when the record was made; the record's reads are made as Rules asks, from the state's index.
+    /// </summary>
+    private static string? FiringSideOf(GameState state, ObjectIndex index, FireResolved fire, string? phasingSide) =>
+        ScenarioA1Sniper.FiringSide(fire.Firers.Count > 0, () => index.Unit(fire.Firers[0])?.Side,
             () => fire.Facts.TryGetProperty("demolitionCharge", out var charge) && charge.TryGetProperty("userId", out var user) && user.GetString() is { } userId
-                ? state.Unit(userId)?.Side : null,
+                ? index.Unit(userId)?.Side : null,
+            () => fire.Facts.TryGetProperty("canister", out var canister) && canister.ValueKind == JsonValueKind.Object && canister.TryGetProperty("gunId", out var gunId)
+                && gunId.GetString() is { } gun
+                ? index.Unit(gun)?.Side ?? (state.Find(gun) is EquipmentInstance equipment ? equipment.Side ?? (equipment.Holding?.Holder is { } crew ? index.Unit(crew)?.Side : null) : null)
+                : null,
             () => fire.Facts.TryGetProperty("fireKind", out var kind) && kind.GetString() == ScenarioA1FireCalculator.ResidualFire,
-            () => state.Sides.FirstOrDefault(item => item.Id != state.PhasingSide)?.Id);
+            () => state.Sides.FirstOrDefault(item => item.Id != phasingSide)?.Id);
 
     /// <summary>
     /// A Sniper target (A14.2 EXC, A14.22, A14.31; pass 71, ruling R71.3): a unit (on foot or a Vulnerable PRC), a vehicle's Inherent crew or the unarmored

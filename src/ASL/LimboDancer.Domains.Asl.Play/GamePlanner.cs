@@ -392,6 +392,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, surrenderPending);
         }
 
+        // A14.1 (pass 71, ruling R71.13): the Sniper attacks every DR of the step calls for, after the step's own effects and before the follow-ups below, in
+        // DR order; those Fire's own calls answered are not called again.
+        if (plan.Status == GamePlanStatus.Ready && plan.Roll is { } sniping)
+        {
+            plan = plan with
+            {
+                Roll = sniping with
+                {
+                    Build = draw => WithSniperAttacks(scope, attemptId, expected, actor ?? "unknown", existing, sniping.Build(draw), draw)
+                }
+            };
+        }
+
         // C6.5, C6.51 (ruling R5.13): an Acquisition follows the units it is on.
         plan = WithAcquisitions(plan, scope, existing, attemptId, expected);
 

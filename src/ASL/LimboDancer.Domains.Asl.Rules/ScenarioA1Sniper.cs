@@ -98,10 +98,23 @@ public static class ScenarioA1Sniper
     /// <summary>A14.1: Sniper attacks follow the DRs of the PFPh, MPh, DFPh, and AFPh.</summary>
     public static bool TriggerPhase(string? phase) => phase is "pfph" or "mph" or "dfph" or "afph";
 
-    /// <summary>A fire record's roll key, split into its kind and its unit; pass 31 (ruling R31.5): a unit's second Leader Loss check, keyed "unit#2", is the same unit's DR.</summary>
+    /// <summary>
+    /// A fire record's roll key, split into its kind and its unit; pass 31 (ruling R31.5): a unit's second Leader Loss check, keyed "unit#2", is the same unit's DR.
+    /// Pass 71 (ruling R71.13): an ordnance record's nested keys, the HE hit's ("hit:"), the Critical Hit's ("critical-hit:"), and the PRC's ("prc:"), are
+    /// read as the fire key inside them.
+    /// </summary>
     public static (string Kind, string UnitId) RollKey(string key)
     {
         ArgumentNullException.ThrowIfNull(key);
+        foreach (var nested in NestedRollKeys)
+        {
+            if (key.StartsWith(nested, StringComparison.Ordinal))
+            {
+                key = key[nested.Length..];
+                break;
+            }
+        }
+
         var split = key.IndexOf(':', StringComparison.Ordinal);
         var (kind, unitId) = split < 0 ? (key, string.Empty) : (key[..split], key[(split + 1)..]);
         if (unitId.IndexOf('#', StringComparison.Ordinal) is var numbered and > 0)
@@ -116,13 +129,34 @@ public static class ScenarioA1Sniper
     /// A14.1: whose DR a roll is: an IFT DR is its firing side's; a MC or TC DR (a check, a leader loss check, a berserk NTC, a crew's) its unit's, never a
     /// prisoner's; any other roll is no side's. <paramref name="checker"/> reads the unit's side and whether it is captured, only for a check.
     /// </summary>
-    public static string? RollMaker(string kind, string? firingSide, Func<(string? Side, bool Captured)?> checker)
+    public static string? RollMaker(string kind, string? firingSide, Func<(string? Side, bool Captured)?> checker) =>
+        RollMaker(kind, true, firingSide, checker, static () => null);
+
+    /// <summary>The roll kinds of the records that carry one roll (pass 71, ruling R71.13): a PAATC (A11.6), an OVR NTC (D7.1, A4.15), and a Bail Out NMC (D6.24).</summary>
+    public const string PaatcRoll = "paatc";
+    public const string NtcRoll = "ntc";
+    public const string BailOutRoll = "bailOut";
+
+    private static readonly string[] NestedRollKeys = ["hit:", "critical-hit:", "prc:"];
+
+    /// <summary>
+    /// A14.1 (p. 82; pass 71, ruling R71.13): whose Original DR a roll is, of every record that carries one: a TH or IFT DR (a fire record's attack, an ordnance
+    /// To Hit DR, a Canister shot's DR, the HE hit's IFT DR) is its firing side's; a MC, NMC, or TC (a check, a leader loss check, a berserk NTC, a crew's
+    /// check, a PAATC, an OVR NTC, a Bail Out NMC) its unit's, "[EXC: those made for Prisoners]"; a vehicle crew's check that names no unit (a Collateral
+    /// Attack's MC, an immobilization TC, an ordnance crew check) the target vehicle's side's. Any other roll (To Kill, Shock, Survival, a selection, a dr) is
+    /// no side's. <paramref name="checker"/> reads the named unit's side and whether it is captured, <paramref name="vehicleSide"/> the target vehicle's side,
+    /// each only when asked.
+    /// </summary>
+    public static string? RollMaker(string kind, bool unitNamed, string? firingSide, Func<(string? Side, bool Captured)?> checker, Func<string?> vehicleSide)
     {
         ArgumentNullException.ThrowIfNull(checker);
+        ArgumentNullException.ThrowIfNull(vehicleSide);
         return kind switch
         {
-            "attack" => firingSide,
-            "checks" or "leaderLoss" or "berserkCheck" or "crewCheck" when checker() is { Captured: false } found => found.Side,
+            "attack" or "toHit" or "canister" => firingSide,
+            "collateralCheck" or "taskCheck" => vehicleSide(),
+            "crewCheck" when !unitNamed => vehicleSide(),
+            "checks" or "leaderLoss" or "berserkCheck" or "crewCheck" or "areaCrewCheck" or PaatcRoll or NtcRoll or BailOutRoll when checker() is { Captured: false } found => found.Side,
             _ => null,
         };
     }
@@ -231,10 +265,19 @@ public static class ScenarioA1Sniper
         $"the {side} units in {hex} that may take it make a Sniper Check against the {sniperSide} Sniper, all of them in one combined DR, and become TI: a Final DR of 2 or less eliminates the Sniper, a 3 pins it (A14.4)";
 
     /// <summary>A14.1, A8.2: the side that made a fire record's IFT DR: its firers', a DC's user's, or the DEFENDER's for Residual FP; each read when the one before gives none.</summary>
-    public static string? FiringSide(bool hasFirers, Func<string?> firstFirerSide, Func<string?> demolitionChargeUserSide, Func<bool> residualFire, Func<string?> defenderSide)
+    public static string? FiringSide(bool hasFirers, Func<string?> firstFirerSide, Func<string?> demolitionChargeUserSide, Func<bool> residualFire, Func<string?> defenderSide) =>
+        FiringSide(hasFirers, firstFirerSide, demolitionChargeUserSide, static () => null, residualFire, defenderSide);
+
+    /// <summary>
+    /// As above, and (pass 71, ruling R71.13) a Canister shot's Location attack, which names no firer, is its Gun's side's: the shot's one DR is its IFT DR
+    /// (C8.4).
+    /// </summary>
+    public static string? FiringSide(bool hasFirers, Func<string?> firstFirerSide, Func<string?> demolitionChargeUserSide, Func<string?> canisterGunSide, Func<bool> residualFire,
+        Func<string?> defenderSide)
     {
         ArgumentNullException.ThrowIfNull(firstFirerSide);
         ArgumentNullException.ThrowIfNull(demolitionChargeUserSide);
+        ArgumentNullException.ThrowIfNull(canisterGunSide);
         ArgumentNullException.ThrowIfNull(residualFire);
         ArgumentNullException.ThrowIfNull(defenderSide);
         if (hasFirers)
@@ -245,6 +288,11 @@ public static class ScenarioA1Sniper
         if (demolitionChargeUserSide() is { } userSide)
         {
             return userSide;
+        }
+
+        if (canisterGunSide() is { } gunSide)
+        {
+            return gunSide;
         }
 
         return residualFire() ? defenderSide() : null;

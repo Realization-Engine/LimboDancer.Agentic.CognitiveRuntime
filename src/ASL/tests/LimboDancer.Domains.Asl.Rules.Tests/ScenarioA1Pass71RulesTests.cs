@@ -415,4 +415,61 @@ public sealed class ScenarioA1Pass71RulesTests
         Assert.Contains("chooses which takes the dr of 1", ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.FirstStep, "german", "[M5]", 1), StringComparison.Ordinal);
         Assert.EndsWith("(A14.2)", ScenarioA1Sniper.ChoiceText(ScenarioA1Sniper.RepositionStep, "german", null, 1), StringComparison.Ordinal);
     }
+
+    // Increment 4e: every A14.1 trigger (ruling R71.13).
+
+    private static (string? Side, bool Captured)? Unread() => throw new InvalidOperationException("The unit is not read.");
+
+    private static string? NoVehicle() => throw new InvalidOperationException("The vehicle is not read.");
+
+    [Fact]
+    public void AToHitACanisterAndAnHeHitsIftDrAreTheFiringSidesAndTheirNestedChecksTheUnits()
+    {
+        // A14.1 (p. 82; ruling R71.13): "a TH, MC, TC, non-OBA IFT ... Original DR": an ordnance To Hit DR, a Canister shot's IFT DR, and the HE hit's IFT DR
+        // are the firing side's; the HE hit's and a Critical Hit's MCs, and a PRC's, are the unit's, read inside their nested keys.
+        Assert.Equal(("toHit", string.Empty), ScenarioA1Sniper.RollKey("toHit"));
+        Assert.Equal(("attack", string.Empty), ScenarioA1Sniper.RollKey("hit:attack"));
+        Assert.Equal(("checks", "r1"), ScenarioA1Sniper.RollKey("hit:checks:r1"));
+        Assert.Equal(("leaderLoss", "r2"), ScenarioA1Sniper.RollKey("critical-hit:leaderLoss:r2#2"));
+        Assert.Equal(("checks", "de-p"), ScenarioA1Sniper.RollKey("prc:checks:de-p"));
+        foreach (var kind in new[] { "toHit", "canister", "attack" })
+        {
+            Assert.Equal("russian", ScenarioA1Sniper.RollMaker(kind, false, "russian", Unread, NoVehicle));
+        }
+
+        Assert.Equal("german", ScenarioA1Sniper.RollMaker("checks", true, "russian", () => ("german", false), NoVehicle));
+
+        // C8.4: a Canister shot's Location attack names no firer; its DR is its Gun's side's, read after a DC's user and before Residual FP.
+        Assert.Equal("american", ScenarioA1Sniper.FiringSide(false, NoVehicle, static () => null, static () => "american", static () => true, static () => "german"));
+        Assert.Equal("german", ScenarioA1Sniper.FiringSide(false, NoVehicle, static () => null, static () => null, static () => true, static () => "german"));
+
+        // Not A14.1's kinds: To Kill, Shock, Crew Survival, a selection, a dr.
+        foreach (var kind in new[] { "toKill", "shockCheck", "crewSurvival", "areaSurvival", "randomSelection", "subsequent", "panzerfaustCheck", "woundSeverity" })
+        {
+            Assert.Null(ScenarioA1Sniper.RollMaker(kind, true, "russian", Unread, NoVehicle));
+        }
+    }
+
+    [Fact]
+    public void AVehicleCrewsCheckIsItsVehiclesSideAndEveryOtherCheckItsUnitsButAPrisoners()
+    {
+        // A14.1: a Collateral Attack's MC, an immobilization TC, and an ordnance crew check name no unit: they are the target vehicle's side's; a mortar's crew
+        // TC names its vehicle. A PAATC, an OVR NTC, and a Bail Out NMC are their unit's, "[EXC: those made for Prisoners]".
+        foreach (var kind in new[] { "collateralCheck", "taskCheck", "crewCheck" })
+        {
+            Assert.Equal("german", ScenarioA1Sniper.RollMaker(kind, false, "russian", Unread, () => "german"));
+        }
+
+        Assert.Equal("german", ScenarioA1Sniper.RollMaker("crewCheck", true, "russian", () => ("german", false), NoVehicle));
+        Assert.Equal("german", ScenarioA1Sniper.RollMaker("areaCrewCheck", true, "russian", () => ("german", false), NoVehicle));
+        foreach (var kind in new[] { ScenarioA1Sniper.PaatcRoll, ScenarioA1Sniper.NtcRoll, ScenarioA1Sniper.BailOutRoll })
+        {
+            Assert.Equal("russian", ScenarioA1Sniper.RollMaker(kind, true, null, () => ("russian", false), NoVehicle));
+            Assert.Null(ScenarioA1Sniper.RollMaker(kind, true, null, () => ("russian", true), NoVehicle));
+        }
+
+        // The older overload reads as before the increment.
+        Assert.Equal("russian", ScenarioA1Sniper.RollMaker("checks", "german", () => ("russian", false)));
+        Assert.Null(ScenarioA1Sniper.RollMaker("collateralCheck", "german", Unread));
+    }
 }

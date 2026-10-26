@@ -250,8 +250,8 @@ public sealed partial class GamePlanner
                         AddFireFollowUps(scope, attemptId, expected, actor, existing, answered, resume.GetProperty("targetSide").GetString()!, step, events, draw, followUps);
                     }
 
-                    // Ruling R55.30: a Canister shot follows ordnance, which calls no Sniper; its resumed Locations call none either.
-                    if (followUps?.DcCharge is null && fire.Canister is null && followUps?.Canister is null)
+                    // Pass 71 (ruling R71.13, which supersedes R55.30): a resumed Canister shot's Locations call the Sniper too; a DC's follow-ups have.
+                    if (followUps?.DcCharge is null)
                     {
                         AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
                     }

@@ -1804,3 +1804,4 @@ One session under the user's word of 2026-10-26 ("Run Pass 71 without my interve
 | 4b, 71.1 (II): the SAN as state and Sniper Check | 09:43 | 10:27 | 0:44 | | Agent 09:43 to about 10:23 (beside the merge of main and the new baseline); Studio check; estimate 1:00 |
 | 4c, 71.1 (III): the Sniper counter at setup and its placement | 10:31 | 11:41 | 1:10 | | Agent 10:31 to about 11:37 (about 85 card-start methods reached); Studio check; estimate 0:55 |
 | 4d, 71.1 (IV): the Sniper player's choices | 11:44 | 12:24 | 0:40 | | Agent 11:44 to about 12:20; Studio check (the games' dice plan missed a die, rewritten); estimate 1:15 |
+| 4e, 71.1 (V): every A14.1 trigger through one reader; the measurement after 4e | 12:24 | 13:08 | 0:44 | | Agent 12:24 to about 13:03; Studio check; measurement 13:05 to 13:07 (level or faster); estimate 0:20 |

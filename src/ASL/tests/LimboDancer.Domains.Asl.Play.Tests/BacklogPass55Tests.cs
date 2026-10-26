@@ -2183,11 +2183,11 @@ public sealed class BacklogPass55Tests : IDisposable
     }
 
     [Fact]
-    public async Task ACanisterShotResumedAfterAnOwnersChoiceCallsNoSniper()
+    public async Task ACanisterShotResumedAfterAnOwnersChoiceCallsTheSniperOnceOnItsDr()
     {
-        // Ruling R55.30 (the referee's review): a Canister shot follows ordnance, which calls no Sniper. The German SAN is 6 and the shot's
-        // IFT DR is a 6. The first squad passes its MC on an Original 2, and Heat of Battle gives its owner an option, so the shot stops; the
-        // answer resolves that Location and the rest, and no Sniper is called on that path either.
+        // Pass 71 (ruling R71.13, which supersedes R55.30, the referee's review of pass 55): a Canister shot's IFT DR is an A14.1 trigger. The German SAN is 6
+        // and the shot's IFT DR is a 6. The first squad passes its MC on an Original 2, and Heat of Battle gives its owner an option, so the shot stops; the
+        // answer resolves that Location and the rest, and the German Sniper attacks once, after them, on the shot's one DR (its dr 3 has no effect).
         Dictionary<string, object>[] placements =
         [
             .. AmericanGun(), .. Squads(),
@@ -2232,7 +2232,8 @@ public sealed class BacklogPass55Tests : IDisposable
         }
 
         Assert.Equal(Aim4, Fires(before).Select(fire => fire.TargetLocation));
-        Assert.DoesNotContain(Since(before), item => item.Type.StartsWith("sniper", StringComparison.Ordinal));
+        var sniped = Assert.Single(Since(before).Select(item => item.Payload).OfType<SniperAttacked>());
+        Assert.Equal(("de-sniper", LastShot(before).Rolls["canister"], "none"), (sniped.Sniper, sniped.Trigger, sniped.Result));
         NoReplayErrors();
     }
 

@@ -38,6 +38,9 @@ public sealed class BacklogPass71Tests : IDisposable
     private readonly HashSet<(string, string)> blocked = [];
     private readonly HashSet<string> upstairs = new(StringComparer.Ordinal);
 
+    // The scenario's year (increment 4e: Riders need 1943, D6.2).
+    private int year = 1942;
+
     public BacklogPass71Tests() => store = new FileGameStore(root);
 
     public void Dispose()
@@ -131,13 +134,13 @@ public sealed class BacklogPass71Tests : IDisposable
     private static Dictionary<string, object> Squad(string id, string hex, string side, params string[] states) =>
         Unit(id, "asl:squad", side == "german" ? "attacker-squad" : "defender-squad", hex, side, states);
 
-    private static Dictionary<string, object> Vehicle(string id, string definition, string hex, bool buttonedUp) => new()
+    private static Dictionary<string, object> Vehicle(string id, string definition, string hex, bool buttonedUp, string facing = "east", string side = "german") => new()
     {
         ["id"] = id,
         ["kind"] = "asl:vehicle",
         ["definition"] = definition,
-        ["side"] = "german",
-        ["position"] = new Dictionary<string, string> { ["at"] = L(hex), ["facing"] = "east" },
+        ["side"] = side,
+        ["position"] = new Dictionary<string, string> { ["at"] = L(hex), ["facing"] = facing },
         ["conditions"] = new Dictionary<string, bool> { [Conditions.ButtonedUp] = buttonedUp },
     };
 
@@ -198,7 +201,7 @@ public sealed class BacklogPass71Tests : IDisposable
                     new { id = "russian", nationality = "russian", elr = 2, san = russianSan, friendlyEdge = "right" },
                 },
                 ["scenarioMonth"] = 7,
-                ["scenarioYear"] = 1942,
+                ["scenarioYear"] = year,
             },
             placements,
         }));
@@ -930,6 +933,377 @@ public sealed class BacklogPass71Tests : IDisposable
         Assert.Equal(["rs", "gs"], sniped.Select(item => item.Sniper));
         Assert.Equal(("g1", ScenarioA1Sniper.Pinned), (sniped[0].Unit, sniped[0].Result));
         Assert.Equal((3, ScenarioA1Sniper.NoEffect), (sniped[1].Dr, sniped[1].Result));
+        Assert.Null(Current.Choice);
+        Assert.False(History.HasErrors);
+    }
+
+    // Increment 4e: every A14.1 trigger, read by one reader once per planned step (ruling R71.13). Unless a test says otherwise, every die after those given is a
+    // 4: a Sniper dr of 4 has no effect, and no check of 4 + 4 equals a SAN.
+
+    private static readonly string[] R1 = ["r1"];
+    private static readonly string[] G2 = ["g2"];
+
+    /// <summary>The hex across one hexside of another, by board 01's geometry.</summary>
+    private static string N(string hex, HexsideDirection side) => Board01Fixture.Handle().Neighbor(HexName.Parse(hex), side)!.Value.ToString();
+
+    private SniperAttacked[] Sniped(long before) => [.. Since(before).Select(item => item.Payload).OfType<SniperAttacked>()];
+
+    private async Task PassFire() => Committed(await Do(GameActions.PassFire, NoRoll(), new
+    {
+    }));
+
+    private Task<PlayResult> Drive(string kind, string? to = null, Dictionary<string, object>? options = null)
+    {
+        var arguments = new Dictionary<string, object> { ["vehicleId"] = "de-tk", ["kind"] = kind };
+        if (to is not null)
+        {
+            arguments["to"] = to;
+        }
+
+        foreach (var (name, value) in options ?? [])
+        {
+            arguments[name] = value;
+        }
+
+        return Do(GameActions.MoveVehicle, NoRoll(), arguments);
+    }
+
+    [Theory]
+    [InlineData(2, true)]
+    [InlineData(3, false)]
+    public async Task ResidualFpOnAMoveCallsTheSniperOnlyWhenItsDrEqualsTheEnemySan(int white, bool calls)
+    {
+        // A8.2, A14.1 (pp. 59, 82; ruling R71.13): in the German MPh g1 enters E2, and r1's First Fire at it (6 + 5) leaves Residual FP there; g2 entering E2
+        // is attacked by it. That DR is the DEFENDER's (A8.2): the Russian 1 + 2 equals the German SAN of 3 and calls the German Sniper in I4; a 1 + 3 calls
+        // none. Before the increment no move called a Sniper.
+        await Setup(3, Squad("g2", "E3", "german"), Sniper("gs", "I4", "german"));
+        await Advance();
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("E2"),
+        }));
+        Committed(await Do(GameActions.Fire, Then(4, 6, 5), new
+        {
+            firers = R1,
+            target = L("E2"),
+        }));
+        await PassFire();
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+        var before = Revision;
+        Committed(await Do(GameActions.Move, Then(4, 1, white), new
+        {
+            unitIds = G2,
+            to = L("E2"),
+        }));
+        var residual = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.Equal(ScenarioA1FireCalculator.ResidualFire, residual.Facts.GetProperty("fireKind").GetString());
+        var sniped = Sniped(before);
+        Assert.Equal(calls ? 1 : 0, sniped.Length);
+        if (calls)
+        {
+            Assert.Equal(("gs", residual.Rolls["attack"], ScenarioA1Sniper.NoEffect), (sniped[0].Sniper, sniped[0].Trigger, sniped[0].Result));
+        }
+
+        Assert.False(History.HasErrors);
+    }
+
+    [Theory]
+    [InlineData(3, true)]
+    [InlineData(4, false)]
+    public async Task AnOrdnanceToHitDrCallsTheSniperOnlyWhenItEqualsTheEnemySan(int white, bool calls)
+    {
+        // A14.1 (p. 82; ruling R71.13, which supersedes R55.30): "a TH ... Original DR": the German PzKpfw IIIH in E6, facing north, fires its MA at r1 in E4
+        // in the PFPh; its To Hit DR 3 + 3 equals the Russian SAN of 6 and calls the Russian Sniper, a 3 + 4 none.
+        await Setup(null, Vehicle("de-tk", "attacker-tank", "E6", buttonedUp: true, facing: "north-east"));
+        var before = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Then(4, 3, white), new
+        {
+            gunId = "de-tk",
+            target = L("E4"),
+        }));
+        var shot = Since(before).Select(item => item.Payload).OfType<OrdnanceFired>().Single();
+        var sniped = Sniped(before);
+        Assert.Equal(calls ? 1 : 0, sniped.Length);
+        if (calls)
+        {
+            Assert.Equal(("rs", shot.Rolls["toHit"]), (sniped[0].Sniper, sniped[0].Trigger));
+        }
+
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task TheHeHitsCheckOfItsTargetCallsTheEnemySniper()
+    {
+        // A14.1 (ruling R71.13): the German MA's To Hit DR 3 + 4 hits r1 in E4; the hit's IFT DR 4 + 4 gives it a check, and r1's 2 + 3 equals the German SAN
+        // of 5 and calls the German Sniper in I4. The check is keyed inside the hit's own rolls.
+        await Setup(5, Vehicle("de-tk", "attacker-tank", "E6", buttonedUp: true, facing: "north-east"), Sniper("gs", "I4", "german"));
+        var before = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Then(4, 3, 4, 4, 4, 2, 3), new
+        {
+            gunId = "de-tk",
+            target = L("E4"),
+        }));
+        var shot = Since(before).Select(item => item.Payload).OfType<OrdnanceFired>().Single();
+        Assert.True(shot.Rolls.ContainsKey("hit:checks:r1"), string.Join(", ", shot.Rolls.Keys));
+        Assert.Equal(("gs", shot.Rolls["hit:checks:r1"]), (Assert.Single(Sniped(before)).Sniper, Sniped(before)[0].Trigger));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task TwoTriggersOfOneMoveAreResolvedInTheOrderOfTheirDrs()
+    {
+        // A14.1 (p. 82): g2 entering E2 is attacked by r1's Residual FP; that Russian DR, 3 + 3, calls the German Sniper (both SANs are 6), and g2's check
+        // after it, 3 + 3, the Russian Sniper: the German attack resolves first, then the Russian.
+        await Setup(6, Squad("g2", "E3", "german"), Sniper("gs", "I4", "german"));
+        await Advance();
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("E2"),
+        }));
+        Committed(await Do(GameActions.Fire, Then(4, 6, 5), new
+        {
+            firers = R1,
+            target = L("E2"),
+        }));
+        await PassFire();
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+        var before = Revision;
+        Committed(await Do(GameActions.Move, Then(4, 3, 3, 3, 3), new
+        {
+            unitIds = G2,
+            to = L("E2"),
+        }));
+        var residual = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.True(residual.Rolls.ContainsKey("checks:g2"), string.Join(", ", residual.Rolls.Keys));
+        var sniped = Sniped(before);
+        Assert.Equal(["gs", "rs"], sniped.Select(item => item.Sniper));
+        Assert.Equal([residual.Rolls["attack"], residual.Rolls["checks:g2"]], sniped.Select(item => item.Trigger));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task AFireLaneAttackOnALaterMoverCallsTheSniper()
+    {
+        // A9.22, A14.1 (ruling R71.13): r1's LMG Defensive First Fires at g1 entering the hex north-east of E4 and lays a Fire Lane one hex beyond; g2 then
+        // enters that far hex and is attacked by the lane. Its Russian DR, 3 + 3, equals the German SAN of 6 and calls the German Sniper in I4.
+        var near = N("E4", HexsideDirection.NorthEast);
+        var far = N(near, HexsideDirection.NorthEast);
+        Dictionary<string, object> lmg = new()
+        {
+            ["id"] = "rmg",
+            ["kind"] = "asl:mg",
+            ["definition"] = "defender-lmg",
+            ["side"] = "russian",
+            ["holding"] = new
+            {
+                holder = "r1",
+                role = "possessed",
+            },
+            ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+        };
+        await Setup(6, lmg, Squad("g2", N(far, HexsideDirection.North), "german"), Sniper("gs", "I4", "german"));
+        await Advance();
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L(near),
+        }));
+        Committed(await Do(GameActions.Fire, Then(4, 5, 4), new Dictionary<string, object>
+        {
+            ["firers"] = R1,
+            ["target"] = L(near),
+            ["weapons"] = new Dictionary<string, string[]> { ["r1"] = ["rmg"] },
+            ["fireLane"] = new Dictionary<string, string> { ["weapon"] = "rmg", ["to"] = L(far) },
+        }));
+        Assert.Single(Current.FireLanes);
+        await PassFire();
+
+        // g1's move ended with its failed check, or ends now.
+        var ended = await Do(GameActions.EndMove, NoRoll(), new
+        {
+        });
+        Assert.True(ended.Outcome == PlayOutcome.Committed || ended.Reasons.Any(reason => reason.StartsWith("play.end-move: no stack is moving", StringComparison.Ordinal)),
+            string.Join("; ", ended.Reasons));
+        var before = Revision;
+        Committed(await Do(GameActions.Move, Then(4, 3, 3), new
+        {
+            unitIds = G2,
+            to = L(far),
+        }));
+        var lane = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.True(lane.Facts.GetProperty("fireLane").GetBoolean());
+        Assert.Equal(("gs", lane.Rolls["attack"]), (Assert.Single(Sniped(before)).Sniper, Sniped(before)[0].Trigger));
+        Assert.False(History.HasErrors);
+    }
+
+    private static readonly string[] SquadAndLeader = ["de-l", "g1"];
+
+    [Fact]
+    public async Task ASearchsLlmcInTheMphCallsTheSniper()
+    {
+        // A12.154, A10.2, A14.1 (ruling R71.13): g1 and the 8-1 move beside r1 and Search E4; the DEFENDER's Casualty dr of 1 strikes, Random Selection's 6, 1
+        // picks the leader, and his Wound Severity dr of 6 eliminates him. g1's LLMC, 3 + 3, equals the Russian SAN of 6 and calls the Russian Sniper.
+        var beside = N("E4", HexsideDirection.NorthWest);
+        await Setup(null, Unit("de-l", "asl:leader", "attacker-leader-8-1", "E3", "german"));
+        await Advance();
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = SquadAndLeader,
+            to = L(beside),
+        }));
+        await PassFire();
+        var before = Revision;
+        Committed(await Do(GameActions.Search, Then(4, 6, 1, 6, 1, 6, 3, 3), new
+        {
+            unitIds = SquadAndLeader,
+            hexes = new[] { L("E4") },
+        }));
+        var llmc = Since(before).Select(item => item.Payload).OfType<MoraleCheckResolved>().Single();
+        Assert.Equal(ScenarioA1MoraleCheck.Searching, llmc.Cause);
+        Assert.Equal(("rs", llmc.Rolls.Single().Value), (Assert.Single(Sniped(before)).Sniper, Sniped(before)[0].Trigger));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task ARidersBailOutNmcCallsTheSniper()
+    {
+        // D6.21, D6.24, A14.1 (ruling R71.13): the German tank in E6 faces east, so its MA's shot at r1 in E4 turns the turret and its 4-6-7 Rider Bails Out;
+        // the To Hit DR 6 + 5 misses, and the Rider's NMC, 3 + 3, equals the Russian SAN of 6 and calls the Russian Sniper. The year is 1943 (D6.2).
+        year = 1943;
+        var rider = Squad("de-r", "B10", "german");
+        rider["position"] = new Dictionary<string, string> { ["in"] = "de-tk", ["role"] = "rider" };
+        await Setup(null, Vehicle("de-tk", "attacker-tank", "E6", buttonedUp: true), rider);
+        var before = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Then(4, 6, 5, 3, 3), new
+        {
+            gunId = "de-tk",
+            target = L("E4"),
+        }));
+        var bailed = Since(before).Select(item => item.Payload).OfType<RiderBailedOut>().Single();
+        var sniped = Assert.Single(Sniped(before));
+        Assert.Equal(("rs", bailed.Roll), (sniped.Sniper, sniped.Trigger));
+        Assert.False(History.HasErrors);
+    }
+
+    /// <summary>The German tank in the hex south-west of E4 starts in the German MPh and enters r1's E4 with an OVR, the Russian passing each time.</summary>
+    private async Task OverrunR1(int? germanSan, params Dictionary<string, object>[] placements)
+    {
+        await Setup(germanSan, [Vehicle("de-tk", "attacker-tank", N("E4", HexsideDirection.SouthWest), buttonedUp: true), .. placements]);
+        await Advance();
+        Committed(await Drive("start"));
+        await PassFire();
+        Committed(await Drive("enter", L("E4"), new()
+        {
+            ["overrun"] = true
+        }));
+        await PassFire();
+    }
+
+    [Fact]
+    public async Task AVehicleOvrsIftDrCallsTheSniper()
+    {
+        // D7.1, A14.1 (ruling R71.13): the German tank overruns r1 in E4 in the German MPh; the OVR's IFT DR 3 + 3 equals the Russian SAN of 6 and calls the
+        // Russian Sniper. Before the increment only an OVR resumed after a choice called it.
+        await OverrunR1(null);
+        var before = Revision;
+        Committed(await Do(GameActions.Overrun, Then(4, 3, 3), new
+        {
+        }));
+        var overrun = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.Equal(("rs", overrun.Rolls["attack"]), (Assert.Single(Sniped(before)).Sniper, Sniped(before)[0].Trigger));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task APaatcInTheMphCallsTheSniper()
+    {
+        // A11.6, D7.21, A14.1 (ruling R71.13): the OVR's Original 12 gives r1 a PTC, passed on 2 + 2, and malfunctions the MA (6, 1, 1; as pass 11's test). r1
+        // then takes its PAATC for CC Reaction Fire: 3 + 4 equals the German SAN of 7 and calls the German Sniper in I4.
+        await OverrunR1(7, Sniper("gs", "I4", "german"));
+        Committed(await Do(GameActions.Overrun, Then(4, 6, 6, 2, 2, 6, 1, 1), new
+        {
+        }));
+        var before = Revision;
+        Committed(await Do(GameActions.VehicleCloseCombat, Then(4, 3, 4), new Dictionary<string, object>
+        {
+            ["location"] = L("E4"),
+            ["attackers"] = R1,
+        }));
+        var paatc = Since(before).Select(item => item.Payload).OfType<PaatcTaken>().Single();
+        Assert.Equal(("gs", paatc.Roll), (Assert.Single(Sniped(before)).Sniper, Sniped(before)[0].Trigger));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task APaatcInTheAphCallsNoSniper()
+    {
+        // A14.1 (p. 82): a Sniper is called "during any PFPh, MPh, DFPh or AFPh": g1's PAATC to advance onto the Russian tank in E2, 3 + 3, equals the Russian
+        // SAN of 6 in the German APh, and calls nothing.
+        await Setup(null, Vehicle("ru-tk", "defender-tank", "E2", buttonedUp: true, side: "russian"));
+        await Advance(5);
+        Assert.Equal("aph", Current.Phase);
+        var before = Revision;
+        Committed(await Do(GameActions.Advance, Then(4, 3, 3), new
+        {
+            unitIds = G1,
+            to = L("E2"),
+        }));
+        Assert.Single(Since(before).Select(item => item.Payload).OfType<PaatcTaken>());
+        Assert.Empty(Sniped(before));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task AnInfantryOvrNtcCallsTheSniper()
+    {
+        // A4.15, A14.1 (p. 49, 82; ruling R71.13): g1 takes the NTC of an Infantry OVR of the lone Russian 7-0 beside it; its 3 + 3 equals the Russian SAN of 6
+        // and calls the Russian Sniper.
+        var lone = N("E3", HexsideDirection.NorthWest);
+        await Setup(null, Unit("rl", "asl:leader", "defender-leader-7-0", lone, "russian"));
+        await Advance();
+        var before = Revision;
+        Committed(await Do(GameActions.InfantryOverrunNtc, Then(4, 3, 3), new Dictionary<string, object>
+        {
+            ["unitIds"] = G1,
+            ["to"] = L(lone),
+        }));
+        var ntc = Since(before).Select(item => item.Payload).OfType<InfantryOverrunNtc>().Single();
+        Assert.Equal(("rs", ntc.Roll), (Assert.Single(Sniped(before)).Sniper, Sniped(before)[0].Trigger));
+        Assert.False(History.HasErrors);
+    }
+
+    [Fact]
+    public async Task ASnipersOwnLlmcCallsTheNextAttackAfterTheSniperCheckItWaitsFor()
+    {
+        // A14.1, A14.3 (p. 82; ruling R71.13): the Russian Sniper's dr 1 eliminates the German 8-0 in E6, and the 4-6-7's LLMC, 3 + 3, equals the Russian SAN
+        // of 6: it calls the Sniper again. The first attack offers the Sniper Check, which keeps the new trigger in its resume; declined, the second attack
+        // follows (its dr 4 has no effect).
+        await Setup(null, Unit("de-l", "asl:leader", "attacker-leader-8-0", "E6", "german"), Squad("de-s", "E6", "german"));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Then(4, [3, 3, 3, 3, 1]), new
+        {
+            firers = G1,
+            target = L("E4"),
+        }));
+        Committed(await Choose(ScenarioA1Sniper.Attack, Then(4, 1, 1, 6, 1, 3, 3)));
+        var llmc = Since(before).Select(item => item.Payload).OfType<MoraleCheckResolved>().Single();
+        var trigger = llmc.Rolls.Single().Value;
+        Assert.Equal(("de-l", ScenarioA1Sniper.Eliminated), (Assert.Single(Sniped(before)).Unit, Sniped(before)[0].Result));
+        var check = Current.Choice!;
+        Assert.Equal(ChoicePending.SniperCheck, check.Kind);
+        Assert.Equal(trigger, check.Resume.GetProperty("rest")[0].GetProperty("roll").GetString());
+
+        Committed(await Choose(ChoicePending.Decline, Then(4)));
+        var sniped = Sniped(before);
+        Assert.Equal(2, sniped.Length);
+        Assert.Equal(("rs", trigger, 4), (sniped[1].Sniper, sniped[1].Trigger, sniped[1].Dr));
         Assert.Null(Current.Choice);
         Assert.False(History.HasErrors);
     }
