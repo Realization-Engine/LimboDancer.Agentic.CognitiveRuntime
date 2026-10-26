@@ -489,8 +489,25 @@ public static class ReplaySteps
             return ("other", null, $"{A(SideOf(surrender.Unit), "unit")} offers to surrender{end}", false);
         }
 
+        // A14.4 (pass 71, rulings R71.9, R71.10): a Sniper Check, and a Sniper eliminated, which lowers its side's SAN.
+        if (First<SniperChecked>(payloads) is { } check)
+        {
+            return ("other", SideOf(Head(check.Units)), $"A Sniper Check against {A(SideOf(check.Sniper), "Sniper")} in {Place(before, check.Location)}{end}", false);
+        }
+
+        if (First<SanReduced>(payloads) is { } reduced)
+        {
+            return ("other", reduced.Side, $"{The(reduced.Side, "Sniper")} is eliminated, and the {DisplayText.Side(reduced.Side)} SAN falls{end}", false);
+        }
+
         if (First<ChoicePending>(payloads) is { } waiting)
         {
+            // A14.4 (pass 71, ruling R71.10): the attacked side may take a Sniper Check.
+            if (waiting.Kind == ChoicePending.SniperCheck)
+            {
+                return ("other", waiting.Side, $"A Sniper attacks, and the {DisplayText.Side(waiting.Side)} side may take a Sniper Check", false);
+            }
+
             // C2.2401 (pass 55): the DEFENDER's shot is declared and not yet rolled.
             if (waiting.Kind == ChoicePending.GunDuel)
             {
@@ -715,6 +732,9 @@ public static class ReplaySteps
 
                 // Pass 70 (ruling R70.4): a morale check made outside an attack is seen in its Location, within the step of what caused it.
                 MoraleCheckResolved check => BoardLocation.TryParse(check.Location, out var checkedAt) ? checkedAt : null,
+
+                // Pass 71 (ruling R71.10): a Sniper Check is seen in its Location.
+                SniperChecked sniperCheck => sniperCheck.Location,
                 _ => null,
             };
             if (at is not null)

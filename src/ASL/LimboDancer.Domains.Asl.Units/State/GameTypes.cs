@@ -69,6 +69,16 @@ public sealed record SideState(string Id, string Nationality, int? Elr, int? San
     /// backlog pass 18, ruling R18.3); empty for a game that names none.
     /// </summary>
     public IReadOnlyList<ObGroup> Groups { get; init; } = [];
+
+    /// <summary>
+    /// How many times the side's SAN was reduced (A14.4; pass 71, ruling R71.9), counted from its <c>san-reduced</c> records; 0 for a game with none. The
+    /// actual SAN is Rules' (<see cref="Rules.ScenarioA1Sniper.ActualSan"/>).
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public int SanReductions
+    {
+        get; init;
+    }
 }
 
 /// <summary>An OB group of a side: its id in the game, its name on the card, and its ELR (A19.1; ruling R18.3).</summary>

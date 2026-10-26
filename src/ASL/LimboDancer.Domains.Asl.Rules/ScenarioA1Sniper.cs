@@ -38,6 +38,18 @@ public sealed record SniperVehicleFacts(bool Unarmored, bool PartiallyArmored, b
 public sealed record SniperVehicleTargets(IReadOnlyList<int> Prc, bool Crew, bool Vehicle);
 
 /// <summary>
+/// A unit in a Sniper attack's target Location as A14.4 reads it (pass 71, ruling R71.10): Personnel on foot (not a Dummy, not aboard a vehicle), in Good
+/// Order (A.7), pinned, TI, Unarmed, hidden, and whether it has fired or moved this Player Turn.
+/// </summary>
+public sealed record SniperCheckCandidate(bool PersonnelOnFoot, bool GoodOrder, bool Pinned, bool Ti, bool Unarmed, bool Hidden, bool FiredOrMoved);
+
+/// <summary>
+/// A participant in a Sniper Check as its DRM reads it (A14.4; ruling R71.10): its kind, a leader's leadership modifier as it now applies (a wounded
+/// leader's one worse, A17.2), and whether a leader is heroic (A15.21).
+/// </summary>
+public sealed record SniperCheckParticipant(string Kind, int? Leadership, bool Heroic);
+
+/// <summary>
 /// Snipers (A14; backlog pass 15, ruling R15.5; pass 32.h, S9): which DRs call for a Sniper attack, the Sniper dr, the Random Location and the target it finds,
 /// Random Selection among the targets, and the results. Play reads the records, the state, and the map, draws the dice, and writes the events.
 /// </summary>
@@ -103,8 +115,105 @@ public static class ScenarioA1Sniper
     /// <summary>E1.76 (backlog pass 16, ruling R16.7): at night each side's SAN is two higher, to at most 7.</summary>
     public static int SniperActivationNumber(int printed, bool night) => night ? Math.Min(printed + 2, 7) : printed;
 
+    /// <summary>
+    /// The actual SAN (A14.4, E1.76, pp. 83, 225; pass 71, ruling R71.9): a Sniper eliminated "reduces that side's SAN by one for the duration of the
+    /// scenario"; by day the printed SAN less the reductions; at night the printed SAN plus two (to at most 7) less the reductions, which "can never be
+    /// reduced below the printed (or recorded) SAN".
+    /// </summary>
+    public static int ActualSan(int printed, bool night, int reductions) =>
+        night ? Math.Max(printed, SniperActivationNumber(printed, true) - reductions) : printed - reductions;
+
+    /// <summary>A14.1 (p. 82; ruling R71.9): "If a SAN is (reduced to) &lt; 2, that Sniper counter is removed from play and that side may make no (further) Sniper attacks."</summary>
+    public static bool CounterRemoved(int actualSan) => actualSan < 2;
+
     /// <summary>A14.1: a two-dice DR equal to the enemy's SAN calls for the Sniper attack.</summary>
-    public static bool Triggers(int sum, int printedSan, bool night) => sum == SniperActivationNumber(printedSan, night);
+    public static bool Triggers(int sum, int printedSan, bool night) => Triggers(sum, printedSan, night, 0);
+
+    /// <summary>A14.1 (pass 71, ruling R71.9): a two-dice DR equal to the enemy's actual SAN, after its reductions, calls for the Sniper attack.</summary>
+    public static bool Triggers(int sum, int printedSan, bool night, int reductions) => sum == ActualSan(printedSan, night, reductions);
+
+    /// <summary>The causes of a SAN reduction (A14.4; ruling R71.9): a Sniper Check, or an enemy Sniper's attack, that eliminates the Sniper.</summary>
+    public const string SniperCheckCause = "sniper-check";
+    public const string SniperAttackCause = "sniper-attack";
+
+    /// <summary>The projector's check of a recorded SAN reduction (A14.4; ruling R71.9): the side has a SAN, and the cause is one of the two.</summary>
+    public static RecordRefusal? VerifySanReduced(bool sideHasSan, string cause) =>
+        !sideHasSan || cause is not (SniperCheckCause or SniperAttackCause)
+            ? new RecordRefusal("UNIT-STATE-042", "A SAN reduction names a side with a SAN and a Sniper Check or a Sniper attack as its cause (A14.4).")
+            : null;
+
+    /// <summary>
+    /// A14.4 (p. 82; pass 71, ruling R71.10): "any unpinned, non-TI, armed Good Order Infantry ... unit in the target Location which has not yet fired/moved
+    /// during that Player Turn" may take the Sniper Check. A hidden unit is left out, so the combined check never costs a unit its hidden status unasked.
+    /// </summary>
+    public static bool MayTakeSniperCheck(SniperCheckCandidate unit)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+        return unit.PersonnelOnFoot && unit.GoodOrder && !unit.Pinned && !unit.Ti && !unit.Unarmed && !unit.Hidden && !unit.FiredOrMoved;
+    }
+
+    /// <summary>
+    /// The Sniper Check DRM (A14.4, p. 83; ruling R71.10), the most benefit the participants can have, with its causes: the leadership of one leader directing
+    /// any unit other than himself, none for a leader alone ("a leader cannot modify his own DR", the EX); -1 each hero; -1 each crew or HS equivalent, a squad
+    /// two. A heroic leader gives his leadership or his hero's -1, never both (A15.21).
+    /// </summary>
+    public static (int Drm, IReadOnlyList<string> Causes) SniperCheckDrm(IReadOnlyList<SniperCheckParticipant> participants)
+    {
+        ArgumentNullException.ThrowIfNull(participants);
+        var heroes = participants.Count(unit => unit.Kind == "asl:hero");
+        var halfSquads = participants.Sum(unit => ScenarioA1OrdnanceProjection.HalfSquadEquivalents(unit.Kind));
+        var heroicLeaders = participants.Count(unit => unit.Leadership is not null && unit.Heroic);
+        var (drm, director) = (-heroes - halfSquads - heroicLeaders, (SniperCheckParticipant?)null);
+        if (participants.Count > 1)
+        {
+            foreach (var leader in participants.Where(unit => unit.Leadership is not null))
+            {
+                var directed = -heroes - halfSquads - heroicLeaders + (leader.Heroic ? 1 : 0) + leader.Leadership!.Value;
+                if (directed < drm)
+                {
+                    (drm, director) = (directed, leader);
+                }
+            }
+        }
+
+        var causes = new List<string>();
+        if (director is not null)
+        {
+            causes.Add($"leadership {director.Leadership:+0;-0}");
+        }
+
+        if (heroes + heroicLeaders - (director?.Heroic == true ? 1 : 0) is > 0 and var heroic)
+        {
+            causes.Add($"{heroic} hero{(heroic == 1 ? string.Empty : "es")} -{heroic}");
+        }
+
+        if (halfSquads > 0)
+        {
+            causes.Add($"{halfSquads} HS equivalent{(halfSquads == 1 ? string.Empty : "s")} -{halfSquads}");
+        }
+
+        return (drm, causes);
+    }
+
+    /// <summary>A14.4 (p. 82; ruling R71.10): a Sniper Check Final DR of 2 or less eliminates the Sniper, a 3 pins it (no further effect on one already pinned).</summary>
+    public static string SniperCheckResult(int finalDr, bool pinned) => finalDr <= 2 ? SniperEliminated : finalDr == 3 && !pinned ? SniperPinned : NoEffect;
+
+    /// <summary>
+    /// What a Sniper Check does to each participant (A14.4, A12.141; ruling R71.10): it becomes TI, and loses its "?" and hidden status when it is in the LOS
+    /// of a Good Order enemy ground unit within 16 hexes (A12.141 names "make a Sniper Check").
+    /// </summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> SniperCheckConditions(bool losesConcealment) =>
+        losesConcealment ? [(UnitCondition.Ti, true), (UnitCondition.Concealed, false), (UnitCondition.Hidden, false)] : [(UnitCondition.Ti, true)];
+
+    /// <summary>The projector's check of a recorded Sniper Check (A14.4; ruling R71.10): its Sniper and units in play, its DR recorded, and its result the DR's.</summary>
+    public static RecordRefusal? VerifySniperCheck(bool sniperFound, bool unitsActive, IReadOnlyList<int>? dice, int drm, bool pinned, string result) =>
+        !sniperFound || !unitsActive || dice is not { Count: 2 } || SniperCheckResult(dice.Sum() + drm, pinned) != result
+            ? new RecordRefusal("UNIT-STATE-042", "A Sniper Check names a Sniper counter and units in play, its recorded DR, and the result of that DR (A14.4).")
+            : null;
+
+    /// <summary>The words of a pending Sniper Check (A14.4; ruling R71.10), by the target Location's hex.</summary>
+    public static string SniperCheckChoiceText(string side, string sniperSide, string hex) =>
+        $"the {side} units in {hex} that may take it make a Sniper Check against the {sniperSide} Sniper, all of them in one combined DR, and become TI: a Final DR of 2 or less eliminates the Sniper, a 3 pins it (A14.4)";
 
     /// <summary>A14.1, A8.2: the side that made a fire record's IFT DR: its firers', a DC's user's, or the DEFENDER's for Residual FP; each read when the one before gives none.</summary>
     public static string? FiringSide(bool hasFirers, Func<string?> firstFirerSide, Func<string?> demolitionChargeUserSide, Func<bool> residualFire, Func<string?> defenderSide)

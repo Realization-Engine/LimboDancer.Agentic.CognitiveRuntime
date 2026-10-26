@@ -180,4 +180,113 @@ public sealed class ScenarioA1Pass71RulesTests
         Assert.Equal([(UnitCondition.Pinned, true)], ScenarioA1Sniper.PinnedConditions(keepsConcealment: true));
         Assert.Equal([(UnitCondition.Pinned, true), (UnitCondition.Concealed, false), (UnitCondition.Hidden, false)], ScenarioA1Sniper.PinnedConditions(keepsConcealment: false));
     }
+
+    // Increment 4b: the SAN as state and Sniper Check (A14.4, E1.76; rulings R71.9, R71.10).
+    private static SniperCheckCandidate Candidate(bool onFoot = true, bool goodOrder = true, bool pinned = false, bool ti = false, bool unarmed = false, bool hidden = false,
+        bool firedOrMoved = false) => new(onFoot, goodOrder, pinned, ti, unarmed, hidden, firedOrMoved);
+
+    private static SniperCheckParticipant Leader(int leadership, bool heroic = false) => new("asl:leader", leadership, heroic);
+
+    private static readonly SniperCheckParticipant Squad = new("asl:squad", null, false);
+    private static readonly SniperCheckParticipant HalfSquad = new("asl:half-squad", null, false);
+    private static readonly SniperCheckParticipant Crew = new("asl:crew", null, false);
+    private static readonly SniperCheckParticipant Hero = new("asl:hero", null, false);
+
+    [Fact]
+    public void TheActualSanIsThePrintedLessItsReductionsAndAtNightNeverBelowThePrinted()
+    {
+        // A14.4 (p. 83; ruling R71.9): each Sniper eliminated reduces the SAN by one; by day from the printed SAN.
+        Assert.Equal(3, ScenarioA1Sniper.ActualSan(3, night: false, reductions: 0));
+        Assert.Equal(2, ScenarioA1Sniper.ActualSan(3, night: false, reductions: 1));
+        Assert.Equal(1, ScenarioA1Sniper.ActualSan(2, night: false, reductions: 1));
+
+        // E1.76 (p. 225): at night the printed SAN plus two, at most 7, which "can never be reduced below the printed" SAN.
+        Assert.Equal(6, ScenarioA1Sniper.ActualSan(4, night: true, reductions: 0));
+        Assert.Equal(5, ScenarioA1Sniper.ActualSan(4, night: true, reductions: 1));
+        Assert.Equal(4, ScenarioA1Sniper.ActualSan(4, night: true, reductions: 2));
+        Assert.Equal(4, ScenarioA1Sniper.ActualSan(4, night: true, reductions: 3));
+        Assert.Equal(6, ScenarioA1Sniper.ActualSan(6, night: true, reductions: 1));
+
+        // The trigger reads the actual SAN: a DR equal to the old SAN calls nothing once it is reduced.
+        Assert.True(ScenarioA1Sniper.Triggers(3, 3, night: false, reductions: 0));
+        Assert.False(ScenarioA1Sniper.Triggers(3, 3, night: false, reductions: 1));
+        Assert.True(ScenarioA1Sniper.Triggers(2, 3, night: false, reductions: 1));
+    }
+
+    [Fact]
+    public void ASanBelowTwoRemovesTheCounter()
+    {
+        // A14.1, A14.4 (pp. 82, 83; ruling R71.9): "If the SAN is reduced to 1, remove the Sniper Target Selection counter from the game."
+        Assert.True(ScenarioA1Sniper.CounterRemoved(1));
+        Assert.True(ScenarioA1Sniper.CounterRemoved(0));
+        Assert.False(ScenarioA1Sniper.CounterRemoved(2));
+
+        // A recorded reduction names a side with a SAN and one of the two causes.
+        Assert.Null(ScenarioA1Sniper.VerifySanReduced(true, ScenarioA1Sniper.SniperCheckCause));
+        Assert.Null(ScenarioA1Sniper.VerifySanReduced(true, ScenarioA1Sniper.SniperAttackCause));
+        Assert.NotNull(ScenarioA1Sniper.VerifySanReduced(false, ScenarioA1Sniper.SniperCheckCause));
+        Assert.NotNull(ScenarioA1Sniper.VerifySanReduced(true, "fire"));
+    }
+
+    [Fact]
+    public void TheSniperCheckDrmFollowsTheExamplesThreeCases()
+    {
+        // A14.4 EX (p. 83): "An 8-1 leader making a Sniper Check would not qualify for any DRM because a leader cannot modify his own DR."
+        Assert.Equal(0, ScenarioA1Sniper.SniperCheckDrm([Leader(-1)]).Drm);
+
+        // "An 8-1 leader with a HS would receive a -2 DRM (-1 for leadership and -1 for a HS taking the Sniper Check)."
+        var (withHalfSquad, causes) = ScenarioA1Sniper.SniperCheckDrm([Leader(-1), HalfSquad]);
+        Assert.Equal(-2, withHalfSquad);
+        Assert.Equal(["leadership -1", "1 HS equivalent -1"], causes);
+
+        // "An 8-1 leader, a squad, and a HS would receive a -4 DRM (-1 for leadership, -1 for the HS, and -2 for the squad)."
+        Assert.Equal(-4, ScenarioA1Sniper.SniperCheckDrm([Leader(-1), Squad, HalfSquad]).Drm);
+    }
+
+    [Fact]
+    public void ASniperCheckCountsEachHeroAndEachCrewAndAHeroicLeaderGivesOneOrTheOther()
+    {
+        // A14.4 (p. 83): -1 each participating hero; -1 each crew/HS equivalent.
+        Assert.Equal(-1, ScenarioA1Sniper.SniperCheckDrm([Hero]).Drm);
+        Assert.Equal(-2, ScenarioA1Sniper.SniperCheckDrm([Hero, Crew]).Drm);
+        Assert.Equal(-2, ScenarioA1Sniper.SniperCheckDrm([Squad]).Drm);
+
+        // A leader whose modifier helps nobody is not used: a 7-0's 0, a 6+1's +1.
+        Assert.Equal(-2, ScenarioA1Sniper.SniperCheckDrm([Leader(0), Squad]).Drm);
+        Assert.Equal(-2, ScenarioA1Sniper.SniperCheckDrm([Leader(1), Squad]).Drm);
+
+        // A15.21 (p. 83): "A heroic leader may not combine his heroic DRM with his leadership DRM": a heroic 9-2 with a squad directs it (-2 - 2), and his hero's
+        // -1 is not added; alone, he is a hero (-1).
+        Assert.Equal(-4, ScenarioA1Sniper.SniperCheckDrm([Leader(-2, heroic: true), Squad]).Drm);
+        Assert.Equal(-1, ScenarioA1Sniper.SniperCheckDrm([Leader(-2, heroic: true)]).Drm);
+    }
+
+    [Theory]
+    [InlineData(2, ScenarioA1Sniper.SniperEliminated)]
+    [InlineData(3, ScenarioA1Sniper.SniperPinned)]
+    [InlineData(4, ScenarioA1Sniper.NoEffect)]
+    public void ASniperCheckFinalDrOfTwoEliminatesTheSniperAndAThreePinsIt(int finalDr, string result)
+    {
+        // A14.4 (p. 82): "will do so on a Sniper Check Final DR of <= 2. A Sniper Check Final DR of 3 pins the Sniper."
+        Assert.Equal(result, ScenarioA1Sniper.SniperCheckResult(finalDr, pinned: false));
+        Assert.Equal(finalDr <= 2 ? ScenarioA1Sniper.SniperEliminated : ScenarioA1Sniper.NoEffect, ScenarioA1Sniper.SniperCheckResult(finalDr, pinned: true));
+    }
+
+    [Fact]
+    public void OnlyUnpinnedNonTiArmedGoodOrderInfantryThatHasNeitherFiredNorMovedMayTakeTheSniperCheck()
+    {
+        // A14.4 (p. 82): "any unpinned, non-TI, armed Good Order Infantry/Cavalry unit in the target Location which has not yet fired/moved during that Player Turn".
+        Assert.True(ScenarioA1Sniper.MayTakeSniperCheck(Candidate()));
+        Assert.False(ScenarioA1Sniper.MayTakeSniperCheck(Candidate(pinned: true)));
+        Assert.False(ScenarioA1Sniper.MayTakeSniperCheck(Candidate(ti: true)));
+        Assert.False(ScenarioA1Sniper.MayTakeSniperCheck(Candidate(goodOrder: false)));
+        Assert.False(ScenarioA1Sniper.MayTakeSniperCheck(Candidate(firedOrMoved: true)));
+        Assert.False(ScenarioA1Sniper.MayTakeSniperCheck(Candidate(unarmed: true)));
+        Assert.False(ScenarioA1Sniper.MayTakeSniperCheck(Candidate(onFoot: false)));
+        Assert.False(ScenarioA1Sniper.MayTakeSniperCheck(Candidate(hidden: true)));
+
+        // A12.141 (p. 78): making a Sniper Check costs the "?" in the LOS of a Good Order enemy ground unit within 16 hexes; TI always.
+        Assert.Equal([(UnitCondition.Ti, true)], ScenarioA1Sniper.SniperCheckConditions(losesConcealment: false));
+        Assert.Equal([(UnitCondition.Ti, true), (UnitCondition.Concealed, false), (UnitCondition.Hidden, false)], ScenarioA1Sniper.SniperCheckConditions(losesConcealment: true));
+    }
 }

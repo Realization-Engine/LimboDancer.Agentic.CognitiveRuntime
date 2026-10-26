@@ -5098,6 +5098,9 @@ else if (state is not null)
         // A12.14 (pass 70, ruling R70.21): force the loss, showing a concealed unit for a moment, or let the stack keep its "?".
         (ChoicePending.ConcealmentLoss, ChoicePending.Take) => "force the loss of its \"?\"",
         (ChoicePending.ConcealmentLoss, _) => "decline: it keeps its \"?\"",
+        // A14.4 (pass 71, ruling R71.10): every unit that may take it makes the one combined Sniper Check, or none does.
+        (ChoicePending.SniperCheck, ChoicePending.Take) => "take the Sniper Check",
+        (ChoicePending.SniperCheck, _) => "decline: no Sniper Check",
         (_, ChoicePending.Take) => "take it",
         (_, ChoicePending.Decline) => "decline it",
         (ChoicePending.Acquisition, _) => $"keep it on {option}",
@@ -9412,6 +9415,9 @@ else if (state is not null)
                     InstanceEliminated gone when state.Unit(gone.Id) is { Kind: UnitKinds.Dummy } dummy
                         => dummyStacks.Add($"{ReplaySteps.AttemptOf(item.EventId)}|{history.At(item.Revision - 1)?.Location(dummy.Id)?.Location}|{dummy.Side}") ? $"{DisplayText.ASide(dummy.Side)} Dummy stack was removed." : null,
                     InstanceCaptured taken when state.Unit(taken.Id) is { } prisoner => $"A {DisplayText.Side(prisoner.Side)} unit was captured.",
+                    // Pass 71 (A14.4; rulings R71.9, R71.10): a Sniper Check made in public, and a Sniper eliminated, named by side only.
+                    SniperChecked check => $"A Sniper Check was made in {PlaceOf(check.Location)}.",
+                    SanReduced reduced => $"The {DisplayText.Side(reduced.Side)} Sniper was eliminated, and its SAN is lower.",
                     GameEnded => "The game ended.",
                     _ => null,
                 };

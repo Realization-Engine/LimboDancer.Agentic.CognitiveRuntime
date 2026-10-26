@@ -1209,6 +1209,18 @@ public static class GameEventWriter
 
                 writer.WriteString("result", sniper.Result);
                 break;
+            case SanReduced reduced:
+                writer.WriteString("side", reduced.Side);
+                writer.WriteString("cause", reduced.Cause);
+                break;
+            case SniperChecked check:
+                writer.WriteString("sniper", check.Sniper);
+                writer.WriteString("location", check.Location.ToString());
+                Strings(writer, "units", check.Units);
+                writer.WriteString("roll", check.Roll);
+                writer.WriteNumber("drm", check.Drm);
+                writer.WriteString("result", check.Result);
+                break;
             case PrisonersMassacred massacre:
                 Strings(writer, "units", massacre.Units);
                 Strings(writer, "prisoners", massacre.Prisoners);

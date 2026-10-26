@@ -6,6 +6,7 @@ using LimboDancer.Domains.Asl.Play;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.State;
 using Microsoft.Extensions.DependencyInjection;
+using PlayPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.Play;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 
@@ -17,6 +18,9 @@ public sealed class PlayPagePass71Tests : IDisposable
 {
     // Its own id: UnitNames keeps names by the game's id and first event id.
     private const string Game = "playpage-pass71";
+
+    // CA1861: the German squad that fires in each test.
+    private static readonly string[] GermanFirer = ["de-1"];
     private readonly string root = Path.Combine(Path.GetTempPath(), "asl-play-71-" + Guid.NewGuid().ToString("N"));
     private readonly ScriptedDice dice = new();
     private readonly LivePlay live;
@@ -121,7 +125,7 @@ public sealed class PlayPagePass71Tests : IDisposable
         dice.Enqueue([3, 3, 3, 3, 2, 1, 1]);
         await Do(GameActions.Fire, new
         {
-            firers = new[] { "de-1" },
+            firers = GermanFirer,
             target = WideBoards.At(5),
         });
         var sniped = Assert.Single(Events.Select(item => item.Payload).OfType<SniperAttacked>());
@@ -134,5 +138,56 @@ public sealed class PlayPagePass71Tests : IDisposable
             Assert.Matches(@": dr 2; \[[A-Z]{1,2}\d{1,2}\]: the crew of .+ is Stunned \(A14\.3, D5\.34\)$", line);
             Assert.DoesNotContain("ab-wide:", line, StringComparison.Ordinal);
         }
+    }
+
+    private IRenderedComponent<PlayPage> Open(string view)
+    {
+        var page = context.Render<PlayPage>();
+        page.OpenGame(Game);
+        page.ViewAs(view);
+        return page;
+    }
+
+    private static Dictionary<string, object> Plain(string id, string kind, string definition, string at, string side) =>
+        Placed(id, kind, definition, at, side, new Dictionary<string, bool> { ["asl:broken"] = false, ["asl:concealed"] = false, ["asl:hidden"] = false });
+
+    [Fact]
+    public async Task TheSniperCheckIsTheGermanSidesChoiceAndItsLinesNameTheHex()
+    {
+        // Increment 4b (A14.4; rulings R71.9, R71.10): as above, the Russian Sniper's dr 2 lands one hex north, now on a German 8-1, 4-6-7, and 2-4-7;
+        // Random Selection's 6, 1, 1 picks the HS, which is pinned. The German view offers the Sniper Check with its two answers, the Russian view none. Taken,
+        // the DR 3 + 2 - 3 eliminates the Russian Sniper, and the lines say the hex in brackets and the Russian SAN of 5.
+        var stackAt = WideBoards.At(9);
+        var sniperAt = GameMaps.LocationOf(WideBoards.Board, new HexIndex(9, 4))!.ToString();
+        await Start(Squad("de-1", "attacker-squad", WideBoards.At(3), "german"), Squad("ru-1", "defender-squad", WideBoards.At(5), "russian"),
+            Plain("de-l", "asl:leader", "attacker-leader-8-1", stackAt, "german"), Squad("de-s", "attacker-squad", stackAt, "german"),
+            Plain("de-h", "asl:half-squad", "attacker-half-squad", stackAt, "german"), Placed("rs", "asl:sniper", null, sniperAt, "russian", new Dictionary<string, bool>()));
+        dice.Enqueue([3, 3, 3, 3, 2, 1, 1, 6, 1, 1]);
+        await Do(GameActions.Fire, new
+        {
+            firers = GermanFirer,
+            target = WideBoards.At(5),
+        });
+        var choice = live.History(Game)!.Current!.Choice!;
+        Assert.Equal((ChoicePending.SniperCheck, "german"), (choice.Kind, choice.Side));
+
+        var german = Open("german");
+        Assert.Equal(2, german.FindAll("#play-choice button.choose").Count);
+        Assert.Contains("take the Sniper Check", german.Find("#play-choice").TextContent, StringComparison.Ordinal);
+        Assert.Empty(Open("russian").FindAll("#play-choice button.choose"));
+
+        dice.Enqueue([3, 2]);
+        await Do(GameActions.Choose, new
+        {
+            key = choice.Key,
+            option = ChoicePending.Take,
+        });
+        var history = live.History(Game)!;
+        var view = new Perspective("german");
+        var lines = new PlayRecords(history, view, long.MaxValue, UnitNames.For(history, view, [.. live.Catalogs])).Snipers.Select(item => item.Text).ToArray();
+        Assert.Contains(lines, line => line.Contains("Sniper Check against the Russian Sniper", StringComparison.Ordinal) && line.Contains("= 2, the Sniper is eliminated", StringComparison.Ordinal)
+            && line.Contains(" in [", StringComparison.Ordinal));
+        Assert.Contains(lines, line => line.EndsWith("the Russian SAN is now 5 (A14.4)", StringComparison.Ordinal));
+        Assert.DoesNotContain(lines, line => line.Contains("ab-wide:", StringComparison.Ordinal));
     }
 }

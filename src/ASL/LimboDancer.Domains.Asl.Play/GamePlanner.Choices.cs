@@ -93,6 +93,14 @@ public sealed partial class GamePlanner
             return DescribeGunDuel(choice.Resume);
         }
 
+        // A14.4 (pass 71, ruling R71.10): the attacked side's Sniper Check, by the target Location's hex and the Sniper's side, both in the resume data.
+        if (choice.Kind == ChoicePending.SniperCheck)
+        {
+            var hex = choice.Resume.TryGetProperty("location", out var checkAt) && BoardLocation.TryParse(checkAt.GetString() ?? string.Empty, out var place) ? $"[{place.Hex}]" : subject;
+            var sniperSide = choice.Resume.TryGetProperty("sniperSide", out var bySide) ? bySide.GetString() ?? "enemy" : "enemy";
+            return ScenarioA1Sniper.SniperCheckChoiceText(choice.Side, sniperSide, hex);
+        }
+
         // A12.14 (pass 70, ruling R70.21): the viewing side's option, by the stack's hex.
         if (choice.Kind == ChoicePending.ConcealmentLoss)
         {
@@ -138,6 +146,13 @@ public sealed partial class GamePlanner
         }
 
         var made = Event(scope, attemptId, 1, expected, "choice-made", new ChoiceMade(key, option), null, null, [pending.Event]);
+
+        // A14.4 (pass 71, ruling R71.10): the Sniper Check is taken or not, then the Sniper attacks still to resolve.
+        if (pending.Kind == ChoicePending.SniperCheck)
+        {
+            return PlanSniperCheckAnswer(scope, existing, attemptId, expected, label, actor, state, pending, made, option, summary);
+        }
+
         if (pending.Kind == ChoicePending.Acquisition)
         {
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [made], [summary]);

@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Geometry;
@@ -13,9 +15,10 @@ namespace LimboDancer.Domains.Asl.Play;
 /// A14.3); a Random Location DR from the Sniper counter's hex finds the target hex, or the closest hex holding an eligible target or the enemy Sniper counter,
 /// ties to the lowest TEM and SMOKE and then the first hex by name (A14.2, A14.21); the Location there with the most targets is attacked, and Random Selection
 /// picks among them, a concealed stack counting as one (A14.23). Since pass 71 (rulings R71.3 to R71.8) the targets are the units on foot, the Vulnerable PRC,
-/// Inherent crews, unarmored vehicles, and the enemy Sniper counter (A14.22, A14.31), each with its own results (A14.3, A14.33, D5.34, D5.341). The Sniper
-/// player never forfeits an attack, so never repositions (backlog). The rules are <see cref="ScenarioA1Sniper"/>'s (pass 32.h); this file reads the records,
-/// the state, and the map, draws the dice, and writes the events.
+/// Inherent crews, unarmored vehicles, and the enemy Sniper counter (A14.22, A14.31), each with its own results (A14.3, A14.33, D5.34, D5.341). Since pass 71's
+/// increment 4b (rulings R71.9, R71.10) a SAN falls when its Sniper is eliminated, and the attacked side's units in the target Location may take a Sniper
+/// Check, a pending choice the attacks still to resolve wait for (A14.4). The Sniper player never forfeits an attack, so never repositions (backlog). The
+/// rules are <see cref="ScenarioA1Sniper"/>'s (pass 32.h); this file reads the records, the state, and the map, draws the dice, and writes the events.
 /// </summary>
 public sealed partial class GamePlanner
 {
@@ -46,9 +49,10 @@ public sealed partial class GamePlanner
                 // A14.1: an IFT DR is its firing side's; a MC or TC DR its unit's, never a prisoner's (Rules decides, pass 32.h).
                 var maker = ScenarioA1Sniper.RollMaker(kind, firingSide,
                     () => before.Unit(unitId) is { } checker ? (checker.Side, Is(checker, Conditions.Captured)) : null);
-                // E1.76 (backlog pass 16, ruling R16.7): at night each side's SAN is two higher, to at most 7.
+                // E1.76 (backlog pass 16, ruling R16.7): at night each side's SAN is two higher, to at most 7; A14.4 (pass 71, ruling R71.9): less its
+                // reductions, never below the printed SAN at night.
                 if (maker is null || before.Sides.FirstOrDefault(item => item.Id != maker) is not { San: { } printed } enemy
-                    || !ScenarioA1Sniper.Triggers(roll.Values.Sum(), printed, before.Night))
+                    || !ScenarioA1Sniper.Triggers(roll.Values.Sum(), printed, before.Night, enemy.SanReductions))
                 {
                     continue;
                 }
@@ -60,9 +64,22 @@ public sealed partial class GamePlanner
             }
         }
 
-        foreach (var (trigger, sniperId) in triggers.OrderBy(item => order.IndexOf(item.Roll)))
+        SnipeInOrder(scope, attemptId, expected, actor, existing, events, draw, [.. triggers.OrderBy(item => order.IndexOf(item.Roll))]);
+    }
+
+    /// <summary>
+    /// The Sniper attacks called for, in the order their DRs were made (A14.1), until one stops at a Sniper Check (A14.4; pass 71, ruling R71.10): the
+    /// attacks after it are kept in the choice and resolve after the answer, in the same order.
+    /// </summary>
+    private void SnipeInOrder(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing, List<GameEvent> events,
+        Func<RollRequest, RollResult> draw, (string Roll, string Sniper)[] triggers)
+    {
+        for (var position = 0; position < triggers.Length; position++)
         {
-            Snipe(scope, attemptId, expected, actor, existing, events, draw, sniperId, trigger);
+            if (Snipe(scope, attemptId, expected, actor, existing, events, draw, triggers[position].Sniper, triggers[position].Roll, [.. triggers.Skip(position + 1)]))
+            {
+                return;
+            }
         }
     }
 
@@ -84,26 +101,30 @@ public sealed partial class GamePlanner
         public bool ConcealedOrDummy => Item is UnitInstance unit && (Is(unit, Conditions.Concealed) || unit.Kind == UnitKinds.Dummy);
     }
 
-    private void Snipe(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing, List<GameEvent> events,
-        Func<RollRequest, RollResult> draw, string sniperId, string trigger)
+    /// <summary>
+    /// One Sniper attack (A14.2, A14.3); true when it stops at the attacked side's Sniper Check (A14.4; pass 71, ruling R71.10), whose choice keeps
+    /// <paramref name="rest"/>, the attacks still to resolve.
+    /// </summary>
+    private bool Snipe(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing, List<GameEvent> events,
+        Func<RollRequest, RollResult> draw, string sniperId, string trigger, IReadOnlyList<(string Roll, string Sniper)> rest)
     {
         // Pass 71 (design section 5, item 4): the state after the commit's events so far is taken once, and every Location is read from its index.
         if (Replay([.. existing, .. events]).Current is not { } state || state.Find(sniperId) is not EntityInstance { Status: InstanceStatus.Active } sniper
             || sniper.Side is not { } sniperSide || state.Sides.FirstOrDefault(item => item.Id != sniperSide)?.Id is not { } attacked)
         {
-            return;
+            return false;
         }
 
         var index = MemoOf(state).Objects(state);
         if (index.Location(sniper.Id) is not { } sniperAt)
         {
-            return;
+            return false;
         }
 
         // A14.31: a pinned Sniper makes no further attack this Player Turn.
         if (!ScenarioA1Sniper.Attacks(Is(sniper, Conditions.Pinned)))
         {
-            return;
+            return false;
         }
 
         var package = ScenarioA1FirePackage.Identity.ToString();
@@ -125,7 +146,7 @@ public sealed partial class GamePlanner
         if (!ScenarioA1Sniper.Effective(dr))
         {
             Record(sniperRoll, dr, null, null, ScenarioA1Sniper.NoEffect);
-            return;
+            return false;
         }
 
         // A14.2 (ruling R15.5): the Random Location DR: the colored dr a hexside direction, the white dr the hexes along it, stopping at the last hex on the map.
@@ -142,7 +163,7 @@ public sealed partial class GamePlanner
         if (eligible.Count == 0)
         {
             Record(sniperRoll, dr, null, null, ScenarioA1Sniper.NoTarget);
-            return;
+            return false;
         }
 
         // A14.21 (ruling R71.7): the target hex, or the closest hex holding an eligible target or the enemy Sniper counter; ties go to the lowest TEM with the
@@ -238,7 +259,7 @@ public sealed partial class GamePlanner
                     SnipeVehicle(scope, attemptId, expected, events, state, target, rollId, value, location, package, Record, () => Seen(target));
                     break;
                 case ScenarioA1Sniper.SniperTarget:
-                    SnipeSniper(scope, attemptId, expected, events, (EntityInstance)target.Item, rollId, value, location, package, Record);
+                    SnipeSniper(scope, attemptId, expected, events, state, (EntityInstance)target.Item, rollId, value, location, package, Record);
                     break;
                 default:
                     var unit = (UnitInstance)target.Item;
@@ -280,6 +301,139 @@ public sealed partial class GamePlanner
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
                 new ConditionsChanged(brokenId, new Dictionary<string, ConditionState> { [Conditions.DesperationMorale] = ConditionState.True }), package, null));
         }
+
+        // A14.4 (pass 71, ruling R71.10): the attack resolved, the attacked side's units in the target Location that may take a Sniper Check are offered it,
+        // read from the state after the attack only when the Location held a unit of that side on foot before it.
+        if (events.Any(item => item.Payload is ChoicePending)
+            || !index.At(location).OfType<UnitInstance>().Any(unit => unit.Side == attacked && index.VehicleOf(unit.Id) is null && !LiveFire.IsVehicle(unit))
+            || Replay([.. existing, .. events]).Current is not { } attackedState || SniperCheckers(attackedState, location, attacked).Count == 0)
+        {
+            return false;
+        }
+
+        var resume = new JsonObject
+        {
+            ["record"] = ChoicePending.SniperCheck,
+            ["sniper"] = sniper.Id,
+            ["sniperSide"] = sniperSide,
+            ["location"] = location.ToString(),
+            ["rest"] = new JsonArray([.. rest.Select(item => (JsonNode)new JsonObject { ["roll"] = item.Roll, ["sniper"] = item.Sniper })]),
+        };
+        events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending", new ChoicePending($"{ChoicePending.SniperCheck}:{sniper.Id}:{location}",
+            ChoicePending.SniperCheck, attacked, [ChoicePending.Take, ChoicePending.Decline], JsonSerializer.SerializeToElement(resume)), null, null));
+        return true;
+    }
+
+    /// <summary>
+    /// The units of the attacked side in a Sniper attack's target Location that may take the Sniper Check (A14.4; pass 71, ruling R71.10), read from the
+    /// state's index, in id order: Personnel on foot, in Good Order, unpinned, not TI, armed, not hidden, and neither fired nor moved this Player Turn (a fire
+    /// marker, a fire this phase, a Gun crew's shot, or the state's list of the units that moved or fired in an earlier phase).
+    /// </summary>
+    private List<UnitInstance> SniperCheckers(GameState state, BoardLocation location, string attacked)
+    {
+        var index = MemoOf(state).Objects(state);
+        bool FiredOrMoved(UnitInstance unit) => Is(unit, Conditions.PrepFire) || Is(unit, Conditions.FirstFire) || Is(unit, Conditions.FinalFire) || Is(unit, Conditions.BoundingFire)
+            || unit.MfSpent > 0 || unit.HalfMfSpent || state.PhaseFirers.Any(item => item.Unit == unit.Id) || state.GunCrewsFired.Contains(unit.Id, StringComparer.Ordinal)
+            || state.FiredOrMovedThisPlayerTurn.Contains(unit.Id, StringComparer.Ordinal);
+        return [.. index.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == attacked
+                && ScenarioA1Sniper.MayTakeSniperCheck(new SniperCheckCandidate(vocabulary.IsA(unit.Kind, "asl:personnel") && unit.Kind != UnitKinds.Dummy && index.VehicleOf(unit.Id) is null,
+                    GameState.GoodOrder(unit, vocabulary) != ConditionState.False, Is(unit, Conditions.Pinned), Is(unit, "asl:ti"), Is(unit, Conditions.Unarmed), Is(unit, Conditions.Hidden),
+                    FiredOrMoved(unit))))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
+    }
+
+    /// <summary>
+    /// A Sniper eliminated (A14.4, p. 83; pass 71, ruling R71.9): "reduces that side's SAN by one for the duration of the scenario", and "If the SAN is reduced
+    /// to 1, remove the Sniper Target Selection counter from the game"; Rules gives the actual SAN, never below the printed one at night (E1.76). A side with
+    /// no SAN, which has no Sniper by A14.01, only loses the counter.
+    /// </summary>
+    private void ReduceSan(GameScope scope, string attemptId, long expected, List<GameEvent> events, GameState state, EntityInstance sniper, string cause, string? package)
+    {
+        if (state.Side(sniper.Side ?? string.Empty) is { San: { } printed } side)
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "san-reduced", new SanReduced(side.Id, cause), package, null));
+            if (!ScenarioA1Sniper.CounterRemoved(ScenarioA1Sniper.ActualSan(printed, state.Night, side.SanReductions + 1)))
+            {
+                return;
+            }
+        }
+
+        events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(sniper.Id), package, null));
+    }
+
+    /// <summary>
+    /// The attacked side's answer to its Sniper Check (A14.4, p. 83; pass 71, ruling R71.10). Taken, every unit in the target Location that may take it makes
+    /// the one combined DR, with the DRM of most benefit (Rules decides it), and becomes TI, losing its "?" in the LOS of a Good Order enemy ground unit
+    /// within 16 hexes (A12.141); a Final DR of 2 or less eliminates the Sniper (ruling R71.9), a 3 pins it. The DR calls no Sniper (A14.1 names no Sniper
+    /// Check). Then the Sniper attacks still to resolve follow, in the order of their DRs. A record that names a unit kept beneath its "?" is its owner's.
+    /// </summary>
+    private GamePlan PlanSniperCheckAnswer(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor,
+        GameState state, PendingChoice pending, GameEvent made, string option, string summary)
+    {
+        var resume = pending.Resume;
+        var sniperId = resume.GetProperty("sniper").GetString()!;
+        var at = BoardLocation.Parse(resume.GetProperty("location").GetString()!);
+        (string Roll, string Sniper)[] rest = [.. resume.GetProperty("rest").EnumerateArray().Select(item => (item.GetProperty("roll").GetString()!, item.GetProperty("sniper").GetString()!))];
+        var answered = state with
+        {
+            Choice = null
+        };
+        var sniper = answered.Find(sniperId) as EntityInstance;
+        List<UnitInstance> units = option == ChoicePending.Take && sniper is { Status: InstanceStatus.Active } ? SniperCheckers(answered, at, pending.Side) : [];
+        if (units.Count == 0 && rest.Length == 0)
+        {
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [made], [summary]);
+        }
+
+        var (drm, causes) = ScenarioA1Sniper.SniperCheckDrm([.. units.Select(unit => new SniperCheckParticipant(unit.Kind,
+            DefinitionOf(unit) is { IsLeader: true, Leadership: { } leadership } ? leadership + (Is(unit, Conditions.Wounded) ? 1 : 0) : null, Is(unit, Conditions.Heroic)))]);
+        IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
+        {
+            var events = new List<GameEvent> { made };
+            if (units.Count > 0 && sniper is not null)
+            {
+                var package = ScenarioA1FirePackage.Identity.ToString();
+                var rollId = $"{attemptId}-roll-1";
+                var dice = draw(new RollRequest(2, 6));
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled", new DiceRolled(rollId, "sniper-check", 2, 6, dice.Values, DiceRolled.SystemSource, actor),
+                    package, null));
+                var result = ScenarioA1Sniper.SniperCheckResult(dice.Values.Sum() + drm, Is(sniper, Conditions.Pinned));
+
+                // A12.141: the participants lose their "?" in the LOS of a Good Order enemy ground unit within 16 hexes; those that keep it are not named to the
+                // Sniper's side, nor is the record that names them.
+                var concealed = units.Any(unit => Is(unit, Conditions.Concealed));
+                var exposed = concealed && EnemyGoodOrderInLosWithin16(answered, pending.Side, at);
+                IReadOnlyList<string>? owner = concealed && !exposed ? [pending.Side] : null;
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "sniper-checked", new SniperChecked(sniperId, at, [.. units.Select(unit => unit.Id)], rollId, drm, result),
+                    package, owner));
+                foreach (var unit in units)
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                        new ConditionsChanged(unit.Id, ConditionChanges(ScenarioA1Sniper.SniperCheckConditions(exposed && Is(unit, Conditions.Concealed)))), package,
+                        Is(unit, Conditions.Concealed) && !exposed ? [pending.Side] : null));
+                }
+
+                if (result == ScenarioA1Sniper.SniperEliminated)
+                {
+                    ReduceSan(scope, attemptId, expected, events, answered, sniper, ScenarioA1Sniper.SniperCheckCause, package);
+                }
+                else if (result == ScenarioA1Sniper.SniperPinned)
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                        new ConditionsChanged(sniper.Id, new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Pinned] = ConditionState.True }), package, null));
+                }
+            }
+
+            SnipeInOrder(scope, attemptId, expected, actor, existing, events, draw, rest);
+            return events;
+        }
+
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [summary, units.Count == 0 ? "play.sniper-check: the Sniper attacks still to resolve follow (A14.1)"
+            : $"play.sniper-check: {string.Join(", ", units.Select(unit => unit.Id))} in {at} make one combined Sniper Check DR{(drm == 0 ? string.Empty : $", DRM {drm:+0;-0} ({string.Join(", ", causes)})")}: a Final DR of 2 or less eliminates the Sniper, a 3 pins it, and they become TI (A14.4)"])
+        {
+            Roll = new PlannedRoll("choice", Build),
+            FirstEventId = EventId(attemptId, 1),
+        };
     }
 
     /// <summary>The id of the HS a Sniper's Casualty Reduction leaves (A7.302).</summary>
@@ -456,18 +610,17 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// A14.3, A14.31 (ruling R71.6): a Sniper attack on the enemy Sniper counter: dr 1 eliminates it, dr 2 pins it until the CCPh's end (the projector clears
-    /// the pin with the others).
+    /// A14.3, A14.31 (ruling R71.6): a Sniper attack on the enemy Sniper counter: dr 1 eliminates the Sniper, which reduces its side's SAN and removes the
+    /// counter only below 2 (A14.4; ruling R71.9); dr 2 pins it until the CCPh's end (the projector clears the pin with the others).
     /// </summary>
-    private void SnipeSniper(GameScope scope, string attemptId, long expected, List<GameEvent> events, EntityInstance enemy, string rollId, int dr,
+    private void SnipeSniper(GameScope scope, string attemptId, long expected, List<GameEvent> events, GameState state, EntityInstance enemy, string rollId, int dr,
         BoardLocation location, string package, Action<string, int, BoardLocation?, string?, string> record)
     {
         var result = ScenarioA1Sniper.SniperResult(dr, Is(enemy, Conditions.Pinned));
         record(rollId, dr, location, enemy.Id, result);
         if (result == ScenarioA1Sniper.SniperEliminated)
         {
-            // Pass 71, increment 4b: the SAN reduction of ruling R71.9 joins the elimination here.
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(enemy.Id), package, null));
+            ReduceSan(scope, attemptId, expected, events, state, enemy, ScenarioA1Sniper.SniperAttackCause, package);
         }
         else if (result == ScenarioA1Sniper.SniperPinned)
         {

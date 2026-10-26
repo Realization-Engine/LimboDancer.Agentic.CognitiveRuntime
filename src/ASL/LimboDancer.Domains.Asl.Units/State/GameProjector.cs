@@ -172,6 +172,8 @@ public static class GameProjector
                 SurrenderRejected rejected => RejectSurrender(previous, rejected),
                 PrisonerFreed freed => FreePrisoner(previous, freed),
                 SniperAttacked sniper => Snipe(previous, sniper),
+                SanReduced reduced => ReduceSan(previous, reduced),
+                SniperChecked check => CheckSniper(previous, check),
                 WindChanged wind => ChangeWind(previous, wind),
                 StarshellFired starshell => FireStarshell(previous, starshell),
                 VehicleWrecked wreck => Wreck(previous, wreck),
@@ -218,6 +220,20 @@ public static class GameProjector
                 next = next with
                 {
                     MovedVehicles = [.. next.MovedVehicles, stepped.Vehicle]
+                };
+            }
+
+            // A14.4 (pass 71, ruling R71.10): the units that moved this Player Turn, for the Sniper Check; derived here, never recorded.
+            if ((gameEvent.Payload switch
+            {
+                MovementStepped step => step.Movers,
+                VehicleStepped { Units: { Count: > 0 } carried } => carried,
+                _ => null,
+            }) is { } movedNow && movedNow.Any(id => !next.FiredOrMovedThisPlayerTurn.Contains(id, StringComparer.Ordinal)))
+            {
+                next = next with
+                {
+                    FiredOrMovedThisPlayerTurn = [.. next.FiredOrMovedThisPlayerTurn, .. movedNow.Where(id => !next.FiredOrMovedThisPlayerTurn.Contains(id, StringComparer.Ordinal)).Distinct(StringComparer.Ordinal)]
                 };
             }
 
@@ -625,6 +641,9 @@ public static class GameProjector
                             Rules.ScenarioA1SequenceProjection.JoinsNoMoveList(state.NoMoveThisPlayerTurn.Contains(id), state.Unit(id) is not null,
                                 state.Unit(id) is { } fired && GameState.Condition(fired, Conditions.PrepFire) == ConditionState.True))]
                         : state.NoMoveThisPlayerTurn,
+                    // A14.4 (pass 71, ruling R71.10): the phase's firers have fired this Player Turn, for the Sniper Check of a later phase.
+                    FiredOrMovedThisPlayerTurn = newPlayerTurn ? [] : state.PhaseFirers.Count == 0 ? state.FiredOrMovedThisPlayerTurn : [.. state.FiredOrMovedThisPlayerTurn,
+                        .. state.PhaseFirers.Select(item => item.Unit).Distinct(StringComparer.Ordinal).Where(id => !state.FiredOrMovedThisPlayerTurn.Contains(id, StringComparer.Ordinal))],
                     OrdnanceShotsHere = [],
                     GunsTurnedThisPhase = [],
                     MotionAttempts = [],
@@ -1486,7 +1505,7 @@ public static class GameProjector
         {
             if (Rules.ScenarioA1SequenceProjection.PendChoiceRefusal(state.Choice is not null, state.Side(pending.Side) is not null, pending.Options.Count,
                 pending.Kind is ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc
-                    or ChoicePending.OverrunEvade or ChoicePending.GunDuel or ChoicePending.ConcealmentLoss,
+                    or ChoicePending.OverrunEvade or ChoicePending.GunDuel or ChoicePending.ConcealmentLoss or ChoicePending.SniperCheck,
                 state.ChoicesMade.ContainsKey(pending.Key)) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);
@@ -1518,8 +1537,8 @@ public static class GameProjector
                 Choice = null
             };
             // A12.41 (ruling R11.12): the reveal or the PAATC follows the answer at once, as its own events; so does a forced "?" loss (A12.14; pass 70,
-            // ruling R70.21).
-            if (pending.Kind is ChoicePending.Paatc or ChoicePending.ConcealmentLoss)
+            // ruling R70.21), and so does a Sniper Check (A14.4; pass 71, ruling R71.10).
+            if (pending.Kind is ChoicePending.Paatc or ChoicePending.ConcealmentLoss or ChoicePending.SniperCheck)
             {
                 return next;
             }
@@ -4884,6 +4903,37 @@ public static class GameProjector
             // Pass 32.h: the record's reads are made here, and Rules decides (A14.1).
             if (Rules.ScenarioA1Sniper.VerifySniperAttack(state.Find(sniper.Sniper) is EntityInstance { Kind: "asl:sniper", Status: InstanceStatus.Active }, rolls.ContainsKey(sniper.Roll),
                 rolls.ContainsKey(sniper.Trigger), sniper.Dr) is { } refusal)
+            {
+                return Fail<GameState>(refusal.Code, refusal.Text);
+            }
+
+            return state;
+        }
+
+        /// <summary>
+        /// A SAN reduction (A14.4; pass 71, ruling R71.9): the side's count of reductions grows by one; its printed SAN stays as recorded. A record before the
+        /// pass holds none, so every side of an older game keeps a count of 0.
+        /// </summary>
+        private GameState? ReduceSan(GameState state, SanReduced reduced)
+        {
+            if (Rules.ScenarioA1Sniper.VerifySanReduced(state.Side(reduced.Side) is { San: not null }, reduced.Cause) is { } refusal)
+            {
+                return Fail<GameState>(refusal.Code, refusal.Text);
+            }
+
+            return state with
+            {
+                Sides = [.. state.Sides.Select(side => side.Id == reduced.Side ? side with { SanReductions = side.SanReductions + 1 } : side)],
+            };
+        }
+
+        /// <summary>A Sniper Check (A14.4; pass 71, ruling R71.10): its Sniper and units are in play, and its result is its recorded DR's; the events after it apply it.</summary>
+        private GameState? CheckSniper(GameState state, SniperChecked check)
+        {
+            var sniper = state.Find(check.Sniper) as EntityInstance;
+            if (Rules.ScenarioA1Sniper.VerifySniperCheck(sniper is { Kind: "asl:sniper", Status: InstanceStatus.Active },
+                check.Units.Count > 0 && check.Units.All(id => Active(state, id) is UnitInstance), rolls.TryGetValue(check.Roll, out var roll) ? roll.Values : null, check.Drm,
+                sniper is not null && GameState.Condition(sniper, Conditions.Pinned) == ConditionState.True, check.Result) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);
             }

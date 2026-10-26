@@ -1625,16 +1625,46 @@ public sealed class PlayRecords
             _ => string.Empty,
         }))];
 
-    /// <summary>The Sniper attacks the viewer may see (A14; ruling R15.5), latest first.</summary>
-    private IReadOnlyList<(string EventId, string Text)> SniperRecords => [.. events.Where(item => item.IsVisibleTo(viewer) && item.Payload is SniperAttacked).Reverse().Select(item =>
+    /// <summary>The Sniper attacks, Sniper Checks, and SAN reductions the viewer may see (A14; ruling R15.5; pass 71, rulings R71.9, R71.10), latest first.</summary>
+    private IReadOnlyList<(string EventId, string Text)> SniperRecords => [.. events.Where(item => item.IsVisibleTo(viewer) && item.Payload is SniperAttacked or SniperChecked or SanReduced)
+        .Reverse().Select(item => (item.EventId, item.Payload switch
         {
-            var sniper = (SniperAttacked)item.Payload;
-            var side = state?.Find(sniper.Sniper)?.Side ?? "a";
-            var text = $"The {side} Sniper ({sniper.Sniper}) attacks after the SAN roll {sniper.Trigger}: dr {sniper.Dr}"
-                + (sniper.Target is { } at ? $"; {at}: {SniperResultText(sniper.Unit, sniper.Result)}" : sniper.Result == ScenarioA1Sniper.NoTarget
-                    ? ", no target in reach (A14.21, A14.22)" : ", no effect (A14.3)");
-            return (item.EventId, text);
-        })];
+            SniperChecked check => SniperCheckText(check),
+            SanReduced reduced => $"The {DisplayText.Side(reduced.Side)} Sniper is eliminated by {(reduced.Cause == ScenarioA1Sniper.SniperCheckCause ? "a Sniper Check" : "the enemy Sniper")}: "
+                + (ActualSanAfter(item, reduced.Side) is { } san
+                    ? $"the {DisplayText.Side(reduced.Side)} SAN is now {san.ToString(System.Globalization.CultureInfo.InvariantCulture)}"
+                        + (ScenarioA1Sniper.CounterRemoved(san) ? ", below 2, so its Sniper counter is removed (A14.1, A14.4)" : " (A14.4)")
+                    : $"the {DisplayText.Side(reduced.Side)} SAN is one lower (A14.4)"),
+            _ => SniperAttackText((SniperAttacked)item.Payload),
+        }))];
+
+    private string SniperAttackText(SniperAttacked sniper)
+    {
+        var side = state?.Find(sniper.Sniper)?.Side ?? "a";
+        return $"The {side} Sniper ({sniper.Sniper}) attacks after the SAN roll {sniper.Trigger}: dr {sniper.Dr}"
+            + (sniper.Target is { } at ? $"; {at}: {SniperResultText(sniper.Unit, sniper.Result)}" : sniper.Result == ScenarioA1Sniper.NoTarget
+                ? ", no target in reach (A14.21, A14.22)" : ", no effect (A14.3)");
+    }
+
+    /// <summary>A Sniper Check (A14.4; pass 71, ruling R71.10): its units, its DR and DRM, and its result.</summary>
+    private string SniperCheckText(SniperChecked check)
+    {
+        var rolled = events.Select(item => item.Payload).OfType<DiceRolled>().FirstOrDefault(roll => roll.Roll == check.Roll)?.Values;
+        return $"{string.Join(", ", check.Units)} in {check.Location} make a Sniper Check against the {DisplayText.Side(state?.Find(check.Sniper)?.Side)} Sniper ({check.Sniper})"
+            + (rolled is { Count: > 0 } ? $": DR {string.Join(", ", rolled)} = {rolled.Sum()}" + (check.Drm != 0 ? $" {(check.Drm < 0 ? "-" : "+")} {Math.Abs(check.Drm)} = {rolled.Sum() + check.Drm}" : string.Empty)
+                : string.Empty)
+            + check.Result switch
+            {
+                ScenarioA1Sniper.SniperEliminated => ", the Sniper is eliminated",
+                ScenarioA1Sniper.SniperPinned => ", the Sniper is pinned and makes no further attack this Player Turn (A14.31)",
+                _ => ", no effect",
+            } + "; they are TI (A14.4)";
+    }
+
+    /// <summary>A side's actual SAN after a reduction (A14.4, E1.76; ruling R71.9), as Rules gives it from the state after the event.</summary>
+    private int? ActualSanAfter(GameEvent item, string side) => history.At(item.Revision) is { } after && after.Side(side) is { San: { } printed } reduced
+        ? ScenarioA1Sniper.ActualSan(printed, after.Night, reduced.SanReductions)
+        : null;
 
     /// <summary>
     /// What a Sniper attack did in its Location (A14.3; pass 71, the record lines): the unit by its id, which the view's names make "4-6-7 squad G1", or a
@@ -1652,7 +1682,7 @@ public sealed class PlayRecords
         (_, ScenarioA1Sniper.CrewBroken) => $"the Inherent crew of {unit} breaks (A14.3)",
         (_, ScenarioA1Sniper.CrewPinned) => $"the Inherent crew of {unit} is pinned (A14.3)",
         (_, ScenarioA1Sniper.Immobilized) => $"{unit} is immobilized (A14.33)",
-        (_, ScenarioA1Sniper.SniperEliminated) => $"the enemy Sniper counter ({unit}) is eliminated (A14.3, A14.31)",
+        (_, ScenarioA1Sniper.SniperEliminated) => $"the enemy Sniper ({unit}) is eliminated (A14.3, A14.31)",
         (_, ScenarioA1Sniper.SniperPinned) => $"the enemy Sniper counter ({unit}) is pinned and makes no further attack this Player Turn (A14.31)",
         (_, ScenarioA1Sniper.NoEffect) => $"{unit} is unaffected (A14.3)",
         (_, ScenarioA1Sniper.CasualtyReduced) => $"{unit} is Casualty Reduced (A14.3)",

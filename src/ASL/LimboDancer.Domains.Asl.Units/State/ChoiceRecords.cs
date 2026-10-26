@@ -48,6 +48,13 @@ public sealed record ChoicePending(string Key, string Kind, string Side, IReadOn
     /// answer are recorded for the viewing side only.
     /// </summary>
     public const string ConcealmentLoss = Rules.ScenarioA1ConcealmentChoices.ConcealmentLossChoice;
+
+    /// <summary>
+    /// A14.4 (pass 71, ruling R71.10): after an effective Sniper attack, the attacked side's units in the target Location that may take a Sniper Check
+    /// take it together (<see cref="Take"/>) or not (<see cref="Decline"/>). Its <see cref="Resume"/> names the Sniper, the Location, and the Sniper
+    /// attacks still to resolve, never a unit.
+    /// </summary>
+    public const string SniperCheck = "sniper-check";
 }
 
 /// <summary>
@@ -81,6 +88,19 @@ public sealed record PrisonerFreed(string Unit) : EventPayload;
 /// apply it.
 /// </summary>
 public sealed record SniperAttacked(string Sniper, string Trigger, string Roll, int Dr, BoardLocation? Target, string? Unit, string Result) : EventPayload;
+
+/// <summary>
+/// <c>san-reduced</c>: a side's Sniper was eliminated, by a Sniper Check (<c>sniper-check</c>) or by the enemy Sniper's attack (<c>sniper-attack</c>), and
+/// its SAN is one lower for the rest of the game (A14.4; pass 71, ruling R71.9). The side's printed SAN stays as recorded; the reductions are counted.
+/// </summary>
+public sealed record SanReduced(string Side, string Cause) : EventPayload;
+
+/// <summary>
+/// <c>sniper-checked</c>: the Sniper Check of the units of the attacked side in the target Location (A14.4; pass 71, ruling R71.10): the Sniper, the
+/// Location, the units that took it, the roll of its one combined DR, its DRM, and the result (<c>sniper-eliminated</c>, <c>sniper-pinned</c>, or
+/// <c>none</c>). The events after it apply it.
+/// </summary>
+public sealed record SniperChecked(string Sniper, BoardLocation Location, IReadOnlyList<string> Units, string Roll, int Drm, string Result) : EventPayload;
 
 /// <summary>
 /// <c>wind-changed</c>: the Wind Change DR <paramref name="Roll"/> made at the start of a RPh (B25.65; backlog pass 16, ruling R16.10), and what it

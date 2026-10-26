@@ -1446,6 +1446,9 @@ public sealed partial class GamePlanner
         UnitCondition.StunRecovery => Conditions.StunRecovery,
         UnitCondition.BmgDisabled => Conditions.BmgDisabled,
         UnitCondition.CmgDisabled => Conditions.CmgDisabled,
+
+        // A14.4 (pass 71, ruling R71.10): a Sniper Check's participants become TI.
+        UnitCondition.Ti => "asl:ti",
         _ => Conditions.CmgMalfunctioned,
     };
 
