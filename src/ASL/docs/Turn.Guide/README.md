@@ -1,6 +1,6 @@
 # ASL Turn Guide
 
-Current planning status: **B5-R1 through B5-R6 are accepted; no required B5 slices remain. U1 is eligible**, with implementation still to follow. The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and nine deferred rule-family packages, B5-D1 through B5-D9. D9 adds the ordinary core-phase rules missing from the original eight packages; it does not add a required B5 slice.
+Current planning status: **B5-R1 through B5-R6 are accepted; no required B5 slices remain. U1 is implemented**, with reference and live Blazor consumers. The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and nine deferred rule-family packages, B5-D1 through B5-D9. D9 adds the ordinary core-phase rules missing from the original eight packages; it does not add a required B5 slice.
 
 All turn-guide analysis, design, phase catalogs, walkthroughs and dependency audit live in this folder.
 
@@ -97,3 +97,9 @@ R5 verification: 179 ASL.Turns tests pass with 821/821 lines and 466/466 branche
 
 
 B5-R6 final acceptance: 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). All 97 focused Play acceptance/regression cases, 49 focused Rules cases and 421 Units cases pass. The consumer example also passes a final targeted rerun after strengthening its pre-proposal revision assertion. Coverage applies to the entire ASL.Turns assembly, not the Play, Rules or Units assemblies. See the [B5 acceptance and U1 handoff](ASL%20Turn%20Guide%20B5%20Acceptance%20and%20U1%20Handoff.md) for the executable consumer example and all six gate criteria. U1 can now start without hiding deferred rules or duplicating command authority.
+
+
+U1: open Reference > Turn Phase Guide (`/turn-guide`), or the Turn Phase Guide button in Play's Actions pane. The preview's phase/checklist/detail structure now consumes the accepted backend. All pending rules remain visible; considered marks are temporary private reminders. Offered live decisions and phase close use the existing review/confirmation flow. See the design U1 section and implementation plan section 12.
+
+
+U1 final verification: 22 focused MapStudio component, page, workspace and navigation tests pass. The new tests retain all 538 topics and verify offered actions, historical read-only behavior, private marks, scope changes, stale read suppression, safe errors and normal phase-close confirmation. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Browser inspection verified the shared-theme checklist/detail layout, unclipped rows, selected-state styling and Rally-to-Advancing-Fire navigation. Backend libraries were unchanged.

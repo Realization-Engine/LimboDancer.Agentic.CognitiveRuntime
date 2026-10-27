@@ -1,3 +1,5 @@
+@using ASL.Turns
+@using LimboDancer.Domains.Asl.MapStudio.Components.Turns
 @page "/games/play"
 @using System.Globalization
 @using System.Text.Json
@@ -456,6 +458,15 @@ else if (state is not null)
             @if (Compact)
             {
                 <div class="play-tab-context" id="play-tab-context">@pickers</div>
+            }
+            @if (state is not null && handOver is null)
+            {
+                <button type="button" id="play-turn-guide-toggle" aria-expanded="@turnGuideOpen" @onclick="() => turnGuideOpen = !turnGuideOpen">Turn Phase Guide</button>
+                @if (turnGuideOpen)
+                {
+                    <LiveTurnGuide @key="AskedBy" ScopeKey="@AskedBy" Revision="@state.Revision" ActualPhase="@state.Phase"
+                        ReadGuide="ReadTurnGuide" ActionRequested="ProposeTurnDecision" CloseRequested="ProposeAdvance" Busy="@busy" />
+                }
             }
             @* Table player, pass 29: the hex picked on the map is offered to every typed Location of the actions. *@
             <CascadingValue Name="PickedLocation" Value="@highlight?.ToString()">
@@ -7688,6 +7699,20 @@ else if (state is not null)
         }
 
         return Propose(GameActions.Move, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    private bool turnGuideOpen;
+    private Task<TurnHostGuide> ReadTurnGuide(string phase) => Live.Planner.ReadTurnGuideProfileAsync(
+        new GameScope(LivePlay.Tenant, gameId), Viewer, phase, "existing-engine-work-v1");
+
+    private async Task ProposeTurnDecision(TurnPlacedDcAction action)
+    {
+        if (busy || handOver is not null) return;
+        var asked = AskedBy;
+        var arguments = await Live.Planner.PreparePlacedDcDecisionAsync(new GameScope(LivePlay.Tenant, gameId), Viewer, action, Attempt("turn-guide"));
+        if (AskedBy != asked) return;
+        if (arguments is null) { status = "This guidance has changed. Refresh the guide before requesting the action."; Refresh(); return; }
+        await Propose(GameActions.DetonateDc, arguments.Value);
     }
 
     private Task ProposeAdvance()

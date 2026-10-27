@@ -1,0 +1,41 @@
+@using LimboDancer.Domains.Asl.Play
+<section class="turn-evidence" aria-label="Disclosed game guidance">
+    <h3>Cross-phase obligations</h3>
+    @if (Host.Obligations.IsEmpty) { <p>No disclosed obligations. This does not certify that the phase is complete.</p> }
+    @foreach (var item in Host.Obligations) { <p>@item.SubjectId: @item.DefinitionId · @item.State · Command support: @item.CommandSupport</p>
+        @if (item.Deadline is { } deadline) { <p>Due window: @deadline.Kind. Owner: @deadline.OwnerSide.</p> } }
+    @foreach (var item in Host.DecisionWindows)
+    {
+        <details><summary>@item.SubjectId: @item.Timing</summary><p>@string.Join("; ", item.SourceTiming)</p>
+            @foreach (var gap in item.Pending) { <p>@gap</p> }
+        </details>
+    }
+    <h3>Phase close</h3>
+    <p>@Host.PhaseClose.Disposition</p>
+    @foreach (var reason in Host.PhaseClose.Reasons) { <p>@reason</p> }
+    @foreach (var effect in Host.PhaseClose.AutomaticEffects) { <p>@effect</p> }
+    @if (Host.PhaseClose.RequiresRoll) { <p>The governed phase-close action requires a roll.</p> }
+    @foreach (var gap in Host.PhaseClose.EvaluationGaps) { <p>Pending: @gap</p> }
+    @if (Host.FireHistory is { } fire)
+    {
+        <details><summary>Fire and Spotter history</summary>
+            @foreach (var shot in fire.Shots) { <p>@string.Join(", ", shot.Firers): @shot.Kind, turn @shot.GameTurn @shot.Phase, weapon @shot.Weapon, Spotter @shot.Spotter. ROF retained: @shot.RateOfFireKept</p> }
+            @foreach (var spotter in fire.Spotters) { <p>@spotter.Weapon / @spotter.Spotter: @spotter.State</p> }
+            @foreach (var gap in fire.EvaluationGaps) { <p>Pending: @gap</p> }
+        </details>
+    }
+    @if (Host.Atmosphere is { } atmosphere)
+    {
+        <details><summary>Smoke and weather history</summary>
+            @foreach (var grenade in atmosphere.Grenades) { <p>@grenade.Unit: @grenade.State · turn @grenade.GameTurn @grenade.Phase</p> }
+            @foreach (var wind in atmosphere.Wind) { <p>Wind recorded: turn @wind.GameTurn @wind.Phase. Gust: @wind.Gust</p> }
+            @foreach (var smoke in atmosphere.UnclassifiedSmoke) { <p>Unclassified smoke: @smoke</p> }
+            @foreach (var gap in atmosphere.PendingRules) { <p>Pending @gap.Family: @gap.MissingFacts @gap.Timing (@gap.Reference)</p> }
+        </details>
+    }
+    <details><summary>Work and completion effects</summary>
+        @foreach (var work in Host.Work) { <p>@work.Subject: @work.Kind · @work.CompletedGameTurns / @work.RequiredGameTurns Game Turns · @work.EffectStatus · Rules: @work.RuleAutomation</p> }
+        @foreach (var gap in Host.WorkProgressGaps) { <p>Pending: @gap</p> }
+    </details>
+</section>
+@code { [Parameter, EditorRequired] public TurnHostGuide Host { get; set; } = null!; }

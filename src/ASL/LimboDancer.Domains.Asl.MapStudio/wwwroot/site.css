@@ -3957,3 +3957,27 @@ button[data-working]::after {
 @media (max-width: 1023.98px) {
     .acronym-search-layout { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* U1: Turn Phase Guide, preview structure using the shared Studio theme. */
+.turn-guide { border:1px solid var(--line); border-radius:8px; color:inherit; overflow:hidden; }
+.turn-guide header, .turn-guide article, .turn-guide aside { padding:1rem; }
+.turn-guide header { background:var(--surface-2); }
+.turn-phases { display:flex; flex-wrap:wrap; gap:.4rem; }
+.turn-phases button[aria-pressed=true], .turn-topic[aria-pressed=true] { background:var(--accent); color:#fff; }
+.turn-layout { display:grid; grid-template-columns:minmax(190px, .85fr) minmax(0, 1.5fr); border-top:1px solid var(--line); }
+.turn-layout aside { border-right:1px solid var(--line); max-height:70vh; overflow:auto; }
+.turn-topic { display:block; width:100%; text-align:left; padding:.6rem; margin:.3rem 0; }
+.turn-topic small { display:block; font-size:.8rem; }
+.turn-guide article { min-width:0; overflow-wrap:anywhere; }
+.turn-guide button:focus-visible, .turn-guide input:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+.turn-pending { border-left:3px solid var(--warn); padding-left:.7rem; }
+.turn-close { margin:1rem; }
+.turn-guide input[type=search] { width:100%; }
+@media(max-width:700px) { .turn-layout { grid-template-columns:1fr; } .turn-layout aside { border-right:0; border-bottom:1px solid var(--line); max-height:40vh; } }
+
+.turn-evidence { padding:1rem; border-top:1px solid var(--line); }
+.turn-guide { background:var(--surface); }
+.turn-guide dt { font-weight:600; }
+.turn-guide dd { margin:0 0 .6rem; color:var(--muted); }
+
+.turn-guide .turn-topic { height:auto; min-height:2rem; white-space:normal; line-height:1.5; }

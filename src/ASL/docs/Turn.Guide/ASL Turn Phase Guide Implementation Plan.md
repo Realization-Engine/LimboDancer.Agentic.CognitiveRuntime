@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first plan. B5-R1 through B5-R6 are implemented and verified. B5 is accepted for the admitted baseline; zero required slices remain and U1 is eligible. The finite backlog below is authoritative; later Rules work is tracked separately as B5-D1 through B5-D9. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 and the bounded B5 Placed DC, fire/Spotter, atmosphere history and work-progress, live work adjudication and bounded completion-effect slices are implemented; additional families remain planned. UI work is intentionally last.
+Status: Backend-first plan. B5-R1 through B5-R6 are implemented and verified. B5 is accepted for the admitted baseline; zero required slices remain and U1 is implemented. The finite backlog below is authoritative; later Rules work is tracked separately as B5-D1 through B5-D9. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 and the bounded B5 Placed DC, fire/Spotter, atmosphere history and work-progress, live work adjudication and bounded completion-effect slices are implemented; additional families remain planned. UI work is intentionally last.
 
 References: [Design](ASL%20Turn%20Phase%20Guide%20Design.md), [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md).
 
@@ -24,7 +24,7 @@ Run focused tests only for changed behavior and direct dependencies. Broaden whe
 | B3, bounded slice implemented | Rule-owned timing and obligation lifecycle for Stun, CX, Trip Flare and non-Flame Clearance | B2 and relevant Rules families | Due, interrupt, resolve and retained history proved at exact boundaries. |
 | B4, implemented | Play/Units adapters and shared phase-close assessment | B2-B3 | Existing command validation and guidance agree without duplicate cleanup; disclosure and stale checks pass. |
 | B5, accepted | Close B5-R1 through B5-R6 against the admitted baseline | B4 and completed B5 slices | All six acceptance records pass; pending/deferred rules stay visible. Full ASL execution is not this gate. |
-| U1, eligible, not implemented | Reference and Live Blazor consumers | Backend readiness gate | UI renders backend results and routes intentions without rule calculations. |
+| U1, implemented | Reference and Live Blazor consumers | Backend readiness gate | UI renders backend results and routes intentions without rule calculations. |
 
 The previous UI-first P1-P7 plan is superseded by this order. The full final scope remains intact; deferring UI does not defer reference content.
 
@@ -175,7 +175,7 @@ B5-R6 records proof of these six criteria. Only after that acceptance may U1 bui
 
 `ASL.Turns.Tests` owns content, coordination and backend contracts. Existing Rules tests own rule verdicts; Units tests own events/projection/replay; Play tests own governed command enforcement and adapters. Add renderer tests only at U1. Run the narrow project/class filters relevant to each change, with no blanket whole-solution test requirement.
 
-Next work: U1, the thin Blazor consumer described in the final acceptance handoff. B5-D1 through B5-D9 are later Rules-pass work, not additional B5 completion gates. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
+U1 is implemented below. Further rule admissions follow the deferred register and require their own evidence; they are not additional B5 slices. B5-D1 through B5-D9 are later Rules-pass work, not additional B5 completion gates. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
 
 B4 final verification: 123 ASL.Turns tests and 77 focused Play regression tests pass. Coverage is 100% for ASL.Turns, not a claim of full Play assembly coverage.
 
@@ -437,3 +437,13 @@ All six section 9 criteria pass against named evidence in the [B5 acceptance and
 B5 is complete for this admitted baseline. U1 is eligible but not implemented. It consumes existing snapshots and action panels, preserves source and pending states, and keeps consideration flags private. It must not calculate legality, resolve obligations from checkboxes, infer missing facts, or create a second phase-close authority. All nine B5-D packages remain deferred and visible; the eventual all-Passes target is unchanged. R6 changes no runtime contracts, journal schemas or profile versions.
 
 **R6 verification:** 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). All 97 focused Play acceptance/regression cases, 49 focused Rules cases and 421 Units cases pass. The consumer example also passes a final targeted rerun after strengthening its pre-proposal revision assertion. Coverage applies to the entire ASL.Turns assembly, not the Play, Rules or Units assemblies.
+
+
+## 12. U1 implementation
+
+U1 now supplies the Reference `/turn-guide` page and a live Turn Phase Guide in Play's Actions pane. See the design's U1 section for the component boundaries, preview mapping, disclosure, asynchronous refresh and command routing. The reference mode and live mode share the same thin renderer. All pending options remain available; private considered marks never affect game state. Historical inputs remain read-only. The existing Studio view selection and proposal/confirmation panels retain authority.
+
+The preview is still the frozen design artifact. The implementation uses shared site styling and responsive checklist/detail columns. Component tests and a real Play-page integration test cover reference completeness, safe host intents and phase-close confirmation. U1 introduces no rule implementation or backend version change.
+
+
+U1 final verification: 22 focused MapStudio component, page, workspace and navigation tests pass. The new tests retain all 538 topics and verify offered actions, historical read-only behavior, private marks, scope changes, stale read suppression, safe errors and normal phase-close confirmation. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Browser inspection verified the shared-theme checklist/detail layout, unclipped rows, selected-state styling and Rally-to-Advancing-Fire navigation. Backend libraries were unchanged.
