@@ -332,3 +332,6 @@ B4 update, 2026-10-27: Play supplies disclosed Stun/CX history evidence and shar
 
 
 B5 update, 2026-10-27: the bounded Placed DC slice persists ownership at placement and derives scheduled, due, interrupted and resolved obligations from the authoritative history. Existing commands and cleanup remain authoritative. The expanded `existing-engine-dc-v1` profile has explicit evidence; all 538 topics and 38 dependencies remain available. Legacy missing ownership stays incomplete. See design B5 and implementation plan section 8 for compatibility, disclosure and remaining families. Coverage: 127 Turns tests, 465/465 lines and 264/264 branches (100%).
+
+
+B5 fire/Spotter update, 2026-10-27: the new explicit profile derives disclosed firing and Spotter history from existing durable events. Recorded ROF and retained assignments are evidence, not permission to fire. First observed use is distinguished from unrecorded original designation. Replacement timing, Opportunity Fire/breakdown and remaining fire families stay pending. See the design and plan B5 fire/Spotter section. ASL.Turns: 131 tests, 516/516 lines and 288/288 branches covered (100%).

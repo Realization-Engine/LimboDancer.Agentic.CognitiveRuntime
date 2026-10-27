@@ -18,6 +18,9 @@ public static class TurnGuideProfiles
         "existing-engine" => new(id, "b4", ["stun", "cx"], ["B4 PlayTests.TurnGuide; VehicleStepsTests"]),
         "existing-engine-dc-v1" => new(id, "b5-dc-1", ["stun", "cx", "placedDc"],
             ["A23.3-.4; ASOP 5.22A", "BacklogPass15Tests; TurnObligationRulesTests", "dcOwnerSide event field; legacy null remains incomplete"]),
+        "existing-engine-fire-v1" => new(id, "b5-fire-1", ["stun", "cx", "placedDc"],
+            ["B5 fire and Spotter history; C9.3-.31; A.15", "BacklogPass9Tests; TurnFireHistoryTests",
+             "Existing fire-resolved/ordnance-fired events; Spotter replacement and Opportunity Fire remain pending"]),
         _ => throw new ArgumentException("Unknown turn guide profile.", nameof(id)),
     };
 }

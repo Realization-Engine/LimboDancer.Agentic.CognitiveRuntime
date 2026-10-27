@@ -436,6 +436,10 @@ public sealed class BacklogPass15Tests : IDisposable
         Assert.Empty(Current.PlacedCharges);
         var completed = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "afph", "existing-engine-dc-v1");
         Assert.Equal(TurnObligationState.Resolved, Assert.Single(completed.Obligations).State);
+        var recordedFire = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "afph", "existing-engine-fire-v1")).FireHistory!;
+        Assert.Equal(TurnFireKind.Fire, Assert.Single(recordedFire.Shots).Kind);
+        Assert.Null(Assert.Single(recordedFire.Shots).RateOfFireKept);
+        Assert.Empty(recordedFire.Spotters);
         var ownCompleted = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "afph", "existing-engine-dc-v1");
         Assert.Equal(TurnObligationState.Resolved, Assert.Single(ownCompleted.Obligations).State);
         var diskReload = await ReadCopiedDcHistory(store.Read(Scope)!.Events, Perspective.Adjudicator);

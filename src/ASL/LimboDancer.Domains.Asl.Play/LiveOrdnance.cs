@@ -467,8 +467,9 @@ public static class LiveOrdnance
     private static ((OrdnanceSpotter? Spotter, FireDirector? Director)? Support, string? Reason) MortarSupport(GameState state, string gun, UnitInstance firer, string? spotter,
         string? director, string phase)
     {
-        var kept = state.MortarSpotters.FirstOrDefault(item => item.Gun == gun)?.Spotter is { } recorded && state.Unit(recorded) is { Status: InstanceStatus.Active } still
-            && !Is(still, Conditions.Broken) && !Is(still, Conditions.Captured) && still.Side == firer.Side ? still : null;
+        var kept = state.MortarSpotters.FirstOrDefault(item => item.Gun == gun)?.Spotter is { } recorded && state.Unit(recorded) is { } still
+            && ScenarioA1OrdnanceEligibility.RetainsMortarSpotter(still.Status == InstanceStatus.Active, still.Side == firer.Side,
+                Is(still, Conditions.Broken), Is(still, Conditions.Captured)) ? still : null;
         return ScenarioA1OrdnanceEligibility.MortarSupport(gun, kept?.Id, spotter, () => SpotterFacts(state, gun, firer, spotter!), director,
             () => DirectorFacts(state, gun, firer, director!), phase);
     }

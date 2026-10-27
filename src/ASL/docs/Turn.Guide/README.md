@@ -38,3 +38,6 @@ B4 final verification: 123 ASL.Turns tests and 77 focused Play regression tests 
 
 
 B5 implements the bounded Placed DC persistence/replay/profile slice. See implementation plan section 8 and the design B5 contract. Current ASL.Turns verification: 127 tests, 465/465 lines and 264/264 branches (100%). The baseline profile remains available; other rule families and missing facts remain visible as pending.
+
+
+The next B5 slice adds fire/Spotter history through `existing-engine-fire-v1`, with historical disclosure and shared Rules retention checks. Remaining Spotter execution rules stay pending. Current ASL.Turns verification: 131 tests, 516/516 lines and 288/288 branches, both 100%. See the design and implementation plan B5 fire/Spotter section.

@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text;
+using ASL.Turns;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
@@ -27,6 +29,7 @@ public sealed class BacklogPass9Tests : IDisposable
     private static readonly string[] G3 = ["g3"];
     private static readonly string[] GH = ["gh"];
     private static readonly string[] R1 = ["r1"];
+    private static readonly string[] RussianView = ["russian"];
     private static readonly string[] R2 = ["r2"];
     private static readonly string[] R4R5 = ["r4", "r5"];
     private static readonly string[] R1R2 = ["r1", "r2"];
@@ -450,6 +453,71 @@ public sealed class BacklogPass9Tests : IDisposable
         Assert.True(Is(Current.Unit("g2")!, Conditions.PrepFire));
         Refused(await Shoot("de-mtr", "bd01:B6:0", "g3", null, 2, 6), "play.ordnance-spotter-kept");
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+        var shotRevision = Revision;
+        var guide = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", "existing-engine-fire-v1");
+        var history = guide.FireHistory!;
+        var record = Assert.Single(history.Shots);
+        Assert.Equal(TurnFireKind.Ordnance, record.Kind);
+        Assert.Equal("g1", Assert.Single(record.Firers));
+        Assert.Equal("de-mtr", record.Weapon);
+        Assert.Equal("g2", record.Spotter);
+        Assert.True(record.RateOfFireKept);
+        Assert.True(record.InCurrentPhase);
+        Assert.Equal(TurnSpotterState.Retained, Assert.Single(history.Spotters).State);
+        Assert.True(Assert.Single(history.Spotters).SpottedThisPhase);
+        Assert.NotEmpty(history.EvaluationGaps);
+        var enemy = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("russian"), "pfph", "existing-engine-fire-v1");
+        Assert.Empty(enemy.FireHistory!.Shots);
+        Assert.Empty(enemy.FireHistory.Spotters);
+        Assert.Null((await Planner().ReadTurnGuideAsync(Scope, Perspective.Side("german"), "pfph")).FireHistory);
+        Assert.Equal(JsonSerializer.Serialize(guide), JsonSerializer.Serialize(await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", "existing-engine-fire-v1")));
+        Assert.Equal(shotRevision, Revision);
+        var written = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(written)).Record!;
+        Assert.Equal(written, GameEventWriter.Write(Scope, loaded));
+        var copyStore = new FileGameStore(Path.Combine(root, "fire-copy"));
+        var copyPlanner = new GamePlanner(copyStore, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, copyStore.Append(Scope, loaded.Label, 0, loaded.Events, copyPlanner.Replay).Status);
+        Assert.Equal(AppendStatus.Replay, copyStore.Append(Scope, loaded.Label, 0, loaded.Events, copyPlanner.Replay).Status);
+        Assert.Equal(JsonSerializer.Serialize(history), JsonSerializer.Serialize((await copyPlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", "existing-engine-fire-v1")).FireHistory));
+        var withheld = loaded.Events.Select(item => item.Payload is OrdnanceFired ? item with { Visibility = RussianView } : item).ToArray();
+        var privateStore = new FileGameStore(Path.Combine(root, "private-fire-copy"));
+        var privatePlanner = new GamePlanner(privateStore, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, privateStore.Append(Scope, loaded.Label, 0, withheld, privatePlanner.Replay).Status);
+        var undisclosed = (await privatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", "existing-engine-fire-v1")).FireHistory!;
+        Assert.Empty(undisclosed.Shots);
+        Assert.Empty(undisclosed.Spotters);
+        Assert.Single((await privatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "pfph", "existing-engine-fire-v1")).FireHistory!.Shots);
+        await Advance();
+        var next = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", "existing-engine-fire-v1")).FireHistory!;
+        Assert.False(Assert.Single(next.Shots).InCurrentPhase);
+        Assert.False(Assert.Single(next.Spotters).SpottedThisPhase);
+        Assert.Equal(TurnSpotterState.Retained, Assert.Single(next.Spotters).State);
+        var old = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", "existing-engine-fire-v1", shotRevision);
+        Assert.Equal(JsonSerializer.Serialize(history), JsonSerializer.Serialize(old.FireHistory));
+        Assert.Equal(TurnCloseDisposition.ReadOnly, old.PhaseClose.Disposition);
+        // CCPh may require concealment dice on this board; only the governed command draws them.
+        for (var phase = 0; phase < 7; phase++)
+        {
+            Committed(await Do(GameActions.AdvancePhase, new DiceRoller(_ => 5), new
+            {
+            }));
+        }
+        Assert.Equal("pfph", Current.Phase);
+        var later = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", "existing-engine-fire-v1")).FireHistory!;
+        Assert.False(Assert.Single(later.Shots).InCurrentPhase);
+        var last = store.Read(Scope)!.Events[^1];
+        var loss = last with
+        {
+            EventId = "spotter-broken",
+            Revision = last.Revision + 1,
+            Type = "conditions-changed",
+            Payload = new ConditionsChanged("g2", new Dictionary<string, ConditionState> { [Conditions.Broken] = ConditionState.True }),
+        };
+        Assert.Equal(AppendStatus.Committed, store.Append(Scope, "spotter-loss", Revision, [loss], Planner().Replay).Status);
+        var lost = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", "existing-engine-fire-v1")).FireHistory!;
+        Assert.Equal(TurnSpotterState.Lost, Assert.Single(lost.Spotters).State);
+        Assert.NotEmpty(lost.EvaluationGaps);
     }
 
     [Fact]
