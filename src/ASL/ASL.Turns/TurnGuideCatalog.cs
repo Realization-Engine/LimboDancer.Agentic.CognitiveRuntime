@@ -72,7 +72,10 @@ public sealed class TurnGuideCatalog
         [.. Dependencies.Where(item => item.TopicIds.Contains(topicId, StringComparer.Ordinal))];
 
     /// <summary>Loads a fresh immutable catalog; callers may retain it for their service lifetime.</summary>
-    public static TurnGuideCatalog Load()
+    public static TurnGuideCatalog Load() => Load(name => typeof(TurnGuideCatalog).Assembly.GetManifestResourceStream(name));
+
+    /// <summary>Loads versioned source streams; each supplied stream is disposed after reading.</summary>
+    public static TurnGuideCatalog Load(Func<string, Stream?> resourceProvider)
     {
         (string Id, string Name)[] identities =
         [
@@ -80,8 +83,8 @@ public sealed class TurnGuideCatalog
             ("dfph", "Defensive Fire"), ("afph", "Advancing Fire"),
             ("rtph", "Rout"), ("aph", "Advance"), ("ccph", "Close Combat"),
         ];
-        var phases = identities.Select(identity => ReadPhase(identity.Id, identity.Name)).ToImmutableArray();
-        using var dependencyDocument = ReadResource("ASL.Turns.Dependencies.json");
+        var phases = identities.Select(identity => ReadPhase(identity.Id, identity.Name, resourceProvider)).ToImmutableArray();
+        using var dependencyDocument = ReadResource("ASL.Turns.Dependencies.json", resourceProvider);
         var dependencies = dependencyDocument.RootElement.GetProperty("chains").EnumerateArray().Select(item =>
             new TurnDependency(Text(item, "id"), Text(item, "title"), Text(item, "origin"), Text(item, "due"),
                 Strings(item, "checks"), Text(item, "example"), Text(item, "refs"), Pages(item),
@@ -90,9 +93,9 @@ public sealed class TurnGuideCatalog
         return new TurnGuideCatalog(phases, dependencies);
     }
 
-    private static TurnPhase ReadPhase(string id, string name)
+    private static TurnPhase ReadPhase(string id, string name, Func<string, Stream?> resourceProvider)
     {
-        using var document = ReadResource($"ASL.Turns.ASL {name} Phase Checklist Catalog.json");
+        using var document = ReadResource($"ASL.Turns.ASL {name} Phase Checklist Catalog.json", resourceProvider);
         var root = document.RootElement;
         var groups = Strings(root, "groups");
         var glossary = root.GetProperty("glossary").EnumerateObject().ToImmutableDictionary(
@@ -125,9 +128,10 @@ public sealed class TurnGuideCatalog
             groups, options, glossary, ledger);
     }
 
-    private static JsonDocument ReadResource(string name)
+    private static JsonDocument ReadResource(string name, Func<string, Stream?> resourceProvider)
     {
-        using var stream = typeof(TurnGuideCatalog).Assembly.GetManifestResourceStream(name)
+        ArgumentNullException.ThrowIfNull(resourceProvider);
+        using var stream = resourceProvider(name)
             ?? throw new InvalidDataException($"Missing turn-guide resource '{name}'.");
         var document = JsonDocument.Parse(stream);
         if (!document.RootElement.TryGetProperty("schemaVersion", out var version) || (version.GetInt32() != 1 && !(version.GetInt32() == 2 && name == "ASL.Turns.ASL Rally Phase Checklist Catalog.json")))

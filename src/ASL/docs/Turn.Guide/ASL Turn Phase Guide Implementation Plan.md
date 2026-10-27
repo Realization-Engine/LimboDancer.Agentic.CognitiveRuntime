@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first plan. Foundation B0 is implemented and tested. Remaining stages are planned. UI work is intentionally last.
+Status: Backend-first plan. Foundation B0 and the B1 capability/timing contracts are implemented and tested. Live stages remain planned. UI work is intentionally last.
 
 References: [Design](ASL%20Turn%20Phase%20Guide%20Design.md), [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md).
 
@@ -19,7 +19,7 @@ Run focused tests only for changed behavior and direct dependencies. Broaden whe
 | Stage | Deliverable | Depends on | Exit gate |
 |---|---|---|---|
 | B0, implemented | New library/test projects, headless immutable reference catalog, relocated documentation and saved mock-up | Reviewed inventories | Complete baseline loads without UI/Play dependencies; focused tests pass. |
-| B1 | Stable backend schema, source/term mappings and typed capabilities | B0 | No prose parsing for legality, unregistered capability is Not evaluated, all IDs/links traceable. |
+| B1, contracts implemented | Stable identity/timing manifest, contextual term IDs and typed capabilities | B0 | No prose parsing for legality, unregistered capability is Not evaluated, all IDs/links traceable. |
 | B2 | Pure guidance request/result and read composition | B1 | Fixed facts yield deterministic snapshots; no writes, dice or UI state. |
 | B3 | Rule-owned timing and obligation lifecycle | B2 and relevant Rules families | Due, interrupt, resolve and retained history proved at exact boundaries. |
 | B4 | Play/Units adapters and shared phase-close assessment | B2-B3 | Existing command validation and guidance agree without duplicate cleanup; disclosure and stale checks pass. |
@@ -36,17 +36,17 @@ The previous UI-first P1-P7 plan is superseded by this order. The full final sco
 - Embedded the reviewed catalogs from `docs/Turn.Guide`. The library exposes immutable phases, topics, terms, ledgers and dependency definitions with qualified IDs and reference lookups.
 - Preserved pending notes, source metadata, separate phase glossaries and the Rally schema difference. An absent Rally JSON ledger does not replace the reviewed walkthrough ledger.
 
-Validation: `dotnet test src/ASL/tests/ASL.Turns.Tests/ASL.Turns.Tests.csproj --no-restore` passes five tests. These verify the full inventory/links, pending visibility, qualified/case-sensitive identity, documented flare deadlines and absence of UI/Play assembly dependencies. No live timing engine is claimed.
+At the B0 commit, `dotnet test src/ASL/tests/ASL.Turns.Tests/ASL.Turns.Tests.csproj --no-restore` passed five tests. B1 expands this baseline and adds the coverage gate below. These verify the full inventory/links, pending visibility, qualified/case-sensitive identity, documented flare deadlines and absence of UI/Play assembly dependencies. No live timing engine is claimed.
 
-## 4. B1: Stable schema and capability manifest
+## 4. B1: Stable schema and capability contracts, implemented
 
-Keep source JSON as the authored input. Introduce a normalization builder only when needed to generate the reviewed next schema; avoid a second manually maintained catalog. Verify mode must not rewrite input or output.
+The library now exposes typed source review, evaluator/command support and applicability dimensions. An immutable capability catalog retains all topics; missing registrations stay Not evaluated. Explicit sub-action/profile registrations require evidence for partial or integrated support. The design documents the distinction between production registration and existing Rules implementation.
 
-Define stable group and semantic window IDs, aliases, supplemental timing records, all printed-step ledgers, exact source status, acronym/concept links and structured scope tags. Review every older shape explicitly. Never infer rule integration from the current English `status` field or collapse definitions by label alone.
+The versioned timing manifest assigns stable group IDs and source-reference windows to all 538 topics. It preserves printed steps, imports Rally's ten-step ledger and uses explicit unclassified supplemental windows. Validation rejects unknown/duplicate/missing links, incorrect phase ownership and incomplete multi-window mappings. Group identities survive label and numeric-position changes. Contextual term IDs preserve phase and case. Typed due payloads distinguish event, window, owner-relative phase, Player Turn and completed Game Turn intervals without executing them.
 
-Inventory current Rules, planner and event coverage for each capability. A manifest records evaluator support, command support, profile/subset, source status and test evidence. Missing entry defaults to Not evaluated. Partial topics retain supported and unsupported sub-actions separately. Retain the prisoner-abandonment interpretation issue and external module gaps.
+The existing JSON remains authoritative for topic text, sources and glossaries. The identity manifest adds keys and bindings only. No normalization generator or second content catalog is introduced. No IDs are renamed; aliases are required before any future rename. External acronym mappings and executable capability/profile registrations require reviewed evidence during B2/B3 integration, not guessed IDs or parsed integration prose. Existing interpretation and module-source gaps remain visible.
 
-Tests: missing/duplicate identities, broken dependency targets, schema-version rejection, source bounds, Rally ledger import, `DR`/`dr`, conflicting context definitions, deterministic normalized generation and failed-load diagnostics. Add malformed-input tests when the public normalization/read contract is introduced; the current loader only accepts embedded reviewed resources.
+Required validation: `./src/ASL/tests/ASL.Turns.Tests/Test-Coverage.ps1`. Current result is 62 passing tests, 242/242 lines and 132/132 branches covered for the entire library. Keep both coverage measures at 100%; test the behavior and failure paths rather than adding exclusions. The gate uses fresh reports so stale successful runs cannot mask a regression.
 
 ## 5. B2: Headless guidance composition
 
@@ -99,4 +99,4 @@ Only then build a thin consumer using existing site styling and action panels. C
 
 `ASL.Turns.Tests` owns content, coordination and backend contracts. Existing Rules tests own rule verdicts; Units tests own events/projection/replay; Play tests own governed command enforcement and adapters. Add renderer tests only at U1. Run the narrow project/class filters relevant to each change, with no blanket whole-solution test requirement.
 
-Next work: B1's typed capability and stable timing schema, followed by B2's pure snapshot contract. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
+Next work: B2's pure snapshot contract, using the B1 types and verifying the first concrete capability registrations against Rules/Play proofs. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.

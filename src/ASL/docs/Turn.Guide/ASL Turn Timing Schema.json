@@ -1,0 +1,5424 @@
+{
+  "schemaVersion": 1,
+  "groups": [
+    {
+      "id": "rph:group:reinforcements-and-entry",
+      "phaseId": "rph",
+      "label": "1.11A · Reinforcements and entry"
+    },
+    {
+      "id": "rph:group:wind-and-linked-effects",
+      "phaseId": "rph",
+      "label": "1.12A · Wind and linked effects"
+    },
+    {
+      "id": "rph:group:recombination-and-animal-pack",
+      "phaseId": "rph",
+      "label": "1.13B · Recombination and Animal-Pack"
+    },
+    {
+      "id": "rph:group:recovery",
+      "phaseId": "rph",
+      "label": "1.14B · Recovery"
+    },
+    {
+      "id": "rph:group:deployment-and-scrounging",
+      "phaseId": "rph",
+      "label": "1.21A · Deployment and Scrounging"
+    },
+    {
+      "id": "rph:group:repairs-and-transfers",
+      "phaseId": "rph",
+      "label": "1.22B · Repairs and transfers"
+    },
+    {
+      "id": "rph:group:rally-attempts-and-consequences",
+      "phaseId": "rph",
+      "label": "1.23B · Rally attempts and consequences"
+    },
+    {
+      "id": "rph:group:parachute-drop-points",
+      "phaseId": "rph",
+      "label": "1.24A · Parachute Drop Points"
+    },
+    {
+      "id": "rph:group:shock-and-dm",
+      "phaseId": "rph",
+      "label": "1.31B · Shock and DM"
+    },
+    {
+      "id": "rph:group:wall-advantage",
+      "phaseId": "rph",
+      "label": "1.32B · Wall Advantage"
+    },
+    {
+      "id": "rph:group:additional-timing-and-standing-choices",
+      "phaseId": "rph",
+      "label": "Additional timing and standing choices"
+    },
+    {
+      "id": "rph:group:actions-belonging-elsewhere",
+      "phaseId": "rph",
+      "label": "Actions belonging elsewhere"
+    },
+    {
+      "id": "pfph:group:opening-cleanup-and-illumination",
+      "phaseId": "pfph",
+      "label": "2.11A · Opening cleanup and illumination"
+    },
+    {
+      "id": "pfph:group:early-smoke-ir-and-mol-projectors",
+      "phaseId": "pfph",
+      "label": "2.12A · Early SMOKE, IR and MOL Projectors"
+    },
+    {
+      "id": "pfph:group:contact-access-and-new-artillery-missions",
+      "phaseId": "pfph",
+      "label": "2.13A · Contact, Access and new artillery missions"
+    },
+    {
+      "id": "pfph:group:existing-artillery-missions",
+      "phaseId": "pfph",
+      "label": "2.14A · Existing artillery missions"
+    },
+    {
+      "id": "pfph:group:artillery-resolution-and-consequences",
+      "phaseId": "pfph",
+      "label": "2.15A · Artillery resolution and consequences"
+    },
+    {
+      "id": "pfph:group:mopping-up-entrenching-and-kindling",
+      "phaseId": "pfph",
+      "label": "2.21A · Mopping Up, entrenching and Kindling"
+    },
+    {
+      "id": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "phaseId": "pfph",
+      "label": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "pfph:group:limber-and-unlimber",
+      "phaseId": "pfph",
+      "label": "2.23A · Limber and unlimber"
+    },
+    {
+      "id": "pfph:group:final-ca-and-aa-mode-choices",
+      "phaseId": "pfph",
+      "label": "2.31A · Final CA and AA-mode choices"
+    },
+    {
+      "id": "pfph:group:supplemental-timing-and-special-rules",
+      "phaseId": "pfph",
+      "label": "Supplemental timing and special rules"
+    },
+    {
+      "id": "pfph:group:consequences-and-response-windows",
+      "phaseId": "pfph",
+      "label": "Consequences and response windows"
+    },
+    {
+      "id": "pfph:group:actions-belonging-elsewhere",
+      "phaseId": "pfph",
+      "label": "Actions belonging elsewhere"
+    },
+    {
+      "id": "mph:group:movement-contract-and-expenditure-windows",
+      "phaseId": "mph",
+      "label": "Movement contract and expenditure windows"
+    },
+    {
+      "id": "mph:group:start-of-the-phase",
+      "phaseId": "mph",
+      "label": "3.11A-3.13A · Start of the phase"
+    },
+    {
+      "id": "mph:group:berserk-priority",
+      "phaseId": "mph",
+      "label": "3.21A · Berserk priority"
+    },
+    {
+      "id": "mph:group:select-a-ground-mover-and-declarations",
+      "phaseId": "mph",
+      "label": "3.22A · Select a ground mover and declarations"
+    },
+    {
+      "id": "mph:group:select-aerial-movement",
+      "phaseId": "mph",
+      "label": "3.23A · Select aerial movement"
+    },
+    {
+      "id": "mph:group:resolve-a-berserk-charge",
+      "phaseId": "mph",
+      "label": "3.31A · Resolve a berserk charge"
+    },
+    {
+      "id": "mph:group:routes-costs-and-exposure",
+      "phaseId": "mph",
+      "label": "3.32A · Routes, costs and exposure"
+    },
+    {
+      "id": "mph:group:equipment-transport-and-labor",
+      "phaseId": "mph",
+      "label": "3.32A · Equipment, transport and labor"
+    },
+    {
+      "id": "mph:group:smoke-vehicles-and-attacks",
+      "phaseId": "mph",
+      "label": "3.32A · Smoke, vehicles and attacks"
+    },
+    {
+      "id": "mph:group:impulses-terrain-and-amphibious-effects",
+      "phaseId": "mph",
+      "label": "3.32A · Impulses, terrain and amphibious effects"
+    },
+    {
+      "id": "mph:group:aerial-movement",
+      "phaseId": "mph",
+      "label": "3.33A-3.34A · Aerial movement"
+    },
+    {
+      "id": "mph:group:effects-before-ordinary-first-fire",
+      "phaseId": "mph",
+      "label": "3.35D · Effects before ordinary First Fire"
+    },
+    {
+      "id": "mph:group:defender-fire-and-response-choices",
+      "phaseId": "mph",
+      "label": "3.36D · Defender fire and response choices"
+    },
+    {
+      "id": "mph:group:fire-against-aerial-landings",
+      "phaseId": "mph",
+      "label": "3.37D-3.38D · Fire against aerial landings"
+    },
+    {
+      "id": "mph:group:end-this-ground-unit-s-move",
+      "phaseId": "mph",
+      "label": "3.41A · End this ground unit’s move"
+    },
+    {
+      "id": "mph:group:land-gliders-and-parachutes",
+      "phaseId": "mph",
+      "label": "3.42A-3.43A · Land gliders and parachutes"
+    },
+    {
+      "id": "mph:group:end-the-entire-movement-phase",
+      "phaseId": "mph",
+      "label": "3.51A-3.53B · End the entire Movement Phase"
+    },
+    {
+      "id": "mph:group:additional-rule-specific-movement-overlays",
+      "phaseId": "mph",
+      "label": "Additional rule-specific Movement overlays"
+    },
+    {
+      "id": "dfph:group:carry-forward-the-movement-fire-record",
+      "phaseId": "dfph",
+      "label": "Carry forward the Movement fire record"
+    },
+    {
+      "id": "dfph:group:dispersed-smoke-and-illumination-first",
+      "phaseId": "dfph",
+      "label": "4.11D · Dispersed SMOKE and illumination first"
+    },
+    {
+      "id": "dfph:group:artillery-contact-and-access",
+      "phaseId": "dfph",
+      "label": "4.12D · Artillery contact and Access"
+    },
+    {
+      "id": "dfph:group:existing-artillery-and-scheduled-barrages",
+      "phaseId": "dfph",
+      "label": "4.13D · Existing artillery and scheduled barrages"
+    },
+    {
+      "id": "dfph:group:artillery-resolution-and-map-effects",
+      "phaseId": "dfph",
+      "label": "4.14D · Artillery resolution and map effects"
+    },
+    {
+      "id": "dfph:group:final-fire-eligibility-and-remaining-shots",
+      "phaseId": "dfph",
+      "label": "4.21D · Final Fire eligibility and remaining shots"
+    },
+    {
+      "id": "dfph:group:attack-choices-and-commitments",
+      "phaseId": "dfph",
+      "label": "4.21D · Attack choices and commitments"
+    },
+    {
+      "id": "dfph:group:illumination-aircraft-and-counter-responses",
+      "phaseId": "dfph",
+      "label": "4.21D · Illumination, aircraft and counter-responses"
+    },
+    {
+      "id": "dfph:group:clearance-declarations-and-flame-control",
+      "phaseId": "dfph",
+      "label": "4.21D · Clearance declarations and Flame control"
+    },
+    {
+      "id": "dfph:group:weapon-handling",
+      "phaseId": "dfph",
+      "label": "4.21D · Weapon handling"
+    },
+    {
+      "id": "dfph:group:gun-preparation",
+      "phaseId": "dfph",
+      "label": "4.22D · Gun preparation"
+    },
+    {
+      "id": "dfph:group:final-arc-and-aa-mode-choices",
+      "phaseId": "dfph",
+      "label": "4.31D · Final arc and AA-mode choices"
+    },
+    {
+      "id": "dfph:group:close-the-phase-with-the-correct-markers",
+      "phaseId": "dfph",
+      "label": "4.32D · Close the phase with the correct markers"
+    },
+    {
+      "id": "dfph:group:supplemental-timing-and-equipment-exceptions",
+      "phaseId": "dfph",
+      "label": "Supplemental timing and equipment exceptions"
+    },
+    {
+      "id": "dfph:group:consequences-source-limits-and-phase-boundaries",
+      "phaseId": "dfph",
+      "label": "Consequences, source limits and phase boundaries"
+    },
+    {
+      "id": "afph:group:carry-forward-commitments",
+      "phaseId": "afph",
+      "label": "Carry forward commitments"
+    },
+    {
+      "id": "afph:group:drifting-smoke",
+      "phaseId": "afph",
+      "label": "5.11B · Drifting SMOKE"
+    },
+    {
+      "id": "afph:group:opening-dispersed-wp",
+      "phaseId": "afph",
+      "label": "5.12A · Opening Dispersed WP"
+    },
+    {
+      "id": "afph:group:gusts-and-smoke",
+      "phaseId": "afph",
+      "label": "5.13A · Gusts and SMOKE"
+    },
+    {
+      "id": "afph:group:glider-contents",
+      "phaseId": "afph",
+      "label": "5.21A · Glider contents"
+    },
+    {
+      "id": "afph:group:infantry-and-weapon-choices",
+      "phaseId": "afph",
+      "label": "5.22A · Infantry and weapon choices"
+    },
+    {
+      "id": "afph:group:ordnance-and-vehicles",
+      "phaseId": "afph",
+      "label": "5.22A · Ordnance and vehicles"
+    },
+    {
+      "id": "afph:group:demolitions-and-equipment",
+      "phaseId": "afph",
+      "label": "5.22A · Demolitions and equipment"
+    },
+    {
+      "id": "afph:group:attack-mode-and-acquisition-decisions",
+      "phaseId": "afph",
+      "label": "5.22A · Attack mode and acquisition decisions"
+    },
+    {
+      "id": "afph:group:berserk-return",
+      "phaseId": "afph",
+      "label": "5.23A · Berserk return"
+    },
+    {
+      "id": "afph:group:blaze-spread",
+      "phaseId": "afph",
+      "label": "5.31B · Blaze spread"
+    },
+    {
+      "id": "afph:group:flame-conversion",
+      "phaseId": "afph",
+      "label": "5.32B · Flame conversion"
+    },
+    {
+      "id": "afph:group:end-choices-before-5-33b-cleanup",
+      "phaseId": "afph",
+      "label": "End choices before 5.33B cleanup"
+    },
+    {
+      "id": "afph:group:fire-counter-cleanup",
+      "phaseId": "afph",
+      "label": "5.33B · Fire-counter cleanup"
+    },
+    {
+      "id": "afph:group:supplemental-equipment-and-standing-choices",
+      "phaseId": "afph",
+      "label": "Supplemental equipment and standing choices"
+    },
+    {
+      "id": "afph:group:consequences-and-source-boundaries",
+      "phaseId": "afph",
+      "label": "Consequences and source boundaries"
+    },
+    {
+      "id": "afph:group:supplemental-terrain-and-movement-status-restrictions",
+      "phaseId": "afph",
+      "label": "Supplemental terrain and movement-status restrictions"
+    },
+    {
+      "id": "rtph:group:phase-ownership-and-obligation-review",
+      "phaseId": "rtph",
+      "label": "Phase ownership and obligation review"
+    },
+    {
+      "id": "rtph:group:opening-break-and-dm-decisions",
+      "phaseId": "rtph",
+      "label": "6.11B · Opening break and DM decisions"
+    },
+    {
+      "id": "rtph:group:disrupted-surrender-first",
+      "phaseId": "rtph",
+      "label": "6.12B · Disrupted surrender first"
+    },
+    {
+      "id": "rtph:group:decide-who-routes-and-with-what",
+      "phaseId": "rtph",
+      "label": "6.21B · Decide who routes and with what"
+    },
+    {
+      "id": "rtph:group:select-destination-and-route",
+      "phaseId": "rtph",
+      "label": "6.21B · Select destination and route"
+    },
+    {
+      "id": "rtph:group:interdiction-and-enemy-responses",
+      "phaseId": "rtph",
+      "label": "6.21B · Interdiction and enemy responses"
+    },
+    {
+      "id": "rtph:group:surrender-and-capture-consequences",
+      "phaseId": "rtph",
+      "label": "6.21B · Surrender and capture consequences"
+    },
+    {
+      "id": "rtph:group:hazards-and-route-linked-effects",
+      "phaseId": "rtph",
+      "label": "6.21B · Hazards and route-linked effects"
+    },
+    {
+      "id": "rtph:group:special-rout-procedures",
+      "phaseId": "rtph",
+      "label": "6.21B · Special rout procedures"
+    },
+    {
+      "id": "rtph:group:end-of-phase-blaze-deadline",
+      "phaseId": "rtph",
+      "label": "6.31B · End-of-phase Blaze deadline"
+    },
+    {
+      "id": "rtph:group:supplemental-terrain-protection-and-status",
+      "phaseId": "rtph",
+      "label": "Supplemental terrain, protection and status"
+    },
+    {
+      "id": "aph:group:phase-ownership-and-commitments",
+      "phaseId": "aph",
+      "label": "Phase ownership and commitments"
+    },
+    {
+      "id": "aph:group:opening-transfers",
+      "phaseId": "aph",
+      "label": "7.11A · Opening transfers"
+    },
+    {
+      "id": "aph:group:japanese-tank-hunter-hero",
+      "phaseId": "aph",
+      "label": "7.12A · Japanese Tank-Hunter Hero"
+    },
+    {
+      "id": "aph:group:opening-surf-obligations",
+      "phaseId": "aph",
+      "label": "7.13A · Opening surf obligations"
+    },
+    {
+      "id": "aph:group:eligibility-load-and-destination",
+      "phaseId": "aph",
+      "label": "7.21A · Eligibility, load and destination"
+    },
+    {
+      "id": "aph:group:enemy-entry-and-combat-commitments",
+      "phaseId": "aph",
+      "label": "7.21A · Enemy entry and combat commitments"
+    },
+    {
+      "id": "aph:group:terrain-connections-and-special-profiles",
+      "phaseId": "aph",
+      "label": "7.21A · Terrain connections and special profiles"
+    },
+    {
+      "id": "aph:group:attacker-drift",
+      "phaseId": "aph",
+      "label": "7.22A · ATTACKER drift"
+    },
+    {
+      "id": "aph:group:defender-drift",
+      "phaseId": "aph",
+      "label": "7.23D · DEFENDER drift"
+    },
+    {
+      "id": "aph:group:beaching-after-advance-and-drift",
+      "phaseId": "aph",
+      "label": "7.24A · Beaching after advance and drift"
+    },
+    {
+      "id": "aph:group:immediate-effects-and-survival",
+      "phaseId": "aph",
+      "label": "7.25B · Immediate effects and survival"
+    },
+    {
+      "id": "aph:group:parachute-replacement",
+      "phaseId": "aph",
+      "label": "7.26A · Parachute replacement"
+    },
+    {
+      "id": "aph:group:supplemental-consequences-and-phase-boundary",
+      "phaseId": "aph",
+      "label": "Supplemental consequences and phase boundary"
+    },
+    {
+      "id": "ccph:group:location-order-and-commitment",
+      "phaseId": "ccph",
+      "label": "Location order and commitment"
+    },
+    {
+      "id": "ccph:group:reveal-the-location",
+      "phaseId": "ccph",
+      "label": "8.11B · Reveal the Location"
+    },
+    {
+      "id": "ccph:group:ambush-and-its-alternatives",
+      "phaseId": "ccph",
+      "label": "8.12B · Ambush and its alternatives"
+    },
+    {
+      "id": "ccph:group:defending-japanese-hero",
+      "phaseId": "ccph",
+      "label": "8.13D · Defending Japanese hero"
+    },
+    {
+      "id": "ccph:group:sequence-prisoners-and-abandoned-vehicles",
+      "phaseId": "ccph",
+      "label": "8.14B · Sequence, prisoners and abandoned vehicles"
+    },
+    {
+      "id": "ccph:group:melee-withdrawal-declarations",
+      "phaseId": "ccph",
+      "label": "8.15B · Melee Withdrawal declarations"
+    },
+    {
+      "id": "ccph:group:smc-pairing",
+      "phaseId": "ccph",
+      "label": "8.16B · SMC pairing"
+    },
+    {
+      "id": "ccph:group:declare-attacks-and-special-modes",
+      "phaseId": "ccph",
+      "label": "8.21B · Declare attacks and special modes"
+    },
+    {
+      "id": "ccph:group:atmm-after-attack-declaration",
+      "phaseId": "ccph",
+      "label": "8.22B · ATMM after attack declaration"
+    },
+    {
+      "id": "ccph:group:japanese-response-to-capture",
+      "phaseId": "ccph",
+      "label": "8.23B · Japanese response to capture"
+    },
+    {
+      "id": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "phaseId": "ccph",
+      "label": "8.24B · Resolve attacks and immediate consequences"
+    },
+    {
+      "id": "ccph:group:new-prisoner-information",
+      "phaseId": "ccph",
+      "label": "8.25B · New prisoner information"
+    },
+    {
+      "id": "ccph:group:close-this-location",
+      "phaseId": "ccph",
+      "label": "8.31B · Close this Location"
+    },
+    {
+      "id": "ccph:group:phase-wide-aerial-combat",
+      "phaseId": "ccph",
+      "label": "8.41B · Phase-wide aerial combat"
+    },
+    {
+      "id": "ccph:group:complete-declared-tasks",
+      "phaseId": "ccph",
+      "label": "8.42B · Complete declared tasks"
+    },
+    {
+      "id": "ccph:group:status-and-replenishment",
+      "phaseId": "ccph",
+      "label": "8.43B · Status and replenishment"
+    },
+    {
+      "id": "ccph:group:concealment-gain",
+      "phaseId": "ccph",
+      "label": "8.44A · Concealment gain"
+    },
+    {
+      "id": "ccph:group:night-cleanup-after-concealment",
+      "phaseId": "ccph",
+      "label": "8.45B · Night cleanup after concealment"
+    },
+    {
+      "id": "ccph:group:supplemental-events-and-turn-handoff",
+      "phaseId": "ccph",
+      "label": "Supplemental events and turn handoff"
+    }
+  ],
+  "windows": [
+    {
+      "id": "rph:asop:1.11A",
+      "phaseId": "rph",
+      "kind": "PrintedAsop",
+      "locator": "1.11A"
+    },
+    {
+      "id": "rph:asop:1.12A",
+      "phaseId": "rph",
+      "kind": "PrintedAsop",
+      "locator": "1.12A"
+    },
+    {
+      "id": "rph:asop:1.13B",
+      "phaseId": "rph",
+      "kind": "PrintedAsop",
+      "locator": "1.13B"
+    },
+    {
+      "id": "rph:asop:1.14B",
+      "phaseId": "rph",
+      "kind": "PrintedAsop",
+      "locator": "1.14B"
+    },
+    {
+      "id": "rph:asop:1.21A",
+      "phaseId": "rph",
+      "kind": "PrintedAsop",
+      "locator": "1.21A"
+    },
+    {
+      "id": "rph:asop:1.22B",
+      "phaseId": "rph",
+      "kind": "PrintedAsop",
+      "locator": "1.22B"
+    },
+    {
+      "id": "rph:asop:1.23B",
+      "phaseId": "rph",
+      "kind": "PrintedAsop",
+      "locator": "1.23B"
+    },
+    {
+      "id": "rph:asop:1.24A",
+      "phaseId": "rph",
+      "kind": "PrintedAsop",
+      "locator": "1.24A"
+    },
+    {
+      "id": "rph:asop:1.31B",
+      "phaseId": "rph",
+      "kind": "PrintedAsop",
+      "locator": "1.31B"
+    },
+    {
+      "id": "rph:asop:1.32B",
+      "phaseId": "rph",
+      "kind": "PrintedAsop",
+      "locator": "1.32B"
+    },
+    {
+      "id": "rph:supplemental:oba",
+      "phaseId": "rph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rph:supplemental:ammo",
+      "phaseId": "rph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rph:supplemental:other",
+      "phaseId": "rph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rph:supplemental:phone",
+      "phaseId": "rph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rph:supplemental:ammoTransfer",
+      "phaseId": "rph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rph:supplemental:stunBoundary",
+      "phaseId": "rph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rph:supplemental:notHere",
+      "phaseId": "rph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "pfph:asop:2.11A",
+      "phaseId": "pfph",
+      "kind": "PrintedAsop",
+      "locator": "2.11A"
+    },
+    {
+      "id": "pfph:asop:2.12A",
+      "phaseId": "pfph",
+      "kind": "PrintedAsop",
+      "locator": "2.12A"
+    },
+    {
+      "id": "pfph:asop:2.13A",
+      "phaseId": "pfph",
+      "kind": "PrintedAsop",
+      "locator": "2.13A"
+    },
+    {
+      "id": "pfph:asop:2.14A",
+      "phaseId": "pfph",
+      "kind": "PrintedAsop",
+      "locator": "2.14A"
+    },
+    {
+      "id": "pfph:asop:2.15A",
+      "phaseId": "pfph",
+      "kind": "PrintedAsop",
+      "locator": "2.15A"
+    },
+    {
+      "id": "pfph:asop:2.21A",
+      "phaseId": "pfph",
+      "kind": "PrintedAsop",
+      "locator": "2.21A"
+    },
+    {
+      "id": "pfph:asop:2.22A",
+      "phaseId": "pfph",
+      "kind": "PrintedAsop",
+      "locator": "2.22A"
+    },
+    {
+      "id": "pfph:asop:2.23A",
+      "phaseId": "pfph",
+      "kind": "PrintedAsop",
+      "locator": "2.23A"
+    },
+    {
+      "id": "pfph:asop:2.31A",
+      "phaseId": "pfph",
+      "kind": "PrintedAsop",
+      "locator": "2.31A"
+    },
+    {
+      "id": "pfph:supplemental:searchlight",
+      "phaseId": "pfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "pfph:supplemental:cancelBeam",
+      "phaseId": "pfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "pfph:supplemental:closeAir",
+      "phaseId": "pfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "pfph:supplemental:nationality",
+      "phaseId": "pfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "pfph:supplemental:massacre",
+      "phaseId": "pfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "pfph:supplemental:standing",
+      "phaseId": "pfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "pfph:supplemental:sniper",
+      "phaseId": "pfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "pfph:supplemental:phoneCut",
+      "phaseId": "pfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "pfph:supplemental:notHere",
+      "phaseId": "pfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "mph:asop:3.11A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.11A"
+    },
+    {
+      "id": "mph:asop:3.12D",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.12D"
+    },
+    {
+      "id": "mph:asop:3.13A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.13A"
+    },
+    {
+      "id": "mph:asop:3.21A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.21A"
+    },
+    {
+      "id": "mph:asop:3.22A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.22A"
+    },
+    {
+      "id": "mph:asop:3.23A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.23A"
+    },
+    {
+      "id": "mph:asop:3.31A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.31A"
+    },
+    {
+      "id": "mph:asop:3.32A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.32A"
+    },
+    {
+      "id": "mph:asop:3.33A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.33A"
+    },
+    {
+      "id": "mph:asop:3.34A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.34A"
+    },
+    {
+      "id": "mph:asop:3.35D",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.35D"
+    },
+    {
+      "id": "mph:asop:3.36D",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.36D"
+    },
+    {
+      "id": "mph:asop:3.37D",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.37D"
+    },
+    {
+      "id": "mph:asop:3.38D",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.38D"
+    },
+    {
+      "id": "mph:asop:3.41A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.41A"
+    },
+    {
+      "id": "mph:asop:3.42A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.42A"
+    },
+    {
+      "id": "mph:asop:3.43A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.43A"
+    },
+    {
+      "id": "mph:asop:3.51A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.51A"
+    },
+    {
+      "id": "mph:asop:3.52A",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.52A"
+    },
+    {
+      "id": "mph:asop:3.53B",
+      "phaseId": "mph",
+      "kind": "PrintedAsop",
+      "locator": "3.53B"
+    },
+    {
+      "id": "mph:supplemental:expenditure",
+      "phaseId": "mph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "mph:supplemental:order",
+      "phaseId": "mph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "mph:supplemental:jitter",
+      "phaseId": "mph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "mph:supplemental:cpva",
+      "phaseId": "mph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "mph:supplemental:bugles",
+      "phaseId": "mph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "mph:supplemental:bayonet",
+      "phaseId": "mph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "mph:supplemental:searchlight",
+      "phaseId": "mph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "mph:supplemental:attackChain",
+      "phaseId": "mph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "mph:supplemental:profile",
+      "phaseId": "mph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:asop:4.11D",
+      "phaseId": "dfph",
+      "kind": "PrintedAsop",
+      "locator": "4.11D"
+    },
+    {
+      "id": "dfph:asop:4.12D",
+      "phaseId": "dfph",
+      "kind": "PrintedAsop",
+      "locator": "4.12D"
+    },
+    {
+      "id": "dfph:asop:4.13D",
+      "phaseId": "dfph",
+      "kind": "PrintedAsop",
+      "locator": "4.13D"
+    },
+    {
+      "id": "dfph:asop:4.14D",
+      "phaseId": "dfph",
+      "kind": "PrintedAsop",
+      "locator": "4.14D"
+    },
+    {
+      "id": "dfph:asop:4.21D",
+      "phaseId": "dfph",
+      "kind": "PrintedAsop",
+      "locator": "4.21D"
+    },
+    {
+      "id": "dfph:asop:4.22D",
+      "phaseId": "dfph",
+      "kind": "PrintedAsop",
+      "locator": "4.22D"
+    },
+    {
+      "id": "dfph:asop:4.31D",
+      "phaseId": "dfph",
+      "kind": "PrintedAsop",
+      "locator": "4.31D"
+    },
+    {
+      "id": "dfph:asop:4.32D",
+      "phaseId": "dfph",
+      "kind": "PrintedAsop",
+      "locator": "4.32D"
+    },
+    {
+      "id": "dfph:supplemental:handoff",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:targets",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:hold",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:searchlight",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:fascine",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:spGunMode",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:barrels",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:equipmentHistory",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:nationality",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:massacre",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:standing",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:attackResults",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:sniper",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:phoneCut",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:notHere",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "dfph:supplemental:sourceProfile",
+      "phaseId": "dfph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:asop:5.11B",
+      "phaseId": "afph",
+      "kind": "PrintedAsop",
+      "locator": "5.11B"
+    },
+    {
+      "id": "afph:asop:5.12A",
+      "phaseId": "afph",
+      "kind": "PrintedAsop",
+      "locator": "5.12A"
+    },
+    {
+      "id": "afph:asop:5.13A",
+      "phaseId": "afph",
+      "kind": "PrintedAsop",
+      "locator": "5.13A"
+    },
+    {
+      "id": "afph:asop:5.21A",
+      "phaseId": "afph",
+      "kind": "PrintedAsop",
+      "locator": "5.21A"
+    },
+    {
+      "id": "afph:asop:5.22A",
+      "phaseId": "afph",
+      "kind": "PrintedAsop",
+      "locator": "5.22A"
+    },
+    {
+      "id": "afph:asop:5.23A",
+      "phaseId": "afph",
+      "kind": "PrintedAsop",
+      "locator": "5.23A"
+    },
+    {
+      "id": "afph:asop:5.31B",
+      "phaseId": "afph",
+      "kind": "PrintedAsop",
+      "locator": "5.31B"
+    },
+    {
+      "id": "afph:asop:5.32B",
+      "phaseId": "afph",
+      "kind": "PrintedAsop",
+      "locator": "5.32B"
+    },
+    {
+      "id": "afph:asop:5.33B",
+      "phaseId": "afph",
+      "kind": "PrintedAsop",
+      "locator": "5.33B"
+    },
+    {
+      "id": "afph:supplemental:handoff",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:hold",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:caEnd",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:aaMode",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:goliath",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:lcBlaze",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:searchlight",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:paratroops",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:massacre",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:nationality",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:standing",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:results",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:sniper",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:notHere",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:sourceProfile",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:climbing",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:fording",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:charge",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:breach",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "afph:supplemental:fortifiedBerserk",
+      "phaseId": "afph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:asop:6.11B",
+      "phaseId": "rtph",
+      "kind": "PrintedAsop",
+      "locator": "6.11B"
+    },
+    {
+      "id": "rtph:asop:6.12B",
+      "phaseId": "rtph",
+      "kind": "PrintedAsop",
+      "locator": "6.12B"
+    },
+    {
+      "id": "rtph:asop:6.21B",
+      "phaseId": "rtph",
+      "kind": "PrintedAsop",
+      "locator": "6.21B"
+    },
+    {
+      "id": "rtph:asop:6.31B",
+      "phaseId": "rtph",
+      "kind": "PrintedAsop",
+      "locator": "6.31B"
+    },
+    {
+      "id": "rtph:supplemental:handoff",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:supplemental:knowledge",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:supplemental:blazeEscape",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:supplemental:shelter",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:supplemental:pillbox",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:supplemental:tunnel",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:supplemental:wire",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:supplemental:crest",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:supplemental:terrain",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:supplemental:seaborneStatus",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:supplemental:results",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:supplemental:finish",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:supplemental:boundaries",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "rtph:supplemental:sourceProfile",
+      "phaseId": "rtph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "aph:asop:7.11A",
+      "phaseId": "aph",
+      "kind": "PrintedAsop",
+      "locator": "7.11A"
+    },
+    {
+      "id": "aph:asop:7.12A",
+      "phaseId": "aph",
+      "kind": "PrintedAsop",
+      "locator": "7.12A"
+    },
+    {
+      "id": "aph:asop:7.13A",
+      "phaseId": "aph",
+      "kind": "PrintedAsop",
+      "locator": "7.13A"
+    },
+    {
+      "id": "aph:asop:7.21A",
+      "phaseId": "aph",
+      "kind": "PrintedAsop",
+      "locator": "7.21A"
+    },
+    {
+      "id": "aph:asop:7.22A",
+      "phaseId": "aph",
+      "kind": "PrintedAsop",
+      "locator": "7.22A"
+    },
+    {
+      "id": "aph:asop:7.23D",
+      "phaseId": "aph",
+      "kind": "PrintedAsop",
+      "locator": "7.23D"
+    },
+    {
+      "id": "aph:asop:7.24A",
+      "phaseId": "aph",
+      "kind": "PrintedAsop",
+      "locator": "7.24A"
+    },
+    {
+      "id": "aph:asop:7.25B",
+      "phaseId": "aph",
+      "kind": "PrintedAsop",
+      "locator": "7.25B"
+    },
+    {
+      "id": "aph:asop:7.26A",
+      "phaseId": "aph",
+      "kind": "PrintedAsop",
+      "locator": "7.26A"
+    },
+    {
+      "id": "aph:supplemental:handoff",
+      "phaseId": "aph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "aph:supplemental:gliders",
+      "phaseId": "aph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "aph:supplemental:control",
+      "phaseId": "aph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "aph:supplemental:acquisition",
+      "phaseId": "aph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "aph:supplemental:boundaries",
+      "phaseId": "aph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "aph:supplemental:close",
+      "phaseId": "aph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "aph:supplemental:sourceProfile",
+      "phaseId": "aph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "ccph:asop:8.11B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.11B"
+    },
+    {
+      "id": "ccph:asop:8.12B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.12B"
+    },
+    {
+      "id": "ccph:asop:8.13D",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.13D"
+    },
+    {
+      "id": "ccph:asop:8.14B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.14B"
+    },
+    {
+      "id": "ccph:asop:8.15B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.15B"
+    },
+    {
+      "id": "ccph:asop:8.16B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.16B"
+    },
+    {
+      "id": "ccph:asop:8.21B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.21B"
+    },
+    {
+      "id": "ccph:asop:8.22B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.22B"
+    },
+    {
+      "id": "ccph:asop:8.23B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.23B"
+    },
+    {
+      "id": "ccph:asop:8.24B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.24B"
+    },
+    {
+      "id": "ccph:asop:8.25B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.25B"
+    },
+    {
+      "id": "ccph:asop:8.31B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.31B"
+    },
+    {
+      "id": "ccph:asop:8.41B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.41B"
+    },
+    {
+      "id": "ccph:asop:8.42B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.42B"
+    },
+    {
+      "id": "ccph:asop:8.43B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.43B"
+    },
+    {
+      "id": "ccph:asop:8.44A",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.44A"
+    },
+    {
+      "id": "ccph:asop:8.45B",
+      "phaseId": "ccph",
+      "kind": "PrintedAsop",
+      "locator": "8.45B"
+    },
+    {
+      "id": "ccph:supplemental:handoff",
+      "phaseId": "ccph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "ccph:supplemental:participants",
+      "phaseId": "ccph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "ccph:supplemental:caveSmoke",
+      "phaseId": "ccph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "ccph:supplemental:lcBlazePin",
+      "phaseId": "ccph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "ccph:supplemental:tripFlareExpiry",
+      "phaseId": "ccph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "ccph:supplemental:specialChecks",
+      "phaseId": "ccph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "ccph:supplemental:close",
+      "phaseId": "ccph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    },
+    {
+      "id": "ccph:supplemental:sourceProfile",
+      "phaseId": "ccph",
+      "kind": "SupplementalUnclassified",
+      "locator": null
+    }
+  ],
+  "bindings": [
+    {
+      "topicId": "rph:arrival",
+      "groupId": "rph:group:reinforcements-and-entry",
+      "windowIds": [
+        "rph:asop:1.11A"
+      ]
+    },
+    {
+      "topicId": "rph:entry",
+      "groupId": "rph:group:reinforcements-and-entry",
+      "windowIds": [
+        "rph:asop:1.11A"
+      ]
+    },
+    {
+      "topicId": "rph:dyoArrival",
+      "groupId": "rph:group:reinforcements-and-entry",
+      "windowIds": [
+        "rph:asop:1.11A"
+      ]
+    },
+    {
+      "topicId": "rph:wind",
+      "groupId": "rph:group:wind-and-linked-effects",
+      "windowIds": [
+        "rph:asop:1.12A"
+      ]
+    },
+    {
+      "topicId": "rph:night",
+      "groupId": "rph:group:wind-and-linked-effects",
+      "windowIds": [
+        "rph:asop:1.12A"
+      ]
+    },
+    {
+      "topicId": "rph:civilian",
+      "groupId": "rph:group:wind-and-linked-effects",
+      "windowIds": [
+        "rph:asop:1.12A"
+      ]
+    },
+    {
+      "topicId": "rph:precipitation",
+      "groupId": "rph:group:wind-and-linked-effects",
+      "windowIds": [
+        "rph:asop:1.12A"
+      ]
+    },
+    {
+      "topicId": "rph:fog",
+      "groupId": "rph:group:wind-and-linked-effects",
+      "windowIds": [
+        "rph:asop:1.12A"
+      ]
+    },
+    {
+      "topicId": "rph:snowDrifts",
+      "groupId": "rph:group:wind-and-linked-effects",
+      "windowIds": [
+        "rph:asop:1.12A"
+      ]
+    },
+    {
+      "topicId": "rph:smoke",
+      "groupId": "rph:group:wind-and-linked-effects",
+      "windowIds": [
+        "rph:asop:1.12A"
+      ]
+    },
+    {
+      "topicId": "rph:dust",
+      "groupId": "rph:group:wind-and-linked-effects",
+      "windowIds": [
+        "rph:asop:1.12A"
+      ]
+    },
+    {
+      "topicId": "rph:surf",
+      "groupId": "rph:group:wind-and-linked-effects",
+      "windowIds": [
+        "rph:asop:1.12A"
+      ]
+    },
+    {
+      "topicId": "rph:recombine",
+      "groupId": "rph:group:recombination-and-animal-pack",
+      "windowIds": [
+        "rph:asop:1.13B"
+      ]
+    },
+    {
+      "topicId": "rph:packStart",
+      "groupId": "rph:group:recombination-and-animal-pack",
+      "windowIds": [
+        "rph:asop:1.13B"
+      ]
+    },
+    {
+      "topicId": "rph:packHalf",
+      "groupId": "rph:group:recombination-and-animal-pack",
+      "windowIds": [
+        "rph:asop:1.13B"
+      ]
+    },
+    {
+      "topicId": "rph:packReverse",
+      "groupId": "rph:group:recombination-and-animal-pack",
+      "windowIds": [
+        "rph:asop:1.13B"
+      ]
+    },
+    {
+      "topicId": "rph:recover",
+      "groupId": "rph:group:recovery",
+      "windowIds": [
+        "rph:asop:1.14B"
+      ]
+    },
+    {
+      "topicId": "rph:skis",
+      "groupId": "rph:group:recovery",
+      "windowIds": [
+        "rph:asop:1.14B",
+        "rph:asop:1.22B"
+      ]
+    },
+    {
+      "topicId": "rph:deploy",
+      "groupId": "rph:group:deployment-and-scrounging",
+      "windowIds": [
+        "rph:asop:1.21A"
+      ]
+    },
+    {
+      "topicId": "rph:scrounge",
+      "groupId": "rph:group:deployment-and-scrounging",
+      "windowIds": [
+        "rph:asop:1.21A"
+      ]
+    },
+    {
+      "topicId": "rph:repair",
+      "groupId": "rph:group:repairs-and-transfers",
+      "windowIds": [
+        "rph:asop:1.22B"
+      ]
+    },
+    {
+      "topicId": "rph:vehicleRepair",
+      "groupId": "rph:group:repairs-and-transfers",
+      "windowIds": [
+        "rph:asop:1.22B"
+      ]
+    },
+    {
+      "topicId": "rph:transfer",
+      "groupId": "rph:group:repairs-and-transfers",
+      "windowIds": [
+        "rph:asop:1.22B"
+      ]
+    },
+    {
+      "topicId": "rph:prisoners",
+      "groupId": "rph:group:repairs-and-transfers",
+      "windowIds": [
+        "rph:asop:1.22B"
+      ]
+    },
+    {
+      "topicId": "rph:leaders",
+      "groupId": "rph:group:rally-attempts-and-consequences",
+      "windowIds": [
+        "rph:asop:1.23B"
+      ]
+    },
+    {
+      "topicId": "rph:first",
+      "groupId": "rph:group:rally-attempts-and-consequences",
+      "windowIds": [
+        "rph:asop:1.23B"
+      ]
+    },
+    {
+      "topicId": "rph:self",
+      "groupId": "rph:group:rally-attempts-and-consequences",
+      "windowIds": [
+        "rph:asop:1.23B"
+      ]
+    },
+    {
+      "topicId": "rph:assisted",
+      "groupId": "rph:group:rally-attempts-and-consequences",
+      "windowIds": [
+        "rph:asop:1.23B"
+      ]
+    },
+    {
+      "topicId": "rph:commissar",
+      "groupId": "rph:group:rally-attempts-and-consequences",
+      "windowIds": [
+        "rph:asop:1.23B"
+      ]
+    },
+    {
+      "topicId": "rph:results",
+      "groupId": "rph:group:rally-attempts-and-consequences",
+      "windowIds": [
+        "rph:asop:1.23B"
+      ]
+    },
+    {
+      "topicId": "rph:campaign",
+      "groupId": "rph:group:rally-attempts-and-consequences",
+      "windowIds": [
+        "rph:asop:1.23B"
+      ]
+    },
+    {
+      "topicId": "rph:nationality",
+      "groupId": "rph:group:rally-attempts-and-consequences",
+      "windowIds": [
+        "rph:asop:1.21A",
+        "rph:asop:1.23B"
+      ]
+    },
+    {
+      "topicId": "rph:modifiers",
+      "groupId": "rph:group:rally-attempts-and-consequences",
+      "windowIds": [
+        "rph:asop:1.23B"
+      ]
+    },
+    {
+      "topicId": "rph:winterFate",
+      "groupId": "rph:group:rally-attempts-and-consequences",
+      "windowIds": [
+        "rph:asop:1.23B"
+      ]
+    },
+    {
+      "topicId": "rph:drop",
+      "groupId": "rph:group:parachute-drop-points",
+      "windowIds": [
+        "rph:asop:1.24A"
+      ]
+    },
+    {
+      "topicId": "rph:shock",
+      "groupId": "rph:group:shock-and-dm",
+      "windowIds": [
+        "rph:asop:1.31B"
+      ]
+    },
+    {
+      "topicId": "rph:dm",
+      "groupId": "rph:group:shock-and-dm",
+      "windowIds": [
+        "rph:asop:1.31B"
+      ]
+    },
+    {
+      "topicId": "rph:wa",
+      "groupId": "rph:group:wall-advantage",
+      "windowIds": [
+        "rph:asop:1.32B"
+      ]
+    },
+    {
+      "topicId": "rph:oba",
+      "groupId": "rph:group:additional-timing-and-standing-choices",
+      "windowIds": [
+        "rph:supplemental:oba"
+      ]
+    },
+    {
+      "topicId": "rph:ammo",
+      "groupId": "rph:group:additional-timing-and-standing-choices",
+      "windowIds": [
+        "rph:supplemental:ammo"
+      ]
+    },
+    {
+      "topicId": "rph:other",
+      "groupId": "rph:group:additional-timing-and-standing-choices",
+      "windowIds": [
+        "rph:supplemental:other"
+      ]
+    },
+    {
+      "topicId": "rph:phone",
+      "groupId": "rph:group:additional-timing-and-standing-choices",
+      "windowIds": [
+        "rph:supplemental:phone"
+      ]
+    },
+    {
+      "topicId": "rph:ammoTransfer",
+      "groupId": "rph:group:additional-timing-and-standing-choices",
+      "windowIds": [
+        "rph:supplemental:ammoTransfer"
+      ]
+    },
+    {
+      "topicId": "rph:stunBoundary",
+      "groupId": "rph:group:additional-timing-and-standing-choices",
+      "windowIds": [
+        "rph:supplemental:stunBoundary"
+      ]
+    },
+    {
+      "topicId": "rph:notHere",
+      "groupId": "rph:group:actions-belonging-elsewhere",
+      "windowIds": [
+        "rph:supplemental:notHere"
+      ]
+    },
+    {
+      "topicId": "pfph:smokeCleanup",
+      "groupId": "pfph:group:opening-cleanup-and-illumination",
+      "windowIds": [
+        "pfph:asop:2.11A"
+      ]
+    },
+    {
+      "topicId": "pfph:napalm",
+      "groupId": "pfph:group:opening-cleanup-and-illumination",
+      "windowIds": [
+        "pfph:asop:2.11A"
+      ]
+    },
+    {
+      "topicId": "pfph:dustCleanup",
+      "groupId": "pfph:group:opening-cleanup-and-illumination",
+      "windowIds": [
+        "pfph:asop:2.11A"
+      ]
+    },
+    {
+      "topicId": "pfph:starshellOpening",
+      "groupId": "pfph:group:opening-cleanup-and-illumination",
+      "windowIds": [
+        "pfph:asop:2.11A"
+      ]
+    },
+    {
+      "topicId": "pfph:smokeFire",
+      "groupId": "pfph:group:early-smoke-ir-and-mol-projectors",
+      "windowIds": [
+        "pfph:asop:2.12A"
+      ]
+    },
+    {
+      "topicId": "pfph:wpEffects",
+      "groupId": "pfph:group:early-smoke-ir-and-mol-projectors",
+      "windowIds": [
+        "pfph:asop:2.12A"
+      ]
+    },
+    {
+      "topicId": "pfph:mortarIR",
+      "groupId": "pfph:group:early-smoke-ir-and-mol-projectors",
+      "windowIds": [
+        "pfph:asop:2.12A"
+      ]
+    },
+    {
+      "topicId": "pfph:earlySpotter",
+      "groupId": "pfph:group:early-smoke-ir-and-mol-projectors",
+      "windowIds": [
+        "pfph:asop:2.12A"
+      ]
+    },
+    {
+      "topicId": "pfph:molProjector",
+      "groupId": "pfph:group:early-smoke-ir-and-mol-projectors",
+      "windowIds": [
+        "pfph:asop:2.12A"
+      ]
+    },
+    {
+      "topicId": "pfph:radio",
+      "groupId": "pfph:group:contact-access-and-new-artillery-missions",
+      "windowIds": [
+        "pfph:asop:2.13A"
+      ]
+    },
+    {
+      "topicId": "pfph:access",
+      "groupId": "pfph:group:contact-access-and-new-artillery-missions",
+      "windowIds": [
+        "pfph:asop:2.13A"
+      ]
+    },
+    {
+      "topicId": "pfph:newMission",
+      "groupId": "pfph:group:contact-access-and-new-artillery-missions",
+      "windowIds": [
+        "pfph:asop:2.13A"
+      ]
+    },
+    {
+      "topicId": "pfph:obaIR",
+      "groupId": "pfph:group:contact-access-and-new-artillery-missions",
+      "windowIds": [
+        "pfph:asop:2.13A"
+      ]
+    },
+    {
+      "topicId": "pfph:rockets",
+      "groupId": "pfph:group:contact-access-and-new-artillery-missions",
+      "windowIds": [
+        "pfph:asop:2.13A",
+        "pfph:asop:2.14A"
+      ]
+    },
+    {
+      "topicId": "pfph:aerialObserver",
+      "groupId": "pfph:group:contact-access-and-new-artillery-missions",
+      "windowIds": [
+        "pfph:asop:2.13A"
+      ]
+    },
+    {
+      "topicId": "pfph:correct",
+      "groupId": "pfph:group:existing-artillery-missions",
+      "windowIds": [
+        "pfph:asop:2.14A"
+      ]
+    },
+    {
+      "topicId": "pfph:continuation",
+      "groupId": "pfph:group:existing-artillery-missions",
+      "windowIds": [
+        "pfph:asop:2.13A",
+        "pfph:asop:2.14A"
+      ]
+    },
+    {
+      "topicId": "pfph:barrage",
+      "groupId": "pfph:group:existing-artillery-missions",
+      "windowIds": [
+        "pfph:asop:2.14A"
+      ]
+    },
+    {
+      "topicId": "pfph:obaSmokeResolution",
+      "groupId": "pfph:group:artillery-resolution-and-consequences",
+      "windowIds": [
+        "pfph:asop:2.15A"
+      ]
+    },
+    {
+      "topicId": "pfph:ffe",
+      "groupId": "pfph:group:artillery-resolution-and-consequences",
+      "windowIds": [
+        "pfph:asop:2.15A"
+      ]
+    },
+    {
+      "topicId": "pfph:terrainEffects",
+      "groupId": "pfph:group:artillery-resolution-and-consequences",
+      "windowIds": [
+        "pfph:asop:2.15A"
+      ]
+    },
+    {
+      "topicId": "pfph:columnReverseSlope",
+      "groupId": "pfph:group:artillery-resolution-and-consequences",
+      "windowIds": [
+        "pfph:asop:2.15A"
+      ]
+    },
+    {
+      "topicId": "pfph:mopUp",
+      "groupId": "pfph:group:mopping-up-entrenching-and-kindling",
+      "windowIds": [
+        "pfph:asop:2.21A"
+      ]
+    },
+    {
+      "topicId": "pfph:entrench",
+      "groupId": "pfph:group:mopping-up-entrenching-and-kindling",
+      "windowIds": [
+        "pfph:asop:2.21A"
+      ]
+    },
+    {
+      "topicId": "pfph:kindle",
+      "groupId": "pfph:group:mopping-up-entrenching-and-kindling",
+      "windowIds": [
+        "pfph:asop:2.21A"
+      ]
+    },
+    {
+      "topicId": "pfph:fireOrHold",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:smallArms",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:spraying",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:weapons",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:ordnance",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:specialAmmo",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:mortarSpotter",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:vehicleFire",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:rof",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:intensive",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:ftMol",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:dc",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:encirclement",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:opportunity",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:starshellLater",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:heavyAA",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:assemble",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:destroy",
+      "groupId": "pfph:group:fire-opportunity-fire-and-weapon-handling",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:limber",
+      "groupId": "pfph:group:limber-and-unlimber",
+      "windowIds": [
+        "pfph:asop:2.23A"
+      ]
+    },
+    {
+      "topicId": "pfph:unlimber",
+      "groupId": "pfph:group:limber-and-unlimber",
+      "windowIds": [
+        "pfph:asop:2.23A"
+      ]
+    },
+    {
+      "topicId": "pfph:caEnd",
+      "groupId": "pfph:group:final-ca-and-aa-mode-choices",
+      "windowIds": [
+        "pfph:asop:2.31A"
+      ]
+    },
+    {
+      "topicId": "pfph:aaModeEnd",
+      "groupId": "pfph:group:final-ca-and-aa-mode-choices",
+      "windowIds": [
+        "pfph:asop:2.31A"
+      ]
+    },
+    {
+      "topicId": "pfph:searchlight",
+      "groupId": "pfph:group:supplemental-timing-and-special-rules",
+      "windowIds": [
+        "pfph:supplemental:searchlight"
+      ]
+    },
+    {
+      "topicId": "pfph:cancelBeam",
+      "groupId": "pfph:group:supplemental-timing-and-special-rules",
+      "windowIds": [
+        "pfph:supplemental:cancelBeam"
+      ]
+    },
+    {
+      "topicId": "pfph:closeAir",
+      "groupId": "pfph:group:supplemental-timing-and-special-rules",
+      "windowIds": [
+        "pfph:supplemental:closeAir"
+      ]
+    },
+    {
+      "topicId": "pfph:naval",
+      "groupId": "pfph:group:supplemental-timing-and-special-rules",
+      "windowIds": [
+        "pfph:asop:2.15A"
+      ]
+    },
+    {
+      "topicId": "pfph:nationality",
+      "groupId": "pfph:group:supplemental-timing-and-special-rules",
+      "windowIds": [
+        "pfph:supplemental:nationality"
+      ]
+    },
+    {
+      "topicId": "pfph:massacre",
+      "groupId": "pfph:group:supplemental-timing-and-special-rules",
+      "windowIds": [
+        "pfph:supplemental:massacre"
+      ]
+    },
+    {
+      "topicId": "pfph:standing",
+      "groupId": "pfph:group:supplemental-timing-and-special-rules",
+      "windowIds": [
+        "pfph:supplemental:standing"
+      ]
+    },
+    {
+      "topicId": "pfph:attackResults",
+      "groupId": "pfph:group:consequences-and-response-windows",
+      "windowIds": [
+        "pfph:asop:2.22A"
+      ]
+    },
+    {
+      "topicId": "pfph:sniper",
+      "groupId": "pfph:group:consequences-and-response-windows",
+      "windowIds": [
+        "pfph:supplemental:sniper"
+      ]
+    },
+    {
+      "topicId": "pfph:phoneCut",
+      "groupId": "pfph:group:consequences-and-response-windows",
+      "windowIds": [
+        "pfph:supplemental:phoneCut"
+      ]
+    },
+    {
+      "topicId": "pfph:notHere",
+      "groupId": "pfph:group:actions-belonging-elsewhere",
+      "windowIds": [
+        "pfph:supplemental:notHere"
+      ]
+    },
+    {
+      "topicId": "mph:expenditure",
+      "groupId": "mph:group:movement-contract-and-expenditure-windows",
+      "windowIds": [
+        "mph:supplemental:expenditure"
+      ]
+    },
+    {
+      "topicId": "mph:order",
+      "groupId": "mph:group:movement-contract-and-expenditure-windows",
+      "windowIds": [
+        "mph:supplemental:order"
+      ]
+    },
+    {
+      "topicId": "mph:spotter",
+      "groupId": "mph:group:start-of-the-phase",
+      "windowIds": [
+        "mph:asop:3.11A"
+      ]
+    },
+    {
+      "topicId": "mph:starshellOpening",
+      "groupId": "mph:group:start-of-the-phase",
+      "windowIds": [
+        "mph:asop:3.12D"
+      ]
+    },
+    {
+      "topicId": "mph:gliderSetup",
+      "groupId": "mph:group:start-of-the-phase",
+      "windowIds": [
+        "mph:asop:3.13A"
+      ]
+    },
+    {
+      "topicId": "mph:berserkPrepare",
+      "groupId": "mph:group:berserk-priority",
+      "windowIds": [
+        "mph:asop:3.21A"
+      ]
+    },
+    {
+      "topicId": "mph:eligibility",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:startDrop",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:freedom",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:strayingStart",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:doubleStart",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:assault",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:dash",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:sewerStart",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:climbStart",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:wave",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:dareDeath",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:swimStart",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:gallopStart",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:motionStart",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:formations",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:radioless",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:flail",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:surfStart",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:crewVehicle",
+      "groupId": "mph:group:select-a-ground-mover-and-declarations",
+      "windowIds": [
+        "mph:asop:3.22A"
+      ]
+    },
+    {
+      "topicId": "mph:aerialQueue",
+      "groupId": "mph:group:select-aerial-movement",
+      "windowIds": [
+        "mph:asop:3.23A"
+      ]
+    },
+    {
+      "topicId": "mph:berserkCharge",
+      "groupId": "mph:group:resolve-a-berserk-charge",
+      "windowIds": [
+        "mph:asop:3.31A"
+      ]
+    },
+    {
+      "topicId": "mph:route",
+      "groupId": "mph:group:routes-costs-and-exposure",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:minimum",
+      "groupId": "mph:group:routes-costs-and-exposure",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:bypass",
+      "groupId": "mph:group:routes-costs-and-exposure",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:terrainModes",
+      "groupId": "mph:group:routes-costs-and-exposure",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:vehicleMotion",
+      "groupId": "mph:group:routes-costs-and-exposure",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:reliability",
+      "groupId": "mph:group:routes-costs-and-exposure",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:sewerTravel",
+      "groupId": "mph:group:routes-costs-and-exposure",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:climbSwim",
+      "groupId": "mph:group:routes-costs-and-exposure",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:lateDouble",
+      "groupId": "mph:group:routes-costs-and-exposure",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:concealment",
+      "groupId": "mph:group:routes-costs-and-exposure",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:wallAdvantage",
+      "groupId": "mph:group:routes-costs-and-exposure",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:recover",
+      "groupId": "mph:group:equipment-transport-and-labor",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:dropDuring",
+      "groupId": "mph:group:equipment-transport-and-labor",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:prisonerMovement",
+      "groupId": "mph:group:equipment-transport-and-labor",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:recapture",
+      "groupId": "mph:group:equipment-transport-and-labor",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:manhandle",
+      "groupId": "mph:group:equipment-transport-and-labor",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:placeDC",
+      "groupId": "mph:group:equipment-transport-and-labor",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:setDC",
+      "groupId": "mph:group:equipment-transport-and-labor",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:mount",
+      "groupId": "mph:group:equipment-transport-and-labor",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:hook",
+      "groupId": "mph:group:equipment-transport-and-labor",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:clearDeclare",
+      "groupId": "mph:group:equipment-transport-and-labor",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:clearFlame",
+      "groupId": "mph:group:equipment-transport-and-labor",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:skis",
+      "groupId": "mph:group:equipment-transport-and-labor",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:smoke",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:infantryOVR",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:hero",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:cavalry",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:bog",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:recall",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:bounding",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:gunDuel",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:vehicleOVR",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:esbHD",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:crewPosture",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:armoredAssault",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:wreckRemoval",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:wreckChecks",
+      "groupId": "mph:group:smoke-vehicles-and-attacks",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:impulse",
+      "groupId": "mph:group:impulses-terrain-and-amphibious-effects",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:column",
+      "groupId": "mph:group:impulses-terrain-and-amphibious-effects",
+      "windowIds": [
+        "mph:asop:3.32A",
+        "mph:asop:3.35D",
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:panji",
+      "groupId": "mph:group:impulses-terrain-and-amphibious-effects",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:dust",
+      "groupId": "mph:group:impulses-terrain-and-amphibious-effects",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:ddScreens",
+      "groupId": "mph:group:impulses-terrain-and-amphibious-effects",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:beach",
+      "groupId": "mph:group:impulses-terrain-and-amphibious-effects",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:surf",
+      "groupId": "mph:group:impulses-terrain-and-amphibious-effects",
+      "windowIds": [
+        "mph:asop:3.32A"
+      ]
+    },
+    {
+      "topicId": "mph:gliderEvade",
+      "groupId": "mph:group:aerial-movement",
+      "windowIds": [
+        "mph:asop:3.33A"
+      ]
+    },
+    {
+      "topicId": "mph:parachuteDrift",
+      "groupId": "mph:group:aerial-movement",
+      "windowIds": [
+        "mph:asop:3.34A"
+      ]
+    },
+    {
+      "topicId": "mph:residualAttack",
+      "groupId": "mph:group:effects-before-ordinary-first-fire",
+      "windowIds": [
+        "mph:asop:3.35D"
+      ]
+    },
+    {
+      "topicId": "mph:ffeMove",
+      "groupId": "mph:group:effects-before-ordinary-first-fire",
+      "windowIds": [
+        "mph:asop:3.35D"
+      ]
+    },
+    {
+      "topicId": "mph:mines",
+      "groupId": "mph:group:effects-before-ordinary-first-fire",
+      "windowIds": [
+        "mph:asop:3.35D"
+      ]
+    },
+    {
+      "topicId": "mph:starshellLater",
+      "groupId": "mph:group:effects-before-ordinary-first-fire",
+      "windowIds": [
+        "mph:asop:3.35D"
+      ]
+    },
+    {
+      "topicId": "mph:tripFlare",
+      "groupId": "mph:group:effects-before-ordinary-first-fire",
+      "windowIds": [
+        "mph:asop:3.35D"
+      ]
+    },
+    {
+      "topicId": "mph:firstFire",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:subsequent",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:fpf",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:mandatoryTPBF",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:snap",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:fireLane",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:defenderWeapons",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:throwDC",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:ovrPrevention",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:reaction",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:heroReaction",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:motionAttempt",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:airSupport",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:attackerAA",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:residualCreate",
+      "groupId": "mph:group:defender-fire-and-response-choices",
+      "windowIds": [
+        "mph:asop:3.36D"
+      ]
+    },
+    {
+      "topicId": "mph:gliderAA",
+      "groupId": "mph:group:fire-against-aerial-landings",
+      "windowIds": [
+        "mph:asop:3.37D"
+      ]
+    },
+    {
+      "topicId": "mph:parachuteFire",
+      "groupId": "mph:group:fire-against-aerial-landings",
+      "windowIds": [
+        "mph:asop:3.38D"
+      ]
+    },
+    {
+      "topicId": "mph:search",
+      "groupId": "mph:group:end-this-ground-unit-s-move",
+      "windowIds": [
+        "mph:asop:3.41A"
+      ]
+    },
+    {
+      "topicId": "mph:brokenBypass",
+      "groupId": "mph:group:end-this-ground-unit-s-move",
+      "windowIds": [
+        "mph:asop:3.41A"
+      ]
+    },
+    {
+      "topicId": "mph:sewerEmerge",
+      "groupId": "mph:group:end-this-ground-unit-s-move",
+      "windowIds": [
+        "mph:asop:3.41A"
+      ]
+    },
+    {
+      "topicId": "mph:smallArms",
+      "groupId": "mph:group:end-this-ground-unit-s-move",
+      "windowIds": [
+        "mph:asop:3.41A"
+      ]
+    },
+    {
+      "topicId": "mph:endVehicle",
+      "groupId": "mph:group:end-this-ground-unit-s-move",
+      "windowIds": [
+        "mph:asop:3.41A"
+      ]
+    },
+    {
+      "topicId": "mph:gliderLand",
+      "groupId": "mph:group:land-gliders-and-parachutes",
+      "windowIds": [
+        "mph:asop:3.42A"
+      ]
+    },
+    {
+      "topicId": "mph:parachuteLand",
+      "groupId": "mph:group:land-gliders-and-parachutes",
+      "windowIds": [
+        "mph:asop:3.43A"
+      ]
+    },
+    {
+      "topicId": "mph:blazeEnd",
+      "groupId": "mph:group:end-the-entire-movement-phase",
+      "windowIds": [
+        "mph:asop:3.51A"
+      ]
+    },
+    {
+      "topicId": "mph:wreckEnd",
+      "groupId": "mph:group:end-the-entire-movement-phase",
+      "windowIds": [
+        "mph:asop:3.51A"
+      ]
+    },
+    {
+      "topicId": "mph:canisters",
+      "groupId": "mph:group:end-the-entire-movement-phase",
+      "windowIds": [
+        "mph:asop:3.51A"
+      ]
+    },
+    {
+      "topicId": "mph:berserkEnd",
+      "groupId": "mph:group:end-the-entire-movement-phase",
+      "windowIds": [
+        "mph:asop:3.52A"
+      ]
+    },
+    {
+      "topicId": "mph:cleanup",
+      "groupId": "mph:group:end-the-entire-movement-phase",
+      "windowIds": [
+        "mph:asop:3.53B"
+      ]
+    },
+    {
+      "topicId": "mph:jitter",
+      "groupId": "mph:group:additional-rule-specific-movement-overlays",
+      "windowIds": [
+        "mph:supplemental:jitter"
+      ]
+    },
+    {
+      "topicId": "mph:cpva",
+      "groupId": "mph:group:additional-rule-specific-movement-overlays",
+      "windowIds": [
+        "mph:supplemental:cpva"
+      ]
+    },
+    {
+      "topicId": "mph:bugles",
+      "groupId": "mph:group:additional-rule-specific-movement-overlays",
+      "windowIds": [
+        "mph:supplemental:bugles"
+      ]
+    },
+    {
+      "topicId": "mph:bayonet",
+      "groupId": "mph:group:additional-rule-specific-movement-overlays",
+      "windowIds": [
+        "mph:supplemental:bayonet"
+      ]
+    },
+    {
+      "topicId": "mph:searchlight",
+      "groupId": "mph:group:additional-rule-specific-movement-overlays",
+      "windowIds": [
+        "mph:supplemental:searchlight"
+      ]
+    },
+    {
+      "topicId": "mph:attackChain",
+      "groupId": "mph:group:additional-rule-specific-movement-overlays",
+      "windowIds": [
+        "mph:supplemental:attackChain"
+      ]
+    },
+    {
+      "topicId": "mph:profile",
+      "groupId": "mph:group:additional-rule-specific-movement-overlays",
+      "windowIds": [
+        "mph:supplemental:profile"
+      ]
+    },
+    {
+      "topicId": "dfph:handoff",
+      "groupId": "dfph:group:carry-forward-the-movement-fire-record",
+      "windowIds": [
+        "dfph:supplemental:handoff"
+      ]
+    },
+    {
+      "topicId": "dfph:targets",
+      "groupId": "dfph:group:carry-forward-the-movement-fire-record",
+      "windowIds": [
+        "dfph:supplemental:targets"
+      ]
+    },
+    {
+      "topicId": "dfph:hold",
+      "groupId": "dfph:group:carry-forward-the-movement-fire-record",
+      "windowIds": [
+        "dfph:supplemental:hold"
+      ]
+    },
+    {
+      "topicId": "dfph:smokeFire",
+      "groupId": "dfph:group:dispersed-smoke-and-illumination-first",
+      "windowIds": [
+        "dfph:asop:4.11D"
+      ]
+    },
+    {
+      "topicId": "dfph:wpEffects",
+      "groupId": "dfph:group:dispersed-smoke-and-illumination-first",
+      "windowIds": [
+        "dfph:asop:4.11D"
+      ]
+    },
+    {
+      "topicId": "dfph:mortarIR",
+      "groupId": "dfph:group:dispersed-smoke-and-illumination-first",
+      "windowIds": [
+        "dfph:asop:4.11D"
+      ]
+    },
+    {
+      "topicId": "dfph:earlySpotter",
+      "groupId": "dfph:group:dispersed-smoke-and-illumination-first",
+      "windowIds": [
+        "dfph:asop:4.11D"
+      ]
+    },
+    {
+      "topicId": "dfph:molProjector",
+      "groupId": "dfph:group:dispersed-smoke-and-illumination-first",
+      "windowIds": [
+        "dfph:asop:4.11D"
+      ]
+    },
+    {
+      "topicId": "dfph:radio",
+      "groupId": "dfph:group:artillery-contact-and-access",
+      "windowIds": [
+        "dfph:asop:4.12D"
+      ]
+    },
+    {
+      "topicId": "dfph:access",
+      "groupId": "dfph:group:artillery-contact-and-access",
+      "windowIds": [
+        "dfph:asop:4.12D"
+      ]
+    },
+    {
+      "topicId": "dfph:newMission",
+      "groupId": "dfph:group:artillery-contact-and-access",
+      "windowIds": [
+        "dfph:asop:4.12D"
+      ]
+    },
+    {
+      "topicId": "dfph:obaIR",
+      "groupId": "dfph:group:artillery-contact-and-access",
+      "windowIds": [
+        "dfph:asop:4.12D"
+      ]
+    },
+    {
+      "topicId": "dfph:aerialObserver",
+      "groupId": "dfph:group:artillery-contact-and-access",
+      "windowIds": [
+        "dfph:asop:4.12D"
+      ]
+    },
+    {
+      "topicId": "dfph:continuation",
+      "groupId": "dfph:group:artillery-contact-and-access",
+      "windowIds": [
+        "dfph:asop:4.12D"
+      ]
+    },
+    {
+      "topicId": "dfph:rockets",
+      "groupId": "dfph:group:artillery-contact-and-access",
+      "windowIds": [
+        "dfph:asop:4.12D"
+      ]
+    },
+    {
+      "topicId": "dfph:correct",
+      "groupId": "dfph:group:existing-artillery-and-scheduled-barrages",
+      "windowIds": [
+        "dfph:asop:4.13D"
+      ]
+    },
+    {
+      "topicId": "dfph:barrage",
+      "groupId": "dfph:group:existing-artillery-and-scheduled-barrages",
+      "windowIds": [
+        "dfph:asop:4.13D"
+      ]
+    },
+    {
+      "topicId": "dfph:obaSmokeResolution",
+      "groupId": "dfph:group:artillery-resolution-and-map-effects",
+      "windowIds": [
+        "dfph:asop:4.14D"
+      ]
+    },
+    {
+      "topicId": "dfph:ffe",
+      "groupId": "dfph:group:artillery-resolution-and-map-effects",
+      "windowIds": [
+        "dfph:asop:4.14D"
+      ]
+    },
+    {
+      "topicId": "dfph:terrainEffects",
+      "groupId": "dfph:group:artillery-resolution-and-map-effects",
+      "windowIds": [
+        "dfph:asop:4.14D"
+      ]
+    },
+    {
+      "topicId": "dfph:columnReverseSlope",
+      "groupId": "dfph:group:artillery-resolution-and-map-effects",
+      "windowIds": [
+        "dfph:asop:4.14D"
+      ]
+    },
+    {
+      "topicId": "dfph:naval",
+      "groupId": "dfph:group:artillery-resolution-and-map-effects",
+      "windowIds": [
+        "dfph:asop:4.14D"
+      ]
+    },
+    {
+      "topicId": "dfph:unmarked",
+      "groupId": "dfph:group:final-fire-eligibility-and-remaining-shots",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:firstMarked",
+      "groupId": "dfph:group:final-fire-eligibility-and-remaining-shots",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:sustained",
+      "groupId": "dfph:group:final-fire-eligibility-and-remaining-shots",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:intensive",
+      "groupId": "dfph:group:final-fire-eligibility-and-remaining-shots",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:rof",
+      "groupId": "dfph:group:final-fire-eligibility-and-remaining-shots",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:spent",
+      "groupId": "dfph:group:final-fire-eligibility-and-remaining-shots",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:smallArms",
+      "groupId": "dfph:group:attack-choices-and-commitments",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:spraying",
+      "groupId": "dfph:group:attack-choices-and-commitments",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:weapons",
+      "groupId": "dfph:group:attack-choices-and-commitments",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:ordnance",
+      "groupId": "dfph:group:attack-choices-and-commitments",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:specialAmmo",
+      "groupId": "dfph:group:attack-choices-and-commitments",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:ftMol",
+      "groupId": "dfph:group:attack-choices-and-commitments",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:encirclement",
+      "groupId": "dfph:group:attack-choices-and-commitments",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:vehicleFire",
+      "groupId": "dfph:group:attack-choices-and-commitments",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:dc",
+      "groupId": "dfph:group:attack-choices-and-commitments",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:mortarSpotter",
+      "groupId": "dfph:group:attack-choices-and-commitments",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:sewerFire",
+      "groupId": "dfph:group:attack-choices-and-commitments",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:landedGlider",
+      "groupId": "dfph:group:attack-choices-and-commitments",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:starshellLater",
+      "groupId": "dfph:group:illumination-aircraft-and-counter-responses",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:groundSupport",
+      "groupId": "dfph:group:illumination-aircraft-and-counter-responses",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:lightAA",
+      "groupId": "dfph:group:illumination-aircraft-and-counter-responses",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:heavyAA",
+      "groupId": "dfph:group:illumination-aircraft-and-counter-responses",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:airResults",
+      "groupId": "dfph:group:illumination-aircraft-and-counter-responses",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:wire",
+      "groupId": "dfph:group:clearance-declarations-and-flame-control",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:clearDC",
+      "groupId": "dfph:group:clearance-declarations-and-flame-control",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:roadblock",
+      "groupId": "dfph:group:clearance-declarations-and-flame-control",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:path",
+      "groupId": "dfph:group:clearance-declarations-and-flame-control",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:panji",
+      "groupId": "dfph:group:clearance-declarations-and-flame-control",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:flame",
+      "groupId": "dfph:group:clearance-declarations-and-flame-control",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:columnFire",
+      "groupId": "dfph:group:clearance-declarations-and-flame-control",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:assemble",
+      "groupId": "dfph:group:weapon-handling",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:destroy",
+      "groupId": "dfph:group:weapon-handling",
+      "windowIds": [
+        "dfph:asop:4.21D"
+      ]
+    },
+    {
+      "topicId": "dfph:limber",
+      "groupId": "dfph:group:gun-preparation",
+      "windowIds": [
+        "dfph:asop:4.22D"
+      ]
+    },
+    {
+      "topicId": "dfph:unlimber",
+      "groupId": "dfph:group:gun-preparation",
+      "windowIds": [
+        "dfph:asop:4.22D"
+      ]
+    },
+    {
+      "topicId": "dfph:caEnd",
+      "groupId": "dfph:group:final-arc-and-aa-mode-choices",
+      "windowIds": [
+        "dfph:asop:4.31D"
+      ]
+    },
+    {
+      "topicId": "dfph:aaModeEnd",
+      "groupId": "dfph:group:final-arc-and-aa-mode-choices",
+      "windowIds": [
+        "dfph:asop:4.31D"
+      ]
+    },
+    {
+      "topicId": "dfph:cleanup",
+      "groupId": "dfph:group:close-the-phase-with-the-correct-markers",
+      "windowIds": [
+        "dfph:asop:4.32D"
+      ]
+    },
+    {
+      "topicId": "dfph:searchlight",
+      "groupId": "dfph:group:supplemental-timing-and-equipment-exceptions",
+      "windowIds": [
+        "dfph:supplemental:searchlight"
+      ]
+    },
+    {
+      "topicId": "dfph:fascine",
+      "groupId": "dfph:group:supplemental-timing-and-equipment-exceptions",
+      "windowIds": [
+        "dfph:supplemental:fascine"
+      ]
+    },
+    {
+      "topicId": "dfph:spGunMode",
+      "groupId": "dfph:group:supplemental-timing-and-equipment-exceptions",
+      "windowIds": [
+        "dfph:supplemental:spGunMode"
+      ]
+    },
+    {
+      "topicId": "dfph:barrels",
+      "groupId": "dfph:group:supplemental-timing-and-equipment-exceptions",
+      "windowIds": [
+        "dfph:supplemental:barrels"
+      ]
+    },
+    {
+      "topicId": "dfph:equipmentHistory",
+      "groupId": "dfph:group:supplemental-timing-and-equipment-exceptions",
+      "windowIds": [
+        "dfph:supplemental:equipmentHistory"
+      ]
+    },
+    {
+      "topicId": "dfph:nationality",
+      "groupId": "dfph:group:supplemental-timing-and-equipment-exceptions",
+      "windowIds": [
+        "dfph:supplemental:nationality"
+      ]
+    },
+    {
+      "topicId": "dfph:massacre",
+      "groupId": "dfph:group:supplemental-timing-and-equipment-exceptions",
+      "windowIds": [
+        "dfph:supplemental:massacre"
+      ]
+    },
+    {
+      "topicId": "dfph:standing",
+      "groupId": "dfph:group:supplemental-timing-and-equipment-exceptions",
+      "windowIds": [
+        "dfph:supplemental:standing"
+      ]
+    },
+    {
+      "topicId": "dfph:attackResults",
+      "groupId": "dfph:group:consequences-source-limits-and-phase-boundaries",
+      "windowIds": [
+        "dfph:supplemental:attackResults"
+      ]
+    },
+    {
+      "topicId": "dfph:sniper",
+      "groupId": "dfph:group:consequences-source-limits-and-phase-boundaries",
+      "windowIds": [
+        "dfph:supplemental:sniper"
+      ]
+    },
+    {
+      "topicId": "dfph:phoneCut",
+      "groupId": "dfph:group:consequences-source-limits-and-phase-boundaries",
+      "windowIds": [
+        "dfph:supplemental:phoneCut"
+      ]
+    },
+    {
+      "topicId": "dfph:notHere",
+      "groupId": "dfph:group:consequences-source-limits-and-phase-boundaries",
+      "windowIds": [
+        "dfph:supplemental:notHere"
+      ]
+    },
+    {
+      "topicId": "dfph:sourceProfile",
+      "groupId": "dfph:group:consequences-source-limits-and-phase-boundaries",
+      "windowIds": [
+        "dfph:supplemental:sourceProfile"
+      ]
+    },
+    {
+      "topicId": "afph:handoff",
+      "groupId": "afph:group:carry-forward-commitments",
+      "windowIds": [
+        "afph:supplemental:handoff"
+      ]
+    },
+    {
+      "topicId": "afph:hold",
+      "groupId": "afph:group:carry-forward-commitments",
+      "windowIds": [
+        "afph:supplemental:hold"
+      ]
+    },
+    {
+      "topicId": "afph:drift",
+      "groupId": "afph:group:drifting-smoke",
+      "windowIds": [
+        "afph:asop:5.11B"
+      ]
+    },
+    {
+      "topicId": "afph:wp",
+      "groupId": "afph:group:opening-dispersed-wp",
+      "windowIds": [
+        "afph:asop:5.12A"
+      ]
+    },
+    {
+      "topicId": "afph:wpEffects",
+      "groupId": "afph:group:opening-dispersed-wp",
+      "windowIds": [
+        "afph:asop:5.12A"
+      ]
+    },
+    {
+      "topicId": "afph:gustSmoke",
+      "groupId": "afph:group:gusts-and-smoke",
+      "windowIds": [
+        "afph:asop:5.13A"
+      ]
+    },
+    {
+      "topicId": "afph:glider",
+      "groupId": "afph:group:glider-contents",
+      "windowIds": [
+        "afph:asop:5.21A"
+      ]
+    },
+    {
+      "topicId": "afph:smallArms",
+      "groupId": "afph:group:infantry-and-weapon-choices",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:assault",
+      "groupId": "afph:group:infantry-and-weapon-choices",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:opportunity",
+      "groupId": "afph:group:infantry-and-weapon-choices",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:movedWeapons",
+      "groupId": "afph:group:infantry-and-weapon-choices",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:weapons",
+      "groupId": "afph:group:infantry-and-weapon-choices",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:spraying",
+      "groupId": "afph:group:infantry-and-weapon-choices",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:ft",
+      "groupId": "afph:group:infantry-and-weapon-choices",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:mol",
+      "groupId": "afph:group:infantry-and-weapon-choices",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:encirclement",
+      "groupId": "afph:group:infantry-and-weapon-choices",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:ordnance",
+      "groupId": "afph:group:ordnance-and-vehicles",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:ammo",
+      "groupId": "afph:group:ordnance-and-vehicles",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:latw",
+      "groupId": "afph:group:ordnance-and-vehicles",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:mortar",
+      "groupId": "afph:group:ordnance-and-vehicles",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:rof",
+      "groupId": "afph:group:ordnance-and-vehicles",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:intensive",
+      "groupId": "afph:group:ordnance-and-vehicles",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:vehicle",
+      "groupId": "afph:group:ordnance-and-vehicles",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:carryover",
+      "groupId": "afph:group:ordnance-and-vehicles",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:passengers",
+      "groupId": "afph:group:ordnance-and-vehicles",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:sewer",
+      "groupId": "afph:group:ordnance-and-vehicles",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:placed",
+      "groupId": "afph:group:demolitions-and-equipment",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:thrown",
+      "groupId": "afph:group:demolitions-and-equipment",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:set",
+      "groupId": "afph:group:demolitions-and-equipment",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:limber",
+      "groupId": "afph:group:demolitions-and-equipment",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:unlimber",
+      "groupId": "afph:group:demolitions-and-equipment",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:berserk",
+      "groupId": "afph:group:berserk-return",
+      "windowIds": [
+        "afph:asop:5.23A"
+      ]
+    },
+    {
+      "topicId": "afph:blaze",
+      "groupId": "afph:group:blaze-spread",
+      "windowIds": [
+        "afph:asop:5.31B"
+      ]
+    },
+    {
+      "topicId": "afph:windSpread",
+      "groupId": "afph:group:blaze-spread",
+      "windowIds": [
+        "afph:asop:5.31B"
+      ]
+    },
+    {
+      "topicId": "afph:flame",
+      "groupId": "afph:group:flame-conversion",
+      "windowIds": [
+        "afph:asop:5.32B"
+      ]
+    },
+    {
+      "topicId": "afph:blazeExit",
+      "groupId": "afph:group:flame-conversion",
+      "windowIds": [
+        "afph:asop:5.32B"
+      ]
+    },
+    {
+      "topicId": "afph:caEnd",
+      "groupId": "afph:group:end-choices-before-5-33b-cleanup",
+      "windowIds": [
+        "afph:supplemental:caEnd"
+      ]
+    },
+    {
+      "topicId": "afph:aaMode",
+      "groupId": "afph:group:end-choices-before-5-33b-cleanup",
+      "windowIds": [
+        "afph:supplemental:aaMode"
+      ]
+    },
+    {
+      "topicId": "afph:cleanup",
+      "groupId": "afph:group:fire-counter-cleanup",
+      "windowIds": [
+        "afph:asop:5.33B"
+      ]
+    },
+    {
+      "topicId": "afph:goliath",
+      "groupId": "afph:group:supplemental-equipment-and-standing-choices",
+      "windowIds": [
+        "afph:supplemental:goliath"
+      ]
+    },
+    {
+      "topicId": "afph:lcBlaze",
+      "groupId": "afph:group:supplemental-equipment-and-standing-choices",
+      "windowIds": [
+        "afph:supplemental:lcBlaze"
+      ]
+    },
+    {
+      "topicId": "afph:searchlight",
+      "groupId": "afph:group:supplemental-equipment-and-standing-choices",
+      "windowIds": [
+        "afph:supplemental:searchlight"
+      ]
+    },
+    {
+      "topicId": "afph:paratroops",
+      "groupId": "afph:group:supplemental-equipment-and-standing-choices",
+      "windowIds": [
+        "afph:supplemental:paratroops"
+      ]
+    },
+    {
+      "topicId": "afph:massacre",
+      "groupId": "afph:group:supplemental-equipment-and-standing-choices",
+      "windowIds": [
+        "afph:supplemental:massacre"
+      ]
+    },
+    {
+      "topicId": "afph:nationality",
+      "groupId": "afph:group:supplemental-equipment-and-standing-choices",
+      "windowIds": [
+        "afph:supplemental:nationality"
+      ]
+    },
+    {
+      "topicId": "afph:standing",
+      "groupId": "afph:group:supplemental-equipment-and-standing-choices",
+      "windowIds": [
+        "afph:supplemental:standing"
+      ]
+    },
+    {
+      "topicId": "afph:results",
+      "groupId": "afph:group:consequences-and-source-boundaries",
+      "windowIds": [
+        "afph:supplemental:results"
+      ]
+    },
+    {
+      "topicId": "afph:sniper",
+      "groupId": "afph:group:consequences-and-source-boundaries",
+      "windowIds": [
+        "afph:supplemental:sniper"
+      ]
+    },
+    {
+      "topicId": "afph:notHere",
+      "groupId": "afph:group:consequences-and-source-boundaries",
+      "windowIds": [
+        "afph:supplemental:notHere"
+      ]
+    },
+    {
+      "topicId": "afph:sourceProfile",
+      "groupId": "afph:group:consequences-and-source-boundaries",
+      "windowIds": [
+        "afph:supplemental:sourceProfile"
+      ]
+    },
+    {
+      "topicId": "afph:climbing",
+      "groupId": "afph:group:supplemental-terrain-and-movement-status-restrictions",
+      "windowIds": [
+        "afph:supplemental:climbing"
+      ]
+    },
+    {
+      "topicId": "afph:fording",
+      "groupId": "afph:group:supplemental-terrain-and-movement-status-restrictions",
+      "windowIds": [
+        "afph:supplemental:fording"
+      ]
+    },
+    {
+      "topicId": "afph:charge",
+      "groupId": "afph:group:supplemental-terrain-and-movement-status-restrictions",
+      "windowIds": [
+        "afph:supplemental:charge"
+      ]
+    },
+    {
+      "topicId": "afph:breach",
+      "groupId": "afph:group:supplemental-terrain-and-movement-status-restrictions",
+      "windowIds": [
+        "afph:supplemental:breach"
+      ]
+    },
+    {
+      "topicId": "afph:fortifiedBerserk",
+      "groupId": "afph:group:supplemental-terrain-and-movement-status-restrictions",
+      "windowIds": [
+        "afph:supplemental:fortifiedBerserk"
+      ]
+    },
+    {
+      "topicId": "afph:mgArmor",
+      "groupId": "afph:group:attack-mode-and-acquisition-decisions",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:acquisition",
+      "groupId": "afph:group:attack-mode-and-acquisition-decisions",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "afph:targets",
+      "groupId": "afph:group:attack-mode-and-acquisition-decisions",
+      "windowIds": [
+        "afph:asop:5.22A"
+      ]
+    },
+    {
+      "topicId": "rtph:handoff",
+      "groupId": "rtph:group:phase-ownership-and-obligation-review",
+      "windowIds": [
+        "rtph:supplemental:handoff"
+      ]
+    },
+    {
+      "topicId": "rtph:knowledge",
+      "groupId": "rtph:group:phase-ownership-and-obligation-review",
+      "windowIds": [
+        "rtph:supplemental:knowledge"
+      ]
+    },
+    {
+      "topicId": "rtph:voluntaryBreak",
+      "groupId": "rtph:group:opening-break-and-dm-decisions",
+      "windowIds": [
+        "rtph:asop:6.11B"
+      ]
+    },
+    {
+      "topicId": "rtph:dm",
+      "groupId": "rtph:group:opening-break-and-dm-decisions",
+      "windowIds": [
+        "rtph:asop:6.11B"
+      ]
+    },
+    {
+      "topicId": "rtph:disruptedOpening",
+      "groupId": "rtph:group:disrupted-surrender-first",
+      "windowIds": [
+        "rtph:asop:6.12B"
+      ]
+    },
+    {
+      "topicId": "rtph:interrogationOpening",
+      "groupId": "rtph:group:disrupted-surrender-first",
+      "windowIds": [
+        "rtph:asop:6.12B"
+      ]
+    },
+    {
+      "topicId": "rtph:mustRout",
+      "groupId": "rtph:group:decide-who-routes-and-with-what",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:optionalRout",
+      "groupId": "rtph:group:decide-who-routes-and-with-what",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:disruptedRout",
+      "groupId": "rtph:group:decide-who-routes-and-with-what",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:budget",
+      "groupId": "rtph:group:decide-who-routes-and-with-what",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:load",
+      "groupId": "rtph:group:decide-who-routes-and-with-what",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:recovery",
+      "groupId": "rtph:group:decide-who-routes-and-with-what",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:leader",
+      "groupId": "rtph:group:decide-who-routes-and-with-what",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:prisoners",
+      "groupId": "rtph:group:decide-who-routes-and-with-what",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:destination",
+      "groupId": "rtph:group:select-destination-and-route",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:ignore",
+      "groupId": "rtph:group:select-destination-and-route",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:noCover",
+      "groupId": "rtph:group:select-destination-and-route",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:direction",
+      "groupId": "rtph:group:select-destination-and-route",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:lowCrawl",
+      "groupId": "rtph:group:select-destination-and-route",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:refigure",
+      "groupId": "rtph:group:select-destination-and-route",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:stop",
+      "groupId": "rtph:group:select-destination-and-route",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:openGround",
+      "groupId": "rtph:group:interdiction-and-enemy-responses",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:interdictor",
+      "groupId": "rtph:group:interdiction-and-enemy-responses",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:interdiction",
+      "groupId": "rtph:group:interdiction-and-enemy-responses",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:reveal",
+      "groupId": "rtph:group:interdiction-and-enemy-responses",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:repulse",
+      "groupId": "rtph:group:interdiction-and-enemy-responses",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:surrender",
+      "groupId": "rtph:group:surrender-and-capture-consequences",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:exempt",
+      "groupId": "rtph:group:surrender-and-capture-consequences",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:accept",
+      "groupId": "rtph:group:surrender-and-capture-consequences",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:capture",
+      "groupId": "rtph:group:surrender-and-capture-consequences",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:interrogation",
+      "groupId": "rtph:group:surrender-and-capture-consequences",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:failure",
+      "groupId": "rtph:group:surrender-and-capture-consequences",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:mines",
+      "groupId": "rtph:group:hazards-and-route-linked-effects",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:ffe",
+      "groupId": "rtph:group:hazards-and-route-linked-effects",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:specialFfe",
+      "groupId": "rtph:group:hazards-and-route-linked-effects",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:panji",
+      "groupId": "rtph:group:hazards-and-route-linked-effects",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:flare",
+      "groupId": "rtph:group:hazards-and-route-linked-effects",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:column",
+      "groupId": "rtph:group:hazards-and-route-linked-effects",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:night",
+      "groupId": "rtph:group:special-rout-procedures",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:skis",
+      "groupId": "rtph:group:special-rout-procedures",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:evacuation",
+      "groupId": "rtph:group:special-rout-procedures",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:crewExit",
+      "groupId": "rtph:group:special-rout-procedures",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:paratroops",
+      "groupId": "rtph:group:special-rout-procedures",
+      "windowIds": [
+        "rtph:asop:6.21B"
+      ]
+    },
+    {
+      "topicId": "rtph:blazeEnd",
+      "groupId": "rtph:group:end-of-phase-blaze-deadline",
+      "windowIds": [
+        "rtph:asop:6.31B"
+      ]
+    },
+    {
+      "topicId": "rtph:blazeEscape",
+      "groupId": "rtph:group:supplemental-terrain-protection-and-status",
+      "windowIds": [
+        "rtph:supplemental:blazeEscape"
+      ]
+    },
+    {
+      "topicId": "rtph:shelter",
+      "groupId": "rtph:group:supplemental-terrain-protection-and-status",
+      "windowIds": [
+        "rtph:supplemental:shelter"
+      ]
+    },
+    {
+      "topicId": "rtph:pillbox",
+      "groupId": "rtph:group:supplemental-terrain-protection-and-status",
+      "windowIds": [
+        "rtph:supplemental:pillbox"
+      ]
+    },
+    {
+      "topicId": "rtph:tunnel",
+      "groupId": "rtph:group:supplemental-terrain-protection-and-status",
+      "windowIds": [
+        "rtph:supplemental:tunnel"
+      ]
+    },
+    {
+      "topicId": "rtph:wire",
+      "groupId": "rtph:group:supplemental-terrain-protection-and-status",
+      "windowIds": [
+        "rtph:supplemental:wire"
+      ]
+    },
+    {
+      "topicId": "rtph:crest",
+      "groupId": "rtph:group:supplemental-terrain-protection-and-status",
+      "windowIds": [
+        "rtph:supplemental:crest"
+      ]
+    },
+    {
+      "topicId": "rtph:terrain",
+      "groupId": "rtph:group:supplemental-terrain-protection-and-status",
+      "windowIds": [
+        "rtph:supplemental:terrain"
+      ]
+    },
+    {
+      "topicId": "rtph:seaborneStatus",
+      "groupId": "rtph:group:supplemental-terrain-protection-and-status",
+      "windowIds": [
+        "rtph:supplemental:seaborneStatus"
+      ]
+    },
+    {
+      "topicId": "rtph:results",
+      "groupId": "rtph:group:supplemental-terrain-protection-and-status",
+      "windowIds": [
+        "rtph:supplemental:results"
+      ]
+    },
+    {
+      "topicId": "rtph:finish",
+      "groupId": "rtph:group:supplemental-terrain-protection-and-status",
+      "windowIds": [
+        "rtph:supplemental:finish"
+      ]
+    },
+    {
+      "topicId": "rtph:boundaries",
+      "groupId": "rtph:group:supplemental-terrain-protection-and-status",
+      "windowIds": [
+        "rtph:supplemental:boundaries"
+      ]
+    },
+    {
+      "topicId": "rtph:sourceProfile",
+      "groupId": "rtph:group:supplemental-terrain-protection-and-status",
+      "windowIds": [
+        "rtph:supplemental:sourceProfile"
+      ]
+    },
+    {
+      "topicId": "aph:handoff",
+      "groupId": "aph:group:phase-ownership-and-commitments",
+      "windowIds": [
+        "aph:supplemental:handoff"
+      ]
+    },
+    {
+      "topicId": "aph:transfer",
+      "groupId": "aph:group:opening-transfers",
+      "windowIds": [
+        "aph:asop:7.11A"
+      ]
+    },
+    {
+      "topicId": "aph:prisoners",
+      "groupId": "aph:group:opening-transfers",
+      "windowIds": [
+        "aph:asop:7.11A"
+      ]
+    },
+    {
+      "topicId": "aph:skiUse",
+      "groupId": "aph:group:opening-transfers",
+      "windowIds": [
+        "aph:asop:7.11A"
+      ]
+    },
+    {
+      "topicId": "aph:tankHunter",
+      "groupId": "aph:group:japanese-tank-hunter-hero",
+      "windowIds": [
+        "aph:asop:7.12A"
+      ]
+    },
+    {
+      "topicId": "aph:openingSurf",
+      "groupId": "aph:group:opening-surf-obligations",
+      "windowIds": [
+        "aph:asop:7.13A"
+      ]
+    },
+    {
+      "topicId": "aph:eligibility",
+      "groupId": "aph:group:eligibility-load-and-destination",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:destination",
+      "groupId": "aph:group:eligibility-load-and-destination",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:load",
+      "groupId": "aph:group:eligibility-load-and-destination",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:drop",
+      "groupId": "aph:group:eligibility-load-and-destination",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:leader",
+      "groupId": "aph:group:eligibility-load-and-destination",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:difficult",
+      "groupId": "aph:group:eligibility-load-and-destination",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:stacking",
+      "groupId": "aph:group:eligibility-load-and-destination",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:wounded",
+      "groupId": "aph:group:eligibility-load-and-destination",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:enemy",
+      "groupId": "aph:group:enemy-entry-and-combat-commitments",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:paatc",
+      "groupId": "aph:group:enemy-entry-and-combat-commitments",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:heroAdvance",
+      "groupId": "aph:group:enemy-entry-and-combat-commitments",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:concealment",
+      "groupId": "aph:group:enemy-entry-and-combat-commitments",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:buildings",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:fortified",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:entrenchment",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:pillbox",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:crest",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:climb",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:sewer",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:tunnel",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:wire",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:waterTerrain",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:wall",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:night",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:skis",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:paddy",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:caves",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:columnAdvance",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:entryExit",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:boatLoading",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:swimmer",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:crewExposure",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:tripFlare",
+      "groupId": "aph:group:terrain-connections-and-special-profiles",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:attackerDrift",
+      "groupId": "aph:group:attacker-drift",
+      "windowIds": [
+        "aph:asop:7.22A"
+      ]
+    },
+    {
+      "topicId": "aph:oceanDrift",
+      "groupId": "aph:group:attacker-drift",
+      "windowIds": [
+        "aph:asop:7.22A"
+      ]
+    },
+    {
+      "topicId": "aph:pier",
+      "groupId": "aph:group:attacker-drift",
+      "windowIds": [
+        "aph:asop:7.22A",
+        "aph:asop:7.23D"
+      ]
+    },
+    {
+      "topicId": "aph:defenderDrift",
+      "groupId": "aph:group:defender-drift",
+      "windowIds": [
+        "aph:asop:7.23D"
+      ]
+    },
+    {
+      "topicId": "aph:beach",
+      "groupId": "aph:group:beaching-after-advance-and-drift",
+      "windowIds": [
+        "aph:asop:7.24A"
+      ]
+    },
+    {
+      "topicId": "aph:entrySurf",
+      "groupId": "aph:group:beaching-after-advance-and-drift",
+      "windowIds": [
+        "aph:asop:7.24A"
+      ]
+    },
+    {
+      "topicId": "aph:ffe",
+      "groupId": "aph:group:immediate-effects-and-survival",
+      "windowIds": [
+        "aph:asop:7.25B"
+      ]
+    },
+    {
+      "topicId": "aph:mines",
+      "groupId": "aph:group:immediate-effects-and-survival",
+      "windowIds": [
+        "aph:asop:7.25B"
+      ]
+    },
+    {
+      "topicId": "aph:panji",
+      "groupId": "aph:group:immediate-effects-and-survival",
+      "windowIds": [
+        "aph:asop:7.21A"
+      ]
+    },
+    {
+      "topicId": "aph:drowning",
+      "groupId": "aph:group:immediate-effects-and-survival",
+      "windowIds": [
+        "aph:asop:7.25B"
+      ]
+    },
+    {
+      "topicId": "aph:disband",
+      "groupId": "aph:group:immediate-effects-and-survival",
+      "windowIds": [
+        "aph:asop:7.25B"
+      ]
+    },
+    {
+      "topicId": "aph:parachutes",
+      "groupId": "aph:group:parachute-replacement",
+      "windowIds": [
+        "aph:asop:7.26A"
+      ]
+    },
+    {
+      "topicId": "aph:gliders",
+      "groupId": "aph:group:supplemental-consequences-and-phase-boundary",
+      "windowIds": [
+        "aph:supplemental:gliders"
+      ]
+    },
+    {
+      "topicId": "aph:control",
+      "groupId": "aph:group:supplemental-consequences-and-phase-boundary",
+      "windowIds": [
+        "aph:supplemental:control"
+      ]
+    },
+    {
+      "topicId": "aph:acquisition",
+      "groupId": "aph:group:supplemental-consequences-and-phase-boundary",
+      "windowIds": [
+        "aph:supplemental:acquisition"
+      ]
+    },
+    {
+      "topicId": "aph:boundaries",
+      "groupId": "aph:group:supplemental-consequences-and-phase-boundary",
+      "windowIds": [
+        "aph:supplemental:boundaries"
+      ]
+    },
+    {
+      "topicId": "aph:close",
+      "groupId": "aph:group:supplemental-consequences-and-phase-boundary",
+      "windowIds": [
+        "aph:supplemental:close"
+      ]
+    },
+    {
+      "topicId": "aph:sourceProfile",
+      "groupId": "aph:group:supplemental-consequences-and-phase-boundary",
+      "windowIds": [
+        "aph:supplemental:sourceProfile"
+      ]
+    },
+    {
+      "topicId": "ccph:handoff",
+      "groupId": "ccph:group:location-order-and-commitment",
+      "windowIds": [
+        "ccph:supplemental:handoff"
+      ]
+    },
+    {
+      "topicId": "ccph:participants",
+      "groupId": "ccph:group:location-order-and-commitment",
+      "windowIds": [
+        "ccph:supplemental:participants"
+      ]
+    },
+    {
+      "topicId": "ccph:reveal",
+      "groupId": "ccph:group:reveal-the-location",
+      "windowIds": [
+        "ccph:asop:8.11B"
+      ]
+    },
+    {
+      "topicId": "ccph:hiddenHero",
+      "groupId": "ccph:group:reveal-the-location",
+      "windowIds": [
+        "ccph:asop:8.11B"
+      ]
+    },
+    {
+      "topicId": "ccph:ambush",
+      "groupId": "ccph:group:ambush-and-its-alternatives",
+      "windowIds": [
+        "ccph:asop:8.12B"
+      ]
+    },
+    {
+      "topicId": "ccph:ambushModifiers",
+      "groupId": "ccph:group:ambush-and-its-alternatives",
+      "windowIds": [
+        "ccph:asop:8.12B"
+      ]
+    },
+    {
+      "topicId": "ccph:ambushChoice",
+      "groupId": "ccph:group:ambush-and-its-alternatives",
+      "windowIds": [
+        "ccph:asop:8.12B"
+      ]
+    },
+    {
+      "topicId": "ccph:street",
+      "groupId": "ccph:group:ambush-and-its-alternatives",
+      "windowIds": [
+        "ccph:asop:8.12B"
+      ]
+    },
+    {
+      "topicId": "ccph:tankHunter",
+      "groupId": "ccph:group:defending-japanese-hero",
+      "windowIds": [
+        "ccph:asop:8.13D"
+      ]
+    },
+    {
+      "topicId": "ccph:sequence",
+      "groupId": "ccph:group:sequence-prisoners-and-abandoned-vehicles",
+      "windowIds": [
+        "ccph:asop:8.14B"
+      ]
+    },
+    {
+      "topicId": "ccph:escape",
+      "groupId": "ccph:group:sequence-prisoners-and-abandoned-vehicles",
+      "windowIds": [
+        "ccph:asop:8.14B"
+      ]
+    },
+    {
+      "topicId": "ccph:abandonedDeclaration",
+      "groupId": "ccph:group:sequence-prisoners-and-abandoned-vehicles",
+      "windowIds": [
+        "ccph:asop:8.14B"
+      ]
+    },
+    {
+      "topicId": "ccph:withdraw",
+      "groupId": "ccph:group:melee-withdrawal-declarations",
+      "windowIds": [
+        "ccph:asop:8.15B"
+      ]
+    },
+    {
+      "topicId": "ccph:brokenWithdrawal",
+      "groupId": "ccph:group:melee-withdrawal-declarations",
+      "windowIds": [
+        "ccph:asop:8.15B"
+      ]
+    },
+    {
+      "topicId": "ccph:withdrawLoad",
+      "groupId": "ccph:group:melee-withdrawal-declarations",
+      "windowIds": [
+        "ccph:asop:8.15B"
+      ]
+    },
+    {
+      "topicId": "ccph:pairing",
+      "groupId": "ccph:group:smc-pairing",
+      "windowIds": [
+        "ccph:asop:8.16B"
+      ]
+    },
+    {
+      "topicId": "ccph:leadership",
+      "groupId": "ccph:group:smc-pairing",
+      "windowIds": [
+        "ccph:asop:8.16B"
+      ]
+    },
+    {
+      "topicId": "ccph:declarations",
+      "groupId": "ccph:group:declare-attacks-and-special-modes",
+      "windowIds": [
+        "ccph:asop:8.21B"
+      ]
+    },
+    {
+      "topicId": "ccph:concealedChoice",
+      "groupId": "ccph:group:declare-attacks-and-special-modes",
+      "windowIds": [
+        "ccph:asop:8.21B"
+      ]
+    },
+    {
+      "topicId": "ccph:personnelAttack",
+      "groupId": "ccph:group:declare-attacks-and-special-modes",
+      "windowIds": [
+        "ccph:asop:8.21B"
+      ]
+    },
+    {
+      "topicId": "ccph:handToHand",
+      "groupId": "ccph:group:declare-attacks-and-special-modes",
+      "windowIds": [
+        "ccph:asop:8.21B"
+      ]
+    },
+    {
+      "topicId": "ccph:capture",
+      "groupId": "ccph:group:declare-attacks-and-special-modes",
+      "windowIds": [
+        "ccph:asop:8.21B"
+      ]
+    },
+    {
+      "topicId": "ccph:vehicleAttack",
+      "groupId": "ccph:group:declare-attacks-and-special-modes",
+      "windowIds": [
+        "ccph:asop:8.21B"
+      ]
+    },
+    {
+      "topicId": "ccph:vehicleFire",
+      "groupId": "ccph:group:declare-attacks-and-special-modes",
+      "windowIds": [
+        "ccph:asop:8.21B"
+      ]
+    },
+    {
+      "topicId": "ccph:prc",
+      "groupId": "ccph:group:declare-attacks-and-special-modes",
+      "windowIds": [
+        "ccph:asop:8.21B"
+      ]
+    },
+    {
+      "topicId": "ccph:closeDefense",
+      "groupId": "ccph:group:declare-attacks-and-special-modes",
+      "windowIds": [
+        "ccph:asop:8.21B"
+      ]
+    },
+    {
+      "topicId": "ccph:terrainCombat",
+      "groupId": "ccph:group:declare-attacks-and-special-modes",
+      "windowIds": [
+        "ccph:asop:8.21B"
+      ]
+    },
+    {
+      "topicId": "ccph:mountedWater",
+      "groupId": "ccph:group:declare-attacks-and-special-modes",
+      "windowIds": [
+        "ccph:asop:8.21B"
+      ]
+    },
+    {
+      "topicId": "ccph:goliath",
+      "groupId": "ccph:group:declare-attacks-and-special-modes",
+      "windowIds": [
+        "ccph:asop:8.21B"
+      ]
+    },
+    {
+      "topicId": "ccph:atmm",
+      "groupId": "ccph:group:atmm-after-attack-declaration",
+      "windowIds": [
+        "ccph:asop:8.22B"
+      ]
+    },
+    {
+      "topicId": "ccph:heroAtmm",
+      "groupId": "ccph:group:atmm-after-attack-declaration",
+      "windowIds": [
+        "ccph:asop:8.22B"
+      ]
+    },
+    {
+      "topicId": "ccph:haraKiri",
+      "groupId": "ccph:group:japanese-response-to-capture",
+      "windowIds": [
+        "ccph:asop:8.23B"
+      ]
+    },
+    {
+      "topicId": "ccph:resolve",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:vehicleResult",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:unlikelyKill",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:crewSmallArms",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:infiltration",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:promotion",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:equipmentLoss",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:captureValidity",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:guards",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:withdrawArrival",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:streetReturn",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:withdrawHazards",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:withdrawSpecial",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:berserk",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:nextAttack",
+      "groupId": "ccph:group:resolve-attacks-and-immediate-consequences",
+      "windowIds": [
+        "ccph:asop:8.24B"
+      ]
+    },
+    {
+      "topicId": "ccph:interrogation",
+      "groupId": "ccph:group:new-prisoner-information",
+      "windowIds": [
+        "ccph:asop:8.25B"
+      ]
+    },
+    {
+      "topicId": "ccph:automaticCapture",
+      "groupId": "ccph:group:close-this-location",
+      "windowIds": [
+        "ccph:asop:8.31B"
+      ]
+    },
+    {
+      "topicId": "ccph:melee",
+      "groupId": "ccph:group:close-this-location",
+      "windowIds": [
+        "ccph:asop:8.31B"
+      ]
+    },
+    {
+      "topicId": "ccph:dareDeath",
+      "groupId": "ccph:group:close-this-location",
+      "windowIds": [
+        "ccph:asop:8.31B"
+      ]
+    },
+    {
+      "topicId": "ccph:heroRemoval",
+      "groupId": "ccph:group:close-this-location",
+      "windowIds": [
+        "ccph:asop:8.24B",
+        "ccph:asop:8.31B"
+      ]
+    },
+    {
+      "topicId": "ccph:dogfight",
+      "groupId": "ccph:group:phase-wide-aerial-combat",
+      "windowIds": [
+        "ccph:asop:8.41B"
+      ]
+    },
+    {
+      "topicId": "ccph:aerialResults",
+      "groupId": "ccph:group:phase-wide-aerial-combat",
+      "windowIds": [
+        "ccph:asop:8.41B"
+      ]
+    },
+    {
+      "topicId": "ccph:aerialClose",
+      "groupId": "ccph:group:phase-wide-aerial-combat",
+      "windowIds": [
+        "ccph:asop:8.41B"
+      ]
+    },
+    {
+      "topicId": "ccph:clearance",
+      "groupId": "ccph:group:complete-declared-tasks",
+      "windowIds": [
+        "ccph:asop:8.42B"
+      ]
+    },
+    {
+      "topicId": "ccph:rubble",
+      "groupId": "ccph:group:complete-declared-tasks",
+      "windowIds": [
+        "ccph:asop:8.42B"
+      ]
+    },
+    {
+      "topicId": "ccph:wireSetDc",
+      "groupId": "ccph:group:complete-declared-tasks",
+      "windowIds": [
+        "ccph:asop:8.42B"
+      ]
+    },
+    {
+      "topicId": "ccph:mineClearance",
+      "groupId": "ccph:group:complete-declared-tasks",
+      "windowIds": [
+        "ccph:asop:8.42B"
+      ]
+    },
+    {
+      "topicId": "ccph:flail",
+      "groupId": "ccph:group:complete-declared-tasks",
+      "windowIds": [
+        "ccph:asop:8.42B"
+      ]
+    },
+    {
+      "topicId": "ccph:ptoClearance",
+      "groupId": "ccph:group:complete-declared-tasks",
+      "windowIds": [
+        "ccph:asop:8.42B"
+      ]
+    },
+    {
+      "topicId": "ccph:moduleClearance",
+      "groupId": "ccph:group:complete-declared-tasks",
+      "windowIds": [
+        "ccph:asop:8.42B"
+      ]
+    },
+    {
+      "topicId": "ccph:labor",
+      "groupId": "ccph:group:complete-declared-tasks",
+      "windowIds": [
+        "ccph:asop:8.42B"
+      ]
+    },
+    {
+      "topicId": "ccph:tunnels",
+      "groupId": "ccph:group:complete-declared-tasks",
+      "windowIds": [
+        "ccph:asop:8.42B"
+      ]
+    },
+    {
+      "topicId": "ccph:pinTi",
+      "groupId": "ccph:group:status-and-replenishment",
+      "windowIds": [
+        "ccph:asop:8.43B"
+      ]
+    },
+    {
+      "topicId": "ccph:stun",
+      "groupId": "ccph:group:status-and-replenishment",
+      "windowIds": [
+        "ccph:asop:8.43B"
+      ]
+    },
+    {
+      "topicId": "ccph:ammo",
+      "groupId": "ccph:group:status-and-replenishment",
+      "windowIds": [
+        "ccph:asop:8.43B"
+      ]
+    },
+    {
+      "topicId": "ccph:concealmentGain",
+      "groupId": "ccph:group:concealment-gain",
+      "windowIds": [
+        "ccph:asop:8.44A"
+      ]
+    },
+    {
+      "topicId": "ccph:concealmentDr",
+      "groupId": "ccph:group:concealment-gain",
+      "windowIds": [
+        "ccph:asop:8.44A"
+      ]
+    },
+    {
+      "topicId": "ccph:concealmentProfiles",
+      "groupId": "ccph:group:concealment-gain",
+      "windowIds": [
+        "ccph:asop:8.44A"
+      ]
+    },
+    {
+      "topicId": "ccph:illumination",
+      "groupId": "ccph:group:night-cleanup-after-concealment",
+      "windowIds": [
+        "ccph:asop:8.45B"
+      ]
+    },
+    {
+      "topicId": "ccph:acquisition",
+      "groupId": "ccph:group:night-cleanup-after-concealment",
+      "windowIds": [
+        "ccph:asop:8.45B"
+      ]
+    },
+    {
+      "topicId": "ccph:caveSmoke",
+      "groupId": "ccph:group:supplemental-events-and-turn-handoff",
+      "windowIds": [
+        "ccph:supplemental:caveSmoke"
+      ]
+    },
+    {
+      "topicId": "ccph:lcBlazePin",
+      "groupId": "ccph:group:supplemental-events-and-turn-handoff",
+      "windowIds": [
+        "ccph:supplemental:lcBlazePin"
+      ]
+    },
+    {
+      "topicId": "ccph:tripFlareExpiry",
+      "groupId": "ccph:group:supplemental-events-and-turn-handoff",
+      "windowIds": [
+        "ccph:supplemental:tripFlareExpiry"
+      ]
+    },
+    {
+      "topicId": "ccph:specialChecks",
+      "groupId": "ccph:group:supplemental-events-and-turn-handoff",
+      "windowIds": [
+        "ccph:supplemental:specialChecks"
+      ]
+    },
+    {
+      "topicId": "ccph:close",
+      "groupId": "ccph:group:supplemental-events-and-turn-handoff",
+      "windowIds": [
+        "ccph:supplemental:close"
+      ]
+    },
+    {
+      "topicId": "ccph:sourceProfile",
+      "groupId": "ccph:group:supplemental-events-and-turn-handoff",
+      "windowIds": [
+        "ccph:supplemental:sourceProfile"
+      ]
+    }
+  ]
+}

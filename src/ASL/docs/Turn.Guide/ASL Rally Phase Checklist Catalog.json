@@ -1447,5 +1447,107 @@
     "pageNumbering": "Physical PDF pages, one-based",
     "reconciled": "2026-10-26",
     "scope": "All ten Rally ASOP entries, their named exceptions, and supplemental Rally/standing/cross-phase procedures identified in the supplied volume. External campaign and SASL text is not supplied; named ASOP campaign exceptions remain represented with unresolved source coverage."
-  }
+  },
+  "asopLedger": [
+    {
+      "step": "1.11A",
+      "clauses": "SSR/provisional reinforcements, offboard setup, Air, DD, Cloaking, Gliders, Para, LC",
+      "optionIds": [
+        "arrival",
+        "entry",
+        "dyoArrival"
+      ]
+    },
+    {
+      "step": "1.12A",
+      "clauses": "Wind, collapse, NVR, civilian information, fog, rain/snow, dust, Heavy Surf, tropical weather, Gusts/SMOKE",
+      "optionIds": [
+        "wind",
+        "night",
+        "civilian",
+        "precipitation",
+        "fog",
+        "snowDrifts",
+        "smoke",
+        "dust",
+        "surf"
+      ]
+    },
+    {
+      "step": "1.13B",
+      "clauses": "Recombination and leaderless exceptions; Animal-Pack start/end and halfway load/unload",
+      "optionIds": [
+        "recombine",
+        "packStart",
+        "packHalf",
+        "packReverse"
+      ]
+    },
+    {
+      "step": "1.14B",
+      "clauses": "Recovery, vehicle/PTO restrictions, ski-use dr",
+      "optionIds": [
+        "recover",
+        "skis"
+      ]
+    },
+    {
+      "step": "1.21A",
+      "clauses": "Deployment and exceptions; Scrounging with TI and Scrounged consequences",
+      "optionIds": [
+        "deploy",
+        "scrounge",
+        "nationality"
+      ]
+    },
+    {
+      "step": "1.22B",
+      "clauses": "SW/Gun and vehicle repair; SW/Gun/prisoner transfers; ski-use dr",
+      "optionIds": [
+        "repair",
+        "vehicleRepair",
+        "transfer",
+        "prisoners",
+        "skis"
+      ]
+    },
+    {
+      "step": "1.23B",
+      "clauses": "All Rally paths, special leaders, first-MMC privilege, named first-two exceptions and consequences",
+      "optionIds": [
+        "leaders",
+        "first",
+        "self",
+        "assisted",
+        "commissar",
+        "results",
+        "campaign",
+        "nationality",
+        "modifiers",
+        "winterFate"
+      ]
+    },
+    {
+      "step": "1.24A",
+      "clauses": "Final Drop Points and aerial Stick placement",
+      "optionIds": [
+        "drop"
+      ]
+    },
+    {
+      "step": "1.31B",
+      "clauses": "Shock/UK recuperation; DM removal/retention",
+      "optionIds": [
+        "shock",
+        "dm"
+      ]
+    },
+    {
+      "step": "1.32B",
+      "clauses": "WA claim, ATTACKER first",
+      "optionIds": [
+        "wa"
+      ]
+    }
+  ]
 }

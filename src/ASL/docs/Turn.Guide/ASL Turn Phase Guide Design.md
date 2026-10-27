@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and `ASL.Turns.Tests` now exist with a tested headless reference catalog. Live evaluation, obligation scheduling and command integration below remain proposed. UI components are deferred until the back-end contracts and behavior are proven.
+Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and `ASL.Turns.Tests` now provide the tested headless reference catalog, typed capability contracts and validated stable timing schema. Live evaluation, obligation scheduling and command integration below remain proposed. UI components are deferred until the back-end contracts and behavior are proven.
 
 References: [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Implementation Plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md), [cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md), [folder index](README.md).
 
@@ -39,9 +39,9 @@ Implemented in this revision:
 - Qualified topic identity, for example `ccph:hiddenHero`, and ordinal case handling. Source hash/edition/scope and pending integration prose remain available.
 - Tests in `src/ASL/tests/ASL.Turns.Tests`, namespace `ASL.Turns.Tests`; both projects are in the ASL solution with normal lock files and build conventions.
 
-The current loader recognizes the existing Rally schema 2 and other schema 1 documents. It validates group/term references, page bounds, dependency targets and available ASOP ledger links. Rally's printed ledger remains in its walkthrough; an absent JSON ledger is not proof of no Rally steps. Numeric group positions and free-text status notes remain authored input, not final stable timing IDs or capability verdicts.
+The current loader recognizes the existing Rally schema 2 and other schema 1 documents. It validates group/term references, page bounds, dependency targets and available ASOP ledger links. B1 imports all ten Rally steps from the reviewed walkthrough into its JSON ledger. Legacy inputs without a ledger remain readable by the catalog loader, but do not satisfy the current timing manifest. Numeric group positions and free-text status notes remain authored input, not final stable timing IDs or capability verdicts.
 
-Not implemented: a live `TurnGuideService`, typed capability registry, rule-family evaluators, instantiated obligations, command adapters, all-phase closure validation, historical migrations or any UI component. The current tests prove the reference foundation, not live rules correctness.
+Not implemented: a live `TurnGuideService`, verified production capability registrations, rule-family evaluators, instantiated obligations, command adapters, all-phase closure validation, historical migrations or any UI component. The current tests prove the reference foundation, not live rules correctness.
 
 ## 4. Backend API to establish before UI work
 
@@ -87,6 +87,30 @@ Typed capability records must separate source review, evaluator support, command
 | Private consideration | Unreviewed; considered; bookmarked, stored by the eventual client outside game state |
 
 A partial topic can expose a proven supported sub-action while keeping other choices visibly pending. Unsupported context does not remove a topic, generate an invented obligation or make a manual consideration mark authoritative.
+
+### B1 contracts implemented, 2026-10-27
+
+`TurnCapabilityCatalog.Create(catalog, registrations)` retains every topic in authored order. Each result carries the original reference topic and zero or more explicitly scoped registrations. `UnregisteredSupport` and `Applicability` are `NotEvaluated`. An empty registration list never means Not applicable, unavailable, or complete. These are reference assessments, not live legality verdicts.
+
+`TurnCapability` identifies a sub-action, topic and exact profile, with independent `TurnSourceReview`, evaluator support, command support and evidence IDs. Source review supports NotReviewed, Reconciled, InterpretationOpen and SourceMissing. Support distinguishes NotEvaluated, Pending, Deferred, Partial and IntegratedSubset. No unqualified Integrated value claims universal ASL execution. Partial and IntegratedSubset require nonempty evidence; invalid enum values, duplicate IDs, unknown topics and blank profiles/evidence fail validation. Evidence strings identify proofs for review, not code that this library executes.
+
+Production registrations are intentionally empty at this boundary. Existing Rules features have not yet been proven through a Turns adapter. In particular, absence of a registration does not downgrade the existing Rules engine. Register a verified sub-action/profile with its tests during integration. The authored pending/deferred notes, campaign source gaps and prisoner-abandonment interpretation remain visible unchanged. Never populate registrations by parsing those notes.
+
+The checked-in [timing manifest](ASL%20Turn%20Timing%20Schema.json), schema version 1, assigns **117 stable groups, 176 reference windows and 538 topic bindings**. Group IDs were assigned once and are now immutable keys; label edits or numeric group reordering must not regenerate them. Topic IDs remain ordinal `<phase>:<local-id>`. Printed window IDs are `<phase>:asop:<printed-step>`, preserving the suffix and edition recorded by the phase source. Supplemental IDs are `<phase>:supplemental:<topic-id>` and explicitly `SupplementalUnclassified`. They are placeholders for source traceability, not invented printed steps or executable schedules.
+
+The manifest stores identities and links, not duplicate topic text, rule prose or glossary definitions. The loader checks version, uniqueness, phase ownership and exact correspondence with every ledger topic link. It rejects missing topics, missing multi-window links, duplicate window references, unrelated supplemental references and unused windows. Rally ski handling retains both 1.14B and 1.22B. Source-derived windows do not establish a total order: nested effects, repeated expenditures and within-step choices still require Rules predicates.
+
+`TurnTermId(PhaseId, Term)` preserves contextual identity and case, including `DR` versus `dr`. Definitions and source hash/edition/pages remain in the reference catalog. An external acronym crosswalk requires reviewed IDs; B1 does not guess external IDs or merge phase definitions. No existing IDs were renamed, so no alias migration is required in this revision. Any later rename needs an explicit compatibility mapping and schema review before consumers change.
+
+`TurnDueSpec` defines separate data shapes for AfterEvent, BeforeWindowCloses, AtWindow, NextFriendlyPhase, PlayerTurnEnd, CompletedGameTurns and SourceChanges. Owner identity, origin event and origin Player Turn remain distinct fields. These are proposed immutable payload shapes, not validated live obligations: B3 must validate actual identities, positive interval counts, allowed windows and rule-specific prerequisites before admitting an instance. No dependency prose is converted into a due specification automatically, and all 38 dependency definitions remain visible.
+
+`TurnGuideCatalog.Load(resourceProvider)` also accepts versioned source streams for authoring validation; it disposes supplied streams after reading. `TurnTimingSchema.Read(stream, catalog)` validates a manifest without modifying it and leaves the caller's input stream ownership unchanged. Raw record constructors are data containers; consumers must use validated loading before relying on authored bindings.
+
+### Required coverage gate
+
+Run `./src/ASL/tests/ASL.Turns.Tests/Test-Coverage.ps1` from PowerShell. It collects coverage for the complete ASL.Turns assembly into a fresh results directory and fails unless tests pass and both covered line and branch counts equal their nonzero totals. It rejects absent or ambiguous reports and unexpected assembly scope. There are no source-file or coverage-attribute exclusions in this project's settings.
+
+B1 verification: **62 tests pass; 242/242 executable lines and 132/132 branches covered (100% each)**. Tests include full inventory/pending visibility, independent support dimensions, all source-loader failure branches, malformed manifests, exact multi-window coverage, contextual term identity and owner-relative due payloads. This measures the implemented library, not completion of future rule execution. Generated reports remain ignored build artifacts; rerun the gate after every library change.
 
 ## 6. Obligation facts, lifecycle and clocks
 

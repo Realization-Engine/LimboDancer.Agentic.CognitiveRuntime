@@ -272,7 +272,7 @@ Reuse `site.css` tokens and the existing theme. Preserve acronym case even in he
 
 ## 8. ASL.Turns backend and Rules integration
 
-The new library is src/ASL/ASL.Turns, with tests in src/ASL/tests/ASL.Turns.Tests. Both are in the ASL solution. The initial immutable reference catalog loads the eight phase inventories and cross-phase dependencies without a UI, Play service or external file path. It preserves qualified topic identity, phase-specific terms, pending notes and source evidence. Five focused tests validate this foundation; they do not establish live rule execution.
+The new library is src/ASL/ASL.Turns, with tests in src/ASL/tests/ASL.Turns.Tests. Both are in the ASL solution. The initial immutable reference catalog loads the eight phase inventories and cross-phase dependencies without a UI, Play service or external file path. It preserves qualified topic identity, phase-specific terms, pending notes and source evidence. The B1 coverage gate now validates the complete implemented library with 62 tests and 100% line/branch coverage; it does not establish live rule execution.
 
 The final dependency direction is Play to ASL.Turns to Rules, with the existing Play to Units to Rules path retained. ASL.Turns must not reference Play, Units or MapStudio. Rules receives narrow facts, not a game/page object. Play translates current state and history into those facts and applies the authenticated GameView disclosure policy. Units remains the event-derived state authority.
 
@@ -298,7 +298,7 @@ Compare later prototypes against the same replay position and viewer. Measure ad
 
 ## 10. Backend-first evaluation and delivery
 
-The first foundation is implemented: ASL.Turns and ASL.Turns.Tests load and validate all 538 topics, 38 dependency definitions and 191 links, without UI services. The next stages are stable capability/timing contracts, pure snapshot composition, representative rule-owned obligation lifecycles, and Play/Units adapters with shared closure assessment. Durable missing facts and additional rule profiles follow in bounded slices.
+The first foundation is implemented: ASL.Turns and ASL.Turns.Tests load and validate all 538 topics, 38 dependency definitions and 191 links, without UI services. B1 now supplies typed capability contracts and stable timing bindings while retaining unknown/pending content. The next stages are pure snapshot composition, representative rule-owned obligation lifecycles, and Play/Units adapters with shared closure assessment. Durable missing facts and additional rule profiles follow in bounded slices.
 
 Before any Blazor construction, prove deterministic reads, pending visibility, correct owner-relative clocks, interruption and completion evidence, stale rejection, viewer-safe output, no duplicate cleanup, and agreement between guidance and governed command validation. The test library remains independent of the UI. Existing Rules, Units and Play test projects verify their own boundaries.
 
@@ -320,3 +320,5 @@ The saved design preview in this folder is reference evidence. Production does n
 - [Memory and Performance Guidelines](../Memory-And-Performance/ASL%20Memory%20and%20Performance%20Guidelines.md), for projection lifetimes, viewer-sensitive reuse, and incremental work.
 
 The phase matrix is a design-level synthesis, not a replacement for the detailed rules or ASOP. New UI behaviors and contracts in this document are proposals; the cited existing components and commits describe the current integration foundation.
+
+B1 update, 2026-10-27: the backend design records the validated 117-group/176-window identity manifest, ten imported Rally ledger steps, independent capability dimensions and required 100% coverage gate. All 538 topics and 38 dependency definitions remain visible. No live legality or due-window evaluator is claimed.
