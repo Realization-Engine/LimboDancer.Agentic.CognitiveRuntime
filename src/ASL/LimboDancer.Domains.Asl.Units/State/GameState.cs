@@ -35,6 +35,9 @@ public sealed record GameState(
     IReadOnlyList<EquipmentInstance> Equipment,
     IReadOnlyList<EntityInstance> Entities)
 {
+    public IReadOnlyList<Rules.TurnLiveWork> TurnWork { get; init; } = [];
+    public IReadOnlyList<string> TurnWorkRolls { get; init; } = [];
+
     /// <summary>The SSRs in force, as <c>game-started</c> named them; empty means none.</summary>
     public IReadOnlyList<string> SpecialRules { get; init; } = [];
 

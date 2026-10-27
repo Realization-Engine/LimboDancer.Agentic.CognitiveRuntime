@@ -12,6 +12,7 @@ public sealed record TurnHostGuide(TurnGuideSnapshot Guide, ImmutableArray<TurnH
     TurnPhaseCloseAssessment PhaseClose)
 {
     public TurnGuideProfile Profile { get; init; } = TurnGuideProfiles.Get("existing-engine");
+    public ImmutableArray<TurnWorkDisclosure> Work { get; init; } = [];
     public ImmutableArray<string> WorkProgressGaps { get; init; } = [];
     public TurnAtmosphereSnapshot? Atmosphere
     {
@@ -88,7 +89,8 @@ public sealed partial class GamePlanner
         return new(guide, obligations, close)
         {
             Profile = profile,
-            // No durable work declarations exist yet. Return gaps, never fabricate work instances from TI markers.
+            Work = profile.Id == "existing-engine-work-v1" ? ReadWork(history, revision, perspective) : [],
+            // Adjudicated work does not certify missing packing or supply rules.
             WorkProgressGaps = profile.Id == "existing-engine-work-v1"
                 ? TurnWorkProgress.Assess(new(scope.ToString(), revision, state.Turn, TurnWorkWindow.Unknown), []).PendingRules : [],
             FireHistory = profile.Id is "existing-engine-fire-v1" or "existing-engine-atmosphere-v1" or "existing-engine-work-v1" ? ReadFireHistory(history, revision, perspective) : null,

@@ -341,3 +341,6 @@ B5 atmosphere update, 2026-10-27: ordinary infantry grenade attempts and MPh cle
 
 
 B5 work-progress update, 2026-10-27: the internal packing/replenishment ledger counts evidenced complete Game Turns, rejects duplicate/overlapping receipts and retains earlier progress across interruptions. Rules owns replenishment/transfer duration; completion remains pending. Packing duration and live declaration/interval/completion events remain unintegrated and visible. See the design and plan work-progress section. Verification: 146 Turns tests, 651/651 lines and 366/366 branches (100%); 28 Rules and 4 host tests pass.
+
+
+B5 live work update, 2026-10-27: packing/replenishment now have permissioned adjudication events, durable live lifecycle state, replay-checked Game Turn boundaries, work-owned TI and completion windows. Replenishment completion records a system Ammunition DR and its depletion result. The guide discloses only authorized work summaries and still labels packing/ammo rule automation Pending. Packing duration and eligibility are explicitly external adjudications; actual packing containment, ammunition combat state and supply/portage mutations remain unintegrated. See the new live work section in the design and implementation plan for the precise boundary. This preserves the all-Passes design target without claiming missing rules are implemented.

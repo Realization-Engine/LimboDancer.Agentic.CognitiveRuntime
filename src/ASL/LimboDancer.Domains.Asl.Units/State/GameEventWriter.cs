@@ -81,6 +81,12 @@ public static class GameEventWriter
     {
         switch (payload)
         {
+            case TurnWorkRecorded work:
+                foreach (var property in JsonSerializer.SerializeToElement(work, JsonSerializerOptions.Web).EnumerateObject())
+                {
+                    property.WriteTo(writer);
+                }
+                break;
             case GameStarted started:
                 writer.WriteStartArray("sides");
                 foreach (var side in started.Sides)

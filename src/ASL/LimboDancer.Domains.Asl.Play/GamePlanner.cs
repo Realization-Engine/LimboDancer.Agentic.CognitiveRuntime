@@ -343,6 +343,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         var plan = action.Id.Value switch
         {
+            "asl.game.record-turn-work" => PlanTurnWork(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label, actor ?? "unknown"),
             "asl.game.advance-phase" => BuildPhaseClosePlan(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.enter-empty-building" => await PlanEntryAsync(scope, arguments, existing, attemptId, expected, label, cancellationToken),
@@ -716,6 +717,11 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         if (Replay(existing).Current is not { } state)
         {
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
+        }
+
+        if (state.TurnWork.Any(work => TurnWorkLifecycle.CompletionDue(work, state.Turn, TurnWorkWindowOf(state))))
+        {
+            return Refused(scope, label, expected, "play.work-due: record completion or interruption before closing the work release window");
         }
 
         // Pass 32.i: the phase's end and what it requires, in the old order; Rules decides each bar over the state's reads and the other slices' reads.

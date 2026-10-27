@@ -11,7 +11,7 @@ namespace LimboDancer.Domains.Asl.Units.State;
 /// invariants (ASL-UNIT-021 to 026), and every map position against the location chains of the exact board versions
 /// in play (ASL-UNIT-024). The first event that breaks a rule stops the replay; nothing after it is projected.
 /// </summary>
-public static class GameProjector
+public static partial class GameProjector
 {
     public static GameHistory Project(IReadOnlyList<GameEvent> events, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
         ILocationChains? chains = null, IReadOnlyCollection<string>? liveSources = null, IFireRecordVerifier? fire = null,
@@ -59,7 +59,7 @@ public static class GameProjector
     private static int Errors(List<UnitDiagnostic> diagnostics) =>
         diagnostics.Count(diagnostic => diagnostic.Severity == UnitDiagnosticSeverity.Error);
 
-    internal sealed class Replay(UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs, ILocationChains? chains, IReadOnlyCollection<string> liveSources,
+    internal sealed partial class Replay(UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs, ILocationChains? chains, IReadOnlyCollection<string> liveSources,
         IFireRecordVerifier? fireVerifier, IRallyRecordVerifier? rallyVerifier, ICloseCombatRecordVerifier? closeCombatVerifier,
         IOrdnanceRecordVerifier? ordnanceVerifier, List<UnitDiagnostic> diagnostics)
     {
@@ -115,6 +115,7 @@ public static class GameProjector
                 GameStarted => Fail<GameState>("UNIT-STATE-004", "A game starts only once."),
                 _ when previous.Ended is not null => Fail<GameState>("UNIT-STATE-045", "The game has ended (A3.9; ruling R20.1); nothing more happens in it."),
                 GameEnded ended => End(previous, ended),
+                TurnWorkRecorded work => RecordTurnWork(previous, work),
                 PhaseChanged phase => ChangePhase(previous, phase),
                 InstanceCreated created => CreateInPlay(previous, created),
                 InstanceMoved moved => Move(previous, moved),
@@ -288,6 +289,7 @@ public static class GameProjector
                 };
             }
 
+            next = MaintainTurnWork(previous!, next, gameEvent.Payload);
             next = AssaultWeapons(next, gameEvent.Payload);
             next = KeepMovingStack(next, gameEvent.Payload);
             next = KeepEncirclements(next);
@@ -542,6 +544,23 @@ public static class GameProjector
 
         private GameState? ChangePhase(GameState state, PhaseChanged change)
         {
+            if (state.TurnWork.Any(item => item.Working))
+            {
+                var other = state.Sides.FirstOrDefault(side => side.Id != state.PhasingSide);
+                if (other is null || Rules.ScenarioA1SequenceCalculator.NextPhase(state.Phase, state.Turn, state.PhasingSide, other.Id, state.FirstSide)
+                    != (change.Turn, change.Phase, change.PhasingSide))
+                {
+                    return Fail<GameState>("UNIT-WORK-002", "Active work requires every phase boundary in order.");
+                }
+            }
+            if (state.TurnWork.Any(item => Rules.TurnWorkLifecycle.CompletionDue(item, state.Turn, WorkWindow(state)))
+                || state.TurnWork.Any(item => item.Working) && change.Turn != state.Turn
+                    && (WorkWindow(state) != Rules.TurnWorkWindow.SecondCloseCombat || change.Turn != state.Turn + 1
+                        || change.Phase != "rph" || change.PhasingSide != state.FirstSide))
+            {
+                return Fail<GameState>("UNIT-WORK-002", "Resolve due work before closing its release window; work cannot skip Game Turn boundaries.");
+            }
+
             // Pass 32.i: the state is read here, in the old order, and Rules decides and words each check of the phase change.
             if (Rules.ScenarioA1SequenceProjection.TurnRefusal(change.Turn, state.Turn) is { } turnRefusal)
             {

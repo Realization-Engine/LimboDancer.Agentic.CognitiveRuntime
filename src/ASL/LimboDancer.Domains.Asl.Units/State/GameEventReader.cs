@@ -123,6 +123,16 @@ public static class GameEventReader
     {
         switch (type)
         {
+            case "turn-work-recorded":
+                try
+                {
+                    return payload.Deserialize<TurnWorkRecorded>(JsonSerializerOptions.Web)
+                        ?? Missing(diagnostics, "Missing work record.", path);
+                }
+                catch (JsonException)
+                {
+                    return Missing(diagnostics, "Invalid typed work record.", path);
+                }
             case "game-started":
                 var sides = new List<SideState>();
                 foreach (var (side, sidePath) in fields.Objects(payload, "sides", path))

@@ -24,8 +24,8 @@ public static class TurnGuideProfiles
         "existing-engine-atmosphere-v1" => new(id, "b5-atmosphere-1", ["stun", "cx", "placedDc"],
             ["A24.1-.11; ordinary infantry grenade attempts and MPh cleanup", "BacklogPass9Tests; TurnAtmosphereTests",
              "Recorded WindChanged/Gust history; white SMOKE, drift, cave WP and dust execution pending"]),
-        "existing-engine-work-v1" => new(id, "b5-work-1", ["stun", "cx", "placedDc"],
-            ["E10.3-.4 progress duration; TurnWorkProgressTests", "Packing duration and all work commands remain pending; no marker-derived progress"]),
+        "existing-engine-work-v1" => new(id, "b5-work-2", ["stun", "cx", "placedDc"],
+            ["E10.3-.4 progress duration; TurnWorkProgressTests", "Permissioned work adjudication, journal replay and lifecycle completion; packing duration and supply rules remain externally adjudicated"]),
         _ => throw new ArgumentException("Unknown turn guide profile.", nameof(id)),
     };
 }

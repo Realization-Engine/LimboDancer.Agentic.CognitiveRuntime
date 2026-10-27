@@ -47,3 +47,6 @@ B5 atmosphere profile: ordinary grenade lifecycle and Wind/Gust history, with di
 
 
 B5 work progress: evidence-based complete Game Turn accounting and Rules-owned replenishment durations. Packing timing and live work event/command integration remain pending. The `existing-engine-work-v1` profile exposes those gaps. Current ASL.Turns verification: 146 tests, 651/651 lines and 366/366 branches (100%). See the design and plan work-progress section.
+
+
+B5 live work adjudication: `existing-engine-work-v1` / `b5-work-2` adds persisted lifecycle events, owned TI, completion windows, permission checks, replay and disclosed work summaries. Full packing/supply rule automation and counter consequences remain pending. See the design and implementation plan's live work section. Latest ASL.Turns coverage: 147 tests, 659/659 lines and 366/366 branches (100%).

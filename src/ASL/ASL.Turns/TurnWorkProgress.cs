@@ -99,6 +99,6 @@ public static class TurnWorkProgress
              "Packing midpoint loading/unloading and reversal remain pending; no duration is guessed from the counter or elapsed Player Turns.",
              "Replenishment: E10.3; original B# <=9/10/11 requires 1/2/3 complete Game Turns. Loss of CE, MP expenditure, firing or CC attack can invalidate the current interval; prior completed intervals remain.",
              "Ammo Dump/offload/transfer: E10.4, E10.6; four complete Game Turns and separate supply/status movement consequences remain pending.",
-             "Declaration, eligibility history, durable boundary/interrupt events, depletion DR, completion and TI/supply mutations need governed Play/Units integration. CompletionPending never performs them."]);
+             "Permissioned work adjudication records declarations, interruptions and completion with TI ownership and an Ammunition DR. Automatic packing/supply eligibility, packing midpoint/reversal, ammo combat effects and supply counter/portage mutations remain pending."]);
     }
 }

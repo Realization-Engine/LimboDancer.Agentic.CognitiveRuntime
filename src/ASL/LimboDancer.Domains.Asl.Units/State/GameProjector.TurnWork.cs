@@ -1,0 +1,134 @@
+using LimboDancer.Domains.Asl.Rules;
+
+namespace LimboDancer.Domains.Asl.Units.State;
+
+public static partial class GameProjector
+{
+    internal sealed partial class Replay
+    {
+        private GameState? RecordTurnWork(GameState state, TurnWorkRecorded change)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(change.RuleBasis))
+                {
+                    throw new InvalidDataException("Work adjudication needs its rule basis.");
+                }
+                var existing = state.TurnWork.SingleOrDefault(item => item.Declaration.Id == change.WorkId);
+                TurnLiveWork next;
+                if (change.Operation == "start")
+                {
+                    var declaration = change.Declaration;
+                    if (existing is not null || declaration is null || declaration.Id != change.WorkId || change.Roll is not null)
+                    {
+                        throw new InvalidDataException("Duplicate or invalid work declaration.");
+                    }
+                    next = TurnWorkLifecycle.Start(declaration, state.Turn, WorkWindow(state) == TurnWorkWindow.FirstRally);
+                    if (declaration.Participants.Any(id => state.Find(id) is not { Status: InstanceStatus.Active } participant
+                        || participant is not UnitInstance and not EquipmentInstance || participant.Side != declaration.Owner || state.Location(id) is null || GameState.Condition(participant, "asl:ti") == ConditionState.True
+                        || state.TurnWork.Any(work => !work.Completed && !work.Cancelled && work.Declaration.Participants.Contains(id))))
+                    {
+                        throw new InvalidDataException("Work needs active own participants without another open work assignment.");
+                    }
+                }
+                else
+                {
+                    if (existing is null || change.Declaration is not null)
+                    {
+                        throw new InvalidDataException("Unknown work or unexpected declaration.");
+                    }
+                    if (change.Operation == "resume" && existing.Declaration.Participants.Any(id => state.Find(id) is not { Status: InstanceStatus.Active } participant
+                        || participant is not UnitInstance and not EquipmentInstance || participant.Side != existing.Declaration.Owner || state.Location(id) is null || GameState.Condition(participant, "asl:ti") == ConditionState.True))
+                    {
+                        throw new InvalidDataException("Resume requires active own participants and uncontested TI ownership.");
+                    }
+                    int? dr = null;
+                    if (change.Roll is not null)
+                    {
+                        if (!rolls.TryGetValue(change.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6 || roll.Purpose != "work-ammunition"
+                            || roll.Source != DiceRolled.SystemSource || state.TurnWorkRolls.Contains(change.Roll))
+                        {
+                            throw new InvalidDataException("Missing work Ammunition DR.");
+                        }
+                        dr = roll.Values.Sum();
+                    }
+                    next = TurnWorkLifecycle.Change(existing, change.Operation, state.Turn, WorkWindow(state), dr);
+                }
+                var updated = state with
+                {
+                    TurnWork = [.. state.TurnWork.Where(item => item.Declaration.Id != change.WorkId), next],
+                    TurnWorkRolls = change.Roll is null ? state.TurnWorkRolls : [.. state.TurnWorkRolls, change.Roll]
+                };
+                return next.Working || existing?.Working == true
+                    ? MarkWorkTi(updated, next.Declaration.Participants, next.Working) : updated;
+            }
+            catch (Exception error) when (error is InvalidDataException or ArgumentException)
+            {
+                return Fail<GameState>("UNIT-WORK-001", error.Message);
+            }
+        }
+
+        internal static TurnWorkWindow WorkWindow(GameState state) => state.Phase == "rph" && state.PhasingSide == state.FirstSide
+            ? TurnWorkWindow.FirstRally : state.Phase == "ccph" && state.PhasingSide != state.FirstSide
+                ? TurnWorkWindow.SecondCloseCombat : TurnWorkWindow.Unknown;
+
+        private static GameState MaintainTurnWork(GameState? previous, GameState next, EventPayload payload)
+        {
+            if (previous is null || previous.TurnWork.Count == 0 || payload is TurnWorkRecorded)
+            {
+                return next;
+            }
+            var work = next.TurnWork.ToArray();
+            for (var i = 0; i < work.Length; i++)
+            {
+                var item = work[i];
+                if (!item.Working)
+                {
+                    continue;
+                }
+                // Phase cleanup cannot own this TI. Explicit counter changes, movement, firing and CC interrupt work.
+                var participants = item.Declaration.Participants;
+                var interrupted = participants.Any(id => next.Find(id) is not { Status: InstanceStatus.Active }
+                    || previous.Location(id)?.Location != next.Location(id)?.Location)
+                    || payload is ConditionsChanged conditions && participants.Contains(conditions.Id)
+                        && (conditions.Conditions.GetValueOrDefault("asl:ti") == ConditionState.False && conditions.Conditions.ContainsKey("asl:ti")
+                            || conditions.Id == item.Declaration.Subject && conditions.Conditions.GetValueOrDefault(Conditions.ButtonedUp) == ConditionState.True)
+                    || payload is MovementStepped movement && movement.Movers.Any(participants.Contains)
+                    || payload is FireResolved fire && fire.Firers.Any(participants.Contains)
+                    || payload is OrdnanceFired ordnance && (participants.Contains(ordnance.Gun) || participants.Contains(ordnance.Crew))
+                    || payload is CloseCombatResolved cc && (cc.Attackers.Any(participants.Contains) || cc.Defenders.Any(participants.Contains))
+                    || payload is VehicleStepped vehicle && participants.Contains(vehicle.Vehicle);
+                if (interrupted)
+                {
+                    work[i] = TurnWorkLifecycle.Change(item, "interrupt", previous.Turn, WorkWindow(previous));
+                    next = MarkWorkTi(next, participants, false);
+                }
+                else if (payload is PhaseChanged && next.Turn != previous.Turn)
+                {
+                    work[i] = TurnWorkLifecycle.NextGameTurn(item, previous.Turn, next.Turn);
+                }
+            }
+            next = next with
+            {
+                TurnWork = work
+            };
+            foreach (var item in work.Where(item => item.Working))
+            {
+                next = MarkWorkTi(next, item.Declaration.Participants, true);
+            }
+            return next;
+        }
+
+        private static GameState MarkWorkTi(GameState state, string[] participants, bool active)
+        {
+            var value = active ? ConditionState.True : ConditionState.False;
+            return state with
+            {
+                Units = [.. state.Units.Select(unit => participants.Contains(unit.Id) ? unit with
+                { Conditions = new Dictionary<string, ConditionState>(unit.Conditions) { ["asl:ti"] = value } } : unit)],
+                Equipment = [.. state.Equipment.Select(item => participants.Contains(item.Id) ? item with
+                { Conditions = new Dictionary<string, ConditionState>(item.Conditions) { ["asl:ti"] = value } } : item)],
+            };
+        }
+    }
+}
