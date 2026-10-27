@@ -1,5 +1,7 @@
 # ASL Turn Guide
 
+Current planning status: **six B5 integration slices remain**, B5-R1 through B5-R6, all Planned. Start with B5-R1 (capability and pending-work inventory). The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and eight deferred rule-family packages, B5-D1 through B5-D8. Deferred rules remain visible and are not prerequisites for initial UI readiness. This replaces the earlier open-ended sequence of B5 rule-family slices.
+
 All turn-guide analysis, design, phase catalogs, walkthroughs and dependency audit live in this folder.
 
 - [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md)

@@ -350,3 +350,8 @@ B5 completion-effects update, 2026-10-27: the work declaration can now bind type
 
 
 B5 supply transfer/offload update (2026-10-27): opt-in four-Game-Turn completion now relocates the existing supply to an adjudicated same-Location vehicle or stationary Ammo Dump, changes the capacity binding, and wrecks an Immobilized source. The declaration freezes the destination; replay validates it again and applies all effects atomically. E10.12's Immobile-source restriction is enforced for available supply. E10.11 qualification, Accessible Locations, dump-backed replenishment, explicit occupant/equipment disposition, transition-turn movement restrictions and remaining E10 integration stay visible as Pending. See the new completion-effects section in the design and implementation plan.
+
+
+### B5 finite-scope decision, 2026-10-27
+
+B5 now has exactly six remaining integration slices: inventory, admitted-capability audit, durable decision windows, one live AFPh Placed DC topic route, replay/disclosure acceptance, and the backend readiness handoff. All six are Planned. The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) owns IDs B5-R1 through B5-R6 and their exit criteria. Eight retained rule-family packages, B5-D1 through B5-D8, belong to later ASL.Rules passes, including Trip Flare/Clearance host execution. This bounds the integration milestone without reducing the all-Passes target or hiding pending options. Existing bounded implementations remain in place; this planning decision adds no runtime support. Safety gaps in an admitted path must be fixed or the path narrowed before B5 closes.

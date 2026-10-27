@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first plan. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 and the bounded B5 Placed DC, fire/Spotter, atmosphere history and work-progress, live work adjudication and bounded completion-effect slices are implemented; additional families remain planned. UI work is intentionally last.
+Status: Backend-first plan. B5 has exactly six remaining integration slices, B5-R1 through B5-R6, all Planned. The finite backlog below is authoritative; later Rules work is tracked separately as B5-D1 through B5-D8. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 and the bounded B5 Placed DC, fire/Spotter, atmosphere history and work-progress, live work adjudication and bounded completion-effect slices are implemented; additional families remain planned. UI work is intentionally last.
 
 References: [Design](ASL%20Turn%20Phase%20Guide%20Design.md), [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md).
 
@@ -23,7 +23,7 @@ Run focused tests only for changed behavior and direct dependencies. Broaden whe
 | B2, implemented | Pure guidance request/result and read composition | B1 | Fixed facts yield deterministic snapshots; no writes, dice or UI state. |
 | B3, bounded slice implemented | Rule-owned timing and obligation lifecycle for Stun, CX, Trip Flare and non-Flame Clearance | B2 and relevant Rules families | Due, interrupt, resolve and retained history proved at exact boundaries. |
 | B4, implemented | Play/Units adapters and shared phase-close assessment | B2-B3 | Existing command validation and guidance agree without duplicate cleanup; disclosure and stale checks pass. |
-| B5, bounded persistence/history slices implemented | Durable missing facts, replay and profile expansion | B4, per rule pass | New families have source, Rules, persistence, replay and visibility evidence. |
+| B5, six remaining integration slices | Close B5-R1 through B5-R6 against the admitted baseline | B4 and completed B5 slices | All six acceptance records pass; pending/deferred rules stay visible. Full ASL execution is not this gate. |
 | U1, deferred | Reference and Live Blazor consumers | Backend readiness gate | UI renders backend results and routes intentions without rule calculations. |
 
 The previous UI-first P1-P7 plan is superseded by this order. The full final scope remains intact; deferring UI does not defer reference content.
@@ -82,7 +82,7 @@ Adjudicators receive exact reasons, event-type effects, roll requirement and Rea
 
 Validation: the full ASL.Turns coverage gate passes at 452/452 lines and 254/254 branches (100% each), without source exclusions. Host tests compare assessment to command plans across all eight phases over two player turns; prove invalid retain-DM refusal parity beyond PhaseEndBar; reject wrong perspectives, missing games and stale map/revision stamps; compare entire side responses before/after hidden enemy/revision changes; and exercise actual Double Time/CX and Stun cleanup, historical reconstruction and repeat-read safety.
 
-B5 owns further durable facts, finer disclosure and remaining families. Clearance-before-status and concealment-before-illumination end-to-end integration remain pending. B4 does not claim the whole rulebook is executable or the UI gate is satisfied.
+B5 owns the finite integration work in B5-R1 through B5-R6. Remaining rule-family execution is retained under B5-D1 through B5-D8 for later Rules passes. Clearance-before-status and concealment-before-illumination end-to-end integration remain pending. B4 does not claim the whole rulebook is executable or the UI gate is satisfied.
 
 ## 8. B5: Persistence and profiles, Placed DC slice implemented
 
@@ -98,7 +98,7 @@ B5 adds a bounded Placed DC integration (A23.3-.4; ASOP 3.32A and 5.22A), not bl
 
 **Proof and remaining work.** Tests exercise new/legacy wire round-trips, owner mismatch rejection, disk reload, idempotent append retry, historical reads, interruption, AFPh closure blocking, detonation completion, post-removal disclosure and repeated-read safety. Rules tests cover phase boundaries and continued obligation despite placer ineligibility. ASL.Turns passes 127 tests with 465/465 lines and 264/264 branches covered (100% each, no source exclusions). Coverage is for ASL.Turns, not the entire existing Rules, Units or Play assemblies.
 
-Further B5 slices remain explicit: remaining fire/Spotter execution semantics; remaining smoke/drift/cave WP/dust execution; packing/replenishment automatic eligibility, animal transport and remaining supply consequences; tunnels/airborne; CC declarations/heroes; and water/aerial/module profiles. Trip Flare and Clearance still need host facts and governed command integration. Each needs source reconciliation, narrow Rules predicates, durable evidence, replay, disclosure and command proofs before admission. The complete UI gate is still pending, especially a supported live topic decision route with exact window evidence.
+Scope correction, 2026-10-27: the remaining rule-family execution described here is assigned to B5-D1 through B5-D8 in the deferred register below. It no longer makes B5 an open-ended sequence of rule implementations. B5-R1 through B5-R6 close integration readiness for the admitted baseline, including a live topic decision route with exact window evidence. Historical implementation sections below retain their original evidence and limitations; the finite backlog controls future scope.
 
 ### B5 fire and Spotter history slice, implemented 2026-10-27
 
@@ -169,13 +169,13 @@ Headless tests must demonstrate:
 5. Viewer-safe output, correct decision ownership and stale request rejection.
 6. Shared phase-close semantics and exactly-once replay for the admitted slice.
 
-Only then build a thin consumer using existing site styling and action panels. Client consideration/bookmarks remain private preferences, not domain lifecycle. Full eventual rule coverage continues through the planned Rules passes; do not label the initial slice as complete ASL execution.
+B5-R6 records proof of these six criteria. Only after that acceptance may U1 build a thin consumer using existing site styling and action panels. Client consideration/bookmarks remain private preferences, not domain lifecycle. Full eventual rule coverage continues through the planned Rules passes; do not label the initial slice as complete ASL execution.
 
 ## 10. Test ownership
 
 `ASL.Turns.Tests` owns content, coordination and backend contracts. Existing Rules tests own rule verdicts; Units tests own events/projection/replay; Play tests own governed command enforcement and adapters. Add renderer tests only at U1. Run the narrow project/class filters relevant to each change, with no blanket whole-solution test requirement.
 
-Next work: further B5 rule-family slices and a supported live topic decision route, with finer side disclosure where supported. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
+Next work: B5-R1, then the numbered dependencies in the finite backlog. B5-D1 through B5-D8 are later Rules-pass work, not additional B5 completion gates. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
 
 B4 final verification: 123 ASL.Turns tests and 77 focused Play regression tests pass. Coverage is 100% for ASL.Turns, not a claim of full Play assembly coverage.
 
@@ -252,3 +252,47 @@ This slice extends the existing permissioned `asl.game.record-turn-work` route. 
 
 
 Supply transfer/offload validation: 150 ASL.Turns tests pass with 666/666 lines and 374/374 branches covered (100%, no exclusions). The focused Rules suite passes 40 tests, the relevant Play/Gun/ordnance/vehicle/guide selection passes 67 tests, and the Units regression suite passes 421 tests.
+
+
+## 11. Finite B5 completion backlog, agreed scope 2026-10-27
+
+**Remaining count: six integration slices, all Planned.** B5-R1 through B5-R6 are the entire remaining B5 commitment. Earlier completed slices stay complete. This planning update implements none of these six slices and grants no new runtime capability. The eight B5-D entries below are deferred rule-family work packages, not eight more B5 slices and not a promise that each will fit one implementation commit.
+
+**Finish line.** B5 finishes when a headless consumer can discover every reviewed option, distinguish executable, adjudicated, missing-fact and pending paths, exercise one evidenced live topic decision route, and trust replay, disclosure and phase-close assessment for the admitted baseline. B5 does not require all eventual ASL.Rules passes to be complete. U1 may then build the thin UI while showing unsupported options. The eventual all-Passes design target is unchanged.
+
+**Frozen admitted baseline.** Preserve the existing profiles through `existing-engine-work-v1` version `b5-work-4`: Stun/CX and the bounded Placed DC integration; recorded fire/Spotter and grenade/Wind history; work progress; permissioned work adjudication; packing assembly/manning, replenishment and supply transfer/offload effects. This list is an integration inventory, not a statement that every topic or rule in those families is executable. `pack`, `ammo`, broader atmosphere and Spotter automation stay Pending. No new rule family must be implemented to close B5.
+
+| ID | Required slice | Depends on | Concrete deliverable and completion evidence | Status |
+|---|---|---|---|---|
+| B5-R1 | Complete capability and pending-work inventory | Completed B5 baseline | A checked inventory maps every current topic/dependency to source review, evaluator/command evidence or an explicit gap and B5-D owner. Preserve 538 topics, 38 dependencies and 191 links; add count, identity and mapping tests. Missing or unregistered support remains NotEvaluated/Pending, never silently available or absent. | Planned |
+| B5-R2 | Audit and bound the admitted host capabilities | B5-R1 | Reconcile each profile and permissioned work effect against actual Rules, Units and Play proofs. Record exact supported conditions, missing facts, source gaps and refusal boundaries. Fix unsafe admitted paths or narrow/refuse them; do not implement a deferred family merely to make an overbroad claim true. Tests prove that pending eligibility and adjudicated effects cannot be mistaken for automatic rule support. Version profiles when their contract changes. | Planned |
+| B5-R3 | Durable decision-window evidence | B5-R2 | Define and persist or reconstruct only the exact timing evidence needed by the B5-R4 Placed DC route: phase occurrence, owner/decision authority, origin, prerequisite state and relevant source timing. If the existing journal is insufficient, add the smallest authoritative evidence. Prove historical replay, repeated phase names and legacy missing-evidence behavior. Do not invent ASOP substep completion from a phase label. | Planned |
+| B5-R4 | One complete headless live topic decision route | B5-R3 | Connect the reviewed AFPh Placed DC topic to its existing governed detonation/choice/follow-up path. Return typed action information only for an admitted, authorized, evidenced window. Execute through normal proposal, confirmation, expected revision and attempt identity. Prove success, unavailable/missing evidence, wrong viewer, stale request, interruption/resolution and closure parity. All other topics retain their honest reference/pending status unless already independently proven. | Planned |
+| B5-R5 | Cross-profile replay and disclosure acceptance | B5-R4 | A bounded matrix covers every shipped profile: new and legacy records, historical reads, repeat reads, retry/idempotency, terminal effects and missing facts. Exercise authorized adjudicator, owning side and opposing side views; hidden-world changes must not leak through results, counts, errors or close assessment. Reuse existing tests where sufficient and add only missing proofs. | Planned |
+| B5-R6 | B5 acceptance and U1 handoff | B5-R1 through B5-R5 | Publish a capability/evidence matrix and a headless consumer example using the B5-R4 route, cross-phase obligations and pending disclosures. Check every item in section 9 against named tests. Verify catalog completeness and the deferred register; pass the full ASL.Turns 100% line/branch coverage gate without exclusions plus relevant Rules/Units/Play checks. Mark B5 complete and U1 eligible only when every acceptance item passes. No Blazor implementation is part of this slice. | Planned |
+
+### 11.1 Deferred ASL.Rules pass register
+
+These IDs identify retained requirements, not invented numbered Rules passes. Assign an actual pass number when its rule implementation is scheduled. Each future admission requires rulebook/ASOP reconciliation, Rules-owned predicates, durable facts, replay, disclosure and governed command proofs. Existing partial implementations and references remain available while the missing semantics stay pending.
+
+| ID | Deferred rule-family work | Retained scope and gap | B5 treatment |
+|---|---|---|---|
+| B5-D1 | Fire and Spotter execution | Original designation, replacement windows, Opportunity Fire and required breakdown, remaining vehicle/PRC fire dependencies. | Preserve observed firing/Spotter history; it is not permission for a new shot or designation. Missing execution remains visible. |
+| B5-D2 | Atmosphere execution | White SMOKE removal/dispersal, drift/Gust effects, cave WP, vehicle/FFE/ambient dust and their distinct cleanup triggers. | Preserve admitted grenade/Wind history and typed gaps. Do not collapse differing timing into generic cleanup. |
+| B5-D3 | Packing and animal transport | Full G10 source reconciliation, eligibility, duration/night/minimum, Gun/Mule/crew roles, midpoint/reversal, loading/unloading and transport. The full Chapter G source remains absent from the local Markdown set. | Keep adjudicated work and assembly effects, with automatic packing support Pending and source gaps explicit. |
+| B5-D4 | Ammunition supply and Ammo Dumps | E10.11 qualification, compatibility, Accessible Locations, additional Immobility cases, occupant/towed-equipment disposition, simultaneous recipients, dump use/replenishment and SSR/DYO setup, transition-turn and firing-benefit MP restrictions, immobilization handling, capture/destruction/explosion, automatic Low Ammo and D3.71/B# firing behavior. | Preserve bounded replenishment and relocation effects. Refuse unsupported effect contexts; Applied never means full E10 integration. |
+| B5-D5 | Tunnels and airborne | Tunnel entry/transit/emergence and airborne arrival/landing histories, eligibility, timing, interruption and consequences. | Retain reviewed topics, dependencies and explicit unsupported host-fact/command gaps. No fabricated live obligation from reference text. |
+| B5-D6 | Close Combat declarations and heroes | Remaining CC declarations, hero creation/use, ownership, timing and cross-phase consequences. | Preserve any independently proven current engine paths; guide integration is pending where evidence is absent. |
+| B5-D7 | Water, aerial and module profiles | Water/amphibious, aerial and module-specific facts, applicability, timing and rule execution. | Keep reference topics visible. An absent integration profile is not evidence of scenario inapplicability. |
+| B5-D8 | Trip Flare and Clearance execution | Host facts and governed command integration for existing bounded timing predicates; clearance-before-status and concealment-before-illumination ordering proofs. | Existing Rules predicates remain partial evidence, not live host support. Keep mandatory-rule explanations visible without manufacturing executable obligations. |
+
+### 11.2 Visibility, change control and verification
+
+- Deferred means implementation is scheduled after B5, not that an option disappears or a rule becomes optional. Keep source, timing, applicability and integration support separate. Unknown facts remain unknown. `NotApplicable` requires scenario evidence; it is never a synonym for missing code.
+- Use the existing typed support vocabulary. A planning deferral does not bulk-change runtime Pending values to Deferred or mark capabilities integrated. B5-R1 establishes the explicit mapping; hosts continue reporting their actual capability and missing facts.
+- Required but unsupported consequences remain visible with their source and manual/adjudicated limitation. A consideration mark cannot satisfy a mandatory effect. No generic “resolve anything” action is introduced, and pending rules do not become invented executable phase-close blockers. Preserve the existing governed closure authority and viewer-safe assessment.
+- Fixes needed to keep an already-admitted path safe belong to B5-R2 or the relevant acceptance slice. Broader rule semantics belong to B5-D1 through B5-D8. If a fix needs a later pass, narrow the advertised support and refuse the unsupported path while preserving the option.
+- Keep the six IDs stable. Implementation can span several commits without adding more exit gates. Expanding the admitted baseline or reopening the B5 finish line requires an explicit scope decision and a recorded reason; newly found rule gaps attach to the deferred register by default.
+- Every implementation slice retains 100% line and branch coverage for the entire ASL.Turns assembly, without source exclusions. Run relevant dependent tests when code changes. This documentation-only rebaseline does not rerun or claim new coverage: the last verified baseline is 150 ASL.Turns tests, 666/666 lines, 374/374 branches, 40 focused Rules tests, 67 relevant Play tests and 421 Units tests.
+
+The next implementation request is **B5-R1: complete capability and pending-work inventory**. The remaining count is six until its deliverables and tests are complete, then five. B5-D work does not decrement that count.
