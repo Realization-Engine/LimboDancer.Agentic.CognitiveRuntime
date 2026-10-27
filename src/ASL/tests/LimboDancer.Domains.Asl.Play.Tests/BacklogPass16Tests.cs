@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ASL.Turns;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
@@ -438,7 +439,34 @@ public sealed class BacklogPass16Tests : IDisposable
         }));
         Assert.Equal("rph", Current.Phase);
         Assert.Equal(4, Current.Nvr);
-        Assert.Single(Since(before).Select(item => item.Payload).OfType<WindChanged>());
+        var wind = Assert.Single(Since(before).Select(item => item.Payload).OfType<WindChanged>());
+        var first = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "rph", "existing-engine-atmosphere-v1");
+        Assert.Equal(wind.Gust, Assert.Single(first.Atmosphere!.Wind).Gust);
+        Assert.Equal("rph", Assert.Single(first.Atmosphere.Wind).Phase);
+        Assert.Equal(TurnSupport.Pending, first.Atmosphere.PendingRules.Single(item => item.Family == TurnAtmosphereFamily.Gusts).CommandSupport);
+        var count = Revision;
+        Assert.Equal(JsonSerializer.Serialize(first), JsonSerializer.Serialize(await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "rph", "existing-engine-atmosphere-v1")));
+        Assert.Equal(count, Revision);
+    }
+
+    [Fact]
+    public async Task RecordedGustRemainsVisibleAtAdvancingFireWithoutBeingAppliedOrRerolled()
+    {
+        await SetupAt(0, "german", ["weather:gusty"], Sides(), Unit("g1", "attacker-squad", "E3", "german"), Unit("r1", "defender-squad", "H8", "russian"));
+        await Advance(7);
+        Committed(await Do(GameActions.AdvancePhase, Then(6), new
+        {
+        }));
+        Assert.True(store.Read(Scope)!.Events.Select(item => item.Payload).OfType<WindChanged>().Single().Gust);
+        var first = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "rph", "existing-engine-atmosphere-v1")).Atmosphere!;
+        Assert.True(Assert.Single(first.Wind).Gust);
+        await Advance(4);
+        Assert.Equal("afph", Current.Phase);
+        var count = Revision;
+        var later = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "afph", "existing-engine-atmosphere-v1")).Atmosphere!;
+        Assert.Equal(JsonSerializer.Serialize(first.Wind), JsonSerializer.Serialize(later.Wind));
+        Assert.Equal(TurnSupport.Pending, later.PendingRules.Single(item => item.Family == TurnAtmosphereFamily.Gusts).CommandSupport);
+        Assert.Equal(count, Revision);
     }
 
     // R16.10 (E3.51): with Overcast, a Wind Change DR of 10 or more starts the rain, which causes Mist.

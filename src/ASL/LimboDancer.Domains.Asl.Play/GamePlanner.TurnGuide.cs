@@ -12,6 +12,10 @@ public sealed record TurnHostGuide(TurnGuideSnapshot Guide, ImmutableArray<TurnH
     TurnPhaseCloseAssessment PhaseClose)
 {
     public TurnGuideProfile Profile { get; init; } = TurnGuideProfiles.Get("existing-engine");
+    public TurnAtmosphereSnapshot? Atmosphere
+    {
+        get; init;
+    }
     public TurnFireHistorySnapshot? FireHistory
     {
         get; init;
@@ -83,7 +87,8 @@ public sealed partial class GamePlanner
         return new(guide, obligations, close)
         {
             Profile = profile,
-            FireHistory = profile.Id == "existing-engine-fire-v1" ? ReadFireHistory(history, revision, perspective) : null,
+            FireHistory = profile.Id is "existing-engine-fire-v1" or "existing-engine-atmosphere-v1" ? ReadFireHistory(history, revision, perspective) : null,
+            Atmosphere = profile.Id == "existing-engine-atmosphere-v1" ? ReadAtmosphere(history, revision, perspective) : null,
         };
     }
 

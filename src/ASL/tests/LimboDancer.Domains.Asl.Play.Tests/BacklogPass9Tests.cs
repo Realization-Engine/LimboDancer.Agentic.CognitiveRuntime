@@ -550,6 +550,15 @@ public sealed class BacklogPass9Tests : IDisposable
         Committed(await Smoke(G1, "bd01:B8:0", "g1", "bd01:B8:0", 1));
         Assert.Single(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
         Assert.Equal(G1, Current.SmokeAttempts);
+        var smokeRevision = Revision;
+        var smokeGuide = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", "existing-engine-atmosphere-v1");
+        Assert.Equal(TurnSmokeState.Active, Assert.Single(smokeGuide.Atmosphere!.Grenades).State);
+        Assert.True(Assert.Single(smokeGuide.Atmosphere.Grenades).AttemptSpentThisPhase);
+        Assert.Empty(smokeGuide.Atmosphere.UnclassifiedSmoke);
+        Assert.Equal(7, smokeGuide.Atmosphere.PendingRules.Length);
+        var enemySmoke = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("russian"), "mph", "existing-engine-atmosphere-v1")).Atmosphere!;
+        Assert.Empty(enemySmoke.Grenades);
+        Assert.NotEmpty(enemySmoke.PendingRules);
         var before = Revision;
         Committed(await Fire(R1, "bd01:B8:0", 6, 6));
         var record = LastFire(before);
@@ -566,6 +575,35 @@ public sealed class BacklogPass9Tests : IDisposable
         await Advance();
         Assert.DoesNotContain(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+        var afterSmoke = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "dfph", "existing-engine-atmosphere-v1")).Atmosphere!;
+        Assert.Equal(TurnSmokeState.RemovedAtMovementEnd, Assert.Single(afterSmoke.Grenades).State);
+        Assert.False(Assert.Single(afterSmoke.Grenades).AttemptSpentThisPhase);
+        var oldSmoke = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", "existing-engine-atmosphere-v1", smokeRevision);
+        Assert.Equal(JsonSerializer.Serialize(smokeGuide.Atmosphere), JsonSerializer.Serialize(oldSmoke.Atmosphere));
+        Assert.Equal(TurnCloseDisposition.ReadOnly, oldSmoke.PhaseClose.Disposition);
+        var stored = store.Read(Scope)!;
+        var disk = GameEventReader.Read(Encoding.UTF8.GetBytes(GameEventWriter.Write(Scope, stored))).Record!;
+        var copied = new FileGameStore(Path.Combine(root, "smoke-copy"));
+        var reader = new GamePlanner(copied, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, copied.Append(Scope, disk.Label, 0, disk.Events, reader.Replay).Status);
+        Assert.Equal(AppendStatus.Replay, copied.Append(Scope, disk.Label, 0, disk.Events, reader.Replay).Status);
+        var count = copied.Read(Scope)!.Events.Count;
+        Assert.Equal(JsonSerializer.Serialize(afterSmoke), JsonSerializer.Serialize((await reader.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "dfph", "existing-engine-atmosphere-v1")).Atmosphere));
+        Assert.Equal(count, copied.Read(Scope)!.Events.Count);
+        var missingLinks = disk.Events.Select(item => item.Payload is InstanceCreated { Instance.Kind: "asl:smoke" }
+            ? item with
+            {
+                Causes = []
+            } : item).ToArray();
+        var legacy = new FileGameStore(Path.Combine(root, "smoke-legacy"));
+        var legacyReader = new GamePlanner(legacy, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, legacy.Append(Scope, disk.Label, 0, missingLinks, legacyReader.Replay).Status);
+        var incomplete = (await legacyReader.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", "existing-engine-atmosphere-v1", smokeRevision)).Atmosphere!;
+        Assert.Equal(TurnSmokeState.NotEvaluated, Assert.Single(incomplete.Grenades).State);
+        Assert.Null(Assert.Single(incomplete.Grenades).Counter);
+        Assert.Single(incomplete.UnclassifiedSmoke);
+        Assert.Equal(TurnSmokeState.NotEvaluated, Assert.Single((await legacyReader.ReadTurnGuideProfileAsync(Scope,
+            Perspective.Side("german"), "dfph", "existing-engine-atmosphere-v1")).Atmosphere!.Grenades).State);
     }
 
     [Fact]
@@ -577,6 +615,9 @@ public sealed class BacklogPass9Tests : IDisposable
         var before = Revision;
         Committed(await Smoke(G1, "bd01:A8:0", "g1", "bd01:B8:0", 6));
         Assert.DoesNotContain(Current.Entities, item => item.Kind == "asl:smoke");
+        var failedSmoke = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", "existing-engine-atmosphere-v1")).Atmosphere!;
+        Assert.Equal(TurnSmokeState.FailedAttempt, Assert.Single(failedSmoke.Grenades).State);
+        Assert.True(Assert.Single(failedSmoke.Grenades).AttemptSpentThisPhase);
         Assert.Equal(4, Since(before).Select(item => item.Payload).OfType<MovementStepped>().Single().HalfMf);
         await Pass();
         Assert.True(Current.Unit("g1")!.MovementEnded);

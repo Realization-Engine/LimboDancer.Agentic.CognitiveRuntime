@@ -335,3 +335,6 @@ B5 update, 2026-10-27: the bounded Placed DC slice persists ownership at placeme
 
 
 B5 fire/Spotter update, 2026-10-27: the new explicit profile derives disclosed firing and Spotter history from existing durable events. Recorded ROF and retained assignments are evidence, not permission to fire. First observed use is distinguished from unrecorded original designation. Replacement timing, Opportunity Fire/breakdown and remaining fire families stay pending. See the design and plan B5 fire/Spotter section. ASL.Turns: 131 tests, 516/516 lines and 288/288 branches covered (100%).
+
+
+B5 atmosphere update, 2026-10-27: ordinary infantry grenade attempts and MPh cleanup now derive from causal event evidence, with recorded Wind/Gust history retained across phases. Drift, cave WP and the three dust categories remain explicit typed pending entries, including distinct timing and missing facts. Unknown SMOKE metadata is not classified or expired by the guide. See the design and plan atmosphere section for scope and compatibility. Verification: 140 Turns tests, 572/572 lines and 304/304 branches (100%); 40 Play and 15 Rules sequence tests pass.

@@ -41,3 +41,6 @@ B5 implements the bounded Placed DC persistence/replay/profile slice. See implem
 
 
 The next B5 slice adds fire/Spotter history through `existing-engine-fire-v1`, with historical disclosure and shared Rules retention checks. Remaining Spotter execution rules stay pending. Current ASL.Turns verification: 131 tests, 516/516 lines and 288/288 branches, both 100%. See the design and implementation plan B5 fire/Spotter section.
+
+
+B5 atmosphere profile: ordinary grenade lifecycle and Wind/Gust history, with distinct pending white SMOKE, drift, cave WP, Vehicle Dust, Ambient Dust and FFE Dust execution. See the design and plan atmosphere section. ASL.Turns now passes 140 tests with 572/572 lines and 304/304 branches covered (100%).
