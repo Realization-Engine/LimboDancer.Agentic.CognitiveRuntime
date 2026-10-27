@@ -57,7 +57,8 @@ public sealed class TurnGuideService
         {
             throw new ArgumentException("Unknown actual phase.", nameof(request));
         }
-        if (!timing.Windows.Any(window => window.Id == context.WindowId && window.PhaseId == context.ActualPhaseId))
+        var phaseOnly = context.WindowId == context.ActualPhaseId + ":phase";
+        if (!phaseOnly && !timing.Windows.Any(window => window.Id == context.WindowId && window.PhaseId == context.ActualPhaseId))
         {
             throw new ArgumentException("Unknown or cross-phase current window.", nameof(request));
         }
@@ -82,7 +83,7 @@ public sealed class TurnGuideService
             var registrations = capabilities.Topics.Single(item => item.Topic.Id == topic.Id).Registrations
                 .Where(item => item.Profile == context.Profile).ToImmutableArray();
             var evaluators = registrations.Where(item => Supported(item.Evaluator)).ToDictionary(item => item.Id, StringComparer.Ordinal);
-            var decisions = visible.Where(item => evaluators.ContainsKey(item.CapabilityId) && item.WindowId == context.WindowId)
+            var decisions = visible.Where(item => !phaseOnly && evaluators.ContainsKey(item.CapabilityId) && item.WindowId == context.WindowId)
                 .OrderBy(item => item.Id, StringComparer.Ordinal)
                 .Select(item => Compose(item, evaluators[item.CapabilityId], request)).ToImmutableArray();
             if (decisions.IsEmpty)

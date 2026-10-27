@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and `ASL.Turns.Tests` now provide the tested headless reference catalog, typed capability contracts, validated stable timing schema, pure B2 guidance composition and a bounded B3 obligation assessment slice. Live host adapters, additional obligation families and command integration below remain proposed. UI components are deferred until the back-end contracts and behavior are proven.
+Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and `ASL.Turns.Tests` now provide the tested headless reference catalog, typed capability contracts, validated stable timing schema, pure B2 guidance composition and a bounded B3 obligation assessment slice. B4 adds Play host adapters and shared phase-close assessment. Additional families and broader integration remain proposed. UI components are deferred until the back-end contracts and behavior are proven.
 
 References: [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Implementation Plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md), [cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md), [folder index](README.md).
 
@@ -41,15 +41,15 @@ Implemented in this revision:
 
 The current loader recognizes the existing Rally schema 2 and other schema 1 documents. It validates group/term references, page bounds, dependency targets and available ASOP ledger links. B1 imports all ten Rally steps from the reviewed walkthrough into its JSON ledger. Legacy inputs without a ledger remain readable by the catalog loader, but do not satisfy the current timing manifest. Numeric group positions and free-text status notes remain authored input, not final stable timing IDs or capability verdicts.
 
-B3 now derives obligation instances from supplied evidence and evaluates four timing families in Rules. Not implemented: live Play/Units adapters, governed command integration, all-family timing coverage, phase-close validation, historical migrations or any UI component. The tests prove the reference/composition contracts and the bounded timing slice; full live-game command and replay integration remain unproven.
+B3 evaluates four timing families in Rules. B4 derives Stun/CX evidence from real Play history and shares the governed phase-close planning path. All-family timing, migrations, finer side readiness disclosure and UI components remain pending. See the B4 contract below.
 
 ## 4. Backend API before UI work
 
-The `Describe` signature is implemented in B2. `AssessClose` remains proposed for B4:
+B2 composition and B4 disclosure projection are implemented:
 
 ```csharp
 TurnGuideSnapshot Describe(TurnGuideRequest request, TurnFacts facts);
-PhaseCloseAssessment AssessClose(TurnCloseRequest request, TurnFacts facts);
+TurnPhaseCloseAssessment TurnPhaseClose.Describe(TurnClosePlanFacts facts, bool adjudicator, bool historical);
 ```
 
 B2 implements a concrete `TurnGuideService` over immutable externally supplied verdicts. Future Rules adapters supply those verdicts; there is no general-purpose plugin engine. A request identifies game scope, internal evaluation stamp, actual and browsed phase/window, viewer/acting side, scenario profile and optional disclosed subject. `TurnFacts` is an immutable, typed adapter result, not a `GameState`, arbitrary dictionary, serialized UI state or callback into a page.
@@ -74,7 +74,7 @@ The service is deterministic for fixed inputs. A read does not change a game, ro
 
 `TurnEvaluationContext` identifies game, authenticated viewer, viewer side, profile, actual phase, semantic window and internal evaluation stamp. `TurnGuideRequest` adds browsed phase and historical mode. `TurnFacts` carries the same context and immutable authorized verdicts. Exact context mismatch rejects stale or cross-game/viewer/profile/window input. Required context strings, current phase/window ownership and browsed phase are validated. The host must include fact, catalog and capability versions in its stamp.
 
-`TurnGuideVerdict` is a trusted adapter contract: an opaque decision ID, audience viewer ID, capability ID, authorized subject ID, current window, decision owner, applicability, safe explanation and optional opaque action route. This is already authorized content, not unrestricted game state. The host must use authenticated identity and GameView-equivalent disclosure before constructing it. Caller-supplied viewer IDs or stamps are not credentials, and support evidence is not runtime proof of a rule verdict. Production adapters remain B3/B4 work.
+`TurnGuideVerdict` is a trusted adapter contract: an opaque decision ID, audience viewer ID, capability ID, authorized subject ID, current window, decision owner, applicability, safe explanation and optional opaque action route. This is already authorized content, not unrestricted game state. The host must use authenticated identity and GameView-equivalent disclosure before constructing it. Caller-supplied viewer IDs or stamps are not credentials, and support evidence is not runtime proof of a rule verdict. Production topic-verdict registrations remain pending; B4 adds history and closure adapters.
 
 Other audiences are removed before content validation, counts or output. Visible duplicate decision IDs and invalid applicability values fail. Only exact-profile registrations with Partial or IntegratedSubset evaluator support can supply decisions, and only verdicts matching the current window participate. Unknown registrations and unrelated windows cannot create legality. A missing subject returns NotEvaluated with a generic reason and no route; side-wide decisions must use an explicitly authorized game/side subject handle.
 
@@ -196,7 +196,7 @@ Progress is a list of evidenced completed Game-Turn intervals tied to the origin
 
 The coordinator deterministically orders prerequisites before dependents, rejects missing prerequisite instances and cycles, and preserves stable ordering for unrelated origins. A dependent remains waiting unless each prerequisite is resolved. Interrupted or cancelled prerequisites do not silently satisfy a required consequence. Parent resolution before its child resolution evidence is rejected. The prerequisites themselves are trusted rule-adapter facts; B3 does not infer arbitrary cross-rule dependencies from prose. Clearance-before-Stun and child-before-parent tests demonstrate coordination, not automatic construction of every cleanup graph.
 
-There is no mutable obligation store, event writer, background scheduler, automatic cleanup or new Units event in this revision. Save/reload tests round-trip the supplied evidence contract and reconstruct the same result. They prove deterministic derivation and no duplicate read effects, not end-to-end Units save migration. Existing projector cleanup remains its only mutation owner; B4 must establish shared phase-close assessment and commit/replay parity before wiring this slice into play.
+There is no mutable obligation store, event writer, background scheduler, automatic cleanup or new Units event in this revision. Save/reload tests round-trip the supplied evidence contract and reconstruct the same result. They prove deterministic derivation and no duplicate read effects, not end-to-end Units save migration. Existing projector cleanup remains its only mutation owner; B4 now shares phase-close planning and proves live Stun/CX cleanup parity; further family integrations remain pending.
 
 Validation: **116 ASL.Turns tests pass, 425/425 executable lines and 234/234 branches covered (100% each)**. The focused Rules run also passes **28 tests**, including the new timing boundaries and existing sequence regressions. Run the existing Turns coverage gate and the Rules tests filtered to `TurnObligationRulesTests|ScenarioA1SequenceRulesTests`. Coverage scope remains the entire ASL.Turns assembly without source exclusions; this is not a claim of 100% coverage for the much larger existing Rules assembly.
 
@@ -216,10 +216,10 @@ Existing seams inspected in the prior design remain the integration anchors:
 
 - `ScenarioA1Definitions` phase identities; `ScenarioA1SequenceCalculator` and `ScenarioA1SequenceProjection` permissions and transition verdicts.
 - `GameState`, `GameEvent`, `GameProjector.ChangePhase` and `GameView` for history, projection and disclosure.
-- `GamePlanner.PlanAdvance`, `GamePlanner.PhaseEndBar`, `PhaseEndedBy` and `GameActions.AdvancePhase` for governed progression.
+- `GamePlanner.BuildPhaseClosePlan`, `GamePlanner.PhaseEndBar`, `PhaseEndedBy` and `GameActions.AdvancePhase` for governed progression.
 - `LivePlay`, existing proposal/confirmation and action panels as eventual consumers, not back-end dependencies.
 
-`PhaseEndBar` is not a full closure assessment: it reports proposer-related checks, while `PlanAdvance` has further checks and consequences. Extract narrow reusable Rules facts/verdicts and shared Play adapters incrementally. ASL.Turns composes the resulting `PhaseCloseAssessment`; both the read display and authoritative command preparation use the same semantics. The command and projector still independently validate at commit/replay.
+`PhaseEndBar` is not a full closure assessment: it reports proposer-related checks, while `BuildPhaseClosePlan` has further checks and consequences. B4 shares the full planning pipeline. ASL.Turns projects the resulting `TurnPhaseCloseAssessment`; both the read display and authoritative command preparation use the same semantics. The command and projector still independently validate at commit/replay.
 
 An action-route result is an opaque, scoped reference resolved by the authenticated Play host. The host opens its existing action path, supplies permissible selections and revalidates current state. Never embed executable command JSON in the reference catalog. UI-free integration tests can use the same route/intent contract without rendering a component.
 
@@ -251,3 +251,23 @@ After the headless contract is stable, a Blazor component can render the phase s
 The saved [design preview](turn-phase-guide.html) is a frozen reference snapshot, not a dependency or implementation of ASL.Turns. Production must not import its JavaScript or reproduce rule logic from the mock-up.
 
 UI construction begins only after headless tests demonstrate complete reference inventory, unknown/pending visibility, a supported live slice, viewer-safe output, stale rejection, representative cross-phase obligations and phase-close parity with the existing command path. Completing the current foundation does not satisfy those later gates.
+
+## B4 host contract, implemented 2026-10-27
+
+Play now references ASL.Turns. GamePlanner.ReadTurnGuideAsync combines the complete phase reference snapshot, disclosed obligations and shared phase-close assessment. AssessTurnPhaseCloseAsync accepts StateStamp, authenticated Perspective and retain-DM selections. These are server APIs, not network endpoints. The caller must authenticate Perspective, as with ViewOf; a client-selected adjudicator is not authorization.
+
+TurnHistoryAdapter derives Stun/CX activation and terminal evidence from actual projected transitions. Repeated reads and planner recreation reconstruct obligations without writes. Historical reads use the requested revision and are read-only. Setup markers have unknown origins and remain NotEvaluated. Other families retain their catalog entries and pending support, including Trip Flare and Clearance whose B3 timing contracts exist but whose host evidence/command integration is not admitted.
+
+The host persists phases, not ASOP substeps. Reserved <phase>:phase context composes reference guidance while suppressing live verdicts and action routes. It never substitutes the first ASOP window. Production topic capability registrations remain empty until specific Rules/command evidence is admitted; all 538 topics and 38 dependency definitions remain available.
+
+Actual phase-advance commands and assessment share the full PlanCoreAsync pipeline and BuildPhaseClosePlan (formerly PlanAdvance), including global guards, proposer checks, phase-specific refusals and consequences. Assessment bypasses only committed-attempt replay detection using an ephemeral, undisclosed probe ID. It never commits or invokes a deferred roll delegate. Existing projector cleanup retains sole mutation ownership. Assessment reports planned event types without creating replacement cleanup events. PhaseEndBar remains a legacy proposer-only check.
+
+Adjudicators receive exact reasons, event-type effects, roll requirement and Ready/Blocked/Stale/ConsequencePending classification. A consequence-only plan is not a completed phase transition. Side views always receive fixed GovernedCheckRequired wording without hidden readiness, reasons, counts or roll flags. They use the existing governed action to confirm closure. Side obligation disclosure requires own visible counters and visible origin/outcome events. Internal revisions, origin IDs and prerequisite graphs never leave the API. Historical views return ReadOnly. Finer side readiness disclosure remains future work.
+
+Validation: the full ASL.Turns coverage gate passes at 452/452 lines and 254/254 branches (100% each), without source exclusions. Host tests compare assessment to command plans across all eight phases over two player turns; prove invalid retain-DM refusal parity beyond PhaseEndBar; reject wrong perspectives, missing games and stale map/revision stamps; compare entire side responses before/after hidden enemy/revision changes; and exercise actual Double Time/CX and Stun cleanup, historical reconstruction and repeat-read safety.
+
+B5 owns further durable facts, finer disclosure and remaining families. Clearance-before-status and concealment-before-illumination end-to-end integration remain pending. B4 does not claim the whole rulebook is executable or the UI gate is satisfied.
+
+The earlier proposed AssessClose signature is superseded by TurnPhaseClose.Describe(TurnClosePlanFacts, bool adjudicator, bool historical), composed through the two Play APIs above. Earlier B2/B3 validation paragraphs record their milestone scope.
+
+B4 final verification: 123 ASL.Turns tests and 77 focused Play regression tests pass. Coverage is 100% for ASL.Turns, not a claim of full Play assembly coverage.

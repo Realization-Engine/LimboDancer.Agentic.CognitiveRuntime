@@ -8,6 +8,12 @@
         "resolved": "10.0.14",
         "contentHash": "T1IOYbID1msKjQEh684HebnN+Xnq/pocMXDukOMZtzzPTf9c4/30+/JndM/1txrqwuSYqWvLiAQWzu4U93cshw=="
       },
+      "asl.turns": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Domains.Asl.Rules": "[1.0.0, )"
+        }
+      },
       "limbodancer.abstractions": {
         "type": "Project"
       },
@@ -32,6 +38,7 @@
       "limbodancer.domains.asl.play": {
         "type": "Project",
         "dependencies": {
+          "ASL.Turns": "[1.0.0, )",
           "LimboDancer.Dice": "[1.0.0, )",
           "LimboDancer.Domains.Asl.Rules": "[1.0.0, )",
           "LimboDancer.Domains.Asl.Units": "[1.0.0, )",

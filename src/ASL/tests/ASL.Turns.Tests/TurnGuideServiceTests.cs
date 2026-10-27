@@ -14,6 +14,22 @@ public sealed class TurnGuideServiceTests
         "side-a", TurnApplicability.Required, "Authorized reason", "opaque-route");
     private static TurnGuideRequest Request => new(Context, "rph", false);
     private static TurnFacts Facts(params TurnGuideVerdict[] verdicts) => new(Context, [.. verdicts]);
+    [Fact]
+    public void PhaseOnlyContextCannotPretendToKnowAnAsopWindow()
+    {
+        var context = Context with
+        {
+            WindowId = "rph:phase"
+        };
+        var service = new TurnGuideService(Catalog, [Capability]);
+        var result = service.Describe(Request with
+        {
+            Context = context
+        }, new TurnFacts(context, [Verdict with { WindowId = context.WindowId }]));
+        Assert.Equal(45, result.Options.Length);
+        Assert.Equal(TurnApplicability.NotEvaluated, Decision(result).Applicability);
+        Assert.Null(Decision(result).ActionRoute);
+    }
     private static TurnDecision Decision(TurnGuideSnapshot result) => Assert.Single(Assert.Single(result.Options,
         item => item.Topic.Id == "rph:assisted").Decisions);
 

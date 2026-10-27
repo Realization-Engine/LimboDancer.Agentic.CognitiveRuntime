@@ -18,7 +18,7 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 /// Governed writes (Governed Writes Design): setup, the sequence of play, and the reviewed empty-building entry, each
 /// committed only through the Execution Gate, on a synthetic verified board 01 whose E4 is a wooden building.
 /// </summary>
-public sealed class PlayTests : IDisposable
+public sealed partial class PlayTests : IDisposable
 {
     private static readonly Guid Tenant = Guid.Parse("7b1d2c3e-0000-4000-8000-00000000c303");
     private static readonly UnitVocabulary Vocabulary = UnitVocabulary.Asl();

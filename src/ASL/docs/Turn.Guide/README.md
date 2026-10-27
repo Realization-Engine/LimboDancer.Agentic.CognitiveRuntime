@@ -30,3 +30,8 @@ B1 adds typed capabilities and stable timing references. Run `./src/ASL/tests/AS
 B2 adds `TurnGuideService.Describe`, an immutable snapshot composer over authorized host verdicts. See design section 4 and implementation plan section 5 for the implemented API and its trust boundary.
 
 B3 adds internal `TurnObligationService.Assess` with Rules-owned timing, evidenced lifecycle state and prerequisite ordering. See design section 6 and implementation plan section 6 for its admitted families, pending work and required host disclosure.
+
+
+B4 adds Play host adapters, authenticated-perspective disclosure and shared governed phase-close assessment. Current coverage: 452/452 lines and 254/254 branches (100%). See implementation plan section 7 and the design B4 host contract for exact scope and remaining B5 work.
+
+B4 final verification: 123 ASL.Turns tests and 77 focused Play regression tests pass. Coverage is 100% for ASL.Turns, not a claim of full Play assembly coverage.

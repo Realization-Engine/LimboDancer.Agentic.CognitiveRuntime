@@ -261,8 +261,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
     }
 
-    public async Task<GamePlan> PlanAsync(ActionDescriptor action, JsonElement arguments, Guid tenant, string? actor = null,
-        CancellationToken cancellationToken = default)
+    public Task<GamePlan> PlanAsync(ActionDescriptor action, JsonElement arguments, Guid tenant, string? actor = null,
+        CancellationToken cancellationToken = default) =>
+        PlanCoreAsync(action, arguments, tenant, actor, assessmentOnly: false, cancellationToken);
+
+    private async Task<GamePlan> PlanCoreAsync(ActionDescriptor action, JsonElement arguments, Guid tenant, string? actor,
+        bool assessmentOnly, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(action);
         if (!Common(arguments, out var gameId, out var attemptId, out var expected))
@@ -274,7 +278,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var record = store.Read(scope);
         var existing = record?.Events ?? [];
         var label = record?.Label ?? gameId;
-        if (existing.FirstOrDefault(item => item.EventId == EventId(attemptId, 1)) is { } committed)
+        if (!assessmentOnly && existing.FirstOrDefault(item => item.EventId == EventId(attemptId, 1)) is { } committed)
         {
             // DICE-10: the same attempt with different inputs is not a replay.
             return ReusedWithOtherInputs(action, arguments, committed)
@@ -340,7 +344,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var plan = action.Id.Value switch
         {
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label, actor ?? "unknown"),
-            "asl.game.advance-phase" => PlanAdvance(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.advance-phase" => BuildPhaseClosePlan(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.enter-empty-building" => await PlanEntryAsync(scope, arguments, existing, attemptId, expected, label, cancellationToken),
             "asl.game.declare-overrun" => await PlanDeclareAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
             "asl.game.enter-building" => await PlanEnterBuildingAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
@@ -706,7 +710,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             : new GamePlan(GamePlanStatus.Ready, scope, label, expected, list, [ScenarioA1GameStart.SetupText(list.Count)]);
     }
 
-    private GamePlan PlanAdvance(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
+    private GamePlan BuildPhaseClosePlan(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
         string actor)
     {
         if (Replay(existing).Current is not { } state)

@@ -2,7 +2,7 @@
 
 Date: 2026-10-26
 
-Status: Backend-first exploration, reopened 2026-10-27. The ASL.Turns reference foundation exists; live evaluation and obligation execution remain planned. No UI component is implemented.
+Status: Backend-first exploration, reopened 2026-10-27. The ASL.Turns reference foundation exists; bounded Rules timing, host history adapters and shared phase-close assessment now exist; additional families and obligation execution remain pending. No UI component is implemented.
 
 Backend decision, 2026-10-27: [Design](ASL%20Turn%20Phase%20Guide%20Design.md) and [Implementation Plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md) now put ASL.Turns and ASL.Turns.Tests first. The headless mechanism owns content, guidance contracts, obligation coordination and closure assessment. Rules remains authoritative for semantics; Play adapts facts and executes governed commands. UI construction waits for backend proofs.
 
@@ -326,3 +326,6 @@ B1 update, 2026-10-27: the backend design records the validated 117-group/176-wi
 B2 update, 2026-10-27: pure guidance composition now retains all reference topics and consumes audience-authorized typed verdicts. Unknown capability/subject facts stay NotEvaluated; historical or browsed-phase reads cannot expose action routes. Internal evaluation stamps stay out of snapshots. The full library passes 88 tests with 336/336 lines and 176/176 branches covered. Rule evaluation, obligation lifecycles and governed host adapters remain B3/B4 work.
 
 B3 update, 2026-10-27: Rules-owned Stun, CX, Trip Flare and non-Flame Clearance timing now feeds a read-only obligation coordinator with stable origins, progress/outcome evidence and prerequisite ordering. All dependency definitions remain visible; unsupported families and command integration remain pending. The internal assessment requires B4 disclosure before any UI use. Verification: 116 Turns tests, 425/425 lines and 234/234 branches; 28 focused Rules tests.
+
+
+B4 update, 2026-10-27: Play supplies disclosed Stun/CX history evidence and shares its full phase-close planner with the guide. Reads never commit or draw dice. Side closure stays conservatively GovernedCheckRequired; adjudicators receive exact existing-engine assessment. Missing ASOP substeps and setup origins are not invented. All pending topics/dependencies remain visible. See the design B4 host contract and implementation plan section 7. ASL.Turns retains 100% coverage: 452/452 lines, 254/254 branches.

@@ -366,11 +366,19 @@ public sealed class VehicleStepsTests : IDisposable
         Assert.True(Is(halftrack, Conditions.Stunned) && Is(halftrack, Conditions.ButtonedUp));
         Assert.False(LiveFire.CrewExposed(halftrack));
 
+        var guideBeforeCleanup = await Planner().ReadTurnGuideAsync(Scope, Perspective.Side("german"), "pfph");
+        Assert.Equal(TurnObligationState.Scheduled, Assert.Single(guideBeforeCleanup.Obligations).State);
+
         // At the end of the Russian Player Turn the Stun becomes Stun +1 (D5.34); the crew stays BU (referee D2).
         await Advance(7);
         Assert.Equal(("rph", "german"), (Current.Phase, Current.PhasingSide));
         halftrack = Current.Unit("de-ht")!;
         Assert.True(Is(halftrack, Conditions.StunRecovery) && Is(halftrack, Conditions.ButtonedUp) && !Is(halftrack, Conditions.Stunned));
+        var afterCleanupRevision = Revision;
+        var guideAfterCleanup = await Planner().ReadTurnGuideAsync(Scope, Perspective.Side("german"), "rph");
+        Assert.Equal(TurnObligationState.Resolved, Assert.Single(guideAfterCleanup.Obligations).State);
+        Assert.Equal(JsonSerializer.Serialize(guideAfterCleanup), JsonSerializer.Serialize(await Planner().ReadTurnGuideAsync(Scope, Perspective.Side("german"), "rph")));
+        Assert.Equal(afterCleanupRevision, Revision);
 
         // BU, its AAMG may not fire in the PFPh (D1.83, D5.3); in its MPh the crew may expose itself again (D5.33).
         await Advance();
