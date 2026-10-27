@@ -43,8 +43,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.work: the work belongs to another or unknown side");
         }
         var effects = declaration?.CompletionEffects is not null || held?.Declaration.CompletionEffects is not null;
-        var eventType = effects ? TurnWorkRecorded.EffectsType : TurnWorkRecorded.LifecycleType;
-        var package = effects ? "asl.turn-work-effects.v1" : "asl.turn-work.v1";
+        var audited = operation == "start" || held?.HostAuditVersion == 1;
+        if (!audited && operation != "cancel")
+        {
+            return Refused(scope, label, expected, "play.work: legacy work is read/cancel only; cancel and redeclare under the audited contract without importing old progress");
+        }
+        var eventType = audited ? TurnWorkRecorded.AuditedType : effects ? TurnWorkRecorded.EffectsType : TurnWorkRecorded.LifecycleType;
+        var package = audited ? "asl.turn-work.v2" : effects ? "asl.turn-work-effects.v1" : "asl.turn-work.v1";
         var needsRoll = operation == "complete" && held?.Declaration.Kind == TurnWorkKind.AmmoReplenishment;
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult>? draw)
         {

@@ -71,7 +71,7 @@ public sealed partial class GamePlanner
                 return new TurnSpotterRead(pair.Weapon, pair.Spotter, known, unit?.Status == InstanceStatus.Active,
                     unit?.Side == crew?.Side, unit is not null && GameState.Condition(unit, Conditions.Broken) == ConditionState.True,
                     unit is not null && GameState.Condition(unit, Conditions.Captured) == ConditionState.True,
-                    state.SpottedThisPhase.Any(item => item.Gun == pair.Weapon && item.Spotter == pair.Spotter));
+                    shots.Any(item => item.InCurrentPhase && item.Weapon == pair.Weapon && item.Spotter == pair.Spotter));
             }).ToImmutableArray();
         return TurnFireHistory.Compose([.. shots], observations);
     }

@@ -360,3 +360,8 @@ B5 now has exactly six remaining integration slices: inventory, admitted-capabil
 ### B5-R1 inventory outcome, 2026-10-27
 
 R1 is complete: the headless inventory explicitly maps every one of the 538 topics and 38 dependencies to source-review status, bounded subset evidence where available, and retained pending-work ownership. All 191 catalog links remain unchanged. The inventory revealed a real ownership omission in the earlier eight deferred packages: ordinary core-phase integration now has owner B5-D9. No additional B5 exit slice was created. Five required slices remain, starting with R2's admitted-capability audit. Evidence inventory does not promote history, timing predicates or adjudicated effects into executable topic routes. The design and implementation plan explain the immutable schema, source gaps and tests.
+
+
+### B5-R2 audit outcome, 2026-10-27
+
+Profiles now expose explicit integration bounds without promoting pending rules. The audit found and fixed known-CE admission and resume/event revalidation gaps in work effects, plus a Spotter-use disclosure path that could reflect a withheld shot. New work uses a versioned audited event contract; legacy journals replay unchanged, but old open work is read/cancel only through the live planner. The design and plan contain the per-subset fact/authority/refusal matrix. No live topic route or full G10/E10 support is claimed. Four required B5 slices remain, beginning with R3 decision-window evidence.

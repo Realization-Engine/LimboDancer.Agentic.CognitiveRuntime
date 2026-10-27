@@ -96,4 +96,10 @@ public sealed class TurnWorkEffectsTests
             Assert.Throws<InvalidDataException>(() => TurnWorkLifecycle.Start(declaration with { CompletionEffects = spec }, 1, true));
         }
     }
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(null, false)]
+    public void ReplenishmentEffectsRequireKnownCe(bool? buttonedUp, bool supported) =>
+        Assert.Equal(supported, TurnWorkEffects.ReplenishmentPostureSupported(buttonedUp));
 }

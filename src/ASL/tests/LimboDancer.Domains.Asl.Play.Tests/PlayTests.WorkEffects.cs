@@ -76,7 +76,7 @@ public sealed partial class PlayTests
         Assert.Equal(TurnSupport.Pending, guide.Work[0].RuleAutomation);
         var record = store.Read(Current().Scope)!;
         var workEvent = record.Events.First(e => e.Payload is TurnWorkRecorded);
-        Assert.Equal(TurnWorkRecorded.EffectsType, workEvent.Type);
+        Assert.Equal(TurnWorkRecorded.AuditedType, workEvent.Type);
         var downgraded = record.Events.Select(e => e.EventId == workEvent.EventId ? e with { Type = TurnWorkRecorded.LifecycleType } : e).ToArray();
         Assert.True(Planner().Replay(downgraded).HasErrors);
         var read = GameEventReader.Read(Encoding.UTF8.GetBytes(GameEventWriter.Write(Current().Scope, record)));
@@ -123,7 +123,7 @@ public sealed partial class PlayTests
         {
             EventId = "bad-completion",
             Revision = changed.Revision + 1,
-            Type = TurnWorkRecorded.EffectsType,
+            Type = TurnWorkRecorded.AuditedType,
             Payload = new TurnWorkRecorded("pack", "complete", null, null, "attempt"),
         };
         var history = Planner().Replay([.. events, changed, complete]);
@@ -134,7 +134,8 @@ public sealed partial class PlayTests
         Assert.NotNull(lastValid);
         Assert.Empty(lastValid.PackedGuns);
         Assert.False(lastValid.TurnWork[0].Completed);
-        Assert.Equal(ConditionState.True, GameState.Condition(lastValid.Unit("g1")!, "asl:ti"));
+        Assert.False(lastValid.TurnWork[0].Working);
+        Assert.Equal(ConditionState.False, GameState.Condition(lastValid.Unit("g1")!, "asl:ti"));
         var append = store.Append(Current().Scope, "work", events.Count, [changed, complete], Planner().Replay);
         Assert.Equal(AppendStatus.Invalid, append.Status);
         Assert.Equal(events.Count, Current().Revision);

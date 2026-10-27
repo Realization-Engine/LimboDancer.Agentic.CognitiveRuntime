@@ -63,7 +63,7 @@ public sealed partial class GamePlanner
             && events[item.Facts.Key.OriginEventId].IsVisibleTo(perspective)
             && (item.Facts.Outcome is null || events[item.Facts.Outcome.EventId].IsVisibleTo(perspective)))
             .Select(item => new TurnHostObligation(item.Facts.Key.DefinitionId, item.Facts.Key.SubjectId,
-                item.Verdict.State, item.Verdict.Deadline, profile.CommandSupport(item.Facts.Key.DefinitionId, item.Facts.Origin is not null)))
+                item.Verdict.State, item.Verdict.Deadline, profile.AssessedCommandSupport(item.Facts.Key.DefinitionId, item.Facts.Origin is not null, item.Verdict.State)))
             .OrderBy(item => item.SubjectId, StringComparer.Ordinal).ThenBy(item => item.DefinitionId, StringComparer.Ordinal).ToImmutableArray();
         bool Disclosed(TurnObligation item)
         {

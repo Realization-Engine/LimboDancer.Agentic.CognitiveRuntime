@@ -16,7 +16,8 @@ public static partial class GameProjector
                 }
                 var existing = state.TurnWork.SingleOrDefault(item => item.Declaration.Id == change.WorkId);
                 var effects = change.Declaration?.CompletionEffects is not null || existing?.Declaration.CompletionEffects is not null;
-                if (eventType != (effects ? TurnWorkRecorded.EffectsType : TurnWorkRecorded.LifecycleType))
+                var audited = existing is null ? eventType == TurnWorkRecorded.AuditedType : existing.HostAuditVersion == 1;
+                if (eventType != (audited ? TurnWorkRecorded.AuditedType : effects ? TurnWorkRecorded.EffectsType : TurnWorkRecorded.LifecycleType))
                 {
                     throw new InvalidDataException("The work event protocol must match its recorded completion specification.");
                 }
@@ -28,7 +29,10 @@ public static partial class GameProjector
                     {
                         throw new InvalidDataException("Duplicate or invalid work declaration.");
                     }
-                    next = TurnWorkLifecycle.Start(declaration, state.Turn, WorkWindow(state) == TurnWorkWindow.FirstRally);
+                    next = TurnWorkLifecycle.Start(declaration, state.Turn, WorkWindow(state) == TurnWorkWindow.FirstRally) with
+                    {
+                        HostAuditVersion = audited ? 1 : 0
+                    };
                     if (declaration.Participants.Any(id => state.Find(id) is not { Status: InstanceStatus.Active } participant
                         || participant is not UnitInstance and not EquipmentInstance || participant.Side != declaration.Owner || state.Location(id) is null || GameState.Condition(participant, "asl:ti") == ConditionState.True
                         || state.TurnWork.Any(work => !work.Completed && !work.Cancelled && work.Declaration.Participants.Contains(id))))
@@ -62,6 +66,14 @@ public static partial class GameProjector
                 if (change.Operation == "start")
                 {
                     state = PrepareWorkEffects(state, next);
+                    if (audited && !AuditedWorkStillValid(state, next))
+                    {
+                        throw new InvalidDataException("Audited work needs active own, uncaptured participants and supported effect facts.");
+                    }
+                }
+                else if (audited && change.Operation == "resume" && !AuditedWorkStillValid(state, next))
+                {
+                    throw new InvalidDataException("Resume cannot re-admit invalid participant or effect facts.");
                 }
                 else if (change.Operation == "complete" && next.Declaration.CompletionEffects is not null)
                 {
@@ -89,7 +101,29 @@ public static partial class GameProjector
             ? TurnWorkWindow.FirstRally : state.Phase == "ccph" && state.PhasingSide != state.FirstSide
                 ? TurnWorkWindow.SecondCloseCombat : TurnWorkWindow.Unknown;
 
-        private static GameState MaintainTurnWork(GameState? previous, GameState next, EventPayload payload)
+        private bool AuditedWorkStillValid(GameState state, TurnLiveWork work)
+        {
+            if (work.Declaration.Participants.Any(id => state.Find(id) is not { Status: InstanceStatus.Active } participant
+                || participant.Side != work.Declaration.Owner || state.Location(id) is null
+                || GameState.Condition(participant, Conditions.Captured) == ConditionState.True))
+            {
+                return false;
+            }
+            try
+            {
+                if (work.Declaration.CompletionEffects is not null)
+                {
+                    ValidateWorkEffectState(state, work);
+                }
+                return true;
+            }
+            catch (InvalidDataException)
+            {
+                return false;
+            }
+        }
+
+        private GameState MaintainTurnWork(GameState? previous, GameState next, EventPayload payload)
         {
             if (previous is null || previous.TurnWork.Count == 0 || payload is TurnWorkRecorded)
             {
@@ -105,7 +139,8 @@ public static partial class GameProjector
                 }
                 // Phase cleanup cannot own this TI. Explicit counter changes, movement, firing and CC interrupt work.
                 var participants = item.Declaration.Participants;
-                var interrupted = participants.Any(id => next.Find(id) is not { Status: InstanceStatus.Active }
+                var interrupted = item.HostAuditVersion == 1 && !AuditedWorkStillValid(next, item)
+                    || participants.Any(id => next.Find(id) is not { Status: InstanceStatus.Active }
                     || previous.Location(id)?.Location != next.Location(id)?.Location)
                     || payload is ConditionsChanged conditions && participants.Contains(conditions.Id)
                         && (conditions.Conditions.GetValueOrDefault("asl:ti") == ConditionState.False && conditions.Conditions.ContainsKey("asl:ti")

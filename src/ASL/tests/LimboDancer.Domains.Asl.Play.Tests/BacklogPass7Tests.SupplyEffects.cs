@@ -34,7 +34,7 @@ public sealed partial class BacklogPass7Tests
     [InlineData(true, true)]
     public async Task SupplyEffectsMoveOneCounterAndApplySourceAndCapacityEffects(bool offload, bool immobilized)
     {
-        await Tanks(1942, "north-east", "east",
+        await WorkTanks(1942, "north-east", "east",
             Vehicle("source", "attacker-truck", "bd01:B10:0", "german", "east", immobilized ? Conditions.Immobilized : Conditions.Bogged),
             Vehicle("destination", "attacker-truck", "bd01:B10:0", "german"));
         var ordinary = GamePlanner.PassengerCapacity(Current, Current.Unit("source")!);
@@ -96,7 +96,7 @@ public sealed partial class BacklogPass7Tests
     [InlineData(true)]
     public async Task SupplyEffectsRejectStaleSourceAtomicallyAndCancellationLeavesSupplyInPlace(bool offload)
     {
-        await Tanks(1942, "north-east", "east",
+        await WorkTanks(1942, "north-east", "east",
             Vehicle("source", "attacker-truck", "bd01:B10:0", "german", "east", Conditions.Immobilized),
             Vehicle("destination", "attacker-truck", "bd01:B10:0", "german"));
         Committed(await RecordWorkEffect("start", "start", SupplyDeclaration(offload)));
@@ -113,7 +113,7 @@ public sealed partial class BacklogPass7Tests
         {
             EventId = "stale-completion",
             Revision = changed.Revision + 1,
-            Type = TurnWorkRecorded.EffectsType,
+            Type = TurnWorkRecorded.AuditedType,
             Payload = new TurnWorkRecorded("ammo", "complete", null, null, "E10.4"),
         };
         Assert.False(Planner().Replay([.. events, changed]).HasErrors);
@@ -135,7 +135,7 @@ public sealed partial class BacklogPass7Tests
     [InlineData(true, true)]
     public async Task SupplyEffectsRejectInvalidSourcesAndDestinationsWithoutRecordingFacts(bool offload, bool mobile)
     {
-        await Tanks(1942, "north-east", "east",
+        await WorkTanks(1942, "north-east", "east",
             Vehicle("source", "attacker-truck", "bd01:B10:0", "german", "east", mobile ? [] : [Conditions.Immobilized]),
             Vehicle("destination", "attacker-truck", "bd01:B9:0", "german"));
         var declaration = SupplyDeclaration(offload);

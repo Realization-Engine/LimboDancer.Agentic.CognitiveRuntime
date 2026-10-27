@@ -497,7 +497,7 @@ public sealed class BacklogPass9Tests : IDisposable
         Assert.Equal(JsonSerializer.Serialize(history), JsonSerializer.Serialize(old.FireHistory));
         Assert.Equal(TurnCloseDisposition.ReadOnly, old.PhaseClose.Disposition);
         // CCPh may require concealment dice on this board; only the governed command draws them.
-        for (var phase = 0; phase < 7; phase++)
+        for (var phase = 0; phase < 15; phase++)
         {
             Committed(await Do(GameActions.AdvancePhase, new DiceRoller(_ => 5), new
             {
@@ -506,6 +506,20 @@ public sealed class BacklogPass9Tests : IDisposable
         Assert.Equal("pfph", Current.Phase);
         var later = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", "existing-engine-fire-v1")).FireHistory!;
         Assert.False(Assert.Single(later.Shots).InCurrentPhase);
+        var beforeHiddenShot = Revision;
+        Committed(await Shoot("de-mtr", "bd01:B6:0", "g2", null, 5, 6));
+        var laterPrivateStore = new FileGameStore(Path.Combine(root, "later-private-shot"));
+        var laterPrivatePlanner = new GamePlanner(laterPrivateStore, boards, Vocabulary, [Catalog], fireLos: los);
+        var laterPrivateEvents = store.Read(Scope)!.Events.Select(item => item.Revision > beforeHiddenShot && item.Payload is OrdnanceFired
+            ? item with
+            {
+                Visibility = RussianView
+            } : item).ToArray();
+        Assert.Equal(AppendStatus.Committed, laterPrivateStore.Append(Scope, "private later shot", 0, laterPrivateEvents, laterPrivatePlanner.Replay).Status);
+        var privateUse = (await laterPrivatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", "existing-engine-fire-v1")).FireHistory!;
+        Assert.Single(privateUse.Shots);
+        Assert.False(Assert.Single(privateUse.Spotters).SpottedThisPhase);
+        Assert.True(Assert.Single((await laterPrivatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "pfph", "existing-engine-fire-v1")).FireHistory!.Spotters).SpottedThisPhase);
         var last = store.Read(Scope)!.Events[^1];
         var loss = last with
         {

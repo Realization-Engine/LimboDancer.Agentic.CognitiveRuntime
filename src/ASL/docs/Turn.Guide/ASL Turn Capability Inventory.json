@@ -67,7 +67,7 @@
     {
       "id": "status-host",
       "kind": "GovernedSubset",
-      "scope": "Stun/CX historical host projection and existing cleanup command integration only with origin evidence.",
+      "scope": "Stun/CX historical host projection and existing cleanup command integration only with origin evidence. NotEvaluated assessments remain Pending.",
       "profiles": [
         "existing-engine",
         "existing-engine-dc-v1",
@@ -114,7 +114,7 @@
     {
       "id": "fire-history",
       "kind": "ObservedHistory",
-      "scope": "Disclosed shot, ROF and first observed Spotter use/retention history; no new-shot or original-designation permission.",
+      "scope": "Disclosed shot, ROF and first observed Spotter use/retention history; no new-shot or original-designation permission. Current-phase use comes only from disclosed shots.",
       "profiles": [
         "existing-engine-fire-v1",
         "existing-engine-atmosphere-v1",
@@ -153,14 +153,15 @@
     {
       "id": "work-effects",
       "kind": "AdjudicatedEffect",
-      "scope": "Permissioned work lifecycle and frozen packing assembly, replenishment, supply transfer/offload effects. Applied does not certify automatic G10/E10 eligibility.",
+      "scope": "Permissioned work lifecycle and frozen packing assembly, replenishment, supply transfer/offload effects. Applied does not certify automatic G10/E10 eligibility. Audited v2 work rechecks facts and known CE for replenishment; legacy work is read/cancel only.",
       "profiles": [
         "existing-engine-work-v1"
       ],
       "references": [
         "src/ASL/LimboDancer.Domains.Asl.Rules/TurnWorkEffects.cs",
         "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/PlayTests.WorkEffects.cs",
-        "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/BacklogPass7Tests.SupplyEffects.cs"
+        "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/BacklogPass7Tests.SupplyEffects.cs",
+        "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/BacklogPass7Tests.WorkAudit.cs"
       ]
     }
   ],

@@ -13,6 +13,11 @@ public sealed record TurnWorkDisclosure(string Id, string Subject, TurnWorkKind 
     int RequiredGameTurns, bool Working, bool Completed, bool Cancelled, bool CompletionDue, bool SupplyDepleted,
     TurnSupport RuleAutomation)
 {
+    public int HostAuditVersion
+    {
+        get; init;
+    }
+
     public TurnWorkEffectKind? EffectKind
     {
         get; init;
@@ -28,6 +33,7 @@ public sealed record TurnWorkDisclosure(string Id, string Subject, TurnWorkKind 
         return new(work.Declaration.Id, work.Declaration.Subject, work.Declaration.Kind, work.CompletedGameTurns,
             work.RequiredGameTurns, work.Working, work.Completed, work.Cancelled, due, work.SupplyDepleted, TurnSupport.Pending)
         {
+            HostAuditVersion = work.HostAuditVersion,
             EffectKind = work.Declaration.CompletionEffects?.Kind,
             EffectStatus = work.Declaration.CompletionEffects is null ? TurnWorkEffectStatus.NotSpecified
                 : work.EffectsApplied ? TurnWorkEffectStatus.Applied : work.Cancelled ? TurnWorkEffectStatus.Cancelled : TurnWorkEffectStatus.AwaitingCompletion,

@@ -1,6 +1,6 @@
 # ASL Turn Guide
 
-Current planning status: **B5-R1 is implemented; five slices remain**, B5-R2 through B5-R6. Next is B5-R2 (audit and bound admitted host capabilities). The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and nine deferred rule-family packages, B5-D1 through B5-D9. D9 adds the ordinary core-phase rules missing from the original eight packages; it does not add a required B5 slice.
+Current planning status: **B5-R1 and B5-R2 are implemented; four slices remain**, B5-R3 through B5-R6. Next is B5-R3 (durable decision-window evidence). The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and nine deferred rule-family packages, B5-D1 through B5-D9. D9 adds the ordinary core-phase rules missing from the original eight packages; it does not add a required B5 slice.
 
 All turn-guide analysis, design, phase catalogs, walkthroughs and dependency audit live in this folder.
 
@@ -70,3 +70,9 @@ B5-R1 validation: 162 ASL.Turns tests, 738/738 lines and 424/424 branches (100%)
 
 
 R1 host regression verification: all four Play TurnGuide tests pass after the service begins loading the inventory. No game commands or event formats changed.
+
+
+B5-R2 adds explicit profile bounds, known-CE and current-fact guards for audited work, legacy read/cancel compatibility, and disclosure-safe Spotter-use history. See the design/plan audit matrix. Profiles are versioned for the new contract; pending rules and all reference content remain visible. Four B5 slices remain, starting with B5-R3.
+
+
+B5-R2 final verification: 168 ASL.Turns tests pass with 780/780 lines and 446/446 branches covered (100%, no exclusions). All 46 focused Play work/guide/fire-history tests, 43 focused Rules tests and 421 Units regression tests pass. Four required B5 slices remain; B5-R3 is next.

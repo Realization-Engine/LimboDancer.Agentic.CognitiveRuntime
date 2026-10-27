@@ -9,6 +9,7 @@ public sealed record TurnAmmoSupply(string Id, string? Vehicle, string Owner, bo
 public sealed record TurnWorkRecorded(string WorkId, string Operation, TurnWorkDeclaration? Declaration,
     string? Roll, string RuleBasis) : EventPayload
 {
+    public const string AuditedType = "turn-work-audited";
     public const string LifecycleType = "turn-work-recorded";
     public const string EffectsType = "turn-work-effects-recorded";
 }

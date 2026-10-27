@@ -65,6 +65,8 @@ public static class TurnWorkEffects
     public static bool CanRelocateSupply(bool immobilized, bool bogged) => !ScenarioA1PassengerActionRules.VehicleMobile(immobilized, bogged);
     public static bool WreckAfterRelocation(bool immobilized) => immobilized;
 
+    public static bool ReplenishmentPostureSupported(bool? buttonedUp) => buttonedUp == false;
+
     public static int? PassengerCapacity(int? ordinary, bool hasAmmoSupply) => hasAmmoSupply ? 0 : ordinary;
     public static string? PackedGunBar(bool packed) => packed ? "play.packed-gun: unpack the Gun before using it; animal loading/transport remains pending (G10)" : null;
 }

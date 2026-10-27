@@ -190,7 +190,7 @@ public sealed partial class PlayTests
         {
             EventId = "cancel-work",
             Revision = unrelatedTi.Revision + 1,
-            Type = "turn-work-recorded",
+            Type = TurnWorkRecorded.AuditedType,
             Payload = new TurnWorkRecorded("work", "cancel", null, null, "Cancel interrupted work"),
         };
         var cancelled = Planner().Replay([.. events, interruptionEvent, unrelatedTi, cancellation]);

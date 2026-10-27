@@ -8,6 +8,13 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 
 public sealed partial class BacklogPass7Tests
 {
+    private Task WorkTanks(int? year = 1942, string germanFacing = "north-east", string russianFacing = "east", params Dictionary<string, object>[] others)
+    {
+        var subject = Vehicle("de-tank", "attacker-tank", "bd01:B10:0", "german", germanFacing);
+        ((Dictionary<string, bool>)subject["conditions"])[Conditions.ButtonedUp] = false;
+        return Setup("german", 7, year, [subject, Vehicle("ru-tank", "defender-tank", "bd01:B8:0", "russian", russianFacing), .. others]);
+    }
+
     private async Task<PlayResult> RecordWorkEffect(string attempt, string operation, TurnWorkDeclaration? declaration = null, DiceRoller? roller = null)
     {
         var actor = GamePlay.Principal("work-adjudicator", Tenant, GameActions.WorkAdjudicationPermission);
@@ -32,7 +39,7 @@ public sealed partial class BacklogPass7Tests
     [InlineData(6, 6, true)]
     public async Task WorkEffectsReplenishRealSpecialAmmoAndResolveSupplyCapacity(int first, int second, bool depleted)
     {
-        await Tanks(1942, "north-east", "east", Vehicle("supply-truck", "attacker-truck", "bd01:B10:0", "german"),
+        await WorkTanks(1942, "north-east", "east", Vehicle("supply-truck", "attacker-truck", "bd01:B10:0", "german"),
             Vehicle("other-tank", "attacker-tank", "bd01:B10:0", "german", "north-east"));
         var ordinaryCapacity = GamePlanner.PassengerCapacity(Current, Current.Unit("supply-truck")!);
         Assert.True(ordinaryCapacity > 0);

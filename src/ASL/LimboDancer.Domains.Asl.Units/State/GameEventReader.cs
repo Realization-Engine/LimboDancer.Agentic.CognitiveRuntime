@@ -125,6 +125,7 @@ public static class GameEventReader
         {
             case "turn-work-recorded":
             case "turn-work-effects-recorded":
+            case "turn-work-audited":
                 try
                 {
                     return payload.Deserialize<TurnWorkRecorded>(JsonSerializerOptions.Web)

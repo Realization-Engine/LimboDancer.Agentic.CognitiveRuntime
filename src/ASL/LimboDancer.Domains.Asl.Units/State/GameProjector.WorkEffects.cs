@@ -56,6 +56,11 @@ public static partial class GameProjector
             else if (effect.Kind == TurnWorkEffectKind.Replenish)
             {
                 var supply = state.TurnAmmoSupplies.FirstOrDefault(item => item.Id == effect.SupplyId);
+                var posture = GameState.Condition(subject, Conditions.ButtonedUp);
+                if (work.HostAuditVersion == 1 && !TurnWorkEffects.ReplenishmentPostureSupported(posture is ConditionState.True or ConditionState.False ? posture == ConditionState.True : null))
+                {
+                    throw new InvalidDataException("Replenishment needs explicit CE posture; unknown or BU is outside the audited subset.");
+                }
                 if (subject is not UnitInstance || !vocabulary.IsA(subject.Kind, "asl:vehicle")
                     || state.Unit(effect.SupplyVehicle!) is not { Status: InstanceStatus.Active, Position: MapPosition } vehicle
                     || !vocabulary.IsA(vehicle.Kind, "asl:vehicle") || vehicle.Side != declaration.Owner

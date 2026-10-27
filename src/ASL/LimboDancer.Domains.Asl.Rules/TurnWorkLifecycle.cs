@@ -12,6 +12,11 @@ public sealed record TurnWorkDeclaration(string Id, string Owner, string Subject
 public sealed record TurnLiveWork(TurnWorkDeclaration Declaration, int RequiredGameTurns, int CompletedGameTurns,
     int? OpenGameTurn, bool Working, bool Completed, bool Cancelled, bool SupplyDepleted)
 {
+    public int HostAuditVersion
+    {
+        get; init;
+    }
+
     public bool EffectsApplied
     {
         get; init;
