@@ -348,6 +348,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
         var plan = action.Id.Value switch
         {
+            "asl.game.review-placed-dc-window" => PlanPlacedDcWindow(scope, arguments, existing, attemptId, expected, label),
             "asl.game.record-turn-work" => PlanTurnWork(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label, actor ?? "unknown"),
             "asl.game.advance-phase" => BuildPhaseClosePlan(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
@@ -1722,6 +1723,20 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     /// </summary>
     private static bool ReusedWithOtherInputs(ActionDescriptor action, JsonElement arguments, GameEvent committed)
     {
+        if (action.Id.Value == "asl.game.review-placed-dc-window")
+        {
+            try
+            {
+                return committed.Payload is not PlacedDcWindowReviewed recorded
+                    || !arguments.TryGetProperty("review", out var node)
+                    || node.Deserialize<TurnPlacedDcReview>(JsonSerializerOptions.Web) != recorded.Review;
+            }
+            catch (JsonException)
+            {
+                return true;
+            }
+        }
+
         if (action.Id.Value == "asl.game.declare-overrun")
         {
             var declared = Text(arguments, "unitId", out var declaringUnit) ? declaringUnit : null;

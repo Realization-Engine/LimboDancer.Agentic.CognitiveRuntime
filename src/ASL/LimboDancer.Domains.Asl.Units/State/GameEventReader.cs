@@ -123,6 +123,16 @@ public static class GameEventReader
     {
         switch (type)
         {
+            case "placed-dc-window-reviewed":
+                try
+                {
+                    return payload.Deserialize<PlacedDcWindowReviewed>(JsonSerializerOptions.Web)
+                        ?? Missing(diagnostics, "Missing window review.", path);
+                }
+                catch (JsonException)
+                {
+                    return Missing(diagnostics, "Invalid typed window review.", path);
+                }
             case "turn-work-recorded":
             case "turn-work-effects-recorded":
             case "turn-work-audited":

@@ -21,7 +21,7 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 /// underscored Morale Factors, Green MMC, a hero's MG, a hero created concealed, and a berserk unit's kept SW. A board 01 grid of Open Ground, fixed dice,
 /// and a clear LOS everywhere.
 /// </summary>
-public sealed class BacklogPass15Tests : IDisposable
+public sealed partial class BacklogPass15Tests : IDisposable
 {
     private static readonly Guid Tenant = Guid.Parse("7b1d2c3e-0000-4000-8000-00000000f515");
     private static readonly GameScope Scope = new(Tenant, "pass15");

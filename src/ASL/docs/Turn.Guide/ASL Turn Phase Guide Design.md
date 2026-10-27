@@ -7,7 +7,7 @@ Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and 
 References: [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Implementation Plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md), [cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md), [folder index](README.md).
 
 
-Current B5 scope (2026-10-27): B5-R1 and B5-R2 are implemented; exactly four integration slices remain, B5-R3 through B5-R6, all Planned. The [finite completion backlog](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) is authoritative. B5-D1 through B5-D9 preserve later ASL.Rules work without making full rulebook execution a prerequisite for the initial UI. Historical slice sections describe the evidence at their implementation date, not additional B5 gates.
+Current B5 scope (2026-10-27): B5-R1 through B5-R3 are implemented; exactly three integration slices remain, B5-R4 through B5-R6, all Planned. The [finite completion backlog](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) is authoritative. B5-D1 through B5-D9 preserve later ASL.Rules work without making full rulebook execution a prerequisite for the initial UI. Historical slice sections describe the evidence at their implementation date, not additional B5 gates.
 
 ## 1. Design decision
 
@@ -499,3 +499,32 @@ ASL.Turns validation: 168 tests pass, with 780/780 lines and 446/446 branches co
 
 
 B5-R2 final verification: 168 ASL.Turns tests pass with 780/780 lines and 446/446 branches covered (100%, no exclusions). All 46 focused Play work/guide/fire-history tests, 43 focused Rules tests and 421 Units regression tests pass. Four required B5 slices remain; B5-R3 is next.
+
+
+### B5-R3: durable Placed DC decision-window evidence
+
+The all-Passes design still represents every reviewed option. This slice admits timing evidence for one route, not automatic execution of opening AFPh rules. The catalog remains 538 topics, 38 dependencies and 191 links. No executable topic registrations are added; B5-R4 owns that connection.
+
+**Authority and persistence.** `TurnPhaseOccurrence` is reconstructed from each actual `game-started` or `phase-changed` event, retaining its event identity, revision, Game Turn, phasing side and phase. A phase name alone is never an occurrence. A Placed DC retains its placement event identity, recorded original owner and Game Turn. Legacy missing owners stay unknown, rather than being supplied from a counter's present owner. This metadata is derived during replay, so no journal migration is needed.
+
+The existing journal does not establish completion of AFPh opening tasks. The narrowly scoped `asl.game.review-placed-dc-window` action therefore records a typed `placed-dc-window-reviewed` event. Its separate `asl.game.adjudicate-window` permission is for a trusted external adjudicator. Ordinary play permission cannot create this evidence. Normal proposal, confirmation, expected revision, attempt identity and journal validation apply. Reusing an attempt with different review inputs is refused. The record binds one charge, its original placement, the exact AFPh occurrence, the owning side, a nonempty rule basis and four explicit prerequisite observations:
+
+| Prerequisite | Source | Meaning of resolved evidence |
+|---|---|---|
+| Drifting SMOKE | ASOP 5.11B | Required source-linked drift work has been adjudicated and completed. |
+| Opening WP | ASOP 5.12A | Opening choices have been considered or waived, and any resulting WP effects have been completed. |
+| Gusts and SMOKE | ASOP 5.13A | Required Gusts consequences have been adjudicated after WP. |
+| Glider contents | ASOP 5.21A | Required landing-content work has been adjudicated before ordinary AFPh decisions. |
+
+Each observation is `Unknown`, `Resolved` or `NotApplicable`. Unknown observations may be recorded durably but cannot open the window. `NotApplicable` is an explicit external ruling, never a default for an unimplemented rule. These observations are a checkpoint attestation that the listed sequence was handled; they do not execute those tasks or certify each underlying rule. A waiver of an optional choice belongs under resolved consideration, not inferred nonapplicability.
+
+**Conservative lifetime.** A review is valid only at the state immediately after its own event. Every subsequent game event expires it, including a replacement review, a changed condition, an attack, or another phase occurrence. A replacement review can establish fresh evidence. This intentionally requires a new review after intervening play, even if a future, richer dependency model could prove some evidence reusable. It avoids granting an old ruling indefinite authority and requires no guessed invalidation list. Multiple charges are reviewed individually. It is not a phase-wide completed-ASOP flag.
+
+**Rules and headless output.** `TurnPlacedDcWindowRules` owns the bounded timing predicate. It checks AFPh, original owner, same Game Turn, operability, exact occurrence/origin and complete opening evidence. It returns `NotEvaluated`, `OutsideWindow` or `ReadyForCommandAssessment`. The last value means only that the timing evidence permits assessing the existing command; it is not legality, permission, an action route, or phase-close approval. Existing command and closure behavior are unchanged. B5-R4 must re-read the current stamp and evidence, run the existing governed command assessment, and withhold routes for historical or unauthorized views.
+
+`TurnDecisionWindows.Describe` composes sanitized evidence with source timing and explicit pending explanations. Play exposes `DecisionWindows` in the DC and later profiles, after origin, subject, phase-entry and review disclosure checks. Enemy evidence is omitted; withheld entry/review evidence cannot authorize a window. Raw event identities, revisions and free-text adjudicator rule bases do not leave this guide response. The authenticated administrative host uses authoritative state to prepare a review; the player guide cannot grant adjudication authority. Historical reads reconstruct the evidence at that revision and are explicitly read-only. Global guide context remains `<phase>:phase`; one charge's review does not advance every topic into ASOP 5.22A.
+
+Profile versions are `b5-r3-dc`, `b5-r3-fire`, `b5-r3-atmosphere` and `b5-work-6`; the base profile is unchanged. The nine deferred packages remain visible. Drift, WP consequences, Gusts and glider automation retain their pending status even when their external adjudications are complete. The frozen UI preview remains design evidence, not a renderer for this backend contract.
+
+
+B5-R3 final verification: all 170 ASL.Turns tests pass, covering 789/789 lines and 450/450 branches (100%, no exclusions). All 22 focused Play tests, 21 focused Rules tests and 421 Units regression tests pass. Three required B5 slices remain; B5-R4 is next.

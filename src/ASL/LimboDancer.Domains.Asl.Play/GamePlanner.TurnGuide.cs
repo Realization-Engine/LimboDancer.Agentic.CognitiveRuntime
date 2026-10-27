@@ -12,6 +12,7 @@ public sealed record TurnHostGuide(TurnGuideSnapshot Guide, ImmutableArray<TurnH
     TurnPhaseCloseAssessment PhaseClose)
 {
     public TurnGuideProfile Profile { get; init; } = TurnGuideProfiles.Get("existing-engine");
+    public ImmutableArray<TurnDecisionWindow> DecisionWindows { get; init; } = [];
     public ImmutableArray<TurnWorkDisclosure> Work { get; init; } = [];
     public ImmutableArray<string> WorkProgressGaps { get; init; } = [];
     public TurnAtmosphereSnapshot? Atmosphere
@@ -89,6 +90,7 @@ public sealed partial class GamePlanner
         return new(guide, obligations, close)
         {
             Profile = profile,
+            DecisionWindows = profile.IntegratedDependencies.Contains("placedDc") ? ReadDecisionWindows(history, revision, perspective, historical) : [],
             Work = profile.Id == "existing-engine-work-v1" ? ReadWork(history, revision, perspective) : [],
             // Adjudicated work does not certify missing packing or supply rules.
             WorkProgressGaps = profile.Id == "existing-engine-work-v1"

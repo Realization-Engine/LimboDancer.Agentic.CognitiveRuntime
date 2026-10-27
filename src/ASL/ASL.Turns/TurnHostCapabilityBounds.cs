@@ -18,8 +18,8 @@ public static class TurnHostCapabilityBounds
         if (profile.IntegratedDependencies.Contains("placedDc"))
         {
             bounds.Add(new("placedDc", TurnEvidenceKind.GovernedSubset, "Placed DC ownership/operability, obligation and existing detonation/cleanup path.",
-                ["Recorded placement owner and MPh origin", "Current operability and disclosed attack/removal evidence", "Normal command eligibility and confirmation"],
-                ["Legacy missing owner remains unknown", "Exact topic decision window and route remain B5-R3/R4 work"], "asl.game.play"));
+                ["Recorded placement owner and MPh origin", "Current operability and disclosed attack/removal evidence", "Normal command eligibility and confirmation", "Opening review separately requires asl.game.adjudicate-window; play permission does not grant it"],
+                ["Legacy missing owner remains unknown", "Exact window needs a current permissioned opening review; topic route remains B5-R4 work"], "asl.game.play"));
         }
         if (id is "existing-engine-fire-v1" or "existing-engine-atmosphere-v1" or "existing-engine-work-v1")
         {

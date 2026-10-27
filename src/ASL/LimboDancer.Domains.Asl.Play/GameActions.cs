@@ -11,6 +11,17 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public static class GameActions
 {
+    public const string WindowAdjudicationPermission = "asl.game.adjudicate-window";
+    public static readonly ActionDescriptor ReviewPlacedDcWindow = Descriptor("asl.game.review-placed-dc-window", "Review Placed DC timing",
+        "Record external AFPh opening-task evidence for one Placed DC at the current state; does not authorize an attack.",
+        WindowAdjudicationPermission, "asl.game.sequence-v1", """
+        { "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "review"],
+          "properties": { "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 }, "review": { "type": "object" } }
+        }
+        """);
+
     public const string WorkAdjudicationPermission = "asl.game.adjudicate-work";
     public static readonly ActionDescriptor RecordTurnWork = Descriptor("asl.game.record-turn-work", "Record work adjudication",
         "Record externally adjudicated packing or replenishment facts and lifecycle changes. This does not certify unintegrated rules.",
@@ -858,7 +869,7 @@ public static class GameActions
     {
         get;
     } =
-        [Setup, AdvancePhase, RecordTurnWork, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
+        [Setup, AdvancePhase, RecordTurnWork, ReviewPlacedDcWindow, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
             Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp,
             InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle, Scrounge, VoluntaryBreak, RemoveConcealment, Search, StreetFightingReturn];

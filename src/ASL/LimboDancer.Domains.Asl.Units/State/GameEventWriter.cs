@@ -81,6 +81,12 @@ public static class GameEventWriter
     {
         switch (payload)
         {
+            case PlacedDcWindowReviewed review:
+                foreach (var property in JsonSerializer.SerializeToElement(review, JsonSerializerOptions.Web).EnumerateObject())
+                {
+                    property.WriteTo(writer);
+                }
+                break;
             case TurnWorkRecorded work:
                 foreach (var property in JsonSerializer.SerializeToElement(work, JsonSerializerOptions.Web).EnumerateObject())
                 {

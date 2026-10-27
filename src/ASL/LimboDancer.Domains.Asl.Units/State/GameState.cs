@@ -35,6 +35,14 @@ public sealed record GameState(
     IReadOnlyList<EquipmentInstance> Equipment,
     IReadOnlyList<EntityInstance> Entities)
 {
+    public Rules.TurnPhaseOccurrence? TurnPhaseOccurrence
+    {
+        get; init;
+    }
+    public Rules.TurnPlacedDcReview? PlacedDcWindowReview
+    {
+        get; init;
+    }
     public IReadOnlyList<Rules.TurnLiveWork> TurnWork { get; init; } = [];
     public IReadOnlyList<string> TurnWorkRolls { get; init; } = [];
     public IReadOnlyList<TurnAmmoSupply> TurnAmmoSupplies { get; init; } = [];
@@ -555,6 +563,19 @@ public sealed record GameState(
 /// </summary>
 public sealed record PlacedCharge(string Charge, string Unit, BoardLocation From, BoardLocation Target, bool Cx, bool TargetsConcealed, bool Operable)
 {
+    public string? OriginEventId
+    {
+        get; init;
+    }
+    public string? OwnerSide
+    {
+        get; init;
+    }
+    public int OriginGameTurn
+    {
+        get; init;
+    }
+
     /// <summary>The Target Facings of each enemy AFV there as the DC was Placed (A23.5; pass 60); null from a record made before the pass.</summary>
     public IReadOnlyList<DcTargetFacing>? Facings
     {

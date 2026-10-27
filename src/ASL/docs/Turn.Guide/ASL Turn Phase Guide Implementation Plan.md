@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first plan. B5-R1 and B5-R2 are implemented and verified. Exactly four integration slices remain, B5-R3 through B5-R6, all Planned. The finite backlog below is authoritative; later Rules work is tracked separately as B5-D1 through B5-D9. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 and the bounded B5 Placed DC, fire/Spotter, atmosphere history and work-progress, live work adjudication and bounded completion-effect slices are implemented; additional families remain planned. UI work is intentionally last.
+Status: Backend-first plan. B5-R1 through B5-R3 are implemented and verified. Exactly three integration slices remain, B5-R4 through B5-R6, all Planned. The finite backlog below is authoritative; later Rules work is tracked separately as B5-D1 through B5-D9. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 and the bounded B5 Placed DC, fire/Spotter, atmosphere history and work-progress, live work adjudication and bounded completion-effect slices are implemented; additional families remain planned. UI work is intentionally last.
 
 References: [Design](ASL%20Turn%20Phase%20Guide%20Design.md), [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md).
 
@@ -175,7 +175,7 @@ B5-R6 records proof of these six criteria. Only after that acceptance may U1 bui
 
 `ASL.Turns.Tests` owns content, coordination and backend contracts. Existing Rules tests own rule verdicts; Units tests own events/projection/replay; Play tests own governed command enforcement and adapters. Add renderer tests only at U1. Run the narrow project/class filters relevant to each change, with no blanket whole-solution test requirement.
 
-Next work: B5-R3, then the numbered dependencies in the finite backlog. B5-D1 through B5-D9 are later Rules-pass work, not additional B5 completion gates. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
+Next work: B5-R4, then the numbered dependencies in the finite backlog. B5-D1 through B5-D9 are later Rules-pass work, not additional B5 completion gates. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
 
 B4 final verification: 123 ASL.Turns tests and 77 focused Play regression tests pass. Coverage is 100% for ASL.Turns, not a claim of full Play assembly coverage.
 
@@ -256,7 +256,7 @@ Supply transfer/offload validation: 150 ASL.Turns tests pass with 666/666 lines 
 
 ## 11. Finite B5 completion backlog, agreed scope 2026-10-27
 
-**Remaining count: four integration slices, B5-R3 through B5-R6, all Planned.** B5-R1 and B5-R2 are implemented and verified below. The six stable R IDs remain the entire completion commitment. Earlier completed slices stay complete. The nine B5-D entries below are deferred rule-family work packages, not nine more B5 slices and not a promise that each will fit one implementation commit. R1 adds reference metadata, not executable topic registrations.
+**Remaining count: three integration slices, B5-R4 through B5-R6, all Planned.** B5-R1 through B5-R3 are implemented and verified below. The six stable R IDs remain the entire completion commitment. Earlier completed slices stay complete. The nine B5-D entries below are deferred rule-family work packages, not nine more B5 slices and not a promise that each will fit one implementation commit. R1 adds reference metadata, not executable topic registrations.
 
 **Finish line.** B5 finishes when a headless consumer can discover every reviewed option, distinguish executable, adjudicated, missing-fact and pending paths, exercise one evidenced live topic decision route, and trust replay, disclosure and phase-close assessment for the admitted baseline. B5 does not require all eventual ASL.Rules passes to be complete. U1 may then build the thin UI while showing unsupported options. The eventual all-Passes design target is unchanged.
 
@@ -266,7 +266,7 @@ Supply transfer/offload validation: 150 ASL.Turns tests pass with 666/666 lines 
 |---|---|---|---|---|
 | B5-R1 | Complete capability and pending-work inventory | Completed B5 baseline | A checked inventory maps every current topic/dependency to source review, evaluator/command evidence or an explicit gap and B5-D owner. Preserve 538 topics, 38 dependencies and 191 links; add count, identity and mapping tests. Missing or unregistered support remains NotEvaluated/Pending, never silently available or absent. | Implemented, 2026-10-27; 162 tests, 100% lines/branches |
 | B5-R2 | Audit and bound the admitted host capabilities | B5-R1 | Reconcile each profile and permissioned work effect against actual Rules, Units and Play proofs. Record exact supported conditions, missing facts, source gaps and refusal boundaries. Fix unsafe admitted paths or narrow/refuse them; do not implement a deferred family merely to make an overbroad claim true. Tests prove that pending eligibility and adjudicated effects cannot be mistaken for automatic rule support. Version profiles when their contract changes. | Implemented, 2026-10-27; audited bounds and versioned guards |
-| B5-R3 | Durable decision-window evidence | B5-R2 | Define and persist or reconstruct only the exact timing evidence needed by the B5-R4 Placed DC route: phase occurrence, owner/decision authority, origin, prerequisite state and relevant source timing. If the existing journal is insufficient, add the smallest authoritative evidence. Prove historical replay, repeated phase names and legacy missing-evidence behavior. Do not invent ASOP substep completion from a phase label. | Planned |
+| B5-R3 | Durable decision-window evidence | B5-R2 | Define and persist or reconstruct only the exact timing evidence needed by the B5-R4 Placed DC route: phase occurrence, owner/decision authority, origin, prerequisite state and relevant source timing. If the existing journal is insufficient, add the smallest authoritative evidence. Prove historical replay, repeated phase names and legacy missing-evidence behavior. Do not invent ASOP substep completion from a phase label. | Implemented, 2026-10-27; durable scoped evidence, replay and disclosure proofs |
 | B5-R4 | One complete headless live topic decision route | B5-R3 | Connect the reviewed AFPh Placed DC topic to its existing governed detonation/choice/follow-up path. Return typed action information only for an admitted, authorized, evidenced window. Execute through normal proposal, confirmation, expected revision and attempt identity. Prove success, unavailable/missing evidence, wrong viewer, stale request, interruption/resolution and closure parity. All other topics retain their honest reference/pending status unless already independently proven. | Planned |
 | B5-R5 | Cross-profile replay and disclosure acceptance | B5-R4 | A bounded matrix covers every shipped profile: new and legacy records, historical reads, repeat reads, retry/idempotency, terminal effects and missing facts. Exercise authorized adjudicator, owning side and opposing side views; hidden-world changes must not leak through results, counts, errors or close assessment. Reuse existing tests where sufficient and add only missing proofs. | Planned |
 | B5-R6 | B5 acceptance and U1 handoff | B5-R1 through B5-R5 | Publish a capability/evidence matrix and a headless consumer example using the B5-R4 route, cross-phase obligations and pending disclosures. Check every item in section 9 against named tests. Verify catalog completeness and the deferred register; pass the full ASL.Turns 100% line/branch coverage gate without exclusions plus relevant Rules/Units/Play checks. Mark B5 complete and U1 eligible only when every acceptance item passes. No Blazor implementation is part of this slice. | Planned |
@@ -296,7 +296,7 @@ These IDs identify retained requirements, not invented numbered Rules passes. As
 - Keep the six IDs stable. Implementation can span several commits without adding more exit gates. Expanding the admitted baseline or reopening the B5 finish line requires an explicit scope decision and a recorded reason; newly found rule gaps attach to the deferred register by default.
 - Every implementation slice retains 100% line and branch coverage for the entire ASL.Turns assembly, without source exclusions. Run relevant dependent tests when code changes. The R1 coverage gate passes 162 ASL.Turns tests, 738/738 lines and 424/424 branches. Historical dependent-suite results remain recorded under the slices that ran them; they are not relabeled as new R1 runs.
 
-The next implementation request is **B5-R3: durable decision-window evidence**. Four required slices remain. B5-D work does not decrement that count.
+The next implementation request is **B5-R4: one complete headless live topic decision route**. Three required slices remain. B5-D work does not decrement that count.
 
 
 ### 11.3 B5-R1 implementation and evidence
@@ -354,3 +354,23 @@ ASL.Turns validation: 168 tests pass, with 780/780 lines and 446/446 branches co
 
 
 B5-R2 final verification: 168 ASL.Turns tests pass with 780/780 lines and 446/446 branches covered (100%, no exclusions). All 46 focused Play work/guide/fire-history tests, 43 focused Rules tests and 421 Units regression tests pass. Four required B5 slices remain; B5-R3 is next.
+
+
+### 11.5 B5-R3 implementation and evidence
+
+B5-R3 reconstructs a stable phase occurrence from journal event identity and retains the DC's placement origin, original recorded owner and Game Turn. The journal did not establish opening-task completion, so the bounded `placed-dc-window-reviewed` event supplies explicit externally adjudicated evidence for ASOP 5.11B, 5.12A, 5.13A and 5.21A. Unknown prerequisites remain unknown. The normal host gate requires the separate `asl.game.adjudicate-window` permission, confirmation, current revision and bound attempt inputs. The Rules predicate binds one operable charge to its own AFPh occurrence and owner. Any following event expires the review. See the [design contract](ASL%20Turn%20Phase%20Guide%20Design.md#b5-r3-durable-placed-dc-decision-window-evidence).
+
+| Acceptance concern | Proof |
+|---|---|
+| Exact occurrence, owner, origin, operability and prerequisite states | `TurnPlacedDcWindowRulesTests.AllRequiredFactsAreBoundAndNoPhaseLabelReopensAnOldWindow` rejects mismatched/repeated occurrence identities, wrong phases/turns/sides, invalid enums and incomplete observations. |
+| Stable headless contract and honest pending disclosure | `TurnDecisionWindowTests` checks serialized evidence, historical flags, matching/missing/stale reviews, source timing and explicit pending statements. |
+| Governed authority and retry identity | `BacklogPass15Tests.DurableWindowReviewBindsOccurrenceOriginAuthorityAndOpeningEvidence` denies ordinary play authority, confirms the authorized review and rejects changed inputs under the same attempt. |
+| Replay, invalidation, legacy and hidden evidence | The same integration test round-trips the file journal, reloads it, reads before/after review revisions, expires evidence on an intervening condition event and detonation, rejects legacy missing-owner review, and withholds enemy/hidden-origin/hidden-entry/hidden-review evidence. |
+| Preserve existing behavior and all pending topics | Focused BacklogPass15 and guide/action registration regressions retain normal detonation and closure behavior. The full Turns suite retains the 538-topic, 38-dependency, 191-link inventory and no executable topic registrations. |
+
+**R4 handoff.** The new outcome `ReadyForCommandAssessment` is timing evidence, not an available action. R4 must select the reviewed Placed DC topic and exact subject, re-read authoritative evidence and the current stamp, assess the existing detonation/choice/follow-up path, and admit a route only for the authorized live owner. Intervening choice/follow-up events require fresh timing review. A historical response is read-only. Global guide context remains phase-only. No ASOP-wide scheduler, automatic opening-rule execution, or new rule family has been admitted.
+
+The supported profiles now use `b5-r3-dc`, `b5-r3-fire`, `b5-r3-atmosphere` and `b5-work-6`; base remains `b5-r2-base`. All nine B5-D packages remain pending. Exactly three required B5 slices remain: R4, R5 and R6.
+
+
+B5-R3 final verification: all 170 ASL.Turns tests pass, covering 789/789 lines and 450/450 branches (100%, no exclusions). All 22 focused Play tests, 21 focused Rules tests and 421 Units regression tests pass. Three required B5 slices remain; B5-R4 is next.

@@ -128,6 +128,7 @@ public static partial class GameProjector
                 GameStarted => Fail<GameState>("UNIT-STATE-004", "A game starts only once."),
                 _ when previous.Ended is not null => Fail<GameState>("UNIT-STATE-045", "The game has ended (A3.9; ruling R20.1); nothing more happens in it."),
                 GameEnded ended => End(previous, ended),
+                PlacedDcWindowReviewed review => RecordPlacedDcWindow(previous, review, gameEvent.Type),
                 TurnWorkRecorded work => RecordTurnWork(previous, work, gameEvent.Type),
                 PhaseChanged phase => ChangePhase(previous, phase),
                 InstanceCreated created => CreateInPlay(previous, created),
@@ -302,6 +303,12 @@ public static partial class GameProjector
                 };
             }
 
+            next = next with
+            {
+                TurnPhaseOccurrence = gameEvent.Payload is PhaseChanged or GameStarted
+                    ? new(gameEvent.EventId, gameEvent.Revision, next.Turn, next.PhasingSide, next.Phase) : next.TurnPhaseOccurrence,
+                PlacedDcWindowReview = gameEvent.Payload is PlacedDcWindowReviewed ? next.PlacedDcWindowReview : null,
+            };
             next = MaintainTurnWork(previous!, next, gameEvent.Payload);
             next = AssaultWeapons(next, gameEvent.Payload);
             next = KeepMovingStack(next, gameEvent.Payload);
@@ -4863,7 +4870,7 @@ public static partial class GameProjector
         /// once its placer leaves the Placement Location or ends its move neither broken, pinned, captured, nor eliminated; a placer so affected first keeps
         /// its DC. A DC no longer in play is gone. Every Placement ends with its Player Turn's CCPh.
         /// </summary>
-        private static GameState KeepPlacedCharges(GameState next, EventPayload payload)
+        private GameState KeepPlacedCharges(GameState next, EventPayload payload)
         {
             var charges = next.PlacedCharges;
             if (payload is MovementStepped { DcPlacement: { } placed } step)
@@ -4872,6 +4879,9 @@ public static partial class GameProjector
                 {
                     // A23.5 (pass 60): the AFVs' Target Facings as Placed; none from a record made before the pass.
                     Facings = placed.Facings,
+                    OriginEventId = eventId,
+                    OwnerSide = placed.OwnerSide,
+                    OriginGameTurn = next.Turn,
                 }];
             }
 

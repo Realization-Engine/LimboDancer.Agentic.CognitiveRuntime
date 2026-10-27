@@ -83,7 +83,7 @@
     {
       "id": "dc",
       "kind": "GovernedSubset",
-      "scope": "Bounded Placed DC ownership, operability, AFPh obligation and existing detonation path. A live topic decision route is still B5-R3/R4 work.",
+      "scope": "Bounded Placed DC ownership, operability, AFPh obligation, durable occurrence and permissioned opening-task evidence, plus existing detonation path. Timing evidence is not command permission. Opening-rule automation remains pending; live topic routing remains B5-R4 work.",
       "profiles": [
         "existing-engine-dc-v1",
         "existing-engine-fire-v1",
@@ -92,7 +92,10 @@
       ],
       "references": [
         "src/ASL/LimboDancer.Domains.Asl.Rules/TurnObligationRules.cs",
-        "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/BacklogPass15Tests.cs"
+        "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/BacklogPass15Tests.cs",
+        "src/ASL/LimboDancer.Domains.Asl.Rules/TurnPlacedDcWindowRules.cs",
+        "src/ASL/LimboDancer.Domains.Asl.Play/GamePlanner.DecisionWindows.cs",
+        "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/BacklogPass15Tests.DecisionWindows.cs"
       ]
     },
     {
