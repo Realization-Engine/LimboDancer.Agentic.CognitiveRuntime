@@ -2,12 +2,12 @@
 
 Date: 2026-10-27
 
-Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and `ASL.Turns.Tests` now provide the tested headless reference catalog, typed capability contracts, validated stable timing schema, pure B2 guidance composition and a bounded B3 obligation assessment slice. B4 adds Play host adapters and shared phase-close assessment. B5 adds durable Placed DC ownership, fire/Spotter and atmospheric history, work-progress evidence, permissioned live work adjudication and completion effects, replay and explicit integration profiles. Additional families remain proposed. UI components are deferred until the back-end contracts and behavior are proven.
+Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and `ASL.Turns.Tests` now provide the tested headless reference catalog, typed capability contracts, validated stable timing schema, pure B2 guidance composition and a bounded B3 obligation assessment slice. B4 adds Play host adapters and shared phase-close assessment. B5 adds durable Placed DC ownership, fire/Spotter and atmospheric history, work-progress evidence, permissioned live work adjudication and completion effects, replay and explicit integration profiles. Additional families remain proposed. The B5 acceptance gate is now passed; U1 may build a thin consumer of the proven backend contracts.
 
 References: [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Implementation Plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md), [cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md), [folder index](README.md).
 
 
-Current B5 scope (2026-10-27): B5-R1 through B5-R5 are implemented; exactly one integration slice remains, B5-R6, Planned. The [finite completion backlog](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) is authoritative. B5-D1 through B5-D9 preserve later ASL.Rules work without making full rulebook execution a prerequisite for the initial UI. Historical slice sections describe the evidence at their implementation date, not additional B5 gates.
+Current B5 scope (2026-10-27): B5-R1 through B5-R6 are implemented and accepted; no required B5 slices remain and U1 is eligible. The [finite completion backlog](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) is authoritative. B5-D1 through B5-D9 preserve later ASL.Rules work without making full rulebook execution a prerequisite for the initial UI. Historical slice sections describe the evidence at their implementation date, not additional B5 gates.
 
 ## 1. Design decision
 
@@ -572,3 +572,12 @@ DC-capable profile versions are `b5-r5-dc`, `b5-r5-fire`, `b5-r5-atmosphere` and
 
 
 B5-R5 final verification: 179 ASL.Turns tests pass, covering 821/821 lines and 466/466 branches (100%, no exclusions). The focused Play matrix/regression run passes 94 tests, and the additional Wind/Gust theory passes two cases. R6 alone remains. Rules and Units source are unchanged; earlier direct suite results remain historical evidence.
+
+
+### B5-R6: final acceptance and U1 handoff
+
+The [B5 acceptance and U1 handoff](ASL%20Turn%20Guide%20B5%20Acceptance%20and%20U1%20Handoff.md) records the six pre-Blazor criteria, final capability/evidence matrix, deferred-rule boundary and executable headless consumer example. B5 is accepted for its admitted baseline; U1 is eligible, not implemented. The all-Passes design goal and all 538 topics, 38 dependencies, 191 links and nine deferred packages remain intact. No additional rule execution, profile version or journal schema is introduced by R6.
+
+The tested consumer browses every phase while keeping actual and browsed phase separate, retains missing facts and pending explanations, observes Due and Resolved obligations, and requests an offered Placed DC action through the existing trusted-server preparation and Play proposal/confirmation pipeline. Its history is read-only and its committed retry cannot execute twice. Renderer preferences cannot become domain facts. Phase close remains a shared governed action, not the result of completing a checklist.
+
+**R6 verification:** 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). All 97 focused Play acceptance/regression cases, 49 focused Rules cases and 421 Units cases pass. The consumer example also passes a final targeted rerun after strengthening its pre-proposal revision assertion. Coverage applies to the entire ASL.Turns assembly, not the Play, Rules or Units assemblies.

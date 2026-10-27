@@ -1,9 +1,10 @@
 # ASL Turn Guide
 
-Current planning status: **B5-R1 through B5-R5 are implemented; one slice remains**, B5-R6 (final acceptance and U1 handoff). The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and nine deferred rule-family packages, B5-D1 through B5-D9. D9 adds the ordinary core-phase rules missing from the original eight packages; it does not add a required B5 slice.
+Current planning status: **B5-R1 through B5-R6 are accepted; no required B5 slices remain. U1 is eligible**, with implementation still to follow. The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and nine deferred rule-family packages, B5-D1 through B5-D9. D9 adds the ordinary core-phase rules missing from the original eight packages; it does not add a required B5 slice.
 
 All turn-guide analysis, design, phase catalogs, walkthroughs and dependency audit live in this folder.
 
+- [B5 acceptance and U1 handoff](ASL%20Turn%20Guide%20B5%20Acceptance%20and%20U1%20Handoff.md)
 - [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md)
 - [Capability and pending-work inventory](ASL%20Turn%20Capability%20Inventory.json)
 - [Backend design](ASL%20Turn%20Phase%20Guide%20Design.md)
@@ -26,7 +27,7 @@ The preview is a frozen copy of the conversation mock-up, including its content 
 | Advance | [Details](ASL%20Advance%20Phase%20Component%20Walkthrough.md) | [JSON](ASL%20Advance%20Phase%20Checklist%20Catalog.json) |
 | Close Combat | [Details](ASL%20Close%20Combat%20Phase%20Component%20Walkthrough.md) | [JSON](ASL%20Close%20Combat%20Phase%20Checklist%20Catalog.json) |
 
-Projects: [ASL.Turns](../../ASL.Turns/ASL.Turns.csproj) and [ASL.Turns.Tests](../../tests/ASL.Turns.Tests/ASL.Turns.Tests.csproj). The initial library loads all 538 topics and 38 dependency definitions without UI services. Live obligation execution remains planned.
+Projects: [ASL.Turns](../../ASL.Turns/ASL.Turns.csproj) and [ASL.Turns.Tests](../../tests/ASL.Turns.Tests/ASL.Turns.Tests.csproj). The library loads all 538 topics and 38 dependency definitions without UI services. Bounded host obligations and the Placed DC route are accepted; unsupported rule families remain pending.
 
 B1 adds typed capabilities and stable timing references. Run `./src/ASL/tests/ASL.Turns.Tests/Test-Coverage.ps1` from the repository root to enforce 100% line and branch coverage for ASL.Turns. Current B3 verification: 116 passing tests, 425/425 lines and 234/234 branches; 28 focused Rules tests also pass.
 
@@ -93,3 +94,6 @@ B5-R4 final verification: all 178 ASL.Turns tests pass, covering 819/819 lines a
 B5-R5 completes cross-profile replay and disclosure acceptance. Passive Placed DC routes request a governed check without disclosing private command blockers; normal proposal and confirmation still enforce them. All pending rules remain visible. See the [R5 design contract](ASL%20Turn%20Phase%20Guide%20Design.md#b5-r5-cross-profile-replay-and-disclosure-acceptance) and [acceptance matrix](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#117-b5-r5-implementation-and-acceptance-matrix).
 
 R5 verification: 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). The focused Play matrix/regression run passes 94 tests, plus two Wind/Gust cases in a separate run. R6 alone remains; B5 completion and UI eligibility await that gate.
+
+
+B5-R6 final acceptance: 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). All 97 focused Play acceptance/regression cases, 49 focused Rules cases and 421 Units cases pass. The consumer example also passes a final targeted rerun after strengthening its pre-proposal revision assertion. Coverage applies to the entire ASL.Turns assembly, not the Play, Rules or Units assemblies. See the [B5 acceptance and U1 handoff](ASL%20Turn%20Guide%20B5%20Acceptance%20and%20U1%20Handoff.md) for the executable consumer example and all six gate criteria. U1 can now start without hiding deferred rules or duplicating command authority.

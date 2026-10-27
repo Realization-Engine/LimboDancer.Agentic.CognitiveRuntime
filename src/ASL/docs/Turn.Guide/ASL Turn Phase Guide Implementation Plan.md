@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first plan. B5-R1 through B5-R5 are implemented and verified. Exactly one integration slice remains, B5-R6, Planned. The finite backlog below is authoritative; later Rules work is tracked separately as B5-D1 through B5-D9. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 and the bounded B5 Placed DC, fire/Spotter, atmosphere history and work-progress, live work adjudication and bounded completion-effect slices are implemented; additional families remain planned. UI work is intentionally last.
+Status: Backend-first plan. B5-R1 through B5-R6 are implemented and verified. B5 is accepted for the admitted baseline; zero required slices remain and U1 is eligible. The finite backlog below is authoritative; later Rules work is tracked separately as B5-D1 through B5-D9. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 and the bounded B5 Placed DC, fire/Spotter, atmosphere history and work-progress, live work adjudication and bounded completion-effect slices are implemented; additional families remain planned. UI work is intentionally last.
 
 References: [Design](ASL%20Turn%20Phase%20Guide%20Design.md), [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md).
 
@@ -23,8 +23,8 @@ Run focused tests only for changed behavior and direct dependencies. Broaden whe
 | B2, implemented | Pure guidance request/result and read composition | B1 | Fixed facts yield deterministic snapshots; no writes, dice or UI state. |
 | B3, bounded slice implemented | Rule-owned timing and obligation lifecycle for Stun, CX, Trip Flare and non-Flame Clearance | B2 and relevant Rules families | Due, interrupt, resolve and retained history proved at exact boundaries. |
 | B4, implemented | Play/Units adapters and shared phase-close assessment | B2-B3 | Existing command validation and guidance agree without duplicate cleanup; disclosure and stale checks pass. |
-| B5, one remaining integration slice | Close B5-R1 through B5-R6 against the admitted baseline | B4 and completed B5 slices | All six acceptance records pass; pending/deferred rules stay visible. Full ASL execution is not this gate. |
-| U1, deferred | Reference and Live Blazor consumers | Backend readiness gate | UI renders backend results and routes intentions without rule calculations. |
+| B5, accepted | Close B5-R1 through B5-R6 against the admitted baseline | B4 and completed B5 slices | All six acceptance records pass; pending/deferred rules stay visible. Full ASL execution is not this gate. |
+| U1, eligible, not implemented | Reference and Live Blazor consumers | Backend readiness gate | UI renders backend results and routes intentions without rule calculations. |
 
 The previous UI-first P1-P7 plan is superseded by this order. The full final scope remains intact; deferring UI does not defer reference content.
 
@@ -175,7 +175,7 @@ B5-R6 records proof of these six criteria. Only after that acceptance may U1 bui
 
 `ASL.Turns.Tests` owns content, coordination and backend contracts. Existing Rules tests own rule verdicts; Units tests own events/projection/replay; Play tests own governed command enforcement and adapters. Add renderer tests only at U1. Run the narrow project/class filters relevant to each change, with no blanket whole-solution test requirement.
 
-Next work: B5-R6, final acceptance and the U1 handoff. B5-D1 through B5-D9 are later Rules-pass work, not additional B5 completion gates. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
+Next work: U1, the thin Blazor consumer described in the final acceptance handoff. B5-D1 through B5-D9 are later Rules-pass work, not additional B5 completion gates. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
 
 B4 final verification: 123 ASL.Turns tests and 77 focused Play regression tests pass. Coverage is 100% for ASL.Turns, not a claim of full Play assembly coverage.
 
@@ -256,7 +256,7 @@ Supply transfer/offload validation: 150 ASL.Turns tests pass with 666/666 lines 
 
 ## 11. Finite B5 completion backlog, agreed scope 2026-10-27
 
-**Remaining count: one integration slice, B5-R6, Planned.** B5-R1 through B5-R5 are implemented and verified below. The six stable R IDs remain the entire completion commitment. Earlier completed slices stay complete. The nine B5-D entries below are deferred rule-family work packages, not nine more B5 slices and not a promise that each will fit one implementation commit. R1 adds reference metadata, not executable topic registrations.
+**Remaining count: zero required B5 slices.** B5-R1 through B5-R6 are implemented and verified below; B5 is accepted and U1 is eligible. The six stable R IDs remain the entire completion commitment. Earlier completed slices stay complete. The nine B5-D entries below are deferred rule-family work packages, not nine more B5 slices and not a promise that each will fit one implementation commit. R1 adds reference metadata, not executable topic registrations.
 
 **Finish line.** B5 finishes when a headless consumer can discover every reviewed option, distinguish executable, adjudicated, missing-fact and pending paths, exercise one evidenced live topic decision route, and trust replay, disclosure and phase-close assessment for the admitted baseline. B5 does not require all eventual ASL.Rules passes to be complete. U1 may then build the thin UI while showing unsupported options. The eventual all-Passes design target is unchanged.
 
@@ -269,7 +269,7 @@ Supply transfer/offload validation: 150 ASL.Turns tests pass with 666/666 lines 
 | B5-R3 | Durable decision-window evidence | B5-R2 | Define and persist or reconstruct only the exact timing evidence needed by the B5-R4 Placed DC route: phase occurrence, owner/decision authority, origin, prerequisite state and relevant source timing. If the existing journal is insufficient, add the smallest authoritative evidence. Prove historical replay, repeated phase names and legacy missing-evidence behavior. Do not invent ASOP substep completion from a phase label. | Implemented, 2026-10-27; durable scoped evidence, replay and disclosure proofs |
 | B5-R4 | One complete headless live topic decision route | B5-R3 | Connect the reviewed AFPh Placed DC topic to its existing governed detonation/choice/follow-up path. Return typed action information only for an admitted, authorized, evidenced window. Execute through normal proposal, confirmation, expected revision and attempt identity. Prove success, unavailable/missing evidence, wrong viewer, stale request, interruption/resolution and closure parity. All other topics retain their honest reference/pending status unless already independently proven. | Implemented, 2026-10-27; scoped live route through the existing governed command |
 | B5-R5 | Cross-profile replay and disclosure acceptance | B5-R4 | A bounded matrix covers every shipped profile: new and legacy records, historical reads, repeat reads, retry/idempotency, terminal effects and missing facts. Exercise authorized adjudicator, owning side and opposing side views; hidden-world changes must not leak through results, counts, errors or close assessment. Reuse existing tests where sufficient and add only missing proofs. | Implemented; evidence in section 11.7 |
-| B5-R6 | B5 acceptance and U1 handoff | B5-R1 through B5-R5 | Publish a capability/evidence matrix and a headless consumer example using the B5-R4 route, cross-phase obligations and pending disclosures. Check every item in section 9 against named tests. Verify catalog completeness and the deferred register; pass the full ASL.Turns 100% line/branch coverage gate without exclusions plus relevant Rules/Units/Play checks. Mark B5 complete and U1 eligible only when every acceptance item passes. No Blazor implementation is part of this slice. | Planned |
+| B5-R6 | B5 acceptance and U1 handoff | B5-R1 through B5-R5 | Publish a capability/evidence matrix and a headless consumer example using the B5-R4 route, cross-phase obligations and pending disclosures. Check every item in section 9 against named tests. Verify catalog completeness and the deferred register; pass the full ASL.Turns 100% line/branch coverage gate without exclusions plus relevant Rules/Units/Play checks. Mark B5 complete and U1 eligible only when every acceptance item passes. No Blazor implementation is part of this slice. | Accepted; evidence in section 11.8 |
 
 ### 11.1 Deferred ASL.Rules pass register
 
@@ -428,3 +428,12 @@ Comparisons cover complete serialized passive responses, including counts and cl
 All nine B5-D packages remain deferred and visible. No new rule family or UI renderer is admitted. R6 alone remains: publish the final capability/evidence matrix and headless consumer example, check section 9, and decide B5 completion and U1 eligibility from those proofs.
 
 **R5 verification:** 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered, both 100%, without exclusions. The focused Play matrix/regression run passes 94 tests; the additional Wind/Gust theory passes two cases, for 96 focused Play cases across the two runs. Rules and Units source are unchanged; earlier direct Rules/Units suite results remain historical evidence, not new R5 runs.
+
+
+### 11.8 B5-R6 final acceptance and U1 handoff
+
+All six section 9 criteria pass against named evidence in the [B5 acceptance and U1 handoff](ASL%20Turn%20Guide%20B5%20Acceptance%20and%20U1%20Handoff.md). That document publishes the final capability/evidence matrix and links the compiled `HeadlessConsumerBrowsesEveryPhaseAndConfirmsAnOfferedDecision` example. The example browses all eight phases and 538 topics with missing facts visible, uses the owning-side conditional route after separate authorized review, preserves proposal/confirmation authority, observes resolved obligations, rejects the expired route, and proves exact retry and historical read-only behavior. Existing tests supply interruption, cleanup parity, disclosure and durable reload proofs.
+
+B5 is complete for this admitted baseline. U1 is eligible but not implemented. It consumes existing snapshots and action panels, preserves source and pending states, and keeps consideration flags private. It must not calculate legality, resolve obligations from checkboxes, infer missing facts, or create a second phase-close authority. All nine B5-D packages remain deferred and visible; the eventual all-Passes target is unchanged. R6 changes no runtime contracts, journal schemas or profile versions.
+
+**R6 verification:** 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). All 97 focused Play acceptance/regression cases, 49 focused Rules cases and 421 Units cases pass. The consumer example also passes a final targeted rerun after strengthening its pre-proposal revision assertion. Coverage applies to the entire ASL.Turns assembly, not the Play, Rules or Units assemblies.
