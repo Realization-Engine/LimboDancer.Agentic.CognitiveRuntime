@@ -56,4 +56,44 @@ public sealed class TurnWorkEffectsTests
             Assert.Throws<InvalidDataException>(() => TurnWorkLifecycle.Start(Declaration with { CompletionEffects = effect }, 1, true));
         }
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SupplyRelocationHasFourTurnsAndNoAmmunitionRoll(bool offload)
+    {
+        var declaration = new TurnWorkDeclaration("work", "side", "truck", offload ? ["truck"] : ["truck", "other"],
+            TurnWorkKind.AmmoTransfer, null, null, "E10.4")
+        {
+            CompletionEffects = new(offload ? TurnWorkEffectKind.OffloadSupply : TurnWorkEffectKind.TransferSupply,
+                SupplyId: "supply", SupplyVehicle: "truck", DestinationVehicle: offload ? null : "other", DumpLocation: offload ? "location" : null),
+        };
+        var work = TurnWorkLifecycle.Start(declaration, 1, true);
+        Assert.Equal(4, work.RequiredGameTurns);
+        for (var turn = 1; turn < 4; turn++)
+        {
+            Assert.Throws<InvalidDataException>(() => TurnWorkLifecycle.Change(work, "complete", turn, TurnWorkWindow.SecondCloseCombat));
+            work = TurnWorkLifecycle.NextGameTurn(work, turn, turn + 1);
+        }
+        Assert.Throws<InvalidDataException>(() => TurnWorkLifecycle.Change(work, "complete", 4, TurnWorkWindow.SecondCloseCombat, 12));
+        var done = TurnWorkLifecycle.Change(work, "complete", 4, TurnWorkWindow.SecondCloseCombat);
+        Assert.Equal(new TurnWorkEffectResult(null, false, false, true), TurnWorkEffects.Resolve(done));
+        Assert.Throws<InvalidDataException>(() => TurnWorkEffects.Resolve(done with { EffectsApplied = true }));
+        Assert.False(TurnWorkEffects.CanRelocateSupply(false, false));
+        Assert.True(TurnWorkEffects.CanRelocateSupply(true, false));
+        Assert.True(TurnWorkEffects.CanRelocateSupply(false, true));
+        Assert.True(TurnWorkEffects.WreckAfterRelocation(true));
+        Assert.False(TurnWorkEffects.WreckAfterRelocation(false));
+        TurnWorkEffectSpec[] invalid = [declaration.CompletionEffects with { RecordLowAmmo = true },
+            declaration.CompletionEffects with { SupplyVehicle = "other" }, declaration.CompletionEffects with { SupplyId = " " },
+            declaration.CompletionEffects with { Crew = "crew" },
+            declaration.CompletionEffects with { DestinationVehicle = "truck" },
+            declaration.CompletionEffects with { DestinationVehicle = "stranger" },
+            declaration.CompletionEffects with { DestinationVehicle = null, DumpLocation = null },
+            declaration.CompletionEffects with { DestinationVehicle = "other", DumpLocation = "location" }];
+        foreach (var spec in invalid)
+        {
+            Assert.Throws<InvalidDataException>(() => TurnWorkLifecycle.Start(declaration with { CompletionEffects = spec }, 1, true));
+        }
+    }
 }

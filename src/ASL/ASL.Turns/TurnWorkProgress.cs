@@ -98,7 +98,7 @@ public static class TurnWorkProgress
             ["Packing: G10.11, G10.3-.31; complete Game Turns, linked Gun/Mule/crew, night doubling and minimum duration require rule-specific facts. Release is at next first RPh 1.13B, not ordinary CCPh TI cleanup.",
              "Packing midpoint loading/unloading and reversal remain pending; no duration is guessed from the counter or elapsed Player Turns.",
              "Replenishment: E10.3; original B# <=9/10/11 requires 1/2/3 complete Game Turns. Loss of CE, MP expenditure, firing or CC attack can invalidate the current interval; prior completed intervals remain.",
-             "Ammo Dump/offload/transfer: E10.4, E10.6; four complete Game Turns and separate supply/status movement consequences remain pending.",
-             "Permissioned work adjudication records declarations, interruptions and completion with TI ownership and an Ammunition DR. Opt-in completion restores recorded Low Ammo and C8.9 ammunition, resolves supply depletion/Passenger capacity, and changes Gun assembly/manning. Automatic eligibility, B# combat behavior, animal transport, midpoint/reversal and supply transfer/dump/wreck effects remain pending."]);
+             "Ammo Dump/offload/transfer: E10.4, E10.6; four complete Game Turns; opt-in completion relocates bound supply to a same-Location vehicle or Ammo Dump and wrecks an Immobilized source. Accessible Locations and full dump use remain pending.",
+             "Permissioned work adjudication records declarations, interruptions and completion with TI ownership and an Ammunition DR. Opt-in completion restores recorded Low Ammo and C8.9 ammunition, resolves supply depletion/Passenger capacity, and changes Gun assembly/manning. Automatic eligibility, B# combat behavior, animal transport, midpoint/reversal and full supply/dump eligibility, use and destruction remain pending."]);
     }
 }

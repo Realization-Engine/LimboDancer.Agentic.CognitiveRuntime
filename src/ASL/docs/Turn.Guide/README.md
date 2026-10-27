@@ -55,3 +55,9 @@ B5 live work adjudication: `existing-engine-work-v1` / `b5-work-2` adds persiste
 B5 completion effects: `existing-engine-work-v1` / `b5-work-3` adds bound Gun assembly/manning changes, C8.9 ammo restoration, recorded Low Ammo clearance, supply depletion and Passenger-capacity consequences. Legacy work has no inferred effects. Eligibility, animal transport, B# combat behavior and remaining supply rules stay pending. See the design and implementation plan's completion-effects section.
 
 Latest completion-effects coverage: 148 ASL.Turns tests, 666/666 lines and 374/374 branches (100%).
+
+
+Latest B5 slice: ammunition supply transfer/offload completion effects (`b5-work-4`). The design and implementation plan describe frozen destinations, stationary dump records, source wrecking, capacity changes, atomic replay, and the remaining pending E10 rules.
+
+
+Supply transfer/offload validation: 150 ASL.Turns tests pass with 666/666 lines and 374/374 branches covered (100%, no exclusions). The focused Rules suite passes 40 tests, the relevant Play/Gun/ordnance/vehicle/guide selection passes 67 tests, and the Units regression suite passes 421 tests.

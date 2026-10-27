@@ -26,7 +26,7 @@ public static class TurnWorkLifecycle
         ArgumentNullException.ThrowIfNull(declaration);
         if (!firstRally || turn < 1 || string.IsNullOrWhiteSpace(declaration.Id) || string.IsNullOrWhiteSpace(declaration.Owner)
             || string.IsNullOrWhiteSpace(declaration.Subject) || string.IsNullOrWhiteSpace(declaration.RuleBasis)
-            || declaration.Participants is null || declaration.Participants.Length < 2
+            || declaration.Participants is null || declaration.Participants.Length < (declaration.CompletionEffects?.Kind == TurnWorkEffectKind.OffloadSupply ? 1 : 2)
             || declaration.Participants.Any(string.IsNullOrWhiteSpace)
             || declaration.Participants.Distinct(StringComparer.Ordinal).Count() != declaration.Participants.Length
             || !declaration.Participants.Contains(declaration.Subject, StringComparer.Ordinal))

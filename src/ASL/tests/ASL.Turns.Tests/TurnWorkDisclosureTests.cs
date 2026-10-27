@@ -54,4 +54,35 @@ public sealed class TurnWorkDisclosureTests
         Assert.Equal(TurnWorkEffectStatus.Applied, view.EffectStatus);
         Assert.Equal(TurnSupport.Pending, view.RuleAutomation);
     }
+
+    [Theory]
+    [InlineData(TurnWorkEffectKind.TransferSupply)]
+    [InlineData(TurnWorkEffectKind.OffloadSupply)]
+    public void RelocationDisclosureKeepsEligibilityPendingAndDestinationsPrivate(TurnWorkEffectKind kind)
+    {
+        var offload = kind == TurnWorkEffectKind.OffloadSupply;
+        var declaration = new TurnWorkDeclaration("work", "side", "source", offload ? ["source"] : ["source", "private-target"],
+            TurnWorkKind.AmmoTransfer, null, null, "private-basis")
+        {
+            CompletionEffects = new(kind, SupplyId: "private-supply", SupplyVehicle: "source",
+                DestinationVehicle: offload ? null : "private-target", DumpLocation: offload ? "private-location" : null),
+        };
+        var work = TurnWorkLifecycle.Start(declaration, 1, true);
+        var view = TurnWorkDisclosure.From(work, false);
+        Assert.Equal(kind, view.EffectKind);
+        Assert.Equal(TurnWorkEffectStatus.AwaitingCompletion, view.EffectStatus);
+        Assert.Equal(4, view.RequiredGameTurns);
+        for (var turn = 1; turn < 4; turn++)
+        {
+            work = TurnWorkLifecycle.NextGameTurn(work, turn, turn + 1);
+        }
+        work = TurnWorkLifecycle.Change(work, "complete", 4, TurnWorkWindow.SecondCloseCombat) with
+        {
+            EffectsApplied = true
+        };
+        view = TurnWorkDisclosure.From(work, false);
+        Assert.Equal(TurnWorkEffectStatus.Applied, view.EffectStatus);
+        Assert.Equal(TurnSupport.Pending, view.RuleAutomation);
+        Assert.DoesNotContain("private-", System.Text.Json.JsonSerializer.Serialize(view), StringComparison.Ordinal);
+    }
 }

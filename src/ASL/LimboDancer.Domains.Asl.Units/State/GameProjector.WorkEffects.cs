@@ -12,7 +12,7 @@ public static partial class GameProjector
             {
                 return state;
             }
-            if (effect.Kind == TurnWorkEffectKind.Replenish)
+            if (effect.Kind is TurnWorkEffectKind.Replenish or TurnWorkEffectKind.TransferSupply or TurnWorkEffectKind.OffloadSupply)
             {
                 var supply = state.TurnAmmoSupplies.FirstOrDefault(item => item.Id == effect.SupplyId);
                 if (effect.CreateSupply)
@@ -49,7 +49,11 @@ public static partial class GameProjector
             {
                 throw new InvalidDataException("The effect needs its active own subject on the map.");
             }
-            if (effect.Kind == TurnWorkEffectKind.Replenish)
+            if (effect.Kind is TurnWorkEffectKind.TransferSupply or TurnWorkEffectKind.OffloadSupply)
+            {
+                ValidateSupplyRelocation(state, work, subject);
+            }
+            else if (effect.Kind == TurnWorkEffectKind.Replenish)
             {
                 var supply = state.TurnAmmoSupplies.FirstOrDefault(item => item.Id == effect.SupplyId);
                 if (subject is not UnitInstance || !vocabulary.IsA(subject.Kind, "asl:vehicle")
@@ -79,12 +83,54 @@ public static partial class GameProjector
             }
         }
 
+        private void ValidateSupplyRelocation(GameState state, TurnLiveWork work, IGameObject subject)
+        {
+            var effect = work.Declaration.CompletionEffects!;
+            var supply = state.TurnAmmoSupplies.FirstOrDefault(item => item.Id == effect.SupplyId);
+            if (subject is not UnitInstance source || !vocabulary.IsA(source.Kind, "asl:vehicle")
+                || supply is not { Available: true, DumpLocation: null } || supply.Vehicle != source.Id || supply.Owner != source.Side
+                || !TurnWorkEffects.CanRelocateSupply(GameState.Condition(source, Conditions.Immobilized) == ConditionState.True,
+                    GameState.Condition(source, Conditions.Bogged) == ConditionState.True)
+                || state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Position is ContainedPosition aboard && aboard.Container == source.Id)
+                || state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == source.Id))
+            {
+                throw new InvalidDataException("Supply relocation needs an available bound supply on an Immobile own vehicle, without explicit occupants or held equipment; their disposition remains pending.");
+            }
+            if (effect.Kind == TurnWorkEffectKind.OffloadSupply)
+            {
+                if (effect.DumpLocation != state.Location(source.Id)!.Location.ToString())
+                {
+                    throw new InvalidDataException("An Ammo Dump must use the source's recorded same Location.");
+                }
+            }
+            else if (state.Unit(effect.DestinationVehicle!) is not { Status: InstanceStatus.Active, Position: MapPosition } destination
+                || !vocabulary.IsA(destination.Kind, "asl:vehicle") || destination.Side != source.Side
+                || state.Location(destination.Id)?.Location != state.Location(source.Id)?.Location
+                || state.TurnAmmoSupplies.Any(item => item.Available && item.Vehicle == destination.Id)
+                || state.Units.Any(unit => unit.Status == InstanceStatus.Active
+                    && unit.Position is ContainedPosition { Role: ContainmentRole.Passenger } aboard && aboard.Container == destination.Id))
+            {
+                throw new InvalidDataException("Supply transfer needs a co-located active own, externally qualified vehicle without supply or Passengers.");
+            }
+        }
+
         private GameState CompleteWorkEffects(GameState state, TurnLiveWork work)
         {
             ValidateWorkEffectState(state, work); // Recheck current state; a declaration is not a timeless permission.
             var result = TurnWorkEffects.Resolve(work);
             var effect = work.Declaration.CompletionEffects!;
             var subject = work.Declaration.Subject;
+            if (result.RelocateSupply)
+            {
+                var relocated = state with
+                {
+                    TurnAmmoSupplies = [.. state.TurnAmmoSupplies.Select(supply => supply.Id == effect.SupplyId
+                        ? supply with { Vehicle = effect.DestinationVehicle, DumpLocation = effect.DumpLocation } : supply)],
+                };
+                return TurnWorkEffects.WreckAfterRelocation(GameState.Condition(state.Unit(subject)!, Conditions.Immobilized) == ConditionState.True)
+                    ? Wreck(relocated, new VehicleWrecked(subject, false)) ?? throw new InvalidDataException("The supply source cannot become a wreck.")
+                    : relocated;
+            }
             if (result.Packed is { } packed)
             {
                 return state with
