@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ASL.Turns</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="../docs/Turn.Guide/*Checklist Catalog.json" LogicalName="ASL.Turns.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../docs/Turn.Guide/ASL Cross-Phase Dependency Catalog.json" LogicalName="ASL.Turns.Dependencies.json" />
+  </ItemGroup>
+</Project>

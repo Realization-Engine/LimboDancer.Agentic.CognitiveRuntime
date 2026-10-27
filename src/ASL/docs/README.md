@@ -2,11 +2,11 @@
 
 This directory holds the current specifications, designs, and reviews for the Advanced Squad Leader (ASL) domain package under `src/ASL/`.
 
-ASL is the first reference domain and architectural fitness test for LimboDancer. ASL-specific concepts are not part of the core `LimboDancer.Agentic.CognitiveRuntime` architecture. The requirements and acceptance scenarios in the [ASL Reference-Domain Requirements](<./Requirements/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md>) are authoritative for reference-domain capability but do not prescribe runtime structure, technology choices, or implementation sequence.
+ASL is the first reference domain and architectural fitness test for LimboDancer. ASL-specific concepts are not part of the core `LimboDancer.Agentic.CognitiveRuntime` architecture. The requirements and acceptance scenarios in the [ASL Reference-Domain Requirements](<Requirements/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md>) are authoritative for reference-domain capability but do not prescribe runtime structure, technology choices, or implementation sequence.
 
-The separate-package boundary and contract timing are defined in the [Domain Integration Model](<../../docs/LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md>). The [ASL Ontology Transformation Specification](<./Requirements/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) governs the rulebook-to-package authoring lifecycle, validation and publication gates, and first occupied-building adjudication slice.
+The separate-package boundary and contract timing are defined in the [Domain Integration Model](<../../docs/LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md>). The [ASL Ontology Transformation Specification](<Requirements/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) governs the rulebook-to-package authoring lifecycle, validation and publication gates, and first occupied-building adjudication slice.
 
-Source data, schemas, generated TIR artifacts, and the rulebook conversion stay under [`docs/ASL/`](../../../docs/ASL/). See that directory's README for those materials and for historical ASL research.
+Source data, schemas, generated TIR artifacts, and the rulebook conversion stay under [`docs/ASL/`](../../../docs/ASL). See that directory's README for those materials and for historical ASL research.
 
 **How this directory is laid out (2026-10-05).** Only the working documents in use stay here:
 
@@ -24,14 +24,14 @@ Everything executed is sorted by kind:
 
 | Folder | Holds |
 |---|---|
-| [`Requirements/`](Requirements/) | Requirements and specifications: the Reference-Domain, Unit, and Map Studio Requirements, the Ontology Transformation Specification, and the Dice Roller Requirements. |
-| [`Designs/`](Designs/) | Designs outside the passes: the designs of the earlier steps, the package-level designs (map model, Map Studio architecture, VASL board ingestion, ASL-OT-02 and ASL-OT-03, the dice roller), the Domain Model Analysis, and the Model Decisions D1 to D4. Each says in its status line whether it is built, in progress, or proposed. |
-| [`Reviews/`](Reviews/) | Reviews and evidence outside the passes: the ASL-OT reviews, the Back-Matter Source Boundary Review, the Scenario A1 Source Review Packet, the fourteen Scenario A1 reviews of the steps and of passes 1 to 4, and the VASL Board 01 Terrain Evidence. |
-| [`Plans/`](Plans/) | Plans that have been carried out: the Rally and Fire Extensions Plan, and the Deviations, Ordnance, and Vehicles Plan (the Scenario Card Games Plan, passes 18 to 22, is now section 3 of the Backlog Passes Plan, and its file a pointer); and one deferred plan, the [Scenario Card Implementation Plan](<Plans/ASL Scenario Card Implementation Plan.md>), the legacy card track moved out of the Redesign Plan on 2026-10-16. |
-| [`Passes/`](Passes/) | The design and the review of each executed pass: `ASL Unit Deviations Pass N Design`, `ASL Unit Backlog Pass N Design`, and `Scenario A1 Backlog Pass N Review <date>`. A new pass writes its design and its review here. |
-| [`Prompts/`](Prompts/) | Working material, not executed work: the [Pass Standing Rules and Harness Lessons](<Prompts/Pass Standing Rules and Harness Lessons.md>), which every session prompt for a pass cites. It is kept current and is not deleted when a pass ends. |
-| [`Memory-And-Performance/`](Memory-And-Performance/) | The standing [ASL Memory and Performance Guidelines](<Memory-And-Performance/ASL Memory and Performance Guidelines.md>) for future work; the completed SVG work (PR 19), Counter Layer work (PR 22), Play Step work (PR 23), and A3 map context work (PR 25), with their analyses, plans, and measurements. |
-| [`Media-Production/`](Media-Production/) | The Guards Counterattack media scripts and production records. |
+| [`Requirements/`](Requirements) | Requirements and specifications: the Reference-Domain, Unit, and Map Studio Requirements, the Ontology Transformation Specification, and the Dice Roller Requirements. |
+| [`Designs/`](Designs) | Designs outside the passes: the designs of the earlier steps, the package-level designs (map model, Map Studio architecture, VASL board ingestion, ASL-OT-02 and ASL-OT-03, the dice roller), the Domain Model Analysis, and the Model Decisions D1 to D4. Each says in its status line whether it is built, in progress, or proposed. |
+| [`Reviews/`](Reviews) | Reviews and evidence outside the passes: the ASL-OT reviews, the Back-Matter Source Boundary Review, the Scenario A1 Source Review Packet, the fourteen Scenario A1 reviews of the steps and of passes 1 to 4, and the VASL Board 01 Terrain Evidence. |
+| [`Plans/`](Plans) | Plans that have been carried out: the Rally and Fire Extensions Plan, and the Deviations, Ordnance, and Vehicles Plan (the Scenario Card Games Plan, passes 18 to 22, is now section 3 of the Backlog Passes Plan, and its file a pointer); and one deferred plan, the [Scenario Card Implementation Plan](<Plans/ASL Scenario Card Implementation Plan.md>), the legacy card track moved out of the Redesign Plan on 2026-10-16. |
+| [`Passes/`](Passes) | The design and the review of each executed pass: `ASL Unit Deviations Pass N Design`, `ASL Unit Backlog Pass N Design`, and `Scenario A1 Backlog Pass N Review <date>`. A new pass writes its design and its review here. |
+| [`Prompts/`](Prompts) | Working material, not executed work: the [Pass Standing Rules and Harness Lessons](<Prompts/Pass Standing Rules and Harness Lessons.md>), which every session prompt for a pass cites. It is kept current and is not deleted when a pass ends. |
+| [`Memory-And-Performance/`](Memory-And-Performance) | The standing [ASL Memory and Performance Guidelines](<Memory-And-Performance/ASL Memory and Performance Guidelines.md>) for future work; the completed SVG work (PR 19), Counter Layer work (PR 22), Play Step work (PR 23), and A3 map context work (PR 25), with their analyses, plans, and measurements. |
+| [`Media-Production/`](Media-Production) | The Guards Counterattack media scripts and production records. |
 
 [ASL CBOR Architecture and Storage Analysis](<Memory-And-Performance/ASL CBOR Architecture and Storage Analysis.md>) evaluates CBOR for map caches and the storage backlog, including whole-game writes, retained scenario cards, and game-to-card indexing. Status: analysis and proposed experiments, 2026-10-21.
 
@@ -60,12 +60,14 @@ Second-defender consequence       7 cases: 2 definitive (return; 2 MF in previou
 Second-defender return execution  gated action for the clear-return subset of the 2 definitive cases
 ```
 
-See the [Scenario A1 execution milestone report](<../../docs/LimboDancer.Agentic.CognitiveRuntime Milestone Report 2026-09-24 Scenario A1 Execution.md>) for evidence and limits. The separate map sequence (ASL-MAP-01 to 08) is defined in the [ASL Map Studio Requirements](<./Requirements/LimboDancer.Agentic.CognitiveRuntime ASL Map Studio Requirements.md>).
+See the [Scenario A1 execution milestone report](<../../docs/LimboDancer.Agentic.CognitiveRuntime Milestone Report 2026-09-24 Scenario A1 Execution.md>) for evidence and limits. The separate map sequence (ASL-MAP-01 to 08) is defined in the [ASL Map Studio Requirements](<Requirements/LimboDancer.Agentic.CognitiveRuntime ASL Map Studio Requirements.md>).
 
 Scenario A1 state changes only in live games: the Map Studio's registered game actions pass the common authority path and Execution Gate and append to the game log, which is the only record of unit state. The earlier second-defender return action, its `LimboDancer.Domains.Asl.Execution` adapter and journal, and the runtime Host's `AddScenarioA1Return` opt-in were retired at unit step 11, and the runtime references no ASL project. No other ASL artifact authorizes execution. A `DomainConclusion` remains an interpretation; any state change independently passes through the common authority path and Execution Gate.
 
 ## Documents
 
+- [ASL Turn Phase Guide Analysis](<Turn.Guide/ASL Turn Phase Guide Analysis.md>): design exploration for an eight-phase Blazor guide and contextual checklist, targeting the completed Rules implementation with all options visible, including rules integration pending.
+- [ASL Rally Phase Component Walkthrough](<Turn.Guide/ASL Rally Phase Component Walkthrough.md>): detailed Rally Phase topics, checklist behavior, contextual vocabulary, and examples for the proposed component.
 - [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>): passes 22b to 30, the Map Studio redesign (theme, shared components, every page as Blazor components, the map-centered Play workspace) interleaved with card play, the deferred rules, and the Chapter H DYO purchase; 170 component candidates assigned to passes.
 - `LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`: normative ASL reference-domain requirements (ASL-RD-001 through ASL-RD-015), end-to-end acceptance scenarios, and traceability to the runtime planes.
 - `LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md`: current rulebook-to-ontology authoring, validation, publication, and first-slice specification.
@@ -127,3 +129,30 @@ Scenario A1 state changes only in live games: the Map Studio's registered game a
 [Ardennes Command Decision Contract Specification](<Ardennes Command Decision Contract Specification.md>) defines the first optional command/supply/leadership window using PL14 and PL15, with finite allocations, timed delivery, explicit variants, deterministic choices and acceptance cases. Status: proposed contract, 9 October 2026.
 
 - [Ardennes Command Prototype Acceptance](<Ardennes Command Prototype Acceptance.md>): implemented smoke-test workflow, browser checks and remaining limits.
+
+- [ASL Rally Phase Checklist Catalog](<Turn.Guide/ASL Rally Phase Checklist Catalog.json>): 45 source-reconciled design topics, including pending rules and physical PDF locators.
+
+- [ASL Prep Fire Phase Component Walkthrough](<Turn.Guide/ASL Prep Fire Phase Component Walkthrough.md>): all nine printed PFPh ASOP steps, detailed decisions, consequences and pending rules.
+- [ASL Prep Fire Phase Checklist Catalog](<Turn.Guide/ASL Prep Fire Phase Checklist Catalog.json>): 58 design topics with shared source references and 108 contextual vocabulary labels.
+- [ASL Movement Phase Component Walkthrough](<Turn.Guide/ASL Movement Phase Component Walkthrough.md>): all 20 printed MPh ASOP steps, expenditure and response windows, special movement, aerial landings, pending rules and source limits.
+- [ASL Movement Phase Checklist Catalog](<Turn.Guide/ASL Movement Phase Checklist Catalog.json>): 114 design topics and 92 contextual vocabulary labels, with a complete printed-step reconciliation ledger.
+- [ASL Defensive Fire Phase Component Walkthrough](<Turn.Guide/ASL Defensive Fire Phase Component Walkthrough.md>): all eight DFPh ASOP steps, carried-forward fire limits, artillery, aircraft, Clearance, equipment choices and day/night cleanup.
+- [ASL Defensive Fire Phase Checklist Catalog](<Turn.Guide/ASL Defensive Fire Phase Checklist Catalog.json>): 72 design topics and 116 contextual vocabulary labels, including pending rules and source limits.
+
+- [ASL Advancing Fire Phase Component Walkthrough](<Turn.Guide/ASL Advancing Fire Phase Component Walkthrough.md>): all nine AFPh steps, detailed fire choices and exceptions, demolition, fire spread, cleanup and pending rules.
+- [ASL Advancing Fire Phase Checklist Catalog](<Turn.Guide/ASL Advancing Fire Phase Checklist Catalog.json>): 58 design topics and 91 contextual vocabulary labels with source references and a printed-step ledger.
+
+- [ASL Rout Phase Component Walkthrough](<Turn.Guide/ASL Rout Phase Component Walkthrough.md>): all four printed RtPh steps, destination/path choices, Interdiction, surrender, special profiles, hazards and pending rules.
+- [ASL Rout Phase Checklist Catalog](<Turn.Guide/ASL Rout Phase Checklist Catalog.json>): 56 design topics and 51 contextual vocabulary labels, with sources and a printed-step ledger.
+
+- [ASL Advance Phase Component Walkthrough](<Turn.Guide/ASL Advance Phase Component Walkthrough.md>): all nine APh steps, commitment and cost checks, terrain and transport exceptions, drift, hazards, parachute replacement and pending rules.
+- [ASL Advance Phase Checklist Catalog](<Turn.Guide/ASL Advance Phase Checklist Catalog.json>): 57 design topics and 61 contextual vocabulary labels, with sources and a complete printed-step ledger.
+
+- [ASL Close Combat Phase Component Walkthrough](<Turn.Guide/ASL Close Combat Phase Component Walkthrough.md>): all 17 CCPh steps, Location and phase-wide queues, declaration commitments, special combat, Clearance and ordered cleanup.
+- [ASL Close Combat Phase Checklist Catalog](<Turn.Guide/ASL Close Combat Phase Checklist Catalog.json>): 78 design topics and 79 contextual vocabulary labels, including pending rules and named source gaps.
+- [ASL Cross-Phase Dependencies and Cleanup Audit](<Turn.Guide/ASL Cross-Phase Dependencies and Cleanup Audit.md>): source-reconciled carry-forward commitments, cleanup clocks, interruption rules and live-component requirements.
+- [ASL Cross-Phase Dependency Catalog](<Turn.Guide/ASL Cross-Phase Dependency Catalog.json>): navigable timing chains connecting the eight phase checklists, including pending integrations and interpretation/source gaps.
+- [ASL Turn Phase Guide Design](<Turn.Guide/ASL Turn Phase Guide Design.md>): ASL.Turns backend contracts, Rules/Units/Play boundaries, viewer-safe results and cross-phase obligations before UI construction.
+- [ASL Turn Phase Guide Implementation Plan](<Turn.Guide/ASL Turn Phase Guide Implementation Plan.md>): backend-first library, timing, obligation, replay and command integration stages, with UI deferred until the readiness gate.
+
+Turn-guide documents and the preserved preview are collected in [Turn.Guide](Turn.Guide/README.md).

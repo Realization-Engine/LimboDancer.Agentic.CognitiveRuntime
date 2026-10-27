@@ -1,0 +1,1941 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "edition": "eASLRB v3.01",
+    "file": "E:/RPG/Dennis-Landi-Games/Squad Leader Apocalypse/References/AdvancedSquadLeader/wgv-2025-08-07_06-00am/eASLRB_v3_01.pdf",
+    "sha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+    "pageNumbering": "Physical PDF pages, one-based",
+    "reconciled": "2026-10-26",
+    "scope": "All nine printed APh ASOP steps and identified supplemental in-volume rule families. Module/SSR/equipment profiles require their own reconciliation.",
+    "asopPdfPages": [
+      681
+    ]
+  },
+  "groups": [
+    "Phase ownership and commitments",
+    "7.11A · Opening transfers",
+    "7.12A · Japanese Tank-Hunter Hero",
+    "7.13A · Opening surf obligations",
+    "7.21A · Eligibility, load and destination",
+    "7.21A · Enemy entry and combat commitments",
+    "7.21A · Terrain connections and special profiles",
+    "7.22A · ATTACKER drift",
+    "7.23D · DEFENDER drift",
+    "7.24A · Beaching after advance and drift",
+    "7.25B · Immediate effects and survival",
+    "7.26A · Parachute replacement",
+    "Supplemental consequences and phase boundary"
+  ],
+  "options": [
+    {
+      "id": "handoff",
+      "g": 0,
+      "title": "Review advance choices and required commitments",
+      "who": "BOTH",
+      "kind": "Phase handoff",
+      "refs": "A3.7; A4.7; ASOP 7",
+      "sourcePages": [
+        681,
+        47,
+        52,
+        75,
+        118
+      ],
+      "terms": [
+        "APh",
+        "Advance receipt",
+        "CC"
+      ],
+      "prompt": "Who may advance, who must act, and what carries into Close Combat?",
+      "checks": [
+        "Ordinary advance is an ATTACKER option. Keep the DEFENDER heavy-current drift window and BOTH-side triggered effects separate.",
+        "Carry forward PIN, TI, CX, CC/Melee, load, night restrictions, tunnel movement, parachutes and water conditions. Optional consideration cannot discharge mandatory emergence or drift.",
+        "Preview destination and consequences before commitment. Passing PAATC immediately commits that unit; do not collect successful checks for later selection."
+      ],
+      "effect": "Propose a per-unit advance receipt and a distinct required-effects queue.",
+      "example": "A squad can stay in cover while a tunnel unit must emerge and an opposing boat must drift.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "Rule-specific APh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "transfer",
+      "g": 1,
+      "title": "Transfer possessed SW or Guns before advances",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A4.431; B26.4; G9.52",
+      "sourcePages": [
+        681,
+        50,
+        145,
+        290
+      ],
+      "terms": [
+        "SW",
+        "IPC",
+        "PP"
+      ],
+      "prompt": "Would reassignment improve either unit’s advance or later combat?",
+      "checks": [
+        "Use Good Order unpinned units in the same Location; respect Wire, Panji, Crest and vehicle-possession restrictions.",
+        "Transfer at the start of APh, before advances. Possession transfer does not move a Gun or Recover an unattended item.",
+        "Recompute both units’ retained load and leader assistance before offering destinations."
+      ],
+      "effect": "Show the before/after load of donor and recipient.",
+      "example": "A squad gives its MMG to a stationary eligible unit before advancing uphill.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 7.11A",
+      "steps": [
+        "7.11A"
+      ]
+    },
+    {
+      "id": "prisoners",
+      "g": 1,
+      "title": "Transfer or abandon prisoners",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A20.5-.53; A4.431",
+      "sourcePages": [
+        681,
+        87
+      ],
+      "terms": [
+        "Guard",
+        "Prisoners",
+        "Melee"
+      ],
+      "prompt": "Should this Guard retain responsibility for the advance?",
+      "checks": [
+        "Offer friendly opening transfer/abandonment only outside Melee; transfer uses the applicable SW transfer procedure and does not consume either unit’s APh capability.",
+        "Preserve guard identity, capacity and prisoner accompaniment. Abandonment does not erase later Massacre/No Quarter consequences."
+      ],
+      "effect": "Show the new Guard and resulting movement/combat obligations.",
+      "example": "A squad transfers prisoners to another eligible Guard before approaching an enemy Location.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.11A",
+      "steps": [
+        "7.11A"
+      ]
+    },
+    {
+      "id": "skiUse",
+      "g": 1,
+      "title": "Resolve ski-use eligibility after a transfer",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "E4.21",
+      "sourcePages": [
+        681,
+        231
+      ],
+      "terms": [
+        "Skis",
+        "dr"
+      ],
+      "prompt": "Can the recipient use these transferred skis?",
+      "checks": [
+        "A recipient already ski-capable needs no new use dr. Otherwise make the immediate ski-use dr: 1 succeeds; 2-6 eliminates the skis.",
+        "Resolve this before offering ski mode. Off-skis equipment carries its PP cost and cannot exceed the unit’s own usage requirements."
+      ],
+      "effect": "Keep receiving skis, qualifying to use them, and donning them separate.",
+      "example": "An untrained recipient receives skis but fails its use dr; no ski-mode advance is then offered.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.11A",
+      "steps": [
+        "7.11A"
+      ]
+    },
+    {
+      "id": "tankHunter",
+      "g": 2,
+      "title": "Attempt Tank-Hunter Hero creation",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "G1.421-.424",
+      "sourcePages": [
+        681,
+        279
+      ],
+      "terms": [
+        "T-H Hero",
+        "Designated Target",
+        "AFV",
+        "dr"
+      ],
+      "prompt": "Is an eligible Japanese squad or HS ADJACENT to an enemy AFV?",
+      "checks": [
+        "Require armed Good Order Japanese Infantry, qualifying AFV LOS/ADJACENCY, and no disqualifying Prep/Bounding/First/Final Fire or Pin/TI counter.",
+        "Final dr ≤3 creates the hero; apply HS +1, Conscript +2 and committed DC -2. Original 6 pins the creator as specified. Choose and record the Designated Target.",
+        "If MMC make simultaneous creation attempts, their subsequent friendly-phase advance is only as a stack. Preserve special DC-Hero rules instead of treating the new counter as ordinary Infantry."
+      ],
+      "effect": "Show attempt risk, DC commitment and the resulting target obligation.",
+      "example": "A Japanese HS risks pinning itself to create a hero against the adjacent tank.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.12A",
+      "steps": [
+        "7.12A"
+      ]
+    },
+    {
+      "id": "openingSurf",
+      "g": 3,
+      "title": "Resolve opening Heavy-Surf beaching checks",
+      "who": "ATTACKER",
+      "kind": "Required check",
+      "refs": "G13.442-.4423",
+      "sourcePages": [
+        681,
+        311,
+        312
+      ],
+      "terms": [
+        "Heavy Surf",
+        "Beached",
+        "LC",
+        "Broached"
+      ],
+      "prompt": "Which boats and non-Aground LC require an opening check?",
+      "checks": [
+        "Check qualifying Ocean Locations with Beach-able hexsides even when the craft intends no action. Boats use their own G13.4423 procedure.",
+        "Resolve TI, changed beaching state, broaching, ramp and passenger consequences before allowing later actions; do not substitute a voluntary beaching toggle."
+      ],
+      "effect": "Keep required opening checks ahead of advance and drift choices.",
+      "example": "A stationary LC can become TI or Broached before its passengers have any choice.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.13A",
+      "steps": [
+        "7.13A"
+      ]
+    },
+    {
+      "id": "eligibility",
+      "g": 4,
+      "title": "Choose eligible Infantry or remain in place",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A.3; A4.7-.8; A11.15; A15.431",
+      "sourcePages": [
+        681,
+        43,
+        52,
+        72,
+        84
+      ],
+      "terms": [
+        "APh",
+        "TI",
+        "CC",
+        "Melee"
+      ],
+      "prompt": "Does this unit retain an advance capability?",
+      "checks": [
+        "Exclude broken, pinned, TI and CC-marked Infantry; units held in Melee and berserk units cannot use ordinary advance. Distinguish a concealed unit not actually held in Melee.",
+        "Earlier movement or fire does not itself consume advance. Check specific restrictions rather than interpreting every MPh prohibition as an APh prohibition.",
+        "Staying is normally legal, but special compulsory tunnel or T-H Hero instructions must remain open."
+      ],
+      "effect": "Explain each restriction and preserve an explicit stay choice.",
+      "example": "A squad that fired earlier can still advance, but a pinned squad waits for the later Pin-removal window.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "destination",
+      "g": 4,
+      "title": "Select one horizontal or vertical destination",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A3.7; A4.7; B23.422",
+      "sourcePages": [
+        681,
+        47,
+        52,
+        137,
+        138
+      ],
+      "terms": [
+        "Location",
+        "Accessible",
+        "ADJACENT"
+      ],
+      "prompt": "Which single advance connection is legal?",
+      "checks": [
+        "Choose one hex horizontally or a legal adjacent building-level Location in the same hex. Do not combine entering a new hex with a separate internal level change.",
+        "A horizontal advance may change elevation across a hill or Depression. Apply explicit split-level and terrain exceptions rather than rejecting every elevation change.",
+        "Resolve source and destination status, not merely hex coordinates; no multi-hex route is created by unused MF."
+      ],
+      "effect": "Show a Location-to-Location connection with its rule and status changes.",
+      "example": "A squad can climb the stairs in its current hex or enter the neighboring hex, but cannot do both.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "load",
+      "g": 4,
+      "title": "Evaluate retained weapons and portage",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A4.42; A4.7-.72; D15.82",
+      "sourcePages": [
+        681,
+        50,
+        52,
+        215
+      ],
+      "terms": [
+        "IPC",
+        "PP",
+        "MF"
+      ],
+      "prompt": "Does the retained load leave any MF for advance?",
+      "checks": [
+        "Compute non-Double Time capability after portage. In no case may the unit advance if it retains no MF after deducting portage costs.",
+        "Evaluate legal load changes before the attempt. Do not reuse the MPh’s remaining MF or grant Gun Manhandling as an APh action.",
+        "Bicycles cannot be moved in APh even by portage; their normal one-PP value does not create an exception. Motorcycles also lack ordinary APh movement."
+      ],
+      "effect": "Compare keep, opening transfer, and legal drop choices before committing.",
+      "example": "A loaded squad that retains no MF must shed or transfer weight before it can advance.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "drop",
+      "g": 4,
+      "title": "Drop possession of SW or a Gun",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A4.43",
+      "sourcePages": [
+        681,
+        50
+      ],
+      "terms": [
+        "SW",
+        "PP",
+        "IPC"
+      ],
+      "prompt": "Would leaving equipment permit the intended advance?",
+      "checks": [
+        "An unbroken unit may drop possession during its APh at no MF cost. A drop at phase start before advancing is treated as unpossessed at the start.",
+        "An unattended item is not automatically transferred or Recovered by another unit. Apply terrain-related loss of abandoned equipment."
+      ],
+      "effect": "Show where the item remains and recalculate load without silently assigning a recipient.",
+      "example": "A squad leaves an HMG behind; a nearby squad cannot simply claim it as an opening transfer afterward.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "leader",
+      "g": 4,
+      "title": "Choose leader accompaniment and portage support",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A4.12; A4.42; A4.72",
+      "sourcePages": [
+        681,
+        48,
+        50,
+        52,
+        75
+      ],
+      "terms": [
+        "SMC",
+        "MMC",
+        "IPC",
+        "MF"
+      ],
+      "prompt": "Does the planned stack qualify for leadership support?",
+      "checks": [
+        "Require the qualifying same-nationality leader relationship from APh start to finish, same Location/level/status, and movement as the combined stack for the MF bonus.",
+        "Apply the eligible leader’s portage assistance to the actual load. A leader joining only at the destination does not retroactively supply the bonus.",
+        "PAATC leadership can apply without accompanying the unit; do not confuse that check modifier with movement support."
+      ],
+      "effect": "Display check leadership and movement/portage support as distinct contributions.",
+      "example": "A Russian squad with five PP can avoid a two-MF difficult advance if valid leader support changes its available capability.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "difficult",
+      "g": 4,
+      "title": "Calculate difficult advance and CX",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A4.72; A5.11; A7.7",
+      "sourcePages": [
+        681,
+        52,
+        224,
+        232,
+        57,
+        58
+      ],
+      "terms": [
+        "Difficult Terrain",
+        "CX",
+        "MF",
+        "PP"
+      ],
+      "prompt": "Does entry cost reach the lesser of four MF or this unit’s available MF?",
+      "checks": [
+        "Use entry cost excluding SMOKE, including applicable elevation, hexside, overstacking, night and ski-change costs. Do not use the terrain name alone.",
+        "An already-CX unit normally cannot make a difficult advance. Otherwise the advance creates CX. Preserve the explicit climbing and deep-stream exceptions.",
+        "Show the actual arithmetic and resulting CC consequences before commitment; a Considered mark never spends MF or creates CX.",
+        "Encirclement doubles the first Location entry cost after modifications, regardless of phase; include that effect before the difficult-advance verdict. Keep the SMOKE exclusion explicit."
+      ],
+      "effect": "Propose a cost receipt with each modifier and threshold.",
+      "example": "A two-MF entry can be difficult for a loaded squad even though another squad enters without CX.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "stacking",
+      "g": 4,
+      "title": "Check arrival order and stacking capacity",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A5.1-.13; A5.5-.6",
+      "sourcePages": [
+        681,
+        52,
+        53
+      ],
+      "terms": [
+        "MMC",
+        "SMC",
+        "Difficult Terrain"
+      ],
+      "prompt": "Would this arrival overstack or exceed a hard capacity?",
+      "checks": [
+        "Compute destination occupancy after each advancing unit/stack. Ordinary overstacking adds costs and combat penalties; it is not universally forbidden.",
+        "Pillbox, entrenchment, sewer and tunnel capacities are hard restrictions. Apply squad-equivalent rules rather than counting counters.",
+        "Recompute after previous arrivals or casualties; the last squad may face a different difficult-terrain test."
+      ],
+      "effect": "Show occupancy and the reason a later unit’s result differs.",
+      "example": "An additional squad makes a building entry four MF and therefore difficult.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "wounded",
+      "g": 4,
+      "title": "Advance with a wounded SMC or carry one",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A17.2; A4.72",
+      "sourcePages": [
+        681,
+        85
+      ],
+      "terms": [
+        "SMC",
+        "Wound",
+        "PP",
+        "IPC"
+      ],
+      "prompt": "Should the wounded man advance independently or be carried?",
+      "checks": [
+        "Use the wounded SMC’s reduced three-MF capability and zero IPC when advancing independently.",
+        "Carrying an eligible Good Order wounded man who is not portaging equipment costs five PP; include that load in the carrier’s advance test.",
+        "Pass 71 built MPh carrying, but APh carrying remains backlog 74. Keep this option visible with a pending APh evaluation."
+      ],
+      "effect": "Offer separate independent and carried choices with truthful coverage.",
+      "example": "A squad may need to leave a SW to carry its wounded leader without losing all advance capability.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "enemy",
+      "g": 5,
+      "title": "Advance into an enemy Location or existing Melee",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A3.7; A4.14; A11.15; A12.15",
+      "sourcePages": [
+        681,
+        47,
+        49,
+        72,
+        78
+      ],
+      "terms": [
+        "CC",
+        "Melee",
+        "HIP"
+      ],
+      "prompt": "Is entering this Location worth the coming combat?",
+      "checks": [
+        "Enemy occupation does not impose the ordinary MPh entry prohibition. Check fortified building, pillbox and other explicit exceptions.",
+        "Keep concealment and hidden identities protected until the rules require disclosure. Do not run the ordinary MPh bounce/detection procedure as a generic advance rule.",
+        "Record the encounter for CCPh. Do not roll Ambush, resolve CC or reveal all hidden contents merely because the user browses a destination."
+      ],
+      "effect": "Preview known combat commitments without disclosing unknown defenders.",
+      "example": "A squad enters an enemy-occupied building and awaits the proper CCPh reveal and Ambush windows.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "paatc",
+      "g": 5,
+      "title": "Attempt PAATC and immediately resolve the advance",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A4.71; A11.6; G14.32",
+      "sourcePages": [
+        681,
+        52,
+        75,
+        93,
+        95,
+        314
+      ],
+      "terms": [
+        "PAATC",
+        "AFV",
+        "MMC",
+        "SMC"
+      ],
+      "prompt": "Must this unit test before entering the AFV Location?",
+      "checks": [
+        "A MMC entering a Location containing a manned unconcealed enemy AFV normally tests. Apply SMC/Fanatic exemptions and explicit nationality rules; exemption does not remove other advance restrictions.",
+        "Failure pins the unit. Success requires immediate advance; do not wait for other units’ rolls. Attempts need not all be predesignated.",
+        "A leader in the origin may assist without advancing. Inexperienced Infantry use a 1TC rather than NTC; apply applicable nationality/Commissar rules explicitly.",
+        "Seaborne Assault/Evacuation Infantry Fanatic on a Beach or pier needs no PAATC to advance into the Hinterland against an AFV: assess Fanaticism when the check would be required, not only at the destination."
+      ],
+      "effect": "Use a commit-and-resolve control in the future live UI, not a provisional roll button.",
+      "example": "The first squad passes and enters before the second squad decides to attempt its check.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "heroAdvance",
+      "g": 5,
+      "title": "Complete a T-H Hero’s compulsory advance",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "G1.423-.424",
+      "sourcePages": [
+        681,
+        279
+      ],
+      "terms": [
+        "T-H Hero",
+        "Designated Target",
+        "CC"
+      ],
+      "prompt": "Is the hero ADJACENT to its Designated Target?",
+      "checks": [
+        "A T-H Hero ADJACENT to its Designated Target at APh start must advance into that target’s Location if able.",
+        "Preserve the hero’s special target and DC rules. ATMM and CC attack resolution remain in their own later windows."
+      ],
+      "effect": "Keep the target obligation visible even if the general advance list is marked considered.",
+      "example": "A newly created hero cannot choose a safer unrelated destination instead of its required tank target.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "concealment",
+      "g": 5,
+      "title": "Preserve or lose concealment at the correct trigger",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A12.14-.15; A11.19; E1.31-.43",
+      "sourcePages": [
+        681,
+        72,
+        77,
+        78,
+        223,
+        224,
+        148
+      ],
+      "terms": [
+        "HIP",
+        "LOS",
+        "Cloaking"
+      ],
+      "prompt": "What information must this advance reveal now?",
+      "checks": [
+        "Apply lawful observer and terrain tests, including night and special terrain. Do not expose hidden occupants in candidate counts or disabled reasons.",
+        "Keep normal advance concealment separate from CCPh strength revelation and from mine-attack concealment rules. Concealed units not held in Melee can have legal exit choices."
+      ],
+      "effect": "Project only viewer-safe candidates and record the precise reveal trigger.",
+      "example": "An advance into cover can retain concealment, while CCPh still has its own disclosure step.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "buildings",
+      "g": 6,
+      "title": "Use stairs, rowhouses, split levels and rooftops",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "B23.4; B23.71-.74; B23.8",
+      "sourcePages": [
+        681,
+        137,
+        138,
+        139,
+        140
+      ],
+      "terms": [
+        "Location",
+        "ADJACENT",
+        "Difficult Terrain"
+      ],
+      "prompt": "Which actual building connection leads to the intended Location?",
+      "checks": [
+        "Use a valid stairwell for vertical advance and the proper rowhouse/breach or split-level connection for lateral entry.",
+        "Apply rooftop availability by SSR and its own costs. Do not permit an upper-level jump into a different building or collapse Factory/rooftop distinctions."
+      ],
+      "effect": "Show connection type and entry cost, with pending interior geometry explicit.",
+      "example": "A wall between rowhouses changes the allowed connection; adjacent artwork alone is insufficient.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "fortified",
+      "g": 6,
+      "title": "Test fortified-building entry before commitment",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "B23.922-.9221; B8.61",
+      "sourcePages": [
+        681,
+        140,
+        141,
+        117,
+        118
+      ],
+      "terms": [
+        "Good Order",
+        "CC",
+        "Tunnel"
+      ],
+      "prompt": "Does a qualifying enemy squad bar this entry?",
+      "checks": [
+        "An unpinned Good Order armed enemy squad or equivalent inside bars entry unless an applicable Breach or specific rule permits it.",
+        "An unsuccessful attempt consumes that unit’s APh capability and leaves it in its present hex. Respect revelation at the attempt, not during private preview.",
+        "Tunnel emergence has its own exception; sewer emergence does not inherit that exception."
+      ],
+      "effect": "Distinguish known legal entry from a potentially revealing committed attempt.",
+      "example": "An attempted entry reveals the fortified position and leaves the squad unable to try another destination.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "entrenchment",
+      "g": 6,
+      "title": "Advance into, out of or between entrenchments",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A4.7; B27.41-.54",
+      "sourcePages": [
+        681,
+        52,
+        146,
+        147
+      ],
+      "terms": [
+        "Accessible",
+        "Difficult Terrain"
+      ],
+      "prompt": "Can the advance end beneath the desired fortification?",
+      "checks": [
+        "One advance can go from inside an entrenchment to inside another in an Accessible hex, subject to capacity and applicable costs.",
+        "Distinguish ordinary entry/exit from connected trenches. Connected-trench movement has explicit cost and mine protection; do not treat every pair of foxholes as connected."
+      ],
+      "effect": "Include origin and destination below-counter status in the receipt.",
+      "example": "A squad can advance directly between eligible entrenchments, but a full destination still bars entry.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "pillbox",
+      "g": 6,
+      "title": "Apply pillbox entry, exit and bunker restrictions",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "B30.41-.44; B30.6-.8",
+      "sourcePages": [
+        681,
+        151,
+        152
+      ],
+      "terms": [
+        "Pillbox",
+        "Tunnel",
+        "CC"
+      ],
+      "prompt": "Is this the outside hex or the separate pillbox Location?",
+      "checks": [
+        "Enemy Infantry inside bars entering the pillbox itself. Qualifying enemy outside bars entry too, with the explicit tunnel exception.",
+        "Apply the special exit and bunker/trench connections. Do not treat adjacent outside units as occupants of the same Location or ordinary building CC."
+      ],
+      "effect": "Keep pillbox and outside-hex candidates separate with their restrictions.",
+      "example": "An Infantry unit may approach the pillbox hex without being allowed into its occupied interior.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "crest",
+      "g": 6,
+      "title": "Choose Crest status or move out of it",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "B20.91-.93",
+      "sourcePages": [
+        681,
+        133
+      ],
+      "terms": [
+        "Crest",
+        "Location",
+        "MF"
+      ],
+      "prompt": "Is the unit entering, leaving or changing sides of a Depression?",
+      "checks": [
+        "Eligible Infantry IN a Depression may spend its advance claiming Crest status in the same hex; entry from outside uses the proper entering hexside.",
+        "No direct Crest-to-Crest switch is permitted. Leaving on the opposite side requires first leaving Crest status in the current hex, so do not offer an illegal one-step crossing."
+      ],
+      "effect": "Show the occupied side and resulting exposed hexsides.",
+      "example": "A squad cannot rotate to the far bank and leave the Depression in one ordinary advance.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "climb",
+      "g": 6,
+      "title": "Finish climbing or scaling at the reached level",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "B11.432-.434; B23.424; B6.4",
+      "sourcePages": [
+        681,
+        127,
+        137,
+        115
+      ],
+      "terms": [
+        "CX",
+        "Climbing"
+      ],
+      "prompt": "Did the MPh reach the destination’s height?",
+      "checks": [
+        "No new Climbing attempt occurs in APh. At the proper level, an ascending unit can cross the cliff hexside; a descending unit removes its Climb counter.",
+        "Exchange the completed Climb state for CX and apply B11.432’s additional-penalty Pin consequence. Ordinary difficult-advance restrictions do not prevent this special completion.",
+        "Use the related scaling/bridge rules when applicable. A climber still at ground level may leave the Climb counter there to abandon the attempt; an unfinished climb is not a free advance to the top."
+      ],
+      "effect": "Carry the reached level from MPh and expose only the legal completion.",
+      "example": "A climber at the destination height can finish despite already being CX.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "sewer",
+      "g": 6,
+      "title": "Choose permitted sewer emergence or adjacent sewer CC",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "B8.41-.45",
+      "sourcePages": [
+        681,
+        117
+      ],
+      "terms": [
+        "Sewer",
+        "CC",
+        "CX"
+      ],
+      "prompt": "What did the earlier Sewer Emergence dr permit?",
+      "checks": [
+        "Use the recorded MPh emergence result, not a fresh APh roll. If permitted, emerge concealed into the Manhole Location subject to its entry restrictions.",
+        "The special alternative is entering CC with an adjacent sewer unit under B8.44. Sewer concealment prevents ordinary Melee lock.",
+        "Apply Pin/CX when emerging after leaving an Encircled Location. Keep next-MPh movement obligations attached."
+      ],
+      "effect": "Offer only the emergence and sewer-CC alternatives supported by the earlier result.",
+      "example": "A stack with a failed emergence result cannot choose the surface simply because APh has arrived.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "tunnel",
+      "g": 6,
+      "title": "Complete mandatory tunnel emergence",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "B8.61; G11.933",
+      "sourcePages": [
+        681,
+        118,
+        301
+      ],
+      "terms": [
+        "Tunnel",
+        "CX",
+        "Pillbox"
+      ],
+      "prompt": "Which tunnel occupants must exit now?",
+      "checks": [
+        "Units that entered the tunnel in MPh must emerge at the opposite entrance in this APh, concealed, even if enemy occupied or Fortified.",
+        "An enemy-occupied pillbox exit instead eliminates them. Apply Pin/CX for an Encircled origin and preserve IPC/capacity limits.",
+        "Cave-complex tunnel endpoints can complete by removing a Sewer counter in the correct hidden box; do not force public disclosure of the underground destination."
+      ],
+      "effect": "Represent emergence as a required continuation of the MPh record.",
+      "example": "A unit cannot remain safely in its tunnel for another turn by declining ordinary advance.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "wire",
+      "g": 6,
+      "title": "Respect Wire’s above and below states",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "B26.4",
+      "sourcePages": [
+        681,
+        145,
+        147
+      ],
+      "terms": [
+        "Wire",
+        "CC"
+      ],
+      "prompt": "Will the advance end on top of Wire?",
+      "checks": [
+        "APh cannot be used to move beneath Wire. Apply the legal entry/exit and connected-trench exceptions rather than offering a Wire-clearance roll.",
+        "Being on Wire also restricts equipment access and entry into entrenchments, pillboxes and vehicles. Carry the CC disadvantage forward."
+      ],
+      "effect": "Keep above-Wire and below-Wire states visible in destination explanations.",
+      "example": "A squad advances onto Wire but cannot spend an extra step to slip beneath it.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "waterTerrain",
+      "g": 6,
+      "title": "Distinguish deep streams, marsh and fording",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "B16.4; B20.43; B21.41",
+      "sourcePages": [
+        681,
+        130,
+        132,
+        135
+      ],
+      "terms": [
+        "CX",
+        "Difficult Terrain"
+      ],
+      "prompt": "Which water-terrain entry is actually allowed?",
+      "checks": [
+        "Deep-stream entry has the explicit already-CX exception and its four-MF/CX handling. Do not generalize it to every water hex.",
+        "Marsh entry is barred in APh except via a bridge. A Water Obstacle cannot be entered by fording in APh, but can be left by a legal advance."
+      ],
+      "effect": "Explain the named exception or prohibition instead of one generic impassable-water badge.",
+      "example": "A CX squad may have a legal deep-stream entry even though it cannot advance into a marsh.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "wall",
+      "g": 6,
+      "title": "Claim or forfeit Wall Advantage",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "B9.32-.323",
+      "sourcePages": [
+        681,
+        119,
+        120
+      ],
+      "terms": [
+        "WA",
+        "TI"
+      ],
+      "prompt": "Would a legal Wall Advantage change help this unit?",
+      "checks": [
+        "During its APh the unit may claim WA before, during or after a legal advance when eligible. Apply mandatory WA and competing enemy WA conditions.",
+        "Pinned, TI or Immobile units cannot voluntarily claim or forfeit WA. Losing eligibility requires forfeiture at its proper trigger."
+      ],
+      "effect": "Offer a status decision even to an otherwise stationary eligible unit.",
+      "example": "A unit can claim WA in APh without moving to a different hex.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "night",
+      "g": 6,
+      "title": "Check night freedom, Cloaking and entry costs",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "E1.21; E1.422; E1.51",
+      "sourcePages": [
+        681,
+        223,
+        224
+      ],
+      "terms": [
+        "No Move",
+        "Cloaking",
+        "NVR",
+        "Difficult Terrain"
+      ],
+      "prompt": "Does this unit have Freedom of Movement, and what does night change?",
+      "checks": [
+        "A Scenario Defender without Freedom of Movement cannot attempt advance. Do not add an APh version of the once-per-friendly-MPh leader freedom dr.",
+        "Cloaked contents normally advance as one stack unless properly separated. Apply the extra Concealment Terrain MF and its Cloaking/road/Bypass exceptions to the difficult-advance calculation.",
+        "Do not import MPh Straying rolls or premature night illumination cleanup into APh."
+      ],
+      "effect": "Show freedom, representation and terrain cost as separate gates.",
+      "example": "Night can make a loaded unit’s intended entry difficult even though daytime entry would not.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "skis",
+      "g": 6,
+      "title": "Don or remove skis before or after advancing",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "E4.2; E4.32; E4.5",
+      "sourcePages": [
+        681,
+        231,
+        232
+      ],
+      "terms": [
+        "Skis",
+        "MF",
+        "CX"
+      ],
+      "prompt": "Would foot or ski mode better support the destination and ensuing CC?",
+      "checks": [
+        "Change mode only where allowed and not while pinned/TI. Removing skis costs no MF; donning costs two MF, or one for Finnish Infantry.",
+        "A one-hex ski advance can include a mode change at the start or end; include its MF in the difficult-advance calculation.",
+        "Show ski-mode CC attack/defense penalties and off-skis portage rather than silently treating skis as cosmetic."
+      ],
+      "effect": "Compare final mode, load, CX and CC consequences.",
+      "example": "A Finnish unit can don skis more cheaply, but the combined cost can still make its advance difficult.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "paddy",
+      "g": 6,
+      "title": "Advance onto or off a paddy bank",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "G8.210-.211; G8.22",
+      "sourcePages": [
+        681,
+        286,
+        287
+      ],
+      "terms": [
+        "Bank",
+        "MF",
+        "Difficult Terrain"
+      ],
+      "prompt": "Should the unit end IN the paddy or on its bank?",
+      "checks": [
+        "Apply normal advance restrictions and the applicable IN-hex cost when leaving Bank status. Preserve the different exposure and status of bank occupants.",
+        "Newly appearing paratroops cannot enter onto a Bank counter in that same APh. Do not turn parachute replacement into a paddy-bank advance."
+      ],
+      "effect": "Treat bank position as a destination status with consequences.",
+      "example": "An advancing squad chooses between the bank and paddy interior; a just-dropped stick has no such extra move.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "caves",
+      "g": 6,
+      "title": "Apply cave and Cave Complex advance restrictions",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "G11.6-.76; G11.933",
+      "sourcePages": [
+        681,
+        297,
+        298,
+        301
+      ],
+      "terms": [
+        "Cave Complex",
+        "Accessible",
+        "IPC"
+      ],
+      "prompt": "Does this particular subterranean connection permit APh entry?",
+      "checks": [
+        "Only permitted Japanese Infantry and associated items enter caves. Use Entrance Hex or Accessible cave/Complex connections; touching Complexes do not permit APh transfer between them.",
+        "Entering a cave/Complex uses the special four-MF inherent allotment with no leader/Double Time bonus. Entry from an Accessible cave/Complex requires at least two available MF, even for hidden movement.",
+        "Minimum Move and difficult advance cannot override that special entry minimum. Apply the one-cave/Complex/tunnel-per-phase restriction and preserve private movement."
+      ],
+      "effect": "Explain why an Accessible connection can still be unavailable in this phase.",
+      "example": "Two touching Cave Complexes allow an MPh connection but not a direct APh transfer.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "columnAdvance",
+      "g": 6,
+      "title": "Advance an eligible Column as a formation",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "E11.52-.522",
+      "sourcePages": [
+        681,
+        246
+      ],
+      "terms": [
+        "Column",
+        "MF"
+      ],
+      "prompt": "Is the intended impulse legal for every participating Column unit?",
+      "checks": [
+        "Use the multi-hex stack and slowest-unit rate, with applicable leadership and terrain restrictions. Column formation does not waive ordinary unit-type APh restrictions.",
+        "No woods/building entry except the specified Path/road/Factory cases and no MF expenditure beneath fortification counters. Preserve continuous Hazardous Movement and the following Disbandment checks."
+      ],
+      "effect": "Evaluate the formation rather than offering unrelated per-counter advances.",
+      "example": "A Column’s terrain restriction can prevent a tempting move into nearby woods.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "entryExit",
+      "g": 6,
+      "title": "Consider scheduled board entry or permanent exit",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A2.5-.6",
+      "sourcePages": [
+        681,
+        46
+      ],
+      "terms": [
+        "APh",
+        "SSR"
+      ],
+      "prompt": "Is this an eligible delayed reinforcement entry or intended exit?",
+      "checks": [
+        "Forces capable of APh movement may delay their scheduled entry until APh. Apply specified entry locations and the blocked-entry rule; do not invent a new reinforcement turn.",
+        "A legal board-edge advance can exit into the mirror-image offboard hex. Exiting normally prevents return; show scenario victory consequences before commitment."
+      ],
+      "effect": "Offer entry/exit with the actual scenario boundary and irreversible consequence.",
+      "example": "An eligible reinforcement squad waits until APh to enter at its scheduled edge.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "boatLoading",
+      "g": 6,
+      "title": "Load or unload a Beached boat in APh",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "E5.22-.23",
+      "sourcePages": [
+        681,
+        233
+      ],
+      "terms": [
+        "Beached",
+        "PP",
+        "APh"
+      ],
+      "prompt": "Is the boat already Beached on the correct shore hexside?",
+      "checks": [
+        "Apply E5’s explicit boat APh loading/unloading permission across the Beached hexside, capacity and terrain restrictions. APh loading excludes Guns.",
+        "Do not Manhandle a boat in APh or generalize this permission to ordinary vehicles or LC. Beaching state and un-Beaching affect subsequent drift."
+      ],
+      "effect": "Keep boat permissions distinct from vehicle transport menus.",
+      "example": "Infantry can load an eligible Beached assault boat, while its Gun must wait for an allowed loading phase.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "swimmer",
+      "g": 6,
+      "title": "Leave the water or board eligible transport",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "E6.2",
+      "sourcePages": [
+        681,
+        235
+      ],
+      "terms": [
+        "Drift",
+        "Beached"
+      ],
+      "prompt": "Can this swimmer or forder reach a legal endpoint?",
+      "checks": [
+        "A swimmer may advance only onto land or a pontoon bridge through a non-cliff hexside, apart from Drift.",
+        "Swimmers/forders may enter an abandoned or friendly boat/amphibious vehicle in the same Location only during their APh. Enemy-occupied boat capture is a separate CCPh case."
+      ],
+      "effect": "Show land exit and same-Location boarding without granting free swimming movement.",
+      "example": "A swimmer can board a friendly boat nearby in its Location, but cannot choose another water hex as ordinary advance.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "crewExposure",
+      "g": 6,
+      "title": "Change eligible vehicle CE or BU status",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "D5.33-.34",
+      "sourcePages": [
+        681,
+        203
+      ],
+      "terms": [
+        "CE",
+        "BU",
+        "PRC"
+      ],
+      "prompt": "Would changing crew exposure help before CC or the next turn?",
+      "checks": [
+        "Owner APh permits placing or removing the CE counter, but not voluntarily changing it both ways in the same phase.",
+        "Apply Stun and broken/pinned passenger restrictions and linked crew/passenger exposure. This is not vehicle movement and does not grant a new VCA or weapon fire action."
+      ],
+      "effect": "Offer one legal exposure transition with its combat implications.",
+      "example": "An eligible vehicle buttons up in APh while its movement capability remains unchanged.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "tripFlare",
+      "g": 6,
+      "title": "Resolve trip-flare activation at the triggering entry",
+      "who": "BOTH",
+      "kind": "Triggered effect",
+      "refs": "E1.95",
+      "sourcePages": [
+        681,
+        227
+      ],
+      "terms": [
+        "Trip Flare",
+        "HIP"
+      ],
+      "prompt": "Does this advance trigger a hidden flare?",
+      "checks": [
+        "Check the actual entry/expenditure and path, trench or subterranean exceptions at the correct moment, including friendly activation.",
+        "Reveal only when triggered and carry illumination into subsequent phases. APh activation does not receive immediate AFPh cleanup."
+      ],
+      "effect": "Attach the flare event and its later removal window to the advance.",
+      "example": "An advance triggers a flare that remains for the following combat.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "attackerDrift",
+      "g": 7,
+      "title": "Resolve Moderate or Heavy Current drift",
+      "who": "ATTACKER",
+      "kind": "Required drift",
+      "refs": "B21.121; E5.23; E6.2",
+      "sourcePages": [
+        681,
+        134,
+        233,
+        235
+      ],
+      "terms": [
+        "Drift",
+        "Beached"
+      ],
+      "prompt": "Which ATTACKER water subjects must drift?",
+      "checks": [
+        "Moderate Current acts in the owner’s APh; Heavy Current acts in every APh. Slow Current does not cause this displacement.",
+        "Apply launching/landing/un-Beaching exceptions and no drift into/out of marsh. When two downstream hexes exist, distinguish eligible powered-craft choice from random paddled/disabled-craft drift."
+      ],
+      "effect": "Separate a mandatory displacement from a permitted choice of downstream hex.",
+      "example": "A paddled boat with two downstream hexes uses the prescribed dr instead of choosing the safer one.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.22A",
+      "steps": [
+        "7.22A"
+      ]
+    },
+    {
+      "id": "oceanDrift",
+      "g": 7,
+      "title": "Resolve Heavy-Surf Ocean drift",
+      "who": "ATTACKER",
+      "kind": "Required drift",
+      "refs": "G13.444; G13.441",
+      "sourcePages": [
+        681,
+        311,
+        312
+      ],
+      "terms": [
+        "Heavy Surf",
+        "Drift",
+        "Swamping"
+      ],
+      "prompt": "Which ATTACKER craft or swimmers drift toward land?",
+      "checks": [
+        "In Heavy Surf use the owner-APh Ocean procedure: amphibians/swimmers in deep Ocean and boats/LC in Ocean, with Aground, adjacent land/reef and same-turn exit/(un)Beaching exceptions.",
+        "Move each subject individually toward the nearest qualifying non-Island land, randomly choosing tied targets; maintain VCA. Do not substitute river-current direction.",
+        "Resolve Swamping and entry consequences for each craft, not a single platoon roll."
+      ],
+      "effect": "Display the selected drift direction and each craft’s consequence queue.",
+      "example": "A drifting LC can require a new surf check on reaching a Beach-able hexside.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.22A",
+      "steps": [
+        "7.22A"
+      ]
+    },
+    {
+      "id": "pier",
+      "g": 7,
+      "title": "Apply the craft-specific pier drift exception",
+      "who": "BOTH",
+      "kind": "Drift exception",
+      "refs": "G13.734",
+      "sourcePages": [
+        681,
+        313
+      ],
+      "terms": [
+        "Drift",
+        "LC"
+      ],
+      "prompt": "Does the potential drift enter a protected pier hex?",
+      "checks": [
+        "LC/amphibians do not drift into a pier hex; boats/swimmers do not drift into a stone-pier hex.",
+        "Apply the same exception to the DEFENDER window. Do not turn all wooden piers into universal drift barriers."
+      ],
+      "effect": "Explain which subject and pier construction prevent displacement.",
+      "example": "A wooden pier can stop an LC’s drift without granting the same exception to a swimmer.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.22A",
+      "steps": [
+        "7.22A",
+        "7.23D"
+      ]
+    },
+    {
+      "id": "defenderDrift",
+      "g": 8,
+      "title": "Resolve DEFENDER Heavy Current drift",
+      "who": "DEFENDER",
+      "kind": "Required drift",
+      "refs": "B21.121; E5.23; E6.2; G13.734",
+      "sourcePages": [
+        681,
+        134,
+        233,
+        235,
+        313
+      ],
+      "terms": [
+        "Drift",
+        "APh"
+      ],
+      "prompt": "Does Heavy Current require opposing displacement now?",
+      "checks": [
+        "Resolve eligible DEFENDER boats, amphibians and swimmers in Heavy Current, with the same applicable drift and pier exceptions.",
+        "Do not give DEFENDER ordinary advance, Moderate Current drift or owner-only Ocean Heavy-Surf drift simply because this is a shared effects phase."
+      ],
+      "effect": "Switch decision ownership for lawful drift choices without changing whose APh it is.",
+      "example": "The defending boat drifts in Heavy Current even though its Infantry cannot advance.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.23D",
+      "steps": [
+        "7.23D"
+      ]
+    },
+    {
+      "id": "beach",
+      "g": 9,
+      "title": "Consider permitted boat beaching or un-Beaching",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "E5.23; G12.3",
+      "sourcePages": [
+        681,
+        233,
+        303
+      ],
+      "terms": [
+        "Beached",
+        "LC"
+      ],
+      "prompt": "Can this boat legally change its shore relationship?",
+      "checks": [
+        "Use a qualifying non-cliff shore or permitted pontoon bridge and the boat’s exact location. Loading/unloading crosses its Beached hexside.",
+        "Keep LC separate: APh LC Beaching requires Heavy Surf and the prescribed DR. Do not offer E5’s free boat option to all landing craft."
+      ],
+      "effect": "Show boat and LC-specific choices, including downstream drift implications.",
+      "example": "A boat may un-Beach, but an LC cannot use the same button as a free APh maneuver.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.24A",
+      "steps": [
+        "7.24A"
+      ]
+    },
+    {
+      "id": "entrySurf",
+      "g": 9,
+      "title": "Resolve newly required surf and grounding consequences",
+      "who": "ATTACKER",
+      "kind": "Required check",
+      "refs": "G13.442-.4423; G12.21; G13.441",
+      "sourcePages": [
+        681,
+        303,
+        311,
+        312
+      ],
+      "terms": [
+        "Heavy Surf",
+        "Broached",
+        "LC"
+      ],
+      "prompt": "Did entry or a changed beaching state create another required check?",
+      "checks": [
+        "A qualifying boat/non-Aground LC in Heavy Surf takes the applicable entry (un)Beaching check, separate from its opening check.",
+        "Apply ramp-down, TI, broaching, survival and obstacle consequences as prescribed. Outside the surf exception, qualifying LC entry into shallow Ocean uses G12.21’s Aground check before Beaching."
+      ],
+      "effect": "Keep checks tied to distinct events, preventing both missed and duplicated rolls.",
+      "example": "A craft survives its opening check but must still resolve the new entry event after drift.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.24A",
+      "steps": [
+        "7.24A"
+      ]
+    },
+    {
+      "id": "ffe",
+      "g": 10,
+      "title": "Resolve existing FFE against the advancing or drifting subject",
+      "who": "BOTH",
+      "kind": "Triggered attack",
+      "refs": "C1.51-.53; C1.71-.72; C1.9; E12.5; G14.65-.661",
+      "sourcePages": [
+        681,
+        165,
+        166,
+        167,
+        247,
+        316,
+        317
+      ],
+      "terms": [
+        "FFE",
+        "WP"
+      ],
+      "prompt": "Does entry or increased vulnerability trigger existing artillery?",
+      "checks": [
+        "During steps 7.21-.24 resolve applicable HE/WP FFE against the moving unit/stack only, not every occupant of the Location again.",
+        "Apply the relevant mission profile, including Barrage, Harassing Fire, Rocket and naval special cases. No new observer mission action is granted by this trigger.",
+        "Preserve the event sequence and consequences before later movement; do not apply MPh-only FFMO/FFNAM simply because a unit advances."
+      ],
+      "effect": "Attach each eligible FFE attack to its triggering advance/drift event.",
+      "example": "An advancing squad entering an existing Blast Area is checked while a stationary friendly stack is not reattacked by its entry.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.25B",
+      "steps": [
+        "7.25B"
+      ]
+    },
+    {
+      "id": "mines",
+      "g": 10,
+      "title": "Resolve exit and entry mine attacks separately",
+      "who": "BOTH",
+      "kind": "Triggered attack",
+      "refs": "B28.41-.412; G14.53",
+      "sourcePages": [
+        681,
+        147,
+        148,
+        315
+      ],
+      "terms": [
+        "CC",
+        "HIP"
+      ],
+      "prompt": "Does the subject leave or enter a minefield?",
+      "checks": [
+        "An exit attack resolves in the original minefield. If it breaks or pins the unit, the unit does not leave and no destination attack or enemy discovery occurs.",
+        "If it exits successfully, resolve the destination minefield attack separately. Only moving subjects are attacked; apply connected-trench and mine-type exceptions.",
+        "Concealed units are attacked at full strength; A-P mine concealment loss follows its special break/Casualty Reduction rule. Include applicable A-B mines for watercraft."
+      ],
+      "effect": "Show origin-attack and destination-attack checkpoints before confirming arrival.",
+      "example": "A squad pinned by exit mines never reaches the concealed enemy in the intended destination.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.25B",
+      "steps": [
+        "7.25B"
+      ]
+    },
+    {
+      "id": "panji",
+      "g": 10,
+      "title": "Resolve difficult-advance Panji checks",
+      "who": "BOTH",
+      "kind": "Triggered check",
+      "refs": "G9.31; G9.41-.45",
+      "sourcePages": [
+        681,
+        289,
+        290
+      ],
+      "terms": [
+        "Panji",
+        "Difficult Terrain",
+        "MC"
+      ],
+      "prompt": "Does this crossing require a Panji MC?",
+      "checks": [
+        "A normal advance is exempt from the entry MC; difficult advance across a Covered hexside can require it. Apply trench/subterranean and non-Covered entry exceptions.",
+        "Use the G9.43 stack selection and follow-on PTC procedure when applicable. Panji MC has special doubles/Replacement/Casualty Reduction effects and no Heat of Battle.",
+        "Do not offer an extra-MF move underneath in APh. Record above/below status and any Pin/break result before continuation."
+      ],
+      "effect": "Explain why the same crossing differs with a heavier load or existing CX.",
+      "example": "A load that turns normal advance into difficult advance also exposes the squad to a Panji MC.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.21A; resolve at the crossing",
+      "steps": [
+        "7.21A"
+      ]
+    },
+    {
+      "id": "drowning",
+      "g": 10,
+      "title": "Complete required swimmer survival checks",
+      "who": "ATTACKER",
+      "kind": "Required survival",
+      "refs": "E6.21; G13.444; G13.444",
+      "sourcePages": [
+        681,
+        235,
+        311,
+        312
+      ],
+      "terms": [
+        "Drowning",
+        "Drift"
+      ],
+      "prompt": "Is a swimmer still in non-fordable water at the end of its friendly APh?",
+      "checks": [
+        "Make the required Drowning DR even if no optional movement was chosen: elimination at ≥12 in Slow, ≥11 in Moderate or ≥10 in Heavy Current.",
+        "When a drift direction dr is needed, use the colored die of this DR as prescribed. Apply Ocean-specific instructions rather than inventing another independent direction roll.",
+        "Keep the rule’s end-of-friendly-APh timing explicit inside the ASOP 7.25 effects family; do not check an opposing swimmer solely because its Heavy Current drift occurred.",
+        "For Drowning only, Heavy-Surf Ocean uses Heavy Current; deep Ocean without Heavy Surf and deep lake use Slow Current. These classifications do not add river-current drift to the Ocean."
+      ],
+      "effect": "Keep a phase-end survival obligation linked to the swimmer after displacement.",
+      "example": "A swimmer that stays in Slow Current still needs the end-of-friendly-APh survival roll.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.25B",
+      "steps": [
+        "7.25B"
+      ]
+    },
+    {
+      "id": "disband",
+      "g": 10,
+      "title": "Check Column Disbandment after each relevant event",
+      "who": "BOTH",
+      "kind": "Triggered status",
+      "refs": "E11.532-.536",
+      "sourcePages": [
+        681,
+        246
+      ],
+      "terms": [
+        "Column",
+        "LOS"
+      ],
+      "prompt": "Did an advance or attack require the Column to disband?",
+      "checks": [
+        "Check as each unit advances and after each attack, using Known-enemy LOS and attack conditions. Do not defer every check until the entire formation finishes.",
+        "Apply special OBA/aerial proximity and mine/Wire exceptions. Update formation and Hazardous Movement state as soon as the rule requires."
+      ],
+      "effect": "Make formation state a consequence of the event sequence.",
+      "example": "An advance reveals a Known enemy and changes the remaining Column’s status immediately.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.25B",
+      "steps": [
+        "7.25B"
+      ]
+    },
+    {
+      "id": "parachutes",
+      "g": 11,
+      "title": "Replace just-dropped parachutes with their contents",
+      "who": "ATTACKER",
+      "kind": "Required replacement",
+      "refs": "E9.6; E9.42; G8.22",
+      "sourcePages": [
+        681,
+        244,
+        287
+      ],
+      "terms": [
+        "APh",
+        "SMC"
+      ],
+      "prompt": "Which onboard 5/8-inch parachutes must be replaced?",
+      "checks": [
+        "Remove just-dropped 5/8-inch parachutes and place their component units, except those already Deployed under E9.42. Restore normal capabilities at this prescribed point.",
+        "Paratroops do not advance in this APh. Replacement is not permission to take an additional move or enter paddy Bank status.",
+        "Preserve casualties and equipment from the landing record; do not recreate an intact original stick."
+      ],
+      "effect": "Show a required landing-record completion rather than an ordinary destination picker.",
+      "example": "A damaged stick becomes its surviving component counters where it landed.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 7.26A",
+      "steps": [
+        "7.26A"
+      ]
+    },
+    {
+      "id": "gliders",
+      "g": 12,
+      "title": "Distinguish landed glider contents from parachutists",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "E8.4; E9.6",
+      "sourcePages": [
+        681,
+        242,
+        244
+      ],
+      "terms": [
+        "APh",
+        "PRC"
+      ],
+      "prompt": "Has this unit already become eligible Infantry?",
+      "checks": [
+        "Ordinary glider contents placed after landing can advance if otherwise eligible; apply surviving state and load.",
+        "Vehicle/Gun-associated contents retained under E8.4 do not gain a generic unloading action. Newly dropped parachutists use 7.26A instead."
+      ],
+      "effect": "Preserve landing provenance so similar counters receive different legal options.",
+      "example": "A surviving glider squad may advance while a just-dropped parachute stick must remain.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific APh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "control",
+      "g": 12,
+      "title": "Update lawful Control and objective consequences",
+      "who": "ATTACKER",
+      "kind": "Advance choice",
+      "refs": "A26.1-.16; SSR",
+      "sourcePages": [
+        681,
+        97,
+        98
+      ],
+      "terms": [
+        "Good Order",
+        "CC",
+        "SSR"
+      ],
+      "prompt": "Does arrival change Control or satisfy an objective?",
+      "checks": [
+        "Apply the appropriate unit, enemy-presence and Location/building/hex Control tests. Entering an enemy Location does not automatically capture every level of its building.",
+        "Apply scenario victory timing and distinguish public objective changes from hidden occupancy. Do not declare an early win from a reference consideration."
+      ],
+      "effect": "Carry an auditable arrival consequence into the live game.",
+      "example": "An eligible squad reaches an objective, but its building Control test still depends on the applicable rules.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "Rule-specific APh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "acquisition",
+      "g": 12,
+      "title": "Carry Acquisition through the completed advance",
+      "who": "Weapon owner",
+      "kind": "Tracking consequence",
+      "refs": "C6.5-.52",
+      "sourcePages": [
+        681,
+        174,
+        175,
+        226
+      ],
+      "terms": [
+        "Acquisition",
+        "LOS"
+      ],
+      "prompt": "Does a weapon legally retain tracking of this target?",
+      "checks": [
+        "Follow the acquired target only under the weapon’s LOS and Acquisition rules; preserve the end-of-APh choice when acquired targets separate.",
+        "No shot is granted in APh. Keep tracking decisions private to the authorized player and retain night limitations."
+      ],
+      "effect": "Queue any required tracking choice after the appropriate movement endpoint.",
+      "example": "Two acquired units split during advance; the weapon’s owner must retain a legal target rather than duplicate Acquisition.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific APh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "boundaries",
+      "g": 12,
+      "title": "Keep other-phase actions out of Advance",
+      "who": "BOTH",
+      "kind": "Boundary explanation",
+      "refs": "A4.7; A13.31; A13.7; A15.431; E5.22; ASOP 8",
+      "sourcePages": [
+        681,
+        52,
+        80,
+        82,
+        84,
+        143,
+        233
+      ],
+      "terms": [
+        "APh",
+        "MPh",
+        "CCPh"
+      ],
+      "prompt": "Is this an Advance permission or a later action?",
+      "checks": [
+        "No ordinary vehicle/Cavalry movement, horse mounting/dismounting, Gun/boat Manhandling, Search, Rally, DFF or ordinary shooting is created here. Keep explicit boat/swimmer and CE exceptions.",
+        "Do not resolve Ambush, ATMM, CC attacks, Melee Withdrawal, end-turn concealment gain or Pin/TI cleanup early.",
+        "Terrain Blaze and other prohibited destinations still matter. A phase-specific exemption must be sourced rather than inferred from the generic advance rule."
+      ],
+      "effect": "Give an explanation and the correct phase rather than an unexplained disabled control.",
+      "example": "A squad reaches CC while pinned units elsewhere remain pinned until the proper CCPh cleanup.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "Rule-specific APh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "close",
+      "g": 12,
+      "title": "Close Advance only after required continuations",
+      "who": "BOTH",
+      "kind": "Phase handoff",
+      "refs": "ASOP 7.11A-7.26A; ASOP 8",
+      "sourcePages": [
+        681,
+        681
+      ],
+      "terms": [
+        "APh",
+        "CC",
+        "Advance receipt"
+      ],
+      "prompt": "Are all mandatory effects and arrivals settled?",
+      "checks": [
+        "Finish committed advances, required emergence, both drift windows, surf events, attacks, survival and parachute replacement. Optional stay choices do not clear required effects.",
+        "Carry final Locations, CX, equipment, CC encounters, concealment, exposure, objectives and acquisition forward. Do not perform CCPh opening reveals or generic counter cleanup."
+      ],
+      "effect": "Separate marking reference topics considered from a future guarded End phase action.",
+      "example": "All Infantry decline ordinary advance, but an unresolved swimmer check still prevents closure.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "Rule-specific APh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "sourceProfile",
+      "g": 12,
+      "title": "Keep deferred and scenario-specific options visible",
+      "who": "BOTH",
+      "kind": "Coverage boundary",
+      "refs": "ASOP 7; SSR; Chapters F/G/H/W",
+      "sourcePages": [
+        681,
+        681
+      ],
+      "terms": [
+        "SSR",
+        "Source gap"
+      ],
+      "prompt": "Are all scenario overlays and evaluators available?",
+      "checks": [
+        "All nine printed APh steps and identified supplemental rule families are represented. In-volume historical, nationality and equipment exceptions remain profile obligations, not proof that every permutation is audited.",
+        "Missing source, pending integration, unknown applicability and known illegality must be distinct. Do not hide a reference choice because its engine pass is later.",
+        "Scenario-specific terrain, bridges, cellars, winter/desert/PTO rules and special transport must refine these options using their own source ledger before live legality is claimed."
+      ],
+      "effect": "Retain the full catalog with truthful source and integration status.",
+      "example": "An unintegrated cave connection stays available for study without claiming a computed legal destination.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific APh timing; supplemental to ASOP",
+      "steps": []
+    }
+  ],
+  "glossary": {
+    "APh": "Advance Phase. Ordinary advance belongs to the ATTACKER. Opposing drift and triggered consequences have explicit windows.",
+    "Advance receipt": "Proposed live record of origin, destination, load, support, cost, checks and consequences. The reference preview does not create game events.",
+    "CC": "Close Combat. Advance can create a CC encounter; actual Ambush, attacks and most reveal procedures await their CCPh windows.",
+    "SW": "Support Weapon. Using one affects its possessor’s capability accounting.",
+    "IPC": "Inherent Portage Capacity. Evaluate retained load and eligible leader assistance before the difficult-advance test.",
+    "PP": "Portage Points. A retained load leaving no MF bars advance even into otherwise inexpensive terrain.",
+    "Guard": "Unit assigned to prisoners. Capacity, fire restrictions and accompaniment are separate from the act of accepting surrender.",
+    "Prisoners": "Captured Personnel under a Guard. Transfer, abandonment, accompaniment and escape have distinct rule windows.",
+    "Melee": "A11.15 continuing combat restriction. Units held in Melee cannot leave by ordinary advance; a concealed unit not held in Melee is a different case.",
+    "Skis": "E4 equipment whose mode changes and downhill bonus have explicit RtPh permission. Low Crawl requires removing skis.",
+    "dr": "One die, distinct from a two-dice DR.",
+    "T-H Hero": "Japanese Tank-Hunter Hero, created through G1.421 with a Designated Target and special compulsory advance and combat rules.",
+    "Designated Target": "The qualifying target chosen when a T-H Hero appears. It constrains the hero’s subsequent actions.",
+    "AFV": "Armored Fighting Vehicle.",
+    "Heavy Surf": "Scenario water condition with mandatory beaching, drift, swamping and broaching procedures. Not equivalent to river Heavy Current.",
+    "Beached": "Watercraft straddling a qualifying shore hexside. Boat loading/unloading and LC permissions differ.",
+    "LC": "Landing Craft, governed by its own transport, fire, beaching and grounding rules.",
+    "Broached": "G13.4421 adverse surf result, with wreck, passenger and equipment consequences. Not a voluntary beaching choice.",
+    "TI": "Task Involved status, not a synonym for Prep Fire.",
+    "Location": "A hex can contain multiple Locations. Same hex does not necessarily mean a leader can help or a transfer is legal.",
+    "Accessible": "A rules-defined connection usable by hypothetical Infantry under normal advance conditions, ignoring enemy presence. Special cave and terrain restrictions still apply.",
+    "ADJACENT": "Rules-defined Location relationship requiring the specified advance connection and LOS, disregarding SMOKE and NVR for this relationship. Not synonymous with neighboring hexes.",
+    "MF": "Movement Factors. Advance uses a fresh capability/portage comparison, not the MF left over from the MPh, and does not grant a multi-hex movement budget.",
+    "SMC": "Single-Man Counter, such as a leader or Hero.",
+    "MMC": "Multi-Man Counter: squad, half-squad or crew.",
+    "Difficult Terrain": "A4.72 advance test using entry cost excluding SMOKE against the lesser of four MF or the available non-Double Time MF allotment. This is a unit-and-load calculation, not just a terrain tag.",
+    "CX": "Counter Exhausted. Usually bars an already-CX unit from a difficult advance; climbing and deep-stream entry have explicit exceptions. A difficult advance creates CX.",
+    "Wound": "A17 injury with severity, reduced morale/leadership, IPC and movement consequences. Track MF already spent if it occurs mid-rout.",
+    "HIP": "Hidden Initial Placement. No guide prompt may leak hidden opposing information.",
+    "PAATC": "Pre-AFV Attack Task Check. An eligible MMC tests before advancing against a manned unconcealed enemy AFV. Failure pins; success commits immediate advance.",
+    "LOS": "Line of Sight. Guidance uses only information the viewing player may know.",
+    "Cloaking": "Night concealment representation whose contents normally advance as one stack until properly separated; hidden contents remain owner-only.",
+    "Good Order": "The defined unit status, separate from merely unbroken. Apply the exact status requirement of each action.",
+    "Tunnel": "B8.62 special rout connection between entrances, with emergence conditions and immunity to Interdiction while inside.",
+    "Pillbox": "Separate Location equivalent to a building for rout, with special Known-enemy, entry/exit, ordinary forced-rout and Blaze rules.",
+    "Crest": "Depression-edge status on a specified side, not a free choice of every edge of the hex.",
+    "Climbing": "B11.4 multi-turn movement using a recorded height and vertex. APh completes or leaves the climb at a legally reachable level.",
+    "Sewer": "B8 subterranean Location. APh emergence depends on the earlier Emergence dr; adjacent sewer CC is a special alternative.",
+    "Wire": "Obstacle with distinct above/below states. Infantry cannot move beneath it during APh.",
+    "WA": "Wall Advantage. Its claim, loss and mandatory conditions depend on B9.32 and the position.",
+    "No Move": "Night Scenario Defender restriction. Freedom of Movement must exist before attempting an advance.",
+    "NVR": "Night Visibility Range. Night Rout also has specific E1.54 rules beyond visibility changes.",
+    "Bank": "Rice-paddy bank status, distinct from being IN the paddy. It changes movement, exposure and combat consequences.",
+    "Cave Complex": "Japanese subterranean system. Accessibility does not grant APh movement between touching Complexes.",
+    "Column": "Formation using multi-hex Impulse movement/advance at its slowest unit’s rate, with restrictions and immediate Disbandment checks.",
+    "SSR": "Scenario Special Rule. It can add or modify applicability and must be included in the scenario profile.",
+    "Drift": "Mandatory displacement under current or surf rules. Ownership, timing and exceptions differ from voluntary advance.",
+    "CE": "Crew Exposed. A vehicle crew posture whose voluntary changes have timing restrictions.",
+    "BU": "Buttoned Up. The alternative protected crew posture, with weapon and observation consequences.",
+    "PRC": "Passengers, Riders and Crew, with different vulnerability and fire restrictions.",
+    "Trip Flare": "E1.95 hidden device with entry/expenditure triggers. A flare set off in RtPh persists until the next Player Turn’s AFPh cleanup.",
+    "Swamping": "G13.441 watercraft hazard on qualifying Ocean entry, including drift. Resolve the craft-specific result.",
+    "FFE": "Fire For Effect. Existing HE/WP FFE can attack the routing subject on qualifying entry or increased vulnerability; it does not itself Interdict.",
+    "WP": "White Phosphorus, with its own height, NMC and ignition rules.",
+    "Panji": "Covered-hexside obstacle. Normal advance avoids its entry MC; difficult advance can trigger it. APh does not permit the extra-MF move beneath it.",
+    "MC": "Morale Check.",
+    "Drowning": "E6.21 survival DR at the end of each friendly APh for a swimmer remaining in non-fordable water; thresholds depend on current.",
+    "Acquisition": "A weapon-specific targeting benefit. Tracking a moving target is not permission to fire in APh.",
+    "MPh": "Movement Phase. THE MPh contains a separate start, during and end for each moving unit or stack.",
+    "CCPh": "Close Combat Phase, after Advance. It owns its reveal, Ambush, attack, withdrawal and cleanup windows.",
+    "Source gap": "Scenario/module/equipment evidence still to reconcile. Distinct from integration pending and known illegality."
+  },
+  "asopLedger": [
+    {
+      "step": "7.11A",
+      "clauses": "Opening SW/Gun/prisoner transfers and immediate ski-use dr.",
+      "optionIds": [
+        "transfer",
+        "prisoners",
+        "skiUse"
+      ]
+    },
+    {
+      "step": "7.12A",
+      "clauses": "Japanese squad/HS T-H Hero creation when ADJACENT to enemy AFV.",
+      "optionIds": [
+        "tankHunter"
+      ]
+    },
+    {
+      "step": "7.13A",
+      "clauses": "Required opening boat/non-Aground LC Heavy-Surf (un)Beaching DR.",
+      "optionIds": [
+        "openingSurf"
+      ]
+    },
+    {
+      "step": "7.21A",
+      "clauses": "Eligible Infantry advance; PAATC; Difficult Terrain/CX/Panji; climbing completion; ski mode; CE; WA; sewer emergence or sewer CC; trip flares.",
+      "optionIds": [
+        "eligibility",
+        "destination",
+        "load",
+        "drop",
+        "leader",
+        "difficult",
+        "stacking",
+        "wounded",
+        "enemy",
+        "paatc",
+        "heroAdvance",
+        "concealment",
+        "buildings",
+        "fortified",
+        "entrenchment",
+        "pillbox",
+        "crest",
+        "climb",
+        "sewer",
+        "tunnel",
+        "wire",
+        "waterTerrain",
+        "wall",
+        "night",
+        "skis",
+        "paddy",
+        "caves",
+        "columnAdvance",
+        "entryExit",
+        "boatLoading",
+        "swimmer",
+        "crewExposure",
+        "tripFlare",
+        "panji"
+      ]
+    },
+    {
+      "step": "7.22A",
+      "clauses": "ATTACKER Moderate/Heavy Current drift and Heavy-Surf Ocean drift; pier exceptions.",
+      "optionIds": [
+        "attackerDrift",
+        "oceanDrift",
+        "pier"
+      ]
+    },
+    {
+      "step": "7.23D",
+      "clauses": "DEFENDER Heavy Current drift; pier exceptions.",
+      "optionIds": [
+        "pier",
+        "defenderDrift"
+      ]
+    },
+    {
+      "step": "7.24A",
+      "clauses": "Boat (un)Beaching and required Heavy-Surf (un)Beaching checks.",
+      "optionIds": [
+        "beach",
+        "entrySurf"
+      ]
+    },
+    {
+      "step": "7.25B",
+      "clauses": "During 7.21-.24, subject-only FFE and mine attacks with listed profiles; Drowning and Column Disbandment.",
+      "optionIds": [
+        "ffe",
+        "mines",
+        "drowning",
+        "disband"
+      ]
+    },
+    {
+      "step": "7.26A",
+      "clauses": "Replace onboard just-dropped 5/8-inch parachutes with their contents.",
+      "optionIds": [
+        "parachutes"
+      ]
+    }
+  ]
+}

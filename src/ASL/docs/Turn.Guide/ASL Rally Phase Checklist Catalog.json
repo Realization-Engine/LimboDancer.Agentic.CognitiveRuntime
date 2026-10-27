@@ -1,0 +1,1451 @@
+{
+  "glossary": {
+    "RPh": "Rally Phase. Each Player Turn begins with one; both sides have activities here.",
+    "ASOP": "Advanced Sequence Of Play. Its ordered windows determine when the listed activities occur.",
+    "ATTACKER": "The side whose Player Turn this is, regardless of its scenario mission.",
+    "DEFENDER": "The other side during this Player Turn. It still has Rally Phase choices.",
+    "SSR": "Scenario Special Rule. Read its conditions and timing before applying general procedures.",
+    "OB": "Order of Battle: the forces provided by the scenario.",
+    "DR": "Dice roll. The Rally DR uses two dice; Original means before modifiers.",
+    "dr": "Die roll, using one die. Recovery, repair, and Shock recuperation use dr rather than DR.",
+    "DRM": "Dice Roll Modifier. Apply only those allowed for the particular action.",
+    "drm": "Die Roll Modifier. Preserve lowercase; it is not the same label as DRM.",
+    "Good Order": "A rules-defined condition, not merely “unbroken.” Check the complete rule and action-specific restrictions. Display the full term; equipment:GO means something else.",
+    "MMC": "Multi-Man Counter: squad, half-squad, or crew in counter form.",
+    "SMC": "Single Man Counter: a leader or hero. Being an SMC does not by itself confer leadership.",
+    "HS": "Half-Squad. Two qualifying HS can recombine under A1.32.",
+    "SW": "Support Weapon. Possession, recovery, repair, and transfer are different procedures.",
+    "R#": "Repair Number in this context. The same printed form can mean something else on vehicle counters.",
+    "B#": "Breakdown Number. In the vehicle ammunition context, check the separate Low Ammo rules rather than treating every failure as a repairable malfunction.",
+    "X#": "Nonrepairable breakdown number. A permanently lost weapon is not a candidate for an ordinary repair attempt.",
+    "DM": "Desperation Morale. Normally +4 to a Rally DR; removal or permitted retention is an end-of-RPh matter.",
+    "dm": "Dismantled weapon. It is unrelated to DM. Eligible weapons can be repaired while dismantled; assembling them is not an ordinary RPh action.",
+    "NTC": "Normal Task Check. Used for ordinary Deployment, with the applicable leadership modifier.",
+    "ML": "Morale Level. Rally normally uses the morale printed on the broken side, with applicable adjustments.",
+    "HOB": "Heat of Battle. A qualifying Original 2 on a non-Self-Rally attempt can trigger it; normal Self-Rally does not.",
+    "CX": "Counter Exhaustion. It can affect a Recovery dr. This is not a generic Rally Phase cleanup marker.",
+    "TI": "Temporarily Immobilized. Scrounging imposes this even if unsuccessful, restricting later activities.",
+    "AFV": "Armored Fighting Vehicle.",
+    "MA": "Main Armament.",
+    "SA": "Secondary Armament as specifically defined in the vehicle listing, not a synonym for every extra MG.",
+    "AAMG": "Anti-Aircraft Machine Gun. Its repair can require a CE crew or a qualifying Hero Rider.",
+    "CE": "Crew Exposed, the vehicle crew meaning. Link main:CE rather than the equipment entry with the same form.",
+    "BU": "Buttoned Up. Check each weapon’s repair requirements; do not demand a CE crew for every repair.",
+    "UK": "Unconfirmed Kill. An AFV that fails its first Shock recuperation enters this condition.",
+    "CS": "Crew Survival, in this context. A wreck caused by failed UK recuperation does not grant a CS roll.",
+    "WA": "Wall/Hedge Advantage. Claiming it at the end of RPh has its own eligibility and ordering.",
+    "NVR": "Night Visibility Range. The night change procedure uses the Wind Change dice under E1.12.",
+    "EC": "Environmental Conditions. Weather changes can affect this category and other rule procedures.",
+    "LV": "Low Visibility. Fog, precipitation, and night have distinct effects; they are not one interchangeable modifier.",
+    "HIP": "Hidden Initial Placement. The guide must not disclose an opponent’s hidden unit through prompts or counts.",
+    "OBA": "Offboard Artillery. RPh end housekeeping is not a general invitation to call or correct a mission here.",
+    "FFE:C": "Fire For Effect Continuation. Check applicable end-RPh mission and Battery Access consequences.",
+    "PP": "Portage Points. Useful when deciding who should possess a weapon before movement.",
+    "SAN": "Sniper Activation Number. Not every DR is a Sniper trigger; ordinary Rally rolls do not activate one merely by matching SAN.",
+    "LLMC": "Leader-Loss Morale Check. Resolve only when an event meets its trigger and qualifications.",
+    "LLTC": "Leader-Loss Task Check. Keep distinct from LLMC and from the original Rally attempt.",
+    "Location": "A hex can contain multiple Locations. Same hex does not necessarily mean a leader can help or a transfer is legal.",
+    "Fate": "Normally Original Rally DR 12 causes Casualty Reduction; E3.742 extends the risk to 11 in qualifying Extreme Winter cases.",
+    "Field Promotion": "The special first-ATTACKER-MMC Self-Rally route can create a leader on an Original 2, under A18.11.",
+    "Shock": "An AFV incapacitation state with a scheduled recuperation dr; it is not infantry rallying or Stun.",
+    "Stun": "A vehicle crew condition distinct from Shock. Its normal end-Player-Turn transition is not a Shock recuperation roll.",
+    "Disrupted": "A condition that prohibits Self-Rally, including both inherent and special first-MMC paths (A19.12).",
+    "Commissar": "A special leader whose compulsory rally procedures and failure consequences differ from ordinary leadership.",
+    "SMOKE": "ASL smoke effects, including WP where applicable. Weather handling and placement timing are separate procedures.",
+    "DYO": "Design Your Own scenario. Its reinforcement and continuing weather rules can add Rally checks.",
+    "DD": "Duplex Drive tank. Its entry preparation is a special reinforcement case.",
+    "LC": "Landing Craft. Loading and entry conditions require their own manifest and scenario rules.",
+    "CG": "Campaign Game. Named campaign rules can change the first-MMC Self-Rally allowance.",
+    "Pack-TI": "Animal-Pack task status under G10.11, distinct from ordinary TI and with separate loss and duration rules.",
+    "M#": "Manhandling Number. Also used in the Animal-Pack period calculation.",
+    "MTR": "Mortar. Animal-Pack timing distinguishes mortars from other Pack Guns.",
+    "CA": "Covered Arc. The owner can select it when a Gun is unloaded at the packing midpoint.",
+    "PO": "Political Officer in the CPVA rules, with Rally behavior distinct from a Russian Commissar.",
+    "CPVA": "Chinese People’s Volunteer Army. Chapter W adds specific unit and Political Officer rules.",
+    "KMC": "Korean Marine Corps. Specific squad types have leaderless Deployment permissions.",
+    "Fanatic": "Status that increases normal and broken morale by one, with other rule-specific effects.",
+    "Encircled": "A condition with morale and other effects; include its applicable penalty in the actual Rally calculation.",
+    "Wounded": "SMC condition affecting morale and leadership. Do not read only the printed unwounded values.",
+    "Recall": "Vehicle withdrawal obligation. It can result from armament disablement or crew conditions; it is not repaired by Rally."
+  },
+  "groups": [
+    "1.11A · Reinforcements and entry",
+    "1.12A · Wind and linked effects",
+    "1.13B · Recombination and Animal-Pack",
+    "1.14B · Recovery",
+    "1.21A · Deployment and Scrounging",
+    "1.22B · Repairs and transfers",
+    "1.23B · Rally attempts and consequences",
+    "1.24A · Parachute Drop Points",
+    "1.31B · Shock and DM",
+    "1.32B · Wall Advantage",
+    "Additional timing and standing choices",
+    "Actions belonging elsewhere"
+  ],
+  "options": [
+    {
+      "id": "arrival",
+      "g": 0,
+      "title": "Check reinforcements and air arrival",
+      "who": "ATTACKER",
+      "kind": "Required when due",
+      "refs": "ASOP 1.11A; A2.51-.52; E7.2",
+      "status": "Air arrival: rules integration pending",
+      "terms": [
+        "SSR",
+        "OB",
+        "dr",
+        "ATTACKER"
+      ],
+      "prompt": "Are forces due now, or does an SSR require an arrival roll?",
+      "checks": [
+        "Resolve provisional arrivals and any applicable Air Support arrival test. Air Support availability is subject to its weather restrictions.",
+        "Set up forces due this Player Turn offboard, respecting their entry instructions. Do not give offboard units the ordinary on-board action menu.",
+        "An Air Support arrival success schedules entry in the next MPh; it does not make an RPh attack.",
+        "Air Support arrival uses a dr less than the Game Turn number; DYO ground reinforcement arrival is a different DR test. Show separate pending checks."
+      ],
+      "effect": "Show each scheduled force, its entry edge or restriction, and its next action. Keep failed arrival rolls recorded, with the next eligible check.",
+      "example": "Air Support / Arrival check due / Rules integration pending / Read E7.2. It stays visible even though the arrival roll cannot yet be executed.",
+      "timing": "1.11A · Reinforcements and entry",
+      "sourcePages": [
+        678,
+        46,
+        236
+      ]
+    },
+    {
+      "id": "entry",
+      "g": 0,
+      "title": "Prepare special offboard entry",
+      "who": "ATTACKER",
+      "kind": "Conditional procedure",
+      "refs": "A2.51-.52; D16.8; E1.41; E8.1; E9.1-.11; G1.664; G14.23",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "OB",
+        "SSR",
+        "CE",
+        "BU",
+        "dm",
+        "DD",
+        "LC",
+        "HIP"
+      ],
+      "prompt": "Which entry method and initial configuration apply to each arriving force?",
+      "checks": [
+        "Record entry instructions, offboard setup, passengers and towing, CE/BU, dismantled or limbered equipment, and applicable Motion status.",
+        "Expose DD tank preparation, night Cloaking, glider setup, parachute predesignations including Japanese paratrooper conditions, and seaborne landing-craft manifests as separate entry-method details.",
+        "Keep secret manifests and predesignations private. Offboard forces cannot use the ordinary onboard RPh menu; retain the specific offboard Deployment permission."
+      ],
+      "effect": "Each force has its own entry record and source conditions. A pending entry method never disappears behind a generic reinforcement check.",
+      "example": "Prepare special offboard entry / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.11A · Reinforcements and entry",
+      "sourcePages": [
+        678,
+        46,
+        216,
+        223,
+        241,
+        242,
+        281,
+        314
+      ]
+    },
+    {
+      "id": "dyoArrival",
+      "g": 0,
+      "title": "Roll for DYO reinforcements",
+      "who": "ATTACKER",
+      "kind": "Conditional procedure",
+      "refs": "H1.7",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "DYO",
+        "DR",
+        "OB"
+      ],
+      "prompt": "Are purchased DYO reinforcements awaiting permission to enter?",
+      "checks": [
+        "Make the prescribed DR at the start of their owner’s RPh until eligible.",
+        "Success requires DR no greater than the current Game Turn number; observe the friendly entry-edge requirement."
+      ],
+      "effect": "Keep this roll distinct from the Air Support arrival dr.",
+      "example": "Roll for DYO reinforcements / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.11A · Reinforcements and entry",
+      "sourcePages": [
+        678,
+        334
+      ]
+    },
+    {
+      "id": "wind",
+      "g": 1,
+      "title": "Resolve Wind Change and building collapse",
+      "who": "ATTACKER resolves",
+      "kind": "Required procedure",
+      "refs": "ASOP 1.12A; B25.65-.66; E3.4",
+      "status": "Full wind procedure: partially integrated",
+      "terms": [
+        "DR",
+        "dr",
+        "NVR",
+        "EC",
+        "LV",
+        "SSR"
+      ],
+      "prompt": "Which opening effects follow from this Wind Change DR and the existing conditions?",
+      "checks": [
+        "Use one Wind Change DR, retaining both dice for linked procedures. Apply the wind direction/force procedure on the qualifying result.",
+        "Resolve Gusts on 12 normally, or 10 or more under Gusty conditions. Apply B25.66 building-collapse selection and consequences when triggered.",
+        "Fan out to the weather, visibility, information and SMOKE rows below using the same dice. Do not roll independently for every weather topic.",
+        "A Gusts result affects later fire-spread procedures; do not perform ordinary AFPh fire spread in Rally."
+      ],
+      "effect": "One opening event can produce several required consequences. Expand them as child tasks, not optional checkboxes. Do not roll separately for effects that share the Wind Change dice.",
+      "example": "Wind check → Gusts → eligible SMOKE updates → collapse check, if a burning building qualifies. Civilian information, when triggered by the SSR, cannot simply be declined.",
+      "timing": "1.12A · Wind and linked effects",
+      "sourcePages": [
+        678,
+        144,
+        145,
+        222,
+        228,
+        229,
+        230,
+        231
+      ]
+    },
+    {
+      "id": "night",
+      "g": 1,
+      "title": "Adjust Night Visibility Range",
+      "who": "ATTACKER resolves",
+      "kind": "Conditional procedure",
+      "refs": "E1.12",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "NVR",
+        "DR",
+        "dr"
+      ],
+      "prompt": "Does the shared Wind Change result alter night visibility?",
+      "checks": [
+        "Apply the night procedure to the colored and white dice, preserving their identities.",
+        "Respect the opening-turn exclusion and the permitted NVR bounds; update only the affected visibility facts."
+      ],
+      "effect": "Refresh disclosed LOS-dependent opportunities without revealing hidden enemies.",
+      "example": "Adjust Night Visibility Range / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.12A · Wind and linked effects",
+      "sourcePages": [
+        678,
+        222
+      ]
+    },
+    {
+      "id": "civilian",
+      "g": 1,
+      "title": "Resolve Civilian Interrogation information",
+      "who": "ATTACKER receives",
+      "kind": "Conditional procedure",
+      "refs": "E2.4-.43",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "SSR",
+        "DR",
+        "HIP",
+        "SAN"
+      ],
+      "prompt": "Does the SSR enable information from this Wind Change roll?",
+      "checks": [
+        "Only use this procedure when an SSR enables it. The qualifying total is 3 in hostile/neutral country or 4 in friendly country.",
+        "Information cannot be refused. Determine its random location and eligible receiving friendly units before revealing the permitted information."
+      ],
+      "effect": "Create a required information-resolution follow-up, not an optional search or attack.",
+      "example": "Resolve Civilian Interrogation information / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.12A · Wind and linked effects",
+      "sourcePages": [
+        678,
+        228
+      ]
+    },
+    {
+      "id": "precipitation",
+      "g": 1,
+      "title": "Change rain or falling snow",
+      "who": "ATTACKER resolves",
+      "kind": "Conditional procedure",
+      "refs": "E3.51-.53; E3.71; G16.2",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "DR",
+        "EC",
+        "LV",
+        "DYO"
+      ],
+      "prompt": "Does existing weather make this Wind Change DR start, intensify or stop precipitation?",
+      "checks": [
+        "Use the proper Overcast/rain or falling-snow procedure; a qualifying high roll can start or intensify, and a low roll can stop precipitation.",
+        "Recompute visibility, eligible SMOKE and environmental effects; rain makes EC Wet for the rest of the scenario.",
+        "Tropical DYO weather footnotes can make Heavy Rain permanent, including rain that begins during play under the specified chart result. Do not let the ordinary stopping roll override that condition."
+      ],
+      "effect": "Explain which scenario condition prevents an otherwise normal weather change.",
+      "example": "Change rain or falling snow / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.12A · Wind and linked effects",
+      "sourcePages": [
+        678,
+        229,
+        230,
+        319
+      ]
+    },
+    {
+      "id": "fog",
+      "g": 1,
+      "title": "Reduce fog density",
+      "who": "ATTACKER resolves",
+      "kind": "Conditional procedure",
+      "refs": "E3.312",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "LV",
+        "DR"
+      ],
+      "prompt": "Is fog due to thin after the Wind Change result?",
+      "checks": [
+        "Use the post-roll wind conditions. Mild Breeze reduction is once per Game Turn.",
+        "Heavy Winds or Gusts reduction is per Player Turn. Record the last reduction window so a Game Turn effect is not applied twice."
+      ],
+      "effect": "Update the actual fog level and its visibility consequences.",
+      "example": "Reduce fog density / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.12A · Wind and linked effects",
+      "sourcePages": [
+        678,
+        229
+      ]
+    },
+    {
+      "id": "snowDrifts",
+      "g": 1,
+      "title": "Place new snow drifts",
+      "who": "ATTACKER resolves",
+      "kind": "Conditional procedure",
+      "refs": "E3.75",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "DR",
+        "EC"
+      ],
+      "prompt": "Were Heavy Winds or Gusts already in force with Ground or Deep Snow before this roll?",
+      "checks": [
+        "Check pre-roll conditions, not the new wind state.",
+        "Apply the random drift-placement procedure for each mapboard when due."
+      ],
+      "effect": "Retain a pre-roll weather snapshot for this branch of the opening procedure.",
+      "example": "Place new snow drifts / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.12A · Wind and linked effects",
+      "sourcePages": [
+        678,
+        231
+      ]
+    },
+    {
+      "id": "smoke",
+      "g": 1,
+      "title": "Apply Gusts and first-RPh SMOKE drift",
+      "who": "ATTACKER resolves",
+      "kind": "Conditional procedure",
+      "refs": "A24.61-.62; B25.651; F11.74; G11.8",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "SMOKE",
+        "DR"
+      ],
+      "prompt": "Which existing SMOKE and dust counters must change now?",
+      "checks": [
+        "Gusts remove dispersed SMOKE and Vehicle Dust and disperse remaining affected SMOKE. Apply cave and other source-specific exceptions.",
+        "Resolve the special first-RPh SMOKE drift where applicable. Ordinary later drift retains its AFPh timing.",
+        "Apply rain restrictions with the precipitation result, rather than leaving impossible counters on the map."
+      ],
+      "effect": "Show individual affected counters; this is mandatory housekeeping, not an optional smoke-placement action.",
+      "example": "Apply Gusts and first-RPh SMOKE drift / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.12A · Wind and linked effects",
+      "sourcePages": [
+        678,
+        92,
+        93,
+        145,
+        268,
+        298
+      ]
+    },
+    {
+      "id": "dust",
+      "g": 1,
+      "title": "Change Desert dust intensity",
+      "who": "ATTACKER resolves",
+      "kind": "Conditional procedure",
+      "refs": "F11.73-.77",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "LV",
+        "DR"
+      ],
+      "prompt": "Does this Desert scenario allow Heavy Dust, and what do wind and rain do to it?",
+      "checks": [
+        "Use the density progression under the Heavy-Dust prerequisites, including the Gusts and cessation rules.",
+        "Rain removes the applicable dust for the remainder of the scenario under F11.77. Vehicle Dust removal is also linked to Gusts."
+      ],
+      "effect": "Keep the Desert option visible as pending integration, with its actual scenario prerequisites.",
+      "example": "Change Desert dust intensity / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.12A · Wind and linked effects",
+      "sourcePages": [
+        678,
+        267,
+        268
+      ]
+    },
+    {
+      "id": "surf",
+      "g": 1,
+      "title": "Preserve Heavy Surf wind restrictions",
+      "who": "ATTACKER resolves",
+      "kind": "Conditional procedure",
+      "refs": "G13.448; G16.2",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "dr",
+        "DYO"
+      ],
+      "prompt": "Does Heavy Surf prevent this wind-force change?",
+      "checks": [
+        "Heavy Surf keeps Heavy Winds in effect for the entire scenario. A Wind Change dr of 5 or more does not remove that wind.",
+        "Do not invent a Rally roll to start or stop Heavy Surf. Tropical DYO setup tables are setup procedures; only their continuing restrictions are applied now."
+      ],
+      "effect": "Annotate the shared Wind Change result with the restriction that overrides it.",
+      "example": "Preserve Heavy Surf wind restrictions / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.12A · Wind and linked effects",
+      "sourcePages": [
+        678,
+        311,
+        319
+      ]
+    },
+    {
+      "id": "recombine",
+      "g": 2,
+      "title": "Recombine half-squads",
+      "who": "Both sides",
+      "kind": "Optional early choice",
+      "refs": "A1.32; A2.8",
+      "status": "Partially integrated",
+      "terms": [
+        "HS",
+        "MMC",
+        "Good Order",
+        "Location"
+      ],
+      "prompt": "Would combining these two half-squads serve the coming turn better than keeping them separate?",
+      "checks": [
+        "Check nationality, matching Strength Factor, Class, Good Order, and the same Location and terrain.",
+        "Check leader presence and the specific leaderless exceptions. Do not infer eligibility from “two HS in one hex.”",
+        "Reserve the participating units’ RPh activity. A leader enabling recombination cannot then take a different RPh activity.",
+        "An eligible leader may enable multiple pairs as its recombination activity. Combining Fanatic and non-Fanatic HS does not produce a Fanatic squad. Include the Unarmed, Guard, Finnish and Carrier leaderless exceptions."
+      ],
+      "effect": "Show the resulting squad and lost separate capabilities before confirmation. The early timing should be visible before the player spends those units on recovery or repair.",
+      "example": "Two eligible HS + leader / Recombine, or keep separate. Warning: this commits the leader’s RPh activity, which may affect later rally assistance.",
+      "timing": "1.13B · Recombination and Animal-Pack",
+      "sourcePages": [
+        678,
+        45
+      ]
+    },
+    {
+      "id": "packStart",
+      "g": 2,
+      "title": "Start or finish Animal-Packing",
+      "who": "Both sides",
+      "kind": "Conditional procedure",
+      "refs": "ASOP 1.13B; G10.11; G10.3",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "TI",
+        "M#",
+        "MTR",
+        "Pack-TI"
+      ],
+      "prompt": "Is this the initial RPh of the Game Turn, and should a packing period start or finish?",
+      "checks": [
+        "Check the eligible Gun, Mule and same-nationality Good Order non-PRC crew in the same terrain and Location.",
+        "Place or remove Animal-Pack counters only in the applicable initial-RPh window. Calculate the period from the Gun’s M#, adding the non-mortar adjustment, minimum one Game Turn, and night doubling.",
+        "Track Pack-TI separately from ordinary TI; interruptions can invalidate time accumulated without freeing the Gun or Mule."
+      ],
+      "effect": "Show the start turn, required full turns, halfway window and completion window before committing.",
+      "example": "Start or finish Animal-Packing / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.13B · Recombination and Animal-Pack",
+      "sourcePages": [
+        678,
+        291
+      ]
+    },
+    {
+      "id": "packHalf",
+      "g": 2,
+      "title": "Load or unload at the packing midpoint",
+      "who": "Both sides when due",
+      "kind": "Conditional procedure",
+      "refs": "ASOP 1.13B; G10.31",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "Pack-TI",
+        "CA",
+        "MTR"
+      ],
+      "prompt": "Has half of the packing period completed?",
+      "checks": [
+        "Resolve the load/unload in the following Player-Turn RPh; this can be the second RPh of a Game Turn.",
+        "The crew must retain Pack-TI. On unloading choose the Gun CA, and check terrain that eliminates an unloaded Gun.",
+        "Loading/unloading does not itself finish the packing period."
+      ],
+      "effect": "Keep midpoint and completion as two obligations, never one checkbox.",
+      "example": "Load or unload at the packing midpoint / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.13B · Recombination and Animal-Pack",
+      "sourcePages": [
+        678,
+        291
+      ]
+    },
+    {
+      "id": "packReverse",
+      "g": 2,
+      "title": "Reverse a packing commitment",
+      "who": "Owning side",
+      "kind": "Conditional procedure",
+      "refs": "G10.32-.33",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "Pack-TI",
+        "CA"
+      ],
+      "prompt": "Would you reverse packing or unpacking at this initial-RPh opportunity?",
+      "checks": [
+        "Declare reversal at 1.13B in the initial RPh of a Game Turn. The new period uses the net time already spent, with the involuntary-unloading exception.",
+        "Preserve Pack-TI. Explain permitted ancillary handling under G10.32 while the Gun is unloaded, rather than applying an ordinary weapon-transfer shortcut."
+      ],
+      "effect": "Preview the revised completion date and retained restrictions before the player decides.",
+      "example": "Reverse a packing commitment / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.13B · Recombination and Animal-Pack",
+      "sourcePages": [
+        678,
+        292
+      ]
+    },
+    {
+      "id": "recover",
+      "g": 3,
+      "title": "Recover a weapon or Gun",
+      "who": "Both sides",
+      "kind": "Optional early choice",
+      "refs": "A4.44; D6.31; E4.21; G.5",
+      "status": "Partially integrated",
+      "terms": [
+        "SW",
+        "SMC",
+        "Good Order",
+        "dr",
+        "drm",
+        "CX",
+        "Location"
+      ],
+      "prompt": "Is valuable equipment unpossessed, or held by a broken unit from which an SMC can recover it?",
+      "checks": [
+        "Offer eligible unpinned Good Order non-Bypassing units in the correct Location, with known-enemy, terrain, and transport restrictions.",
+        "Distinguish an unpossessed weapon from a weapon held by a friendly broken unit: the latter recovery is an SMC case.",
+        "Preview the Recovery dr and its modifiers. Recovering a weapon consumes the recovering unit’s RPh action; it is not an action by the broken former possessor.",
+        "A weapon recovered this phase cannot then be transferred in the same phase. Apply a ski-use check if recovering skis requires one.",
+        "Recovery succeeds on a final dr below 6. Include CX and night penalties, and the +2 jungle/kunai/bamboo modifier unless the item is in the listed vehicle, trench, building or pillbox exception. No leadership modifier applies."
+      ],
+      "effect": "The checklist preserves the attempted result even on failure and shows which later actions are excluded.",
+      "example": "Leader: recover MG, or preserve this leader for rally assistance? Broken former possessor: its own Rally attempt is not consumed by the leader’s recovery.",
+      "timing": "1.14B · Recovery",
+      "sourcePages": [
+        678,
+        50,
+        207,
+        276
+      ]
+    },
+    {
+      "id": "skis",
+      "g": 3,
+      "title": "Resolve ski-use capability after Recovery or Transfer",
+      "who": "Receiving unit",
+      "kind": "Conditional procedure",
+      "refs": "E4.21; ASOP 1.14B and 1.22B",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "dr",
+        "SW"
+      ],
+      "prompt": "Does receiving these skis require a ski-use determination?",
+      "checks": [
+        "Offer the check as a dependent result of either Recovery at 1.14B or Transfer at 1.22B.",
+        "Apply known ski-capable nationality and unit rules before rolling. Preserve the result for the receiving unit."
+      ],
+      "effect": "One definition is attached to two source windows; it is not an independent extra RPh action.",
+      "example": "Resolve ski-use capability after Recovery or Transfer / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.14B · Recovery",
+      "sourcePages": [
+        678,
+        231
+      ]
+    },
+    {
+      "id": "deploy",
+      "g": 4,
+      "title": "Deploy a squad",
+      "who": "ATTACKER; special exceptions apply",
+      "kind": "Optional choice",
+      "refs": "A1.31; A2.52; A20.5; A25.7",
+      "status": "Partially integrated",
+      "terms": [
+        "MMC",
+        "HS",
+        "NTC",
+        "DRM",
+        "Good Order"
+      ],
+      "prompt": "Would two half-squads provide useful coverage, or do you need the full squad and its leader elsewhere?",
+      "checks": [
+        "Check nationality and unit exceptions, the leader requirement, and any NTC requirement.",
+        "Show how possessions would be assigned to the resulting HS.",
+        "An ordinary attempt uses both squad and directing leader for this RPh even when it fails. A Guard’s special automatic deployment has its own rule.",
+        "Finnish and Ranger leaderless Deployment uses a 1TC, not the ordinary NTC. USMC 7-6-8 and eligible KMC 5-5-8 use their leaderless NTC exceptions. Unarmed, Guard and Carrier cases keep their own rules."
+      ],
+      "effect": "Warn about the leader’s competing rally role before committing the attempt. Show special nationality and Guard cases as distinct eligibility explanations.",
+      "example": "Leader can direct Deployment or provide ordinary rally assistance later. Selecting Deployment previews that conflict; it does not silently select a tactic.",
+      "timing": "1.21A · Deployment and Scrounging",
+      "sourcePages": [
+        678,
+        45,
+        46,
+        87,
+        97,
+        319,
+        659,
+        660
+      ]
+    },
+    {
+      "id": "scrounge",
+      "g": 4,
+      "title": "Scrounge a wreck or abandoned vehicle",
+      "who": "ATTACKER",
+      "kind": "Optional choice",
+      "refs": "D10.5–.52",
+      "status": "Core procedure integrated",
+      "terms": [
+        "MMC",
+        "SW",
+        "TI",
+        "dr",
+        "dm"
+      ],
+      "prompt": "Is recovering a possible weapon worth tying up this Infantry unit for the Player Turn?",
+      "checks": [
+        "Check an eligible non-berserk, unbroken Infantry MMC, no Melee, and a same-hex non-burning wreck or abandoned vehicle.",
+        "Exclude already-scrounged or otherwise disqualified sources. Show what is knowable without revealing hidden information.",
+        "Preview the Scrounged and TI consequences regardless of success; any salvaged SW may be dismantled."
+      ],
+      "effect": "This is a commitment preview, not just a loot button. The unit can lose its later movement and fire opportunities even if the dr finds nothing.",
+      "example": "Scrounge / Considered, declined: this unit is needed to move. The checklist records a deliberate choice without treating it as an executed action.",
+      "timing": "1.21A · Deployment and Scrounging",
+      "sourcePages": [
+        678,
+        211
+      ]
+    },
+    {
+      "id": "repair",
+      "g": 5,
+      "title": "Repair support weapons and Guns",
+      "who": "Both sides",
+      "kind": "Optional choice",
+      "refs": "A9.72; A9.8; C1.22-.23; W2.14; W3.11",
+      "status": "Partially integrated",
+      "terms": [
+        "SW",
+        "R#",
+        "dr",
+        "Good Order",
+        "dm"
+      ],
+      "prompt": "Which malfunctioned weapons should you risk repairing, and which unit can legally attempt it?",
+      "checks": [
+        "Show the possessor, repair threshold, and permanent-loss result before any roll.",
+        "Apply the unit’s allowed repair capacity: A9.72 can permit more than one weapon, so do not use one checkbox per unit to mean all repairs are done.",
+        "Gun repair requires the appropriate crew and conditions; captured-equipment restrictions and dismantled-weapon repair remain represented.",
+        "Radio repair is represented under C1.22; Field Phones cannot be repaired under C1.23. Captured weapons cannot be repaired unless recaptured by the original side.",
+        "Include the Early Korean War U.S./ROK SW Repair Number override of 1 under W2.14/W3.11 when their date and force conditions apply."
+      ],
+      "effect": "Resolve each weapon separately. A completed repair attempt is finished even when nothing is repaired. A malfunction is not the same as permanent disablement.",
+      "example": "MMG / Repair on its R# / dr 6 eliminates / Attempt or leave malfunctioned. A second qualifying weapon remains a separate choice.",
+      "timing": "1.22B · Repairs and transfers",
+      "sourcePages": [
+        678,
+        65,
+        163,
+        660
+      ]
+    },
+    {
+      "id": "vehicleRepair",
+      "g": 5,
+      "title": "Repair vehicle armament",
+      "who": "Both sides",
+      "kind": "Optional choice",
+      "refs": "D3.7",
+      "status": "Partially integrated",
+      "terms": [
+        "AFV",
+        "MA",
+        "SA",
+        "AAMG",
+        "CE",
+        "BU",
+        "dr"
+      ],
+      "prompt": "Which individual weapon can this crew attempt to restore?",
+      "checks": [
+        "List each malfunctioned armament separately. A shocked or stunned crew cannot perform the ordinary repair attempt.",
+        "Use the weapon-specific exposure conditions. AAMG repair is different from internal MA or MG repair; include the qualifying Hero Rider case.",
+        "Preview success, permanent disablement, and any resulting Recall obligation."
+      ],
+      "effect": "A single “repair tank” checkbox hides meaningful choices. The unit card should show one row per weapon with the applicable crew conditions.",
+      "example": "MA: repair choice. AAMG: exposure or Hero Rider eligibility to check. An unsupported SA case remains visible as rules integration pending.",
+      "timing": "1.22B · Repairs and transfers",
+      "sourcePages": [
+        678,
+        201
+      ]
+    },
+    {
+      "id": "transfer",
+      "g": 5,
+      "title": "Transfer weapons and Guns",
+      "who": "Both sides",
+      "kind": "Optional choice",
+      "refs": "A4.431; D6.31; E4.21",
+      "status": "Terrain and transport edge cases require coverage review",
+      "terms": [
+        "SW",
+        "PP",
+        "Good Order",
+        "Location",
+        "dr"
+      ],
+      "prompt": "Who should carry or use this weapon after Rally?",
+      "checks": [
+        "Check giver and receiver eligibility, same Location, and special terrain and vehicle restrictions.",
+        "Exclude equipment recovered this phase. Distinguish Transfer from Recovery and from rearrangement on Deployment.",
+        "Show resulting possession and carrying burden. A transferred ski set can require its own ski-use dr.",
+        "Cavalry cannot Recover SW/Guns but can transfer SW under A13.33. Do not apply Recovery eligibility to every Transfer."
+      ],
+      "effect": "Link the new possessor to movement planning without inventing a movement expenditure in RPh. Apply the actual action accounting rather than assuming every equipment transaction is free.",
+      "example": "Transfer MG from squad A to squad B / PP consequences shown / Recipient and giver validated independently.",
+      "timing": "1.22B · Repairs and transfers",
+      "sourcePages": [
+        678,
+        50,
+        81,
+        207
+      ]
+    },
+    {
+      "id": "prisoners",
+      "g": 5,
+      "title": "Transfer or abandon prisoners",
+      "who": "Owning side in its permitted RPh",
+      "kind": "Optional custody choice",
+      "refs": "A20.5–.51",
+      "status": "Partially integrated",
+      "terms": [
+        "MMC",
+        "SMC",
+        "HS",
+        "Location"
+      ],
+      "prompt": "Should another eligible unit guard these prisoners, or are you considering abandonment?",
+      "checks": [
+        "Check custody, same Location, Guard capacity, and Melee restrictions.",
+        "Keep prisoner transfer distinct from SW transfer: its explicit exception does not penalize either unit’s RPh capabilities.",
+        "Explain abandonment consequences and any special Guard deployment option."
+      ],
+      "effect": "Freeing a Guard for another role is a legitimate consideration. Avoid charging it a generic RPh action that the prisoner rule explicitly exempts.",
+      "example": "Guard transfer / Recipient capacity reviewed / Original Guard’s RPh capability preserved under A20.5.",
+      "timing": "1.22B · Repairs and transfers",
+      "sourcePages": [
+        678,
+        87
+      ]
+    },
+    {
+      "id": "leaders",
+      "g": 6,
+      "title": "Rally leaders and choose assistance",
+      "who": "Both sides",
+      "kind": "Optional; Commissar exceptions",
+      "refs": "A10.6, .7, .71; D6.651; A10.72",
+      "status": "Core procedure integrated; special cases reviewed separately",
+      "terms": [
+        "SMC",
+        "ML",
+        "DR",
+        "DRM",
+        "Location",
+        "Good Order"
+      ],
+      "prompt": "Can a leader rally first and then help the broken units in this Location?",
+      "checks": [
+        "Where legal, resolve the broken leader before units that depend on that leader. A leader cannot apply its own leadership modifier to itself.",
+        "If an eligible unbroken leader is present, choose the proper assisted procedure rather than assuming Self-Rally is allowed.",
+        "A leader who successfully rallies may then rally other broken units in the Location during this RPh. Respect transport and other restrictions on whom it may help.",
+        "A10.72 makes an applicable non-zero leadership modifier mandatory unless another present leader’s modifier is substituted. The choice to attempt an ordinary Rally is distinct from choosing its modifiers.",
+        "Passenger leadership is restricted under D6.651. Show its vehicle and CE/halftrack conditions; an Armor Leader is not a general passenger Rally leader."
+      ],
+      "effect": "Show a dependency: leader rally → assisted rally choices become available. Do not mark the leader “used up” merely because its own Rally succeeded.",
+      "example": "Broken leader + two broken squads / Leader rallies successfully / Both squads gain their individual leader-assisted Rally choices.",
+      "timing": "1.23B · Rally attempts and consequences",
+      "sourcePages": [
+        678,
+        68,
+        69,
+        207
+      ]
+    },
+    {
+      "id": "first",
+      "g": 6,
+      "title": "Choose the first MMC Rally attempt",
+      "who": "ATTACKER",
+      "kind": "Expiring opportunity",
+      "refs": "A10.63; A18.11; A25.71; G1.62",
+      "status": "Core procedure integrated; documented edge-case review needed",
+      "terms": [
+        "MMC",
+        "SMC",
+        "DR",
+        "DRM",
+        "DM",
+        "ML",
+        "Field Promotion",
+        "Disrupted"
+      ],
+      "prompt": "Do you want the first MMC attempt to use the special Self-Rally opportunity?",
+      "checks": [
+        "Identify the eligible MMC before making another MMC Rally attempt. The ordinary opportunity is tied to the first attempt, not a spare action saved until later.",
+        "Check absence of a Good Order leader, Disrupted status, and any scenario-specific exceptions. Distinguish this opportunity from a unit’s inherent Self-Rally capability.",
+        "Preview +1 Self-Rally, DM, terrain, and other applicable effects. On a qualifying Original 2, branch to Field Promotion rather than normal HOB.",
+        "Finnish units are not eligible for Field Promotion under A25.71; Japanese cannot create leaders under G1.62. Do not show an executable leader-creation offer merely because Original 2 was rolled."
+      ],
+      "effect": "Before another MMC rolls, show a quiet last-chance reminder. Choosing another MMC deliberately closes this opportunity under the ordinary rule.",
+      "example": "Example: broken morale 7, DM, woods, special Self-Rally. +4 DM +1 Self-Rally −1 terrain = +4. Final DR must be ≤7, so Original DR ≤3 succeeds; an Original 2 opens the special leader-creation procedure.",
+      "timing": "1.23B · Rally attempts and consequences",
+      "sourcePages": [
+        678,
+        68,
+        85,
+        97,
+        280
+      ]
+    },
+    {
+      "id": "self",
+      "g": 6,
+      "title": "Use inherent Self-Rally capability",
+      "who": "Both sides where eligible",
+      "kind": "Optional choice",
+      "refs": "A10.6, .63, .71; A25.7; A19.12; W2.12",
+      "status": "Core procedure integrated; nationality coverage varies",
+      "terms": [
+        "MMC",
+        "SMC",
+        "ML",
+        "DRM",
+        "Good Order"
+      ],
+      "prompt": "Which units can rally without assistance even when the special first-MMC opportunity is unavailable?",
+      "checks": [
+        "Identify the broken-side Self-Rally capability and applicable leader, crew, and nationality cases. Finnish Conscript exceptions must remain distinct.",
+        "Apply the no-Good-Order-leader restriction and the +1 Self-Rally modifier, subject to explicit exceptions.",
+        "Keep each unit’s single Rally attempt for the Player Turn.",
+        "Disrupted units cannot Self-Rally under A19.12, including the inherent-capability path. Finnish Conscript exclusions and Ranger eligibility remain separate."
+      ],
+      "effect": "The DEFENDER is not given the ATTACKER’s ordinary first-MMC privilege, but still sees eligible inherent Self-Rally choices.",
+      "example": "Broken crew with Self-Rally capability / Its own choice remains visible even after the first MMC opportunity has been spent elsewhere.",
+      "timing": "1.23B · Rally attempts and consequences",
+      "sourcePages": [
+        678,
+        68,
+        69,
+        86,
+        97,
+        659
+      ]
+    },
+    {
+      "id": "assisted",
+      "g": 6,
+      "title": "Rally units with a leader",
+      "who": "Both sides",
+      "kind": "Optional; compulsory under some rules",
+      "refs": "A10.6–.71",
+      "status": "Core procedure integrated; special cases reviewed separately",
+      "terms": [
+        "MMC",
+        "SMC",
+        "ML",
+        "DM",
+        "DR",
+        "DRM",
+        "Location"
+      ],
+      "prompt": "Which eligible broken units should this leader attempt to rally?",
+      "checks": [
+        "List one row per eligible unit, not one row per stack. Check the leader’s existing RPh commitments.",
+        "Preview broken-side morale, applicable leadership, DM, and the terrain bonus. “In cover” is not a substitute for the actual qualifying terrain list.",
+        "A leader can assist multiple broken units in the same Location. Each unit gets only one Rally attempt per Player Turn.",
+        "Apply mandatory leadership under A10.72, including a positive modifier. Do not offer a switch to ignore an inconvenient eligible leader."
+      ],
+      "effect": "Show Attempted: failed separately from Not attempted. A failed attempt does not leave a misleading unchecked task.",
+      "example": "Squad A: attempted, failed. Squad B: not attempted. Leader: still eligible to assist Squad B under the same rally activity.",
+      "timing": "1.23B · Rally attempts and consequences",
+      "sourcePages": [
+        678,
+        68,
+        69
+      ]
+    },
+    {
+      "id": "commissar",
+      "g": 6,
+      "title": "Apply Commissar rally duties",
+      "who": "Side with the Commissar",
+      "kind": "Required when applicable",
+      "refs": "A25.221–.222",
+      "status": "Use specific rule coverage, not ordinary-leader assumptions",
+      "terms": [
+        "Commissar",
+        "MMC",
+        "SMC",
+        "HS",
+        "DM",
+        "ML"
+      ],
+      "prompt": "Does this Commissar have compulsory Self-Rally or rally duties?",
+      "checks": [
+        "A broken Commissar must attempt Self-Rally, even with another leader present.",
+        "Apply the Commissar’s morale and DM treatment when rallying other units. Do not stack ordinary leadership benefits onto it.",
+        "Preview replacement, reduction, or elimination consequences for failed attempts under the precise unit rules."
+      ],
+      "effect": "This is a mandatory procedure with material risks, not an ordinary optional “use leader” item. Marking it considered cannot clear it.",
+      "example": "Commissar present / Required rally attempts listed / Failure consequences visible before resolution.",
+      "timing": "1.23B · Rally attempts and consequences",
+      "sourcePages": [
+        678,
+        94
+      ]
+    },
+    {
+      "id": "results",
+      "g": 6,
+      "title": "Resolve Rally results and follow-ups",
+      "who": "Affected side",
+      "kind": "Triggered requirements and choices",
+      "refs": "A10.64; A15.1; A17; A18.11; A10.2; E3.742; G13.447",
+      "status": "Coverage follows the triggered rule",
+      "terms": [
+        "HOB",
+        "Field Promotion",
+        "Fate",
+        "DR",
+        "dr",
+        "LLMC",
+        "LLTC",
+        "SAN"
+      ],
+      "prompt": "Did the actual roll create another required effect or decision?",
+      "checks": [
+        "Normal Fate is Original Rally DR 12, causing Casualty Reduction. Extreme Winter E3.742 extends this to 11 or more for its date/nationality conditions outside buildings/pillboxes; use the separate winter row.",
+        "A qualifying non-Self-Rally Original 2 can trigger HOB, with its exclusions. A special first-MMC Self-Rally Original 2 uses the Field Promotion procedure.",
+        "Resolve dependent leader-loss effects only when triggered. Do not trigger a Sniper merely because an ordinary Rally DR equals SAN.",
+        "Apply any resultant state effects, including the G13.447 CX requirement when a unit rallies in shallow Ocean under Heavy Surf."
+      ],
+      "effect": "The attempted unit is not finished until its actual consequences settle. Do not prepopulate optional “try HOB” or “try Field Promotion” actions.",
+      "example": "Rally roll → qualifying result → required follow-up or offered leader-creation choice → resolved record. Ordinary Self-Rally is not an HOB route.",
+      "timing": "1.23B · Rally attempts and consequences",
+      "sourcePages": [
+        678,
+        68,
+        83,
+        84,
+        85,
+        231,
+        311
+      ]
+    },
+    {
+      "id": "campaign",
+      "g": 6,
+      "title": "Apply campaign first-two Self-Rally allowance",
+      "who": "ATTACKER when the CG rule applies",
+      "kind": "Conditional procedure",
+      "refs": "ASOP 1.23B: ABtF CG14; BRT CG14; KGP CG18; RB CG17",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "CG",
+        "MMC",
+        "SSR"
+      ],
+      "prompt": "Does the campaign grant the first two MMC attempts the special allowance?",
+      "checks": [
+        "Keep ABtF CG14, BRT CG14, KGP CG18 and RB CG17 as individually identified scenario-rule references.",
+        "The supplied ASOP names these exceptions, but their full campaign rules are not in this rulebook PDF. Show Source text needed and Rules integration pending.",
+        "Do not infer that every campaign, nationality or module gets two attempts."
+      ],
+      "effect": "Display the named exception now; require the actual scenario rule before evaluating its complete eligibility and consequences.",
+      "example": "Apply campaign first-two Self-Rally allowance / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.23B · Rally attempts and consequences",
+      "sourcePages": [
+        678
+      ]
+    },
+    {
+      "id": "nationality",
+      "g": 6,
+      "title": "Apply nationality and unit-class exceptions",
+      "who": "Affected side",
+      "kind": "Conditional procedure",
+      "refs": "A25; G1.2, G1.41, G1.62; G17.11; G18.31; W2.12; W3.32; W7.27-.31",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "MMC",
+        "HS",
+        "ML",
+        "DM",
+        "PO",
+        "CPVA",
+        "KMC"
+      ],
+      "prompt": "Which force-specific rule changes this Rally or reorganization choice?",
+      "checks": [
+        "Japanese leaders use their Commissar-like rally treatment, except inherent Armor Leaders; Japanese HS recombine into the specified full-strength squad. Japanese leader creation is excluded.",
+        "Red Chinese Commissar failed-rally penalties differ from Russian Commissars. Fate still applies.",
+        "CPVA Political Officers use +2 DM rather than immunity to DM and do not apply the Russian failed-rally replacement/reduction/elimination penalty. They must be assigned in the OB.",
+        "CPVA HS recombine into full-strength squads; CPVA infantry crews cannot Deploy and vehicle crews cannot Recombine.",
+        "Finns and Korean War Rangers have their own Self-Rally and leaderless reorganization rules. USMC and KMC squad types have specific Deployment exceptions.",
+        "Use A25 nationality, alliance and scenario morale/leadership adjustments on the actual unit; do not treat all Allied or all Axis units as interchangeable."
+      ],
+      "effect": "Attach these clauses to the affected Deployment, Recombination and Rally rows, with explicit pending coverage instead of a generic deferred-chapter card.",
+      "example": "Apply nationality and unit-class exceptions / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.23B · Rally attempts and consequences",
+      "sourcePages": [
+        678,
+        94,
+        97,
+        278,
+        280,
+        319,
+        322,
+        659,
+        660,
+        663
+      ]
+    },
+    {
+      "id": "modifiers",
+      "g": 6,
+      "title": "Review morale, terrain and Rally modifiers",
+      "who": "Both sides",
+      "kind": "Conditional procedure",
+      "refs": "A7.7; A10.61-.62, .8; A17.2; B23.211, B23.83; F12.44; G3.11; G5.5; G11.1-.2",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "ML",
+        "DM",
+        "DRM",
+        "Fanatic",
+        "Encircled",
+        "Wounded"
+      ],
+      "prompt": "What number must this particular unit roll, and why?",
+      "checks": [
+        "Start from the actual broken-side morale, then account for wounds, Fanatic status, encirclement, nationality and scenario conditions.",
+        "Show each applicable DRM separately: leadership, Self-Rally, DM and terrain. A cover graphic alone cannot determine the terrain bonus.",
+        "Woods, buildings, pillboxes and trenches qualify under A10.61. Apply the cave/cave-complex and other terrain rules; rooftops, lumberyards, bamboo without a qualifying pillbox, collapsed huts and mausoleums do not automatically qualify."
+      ],
+      "effect": "Give an explainable calculation, with unknown or pending modifiers identified rather than silently zeroed.",
+      "example": "Review morale, terrain and Rally modifiers / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.23B · Rally attempts and consequences",
+      "sourcePages": [
+        678,
+        68,
+        69,
+        84,
+        135,
+        139,
+        270,
+        282,
+        284,
+        292,
+        294
+      ]
+    },
+    {
+      "id": "winterFate",
+      "g": 6,
+      "title": "Apply Extreme Winter Fate",
+      "who": "Affected units",
+      "kind": "Conditional procedure",
+      "refs": "E3.742; A10.64",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "DR",
+        "Fate",
+        "MMC",
+        "SMC"
+      ],
+      "prompt": "Does this attempt have an additional casualty risk on Original 11?",
+      "checks": [
+        "In Extreme Winter, apply the extended Fate rule to non-Finnish Axis Personnel before April 1942 and Russians before April 1941.",
+        "It applies outside a building or pillbox. Woods or trench Rally bonus does not exempt the unit.",
+        "Preview the risk before the roll and resolve Casualty Reduction on Original Rally DR 11 or 12 when applicable."
+      ],
+      "effect": "A terrain bonus must not obscure this separate Original-dice consequence.",
+      "example": "Apply Extreme Winter Fate / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "1.23B · Rally attempts and consequences",
+      "sourcePages": [
+        678,
+        231,
+        68
+      ]
+    },
+    {
+      "id": "drop",
+      "g": 7,
+      "title": "Determine parachute Drop Points",
+      "who": "ATTACKER on entry",
+      "kind": "Required when due",
+      "refs": "E9.12",
+      "status": "Rules integration pending",
+      "terms": [
+        "dr",
+        "SSR",
+        "OB"
+      ],
+      "prompt": "Are parachute Wings entering this Player Turn?",
+      "checks": [
+        "Determine the final Drop Point for each entering Wing under its procedure.",
+        "Preserve secret predesignations and apply the random displacement process only where required.",
+        "Place the associated parachute counters in their proper aerial positions."
+      ],
+      "effect": "This remains a distinct entry-timing task. It cannot be hidden just because no executable airborne workflow exists yet.",
+      "example": "Entering Wing / Drop Point determination due / Rules integration pending / Rule explanation available.",
+      "timing": "1.24A · Parachute Drop Points",
+      "sourcePages": [
+        678,
+        242
+      ]
+    },
+    {
+      "id": "shock",
+      "g": 8,
+      "title": "Resolve Shock and UK recuperation",
+      "who": "Both sides",
+      "kind": "Required when due",
+      "refs": "C7.42",
+      "status": "Core procedure integrated",
+      "terms": [
+        "AFV",
+        "Shock",
+        "UK",
+        "CS",
+        "dr",
+        "Stun"
+      ],
+      "prompt": "Which AFVs are due for a recuperation roll at this RPh end?",
+      "checks": [
+        "Track when each condition was imposed; only the AFVs due now enter the obligation list.",
+        "For Shock, 1–2 removes it; 3–6 advances to UK. For UK, 1–3 removes it; 4–6 wrecks the AFV without a Crew Survival roll.",
+        "Do not substitute this for Stun handling or offer infantry Rally modifiers.",
+        "The due recuperation procedure still applies to an abandoned AFV. A further Shock result can reset UK to Shock; retain the condition’s timing history."
+      ],
+      "effect": "A real end-phase block identifies the specific AFV and due roll. Acknowledging the topic is not resolving the obligation.",
+      "example": "AFV 1 / UK recuperation due / Resolve dr. The obligation remains until the game records the result.",
+      "timing": "1.31B · Shock and DM",
+      "sourcePages": [
+        678,
+        177
+      ]
+    },
+    {
+      "id": "dm",
+      "g": 8,
+      "title": "Remove or retain DM",
+      "who": "Both sides",
+      "kind": "Cleanup with a conditional choice",
+      "refs": "A10.62",
+      "status": "Partially integrated",
+      "terms": [
+        "DM",
+        "ML",
+        "Location"
+      ],
+      "prompt": "Would retaining DM preserve a useful rout option, and is retaining it legal here?",
+      "checks": [
+        "Apply DM removal and continuing conditions correctly after the Rally attempts. Never remove DM early to improve that same RPh’s roll.",
+        "Offer voluntary retention only under its terrain and overstacking exceptions.",
+        "Explain the tradeoff: retained DM can preserve a later rout option but still affects subsequent rallying while present."
+      ],
+      "effect": "Use explicit Remove or Retain choices for eligible cases. Do not silently clear every DM marker or force the player to retain all of them.",
+      "example": "Broken unit in eligible open terrain / Retain DM for later rout? The panel explains the reason and leaves the tactical choice to the player.",
+      "timing": "1.31B · Shock and DM",
+      "sourcePages": [
+        678,
+        68
+      ]
+    },
+    {
+      "id": "wa",
+      "g": 9,
+      "title": "Claim Wall or Hedge Advantage",
+      "who": "Both sides; ATTACKER first",
+      "kind": "Optional timing window",
+      "refs": "B9.32–.323; B9.55",
+      "status": "Rules integration pending",
+      "terms": [
+        "WA",
+        "TI",
+        "Location"
+      ],
+      "prompt": "Do any eligible units need to claim Wall/Hedge Advantage before Prep Fire?",
+      "checks": [
+        "Check the terrain and enemy relationship and the eligibility restrictions, including Pinned, TI, and Immobile conditions.",
+        "Preserve ATTACKER-first claiming order. Separate voluntary claiming from mandatory gain or loss under other circumstances.",
+        "Claiming or forfeiting WA does not consume the unit’s ordinary RPh action allowance.",
+        "Account for bocage LOS and concealment effects under B9.55 when WA changes. Do not grant normal CCPh concealment gain just because this is the RPh."
+      ],
+      "effect": "Display this even if every rally attempt is complete. It is an easily missed end-of-phase opportunity, not a rallying modifier.",
+      "example": "Wall/Hedge Advantage / End-RPh window / Rules integration pending / Mark considered. No claim is written into the game.",
+      "timing": "1.32B · Wall Advantage",
+      "sourcePages": [
+        678,
+        119,
+        122
+      ]
+    },
+    {
+      "id": "oba",
+      "g": 10,
+      "title": "Settle artillery continuation",
+      "who": "Affected battery owner",
+      "kind": "Required when applicable",
+      "refs": "C1.21–.22; C1.34",
+      "status": "Check the battery-specific integration path",
+      "terms": [
+        "OBA",
+        "FFE:C",
+        "SSR"
+      ],
+      "prompt": "Does an FFE:C state require Battery Access or mission cleanup now?",
+      "checks": [
+        "For the relevant FFE:C battery, apply end-RPh loss of Battery Access under C1.21; if Radio Contact is not present, apply the FFE:C cancellation under C1.22. Preserve the distinction between Access and Contact.",
+        "Apply the appropriate loss of Access or mission cancellation; do not assume every OBA mission ends in Rally.",
+        "Calling, correcting, and maintaining contact in the ordinary fire-phase procedure belong in those phases, not on a generic Rally action button."
+      ],
+      "effect": "Show the affected mission and the automatic consequence. The phase cannot be declared clear by a manual checklist tick.",
+      "example": "Battery with FFE:C / End-RPh consequence / Details explain which access or mission state changes and why.",
+      "timing": "Additional timing and standing choices",
+      "sourcePages": [
+        163,
+        682,
+        685
+      ]
+    },
+    {
+      "id": "ammo",
+      "g": 10,
+      "title": "Plan ammunition replenishment",
+      "who": "Eligible vehicle owner",
+      "kind": "Cross-phase commitment",
+      "refs": "E10.3–.31",
+      "status": "Rules integration pending",
+      "terms": [
+        "AFV",
+        "TI",
+        "B#",
+        "Location"
+      ],
+      "prompt": "Should the vehicle and an Ammo Vehicle commit the complete turns required to replenish Low Ammo?",
+      "checks": [
+        "Check eligible Low Ammo status, the Ammo Vehicle, and the same or Accessible Locations.",
+        "Account for the required complete Game Turns, RPh through CCPh for both Player Turns. Show the commitment before time in the turn is spent elsewhere.",
+        "Track the applicable replenishment period and interruption conditions; do not offer instant repair or a generic Rally roll."
+      ],
+      "effect": "This is a duration commitment visible at the start of a turn, not an ordinary Rally attempt. A reminder tracks when the required period can complete.",
+      "example": "Low Ammo / Compatible Ammo Vehicle nearby / Required period and TI consequences / Rules integration pending.",
+      "timing": "Additional timing and standing choices",
+      "sourcePages": [
+        244
+      ]
+    },
+    {
+      "id": "other",
+      "g": 10,
+      "title": "Apply standing concealment and Guard choices",
+      "who": "As the individual rule permits",
+      "kind": "Context-dependent",
+      "refs": "A12.14; A12.33; A20.5; B9.55; scenario SSR",
+      "status": "Separate content entries as applicable",
+      "terms": [
+        "SSR",
+        "HIP",
+        "Good Order"
+      ],
+      "prompt": "Does a standing choice or an SSR create another decision during Rally?",
+      "checks": [
+        "Voluntary concealment loss remains a standing choice under A12.14; show its consequences without treating it as ordinary RPh concealment gain.",
+        "Check mandatory revelation of a hidden Gun in non-Concealment Terrain under A12.33, including the start of the first RPh. Apply bocage exceptions correctly.",
+        "An unbroken Guard squad can Deploy automatically at any time under A20.5. Do not hide that option because the side is DEFENDER or 1.21A has passed. Prisoner custody transfer or abandonment keeps its friendly-RPh restriction.",
+        "Scenario-specific procedures need individually named rows with their rule text. Unknown SSR relevance remains visible; it is not assumed inapplicable."
+      ],
+      "effect": "An “all options” view includes these contextual choices. The live checklist expands only the ones whose timing and disclosure can be established.",
+      "example": "Scenario-specific reinforcement condition / Source SSR shown / Required, optional, or not yet evaluated stated separately from integration status.",
+      "timing": "Additional timing and standing choices",
+      "sourcePages": [
+        77,
+        80,
+        87,
+        122
+      ]
+    },
+    {
+      "id": "phone",
+      "g": 10,
+      "title": "Check a triggered Field Phone cut",
+      "who": "Affected phone owner",
+      "kind": "Conditional procedure",
+      "refs": "C1.23",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "DR",
+        "OBA",
+        "HIP"
+      ],
+      "prompt": "Did an opposing unit’s Original 2 DR trigger the phone-security rule?",
+      "checks": [
+        "Check the actual opposing unit and the Field Phone security area when an Original 2 is rolled for any purpose. Rally and Deployment can therefore matter.",
+        "Resolve the cut only if all source conditions hold. A Field Phone cannot be repaired or moved; a radio’s repair option is not applicable."
+      ],
+      "effect": "Attach this consequence to the triggering roll without exposing a hidden phone or protected security information.",
+      "example": "Check a triggered Field Phone cut / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "Additional timing and standing choices",
+      "sourcePages": [
+        163
+      ]
+    },
+    {
+      "id": "ammoTransfer",
+      "g": 10,
+      "title": "Commit to an Ammo Dump or ammo transfer",
+      "who": "Owning side",
+      "kind": "Conditional procedure",
+      "refs": "E10.4; E10.6",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "TI",
+        "AFV",
+        "OB"
+      ],
+      "prompt": "Should the Ammo Vehicle offload, or should an immobile Ammo Vehicle transfer its supply?",
+      "checks": [
+        "Use the eligible offload or accessible-vehicle transfer conditions. The prescribed commitment is four complete Game Turns.",
+        "Track the replenishment-style TI conditions and the end-CCPh completion. Apply vehicle movement restrictions in the turn it gains or loses Ammo Vehicle status."
+      ],
+      "effect": "This is a multi-turn commitment to consider before spending the turn, not instant RPh SW Transfer.",
+      "example": "Commit to an Ammo Dump or ammo transfer / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "Additional timing and standing choices",
+      "sourcePages": [
+        244
+      ]
+    },
+    {
+      "id": "stunBoundary",
+      "g": 10,
+      "title": "Verify incoming Stun and Recall state",
+      "who": "Affected vehicle owner",
+      "kind": "Conditional procedure",
+      "refs": "D5.34-.341; Vehicle reference charts",
+      "status": "Rules integration pending; reference available",
+      "terms": [
+        "Stun",
+        "Recall",
+        "AFV"
+      ],
+      "prompt": "Was the previous Player Turn’s Stun transition applied?",
+      "checks": [
+        "D5.34 places the normal Stun flip at Player-Turn end; the quick charts describe the beginning of the next RPh. Treat this as one boundary transition, never two.",
+        "Show a reminder or reconciliation issue if the imported state still has an overdue Stun marker. Recall follows its own conditions, without a Shock recuperation roll."
+      ],
+      "effect": "The end-state engine owns the transition. The Rally guide can expose an overdue boundary obligation without relocating the rule.",
+      "example": "Verify incoming Stun and Recall state / Check scenario and subject / Pending integration remains visible; consideration does not perform this procedure.",
+      "timing": "Additional timing and standing choices",
+      "sourcePages": [
+        203,
+        221,
+        704
+      ]
+    },
+    {
+      "id": "notHere",
+      "g": 11,
+      "title": "Common actions that belong elsewhere",
+      "who": "Reference",
+      "kind": "Timing clarification",
+      "refs": "A4.43; A9.73; A9.8; A3.2; D5.41; D5.34; C1.22",
+      "status": "Reference guidance",
+      "terms": [
+        "dm",
+        "DM",
+        "Stun",
+        "OBA",
+        "CX"
+      ],
+      "prompt": "Are you looking for an action that is not normally a Rally Phase choice?",
+      "checks": [
+        "Assembling or dismantling a weapon normally belongs to PFPh or DFPh, although a qualifying weapon may be repaired while already dismantled.",
+        "Ordinary entrenching belongs to PFPh. Voluntary vehicle abandonment is an MPh action.",
+        "Ordinary dropping of weapon possession and deliberate weapon destruction have their own permitted phases; neither is a generic RPh option.",
+        "Do not reset CX or call an OBA mission merely because this is Rally. Verify an incoming Stun boundary transition separately from Shock recuperation.",
+        "Voluntary breaking belongs to its Rout timing. Pre-game Commissar substitution, initial weather tables and pre-game barrage planning are setup tasks, not repeatable Rally actions."
+      ],
+      "effect": "Explain where the option belongs and offer a future-phase bookmark in the real component. Avoid filling the Rally checklist with invalid action buttons.",
+      "example": "Assemble MMG / Available in a later fire phase under A9.8 / Future reminder, not an RPh execution control.",
+      "timing": "Actions belonging elsewhere",
+      "sourcePages": [
+        49,
+        65,
+        68,
+        203
+      ]
+    }
+  ],
+  "schemaVersion": 2,
+  "source": {
+    "edition": "eASLRB v3.01",
+    "file": "eASLRB_v3_01.pdf",
+    "sha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+    "asopPdfPage": 678,
+    "pageNumbering": "Physical PDF pages, one-based",
+    "reconciled": "2026-10-26",
+    "scope": "All ten Rally ASOP entries, their named exceptions, and supplemental Rally/standing/cross-phase procedures identified in the supplied volume. External campaign and SASL text is not supplied; named ASOP campaign exceptions remain represented with unresolved source coverage."
+  }
+}

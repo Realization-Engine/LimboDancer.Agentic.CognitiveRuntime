@@ -1,0 +1,2688 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "edition": "eASLRB v3.01",
+    "file": "E:/RPG/Dennis-Landi-Games/Squad Leader Apocalypse/References/AdvancedSquadLeader/wgv-2025-08-07_06-00am/eASLRB_v3_01.pdf",
+    "sha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+    "pageNumbering": "Physical PDF pages, one-based",
+    "reconciled": "2026-10-26",
+    "scope": "All 17 printed CCPh ASOP steps and identified supplemental in-volume families. Campaign/module/equipment profiles need their own reconciliation.",
+    "asopPdfPages": [
+      681
+    ]
+  },
+  "groups": [
+    "Location order and commitment",
+    "8.11B · Reveal the Location",
+    "8.12B · Ambush and its alternatives",
+    "8.13D · Defending Japanese hero",
+    "8.14B · Sequence, prisoners and abandoned vehicles",
+    "8.15B · Melee Withdrawal declarations",
+    "8.16B · SMC pairing",
+    "8.21B · Declare attacks and special modes",
+    "8.22B · ATMM after attack declaration",
+    "8.23B · Japanese response to capture",
+    "8.24B · Resolve attacks and immediate consequences",
+    "8.25B · New prisoner information",
+    "8.31B · Close this Location",
+    "8.41B · Phase-wide aerial combat",
+    "8.42B · Complete declared tasks",
+    "8.43B · Status and replenishment",
+    "8.44A · Concealment gain",
+    "8.45B · Night cleanup after concealment",
+    "Supplemental events and turn handoff"
+  ],
+  "options": [
+    {
+      "id": "handoff",
+      "g": 0,
+      "title": "Finish one Location before starting the next",
+      "who": "ATTACKER",
+      "kind": "Phase handoff",
+      "refs": "A11.12; ASOP 8",
+      "sourcePages": [
+        681,
+        72
+      ],
+      "terms": [
+        "CCPh",
+        "CC",
+        "Melee",
+        "Declaration receipt"
+      ],
+      "prompt": "Which Location does the ATTACKER select, and what remains unresolved there?",
+      "checks": [
+        "The ATTACKER chooses the order of CC Locations. Complete that Location’s opening, declarations, attacks, withdrawals and closing status before starting another.",
+        "Keep phase-wide aerial combat, Clearance and cleanup in a separate queue, even when no ground CC exists.",
+        "A reference Considered mark performs no game action. A live phase cannot close while committed attacks or required effects remain unresolved."
+      ],
+      "effect": "Propose a Location queue, a declaration receipt and a separate end-phase obligations queue.",
+      "example": "Resolving one village fight does not permit TI cleanup while another Location still has attacks.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "Rule-specific CCPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "participants",
+      "g": 0,
+      "title": "Identify the actual combat participants",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.1; B23.422; B30.6; G11.87; G13.495",
+      "sourcePages": [
+        681,
+        72,
+        137,
+        151,
+        301,
+        312
+      ],
+      "terms": [
+        "Location",
+        "CC",
+        "PRC"
+      ],
+      "prompt": "Which opposing units can legally engage each other?",
+      "checks": [
+        "Use Location, level and terrain status rather than just hex membership. Foxhole occupants can fight other units in the same Location; separate building levels normally cannot.",
+        "Apply pillbox’s same-hex exception, cave restrictions and non-frozen Ocean prohibition before showing attacks.",
+        "Carry forward concealment, PIN, TI, CX, broken status, equipment, mounted status, prior Melee and earlier phase history without silently clearing them."
+      ],
+      "effect": "Show separate combat groups and explain why apparent neighbors cannot attack.",
+      "example": "Opposing units on different floors do not automatically fight because their counters share a hex.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "Rule-specific CCPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "reveal",
+      "g": 1,
+      "title": "Place hidden items and disclose concealed strengths",
+      "who": "BOTH",
+      "kind": "Required disclosure",
+      "refs": "A11.19; A12.31",
+      "sourcePages": [
+        681,
+        73,
+        78,
+        151
+      ],
+      "terms": [
+        "HIP",
+        "CC",
+        "FP"
+      ],
+      "prompt": "What must become visible at this Location’s opening?",
+      "checks": [
+        "Place the Location’s hidden items onboard under concealment and reveal concealed Strength Factors; remove Dummies before attack designation.",
+        "Revealing strength is not blanket loss of concealment. Retain the remaining protection until a specific loss trigger.",
+        "Do not reveal every CC Location simultaneously when only one has been selected; respect special pillbox inspection and other profile rules."
+      ],
+      "effect": "Separate public strength disclosure from concealment removal.",
+      "example": "A concealed squad’s strength becomes known while its concealment still affects the coming attack.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.11B",
+      "steps": [
+        "8.11B"
+      ]
+    },
+    {
+      "id": "hiddenHero",
+      "g": 1,
+      "title": "Resolve a revealed hidden Tank-Hunter Hero",
+      "who": "Japanese player",
+      "kind": "Required status",
+      "refs": "G1.422; G1.425; A11.19",
+      "sourcePages": [
+        681,
+        279,
+        280
+      ],
+      "terms": [
+        "T-H Hero",
+        "HIP",
+        "AFV"
+      ],
+      "prompt": "Does involuntary revelation meet the hero’s survival exception?",
+      "checks": [
+        "A hidden T-H Hero involuntarily revealed in CCPh survives this special test only as a DEFENDER in the same Location with an enemy AFV.",
+        "Apply its special target and attack obligations if it remains; do not treat it as an ordinary Hero with a general heroic DRM."
+      ],
+      "effect": "Resolve the special revealed-counter consequence before offering attacks.",
+      "example": "A hidden T-H Hero revealed without the qualifying AFV cannot remain as ordinary Infantry.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.11B",
+      "steps": [
+        "8.11B"
+      ]
+    },
+    {
+      "id": "ambush",
+      "g": 2,
+      "title": "Determine whether Ambush applies",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.4; G.6; E1.77",
+      "sourcePages": [
+        681,
+        73,
+        225,
+        276
+      ],
+      "terms": [
+        "Ambush",
+        "dr",
+        "Melee"
+      ],
+      "prompt": "Is this a new encounter with a qualifying terrain or concealment trigger?",
+      "checks": [
+        "Check Infantry advance into woods/building or by/against concealed units, and the hidden-unit placement trigger. Jungle, bamboo and kunai qualify under G.6.",
+        "Reinforcing an existing Melee does not create a fresh ordinary Ambush roll. A vehicle in the Location does not by itself prevent Ambush.",
+        "Normally one side must roll at least three lower after drm; the unilluminated night ATTACKER uses the E1.77 two-lower exception."
+      ],
+      "effect": "Explain the trigger and threshold before either side rolls.",
+      "example": "An unilluminated night attacker can gain Ambush with a two-point advantage.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.12B",
+      "steps": [
+        "8.12B"
+      ]
+    },
+    {
+      "id": "ambushModifiers",
+      "g": 2,
+      "title": "Build each side’s Ambush modifier explanation",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.17-.18; A11.4; G.6",
+      "sourcePages": [
+        681,
+        73,
+        276
+      ],
+      "terms": [
+        "drm",
+        "CX",
+        "BU",
+        "Stealthy"
+      ],
+      "prompt": "Which qualifying units and statuses contribute to the Ambush dr?",
+      "checks": [
+        "Account for concealment, Stealth/Lax, CX, broken, pinned, berserk, vehicle/Cavalry/pillbox, BU/Stun, bank/Panji and PTO attacker conditions.",
+        "Apply the best eligible unpinned Good Order leader with the alone/berserk restrictions. Do not substitute CC attack DRM for Ambush drm.",
+        "Retain relevant force-wide qualifiers even when only part of the force has the status; keep hidden identities private until lawful disclosure."
+      ],
+      "effect": "Show one auditable dr calculation per side.",
+      "example": "A concealed Stealthy squad with a CX leader has both favorable and unfavorable Ambush modifiers.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.12B",
+      "steps": [
+        "8.12B"
+      ]
+    },
+    {
+      "id": "ambushChoice",
+      "g": 2,
+      "title": "Use the Ambush advantage or withdraw",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.4-.41",
+      "sourcePages": [
+        681,
+        73,
+        74
+      ],
+      "terms": [
+        "Ambush",
+        "Withdrawal",
+        "CC"
+      ],
+      "prompt": "Attack first, leave before combat, or preserve a later withdrawal option?",
+      "checks": [
+        "The ambusher normally resolves all its attacks first; apply the sequential-priority rules when prisoners are involved. The ambushed side loses concealment.",
+        "Eligible unpinned, non-berserk, non-Disrupted Infantry may withdraw before resolution or after all attacks by and against it, before Melee.",
+        "An attacking ambusher can retain concealment when it eliminates/captures its target. An unsuccessful attack loses that special protection."
+      ],
+      "effect": "Expose the two distinct withdrawal windows and the consequence of attacking.",
+      "example": "An ambusher can leave safely now instead of risking a failed attack and return attack.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.12B",
+      "steps": [
+        "8.12B"
+      ]
+    },
+    {
+      "id": "street",
+      "g": 2,
+      "title": "Check Street Fighting without inventing an Ambush roll",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.8",
+      "sourcePages": [
+        681,
+        76
+      ],
+      "terms": [
+        "Street Fighting",
+        "Ambush",
+        "AFV"
+      ],
+      "prompt": "Does the earlier advance or Bypass position qualify against this vehicle?",
+      "checks": [
+        "Check the road with buildings on both sides and ground-level advance provenance, or eligible Infantry in the vehicle’s Bypassed obstacle.",
+        "The special -1/+1 vehicle-combat advantage does not stack with actual Ambush; actual Ambush takes precedence.",
+        "Preserve the eligible return-to-origin option after attacks, with broken/pinned/above-Wire restrictions and return hazards. It is not a general free Withdrawal."
+      ],
+      "effect": "Keep actual Ambush, Street Fighting modifiers and the later return decision separate.",
+      "example": "A Street Fighter on top of Wire receives the applicable combat benefit but cannot return to its building.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.12B",
+      "steps": [
+        "8.12B"
+      ]
+    },
+    {
+      "id": "tankHunter",
+      "g": 3,
+      "title": "Consider DEFENDER Tank-Hunter Hero creation",
+      "who": "DEFENDER",
+      "kind": "Combat decision",
+      "refs": "G1.421-.4231",
+      "sourcePages": [
+        681,
+        279
+      ],
+      "terms": [
+        "T-H Hero",
+        "Designated Target",
+        "AFV"
+      ],
+      "prompt": "Can a qualifying Japanese squad or HS create a hero here?",
+      "checks": [
+        "Require an armed Good Order Japanese Infantry squad/HS with an enemy AFV in the same Location and LOS, no disqualifying fire/Pin/TI marker, and remaining scenario allowance.",
+        "Wait for Ambush determination and completion of all ATTACKER Ambush attacks. The printed opening step does not override that explicit delay.",
+        "Apply the creation dr and HS/Conscript/DC modifiers, Original 6 Pin consequence and Designated Target choice. The hero must attempt to attack that AFV if still in its Location."
+      ],
+      "effect": "Queue the choice after any required attacker Ambush attacks rather than resolving it prematurely.",
+      "example": "An ambushed Japanese squad must survive the attacker’s attacks before attempting creation.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.13D",
+      "steps": [
+        "8.13D"
+      ]
+    },
+    {
+      "id": "sequence",
+      "g": 4,
+      "title": "Choose the correct attack sequence",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.3-.34",
+      "sourcePages": [
+        681,
+        73
+      ],
+      "terms": [
+        "Sequential CC",
+        "Simultaneous CC",
+        "Ambush"
+      ],
+      "prompt": "Which rule decides who attacks next?",
+      "checks": [
+        "Vehicle presence, even an abandoned vehicle not being attacked, creates sequential CC. The non-vehicular side starts; if both sides have vehicles, the ATTACKER starts.",
+        "Ambush normally gives the ambusher all its attacks first. Prisoner attacks take priority when the higher-numbered sequential rule applies.",
+        "Show the precedence explicitly. In ordinary vehicle sequence alternate one attack at a time, recomputing survivors and escorts after each result."
+      ],
+      "effect": "Display current decision owner, governing rule and the next available attack window.",
+      "example": "Prisoners can attack before other combatants even in a Location with both Ambush and a vehicle.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.14B",
+      "steps": [
+        "8.14B"
+      ]
+    },
+    {
+      "id": "escape",
+      "g": 4,
+      "title": "Declare eligible prisoner escape attacks",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A20.55; A25.82; G1.621",
+      "sourcePages": [
+        681,
+        88,
+        96,
+        280
+      ],
+      "terms": [
+        "Prisoners",
+        "Guard",
+        "NTC",
+        "Melee"
+      ],
+      "prompt": "Can these prisoners attack their Guard now?",
+      "checks": [
+        "Outside Melee the Guard must be broken and prisoners must pass an NTC. In existing Melee the NTC and broken-Guard conditions no longer apply.",
+        "Only eligible Infantry may escape; apply Italian, Japanese and Axis Minor restrictions and the specified Axis Minor exception.",
+        "The Guard must be eliminated before attacking others unless included in the same attack. Mere Guard elimination does not guarantee freedom if other enemies remain."
+      ],
+      "effect": "Show eligible escape groups, required checks and the conditions for actual freedom.",
+      "example": "Prisoners in established Melee can attack an unbroken Guard without another NTC.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.14B",
+      "steps": [
+        "8.14B"
+      ]
+    },
+    {
+      "id": "abandonedDeclaration",
+      "g": 4,
+      "title": "Declare an escorted abandoned-vehicle capture attempt",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A21.2; A11.52",
+      "sourcePages": [
+        681,
+        74,
+        88
+      ],
+      "terms": [
+        "AFV",
+        "Personnel Escort",
+        "CCV"
+      ],
+      "prompt": "Is this vehicle contested or eligible for later automatic capture?",
+      "checks": [
+        "An abandoned AFV with enemy Personnel present requires a CC capture attempt; both sides may contest it and supply its escort protection until controlled.",
+        "Treat the unmanned AFV as CE and Immobile and apply the no-manned-MG modifier. A manned AFV cannot be captured by this procedure.",
+        "If no enemy Personnel remain, the automatic capture window is at Location close. Do not award ownership at the opening merely because the vehicle is abandoned."
+      ],
+      "effect": "Distinguish attack commitment from the possible automatic closing result.",
+      "example": "Two opposing squads beside an abandoned tank must resolve the contest before assigning its crew.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.14B",
+      "steps": [
+        "8.14B"
+      ]
+    },
+    {
+      "id": "withdraw",
+      "g": 5,
+      "title": "Declare voluntary Withdrawal from Melee",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.2",
+      "sourcePages": [
+        681,
+        73
+      ],
+      "terms": [
+        "Withdrawal",
+        "Melee",
+        "SMC"
+      ],
+      "prompt": "Which eligible units leave, and which stand to cover them?",
+      "checks": [
+        "ATTACKER declares first, before either side’s attacks. Ordinary Withdrawal requires existing Melee and excludes pinned, berserk and Disrupted units.",
+        "Withdrawing units cannot attack, and declarations cannot be canceled after seeing combat results. Apply the -2 target DRM plus standing-friendly-unit protection.",
+        "SMC departing without a MMC can be singled out. Apply withdrawal modifiers only to withdrawing targets in a mixed attack."
+      ],
+      "effect": "Commit separate standing and withdrawing groups before attack selection.",
+      "example": "A leader can withdraw while a squad stands, but may then be attacked as a separate target.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.15B",
+      "steps": [
+        "8.15B"
+      ]
+    },
+    {
+      "id": "brokenWithdrawal",
+      "g": 5,
+      "title": "Handle compulsory broken-unit Withdrawal",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.16; A11.2",
+      "sourcePages": [
+        681,
+        72,
+        73
+      ],
+      "terms": [
+        "Withdrawal",
+        "Disrupted",
+        "Guard"
+      ],
+      "prompt": "Which broken Infantry must attempt to leave Melee?",
+      "checks": [
+        "Non-Disrupted, non-Guard broken Infantry must attempt Withdrawal. Broken units never attack but defend with their full unbroken-side FP and the broken-unit DRM.",
+        "Apply the special Failure-to-Rout consequence for a non-Guard broken unit unable to withdraw at Location close; preserve the Disrupted/Guard distinctions.",
+        "After successful Withdrawal, normal rout rules apply in a subsequent RtPh. This is not an extra rout now."
+      ],
+      "effect": "Show compulsory declaration and any unresolved closing consequence separately.",
+      "example": "A broken squad cannot choose to remain in Melee simply because its retreat looks dangerous.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.15B",
+      "steps": [
+        "8.15B"
+      ]
+    },
+    {
+      "id": "withdrawLoad",
+      "g": 5,
+      "title": "Drop excess equipment and evaluate an Accessible exit",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A4.43; A11.21; G9.5",
+      "sourcePages": [
+        681,
+        50,
+        73,
+        151,
+        290
+      ],
+      "terms": [
+        "IPC",
+        "PP",
+        "Accessible",
+        "CX"
+      ],
+      "prompt": "What can this withdrawing unit retain, and where can it legally go?",
+      "checks": [
+        "Retained equipment cannot exceed IPC; offer the legal opening drop instead of refusing every overburdened unit outright.",
+        "Destination must be Accessible under normal advance conditions, possibly creating CX, and cannot contain a Known enemy. Terrain and pillbox restrictions still apply.",
+        "Entering a real concealed enemy’s Location eliminates the withdrawing unit and forces the prescribed enemy reveal; do not disclose that hidden risk in a public destination list.",
+        "Infantry above a Panji counter cannot Withdraw from CC off that counter. A generic Accessible-hex test must not bypass this explicit prohibition."
+      ],
+      "effect": "Show load choices and viewer-safe endpoints without claiming unknown destinations are safe.",
+      "example": "A squad drops an HMG to meet IPC, but an unseen enemy can still make its chosen exit fatal.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.15B",
+      "steps": [
+        "8.15B"
+      ]
+    },
+    {
+      "id": "pairing",
+      "g": 6,
+      "title": "Declare SMC solo status and defending groups",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.14; A11.12",
+      "sourcePages": [
+        681,
+        72
+      ],
+      "terms": [
+        "SMC",
+        "MMC",
+        "FP"
+      ],
+      "prompt": "Which unit does each SMC attack and defend with?",
+      "checks": [
+        "ATTACKER establishes pairing/solo status first, before attack declarations. Each SMC contributes one FP in ordinary Personnel CC.",
+        "A solo attacker also defends alone. A paired SMC attacks with its MMC if combining, and normally cannot be singled out separately.",
+        "A Known SMC cannot defend with a concealed unit without resolving the required concealment compatibility; withdrawal can create separate targetability."
+      ],
+      "effect": "Make defensible groups visible before targeting, and lock them at the proper point.",
+      "example": "Pairing a leader with a squad changes both the attack and the smallest target the opponent can select.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.16B",
+      "steps": [
+        "8.16B"
+      ]
+    },
+    {
+      "id": "leadership",
+      "g": 6,
+      "title": "Choose eligible leadership and heroic support",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.141; A15.24",
+      "sourcePages": [
+        681,
+        72,
+        74,
+        83,
+        279
+      ],
+      "terms": [
+        "SMC",
+        "DRM",
+        "CCV"
+      ],
+      "prompt": "Who may direct this declared attack?",
+      "checks": [
+        "One leader can direct the attack of the group it defends with and other units joining that combined attack. No leadership DRM for a solo leader or an attack with berserk units.",
+        "For a vehicle target the leader must combine in that attack; apply the separate CCV combination limit. Heroic effects are distinct, and a T-H Hero supplies no ordinary Hero DRM.",
+        "CC does not generate LLMC/LLTC from leader casualties. Do not queue a generic leader-loss check."
+      ],
+      "effect": "Show FP/CCV contribution separately from the attack modifier.",
+      "example": "A solo 9-2 leader does not get to apply its -2 leadership to its own attack.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.16B",
+      "steps": [
+        "8.16B"
+      ]
+    },
+    {
+      "id": "declarations",
+      "g": 7,
+      "title": "Declare targets at the correct commitment boundary",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.12; A11.3",
+      "sourcePages": [
+        681,
+        72,
+        73
+      ],
+      "terms": [
+        "Declaration receipt",
+        "Simultaneous CC",
+        "Sequential CC"
+      ],
+      "prompt": "Which attacks must be fixed now, and which can wait?",
+      "checks": [
+        "In simultaneous CC the ATTACKER declares all attacks, then DEFENDER declares all, before resolution. Preserve each declared strength even if its units are simultaneously lost.",
+        "Sequential CC declares the next attack after prior effects; no eliminated unit gets a later return attack. Passing and exhausted attackers must be tracked.",
+        "Units need not all attack or all be attacked. Enforce ordinary once-per-unit attack/target limits with vehicle and special-rule exceptions."
+      ],
+      "effect": "Provide a commitment review rather than letting the player retarget after a favorable die roll.",
+      "example": "An eliminated squad still resolves its declared simultaneous attack, but not a future sequential one.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.21B",
+      "steps": [
+        "8.21B"
+      ]
+    },
+    {
+      "id": "concealedChoice",
+      "g": 7,
+      "title": "Choose whether concealed units attack",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.19; A11.4",
+      "sourcePages": [
+        681,
+        72,
+        73,
+        74
+      ],
+      "terms": [
+        "CC",
+        "Ambush",
+        "FP"
+      ],
+      "prompt": "Keep concealment or commit it to an attack?",
+      "checks": [
+        "Resolve the concealed participant’s attack/decline intent before final attack odds and targets depend on it; do not let declaration order provide a concealment trap.",
+        "Making or directing an attack normally loses concealment, with successful Ambush retention as the explicit exception. Attack FP against a concealed target is halved.",
+        "A unit retaining concealment is neither held in Melee nor able to hold opponents in Melee. A casualty can change that status."
+      ],
+      "effect": "Compare attack now with retaining concealment and later freedom of movement.",
+      "example": "A concealed defender can decline its attack, leaving the attacker facing reduced odds.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.21B",
+      "steps": [
+        "8.21B"
+      ]
+    },
+    {
+      "id": "personnelAttack",
+      "g": 7,
+      "title": "Build ordinary Personnel CC odds",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.11-.14; A7.8; A4.51; A4.8",
+      "sourcePages": [
+        681,
+        52,
+        58,
+        72,
+        73,
+        87
+      ],
+      "terms": [
+        "FP",
+        "CCT",
+        "DRM"
+      ],
+      "prompt": "Combine or split the attack, and which defending group is the target?",
+      "checks": [
+        "Use eligible inherent FP, including SMC groups, and round the odds down to a printed CCT column. Ordinary SW/Guns do not add attack FP.",
+        "Apply applicable Pin, Guard, concealment, CX, TI, broken-target, withdrawal, Ambush and stacking effects at their proper calculation stages.",
+        "No PBF/TPBF, TEM or LOS Hindrance modifies ordinary CC. Keep different target DRM separate rather than assigning one result to an unlike group."
+      ],
+      "effect": "Show strength arithmetic, odds, Kill Number and target-specific modifiers before commitment.",
+      "example": "Two squads may combine against one defender or split attacks, with different odds and risks.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.21B",
+      "steps": [
+        "8.21B"
+      ]
+    },
+    {
+      "id": "handToHand",
+      "g": 7,
+      "title": "Choose or require Hand-to-Hand under the active profile",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "J2.31; A25.43; G1.64; G18.62; SSR RB11",
+      "sourcePages": [
+        681,
+        96,
+        281,
+        322,
+        602
+      ],
+      "terms": [
+        "HtH",
+        "CCT",
+        "Dare-Death"
+      ],
+      "prompt": "Does this nationality, Deluxe rule or SSR permit or require HtH?",
+      "checks": [
+        "HtH is not a universal toggle. Deluxe/SSR ATTACKER permissions, Gurkha choice, Japanese automatic conditions and Dare-Death rules differ; respect Ambush, Pin and Withdrawal exceptions.",
+        "Use red Kill Numbers for eligible Personnel combat and retain HtH for the continuing Melee. Vehicle/PRC/pillbox attacks do not acquire HtH benefits.",
+        "Japanese/Gurkha qualifying HtH attacks receive their extra modifier. Mixed vehicle Locations still require separate eligible Personnel and vehicle procedures."
+      ],
+      "effect": "Show the enabling profile, whether optional or mandatory, and which attacks it affects.",
+      "example": "Japanese eligible attacking Infantry may require HtH while an AFV in the same Location still uses its own procedure.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.21B",
+      "steps": [
+        "8.21B"
+      ]
+    },
+    {
+      "id": "capture",
+      "g": 7,
+      "title": "Declare capture instead of elimination",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A20.22-.221; A11.52",
+      "sourcePages": [
+        681,
+        74,
+        87
+      ],
+      "terms": [
+        "Prisoners",
+        "Partial Kill",
+        "No Quarter"
+      ],
+      "prompt": "Is capture legal for this attacker and target, and worth the changed modifier?",
+      "checks": [
+        "A non-vehicular, non-berserk attacker must predesignate capture against a permitted target; manned AFV and Motion/non-stopped vehicle restrictions apply.",
+        "Normal capture adds +1, replaced by -1 against Inexperienced Personnel. Mixed target classes can yield different results from the same roll.",
+        "Below the Kill Number captures all affected defenders; equality captures one defender-selected unit or a HS of a squad. No Quarter does not replace these rules with a generic execute option."
+      ],
+      "effect": "Keep attack mode and target-specific capture results in the declaration receipt.",
+      "example": "A Partial Kill capture lets the defender select the captured unit rather than using ordinary casualty Random Selection.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.21B",
+      "steps": [
+        "8.21B"
+      ]
+    },
+    {
+      "id": "vehicleAttack",
+      "g": 7,
+      "title": "Build a Personnel attack against a vehicle",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.5-.51; A11.61",
+      "sourcePages": [
+        681,
+        74,
+        75
+      ],
+      "terms": [
+        "CCV",
+        "AFV",
+        "Personnel Escort"
+      ],
+      "prompt": "Which unit and optional SMC make this vehicle attack?",
+      "checks": [
+        "Use CCV: squad 5, crew 4, HS 3, SMC 2, with applicable Assault Engineer, Inexperienced and halving penalties.",
+        "At most two units combine, one a SMC adding one to the other unit’s CCV. Do not sum several squads or mix Personnel and vehicle targets in one attack.",
+        "Evaluate current escort, Motion/non-stopped, armor/exposure, immobility and manned functioning MG modifiers at this attack, plus valid leadership/hero/Ambush/Street Fighting effects."
+      ],
+      "effect": "Display the vehicle attack’s CCV and modifiers separately from Personnel odds.",
+      "example": "Eliminating an escort in an earlier sequential attack can improve the next attack on the tank.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.21B",
+      "steps": [
+        "8.21B"
+      ]
+    },
+    {
+      "id": "vehicleFire",
+      "g": 7,
+      "title": "Allocate eligible vehicle CC weapons",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.62; D1.82",
+      "sourcePages": [
+        681,
+        76
+      ],
+      "terms": [
+        "AAMG",
+        "CMG",
+        "RMG",
+        "IFE",
+        "CCV"
+      ],
+      "prompt": "Which functioning armament can attack, separately or together?",
+      "checks": [
+        "Check eligible AAMG, unrestricted CMG, RMG, turreted MA IFE ≤15mm and allowed halftrack passenger fire. A BMG is not a CC weapon.",
+        "Vehicle FP forms CCT odds against Personnel CCV, using black Kill Numbers. Apply cumulative halving and Shock/Stun limits; no ROF or Intensive Fire sequence is created.",
+        "Weapons may combine or make separate legal attacks. Track each used weapon and target exceptions instead of spending one generic vehicle attack."
+      ],
+      "effect": "Show available weapon allocations with their own consumed status.",
+      "example": "A tank can use its sN separately and still have an eligible CMG attack later in the sequence.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.21B",
+      "steps": [
+        "8.21B"
+      ]
+    },
+    {
+      "id": "prc",
+      "g": 7,
+      "title": "Handle Riders, Passengers and vehicle capture targets",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.52; A11.611; A11.71",
+      "sourcePages": [
+        681,
+        74,
+        75,
+        76
+      ],
+      "terms": [
+        "PRC",
+        "CCV",
+        "Prisoners"
+      ],
+      "prompt": "Can these occupants be attacked separately or only with their vehicle?",
+      "checks": [
+        "Riders may be attacked separately with their own attack/defense modifiers. Other PRC normally share vehicle destruction, with no survival roll in CC.",
+        "For capturing an eligible stationary unarmored vehicle, all other enemy Personnel must be eliminated/captured and its Passengers captured through the special Personnel CC procedure.",
+        "Apply passenger attack/defense and capture modifiers; do not offer capture of a manned AFV or Motion/non-stopped vehicle."
+      ],
+      "effect": "Separate Rider targets, special Passenger capture and vehicle-wide consequences.",
+      "example": "Destroying an AFV in CC eliminates its PRC without a crew-survival choice.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.21B",
+      "steps": [
+        "8.21B"
+      ]
+    },
+    {
+      "id": "closeDefense",
+      "g": 7,
+      "title": "Consider the separate sN close-defense attack",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.622; D13.34",
+      "sourcePages": [
+        681,
+        76,
+        212
+      ],
+      "terms": [
+        "sN",
+        "IFT",
+        "BU"
+      ],
+      "prompt": "Is this equipped AFV eligible to use its close-defense projector now?",
+      "checks": [
+        "Require the correct equipment/date and BU status. Normally the AFV or escort must already have been attacked this CCPh; a qualifying ambusher has an exception.",
+        "Use a separate 16-FP IFT attack on every unarmored unit in the Location, including friendly units and vulnerable PRC. Never combine it with MG FP.",
+        "Apply its Original-DR Usage Number test and special CC modifiers, without ordinary TEM/SMOKE. Do not add the usual BU smoke-dispenser usage penalty to this HE attack."
+      ],
+      "effect": "Preview friendly exposure and the exact eligibility trigger before commitment.",
+      "example": "A tank can hurt its own escort with sN, so the choice belongs beside the target consequences.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.21B",
+      "steps": [
+        "8.21B"
+      ]
+    },
+    {
+      "id": "terrainCombat",
+      "g": 7,
+      "title": "Apply pillbox, sewer, cave and obstacle exceptions",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "B30.6-.7; B8.44; G11.87; B26.31; G9.5-.56",
+      "sourcePages": [
+        681,
+        117,
+        145,
+        151,
+        287,
+        290,
+        301
+      ],
+      "terms": [
+        "Pillbox",
+        "Melee",
+        "Wire",
+        "Panji"
+      ],
+      "prompt": "Does the terrain change attack eligibility, modifiers or continuing Melee?",
+      "checks": [
+        "Pillbox CC crosses its separate Location boundary only under B30.6; friendly outside units can block it, vehicle/PRC versus occupants is barred, and HtH/Melee do not result.",
+        "Sewer concealment prevents ordinary Melee lock. Units inside a cave cannot conduct CC with units outside it.",
+        "Apply above-Wire, Panji and bank status consequences to their actual subjects. Do not reintroduce general terrain TEM into CC."
+      ],
+      "effect": "Explain terrain-specific targeting and post-combat status.",
+      "example": "Pillbox occupants and outside Infantry may fight yet remain outside ordinary Melee afterward.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.21B",
+      "steps": [
+        "8.21B"
+      ]
+    },
+    {
+      "id": "mountedWater",
+      "g": 7,
+      "title": "Apply mounted and water-combat profiles",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A13.7; A11.71; E4.5; E5.6; E6.2; G13.495",
+      "sourcePages": [
+        681,
+        76,
+        82,
+        232,
+        234,
+        235,
+        312
+      ],
+      "terms": [
+        "CC",
+        "PRC",
+        "Skis"
+      ],
+      "prompt": "Are these combatants mounted, swimming or in an Ocean Location?",
+      "checks": [
+        "Apply the appropriate Cavalry/cyclist/skier/boat-Passenger modifiers and Melee exemptions. Mounted status is not erased at combat start.",
+        "In allowed Water Obstacles boat Passengers fight, but the boat is not a separate CC target; it is destroyed with all its Passengers or captured by capturing them.",
+        "Swimmers have their unarmed Personnel factor and no CCV. CC is not allowed in non-frozen Ocean Locations; do not generalize river combat to surf."
+      ],
+      "effect": "Select the actual transport/terrain profile before offering attack arithmetic.",
+      "example": "Boat passengers in a river can fight, while non-frozen Ocean occupants cannot use the same attack.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.21B",
+      "steps": [
+        "8.21B"
+      ]
+    },
+    {
+      "id": "goliath",
+      "g": 7,
+      "title": "Keep a Goliath’s special detonation option",
+      "who": "Controller",
+      "kind": "Equipment exception",
+      "refs": "Chapter H German Vehicle Note 93",
+      "sourcePages": [
+        681,
+        348
+      ],
+      "terms": [
+        "Sequential CC",
+        "DC"
+      ],
+      "prompt": "Does an eligible controller have a legal detonation opportunity?",
+      "checks": [
+        "A Goliath has sequential CC and can attack in its sequential window by controller detonation. Apply its own control, target and explosion rules.",
+        "It cannot be captured in CC. Do not treat the general ban on ordinary SW use as eliminating this explicit equipment exception."
+      ],
+      "effect": "Expose a pending equipment-specific option when the scenario includes the device.",
+      "example": "A surviving Goliath can detonate at its turn in the sequence if its controller remains eligible.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.21B",
+      "steps": [
+        "8.21B"
+      ]
+    },
+    {
+      "id": "atmm",
+      "g": 8,
+      "title": "Attempt a German ATMM check",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "C13.7-.74",
+      "sourcePages": [
+        681,
+        185
+      ],
+      "terms": [
+        "ATMM",
+        "CCV",
+        "CX"
+      ],
+      "prompt": "Would the ATMM chance justify the risk of pinning the attacker?",
+      "checks": [
+        "For eligible 1944-45 German Infantry, declare the vehicle attack before the availability dr. Exclude pinned/broken units and wagon/motorcycle targets.",
+        "Success supplies -3 to that attack; apply HS/crew +1, SMC +2, CX +1 and non-armored-target +1. Leadership/heroism does not modify the check.",
+        "Original 6 pins even a berserk unit and changes CCV. Only one combined participant attempts the check; Original attack DR 12 negates the ATMM modifier."
+      ],
+      "effect": "Show the success benefit and check-failure consequence without allowing post-check retargeting.",
+      "example": "The squad fails its ATMM check with Original 6 and must resolve its declared attack with the new Pin penalty.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.22B",
+      "steps": [
+        "8.22B"
+      ]
+    },
+    {
+      "id": "heroAtmm",
+      "g": 8,
+      "title": "Use the T-H Hero’s distinct ATMM procedure",
+      "who": "Japanese player",
+      "kind": "Combat decision",
+      "refs": "G1.4231; C13.73",
+      "sourcePages": [
+        681,
+        279
+      ],
+      "terms": [
+        "T-H Hero",
+        "ATMM",
+        "CCV"
+      ],
+      "prompt": "Does this unpinned hero attempt its special ATMM check?",
+      "checks": [
+        "Final dr ≤3 succeeds, with only the pre-1944 +1 drm; Original 6 does not Pin this hero. Other Japanese units cannot use this permission.",
+        "If paired, the hero adds one FP/CCV to its partner and may contribute its ATMM modifier under the combined-attack rule; its standalone CCV is five."
+      ],
+      "effect": "Use the hero-specific check rather than the German modifier list.",
+      "example": "A pre-1944 T-H Hero has a different availability modifier and avoids the German Original-6 Pin result.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.22B",
+      "steps": [
+        "8.22B"
+      ]
+    },
+    {
+      "id": "haraKiri",
+      "g": 9,
+      "title": "Offer eligible Hara-Kiri before a capture attempt resolves",
+      "who": "Japanese player",
+      "kind": "Combat decision",
+      "refs": "G1.641",
+      "sourcePages": [
+        681,
+        281
+      ],
+      "terms": [
+        "Hara-Kiri",
+        "NTC",
+        "SMC"
+      ],
+      "prompt": "Does the Japanese defender choose this immediate response?",
+      "checks": [
+        "Offer immediately before a CC Capture attempt resolves, even after declaring its own attack, but not after it has already made that attack.",
+        "Berserk/heroic units may eliminate themselves automatically; otherwise resolve the NTC with the specified Inexperienced/Unarmed and paired-SMC modifiers. Best SMC acts first.",
+        "Failure forfeits that unit’s CC attack and benefits the capture attempt by the specified extra -1. Apply the appropriate VP and casualty-tally consequences on success."
+      ],
+      "effect": "Switch decision ownership to the affected Japanese player at the exact response window.",
+      "example": "A failed attempt can both cancel the defender’s attack and make its capture easier.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.23B",
+      "steps": [
+        "8.23B"
+      ]
+    },
+    {
+      "id": "resolve",
+      "g": 10,
+      "title": "Resolve the committed attack and target-specific results",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.11-.12; A20.22",
+      "sourcePages": [
+        681,
+        72,
+        73,
+        87
+      ],
+      "terms": [
+        "CCT",
+        "Partial Kill",
+        "DR"
+      ],
+      "prompt": "Which declared strength and modifier set applies to this roll?",
+      "checks": [
+        "Ordinary Personnel CC below the Kill Number eliminates; equality causes Casualty Reduction through Random Selection, including ties; above normally has no effect.",
+        "Keep capture equality’s defender choice separate. Preserve Original, Final and colored-die values for special triggers.",
+        "In simultaneous CC keep already-declared attacks despite casualties. In sequential CC apply changes before offering the next declaration."
+      ],
+      "effect": "Render a result receipt that explains each target outcome and remaining obligations.",
+      "example": "One mixed attack can affect withdrawing and standing defenders differently.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "vehicleResult",
+      "g": 10,
+      "title": "Resolve vehicle destruction, burning or immobilization",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.5; A11.611",
+      "sourcePages": [
+        681,
+        74,
+        75
+      ],
+      "terms": [
+        "CCV",
+        "PRC"
+      ],
+      "prompt": "What does the Final vehicle-attack DR do?",
+      "checks": [
+        "Below CCV eliminates the vehicle; at or below half CCV makes a burning wreck; equality immobilizes it.",
+        "Vehicle destruction eliminates PRC without a crew-survival roll. Apply immobilization and burning consequences before subsequent attacks.",
+        "Do not use the Personnel Partial Kill rule or its Random Selection for this result."
+      ],
+      "effect": "Show the vehicle result independently of Personnel odds.",
+      "example": "An initial immobilization improves the conditions for a later attack against the same vehicle.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "unlikelyKill",
+      "g": 10,
+      "title": "Offer the Original-2 Unlikely Kill follow-up",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.501",
+      "sourcePages": [
+        681,
+        74,
+        85
+      ],
+      "terms": [
+        "CCV",
+        "dr"
+      ],
+      "prompt": "Does this Original 2 give a further vehicle-result chance?",
+      "checks": [
+        "The attacker may roll the subsequent die: 1 burns, 2 eliminates, 3 immobilizes, otherwise no additional effect.",
+        "Retain any elimination/immobilization already earned by the Original attack; the follow-up cannot worsen that result, but can improve it.",
+        "Resolve the associated Infiltration and eligible Field Promotion consequences in their proper order rather than treating the extra die as the whole result."
+      ],
+      "effect": "Show the existing guaranteed result before offering the optional improving die.",
+      "example": "An attack that already immobilized the tank keeps that result even if the extra die has no effect.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "crewSmallArms",
+      "g": 10,
+      "title": "Apply Original-12 crew small arms and ATMM consequences",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.621; C13.74",
+      "sourcePages": [
+        681,
+        76,
+        85,
+        185
+      ],
+      "terms": [
+        "DR",
+        "ATMM",
+        "Wound"
+      ],
+      "prompt": "Does this failed vehicle attack also harm the attackers?",
+      "checks": [
+        "Original 12 against a non-Abandoned crewed vehicle that is neither Shocked nor Stunned causes Casualty Reduction to its attackers.",
+        "Resolve the ATMM malfunction rule and each eligible casualty/wound procedure. Do not treat a high Final DR alone as the Original-12 trigger."
+      ],
+      "effect": "Keep self-inflicted consequences visible even when the vehicle was not harmed.",
+      "example": "A squad’s Original 12 can reduce it despite doing nothing to the tank.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "infiltration",
+      "g": 10,
+      "title": "Offer immediate Infiltration withdrawal",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.22",
+      "sourcePages": [
+        681,
+        73
+      ],
+      "terms": [
+        "Infiltration",
+        "Withdrawal",
+        "DR"
+      ],
+      "prompt": "Does this Original 2 or 12 open an immediate escape?",
+      "checks": [
+        "An eligible Infantry/Cavalry attacker rolling Original 2 may withdraw immediately after its attack; eligible targets of Original 12 may likewise withdraw after that attack.",
+        "Respect already eliminated/captured/pinned status and the restrictions of the relevant unit profile. Do not allow the choice to be saved until its own attack or later results.",
+        "Resolve the Accessible destination, portage and movement consequences through the proper Withdrawal rules."
+      ],
+      "effect": "Pause combat for the entitled player’s use-or-decline decision.",
+      "example": "A target of Original 12 cannot make its pending attack and then claim the earlier Infiltration escape.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "promotion",
+      "g": 10,
+      "title": "Resolve a possible CC Field Promotion",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A18.12-.2",
+      "sourcePages": [
+        681,
+        85
+      ],
+      "terms": [
+        "SMC",
+        "MMC",
+        "DRM"
+      ],
+      "prompt": "Did an attacking MMC roll Original 2?",
+      "checks": [
+        "Use the Leader Creation table, nationality/status and attack conditions, including applicable CC-versus-AFV modifier. Apply national exceptions rather than creating a leader universally.",
+        "A created leader cannot be refused. Unless Infiltration removed the units, recompute both attacks with their original rolls, new FP/leadership and required defending association.",
+        "Do not reroll attacks or omit the creation opportunity merely because the target was a vehicle."
+      ],
+      "effect": "Link the creation result to any required recalculation of already displayed combat.",
+      "example": "A newly created leader can change an attack result without changing the dice already rolled.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "equipmentLoss",
+      "g": 10,
+      "title": "Resolve eliminated possessors’ SW and Gun fate",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.13; A20.24",
+      "sourcePages": [
+        681,
+        72,
+        87
+      ],
+      "terms": [
+        "SW",
+        "dr",
+        "CCT"
+      ],
+      "prompt": "Which equipment survives the loss of its possessor?",
+      "checks": [
+        "When the Original colored CC die is 1, check each SW/Gun of an eliminated possessor with the subsequent dr against the black Kill Number.",
+        "Other equipment remains unpossessed; captured units first abandon SW. Do not automatically assign a captured weapon to the victor or use red HtH numbers for the destruction check."
+      ],
+      "effect": "Keep equipment-loss rolls separate from casualty and capture results.",
+      "example": "Winning HtH does not automatically destroy the defeated squad’s MG.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "captureValidity",
+      "g": 10,
+      "title": "Reconcile simultaneous captures after both sides resolve",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A20.221",
+      "sourcePages": [
+        681,
+        87
+      ],
+      "terms": [
+        "Simultaneous CC",
+        "Prisoners",
+        "Melee"
+      ],
+      "prompt": "Did the capturing force survive to keep its prisoners?",
+      "checks": [
+        "If a side is completely eliminated/captured in simultaneous CC, its captures in that Location during the phase are ineffective.",
+        "Apply the special mutual-elimination/capture rule for remaining unarmed prisoners, rearming and any newly opposing armed units in Melee.",
+        "Do not finalize prisoner ownership, VP or freedom after only the first side’s roll."
+      ],
+      "effect": "Mark captures provisional until the simultaneous exchange is settled.",
+      "example": "A squad apparently captures its opponent, but its own simultaneous elimination can undo that capture.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "guards",
+      "g": 10,
+      "title": "Assign Guards and resolve escape or rearming",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A20.5-.55; A20.551",
+      "sourcePages": [
+        681,
+        87,
+        88
+      ],
+      "terms": [
+        "Guard",
+        "Prisoners",
+        "Melee"
+      ],
+      "prompt": "Who guards surviving prisoners, and which escaped units become armed?",
+      "checks": [
+        "Assign a legal Guard and capacity, including replacement when a Guard is eliminated. An unbroken Guard squad may use its automatic Deployment permission.",
+        "Guard attack FP versus non-prisoners is halved, not its defense. A CC attack on a Guard does not also attack its prisoners.",
+        "Escaping requires the specified absence of enemies or successful Withdrawal/Infiltration. Apply rearming by eliminated/captured armed enemy and the escaped-SMC rule; no free Scrounging action occurs here."
+      ],
+      "effect": "Track Guard identity, capacity, escape, rearming and VP as distinct consequences.",
+      "example": "Eliminating a broken Guard may leave prisoners in Melee with another enemy unit rather than free to leave.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "withdrawArrival",
+      "g": 10,
+      "title": "Resolve successful Withdrawal and hidden-enemy entry",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.2-.22; A11.41",
+      "sourcePages": [
+        681,
+        73,
+        74,
+        148
+      ],
+      "terms": [
+        "Withdrawal",
+        "Accessible",
+        "HIP"
+      ],
+      "prompt": "Did the withdrawing subject survive and reach a legal endpoint?",
+      "checks": [
+        "For ordinary Melee Withdrawal, elimination, reduction or capture prevents successful departure. Use the particular exception for Ambush or Infiltration rather than applying all ordinary attack penalties.",
+        "Apply ≤IPC, normal advance accessibility, difficult terrain and Known-enemy exclusion. A real concealed enemy destination causes elimination and the prescribed reveal.",
+        "Record arrival and concealment effects only after origin hazards permit departure; never pre-disclose hidden occupants through route validation."
+      ],
+      "effect": "Use a movement receipt tied to the actual withdrawal type.",
+      "example": "A secretly occupied escape destination can eliminate the withdrawing unit despite a successful combat escape.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "streetReturn",
+      "g": 10,
+      "title": "Resolve the Street Fighting return choice",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.8",
+      "sourcePages": [
+        681,
+        76
+      ],
+      "terms": [
+        "Street Fighting",
+        "Withdrawal",
+        "Wire"
+      ],
+      "prompt": "Return to the origin building or remain in the road?",
+      "checks": [
+        "Offer the return tied to eligible Street Fighting provenance after the applicable CC attack; do not treat it as ordinary Melee Withdrawal.",
+        "Broken, pinned or above-Wire subjects cannot return. Resolve mines/FFE normally on the return and preserve the resulting encounter state."
+      ],
+      "effect": "Show the actual original Location and its movement consequences.",
+      "example": "A Street Fighter can choose to stay beside the vehicle rather than return, if otherwise eligible.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "withdrawHazards",
+      "g": 10,
+      "title": "Resolve FFE and mines against withdrawing subjects",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "C1.51-.53; C1.71-.72; C1.9; E12.5; G14.65-.661; B28.41-.412",
+      "sourcePages": [
+        681,
+        148,
+        165,
+        166,
+        167,
+        247,
+        316,
+        317
+      ],
+      "terms": [
+        "FFE",
+        "WP",
+        "Withdrawal"
+      ],
+      "prompt": "Which attacks occur on this departure or entry?",
+      "checks": [
+        "Resolve each applicable existing FFE/mine attack against the withdrawing unit/stack only. Stationary occupants are not attacked again because someone moves.",
+        "Exit mines resolve in the origin; a disabling result can prevent arrival and destination discovery. Apply entry mines only after successful exit.",
+        "Keep Harassing Fire, Barrage, Rocket, naval and terrain exceptions available. No new artillery mission action or ordinary defensive-fire window is created."
+      ],
+      "effect": "Interleave hazards with each withdrawal rather than batch them after combat closes.",
+      "example": "A unit survives CC but is stopped by an exit mine attack before reaching its intended cover.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "withdrawSpecial",
+      "g": 10,
+      "title": "Check Panji, trip flares and Column Disbandment",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "G9.41-.45; E1.95; E11.532-.534",
+      "sourcePages": [
+        681,
+        227,
+        246,
+        289
+      ],
+      "terms": [
+        "Panji",
+        "Trip Flare",
+        "Column"
+      ],
+      "prompt": "Does this actual movement or attack trigger a special effect?",
+      "checks": [
+        "Apply Panji crossing and stack rules with their listed exemptions; do not assume every withdrawal is exempt simply because normal advance can be.",
+        "Resolve trip-flare activation at the triggering event. A flare activated in CCPh survives until the next Player Turn’s AFPh.",
+        "Check Column Disbandment after relevant attacks/movement using E11.532 and the special E11.533 proximity rule; ASOP’s reference to .533 does not replace the general trigger."
+      ],
+      "effect": "Attach the special event and its future expiry to the movement receipt.",
+      "example": "A successful withdrawal sets off a flare that must remain after this turn’s night cleanup.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "berserk",
+      "g": 10,
+      "title": "Restore eligible berserk units after eliminating their enemies",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A15.46",
+      "sourcePages": [
+        681,
+        84,
+        322
+      ],
+      "terms": [
+        "Good Order",
+        "CC"
+      ],
+      "prompt": "Has this berserk unit eliminated all Known enemy units here, including at least one?",
+      "checks": [
+        "Apply the stated elimination condition and restore Good Order when required; mere absence of an enemy at the start does not establish the trigger.",
+        "Keep Dare-Death voluntary-berserk recovery and T-H Hero removal separate. Recompute subsequent legal actions and closing Melee using the resulting state."
+      ],
+      "effect": "Explain why berserk status ends or remains before the Location closes.",
+      "example": "A berserk unit that eliminates its last Known opponent can return to normal before the next Location is selected.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "nextAttack",
+      "g": 10,
+      "title": "Continue the sequential loop or finish the exchange",
+      "who": "BOTH",
+      "kind": "Sequence continuation",
+      "refs": "A11.3-.34; ASOP 8.24B",
+      "sourcePages": [
+        681,
+        73,
+        74,
+        76
+      ],
+      "terms": [
+        "Sequential CC",
+        "Declaration receipt"
+      ],
+      "prompt": "Does an entitled side still have an unused legal attack?",
+      "checks": [
+        "Complete casualties, capture responses, Infiltration and other immediate effects before reopening 8.21B for the next attack.",
+        "Recompute targets, escorts, weapon use and ownership of the next decision. Do not reset spent attacks or allow already eliminated units to act."
+      ],
+      "effect": "Show the next owner and remaining attacks rather than a generic Next button.",
+      "example": "After an escort is eliminated, the next attacker sees the tank’s revised protection.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.24B",
+      "steps": [
+        "8.24B"
+      ]
+    },
+    {
+      "id": "interrogation",
+      "g": 11,
+      "title": "Resolve Interrogation when the optional rule is in use",
+      "who": "Captor",
+      "kind": "Conditional procedure",
+      "refs": "E2.1-.3; G1.621; G18.71",
+      "sourcePages": [
+        681,
+        228,
+        280,
+        322
+      ],
+      "terms": [
+        "Interrogation",
+        "Prisoners",
+        "HIP"
+      ],
+      "prompt": "Is this a new eligible prisoner under the active rules profile?",
+      "checks": [
+        "When E2 is in use, apply the immediate one-DR-per-prisoner procedure; a failed or unusable result does not permit another roll for that prisoner.",
+        "Apply prisoner/Guard and nationality/scenario modifiers, including Japanese 1944-45 and Chinese allegiance provisions.",
+        "Apply only the required disclosure, valid fallback result and prisoner-side tie choice. Do not reveal hidden positions to both clients while calculating privately."
+      ],
+      "effect": "Record the prisoner’s interrogated status and the authorized information change.",
+      "example": "A prisoner with no usable first result cannot be interrogated again after the next attack.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.25B",
+      "steps": [
+        "8.25B"
+      ]
+    },
+    {
+      "id": "automaticCapture",
+      "g": 12,
+      "title": "Capture eligible unescorted abandoned vehicles",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A21.2-.22; A11.52",
+      "sourcePages": [
+        681,
+        74,
+        88
+      ],
+      "terms": [
+        "AFV",
+        "SMC",
+        "MMC"
+      ],
+      "prompt": "Is automatic capture now allowed after this Location’s combat?",
+      "checks": [
+        "If the conditions are met, assign the capturing Infantry and vehicle ownership at Location close. No extra Ambush roll is made against an abandoned vehicle alone.",
+        "Apply temporary driver/crew consequences, including a squad’s exchange for a HS and SMC restrictions; do not hand out a fully qualified free crew.",
+        "Preserve captured-use, movement and VP requirements for later phases. Current coverage includes capture foundations, but remaining detailed consequences stay labeled."
+      ],
+      "effect": "Show who becomes the crew and which Infantry remains outside.",
+      "example": "Capturing an armed vehicle consumes the proper capturing manpower rather than duplicating it.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.31B",
+      "steps": [
+        "8.31B"
+      ]
+    },
+    {
+      "id": "melee",
+      "g": 12,
+      "title": "Determine Melee per surviving unit",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "A11.15; A11.7-.71; B30.6; B8.44",
+      "sourcePages": [
+        681,
+        72,
+        76,
+        117,
+        151
+      ],
+      "terms": [
+        "Melee",
+        "PRC",
+        "CC"
+      ],
+      "prompt": "Who is actually held, who holds the enemy, and who remains free?",
+      "checks": [
+        "Retained concealment neither holds nor is held in Melee. Vehicles are never held, but qualifying non-Abandoned unbroken Stopped vehicles can hold Known enemy Infantry.",
+        "Apply mobile/immobile PRC, Cavalry/cyclist/skier, sewer and pillbox exceptions. Do not mark every surviving counter identically.",
+        "Flip/remove CC or retain/remove Melee as appropriate; carry future movement/fire restrictions to the next turn."
+      ],
+      "effect": "Record a per-unit hold reason rather than one blanket Location flag.",
+      "example": "A stopped tank holds enemy Infantry even though the tank itself is free to move in its next MPh.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.31B",
+      "steps": [
+        "8.31B"
+      ]
+    },
+    {
+      "id": "dareDeath",
+      "g": 12,
+      "title": "End voluntary Dare-Death berserk status when permitted",
+      "who": "Chinese player",
+      "kind": "Required status",
+      "refs": "G18.6-.62",
+      "sourcePages": [
+        681,
+        322
+      ],
+      "terms": [
+        "Dare-Death",
+        "Melee"
+      ],
+      "prompt": "Does this voluntarily berserk unit remain in Melee?",
+      "checks": [
+        "Voluntarily berserk Dare-Death participants return to normal at turn end unless still in Melee; preserve provenance rather than treating every berserk result alike.",
+        "Retain applicable Dare-Death CC attributes even when no longer berserk. Resolve ordinary A15.46 recovery separately."
+      ],
+      "effect": "Show the rule and state that preserve or remove this specific berserk marker.",
+      "example": "A voluntary Dare-Death unit outside Melee recovers, while one still held remains berserk.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.31B",
+      "steps": [
+        "8.31B"
+      ]
+    },
+    {
+      "id": "heroRemoval",
+      "g": 12,
+      "title": "Remove spent Tank-Hunter Heroes at their rule window",
+      "who": "Japanese player",
+      "kind": "Required expiry",
+      "refs": "G1.425",
+      "sourcePages": [
+        681,
+        280
+      ],
+      "terms": [
+        "T-H Hero",
+        "CC"
+      ],
+      "prompt": "Has the hero completed its permitted CC attack?",
+      "checks": [
+        "Remove a non-hidden T-H Hero immediately after its CC attack against its Designated Target. If it makes no such attack, remove it at the end of its creation/HIP-loss Player Turn unless held in Melee; then remove it when freed. Earlier loss of the Designated Target eliminates it immediately.",
+        "Preserve related DC/equipment and VP rules. Do not use the general Melee-survivor routine to keep it in play."
+      ],
+      "effect": "Carry the hero-specific expiry through the attack and Location closing record.",
+      "example": "A surviving T-H Hero attack does not imply the hero remains for another turn.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Immediately after its Designated-Target attack; otherwise G1.425 turn-end/Melee continuation",
+      "steps": [
+        "8.24B",
+        "8.31B"
+      ]
+    },
+    {
+      "id": "dogfight",
+      "g": 13,
+      "title": "Declare Dogfight groups and initial targets",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "E7.22-.221",
+      "sourcePages": [
+        681,
+        236
+      ],
+      "terms": [
+        "Dogfight",
+        "FB",
+        "Aerial Melee"
+      ],
+      "prompt": "Which eligible aircraft enter combat, and what is each first target?",
+      "checks": [
+        "Only an undamaged FB voluntarily initiates Aerial Combat. Form the allowed aircraft groups and account for existing Aerial Melee.",
+        "Predesignate every aircraft’s initial target, ATTACKER first, before results. Despite sequential resolution, an aircraft cannot wait to pick its initial target.",
+        "Resolve all ATTACKER attacks, including retained ROF, before surviving DEFENDER return attacks."
+      ],
+      "effect": "Use a distinct aerial declaration receipt rather than the ground CC alternation rule.",
+      "example": "A second fighter cannot change its declared first target because the first fighter destroyed another plane.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.41B",
+      "steps": [
+        "8.41B"
+      ]
+    },
+    {
+      "id": "aerialResults",
+      "g": 13,
+      "title": "Resolve aerial attacks, damage and retained ROF",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "E7.221-.223; E7.226",
+      "sourcePages": [
+        681,
+        236
+      ],
+      "terms": [
+        "Dogfight",
+        "ROF",
+        "DR"
+      ],
+      "prompt": "What does this attack do, and may the FB attack again?",
+      "checks": [
+        "Apply the aerial modifiers and table: Final DR ≤4 eliminates; 5 Damages. A second Damage eliminates; surviving damaged aircraft face Recall/Aerial Melee rules.",
+        "FB ROF is 1 with bombs or 2 without. A retained-ROF follow-up may choose another target in its Dogfight, after its required initial attack.",
+        "Original 12 disables MG; Original 11 by a FB attacking a Stuka invokes its special rear-gunner result. Do not use ground CC Infiltration or Field Promotion."
+      ],
+      "effect": "Display aircraft-specific outcomes and remaining ROF before return fire.",
+      "example": "A fighter retains ROF and can select another plane after resolving its declared initial target.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.41B",
+      "steps": [
+        "8.41B"
+      ]
+    },
+    {
+      "id": "aerialClose",
+      "g": 13,
+      "title": "Choose Recall and determine continuing Aerial Melee",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "E7.22-.226; E7.24",
+      "sourcePages": [
+        681,
+        236
+      ],
+      "terms": [
+        "Aerial Melee",
+        "Dogfight"
+      ],
+      "prompt": "Which aircraft must leave, may leave, or remain held?",
+      "checks": [
+        "A Final attack DR ≥10 gives its target an end-CCPh Recall option. Damaged or MG-disabled aircraft have their own Recall and enemy-FB constraints.",
+        "Continuing Aerial Melee requires a qualifying undamaged FB with functioning MG wishing to hold opponents. Ordinary Infantry Withdrawal rules do not apply.",
+        "Bomb jettison is a separate own-MPh option, not a late CCPh way to alter already declared attacks."
+      ],
+      "effect": "Resolve each aircraft’s exit decision and next-turn hold status.",
+      "example": "A damaged bomber may be held in Aerial Melee rather than automatically disappearing at once.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.41B",
+      "steps": [
+        "8.41B"
+      ]
+    },
+    {
+      "id": "clearance",
+      "g": 14,
+      "title": "Validate pending non-Flame Clearance tasks",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "B24.7; B24.8",
+      "sourcePages": [
+        681,
+        142,
+        143
+      ],
+      "terms": [
+        "Clearance",
+        "TI",
+        "Labor"
+      ],
+      "prompt": "Which earlier declarations remain eligible to resolve now?",
+      "checks": [
+        "Use the carried declaration, target and participants from the proper MPh/DFPh window. Pin or loss of Good Order can end participation.",
+        "Combine attempts against the same item in the same phase as required; apply task-specific leadership, Sapper, Hero, dozer and Labor modifiers.",
+        "Do not offer a fresh uncommitted task or resolve Flame Clearance here. Resolve tasks before ordinary TI/Pin cleanup."
+      ],
+      "effect": "Make the declaration’s history and current eligibility visible.",
+      "example": "A pinned clearing squad cannot regain eligibility by clearing Pin early.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.42B",
+      "steps": [
+        "8.42B"
+      ]
+    },
+    {
+      "id": "rubble",
+      "g": 14,
+      "title": "Complete rubble or roadblock Clearance",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "B24.71; B24.76; B29.5",
+      "sourcePages": [
+        681,
+        142,
+        150
+      ],
+      "terms": [
+        "Clearance",
+        "TB"
+      ],
+      "prompt": "Which terrain change does a successful task create?",
+      "checks": [
+        "Rubble Clearance in a qualifying non-building hex places a TB through chosen hexsides, preserving terrain LOS/TEM until complete removal conditions are met.",
+        "Roadblock Clearance removes the specified obstacle; use the correct earlier declaration and eligible Infantry/dozer path rather than treating both tasks as identical."
+      ],
+      "effect": "Preview the affected hexsides and exact surviving terrain.",
+      "example": "A cleared rubble lane lowers entry cost along its TB without instantly removing all rubble TEM.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.42B",
+      "steps": [
+        "8.42B"
+      ]
+    },
+    {
+      "id": "wireSetDc",
+      "g": 14,
+      "title": "Complete Wire or Set DC Clearance",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "B24.73; B24.75",
+      "sourcePages": [
+        681,
+        142
+      ],
+      "terms": [
+        "Clearance",
+        "Wire",
+        "DC"
+      ],
+      "prompt": "Did the qualified clearing party retain the required position and status?",
+      "checks": [
+        "Wire removal requires the prescribed below-Wire position and prior task commitment. Being above Wire is not enough.",
+        "Set DC removal has its own same-Location declaration and eligibility. Resolve the Clearance result; do not detonate or Recover the device as a substitute."
+      ],
+      "effect": "Keep target identity and above/below status in the task record.",
+      "example": "A squad below Wire can finish its declared removal while a squad above it cannot assist as though colocated.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.42B",
+      "steps": [
+        "8.42B"
+      ]
+    },
+    {
+      "id": "mineClearance",
+      "g": 14,
+      "title": "Resolve Infantry minefield lanes and mishaps",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "B24.74; B28.6; B28.8",
+      "sourcePages": [
+        681,
+        142,
+        148,
+        149
+      ],
+      "terms": [
+        "Clearance",
+        "TB",
+        "DR"
+      ],
+      "prompt": "Does the task establish a safe lane, or cause casualties?",
+      "checks": [
+        "Resolve the committed mine Clearance and any Sapper benefit. On success place the legal TB including a previously established partial TB hexside.",
+        "Original 12, or 11-12 for Inexperienced clearers, causes the specified Casualty Reduction. Preserve the partial lane’s user/exit limitations until a full result exists.",
+        "Only when every hexside is crossed by TB does full removal occur; a single success is not blanket minefield deletion."
+      ],
+      "effect": "Show lane geometry and casualty risk independently of the success total.",
+      "example": "A failed task can leave its entering unit a special exit without making that route safe for everyone.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.42B",
+      "steps": [
+        "8.42B"
+      ]
+    },
+    {
+      "id": "flail",
+      "g": 14,
+      "title": "Resolve a Flail Tank’s special mine Clearance",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "B28.7-.72",
+      "sourcePages": [
+        681,
+        149
+      ],
+      "terms": [
+        "Clearance",
+        "TB",
+        "DR"
+      ],
+      "prompt": "Did the Flail Tank complete the qualifying movement and remain eligible?",
+      "checks": [
+        "Require the proper entire-MPh commitment, no disqualifying fire/immobility/elimination and no friendly Infantry/Cavalry/vulnerable PRC in the minefield.",
+        "Use its special Final DR ≤10 and legal entry-hexside-to-current-VCA TB. Original 11 destroys the mechanism; Original 12 has the A-T/A-P-specific destruction or immobilization result."
+      ],
+      "effect": "Use a separate vehicle procedure rather than the Infantry ≤2 target.",
+      "example": "A tank can survive while losing its flail mechanism and future Clearance ability.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.42B",
+      "steps": [
+        "8.42B"
+      ]
+    },
+    {
+      "id": "ptoClearance",
+      "g": 14,
+      "title": "Complete jungle/bamboo paths or Panji Clearance",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "G2.7; G9.71",
+      "sourcePages": [
+        681,
+        282,
+        290
+      ],
+      "terms": [
+        "Clearance",
+        "Panji",
+        "Labor"
+      ],
+      "prompt": "Which path or Covered hexside was the declared target?",
+      "checks": [
+        "Path creation uses its restricted armed MMC eligibility and dedicated modifier list, including light jungle, bamboo and CX, not the generic extra-manpower benefits.",
+        "Panji Clearance changes a predesignated Covered hexside to non-Covered using Wire-like procedures. Units above Panji cannot attempt, direct or assist either task.",
+        "Preserve the chosen path hexsides and remaining obstacle state."
+      ],
+      "effect": "Show path creation and Panji hexside removal as distinct effects.",
+      "example": "A successful Panji task opens one predesignated hexside rather than deleting the entire counter.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.42B",
+      "steps": [
+        "8.42B"
+      ]
+    },
+    {
+      "id": "moduleClearance",
+      "g": 14,
+      "title": "Keep debris and dozer-specific task profiles available",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "O1.5; G15.2-.22; SSR",
+      "sourcePages": [
+        681,
+        318
+      ],
+      "terms": [
+        "Clearance",
+        "SSR"
+      ],
+      "prompt": "Does this scenario add a specialized pending task?",
+      "checks": [
+        "ASOP explicitly includes O1.5 Debris Clearance. Preserve it as a separate selectable profile with its source verification status; do not silently treat Debris as rubble.",
+        "Dozer terrain/fortification/cave tasks use their own prior commitments, mobility, Melee and result requirements. An unsupported profile must remain visible as pending.",
+        "Require the scenario/module source and task-specific result before a live execution is offered."
+      ],
+      "effect": "Keep named source gaps distinct from absent engine support.",
+      "example": "A Red Barricades debris task remains represented even when the current rules package cannot execute it.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.42B",
+      "steps": [
+        "8.42B"
+      ]
+    },
+    {
+      "id": "labor",
+      "g": 14,
+      "title": "Update Labor after an unsuccessful eligible task",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "B24.8",
+      "sourcePages": [
+        681,
+        143
+      ],
+      "terms": [
+        "Labor",
+        "Clearance"
+      ],
+      "prompt": "Does this failure establish or improve the task’s Labor status?",
+      "checks": [
+        "Apply the -1 then -2 progression to that same task; new participants can join a continuing task under the rule.",
+        "Remove Labor when the task succeeds or all relevant MMC are eliminated/leave. Do not carry the benefit to a different target or treat every phase without an attempt as a failure."
+      ],
+      "effect": "Attach Labor to the task and its surviving work party.",
+      "example": "A failed Wire task does not grant a bonus to clearing nearby mines.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.42B",
+      "steps": [
+        "8.42B"
+      ]
+    },
+    {
+      "id": "tunnels",
+      "g": 14,
+      "title": "Resolve destruction of Recovered tunnel entrances",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "B8.63; ASOP 8.42B",
+      "sourcePages": [
+        681,
+        118
+      ],
+      "terms": [
+        "Tunnel",
+        "Good Order"
+      ],
+      "prompt": "Which entrance has been lawfully discovered and can be destroyed?",
+      "checks": [
+        "Require the used-in-LOS and subsequent Recovery discovery history, eligible Good Order Infantry and no Known enemy in its Location.",
+        "The ASOP places Recovered-entrance elimination here; preserve B8.63’s eligibility and destruction permission. Do not reveal entrances merely because a Search happened nearby."
+      ],
+      "effect": "Show the discovered entrance and qualified destruction decision before removing it.",
+      "example": "An unrecovered secret tunnel is not deleted by a generic end-turn cleanup.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.42B",
+      "steps": [
+        "8.42B"
+      ]
+    },
+    {
+      "id": "pinTi",
+      "g": 15,
+      "title": "Remove Pin and ordinary TI after tasks resolve",
+      "who": "BOTH",
+      "kind": "Required cleanup",
+      "refs": "ASOP 8.43B; A4.8; B24.721; B25.15; E10.3; G10.11; G12.68",
+      "sourcePages": [
+        681,
+        52,
+        142,
+        143,
+        244,
+        291,
+        308
+      ],
+      "terms": [
+        "TI",
+        "Pack-TI"
+      ],
+      "prompt": "Which markers expire now, and which belong to continuing tasks?",
+      "checks": [
+        "Remove the appropriate Pin and ordinary TI markers only after combat and Clearance windows finish.",
+        "Do not remove Ammo Replenishment TI prematurely or Animal-Pack counters. Retain their multi-turn task history and later completion windows. Classify Pin markers by their cause: LC-Blaze Pin follows G12.68, and new/Hampered Flame markers carry terrain history rather than personnel status."
+      ],
+      "effect": "Use a rule-owned expiry list, not a blanket remove-all-status command.",
+      "example": "The clearing squad loses ordinary TI, but a Gun being Animal-Packed remains Pack-TI.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.43B",
+      "steps": [
+        "8.43B"
+      ]
+    },
+    {
+      "id": "stun",
+      "g": 15,
+      "title": "Convert Stun while preserving cumulative effects",
+      "who": "BOTH",
+      "kind": "Required cleanup",
+      "refs": "D5.34; G12.111; G14.33",
+      "sourcePages": [
+        681,
+        203,
+        302,
+        314
+      ],
+      "terms": [
+        "BU",
+        "PRC"
+      ],
+      "prompt": "Which Stun flips to a lasting penalty, and which uses a cumulative profile?",
+      "checks": [
+        "Flip ordinary Stun to its +1 side at the proper time; do not erase the penalty or equate this with a free CE change.",
+        "Apply LC and seaborne cumulative-Stun exceptions. Preserve Recall and crew consequences under the applicable vehicle profile."
+      ],
+      "effect": "Explain recovery of immediate capabilities separately from retained penalties.",
+      "example": "An AFV’s Stun expires as an immediate restriction while its +1 remains.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.43B",
+      "steps": [
+        "8.43B"
+      ]
+    },
+    {
+      "id": "ammo",
+      "g": 15,
+      "title": "Complete or continue Ammo Replenishment",
+      "who": "BOTH",
+      "kind": "Required task check",
+      "refs": "E10.3-.4",
+      "sourcePages": [
+        681,
+        244
+      ],
+      "terms": [
+        "TI",
+        "CE",
+        "DR"
+      ],
+      "prompt": "Has the required number of complete Game Turns been maintained?",
+      "checks": [
+        "Check qualifying locations, compatible ammunition, uninterrupted TI and CE, and the B#-dependent duration. Moving, firing, losing CE or being attacked in CC can interrupt the process.",
+        "On completion restore the allowed depleted ammunition and make the Ammo Vehicle’s exhaustion DR. Original 12 removes its supply role.",
+        "Retain incomplete-task TI and separate any Ammo Dump/transfer completion. Do not count an interrupted partial Game Turn as complete."
+      ],
+      "effect": "Show completed turns, interruption cause and the next required outcome.",
+      "example": "An attack in CC can interrupt resupply even if it causes no casualties.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.43B",
+      "steps": [
+        "8.43B"
+      ]
+    },
+    {
+      "id": "concealmentGain",
+      "g": 16,
+      "title": "Evaluate eligible ATTACKER concealment gain",
+      "who": "ATTACKER",
+      "kind": "Combat decision",
+      "refs": "A12.12-.122; A12.2; A12.32",
+      "sourcePages": [
+        681,
+        77,
+        78,
+        79
+      ],
+      "terms": [
+        "LOS",
+        "Good Order",
+        "HIP"
+      ],
+      "prompt": "Which units qualify now under the governing concealment table?",
+      "checks": [
+        "Use the unit category, Good Order status, Concealment Terrain, enemy LOS and range; the Concealment Table controls over generic prose.",
+        "Evaluate unbroken enemy observers, including the proper Dummy/vehicle distinctions. Apply the lawful disclosure rule if a hidden unit is used to deny concealment.",
+        "Only the appropriate ATTACKER units gain concealment here. Do not grant new HIP or regain Cloaking as an ordinary end-turn benefit."
+      ],
+      "effect": "Show authorized reasons for automatic gain, a required dr, or refusal without secret-state leakage.",
+      "example": "An eligible unit outside enemy LOS can gain concealment while a broken unit cannot.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.44A",
+      "steps": [
+        "8.44A"
+      ]
+    },
+    {
+      "id": "concealmentDr",
+      "g": 16,
+      "title": "Make each required concealment dr",
+      "who": "ATTACKER",
+      "kind": "Combat decision",
+      "refs": "A12.122",
+      "sourcePages": [
+        681,
+        77,
+        223,
+        280
+      ],
+      "terms": [
+        "dr",
+        "drm",
+        "SMC"
+      ],
+      "prompt": "Does this unit need a roll instead of automatic gain?",
+      "checks": [
+        "Use the two specified terrain/range/LOS cases. Roll separately for each qualifying unit, with success on Final dr ≤5.",
+        "Apply US#, valid leadership, Lax/Stealthy, terrain/Hindrance and Japanese modifiers. A stack does not share one all-or-nothing result.",
+        "Use the night automatic-gain exception when applicable rather than rolling unnecessarily."
+      ],
+      "effect": "Show per-unit outcomes and the source of each modifier.",
+      "example": "A squad can fail while its leader and Hero in the same stack qualify.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "ASOP 8.44A",
+      "steps": [
+        "8.44A"
+      ]
+    },
+    {
+      "id": "concealmentProfiles",
+      "g": 16,
+      "title": "Apply night, winter, desert and campaign concealment rules",
+      "who": "ATTACKER",
+      "kind": "Combat decision",
+      "refs": "E1.32; E3.712; F11.601; G1.63; ASOP 8.44A",
+      "sourcePages": [
+        681,
+        223,
+        230,
+        266,
+        280,
+        298
+      ],
+      "terms": [
+        "SSR",
+        "Cloaking",
+        "Source gap"
+      ],
+      "prompt": "Which special profile modifies ordinary concealment gain?",
+      "checks": [
+        "Night makes daylight dr cases automatic; winter camouflage, desert visibility and Japanese modifiers require their own applicable conditions.",
+        "Retain named ABtF CG12, BRT CG11, KGP CG11, PB CG10 and RB CG15 profiles from ASOP, with source gaps explicitly identified until those campaign rules are reconciled.",
+        "A cave’s entry-based HIP permission is not an end-CCPh HIP gain. Do not promise every module’s concealment behavior from the generic table."
+      ],
+      "effect": "Keep profile options available while distinguishing verified rules from missing scenario evidence.",
+      "example": "A campaign concealment exception remains selectable for study even before its module source is integrated.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.44A",
+      "steps": [
+        "8.44A"
+      ]
+    },
+    {
+      "id": "illumination",
+      "g": 17,
+      "title": "Remove Starshells and IR after concealment is assessed",
+      "who": "BOTH",
+      "kind": "Required cleanup",
+      "refs": "E1.923; E1.933; ASOP 8.44A-.45B",
+      "sourcePages": [
+        681,
+        225,
+        226,
+        227
+      ],
+      "terms": [
+        "IR",
+        "LOS"
+      ],
+      "prompt": "Which illumination expires at this Player Turn’s end?",
+      "checks": [
+        "Evaluate concealment gain first, with the illumination still present. Then remove all Starshells and IR at this window.",
+        "Do not clear Blazes, Flames, every trip flare or active searchlights merely because they also illuminate. Their removal rules differ."
+      ],
+      "effect": "Show ordered expiry so darkness cannot grant premature concealment.",
+      "example": "A Starshell still affects the concealment decision before it is removed.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.45B",
+      "steps": [
+        "8.45B"
+      ]
+    },
+    {
+      "id": "acquisition",
+      "g": 17,
+      "title": "Remove night Acquisition that loses illumination",
+      "who": "BOTH",
+      "kind": "Required cleanup",
+      "refs": "E1.74",
+      "sourcePages": [
+        681,
+        225
+      ],
+      "terms": [
+        "Acquisition",
+        "LOS"
+      ],
+      "prompt": "Does the target retain the required Blaze/Flame illumination?",
+      "checks": [
+        "At turn end retain Acquisition only under the specified Blaze/Flame illumination condition. Starshell/IR expiry can remove its supporting illumination.",
+        "Respect the broader immediate-loss rule whenever illumination disappears earlier. Do not treat all Acquisition as expiring every turn or preserve it because the Gun is still present."
+      ],
+      "effect": "Link each Acquisition expiry to its target’s illumination state.",
+      "example": "A target illuminated only by IR loses Acquisition when that IR expires.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 8.45B",
+      "steps": [
+        "8.45B"
+      ]
+    },
+    {
+      "id": "caveSmoke",
+      "g": 18,
+      "title": "Expire cave smoke and resolve connected WP disclosures",
+      "who": "BOTH",
+      "kind": "Required expiry",
+      "refs": "G11.85-.851",
+      "sourcePages": [
+        681,
+        300,
+        301
+      ],
+      "terms": [
+        "WP",
+        "HIP",
+        "CCPh"
+      ],
+      "prompt": "Does a half-inch SMOKE counter in a cave expire at this turn’s end?",
+      "checks": [
+        "Half-inch SMOKE placed in a cave persists until the end of that Player Turn. Apply the specified expiry after concealment placement; do not clear every ordnance SMOKE counter by the same rule.",
+        "Removing cave WP can immediately reveal higher connected hidden caves and above-ground tunnel openings under G11.851, regardless of LOS. Determine the exact Accessible/Complex relationships.",
+        "Revealing a tunnel opening in a hidden pillbox does not reveal the pillbox itself. Keep the required disclosure narrower than a blanket reveal of all underground contents."
+      ],
+      "effect": "Attach connected revelation to the WP expiry event.",
+      "example": "A cave WP counter expires and reveals a higher tunnel opening while the pillbox containing it remains hidden.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific CCPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "lcBlazePin",
+      "g": 18,
+      "title": "Remove a landing-craft Blaze’s temporary Pin marker",
+      "who": "BOTH",
+      "kind": "Required expiry",
+      "refs": "G12.68",
+      "sourcePages": [
+        681,
+        307,
+        308
+      ],
+      "terms": [
+        "LC",
+        "CCPh"
+      ],
+      "prompt": "Which newly placed Blaze has reached its next-CCPh expiry?",
+      "checks": [
+        "A Blaze placed on a LC initially receives a Pin marker. Remove that marker at the end of the next CCPh according to its placement record, without extinguishing the Blaze.",
+        "Preserve duplicate Passenger-wreck bookkeeping. The unpinned Blaze then has its specified MP and later AFPh damage effects; those are not a fresh CCPh attack."
+      ],
+      "effect": "Distinguish a fire-timing marker from a pinned Personnel unit.",
+      "example": "Removing the marker activates the Blaze’s later effects rather than clearing the fire.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific CCPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "tripFlareExpiry",
+      "g": 18,
+      "title": "Remove only the trip flares due now",
+      "who": "BOTH",
+      "kind": "Required cleanup",
+      "refs": "E1.951",
+      "sourcePages": [
+        681,
+        227
+      ],
+      "terms": [
+        "Trip Flare",
+        "CCPh"
+      ],
+      "prompt": "Was this flare activated during MPh or during a later phase?",
+      "checks": [
+        "Red-on-white MPh trip flares expire at the end of that Player Turn’s CCPh after concealment placement.",
+        "Purple-on-white RtPh/APh/CCPh flares persist until the next Player Turn’s AFPh. Store activation provenance, not just a generic flare flag."
+      ],
+      "effect": "Use an expiry record tied to the activation phase.",
+      "example": "A flare triggered by this CCPh’s Withdrawal survives when the older MPh flare is removed.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific CCPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "specialChecks",
+      "g": 18,
+      "title": "Resolve check-triggered effects without inventing Sniper activity",
+      "who": "BOTH",
+      "kind": "Combat decision",
+      "refs": "B28.9; A14.1; A17.11; A18.12",
+      "sourcePages": [
+        681,
+        82,
+        85,
+        149
+      ],
+      "terms": [
+        "DR",
+        "Wound"
+      ],
+      "prompt": "Does a required check trigger a separate rule effect?",
+      "checks": [
+        "Apply Booby Trap and casualty/wound consequences to qualifying checks under the scenario profile; preserve Original dice and proper Random Selection.",
+        "Ordinary CCPh rolls are not among A14.1’s normal SAN phases. Do not run a generic Sniper trigger on every CC or task-check roll.",
+        "Preserve Field Promotion and special Original-2/12 branches instead of hiding them behind the ordinary attack result."
+      ],
+      "effect": "Expose only the triggered branch supported by its rule.",
+      "example": "An escape NTC can need a Booby Trap check without creating an ordinary CCPh Sniper attack.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific CCPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "close",
+      "g": 18,
+      "title": "Finish obligations and hand over the Player Turn",
+      "who": "BOTH",
+      "kind": "Turn handoff",
+      "refs": "A3.8-.9; ASOP 8",
+      "sourcePages": [
+        681,
+        47,
+        73,
+        143,
+        244,
+        291
+      ],
+      "terms": [
+        "CCPh",
+        "Declaration receipt",
+        "Melee"
+      ],
+      "prompt": "Is every Location and phase-wide continuation settled?",
+      "checks": [
+        "Require completion of all selected Locations, aerial choices, declared tasks, required status changes, concealment and night expiries before the turn changes.",
+        "Carry Melee, HtH, Guard/crew identities, captured equipment, Labor, ongoing resupply/Pack-TI and future flare expiries into the next turn.",
+        "Do not clear DM/CX or every fire/status marker through a generic CCPh cleanup. Use each marker’s rule and apply scenario victory timing separately."
+      ],
+      "effect": "Keep End Location, End ground combat and End Player Turn distinct in the live design.",
+      "example": "No ground fights remain, but incomplete resupply and a next-turn flare still require carried state.",
+      "status": "Partially integrated; full rule path remains to be verified.",
+      "timing": "Rule-specific CCPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "sourceProfile",
+      "g": 18,
+      "title": "Preserve all identified options and source boundaries",
+      "who": "BOTH",
+      "kind": "Coverage boundary",
+      "refs": "ASOP 8; SSR; Chapters H/J/O/W",
+      "sourcePages": [
+        681,
+        681
+      ],
+      "terms": [
+        "SSR",
+        "Source gap"
+      ],
+      "prompt": "Which rules are verified, which await integration, and which need more source evidence?",
+      "checks": [
+        "All 17 printed CCPh steps and identified supplemental families are represented. This is not certification of every Chapter H note, historical module, SSR or optional combination.",
+        "Keep pending integration, source gaps, unknown applicability and known illegality separate. Missing evaluators must not hide reference choices.",
+        "The future Blazor guide should consume viewer-safe Rules projections and durable decision receipts. This preview neither adjudicates combat nor implements engine passes."
+      ],
+      "effect": "Expose source and integration limitations without shrinking the intended completed system.",
+      "example": "A deferred sN attack remains visible with its prerequisites even when the current engine cannot execute it.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific CCPh timing; supplemental to ASOP",
+      "steps": []
+    }
+  ],
+  "glossary": {
+    "CCPh": "Close Combat Phase. Resolve each selected Location completely, then resolve phase-wide aerial combat, Clearance and cleanup.",
+    "CC": "Close Combat. Usually simultaneous attacks between opposing units in a Location, with explicit sequencing, vehicle and terrain exceptions.",
+    "Melee": "Continuing combat status determined per eligible unit after the Location’s combat, with concealment, vehicle, transport, sewer and pillbox exceptions.",
+    "Declaration receipt": "Proposed live record of attackers, defending groups, targets, attack mode, strength, modifiers and obligations at the commitment boundary.",
+    "Location": "A hex can contain multiple Locations. Same hex does not necessarily mean a leader can help or a transfer is legal.",
+    "PRC": "Passengers, Riders and Crew, with different vulnerability and fire restrictions.",
+    "HIP": "Hidden Initial Placement. No guide prompt may leak hidden opposing information.",
+    "FP": "Firepower.",
+    "T-H Hero": "Japanese Tank-Hunter Hero, created through G1.421 with a Designated Target and special compulsory advance and combat rules.",
+    "AFV": "Armored Fighting Vehicle.",
+    "Ambush": "An opening advantage that can change attack order, CC DRM, concealment and withdrawal. It is not rerolled merely because new units reinforce a Melee.",
+    "dr": "One-die roll. Ambush and ATMM use dr, not DR.",
+    "drm": "Modifier to a one-die roll, such as an Ambush or ATMM check.",
+    "CX": "Counter Exhausted. Usually bars an already-CX unit from a difficult advance; climbing and deep-stream entry have explicit exceptions. A difficult advance creates CX.",
+    "BU": "Buttoned Up. The alternative protected crew posture, with weapon and observation consequences.",
+    "Stealthy": "A11.17 quality affecting Ambush and other named checks, subject to Good Order, nationality and Lax exceptions.",
+    "Withdrawal": "Leaving combat under a specific rule. Ordinary Melee Withdrawal, Ambush Withdrawal, Infiltration and Street Fighting return have different eligibility and timing.",
+    "Street Fighting": "A11.8 vehicle combat advantage and return option based on eligible road/building or Bypass relationships, distinct from an actual Ambush.",
+    "Designated Target": "The qualifying target chosen when a T-H Hero appears. It constrains the hero’s subsequent actions.",
+    "Sequential CC": "Attacks resolved in order, with the next declaration allowed after earlier results. Eliminated units lose their pending attack opportunities.",
+    "Simultaneous CC": "Both sides declare before resolution. A declared attack still resolves at its original strength despite simultaneous elimination, reduction or capture, subject to explicit interrupts.",
+    "Prisoners": "Captured Personnel under a Guard. Transfer, abandonment, accompaniment and escape have distinct rule windows.",
+    "Guard": "Unit assigned to prisoners. Capacity, fire restrictions and accompaniment are separate from the act of accepting surrender.",
+    "NTC": "Normal Task Check, used only when the governing rule calls for it.",
+    "Personnel Escort": "Qualified Personnel in the vehicle’s Location that modify its vulnerability, assessed at each attack rather than frozen for the whole phase.",
+    "CCV": "Close Combat Value. Used for Personnel attacking vehicles and as the defending strength against vehicle CC fire. It is not the unit’s printed Infantry FP.",
+    "SMC": "Single-Man Counter, such as a leader or Hero.",
+    "Disrupted": "A19.12 status with its own opening surrender and restricted rout rules. Ordinary daytime Low Crawl is unavailable; night and No Quarter require explicit treatment.",
+    "IPC": "Inherent Portage Capacity. Evaluate retained load and eligible leader assistance before the difficult-advance test.",
+    "PP": "Portage Points. A retained load leaving no MF bars advance even into otherwise inexpensive terrain.",
+    "Accessible": "A rules-defined connection usable by hypothetical Infantry under normal advance conditions, ignoring enemy presence. Special cave and terrain restrictions still apply.",
+    "MMC": "Multi-Man Counter: squad, half-squad or crew.",
+    "DRM": "Modifier to a two-dice roll. Keep target-specific CC modifiers separate from Ambush one-die modifiers.",
+    "CCT": "Close Combat Table. Personnel odds use its appropriate black or Hand-to-Hand red Kill Numbers; personnel attacks on vehicles instead use CCV.",
+    "HtH": "Hand-to-Hand CC. Uses red Kill Numbers when the applicable nationality, Deluxe or SSR rule permits or requires it. Not a universal choice.",
+    "Dare-Death": "Chinese designated MMC with special HtH/non-HtH benefits and voluntary-berserk recovery rules.",
+    "Partial Kill": "Final CC DR equal to the applicable Kill Number. Ordinary attacks use Random Selection for Casualty Reduction; capture has its own selection procedure.",
+    "No Quarter": "A surrender policy under A20.3. It does not create a generic right to replace every CC capture with elimination.",
+    "AAMG": "Anti-Aircraft Machine Gun.",
+    "CMG": "Coaxial Machine Gun.",
+    "RMG": "Rear Machine Gun. Use its eligible CC FP under A11.62; weapon allocation remains distinct from ordinary fire.",
+    "IFE": "Infantry Firepower Equivalent, a weapon-specific alternative to ordinary TH fire.",
+    "sN": "Nahverteidigungswaffe. A qualifying BU AFV’s separate close-defense HE attack on the IFT, with usage and timing restrictions and friendly-unit exposure.",
+    "IFT": "Infantry Fire Table.",
+    "Pillbox": "Separate Location equivalent to a building for rout, with special Known-enemy, entry/exit, ordinary forced-rout and Blaze rules.",
+    "Wire": "Obstacle with distinct above/below states. Infantry cannot move beneath it during APh.",
+    "Panji": "Covered-hexside obstacle. Normal advance avoids its entry MC; difficult advance can trigger it. APh does not permit the extra-MF move beneath it.",
+    "Skis": "E4 equipment whose mode changes and downhill bonus have explicit RtPh permission. Low Crawl requires removing skis.",
+    "DC": "Demolition Charge.",
+    "ATMM": "Anti-Tank Magnetic Mine. A pre-resolution availability check after declaring the attack, with nationality/date and failure rules; it is not ordinary fire.",
+    "Hara-Kiri": "G1.641 Japanese Personnel self-elimination attempt immediately before a CC Capture attempt resolves, with special eligibility, order and failure consequences.",
+    "DR": "Two-dice roll. Preserve Original and Final values and the colored die for special results.",
+    "Wound": "A17 injury with severity, reduced morale/leadership, IPC and movement consequences. Track MF already spent if it occurs mid-rout.",
+    "Infiltration": "Immediate withdrawal opportunity from an Original CC DR of 2 or 12, with eligibility restrictions. It cannot be saved until after another attack.",
+    "SW": "Support Weapon. Using one affects its possessor’s capability accounting.",
+    "FFE": "Fire For Effect. Existing HE/WP FFE can attack the routing subject on qualifying entry or increased vulnerability; it does not itself Interdict.",
+    "WP": "White Phosphorus, with its own height, NMC and ignition rules.",
+    "Trip Flare": "E1.95 hidden device with entry/expenditure triggers. A flare set off in RtPh persists until the next Player Turn’s AFPh cleanup.",
+    "Column": "Formation using multi-hex Impulse movement/advance at its slowest unit’s rate, with restrictions and immediate Disbandment checks.",
+    "Good Order": "The defined unit status, separate from merely unbroken. Apply the exact status requirement of each action.",
+    "Interrogation": "E2 optional-rule procedure, when in use, immediately after capture or surrender. One roll per prisoner, with controlled disclosure.",
+    "Dogfight": "Aerial-combat group with predesignated initial targets, ATTACKER-first sequential attacks, special ROF, damage and Recall.",
+    "FB": "Fighter-Bomber, an aircraft type with its own sighting and Ground Support procedures.",
+    "Aerial Melee": "Continuing Dogfight held by a qualifying undamaged FB with functioning MG. Ordinary Infantry Withdrawal rules do not apply.",
+    "ROF": "Rate of Fire. A retained opportunity is not an automatic shot.",
+    "Clearance": "Resolution of a previously declared task. Non-Flame tasks finish in CCPh under their own eligibility and result rules; this is not a fresh declaration window.",
+    "TI": "Task Involved status, not a synonym for Prep Fire.",
+    "Labor": "Task-specific Clearance benefit earned by failure, normally progressing from -1 to -2. It does not transfer freely to another task.",
+    "TB": "Trail Break. Creation and use depend on terrain and the applicable vehicle procedure.",
+    "SSR": "Scenario Special Rule. It can add or modify applicability and must be included in the scenario profile.",
+    "Tunnel": "B8.62 special rout connection between entrances, with emergence conditions and immunity to Interdiction while inside.",
+    "Pack-TI": "Animal-Pack task status. It survives ordinary end-CCPh TI removal and completes at its specified later Rally window.",
+    "CE": "Crew Exposed. A vehicle crew posture whose voluntary changes have timing restrictions.",
+    "LOS": "Line of Sight. Guidance uses only information the viewing player may know.",
+    "Cloaking": "Night concealment representation whose contents normally advance as one stack until properly separated; hidden contents remain owner-only.",
+    "Source gap": "Missing or unreconciled scenario/module/equipment evidence, distinct from a rule awaiting implementation.",
+    "IR": "Illuminating Round, with its own usage and placement procedure.",
+    "Acquisition": "A weapon-specific targeting benefit. Tracking a moving target is not permission to fire in APh.",
+    "LC": "Landing Craft, governed by its own transport, fire, beaching and grounding rules."
+  },
+  "asopLedger": [
+    {
+      "step": "8.11B",
+      "clauses": "Place hidden items under concealment; disclose concealed Strength Factors; remove Dummies.",
+      "optionIds": [
+        "reveal",
+        "hiddenHero"
+      ]
+    },
+    {
+      "step": "8.12B",
+      "clauses": "Ambush in qualifying terrain or concealment; Street Fighting; night threshold.",
+      "optionIds": [
+        "ambush",
+        "ambushModifiers",
+        "ambushChoice",
+        "street"
+      ]
+    },
+    {
+      "step": "8.13D",
+      "clauses": "Defending Japanese squad/HS Tank-Hunter Hero creation, subject to G1.421 delayed timing.",
+      "optionIds": [
+        "tankHunter"
+      ]
+    },
+    {
+      "step": "8.14B",
+      "clauses": "Sequential precedence; prisoner escape; escorted abandoned-vehicle capture declaration.",
+      "optionIds": [
+        "sequence",
+        "escape",
+        "abandonedDeclaration"
+      ]
+    },
+    {
+      "step": "8.15B",
+      "clauses": "Optional/required Melee Withdrawal, ATTACKER first; drop equipment preventing departure.",
+      "optionIds": [
+        "withdraw",
+        "brokenWithdrawal",
+        "withdrawLoad"
+      ]
+    },
+    {
+      "step": "8.16B",
+      "clauses": "SMC solo status or pairing, ATTACKER first.",
+      "optionIds": [
+        "pairing",
+        "leadership"
+      ]
+    },
+    {
+      "step": "8.21B",
+      "clauses": "Sequential next-attack or simultaneous declarations; HtH/capture mode; reveal attacking/directing units.",
+      "optionIds": [
+        "declarations",
+        "concealedChoice",
+        "personnelAttack",
+        "handToHand",
+        "capture",
+        "vehicleAttack",
+        "vehicleFire",
+        "prc",
+        "closeDefense",
+        "terrainCombat",
+        "mountedWater",
+        "goliath"
+      ]
+    },
+    {
+      "step": "8.22B",
+      "clauses": "German or T-H Hero ATMM checks.",
+      "optionIds": [
+        "atmm",
+        "heroAtmm"
+      ]
+    },
+    {
+      "step": "8.23B",
+      "clauses": "Japanese Hara-Kiri response to capture.",
+      "optionIds": [
+        "haraKiri"
+      ]
+    },
+    {
+      "step": "8.24B",
+      "clauses": "Resolve attacks; Withdrawal/Infiltration; subject-only FFE/mines; Column/flare/Panji effects; berserk recovery; repeat sequential loop.",
+      "optionIds": [
+        "resolve",
+        "vehicleResult",
+        "unlikelyKill",
+        "crewSmallArms",
+        "infiltration",
+        "promotion",
+        "equipmentLoss",
+        "captureValidity",
+        "guards",
+        "withdrawArrival",
+        "streetReturn",
+        "withdrawHazards",
+        "withdrawSpecial",
+        "berserk",
+        "nextAttack",
+        "heroRemoval"
+      ]
+    },
+    {
+      "step": "8.25B",
+      "clauses": "Interrogation of new prisoners with nationality profiles.",
+      "optionIds": [
+        "interrogation"
+      ]
+    },
+    {
+      "step": "8.31B",
+      "clauses": "Automatic unescorted abandoned-vehicle capture; CC/Melee state; Dare-Death berserk status.",
+      "optionIds": [
+        "automaticCapture",
+        "melee",
+        "dareDeath",
+        "heroRemoval"
+      ]
+    },
+    {
+      "step": "8.41B",
+      "clauses": "Declare and resolve Aerial Combat, ATTACKER first, with special ROF/Recall/damage rules.",
+      "optionIds": [
+        "dogfight",
+        "aerialResults",
+        "aerialClose"
+      ]
+    },
+    {
+      "step": "8.42B",
+      "clauses": "All non-Flame Clearance, including flail/PTO/debris profiles; Labor; Recovered tunnel entrances.",
+      "optionIds": [
+        "clearance",
+        "rubble",
+        "wireSetDc",
+        "mineClearance",
+        "flail",
+        "ptoClearance",
+        "moduleClearance",
+        "labor",
+        "tunnels"
+      ]
+    },
+    {
+      "step": "8.43B",
+      "clauses": "Pin/TI cleanup with replenishment/Pack-TI exceptions; Stun and cumulative exceptions; Ammo Replenishment.",
+      "optionIds": [
+        "pinTi",
+        "stun",
+        "ammo"
+      ]
+    },
+    {
+      "step": "8.44A",
+      "clauses": "ATTACKER concealment gain under ordinary and named night/winter/desert/Japanese/campaign profiles.",
+      "optionIds": [
+        "concealmentGain",
+        "concealmentDr",
+        "concealmentProfiles"
+      ]
+    },
+    {
+      "step": "8.45B",
+      "clauses": "Night Starshell/IR removal; Acquisition without persistent qualifying illumination.",
+      "optionIds": [
+        "illumination",
+        "acquisition"
+      ]
+    }
+  ]
+}

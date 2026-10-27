@@ -1,0 +1,2041 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "edition": "eASLRB v3.01",
+    "file": "eASLRB_v3_01.pdf",
+    "sha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+    "pageNumbering": "Physical PDF pages, one-based",
+    "reconciled": "2026-10-26",
+    "scope": "All nine printed PFPh ASOP steps and their named clauses, supplemented by shared fire rules and in-volume special procedures. External module/SSR text requires separate verification.",
+    "asopPdfPages": [
+      678,
+      679
+    ]
+  },
+  "groups": [
+    "2.11A · Opening cleanup and illumination",
+    "2.12A · Early SMOKE, IR and MOL Projectors",
+    "2.13A · Contact, Access and new artillery missions",
+    "2.14A · Existing artillery missions",
+    "2.15A · Artillery resolution and consequences",
+    "2.21A · Mopping Up, entrenching and Kindling",
+    "2.22A · Fire, Opportunity Fire and weapon handling",
+    "2.23A · Limber and unlimber",
+    "2.31A · Final CA and AA-mode choices",
+    "Supplemental timing and special rules",
+    "Consequences and response windows",
+    "Actions belonging elsewhere"
+  ],
+  "options": [
+    {
+      "id": "smokeCleanup",
+      "g": 0,
+      "title": "Remove and disperse existing SMOKE",
+      "who": "ATTACKER",
+      "kind": "Required opening procedure",
+      "refs": "A24.4; A24.61; ASOP 2.11A",
+      "sourcePages": [
+        678,
+        92,
+        93
+      ],
+      "terms": [
+        "SMOKE",
+        "WP",
+        "PFPh"
+      ],
+      "prompt": "Which of your old SMOKE counters expire or disperse now?",
+      "checks": [
+        "Remove the owning side’s white Dispersed SMOKE first; then flip its remaining white SMOKE to Dispersed. Do not remove both sides’ SMOKE indiscriminately.",
+        "Update dependent drifting counters when the source is removed or reduced. Separate ordinary source cleanup from the special Napalm rule.",
+        "Re-evaluate visible LOS and Hindrances before proposing new shots. Link gray drift to its originating source: remove it immediately when that source is removed; when the source disperses, remove the furthest drifting counter under A24.61."
+      ],
+      "effect": "Show the affected counters and resulting Hindrance. A considered topic cannot substitute for required cleanup.",
+      "example": "Remove and disperse existing SMOKE / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.11A · Opening cleanup and illumination"
+    },
+    {
+      "id": "napalm",
+      "g": 0,
+      "title": "Resolve expiring Napalm Blaze effects",
+      "who": "Owner of affected Napalm",
+      "kind": "Required when triggered",
+      "refs": "G17.41; ASOP 2.11A",
+      "sourcePages": [
+        678,
+        321
+      ],
+      "terms": [
+        "SMOKE",
+        "Blaze",
+        "SW"
+      ],
+      "prompt": "Does removal of Napalm smoke leave burning terrain or destroy equipment?",
+      "checks": [
+        "Identify Napalm-origin smoke and its associated Blaze; generic smoke cleanup loses the information needed here.",
+        "On smoke removal, remove the Napalm Blaze in non-Burnable Terrain; in Burnable Terrain make the prescribed Kindling DR to determine conversion to a Terrain Blaze. Resolve the separate 12-FP-column weapon-destruction dr for each eligible SW/Gun, with the pillbox modifier.",
+        "Keep this visible for future air-support scenarios even though ordinary Chapter E ground support does not attack in PFPh."
+      ],
+      "effect": "Resolve source-linked counters and equipment before continuing.",
+      "example": "Resolve expiring Napalm Blaze effects / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.11A · Opening cleanup and illumination"
+    },
+    {
+      "id": "dustCleanup",
+      "g": 0,
+      "title": "Remove due Vehicle Dust",
+      "who": "ATTACKER",
+      "kind": "Required when due",
+      "refs": "F11.74; ASOP 2.11A",
+      "sourcePages": [
+        678,
+        267,
+        268
+      ],
+      "terms": [
+        "Motion",
+        "AFV",
+        "LOS"
+      ],
+      "prompt": "Does this vehicle’s last dust counter expire now?",
+      "checks": [
+        "Check whether the vehicle begins its next friendly PFPh not in Motion, or has been destroyed, stunned, shocked or immobilized as specified.",
+        "Do not remove an eligible continuing-Motion dust counter merely because the phase changed; its next MP expenditure can be the removal event."
+      ],
+      "effect": "Retain the source vehicle and movement state on each dust record.",
+      "example": "Remove due Vehicle Dust / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.11A · Opening cleanup and illumination"
+    },
+    {
+      "id": "starshellOpening",
+      "g": 0,
+      "title": "Attempt opening Starshells",
+      "who": "ATTACKER",
+      "kind": "Optional, limited timing",
+      "refs": "E1.91-.922; ASOP 2.11A",
+      "sourcePages": [
+        678,
+        226,
+        227
+      ],
+      "terms": [
+        "NVR",
+        "IR",
+        "dr",
+        "CE",
+        "MMC",
+        "SMC"
+      ],
+      "prompt": "Would illumination help before firing, and which unit should use this hex’s attempt?",
+      "checks": [
+        "Check the initial-use trigger and the one-attempt-per-hex limit. Eligible Good Order non-pinned, non-TI leaders, MMC and CE AFV have distinct Usage thresholds.",
+        "After the initial Player Turn of illumination, non-leader Starshell attempts must precede ordinary firing. Leaders retain their later timing exception.",
+        "Choose the placement method before its placement dice. Starshell use alone does not consume ordinary fire capability, but hidden/Cloaked firers must be placed concealed."
+      ],
+      "effect": "Show one shared hex opportunity, not independent unlimited attempts for every unit in the stack.",
+      "example": "Attempt opening Starshells / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.11A · Opening cleanup and illumination"
+    },
+    {
+      "id": "smokeFire",
+      "g": 1,
+      "title": "Fire ordnance Smoke or WP first",
+      "who": "ATTACKER",
+      "kind": "Expiring ammunition window",
+      "refs": "C8.5-.6; A24.2-.5; ASOP 2.12A",
+      "sourcePages": [
+        678,
+        91,
+        92,
+        178,
+        179
+      ],
+      "terms": [
+        "SMOKE",
+        "WP",
+        "TH",
+        "ATT",
+        "ROF",
+        "s#"
+      ],
+      "prompt": "Do you want smoke before any friendly non-SMOKE fire closes the window?",
+      "checks": [
+        "Check ammunition availability, Depletion Number, weather, terrain, range and the appropriate Area Target Type procedure.",
+        "SMOKE must precede other friendly non-SMOKE fire. Keep the closure side-wide, not merely a flag on this Gun. Respect the distinct IR and MOL-Projector procedures and ASOP ordering; their early windows do not grant unrestricted later SMOKE fire.",
+        "Preview full-strength PFPh placement, WP’s distinct height and morale effects, and ROF rules. An unavailable special-ammo attempt has its own C8.9 accounting."
+      ],
+      "effect": "Before committing the first window-closing shot, show unconsidered eligible SMOKE sources without forcing the player to use them.",
+      "example": "AT Gun: smoke screen or HE attack? The checklist shows the shared SMOKE window before the player commits.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.12A · Early SMOKE, IR and MOL Projectors"
+    },
+    {
+      "id": "wpEffects",
+      "g": 1,
+      "title": "Resolve WP checks and possible Flame",
+      "who": "Both sides resolve affected units",
+      "kind": "Triggered consequences",
+      "refs": "A24.31-.32; C3.76; ASOP 2.12A and 2.15A",
+      "sourcePages": [
+        678,
+        92,
+        171
+      ],
+      "terms": [
+        "WP",
+        "NMC",
+        "CH",
+        "DR"
+      ],
+      "prompt": "Which units and terrain are affected by this WP placement?",
+      "checks": [
+        "Resolve WP NMC using its own terrain/CH rules, not the ordinary HE result path.",
+        "Track the source distinction between direct ordnance placement and a WP FFE, which can affect vulnerable occupants throughout its Blast Area.",
+        "Resolve any Flame check before moving on. A successful placement is not the end of the action."
+      ],
+      "effect": "Create linked resolution rows for each affected disclosed subject and required terrain effect.",
+      "example": "Resolve WP checks and possible Flame / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.12A · Early SMOKE, IR and MOL Projectors"
+    },
+    {
+      "id": "mortarIR",
+      "g": 1,
+      "title": "Fire a mortar Illuminating Round",
+      "who": "ATTACKER",
+      "kind": "Optional, commits weapon",
+      "refs": "C8.7; E1.91; E1.93-.932",
+      "sourcePages": [
+        678,
+        179,
+        226,
+        227
+      ],
+      "terms": [
+        "IR",
+        "MTR",
+        "dr",
+        "TH",
+        "SAN",
+        "ROF"
+      ],
+      "prompt": "Is illumination worth giving up this mortar’s other ammunition for the Player Turn?",
+      "checks": [
+        "Confirm IR capability and initial-use permission, then make the Usage dr. Failure is not firing.",
+        "On success make the TH DR for malfunction, Low Ammo and SAN purposes; use the IR placement procedure instead of an ordinary target hit.",
+        "Firing IR uses all the mortar’s ROF for the Player Turn and prevents another ammunition type. Place No Fire; resolve Gunflash/concealment. Its CA does not change because IR was fired."
+      ],
+      "effect": "Distinguish Usage failed, round fired, and failed due to malfunction. Do not offer HE after an IR has been fired.",
+      "example": "Fire a mortar Illuminating Round / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.12A · Early SMOKE, IR and MOL Projectors"
+    },
+    {
+      "id": "earlySpotter",
+      "g": 1,
+      "title": "Designate a Spotter for early mortar fire",
+      "who": "ATTACKER",
+      "kind": "Optional prerequisite",
+      "refs": "C9.3-.31; ASOP 2.12A",
+      "sourcePages": [
+        678,
+        179
+      ],
+      "terms": [
+        "MTR",
+        "LOS",
+        "ROF",
+        "SW"
+      ],
+      "prompt": "Does the early mortar shot need a Spotter?",
+      "checks": [
+        "Use eligible Good Order Personnel in the same or adjacent hex; several mortars sharing a Spotter must meet the common-hex and common-target conditions.",
+        "Apply spotted-fire TH and ROF penalties. Spotting counts as SW use and restricts movement and inherent fire as specified.",
+        "Keep a hidden Spotter private. Replacing a lost original Spotter has a later MPh timing; this is not a free replacement control."
+      ],
+      "effect": "Attach the Spotter commitment to the planned early shot and to remaining unit capability.",
+      "example": "Designate a Spotter for early mortar fire / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.12A · Early SMOKE, IR and MOL Projectors"
+    },
+    {
+      "id": "molProjector",
+      "g": 1,
+      "title": "Fire a MOL Projector before ordinary weapons",
+      "who": "ATTACKER",
+      "kind": "Expiring special-weapon window",
+      "refs": "C13.51-.58; ASOP 2.12A",
+      "sourcePages": [
+        678,
+        184
+      ],
+      "terms": [
+        "MOL",
+        "TH",
+        "SMOKE",
+        "CA"
+      ],
+      "prompt": "Is a MOL Projector attack wanted before non-SMOKE weapons fire?",
+      "checks": [
+        "Predesignate its target and validate range, elevation and CA using C13.5. It is not a squad’s MOL attack.",
+        "In PFPh it must precede the first weapon firing other than SMOKE. Leadership does not modify its TH DR.",
+        "Resolve its hit, smoke, possible Flame and fire-marker consequences."
+      ],
+      "effect": "Display a separate last-chance reminder alongside the SMOKE window.",
+      "example": "Fire a MOL Projector before ordinary weapons / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.12A · Early SMOKE, IR and MOL Projectors"
+    },
+    {
+      "id": "radio",
+      "g": 2,
+      "title": "Gain or maintain artillery contact",
+      "who": "ATTACKER’s Observer",
+      "kind": "Optional or mission-dependent",
+      "refs": "C1.2, C1.22-.23, C1.6-.63; G.7; E12.77",
+      "sourcePages": [
+        678,
+        163,
+        166,
+        276,
+        248
+      ],
+      "terms": [
+        "OBA",
+        "DR",
+        "Radio Contact",
+        "FFE"
+      ],
+      "prompt": "Should this Observer commit the phase to the battery?",
+      "checks": [
+        "Validate the Observer, possession, transport/Guard limits and radio or Field Phone. Check nationality/date/PTO modifiers and whether maintenance rather than first contact applies.",
+        "Contact/maintenance is the Observer’s sole phase action apart from allowed OBA activities. A failed attempt cannot be retried by this radio or Observer in the same phase.",
+        "Distinguish voluntary and involuntary contact loss and their mission effects. Offboard Observers and Creeping Barrages have explicit exceptions, not an assumed radio roll."
+      ],
+      "effect": "Compare OBA use with the leader’s competing fire-direction role before commitment.",
+      "example": "Gain or maintain artillery contact / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.13A · Contact, Access and new artillery missions"
+    },
+    {
+      "id": "access",
+      "g": 2,
+      "title": "Request Battery Access",
+      "who": "ATTACKER’s Observer",
+      "kind": "Conditional choice or required procedure",
+      "refs": "C1.21; C1.34; G14.63",
+      "sourcePages": [
+        678,
+        163,
+        164,
+        316
+      ],
+      "terms": [
+        "Battery Access",
+        "OBA",
+        "FFE:C",
+        "AR"
+      ],
+      "prompt": "Is Access needed, and does FFE:C make the request mandatory?",
+      "checks": [
+        "Keep Contact and Access separate. Use the battery’s actual draw pile and the required additional-draw conditions.",
+        "With Contact and an FFE:C, resolve the mandatory Access attempt and continuation outcome. Do not offer ordinary attacks while an unresolved required branch is pending.",
+        "Honor red-card consequences, permanent loss where applicable, and special battery/NOBA rules. Never reveal private draw-pile order."
+      ],
+      "effect": "Show the next legal branch after the draw; marking this considered cannot gain Access.",
+      "example": "Request Battery Access / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.13A · Contact, Access and new artillery missions"
+    },
+    {
+      "id": "newMission",
+      "g": 2,
+      "title": "Choose a new mission and place its AR",
+      "who": "ATTACKER’s Observer",
+      "kind": "Optional mission declaration",
+      "refs": "C1.3-.32; C1.7-.732",
+      "sourcePages": [
+        678,
+        164,
+        166
+      ],
+      "terms": [
+        "AR",
+        "SR",
+        "FFE",
+        "HE",
+        "LOS",
+        "Harassing Fire"
+      ],
+      "prompt": "Which mission and target are justified by this Observer’s view?",
+      "checks": [
+        "Choose the legal mission type and declare it at the required time. Ordinary HE Concentration, Harassing Fire, SMOKE, IR and Barrage are distinct choices.",
+        "Place an AR using Observer LOS and the correct additional-draw tests, then resolve Accuracy and Extent of Error. Do not leak hidden units through legality messages.",
+        "A Pre-Registered eligible target may use its direct-FFE procedure. An ordinary SR is not permission to resolve an immediate HE attack."
+      ],
+      "effect": "Keep proposed AR, resulting SR and FFE as distinct states, with a visible next decision.",
+      "example": "Choose a new mission and place its AR / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.13A · Contact, Access and new artillery missions"
+    },
+    {
+      "id": "obaIR",
+      "g": 2,
+      "title": "Declare an OBA illumination mission",
+      "who": "ATTACKER’s Observer",
+      "kind": "Optional early declaration",
+      "refs": "E1.931-.932; C1.7",
+      "sourcePages": [
+        678,
+        166,
+        227
+      ],
+      "terms": [
+        "IR",
+        "OBA",
+        "Battery Access",
+        "SR"
+      ],
+      "prompt": "Should this battery provide illumination instead of a normal fire mission?",
+      "checks": [
+        "Declare IR before the mission’s first Battery Access draw. OBA needs Contact and Access but no mortar-style Usage dr.",
+        "Track FFE stage offboard for Access purposes; place IR by its own procedure, not as an FFE Blast Area.",
+        "Ordinary IR use consumes the battery’s ROF and other-ammunition opportunity for the Player Turn; apply the separate NOBA exception where authorized."
+      ],
+      "effect": "Expose this before drawing, so the interface cannot invite a late retroactive mission choice.",
+      "example": "Declare an OBA illumination mission / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.13A · Contact, Access and new artillery missions"
+    },
+    {
+      "id": "rockets",
+      "g": 2,
+      "title": "Place a rocket artillery mission",
+      "who": "ATTACKER’s Observer",
+      "kind": "Special mission procedure",
+      "refs": "C1.9; ASOP 2.13A-.14A",
+      "sourcePages": [
+        678,
+        167
+      ],
+      "terms": [
+        "AR",
+        "FFE",
+        "OBA"
+      ],
+      "prompt": "Is this a rocket battery with its own placement and expenditure rules?",
+      "checks": [
+        "Use the rocket AR/FFE procedure and applicable restrictions rather than the ordinary SR correction loop.",
+        "Rocket Correction is not allowed. Show the limited mission opportunity and resulting battery state."
+      ],
+      "effect": "Do not offer a misleading Correct SR button on a rocket mission.",
+      "example": "Place a rocket artillery mission / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.13A · Contact, Access and new artillery missions"
+    },
+    {
+      "id": "aerialObserver",
+      "g": 2,
+      "title": "Use an Observation Plane or special Observer",
+      "who": "ATTACKER",
+      "kind": "Conditional observer procedure",
+      "refs": "C1.63; E7.61-.62; G14.68",
+      "sourcePages": [
+        678,
+        166,
+        239,
+        240,
+        317
+      ],
+      "terms": [
+        "OBA",
+        "LOS",
+        "TC",
+        "NOBA"
+      ],
+      "prompt": "Does this Observer use aerial sighting or shipboard procedures?",
+      "checks": [
+        "For an Observation Plane, resolve applicable Sighting TC and observation restrictions before the battery’s placement and resolution.",
+        "Use its actual aerial LOS and mistaken-attack rules rather than ground-Observer visibility.",
+        "A Shipboard Observer has its own LOS, accuracy and AR restrictions. Keep offboard and aerial Observer identities distinct."
+      ],
+      "effect": "A new Observer profile changes the decision and consequences; it is not just a different icon.",
+      "example": "Use an Observation Plane or special Observer / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.13A · Contact, Access and new artillery missions"
+    },
+    {
+      "id": "correct",
+      "g": 3,
+      "title": "Correct, convert, leave or cancel an existing mission",
+      "who": "ATTACKER’s Observer",
+      "kind": "State-dependent choice",
+      "refs": "C1.33-.337; C1.35-.4",
+      "sourcePages": [
+        679,
+        164
+      ],
+      "terms": [
+        "SR",
+        "FFE",
+        "AR",
+        "LOS"
+      ],
+      "prompt": "What does the existing marker and current Observer LOS allow?",
+      "checks": [
+        "Enumerate the alternatives permitted for this exact SR or FFE:1/2 state, including leaving a qualifying SR in place, correction, predesignated conversion, and cancellation.",
+        "Require the applicable Contact, Access and Blast-Height/target visibility. Preserve declaration-before-dice ordering.",
+        "Do not offer arbitrary backward transitions such as replacing an FFE:1/2 with an SR; apply the special cancellation consequences."
+      ],
+      "effect": "Display legal branches with reasons for unavailable ones; pending evaluation remains unknown rather than illegal.",
+      "example": "Correct, convert, leave or cancel an existing mission / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.14A · Existing artillery missions"
+    },
+    {
+      "id": "continuation",
+      "g": 3,
+      "title": "Resolve FFE:C continuation",
+      "who": "ATTACKER’s Observer",
+      "kind": "Required after applicable Access attempt",
+      "refs": "C1.34-.343; G14.671",
+      "sourcePages": [
+        679,
+        164,
+        316,
+        317
+      ],
+      "terms": [
+        "FFE:C",
+        "SR",
+        "FFE",
+        "NOBA"
+      ],
+      "prompt": "Can the next mission continue here, or must it begin with a new AR?",
+      "checks": [
+        "Resolve the old mission’s cancellation and the permitted new SR/FFE/AR branches after the Access outcome.",
+        "Do not treat FFE:C as another attacking FFE.",
+        "NOBA forbids the ordinary C1.341/C1.342 continuation shortcuts and requires its new-AR procedure."
+      ],
+      "effect": "One continuation decision replaces the old mission; it does not silently extend an HE attack.",
+      "example": "Resolve FFE:C continuation / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.14A · Existing artillery missions"
+    },
+    {
+      "id": "barrage",
+      "g": 3,
+      "title": "Correct or lift a Creeping Barrage",
+      "who": "Scenario Attacker",
+      "kind": "Scheduled mandatory procedure with specific choices",
+      "refs": "E12.1-.7; E12.73-.771",
+      "sourcePages": [
+        679,
+        246,
+        247,
+        248
+      ],
+      "terms": [
+        "FFE",
+        "Barrage",
+        "AR",
+        "OBA"
+      ],
+      "prompt": "Which recorded Barrage step is due now?",
+      "checks": [
+        "Use the pre-recorded direction, timing and Lift schedule. Correct/convert and resolve the Creeping Barrage as required; do not ask for normal Observer radio contact.",
+        "Distinguish an ordinary Barrage’s geometry from a Creeping Barrage’s compulsory progression.",
+        "Represent the allowed early-Lift/conversion decision and later return to ordinary OBA under E12.771, including its delay and Contact/Access requirements."
+      ],
+      "effect": "Show the scheduled footprint and mandatory progression, with secret planning visible only to its owner.",
+      "example": "Correct or lift a Creeping Barrage / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.14A · Existing artillery missions"
+    },
+    {
+      "id": "obaSmokeResolution",
+      "g": 4,
+      "title": "Place OBA SMOKE or IR before HE FFE",
+      "who": "ATTACKER; both sides resolve effects",
+      "kind": "Required mission resolution",
+      "refs": "C1.71; E12.51; E1.93; A24.32; C3.76; G14.65",
+      "sourcePages": [
+        679,
+        166,
+        171,
+        227,
+        247,
+        316
+      ],
+      "terms": [
+        "SMOKE",
+        "WP",
+        "IR",
+        "FFE",
+        "NMC"
+      ],
+      "prompt": "Which smoke or illumination missions must resolve before HE artillery?",
+      "checks": [
+        "Place eligible SMOKE in the actual Blast Area, respecting terrain and weather exclusions and Barrage variations.",
+        "Resolve WP NMC and Flame consequences under the FFE-specific rules.",
+        "Apply NOBA illumination exceptions through its own mission record; ordinary OBA IR remains distinct from a smoke FFE."
+      ],
+      "effect": "Resolve all applicable early effects before HE FFE. Separate placement completion from affected-unit resolution.",
+      "example": "Place OBA SMOKE or IR before HE FFE / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.15A · Artillery resolution and consequences"
+    },
+    {
+      "id": "ffe",
+      "g": 4,
+      "title": "Resolve HE FFE and advance its marker",
+      "who": "Both sides resolve; ATTACKER’s battery",
+      "kind": "Required when due",
+      "refs": "C1.5; C1.52-.56; G14.65",
+      "sourcePages": [
+        679,
+        164,
+        165,
+        316
+      ],
+      "terms": [
+        "FFE",
+        "HE",
+        "IFT",
+        "DR",
+        "PRC"
+      ],
+      "prompt": "Which hexes and occupants are affected by this mission now?",
+      "checks": [
+        "Resolve the actual Blast Area with the prescribed separate hex DR and all eligible friendly as well as enemy occupants.",
+        "Use the applicable protection, level, collateral and special-terrain rules. Do not apply movement-only FFMO/FFNAM in this stationary phase resolution.",
+        "Advance FFE:1 to FFE:2 or FFE:2 to FFE:C as required. Involuntary loss of radio contact does not automatically erase all existing FFE effects."
+      ],
+      "effect": "The battery stays unresolved until unit and terrain consequences finish.",
+      "example": "Resolve HE FFE and advance its marker / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.15A · Artillery resolution and consequences"
+    },
+    {
+      "id": "terrainEffects",
+      "g": 4,
+      "title": "Resolve artillery changes to terrain and fortifications",
+      "who": "Both sides resolve affected state",
+      "kind": "Triggered mandatory effects",
+      "refs": "B2.1; B6.331; B25.13; B24.11; B26.52; B29.5; B30.92; B28.62; G9.72; G13.7; G14.56; E1.952; F8.41",
+      "sourcePages": [
+        679,
+        113,
+        116,
+        142,
+        143,
+        145,
+        149,
+        150,
+        153,
+        286,
+        312,
+        315,
+        227,
+        264
+      ],
+      "terms": [
+        "HE",
+        "FFE",
+        "KIA",
+        "TEM",
+        "Blaze"
+      ],
+      "prompt": "Did this attack change the map or remove a fortification?",
+      "checks": [
+        "Check the separate conditions for shellholes, Flame, rubble and bridge effects; a qualifying result is not one universal destruction rule.",
+        "Check wire, roadblock and pillbox removal, minefield and panji removal/reduction, and sangar or trip-flare elimination.",
+        "Include beach-obstacle and pier rules where relevant. Never expose a hidden fortification merely to display a speculative effect."
+      ],
+      "effect": "Create per-feature follow-ups with the governing rule and originating attack. This explicitly covers every terrain/fortification family listed in 2.15A.",
+      "example": "Resolve artillery changes to terrain and fortifications / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.15A · Artillery resolution and consequences"
+    },
+    {
+      "id": "columnReverseSlope",
+      "g": 4,
+      "title": "Resolve Column and Reverse Slope effects",
+      "who": "Affected sides",
+      "kind": "Triggered consequences",
+      "refs": "E11.533; G14.66-.661",
+      "sourcePages": [
+        679,
+        245,
+        316
+      ],
+      "terms": [
+        "FFE",
+        "NOBA",
+        "Column",
+        "LOS"
+      ],
+      "prompt": "Does this artillery resolution break a Column or interact with a Reverse Slope?",
+      "checks": [
+        "Apply Column disbandment when its trigger is met; do not leave its formation state unchanged after the attack.",
+        "For NOBA, resolve Reverse Slope protection and exceptions against the naval line of fire, not a generic observer-LOS shortcut."
+      ],
+      "effect": "Surface these as dependencies of the actual mission, with pending integration visible.",
+      "example": "Resolve Column and Reverse Slope effects / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.15A · Artillery resolution and consequences"
+    },
+    {
+      "id": "mopUp",
+      "g": 5,
+      "title": "Mop Up a building",
+      "who": "ATTACKER’s eligible Infantry MMC",
+      "kind": "Optional commitment",
+      "refs": "A12.153-.154; A20.3-.4",
+      "sourcePages": [
+        679,
+        79,
+        87
+      ],
+      "terms": [
+        "MMC",
+        "TI",
+        "HIP",
+        "Control"
+      ],
+      "prompt": "Is securing this building worth committing these units for the turn?",
+      "checks": [
+        "Check armed, unpinned Good Order MMC, the source’s building conditions, no unconcealed unbroken enemy, and coverage of uncontrolled ground-level Locations. Predesignate multiple participants where needed.",
+        "One attempt per building per Player Turn. Treat Rowhouses separately and exclude rubble/Blaze Locations as specified. No Quarter/Massacre disables this option.",
+        "Reveal hidden units only through the authorized result, remove Dummies, resolve possible casualties and determine Control/surrender only when its conditions are met."
+      ],
+      "effect": "Track the building and participants together. In current software, disclose the recorded any-building implementation deviation; final-design eligibility follows the source.",
+      "example": "Two MMC cover a large building together / Both become TI / A hidden defender is revealed concealed, so securing and surrender are not assumed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.21A · Mopping Up, entrenching and Kindling"
+    },
+    {
+      "id": "entrench",
+      "g": 5,
+      "title": "Attempt entrenchment",
+      "who": "ATTACKER’s Infantry MMC and participating leader",
+      "kind": "Optional commitment",
+      "refs": "B27.11; B24.8; A25.21; F.1B; G3.5; G13.3; G13.82; E3.743",
+      "sourcePages": [
+        679,
+        146,
+        142,
+        94,
+        254,
+        282,
+        309,
+        313,
+        231
+      ],
+      "terms": [
+        "TI",
+        "DR",
+        "DRM",
+        "MMC",
+        "Labor"
+      ],
+      "prompt": "Would a foxhole improve this position enough to forgo movement and fire?",
+      "checks": [
+        "Check unused eligible participants, terrain, Wire/existing-entrenchment exclusions and special Desert/PTO/beach restrictions. Extreme Winter forbids digging foxholes.",
+        "Preview the ordinary final DR of 5 or less, single-HS/crew adjustment, leadership, Labor and applicable nationality/terrain modifiers.",
+        "All participants become TI even on failure. Preserve eligible Labor after failure and the actual foxhole capacity/result after success. Entrenching DR can trigger a Sniper."
+      ],
+      "effect": "A failed attempt is completed, with Labor and TI tracked separately from success.",
+      "example": "Attempt entrenchment / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.21A · Mopping Up, entrenching and Kindling"
+    },
+    {
+      "id": "kindle",
+      "g": 5,
+      "title": "Attempt Kindling",
+      "who": "ATTACKER’s Infantry and required leader",
+      "kind": "Optional commitment",
+      "refs": "B25.11; A22.613; scenario SSR",
+      "sourcePages": [
+        679,
+        143,
+        90
+      ],
+      "terms": [
+        "NTC",
+        "DR",
+        "EC",
+        "MOL",
+        "Blaze"
+      ],
+      "prompt": "Does the scenario permit deliberate fire here, and is the commitment worthwhile?",
+      "checks": [
+        "Check Burnable Terrain, unpinned Good Order Infantry and the required SMC NTC. Check scenario restrictions on Kindling.",
+        "Predesignate all attempts a leader directs in this Location. It cannot wait for one result before adding another unit or simultaneously make its own attempt.",
+        "Show terrain Kindling Number, EC, reversed leadership modifier, unit-size and eligible MOL adjustments. All involved use their full Prep Fire capability regardless of outcome."
+      ],
+      "effect": "Use Prep Fire consequences rather than incorrectly labeling this as ordinary TI entrenchment.",
+      "example": "Attempt Kindling / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.21A · Mopping Up, entrenching and Kindling"
+    },
+    {
+      "id": "fireOrHold",
+      "g": 6,
+      "title": "Choose fire now, Opportunity Fire, or preserve movement",
+      "who": "ATTACKER",
+      "kind": "Commitment comparison",
+      "refs": "A3.2-.5; A7.1; A7.25; D.3",
+      "sourcePages": [
+        679,
+        47,
+        54,
+        55,
+        192
+      ],
+      "terms": [
+        "PFPh",
+        "MPh",
+        "AFPh",
+        "TI",
+        "ROF"
+      ],
+      "prompt": "Which units should commit now, and which should retain later options?",
+      "checks": [
+        "Prep Fire normally prevents that unit’s subsequent movement and AFPh fire. Identify linked vehicle/PRC restrictions and exceptions rather than treating every counter independently.",
+        "Opportunity Fire defers an eligible Infantry/Cavalry attack to AFPh at full effect but also gives up movement. Simply not firing preserves different choices.",
+        "Do not require every unit to fire or every optional topic to be checked. Track individual weapons, SW capacity and leadership commitments."
+      ],
+      "effect": "Preview the capabilities given up before execution, then keep retained ROF choices open.",
+      "example": "Squad A fires now. Squad B reserves Opportunity Fire. Squad C holds fire to move. Three deliberate choices, not two incomplete checkboxes.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "smallArms",
+      "g": 6,
+      "title": "Fire inherent FP or a fire group",
+      "who": "ATTACKER",
+      "kind": "Optional attack",
+      "refs": "A7.2-.5; A7.53-.55; A9.4",
+      "sourcePages": [
+        679,
+        54,
+        55,
+        56,
+        57,
+        64
+      ],
+      "terms": [
+        "FP",
+        "FG",
+        "IFT",
+        "DRM",
+        "PBF",
+        "TPBF",
+        "LOS"
+      ],
+      "prompt": "Should these units combine fire or keep separate attacks?",
+      "checks": [
+        "Choose legal target Locations and validate LOS, range and mandatory FG rules before resolving an attack. Group membership is constrained, not any convenient collection of units.",
+        "Preview PBF/TPBF, Long Range, Area Fire, concealment, terrain and Hindrances. Keep same-hex and multi-level target rules explicit.",
+        "Apply allowed leadership and its direction commitments. Do not suggest splitting an attack where mandatory FG rules require combining it."
+      ],
+      "effect": "Show adjusted FP and DRM with provenance, plus the members committed by confirmation.",
+      "example": "Fire inherent FP or a fire group / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "spraying",
+      "g": 6,
+      "title": "Choose Spraying Fire",
+      "who": "ATTACKER",
+      "kind": "Conditional attack mode",
+      "refs": "A7.34; A9.5",
+      "sourcePages": [
+        679,
+        56,
+        64
+      ],
+      "terms": [
+        "FP",
+        "MG",
+        "IFT",
+        "CA"
+      ],
+      "prompt": "Would spreading eligible fire across the permitted targets help?",
+      "checks": [
+        "Check the weapon or squad’s Spraying Fire capability, target relationship, range and CA.",
+        "Show the halved FP and separate target consequences; do not make this a universal MG or squad option."
+      ],
+      "effect": "Keep squad Spraying Fire visible even where the current implementation supports only a narrower attack set.",
+      "example": "Choose Spraying Fire / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "weapons",
+      "g": 6,
+      "title": "Allocate SW and leader direction",
+      "who": "ATTACKER",
+      "kind": "Attack preparation",
+      "refs": "A7.35; A7.53-.54; A9.1-.4; A21",
+      "sourcePages": [
+        679,
+        56,
+        57,
+        63,
+        64,
+        88
+      ],
+      "terms": [
+        "SW",
+        "MG",
+        "ROF",
+        "SMC",
+        "MMC"
+      ],
+      "prompt": "Which weapons can this unit use while retaining any inherent fire?",
+      "checks": [
+        "Apply squad/HS/crew/SMC weapon-use limits and the relationship to inherent FP; a SW shot is not free simply because it has a separate counter.",
+        "Check captured and non-qualified use, crew-served requirements, ammunition shortage and relevant nationality adjustments.",
+        "For MGs include mandatory direction and later ROF direction restrictions. Record the directing leader, not just a numeric bonus."
+      ],
+      "effect": "Maintain per-unit capability and per-weapon shots as related records.",
+      "example": "Allocate SW and leader direction / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "ordnance",
+      "g": 6,
+      "title": "Choose target type and ammunition",
+      "who": "ATTACKER",
+      "kind": "Optional ordnance attack",
+      "refs": "C2-.8; C3.31-.33; C8.9",
+      "sourcePages": [
+        679,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179
+      ],
+      "terms": [
+        "TH",
+        "TK",
+        "ATT",
+        "ITT",
+        "VTT",
+        "HE",
+        "AP",
+        "HEAT",
+        "APCR",
+        "APDS"
+      ],
+      "prompt": "Which legal target type and available ammunition fit this target?",
+      "checks": [
+        "Offer only ammunition and target types provided by the actual weapon notes and scenario/date, while keeping unsupported options readable. Include HE, AP, HEAT, APCR/APDS and special types where present.",
+        "Show range, CA, acquisition, size, movement, terrain and qualified-user effects. Resolve hits through IFT or TK as appropriate.",
+        "Keep Critical Hits, Multiple Hits, dud/Depletion and malfunction branches distinct. Do not label every miss as an unchanged game state."
+      ],
+      "effect": "The attack record captures declared target type/ammo before dice and links resulting effects.",
+      "example": "Choose target type and ammunition / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "specialAmmo",
+      "g": 6,
+      "title": "Consider Canister, IFE and special attack modes",
+      "who": "ATTACKER",
+      "kind": "Conditional weapon choices",
+      "refs": "C2.29; C8.4; C5.7; C13; weapon notes",
+      "sourcePages": [
+        679,
+        168,
+        173,
+        178,
+        182,
+        183,
+        184
+      ],
+      "terms": [
+        "IFE",
+        "C",
+        "TH",
+        "TK",
+        "CA"
+      ],
+      "prompt": "Does this weapon have a useful alternative to its ordinary shot?",
+      "checks": [
+        "Represent Canister geometry and ammunition, IFE capability and its fire/ROF accounting, and Deliberate Immobilization eligibility as distinct choices.",
+        "For LATW show PF availability, BAZ/PSK/PIAT/ATR restrictions, backblast or Desperation penalties and captured/non-qualified use as applicable.",
+        "Weapon and nationality notes select the actual choices and modifiers. Pending IFE or a specific weapon path must not disappear from the guide."
+      ],
+      "effect": "Expose modes before commitment and show their separate risk, target restrictions and consequences.",
+      "example": "Consider Canister, IFE and special attack modes / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "mortarSpotter",
+      "g": 6,
+      "title": "Designate a mortar’s original Spotter",
+      "who": "ATTACKER",
+      "kind": "Optional prerequisite",
+      "refs": "C9.3-.31; ASOP 2.22A",
+      "sourcePages": [
+        679,
+        179
+      ],
+      "terms": [
+        "MTR",
+        "LOS",
+        "ROF",
+        "SW"
+      ],
+      "prompt": "Does a mortar without an original Spotter need one for this attack?",
+      "checks": [
+        "Designate an eligible original Spotter now, before ordinary mortar fire, using the same capability accounting as early spotting.",
+        "Apply +2 spotted-fire TH DRM and reduced ROF where applicable. Pinned Spotter effects propagate to its spotted attacks.",
+        "A lost original Spotter cannot be replaced here at will; the source gives replacement timing at the start of the owner’s MPh."
+      ],
+      "effect": "Keep early designation, ordinary original designation and later replacement as separate timing windows.",
+      "example": "Designate a mortar’s original Spotter / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "vehicleFire",
+      "g": 6,
+      "title": "Choose vehicle weapons and firing arcs",
+      "who": "ATTACKER",
+      "kind": "Optional attacks with shared constraints",
+      "refs": "D.3; D3.1-.5; D5.3; D6.6; G12.5",
+      "sourcePages": [
+        679,
+        192,
+        200,
+        201,
+        202,
+        203,
+        207,
+        304
+      ],
+      "terms": [
+        "AFV",
+        "MA",
+        "SA",
+        "AAMG",
+        "BMG",
+        "CMG",
+        "CE",
+        "BU",
+        "TCA",
+        "VCA"
+      ],
+      "prompt": "Which weapons can fire, and what will that do to movement and other weapons?",
+      "checks": [
+        "List MA, SA and individual MGs with crew, exposure, Shock/Stun, Motion and CA eligibility. Do not use one generic fire-tank checkbox.",
+        "Apply weapon-combination and turret/hull sequencing rules. A CA change for one attack can change another weapon’s modifiers.",
+        "Prep Fire by the vehicle or its PRC has linked movement/fire consequences under D.3; preserve the specific unloading exception for unfired Passengers/Riders. Include LC special armament rules as pending."
+      ],
+      "effect": "Compare individual attacks while keeping vehicle-wide commitments visible.",
+      "example": "Choose vehicle weapons and firing arcs / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "rof",
+      "g": 6,
+      "title": "Use retained Rate of Fire",
+      "who": "ATTACKER",
+      "kind": "Continuing opportunity",
+      "refs": "A9.2-.21; C2.24; C3.33; C9.31",
+      "sourcePages": [
+        679,
+        63,
+        168,
+        170,
+        179
+      ],
+      "terms": [
+        "ROF",
+        "DR",
+        "MG",
+        "MTR",
+        "CA"
+      ],
+      "prompt": "Did this weapon retain another normal shot, and is it worth taking?",
+      "checks": [
+        "Use the correct colored die and effective ROF after all applicable reductions, including target type, spotting and AA-mode changes.",
+        "Re-evaluate target, CA restrictions, leadership and concealment after each resolved shot. Retained ROF is permission for another decision, not automatic firing.",
+        "A completed attack must not mark the weapon finished while its legal ROF opportunity remains. Stopping is allowed."
+      ],
+      "effect": "Create a new shot opportunity linked to the weapon and current phase, preserving the prior result.",
+      "example": "Use retained Rate of Fire / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "intensive",
+      "g": 6,
+      "title": "Consider Intensive Fire after normal ROF",
+      "who": "ATTACKER",
+      "kind": "Optional extra shot with risk",
+      "refs": "C5.6-.63",
+      "sourcePages": [
+        679,
+        172,
+        173
+      ],
+      "terms": [
+        "IF",
+        "TH",
+        "B#",
+        "ROF"
+      ],
+      "prompt": "Is another shot worth the extra malfunction risk?",
+      "checks": [
+        "Require exhausted normal ROF, an eligible Gun, and remaining Intensive Fire capability. Respect No IF weapon notes.",
+        "Preview +2 TH DRM and the B# reduction by two under A.11. Do not offer ordinary MG Sustained Fire as a generic Prep Fire extra shot.",
+        "Place the correct fire marker and resolve permanent-loss or other weapon consequences as required."
+      ],
+      "effect": "Keep IF separate from ROF and explain the risk before rolling.",
+      "example": "Consider Intensive Fire after normal ROF / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "ftMol",
+      "g": 6,
+      "title": "Use a flamethrower or squad MOL attack",
+      "who": "ATTACKER",
+      "kind": "Optional special attack",
+      "refs": "A22.1-.6; B25.12",
+      "sourcePages": [
+        679,
+        89,
+        90,
+        143
+      ],
+      "terms": [
+        "FT",
+        "MOL",
+        "IFT",
+        "TK",
+        "X#"
+      ],
+      "prompt": "Does the special weapon justify its range, availability and loss risk?",
+      "checks": [
+        "Check FT eligibility/range and distinguish Personnel/vehicle resolution, relevant protection exceptions, and depletion.",
+        "MOL requires its applicable SSR or nationality capability and a successful MOL Check; use its actual inherent-fire and target rules.",
+        "Resolve any self-effect, Flame or burning-wreck result. A squad’s MOL is separate from the early MOL Projector timing."
+      ],
+      "effect": "Preview risks and possible fire consequences rather than showing only nominal FP.",
+      "example": "Use a flamethrower or squad MOL attack / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "dc",
+      "g": 6,
+      "title": "Throw a DC or detonate an existing Set DC",
+      "who": "ATTACKER",
+      "kind": "Conditional special attack",
+      "refs": "A23.6-.72; G1.6121",
+      "sourcePages": [
+        679,
+        90,
+        91,
+        280
+      ],
+      "terms": [
+        "DC",
+        "NTC",
+        "IFT",
+        "US#"
+      ],
+      "prompt": "Is there a legal thrown or previously Set demolition attack now?",
+      "checks": [
+        "A Thrown DC uses its own range, elevation, attack and thrower-risk procedure; it is not MPh Placement.",
+        "A previously Set DC can be detonated in a subsequent Player Turn’s friendly fire phase by its authorized Good Order unit/derivative HS, with the required distance, LOS and NTC.",
+        "Resolve malfunction, attack and bridge/rubble consequences. Japanese A-T Set DC keeps its own trigger rules and is not a universal remote detonation."
+      ],
+      "effect": "Show who is authorized to trigger the charge and the prior-turn requirement before offering execution.",
+      "example": "Throw a DC or detonate an existing Set DC / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "encirclement",
+      "g": 6,
+      "title": "Sequence attacks for Encirclement",
+      "who": "ATTACKER",
+      "kind": "Conditional attack-order opportunity",
+      "refs": "A7.7-.72",
+      "sourcePages": [
+        679,
+        57
+      ],
+      "terms": [
+        "FP",
+        "LOS",
+        "Encircled"
+      ],
+      "prompt": "Could consecutive attacks establish Encirclement?",
+      "checks": [
+        "Check eligible targets, ranges, directions and firepower under A7.7, including the pillbox and other exclusions.",
+        "Qualifying attacks must be consecutive; an intervening attack on a different target can break the sequence.",
+        "Keep ordinary and upper-level Encirclement distinct. Do not automatically apply a result just because two units fired at one hex."
+      ],
+      "effect": "Warn when a proposed unrelated shot would abandon an identified sequence, without choosing tactics for the player.",
+      "example": "Sequence attacks for Encirclement / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "opportunity",
+      "g": 6,
+      "title": "Declare Opportunity Fire",
+      "who": "ATTACKER’s eligible Infantry/Cavalry",
+      "kind": "Expiring commitment choice",
+      "refs": "A7.25; C9.3; E7.5",
+      "sourcePages": [
+        679,
+        55,
+        179,
+        239
+      ],
+      "terms": [
+        "AFPh",
+        "MPh",
+        "ROF",
+        "IF",
+        "CA",
+        "MTR"
+      ],
+      "prompt": "Would firing later at full effect be better than firing or moving now?",
+      "checks": [
+        "Require Good Order and no prior fire/TI this Player Turn. Vehicles cannot use ordinary Opportunity Fire. Place Bounding Fire and apply concealment loss when required.",
+        "The unit cannot fire in PFPh or move in MPh. In AFPh it can fire without the usual AFPh penalty and may use permitted ROF/IF.",
+        "Infantry-manned ordnance cannot change CA until its AFPh TH attempt. A mortar needs the relevant LOS/Spotter condition; a weapon in AA mode cannot be designated."
+      ],
+      "effect": "Show the deferred AFPh opportunity and movement cost immediately, with no target-selection shortcut that bypasses the rule.",
+      "example": "A mortar with a Spotter reserves full-effect AFPh fire. Its CA is not freely changed now, and the reservation remains even if later events spoil the shot.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "starshellLater",
+      "g": 6,
+      "title": "Use a later Starshell opportunity",
+      "who": "ATTACKER",
+      "kind": "Conditional later window",
+      "refs": "E1.91-.922; ASOP 2.22A",
+      "sourcePages": [
+        679,
+        226,
+        227
+      ],
+      "terms": [
+        "IR",
+        "dr",
+        "MMC",
+        "CE",
+        "SMC"
+      ],
+      "prompt": "Does the current illumination history still permit a Starshell attempt now?",
+      "checks": [
+        "Leaders have the within-phase timing exception. MMC/CE AFV retain later timing only under the initial-illumination conditions.",
+        "Use the same per-hex attempt record as the opening window. A failed opening attempt does not create a fresh later attempt."
+      ],
+      "effect": "Keep the eligibility explanation tied to scenario illumination history.",
+      "example": "Use a later Starshell opportunity / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "heavyAA",
+      "g": 6,
+      "title": "Fire Heavy AA at an aerial target",
+      "who": "ATTACKER",
+      "kind": "Special attack",
+      "refs": "E7.5; E7.52; W9.13",
+      "sourcePages": [
+        679,
+        239,
+        667
+      ],
+      "terms": [
+        "AA",
+        "TH",
+        "ROF",
+        "IFE",
+        "FAC"
+      ],
+      "prompt": "Does an eligible Heavy AA Gun have a useful aerial target?",
+      "checks": [
+        "Only the qualifying AA Gun without printed IFE uses Heavy AA; this is not ordinary Light AA fire at any convenient time.",
+        "Validate aerial targets, including Observation Planes and applicable airborne FAC. Resolve the Heavy AA elimination/damage/prevention outcomes, normal malfunction and ROF.",
+        "Update AA mode and its one-attack ROF adjustment as required."
+      ],
+      "effect": "Offer an aerial-target workflow with its actual resolution, separate from ground fire.",
+      "example": "Fire Heavy AA at an aerial target / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "assemble",
+      "g": 6,
+      "title": "Assemble or dismantle a weapon",
+      "who": "ATTACKER’s possessor",
+      "kind": "Optional weapon-use commitment",
+      "refs": "A9.8",
+      "sourcePages": [
+        679,
+        65
+      ],
+      "terms": [
+        "dm",
+        "SW",
+        "PP",
+        "ROF"
+      ],
+      "prompt": "Should the weapon be ready to fire later or easier to carry later?",
+      "checks": [
+        "Validate eligible weapon types and nationality exceptions, possession, and that the weapon has not fired.",
+        "Conversion counts as using the SW and all of its ROF; enforce the unit’s weapon-use capacity.",
+        "Do not promise that dismantling now allows the possessor to move in this MPh. Show the actual fire/use commitment and resulting PP."
+      ],
+      "effect": "Separate conversion success from later fire or movement eligibility.",
+      "example": "Assemble or dismantle a weapon / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "destroy",
+      "g": 6,
+      "title": "Destroy or deliberately malfunction equipment",
+      "who": "ATTACKER’s possessor or inherent crew",
+      "kind": "Optional irreversible game action",
+      "refs": "A9.73",
+      "sourcePages": [
+        679,
+        65
+      ],
+      "terms": [
+        "SW",
+        "MA",
+        "ROF",
+        "Recall"
+      ],
+      "prompt": "Would denying this equipment justify losing its use?",
+      "checks": [
+        "The weapon and possessing unit must still otherwise be able to fire it. Count only as many weapons as the unit could use.",
+        "Offer destruction and deliberate malfunction as distinct outcomes, each instead of firing. Include vehicular weapons.",
+        "Show any resulting vehicle Recall and later repair implications; do not treat permanent destruction as a repairable malfunction."
+      ],
+      "effect": "Preview the exact equipment state change before executing, while a reference acknowledgement remains harmless.",
+      "example": "Destroy or deliberately malfunction equipment / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.22A · Fire, Opportunity Fire and weapon handling"
+    },
+    {
+      "id": "limber",
+      "g": 7,
+      "title": "Limber a Gun for later movement",
+      "who": "ATTACKER’s eligible crew",
+      "kind": "Optional preparation",
+      "refs": "C10.111; C10.21-.23",
+      "sourcePages": [
+        679,
+        180,
+        181
+      ],
+      "terms": [
+        "TI",
+        "Gun",
+        "MPh",
+        "QSU"
+      ],
+      "prompt": "Should this Gun prepare for towing instead of firing?",
+      "checks": [
+        "Check whether the Gun requires/can use limbering, its possession and eligible crew. QSU and NM/RFNM cases are not interchangeable.",
+        "Neither Gun nor crew may fire in the Player Turn of (un)limbering. Limbering does not itself make them TI, unlike unlimbering. Show the planned later hookup separately.",
+        "Any simultaneous CA adjustment follows the (un)limbering exception, not a free general CA change."
+      ],
+      "effect": "Compare fire now with the actual remaining towing sequence; limbering does not itself hook up a vehicle.",
+      "example": "Limber a Gun for later movement / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.23A · Limber and unlimber"
+    },
+    {
+      "id": "unlimber",
+      "g": 7,
+      "title": "Unlimber a Gun",
+      "who": "ATTACKER’s eligible crew",
+      "kind": "Optional TI commitment",
+      "refs": "C10.111; C10.21-.23",
+      "sourcePages": [
+        679,
+        180,
+        181
+      ],
+      "terms": [
+        "TI",
+        "Gun",
+        "CA",
+        "QSU"
+      ],
+      "prompt": "Is preparing this Gun for future fire worth committing it and the crew now?",
+      "checks": [
+        "Check Gun type, possession, crew and current limbered state.",
+        "Apply TI to the Gun and crew as required. Do not offer an immediate normal shot just because the counter is now unlimbered.",
+        "Show allowed simultaneous CA selection and the later turn/phase in which the weapon can next act."
+      ],
+      "effect": "Track preparation and readiness separately.",
+      "example": "Unlimber a Gun / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.23A · Limber and unlimber"
+    },
+    {
+      "id": "caEnd",
+      "g": 8,
+      "title": "Change Gun CA without firing",
+      "who": "ATTACKER",
+      "kind": "Optional end-phase window",
+      "refs": "C3.22; D3.51; A7.25",
+      "sourcePages": [
+        679,
+        169,
+        201,
+        55
+      ],
+      "terms": [
+        "CA",
+        "TCA",
+        "VCA",
+        "IF",
+        "AFPh"
+      ],
+      "prompt": "Would repositioning the firing arc now improve a later shot?",
+      "checks": [
+        "Require the crew to remain able to fire the Gun without Intensive/Sustained Fire at phase end, with the explicit exceptions. Retained ROF may preserve this option.",
+        "Changing CA here prevents movement of the Gun and crew for the rest of the Player Turn, but does not by itself prevent AFPh fire.",
+        "Do not allow an Opportunity-Fire ordnance reservation to evade A7.25’s CA restriction."
+      ],
+      "effect": "Show a separate movement commitment without falsely marking an attack as fired.",
+      "example": "An unfired Gun changes CA now, gives up movement, and may fire in AFPh under its actual AFPh restrictions.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "2.31A · Final CA and AA-mode choices"
+    },
+    {
+      "id": "aaModeEnd",
+      "g": 8,
+      "title": "Designate or cancel AA mode",
+      "who": "ATTACKER",
+      "kind": "Optional end-phase window",
+      "refs": "E7.5; C3.22",
+      "sourcePages": [
+        679,
+        239,
+        169
+      ],
+      "terms": [
+        "AA",
+        "CA",
+        "ROF",
+        "AAMG"
+      ],
+      "prompt": "Should this weapon be prepared for aerial or ground targets?",
+      "checks": [
+        "Use the end-fire-phase CA eligibility criterion even for a weapon that is not a Gun.",
+        "Keep AA-capable weapon rules, vehicular AAMG exceptions and Opportunity-Fire incompatibility explicit.",
+        "Changing mode by making an attack has different timing and ROF consequences from this end-phase choice."
+      ],
+      "effect": "Do not present mode switching as an always-free toggle.",
+      "example": "Designate or cancel AA mode / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "2.31A · Final CA and AA-mode choices"
+    },
+    {
+      "id": "searchlight",
+      "g": 9,
+      "title": "Establish or maintain a searchlight beam",
+      "who": "ATTACKER under Chapter W",
+      "kind": "Opening illumination procedure",
+      "refs": "W10.2-.5; W10.45-.51",
+      "sourcePages": [
+        668,
+        669,
+        670
+      ],
+      "terms": [
+        "SL",
+        "IB Lane",
+        "TC",
+        "NVR",
+        "DR"
+      ],
+      "prompt": "Does a searchlight need a new target or a maintenance decision before firing starts?",
+      "checks": [
+        "Apply initial-use triggers and the Starshell-equivalent per-hex attempt rule. Later establishment belongs at the start of friendly PFPh under W10.51.",
+        "For an existing beam, choose maintenance with its Reliability DR, or let it cancel and consider a different target. Show malfunction/disablement risk.",
+        "A new target uses Sighting TC and the beam’s LOS, CA and illumination rules. Apply the correct fire marker and remaining capability."
+      ],
+      "effect": "Place this next to opening illumination in a live checklist, labeled with its Chapter W timing rather than inventing a printed ASOP substep.",
+      "example": "Establish or maintain a searchlight beam / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "Supplemental timing and special rules"
+    },
+    {
+      "id": "cancelBeam",
+      "g": 9,
+      "title": "Voluntarily cancel a searchlight beam",
+      "who": "Owning side under Chapter W",
+      "kind": "Standing conditional choice",
+      "refs": "W10.52",
+      "sourcePages": [
+        670
+      ],
+      "terms": [
+        "SL",
+        "IB Lane",
+        "Gunflash"
+      ],
+      "prompt": "Would cancelling the beam change visibility or exposure usefully?",
+      "checks": [
+        "Cancellation is available during the owner’s PFPh under its rule, and at other times only under the separately specified conditions.",
+        "Remove the beam and update applicable Gunflash/illumination effects. This is not repairing or re-aiming the light."
+      ],
+      "effect": "Recompute disclosed visibility without counting cancellation as a new Sighting attempt.",
+      "example": "Voluntarily cancel a searchlight beam / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "Supplemental timing and special rules"
+    },
+    {
+      "id": "closeAir",
+      "g": 9,
+      "title": "Conduct Korean War Close Air Support",
+      "who": "UN ATTACKER; DEFENDER responds",
+      "kind": "After all FFE, when applicable",
+      "refs": "W9.1-.22; E7.3-.5",
+      "sourcePages": [
+        666,
+        667,
+        668
+      ],
+      "terms": [
+        "TACP",
+        "FAC",
+        "TC",
+        "AA",
+        "Residual FP"
+      ],
+      "prompt": "Does a qualifying FAC-directed aircraft have a legal PFPh attack?",
+      "checks": [
+        "Use the Chapter W exception immediately after all FFE. Ordinary Chapter E air support is not thereby granted PFPh attacks.",
+        "Require FAC/TACP direction and its Contact, LOS and target limitations. An aircraft cannot conduct Ground Support in two consecutive Player Turns.",
+        "Expose DEFENDER Light AA, mistaken-attack handling and immunity zones. Resolve the source-specific Residual FP and other consequences."
+      ],
+      "effect": "This creates a real defender response window inside Prep Fire, despite ordinary Prep Fire attacks belonging to ATTACKER.",
+      "example": "Conduct Korean War Close Air Support / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "Supplemental timing and special rules"
+    },
+    {
+      "id": "naval",
+      "g": 9,
+      "title": "Apply Naval OBA mission exceptions",
+      "who": "Affected battery owner",
+      "kind": "Mission-specific overlay",
+      "refs": "G14.6-.68",
+      "sourcePages": [
+        315,
+        316,
+        317
+      ],
+      "terms": [
+        "NOBA",
+        "IR",
+        "FFE:C",
+        "SFCP"
+      ],
+      "prompt": "Does this naval mission differ from ordinary OBA?",
+      "checks": [
+        "Apply SFCP/Observer, Access, Blast Area, naval line-of-fire and Reverse Slope rules to the corresponding mission steps.",
+        "Keep the FFE:C new-AR requirement visible.",
+        "A qualifying NOBA battery of at least 150mm can fire IR with its HE/WP mission under G14.672, using its placement restriction. Do not apply the ordinary OBA IR prohibition without this exception."
+      ],
+      "effect": "Attach this profile to the individual battery; do not provide disconnected generic naval buttons.",
+      "example": "Apply Naval OBA mission exceptions / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "Supplemental timing and special rules"
+    },
+    {
+      "id": "nationality",
+      "g": 9,
+      "title": "Apply nationality, terrain and equipment restrictions",
+      "who": "Affected side",
+      "kind": "Eligibility and modifier overlay",
+      "refs": "A19; A21; A25; G.3; G11.8; G12.5; W7.41; Chapter H notes",
+      "sourcePages": [
+        86,
+        88,
+        94,
+        97,
+        276,
+        298,
+        304,
+        663,
+        664
+      ],
+      "terms": [
+        "CPVA",
+        "FG",
+        "ROF",
+        "B#",
+        "SSR"
+      ],
+      "prompt": "Which specific rule changes this unit’s permitted attack?",
+      "checks": [
+        "Check nationality, elite status, captured/non-qualified use, ammunition shortage and the weapon’s listing/date/notes. Make unsupported configurations visible with unknown eligibility.",
+        "Include PTO multi-hex FG restrictions, cave firing/SMOKE and LC armament conditions.",
+        "Qualifying Good Order CPVA squad/HS attacks at non-ADJACENT targets in PFPh or using Opportunity Fire are Area Fire unless directed by a leader under W7.41. Preserve the Recon Unit exception."
+      ],
+      "effect": "Modifiers must attach to the proposed shot. Chapter H equipment entries and scenario SSR are source profiles, not a claim that every weapon uses one generic rule.",
+      "example": "Apply nationality, terrain and equipment restrictions / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "Supplemental timing and special rules"
+    },
+    {
+      "id": "massacre",
+      "g": 9,
+      "title": "Resolve the prisoner-elimination rule",
+      "who": "Eligible ATTACKER units",
+      "kind": "Optional or compulsory special case",
+      "refs": "A20.3-.4; A15.43",
+      "sourcePages": [
+        87,
+        84
+      ],
+      "terms": [
+        "ELR",
+        "SW",
+        "Melee",
+        "Berserk"
+      ],
+      "prompt": "Does A20.4 apply in this Location?",
+      "checks": [
+        "Show the exact nationality/status and no-Melee restrictions. The optional action counts as SW use.",
+        "The berserk-unit-with-prisoners case has a compulsory start-of-fire-phase result and loss of berserk status; it is an exception to the usual no-Prep-Fire guidance for berserk units.",
+        "Apply No Quarter/Mopping Up restrictions and the once-only enemy ELR increase as specified."
+      ],
+      "effect": "Use the rule’s neutral description and consequences; neither hide the option nor suggest it as a tactic.",
+      "example": "Resolve the prisoner-elimination rule / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "Supplemental timing and special rules"
+    },
+    {
+      "id": "standing",
+      "g": 9,
+      "title": "Consider standing choices and ongoing commitments",
+      "who": "As the specific rule permits",
+      "kind": "Conditional cross-phase choices",
+      "refs": "A12.14; A20.5; B9.32-.323; E10.2-.4",
+      "sourcePages": [
+        78,
+        87,
+        119,
+        244
+      ],
+      "terms": [
+        "HIP",
+        "WA",
+        "TI",
+        "Ammo Vehicle"
+      ],
+      "prompt": "Will this action affect an ongoing obligation or standing choice?",
+      "checks": [
+        "Retain voluntary concealment loss and automatic Guard Deployment where their own rules permit them. Do not turn prisoner transfer into a PFPh choice.",
+        "Apply voluntary/mandatory WA changes at their legal windows, never retroactively after an attack is declared to improve its defense.",
+        "Firing can interrupt replenishment. Using an Ammo Vehicle’s Prep Fire benefit restricts that vehicle’s subsequent movement; show the linked commitment."
+      ],
+      "effect": "Cross-phase records persist into Prep Fire and update when an actual event changes them.",
+      "example": "Consider standing choices and ongoing commitments / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "Supplemental timing and special rules"
+    },
+    {
+      "id": "attackResults",
+      "g": 10,
+      "title": "Resolve attack results before the next decision",
+      "who": "Both sides as affected",
+      "kind": "Required resolution chain",
+      "refs": "A7.3; A9.7; A10; A15; A17; C3.7-.8; C7; D.8",
+      "sourcePages": [
+        55,
+        56,
+        65,
+        66,
+        67,
+        69,
+        83,
+        84,
+        170,
+        171,
+        176,
+        177,
+        193
+      ],
+      "terms": [
+        "MC",
+        "PTC",
+        "KIA",
+        "K",
+        "HOB",
+        "LLMC",
+        "LLTC",
+        "DM",
+        "CH"
+      ],
+      "prompt": "Which required results remain from this shot?",
+      "checks": [
+        "Resolve random selection, casualties, MC/PTC, wounds, leader-loss effects and applicable HOB or special morale changes in their proper sequence.",
+        "Resolve collateral effects, Shock/Stun/Recall, burning wrecks, equipment destruction, Cowering, malfunction and ammunition depletion where triggered.",
+        "Update concealment, Control/WA and capability only from authorized results. Never mark the attack finished while a dependent choice remains."
+      ],
+      "effect": "Separate attacker choices from defender resolution, keep private information private, and reopen only newly created opportunities.",
+      "example": "Resolve attack results before the next decision / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "Consequences and response windows"
+    },
+    {
+      "id": "sniper",
+      "g": 10,
+      "title": "Resolve Sniper attacks and checks",
+      "who": "Both sides according to trigger",
+      "kind": "Triggered response",
+      "refs": "A14.1-.4; E1.72; E1.76; G12.603; G14.261; ASOP dagger",
+      "sourcePages": [
+        82,
+        83,
+        225,
+        305,
+        314,
+        678
+      ],
+      "terms": [
+        "SAN",
+        "TH",
+        "MC",
+        "TC",
+        "DR"
+      ],
+      "prompt": "Did a qualifying Original DR activate a Sniper?",
+      "checks": [
+        "PFPh is Sniper-capable. Check qualifying TH, MC, TC, non-OBA IFT and Entrenching DR, with the Prisoner and other exclusions. Do not treat every DR or dr as a trigger.",
+        "Finish the triggering roll’s required effects before the Sniper attack, and respect chained-result ordering. Offer the permitted Sniper Check when its conditions arise.",
+        "Include night, LC/seaborne exceptions. ASOP references RB CG8, ABtF CG8, BRT CG8, KGP CG16 and PB CG13; their complete module text needs its own source profile."
+      ],
+      "effect": "The response can change later eligibility, so rerun affected opportunities after resolution.",
+      "example": "Resolve Sniper attacks and checks / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Partially integrated; full rule path still needs verification",
+      "timing": "Consequences and response windows"
+    },
+    {
+      "id": "phoneCut",
+      "g": 10,
+      "title": "Resolve a triggered Field Phone cut",
+      "who": "Affected phone owner",
+      "kind": "Triggered consequence",
+      "refs": "C1.23",
+      "sourcePages": [
+        163
+      ],
+      "terms": [
+        "OBA",
+        "DR",
+        "HIP"
+      ],
+      "prompt": "Did an opposing unit’s Original 2 trigger a phone-security consequence?",
+      "checks": [
+        "Check the specified security-area and opposing-unit conditions for an Original 2 DR for any purpose.",
+        "Keep phone information private, and distinguish a cut/non-repairable phone from a malfunctioned repairable radio."
+      ],
+      "effect": "Link this to the triggering roll, rather than inserting a voluntary phone-cutting action.",
+      "example": "Resolve a triggered Field Phone cut / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "Consequences and response windows"
+    },
+    {
+      "id": "notHere",
+      "g": 11,
+      "title": "Keep later-phase actions in their proper windows",
+      "who": "Reference",
+      "kind": "Timing clarification",
+      "refs": "A4.44; A8; A9.72; A23.3; A24.1; B24.7; C10.1; E7.4",
+      "sourcePages": [
+        50,
+        58,
+        65,
+        90,
+        91,
+        142,
+        180,
+        237,
+        238
+      ],
+      "terms": [
+        "MPh",
+        "DFPh",
+        "AFPh",
+        "SW",
+        "ROF"
+      ],
+      "prompt": "Are you looking for something that belongs to another phase?",
+      "checks": [
+        "Normal SW Recovery/Transfer/repair are not generic Prep Fire actions. MPh smoke grenades, vehicle smoke dispensers and placed DC keep their own windows.",
+        "Clearance declarations, Gun hookup/unhooking and Pushing normally belong in MPh; entrenching, Mopping Up and Kindling have the PFPh windows described here.",
+        "Defensive First Fire, ordinary Fire Lanes, Subsequent First Fire and FPF are not ordinary Prep Fire attacks. Ordinary air Ground Support has its own timing; the Chapter W CAS exception is separate.",
+        "Do not remove Prep Fire, Bounding Fire or TI simply because PFPh ends; use their actual later removal rules."
+      ],
+      "effect": "Offer a future-phase reminder, not an invalid action button.",
+      "example": "Keep later-phase actions in their proper windows / Review subject and scenario / Pending rules remain visible; no game action is performed.",
+      "status": "Rules integration pending; reference available",
+      "timing": "Actions belonging elsewhere"
+    }
+  ],
+  "glossary": {
+    "SMOKE": "The umbrella for Smoke and WP effects; preserve ammunition type, owner and source.",
+    "WP": "White Phosphorus, with its own height, NMC and ignition rules.",
+    "PFPh": "Prep Fire Phase, the ATTACKER’s early fire and preparation window.",
+    "Blaze": "A continuing fire state, distinct from a Flame and from its smoke counter.",
+    "SW": "Support Weapon. Using one affects its possessor’s capability accounting.",
+    "Motion": "Vehicle state. It changes firing eligibility and Vehicle Dust timing.",
+    "AFV": "Armored Fighting Vehicle.",
+    "LOS": "Line of Sight. Guidance uses only information the viewing player may know.",
+    "NVR": "Night Visibility Range.",
+    "IR": "Illuminating Round, with its own usage and placement procedure.",
+    "dr": "One die, distinct from a two-dice DR.",
+    "CE": "Crew Exposed vehicle condition.",
+    "MMC": "Multi-Man Counter: squad, half-squad or crew.",
+    "SMC": "Single-Man Counter, such as a leader or Hero.",
+    "TH": "To Hit roll or number for an ordnance attack.",
+    "ATT": "Area Target Type.",
+    "ROF": "Rate of Fire. A retained opportunity is not an automatic shot.",
+    "s#": "Smoke Depletion Number on the actual weapon. Distinguish s from WP availability.",
+    "NMC": "Normal Morale Check.",
+    "CH": "Critical Hit.",
+    "DR": "Two-dice roll. Keep Original, modified and individual colored/white values.",
+    "MTR": "Mortar.",
+    "SAN": "Sniper Activation Number, tested only for qualifying Original rolls.",
+    "MOL": "Molotov Cocktail. A squad MOL and a MOL Projector have different procedures.",
+    "CA": "Covered Arc.",
+    "OBA": "Offboard Artillery.",
+    "Radio Contact": "Communication state, separate from Battery Access.",
+    "FFE": "Fire For Effect. FFE:1, FFE:2 and FFE:C have different actions.",
+    "Battery Access": "Permission to use the battery, determined by its access procedure.",
+    "FFE:C": "Continuation marker; it is not an attacking FFE.",
+    "AR": "Artillery Request marker, placed before Accuracy resolution.",
+    "SR": "Spotting Round marker.",
+    "HE": "High Explosive ammunition or mission.",
+    "Harassing Fire": "OBA mission with different area and firepower from a Concentration.",
+    "TC": "Task Check.",
+    "NOBA": "Naval Offboard Artillery.",
+    "Barrage": "An artillery pattern; a Creeping Barrage additionally follows recorded progression.",
+    "IFT": "Infantry Fire Table.",
+    "PRC": "Passengers, Riders and Crew, with different vulnerability and fire restrictions.",
+    "KIA": "Killed In Action attack result.",
+    "TEM": "Terrain Effects Modifier.",
+    "Column": "A formation with specific disbandment rules.",
+    "TI": "Task Involved status, not a synonym for Prep Fire.",
+    "HIP": "Hidden Initial Placement. No guide prompt may leak hidden opposing information.",
+    "Control": "Rules-defined ownership of Locations or buildings, not simply current occupancy.",
+    "DRM": "Modifier to a two-dice roll. A drm modifies a single die.",
+    "Labor": "Progress modifier/status from eligible unsuccessful labor attempts.",
+    "NTC": "Normal Task Check.",
+    "EC": "Environmental Conditions.",
+    "MPh": "Movement Phase. Several Prep Fire commitments prevent subsequent movement.",
+    "AFPh": "Advancing Fire Phase. Opportunity Fire reserves a full-effect attack here.",
+    "FP": "Firepower.",
+    "FG": "Fire Group, subject to formation and mandatory grouping rules.",
+    "PBF": "Point Blank Fire.",
+    "TPBF": "Triple Point Blank Fire.",
+    "MG": "Machine Gun.",
+    "TK": "To Kill resolution, distinct from the To Hit roll.",
+    "ITT": "Infantry Target Type.",
+    "VTT": "Vehicle Target Type.",
+    "AP": "Armor Piercing ammunition.",
+    "HEAT": "High Explosive Anti-Tank ammunition.",
+    "APCR": "Armor Piercing Composite Rigid ammunition.",
+    "APDS": "Armor Piercing Discarding Sabot ammunition.",
+    "IFE": "Infantry Firepower Equivalent, a weapon-specific alternative to ordinary TH fire.",
+    "C": "Canister ammunition, in this ordnance context.",
+    "MA": "Main Armament.",
+    "SA": "Secondary Armament.",
+    "AAMG": "Anti-Aircraft Machine Gun.",
+    "BMG": "Bow Machine Gun.",
+    "CMG": "Coaxial Machine Gun.",
+    "BU": "Buttoned Up vehicle condition.",
+    "TCA": "Turret Covered Arc.",
+    "VCA": "Vehicle Covered Arc.",
+    "IF": "Intensive Fire, an extra Gun shot with accuracy and malfunction penalties.",
+    "B#": "Breakdown Number, with relevant reductions applied under the actual rule.",
+    "FT": "Flamethrower.",
+    "X#": "Permanent weapon-loss/depletion threshold where specified.",
+    "DC": "Demolition Charge.",
+    "US#": "Unit Size Number, used in the Set DC procedure.",
+    "Encircled": "State established by qualifying fire or other specific rules.",
+    "AA": "Anti-Aircraft fire or mode.",
+    "FAC": "Forward Air Controller in the applicable Chapter W rules.",
+    "dm": "Dismantled weapon state, distinct from DM.",
+    "PP": "Portage Points.",
+    "Recall": "Vehicle withdrawal obligation.",
+    "Gun": "Rules-defined ordnance, not every weapon colloquially called a gun.",
+    "QSU": "Quick Set Up, affecting Gun handling.",
+    "SL": "Searchlight in this Chapter W context; not the Squad Leader game abbreviation.",
+    "IB Lane": "Illuminating Beam Lane created by a searchlight.",
+    "Gunflash": "Night firing signature, governed by its own placement/removal rules.",
+    "TACP": "Tactical Air Control Party.",
+    "Residual FP": "Firepower left for qualifying later movement attacks; not an ordinary Prep Fire byproduct.",
+    "SFCP": "Shore Fire Control Party for NOBA.",
+    "CPVA": "Chinese People’s Volunteer Army.",
+    "SSR": "Scenario Special Rule. Unknown content is a source gap, not assumed inapplicable.",
+    "ELR": "Experience Level Rating.",
+    "Melee": "Close-combat state restricting many actions.",
+    "Berserk": "Special morale state; ordinary Prep Fire is prohibited, with specific rule exceptions.",
+    "WA": "Wall/Hedge Advantage.",
+    "Ammo Vehicle": "Ammunition-supply vehicle with linked firing and replenishment commitments.",
+    "MC": "Morale Check.",
+    "PTC": "Pin Task Check.",
+    "K": "Casualty Reduction result, distinct from KIA.",
+    "HOB": "Heat of Battle, a triggered resolution rather than an optional action.",
+    "LLMC": "Leader-Loss Morale Check.",
+    "LLTC": "Leader-Loss Task Check.",
+    "DM": "Desperation Morale, distinct from dismantled dm.",
+    "DFPh": "Defensive Fire Phase, distinct from defensive responses during Prep Fire."
+  },
+  "asopLedger": [
+    {
+      "step": "2.11A",
+      "clauses": "Remove/disperse SMOKE; Napalm consequences; Starshells; Vehicle Dust",
+      "optionIds": [
+        "smokeCleanup",
+        "napalm",
+        "dustCleanup",
+        "starshellOpening"
+      ]
+    },
+    {
+      "step": "2.12A",
+      "clauses": "Ordnance SMOKE; mortar IR; Spotter; WP NMC/Flame; MOL Projector; fire/Gunflash markers",
+      "optionIds": [
+        "smokeFire",
+        "wpEffects",
+        "mortarIR",
+        "earlySpotter",
+        "molProjector"
+      ]
+    },
+    {
+      "step": "2.13A",
+      "clauses": "Contact and exceptions; Sighting TC; Access; AR/SR/Pre-Reg FFE/IR; rockets; FFE:C",
+      "optionIds": [
+        "radio",
+        "access",
+        "newMission",
+        "obaIR",
+        "rockets",
+        "aerialObserver",
+        "continuation"
+      ]
+    },
+    {
+      "step": "2.14A",
+      "clauses": "Correct/convert/cancel; Creeping Barrage; rocket correction exclusion",
+      "optionIds": [
+        "correct",
+        "continuation",
+        "barrage",
+        "rockets"
+      ]
+    },
+    {
+      "step": "2.15A",
+      "clauses": "OBA SMOKE/IR/WP; HE FFE; all listed terrain/fortification effects; Column and Reverse Slopes",
+      "optionIds": [
+        "obaSmokeResolution",
+        "ffe",
+        "terrainEffects",
+        "columnReverseSlope",
+        "naval"
+      ]
+    },
+    {
+      "step": "2.21A",
+      "clauses": "Mop Up/casualties; entrench/Labor; Kindling/NTC; TI/Prep Fire",
+      "optionIds": [
+        "mopUp",
+        "entrench",
+        "kindle"
+      ]
+    },
+    {
+      "step": "2.22A",
+      "clauses": "Original mortar Spotter; unit and weapon fire; Heavy AA; mutual resolution; Opportunity Fire; later Starshells; destroy/malfunction/dm/assemble",
+      "optionIds": [
+        "fireOrHold",
+        "smallArms",
+        "spraying",
+        "weapons",
+        "ordnance",
+        "specialAmmo",
+        "mortarSpotter",
+        "vehicleFire",
+        "rof",
+        "intensive",
+        "ftMol",
+        "dc",
+        "encirclement",
+        "opportunity",
+        "starshellLater",
+        "heavyAA",
+        "assemble",
+        "destroy",
+        "attackResults"
+      ]
+    },
+    {
+      "step": "2.23A",
+      "clauses": "Limber/unlimber; unlimber TI",
+      "optionIds": [
+        "limber",
+        "unlimber"
+      ]
+    },
+    {
+      "step": "2.31A",
+      "clauses": "Eligible end-phase CA change; AA-mode designation/cancellation",
+      "optionIds": [
+        "caEnd",
+        "aaModeEnd"
+      ]
+    }
+  ]
+}

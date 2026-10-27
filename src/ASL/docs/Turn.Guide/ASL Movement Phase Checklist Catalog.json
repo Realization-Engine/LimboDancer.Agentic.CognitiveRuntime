@@ -1,0 +1,3643 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "edition": "eASLRB v3.01",
+    "file": "E:/RPG/Dennis-Landi-Games/Squad Leader Apocalypse/References/AdvancedSquadLeader/wgv-2025-08-07_06-00am/eASLRB_v3_01.pdf",
+    "sha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+    "reconciled": "2026-10-26",
+    "asopPdfPages": [
+      679,
+      680
+    ],
+    "pageNumbering": "One-based physical PDF pages.",
+    "scope": "All 20 printed MPh ASOP steps and identified supplemental in-volume rule families. Scenario SSRs, individual equipment notes and external modules require profile-specific reconciliation."
+  },
+  "groups": [
+    "Movement contract and expenditure windows",
+    "3.11A-3.13A · Start of the phase",
+    "3.21A · Berserk priority",
+    "3.22A · Select a ground mover and declarations",
+    "3.23A · Select aerial movement",
+    "3.31A · Resolve a berserk charge",
+    "3.32A · Routes, costs and exposure",
+    "3.32A · Equipment, transport and labor",
+    "3.32A · Smoke, vehicles and attacks",
+    "3.32A · Impulses, terrain and amphibious effects",
+    "3.33A-3.34A · Aerial movement",
+    "3.35D · Effects before ordinary First Fire",
+    "3.36D · Defender fire and response choices",
+    "3.37D-3.38D · Fire against aerial landings",
+    "3.41A · End this ground unit’s move",
+    "3.42A-3.43A · Land gliders and parachutes",
+    "3.51A-3.53B · End the entire Movement Phase",
+    "Additional rule-specific Movement overlays"
+  ],
+  "options": [
+    {
+      "id": "expenditure",
+      "g": 0,
+      "title": "Commit one expenditure, then resolve responses",
+      "who": "BOTH",
+      "kind": "Decision-window contract",
+      "refs": "A8.1-.14; D2.1; ASOP 3.32A-3.36D",
+      "sourcePages": [
+        679,
+        59,
+        195
+      ],
+      "terms": [
+        "MF",
+        "MP",
+        "DFF",
+        "ITS MPh"
+      ],
+      "prompt": "What is being spent now, and whose decision follows?",
+      "checks": [
+        "Keep the route proposal separate from committed expenditures. Entering a hex and Recovering a weapon are separate actions, even in the same Location.",
+        "Record the actual MF/MP cost, route, facing and participating units. Complete an impulse’s expenditures before First Fire.",
+        "Resolve triggered effects and the defender’s current response before the next expenditure. A pass closes only this window, not later windows or the entire MPh."
+      ],
+      "effect": "A live component needs distinct Continue movement, End this unit’s move and End phase actions, with Rules-owned gates. This reference preview only records consideration.",
+      "example": "A squad enters for 1 MF, then wants to Recover a SW for another MF. The defender gets the entry response before Recovery is committed.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "Rule-specific MPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "order",
+      "g": 0,
+      "title": "Choose the next mover without skipping compulsory movement",
+      "who": "ATTACKER",
+      "kind": "Sequence obligation",
+      "refs": "ASOP MPh preamble; A15.43; A4.1",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MPh",
+        "ITS MPh",
+        "Human Wave"
+      ],
+      "prompt": "Which movement sequence must finish before another begins?",
+      "checks": [
+        "Complete all units that began THE MPh berserk before any non-berserk unit starts ITS MPh.",
+        "Complete ground movement before aerial glider/parachute sequences. Revisit currently berserk units at 3.21A; newly created berserk states can interrupt other procedures.",
+        "Within a printed step, choose the order unless a rule says otherwise. Do not combine different units into a stack merely to share a completed checklist."
+      ],
+      "effect": "Track a separate movement instance for each unit/stack and the appropriate group procedure. No moving units is a valid transition only after required work is settled.",
+      "example": "An unmoved berserk squad prevents starting an ordinary tank’s move. A later berserk result requires its own source-governed interruption.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "Rule-specific MPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "spotter",
+      "g": 1,
+      "title": "Replace a lost or non-Good-Order mortar Spotter",
+      "who": "ATTACKER",
+      "kind": "Optional opening choice",
+      "refs": "C9.3",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MTR",
+        "LOS"
+      ],
+      "prompt": "Does a mortar need a replacement Spotter?",
+      "checks": [
+        "This opening window replaces a Spotter eliminated or no longer in Good Order.",
+        "Check spotting qualifications and commitments under C9.3; do not treat this as unrestricted mid-move designation."
+      ],
+      "effect": "Associate the replacement with its mortar and preserve all spotting commitments.",
+      "example": "A broken Spotter can trigger this opening review before any unit starts moving.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.11A",
+      "steps": [
+        "3.11A"
+      ]
+    },
+    {
+      "id": "starshellOpening",
+      "g": 1,
+      "title": "Attempt opening defender Starshells",
+      "who": "DEFENDER",
+      "kind": "Optional opening choice",
+      "refs": "E1.91-.921",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "NVR",
+        "CE",
+        "IR"
+      ],
+      "prompt": "Would illumination matter before the attacker starts moving?",
+      "checks": [
+        "Evaluate eligible leaders, MMC and CE AFV in this opening window.",
+        "Keep placement, usage and illumination results separate from later restricted attempts."
+      ],
+      "effect": "Recompute disclosed illumination and LOS before the first move.",
+      "example": "The defender considers an eligible Starshell before the attacker selects its first mover.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.12D",
+      "steps": [
+        "3.12D"
+      ]
+    },
+    {
+      "id": "gliderSetup",
+      "g": 1,
+      "title": "Place aerial gliders at their intended landing hexes",
+      "who": "ATTACKER",
+      "kind": "Required aerial setup",
+      "refs": "E8.2",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "ILH",
+        "MPh"
+      ],
+      "prompt": "Are incoming gliders represented in their aerial Locations?",
+      "checks": [
+        "Place all applicable gliders blue side up at their ILH.",
+        "Placement does not bypass ground movement or begin landing; the aerial response sequence comes later."
+      ],
+      "effect": "Keep gliders queued for 3.23A and 3.37D after ground movement.",
+      "example": "A glider appears at its ILH now, but the ground units finish their MPh first.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.13A",
+      "steps": [
+        "3.13A"
+      ]
+    },
+    {
+      "id": "berserkPrepare",
+      "g": 2,
+      "title": "Prepare the next required berserk charge",
+      "who": "ATTACKER",
+      "kind": "Compulsory movement",
+      "refs": "A15.43; ASOP 3.21A",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "LOS",
+        "MF",
+        "ITS MPh"
+      ],
+      "prompt": "Is there a currently berserk unit required to charge?",
+      "checks": [
+        "Determine the legal charge target and route using the berserk rules and Known enemy information.",
+        "Enter 3.31A for that charge; only proceed to ordinary selection if no such unit can charge."
+      ],
+      "effect": "Do not offer a general decline as an alternative to a compulsory charge.",
+      "example": "After a fire result creates a berserk unit, the guide revisits charge obligations rather than keeping a stale ordinary move plan.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.21A",
+      "steps": [
+        "3.21A"
+      ]
+    },
+    {
+      "id": "eligibility",
+      "g": 3,
+      "title": "Select an eligible unit, stack or group",
+      "who": "ATTACKER",
+      "kind": "Movement eligibility",
+      "refs": "A4.1; D2.1",
+      "sourcePages": [
+        679,
+        47,
+        50,
+        195
+      ],
+      "terms": [
+        "MF",
+        "MP",
+        "TI",
+        "CX"
+      ],
+      "prompt": "Who can move, and what commitments already limit them?",
+      "checks": [
+        "Check Good Order/Mobile status, pinned Infantry and Prep/Bounding Fire or TI commitments; preserve explicit special-rule exceptions.",
+        "Calculate MF/MP, portage, leader accompaniment and movement type. Do not restore already-spent MF merely because a SW is dropped.",
+        "Review road bonus, terrain and prior unloading restrictions from their own rules."
+      ],
+      "effect": "Show available movement and the reason for known restrictions. Unknown terrain evaluation stays visible as not evaluated.",
+      "example": "A squad that held fire may move; its neighboring Prep-firing squad cannot be treated as another ordinary mover.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "startDrop",
+      "g": 3,
+      "title": "Drop possession before moving",
+      "who": "ATTACKER",
+      "kind": "Optional possession choice",
+      "refs": "A4.43",
+      "sourcePages": [
+        679,
+        50
+      ],
+      "terms": [
+        "SW",
+        "PP",
+        "IPC"
+      ],
+      "prompt": "Should carried equipment be left before movement begins?",
+      "checks": [
+        "Name the weapon and its Location; dropping possession is not a Rally transfer to another unit.",
+        "Recalculate starting portage correctly and retain any independent Recovery requirements for the next owner."
+      ],
+      "effect": "Record ownership and load separately from movement allowance.",
+      "example": "A squad leaves an MMG before starting; another unit still needs its own legal Recovery opportunity.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "freedom",
+      "g": 3,
+      "title": "Check night Freedom of Movement",
+      "who": "ATTACKER",
+      "kind": "Conditional movement restriction",
+      "refs": "E1.21",
+      "sourcePages": [
+        679,
+        223
+      ],
+      "terms": [
+        "Freedom of Movement",
+        "NVR",
+        "NTC"
+      ],
+      "prompt": "Is a night Scenario Defender unit free to move?",
+      "checks": [
+        "Check the actual release conditions, including permitted attacks, Known enemy sightings and applicable sharing rules.",
+        "Offer the best eligible leader’s once-per-friendly-MPh dr only when E1.21 permits it; this is not a generic NTC.",
+        "Preserve acquired Freedom of Movement and distinguish Scenario Defender from this turn’s DEFENDER."
+      ],
+      "effect": "Explain publicly known restrictions without revealing unseen opposing units.",
+      "example": "A side now taking its Player Turn can still be the Scenario Defender and subject to night movement limits.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "strayingStart",
+      "g": 3,
+      "title": "Resolve required Movement and Straying checks",
+      "who": "ATTACKER",
+      "kind": "Conditional opening procedure",
+      "refs": "E1.53-.531; G2.22; G3.21; G13.83",
+      "sourcePages": [
+        679,
+        224,
+        225
+      ],
+      "terms": [
+        "Straying",
+        "NVR",
+        "DR"
+      ],
+      "prompt": "Does night, jungle, bamboo or beach movement require a check?",
+      "checks": [
+        "Use the applicable rule and unit conditions, rather than applying one universal night roll.",
+        "Resolve movement direction, restrictions and any Jitter trigger before continuing the intended route."
+      ],
+      "effect": "Keep the intended route and the actual permitted route distinct.",
+      "example": "A unit that planned to move north must follow a source-required Straying result instead.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "doubleStart",
+      "g": 3,
+      "title": "Declare Double Time at the start",
+      "who": "ATTACKER",
+      "kind": "Optional movement mode",
+      "refs": "A4.5",
+      "sourcePages": [
+        679,
+        50,
+        51
+      ],
+      "terms": [
+        "Double Time",
+        "MF",
+        "CX"
+      ],
+      "prompt": "Is gaining two MF worth the CX consequences?",
+      "checks": [
+        "Check eligibility and declare before the unit begins its movement.",
+        "Add the permitted two MF and CX; retain portage and other restrictions. Compare with the smaller later declaration."
+      ],
+      "effect": "Show effects on later fire and CC as well as movement.",
+      "example": "A squad considers reaching cover with two extra MF before it spends its first MF.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "assault",
+      "g": 3,
+      "title": "Declare Assault Movement",
+      "who": "ATTACKER",
+      "kind": "Optional movement mode",
+      "refs": "A4.61",
+      "sourcePages": [
+        679,
+        51
+      ],
+      "terms": [
+        "Assault Movement",
+        "FFNAM",
+        "FFMO"
+      ],
+      "prompt": "Can the planned move qualify for Assault Movement?",
+      "checks": [
+        "Declare before moving; satisfy the one-Location and less-than-all-MF conditions, including qualifying bonuses and exclusions.",
+        "Do not apply it to Cavalry or prohibited PRC/hazardous activity. It cannot be voluntarily cancelled to recover options.",
+        "Avoiding FFNAM does not automatically avoid FFMO; reassess loss of status if the governing rules require it."
+      ],
+      "effect": "Make the mode’s route constraints visible before commitment.",
+      "example": "A one-Location move across Open Ground may avoid FFNAM while still receiving FFMO.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "dash",
+      "g": 3,
+      "title": "Declare Dash across a road",
+      "who": "ATTACKER",
+      "kind": "Optional movement mode",
+      "refs": "A4.63",
+      "sourcePages": [
+        679,
+        51,
+        52
+      ],
+      "terms": [
+        "Dash",
+        "DFF",
+        "MF"
+      ],
+      "prompt": "Does this road crossing qualify for Dash?",
+      "checks": [
+        "Verify the declared start, crossed road Location and destination under A4.63 before accepting the mode.",
+        "Apply Dash-specific expenditure and defensive-fire restrictions rather than treating it as ordinary Assault Movement."
+      ],
+      "effect": "Keep the crossing and its response opportunities linked as one special procedure.",
+      "example": "The player compares an ordinary crossing with a qualifying Dash, without assuming every road hex permits one.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "sewerStart",
+      "g": 3,
+      "title": "Declare Sewer entry",
+      "who": "ATTACKER",
+      "kind": "Optional special movement",
+      "refs": "B8.4",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MF",
+        "Straying",
+        "ITS MPh"
+      ],
+      "prompt": "Should this unit use the Sewer route?",
+      "checks": [
+        "Verify entry Location, unit and scenario qualifications.",
+        "Queue travel/Lost checks and a separate end-of-unit emergence attempt; ordinary surface routes do not describe this movement."
+      ],
+      "effect": "Keep sewer position private as the rules require.",
+      "example": "A sewer-moving stack has its emergence review at 3.41A even if its surface move list is empty.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "climbStart",
+      "g": 3,
+      "title": "Declare Climbing",
+      "who": "ATTACKER",
+      "kind": "Optional special movement",
+      "refs": "B11.4",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MF",
+        "Hazardous Movement"
+      ],
+      "prompt": "Is Climbing the intended way across this cliff?",
+      "checks": [
+        "Check unit eligibility, the cliff route and required declaration before movement.",
+        "Track Climb counters, costs and possible Falling checks through the procedure."
+      ],
+      "effect": "Replace ordinary hex-entry prompts with climbing progress and exposure.",
+      "example": "A climber’s partially completed ascent is not represented as an ordinary move into the upper hex.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "wave",
+      "g": 3,
+      "title": "Declare Human Wave or Banzai movement",
+      "who": "ATTACKER",
+      "kind": "Optional group movement",
+      "refs": "A13.62; A25.23; G18.61; G1.5",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "Human Wave",
+        "Banzai",
+        "Impulse"
+      ],
+      "prompt": "Does this group qualify for the intended charge procedure?",
+      "checks": [
+        "Validate participants, leadership, target/direction and nationality-specific declaration requirements.",
+        "Track each impulse and its constraints; expend the group’s MF/MP before First Fire.",
+        "Keep Japanese Banzai and other Human Wave variants distinct rather than copying one generic rule."
+      ],
+      "effect": "Create one group procedure with individual casualties and movement states.",
+      "example": "Several squads participate in a charge; resolving one squad’s fire result does not finish the other participants.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "dareDeath",
+      "g": 3,
+      "title": "Declare Dare-Death berserk status",
+      "who": "ATTACKER",
+      "kind": "Optional declaration, compulsory consequence",
+      "refs": "G18.6",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MF",
+        "LOS"
+      ],
+      "prompt": "Should eligible Dare-Death Infantry become berserk now?",
+      "checks": [
+        "Verify the designated unit and declaration conditions.",
+        "Once declared, follow the required charge in 3.32A rather than ordinary elective movement."
+      ],
+      "effect": "Show the loss of route discretion before confirmation.",
+      "example": "An eligible Chinese unit can choose the declaration, but cannot then choose an ordinary cautious route.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "swimStart",
+      "g": 3,
+      "title": "Declare Swimming movement",
+      "who": "ATTACKER",
+      "kind": "Optional special movement",
+      "refs": "E6",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MF",
+        "TC",
+        "MC"
+      ],
+      "prompt": "Can and should this unit cross by Swimming?",
+      "checks": [
+        "Check water, unit, equipment and entry qualifications.",
+        "Queue required TC/MC, movement limitations and consequences instead of normal walking costs."
+      ],
+      "effect": "Retain Swimming as a visible option even when water movement is not integrated.",
+      "example": "The route includes water; the guide offers the rule reference without claiming the current engine can adjudicate it.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "gallopStart",
+      "g": 3,
+      "title": "Declare Cavalry or wagon Gallop",
+      "who": "ATTACKER",
+      "kind": "Optional movement mode",
+      "refs": "A13.36; D12.4",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MF",
+        "CX"
+      ],
+      "prompt": "Should the horse or wagon Gallop from the start?",
+      "checks": [
+        "Check CX and type restrictions; opening Cavalry Gallop adds eight MF, wagon Gallop four.",
+        "Do not substitute the later Cavalry four-MF option for the opening declaration."
+      ],
+      "effect": "Track mount and rider states separately where required.",
+      "example": "A Cavalry unit weighs the opening eight-MF option before spending any movement.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "motionStart",
+      "g": 3,
+      "title": "Begin movement of a vehicle in Motion",
+      "who": "ATTACKER",
+      "kind": "State transition",
+      "refs": "D2.1; D2.4; ASOP 3.22A",
+      "sourcePages": [
+        679,
+        195
+      ],
+      "terms": [
+        "Motion",
+        "MP",
+        "Non-Stopped"
+      ],
+      "prompt": "Will this vehicle expend MP or MF now?",
+      "checks": [
+        "Remove the Motion counter when the vehicle will expend movement as prescribed.",
+        "Preserve the correct Non-Stopped and moving-target conditions; removing the counter does not mean it Stopped."
+      ],
+      "effect": "Keep separate fields for counter state, expenditure state and fire modifiers.",
+      "example": "A vehicle begins ITS MPh from Motion without becoming a stationary firing target.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "formations",
+      "g": 3,
+      "title": "Check Column, Convoy and Platoon movement",
+      "who": "ATTACKER",
+      "kind": "Conditional group procedure",
+      "refs": "E11.2; E11.52; D14.2",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MP",
+        "Impulse"
+      ],
+      "prompt": "Is movement linked to a formation?",
+      "checks": [
+        "Validate formation membership, order and movement constraints before individual expenditure.",
+        "Track group expenditure, leaders and disbandment triggers; do not silently turn a group into independent moves."
+      ],
+      "effect": "Expose each formation’s governing procedure and leave unavailable evaluators explicit.",
+      "example": "A convoy member cannot skip ahead just because its individual MP budget allows it.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "radioless",
+      "g": 3,
+      "title": "Attempt non-Platoon movement with a radioless AFV",
+      "who": "ATTACKER",
+      "kind": "Conditional task check",
+      "refs": "D14.23",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "AFV",
+        "NTC"
+      ],
+      "prompt": "Does this onboard AFV need permission to move independently?",
+      "checks": [
+        "Check radioless status, Platoon choice and the Recalled exception.",
+        "Resolve the NTC and its consequences before normal movement; do not infer automatic success from an unimplemented check."
+      ],
+      "effect": "Attach the roll to this vehicle’s movement instance.",
+      "example": "An onboard radioless tank considers leaving its platoon; a Recalled vehicle uses the stated exception.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "flail",
+      "g": 3,
+      "title": "Declare a flail Trail Break attempt",
+      "who": "ATTACKER",
+      "kind": "Optional engineering movement",
+      "refs": "B28.7",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "TB",
+        "MP"
+      ],
+      "prompt": "Should the flail tank attempt a Trail Break in the minefield it will enter?",
+      "checks": [
+        "Declare the attempt at the required opening window and identify the entry hex.",
+        "Apply flail capability, mine and path rules during movement; do not mark a safe route before resolution."
+      ],
+      "effect": "Record the declared attempt separately from a successfully created TB.",
+      "example": "Following units receive a usable route only after the flail procedure actually creates it.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "surfStart",
+      "g": 3,
+      "title": "Resolve opening Heavy Surf beaching checks",
+      "who": "ATTACKER",
+      "kind": "Conditional opening procedure",
+      "refs": "G13.442; G13.4423",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "LC",
+        "DR"
+      ],
+      "prompt": "Does this boat or non-Aground LC require an opening (un)Beaching DR?",
+      "checks": [
+        "Check craft state and Heavy Surf before normal movement.",
+        "Carry grounding, immobilization, broaching and swamping outcomes into later choices."
+      ],
+      "effect": "A failed opening procedure can change which later actions remain available.",
+      "example": "An LC cannot plan a normal landing while an unresolved opening surf result controls its state.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "crewVehicle",
+      "g": 3,
+      "title": "Enter or voluntarily abandon a vehicle",
+      "who": "ATTACKER",
+      "kind": "Optional crew action",
+      "refs": "D5.41-.43; D5.411",
+      "sourcePages": [
+        679,
+        204
+      ],
+      "terms": [
+        "MF",
+        "CE",
+        "SW",
+        "FFNAM"
+      ],
+      "prompt": "Should this unit enter the vehicle, or should its crew abandon it?",
+      "checks": [
+        "Verify start-of-ITS-MPh position, all-MF cost, prior movement/fire and same-Player-Turn re-entry restrictions.",
+        "Offer permitted weapon removal and the abandoning inherent crew’s self-destruction/malfunction choice.",
+        "Resolve the associated fire window; entry and linked hooking succeed only if their survival conditions are met. Abandonment has its own outcome rules."
+      ],
+      "effect": "Do not complete entry or hooking merely when MF are paid. Show the different commitments of entering and leaving.",
+      "example": "A crew abandoning its vehicle considers removing an eligible weapon and wrecking the vehicle as it leaves.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.22A",
+      "steps": [
+        "3.22A"
+      ]
+    },
+    {
+      "id": "aerialQueue",
+      "g": 4,
+      "title": "Start the next aerial sequence",
+      "who": "ATTACKER",
+      "kind": "Sequence transition",
+      "refs": "ASOP 3.23A; E8; E9",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "ILH",
+        "MPh"
+      ],
+      "prompt": "Have all ground movement sequences finished?",
+      "checks": [
+        "Route an aerial glider to 3.37D before Evasive Action or landing.",
+        "If there is no aerial glider, use the all-parachute drift procedure at 3.34A; do not process parachutes as ordinary individual ground moves."
+      ],
+      "effect": "Use a dedicated aerial sequence rather than the ground-unit expenditure loop.",
+      "example": "The first glider receives its defender AA window before the landing attempt.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.23A",
+      "steps": [
+        "3.23A"
+      ]
+    },
+    {
+      "id": "berserkCharge",
+      "g": 5,
+      "title": "Conduct the required charge",
+      "who": "ATTACKER",
+      "kind": "Compulsory movement",
+      "refs": "A15.43-.431; A15.45; G13.491",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MF",
+        "DFF",
+        "LOS"
+      ],
+      "prompt": "What must this berserk unit do at its next expenditure?",
+      "checks": [
+        "Apply charge target, route and entry restrictions, including relevant beach exceptions.",
+        "After each qualifying expenditure resolve 3.35D and 3.36D; berserk status does not bypass defensive fire."
+      ],
+      "effect": "Reevaluate the charge after results instead of executing the whole plotted path at once.",
+      "example": "A charge pauses for fire; surviving units continue according to their updated state.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.31A",
+      "steps": [
+        "3.31A"
+      ]
+    },
+    {
+      "id": "route",
+      "g": 6,
+      "title": "Choose route, Location and cost",
+      "who": "ATTACKER",
+      "kind": "Optional expenditure",
+      "refs": "A4.1-.3; D2; Chapter B; ASOP 3.32A",
+      "sourcePages": [
+        679,
+        47,
+        48,
+        195
+      ],
+      "terms": [
+        "MF",
+        "MP",
+        "PP",
+        "FFMO"
+      ],
+      "prompt": "Which legal route and expenditure should be committed next?",
+      "checks": [
+        "Calculate actual terrain, elevation, hexside, road, portage and movement-type costs. A road-rate entry can change exposure and TEM.",
+        "Distinguish Location changes from hex changes. Include bridges, gullies, streams, shellholes, crags, railroads and building levels in the full design.",
+        "Display pending terrain rules as not evaluated, not impassable; hidden obstacles must be adjudicated without advance disclosure."
+      ],
+      "effect": "The completed Rules implementation supplies costs and exposure; the component explains the resulting choices.",
+      "example": "A squad can compare a road-rate entry with entry through woods, including the different defensive-fire treatment.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "minimum",
+      "g": 6,
+      "title": "Consider a Minimum Move",
+      "who": "ATTACKER",
+      "kind": "Optional special expenditure",
+      "refs": "A4.134",
+      "sourcePages": [
+        679,
+        48,
+        49
+      ],
+      "terms": [
+        "Minimum Move",
+        "MF",
+        "CX"
+      ],
+      "prompt": "Can this Infantry make a one-hex Minimum Move?",
+      "checks": [
+        "Retain at least one MF after excess portage deductions and satisfy the rule’s exclusions, including pushing a Gun or loading/unloading.",
+        "After entry and all First Fire, unbroken survivors become pinned and CX. Do not apply those states before the fire sequence."
+      ],
+      "effect": "Show both the reachable hex and the resulting Pin/CX commitment.",
+      "example": "A unit lacking the full entry cost may still qualify, but the move does not leave it ready for unrestricted follow-on action.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "bypass",
+      "g": 6,
+      "title": "Choose Infantry Bypass or VBM",
+      "who": "ATTACKER",
+      "kind": "Optional route mode",
+      "refs": "A4.3-.34; D2.3",
+      "sourcePages": [
+        679,
+        49,
+        50
+      ],
+      "terms": [
+        "Bypass",
+        "VBM",
+        "VCA",
+        "TCA"
+      ],
+      "prompt": "Is there sufficient clearance, and which side of the obstacle is being bypassed?",
+      "checks": [
+        "Use unit-specific clearance, terrain and entry restrictions. Infantry and vehicle Bypass are not interchangeable.",
+        "Preserve route vertices/hexsides and facing for LOS and attacks, including applicable mine and SMOKE effects.",
+        "Do not allow an ordinary voluntary Infantry end in Bypass; handle the specific broken-unit and vehicle ending rules."
+      ],
+      "effect": "Expose route geometry without presenting an unavailable LOS evaluator as a safe route.",
+      "example": "Two routes through one woods hex may create different firing opportunities even though the destination hex is the same.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "terrainModes",
+      "g": 6,
+      "title": "Review special terrain and fortification movement",
+      "who": "ATTACKER",
+      "kind": "Conditional route family",
+      "refs": "B6; B8; B9; B11; B20-B23; B26-B30; E3; G2-G5; G9; G11; Chapter F",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MF",
+        "MP",
+        "WA",
+        "TB"
+      ],
+      "prompt": "Does this route require a special terrain procedure?",
+      "checks": [
+        "Include tunnels, cliffs, Crest status, water/ice, rowhouses, Factories, fortified buildings, entrenchments, Wire, mines, pillboxes and roadblocks.",
+        "Include desert terrain, jungle, bamboo, huts, kunai, rice paddies, Panji and caves as explicit pending families; use scenario and equipment overlays.",
+        "Select the exact rule before committing. This family record is an index to detailed route rules, not evidence that every subcase has been adjudicated."
+      ],
+      "effect": "Keep all named families discoverable; an unsupported cost needs an explanation and reference, not removal from the catalog.",
+      "example": "A cave entry and a normal building entry both remain findable, but require different Rules projections.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "vehicleMotion",
+      "g": 6,
+      "title": "Choose Start, Stop, Delay, Reverse or facing expenditure",
+      "who": "ATTACKER",
+      "kind": "Optional vehicle expenditure",
+      "refs": "D2.1-.3",
+      "sourcePages": [
+        679,
+        59,
+        195
+      ],
+      "terms": [
+        "MP",
+        "Motion",
+        "Non-Stopped",
+        "VCA",
+        "TCA"
+      ],
+      "prompt": "What vehicle expenditure is intended now?",
+      "checks": [
+        "Price each Start, Stop, Delay, Reverse, facing and route action under the applicable rule.",
+        "Give the defender each appropriate expenditure window before the next action; do not combine Stop and unload to suppress a response.",
+        "Track remaining MP and the consequences of ending movement, including assumed expenditures where required."
+      ],
+      "effect": "The movement ledger must describe expenditures, not just a line of visited hexes.",
+      "example": "A tank Stops before unloading; the defender’s Stop-MP response occurs before unloading is announced.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "reliability",
+      "g": 6,
+      "title": "Resolve Mechanical Reliability, Stall and Bog Removal",
+      "who": "ATTACKER",
+      "kind": "Conditional prerequisite",
+      "refs": "D2.51; D8.3; G12.211-.212",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MP",
+        "DR"
+      ],
+      "prompt": "Does this movement need a prerequisite check?",
+      "checks": [
+        "Check vehicle-specific Mechanical Reliability/Stall triggers and Bog Removal conditions before continuation.",
+        "Keep Bog Removal distinct from a new terrain-entry Bog check; include LC Aground procedures where applicable."
+      ],
+      "effect": "A failed check changes capability and stops stale route execution.",
+      "example": "A Bogged vehicle cannot spend an ordinary movement entry while its removal result is unresolved.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "sewerTravel",
+      "g": 6,
+      "title": "Resolve sewer travel and Lost results",
+      "who": "ATTACKER",
+      "kind": "Conditional travel procedure",
+      "refs": "B8.41",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MF",
+        "Straying"
+      ],
+      "prompt": "Has this sewer move reached a required roll?",
+      "checks": [
+        "Perform Sewer dr and any required Lost dr at their prescribed timing.",
+        "Update the actual route privately and preserve the separate emergence procedure."
+      ],
+      "effect": "Do not expose the concealed sewer route through counts or warnings.",
+      "example": "A failed route result cannot be replaced by clicking the intended destination again.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "climbSwim",
+      "g": 6,
+      "title": "Resolve Falling, Climb progress and Swimming checks",
+      "who": "ATTACKER",
+      "kind": "Required special-movement effects",
+      "refs": "B11.41; B11.43; E6.1; E6.5",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "TC",
+        "MC",
+        "MF"
+      ],
+      "prompt": "What consequences does this special movement trigger?",
+      "checks": [
+        "Resolve any Falling DR and place the correct Climb counter after a successful ascent/descent.",
+        "Resolve required Swimming TC/MC; distinguish movement completion from surviving its checks."
+      ],
+      "effect": "Keep required effects attached to their originating expenditure.",
+      "example": "A successful climb changes the progress counter, while a Falling result requires resolution before another move.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "lateDouble",
+      "g": 6,
+      "title": "Declare Double Time after starting",
+      "who": "ATTACKER",
+      "kind": "Optional late declaration",
+      "refs": "A4.5",
+      "sourcePages": [
+        679,
+        50,
+        51
+      ],
+      "terms": [
+        "Double Time",
+        "CX",
+        "MF"
+      ],
+      "prompt": "Would one additional MF help now?",
+      "checks": [
+        "Verify that a late declaration remains legal for this unit and movement mode.",
+        "Gain one MF, not the opening two, and apply CX without undoing previous expenditures."
+      ],
+      "effect": "Refresh remaining options and later-phase consequences.",
+      "example": "A squad one MF short of its revised destination considers late Double Time.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "concealment",
+      "g": 6,
+      "title": "Resolve concealment, detection and occupied entry",
+      "who": "BOTH",
+      "kind": "Conditional disclosure procedure",
+      "refs": "A12.14-.15; A12.2; A12.33; A12.41-.42; A4.15",
+      "sourcePages": [
+        679,
+        79,
+        80
+      ],
+      "terms": [
+        "LOS",
+        "OVR",
+        "PAATC"
+      ],
+      "prompt": "Does this expenditure require concealment or entry adjudication?",
+      "checks": [
+        "Use the viewing side’s lawful information and the proper concealed/HIP reveal procedure.",
+        "Preserve voluntary choices where rules allow them, and handle forced-back or Infantry OVR branches at the correct point.",
+        "Resolve required PAATC and vehicle-ending detection separately; do not expose a hidden defender through route warnings."
+      ],
+      "effect": "The UI receives only the disclosed outcome, not an omniscient eligibility list.",
+      "example": "An attempted entry reveals a concealed SMC; the resulting OVR decision is handled before normal movement resumes.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "wallAdvantage",
+      "g": 6,
+      "title": "Claim or relinquish Wall Advantage when allowed",
+      "who": "ATTACKER",
+      "kind": "Conditional position choice",
+      "refs": "B9.32-.322",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "WA",
+        "TEM"
+      ],
+      "prompt": "Should this unit claim Wall Advantage at this point?",
+      "checks": [
+        "Check claim timing, competing enemy claims and mandatory WA conditions.",
+        "Respect firing, movement and loss/reclaim restrictions; do not make WA a freely reversible display toggle."
+      ],
+      "effect": "Update protection and related fire choices only after the legal state change.",
+      "example": "A unit reaching a wall reviews its claim while the expenditure and opposing position are current.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "recover",
+      "g": 7,
+      "title": "Recover a SW or Gun",
+      "who": "ATTACKER",
+      "kind": "Optional expenditure",
+      "refs": "A4.44; E4.21",
+      "sourcePages": [
+        679,
+        50
+      ],
+      "terms": [
+        "SW",
+        "MF",
+        "PP"
+      ],
+      "prompt": "Should this unit spend movement to attempt Recovery?",
+      "checks": [
+        "Check possession, Location, required MF and Recovery conditions; a failed attempt still has its prescribed expenditure.",
+        "Resolve the associated response window and any Ski-use dr. Update portage without refunding spent MF."
+      ],
+      "effect": "Give each Recovery its own expenditure identity.",
+      "example": "The squad enters a hex, survives the entry response, then attempts to Recover the abandoned LMG.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "dropDuring",
+      "g": 7,
+      "title": "Drop a weapon or release prisoners",
+      "who": "ATTACKER",
+      "kind": "Optional possession change",
+      "refs": "A4.43; A20.53",
+      "sourcePages": [
+        679,
+        50,
+        87
+      ],
+      "terms": [
+        "SW",
+        "PP",
+        "MF"
+      ],
+      "prompt": "What should be left at this Location?",
+      "checks": [
+        "Distinguish dropping a SW/Gun from releasing prisoners and follow the applicable ownership/guard rules.",
+        "Do not refund already lost movement allowance when dropping excess portage during the move.",
+        "Source tension: ASOP 3.32A lists dropping prisoners, while A20.53 sends voluntary abandonment to A20.5, which lists friendly RPh/APh. Keep the listed option visible, but require a resolved rule interpretation before enabling MPh abandonment."
+      ],
+      "effect": "Leave an explicit position and possession record. Do not infer executable permission from this unresolved source tension.",
+      "example": "Dropping a heavy weapon mid-route does not erase the cost already paid for carrying it.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "prisonerMovement",
+      "g": 7,
+      "title": "Move Guards and prisoners, or escort prisoners offboard",
+      "who": "ATTACKER",
+      "kind": "Conditional combined movement",
+      "refs": "A20.5-.54",
+      "sourcePages": [
+        679,
+        87,
+        88
+      ],
+      "terms": [
+        "MF",
+        "US#",
+        "PRC"
+      ],
+      "prompt": "How must the Guard and prisoners move together?",
+      "checks": [
+        "Move prisoners as one combined stack at their Guard’s foot rate under the captor’s direction. Apply guarding capacity, weapon-use and transport capacity restrictions.",
+        "Consider a legal Friendly Board Edge escort exit and its victory-condition treatment; an ordinary edge is not automatically Friendly.",
+        "Resolve fire against both Guards and prisoners using the special casualty/Pin rules, and handle replacement Guards or freed Unarmed units when a Guard is eliminated."
+      ],
+      "effect": "Track Guard identity and prisoner capacity through movement and casualties.",
+      "example": "Mounted transport must have room for the prisoners as well as the Guard; a spare seat for the Guard alone is insufficient.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "recapture",
+      "g": 7,
+      "title": "Enter an Unarmed unit’s Location to recapture it",
+      "who": "ATTACKER",
+      "kind": "Optional immediate combat on entry",
+      "refs": "A20.54",
+      "sourcePages": [
+        679,
+        88
+      ],
+      "terms": [
+        "CC",
+        "MF",
+        "OVR"
+      ],
+      "prompt": "Should eligible Infantry or Cavalry enter to attempt recapture?",
+      "checks": [
+        "Unarmed units do not bar movement; entering Infantry/Cavalry can engage them in immediate CC during the MPh.",
+        "If the entry attack fails to eliminate or recapture them, place Melee and allow no further movement. This is neither ordinary Infantry OVR nor a free capture."
+      ],
+      "effect": "Open the immediate combat consequence before continuing the route.",
+      "example": "A squad enters a freed Unarmed unit’s hex; an unsuccessful recapture leaves the units in Melee.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "manhandle",
+      "g": 7,
+      "title": "Manhandle a Gun or boat",
+      "who": "ATTACKER",
+      "kind": "Optional movement procedure",
+      "refs": "C10.3; E5.2",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "DR",
+        "TI",
+        "Hazardous Movement"
+      ],
+      "prompt": "Can the crew or Personnel move this equipment by hand?",
+      "checks": [
+        "Check pushing eligibility, route and modifiers; do not assume ordinary Infantry entry eligibility is sufficient.",
+        "Resolve Manhandling DR, TI and Labor on failure as prescribed, including the applicable defensive-fire exposure."
+      ],
+      "effect": "Track the equipment and pushing units as a linked action.",
+      "example": "A crew considers pushing its Gun into cover; a failed attempt still creates the relevant commitments.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "placeDC",
+      "g": 7,
+      "title": "Place a demolition charge",
+      "who": "ATTACKER",
+      "kind": "Optional expenditure with later detonation",
+      "refs": "A23.3-.4; C7.346",
+      "sourcePages": [
+        679,
+        90
+      ],
+      "terms": [
+        "DC",
+        "MF",
+        "PAATC",
+        "AFPh"
+      ],
+      "prompt": "Can the carrier operably Place the DC and survive the response?",
+      "checks": [
+        "Check ADJACENT target, LOS, movement/fire restrictions and any PAATC. Pay the placement MF in the carrier’s Location.",
+        "The carrier must survive the relevant defensive fire unbroken and unpinned for operable Placement.",
+        "A successfully Placed DC waits for its AFPh resolution; it does not explode merely because placement MF were spent."
+      ],
+      "effect": "Track declared, operably Placed and detonated as different states.",
+      "example": "A squad Places from cover. If pinned during the placement response, the DC is not operably Placed.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "setDC",
+      "g": 7,
+      "title": "Set a demolition charge",
+      "who": "ATTACKER",
+      "kind": "Optional special preparation",
+      "refs": "A23.7",
+      "sourcePages": [
+        679,
+        91
+      ],
+      "terms": [
+        "DC",
+        "US#"
+      ],
+      "prompt": "Should the unit Set this DC for later use?",
+      "checks": [
+        "Spend all MF using Hazardous Movement to Set it in the unit’s own Location; resolve the dr against the unit’s US#, with permitted assisting-leader drm.",
+        "The unit must avoid Pin/break for successful setting. Retain setting-unit identity and the later-Player-Turn, distance, LOS and NTC conditions for detonation."
+      ],
+      "effect": "Create the later-use record without performing its eventual detonation.",
+      "example": "A Set DC is not scheduled to explode automatically with an ordinary Placed DC in AFPh.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "mount",
+      "g": 7,
+      "title": "Mount, load, dismount or unload",
+      "who": "ATTACKER",
+      "kind": "Optional transport expenditure",
+      "refs": "A13.31; D6.4-.5; D12.2; D15.41; G12.4-.45; G13.443",
+      "sourcePages": [
+        679,
+        204,
+        205
+      ],
+      "terms": [
+        "PRC",
+        "MF",
+        "MP",
+        "FFNAM"
+      ],
+      "prompt": "Which transport change is intended, and who pays movement?",
+      "checks": [
+        "Validate horse, vehicle, wagon, motorcycle or LC capacity, passenger/rider type, Location and movement state.",
+        "Account for both transport and Personnel expenditure and exposure. Resolve the loading/unloading survival rules.",
+        "Calculate remaining movement and fire restrictions from the transport-specific rule, not a generic four-MF reset."
+      ],
+      "effect": "Show both participants and their remaining capabilities.",
+      "example": "An unloading squad and its transport may have different remaining movement and fire options.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "hook",
+      "g": 7,
+      "title": "Hook or unhook a Gun",
+      "who": "ATTACKER",
+      "kind": "Optional towing action",
+      "refs": "C10.11-.12; D5.43",
+      "sourcePages": [
+        679,
+        204
+      ],
+      "terms": [
+        "TI",
+        "MF",
+        "MP"
+      ],
+      "prompt": "Should the Gun be attached to or removed from its towing vehicle?",
+      "checks": [
+        "Check towing capability and legal Personnel/vehicle positions, then the linked expenditure and response.",
+        "Hooking makes Gun, Personnel and vehicle TI; unhooking makes Gun and Infantry TI under the cited procedure.",
+        "Honor survival requirements for simultaneous crew entry/exit and hooking; towing route restrictions continue afterward."
+      ],
+      "effect": "Use a linked action record rather than changing only the Gun’s displayed carrier.",
+      "example": "A crew abandoning its vehicle while unhooking must satisfy the relevant fire-survival conditions.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "clearDeclare",
+      "g": 7,
+      "title": "Declare Clearance work",
+      "who": "ATTACKER",
+      "kind": "Optional commitment with later resolution",
+      "refs": "B24.71; B24.73-.76; G2.7; G9.71; O1.5",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "TI",
+        "DC",
+        "TB"
+      ],
+      "prompt": "Should this unit commit to Clearance?",
+      "checks": [
+        "Represent rubble, Wire, mines, Set DC, roadblock, Path, Panji covered hexside and non-Factory Debris as separate selectable targets.",
+        "Apply TI and the target-specific declaration and later-resolution procedure. Do not remove the obstacle on declaration.",
+        "O1.5 is a named external-source gap in this volume; its detailed Debris conditions remain unevaluated."
+      ],
+      "effect": "Create a pending work item linked to its actual resolution window.",
+      "example": "A squad declares Wire Clearance now; the wire remains until the clearance procedure succeeds.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "clearFlame",
+      "g": 7,
+      "title": "Attempt to extinguish Flame",
+      "who": "ATTACKER",
+      "kind": "Optional immediate labor attempt",
+      "refs": "B24.72-.721; B25.15-.151",
+      "sourcePages": [
+        679,
+        142,
+        143
+      ],
+      "terms": [
+        "TI",
+        "DR"
+      ],
+      "prompt": "Can this unit attempt Flame Clearance now?",
+      "checks": [
+        "Check unit, Location and Flame conditions, then resolve the attempt.",
+        "Apply TI and task-specific Labor if unsuccessful. A Final Fire Clearance DR of 3-6 Hampers the Flame: mark it PIN so it cannot become Blaze during this Player Turn. A new Flame also uses PIN, but has a different origin. This immediate attempt is distinct from non-Flame work declared for CCPh."
+      ],
+      "effect": "Show extinguished, Hampered, or still-active Flame, and carry the correct conversion eligibility into AFPh. Consideration does not resolve the task.",
+      "example": "A failed attempt leaves a Labor counter and a still-present Flame.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "skis",
+      "g": 7,
+      "title": "Don or remove skis",
+      "who": "ATTACKER",
+      "kind": "Optional equipment-mode choice",
+      "refs": "E4.2; E4.21",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MF",
+        "SW"
+      ],
+      "prompt": "Should this unit change ski use?",
+      "checks": [
+        "Check the timing, movement cost and unit conditions in E4.2.",
+        "Carry ski status into movement, Recovery and combat effects; perform the Recovery-related Ski-use dr when called for."
+      ],
+      "effect": "Keep equipment state and movement state linked.",
+      "example": "A unit changes ski use for the next terrain segment rather than receiving ordinary walking costs automatically.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "smoke",
+      "g": 8,
+      "title": "Place Smoke grenades or use a dispenser",
+      "who": "ATTACKER",
+      "kind": "Optional protection expenditure",
+      "refs": "A24.1; D13; D13.35",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "SMOKE",
+        "MF",
+        "MP",
+        "WP"
+      ],
+      "prompt": "Would Smoke help, and can this unit attempt it now?",
+      "checks": [
+        "Separate Infantry grenades, vehicle grenades and dispenser types, including their usage limits and expenditure.",
+        "Resolve the usage result before assuming a Hindrance; apply WP NMC and possible Flame when triggered.",
+        "A failed attempt still follows its own cost and usage rules. Later smoke does not undo an earlier fire opportunity."
+      ],
+      "effect": "Place smoke only after successful resolution and refresh subsequent LOS/exposure.",
+      "example": "A squad attempts Smoke before crossing; the guide does not promise a protected crossing before the roll.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "infantryOVR",
+      "g": 8,
+      "title": "Attempt Infantry Overrun",
+      "who": "ATTACKER",
+      "kind": "Optional occupied-entry procedure",
+      "refs": "A4.15-.152",
+      "sourcePages": [
+        679,
+        49
+      ],
+      "terms": [
+        "OVR",
+        "NTC",
+        "MF"
+      ],
+      "prompt": "Is this an eligible Infantry OVR situation?",
+      "checks": [
+        "Use the Infantry target, unit, NTC and entry conditions, not the vehicular OVR procedure.",
+        "Handle concealed reveals, additional defenders and resulting forced-back or continuation decisions in source order."
+      ],
+      "effect": "Keep the initial move, check and resulting entry branch traceable.",
+      "example": "A lone enemy SMC may create an Infantry OVR choice that a normal occupied-entry rule would otherwise reject.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "hero",
+      "g": 8,
+      "title": "Create a Tank-Hunter or DC Hero",
+      "who": "ATTACKER",
+      "kind": "Optional nationality-specific action",
+      "refs": "G1.421; G1.424",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "T-H Hero",
+        "DC Hero",
+        "MF",
+        "LOS"
+      ],
+      "prompt": "Can this Japanese squad or HS create the special hero now?",
+      "checks": [
+        "For the movement attempt, verify the enemy AFV in LOS within eight MF and the governing creation restrictions.",
+        "Distinguish DC Hero conditions, equipment and compulsory follow-up from ordinary Tank-Hunter Hero creation."
+      ],
+      "effect": "Queue the created hero’s procedure instead of granting generic hero movement.",
+      "example": "A Japanese squad considers the attempt against a visible nearby tank; the reference remains present even when unimplemented.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "cavalry",
+      "g": 8,
+      "title": "Declare a late Gallop or Cavalry Charge",
+      "who": "ATTACKER",
+      "kind": "Optional mounted action",
+      "refs": "A13.36; A13.6",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MF",
+        "CX",
+        "LOS"
+      ],
+      "prompt": "Should the Cavalry accelerate or commit to a Charge?",
+      "checks": [
+        "A legal later Gallop adds four MF and requires the horse not be CX.",
+        "Declare a Charge while at least three hexes away and in LOS of its target; resolve the charge in the target Location."
+      ],
+      "effect": "Keep Gallop and Charge as distinct choices with linked restrictions.",
+      "example": "A rider cannot wait until adjacent to announce the Charge option listed for three or more hexes away.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "bog",
+      "g": 8,
+      "title": "Resolve entry Bog checks",
+      "who": "ATTACKER",
+      "kind": "Required terrain consequence",
+      "refs": "D8.2-.23",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "DR",
+        "MP"
+      ],
+      "prompt": "Does the terrain entry or maneuver require Bog?",
+      "checks": [
+        "Apply vehicle, terrain and entry modifiers at the prescribed point.",
+        "Update Bog/immobilization and any already-declared attack procedure before offering more movement."
+      ],
+      "effect": "Do not discard a declared OVR merely because a Bog result occurred; use the OVR consequences.",
+      "example": "A tank declaring an OVR into difficult terrain must settle Bog before resolving that attack.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "recall",
+      "g": 8,
+      "title": "Attempt the required Recall exit",
+      "who": "ATTACKER",
+      "kind": "Compulsory movement goal",
+      "refs": "D5.341; G14.232; G14.33",
+      "sourcePages": [
+        679,
+        203
+      ],
+      "terms": [
+        "MP",
+        "LC"
+      ],
+      "prompt": "Does Recall require this vehicle to leave?",
+      "checks": [
+        "Use the Recall route and movement obligations rather than offering unrestricted tactical movement.",
+        "Include landing-craft exceptions and any inability to move or exit under the governing rules."
+      ],
+      "effect": "Show the required exit task and its current impediments.",
+      "example": "A Recalled vehicle is not treated as an optional unmoved unit at phase end.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "bounding",
+      "g": 8,
+      "title": "Use Bounding First Fire",
+      "who": "ATTACKER",
+      "kind": "Optional vehicle fire",
+      "refs": "C5.3; C8.6; D3.3; G12.5",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "BFF",
+        "ROF",
+        "TH",
+        "MP"
+      ],
+      "prompt": "Should this vehicle fire now or retain its movement/fire choices?",
+      "checks": [
+        "Check weapon and PRC eligibility, movement status, CA, ammunition, acquisition and applicable bounding-fire modifiers.",
+        "Track each weapon’s use, ROF and later-fire commitment; include C8.6 Smoke/WP timing exceptions.",
+        "Resolve results and any required consequences before continuing movement."
+      ],
+      "effect": "Keep an attack tied to the current expenditure state rather than ending the vehicle’s move automatically.",
+      "example": "A tank pauses to fire its MA, then checks whether movement and any additional weapon use remain legal.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "gunDuel",
+      "g": 8,
+      "title": "Consider a Gun Duel response",
+      "who": "ATTACKER",
+      "kind": "Conditional attack-order choice",
+      "refs": "C2.2401; D3.3",
+      "sourcePages": [
+        679,
+        167,
+        168
+      ],
+      "terms": [
+        "Gun Duel",
+        "BFF",
+        "CA"
+      ],
+      "prompt": "Can this vehicle resolve an eligible shot before the declared defender attack?",
+      "checks": [
+        "The declared opponent must satisfy the rule’s non-concealed, non-aerial conditions; check CA and fire eligibility.",
+        "Compare the required Gun Duel modifiers and honor the OVR exclusion; do not offer a generic interrupt against every shot."
+      ],
+      "effect": "Resolve attack order through Rules, preserving the initiating defender attack if still applicable.",
+      "example": "A tank named as a DFF target considers a legal BFF Gun Duel before the defender rolls.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "vehicleOVR",
+      "g": 8,
+      "title": "Declare and resolve a vehicular Overrun",
+      "who": "ATTACKER",
+      "kind": "Optional combined movement and attack",
+      "refs": "D7.1; D7.2",
+      "sourcePages": [
+        679,
+        207
+      ],
+      "terms": [
+        "OVR",
+        "MP",
+        "Reaction Fire"
+      ],
+      "prompt": "Should the vehicle Overrun this Location?",
+      "checks": [
+        "Declare at entry as required; combine entry MP with the OVR cost of one quarter printed MP, rounded up, subject to exceptions.",
+        "Resolve applicable Bog and ordinary DFF before the OVR, then Reaction Fire after it. The OVR vehicle cannot invoke a Gun Duel.",
+        "Immobilization or destruction does not automatically cancel the OVR; use the applicable reduced attack and PRC consequences."
+      ],
+      "effect": "Display the distinct before-OVR and after-OVR windows.",
+      "example": "A defender’s shot immobilizes the attacking tank; the guide still resolves the OVR consequences that the rules require.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "esbHD",
+      "g": 8,
+      "title": "Attempt ESB or a Hull Down maneuver",
+      "who": "ATTACKER",
+      "kind": "Optional vehicle maneuver",
+      "refs": "D2.5; D4.22",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "ESB",
+        "HD",
+        "MP"
+      ],
+      "prompt": "Is extra speed or a Hull Down position worth the commitment?",
+      "checks": [
+        "Present ESB and HD as separate actions, with their eligibility, MP and roll requirements.",
+        "Resolve breakdown or maneuver failure before calculating subsequent capability; nationality and vehicle data matter."
+      ],
+      "effect": "Preview the cost and possible movement loss without inventing success probabilities.",
+      "example": "A tank short of its intended destination can consider ESB, while a different position may permit an HD maneuver.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "crewPosture",
+      "g": 8,
+      "title": "Change CE or BU posture",
+      "who": "ATTACKER",
+      "kind": "Optional posture choice",
+      "refs": "D5.33",
+      "sourcePages": [
+        679,
+        203
+      ],
+      "terms": [
+        "CE",
+        "BU",
+        "BFF"
+      ],
+      "prompt": "Can the crew change posture at this exact moment?",
+      "checks": [
+        "Do not both voluntarily place and remove CE in the same phase.",
+        "Do not change after the vehicle/PRC’s Prep or Bounding First Fire, or between being named a target and resolution of all fire allowed by the last MP expenditure.",
+        "Apply linked passenger and crew exceptions; the posture change alone is not movement for moving-target/firer penalties."
+      ],
+      "effect": "Expose the timing restriction before a shot rather than allowing a reactive BU toggle after target declaration.",
+      "example": "A CE tank named as a target cannot become BU while the current fire window remains unresolved.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "armoredAssault",
+      "g": 8,
+      "title": "Move Infantry with an AFV in Armored Assault",
+      "who": "ATTACKER",
+      "kind": "Optional linked movement",
+      "refs": "D9.31",
+      "sourcePages": [
+        679,
+        209,
+        210
+      ],
+      "terms": [
+        "AFV",
+        "MF",
+        "MP",
+        "FFNAM",
+        "FFMO"
+      ],
+      "prompt": "Should the Infantry and AFV move together?",
+      "checks": [
+        "Begin with the Infantry beneath the AFV and apply the combined movement requirements.",
+        "Limit how far the AFV may move by the accompanying Infantry’s movement potential even if they later separate.",
+        "Apply protection to the actual combined move; it does not eliminate FFNAM unless Assault Movement applies."
+      ],
+      "effect": "Track a shared route segment and independent consequences after separation.",
+      "example": "The squad leaves the tank to enter a building; the tank’s remaining route still respects the Armored Assault distance constraint.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "wreckRemoval",
+      "g": 8,
+      "title": "Declare Wreck Removal",
+      "who": "ATTACKER",
+      "kind": "Optional work with phase-end resolution",
+      "refs": "D10.42",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MP",
+        "TI"
+      ],
+      "prompt": "Can this vehicle undertake Wreck Removal?",
+      "checks": [
+        "Check the vehicle, wreck, location and commitment required by D10.42.",
+        "Record the declaration now and resolve the result at 3.51A, rather than deleting the wreck immediately."
+      ],
+      "effect": "Maintain a pending phase-end work item.",
+      "example": "The wreck remains on the map while the declared removal procedure awaits its proper resolution.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "wreckChecks",
+      "g": 8,
+      "title": "Resolve wagon or motorcycle Wreck Checks",
+      "who": "ATTACKER",
+      "kind": "Conditional movement consequence",
+      "refs": "D12.4; D15.46",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "Wreck Check",
+        "MF",
+        "MP"
+      ],
+      "prompt": "Has this movement triggered a Wreck Check?",
+      "checks": [
+        "Use the specific wagon or motorcycle trigger and modifiers.",
+        "Resolve the check and its passenger/equipment consequences before continuing."
+      ],
+      "effect": "Do not substitute a tank Bog check for these different procedures.",
+      "example": "A motorcycle’s hazardous movement segment may call for its own Wreck Check.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "impulse",
+      "g": 9,
+      "title": "Complete the impulse before First Fire",
+      "who": "ATTACKER",
+      "kind": "Group expenditure requirement",
+      "refs": "ASOP 3.32A; A25.23; D14.2; E11; G1.5",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "Impulse",
+        "MF",
+        "MP"
+      ],
+      "prompt": "Have all participating units made this impulse’s expenditures?",
+      "checks": [
+        "Commit the prescribed group expenditures before the defensive-fire procedure.",
+        "Preserve each participant’s cost, position and eligibility when resolving attacks and consequences."
+      ],
+      "effect": "The response window identifies the impulse as well as the affected target.",
+      "example": "The defender cannot interrupt halfway through a group’s required simultaneous expenditure by using ordinary single-unit sequencing.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "column",
+      "g": 9,
+      "title": "Check Column Disbandment",
+      "who": "BOTH",
+      "kind": "Conditional formation consequence",
+      "refs": "E11.531-.532",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "DFF",
+        "Impulse"
+      ],
+      "prompt": "Has movement or fire triggered Column Disbandment?",
+      "checks": [
+        "Check the movement triggers at 3.32A and the residual/fire triggers at 3.35D and 3.36D.",
+        "Carry the changed formation and movement state into subsequent expenditure choices."
+      ],
+      "effect": "One acknowledgment cannot clear later independent disbandment triggers.",
+      "example": "The column remains intact after one move, but a later attack creates a new check.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A",
+        "3.35D",
+        "3.36D"
+      ]
+    },
+    {
+      "id": "panji",
+      "g": 9,
+      "title": "Resolve a Panji movement MC",
+      "who": "ATTACKER",
+      "kind": "Conditional terrain consequence",
+      "refs": "G9.41",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MC",
+        "MF"
+      ],
+      "prompt": "Does this entry or crossing trigger Panji effects?",
+      "checks": [
+        "Use the actual Panji terrain and movement conditions.",
+        "Resolve the MC and resulting state before further movement; preserve hidden obstacle disclosure rules."
+      ],
+      "effect": "Show an encountered effect only when its disclosure is authorized.",
+      "example": "The UI must not warn about an undiscovered Panji feature before the normal encounter procedure.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "dust",
+      "g": 9,
+      "title": "Create Vehicle Dust when required",
+      "who": "ATTACKER",
+      "kind": "Conditional environmental effect",
+      "refs": "F11.74-.741",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MP",
+        "LOS"
+      ],
+      "prompt": "Does this vehicle expenditure create Dust?",
+      "checks": [
+        "Check the applicable desert/environmental conditions and vehicle movement.",
+        "Place and update dust by its rule, then reevaluate subsequent LOS and Hindrances."
+      ],
+      "effect": "Dust is an expenditure consequence, not an optional cosmetic trail.",
+      "example": "The tank’s movement may change a later shot’s visibility even if no smoke was fired.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "ddScreens",
+      "g": 9,
+      "title": "Drop DD tank screens",
+      "who": "ATTACKER",
+      "kind": "Optional amphibious configuration",
+      "refs": "D16.11",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "DD",
+        "MP"
+      ],
+      "prompt": "Should the DD tank lower its screens now?",
+      "checks": [
+        "Check the permitted conditions and resulting movement/fire restrictions.",
+        "Record the configuration change with its rule consequences rather than treating it as CE/BU."
+      ],
+      "effect": "Keep screen state distinct from crew posture.",
+      "example": "An amphibious tank reaching the landing area reviews its DD configuration.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "beach",
+      "g": 9,
+      "title": "Beach, unbeach or resolve Aground",
+      "who": "ATTACKER",
+      "kind": "Amphibious movement procedure",
+      "refs": "E5.23; G12.3; G12.21; G13.446",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "LC",
+        "MP"
+      ],
+      "prompt": "What landing or departure procedure applies here?",
+      "checks": [
+        "Separate boats from LC and legal Beach/Unbeach choices from required Aground checks.",
+        "Use the current beach, water, tide and craft state; include corresponding transport restrictions."
+      ],
+      "effect": "A beached, aground or mobile craft has different next choices.",
+      "example": "An LC that runs Aground cannot continue as though it merely paid an ordinary entry cost.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "surf",
+      "g": 9,
+      "title": "Resolve Swamping, Heavy Surf and Wading CX",
+      "who": "ATTACKER",
+      "kind": "Conditional amphibious effects",
+      "refs": "G13.4222; G13.44-.4423; G13.447",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "LC",
+        "CX",
+        "MF"
+      ],
+      "prompt": "Which surf effects follow this expenditure?",
+      "checks": [
+        "Resolve applicable Swamping, Immobilization, (un)Beaching and Broaching effects.",
+        "Infantry/Cavalry Wading in Heavy Surf become CX as prescribed. Keep the craft and its contents’ outcomes linked."
+      ],
+      "effect": "Carry the new state into fire, transport and remaining movement decisions.",
+      "example": "Troops Wading in Heavy Surf acquire CX even without choosing Double Time.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.32A",
+      "steps": [
+        "3.32A"
+      ]
+    },
+    {
+      "id": "gliderEvade",
+      "g": 10,
+      "title": "Take required glider Evasive Action",
+      "who": "ATTACKER",
+      "kind": "Conditional aerial procedure",
+      "refs": "E8.211",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "AA",
+        "ILH"
+      ],
+      "prompt": "Does the last AA result require Evasive Action?",
+      "checks": [
+        "Resolve the required action and resulting aerial position.",
+        "Return to 3.37D for the next applicable AA opportunity; do not proceed directly to landing after every shot."
+      ],
+      "effect": "Represent the glider’s repeated AA/evasion sequence explicitly.",
+      "example": "An AA result changes the landing approach and creates the next source-defined aerial window.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.33A",
+      "steps": [
+        "3.33A"
+      ]
+    },
+    {
+      "id": "parachuteDrift",
+      "g": 10,
+      "title": "Drift all aerial parachutes",
+      "who": "ATTACKER",
+      "kind": "Required collective aerial movement",
+      "refs": "E9.2",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "DR",
+        "MPh"
+      ],
+      "prompt": "Where do all remaining aerial parachutes drift?",
+      "checks": [
+        "Apply the drift procedure to all aerial parachutes before the 3.38D fire step.",
+        "If none remain aerial, proceed to phase-end work; do not invent a ground MF expenditure."
+      ],
+      "effect": "Keep aerial position and later landing displacement separate.",
+      "example": "All parachutes drift before the defender chooses eligible fire at them.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.34A",
+      "steps": [
+        "3.34A"
+      ]
+    },
+    {
+      "id": "residualAttack",
+      "g": 11,
+      "title": "Resolve existing Residual FP and Fire Lanes",
+      "who": "BOTH",
+      "kind": "Required expenditure consequence",
+      "refs": "A8.22; A9.22",
+      "sourcePages": [
+        679,
+        60
+      ],
+      "terms": [
+        "Residual FP",
+        "Fire Lane",
+        "MF",
+        "MP"
+      ],
+      "prompt": "Does this expenditure trigger an existing residual attack?",
+      "checks": [
+        "Resolve applicable existing residual before new DFF, against the moving unit/stack only.",
+        "Apply the once-per-Location and increased-vulnerability/strength exceptions; a multi-MF expenditure is not automatically multiple residual attacks.",
+        "Use separate Fire Lane rules and applicable activity/entry timing exceptions."
+      ],
+      "effect": "Keep a per-target exposure record, not a simple once-per-hex checkbox.",
+      "example": "A unit already attacked by residual may face another qualifying attack after its vulnerability increases and it spends more MF.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.35D",
+      "steps": [
+        "3.35D"
+      ]
+    },
+    {
+      "id": "ffeMove",
+      "g": 11,
+      "title": "Resolve FFE attacks on moving units",
+      "who": "BOTH",
+      "kind": "Required expenditure consequence",
+      "refs": "A24.31; C1.51-.53; C1.55-.56; C1.72; C1.9; G12.5; G14.65-.661",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "FFE",
+        "WP",
+        "NMC"
+      ],
+      "prompt": "Does the current move trigger an existing FFE effect?",
+      "checks": [
+        "Use the FFE type, expenditure and location rules; include WP, rockets, LC and NOBA/Reverse Slope exceptions.",
+        "Attack the qualifying moving unit/stack, not every stationary unit sharing the Location on each expenditure."
+      ],
+      "effect": "This resolves an existing mission’s effect; it is not an unrestricted new OBA mission window.",
+      "example": "A moving squad enters an FFE area while a stationary squad is already there; their exposure histories are distinct.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.35D",
+      "steps": [
+        "3.35D"
+      ]
+    },
+    {
+      "id": "mines",
+      "g": 11,
+      "title": "Resolve minefield attacks",
+      "who": "BOTH",
+      "kind": "Required expenditure consequence",
+      "refs": "B28.41-.412; B28.42-.52; B28.531; G14.53",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MF",
+        "MP",
+        "TB"
+      ],
+      "prompt": "Has the expenditure triggered a mine attack?",
+      "checks": [
+        "Apply AP/AT mine, entry/exit, known route and clearance/TB exceptions as appropriate.",
+        "Disclose mine information only through the rule’s encounter procedure; do not expose hidden fields in route suggestions."
+      ],
+      "effect": "Attach the attack and discovered information to this movement event.",
+      "example": "The player sees a mine attack when it occurs, not an advance warning based on hidden scenario data.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.35D",
+      "steps": [
+        "3.35D"
+      ]
+    },
+    {
+      "id": "starshellLater",
+      "g": 11,
+      "title": "Attempt later defender illumination",
+      "who": "DEFENDER",
+      "kind": "Conditional response choice",
+      "refs": "E1.921",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "NVR",
+        "IR",
+        "CE"
+      ],
+      "prompt": "Is a later Starshell attempt permitted now?",
+      "checks": [
+        "Check leader eligibility and the special MMC/CE AFV condition when a Starshell/IR has been fired in no previous Player Turn.",
+        "Resolve illumination before subsequent attacks that use the changed visibility."
+      ],
+      "effect": "Do not carry the broader opening opportunity into every later response without checking its conditions.",
+      "example": "A later movement expenditure may offer a leader a Starshell attempt without giving every MMC the same right.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.35D",
+      "steps": [
+        "3.35D"
+      ]
+    },
+    {
+      "id": "tripFlare",
+      "g": 11,
+      "title": "Resolve trip-flare activation",
+      "who": "BOTH",
+      "kind": "Conditional movement effect",
+      "refs": "G.8; ASOP 3.35D",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "NVR",
+        "LOS"
+      ],
+      "prompt": "Does the move activate a trip flare?",
+      "checks": [
+        "Check the triggering condition and resolve the resulting illumination and disclosure.",
+        "Keep this automatic effect distinct from an optional Starshell attempt."
+      ],
+      "effect": "Refresh the current response’s visibility after activation.",
+      "example": "The defender’s possible fire changes after the movement activates illumination.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.35D",
+      "steps": [
+        "3.35D"
+      ]
+    },
+    {
+      "id": "firstFire",
+      "g": 12,
+      "title": "Fire at the current expenditure, or pass",
+      "who": "DEFENDER",
+      "kind": "Optional response",
+      "refs": "A8.1-.14",
+      "sourcePages": [
+        679,
+        59
+      ],
+      "terms": [
+        "DFF",
+        "MF",
+        "MP",
+        "ROF"
+      ],
+      "prompt": "Should this defender fire at the current mover now?",
+      "checks": [
+        "Target only the qualifying moving unit/stack, using its route, expenditure and state. A stationary co-occupant is not automatically a target.",
+        "Limit repeated shots by MF/MP expenditure even when ROF is retained; a one-MF expenditure is not unlimited fire.",
+        "Apply range, LOS, weapon use, fire-group, leadership, cowering and ammunition rules. Passing this window does not pass later ones."
+      ],
+      "effect": "Keep the shot allowance for this expenditure separate from remaining weapon capability.",
+      "example": "A retained-ROF MG may still have to wait for a later expenditure before firing again at this mover.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "subsequent",
+      "g": 12,
+      "title": "Use Subsequent First Fire",
+      "who": "DEFENDER",
+      "kind": "Restricted additional fire",
+      "refs": "A8.3",
+      "sourcePages": [
+        679,
+        61
+      ],
+      "terms": [
+        "SFF",
+        "MG",
+        "IFE",
+        "Sustained Fire"
+      ],
+      "prompt": "Can this First-Fired unit use SFF against the mover?",
+      "checks": [
+        "Check eligible small-arms/MG/IFE use, Normal Range and the nearest Known armed enemy distance restriction.",
+        "Apply Area Fire and relevant Sustained Fire rules; use or forfeit the usable MG/IFE capability as A8.3 requires.",
+        "Place Final Fire markers on the unit and its weapons appropriately."
+      ],
+      "effect": "Show what this choice gives up for later defensive opportunities.",
+      "example": "A First-Fired squad cannot use SFF at a farther target merely because that target is moving.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "fpf",
+      "g": 12,
+      "title": "Use Final Protective Fire",
+      "who": "DEFENDER",
+      "kind": "Optional high-risk fire",
+      "refs": "A8.31-.311",
+      "sourcePages": [
+        679,
+        61
+      ],
+      "terms": [
+        "FPF",
+        "NMC",
+        "Sustained Fire"
+      ],
+      "prompt": "Is the adjacent or same-hex mover worth another FPF attack?",
+      "checks": [
+        "Check Final-Fired Infantry, target and weapon restrictions; apply the required inherent and MG/IFE use.",
+        "Resolve the attack and use the same Original IFT DR as the firer’s NMC under the rule’s leadership conditions.",
+        "The target’s attack result is not cancelled if the firer breaks. Further FPF requires continued eligibility and available expenditure opportunity."
+      ],
+      "effect": "Link the defender’s morale consequence to the attack record.",
+      "example": "A squad’s FPF breaks the moving enemy but also breaks the firing squad; both outcomes remain.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "mandatoryTPBF",
+      "g": 12,
+      "title": "Resolve mandatory same-Location fire",
+      "who": "DEFENDER",
+      "kind": "Compulsory response",
+      "refs": "A8.312",
+      "sourcePages": [
+        679,
+        61
+      ],
+      "terms": [
+        "TPBF",
+        "FPF",
+        "MG"
+      ],
+      "prompt": "Does enemy Infantry/Cavalry entry compel an attack?",
+      "checks": [
+        "After residual, mines and OBA, evaluate unbroken armed Infantry not in Melee and the entering MMC conditions.",
+        "Apply compulsory fire-group and weapon-use rules with their exceptions; this is not an optional Pass window."
+      ],
+      "effect": "A required-fire obligation blocks closing the response until resolved.",
+      "example": "A qualifying MMC enters the defender’s Location; the guide replaces a generic optional-fire prompt with the mandatory procedure.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "snap",
+      "g": 12,
+      "title": "Take a Snap Shot",
+      "who": "DEFENDER",
+      "kind": "Optional crossing attack",
+      "refs": "A8.15",
+      "sourcePages": [
+        679,
+        59
+      ],
+      "terms": [
+        "DFF",
+        "FFNAM",
+        "FFMO",
+        "Residual FP"
+      ],
+      "prompt": "Does the crossed hexside present a legal Snap Shot?",
+      "checks": [
+        "Require LOS to the entire crossed hexside and eligible small-arms/MG use; exclude ordnance, IFE, Canister and prohibited MG CA changes.",
+        "Apply Area Fire without FFNAM/FFMO, limit it to the qualifying crossing opportunity, and leave no Residual FP."
+      ],
+      "effect": "Store the crossing geometry so the opportunity cannot be recreated after movement has advanced.",
+      "example": "A defender sees the crossed hexside but not the destination center, creating a possible Snap Shot.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "fireLane",
+      "g": 12,
+      "title": "Establish or maintain a Fire Lane",
+      "who": "DEFENDER",
+      "kind": "Optional MG procedure",
+      "refs": "A9.22-.223",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "MG",
+        "Fire Lane",
+        "ROF",
+        "Residual FP"
+      ],
+      "prompt": "Would a legal Fire Lane cover useful later movement?",
+      "checks": [
+        "Check the MG, initial attack, lane geometry and LOS conditions before placement.",
+        "Apply Fire Lane attacks and cancellation independently from ordinary Residual FP, including any cancellation from CC Reaction Fire."
+      ],
+      "effect": "Show the lane’s future coverage without claiming guaranteed targets.",
+      "example": "A defender trades the relevant MG capability for a lane that may affect later movers.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "defenderWeapons",
+      "g": 12,
+      "title": "Review eligible weapons and attack modes",
+      "who": "DEFENDER",
+      "kind": "Fire-option family",
+      "refs": "A7-A9; A22; A23.6; C2-C9; C13; D3",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "IFT",
+        "TH",
+        "TK",
+        "ROF",
+        "IF"
+      ],
+      "prompt": "Which legal weapon and attack mode fits this response?",
+      "checks": [
+        "Include inherent fire, MG, FT, MOL, LATW, ordnance/IFE, permitted special ammunition, Spraying Fire and fire-group/direction choices.",
+        "Apply actual first/subsequent/final-fire and target restrictions; Intensive Fire is not a blanket right for every weapon or response.",
+        "Recheck ROF, malfunctions, acquisition, ammo depletion and result chains for each shot, including cave and equipment-note exceptions."
+      ],
+      "effect": "Reuse shared firing definitions from Prep Fire, with MPh-specific eligibility instead of copied permission rules.",
+      "example": "A Gun and a squad in one Location may have different legal responses to the same MP expenditure.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "throwDC",
+      "g": 12,
+      "title": "Throw a DC during defensive fire",
+      "who": "DEFENDER",
+      "kind": "Optional special attack",
+      "refs": "A23.6",
+      "sourcePages": [
+        679,
+        90,
+        91
+      ],
+      "terms": [
+        "DC",
+        "DFF"
+      ],
+      "prompt": "Is a Thrown DC attack permitted against this mover?",
+      "checks": [
+        "Check range, LOS, unit/weapon-use and timing conditions. A unit already marked First Fire cannot Throw a DC, and it cannot do so as SFF or FPF.",
+        "Resolve both target and throwing-Location consequences under the Thrown DC procedure; do not treat it as a Placed DC waiting for AFPh."
+      ],
+      "effect": "The checklist warns of consequences to the thrower before committing.",
+      "example": "The defender considers a DC against a nearby mover while accounting for the attack on the throwing Location.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "ovrPrevention",
+      "g": 12,
+      "title": "Fire an OVR Prevention shot",
+      "who": "DEFENDER",
+      "kind": "Conditional pre-OVR response",
+      "refs": "C5.64-.641",
+      "sourcePages": [
+        679,
+        173
+      ],
+      "terms": [
+        "OVR",
+        "IF",
+        "TH",
+        "NMC"
+      ],
+      "prompt": "Can this non-vehicular Gun take an OVR Prevention shot?",
+      "checks": [
+        "Check the Gun’s CA, current fire markers and No IF restriction immediately after the OVR expenditure is announced, before the OVR resolves.",
+        "The Original TH DR also tests its manning Infantry. Pin or break voids the TH attempt except for specified malfunction/Low Ammo effects.",
+        "Apply IF penalties and No Fire afterward where required. An otherwise unfired Gun uses the C5.641 exceptions; do not apply the same penalty and marker to every case."
+      ],
+      "effect": "Show the risk to the crew and the possibility that its shot is voided before commitment.",
+      "example": "A Gun that already Intensive Fired may have this final qualifying defense, but a failed crew check can leave the OVR unaffected.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "reaction",
+      "g": 12,
+      "title": "Resolve CC or non-CC Reaction Fire",
+      "who": "DEFENDER",
+      "kind": "Conditional vehicle response",
+      "refs": "D7.2; C5.64",
+      "sourcePages": [
+        679,
+        207,
+        208
+      ],
+      "terms": [
+        "Reaction Fire",
+        "CC",
+        "PAATC",
+        "OVR"
+      ],
+      "prompt": "Which response to this vehicle is legal at this point?",
+      "checks": [
+        "Separate ordinary DFF before an OVR from Reaction Fire after it, and distinguish CC from non-CC procedures.",
+        "Evaluate PAATC, Street Fighting, fire-marker and weapon conditions under the relevant rule.",
+        "Include the separate OVR Prevention procedure of C5.64 where applicable, rather than treating it as unrestricted FPF."
+      ],
+      "effect": "A vehicle attack can open more than one differently timed response window.",
+      "example": "A unit considers a legal CC Reaction Fire attack after the OVR resolves, not as a substitute for pre-OVR DFF.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "heroReaction",
+      "g": 12,
+      "title": "Create a Tank-Hunter Hero in a CC Reaction Fire position",
+      "who": "DEFENDER",
+      "kind": "Optional special response",
+      "refs": "G1.421",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "T-H Hero",
+        "Reaction Fire"
+      ],
+      "prompt": "Can this Japanese squad or HS attempt hero creation here?",
+      "checks": [
+        "Verify the CC Reaction Fire position and relevant creation conditions.",
+        "Use the defender timing and follow-up procedure rather than copying the attacker’s movement creation window."
+      ],
+      "effect": "Keep this defender option present even when special nationality rules are pending.",
+      "example": "An approaching AFV creates a qualifying reaction position for a Japanese squad.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "motionAttempt",
+      "g": 12,
+      "title": "Attempt defender Motion or a Smoke Dispenser response",
+      "who": "DEFENDER",
+      "kind": "Optional vehicle response",
+      "refs": "D2.401; D13.2",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "Motion",
+        "MP",
+        "SMOKE"
+      ],
+      "prompt": "Can this vehicle react without waiting for its own MPh?",
+      "checks": [
+        "Check the specific Motion attempt conditions, expenditure basis and limits; it is not a general move-away action.",
+        "Evaluate dispenser eligibility and timing independently, then apply usage and resulting smoke effects."
+      ],
+      "effect": "Motion and dispenser choices remain separate actions within the current response window.",
+      "example": "A defending tank may consider Motion or smoke against the mover without gaining an ordinary movement turn.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "airSupport",
+      "g": 12,
+      "title": "Conduct Sighting TC and Ground Support",
+      "who": "DEFENDER",
+      "kind": "Optional aerial attack procedure",
+      "refs": "E7.3-.4; G17.4-.42; W9",
+      "sourcePages": [
+        679,
+        667
+      ],
+      "terms": [
+        "TC",
+        "FB",
+        "DB",
+        "AA"
+      ],
+      "prompt": "Can available aircraft attack this moving target?",
+      "checks": [
+        "Check sighting, target, attack and nationality/scenario restrictions; do not treat aircraft as an ordinary ground DFF weapon.",
+        "Open the attacker’s appropriate Light AA response and resolve attack results/markers in source order.",
+        "Apply Chapter W restrictions where relevant, including consecutive-Player-Turn Ground Support limits; FAC-directed PFPh CAS is a different window."
+      ],
+      "effect": "Link aircraft attack and ground AA responses without changing the Player Turn roles.",
+      "example": "The DEFENDER’s aircraft attacks, but the ATTACKER may now have an AA decision.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "attackerAA",
+      "g": 12,
+      "title": "Use Light AA against attacking aircraft",
+      "who": "ATTACKER",
+      "kind": "Conditional counter-response",
+      "refs": "E7.5; E7.51-.512",
+      "sourcePages": [
+        679
+      ],
+      "terms": [
+        "AA",
+        "FB",
+        "DB",
+        "BFF"
+      ],
+      "prompt": "Which eligible weapons may answer this air attack?",
+      "checks": [
+        "Check Light AA weapon, target and current commitments.",
+        "Apply AA/Prep/Bounding Fire or Gunflash markers as required, preserving subsequent movement and fire restrictions."
+      ],
+      "effect": "Switch the displayed decision owner to ATTACKER for this window.",
+      "example": "An attacker’s weapon answers a diving aircraft while the defender’s ground-fire sequence is temporarily interrupted.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "residualCreate",
+      "g": 12,
+      "title": "Place residual and fire markers correctly",
+      "who": "BOTH",
+      "kind": "Required attack consequence",
+      "refs": "A8.2-.26; A9.22; G11.82; C13.57-.58",
+      "sourcePages": [
+        679,
+        60
+      ],
+      "terms": [
+        "Residual FP",
+        "ROF",
+        "MG",
+        "MOL"
+      ],
+      "prompt": "What persists after this attack?",
+      "checks": [
+        "Use the residual half-FP calculation, reductions and cap in source order. Apply ordnance-hit and ammo/dud exceptions, not a blanket no-ordnance rule.",
+        "A malfunctioned weapon or Snap Shot leaves no ordinary residual; retained ROF and the immediate decision to forfeit it require their own accounting.",
+        "Place First/Final/Intensive/No Fire/Gunflash markers as required. Resolve MOL-Projector Smoke and possible Flame separately."
+      ],
+      "effect": "Record residual and marker effects before reopening movement.",
+      "example": "A MG retaining ROF needs the appropriate residual decision now, not after the next unit enters.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.36D",
+      "steps": [
+        "3.36D"
+      ]
+    },
+    {
+      "id": "gliderAA",
+      "g": 13,
+      "title": "Fire Light AA at an aerial glider",
+      "who": "DEFENDER",
+      "kind": "Optional aerial response",
+      "refs": "E7.51-.512; E8.21-.211",
+      "sourcePages": [
+        680
+      ],
+      "terms": [
+        "AA",
+        "DFF",
+        "SFF"
+      ],
+      "prompt": "Is Light AA fire available against this glider?",
+      "checks": [
+        "Use the special First/Subsequent First Fire rules and required AA/fire/Gunflash markers.",
+        "After fire, go to Evasive Action at 3.33A; if no Light AA fire occurred, go to landing at 3.42A."
+      ],
+      "effect": "Do not expose a ground-unit FPF menu for an aerial glider.",
+      "example": "Declining eligible AA advances the glider toward landing rather than returning to ordinary ground movement.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.37D",
+      "steps": [
+        "3.37D"
+      ]
+    },
+    {
+      "id": "parachuteFire",
+      "g": 13,
+      "title": "Fire at aerial parachutes",
+      "who": "DEFENDER",
+      "kind": "Optional aerial response",
+      "refs": "E9.3-.33; E7.5-.512",
+      "sourcePages": [
+        680
+      ],
+      "terms": [
+        "AA",
+        "DFF",
+        "SFF"
+      ],
+      "prompt": "Which parachutes and weapons qualify for fire?",
+      "checks": [
+        "Use small arms or Light AA only, with the special First/Subsequent First Fire conditions.",
+        "Place required markers, then proceed to the collective landing procedure at 3.43A."
+      ],
+      "effect": "Aerial target and weapon restrictions are visible before attack selection.",
+      "example": "An otherwise available heavy weapon does not gain permission to fire at parachutes simply by appearing in the unit’s weapon list.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.38D",
+      "steps": [
+        "3.38D"
+      ]
+    },
+    {
+      "id": "search",
+      "g": 14,
+      "title": "Consider Search before ending ITS MPh",
+      "who": "ATTACKER",
+      "kind": "Optional last-window expenditure",
+      "refs": "A12.152; A12.154; E1.95; E1.953; G1.63",
+      "sourcePages": [
+        680,
+        79
+      ],
+      "terms": [
+        "Search",
+        "MF",
+        "TI",
+        "DFF"
+      ],
+      "prompt": "Does this eligible unit have a useful Search opportunity?",
+      "checks": [
+        "Check non-Bypassing Good Order Infantry/Cavalry and qualifying MMC/stack conditions, remaining one MF, Pin and Assault Movement exclusions.",
+        "Apply search area, dr modifiers, exclusions, own-hex search and authorized reveal results. Mine discovery does not automatically disclose type or strength.",
+        "Resolve possible Search casualties and night/Japanese exceptions. Search makes the unit TI, but its expenditure still permits DFF/SFF/FPF."
+      ],
+      "effect": "End this move must offer the remaining Search choice without suggesting that undiscovered enemies exist.",
+      "example": "A squad retains one MF and can Search adjacent accessible Locations. The response to that MF remains live.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.41A",
+      "steps": [
+        "3.41A"
+      ]
+    },
+    {
+      "id": "brokenBypass",
+      "g": 14,
+      "title": "Move broken Infantry from Bypass into the obstacle",
+      "who": "ATTACKER",
+      "kind": "Required end-of-unit consequence",
+      "refs": "A4.32",
+      "sourcePages": [
+        680,
+        50
+      ],
+      "terms": [
+        "Bypass",
+        "MF"
+      ],
+      "prompt": "Did Infantry break while in Bypass?",
+      "checks": [
+        "At ITS MPh end apply the required obstacle entry procedure.",
+        "Preserve the resulting Location and subsequent rout obligations; do not leave the unit in an ordinary voluntary Bypass ending."
+      ],
+      "effect": "This required transition is separate from optional end-of-move review.",
+      "example": "A squad broken while bypassing woods enters the obstacle according to A4.32.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.41A",
+      "steps": [
+        "3.41A"
+      ]
+    },
+    {
+      "id": "sewerEmerge",
+      "g": 14,
+      "title": "Attempt sewer emergence",
+      "who": "ATTACKER",
+      "kind": "Conditional end-of-unit procedure",
+      "refs": "B8.42",
+      "sourcePages": [
+        680
+      ],
+      "terms": [
+        "ITS MPh",
+        "DR"
+      ],
+      "prompt": "Where can this sewer unit or stack emerge?",
+      "checks": [
+        "Resolve the required emergence dr and the rule’s legal outcomes.",
+        "Disclose position and units only as the emergence procedure permits."
+      ],
+      "effect": "Do not mark a sewer move complete while emergence remains unresolved.",
+      "example": "The intended exit is a plan; the emergence result determines the actual outcome.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.41A",
+      "steps": [
+        "3.41A"
+      ]
+    },
+    {
+      "id": "smallArms",
+      "g": 14,
+      "title": "Scrounge small arms with an Unarmed unit",
+      "who": "ATTACKER",
+      "kind": "Optional end-of-unit attempt",
+      "refs": "A20.552; G17.14",
+      "sourcePages": [
+        680,
+        88
+      ],
+      "terms": [
+        "MF",
+        "DR"
+      ],
+      "prompt": "Can this Unarmed unit attempt to rearm here?",
+      "checks": [
+        "Check all-MF-spent movement and terrain conditions, including non-water/non-marsh, and the once-per-hex-per-MPh limit.",
+        "Use the required DR and nationality-specific rearming outcome. This is not Rally wreck Scrounging."
+      ],
+      "effect": "Preserve the hex attempt limit across different Unarmed units.",
+      "example": "A second Unarmed unit cannot repeat an already-used hex attempt just because its own checklist is new.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.41A",
+      "steps": [
+        "3.41A"
+      ]
+    },
+    {
+      "id": "endVehicle",
+      "g": 14,
+      "title": "End the vehicle’s move Stopped or in Motion",
+      "who": "ATTACKER",
+      "kind": "Required movement closure",
+      "refs": "D2.4; ASOP 3.41A",
+      "sourcePages": [
+        680
+      ],
+      "terms": [
+        "Motion",
+        "MP",
+        "CC"
+      ],
+      "prompt": "What is this vehicle’s legal end-of-move state?",
+      "checks": [
+        "Place Motion on a qualifying vehicle or expend Stop MP as required.",
+        "Resolve any final expenditure responses and place a CC counter if necessary before selecting another mover."
+      ],
+      "effect": "End this vehicle’s move does not end THE MPh.",
+      "example": "Choosing to Stop creates its applicable MP response; a phase-end button cannot bypass it.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.41A",
+      "steps": [
+        "3.41A"
+      ]
+    },
+    {
+      "id": "gliderLand",
+      "g": 15,
+      "title": "Resolve glider landing and possible crash",
+      "who": "ATTACKER",
+      "kind": "Required aerial conclusion",
+      "refs": "E8.211-.23",
+      "sourcePages": [
+        680
+      ],
+      "terms": [
+        "ILH",
+        "DR"
+      ],
+      "prompt": "What landing result does this glider obtain?",
+      "checks": [
+        "Resolve the Landing DR and any Crash dr using the actual approach and terrain.",
+        "Return to 3.23A after this glider’s sequence; defer contents placement to its specified later window, including AFPh E8.4."
+      ],
+      "effect": "Do not unload all glider contents as ordinary MPh passengers.",
+      "example": "The glider lands now, while the later placement of contents remains a distinct procedure.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.42A",
+      "steps": [
+        "3.42A"
+      ]
+    },
+    {
+      "id": "parachuteLand",
+      "g": 15,
+      "title": "Resolve collective parachute landing",
+      "who": "ATTACKER",
+      "kind": "Required aerial conclusion",
+      "refs": "E9.4; E9.42",
+      "sourcePages": [
+        680
+      ],
+      "terms": [
+        "NMC",
+        "NTC"
+      ],
+      "prompt": "Which landing displacement and checks apply?",
+      "checks": [
+        "Move all non-German 5/8-inch parachutes one hex as prescribed, then land all parachutes and flip the 1/2-inch counters.",
+        "Resolve the required NMC/NTC and terrain outcomes before moving to phase-end procedures."
+      ],
+      "effect": "Keep nationality and counter-size distinctions explicit.",
+      "example": "German and non-German parachutes cannot be processed by one unconditional extra-hex rule.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.43A",
+      "steps": [
+        "3.43A"
+      ]
+    },
+    {
+      "id": "blazeEnd",
+      "g": 16,
+      "title": "Resolve required terrain-Blaze eliminations",
+      "who": "ATTACKER",
+      "kind": "Required phase-end consequence",
+      "refs": "B25.4; E8.232; E9.42",
+      "sourcePages": [
+        680
+      ],
+      "terms": [
+        "LC",
+        "MPh"
+      ],
+      "prompt": "Are affected vehicles or landed aerial units still in a terrain Blaze?",
+      "checks": [
+        "Apply the vehicle-unable-to-leave and glider/parachute landing conditions.",
+        "Resolve elimination and associated contents consequences before completing THE MPh."
+      ],
+      "effect": "This is a phase-end obligation, not an optional warning.",
+      "example": "A landed glider in terrain Blaze requires its prescribed outcome even after all movement choices were considered.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.51A",
+      "steps": [
+        "3.51A"
+      ]
+    },
+    {
+      "id": "wreckEnd",
+      "g": 16,
+      "title": "Resolve declared Wreck Removal",
+      "who": "ATTACKER",
+      "kind": "Required follow-through",
+      "refs": "D10.42",
+      "sourcePages": [
+        680
+      ],
+      "terms": [
+        "MP",
+        "MPh"
+      ],
+      "prompt": "Which declared Wreck Removal attempts are due?",
+      "checks": [
+        "Resolve each valid declaration under its governing conditions.",
+        "Update wreck and vehicle state and retain failed outcomes; merely considering the topic did not create a declaration."
+      ],
+      "effect": "Match each result to its earlier work item.",
+      "example": "The guide resolves the vehicle’s previously declared attempt without repeating the declaration.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.51A",
+      "steps": [
+        "3.51A"
+      ]
+    },
+    {
+      "id": "canisters",
+      "g": 16,
+      "title": "Locate pre-1942 German paratroop arms canisters",
+      "who": "ATTACKER",
+      "kind": "Optional special phase-end attempt",
+      "refs": "E9.7",
+      "sourcePages": [
+        680
+      ],
+      "terms": [
+        "MMC",
+        "DR"
+      ],
+      "prompt": "Are eligible air-dropped German MMC seeking arms canisters?",
+      "checks": [
+        "Check the pre-1942, air-drop and unit conditions.",
+        "Use the specific canister-location procedure, not ordinary SW Recovery or Unarmed Scrounging."
+      ],
+      "effect": "Keep this historical equipment option visible for the relevant scenario profile.",
+      "example": "A qualifying paratroop scenario has a phase-end task that an ordinary Infantry scenario does not.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 3.51A",
+      "steps": [
+        "3.51A"
+      ]
+    },
+    {
+      "id": "berserkEnd",
+      "g": 16,
+      "title": "Return qualifying berserk units to Good Order",
+      "who": "ATTACKER",
+      "kind": "Required phase-end state change",
+      "refs": "A15.46",
+      "sourcePages": [
+        680
+      ],
+      "terms": [
+        "LOS",
+        "MPh"
+      ],
+      "prompt": "Do any berserk units have no Known enemy in LOS?",
+      "checks": [
+        "Evaluate the actual phase-end condition under A15.46.",
+        "Do not confuse this return with the different later AFPh return condition after eliminating Known enemies."
+      ],
+      "effect": "Update the unit before DFPh and preserve lawful information boundaries.",
+      "example": "A berserk unit with no Known enemy in LOS is reviewed at this step, not at the end of each expenditure.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.52A",
+      "steps": [
+        "3.52A"
+      ]
+    },
+    {
+      "id": "cleanup",
+      "g": 16,
+      "title": "Remove Residual FP and half-inch SMOKE",
+      "who": "BOTH",
+      "kind": "Required phase-end cleanup",
+      "refs": "A8.2; A9.223; A24.11; G11.85",
+      "sourcePages": [
+        680
+      ],
+      "terms": [
+        "Residual FP",
+        "Fire Lane",
+        "SMOKE"
+      ],
+      "prompt": "Which counters expire at the end of THE MPh?",
+      "checks": [
+        "Remove all residual, including Fire Lane residual, and the applicable 1/2-inch SMOKE counters.",
+        "Honor the cave exception and counter type; do not remove every SMOKE counter or all defensive fire markers."
+      ],
+      "effect": "Clear only due effects, retaining First/Final Fire commitments for their later removal windows.",
+      "example": "A First Fire marker remains for DFPh even after its residual counter is removed.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 3.53B",
+      "steps": [
+        "3.53B"
+      ]
+    },
+    {
+      "id": "jitter",
+      "g": 17,
+      "title": "Resolve Jitter when triggered",
+      "who": "BOTH",
+      "kind": "Conditional night consequence",
+      "refs": "E1.55; E1.53; W7.8",
+      "sourcePages": [
+        679,
+        224,
+        225,
+        665
+      ],
+      "terms": [
+        "Jitter",
+        "Straying",
+        "Gunflash"
+      ],
+      "prompt": "Has a qualifying night procedure triggered Jitter?",
+      "checks": [
+        "Use the trigger, Gunflash conditions, side/unit selection and eligible weapon restrictions in E1.55.",
+        "Jitter is not a freely chosen attack; apply the resulting movement/fire effects, including cancellation where required.",
+        "Chapter W bugles introduce their own night trigger and visibility treatment rather than ordinary voluntary Starshell fire."
+      ],
+      "effect": "Interrupt the originating movement check and resume only after the night procedure settles.",
+      "example": "A doubles Straying result can create a Jitter sequence instead of simply choosing a new route.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific MPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "cpva",
+      "g": 17,
+      "title": "Apply CPVA IPM and non-IPM movement rules",
+      "who": "ATTACKER",
+      "kind": "Nationality-specific movement",
+      "refs": "W7.4-.42",
+      "sourcePages": [
+        679,
+        663,
+        664,
+        665
+      ],
+      "terms": [
+        "CPVA",
+        "IPM",
+        "NTC",
+        "Impulse"
+      ],
+      "prompt": "Must these CPVA units move as a group, or do they qualify for an exception?",
+      "checks": [
+        "Apply squad/HS, Recon, leader-initiation and joining distinctions; preserve group connectivity and impulse rules.",
+        "For a required non-IPM NTC, apply exemptions, night modifier and failure movement/order consequences; do not trigger SAN or concealment loss from this check.",
+        "Handle newly berserk participants and broken connectivity through the Chapter W procedure. Apply W7.9 restrictions, including no Armored Assault and the specified Rider exceptions."
+      ],
+      "effect": "Keep CPVA movement explicit rather than labelling it ordinary Platoon movement.",
+      "example": "A failed non-IPM attempt may restrict a unit to one Location before other movement, rather than simply consuming a generic action.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific MPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "bugles",
+      "g": 17,
+      "title": "Use CPVA bugles when an SSR permits",
+      "who": "ATTACKER",
+      "kind": "Optional scenario-specific opening choice",
+      "refs": "W7.8",
+      "sourcePages": [
+        679,
+        665
+      ],
+      "terms": [
+        "CPVA",
+        "Jitter",
+        "Gunflash"
+      ],
+      "prompt": "Does this scenario permit the opening bugle choice?",
+      "checks": [
+        "Check the SSR and eligible Good Order leader onboard or entering, at the start of the CPVA MPh.",
+        "Apply the Jitter/initial-illumination equivalence, CPVA non-IPM and concealment modifiers, and the UN Scenario Defender leader’s Freedom of Movement opportunity.",
+        "For the specified dates and UN nationalities, perform required Jitter-only Straying checks even in daytime or when an initial night Movement DR is unnecessary. Apply the stated unit-quality treatment and avoid a second Jitter trigger from a later Movement DR."
+      ],
+      "effect": "Place the choice at phase start, not as a freely repeatable mid-move action.",
+      "example": "A qualifying SSR adds an opening decision; without that SSR the reference remains visible as scenario-dependent.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific MPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "bayonet",
+      "g": 17,
+      "title": "Declare an SSR-enabled UN Bayonet Charge",
+      "who": "ATTACKER",
+      "kind": "Optional nationality-specific charge",
+      "refs": "W.6",
+      "sourcePages": [
+        679,
+        656
+      ],
+      "terms": [
+        "Banzai",
+        "NTC",
+        "CC"
+      ],
+      "prompt": "Does the scenario permit this designated UN Infantry to charge?",
+      "checks": [
+        "Use the Banzai-derived procedure with W.6 exceptions, including Known enemy Infantry targeting and participant qualifications.",
+        "Apply leader/NTC nationality exceptions, failure movement and later Hand-to-Hand consequences; do not copy Japanese end-state rules unchanged."
+      ],
+      "effect": "Show the declaration before movement and preserve its compulsory follow-through.",
+      "example": "A designated UN squad’s failed qualifying check has the specified restricted movement outcome.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific MPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "searchlight",
+      "g": 17,
+      "title": "Maintain or track Chapter W searchlights",
+      "who": "DEFENDER",
+      "kind": "Conditional enemy-MPh procedure",
+      "refs": "W10.44-.52",
+      "sourcePages": [
+        679,
+        670
+      ],
+      "terms": [
+        "NVR",
+        "LOS",
+        "CA"
+      ],
+      "prompt": "Must the beam be maintained, tracked or cancelled?",
+      "checks": [
+        "At the start of the enemy MPh resolve required maintenance/reliability; track a moving target only under the beam and LOS rules.",
+        "Check the limited moving-target exception for a new target within NVR and the conditions for cancellation.",
+        "Do not offer unrestricted beam retargeting or cancellation on every expenditure."
+      ],
+      "effect": "Attach beam changes to the proper movement window and visibility projection.",
+      "example": "A moving unit leaves the beam; the searchlight’s tracking rule determines whether the beam may follow.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific MPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "attackChain",
+      "g": 17,
+      "title": "Resolve attack results, Snipers, wounds and forced movement",
+      "who": "BOTH",
+      "kind": "Triggered consequence chain",
+      "refs": "A7-A8; A14; A15; A17; D5; ASOP dagger",
+      "sourcePages": [
+        679,
+        678
+      ],
+      "terms": [
+        "SAN",
+        "MC",
+        "HOB",
+        "CX"
+      ],
+      "prompt": "Which required results remain from the last roll?",
+      "checks": [
+        "Resolve morale, Pin, casualty, leader loss, HOB/berserk, wound, Stun/Recall, collateral and terrain effects when actually triggered.",
+        "Apply Sniper activation/check eligibility and exclusions to the originating roll; do not create one generic end-of-MPh Sniper task.",
+        "Recalculate ongoing movement after results, including interrupted impulses and charge obligations."
+      ],
+      "effect": "A required consequence cannot be satisfied by marking this reference topic considered.",
+      "example": "A wound changes remaining movement capability; the previously plotted route needs reevaluation.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "Rule-specific MPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "profile",
+      "g": 17,
+      "title": "Apply scenario, equipment and external-module exceptions",
+      "who": "BOTH",
+      "kind": "Conditional source overlay",
+      "refs": "Chapter H notes; SSR; ASOP dagger; O1.5",
+      "sourcePages": [
+        679,
+        678
+      ],
+      "terms": [
+        "SSR",
+        "Source gap"
+      ],
+      "prompt": "Does this scenario or equipment introduce an additional MPh condition?",
+      "checks": [
+        "Keep Chapter F/G/W and equipment-note options visible even though the current implementation passes focus on A-E.",
+        "Record named gaps: O1.5 non-Factory Debris and ASOP Sniper exceptions RB CG8, ABtF CG8, BRT CG8, KGP CG16 and PB CG13. Full module text is outside this volume.",
+        "Load each applicable SSR and equipment note before claiming profile-complete coverage. Unknown relevance is not false; this record does not stand in for an audited inventory of every module."
+      ],
+      "effect": "Show source unavailable or rules integration pending distinctly from illegal.",
+      "example": "A campaign-specific Sniper exception remains named and unresolved until its actual module text is available.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific MPh timing; supplemental to ASOP",
+      "steps": []
+    }
+  ],
+  "glossary": {
+    "MF": "Movement Factors, used by Infantry and certain other movement types. Do not interchange with vehicle MP.",
+    "MP": "Movement Points. Vehicle expenditure and the resulting defensive-fire opportunity are tracked separately from distance.",
+    "DFF": "Defensive First Fire, attacks against eligible moving targets during the opponent’s MPh.",
+    "ITS MPh": "The movement sequence of the current unit or stack, distinct from the entire Movement Phase.",
+    "MPh": "Movement Phase. THE MPh contains a separate start, during and end for each moving unit or stack.",
+    "Human Wave": "Group movement under A25.23 and applicable nationality rules, using ordered impulses.",
+    "MTR": "Mortar.",
+    "LOS": "Line of Sight. Guidance uses only information the viewing player may know.",
+    "NVR": "Night Visibility Range, used with illumination and other night visibility exceptions.",
+    "CE": "Crew Exposed. A vehicle crew posture whose voluntary changes have timing restrictions.",
+    "IR": "Illuminating Round, with its own usage and placement procedure.",
+    "ILH": "Intended Landing Hex for a glider.",
+    "TI": "Task Involved status, not a synonym for Prep Fire.",
+    "CX": "Counter Exhausted. A state caused by Double Time and other rules, with consequences beyond extra movement.",
+    "SW": "Support Weapon. Using one affects its possessor’s capability accounting.",
+    "PP": "Portage Points, the load represented by carried equipment.",
+    "IPC": "Inherent Portage Capacity. Excess portage affects the moving unit’s available MF.",
+    "Freedom of Movement": "Night Scenario Defender restriction and release procedure under E1.21, not ordinary movement eligibility.",
+    "NTC": "Normal Task Check, used only when the governing rule calls for it.",
+    "Straying": "A rules-driven departure from intended movement in specified night or terrain conditions.",
+    "DR": "Two-dice roll. Keep Original, modified and individual colored/white values.",
+    "Double Time": "An Infantry choice to gain MF and become CX. Declaration at the start and later in ITS MPh gives different bonuses.",
+    "Assault Movement": "A declared Infantry movement mode under A4.61. It can avoid FFNAM without automatically avoiding FFMO.",
+    "FFNAM": "First Fire Non-Assault Movement, a modifier tied to movement and activity, not merely a changed hex.",
+    "FFMO": "First Fire Movement in Open Ground, assessed for the particular attack and route.",
+    "Dash": "The special road-crossing movement procedure of A4.63, subject to its own declaration and route conditions.",
+    "Hazardous Movement": "A defined exposure condition for specified activities, not a generic label for a dangerous route.",
+    "Banzai": "The Japanese charge procedure derived from Human Wave rules with G1.5 exceptions.",
+    "Impulse": "A coordinated expenditure by a qualifying group, completed for the group before the response procedure.",
+    "TC": "Task Check.",
+    "MC": "Morale Check.",
+    "Motion": "A vehicle state. It is not interchangeable with Non-Stopped or a moving target for fire modifiers.",
+    "Non-Stopped": "Vehicle condition used in movement and firing rules. It is distinct from a Motion counter.",
+    "AFV": "Armored Fighting Vehicle.",
+    "TB": "Trail Break. Creation and use depend on terrain and the applicable vehicle procedure.",
+    "LC": "Landing Craft, governed by its own transport, fire, beaching and grounding rules.",
+    "Minimum Move": "A4.134 permits certain one-hex moves despite insufficient MF, with Pin and CX consequences after First Fire.",
+    "Bypass": "Movement around a permitted obstacle within its hex. Clearance, costs and attack geometry depend on the unit and route.",
+    "VBM": "Vehicular Bypass Movement. Uses vehicle-specific clearance, costs, facing and defensive-fire geometry.",
+    "VCA": "Vehicular Covered Arc, the vehicle hull’s facing.",
+    "TCA": "Turret Covered Arc, distinct from the vehicle hull’s covered arc.",
+    "WA": "Wall Advantage. Its claim, loss and mandatory conditions depend on B9.32 and the position.",
+    "OVR": "Overrun. Infantry OVR and vehicular OVR are different procedures with different prerequisites.",
+    "PAATC": "Pre-AFV Attack Task Check, required in specified Infantry attacks or entries involving an AFV.",
+    "TEM": "Terrain Effects Modifier.",
+    "US#": "Unit Size Number. Used for purposes including prisoner guarding capacity and the dr to Set a DC; it is not a weapon Usage Number.",
+    "PRC": "Passengers, Riders and Crew, with different vulnerability and fire restrictions.",
+    "CC": "Close Combat. A CC counter and MPh CC Reaction Fire have distinct timing from the later Close Combat Phase.",
+    "DC": "Demolition Charge.",
+    "AFPh": "Advancing Fire Phase. Opportunity Fire reserves a full-effect attack here.",
+    "SMOKE": "The umbrella for Smoke and WP effects; preserve ammunition type, owner and source.",
+    "WP": "White Phosphorus, with its own height, NMC and ignition rules.",
+    "T-H Hero": "Tank-Hunter Hero, created and used under G1.42 rather than ordinary hero rules.",
+    "DC Hero": "A Japanese hero using the special demolition-charge procedure of G1.424.",
+    "BFF": "Bounding First Fire, eligible vehicular fire during the vehicle’s MPh.",
+    "ROF": "Rate of Fire. A retained opportunity is not an automatic shot.",
+    "TH": "To Hit roll or number for an ordnance attack.",
+    "Gun Duel": "C2.2401 procedure that can alter which eligible declared attack resolves first.",
+    "CA": "Covered Arc.",
+    "Reaction Fire": "Defender attacks against vehicles under D7.2, with separate CC and non-CC procedures.",
+    "ESB": "Excessive Speed Breakdown. Extra vehicle movement is subject to the governing breakdown risk.",
+    "HD": "Hull Down. A vehicle protection state, including a possible maneuver attempt under D4.22.",
+    "BU": "Buttoned Up. The alternative protected crew posture, with weapon and observation consequences.",
+    "Wreck Check": "A specified check for wagons or motorcycles in the circumstances of D12.4/D15.46.",
+    "DD": "Duplex Drive tank. Its screens and amphibious state have specific consequences.",
+    "AA": "Anti-Aircraft fire or mode.",
+    "Residual FP": "Firepower left by a qualifying attack, applied to later qualifying expenditures under A8.2.",
+    "Fire Lane": "A machine-gun residual-fire procedure with its own placement, attack and cancellation rules.",
+    "FFE": "Fire For Effect. FFE:1, FFE:2 and FFE:C have different actions.",
+    "NMC": "Normal Morale Check.",
+    "SFF": "Subsequent First Fire, restricted additional defensive fire after First Fire.",
+    "MG": "Machine Gun.",
+    "IFE": "Infantry Firepower Equivalent, a weapon-specific alternative to ordinary TH fire.",
+    "Sustained Fire": "Additional MG/IFE fire with its own firepower and breakdown consequences.",
+    "FPF": "Final Protective Fire, restricted further fire that also tests the firer’s morale.",
+    "TPBF": "Triple Point Blank Fire. Some same-Location entry attacks are compulsory under A8.312.",
+    "IFT": "Infantry Fire Table.",
+    "TK": "To Kill resolution, distinct from the To Hit roll.",
+    "IF": "Intensive Fire, an extra Gun shot with accuracy and malfunction penalties.",
+    "FB": "Fighter-Bomber, an aircraft type with its own sighting and Ground Support procedures.",
+    "DB": "Dive Bomber, an aircraft type with its own attack and AA response procedures.",
+    "MOL": "Molotov Cocktail. A squad MOL and a MOL Projector have different procedures.",
+    "Search": "An end-of-ITS-MPh procedure using a qualifying unit or stack. It is not a free inspection of hidden information.",
+    "MMC": "Multi-Man Counter: squad, half-squad or crew.",
+    "Jitter": "Night firing caused by the E1.55 procedure, not a freely chosen attack.",
+    "Gunflash": "Night firing marker or specified equivalent that affects visibility and related night procedures.",
+    "CPVA": "Chinese People’s Volunteer Army, with Chapter W nationality and movement rules.",
+    "IPM": "Independent Platoon Movement, the CPVA movement procedure in W7.4.",
+    "SAN": "Sniper Activation Number, tested only for qualifying Original rolls.",
+    "HOB": "Heat of Battle, a triggered resolution rather than an optional action.",
+    "SSR": "Scenario Special Rule. It can add or modify applicability and must be included in the scenario profile.",
+    "Source gap": "An identified rule reference whose full text is outside the supplied volume. Its details remain unevaluated."
+  },
+  "asopLedger": [
+    {
+      "step": "3.11A",
+      "clauses": "Replace eliminated/non-Good-Order mortar Spotter.",
+      "optionIds": [
+        "spotter"
+      ]
+    },
+    {
+      "step": "3.12D",
+      "clauses": "Opening defender leader/MMC/CE AFV Starshell attempts.",
+      "optionIds": [
+        "starshellOpening"
+      ]
+    },
+    {
+      "step": "3.13A",
+      "clauses": "All gliders blue aerial side up at ILH.",
+      "optionIds": [
+        "gliderSetup"
+      ]
+    },
+    {
+      "step": "3.21A",
+      "clauses": "Select currently berserk required charge, otherwise ordinary selection.",
+      "optionIds": [
+        "berserkPrepare"
+      ]
+    },
+    {
+      "step": "3.22A",
+      "clauses": "Ground eligibility; dropping SW/Gun; night FoM/Movement/Straying; Double Time/Assault/Dash/Sewer/Climb; Human Wave/Banzai/Swimming/Dare-Death; Gallop; Motion counter; Column/Convoy/Platoon/radioless NTC; flail TB; surf checks; crew entry/abandonment; transition to ground or aerial/end.",
+      "optionIds": [
+        "eligibility",
+        "startDrop",
+        "freedom",
+        "strayingStart",
+        "doubleStart",
+        "assault",
+        "dash",
+        "sewerStart",
+        "climbStart",
+        "wave",
+        "dareDeath",
+        "swimStart",
+        "gallopStart",
+        "motionStart",
+        "formations",
+        "radioless",
+        "flail",
+        "surfStart",
+        "crewVehicle"
+      ]
+    },
+    {
+      "step": "3.23A",
+      "clauses": "Aerial selection and routing to glider AA or parachute drift.",
+      "optionIds": [
+        "aerialQueue"
+      ]
+    },
+    {
+      "step": "3.31A",
+      "clauses": "Required berserk charge with beach exception, then expenditure effects/fire.",
+      "optionIds": [
+        "berserkCharge"
+      ]
+    },
+    {
+      "step": "3.32A",
+      "clauses": "Ground movement; Sewer/reliability/Stall/Bog Removal/Straying; Infantry OVR; late Double Time; Manhandling/Labor/TI; Place/Set DC/US#; all listed transport/Recovery/drop options; all eight Clearance targets and immediate Flame; hook/unhook; grenades/dispensers/WP/Flame; WA; T-H/DC Hero; Gallop/Charge; Bog/Recall/BFF/Wreck Removal/ESB/HD/CE; Armored Assault; Wreck Checks; impulse-before-fire; concealment/Column; Lost/Falling/Swimming/Climb/Panji; skis/dust/DD screens; beach/Aground/surf/Wading CX.",
+      "optionIds": [
+        "route",
+        "minimum",
+        "bypass",
+        "terrainModes",
+        "vehicleMotion",
+        "reliability",
+        "sewerTravel",
+        "climbSwim",
+        "lateDouble",
+        "concealment",
+        "wallAdvantage",
+        "recover",
+        "dropDuring",
+        "prisonerMovement",
+        "recapture",
+        "manhandle",
+        "placeDC",
+        "setDC",
+        "mount",
+        "hook",
+        "clearDeclare",
+        "clearFlame",
+        "skis",
+        "smoke",
+        "infantryOVR",
+        "hero",
+        "cavalry",
+        "bog",
+        "recall",
+        "bounding",
+        "gunDuel",
+        "vehicleOVR",
+        "esbHD",
+        "crewPosture",
+        "armoredAssault",
+        "wreckRemoval",
+        "wreckChecks",
+        "impulse",
+        "column",
+        "panji",
+        "dust",
+        "ddScreens",
+        "beach",
+        "surf"
+      ]
+    },
+    {
+      "step": "3.33A",
+      "clauses": "Glider Evasive Action, return to AA.",
+      "optionIds": [
+        "gliderEvade"
+      ]
+    },
+    {
+      "step": "3.34A",
+      "clauses": "All aerial parachutes drift, then fire or phase-end if none.",
+      "optionIds": [
+        "parachuteDrift"
+      ]
+    },
+    {
+      "step": "3.35D",
+      "clauses": "Moving-ground-unit residual/Fire Lane/FFE/mine attacks; later illumination; Column Disbandment; trip flare.",
+      "optionIds": [
+        "column",
+        "residualAttack",
+        "ffeMove",
+        "mines",
+        "starshellLater",
+        "tripFlare"
+      ]
+    },
+    {
+      "step": "3.36D",
+      "clauses": "First/SFF/FPF; Snap Shot/Fire Lane/Thrown DC/Reaction Fire/air Ground Support; residual and all listed fire markers; MOL-Projector Smoke/Flame; reaction T-H Hero; defender Motion/dispenser; attacker Light AA; Column Disbandment.",
+      "optionIds": [
+        "column",
+        "firstFire",
+        "subsequent",
+        "fpf",
+        "mandatoryTPBF",
+        "snap",
+        "fireLane",
+        "defenderWeapons",
+        "throwDC",
+        "ovrPrevention",
+        "reaction",
+        "heroReaction",
+        "motionAttempt",
+        "airSupport",
+        "attackerAA",
+        "residualCreate"
+      ]
+    },
+    {
+      "step": "3.37D",
+      "clauses": "Light AA First/SFF against glider; markers; evasion or landing branch.",
+      "optionIds": [
+        "gliderAA"
+      ]
+    },
+    {
+      "step": "3.38D",
+      "clauses": "Small-arms/Light-AA First/SFF against all aerial parachutes; markers; landing.",
+      "optionIds": [
+        "parachuteFire"
+      ]
+    },
+    {
+      "step": "3.41A",
+      "clauses": "Search/casualties/TI with defensive fire still allowed; broken Bypass obstacle entry; sewer emergence; Unarmed small-arms Scrounging; Motion/Stop; CC counter; return to next mover.",
+      "optionIds": [
+        "search",
+        "brokenBypass",
+        "sewerEmerge",
+        "smallArms",
+        "endVehicle"
+      ]
+    },
+    {
+      "step": "3.42A",
+      "clauses": "Glider Landing DR/Crash dr; return to aerial selection.",
+      "optionIds": [
+        "gliderLand"
+      ]
+    },
+    {
+      "step": "3.43A",
+      "clauses": "Non-German 5/8-inch displacement; all parachutes land; 1/2-inch flip; NMC/NTC.",
+      "optionIds": [
+        "parachuteLand"
+      ]
+    },
+    {
+      "step": "3.51A",
+      "clauses": "Vehicle and aerial-landing terrain-Blaze elimination; Wreck Removal resolution; pre-1942 German arms canisters.",
+      "optionIds": [
+        "blazeEnd",
+        "wreckEnd",
+        "canisters"
+      ]
+    },
+    {
+      "step": "3.52A",
+      "clauses": "Berserk units with no Known enemy in LOS return to Good Order.",
+      "optionIds": [
+        "berserkEnd"
+      ]
+    },
+    {
+      "step": "3.53B",
+      "clauses": "Remove all residual and applicable 1/2-inch SMOKE, cave exception.",
+      "optionIds": [
+        "cleanup"
+      ]
+    }
+  ]
+}
