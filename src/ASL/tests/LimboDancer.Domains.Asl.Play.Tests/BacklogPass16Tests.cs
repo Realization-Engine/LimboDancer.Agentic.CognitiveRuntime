@@ -449,8 +449,9 @@ public sealed class BacklogPass16Tests : IDisposable
         Assert.Equal(count, Revision);
     }
 
-    [Fact]
-    public async Task RecordedGustRemainsVisibleAtAdvancingFireWithoutBeingAppliedOrRerolled()
+    [Theory]
+    [MemberData(nameof(TurnGuideAcceptanceCases.AtmosphereProfiles), MemberType = typeof(TurnGuideAcceptanceCases))]
+    public async Task RecordedGustRemainsVisibleAtAdvancingFireWithoutBeingAppliedOrRerolled(string profile)
     {
         await SetupAt(0, "german", ["weather:gusty"], Sides(), Unit("g1", "attacker-squad", "E3", "german"), Unit("r1", "defender-squad", "H8", "russian"));
         await Advance(7);
@@ -458,14 +459,18 @@ public sealed class BacklogPass16Tests : IDisposable
         {
         }));
         Assert.True(store.Read(Scope)!.Events.Select(item => item.Payload).OfType<WindChanged>().Single().Gust);
-        var first = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "rph", "existing-engine-atmosphere-v1")).Atmosphere!;
+        var first = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "rph", profile)).Atmosphere!;
         Assert.True(Assert.Single(first.Wind).Gust);
+        var windAt = Revision;
         await Advance(4);
         Assert.Equal("afph", Current.Phase);
         var count = Revision;
-        var later = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "afph", "existing-engine-atmosphere-v1")).Atmosphere!;
+        var later = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "afph", profile)).Atmosphere!;
         Assert.Equal(JsonSerializer.Serialize(first.Wind), JsonSerializer.Serialize(later.Wind));
         Assert.Equal(TurnSupport.Pending, later.PendingRules.Single(item => item.Family == TurnAtmosphereFamily.Gusts).CommandSupport);
+        var historical = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "rph", profile, windAt);
+        TurnGuideAcceptanceCases.AssertProfile(historical, profile);
+        Assert.Equal(JsonSerializer.Serialize(first), JsonSerializer.Serialize(historical.Atmosphere));
         Assert.Equal(count, Revision);
     }
 

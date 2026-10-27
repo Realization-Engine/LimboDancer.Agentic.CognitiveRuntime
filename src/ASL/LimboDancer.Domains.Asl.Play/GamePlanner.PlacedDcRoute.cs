@@ -23,9 +23,9 @@ public sealed partial class GamePlanner
             owner
         }))));
 
-    private async Task<(TurnGuideSnapshot Guide, ImmutableArray<TurnPlacedDcAction> Actions)> AddPlacedDcRouteAsync(
+    private static (TurnGuideSnapshot Guide, ImmutableArray<TurnPlacedDcAction> Actions) AddPlacedDcRoute(
         TurnGuideSnapshot guide, TurnEvaluationContext context, GameState state, Perspective perspective,
-        ImmutableArray<TurnDecisionWindow> windows, CancellationToken cancellationToken)
+        ImmutableArray<TurnDecisionWindow> windows)
     {
         if (guide.BrowsedPhaseId != "afph" || !TurnGuideProfiles.Get(context.Profile).IntegratedDependencies.Contains("placedDc"))
         {
@@ -50,22 +50,11 @@ public sealed partial class GamePlanner
             if (!guide.Historical && !perspective.IsAdjudicator && charge.OwnerSide == perspective.Name
                 && window.Timing == Rules.TurnDecisionTiming.ReadyForCommandAssessment)
             {
-                var args = JsonSerializer.SerializeToElement(new
-                {
-                    gameId = state.Scope.Game,
-                    attemptId = "turn-guide-assessment",
-                    expectedRevision = state.Revision,
-                    equipmentId = charge.Charge,
-                    proposedBy = perspective.Name,
-                });
-                var plan = await PlanCoreAsync(GameActions.DetonateDc, args, state.Scope.Tenant, perspective.Name,
-                    assessmentOnly: true, cancellationToken).ConfigureAwait(false);
-                command = plan.Status == GamePlanStatus.Ready ? TurnCommandReadiness.Ready : TurnCommandReadiness.Refused;
-                if (command == TurnCommandReadiness.Ready)
-                {
-                    token = DcRouteToken(state, charge.Charge, context.Profile, perspective.Name);
-                    actions.Add(new(token, charge.Charge, context.Profile, TurnPlacedDcGuidance.ActionId));
-                }
+                // Passive side reads must not reveal private command blockers through status or route counts.
+                // A route requests the existing governed check; it does not certify command readiness.
+                command = TurnCommandReadiness.GovernedCheckRequired;
+                token = DcRouteToken(state, charge.Charge, context.Profile, perspective.Name);
+                actions.Add(new(token, charge.Charge, context.Profile, TurnPlacedDcGuidance.ActionId));
             }
             verdicts.Add(TurnPlacedDcGuidance.Describe(scoped,
                 new(charge.Charge, charge.OwnerSide ?? "unknown", window.Timing, command, token)));

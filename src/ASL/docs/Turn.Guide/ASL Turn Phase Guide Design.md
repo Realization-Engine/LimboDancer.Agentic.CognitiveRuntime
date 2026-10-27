@@ -7,7 +7,7 @@ Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and 
 References: [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Implementation Plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md), [cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md), [folder index](README.md).
 
 
-Current B5 scope (2026-10-27): B5-R1 through B5-R4 are implemented; exactly two integration slices remain, B5-R5 and B5-R6, both Planned. The [finite completion backlog](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) is authoritative. B5-D1 through B5-D9 preserve later ASL.Rules work without making full rulebook execution a prerequisite for the initial UI. Historical slice sections describe the evidence at their implementation date, not additional B5 gates.
+Current B5 scope (2026-10-27): B5-R1 through B5-R5 are implemented; exactly one integration slice remains, B5-R6, Planned. The [finite completion backlog](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) is authoritative. B5-D1 through B5-D9 preserve later ASL.Rules work without making full rulebook execution a prerequisite for the initial UI. Historical slice sections describe the evidence at their implementation date, not additional B5 gates.
 
 ## 1. Design decision
 
@@ -552,3 +552,23 @@ For guided commits only, the first event carries optional `GuidedDecisionHash` e
 
 
 B5-R4 final verification: all 178 ASL.Turns tests pass, covering 819/819 lines and 464/464 branches (100%, no exclusions). All 25 focused Play tests and 421 Units regression tests pass. The Rules predicates were unchanged; R3 Rules results remain historical evidence, not new R4 runs. Two required B5 slices remain; B5-R5 is next.
+
+
+### B5-R5: cross-profile replay and disclosure acceptance
+
+R5 exercises the five shipped profiles without adding rule families. Exact topic identities and order are checked against the catalog, alongside profile-specific payloads, pending explanations, owning/opposing/adjudicator views, repeated reads, file reloads, historical-prefix replay, legacy gaps, retry identity and completed effects. All 538 topics, 38 dependencies and 191 links remain represented. The detailed profile/evidence matrix is in implementation plan section 11.7.
+
+**Disclosure finding and correction.** The new counterfactual test created two replay-valid journals with the same disclosed DC origin, occurrence, opening review, own-counter facts and state stamp. Only an opposing private choice differed. R4's passive command assessment changed the owning-side topic from Required to Unavailable and removed its action. All four DC-capable profiles failed the complete-response comparison. Generic refusal text alone did not protect privacy because applicability and action count still disclosed the private blocker.
+
+R5 corrects that boundary. A passive owning-side route means **request the governed command check**, not that the command has passed its private eligibility checks. `TurnCommandReadiness.GovernedCheckRequired` preserves the due obligation as Required and explicitly says private decisions may remain. The Play adapter no longer runs a private command-readiness assessment to decide whether to expose a route. This supersedes R4's read-path requirement for a Ready result; it does not change execution authority or the attack rules. The existing Ready/Refused composition values remain available for appropriately authorized assessments, but passive side reads do not receive those private results.
+
+The route still requires the admitted profile, correct live phase, owning perspective and fully disclosed R3 timing evidence. Missing, legacy, withheld, interrupted and historical evidence never becomes an executable action. Preparation binds the offered route to its current state as before. Explicit proposal, confirmation and commit continue through the full existing `PlanCoreAsync` path, including permission, private pending-choice guards, expected revision, timing/token validation, attack legality, dice and follow-ups. The counterfactual test proves identical passive responses while the actual governed proposal is denied in the blocked world without a roll or journal write. A Required checklist item is an obligation to consider, not permission to execute.
+
+**Evidence and freshness boundaries.** Replay comparisons use the same game scope, board data and profile version. A historical read against a full journal must equal the read against a journal ending at that revision, so future effects cannot contaminate past disclosure. Hidden-fact comparisons hold disclosed phase, own facts and decision-evidence currency constant. R3's explicit any-event review expiry is retained: this slice does not conceal an authorized window's invalidation or reuse a stale route. Opaque route handles remain process-local; persisted request digests still support identical committed retries after reload. These are acceptance tests for the admitted host contracts, not a formal proof for every future rule or arbitrary corrupt journal.
+
+Fire/Spotter tests now run in all three profiles that expose them. Grenade origin, cleanup and legacy-link tests run in both atmosphere profiles. The five-profile work matrix checks current versus legacy audit versions, applied packing effects versus pending rule automation, historical pre-completion disclosure and withheld work evidence. Existing supply, replenishment, work-interruption and fire/atmosphere regressions are retained. The base and earlier profiles explicitly omit unsupported optional history/work payloads while preserving the reference topics.
+
+DC-capable profile versions are `b5-r5-dc`, `b5-r5-fire`, `b5-r5-atmosphere` and `b5-work-8`. Base remains `b5-r2-base`. The nine B5-D packages remain pending. R6 alone remains for final B5 acceptance and the UI handoff; no renderer is introduced by R5.
+
+
+B5-R5 final verification: 179 ASL.Turns tests pass, covering 821/821 lines and 466/466 branches (100%, no exclusions). The focused Play matrix/regression run passes 94 tests, and the additional Wind/Gust theory passes two cases. R6 alone remains. Rules and Units source are unchanged; earlier direct suite results remain historical evidence.

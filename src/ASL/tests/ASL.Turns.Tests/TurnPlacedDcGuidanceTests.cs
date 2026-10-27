@@ -12,6 +12,7 @@ public sealed class TurnPlacedDcGuidanceTests
     [InlineData(TurnDecisionTiming.ReadyForCommandAssessment, TurnCommandReadiness.NotEvaluated, TurnApplicability.NotEvaluated)]
     [InlineData(TurnDecisionTiming.ReadyForCommandAssessment, TurnCommandReadiness.Refused, TurnApplicability.Unavailable)]
     [InlineData(TurnDecisionTiming.ReadyForCommandAssessment, TurnCommandReadiness.Ready, TurnApplicability.Required)]
+    [InlineData(TurnDecisionTiming.ReadyForCommandAssessment, TurnCommandReadiness.GovernedCheckRequired, TurnApplicability.Required)]
     [InlineData((TurnDecisionTiming)99, TurnCommandReadiness.Ready, TurnApplicability.NotEvaluated)]
     [InlineData(TurnDecisionTiming.ReadyForCommandAssessment, (TurnCommandReadiness)99, TurnApplicability.NotEvaluated)]
     public void TimingAndCommandEvidenceAreBothRequired(TurnDecisionTiming timing, TurnCommandReadiness command, TurnApplicability expected)
@@ -25,6 +26,11 @@ public sealed class TurnPlacedDcGuidanceTests
         Assert.Equal("dc", verdict.SubjectId);
         Assert.Equal(context.ViewerId, verdict.ViewerId);
         Assert.NotEmpty(verdict.Reason);
+        if (command == TurnCommandReadiness.GovernedCheckRequired)
+        {
+            Assert.Contains("private decisions may remain", verdict.Reason);
+            Assert.DoesNotContain("passes the existing command assessment", verdict.Reason);
+        }
         var service = new TurnGuideService(TurnGuideCatalog.Load(), TurnPlacedDcGuidance.Registrations);
         var result = service.Describe(new(context, "afph", false), new(context, [verdict]));
         Assert.Equal(verdict.ActionRoute, Assert.Single(result.Options.Single(item => item.Topic.Id == TurnPlacedDcGuidance.TopicId).Decisions).ActionRoute);

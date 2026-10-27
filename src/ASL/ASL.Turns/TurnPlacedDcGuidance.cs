@@ -5,7 +5,7 @@ namespace ASL.Turns;
 
 public enum TurnCommandReadiness
 {
-    NotEvaluated, Ready, Refused
+    NotEvaluated, Ready, Refused, GovernedCheckRequired
 }
 
 /// <summary>Opaque state-bound host route. Not authorization and never a raw command plan.</summary>
@@ -35,7 +35,7 @@ public static class TurnPlacedDcGuidance
             TurnDecisionTiming.OutsideWindow => TurnApplicability.Unavailable,
             TurnDecisionTiming.ReadyForCommandAssessment => assessment.Command switch
             {
-                TurnCommandReadiness.Ready => TurnApplicability.Required,
+                TurnCommandReadiness.Ready or TurnCommandReadiness.GovernedCheckRequired => TurnApplicability.Required,
                 TurnCommandReadiness.Refused => TurnApplicability.Unavailable,
                 _ => TurnApplicability.NotEvaluated,
             },
@@ -43,6 +43,8 @@ public static class TurnPlacedDcGuidance
         };
         var reason = applicability switch
         {
+            TurnApplicability.Required when assessment.Command == TurnCommandReadiness.GovernedCheckRequired =>
+                "This Placed DC has timing evidence. Request the governed command check; private decisions may remain. Permission and confirmation are still required.",
             TurnApplicability.Required => "This Placed DC has current timing evidence and passes the existing command assessment. Proposal and confirmation are required.",
             TurnApplicability.Unavailable => "This Placed DC cannot currently be offered through the governed route. Resolve its timing or existing game obligations first.",
             _ => "Current timing or command evidence is missing. Opening-rule automation and other unregistered rules remain pending.",

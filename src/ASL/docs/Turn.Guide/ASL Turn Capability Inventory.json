@@ -83,7 +83,7 @@
     {
       "id": "dc",
       "kind": "GovernedSubset",
-      "scope": "Bounded Placed DC ownership, operability, AFPh obligation, durable occurrence and permissioned opening-task evidence, plus the afph:placed live route through the existing governed detonation command. Timing evidence is not permission. Opening-rule automation, other A23 variants and other topic routes remain pending.",
+      "scope": "Bounded Placed DC ownership, operability, AFPh obligation, durable occurrence and permissioned opening-task evidence. The passive afph:placed route requests the existing governed command check without exposing private readiness. Execution still requires full command validation, permission and confirmation. Opening-rule automation, other A23 variants and other topic routes remain pending.",
       "profiles": [
         "existing-engine-dc-v1",
         "existing-engine-fire-v1",
@@ -98,7 +98,8 @@
         "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/BacklogPass15Tests.DecisionWindows.cs",
         "src/ASL/ASL.Turns/TurnPlacedDcGuidance.cs",
         "src/ASL/LimboDancer.Domains.Asl.Play/GamePlanner.PlacedDcRoute.cs",
-        "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/BacklogPass15Tests.PlacedDcRoute.cs"
+        "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/BacklogPass15Tests.PlacedDcRoute.cs",
+        "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/BacklogPass15Tests.Acceptance.cs"
       ]
     },
     {

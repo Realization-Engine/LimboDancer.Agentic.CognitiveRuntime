@@ -89,7 +89,7 @@ public sealed partial class GamePlanner
             ? TurnPhaseClose.Describe(new(TurnClosePlanStatus.Ready, false, false, [], []), perspective.IsAdjudicator, true)
             : await AssessTurnPhaseCloseAsync(state.Stamp, perspective, [], cancellationToken).ConfigureAwait(false);
         var decisionWindows = profile.IntegratedDependencies.Contains("placedDc") ? ReadDecisionWindows(history, revision, perspective, historical) : [];
-        var routed = await AddPlacedDcRouteAsync(guide, context, state, perspective, decisionWindows, cancellationToken).ConfigureAwait(false);
+        var routed = AddPlacedDcRoute(guide, context, state, perspective, decisionWindows);
         return new(routed.Guide, obligations, close)
         {
             Profile = profile,

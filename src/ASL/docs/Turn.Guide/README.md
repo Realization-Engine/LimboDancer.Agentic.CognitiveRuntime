@@ -1,6 +1,6 @@
 # ASL Turn Guide
 
-Current planning status: **B5-R1 through B5-R4 are implemented; two slices remain**, B5-R5 and B5-R6. Next is B5-R5 (cross-profile replay and disclosure acceptance). The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and nine deferred rule-family packages, B5-D1 through B5-D9. D9 adds the ordinary core-phase rules missing from the original eight packages; it does not add a required B5 slice.
+Current planning status: **B5-R1 through B5-R5 are implemented; one slice remains**, B5-R6 (final acceptance and U1 handoff). The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and nine deferred rule-family packages, B5-D1 through B5-D9. D9 adds the ordinary core-phase rules missing from the original eight packages; it does not add a required B5 slice.
 
 All turn-guide analysis, design, phase catalogs, walkthroughs and dependency audit live in this folder.
 
@@ -88,3 +88,8 @@ B5-R4 connects the Placed DC topic to the existing governed detonation command. 
 
 
 B5-R4 final verification: all 178 ASL.Turns tests pass, covering 819/819 lines and 464/464 branches (100%, no exclusions). All 25 focused Play tests and 421 Units regression tests pass. The Rules predicates were unchanged; R3 Rules results remain historical evidence, not new R4 runs. Two required B5 slices remain; B5-R5 is next.
+
+
+B5-R5 completes cross-profile replay and disclosure acceptance. Passive Placed DC routes request a governed check without disclosing private command blockers; normal proposal and confirmation still enforce them. All pending rules remain visible. See the [R5 design contract](ASL%20Turn%20Phase%20Guide%20Design.md#b5-r5-cross-profile-replay-and-disclosure-acceptance) and [acceptance matrix](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#117-b5-r5-implementation-and-acceptance-matrix).
+
+R5 verification: 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). The focused Play matrix/regression run passes 94 tests, plus two Wind/Gust cases in a separate run. R6 alone remains; B5 completion and UI eligibility await that gate.

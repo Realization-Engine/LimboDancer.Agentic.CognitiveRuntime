@@ -158,8 +158,10 @@ public sealed partial class BacklogPass15Tests
             Revision = Revision + 1
         };
         var blocked = await ReadCopiedDcHistory([.. events, reviewed], Perspective.Side("german"));
-        Assert.Empty(blocked.Actions);
-        Assert.Equal(TurnApplicability.Unavailable, Assert.Single(blocked.Guide.Options.Single(item => item.Topic.Id == "afph:placed").Decisions).Applicability);
+        Assert.Single(blocked.Actions);
+        var conditional = Assert.Single(blocked.Guide.Options.Single(item => item.Topic.Id == "afph:placed").Decisions);
+        Assert.Equal(TurnApplicability.Required, conditional.Applicability);
+        Assert.Contains("private decisions may remain", conditional.Reason);
         Committed(await Do(GameActions.Choose, Then(6), new
         {
             key = Current.Choice!.Key,
