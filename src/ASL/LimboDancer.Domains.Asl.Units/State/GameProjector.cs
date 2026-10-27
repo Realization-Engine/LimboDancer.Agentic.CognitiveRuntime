@@ -108,6 +108,19 @@ public static partial class GameProjector
                 return null;
             }
 
+            var packedTarget = gameEvent.Payload switch
+            {
+                EquipmentTransferred transfer => transfer.Id,
+                InstanceMoved move => move.Id,
+                GunTurned turned => turned.Gun,
+                OrdnanceFired fired => fired.Gun,
+                MovementStepped movement => movement.PushedGun,
+                _ => null,
+            };
+            if (previous is not null && Rules.TurnWorkEffects.PackedGunBar(packedTarget is not null && previous.PackedGuns.Contains(packedTarget)) is { } packedBar)
+            {
+                return Fail<GameState>("UNIT-WORK-003", packedBar);
+            }
             var next = gameEvent.Payload switch
             {
                 GameStarted started when previous is null => Start(gameEvent, started),
@@ -115,7 +128,7 @@ public static partial class GameProjector
                 GameStarted => Fail<GameState>("UNIT-STATE-004", "A game starts only once."),
                 _ when previous.Ended is not null => Fail<GameState>("UNIT-STATE-045", "The game has ended (A3.9; ruling R20.1); nothing more happens in it."),
                 GameEnded ended => End(previous, ended),
-                TurnWorkRecorded work => RecordTurnWork(previous, work),
+                TurnWorkRecorded work => RecordTurnWork(previous, work, gameEvent.Type),
                 PhaseChanged phase => ChangePhase(previous, phase),
                 InstanceCreated created => CreateInPlay(previous, created),
                 InstanceMoved moved => Move(previous, moved),

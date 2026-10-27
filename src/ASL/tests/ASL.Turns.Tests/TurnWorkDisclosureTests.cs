@@ -30,4 +30,28 @@ public sealed class TurnWorkDisclosureTests
         Assert.False(done.CompletionDue);
         Assert.Throws<ArgumentNullException>(() => TurnWorkDisclosure.From(null!, false));
     }
+
+    [Fact]
+    public void EffectsAreDistinguishedFromLegacyLifecycleCompletion()
+    {
+        var declaration = new TurnWorkDeclaration("work", "side", "gun", ["gun", "crew"], TurnWorkKind.AnimalPacking, null, 1, "ruling");
+        var legacy = TurnWorkLifecycle.Start(declaration, 1, true);
+        Assert.Equal(TurnWorkEffectStatus.NotSpecified, TurnWorkDisclosure.From(legacy, false).EffectStatus);
+        Assert.Null(TurnWorkDisclosure.From(legacy, false).EffectKind);
+        var bound = TurnWorkLifecycle.Start(declaration with
+        {
+            CompletionEffects = new(TurnWorkEffectKind.PackGun, Crew: "crew")
+        }, 1, true);
+        Assert.Equal(TurnWorkEffectKind.PackGun, TurnWorkDisclosure.From(bound, false).EffectKind);
+        Assert.Equal(TurnWorkEffectStatus.AwaitingCompletion, TurnWorkDisclosure.From(bound, false).EffectStatus);
+        var cancelled = TurnWorkLifecycle.Change(bound, "cancel", 1, TurnWorkWindow.FirstRally);
+        Assert.Equal(TurnWorkEffectStatus.Cancelled, TurnWorkDisclosure.From(cancelled, false).EffectStatus);
+        var completed = TurnWorkLifecycle.Change(TurnWorkLifecycle.NextGameTurn(bound, 1, 2), "complete", 2, TurnWorkWindow.FirstRally);
+        var view = TurnWorkDisclosure.From(completed with
+        {
+            EffectsApplied = true
+        }, false);
+        Assert.Equal(TurnWorkEffectStatus.Applied, view.EffectStatus);
+        Assert.Equal(TurnSupport.Pending, view.RuleAutomation);
+    }
 }

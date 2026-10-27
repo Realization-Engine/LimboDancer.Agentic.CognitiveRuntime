@@ -50,3 +50,8 @@ B5 work progress: evidence-based complete Game Turn accounting and Rules-owned r
 
 
 B5 live work adjudication: `existing-engine-work-v1` / `b5-work-2` adds persisted lifecycle events, owned TI, completion windows, permission checks, replay and disclosed work summaries. Full packing/supply rule automation and counter consequences remain pending. See the design and implementation plan's live work section. Latest ASL.Turns coverage: 147 tests, 659/659 lines and 366/366 branches (100%).
+
+
+B5 completion effects: `existing-engine-work-v1` / `b5-work-3` adds bound Gun assembly/manning changes, C8.9 ammo restoration, recorded Low Ammo clearance, supply depletion and Passenger-capacity consequences. Legacy work has no inferred effects. Eligibility, animal transport, B# combat behavior and remaining supply rules stay pending. See the design and implementation plan's completion-effects section.
+
+Latest completion-effects coverage: 148 ASL.Turns tests, 666/666 lines and 374/374 branches (100%).

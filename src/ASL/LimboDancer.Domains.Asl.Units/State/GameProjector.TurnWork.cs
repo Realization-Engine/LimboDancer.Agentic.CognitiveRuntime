@@ -6,7 +6,7 @@ public static partial class GameProjector
 {
     internal sealed partial class Replay
     {
-        private GameState? RecordTurnWork(GameState state, TurnWorkRecorded change)
+        private GameState? RecordTurnWork(GameState state, TurnWorkRecorded change, string eventType)
         {
             try
             {
@@ -15,6 +15,11 @@ public static partial class GameProjector
                     throw new InvalidDataException("Work adjudication needs its rule basis.");
                 }
                 var existing = state.TurnWork.SingleOrDefault(item => item.Declaration.Id == change.WorkId);
+                var effects = change.Declaration?.CompletionEffects is not null || existing?.Declaration.CompletionEffects is not null;
+                if (eventType != (effects ? TurnWorkRecorded.EffectsType : TurnWorkRecorded.LifecycleType))
+                {
+                    throw new InvalidDataException("The work event protocol must match its recorded completion specification.");
+                }
                 TurnLiveWork next;
                 if (change.Operation == "start")
                 {
@@ -53,6 +58,18 @@ public static partial class GameProjector
                         dr = roll.Values.Sum();
                     }
                     next = TurnWorkLifecycle.Change(existing, change.Operation, state.Turn, WorkWindow(state), dr);
+                }
+                if (change.Operation == "start")
+                {
+                    state = PrepareWorkEffects(state, next);
+                }
+                else if (change.Operation == "complete" && next.Declaration.CompletionEffects is not null)
+                {
+                    state = CompleteWorkEffects(state, next);
+                    next = next with
+                    {
+                        EffectsApplied = true
+                    };
                 }
                 var updated = state with
                 {

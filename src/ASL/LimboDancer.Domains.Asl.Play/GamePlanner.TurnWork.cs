@@ -9,6 +9,8 @@ namespace LimboDancer.Domains.Asl.Play;
 
 public sealed partial class GamePlanner
 {
+    private static readonly string[] PackedGunArguments = ["gunId", "equipmentId", "pushGun"];
+
     private static TurnWorkWindow TurnWorkWindowOf(GameState state) => state.Phase == "rph" && state.PhasingSide == state.FirstSide
         ? TurnWorkWindow.FirstRally : state.Phase == "ccph" && state.PhasingSide != state.FirstSide
             ? TurnWorkWindow.SecondCloseCombat : TurnWorkWindow.Unknown;
@@ -40,6 +42,9 @@ public sealed partial class GamePlanner
         {
             return Refused(scope, label, expected, "play.work: the work belongs to another or unknown side");
         }
+        var effects = declaration?.CompletionEffects is not null || held?.Declaration.CompletionEffects is not null;
+        var eventType = effects ? TurnWorkRecorded.EffectsType : TurnWorkRecorded.LifecycleType;
+        var package = effects ? "asl.turn-work-effects.v1" : "asl.turn-work.v1";
         var needsRoll = operation == "complete" && held?.Declaration.Kind == TurnWorkKind.AmmoReplenishment;
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult>? draw)
         {
@@ -50,10 +55,10 @@ public sealed partial class GamePlanner
                 rollId = attemptId + "-work-roll";
                 var values = draw is null ? new[] { 1, 1 } : draw(new(2, 6)).Values;
                 events.Add(Event(scope, attemptId, 1, expected, "dice-rolled",
-                    new DiceRolled(rollId, "work-ammunition", 2, 6, values, DiceRolled.SystemSource, actor), "asl.turn-work.v1", [owner]));
+                    new DiceRolled(rollId, "work-ammunition", 2, 6, values, DiceRolled.SystemSource, actor), package, [owner]));
             }
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "turn-work-recorded",
-                new TurnWorkRecorded(id, operation, declaration, rollId, basis), "asl.turn-work.v1", [owner]));
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, eventType,
+                new TurnWorkRecorded(id, operation, declaration, rollId, basis), package, [owner]));
             return events;
         }
         var probe = Build(null);

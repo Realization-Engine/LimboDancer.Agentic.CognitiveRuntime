@@ -2,9 +2,21 @@ namespace LimboDancer.Domains.Asl.Rules;
 
 /// <summary>Adjudicated facts, not engine certification of packing or supply eligibility.</summary>
 public sealed record TurnWorkDeclaration(string Id, string Owner, string Subject, string[] Participants,
-    TurnWorkKind Kind, int? OriginalBNumber, int? PackingGameTurns, string RuleBasis);
+    TurnWorkKind Kind, int? OriginalBNumber, int? PackingGameTurns, string RuleBasis)
+{
+    public TurnWorkEffectSpec? CompletionEffects
+    {
+        get; init;
+    }
+}
 public sealed record TurnLiveWork(TurnWorkDeclaration Declaration, int RequiredGameTurns, int CompletedGameTurns,
-    int? OpenGameTurn, bool Working, bool Completed, bool Cancelled, bool SupplyDepleted);
+    int? OpenGameTurn, bool Working, bool Completed, bool Cancelled, bool SupplyDepleted)
+{
+    public bool EffectsApplied
+    {
+        get; init;
+    }
+}
 
 /// <summary>E10.3-.4 and the G10 first-RPh release contract. Facts outside this bounded lifecycle remain adjudicated.</summary>
 public static class TurnWorkLifecycle
@@ -21,6 +33,7 @@ public static class TurnWorkLifecycle
         {
             throw new InvalidDataException("Work requires a first-RPh declaration, distinct participants and an adjudicated rule basis.");
         }
+        TurnWorkEffects.Validate(declaration);
         var required = TurnWorkRules.Evaluate(declaration.Kind, declaration.OriginalBNumber, 0, true, true, TurnWorkWindow.FirstRally).RequiredGameTurns;
         if (declaration.Kind == TurnWorkKind.AnimalPacking)
         {

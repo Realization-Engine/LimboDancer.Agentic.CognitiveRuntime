@@ -341,6 +341,11 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, unbuilt);
         }
 
+        if (action.Id.Value != GameActions.RecordTurnWork.Id.Value && Replay(existing).Current is { } workState
+            && PackedGunArguments.Any(name => Text(arguments, name, out var id) && workState.PackedGuns.Contains(id)))
+        {
+            return Refused(scope, label, expected, TurnWorkEffects.PackedGunBar(true)!);
+        }
         var plan = action.Id.Value switch
         {
             "asl.game.record-turn-work" => PlanTurnWork(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),

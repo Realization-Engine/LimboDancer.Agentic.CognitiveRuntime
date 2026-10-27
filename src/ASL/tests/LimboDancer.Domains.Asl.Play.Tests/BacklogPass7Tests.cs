@@ -16,7 +16,7 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 /// Shock and the Unconfirmed Kill in the RPh, Special Ammunition and its depletion, and the crews' fates (rulings R7.1 to R7.11). Board 01's
 /// hex facts, fixed dice, and a stub LOS reader.
 /// </summary>
-public sealed class BacklogPass7Tests : IDisposable
+public sealed partial class BacklogPass7Tests : IDisposable
 {
     private static readonly Guid Tenant = Guid.Parse("7b1d2c3e-0000-4000-8000-00000000f507");
     private static readonly GameScope Scope = new(Tenant, "pass7");

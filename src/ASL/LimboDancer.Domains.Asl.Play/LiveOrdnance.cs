@@ -83,6 +83,10 @@ public static class LiveOrdnance
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
+        if (TurnWorkEffects.PackedGunBar(state.PackedGuns.Contains(gunId)) is { } packedBar)
+        {
+            return (null, packedBar);
+        }
         if (gunId.EndsWith(":pf", StringComparison.Ordinal))
         {
             return Panzerfaust(state, gunId, target, targetVehicle, director);

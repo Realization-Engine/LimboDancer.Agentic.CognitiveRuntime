@@ -37,6 +37,9 @@ public sealed record GameState(
 {
     public IReadOnlyList<Rules.TurnLiveWork> TurnWork { get; init; } = [];
     public IReadOnlyList<string> TurnWorkRolls { get; init; } = [];
+    public IReadOnlyList<TurnAmmoSupply> TurnAmmoSupplies { get; init; } = [];
+    public IReadOnlyList<string> LowAmmoVehicles { get; init; } = [];
+    public IReadOnlyList<string> PackedGuns { get; init; } = [];
 
     /// <summary>The SSRs in force, as <c>game-started</c> named them; empty means none.</summary>
     public IReadOnlyList<string> SpecialRules { get; init; } = [];
