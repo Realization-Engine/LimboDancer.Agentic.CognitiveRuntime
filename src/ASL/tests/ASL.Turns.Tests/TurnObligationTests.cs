@@ -11,7 +11,10 @@ public sealed class TurnObligationTests
     private static TurnObligationRead Read => new("game", 20, new(1, 1, "side-a", "ccph", TurnCheckpoint.OrdinaryStatusCleanup));
     private static TurnObligationCandidate Candidate(string definition = "stun", string subject = "unit-1") => new(
         new("game", "origin", definition, subject, 0), 2, "side-a", "side-b", new(1, 1, "side-a", "mph", TurnCheckpoint.DuringPhase),
-        new(true, true, false, false, true, false, false, true), [], null, []);
+        new(true, true, false, false, true, false, false, true)
+        {
+            PlacedDcOperable = true
+        }, [], null, []);
 
     [Fact]
     public void EveryDefinitionRemainsVisibleWithOrWithoutInstances()
@@ -30,6 +33,7 @@ public sealed class TurnObligationTests
     [InlineData("cx")]
     [InlineData("tripFlare")]
     [InlineData("clearance")]
+    [InlineData("placedDc")]
     public void TimingCallsRulesButDoesNotClaimCommandIntegration(string definition)
     {
         var item = Assert.Single(Service.Assess(Read, [Candidate(definition)]).Obligations);

@@ -510,6 +510,10 @@ public static class GameEventWriter
                 if (moving.DcPlacement is { } placement)
                 {
                     writer.WriteString("dcBy", placement.Unit);
+                    if (placement.OwnerSide is { } ownerSide)
+                    {
+                        writer.WriteString("dcOwnerSide", ownerSide);
+                    }
                     writer.WriteString("dc", placement.Charge);
                     writer.WriteString("dcAt", placement.Target.ToString());
                     if (placement.Cx)

@@ -2321,6 +2321,11 @@ public static class GameProjector
         private GameState? StepMovement(GameState state, MovementStepped moving)
         {
             var movers = moving.Movers.Select(id => Active(state, id) as UnitInstance).ToArray();
+            if (moving.DcPlacement is { OwnerSide: { } owner } placement &&
+                (string.IsNullOrWhiteSpace(owner) || state.Unit(placement.Unit)?.Side != owner))
+            {
+                return Fail<GameState>("UNIT-STATE-DC-OWNER", "Recorded DC placement owner does not match its placer.");
+            }
 
             // Pass 32.b: the record's fields and the state are read here, and Rules decides (ScenarioA1MovementCalculator.VerifyStepStart and
             // VerifyStepRecord); the SMOKE attempt's check between them is its own calculator's (pass 32.a), made where it was made.

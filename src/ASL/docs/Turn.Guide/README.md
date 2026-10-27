@@ -35,3 +35,6 @@ B3 adds internal `TurnObligationService.Assess` with Rules-owned timing, evidenc
 B4 adds Play host adapters, authenticated-perspective disclosure and shared governed phase-close assessment. Current coverage: 452/452 lines and 254/254 branches (100%). See implementation plan section 7 and the design B4 host contract for exact scope and remaining B5 work.
 
 B4 final verification: 123 ASL.Turns tests and 77 focused Play regression tests pass. Coverage is 100% for ASL.Turns, not a claim of full Play assembly coverage.
+
+
+B5 implements the bounded Placed DC persistence/replay/profile slice. See implementation plan section 8 and the design B5 contract. Current ASL.Turns verification: 127 tests, 465/465 lines and 264/264 branches (100%). The baseline profile remains available; other rule families and missing facts remain visible as pending.

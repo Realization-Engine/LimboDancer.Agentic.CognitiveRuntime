@@ -9,6 +9,57 @@ public sealed class TurnObligationRulesTests
     private static TurnObligationRuleFacts Facts(TurnObligationFamily family, TurnRulePosition now, string originPhase = "mph") =>
         new(family, Position(originPhase), now, "a", TurnRecordedOutcome.None, true, true, false, false, true, false, false, true);
 
+    [Fact]
+    public void PlacedDcRequiresMovementOriginAndSurvivesPlacerIneligibility()
+    {
+        var facts = Facts(TurnObligationFamily.PlacedDc, Position("afph")) with
+        {
+            PlacedDcOperable = true,
+            Active = false,
+            Broken = true,
+        };
+        Assert.Equal(TurnObligationState.Due, TurnObligationRules.Evaluate(facts).State);
+        Assert.Equal(TurnObligationState.Due, TurnObligationRules.Evaluate(facts with
+        {
+            Now = Position("rph", turn: 2, side: "b")
+        }).State);
+        var invalid = TurnObligationRules.Evaluate(facts with
+        {
+            Origin = Position("pfph")
+        });
+        Assert.Equal(TurnObligationState.NotEvaluated, invalid.State);
+        Assert.Null(invalid.Deadline);
+    }
+
+    [Theory]
+    [InlineData("mph", false, TurnObligationState.Scheduled)]
+    [InlineData("dfph", true, TurnObligationState.Scheduled)]
+    [InlineData("afph", true, TurnObligationState.Due)]
+    [InlineData("afph", false, TurnObligationState.Scheduled)]
+    [InlineData("rtph", true, TurnObligationState.Due)]
+    [InlineData("afph", null, TurnObligationState.NotEvaluated)]
+    public void PlacedDcWaitsForOperabilityAndAdvancingFire(string phase, bool? operable, TurnObligationState expected)
+    {
+        var facts = Facts(TurnObligationFamily.PlacedDc, Position(phase)) with
+        {
+            PlacedDcOperable = operable
+        };
+        Assert.Equal(expected, TurnObligationRules.Evaluate(facts).State);
+        Assert.Equal(TurnRuleDeadlineKind.PlacedDcAttack, TurnObligationRules.Evaluate(facts).Deadline!.Kind);
+        Assert.Equal(TurnObligationState.NotEvaluated, TurnObligationRules.Evaluate(facts with
+        {
+            Origin = null
+        }).State);
+        Assert.Equal(TurnObligationState.Interrupted, TurnObligationRules.Evaluate(facts with
+        {
+            Outcome = TurnRecordedOutcome.Interrupted
+        }).State);
+        Assert.Equal(TurnObligationState.Resolved, TurnObligationRules.Evaluate(facts with
+        {
+            Outcome = TurnRecordedOutcome.Resolved
+        }).State);
+    }
+
     [Theory]
     [InlineData(TurnCheckpoint.ClearanceResolution, TurnObligationState.Scheduled)]
     [InlineData(TurnCheckpoint.OrdinaryStatusCleanup, TurnObligationState.Due)]

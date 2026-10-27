@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first plan. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 host adapters and shared phase-close assessment are implemented; additional families remain planned. UI work is intentionally last.
+Status: Backend-first plan. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 and the bounded B5 Placed DC persistence/profile slice are implemented; additional families remain planned. UI work is intentionally last.
 
 References: [Design](ASL%20Turn%20Phase%20Guide%20Design.md), [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md).
 
@@ -23,7 +23,7 @@ Run focused tests only for changed behavior and direct dependencies. Broaden whe
 | B2, implemented | Pure guidance request/result and read composition | B1 | Fixed facts yield deterministic snapshots; no writes, dice or UI state. |
 | B3, bounded slice implemented | Rule-owned timing and obligation lifecycle for Stun, CX, Trip Flare and non-Flame Clearance | B2 and relevant Rules families | Due, interrupt, resolve and retained history proved at exact boundaries. |
 | B4, implemented | Play/Units adapters and shared phase-close assessment | B2-B3 | Existing command validation and guidance agree without duplicate cleanup; disclosure and stale checks pass. |
-| B5 | Durable missing facts, replay and profile expansion | B4, per rule pass | New families have source, Rules, persistence, replay and visibility evidence. |
+| B5, Placed DC slice implemented | Durable missing facts, replay and profile expansion | B4, per rule pass | New families have source, Rules, persistence, replay and visibility evidence. |
 | U1, deferred | Reference and Live Blazor consumers | Backend readiness gate | UI renders backend results and routes intentions without rule calculations. |
 
 The previous UI-first P1-P7 plan is superseded by this order. The full final scope remains intact; deferring UI does not defer reference content.
@@ -84,13 +84,21 @@ Validation: the full ASL.Turns coverage gate passes at 452/452 lines and 254/254
 
 B5 owns further durable facts, finer disclosure and remaining families. Clearance-before-status and concealment-before-illumination end-to-end integration remain pending. B4 does not claim the whole rulebook is executable or the UI gate is satisfied.
 
-## 8. B5: Persistence and additional families
+## 8. B5: Persistence and profiles, Placed DC slice implemented
 
-Where current history cannot supply needed origin, declaration or progress facts, add rule-specific typed event/state support in Units and an existing or new governed Play action. Round-trip through reader/writer/projector and test replay. Do not introduce an editable guide obligation database or a generic client `Resolve` event.
+B5 adds a bounded Placed DC integration (A23.3-.4; ASOP 3.32A and 5.22A), not blanket support for every remaining rule family.
 
-Expand in bounded slices: fire/vehicle/Spotter history; smoke/drift/cave WP/dust; packing/replenishment; Placed DC/tunnel/airborne; CC declarations/heroes; water/aerial/module profiles. Each slice needs sources/ruling, narrow Rules predicates, durable facts if required, command integration, display-safe result and focused tests before its capability is marked integrated.
+**Durable facts and compatibility.** New governed DC placements write optional `dcOwnerSide` on the existing `movement-step` event. Units reads/writes it and rejects a recorded owner that differs from the placer at that revision. Origin ID, sequence, phase, target, CX and concealed-target facts already exist in the event log, so no duplicate obligation store or generic resolution event is introduced. The existing schema version remains 1: the new field is additive and omitted for legacy null values. Older events replay exactly as before, but the guide keeps their missing placement ownership incomplete (`NotEvaluated`, command support `Pending`), even if later completion evidence exists. No automatic migration guesses ownership from a later counter or custodian.
 
-Old saves missing facts return incomplete evaluation. Changes to legacy replay require their own explicit compatibility/version decision and fixtures. Do not infer dates from current marker presence. Unsupported required effects, when authoritatively established, must be exposed and handled in the shared planner gate, not dismissed through consideration.
+**Lifecycle and authority.** The history adapter creates a distinct `placedDc` candidate from each placement event, preserves its original owner and follows projected operability. Rules schedules it before AFPh and marks an operable DC due in AFPh or overdue afterward. The placer's subsequent ordinary firing eligibility does not erase that obligation. A supported placement interrupted before becoming operable is `Interrupted`. Completion requires a recorded Placed DC attack followed by removal of that charge; removal alone is not proof of detonation. The original governed detonation/choice/follow-up path and projector remain the sole mutation owners. The existing shared phase-close planner blocks a due executable DC attack. Reads do not draw dice, complete attacks or bypass confirmation.
+
+**Profiles.** `TurnGuideProfiles` names integration evidence and a version. `existing-engine` admits Stun/CX command integration only when origin facts exist; `existing-engine-dc-v1` adds the reviewed Placed DC path. `ReadTurnGuideAsync` preserves the baseline; `ReadTurnGuideProfileAsync` explicitly selects the expanded profile and returns its identity/evidence. Unknown profiles fail instead of implying full support. Profile version participates in the internal evaluation context. Profiles describe admitted host integration, not scenario applicability or a claim that all night, water, aerial or module rules are supported.
+
+**Disclosure and pending content.** All 538 topics and 38 dependency definitions remain present regardless of profile. Missing origins and unregistered families remain pending. A profile's command support does not manufacture an executable topic route: the host still lacks persisted ASOP substeps and uses phase-level reference guidance. Side projection requires original ownership, visible origin/outcome events and disclosed subject identity. A completed own DC remains visible after counter removal only when its identity was visible at placement. Adjudicators retain terminal history. Side closure remains the fixed `GovernedCheckRequired` result, including when an opposing hidden obligation exists.
+
+**Proof and remaining work.** Tests exercise new/legacy wire round-trips, owner mismatch rejection, disk reload, idempotent append retry, historical reads, interruption, AFPh closure blocking, detonation completion, post-removal disclosure and repeated-read safety. Rules tests cover phase boundaries and continued obligation despite placer ineligibility. ASL.Turns passes 127 tests with 465/465 lines and 264/264 branches covered (100% each, no source exclusions). Coverage is for ASL.Turns, not the entire existing Rules, Units or Play assemblies.
+
+Further B5 slices remain explicit: fire/Spotter histories beyond this path; smoke/drift/cave WP/dust; packing/replenishment progress; tunnels/airborne; CC declarations/heroes; and water/aerial/module profiles. Trip Flare and Clearance still need host facts and governed command integration. Each needs source reconciliation, narrow Rules predicates, durable evidence, replay, disclosure and command proofs before admission. The complete UI gate is still pending, especially a supported live topic decision route with exact window evidence.
 
 ## 9. Gate before building Blazor
 
@@ -109,6 +117,8 @@ Only then build a thin consumer using existing site styling and action panels. C
 
 `ASL.Turns.Tests` owns content, coordination and backend contracts. Existing Rules tests own rule verdicts; Units tests own events/projection/replay; Play tests own governed command enforcement and adapters. Add renderer tests only at U1. Run the narrow project/class filters relevant to each change, with no blanket whole-solution test requirement.
 
-Next work: B5 durable facts and additional rule-family proofs, with finer side disclosure where supported. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
+Next work: further B5 rule-family slices and a supported live topic decision route, with finer side disclosure where supported. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
 
 B4 final verification: 123 ASL.Turns tests and 77 focused Play regression tests pass. Coverage is 100% for ASL.Turns, not a claim of full Play assembly coverage.
+
+B5 final focused verification: 127 Turns tests, 35 Rules tests, 69 Units tests and 79 Play tests pass. The Turns coverage gate measures 465/465 lines and 264/264 branches, both 100%.

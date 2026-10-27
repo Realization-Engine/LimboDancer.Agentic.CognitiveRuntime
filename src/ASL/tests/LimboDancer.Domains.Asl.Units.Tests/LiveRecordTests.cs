@@ -20,6 +20,25 @@ public sealed class LiveRecordTests
     private static readonly string[] G1 = ["g1"];
     private static readonly string[] G2 = ["g2"];
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("german")]
+    public void DcPlacementOwnershipRoundTripsWithoutInventingLegacyFacts(string? owner)
+    {
+        var step = new MovementStepped(G1, D5, 2, false, 1)
+        {
+            DcPlacement = new("g1", "dc", D5, false, false) { OwnerSide = owner },
+        };
+        var events = With(9, ("dc-placement", "movement-step", step));
+        var scope = events[0].Scope;
+        var json = GameEventWriter.Write(scope, new("DC ownership", true, events));
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(json));
+        Assert.NotNull(loaded.Record);
+        Assert.Equal(owner, ((MovementStepped)loaded.Record.Events[^1].Payload).DcPlacement!.OwnerSide);
+        Assert.Equal(owner is not null, json.Contains("dcOwnerSide", StringComparison.Ordinal));
+        Assert.Equal(json, GameEventWriter.Write(scope, loaded.Record));
+    }
+
     private sealed class RallyVerifier(string? reason) : IRallyRecordVerifier
     {
         public string? Verify(GameState state, RallyAttempted rally, IReadOnlyDictionary<string, DiceRolled> rolls) => reason;

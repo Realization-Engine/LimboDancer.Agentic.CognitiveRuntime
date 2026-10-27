@@ -8,7 +8,13 @@ public sealed record TurnObligationKey(string GameId, string OriginEventId, stri
 public sealed record TurnProgressReceipt(int CompletedGameTurn, string EventId, long Sequence);
 public sealed record TurnOutcomeReceipt(TurnRecordedOutcome Outcome, string EventId, long Sequence);
 public sealed record TurnObligationSubject(bool Active, bool Stunned, bool Recalled, bool StunRecovery,
-    bool Cx, bool Broken, bool Berserk, bool? ClearanceEligible);
+    bool Cx, bool Broken, bool Berserk, bool? ClearanceEligible)
+{
+    public bool? PlacedDcOperable
+    {
+        get; init;
+    }
+}
 public sealed record TurnObligationCandidate(TurnObligationKey Key, long OriginSequence, string OwnerSideId,
     string DecisionOwnerSideId, TurnRulePosition? Origin, TurnObligationSubject Subject,
     ImmutableArray<TurnProgressReceipt> Progress, TurnOutcomeReceipt? Outcome,
@@ -82,7 +88,10 @@ public sealed class TurnObligationService
             var subject = item.Subject;
             var verdict = TurnObligationRules.Evaluate(new TurnObligationRuleFacts(family, item.Origin, read.Position,
                 item.OwnerSideId, item.Outcome?.Outcome ?? TurnRecordedOutcome.None, subject.Active, subject.Stunned,
-                subject.Recalled, subject.StunRecovery, subject.Cx, subject.Broken, subject.Berserk, subject.ClearanceEligible));
+                subject.Recalled, subject.StunRecovery, subject.Cx, subject.Broken, subject.Berserk, subject.ClearanceEligible)
+            {
+                PlacedDcOperable = subject.PlacedDcOperable,
+            });
             // An interrupted/cancelled child is not assumed to satisfy a rule-required consequence.
             var waiting = item.Prerequisites.Any(key => completed[key].Verdict.State != TurnObligationState.Resolved);
             if (verdict.State == TurnObligationState.Resolved && (waiting || item.Prerequisites.Any(key => completed[key].Facts.Outcome!.Sequence > item.Outcome!.Sequence)))
@@ -146,6 +155,7 @@ public sealed class TurnObligationService
 
     private static TurnObligationFamily Family(string definition) => definition switch
     {
+        "placedDc" => TurnObligationFamily.PlacedDc,
         "stun" => TurnObligationFamily.Stun,
         "cx" => TurnObligationFamily.Cx,
         "tripFlare" => TurnObligationFamily.TripFlare,

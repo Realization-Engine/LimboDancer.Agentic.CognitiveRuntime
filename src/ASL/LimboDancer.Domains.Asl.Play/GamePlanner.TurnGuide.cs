@@ -9,7 +9,10 @@ namespace LimboDancer.Domains.Asl.Play;
 public sealed record TurnHostObligation(string DefinitionId, string SubjectId, TurnObligationState State,
     TurnRuleDeadline? Deadline, TurnSupport CommandSupport);
 public sealed record TurnHostGuide(TurnGuideSnapshot Guide, ImmutableArray<TurnHostObligation> Obligations,
-    TurnPhaseCloseAssessment PhaseClose);
+    TurnPhaseCloseAssessment PhaseClose)
+{
+    public TurnGuideProfile Profile { get; init; } = TurnGuideProfiles.Get("existing-engine");
+}
 
 public sealed partial class GamePlanner
 {
@@ -22,7 +25,12 @@ public sealed partial class GamePlanner
     /// </summary>
     public async Task<TurnHostGuide> ReadTurnGuideAsync(GameScope scope, Perspective perspective, string browsedPhase,
         long? historicalRevision = null, CancellationToken cancellationToken = default)
+        => await ReadTurnGuideProfileAsync(scope, perspective, browsedPhase, "existing-engine", historicalRevision, cancellationToken).ConfigureAwait(false);
+
+    public async Task<TurnHostGuide> ReadTurnGuideProfileAsync(GameScope scope, Perspective perspective, string browsedPhase,
+        string profileId, long? historicalRevision = null, CancellationToken cancellationToken = default)
     {
+        var profile = TurnGuideProfiles.Get(profileId);
         var record = store.Read(scope) ?? throw new ArgumentException("Game not found.", nameof(scope));
         var history = Replay(record.Events);
         var revision = historicalRevision ?? record.Events.Count;
@@ -31,24 +39,47 @@ public sealed partial class GamePlanner
         var historical = historicalRevision.HasValue;
         var window = state.Phase + ":phase"; // The host does not persist an ASOP substep; never invent one.
         var context = new TurnEvaluationContext(scope.ToString(), perspective.Name, perspective.Name,
-            "existing-engine", state.Phase, window, state.Stamp.ToString());
+            profile.Id, state.Phase, window, state.Stamp + ":" + profile.Version);
         var guide = GuideReader.Describe(new(context, browsedPhase, historical), new(context, []));
         var evidence = TurnHistoryAdapter.Read(history, state.Revision);
         var assessed = new TurnObligationService(GuideCatalog).Assess(evidence.Read, evidence.Candidates);
         var visible = view.Units.Where(unit => perspective.IsAdjudicator || unit.Side == perspective.Name)
-            .Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
+            .Select(unit => unit.Id)
+            .Concat(view.Equipment.Where(item => perspective.IsAdjudicator || item.Side == perspective.Name).Select(item => item.Id))
+            .ToHashSet(StringComparer.Ordinal);
         // Only own visible counters (or adjudicator) and visible origin/outcome evidence are disclosed.
         var events = history.Events.Where(item => item.Revision <= revision).ToDictionary(item => item.EventId, StringComparer.Ordinal);
-        var obligations = assessed.Obligations.Where(item => visible.Contains(item.Facts.Key.SubjectId)
+        var obligations = assessed.Obligations.Where(item => Disclosed(item)
             && events[item.Facts.Key.OriginEventId].IsVisibleTo(perspective)
             && (item.Facts.Outcome is null || events[item.Facts.Outcome.EventId].IsVisibleTo(perspective)))
             .Select(item => new TurnHostObligation(item.Facts.Key.DefinitionId, item.Facts.Key.SubjectId,
-                item.Verdict.State, item.Verdict.Deadline, item.CommandSupport))
+                item.Verdict.State, item.Verdict.Deadline, profile.CommandSupport(item.Facts.Key.DefinitionId, item.Facts.Origin is not null)))
             .OrderBy(item => item.SubjectId, StringComparer.Ordinal).ThenBy(item => item.DefinitionId, StringComparer.Ordinal).ToImmutableArray();
+        bool Disclosed(TurnObligation item)
+        {
+            if (perspective.IsAdjudicator)
+            {
+                return true;
+            }
+            if (item.Facts.OwnerSideId != perspective.Name)
+            {
+                return false;
+            }
+            if (visible.Contains(item.Facts.Key.SubjectId))
+            {
+                return true;
+            }
+            // Retain a completed own DC whose identity was disclosed at placement, even after its counter is removed.
+            return item.Facts.Key.DefinitionId == "placedDc" && item.Facts.Outcome is not null
+                && ViewOf(history, item.Facts.OriginSequence, perspective).Equipment.Any(dc => dc.Id == item.Facts.Key.SubjectId);
+        }
         var close = historical
             ? TurnPhaseClose.Describe(new(TurnClosePlanStatus.Ready, false, false, [], []), perspective.IsAdjudicator, true)
             : await AssessTurnPhaseCloseAsync(state.Stamp, perspective, [], cancellationToken).ConfigureAwait(false);
-        return new(guide, obligations, close);
+        return new(guide, obligations, close)
+        {
+            Profile = profile
+        };
     }
 
     /// <summary>Assess the same full planning path used by the gate and executor. Never invokes PlannedRoll.Build or commits.</summary>
@@ -90,7 +121,7 @@ public sealed partial class GamePlanner
 
 internal sealed record TurnHistoryEvidence(TurnObligationRead Read, ImmutableArray<TurnObligationCandidate> Candidates);
 
-/// <summary>Derives only Stun/CX origins and terminal evidence from actual projected transitions, without guessing other families.</summary>
+/// <summary>Derives Stun/CX and the admitted Placed DC history from actual events; other families remain pending.</summary>
 internal static class TurnHistoryAdapter
 {
     public static TurnHistoryEvidence Read(GameHistory history, long revision)
@@ -100,6 +131,7 @@ internal static class TurnHistoryAdapter
         var open = new Dictionary<(string Unit, string Definition), int>();
         GameState? previous = null;
         var playerTurn = 1;
+        var dcAttacks = new HashSet<string>(StringComparer.Ordinal);
         var events = history.Events.ToDictionary(item => item.Revision);
         TurnRulePosition position = new(current.Turn, playerTurn, current.PhasingSide, current.Phase, TurnCheckpoint.DuringPhase);
         foreach (var state in history.States.Where(item => item.Revision <= revision))
@@ -111,6 +143,49 @@ internal static class TurnHistoryAdapter
 
             position = new(state.Turn, playerTurn, state.PhasingSide, state.Phase, TurnCheckpoint.DuringPhase);
             var origin = events[state.Revision];
+            if (origin.Payload is MovementStepped { DcPlacement: { } dc })
+            {
+                var owner = dc.OwnerSide ?? state.Unit(dc.Unit)?.Side ?? "unknown";
+                var key = (dc.Charge, "placedDc");
+                open.Add(key, instances.Count);
+                dcAttacks.Remove(dc.Charge);
+                instances.Add(new(new(current.Scope.ToString(), origin.EventId, "placedDc", dc.Charge, 0), origin.Revision,
+                    owner, owner, dc.OwnerSide is null ? null : position,
+                    new(true, false, false, false, false, false, false, null), [], null, []));
+            }
+            if (origin.Payload is FireResolved fire && fire.Facts.TryGetProperty("demolitionCharge", out var attack)
+                && attack.ValueKind == JsonValueKind.Object && attack.TryGetProperty("mode", out var mode)
+                && mode.GetString() == "placed" && attack.TryGetProperty("equipmentId", out var equipment))
+            {
+                dcAttacks.Add(equipment.GetString()!);
+            }
+            foreach (var key in open.Keys.Where(key => key.Definition == "placedDc").ToArray())
+            {
+                var index = open[key];
+                var item = instances[index];
+                var charge = state.PlacedCharges.FirstOrDefault(charge => charge.Charge == key.Unit);
+                if (charge is null)
+                {
+                    var outcome = origin.Payload is InstanceEliminated removed && removed.Id == key.Unit && dcAttacks.Contains(key.Unit)
+                        ? TurnRecordedOutcome.Resolved : TurnRecordedOutcome.Interrupted;
+                    item = item with
+                    {
+                        Outcome = new(outcome, origin.EventId, origin.Revision)
+                    };
+                    open.Remove(key);
+                }
+                else
+                {
+                    item = item with
+                    {
+                        Subject = item.Subject with
+                        {
+                            PlacedDcOperable = charge.Operable
+                        }
+                    };
+                }
+                instances[index] = item;
+            }
             foreach (var unit in state.Units)
             {
                 var subject = new TurnObligationSubject(unit.Status == InstanceStatus.Active, Has(unit, Conditions.Stunned),

@@ -205,6 +205,12 @@ public sealed record CarriedMan(string Man, string Carrier);
 /// <summary>A DC Placement (A23.3; ruling R15.2).</summary>
 public sealed record DcPlacement(string Unit, string Charge, BoardLocation Target, bool Cx, bool TargetsConcealed)
 {
+    /// <summary>Owner at placement, persisted by B5. Null in legacy records; never inferred from a later custodian.</summary>
+    public string? OwnerSide
+    {
+        get; init;
+    }
+
     /// <summary>
     /// The Target Facings of each enemy AFV in the target Location through the hexside the DC was Placed across (A23.5; pass 60, the second referee):
     /// they stand "even if the AFV changes its CA" before the detonation. Null in a record made before the pass, whose detonation reads them then.

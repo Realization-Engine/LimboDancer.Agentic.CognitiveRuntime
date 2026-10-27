@@ -329,3 +329,6 @@ B3 update, 2026-10-27: Rules-owned Stun, CX, Trip Flare and non-Flame Clearance 
 
 
 B4 update, 2026-10-27: Play supplies disclosed Stun/CX history evidence and shares its full phase-close planner with the guide. Reads never commit or draw dice. Side closure stays conservatively GovernedCheckRequired; adjudicators receive exact existing-engine assessment. Missing ASOP substeps and setup origins are not invented. All pending topics/dependencies remain visible. See the design B4 host contract and implementation plan section 7. ASL.Turns retains 100% coverage: 452/452 lines, 254/254 branches.
+
+
+B5 update, 2026-10-27: the bounded Placed DC slice persists ownership at placement and derives scheduled, due, interrupted and resolved obligations from the authoritative history. Existing commands and cleanup remain authoritative. The expanded `existing-engine-dc-v1` profile has explicit evidence; all 538 topics and 38 dependencies remain available. Legacy missing ownership stays incomplete. See design B5 and implementation plan section 8 for compatibility, disclosure and remaining families. Coverage: 127 Turns tests, 465/465 lines and 264/264 branches (100%).

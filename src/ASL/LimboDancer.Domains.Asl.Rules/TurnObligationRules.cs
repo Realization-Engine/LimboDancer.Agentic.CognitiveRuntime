@@ -2,7 +2,7 @@ namespace LimboDancer.Domains.Asl.Rules;
 
 public enum TurnObligationFamily
 {
-    Unsupported, Stun, Cx, TripFlare, NonFlameClearance
+    Unsupported, Stun, Cx, TripFlare, NonFlameClearance, PlacedDc
 }
 public enum TurnCheckpoint
 {
@@ -24,10 +24,16 @@ public sealed record TurnRulePosition(int GameTurn, int PlayerTurn, string Phasi
 public sealed record TurnObligationRuleFacts(TurnObligationFamily Family, TurnRulePosition? Origin,
     TurnRulePosition Now, string OwnerSide, TurnRecordedOutcome Outcome,
     bool Active, bool Stunned, bool Recalled, bool StunRecovery, bool Cx, bool Broken, bool Berserk,
-    bool? ClearanceEligible);
+    bool? ClearanceEligible)
+{
+    public bool? PlacedDcOperable
+    {
+        get; init;
+    }
+}
 public enum TurnRuleDeadlineKind
 {
-    PlayerTurnCleanup, OwnerReleaseEvents, AfterConcealment, NextAdvancingFireEnd, ClearanceAfterCombat
+    PlayerTurnCleanup, OwnerReleaseEvents, AfterConcealment, NextAdvancingFireEnd, ClearanceAfterCombat, PlacedDcAttack
 }
 public sealed record TurnRuleDeadline(TurnRuleDeadlineKind Kind, int EarliestPlayerTurn, string OwnerSide);
 public sealed record TurnObligationRuleVerdict(TurnObligationState State, string Reference, string Reason)
@@ -51,6 +57,7 @@ public static class TurnObligationRules
 
         TurnRuleDeadline? deadline = facts.Family switch
         {
+            TurnObligationFamily.PlacedDc when origin.Phase == "mph" => new(TurnRuleDeadlineKind.PlacedDcAttack, origin.PlayerTurn, facts.OwnerSide),
             TurnObligationFamily.Stun => new(TurnRuleDeadlineKind.PlayerTurnCleanup, origin.PlayerTurn, facts.OwnerSide),
             TurnObligationFamily.Cx => new(TurnRuleDeadlineKind.OwnerReleaseEvents, origin.PlayerTurn, facts.OwnerSide),
             TurnObligationFamily.TripFlare when origin.Phase == "mph" => new(TurnRuleDeadlineKind.AfterConcealment, origin.PlayerTurn, facts.OwnerSide),
@@ -92,6 +99,7 @@ public static class TurnObligationRules
 
         var reference = facts.Family switch
         {
+            TurnObligationFamily.PlacedDc => "A23.3-.4; ASOP 5.22A",
             TurnObligationFamily.Stun => "D5.34; D5.341; ASOP 8.43B",
             TurnObligationFamily.Cx => "A4.51-.52",
             TurnObligationFamily.TripFlare => "E1.95-.951",
@@ -116,6 +124,14 @@ public static class TurnObligationRules
         bool due;
         switch (facts.Family)
         {
+            case TurnObligationFamily.PlacedDc:
+                if (origin.Phase != "mph" || facts.PlacedDcOperable is null)
+                {
+                    return Result(TurnObligationState.NotEvaluated, reference, "Placement or operability evidence is incomplete.");
+                }
+                due = facts.PlacedDcOperable == true && (facts.Now.PlayerTurn > origin.PlayerTurn ||
+                    PhaseRank(facts.Now.Phase) >= PhaseRank("afph"));
+                break;
             case TurnObligationFamily.Stun:
                 if (ScenarioA1SequenceProjection.StunEnds(facts.Active, facts.Recalled, facts.StunRecovery, facts.Stunned).Conditions.Count == 0)
                 {
