@@ -338,3 +338,6 @@ B5 fire/Spotter update, 2026-10-27: the new explicit profile derives disclosed f
 
 
 B5 atmosphere update, 2026-10-27: ordinary infantry grenade attempts and MPh cleanup now derive from causal event evidence, with recorded Wind/Gust history retained across phases. Drift, cave WP and the three dust categories remain explicit typed pending entries, including distinct timing and missing facts. Unknown SMOKE metadata is not classified or expired by the guide. See the design and plan atmosphere section for scope and compatibility. Verification: 140 Turns tests, 572/572 lines and 304/304 branches (100%); 40 Play and 15 Rules sequence tests pass.
+
+
+B5 work-progress update, 2026-10-27: the internal packing/replenishment ledger counts evidenced complete Game Turns, rejects duplicate/overlapping receipts and retains earlier progress across interruptions. Rules owns replenishment/transfer duration; completion remains pending. Packing duration and live declaration/interval/completion events remain unintegrated and visible. See the design and plan work-progress section. Verification: 146 Turns tests, 651/651 lines and 366/366 branches (100%); 28 Rules and 4 host tests pass.

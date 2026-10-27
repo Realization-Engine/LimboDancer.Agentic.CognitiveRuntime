@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first plan. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 and the bounded B5 Placed DC, fire/Spotter and atmosphere history slices are implemented; additional families remain planned. UI work is intentionally last.
+Status: Backend-first plan. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 and the bounded B5 Placed DC, fire/Spotter, atmosphere history and work-progress slices are implemented; additional families remain planned. UI work is intentionally last.
 
 References: [Design](ASL%20Turn%20Phase%20Guide%20Design.md), [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md).
 
@@ -98,7 +98,7 @@ B5 adds a bounded Placed DC integration (A23.3-.4; ASOP 3.32A and 5.22A), not bl
 
 **Proof and remaining work.** Tests exercise new/legacy wire round-trips, owner mismatch rejection, disk reload, idempotent append retry, historical reads, interruption, AFPh closure blocking, detonation completion, post-removal disclosure and repeated-read safety. Rules tests cover phase boundaries and continued obligation despite placer ineligibility. ASL.Turns passes 127 tests with 465/465 lines and 264/264 branches covered (100% each, no source exclusions). Coverage is for ASL.Turns, not the entire existing Rules, Units or Play assemblies.
 
-Further B5 slices remain explicit: remaining fire/Spotter execution semantics; remaining smoke/drift/cave WP/dust execution; packing/replenishment progress; tunnels/airborne; CC declarations/heroes; and water/aerial/module profiles. Trip Flare and Clearance still need host facts and governed command integration. Each needs source reconciliation, narrow Rules predicates, durable evidence, replay, disclosure and command proofs before admission. The complete UI gate is still pending, especially a supported live topic decision route with exact window evidence.
+Further B5 slices remain explicit: remaining fire/Spotter execution semantics; remaining smoke/drift/cave WP/dust execution; packing/replenishment live events and completion; tunnels/airborne; CC declarations/heroes; and water/aerial/module profiles. Trip Flare and Clearance still need host facts and governed command integration. Each needs source reconciliation, narrow Rules predicates, durable evidence, replay, disclosure and command proofs before admission. The complete UI gate is still pending, especially a supported live topic decision route with exact window evidence.
 
 ### B5 fire and Spotter history slice, implemented 2026-10-27
 
@@ -139,6 +139,24 @@ The existing Wind Change event already records Gusts, even though current projec
 **Disclosure.** Side grenade histories require a disclosed own source unit and visible attempt, creation and cleanup evidence. Adjudicators can inspect both sides. Wind rows require visible events. Unclassified counters come only from GameView-visible SMOKE entities; no hidden graph, global revision, die IDs or raw payload escapes. Missing classification grants no timing or action route. The side's phase-close assessment remains conservative.
 
 **Validation.** 140 ASL.Turns tests pass with 572/572 lines and 304/304 branches covered (100%, no exclusions). The focused Play suite passes 40 tests and the Rules sequence suite passes 15. Tests cover lifecycle/failed attempts, all pending families, unknown metadata, causal links and missing-link legacy replay, anonymous-counter ownership, cleanup through the existing projector, history/restart/retry, hidden-world invariance and real recorded Gusts retained at AFPh without mutation.
+
+### B5 packing and replenishment progress slice, implemented 2026-10-27
+
+`TurnWorkProgress.Assess` adds a headless internal evidence ledger. It shares the stable `TurnObligationKey` identity with the obligation model and preserves linked participant IDs, the work kind, original B#, origin sequence, first Game Turn, eligibility and interval receipts. This is a trusted host contract, not a client-writable progress counter. Callers must prove each receipt came from the corresponding first RPh or second CCPh and disclose any resulting instances before returning them to players. The current host has no such authoritative declarations/events, so it exposes gaps only rather than interpreting TI markers as work commitments.
+
+**Complete intervals and replay.** A countable interval has both first-RPh and second-CCPh receipts and is not interrupted. A first boundary alone, second boundary alone or unknown boundaries is incomplete. Interrupted intervals never add progress, and previously completed Game Turns remain counted. The ledger rejects duplicate work origins, wrong games, future/out-of-history receipts, duplicate Game Turns or boundary IDs, reversed/equal endpoints and overlapping known boundaries, including incomplete intervals. Repeated reads and serialization/reload reconstruct the same result. These tests prove the evidence contract; they are not a claim of new Units journal events or live save migration.
+
+**Rules ownership.** `TurnWorkRules` owns the E10.3 table: original B# at most 9, 10 and 11 require one, two and three complete Game Turns respectively. Missing/out-of-scope B# leaves duration unknown. E10.4 offload/transfer uses four complete Game Turns. Verified accumulated progress reaching its duration yields `CompletionPending` only at the second CCPh window, never automatic resolution. Unknown eligibility/origin remains NotEvaluated; current ineligibility reports Interrupted while retaining earlier counts. Nothing rolls the supply depletion DR, clears TI, restores ammunition or moves an Ammo Supply counter.
+
+The source was checked in the local Chapter E markdown, E10.3-.4, and its page-244 replenishment table image (`eASLRB_v3_01-p244-3.png`). E10.3 requires CE and preserves the distinction between complete prior turns and an interrupted turn; MP expenditure, firing and CC attack remain rule-specific eligibility evidence for a future adapter. Compatible supply/locations, up to two identically armed recipients, special ammunition, depletion on Original 12 and supply/portage consequences still require governed integration.
+
+**Packing is explicitly incomplete.** Animal Packing can retain evidenced complete, interrupted and incomplete intervals, but no base duration is guessed. G10.11/G10.3-.31 duration/minimum, night doubling, linked Gun/Mule/crew roles, midpoint loading/unloading and reversal remain pending. Its release belongs at next first RPh ASOP 1.13B after sufficient complete Game Turns, not ordinary CCPh TI cleanup. The current Rules evaluator therefore returns an unknown packing duration and does not announce completion. The reviewed catalog remains the reference for these pending requirements.
+
+**Host/profile boundary.** `existing-engine-work-v1` retains the earlier fire/atmospheric history and returns five `WorkProgressGaps`. It does not expose internal ledger keys, participants, receipts or a generic start/update/resolve command. The `pack` and `ammo` dependency command capabilities remain Pending in every profile. All 538 topics and 38 dependencies remain visible. B3's older `TurnProgressReceipt` alone cannot prove these two-boundary intervals and is not silently promoted to sufficient evidence.
+
+Next integration needs typed, rule-specific Play/Units declarations, participant roles and eligibility histories; authoritative complete-interval/interruption receipts; packing duration/midpoint/reversal rules; governed completion and depletion consequences; and authenticated instance disclosure. No new rule-family gate or mutation owner has been introduced, and the full UI readiness gate remains pending.
+
+Validation: 146 ASL.Turns tests pass, with 651/651 executable lines and 366/366 branches covered (100%, no source exclusions). The focused Rules suite passes 28 tests; 4 host-guide tests pass, including the work profile's pending visibility and hidden-world invariance. Coverage applies to the entire ASL.Turns assembly, not the existing Rules or Play assemblies.
 
 ## 9. Gate before building Blazor
 

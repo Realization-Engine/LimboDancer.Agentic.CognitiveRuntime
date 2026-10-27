@@ -54,13 +54,16 @@ public sealed partial class PlayTests
         var play = Play();
         await Commit(play, GameActions.Setup, SetupArgs("setup-1", 0, [Unit("g1", "attacker-squad", "german", "bd01:D4:0")]));
         var scope = new GameScope(Tenant, "village");
-        var first = await Planner().ReadTurnGuideProfileAsync(scope, Perspective.Side("german"), "rph", "existing-engine-atmosphere-v1");
+        var first = await Planner().ReadTurnGuideProfileAsync(scope, Perspective.Side("german"), "rph", "existing-engine-work-v1");
         var hidden = JsonSerializer.SerializeToNode(Unit("secret-unit", "defender-squad", "russian", "bd01:G4:0", hidden: true))!;
         hidden["conditions"]!["asl:cx"] = true;
         await Commit(play, GameActions.Setup, SetupArgs("setup-hidden", Current().Revision, [hidden], start: false));
-        var second = await Planner().ReadTurnGuideProfileAsync(scope, Perspective.Side("german"), "rph", "existing-engine-atmosphere-v1");
+        var second = await Planner().ReadTurnGuideProfileAsync(scope, Perspective.Side("german"), "rph", "existing-engine-work-v1");
         Assert.Equal(JsonSerializer.Serialize(first), JsonSerializer.Serialize(second));
         Assert.Equal(TurnCloseDisposition.GovernedCheckRequired, second.PhaseClose.Disposition);
+        Assert.Equal(5, second.WorkProgressGaps.Length);
+        Assert.NotNull(second.Atmosphere);
+        Assert.NotNull(second.FireHistory);
         Assert.DoesNotContain("secret-unit", JsonSerializer.Serialize(second), StringComparison.Ordinal);
         var adjudicator = await Planner().ReadTurnGuideAsync(scope, Perspective.Adjudicator, "rph");
         Assert.Equal(TurnObligationState.NotEvaluated, Assert.Single(adjudicator.Obligations, item => item.SubjectId == "secret-unit").State);
@@ -93,7 +96,7 @@ public sealed partial class PlayTests
         }));
         var scope = new GameScope(Tenant, "village");
         var originalRevision = Current().Revision;
-        var first = await Planner().ReadTurnGuideProfileAsync(scope, Perspective.Side("german"), "rph", "existing-engine-atmosphere-v1");
+        var first = await Planner().ReadTurnGuideProfileAsync(scope, Perspective.Side("german"), "rph", "existing-engine-work-v1");
         Assert.Equal(TurnObligationState.Scheduled, Assert.Single(first.Obligations).State);
         for (var i = 0; i < 16; i++)
         {

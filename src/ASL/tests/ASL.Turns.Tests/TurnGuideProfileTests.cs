@@ -9,6 +9,7 @@ public sealed class TurnGuideProfileTests
     [InlineData("existing-engine-dc-v1", TurnSupport.IntegratedSubset)]
     [InlineData("existing-engine-fire-v1", TurnSupport.IntegratedSubset)]
     [InlineData("existing-engine-atmosphere-v1", TurnSupport.IntegratedSubset)]
+    [InlineData("existing-engine-work-v1", TurnSupport.IntegratedSubset)]
     public void ProfilesNameOnlyProvenSlicesAndKeepPendingDefinitions(string id, TurnSupport dc)
     {
         var profile = TurnGuideProfiles.Get(id);
@@ -19,6 +20,7 @@ public sealed class TurnGuideProfileTests
         Assert.Equal(dc, profile.CommandSupport("placedDc", true));
         Assert.Equal(TurnSupport.Pending, profile.CommandSupport("placedDc", false));
         Assert.Equal(TurnSupport.Pending, profile.CommandSupport("pack", true));
+        Assert.Equal(TurnSupport.Pending, profile.CommandSupport("ammo", true));
         Assert.Equal(TurnSupport.Pending, profile.CommandSupport("spotter", true));
         Assert.Equal(TurnSupport.Pending, profile.CommandSupport("smoke", true));
         Assert.Equal(TurnSupport.Pending, profile.CommandSupport("caveWp", true));

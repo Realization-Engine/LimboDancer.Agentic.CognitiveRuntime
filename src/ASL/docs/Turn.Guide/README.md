@@ -44,3 +44,6 @@ The next B5 slice adds fire/Spotter history through `existing-engine-fire-v1`, w
 
 
 B5 atmosphere profile: ordinary grenade lifecycle and Wind/Gust history, with distinct pending white SMOKE, drift, cave WP, Vehicle Dust, Ambient Dust and FFE Dust execution. See the design and plan atmosphere section. ASL.Turns now passes 140 tests with 572/572 lines and 304/304 branches covered (100%).
+
+
+B5 work progress: evidence-based complete Game Turn accounting and Rules-owned replenishment durations. Packing timing and live work event/command integration remain pending. The `existing-engine-work-v1` profile exposes those gaps. Current ASL.Turns verification: 146 tests, 651/651 lines and 366/366 branches (100%). See the design and plan work-progress section.
