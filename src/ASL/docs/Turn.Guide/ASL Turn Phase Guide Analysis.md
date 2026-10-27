@@ -322,3 +322,5 @@ The saved design preview in this folder is reference evidence. Production does n
 The phase matrix is a design-level synthesis, not a replacement for the detailed rules or ASOP. New UI behaviors and contracts in this document are proposals; the cited existing components and commits describe the current integration foundation.
 
 B1 update, 2026-10-27: the backend design records the validated 117-group/176-window identity manifest, ten imported Rally ledger steps, independent capability dimensions and required 100% coverage gate. All 538 topics and 38 dependency definitions remain visible. No live legality or due-window evaluator is claimed.
+
+B2 update, 2026-10-27: pure guidance composition now retains all reference topics and consumes audience-authorized typed verdicts. Unknown capability/subject facts stay NotEvaluated; historical or browsed-phase reads cannot expose action routes. Internal evaluation stamps stay out of snapshots. The full library passes 88 tests with 336/336 lines and 176/176 branches covered. Rule evaluation, obligation lifecycles and governed host adapters remain B3/B4 work.

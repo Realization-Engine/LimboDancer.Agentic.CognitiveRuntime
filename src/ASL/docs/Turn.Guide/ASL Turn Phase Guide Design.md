@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and `ASL.Turns.Tests` now provide the tested headless reference catalog, typed capability contracts and validated stable timing schema. Live evaluation, obligation scheduling and command integration below remain proposed. UI components are deferred until the back-end contracts and behavior are proven.
+Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and `ASL.Turns.Tests` now provide the tested headless reference catalog, typed capability contracts, validated stable timing schema and pure B2 guidance composition. Live evaluation, obligation scheduling and command integration below remain proposed. UI components are deferred until the back-end contracts and behavior are proven.
 
 References: [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Implementation Plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md), [cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md), [folder index](README.md).
 
@@ -41,18 +41,18 @@ Implemented in this revision:
 
 The current loader recognizes the existing Rally schema 2 and other schema 1 documents. It validates group/term references, page bounds, dependency targets and available ASOP ledger links. B1 imports all ten Rally steps from the reviewed walkthrough into its JSON ledger. Legacy inputs without a ledger remain readable by the catalog loader, but do not satisfy the current timing manifest. Numeric group positions and free-text status notes remain authored input, not final stable timing IDs or capability verdicts.
 
-Not implemented: a live `TurnGuideService`, verified production capability registrations, rule-family evaluators, instantiated obligations, command adapters, all-phase closure validation, historical migrations or any UI component. The current tests prove the reference foundation, not live rules correctness.
+Not implemented: live Rules/Play adapters, verified production capability registrations, rule-family evaluators, instantiated obligations, command adapters, all-phase closure validation, historical migrations or any UI component. The current tests prove the reference foundation, not live rules correctness.
 
-## 4. Backend API to establish before UI work
+## 4. Backend API before UI work
 
-Proposed API, not compiled signatures:
+The `Describe` signature is implemented in B2. `AssessClose` remains proposed for B4:
 
 ```csharp
 TurnGuideSnapshot Describe(TurnGuideRequest request, TurnFacts facts);
 PhaseCloseAssessment AssessClose(TurnCloseRequest request, TurnFacts facts);
 ```
 
-Use a concrete `TurnGuideService`, initially with explicit rule-family collaborators rather than a general-purpose plugin engine. A request identifies game scope, internal evaluation stamp, actual and browsed phase/window, viewer/acting side, scenario profile and optional disclosed subject. `TurnFacts` is an immutable, typed adapter result, not a `GameState`, arbitrary dictionary, serialized UI state or callback into a page.
+B2 implements a concrete `TurnGuideService` over immutable externally supplied verdicts. Future Rules adapters supply those verdicts; there is no general-purpose plugin engine. A request identifies game scope, internal evaluation stamp, actual and browsed phase/window, viewer/acting side, scenario profile and optional disclosed subject. `TurnFacts` is an immutable, typed adapter result, not a `GameState`, arbitrary dictionary, serialized UI state or callback into a page.
 
 The internal stamp includes event revision, map/catalog identity, rule/capability version, scenario profile, viewpoint and window identity. It is used for cache correctness and stale rejection. A renderer receives a viewer-safe opaque handle, not a full-state revision stream that exposes hidden activity.
 
@@ -67,6 +67,37 @@ The internal stamp includes event revision, map/catalog identity, rule/capabilit
 No result contains CSS classes, button captions as command identifiers, component names, URL routes or `EventCallback`. Human-readable explanation content is allowed; renderer-specific presentation is not. Output ordering follows semantic windows and rule constraints, not alphabetical labels or numeric ASOP sorting alone.
 
 The service is deterministic for fixed inputs. A read does not change a game, roll dice, allocate a governed attempt or increment progress. Browsing a future phase never changes the actual window.
+
+### B2 implemented contract, 2026-10-27
+
+`new TurnGuideService(catalog, registrations)` validates the capability registrations and stable timing manifest once. `Describe(request, facts)` has no service callbacks, game store, clock, random source, command executor or UI dependency. The default host passes an empty registration collection until an adapter has verified evidence.
+
+`TurnEvaluationContext` identifies game, authenticated viewer, viewer side, profile, actual phase, semantic window and internal evaluation stamp. `TurnGuideRequest` adds browsed phase and historical mode. `TurnFacts` carries the same context and immutable authorized verdicts. Exact context mismatch rejects stale or cross-game/viewer/profile/window input. Required context strings, current phase/window ownership and browsed phase are validated. The host must include fact, catalog and capability versions in its stamp.
+
+`TurnGuideVerdict` is a trusted adapter contract: an opaque decision ID, audience viewer ID, capability ID, authorized subject ID, current window, decision owner, applicability, safe explanation and optional opaque action route. This is already authorized content, not unrestricted game state. The host must use authenticated identity and GameView-equivalent disclosure before constructing it. Caller-supplied viewer IDs or stamps are not credentials, and support evidence is not runtime proof of a rule verdict. Production adapters remain B3/B4 work.
+
+Other audiences are removed before content validation, counts or output. Visible duplicate decision IDs and invalid applicability values fail. Only exact-profile registrations with Partial or IntegratedSubset evaluator support can supply decisions, and only verdicts matching the current window participate. Unknown registrations and unrelated windows cannot create legality. A missing subject returns NotEvaluated with a generic reason and no route; side-wide decisions must use an explicitly authorized game/side subject handle.
+
+Each snapshot retains every authored topic of the browsed phase, including pending/deferred/source-gap topics. It includes original integration notes and checks, profile-specific capability registrations, timing bindings, relevant dependency definitions, source metadata, glossary definitions, stable groups and windows. A topic without a verified assessment receives an explicit evaluation gap. Presence of one supported sub-action does not erase its topic's pending prose or establish universal support.
+
+Decision attention distinguishes EvaluationGap, RequiredDecision, OptionalChoice and Informational. It is a neutral enum, not CSS or UI state. Decisions retain the supplied safe explanation and decision owner. Visible decisions sort by ordinal opaque ID for deterministic composition; this is display stability, not rule execution ordering. Reference topics remain in authored order. Obligations and semantic execution order are still B3 responsibilities.
+
+An action route survives only for a nonhistorical read of the actual phase, when the decision belongs to the viewer's side, command support is Partial/IntegratedSubset, and applicability is Available/Required. The host still owns route creation, scope/expiry checks and governed command revalidation. The service never executes a route. Browsing and historical output cannot advance the game or mark consideration as resolution.
+
+Snapshots expose neither the internal evaluation stamp nor other audiences' identifiers, reasons or counts. Equivalent visible inputs with different hidden verdicts and internal stamps produce identical serialized snapshots. The host must also ensure its own route handles and safe strings do not encode hidden revision churn. Every snapshot explicitly states that supplied assessments do not establish complete ASL legality or phase closure.
+
+Example reference-only composition, with all current Rally options retained:
+
+```csharp
+var catalog = TurnGuideCatalog.Load();
+var guide = new TurnGuideService(catalog, []);
+var context = new TurnEvaluationContext("game-1", "viewer-1", "side-a",
+    "base", "rph", "rph:asop:1.23B", "host-evaluation-stamp");
+var snapshot = guide.Describe(new TurnGuideRequest(context, "rph", false),
+    new TurnFacts(context, []));
+```
+
+B2 validation: **88 tests pass; 336/336 executable lines and 176/176 branches covered (100% each)** across ASL.Turns. Behavioral tests cover all eight phase inventories, required versus optional decisions, unknown subjects and capability gaps, profile/window filtering, stale scopes, historical/browsed/other-side route suppression, deterministic reads, unchanged input facts and hidden-world equivalence. Movement Reaction Fire and compulsory Rout fixtures demonstrate composition of host verdicts, not new Rules integration or validation of those rules.
 
 ## 5. Authored content and capabilities
 

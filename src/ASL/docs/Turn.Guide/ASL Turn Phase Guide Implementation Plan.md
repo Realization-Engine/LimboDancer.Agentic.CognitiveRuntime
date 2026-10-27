@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first plan. Foundation B0 and the B1 capability/timing contracts are implemented and tested. Live stages remain planned. UI work is intentionally last.
+Status: Backend-first plan. B0, B1 contracts and B2 headless guidance composition are implemented and tested. Live Rules adapters and obligation stages remain planned. UI work is intentionally last.
 
 References: [Design](ASL%20Turn%20Phase%20Guide%20Design.md), [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md).
 
@@ -20,7 +20,7 @@ Run focused tests only for changed behavior and direct dependencies. Broaden whe
 |---|---|---|---|
 | B0, implemented | New library/test projects, headless immutable reference catalog, relocated documentation and saved mock-up | Reviewed inventories | Complete baseline loads without UI/Play dependencies; focused tests pass. |
 | B1, contracts implemented | Stable identity/timing manifest, contextual term IDs and typed capabilities | B0 | No prose parsing for legality, unregistered capability is Not evaluated, all IDs/links traceable. |
-| B2 | Pure guidance request/result and read composition | B1 | Fixed facts yield deterministic snapshots; no writes, dice or UI state. |
+| B2, implemented | Pure guidance request/result and read composition | B1 | Fixed facts yield deterministic snapshots; no writes, dice or UI state. |
 | B3 | Rule-owned timing and obligation lifecycle | B2 and relevant Rules families | Due, interrupt, resolve and retained history proved at exact boundaries. |
 | B4 | Play/Units adapters and shared phase-close assessment | B2-B3 | Existing command validation and guidance agree without duplicate cleanup; disclosure and stale checks pass. |
 | B5 | Durable missing facts, replay and profile expansion | B4, per rule pass | New families have source, Rules, persistence, replay and visibility evidence. |
@@ -48,13 +48,15 @@ The existing JSON remains authoritative for topic text, sources and glossaries. 
 
 Required validation: `./src/ASL/tests/ASL.Turns.Tests/Test-Coverage.ps1`. Current result is 62 passing tests, 242/242 lines and 132/132 branches covered for the entire library. Keep both coverage measures at 100%; test the behavior and failure paths rather than adding exclusions. The gate uses fresh reports so stale successful runs cannot mask a regression.
 
-## 5. B2: Headless guidance composition
+## 5. B2: Headless guidance composition, implemented
 
-Add proposed request, facts, snapshot, capability assessment and action-intent records in ASL.Turns. Implement a concrete `TurnGuideService` over immutable inputs with explicit rule-family collaborators. Keep all MapStudio concepts out of these contracts.
+Added `TurnGuideService`, immutable request/context/facts/verdict contracts and consumer-neutral snapshots with source, vocabulary, timing, capability and decision data. Composition retains every browsed-phase topic and its pending notes. It consumes authorized host verdicts rather than evaluating rule prose. Missing evaluator registrations or subjects remain NotEvaluated. Required, optional, informational and evaluation-gap attention remain distinct.
 
-Begin with static reference options plus externally supplied, classified verdicts for existing pending choices, movement responses and Rout obligations. Add the Rules project reference only when a concrete evaluator calls it. Do not create a dependency on GamePlanner to reuse a helper; extract rule predicates to Rules and keep state translation in Play.
+Context equality rejects stale/wrong game, viewer, side, profile, phase, window or evaluation stamp. Audience filtering happens before validating visible verdicts. Exact profile and current-window filtering prevent unrelated facts from creating legality. Historical reads, browsing another phase, another side's decision and absent command support suppress action routes. All writes remain outside the library.
 
-Tests: identical inputs yield identical output; options remain present without evaluators; required and optional attention differ; historical requests have no executable intentions; unrelated reads do not create events/attempts; current versus browsed phase remains distinct; unknown subject/fact does not become false legality.
+Snapshots do not reveal internal stamps or other viewers' verdict data. The host remains responsible for authentication, disclosure-safe reasons/handles and action revalidation. There is no live GamePlanner/Rules adapter, phase-close engine or obligation scheduler in B2. Production capability registrations stay unverified until those integration proofs exist; the Movement/Rout test registrations are fixtures only.
+
+The required coverage gate passes **88 tests, 336/336 lines and 176/176 branches**. Tests prove full reference inventory, pending visibility, required/optional distinction, historical read-only output, unknown-subject behavior, stale scopes, deterministic reads, input immutability and hidden-world equivalence. Use `./src/ASL/tests/ASL.Turns.Tests/Test-Coverage.ps1` to reproduce and enforce both 100% thresholds.
 
 ## 6. B3: Typed clocks and obligation instances
 
@@ -99,4 +101,4 @@ Only then build a thin consumer using existing site styling and action panels. C
 
 `ASL.Turns.Tests` owns content, coordination and backend contracts. Existing Rules tests own rule verdicts; Units tests own events/projection/replay; Play tests own governed command enforcement and adapters. Add renderer tests only at U1. Run the narrow project/class filters relevant to each change, with no blanket whole-solution test requirement.
 
-Next work: B2's pure snapshot contract, using the B1 types and verifying the first concrete capability registrations against Rules/Play proofs. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
+Next work: B3's rule-owned timing and obligation lifecycles, followed by B4 adapters and phase-close parity. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
