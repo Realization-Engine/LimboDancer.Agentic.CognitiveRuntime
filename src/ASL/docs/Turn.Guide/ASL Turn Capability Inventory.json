@@ -1,0 +1,5553 @@
+{
+  "schemaVersion": 1,
+  "gaps": [
+    {
+      "id": "fire",
+      "workItem": "B5-D1",
+      "reason": "Remaining fire, artillery, Spotter, Opportunity Fire and vehicle/PRC execution and guide integration require rule-specific facts and command proofs."
+    },
+    {
+      "id": "atmosphere",
+      "workItem": "B5-D2",
+      "reason": "White SMOKE, drift/Gust, cave WP and dust execution and cleanup remain pending beyond admitted history."
+    },
+    {
+      "id": "packing",
+      "workItem": "B5-D3",
+      "reason": "Automatic packing eligibility/duration, night/minimum, midpoint/reversal and animal transport remain pending; full Chapter G packing source is absent from local Markdown."
+    },
+    {
+      "id": "supply",
+      "workItem": "B5-D4",
+      "reason": "Automatic supply qualification, compatibility, Accessible Locations, dump use, shared recipients, movement restrictions, destruction and Low Ammo combat behavior remain pending beyond adjudicated effects."
+    },
+    {
+      "id": "transit",
+      "workItem": "B5-D5",
+      "reason": "Tunnel and airborne eligibility, transit/arrival, interruption and consequences require further rule and host integration."
+    },
+    {
+      "id": "cc",
+      "workItem": "B5-D6",
+      "reason": "Remaining Close Combat declarations, hero, combat and cross-phase execution need exact facts and governed integration."
+    },
+    {
+      "id": "special",
+      "workItem": "B5-D7",
+      "reason": "Water, aerial, night/weather and module-specific applicability, timing and execution require source-specific host profiles."
+    },
+    {
+      "id": "clearance",
+      "workItem": "B5-D8",
+      "reason": "Trip Flare and Clearance host facts and governed execution, including clearance-before-status and concealment-before-illumination proofs, remain pending."
+    },
+    {
+      "id": "core",
+      "workItem": "B5-D9",
+      "reason": "Remaining core Rally, movement, Rout, terrain/hazard, status, possession and turn-boundary integration requires an evidence audit; existing engine code is not automatically an admitted guide capability."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "status-timing",
+      "kind": "RulePredicate",
+      "scope": "Bounded Stun/CX origin, due, interruption and terminal timing; not all status cleanup.",
+      "profiles": [
+        "existing-engine",
+        "existing-engine-dc-v1",
+        "existing-engine-fire-v1",
+        "existing-engine-atmosphere-v1",
+        "existing-engine-work-v1"
+      ],
+      "references": [
+        "src/ASL/LimboDancer.Domains.Asl.Rules/TurnObligationRules.cs",
+        "src/ASL/tests/ASL.Turns.Tests/TurnObligationTests.cs"
+      ]
+    },
+    {
+      "id": "status-host",
+      "kind": "GovernedSubset",
+      "scope": "Stun/CX historical host projection and existing cleanup command integration only with origin evidence.",
+      "profiles": [
+        "existing-engine",
+        "existing-engine-dc-v1",
+        "existing-engine-fire-v1",
+        "existing-engine-atmosphere-v1",
+        "existing-engine-work-v1"
+      ],
+      "references": [
+        "src/ASL/LimboDancer.Domains.Asl.Play/GamePlanner.TurnGuide.cs",
+        "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/PlayTests.TurnGuide.cs"
+      ]
+    },
+    {
+      "id": "dc",
+      "kind": "GovernedSubset",
+      "scope": "Bounded Placed DC ownership, operability, AFPh obligation and existing detonation path. A live topic decision route is still B5-R3/R4 work.",
+      "profiles": [
+        "existing-engine-dc-v1",
+        "existing-engine-fire-v1",
+        "existing-engine-atmosphere-v1",
+        "existing-engine-work-v1"
+      ],
+      "references": [
+        "src/ASL/LimboDancer.Domains.Asl.Rules/TurnObligationRules.cs",
+        "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/BacklogPass15Tests.cs"
+      ]
+    },
+    {
+      "id": "clearance-timing",
+      "kind": "RulePredicate",
+      "scope": "Bounded Trip Flare expiry and non-Flame Clearance timing predicates; host execution remains pending.",
+      "profiles": [
+        "existing-engine",
+        "existing-engine-dc-v1",
+        "existing-engine-fire-v1",
+        "existing-engine-atmosphere-v1",
+        "existing-engine-work-v1"
+      ],
+      "references": [
+        "src/ASL/LimboDancer.Domains.Asl.Rules/TurnObligationRules.cs",
+        "src/ASL/tests/ASL.Turns.Tests/TurnObligationTests.cs"
+      ]
+    },
+    {
+      "id": "fire-history",
+      "kind": "ObservedHistory",
+      "scope": "Disclosed shot, ROF and first observed Spotter use/retention history; no new-shot or original-designation permission.",
+      "profiles": [
+        "existing-engine-fire-v1",
+        "existing-engine-atmosphere-v1",
+        "existing-engine-work-v1"
+      ],
+      "references": [
+        "src/ASL/ASL.Turns/TurnFireHistory.cs",
+        "src/ASL/tests/ASL.Turns.Tests/TurnFireHistoryTests.cs"
+      ]
+    },
+    {
+      "id": "atmosphere-history",
+      "kind": "ObservedHistory",
+      "scope": "Ordinary infantry grenade attempts/cleanup and recorded Wind/Gust history only.",
+      "profiles": [
+        "existing-engine-atmosphere-v1",
+        "existing-engine-work-v1"
+      ],
+      "references": [
+        "src/ASL/ASL.Turns/TurnAtmosphere.cs",
+        "src/ASL/tests/ASL.Turns.Tests/TurnAtmosphereTests.cs"
+      ]
+    },
+    {
+      "id": "work-timing",
+      "kind": "RulePredicate",
+      "scope": "E10 replenishment/transfer complete-Game-Turn duration and packing release contract; automatic packing duration remains unknown.",
+      "profiles": [
+        "existing-engine-work-v1"
+      ],
+      "references": [
+        "src/ASL/LimboDancer.Domains.Asl.Rules/TurnWorkRules.cs",
+        "src/ASL/tests/ASL.Turns.Tests/TurnWorkProgressTests.cs"
+      ]
+    },
+    {
+      "id": "work-effects",
+      "kind": "AdjudicatedEffect",
+      "scope": "Permissioned work lifecycle and frozen packing assembly, replenishment, supply transfer/offload effects. Applied does not certify automatic G10/E10 eligibility.",
+      "profiles": [
+        "existing-engine-work-v1"
+      ],
+      "references": [
+        "src/ASL/LimboDancer.Domains.Asl.Rules/TurnWorkEffects.cs",
+        "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/PlayTests.WorkEffects.cs",
+        "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/BacklogPass7Tests.SupplyEffects.cs"
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "id": "rph:arrival",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core",
+        "special"
+      ]
+    },
+    {
+      "id": "rph:entry",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rph:dyoArrival",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rph:wind",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "atmosphere-history"
+      ],
+      "gapIds": [
+        "atmosphere",
+        "special"
+      ]
+    },
+    {
+      "id": "rph:night",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rph:civilian",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rph:precipitation",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rph:fog",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rph:snowDrifts",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rph:smoke",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "atmosphere-history"
+      ],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "rph:dust",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere",
+        "special"
+      ]
+    },
+    {
+      "id": "rph:surf",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rph:recombine",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:packStart",
+      "kind": "Topic",
+      "sourceReview": "SourceMissing",
+      "evidenceIds": [
+        "work-effects",
+        "work-timing"
+      ],
+      "gapIds": [
+        "core",
+        "packing"
+      ]
+    },
+    {
+      "id": "rph:packHalf",
+      "kind": "Topic",
+      "sourceReview": "SourceMissing",
+      "evidenceIds": [
+        "work-effects",
+        "work-timing"
+      ],
+      "gapIds": [
+        "packing"
+      ]
+    },
+    {
+      "id": "rph:packReverse",
+      "kind": "Topic",
+      "sourceReview": "SourceMissing",
+      "evidenceIds": [
+        "work-effects",
+        "work-timing"
+      ],
+      "gapIds": [
+        "packing"
+      ]
+    },
+    {
+      "id": "rph:recover",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:skis",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:deploy",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:scrounge",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:repair",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:vehicleRepair",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:transfer",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:prisoners",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:leaders",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:first",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:self",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:assisted",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:commissar",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:results",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:campaign",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rph:nationality",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rph:modifiers",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:winterFate",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rph:drop",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core",
+        "transit"
+      ]
+    },
+    {
+      "id": "rph:shock",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:dm",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:wa",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:oba",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "rph:ammo",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "work-effects",
+        "work-timing"
+      ],
+      "gapIds": [
+        "core",
+        "supply"
+      ]
+    },
+    {
+      "id": "rph:other",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:phone",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "rph:ammoTransfer",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "work-effects",
+        "work-timing"
+      ],
+      "gapIds": [
+        "supply"
+      ]
+    },
+    {
+      "id": "rph:stunBoundary",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "status-host",
+        "status-timing"
+      ],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rph:notHere",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "pfph:smokeCleanup",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "atmosphere-history"
+      ],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "pfph:napalm",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "atmosphere-history"
+      ],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "pfph:dustCleanup",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "pfph:starshellOpening",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance",
+        "special"
+      ]
+    },
+    {
+      "id": "pfph:smokeFire",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "pfph:wpEffects",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere",
+        "core"
+      ]
+    },
+    {
+      "id": "pfph:mortarIR",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:earlySpotter",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:molProjector",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:radio",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:access",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:newMission",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:obaIR",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:rockets",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:aerialObserver",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:correct",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:continuation",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:barrage",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:obaSmokeResolution",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "pfph:ffe",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:terrainEffects",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:columnReverseSlope",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:mopUp",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "pfph:entrench",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance",
+        "core"
+      ]
+    },
+    {
+      "id": "pfph:kindle",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "pfph:fireOrHold",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "status-host",
+        "status-timing"
+      ],
+      "gapIds": [
+        "core",
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:smallArms",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:spraying",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:weapons",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:ordnance",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:specialAmmo",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:mortarSpotter",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "fire-history"
+      ],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:vehicleFire",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:rof",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:intensive",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:ftMol",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:dc",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:encirclement",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:opportunity",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "fire-history",
+        "status-host",
+        "status-timing"
+      ],
+      "gapIds": [
+        "core",
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:starshellLater",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "pfph:heavyAA",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:assemble",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:destroy",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:limber",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:unlimber",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:caEnd",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:aaModeEnd",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:searchlight",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "pfph:cancelBeam",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "pfph:closeAir",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "pfph:naval",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "pfph:nationality",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "pfph:massacre",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "pfph:standing",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:attackResults",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:sniper",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:phoneCut",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "pfph:notHere",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:expenditure",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:order",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:spotter",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "fire-history"
+      ],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:starshellOpening",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:gliderSetup",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "mph:berserkPrepare",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:eligibility",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core",
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:startDrop",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:freedom",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:strayingStart",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:doubleStart",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "status-host",
+        "status-timing"
+      ],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:assault",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:dash",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:sewerStart",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:climbStart",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:wave",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:dareDeath",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:swimStart",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:gallopStart",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:motionStart",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:formations",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:radioless",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:flail",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance",
+        "core"
+      ]
+    },
+    {
+      "id": "mph:surfStart",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:crewVehicle",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:aerialQueue",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:berserkCharge",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:route",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:minimum",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:bypass",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:terrainModes",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special",
+        "transit"
+      ]
+    },
+    {
+      "id": "mph:vehicleMotion",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:reliability",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:sewerTravel",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:climbSwim",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:lateDouble",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "status-host",
+        "status-timing"
+      ],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:concealment",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:wallAdvantage",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:recover",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:dropDuring",
+      "kind": "Topic",
+      "sourceReview": "InterpretationOpen",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:prisonerMovement",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:recapture",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:manhandle",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance",
+        "core"
+      ]
+    },
+    {
+      "id": "mph:placeDC",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "dc"
+      ],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:setDC",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "dc"
+      ],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:mount",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:hook",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:clearDeclare",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "mph:clearFlame",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance",
+        "core"
+      ]
+    },
+    {
+      "id": "mph:skis",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:smoke",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "atmosphere-history"
+      ],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "mph:infantryOVR",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:hero",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "mph:cavalry",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:bog",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:recall",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "status-host",
+        "status-timing"
+      ],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:bounding",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:gunDuel",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:vehicleOVR",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:esbHD",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:crewPosture",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:armoredAssault",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:wreckRemoval",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:wreckChecks",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:impulse",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:column",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:panji",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:dust",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "mph:ddScreens",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:beach",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:surf",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:gliderEvade",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "mph:parachuteDrift",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "mph:residualAttack",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:ffeMove",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:mines",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:starshellLater",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:tripFlare",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "mph:firstFire",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:subsequent",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:fpf",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:mandatoryTPBF",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:snap",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:fireLane",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:defenderWeapons",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:throwDC",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:ovrPrevention",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:reaction",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:heroReaction",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "mph:motionAttempt",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere",
+        "core"
+      ]
+    },
+    {
+      "id": "mph:airSupport",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:attackerAA",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire",
+        "special"
+      ]
+    },
+    {
+      "id": "mph:residualCreate",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:gliderAA",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "mph:parachuteFire",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "mph:search",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:brokenBypass",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:sewerEmerge",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:smallArms",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:endVehicle",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:gliderLand",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "mph:parachuteLand",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "mph:blazeEnd",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:wreckEnd",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:canisters",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "mph:berserkEnd",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "mph:cleanup",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "atmosphere-history"
+      ],
+      "gapIds": [
+        "atmosphere",
+        "core",
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:jitter",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:cpva",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:bugles",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:bayonet",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:searchlight",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "mph:attackChain",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core",
+        "fire"
+      ]
+    },
+    {
+      "id": "mph:profile",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "dfph:handoff",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core",
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:targets",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core",
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:hold",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:smokeFire",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "dfph:wpEffects",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere",
+        "core"
+      ]
+    },
+    {
+      "id": "dfph:mortarIR",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance",
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:earlySpotter",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:molProjector",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:radio",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:access",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:newMission",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:obaIR",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:aerialObserver",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:continuation",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:rockets",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:correct",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:barrage",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:obaSmokeResolution",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "dfph:ffe",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:terrainEffects",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:columnReverseSlope",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:naval",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "dfph:unmarked",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:firstMarked",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:sustained",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:intensive",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:rof",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:spent",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:smallArms",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:spraying",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:weapons",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:ordnance",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:specialAmmo",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:ftMol",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:encirclement",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:vehicleFire",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:dc",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:mortarSpotter",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "fire-history"
+      ],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:sewerFire",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:landedGlider",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "dfph:starshellLater",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "dfph:groundSupport",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "dfph:lightAA",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "dfph:heavyAA",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "dfph:airResults",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "dfph:wire",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "dfph:clearDC",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "dfph:roadblock",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "dfph:path",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "dfph:panji",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "dfph:flame",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance",
+        "core"
+      ]
+    },
+    {
+      "id": "dfph:columnFire",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "dfph:assemble",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:destroy",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:limber",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:unlimber",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:caEnd",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:aaModeEnd",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:cleanup",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire",
+        "special"
+      ]
+    },
+    {
+      "id": "dfph:searchlight",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "dfph:fascine",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "dfph:spGunMode",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:barrels",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:equipmentHistory",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:nationality",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "dfph:massacre",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "dfph:standing",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:attackResults",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core",
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:sniper",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:phoneCut",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:notHere",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "dfph:sourceProfile",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "afph:handoff",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "afph:hold",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:drift",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "atmosphere-history"
+      ],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "afph:wp",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "afph:wpEffects",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere",
+        "core"
+      ]
+    },
+    {
+      "id": "afph:gustSmoke",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "atmosphere-history"
+      ],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "afph:glider",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "afph:smallArms",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:assault",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:opportunity",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:movedWeapons",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core",
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:weapons",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:spraying",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:ft",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:mol",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:encirclement",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:ordnance",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:ammo",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:latw",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:mortar",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "fire-history"
+      ],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:rof",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:intensive",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:vehicle",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:carryover",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:passengers",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:sewer",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:placed",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "dc"
+      ],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:thrown",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "dc"
+      ],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:set",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "dc"
+      ],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:limber",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:unlimber",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:berserk",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "afph:blaze",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "afph:windSpread",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "atmosphere-history"
+      ],
+      "gapIds": [
+        "atmosphere",
+        "core"
+      ]
+    },
+    {
+      "id": "afph:flame",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "afph:blazeExit",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "afph:caEnd",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:aaMode",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "afph:cleanup",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance",
+        "fire",
+        "special"
+      ]
+    },
+    {
+      "id": "afph:goliath",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:lcBlaze",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "afph:searchlight",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "afph:paratroops",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "afph:massacre",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "afph:nationality",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "afph:standing",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:results",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core",
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:sniper",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:notHere",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:sourceProfile",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "afph:climbing",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "afph:fording",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "afph:charge",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "afph:breach",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "afph:fortifiedBerserk",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "afph:mgArmor",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:acquisition",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "afph:targets",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core",
+        "fire"
+      ]
+    },
+    {
+      "id": "rtph:handoff",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:knowledge",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:voluntaryBreak",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:dm",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:disruptedOpening",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:interrogationOpening",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:mustRout",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:optionalRout",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:disruptedRout",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:budget",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:load",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:recovery",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:leader",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:prisoners",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:destination",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:ignore",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:noCover",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:direction",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:lowCrawl",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:refigure",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:stop",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:openGround",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:interdictor",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:interdiction",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:reveal",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:repulse",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:surrender",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:exempt",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:accept",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:capture",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:interrogation",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:failure",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:mines",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:ffe",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "rtph:specialFfe",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "rtph:panji",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:flare",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "rtph:column",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rtph:night",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rtph:skis",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rtph:evacuation",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:crewExit",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:paratroops",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "rtph:blazeEnd",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:blazeEscape",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc",
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:shelter",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:pillbox",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:tunnel",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "rtph:wire",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:crest",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:terrain",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:seaborneStatus",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "rtph:results",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:finish",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:boundaries",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "rtph:sourceProfile",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:handoff",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:transfer",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:prisoners",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:skiUse",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:tankHunter",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "aph:openingSurf",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:eligibility",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:destination",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:load",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:drop",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:leader",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:difficult",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "status-host",
+        "status-timing"
+      ],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:stacking",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:wounded",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:enemy",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "aph:paatc",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "aph:heroAdvance",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "aph:concealment",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc",
+        "core"
+      ]
+    },
+    {
+      "id": "aph:buildings",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:fortified",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:entrenchment",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:pillbox",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:crest",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:climb",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:sewer",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:tunnel",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "aph:wire",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:waterTerrain",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:wall",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:night",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:skis",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:paddy",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:caves",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:columnAdvance",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:entryExit",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:boatLoading",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:swimmer",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:crewExposure",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "status-host",
+        "status-timing"
+      ],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:tripFlare",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "aph:attackerDrift",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:oceanDrift",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:pier",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:defenderDrift",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:beach",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:entrySurf",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:ffe",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "aph:mines",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:panji",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:drowning",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "aph:disband",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:parachutes",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "aph:gliders",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "aph:control",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:acquisition",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "aph:boundaries",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:close",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "aph:sourceProfile",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "ccph:handoff",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:participants",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:reveal",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:hiddenHero",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:ambush",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:ambushModifiers",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "status-host",
+        "status-timing"
+      ],
+      "gapIds": [
+        "cc",
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:ambushChoice",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:street",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:tankHunter",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc",
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:sequence",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:escape",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:abandonedDeclaration",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:withdraw",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:brokenWithdrawal",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:withdrawLoad",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:pairing",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:leadership",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:declarations",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:concealedChoice",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:personnelAttack",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:handToHand",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:capture",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:vehicleAttack",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:vehicleFire",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:prc",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:closeDefense",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere",
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:terrainCombat",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:mountedWater",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "ccph:goliath",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:atmm",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:heroAtmm",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:haraKiri",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:resolve",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:vehicleResult",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:unlikelyKill",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:crewSmallArms",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:infiltration",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:promotion",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:equipmentLoss",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:captureValidity",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:guards",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:withdrawArrival",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:streetReturn",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:withdrawHazards",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core",
+        "fire"
+      ]
+    },
+    {
+      "id": "ccph:withdrawSpecial",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance",
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:berserk",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc",
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:nextAttack",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:interrogation",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:automaticCapture",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:melee",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc",
+        "special"
+      ]
+    },
+    {
+      "id": "ccph:dareDeath",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc",
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:heroRemoval",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "ccph:dogfight",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "ccph:aerialResults",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "ccph:aerialClose",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "ccph:clearance",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance",
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:rubble",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "ccph:wireSetDc",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "ccph:mineClearance",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "ccph:flail",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "ccph:ptoClearance",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "ccph:moduleClearance",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "ccph:labor",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "ccph:tunnels",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "ccph:pinTi",
+      "kind": "Topic",
+      "sourceReview": "SourceMissing",
+      "evidenceIds": [
+        "status-host",
+        "status-timing",
+        "work-effects",
+        "work-timing"
+      ],
+      "gapIds": [
+        "clearance",
+        "core",
+        "packing",
+        "special",
+        "supply"
+      ]
+    },
+    {
+      "id": "ccph:stun",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "status-host",
+        "status-timing"
+      ],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:ammo",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "work-effects",
+        "work-timing"
+      ],
+      "gapIds": [
+        "supply"
+      ]
+    },
+    {
+      "id": "ccph:concealmentGain",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere",
+        "clearance",
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:concealmentDr",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:concealmentProfiles",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "ccph:illumination",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "ccph:acquisition",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance",
+        "fire"
+      ]
+    },
+    {
+      "id": "ccph:caveSmoke",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "atmosphere-history"
+      ],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "ccph:lcBlazePin",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core",
+        "special"
+      ]
+    },
+    {
+      "id": "ccph:tripFlareExpiry",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "ccph:specialChecks",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:close",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "ccph:sourceProfile",
+      "kind": "Topic",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "cx",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "status-timing",
+        "status-host"
+      ],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "dm",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "shock",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "stun",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "status-timing",
+        "status-host"
+      ],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "pinTi",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "defensiveFire",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "opportunity",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "vehicleShot",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "movementHistory",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "placedDc",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "dc"
+      ],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "clearance",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "flame",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "blaze",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "smoke",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "atmosphere-history"
+      ],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "driftGusts",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "atmosphere-history"
+      ],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "nightFire",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "illumination",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "tripFlare",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "clearance-timing"
+      ],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "caveWp",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "oba",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "acquisition",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "ammo",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "work-timing",
+        "work-effects"
+      ],
+      "gapIds": [
+        "supply"
+      ]
+    },
+    {
+      "id": "pack",
+      "kind": "Dependency",
+      "sourceReview": "SourceMissing",
+      "evidenceIds": [
+        "work-timing",
+        "work-effects"
+      ],
+      "gapIds": [
+        "packing"
+      ]
+    },
+    {
+      "id": "tunnel",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "airborne",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "transit"
+      ]
+    },
+    {
+      "id": "water",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "hero",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "berserk",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "melee",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "cc"
+      ]
+    },
+    {
+      "id": "lcBlaze",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "special"
+      ]
+    },
+    {
+      "id": "acrossTurns",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "sourceOrder",
+      "kind": "Dependency",
+      "sourceReview": "InterpretationOpen",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "immediate",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "spotter",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [
+        "fire-history"
+      ],
+      "gapIds": [
+        "fire"
+      ]
+    },
+    {
+      "id": "labor",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "clearance"
+      ]
+    },
+    {
+      "id": "crewPosture",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "core"
+      ]
+    },
+    {
+      "id": "vehicleDust",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "dispenser",
+      "kind": "Dependency",
+      "sourceReview": "Reconciled",
+      "evidenceIds": [],
+      "gapIds": [
+        "atmosphere"
+      ]
+    }
+  ]
+}

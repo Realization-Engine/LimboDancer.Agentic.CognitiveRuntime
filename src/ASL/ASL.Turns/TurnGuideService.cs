@@ -27,6 +27,11 @@ public sealed record TurnGuideSnapshot(string GameId, string ViewerId, string Ac
 /// <summary>Pure reference and authorized-verdict composition. No game access, writes, dice or rule predicates.</summary>
 public sealed class TurnGuideService
 {
+    public TurnCapabilityInventory Inventory
+    {
+        get;
+    }
+
     private readonly TurnGuideCatalog catalog;
     private readonly TurnTimingSchema timing;
     private readonly TurnCapabilityCatalog capabilities;
@@ -35,6 +40,7 @@ public sealed class TurnGuideService
     {
         ArgumentNullException.ThrowIfNull(catalog);
         this.catalog = catalog;
+        Inventory = TurnCapabilityInventory.Load(catalog);
         timing = TurnTimingSchema.Load(catalog);
         capabilities = TurnCapabilityCatalog.Create(catalog, registrations);
     }

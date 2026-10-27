@@ -355,3 +355,8 @@ B5 supply transfer/offload update (2026-10-27): opt-in four-Game-Turn completion
 ### B5 finite-scope decision, 2026-10-27
 
 B5 now has exactly six remaining integration slices: inventory, admitted-capability audit, durable decision windows, one live AFPh Placed DC topic route, replay/disclosure acceptance, and the backend readiness handoff. All six are Planned. The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) owns IDs B5-R1 through B5-R6 and their exit criteria. Eight retained rule-family packages, B5-D1 through B5-D8, belong to later ASL.Rules passes, including Trip Flare/Clearance host execution. This bounds the integration milestone without reducing the all-Passes target or hiding pending options. Existing bounded implementations remain in place; this planning decision adds no runtime support. Safety gaps in an admitted path must be fixed or the path narrowed before B5 closes.
+
+
+### B5-R1 inventory outcome, 2026-10-27
+
+R1 is complete: the headless inventory explicitly maps every one of the 538 topics and 38 dependencies to source-review status, bounded subset evidence where available, and retained pending-work ownership. All 191 catalog links remain unchanged. The inventory revealed a real ownership omission in the earlier eight deferred packages: ordinary core-phase integration now has owner B5-D9. No additional B5 exit slice was created. Five required slices remain, starting with R2's admitted-capability audit. Evidence inventory does not promote history, timing predicates or adjudicated effects into executable topic routes. The design and implementation plan explain the immutable schema, source gaps and tests.

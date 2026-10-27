@@ -1,10 +1,11 @@
 # ASL Turn Guide
 
-Current planning status: **six B5 integration slices remain**, B5-R1 through B5-R6, all Planned. Start with B5-R1 (capability and pending-work inventory). The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and eight deferred rule-family packages, B5-D1 through B5-D8. Deferred rules remain visible and are not prerequisites for initial UI readiness. This replaces the earlier open-ended sequence of B5 rule-family slices.
+Current planning status: **B5-R1 is implemented; five slices remain**, B5-R2 through B5-R6. Next is B5-R2 (audit and bound admitted host capabilities). The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and nine deferred rule-family packages, B5-D1 through B5-D9. D9 adds the ordinary core-phase rules missing from the original eight packages; it does not add a required B5 slice.
 
 All turn-guide analysis, design, phase catalogs, walkthroughs and dependency audit live in this folder.
 
 - [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md)
+- [Capability and pending-work inventory](ASL%20Turn%20Capability%20Inventory.json)
 - [Backend design](ASL%20Turn%20Phase%20Guide%20Design.md)
 - [Backend-first implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md)
 - [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md)
@@ -63,3 +64,9 @@ Latest B5 slice: ammunition supply transfer/offload completion effects (`b5-work
 
 
 Supply transfer/offload validation: 150 ASL.Turns tests pass with 666/666 lines and 374/374 branches covered (100%, no exclusions). The focused Rules suite passes 40 tests, the relevant Play/Gun/ordnance/vehicle/guide selection passes 67 tests, and the Units regression suite passes 421 tests.
+
+
+B5-R1 validation: 162 ASL.Turns tests, 738/738 lines and 424/424 branches (100%). The explicit inventory covers 538 topics, 38 dependencies and all 191 existing links; every binding retains a pending-work owner and any bounded subset evidence. No executable topic capabilities were added.
+
+
+R1 host regression verification: all four Play TurnGuide tests pass after the service begins loading the inventory. No game commands or event formats changed.

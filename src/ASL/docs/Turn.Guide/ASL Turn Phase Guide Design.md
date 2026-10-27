@@ -7,7 +7,7 @@ Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and 
 References: [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Implementation Plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md), [cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md), [folder index](README.md).
 
 
-Current B5 scope (2026-10-27): exactly six remaining integration slices, B5-R1 through B5-R6, all Planned. The [finite completion backlog](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) is authoritative. B5-D1 through B5-D8 preserve later ASL.Rules work without making full rulebook execution a prerequisite for the initial UI. Historical slice sections describe the evidence at their implementation date, not additional B5 gates.
+Current B5 scope (2026-10-27): B5-R1 is implemented; exactly five integration slices remain, B5-R2 through B5-R6, all Planned. The [finite completion backlog](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) is authoritative. B5-D1 through B5-D9 preserve later ASL.Rules work without making full rulebook execution a prerequisite for the initial UI. Historical slice sections describe the evidence at their implementation date, not additional B5 gates.
 
 ## 1. Design decision
 
@@ -269,7 +269,7 @@ Adjudicators receive exact reasons, event-type effects, roll requirement and Rea
 
 Validation: the full ASL.Turns coverage gate passes at 452/452 lines and 254/254 branches (100% each), without source exclusions. Host tests compare assessment to command plans across all eight phases over two player turns; prove invalid retain-DM refusal parity beyond PhaseEndBar; reject wrong perspectives, missing games and stale map/revision stamps; compare entire side responses before/after hidden enemy/revision changes; and exercise actual Double Time/CX and Stun cleanup, historical reconstruction and repeat-read safety.
 
-B5 owns the finite integration work in B5-R1 through B5-R6. Remaining rule-family execution is retained under B5-D1 through B5-D8 for later Rules passes. Clearance-before-status and concealment-before-illumination end-to-end integration remain pending. B4 does not claim the whole rulebook is executable or the UI gate is satisfied.
+B5 owns the finite integration work in B5-R1 through B5-R6. Remaining rule-family execution is retained under B5-D1 through B5-D9 for later Rules passes. Clearance-before-status and concealment-before-illumination end-to-end integration remain pending. B4 does not claim the whole rulebook is executable or the UI gate is satisfied.
 
 The earlier proposed AssessClose signature is superseded by TurnPhaseClose.Describe(TurnClosePlanFacts, bool adjudicator, bool historical), composed through the two Play APIs above. Earlier B2/B3 validation paragraphs record their milestone scope.
 
@@ -290,7 +290,7 @@ B5 adds a bounded Placed DC integration (A23.3-.4; ASOP 3.32A and 5.22A), not bl
 
 **Proof and remaining work.** Tests exercise new/legacy wire round-trips, owner mismatch rejection, disk reload, idempotent append retry, historical reads, interruption, AFPh closure blocking, detonation completion, post-removal disclosure and repeated-read safety. Rules tests cover phase boundaries and continued obligation despite placer ineligibility. ASL.Turns passes 127 tests with 465/465 lines and 264/264 branches covered (100% each, no source exclusions). Coverage is for ASL.Turns, not the entire existing Rules, Units or Play assemblies.
 
-Scope correction, 2026-10-27: completed history/work slices below remain admitted only within their proven boundaries. Remaining rule-family execution is tracked under B5-D1 through B5-D8 in the implementation plan. B5-R1 through B5-R6 close the headless integration and UI readiness gate; full execution of those deferred families is not required to close B5.
+Scope correction, 2026-10-27: completed history/work slices below remain admitted only within their proven boundaries. Remaining rule-family execution is tracked under B5-D1 through B5-D9 in the implementation plan. B5-R1 through B5-R6 close the headless integration and UI readiness gate; full execution of those deferred families is not required to close B5.
 
 
 ### B5 fire and Spotter history slice, implemented 2026-10-27
@@ -441,8 +441,24 @@ The all-Passes ASL.Rules design remains the target. B5 is the finite integration
 
 **Executable, adjudicated and reference-only are distinct.** Current profiles through work version `b5-work-4` form the frozen baseline. Stun/CX and bounded Placed DC support do not promote unrelated topics. Permissioned packing/ammunition effects can be Applied while rule automation is Pending. B5-R4 admits the selected topic route only after B5-R3 proves its window and B5-R2 proves the host capability. Work adjudication retains its separate permission and cannot be offered as ordinary player authority.
 
-**Deferred execution stays represented.** B5-D1 fire/Spotter, D2 atmosphere, D3 packing/animals, D4 supply/dumps, D5 tunnels/airborne, D6 CC/heroes, D7 water/aerial/modules and D8 Trip Flare/Clearance are later Rules-pass packages. Their existing reference content, partial calculators and admitted history remain intact. Unsupported execution is accompanied by source/timing, missing-fact and manual/adjudication explanations where known. Deferred planning is not runtime NotApplicable, hidden content or a completed obligation. No new concrete Rules pass number is invented by this decision.
+**Deferred execution stays represented.** B5-D1 fire/Spotter, D2 atmosphere, D3 packing/animals, D4 supply/dumps, D5 tunnels/airborne, D6 CC/heroes, D7 water/aerial/modules and D8 Trip Flare/Clearance and D9 core-phase rule/guide integration are later Rules-pass packages. Their existing reference content, partial calculators and admitted history remain intact. Unsupported execution is accompanied by source/timing, missing-fact and manual/adjudication explanations where known. Deferred planning is not runtime NotApplicable, hidden content or a completed obligation. No new concrete Rules pass number is invented by this decision.
 
 **Safe closure with incomplete rules.** Keep the shared governed phase-close assessment and viewer-safe output. A reference consideration cannot resolve a mandatory obligation, and an unsupported family cannot be fabricated into an executable blocker. Any claimed live subset must be narrowed or refused when missing facts prevent correctness. New rule-family semantics wait for their B5-D package; safety defects in the admitted subset remain part of the six required integration slices.
 
-**Acceptance.** All six required slices must pass their implementation-plan criteria before B5 is marked complete. Preserve 100% ASL.Turns line and branch coverage without exclusions, with appropriate dependent regression checks. U1 consumes these contracts and keeps all pending rules visible; it does not own timing, eligibility or lifecycle calculations. This documentation change defines scope only: none of B5-R1 through B5-R6 is implemented by it.
+**Acceptance.** All six required slices must pass their implementation-plan criteria before B5 is marked complete. Preserve 100% ASL.Turns line and branch coverage without exclusions, with appropriate dependent regression checks. U1 consumes these contracts and keeps all pending rules visible; it does not own timing, eligibility or lifecycle calculations. R1 now implements the inventory boundary below. R2 through R6 remain Planned; the UI readiness gate is not yet complete.
+
+
+## B5-R1 capability and pending-work inventory, implemented 2026-10-27
+
+`TurnCapabilityInventory` is immutable public reference metadata, embedded from [ASL Turn Capability Inventory.json](ASL%20Turn%20Capability%20Inventory.json). Its schema has explicit topic/dependency bindings, source-review state, subset-evidence links and pending-gap links. The 576 bindings cover all 538 topics and 38 dependencies; joining the original catalog retains its references, source pages and 191 links without duplicating the catalog. Construction fails if the authored inventory no longer matches the catalog, so new content cannot silently acquire a guessed owner or vanish from coverage.
+
+Evidence is typed as RulePredicate, GovernedSubset, ObservedHistory or AdjudicatedEffect. Each record names its supported scope, profile IDs and repository evidence. A recorded shot does not authorize the next shot; a timer predicate does not establish a governed command; an adjudicated completion does not prove automatic eligibility. These distinctions are data, not inferred from prose or the presence of an implementation file. All unregistered remainders keep NotEvaluated applicability/support and Pending rule support. The inventory grants no action route and does not populate executable `TurnCapability` registrations.
+
+Consumers use `TurnGuideService.Inventory` or load the inventory directly, then join by kind and stable topic/dependency ID. Source references and timing remain in the catalog and timing schema; game-specific facts and decisions still come from the existing authenticated adapter. The current host guide response is unchanged. No game event, dice, permission or profile version changes in R1. The following R2 audit must confirm the detailed bounds of the existing evidence before any broader admission.
+
+The deferred registry now has nine owners. D9 explicitly retains core Rally/Rout/movement/terrain/status/possession and other core-phase gaps omitted from the first eight packages. Multiple owners can apply to a topic. This extends retained rule coverage without adding any B5 exit gate; five required integration slices remain. Five bindings preserve the Chapter G packing source gap and two preserve the MPh prisoner-drop/source-order interpretation issue. Reconciled source review describes the prior reference review, not complete engine support.
+
+Tests validate the exact inventory and all links, reject incomplete/unknown/duplicate mappings and malformed evidence, and prove unchanged reference visibility and absent topic action routes across all five profiles and eight phases. R1 passes 162 ASL.Turns tests with 738/738 lines and 424/424 branches, both 100%, without exclusions. The original Rules/Units/Play mutation authority and the all-Passes target remain intact.
+
+
+R1 host regression verification: all four Play TurnGuide tests pass after the service begins loading the inventory. No game commands or event formats changed.
