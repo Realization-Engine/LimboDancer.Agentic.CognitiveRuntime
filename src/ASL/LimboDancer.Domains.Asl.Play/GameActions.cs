@@ -737,7 +737,7 @@ public static class GameActions
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
-            "equipmentId": { "type": "string" }, "vehicle": { "type": "string" }
+            "equipmentId": { "type": "string" }, "vehicle": { "type": "string" }, "guideRoute": { "type": "string" }, "guideProfile": { "type": "string" }
           }
         }
         """, JsonSerializer.SerializeToElement(new

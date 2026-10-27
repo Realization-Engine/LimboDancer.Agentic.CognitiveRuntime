@@ -19,6 +19,12 @@ public sealed record GameEvent(
     IReadOnlyList<string> Causes,
     IReadOnlyList<string>? Visibility)
 {
+    /// <summary>Optional canonical request digest for an admitted guide action. Not rule evidence or authorization.</summary>
+    public string? GuidedDecisionHash
+    {
+        get; init;
+    }
+
     public bool IsVisibleTo(Perspective perspective)
     {
         ArgumentNullException.ThrowIfNull(perspective);

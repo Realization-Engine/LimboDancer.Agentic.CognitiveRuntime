@@ -52,6 +52,10 @@ public static class GameEventWriter
         writer.WriteString("time", item.Time.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fffffff'Z'", CultureInfo.InvariantCulture));
         writer.WriteString("source", item.Source);
         writer.WriteString("type", item.Type);
+        if (item.GuidedDecisionHash is { } digest)
+        {
+            writer.WriteString("guidedDecisionHash", digest);
+        }
         if (item.RulePackage is not null)
         {
             writer.WriteString("rulePackage", item.RulePackage);

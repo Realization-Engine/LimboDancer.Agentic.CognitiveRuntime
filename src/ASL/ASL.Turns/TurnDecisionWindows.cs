@@ -16,5 +16,5 @@ public static class TurnDecisionWindows
             ["Opening tasks are external adjudications; missing evidence is not completion.",
              "Drift, WP consequences, Gusts and glider rule integration remains pending.",
              "Timing evidence is not command permission. Current eligibility, authorization and confirmation remain required.",
-             "Topic routing remains B5-R4 work. Historical evidence is read-only."]);
+             "Only the bounded Placed DC topic route is integrated. Historical evidence is read-only."]);
 }

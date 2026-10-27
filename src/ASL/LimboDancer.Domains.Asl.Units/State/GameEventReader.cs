@@ -116,7 +116,10 @@ public static class GameEventReader
         var payload = type is null ? null : ReadPayload(type, payloadElement, path + ".payload", fields, diagnostics);
         return id is null || revision is null || timeText is null || source is null || type is null || payload is null
             ? null
-            : new GameEvent(scope, id, revision.Value, time, source, type, payload, rulePackage, causes, visibility);
+            : new GameEvent(scope, id, revision.Value, time, source, type, payload, rulePackage, causes, visibility)
+            {
+                GuidedDecisionHash = fields.OptionalString(item, "guidedDecisionHash", path)
+            };
     }
 
     private static EventPayload? ReadPayload(string type, JsonElement payload, string path, JsonFields fields, List<UnitDiagnostic> diagnostics)

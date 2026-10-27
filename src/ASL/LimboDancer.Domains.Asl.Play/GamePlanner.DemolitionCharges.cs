@@ -145,6 +145,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.dc-detonate: name a DC operably Placed this Player Turn (A23.3)");
         }
 
+        if ((arguments.TryGetProperty("guideRoute", out _) || arguments.TryGetProperty("guideProfile", out _))
+            && !GuidedDcMatches(state, arguments, chargeId))
+        {
+            return Refused(scope, label, expected, "play.guide-window: stale or unavailable Placed DC route");
+        }
+
         if (state.Phase != "afph")
         {
             return Refused(scope, label, expected, "play.dc-detonate: a Placed DC detonates in its side's AFPh (A23.4)");

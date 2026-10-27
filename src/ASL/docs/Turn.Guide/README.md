@@ -1,6 +1,6 @@
 # ASL Turn Guide
 
-Current planning status: **B5-R1 through B5-R3 are implemented; three slices remain**, B5-R4 through B5-R6. Next is B5-R4 (one complete headless live topic decision route). The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and nine deferred rule-family packages, B5-D1 through B5-D9. D9 adds the ordinary core-phase rules missing from the original eight packages; it does not add a required B5 slice.
+Current planning status: **B5-R1 through B5-R4 are implemented; two slices remain**, B5-R5 and B5-R6. Next is B5-R5 (cross-profile replay and disclosure acceptance). The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and nine deferred rule-family packages, B5-D1 through B5-D9. D9 adds the ordinary core-phase rules missing from the original eight packages; it does not add a required B5 slice.
 
 All turn-guide analysis, design, phase catalogs, walkthroughs and dependency audit live in this folder.
 
@@ -82,3 +82,9 @@ B5-R3 adds durable Placed DC decision-window evidence. A specific phase occurren
 
 
 B5-R3 final verification: all 170 ASL.Turns tests pass, covering 789/789 lines and 450/450 branches (100%, no exclusions). All 22 focused Play tests, 21 focused Rules tests and 421 Units regression tests pass. Three required B5 slices remain; B5-R4 is next.
+
+
+B5-R4 connects the Placed DC topic to the existing governed detonation command. Owning-side live reads can receive a typed, state-bound route after timing and full command assessment. Preparation, confirmation, stale rejection, durable retry identity and existing defender-choice/removal follow-ups are covered by tests. Other options and pending rules remain visible. See the [R4 design](ASL%20Turn%20Phase%20Guide%20Design.md#b5-r4-one-complete-headless-placed-dc-route) and [acceptance evidence](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#116-b5-r4-implementation-and-evidence).
+
+
+B5-R4 final verification: all 178 ASL.Turns tests pass, covering 819/819 lines and 464/464 branches (100%, no exclusions). All 25 focused Play tests and 421 Units regression tests pass. The Rules predicates were unchanged; R3 Rules results remain historical evidence, not new R4 runs. Two required B5 slices remain; B5-R5 is next.

@@ -379,6 +379,7 @@ public sealed partial class BacklogPass15Tests : IDisposable
         Assert.False(Planner().Replay(legacy).HasErrors);
         var legacyGuide = await ReadCopiedDcHistory(legacy, Perspective.Side("german"));
         Assert.Equal(TurnObligationState.NotEvaluated, Assert.Single(legacyGuide.Obligations).State);
+        Assert.Empty(legacyGuide.Actions);
         Assert.Equal(TurnSupport.Pending, Assert.Single(legacyGuide.Obligations).CommandSupport);
         var interrupted = placementEvent with
         {
@@ -389,6 +390,7 @@ public sealed partial class BacklogPass15Tests : IDisposable
         };
         var interruptedGuide = await ReadCopiedDcHistory([.. loaded.Events, interrupted], Perspective.Side("german"));
         Assert.Equal(TurnObligationState.Interrupted, Assert.Single(interruptedGuide.Obligations).State);
+        Assert.Empty(interruptedGuide.Actions);
         var invalidOwner = legacy.Select(item => item.EventId == placementEvent.EventId ? item with
         {
             Payload = placementStep with

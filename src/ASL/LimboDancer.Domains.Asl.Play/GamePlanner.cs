@@ -1,3 +1,4 @@
+using ASL.Turns;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -475,6 +476,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                     Reasons = [.. plan.Reasons, $"play.result: {(won.Winner is { } winner ? $"{winner} wins at once" : "a draw")}: {won.Reason}"]
                 };
             }
+        }
+
+        if (action.Id.Value == TurnPlacedDcGuidance.ActionId && arguments.TryGetProperty("guideRoute", out _)
+            && plan.Status == GamePlanStatus.Ready && plan.Roll is { } guidedRoll)
+        {
+            var digest = GuidedDcRequestHash(arguments);
+            plan = plan with
+            {
+                Roll = guidedRoll with
+                {
+                    Build = draw => guidedRoll.Build(draw).Select((item, index) => index == 0 ? item with { GuidedDecisionHash = digest } : item).ToArray()
+                }
+            };
         }
 
         // A plan with a roll has no events until the store draws it; its outcomes are checked when they are built.
@@ -1723,6 +1737,16 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     /// </summary>
     private static bool ReusedWithOtherInputs(ActionDescriptor action, JsonElement arguments, GameEvent committed)
     {
+        if (committed.GuidedDecisionHash is { } digest)
+        {
+            return action.Id.Value != TurnPlacedDcGuidance.ActionId || GuidedDcRequestHash(arguments) != digest;
+        }
+        if (action.Id.Value == TurnPlacedDcGuidance.ActionId
+            && (arguments.TryGetProperty("guideRoute", out _) || arguments.TryGetProperty("guideProfile", out _)))
+        {
+            return true;
+        }
+
         if (action.Id.Value == "asl.game.review-placed-dc-window")
         {
             try

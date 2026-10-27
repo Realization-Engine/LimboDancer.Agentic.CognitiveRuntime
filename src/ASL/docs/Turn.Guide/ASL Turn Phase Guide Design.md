@@ -7,7 +7,7 @@ Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and 
 References: [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Implementation Plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md), [cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md), [folder index](README.md).
 
 
-Current B5 scope (2026-10-27): B5-R1 through B5-R3 are implemented; exactly three integration slices remain, B5-R4 through B5-R6, all Planned. The [finite completion backlog](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) is authoritative. B5-D1 through B5-D9 preserve later ASL.Rules work without making full rulebook execution a prerequisite for the initial UI. Historical slice sections describe the evidence at their implementation date, not additional B5 gates.
+Current B5 scope (2026-10-27): B5-R1 through B5-R4 are implemented; exactly two integration slices remain, B5-R5 and B5-R6, both Planned. The [finite completion backlog](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) is authoritative. B5-D1 through B5-D9 preserve later ASL.Rules work without making full rulebook execution a prerequisite for the initial UI. Historical slice sections describe the evidence at their implementation date, not additional B5 gates.
 
 ## 1. Design decision
 
@@ -528,3 +528,27 @@ Profile versions are `b5-r3-dc`, `b5-r3-fire`, `b5-r3-atmosphere` and `b5-work-6
 
 
 B5-R3 final verification: all 170 ASL.Turns tests pass, covering 789/789 lines and 450/450 branches (100%, no exclusions). All 22 focused Play tests, 21 focused Rules tests and 421 Units regression tests pass. Three required B5 slices remain; B5-R4 is next.
+
+
+### B5-R4: one complete headless Placed DC route
+
+`afph:placed` now has one bounded evaluator/command registration in each DC-capable profile. `TurnPlacedDcGuidance` composes typed timing and existing-command readiness into Required, Unavailable or NotEvaluated. Its registrations do not apply to thrown DC, Breach, other AFPh weapons, or the rest of A23. All 538 topics, 38 dependencies and 191 links remain present, and the nine deferred rule-family packages remain pending.
+
+**Read path.** The Play adapter first applies R3's origin, occurrence, ownership and disclosure filters. For a live owning-side read with complete timing evidence, it invokes the same full `PlanCoreAsync(DetonateDc)` assessment used by the existing command, without building its roll or writing events. No raw plan or refusal text enters the guide. A refused assessment gives a generic unavailable explanation. Missing timing or unassessed command facts remain NotEvaluated. Opposing-side, adjudicator, historical, base-profile and other-phase views receive no executable route. Adjudicator evidence is still available for review; this initial route is explicitly an owning-player route.
+
+Only the Placed DC topic is composed using the subject's ASOP 5.22A window. The snapshot's overall context stays `afph:phase`. Other topic decisions and pending explanations do not inherit a charge's opening-task review. `TurnHostGuide.Actions` provides typed `TurnPlacedDcAction` values containing an opaque token, subject, profile and the existing `asl.game.detonate-dc` action identity. The matching topic decision references that token.
+
+**State and authority.** A route token is an HMAC over scope/state stamp, owner, subject and profile/version, using a process-local key. Repeated reads in the same state are stable, but these tokens are not durable rule evidence or authorization. Restarting the host requires refreshing an uncommitted route. R3's journal evidence remains durable and can produce a fresh route after restart. Tokens reveal no raw revision, placement event ID, hidden target, or command plan. The existing play permission and confirmation gate still decides execution authority.
+
+**Consumer flow.** A trusted server supplies the authenticated perspective to `PreparePlacedDcDecisionAsync`, selecting an offered typed route and a fresh attempt ID. It may pass an optional named vehicle target, which the existing command validates. The method re-reads the current guide, verifies that the exact route remains offered, and returns command arguments, or null if the route is stale/unoffered. These arguments are for the trusted host, not the player-facing guide response. Keep them unchanged through proposal and confirmation. Submit them using `GamePlay.ProposeAsync` and then `ConfirmAsync` with `GameActions.DetonateDc` and the authenticated principal. Do not bind a client-selected side or adjudicator perspective.
+
+The existing detonation command accepts optional guide-route/profile arguments. When present, it rechecks the exact token, owner and current R3 evidence at planning, gate and commit time. A later event therefore blocks a prepared request through expected revision and route validation. An ordinary command without guide arguments retains its existing behavior; R4 does not impose external adjudication on every old engine client.
+
+**Execution and retries.** Dice, target checks, player choices, Sniper processing, fire follow-ups, removal, victory and phase closure remain in the existing command pipeline. If an attack pauses for a defender's choice, the normal Choose command owns that response; the guide does not detonate again or take over the defender's authority. The review expires on intervening events and the route disappears. The existing follow-up eventually removes the charge and resolves its obligation.
+
+For guided commits only, the first event carries optional `GuidedDecisionHash` envelope metadata. This canonical digest binds action, game, attempt, expected revision, charge, vehicle selection, owner, profile and opaque route. It is request identity, not an ASL fact. Existing journals omit it and round-trip unchanged. Identical committed retries return Replay without dice; changed inputs or another action cannot reuse that committed attempt. A retry can use the retained original arguments after process restart because it compares the persisted digest, rather than reopening a timing window. A fresh attempt must obtain a current offered route.
+
+**Versions and remaining work.** The DC-capable profiles are `b5-r4-dc`, `b5-r4-fire`, `b5-r4-atmosphere` and `b5-work-7`; base remains unchanged. R5 owns the broader cross-profile replay/disclosure acceptance matrix, and R6 owns final B5 acceptance and the UI handoff. Full opening-rule automation, unsupported A23 variants and all other deferred rules remain visible and pending.
+
+
+B5-R4 final verification: all 178 ASL.Turns tests pass, covering 819/819 lines and 464/464 branches (100%, no exclusions). All 25 focused Play tests and 421 Units regression tests pass. The Rules predicates were unchanged; R3 Rules results remain historical evidence, not new R4 runs. Two required B5 slices remain; B5-R5 is next.

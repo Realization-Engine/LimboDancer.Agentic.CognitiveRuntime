@@ -12,6 +12,7 @@ public sealed record TurnHostGuide(TurnGuideSnapshot Guide, ImmutableArray<TurnH
     TurnPhaseCloseAssessment PhaseClose)
 {
     public TurnGuideProfile Profile { get; init; } = TurnGuideProfiles.Get("existing-engine");
+    public ImmutableArray<TurnPlacedDcAction> Actions { get; init; } = [];
     public ImmutableArray<TurnDecisionWindow> DecisionWindows { get; init; } = [];
     public ImmutableArray<TurnWorkDisclosure> Work { get; init; } = [];
     public ImmutableArray<string> WorkProgressGaps { get; init; } = [];
@@ -28,7 +29,7 @@ public sealed record TurnHostGuide(TurnGuideSnapshot Guide, ImmutableArray<TurnH
 public sealed partial class GamePlanner
 {
     private static readonly TurnGuideCatalog GuideCatalog = TurnGuideCatalog.Load();
-    private static readonly TurnGuideService GuideReader = new(GuideCatalog, []);
+    private static readonly TurnGuideService GuideReader = new(GuideCatalog, TurnPlacedDcGuidance.Registrations);
 
     /// <summary>
     /// Server-side read. The caller must supply its authenticated perspective, as for ViewOf; never bind an untrusted
@@ -87,10 +88,13 @@ public sealed partial class GamePlanner
         var close = historical
             ? TurnPhaseClose.Describe(new(TurnClosePlanStatus.Ready, false, false, [], []), perspective.IsAdjudicator, true)
             : await AssessTurnPhaseCloseAsync(state.Stamp, perspective, [], cancellationToken).ConfigureAwait(false);
-        return new(guide, obligations, close)
+        var decisionWindows = profile.IntegratedDependencies.Contains("placedDc") ? ReadDecisionWindows(history, revision, perspective, historical) : [];
+        var routed = await AddPlacedDcRouteAsync(guide, context, state, perspective, decisionWindows, cancellationToken).ConfigureAwait(false);
+        return new(routed.Guide, obligations, close)
         {
             Profile = profile,
-            DecisionWindows = profile.IntegratedDependencies.Contains("placedDc") ? ReadDecisionWindows(history, revision, perspective, historical) : [],
+            DecisionWindows = decisionWindows,
+            Actions = routed.Actions,
             Work = profile.Id == "existing-engine-work-v1" ? ReadWork(history, revision, perspective) : [],
             // Adjudicated work does not certify missing packing or supply rules.
             WorkProgressGaps = profile.Id == "existing-engine-work-v1"
