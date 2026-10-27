@@ -25,6 +25,8 @@ The preview is a frozen copy of the conversation mock-up, including its content 
 
 Projects: [ASL.Turns](../../ASL.Turns/ASL.Turns.csproj) and [ASL.Turns.Tests](../../tests/ASL.Turns.Tests/ASL.Turns.Tests.csproj). The initial library loads all 538 topics and 38 dependency definitions without UI services. Live obligation execution remains planned.
 
-B1 adds typed capabilities and stable timing references. Run `./src/ASL/tests/ASL.Turns.Tests/Test-Coverage.ps1` from the repository root to enforce 100% line and branch coverage for ASL.Turns. Current B2 verification: 88 passing tests, 336/336 lines and 176/176 branches.
+B1 adds typed capabilities and stable timing references. Run `./src/ASL/tests/ASL.Turns.Tests/Test-Coverage.ps1` from the repository root to enforce 100% line and branch coverage for ASL.Turns. Current B3 verification: 116 passing tests, 425/425 lines and 234/234 branches; 28 focused Rules tests also pass.
 
 B2 adds `TurnGuideService.Describe`, an immutable snapshot composer over authorized host verdicts. See design section 4 and implementation plan section 5 for the implemented API and its trust boundary.
+
+B3 adds internal `TurnObligationService.Assess` with Rules-owned timing, evidenced lifecycle state and prerequisite ordering. See design section 6 and implementation plan section 6 for its admitted families, pending work and required host disclosure.

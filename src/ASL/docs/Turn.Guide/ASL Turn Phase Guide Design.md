@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and `ASL.Turns.Tests` now provide the tested headless reference catalog, typed capability contracts, validated stable timing schema and pure B2 guidance composition. Live evaluation, obligation scheduling and command integration below remain proposed. UI components are deferred until the back-end contracts and behavior are proven.
+Status: Backend-first design, reopened at the user's direction. `ASL.Turns` and `ASL.Turns.Tests` now provide the tested headless reference catalog, typed capability contracts, validated stable timing schema, pure B2 guidance composition and a bounded B3 obligation assessment slice. Live host adapters, additional obligation families and command integration below remain proposed. UI components are deferred until the back-end contracts and behavior are proven.
 
 References: [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Implementation Plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md), [cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md), [folder index](README.md).
 
@@ -25,7 +25,7 @@ This design supersedes the earlier proposal to house the catalog and guide model
 | Existing Play | Adapt state/history into facts, authenticated perspective policy, existing planning/proposal/confirmation, event construction and commit | Duplicate rules or an alternative guide-only write path |
 | Future renderer/MapStudio | Display snapshots, map selections, private browsing/consideration and route requests | Option discovery, expiry calculations, legality, cleanup or phase advancement semantics |
 
-Intended compile-time direction: `MapStudio -> Play -> ASL.Turns -> Rules`, with existing `Play -> Units -> Rules`. `ASL.Turns` must not reference Play, Units or MapStudio. When the first executable evaluator is implemented, add its Rules reference; the initial catalog-only library currently needs no project references. Never make Rules call ASL.Turns to resolve a cycle.
+Intended compile-time direction: `MapStudio -> Play -> ASL.Turns -> Rules`, with existing `Play -> Units -> Rules`. `ASL.Turns` must not reference Play, Units or MapStudio. B3 adds the Rules project reference because obligation assessment now calls rule-owned timing predicates. The initial B0 catalog required no project references. Never make Rules call ASL.Turns to resolve a cycle.
 
 Play translates existing state types into narrow facts. Rule fact/verdict records belong to Rules when their meaning is rule-specific. ASL.Turns owns guide request/result and obligation coordination records. This allows reuse of the same Rules predicates by projector validation and guide evaluation without duplicating them.
 
@@ -41,7 +41,7 @@ Implemented in this revision:
 
 The current loader recognizes the existing Rally schema 2 and other schema 1 documents. It validates group/term references, page bounds, dependency targets and available ASOP ledger links. B1 imports all ten Rally steps from the reviewed walkthrough into its JSON ledger. Legacy inputs without a ledger remain readable by the catalog loader, but do not satisfy the current timing manifest. Numeric group positions and free-text status notes remain authored input, not final stable timing IDs or capability verdicts.
 
-Not implemented: live Rules/Play adapters, verified production capability registrations, rule-family evaluators, instantiated obligations, command adapters, all-phase closure validation, historical migrations or any UI component. The current tests prove the reference foundation, not live rules correctness.
+B3 now derives obligation instances from supplied evidence and evaluates four timing families in Rules. Not implemented: live Play/Units adapters, governed command integration, all-family timing coverage, phase-close validation, historical migrations or any UI component. The tests prove the reference/composition contracts and the bounded timing slice; full live-game command and replay integration remain unproven.
 
 ## 4. Backend API before UI work
 
@@ -166,6 +166,39 @@ Required proof cases:
 | CC | Location/round, simultaneous commitments, sequential result windows and concealed information. |
 
 Optional expiring opportunities and personal reminders are not mandatory obligations. A failed attempt can be resolved, while a successful attack with retained ROF can leave another opportunity. Returning an item as Resolved requires domain evidence, never a UI checkbox.
+
+### B3 implemented slice, 2026-10-27
+
+`TurnObligationService.Assess(read, candidates)` derives an immutable assessment from supplied domain evidence. The new compile-time reference is `ASL.Turns -> LimboDancer.Domains.Asl.Rules`; neither Rules nor Turns references Play or UI. `TurnObligationRules.Evaluate` owns the timing/lifecycle predicates. It reuses `ScenarioA1SequenceProjection.StunEnds`, `LosesCx` and `CxRests`, preserving existing projector ownership of mutations.
+
+This is an internal host API, not a viewer-safe endpoint. Candidate subjects, origins, dependency graphs and receipts may contain hidden information. Do not attach its raw results to a B2 snapshot or send them to a renderer. B4 must authenticate the requester, scope/version the facts and project permitted data, including aggregate counts and missing-fact reasons, through the established disclosure policy.
+
+| Family | Implemented timing assessment | Boundary and limit |
+|---|---|---|
+| Stun/Recall | Normal Player Turn cleanup using the existing Rules consequence predicate; overdue at a later Player Turn | Ordinary status cleanup at 8.43B, after combat/work. Missing markers without resolution evidence return NotEvaluated; no duplicate flip or CE restoration. |
+| CX | Immediate broken/berserk release; subsequent friendly Player Turn PFPh completion/Opportunity Fire, TI, MPh release and overdue later phases | Retain permanent owner identity and the originating CX record. Counter removal does not establish renewed Double Time permission. No new mutation path is added. |
+| Trip Flare | MPh origin waits through ordinary CCPh cleanup until concealment; RtPh/APh/CCPh origin waits until the next Player Turn AFPh end | Unsupported activation phases stay NotEvaluated. This evaluates expiry of an already-qualified activation, not activation eligibility or illumination attacks. |
+| Non-Flame Clearance | Qualified MPh/DFPh declaration waits until 8.42B; eligibility loss interrupts, unknown eligibility stays NotEvaluated | Before ordinary Pin/TI removal. Eligibility input must describe the task's full participation history, including disqualifying interruptions, not merely current markers. No Clearance roll or task-specific eligibility engine is introduced. |
+
+The source basis is the existing [cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md): A4.51-.52, D5.34/.341, E1.95-.951, B24.7-.8 and ASOP 8.42B/8.43B. The slice assumes a qualifying recorded origin within those reviewed profiles. SSR/module exceptions and additional task conditions remain source/profile-gated by the future host adapter.
+
+Every assessment retains all **38 dependency definitions**. The four admitted families report Partial timing support; every other family reports Pending and NotEvaluated. Command support is Pending for every obligation until B4 proves its existing governed route. The 538-topic reference catalog and its pending notes remain unchanged. No registration claims full ASL or scenario coverage.
+
+`TurnObligationKey` is a structural identity: game, originating event, definition, subject and occurrence. It is independent of read revision and display phase. Candidate facts retain owner side separately from current decision owner, origin position/sequence, subject facts, progress receipts, optional terminal evidence and prerequisite keys. Multiple instances of one definition never share an identity merely because they concern the same phase.
+
+`TurnRulePosition` carries Game Turn, absolute Player Turn ordinal, permanent phasing side, phase and semantic checkpoint. These clocks are independent; two Player Turns do not count as two completed Game Turns. Rules validates known phases/checkpoints, positive clocks, origin not after evaluation, and consistent same-Player-Turn phase/side/Game Turn facts. Checkpoints are typed semantic events, not numeric ASOP sorting or wall-clock timers. The host must supply a coherent domain-history position, including checkpoint ordering within a phase.
+
+The evaluator returns a typed `TurnRuleDeadline` alongside its verdict: PlayerTurnCleanup, OwnerReleaseEvents, AfterConcealment, NextAdvancingFireEnd or ClearanceAfterCombat, with earliest Player Turn and permanent owner. These Rules-owned descriptions refine the B1 proposed due payloads for this slice; they are not generic scheduling commands. `Scheduled`, `Due`, `Resolved`, `Interrupted`, `Cancelled` and `NotEvaluated` remain separate states. Due is an assessment, never permission to mutate.
+
+Resolution, interruption and cancellation receipts require a domain event ID and an in-range sequence. Marker absence cannot substitute for a receipt. Known terminal evidence takes precedence over current marker changes, so provenance and release history survive reload. Missing legacy origins stay NotEvaluated rather than receiving invented creation turns. For Clearance, the supplied eligibility-through-history may also identify an interruption before a terminal receipt is available; a later adapter must not erase that interruption when markers clear.
+
+Progress is a list of evidenced completed Game-Turn intervals tied to the originating task. Validation rejects duplicate interval numbers, pre-origin/future progress and progress after terminal evidence. Repeated reads, another Player Turn in the same Game Turn and replay do not increment it. Interrupted work retains prior receipts. Packing/replenishment duration semantics are still pending: retaining an interval receipt is not an evaluator for those unsupported rules.
+
+The coordinator deterministically orders prerequisites before dependents, rejects missing prerequisite instances and cycles, and preserves stable ordering for unrelated origins. A dependent remains waiting unless each prerequisite is resolved. Interrupted or cancelled prerequisites do not silently satisfy a required consequence. Parent resolution before its child resolution evidence is rejected. The prerequisites themselves are trusted rule-adapter facts; B3 does not infer arbitrary cross-rule dependencies from prose. Clearance-before-Stun and child-before-parent tests demonstrate coordination, not automatic construction of every cleanup graph.
+
+There is no mutable obligation store, event writer, background scheduler, automatic cleanup or new Units event in this revision. Save/reload tests round-trip the supplied evidence contract and reconstruct the same result. They prove deterministic derivation and no duplicate read effects, not end-to-end Units save migration. Existing projector cleanup remains its only mutation owner; B4 must establish shared phase-close assessment and commit/replay parity before wiring this slice into play.
+
+Validation: **116 ASL.Turns tests pass, 425/425 executable lines and 234/234 branches covered (100% each)**. The focused Rules run also passes **28 tests**, including the new timing boundaries and existing sequence regressions. Run the existing Turns coverage gate and the Rules tests filtered to `TurnObligationRulesTests|ScenarioA1SequenceRulesTests`. Coverage scope remains the entire ASL.Turns assembly without source exclusions; this is not a claim of 100% coverage for the much larger existing Rules assembly.
 
 ## 7. Replay, nested effects and persistence
 

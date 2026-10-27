@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first plan. B0, B1 contracts and B2 headless guidance composition are implemented and tested. Live Rules adapters and obligation stages remain planned. UI work is intentionally last.
+Status: Backend-first plan. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 host/command integration and further families remain planned. UI work is intentionally last.
 
 References: [Design](ASL%20Turn%20Phase%20Guide%20Design.md), [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md).
 
@@ -21,7 +21,7 @@ Run focused tests only for changed behavior and direct dependencies. Broaden whe
 | B0, implemented | New library/test projects, headless immutable reference catalog, relocated documentation and saved mock-up | Reviewed inventories | Complete baseline loads without UI/Play dependencies; focused tests pass. |
 | B1, contracts implemented | Stable identity/timing manifest, contextual term IDs and typed capabilities | B0 | No prose parsing for legality, unregistered capability is Not evaluated, all IDs/links traceable. |
 | B2, implemented | Pure guidance request/result and read composition | B1 | Fixed facts yield deterministic snapshots; no writes, dice or UI state. |
-| B3 | Rule-owned timing and obligation lifecycle | B2 and relevant Rules families | Due, interrupt, resolve and retained history proved at exact boundaries. |
+| B3, bounded slice implemented | Rule-owned timing and obligation lifecycle for Stun, CX, Trip Flare and non-Flame Clearance | B2 and relevant Rules families | Due, interrupt, resolve and retained history proved at exact boundaries. |
 | B4 | Play/Units adapters and shared phase-close assessment | B2-B3 | Existing command validation and guidance agree without duplicate cleanup; disclosure and stale checks pass. |
 | B5 | Durable missing facts, replay and profile expansion | B4, per rule pass | New families have source, Rules, persistence, replay and visibility evidence. |
 | U1, deferred | Reference and Live Blazor consumers | Backend readiness gate | UI renders backend results and routes intentions without rule calculations. |
@@ -58,13 +58,15 @@ Snapshots do not reveal internal stamps or other viewers' verdict data. The host
 
 The required coverage gate passes **88 tests, 336/336 lines and 176/176 branches**. Tests prove full reference inventory, pending visibility, required/optional distinction, historical read-only output, unknown-subject behavior, stale scopes, deterministic reads, input immutability and hidden-world equivalence. Use `./src/ASL/tests/ASL.Turns.Tests/Test-Coverage.ps1` to reproduce and enforce both 100% thresholds.
 
-## 6. B3: Typed clocks and obligation instances
+## 6. B3: Typed clocks and obligation instances, bounded slice implemented
 
-Start with representative existing Stun and CX facts, then a late Trip Flare and a delayed Clearance task as their Rules support becomes available. These exercise end-turn, next-friendly-phase, origin-dependent and declaration-to-resolution clocks. Preserve the remaining 38 definitions as visible reference content while their instance evaluators are absent.
+`ASL.Turns` now references Rules and calls `TurnObligationRules` through `TurnObligationService.Assess`. Rules evaluates Stun/CX release, activation-dependent Trip Flare expiry and qualified non-Flame Clearance timing. It uses existing Stun/CX predicates where available. The source audit supplies the additional timing boundaries; no projector mutation is duplicated.
 
-Implement stable origin-based instance identity, owner versus decision owner, parent effects, typed due specification, progress, interruption and resolution evidence. Rules owns the predicates; ASL.Turns coordinates their results. Do not parse timestamps or execution logic out of reference prose.
+The evidence contract includes stable origin identity, owner and decision owner, typed positions/deadlines, completed-interval receipts, terminal outcome evidence and prerequisite keys. Read-only coordination validates chronology, detects cycles/missing prerequisites, orders child effects before dependents and rejects parent resolution before child evidence. Missing origins and unsupported families remain NotEvaluated. All 38 definitions and all 538 reference topics remain available; command support is Pending until governed integration is proven.
 
-Tests: immediate versus phase-end order; same Player Turn versus next friendly phase; two Player Turns per Game Turn; interrupted interval after a completed interval; two instances of one definition; surviving provenance after marker removal; repeated read/replay; nested effect before parent continuation. Use the audit examples and the immediately preceding/following windows as positive and negative cases.
+The assessment is internal and may contain hidden facts. B4 must provide authenticated projection, origin extraction, coherent as-of history, task-specific eligibility and existing-command enforcement. The present save/reload tests exercise the evidence contract, not Units migration. Duration rules for packing/replenishment are still pending even though partial progress receipts can be retained.
+
+Validation: **116 tests; 425/425 lines and 234/234 branches for ASL.Turns**. The focused Rules suite passes **28 tests**, covering new timing boundaries and existing sequence behavior. Tests include Stun versus next-RPh timing, CX owner-relative release and provenance, early/late flares, Clearance before cleanup, interruption with retained progress, Game Turn versus Player Turn clocks, distinct instances, prerequisite order, terminal chronology, legacy gaps, deterministic replay and repeated reads.
 
 ## 7. B4: Adapters, disclosure and closure parity
 
@@ -101,4 +103,4 @@ Only then build a thin consumer using existing site styling and action panels. C
 
 `ASL.Turns.Tests` owns content, coordination and backend contracts. Existing Rules tests own rule verdicts; Units tests own events/projection/replay; Play tests own governed command enforcement and adapters. Add renderer tests only at U1. Run the narrow project/class filters relevant to each change, with no blanket whole-solution test requirement.
 
-Next work: B3's rule-owned timing and obligation lifecycles, followed by B4 adapters and phase-close parity. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
+Next work: B4 adapters, disclosure and shared phase-close parity for the admitted B3 slice, then additional rule-family proofs. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.

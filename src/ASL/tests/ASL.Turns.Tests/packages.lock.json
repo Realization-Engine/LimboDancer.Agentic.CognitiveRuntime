@@ -100,7 +100,19 @@
         }
       },
       "asl.turns": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Domains.Asl.Rules": "[1.0.0, )"
+        }
+      },
+      "limbodancer.abstractions": {
         "type": "Project"
+      },
+      "limbodancer.domains.asl.rules": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Abstractions": "[1.0.0, )"
+        }
       }
     }
   }
