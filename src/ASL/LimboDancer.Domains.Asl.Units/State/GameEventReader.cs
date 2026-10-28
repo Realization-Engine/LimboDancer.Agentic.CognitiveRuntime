@@ -1324,8 +1324,9 @@ public static class GameEventReader
                 "rider" => ContainmentRole.Rider,
                 "in-fortification" => ContainmentRole.InFortification,
                 "crew" => ContainmentRole.Crew,
+                "animal-pack" => ContainmentRole.AnimalPack,
                 null => (ContainmentRole?)null,
-                var other => Invalid<ContainmentRole>(diagnostics, $"'{other}' is not passenger, rider, crew, or in-fortification.", positionPath),
+                var other => Invalid<ContainmentRole>(diagnostics, $"'{other}' is not passenger, rider, crew, in-fortification, or animal-pack.", positionPath),
             };
             return role is null ? null : new ContainedPosition(container, role.Value);
         }

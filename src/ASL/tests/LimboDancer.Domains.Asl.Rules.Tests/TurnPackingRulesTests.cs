@@ -7,6 +7,34 @@ public sealed class TurnPackingRulesTests
     private static readonly TurnPackingFacts Eligible = new(TurnPackingWeapon.Gun, true, true, true, true, true, true,
         true, true, null, true, true, true, true);
 
+    [Fact]
+    public void LoadStructureRequiresKnownWeaponCapabilityAndOneOwnDesignatedSquadMule()
+    {
+        var mule = new TurnHorseIdentity(TurnHorseSize.Squad, true, "scenario-mule");
+        foreach (var weapon in new[] { TurnPackingWeapon.Gun, TurnPackingWeapon.OtherMortar, TurnPackingWeapon.Mortar76To82,
+            TurnPackingWeapon.LightMortar, TurnPackingWeapon.MediumMachineGun, TurnPackingWeapon.HeavyMachineGun, TurnPackingWeapon.InfantryGun37 })
+        {
+            Assert.Null(TurnPackingRules.LoadRefusal(weapon, true, mule, true, true, false));
+        }
+        Assert.Null(TurnPackingRules.LoadRefusal(TurnPackingWeapon.Mortar76To82, null, mule, true, true, false));
+        Assert.NotNull(TurnPackingRules.LoadRefusal(TurnPackingWeapon.Gun, null, mule, true, true, false));
+        Assert.NotNull(TurnPackingRules.LoadRefusal(TurnPackingWeapon.Gun, false, mule, true, true, false));
+        Assert.NotNull(TurnPackingRules.LoadRefusal(TurnPackingWeapon.Unknown, true, mule, true, true, false));
+        Assert.NotNull(TurnPackingRules.LoadRefusal((TurnPackingWeapon)99, true, mule, true, true, false));
+        Assert.NotNull(TurnPackingRules.LoadRefusal(TurnPackingWeapon.Gun, true, null, true, true, false));
+        Assert.NotNull(TurnPackingRules.LoadRefusal(TurnPackingWeapon.Gun, true, mule with
+        {
+            Mule = false
+        }, true, true, false));
+        Assert.NotNull(TurnPackingRules.LoadRefusal(TurnPackingWeapon.Gun, true, mule with
+        {
+            Size = TurnHorseSize.HalfSquad
+        }, true, true, false));
+        Assert.NotNull(TurnPackingRules.LoadRefusal(TurnPackingWeapon.Gun, true, mule, false, true, false));
+        Assert.NotNull(TurnPackingRules.LoadRefusal(TurnPackingWeapon.Gun, true, mule, true, false, false));
+        Assert.NotNull(TurnPackingRules.LoadRefusal(TurnPackingWeapon.Gun, true, mule, true, true, true));
+    }
+
     [Theory]
     [InlineData(TurnPackingWeapon.OtherMortar, 9, false, 3)]
     [InlineData(TurnPackingWeapon.Gun, 10, false, 3)]

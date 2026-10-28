@@ -5271,7 +5271,12 @@ public static partial class GameProjector
                 if (item.Position is ContainedPosition contained)
                 {
                     var container = state.Find(contained.Container);
-                    var needs = contained.Role == ContainmentRole.InFortification ? "asl:fortification" : "asl:vehicle";
+                    var needs = contained.Role switch
+                    {
+                        ContainmentRole.InFortification => "asl:fortification",
+                        ContainmentRole.AnimalPack => "asl:horse",
+                        _ => "asl:vehicle"
+                    };
                     if (container is null || container.Status != InstanceStatus.Active)
                     {
                         Error("UNIT-STATE-011", $"'{item.Id}' is in '{contained.Container}', which is not active in the game.");
@@ -5279,6 +5284,10 @@ public static partial class GameProjector
                     else if (!vocabulary.IsA(container.Kind, needs))
                     {
                         Error("UNIT-STATE-011", $"'{item.Id}' is {contained.Role} in a {container.Kind}, which is not a {needs}.");
+                    }
+                    else if (contained.Role == ContainmentRole.AnimalPack)
+                    {
+                        CheckAnimalPack(state, item, container);
                     }
                     else if (InCycle(state, item.Id))
                     {
@@ -5319,6 +5328,30 @@ public static partial class GameProjector
                         Error("UNIT-STATE-014", $"'{prisoner.Id}' and its custodian '{custodian.Id}' are in different Locations (A20.5, p. 87).");
                     }
                 }
+            }
+        }
+
+        private void CheckAnimalPack(GameState state, IGameObject item, IGameObject container)
+        {
+            if (state.SetupClosed || item is not EquipmentInstance equipment)
+            {
+                Error("UNIT-PACK-004", "Animal-Pack containment is an equipment setup assertion; live loading remains pending.");
+                return;
+            }
+            var definition = equipment.Definition is { } reference
+                ? catalogs.FirstOrDefault(source => source.Identity == reference.Catalog
+                    && (source.Publication == CatalogPublication.Published || state.Synthetic && source.Publication == CatalogPublication.Synthetic))?.Definition(reference.Definition) : null;
+            var weapon = definition is null ? Rules.TurnPackingWeapon.Unknown : Rules.TurnPackingRules.ClassifyWeapon(equipment.Kind,
+                definition.Printed("front", "asl:gun-type") is { State: PrintedState.Printed } type ? type.Value?.Text : null,
+                definition.Printed("front", "asl:caliber") is { State: PrintedState.Printed } caliber ? caliber.Value?.Number : null,
+                definition.Printed("front", "asl:size") is { State: PrintedState.Printed } size ? size.Value?.Text : null);
+            var note = definition?.Printed("front", "asl:animal-pack") is { State: PrintedState.Printed, TraitPresent: true };
+            var soleLoad = state.Objects.Count(other => other.Status == InstanceStatus.Active
+                && other.Position is ContainedPosition { Role: ContainmentRole.AnimalPack } load && load.Container == container.Id) == 1;
+            if (Rules.TurnPackingRules.LoadRefusal(weapon, note, (container as EntityInstance)?.Horse, soleLoad,
+                item.Side is not null && item.Side == container.Side, equipment.Holding is not null) is { } refusal)
+            {
+                Error("UNIT-PACK-004", refusal);
             }
         }
 

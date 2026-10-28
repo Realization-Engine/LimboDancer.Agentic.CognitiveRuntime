@@ -58,6 +58,27 @@ public static class TurnPackingRules
         _ => TurnPackingWeapon.Unknown
     };
 
+    /// <summary>G10.1/.2/.7 structural load requirements. This neither authorizes loading nor proves assembly, accompaniment or an ASOP work step.</summary>
+    public static string? LoadRefusal(TurnPackingWeapon weapon, bool? gunAllowedByNoteOrDyo,
+        TurnHorseIdentity? mule, bool soleLoad, bool sameOwner, bool separatelyHeld)
+    {
+        if (mule is not { Size: TurnHorseSize.Squad, Mule: true })
+        {
+            return "An Animal-Pack load requires a designated squad Mule (G10.1-.2).";
+        }
+        if (!soleLoad || !sameOwner || separatelyHeld)
+        {
+            return "A Mule carries one own Pack Gun or listed SW, without a separate holding relationship (G10.2/.7).";
+        }
+        return weapon switch
+        {
+            TurnPackingWeapon.Mortar76To82 or TurnPackingWeapon.LightMortar or TurnPackingWeapon.MediumMachineGun
+                or TurnPackingWeapon.HeavyMachineGun or TurnPackingWeapon.InfantryGun37 => null,
+            TurnPackingWeapon.Gun or TurnPackingWeapon.OtherMortar when gunAllowedByNoteOrDyo == true => null,
+            _ => "The weapon's Animal-Pack capability must be established by G10.2/.61/.7 or an authoritative note."
+        };
+    }
+
     /// <summary>Combine the host's disclosed actor binding with the rule facts; a missing actor is unknown, not a false permission.</summary>
     public static TurnPackingVerdict EvaluateActors(TurnPackingFacts facts, bool? actorsBound)
     {

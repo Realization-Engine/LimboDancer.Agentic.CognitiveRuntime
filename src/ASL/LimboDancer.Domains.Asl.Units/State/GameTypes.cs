@@ -383,6 +383,9 @@ public enum ContainmentRole
     /// and attacked only as the vehicle's crew; it leaves again, as itself, when the vehicle is next Abandoned.
     /// </summary>
     Crew,
+
+    /// <summary>A Gun or listed SW physically loaded on a designated squad Mule (G10.2/.7). This is not Personnel possession.</summary>
+    AnimalPack,
 }
 
 /// <summary>Inside another instance; its location is the container's (ASL-UNIT-025).</summary>

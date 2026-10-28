@@ -7,7 +7,14 @@ namespace LimboDancer.Domains.Asl.Units.State;
 /// <summary>Revision-bound, disclosed candidate facts. Missing timing, terrain or load evidence cannot become execution permission.</summary>
 public sealed record TurnPackingActorRead(StateStamp Stamp, TurnPackingActors Actors, string? Owner,
     TurnPackingWeapon Weapon, int? ManhandlingNumber, bool Night, bool? ActorsBound,
-    TurnPackingFacts Facts, TurnPackingVerdict Verdict, int? RequiredGameTurns);
+    TurnPackingFacts Facts, TurnPackingVerdict Verdict, int? RequiredGameTurns)
+{
+    /// <summary>Disclosed physical load only. Null does not establish that the weapon is unloaded.</summary>
+    public string? LoadedOnMule
+    {
+        get; init;
+    }
+}
 
 /// <summary>Reads G10 actor facts from actual visible counters and pinned catalog definitions. No writes, openings, load state or adjudications are invented.</summary>
 public static class TurnPackingActorReader
@@ -39,10 +46,15 @@ public static class TurnPackingActorReader
             : weapon is not null && mule is { Kind: "asl:horse" } && personnel is not null && vocabulary.IsA(personnel.Kind, "asl:personnel")
                 && weapon.Status == InstanceStatus.Active && mule.Status == InstanceStatus.Active && personnel.Status == InstanceStatus.Active
                 && weapon.Side is not null && weapon.Side == mule.Side && weapon.Side == personnel.Side;
+        var loadedOn = weapon?.Position is ContainedPosition { Role: ContainmentRole.AnimalPack } load ? load.Container : null;
+        bool? available = mule is { Kind: "asl:horse" }
+            && shown.Any(item => item.Id != actors.Weapon && item.Position is ContainedPosition { Role: ContainmentRole.AnimalPack } other && other.Container == actors.Mule)
+                ? false : loadedOn == actors.Mule && mule is { Kind: "asl:horse" } ? true : null;
         // G10.2 possession while Animal-Packed depends on accompaniment. Legacy PackedGuns alone cannot identify a Mule or prove that relationship.
         if (bound == true)
         {
-            bound = weapon!.Holding is not { } holding ? null : holding.Holder == actors.Personnel
+            bound = loadedOn is not null ? loadedOn == actors.Mule ? null : false
+                : weapon!.Holding is not { } holding ? null : holding.Holder == actors.Personnel
                 && holding.Role == (weapon.Kind == "asl:gun" ? HoldingRole.Manned : HoldingRole.Possessed);
         }
         bool? colocated = null;
@@ -62,7 +74,7 @@ public static class TurnPackingActorReader
         var facts = new TurnPackingFacts(weaponClass, canPackByNote,
             view.Phase != "rph" || view.PhasingSide != state.FirstSide ? false : null,
             colocated, horse?.Mule, horse is { Size: not TurnHorseSize.Unknown } ? horse.Size == TurnHorseSize.Squad : null,
-            null, personnel is not null ? vocabulary.IsA(personnel.Kind, "asl:crew") : null,
+            available, personnel is not null ? vocabulary.IsA(personnel.Kind, "asl:crew") : null,
             weaponDefinition is not null && personnelDefinition is not null ? weaponDefinition.Nationality == personnelDefinition.Nationality : null,
             null, personnel is not null ? Boolean(GameState.GoodOrder(personnel, vocabulary)) : null,
             personnel is not null ? Negate(Boolean(GameState.Condition(personnel, Conditions.Pinned))) : null,
@@ -76,7 +88,10 @@ public static class TurnPackingActorReader
             weapon is not null && (GameState.Condition(weapon, Conditions.Dismantled) == ConditionState.True
                 || GameState.Condition(weapon, "asl:limbered") == ConditionState.True) ? true : null);
         return new(view.Stamp, actors, weapon?.Side, weaponClass, number, state.Night, bound, facts,
-            TurnPackingRules.EvaluateActors(facts, bound), TurnPackingRules.RequiredGameTurns(weaponClass, number, state.Night));
+            TurnPackingRules.EvaluateActors(facts, bound), TurnPackingRules.RequiredGameTurns(weaponClass, number, state.Night))
+        {
+            LoadedOnMule = loadedOn
+        };
     }
 
     private static UnitDefinition? Definition(DefinitionReference? reference, string? kind, bool synthetic, IReadOnlyList<UnitCatalog> catalogs)

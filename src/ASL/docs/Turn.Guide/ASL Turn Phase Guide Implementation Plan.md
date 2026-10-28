@@ -533,3 +533,10 @@ Horse counters now have typed setup identities in Units, including explicit unkn
 ### D3.2 progress: disclosed actor facts (2026-10-28)
 
 The Units adapter now reads actual visible actor identities, possession, nationality, status and pinned counter data into Rules-owned packing classification and eligibility. Work-step, terrain, load, SW qualification and unresolved assembly facts remain unknown. Opponent reads cannot distinguish a hidden actor from a missing one. All 446 Units tests, 67 focused Rules tests and 183 ASL.Turns tests pass; ASL.Turns retains 100% line/branch coverage. D3.2 remains In progress, with no new live command or profile admitted.
+
+
+### D3.2 progress: physical Mule load relationships (2026-10-28)
+
+Units now persists and replays a separate `animal-pack` containment role for an actual Gun/SW on a designated squad Mule. Rules checks weapon capability and single-load structure; disclosed reads retain unknown accompaniment, terrain, opening and empty-capacity facts. Loaded setups still cannot enter live play or close the phase. D3.2 remains In progress at 2/36 complete overall. The detailed design and later-rules plan preserve the assembly, work-step, atomic-effect and D3.3 consequence requirements, with all pending rules visible.
+
+Validation: all 457 Units tests pass, including 11 new load cases. All 68 focused packing/work Rules tests and both unloaded/loaded setup-to-guide phase-close tests pass. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered (100%, no exclusions). No live Studio process, ordinary dice or existing game records were changed.

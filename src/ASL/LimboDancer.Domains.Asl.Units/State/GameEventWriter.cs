@@ -1384,6 +1384,7 @@ public static class GameEventWriter
                     ContainmentRole.Passenger => "passenger",
                     ContainmentRole.Rider => "rider",
                     ContainmentRole.Crew => "crew",
+                    ContainmentRole.AnimalPack => "animal-pack",
                     _ => "in-fortification",
                 });
                 break;
