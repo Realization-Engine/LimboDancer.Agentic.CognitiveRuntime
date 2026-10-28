@@ -2330,7 +2330,7 @@ Turns tasks that reach this pass from another: D5.4 (pass 145) accepts airborne 
 
 **Pass 175: Transport and unusual vehicles** (new; 107 rows of the inventory). Counters: a wagon; motorcycles in three sizes and bicycles; an amphibian and a DD tank; an Aerosan; a trailer and a portee vehicle; an Ammo Supply counter. Needs first: 125 (water) for D16; 105 (Impulse Movement) for E11; 95 (snow terrain) for D17; 65 (Riders) for D15 and D17.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 108 rows: 1 partly, 107 not built. Claims: 108 open. A Turns calculator on 6 rows. Wiring: 0 of 108. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 108 rows: 1 partly, 107 not built. Claims: 107 open, 1 claimed (owners: proving-slice (Claude)). A Turns calculator on 6 rows. Wiring: 0 of 108. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
