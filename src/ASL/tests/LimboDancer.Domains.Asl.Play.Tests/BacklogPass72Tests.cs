@@ -284,14 +284,18 @@ public sealed class BacklogPass72Tests : IDisposable
         Assert.Equal("dfph", Current.Phase);
         var choice = Current.Choice!;
         Assert.Equal(($"{ScenarioA1ChargeCalculator.HardeningChoice}:g1", ChoicePending.BattleHardening, "german"), (choice.Key, choice.Kind, choice.Side));
-        Assert.Contains("[C5]", GamePlanner.DescribeChoice(choice), StringComparison.Ordinal);
+        Assert.StartsWith("[C5]: g1 is berserk", GamePlanner.DescribeChoice(choice), StringComparison.Ordinal);
         Assert.True(Is(Current.Unit("g1")!, Conditions.Berserk));
 
-        Committed(await Do(GameActions.Choose, NoRoll(), new
+        var answered = await Do(GameActions.Choose, NoRoll(), new
         {
             key = choice.Key,
             option,
-        }));
+        });
+        Committed(answered);
+        Assert.Contains(answered.Reasons, reason => reason.StartsWith(option == ChoicePending.Take
+            ? "play.berserk-hardening: g1 in bd01:C5:0 loses berserk status and is Battle Hardened: it is Replaced by an unbroken attacker-elite-squad"
+            : "play.berserk-hardening: g1 in bd01:C5:0 loses berserk status and its owner refuses Battle Hardening", StringComparison.Ordinal));
         Assert.Null(Current.Choice);
         Assert.Empty(Current.ChoicesMade);
         var after = Since(before).Select(item => item.Payload).ToArray();

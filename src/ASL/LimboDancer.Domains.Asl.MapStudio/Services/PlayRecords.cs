@@ -498,6 +498,8 @@ public sealed partial class PlayRecords
                 // C2.2401 (pass 55): the ATTACKER's answer to a declared shot; the declaration and a void return shot are among the ordnance records.
                 ChoiceMade answered when before?.Choice is { Kind: ChoicePending.GunDuel } duel && GunDuelParties(duel.Resume) is (var answeredFirer, var answeredVehicle) =>
                     ScenarioA1GunDuels.AnswerText(answered.Option, answeredVehicle, answeredFirer),
+                // A15.44, A15.3 (pass 72, ruling R72.17; the reviews R3.1, R4.2): the Battle Hardening answer says the unit, its hex, and what it became.
+                ChoiceMade hardened when hardened.Key.StartsWith(ScenarioA1ChargeCalculator.HardeningChoice + ":", StringComparison.Ordinal) => HardeningLine(item, hardened, before),
                 ChoiceMade => "A choice the game waited for was answered",
                 SurrenderPending surrender => $"{surrender.Unit}{In(before, surrender.Unit)} surrenders, and its captor is to be chosen (A20.21)",
                 SurrenderRejected refused => $"The surrender of {refused.Unit} is refused (A20.3)",
@@ -631,6 +633,21 @@ public sealed partial class PlayRecords
         }
 
         return parts.Count == 0 ? null : $"{check.Location}: {string.Join("; ", parts)}";
+    }
+
+    /// <summary>
+    /// A Battle Hardening answer in words (A15.44, A15.3; pass 72, ruling R72.17): the unit and its Location before the answer, taken or refused, and what the
+    /// answer's own events made of it: the unit of the next higher quality its lineage produced, or Fanatic. Only the events of the answer's attempt are read.
+    /// </summary>
+    private string HardeningLine(GameEvent item, ChoiceMade made, GameState? before)
+    {
+        var unitId = made.Key[(ScenarioA1ChargeCalculator.HardeningChoice.Length + 1)..];
+        var attempt = AttemptOf(item.EventId);
+        var caused = events.Where(other => AttemptOf(other.EventId) == attempt && other.Causes.Contains(item.EventId, StringComparer.Ordinal)).Select(other => other.Payload).ToArray();
+        var next = caused.OfType<LineageRecorded>().Where(lineage => lineage.Consumed.Contains(unitId, StringComparer.Ordinal)).SelectMany(lineage => lineage.Produced)
+            .Select(produced => produced.Definition).FirstOrDefault();
+        var fanatic = caused.OfType<ConditionsChanged>().Any(changed => changed.Id == unitId && changed.Conditions.TryGetValue(Conditions.Fanatic, out var set) && set == ConditionState.True);
+        return DisplayText.Reason(ScenarioA1ChargeCalculator.HardeningText(unitId, before?.Location(unitId)?.Location.ToString(), made.Option == ChoicePending.Take, next, fanatic)).Text;
     }
 
     /// <summary>

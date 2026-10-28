@@ -110,11 +110,12 @@ public sealed partial class GamePlanner
                 choice.Resume.TryGetProperty("dr", out var dr) ? dr.GetInt32() : 0);
         }
 
-        // A15.44, A15.3 (pass 72, ruling R72.4): the owner's Battle Hardening of a berserk unit that can reach no Known enemy unit, by its hex.
+        // A15.44, A15.3 (pass 72, rulings R72.4, R72.17): the owner's Battle Hardening of a berserk unit that can reach no Known enemy unit, by its hex and the
+        // unit (two berserk units may share a Location, A15.41).
         if (choice.Key.StartsWith(ScenarioA1ChargeCalculator.HardeningChoice + ":", StringComparison.Ordinal))
         {
             return ScenarioA1ChargeCalculator.HardeningChoiceText(choice.Resume.TryGetProperty("location", out var stuck) && BoardLocation.TryParse(stuck.GetString() ?? string.Empty, out var stuckAt)
-                ? $"[{stuckAt.Hex}]" : subject);
+                ? $"[{stuckAt.Hex}]" : null, subject);
         }
 
         // A12.14 (pass 70, ruling R70.21): the viewing side's option, by the stack's hex.
@@ -347,10 +348,15 @@ public sealed partial class GamePlanner
             var reference = next is null ? null : FireReference.Value.Definitions.GetValueOrDefault(next);
             if (reference is not null)
             {
-                // A15.3: an unbroken, unpinned unit of the next higher quality, its "?" and the rest of its conditions kept, as the rally path writes it.
+                // A15.3: the unit of the next higher quality takes the unit's conditions but its "?" and HIP; it is no longer berserk (A15.44, as the
+                // conditions-changed above writes it), then unbroken and unpinned as the rally path writes a Replaced unit.
                 var produced = unit.Conditions.Where(item => item.Key != Conditions.Concealed && item.Key != Conditions.Hidden)
                     .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
-                produced[Conditions.Berserk] = ConditionState.False;
+                foreach (var (condition, value) in ScenarioA1SequenceCalculator.BerserkEndsConditions())
+                {
+                    produced[ConditionName(condition)] = value ? ConditionState.True : ConditionState.False;
+                }
+
                 foreach (var (condition, value) in ScenarioA1RallyRules.ReplacedUnitConditions(true, false, null, null))
                 {
                     produced[ConditionName(condition)] = value is { } set ? (set ? ConditionState.True : ConditionState.False) : GameState.Condition(unit, ConditionName(condition));
@@ -365,7 +371,7 @@ public sealed partial class GamePlanner
                     new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.Fanatic] = ConditionState.True }), null, null, [made.EventId]));
             }
 
-            reasons.Add(ScenarioA1ChargeCalculator.HardeningText(unit.Id, taken, reference is not null, fanatic && reference is null));
+            reasons.Add(ScenarioA1ChargeCalculator.HardeningText(unit.Id, LocationOf(state, unit.Id)?.Location.ToString(), taken, reference?.Id, fanatic && reference is null));
         }
 
         // The next berserk unit's choice, decided as the MPh ended.

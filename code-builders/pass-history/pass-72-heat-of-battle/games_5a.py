@@ -35,13 +35,17 @@ g.phases("rph", "pfph", "mph", side="russian")
 g.write()
 
 # (b) A15.45, A15.44, E1.533, A15.3, ruling R72.4: the berserk Russian 4-4-7 in [A8] (the south pocket) sees only the German 4-6-7 in [A3], across the
-# Water; nothing in the pocket can be reached. The Movement panel reads "4-4-7 squad ... in [A8] is berserk and stays in place: from [A8] no route reaches a
-# Known enemy unit in LOS but across a cliff or a Water Obstacle ...". End the MPh ("end the phase"): the proposal line "4-4-7 squad ... in [A8] can reach
-# no Known enemy unit ..." and, in the DFPh, the pending choice panel
-# (#play-choice, data-key "berserkHardening:r-1") for the Russian side: "The berserk unit in [A8] can reach no Known enemy unit in its LOS (A15.45), so it
-# loses berserk status; its owner takes Battle Hardening or refuses it (A15.44, A15.3)", with "take it" and "decline it". Take: r-1 is Replaced by the
-# Russian elite squad (a "lineage" event, "action": "replaced", the new instance "<attempt>-r-1", definition "defender-elite-squad", "asl:berserk": false).
-# Decline: a "conditions-changed" of r-1 with "asl:berserk": false and nothing else. Both answers write "choice-made" with "key": "berserkHardening:r-1".
+# Water; nothing in the pocket can be reached. The Movement panel reads "4-4-7 squad ... in [A8] is berserk and stays in place: no route reaches a Known
+# enemy unit in its LOS except across a Water Obstacle; at the end of the MPh ...". End the MPh ("end the phase"): the proposal line "4-4-7 squad ... in
+# [A8] can reach no Known enemy unit ..." and, in the DFPh, the pending choice panel
+# (#play-choice, data-key "berserkHardening:r-1") for the Russian side: "[A8]: 4-4-7 squad ... is berserk and can reach no Known enemy unit in its LOS
+# (A15.45), so it loses berserk status; its owner takes Battle Hardening or refuses it (A15.44, A15.3)", with "take it" and "decline it"; Replay titles the
+# step "The Russian side is to take or refuse Battle Hardening". Take: r-1 is Replaced by the Russian elite squad (a "lineage" event, "action": "replaced",
+# the new instance "<attempt>-r-1", definition "defender-elite-squad", "asl:berserk": false); the record reads "4-4-7 squad ... in [A8] loses berserk status
+# and is Battle Hardened: it is Replaced by an unbroken ..." and Replay "The Russian side takes Battle Hardening". Decline: a "conditions-changed" of r-1
+# with "asl:berserk": false and nothing else; the record "... its owner refuses Battle Hardening, so it is Good Order". Both answers write "choice-made"
+# with "key": "berserkHardening:r-1". Ruling R72.17 changes no verdict of the three games (re-read 2026-10-27): (a) [A3] is unreachable, so [G8] is
+# charged with no comparison; (b) the frontier holds only Water bars and no German Location is reached; (c) has one target.
 g = GameFile("p72-charge-unreachable", "pass 72, 5a: a berserk squad that can reach no German is offered Battle Hardening as the MPh ends (A15.44)",
              phasing="russian", board="07")
 g.unit("r-1", "squad", "defender-squad", "russian", "bd07:A8:0", berserk=True)

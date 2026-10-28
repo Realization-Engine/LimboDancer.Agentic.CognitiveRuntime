@@ -24,6 +24,14 @@ public sealed class ScenarioA1Pass72RulesTests
     {
         private readonly Dictionary<int, Dictionary<int, ChargeEntryFacts>> edges = [];
         private readonly Dictionary<int, int> ranges = [];
+        private readonly HashSet<int> hidden = [];
+
+        /// <summary>A Location the charging unit has no LOS to.</summary>
+        public Graph Hidden(int location)
+        {
+            hidden.Add(location);
+            return this;
+        }
 
         public Graph Step(int one, int two)
         {
@@ -87,7 +95,7 @@ public sealed class ScenarioA1Pass72RulesTests
 
         public IReadOnlyList<int> Lane(string key) => [.. key.Split(',').Select(int.Parse)];
 
-        public bool LosClear(int fromLocation, int toLocation) => true;
+        public bool LosClear(int fromLocation, int toLocation) => !hidden.Contains(toLocation);
 
         public int? Distance(int one, int two) => one == two ? 0 : one == 0 ? ranges.GetValueOrDefault(two, 1) : two == 0 ? ranges.GetValueOrDefault(one, 1) : 1;
     }
@@ -127,21 +135,87 @@ public sealed class ScenarioA1Pass72RulesTests
         Assert.Equal([2], steps.Keys);
     }
 
+    /// <summary>The nearest (n1, one hex off) behind <paramref name="refusal"/>; round it the route steps three hexes (n2, n3). The next nearest (n4) is
+    /// <paramref name="nextRange"/> hexes off by a chain of steps from n10.</summary>
+    private static Graph RoundTheNearest(string refusal, int nextRange)
+    {
+        var graph = new Graph().Refuse(0, 1, refusal).Range(1, 1).Path(0, 2, 3, 1).Range(4, nextRange);
+        int[] chain = [0, .. Enumerable.Range(10, nextRange - 1), 4];
+        return graph.Path(chain);
+    }
+
     [Theory]
     [InlineData(2, 4)]
-    [InlineData(3, 1)]
     [InlineData(4, 1)]
-    public void PastABarAnAlternateRouteStaysOnTheNearestWhileNoLongerThanTheNextNearestsRange(int nextRange, int charged)
+    public void PastABarAnAlternateRouteStaysOnTheNearestWhileStillCloserThanTheNextNearest(int nextRange, int charged)
     {
-        // A15.45 (ruling R72.3): the nearest (n1, one hex off) is behind a cliff; round it the route steps three hexes. The next nearest (n4) is nextRange hexes
-        // off: at 2 the alternate route is longer and the charge moves on; at 3 (a tie) and 4 it stays.
-        var graph = new Graph().Refuse(0, 1, Cliff).Range(1, 1).Path(0, 2, 3, 1).Range(4, nextRange);
-        int[] chain = [0, .. Enumerable.Range(10, nextRange - 1), 4];
-        graph.Path(chain);
-        var (steps, target, undecided) = Charge(graph, 1, 4);
+        // A15.45 (rulings R72.3, R72.17): the cliff lies across n1's route (ignoring it, n1 is one MF off, not three). The next nearest (n4) is nextRange hexes
+        // off: at 2 the alternate route is longer and the charge moves on; at 4 it is still closer and stays.
+        var (steps, target, undecided) = Charge(RoundTheNearest(Cliff, nextRange), 1, 4);
         Assert.Null(undecided);
         Assert.Equal(charged, target);
         Assert.Equal([charged == 1 ? 2 : 10], steps.Keys);
+    }
+
+    [Fact]
+    public void AtATieTheAttackerChoosesAmongBothGroupsFromOneSearch()
+    {
+        // A15.45, A15.43 (ruling R72.17): the alternate route to n1 steps three hexes and n4 is three off: "still closer" fails, the targets are equidistant, so
+        // the ATTACKER may take the first step toward either. The search that ignores bars reads the moves the search read: the start is left once.
+        var counting = new CountingGraph(RoundTheNearest(Cliff, 3));
+        var (steps, target, undecided) = ScenarioA1ChargeCalculator.Steps(counting, 0, [1, 4], null, () => new ChargeNodeFacts(0, null, null));
+        Assert.Null(undecided);
+        Assert.Null(target);
+        Assert.Equal([2, 10], steps.Keys.Order());
+        Assert.Equal((1, 4), (steps[2].Target, steps[10].Target));
+        Assert.Equal(1, counting.FromStart);
+    }
+
+    [Fact]
+    public void AnOrdinaryChargePastAMultiLevelBuildingKeepsTheNearest()
+    {
+        // Ruling R72.17: Locations a building does not connect are ordinary movement, no bar; the shortest route round them is A15.43's, whatever the next
+        // nearest's range (two hexes against the route's three).
+        var (steps, target, undecided) = Charge(RoundTheNearest("play.move-stairwell: bd01:D5 has no stairwell, so its levels do not connect (B23.23, B23.4)", 2), 1, 4);
+        Assert.Null(undecided);
+        Assert.Equal(1, target);
+        Assert.Equal([2], steps.Keys);
+    }
+
+    [Fact]
+    public void WithTheNextNearestUnreachableTheChargeKeepsTheNearest()
+    {
+        // Ruling R72.17: the comparison is with the next group that has a reachable target; n4 (two hexes off) is across Water, so the charge stays on n1.
+        var graph = new Graph().Refuse(0, 1, Cliff).Range(1, 1).Path(0, 2, 3, 1).Refuse(0, 4, Water, "Water").Range(4, 2);
+        var (steps, target, undecided) = Charge(graph, 1, 4);
+        Assert.Null(undecided);
+        Assert.Equal(1, target);
+        Assert.Equal([2], steps.Keys);
+    }
+
+    [Fact]
+    public void ATargetCutOffByAnotherEnemyLocationKeepsRulingR305()
+    {
+        // Ruling R72.17: n1 (in LOS, behind a cliff) is reached only through n3, the Location of a Known enemy unit out of LOS, which the charge enters and
+        // never passes; a Known enemy Location is reached, so no Battle Hardening.
+        var graph = new Graph().Refuse(0, 1, Cliff).Range(1, 1).Path(0, 2, 3, 1).Hidden(3);
+        var (steps, target, undecided) = Charge(graph, 1, 3);
+        Assert.Empty(steps);
+        Assert.Equal(1, target);
+        Assert.Equal("play.charge-no-route: the game allows a route to no Known enemy unit in its LOS (the nearest n1), so the charge ends in place (ruling R30.5)", undecided);
+        Assert.False(ScenarioA1ChargeCalculator.NoneReachable(undecided));
+    }
+
+    [Fact]
+    public void WithNoKnownEnemyInLosTheChargeIsNeverHardened()
+    {
+        // A15.431, A15.44 (ruling R72.17): the charge kept to n1, now out of LOS and across Water; the unit returns to normal, so no Battle Hardening is due.
+        var graph = new Graph().Refuse(0, 1, Water, "Water").Range(1, 1).Path(0, 2).Hidden(1);
+        var (steps, target, undecided) = ScenarioA1ChargeCalculator.Steps(graph, 0, [1], 1, () => new ChargeNodeFacts(0, null, null));
+        Assert.Empty(steps);
+        Assert.Equal(1, target);
+        Assert.False(ScenarioA1ChargeCalculator.NoneReachable(undecided));
+        Assert.False(ScenarioA1ChargeCalculator.HardeningDue("mph", true, true, true, false, true, () => undecided));
     }
 
     [Fact]
@@ -152,7 +226,7 @@ public sealed class ScenarioA1Pass72RulesTests
         var (steps, target, undecided) = Charge(graph, 1, 3);
         Assert.Empty(steps);
         Assert.Equal(1, target);
-        Assert.StartsWith(ScenarioA1ChargeCalculator.UnreachableCode + ": from n0 no route reaches a Known enemy unit in LOS but across a cliff or a Water Obstacle", undecided,
+        Assert.StartsWith(ScenarioA1ChargeCalculator.UnreachableCode + ": no route reaches a Known enemy unit in its LOS except across a cliff or a Water Obstacle;", undecided,
             StringComparison.Ordinal);
         Assert.True(ScenarioA1ChargeCalculator.NoneReachable(undecided));
         Assert.True(ScenarioA1ChargeCalculator.HardeningDue("mph", true, true, true, false, true, () => undecided));
@@ -168,19 +242,21 @@ public sealed class ScenarioA1Pass72RulesTests
         var (steps, target, undecided) = Charge(graph, 1, 3);
         Assert.Empty(steps);
         Assert.Equal(1, target);
-        Assert.Equal("play.charge-no-route: no route the game allows leads from n0 to n1; the charge ends in place (A15.431)", undecided);
+        Assert.Equal("play.charge-no-route: the game allows a route to no Known enemy unit in its LOS (the nearest n1), so the charge ends in place (ruling R30.5)", undecided);
         Assert.False(ScenarioA1ChargeCalculator.NoneReachable(undecided));
         Assert.False(ScenarioA1ChargeCalculator.HardeningDue("mph", true, true, true, false, true, () => undecided));
     }
 
     [Fact]
-    public void TheRuleBarsAreACliffAWaterObstacleAndUnconnectedLevels()
+    public void TheRuleBarsAreACliffAndAnUnbridgedWaterObstacle()
     {
-        // A15.45, B21.1 (pp. 84, 134), B23.4: a stream is no Water Obstacle (B20), and terrain "not reviewed" is a gap.
+        // A15.45, B21.1 (pp. 84, 134; ruling R72.17): a stream is no Water Obstacle (B20), terrain "not reviewed" is a gap, a building connection is ordinary
+        // movement (B23.4), and a bridged hex is not barred.
         Assert.True(ScenarioA1ChargeCalculator.RuleBar(new ChargeEntryFacts(null, Cliff, "Open Ground")));
         Assert.True(ScenarioA1ChargeCalculator.RuleBar(new ChargeEntryFacts(null, Water, "Water")));
         Assert.True(ScenarioA1ChargeCalculator.RuleBar(new ChargeEntryFacts(null, "play.move-terrain: Canal is not a reviewed entry (ruling R10.1)", "Canal")));
-        Assert.True(ScenarioA1ChargeCalculator.RuleBar(new ChargeEntryFacts(null, "play.move-stairwell: bd01:D5 has no stairwell, so its levels do not connect (B23.23, B23.4)", null)));
+        Assert.False(ScenarioA1ChargeCalculator.RuleBar(new ChargeEntryFacts(null, Water, "Water") { Bridged = true }));
+        Assert.False(ScenarioA1ChargeCalculator.RuleBar(new ChargeEntryFacts(null, "play.move-stairwell: bd01:D5 has no stairwell, so its levels do not connect (B23.23, B23.4)", null)));
         Assert.False(ScenarioA1ChargeCalculator.RuleBar(new ChargeEntryFacts(null, Unreviewed, "Shallow Stream")));
         Assert.False(ScenarioA1ChargeCalculator.RuleBar(new ChargeEntryFacts(null, null, null)));
         Assert.False(ScenarioA1ChargeCalculator.RuleBar(new ChargeEntryFacts(2, null, "Water")));
@@ -245,8 +321,12 @@ public sealed class ScenarioA1Pass72RulesTests
         Assert.Equal(("attacker-elite-squad", false), ScenarioA1ChargeCalculator.Hardening("attacker-squad", false));
         Assert.Equal(((string?)null, true), ScenarioA1ChargeCalculator.Hardening("attacker-elite-squad", false));
         Assert.Equal(((string?)null, false), ScenarioA1ChargeCalculator.Hardening("attacker-elite-squad", true));
-        Assert.StartsWith("play.berserk-hardening: g1 loses berserk status and its owner refuses Battle Hardening",
-            ScenarioA1ChargeCalculator.HardeningText("g1", false, false, false), StringComparison.Ordinal);
+        Assert.StartsWith("play.berserk-hardening: g1 in bd01:A8:0 loses berserk status and its owner refuses Battle Hardening",
+            ScenarioA1ChargeCalculator.HardeningText("g1", "bd01:A8:0", false, null, false), StringComparison.Ordinal);
+        Assert.StartsWith("play.berserk-hardening: g1 in bd01:A8:0 loses berserk status and is Battle Hardened: it is Replaced by an unbroken attacker-elite-squad",
+            ScenarioA1ChargeCalculator.HardeningText("g1", "bd01:A8:0", true, "attacker-elite-squad", false), StringComparison.Ordinal);
+        Assert.Contains("it becomes Fanatic", ScenarioA1ChargeCalculator.HardeningText("g1", "bd01:A8:0", true, null, true), StringComparison.Ordinal);
+        Assert.StartsWith("[A8]: g1 is berserk and can reach no Known enemy unit in its LOS", ScenarioA1ChargeCalculator.HardeningChoiceText("[A8]", "g1"), StringComparison.Ordinal);
     }
 
     private static CloseCombatUnit Unit(string id, string definition, string side) =>

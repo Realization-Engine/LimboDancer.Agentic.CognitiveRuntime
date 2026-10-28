@@ -1293,16 +1293,17 @@ public sealed partial class GamePlanner
     private int? EntryCost(GameState state, BoardLocation from, BoardLocation to) => ChargeEntry(state, from, to).HalfMf;
 
     /// <summary>
-    /// A charge step's entry (pass 72, ruling R72.4): its half MF as <see cref="EntryCost"/> gives it, or the movement model's refusal and the terrain the map
-    /// reads in the Location entered, for Rules to tell a rule bar from a gap of the model. A bridged hex's terrain is not given: A15.45 bars only an unbridged
-    /// Water Obstacle, and the movement model does not review bridges, so their refusal is a gap.
+    /// A charge step's entry (pass 72, rulings R72.4, R72.17): its half MF as <see cref="EntryCost"/> gives it, or the movement model's refusal, the terrain the
+    /// map reads in the Location entered, and whether its hex holds a bridge, for Rules to tell a rule bar from a gap of the model.
     /// </summary>
     private ChargeEntryFacts ChargeEntry(GameState state, BoardLocation from, BoardLocation to)
     {
         var (entry, reason) = InfantryStep(state, from, to);
         return entry switch
         {
-            null => new ChargeEntryFacts(null, reason, ReadLocation(state, to) is { Hex.Bridge: null } read ? (read.Level.Terrain ?? read.Hex.Center.Terrain)?.Name : null),
+            null => ReadLocation(state, to) is { } read
+                ? new ChargeEntryFacts(null, reason, (read.Level.Terrain ?? read.Hex.Center.Terrain)?.Name) { Bridged = read.Hex.Bridge is not null }
+                : new ChargeEntryFacts(null, reason, null),
 
             // B16.4 (ruling R10.15): marsh takes a berserk unit's whole eight MF; from below only by Minimum Move, which a berserk unit does not make.
             { MinimumMoveOnly: true } => new ChargeEntryFacts(null, null, null),

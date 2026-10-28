@@ -856,13 +856,15 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         // A15.45, A15.44, E1.533 (pass 72, ruling R72.4): a berserk unit whose charge reaches no Known enemy unit in its LOS past rule bars alone stayed in place;
         // as the MPh ends it loses berserk status, and its owner takes or refuses its Battle Hardening, one unit at a time, once the phase has changed.
-        string[] hardening = [.. state.Units.Where(unit => ScenarioA1ChargeCalculator.HardeningDue(state.Phase, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide,
+        // The review (R4.7): only the MPh's berserk units are read further, so no other unit's Location is looked up at a phase advance.
+        UnitInstance[] berserk = state.Phase == "mph" ? [.. state.Units.Where(unit => Is(unit, Conditions.Berserk))] : [];
+        string[] hardening = [.. berserk.Where(unit => ScenarioA1ChargeCalculator.HardeningDue(state.Phase, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide,
             Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), LocationOf(state, unit.Id) is not null,
             () => ChargeSteps(state, [unit], LocationOf(state, unit.Id)!.Location, state.Movement?.Members.Contains(unit.Id) == true ? state.Movement : null).Undecided))
             .Select(unit => unit.Id).Order(StringComparer.Ordinal)];
 
         // A15.431, A15.46: at the end of its MPh a berserk unit with no Known enemy unit in its LOS returns to normal.
-        foreach (var unit in state.Units.Where(unit => ScenarioA1SequenceCalculator.BerserkReturns(state.Phase, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide,
+        foreach (var unit in berserk.Where(unit => ScenarioA1SequenceCalculator.BerserkReturns(state.Phase, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide,
             Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), LocationOf(state, unit.Id) is not null, () => KnownEnemyInLos(state, unit.Side, LocationOf(state, unit.Id)!.Location))))
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",

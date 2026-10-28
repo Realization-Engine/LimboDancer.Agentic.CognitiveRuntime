@@ -14,9 +14,17 @@ public sealed record ChargeSearchStep(int Target, int HalfMf, bool Plain, IReadO
 
 /// <summary>
 /// A charge step's entry as the movement rules give it (A15.431, A15.45; pass 72, ruling R72.4): its half MF, or, when refused, the movement model's refusal
-/// and the name of the terrain of the Location it would enter as the map reads it.
+/// and the name of the terrain of the Location it would enter as the map reads it, with whether that hex holds a bridge (ruling R72.17: A15.45 bars only an
+/// unbridged Water Obstacle; Rules decides).
 /// </summary>
-public readonly record struct ChargeEntryFacts(int? HalfMf, string? Refusal, string? Terrain);
+public readonly record struct ChargeEntryFacts(int? HalfMf, string? Refusal, string? Terrain)
+{
+    /// <summary>Whether the hex entered holds a bridge, as the map reads it.</summary>
+    public bool Bridged
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// A fact reader for the berserk charge's search (A15.43, A15.431; the pass 32 design, D4): Locations are indexes into the caller's table, hexsides 0 to 5

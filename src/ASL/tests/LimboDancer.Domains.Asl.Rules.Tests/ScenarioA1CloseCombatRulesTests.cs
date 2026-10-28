@@ -148,7 +148,7 @@ public sealed class ScenarioA1CloseCombatRulesTests
         var (steps, target, undecided) = ScenarioA1ChargeCalculator.Steps(row, 0, [3], null, () => new ChargeNodeFacts(0, null, null));
         Assert.Empty(steps);
         Assert.Equal(3, target);
-        Assert.Equal("play.charge-no-route: no route the game allows leads from bd01:A1:0 to bd01:D1:0; the charge ends in place (A15.431)", undecided);
+        Assert.Equal("play.charge-no-route: the game allows a route to no Known enemy unit in its LOS (the nearest bd01:D1:0), so the charge ends in place (ruling R30.5)", undecided);
     }
 
     [Fact]
