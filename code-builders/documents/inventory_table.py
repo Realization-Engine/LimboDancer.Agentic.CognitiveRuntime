@@ -3,7 +3,7 @@
 Every documents tool that reads the inventory imports this module, so a column added to the table (the Rules calculator column of
 Step 0, 2026-10-28, and those that follow it) or a chapter beyond E changes no tool. A table is one whose header row begins
 "| § | Title | Page | Status |"; each of its rows is a dict keyed by the header's names, with "chapter" (the letter of the last
-"### Chapter" heading above it) and "line" (its index in the file's lines) added.
+"### Chapter" heading above it, or "ASOP" under "### Appendix 2") and "line" (its index in the file's lines) added.
 """
 import os as _os
 import sys as _sys
@@ -11,7 +11,8 @@ _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 
 from paths import REPO  # noqa: E402
 
 PATH = REPO + "/src/ASL/docs/ASL Rule Inventory A to E.md"
-STATUSES = ["built", "built with a deviation", "partly", "refused", "not built", "not applicable"]
+# "not audited": a row added from the PDF beyond Chapter E (Step 0, 2026-10-28) that no audit has yet judged against the code.
+STATUSES = ["built", "built with a deviation", "partly", "refused", "not built", "not applicable", "not audited"]
 IMPLEMENTED = {"built", "built with a deviation", "partly", "refused"}
 HEADER_START = "| § | Title | Page | Status |"
 
@@ -36,6 +37,8 @@ def rows(lines):
     for index, line in enumerate(lines):
         if line.startswith("### Chapter "):
             chapter = line[len("### Chapter "):][0]
+        elif line.startswith("### Appendix 2"):
+            chapter = "ASOP"
         if line.startswith(HEADER_START):
             names = cells(line)
             continue

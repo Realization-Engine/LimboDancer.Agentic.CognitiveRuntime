@@ -38,7 +38,7 @@ for i in range(start, end):
         if c[0].startswith("**"):
             want = [f"**{sum(total.values())}**"] + [f"**{total[s]}**" for s in STATUSES]
         else:
-            counter = by_chapter.get(c[0][0], collections.Counter())
+            counter = by_chapter.get(c[0].split(".")[0], collections.Counter())
             want = [str(sum(counter.values()))] + [str(counter[s]) for s in STATUSES]
         if c[1:] != want:
             bad += 1
@@ -55,6 +55,10 @@ for i in range(start, end):
         if int(c[1]) != by_pass.get(key, 0):
             bad += 1
             print("pass line differs:", line[:80], "rows", by_pass.get(key, 0))
+for key in by_chapter:
+    if not any(line.startswith(f"| {key}. ") for line in lines[start:end]):
+        bad += 1
+        print("no chapter line for:", key)
 for key in by_pass:
     if key not in seen:
         bad += 1

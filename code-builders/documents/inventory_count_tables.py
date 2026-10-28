@@ -28,14 +28,18 @@ print("rows", rows_all, "with a rule", with_rule, "built", built, "need a pass o
 
 end = next(i for i, line in enumerate(lines) if line.startswith("## 3. Reading the tables"))
 changed = 0
+in_pass_table = False
 for i in range(end):
     line = lines[i]
-    m = re.match(r"^\| ([A-Z])\. ([^|]+) \| \d+ \| \d+ \| \d+ \| \d+ \| \d+ \| \d+ \| \d+ \|$", line)
-    if m:
+    if line.startswith("| Pass or ruling |"):
+        in_pass_table = True
+        continue
+    m = re.match(r"^\| ([A-Z]+)\. ([^|]+) \|(?: \d+ \|)+$", line)
+    if m and not in_pass_table:
         counter = by_chapter.get(m.group(1), collections.Counter())
         lines[i] = f"| {m.group(1)}. {m.group(2)} | {sum(counter.values())} | " + " | ".join(str(counter[s]) for s in STATUSES) + " |"
         changed += 1
-    elif re.match(r"^\| \*\*[^*]+\*\* \| \*\*\d+\*\* \|", line):
+    elif not in_pass_table and re.match(r"^\| \*\*[^*]+\*\* \| \*\*\d+\*\* \|", line):
         label = re.match(r"^\| (\*\*[^*]+\*\*) \|", line).group(1)
         lines[i] = f"| {label} | **{rows_all}** | " + " | ".join(f"**{total[s]}**" for s in STATUSES) + " |"
         changed += 1
@@ -45,6 +49,10 @@ for i in range(end):
     elif re.match(r"^\| (Pass \d+): [^|]+ \| \d+ \|$", line):
         m = re.match(r"^\| (Pass \d+)(: [^|]+) \| \d+ \|$", line)
         lines[i] = f"| {m.group(1)}{m.group(2)} | {by_pass[m.group(1)]} |"
+        changed += 1
+    elif in_pass_table and re.match(r"^\| ([^|*]+) \| \d+ \|$", line):
+        label = re.match(r"^\| ([^|*]+) \| \d+ \|$", line).group(1)
+        lines[i] = f"| {label} | {by_pass[label]} |"
         changed += 1
     elif line.startswith("| **All** |"):
         lines[i] = f"| **All** | **{need}** |"
