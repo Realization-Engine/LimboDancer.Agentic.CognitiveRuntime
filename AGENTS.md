@@ -12,6 +12,22 @@ This repository has standing rules that every agent follows, whatever tool it ru
 
 A sign that a rule has been written in the wrong place: code outside Rules that cites a rule number (A1.31, C9.3, G10.11) while computing the decision itself.
 
+**One rule, one calculator.** A rule is decided by one calculator. Where two decide it today (C9.3 has `ScenarioA1AreaCalculator` and the `TurnSpotter*Rules`), the claim that takes the rule makes them one.
+
+## The claim board: how Claude and Codex share the work
+
+The [Rules-first four-track plan](<src/ASL/docs/Plans/ASL Rules-First Four-Track Plan.md>) governs the rule work (its first tasks started 2026-10-28). Read its sections 3 to 5 and 9 to 11 before taking any.
+
+- **One ledger.** The [rule inventory](<src/ASL/docs/ASL Rule Inventory A to E.md>) is the only record of who builds what. Each rule row has an Owner and a Claim state; its section 6 is the claims table. No other list (a plan's task table, a Turns ledger, an issue) assigns rule work.
+- **Where the work is described.** The pass sections of the [redesign plan](<src/ASL/docs/ASL Card Play and Map Studio Redesign Plan.md>), section 22.1, group the rules and hold the Turn Guide's former tasks (D1.1 to D9.4), each split into a Rules part (a claim) and a wiring part (track 3). Each pass section's Rules status line is written by `code-builders/documents/pass_rules_status.py`; never edit it by hand. The [later Rules plan](<src/ASL/docs/Turn.Guide/ASL Turn Guide Later Rules Implementation Plan.md>) keeps only its acceptance contract, its history, and the map from task to pass.
+- **To claim.** A claim is a numbered rule section, or a subsection group where the section is large (the plan's question 1). On an up-to-date `main`, in one commit that changes the inventory and nothing else: add the claim's row to the claims table (its id, you as Agent, the other agent as Reviewer, the branch you will work on, the Rules files you will change, state "claimed", the date), and set each of its rows' Owner cell to "claim (agent)", for example "C9.3 (Codex)", and its Claim state to "claimed". Run `python code-builders/documents/claim_check.py`, then push to `main` (an edit to an existing document goes straight to main). The push is the lock: if it is rejected as not a fast-forward, fetch, read the table, and take another claim if yours is taken.
+- **Held files.** While a claim is claimed or built it holds its Rules files: no other claim may list them, and a branch may change a file of the Rules project only when a claim of that branch lists it. A file that turns out to be needed is added to the claim by the same kind of commit first.
+- **To build.** On the claim's branch: read every rule of the claim on its PDF page; write the calculator and its wiring contract; its minigame position checked on the workbench; then its tests; then the rows, the coverage document, the backlog, and `pass_rules_status.py`; then the state "built" in the table and the rows (the plan's section 4.3).
+- **Review.** The agent that did not build the claim reviews it, read-only: the rules against the PDF and what a side may know (question 3). When only one agent is working, a sub-agent reviews. The reviewer sets the state "reviewed".
+- **The check.** `python code-builders/documents/claim_check.py --base origin/main --branch <your branch>` must pass before a pull request. CI runs it on every pull request and every push, with the status-line check, and the merge gate's strict stage runs both.
+- **Separate checkouts.** The main checkout (`E:\Archive\GitHub\dlandi\LimboDancer.MCP`) is Claude's. Codex works only in its own worktree. Implementation waits for the user's approval of its design; code reaches main by a pull request with a green CI run, and the user gives the word for each merge.
+- **When the board opens.** The board opens with the plan's first task 6, after the proving slice (first task 4). Until then a claim is made only for a first task of the plan, under its own id (for example "proving-slice").
+
 ## Other rules that apply to every change
 
 - **The rulebook first.** Read the rulebook PDF before stating or coding a rule, and cite the rule and its page. Search the whole rulebook before saying what a counter or rule needs.

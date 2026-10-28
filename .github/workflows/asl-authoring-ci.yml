@@ -59,6 +59,19 @@ jobs:
           else
             python3 code-builders/asl-acronyms/ci_scope.py "$BASE" "$HEAD" >> "$GITHUB_OUTPUT"
           fi
+      # The Rules-first plan (questions 1 to 3 and 10, 2026-10-28): the rule inventory's claim board and each pass's Rules status line.
+      # On a pull request the branch's changed Rules files must be held by its claims; on a push only the ledger is checked.
+      - name: Rule claims and Rules status lines
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          python3 code-builders/documents/pass_rules_status.py --check
+          if [ -n "$BRANCH" ] && git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            python3 code-builders/documents/claim_check.py --base "$BASE" --branch "$BRANCH"
+          else
+            python3 code-builders/documents/claim_check.py
+          fi
 
   acronyms:
     needs: scope
