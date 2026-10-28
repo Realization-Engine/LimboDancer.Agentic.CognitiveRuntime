@@ -146,6 +146,36 @@ public sealed partial class PlayTests
         Assert.Equal(GamePlanStatus.Refused, (await Planner().PlanAsync(GameActions.RecordTurnWork, WorkArgs("late", "complete"), Tenant)).Status);
     }
 
+    // G10.11: a Pack-TI crew that becomes pinned or not in Good Order loses Pack-TI at once; the Game Turn no longer counts (G10.3).
+    [Theory]
+    [InlineData(Conditions.Pinned)]
+    [InlineData(Conditions.Broken)]
+    public async Task AnimalPackingCrewPinnedOrBrokenInterruptsTheWorkAndKeepsPriorProgress(string condition)
+    {
+        var play = await WorkGame();
+        var declaration = new TurnWorkDeclaration("work", "german", "g1", ["g1", "g2"], TurnWorkKind.AnimalPacking, null, 2, "G10 adjudication");
+        await WorkCommit(play, WorkArgs("start", "start", declaration));
+        await WorkPhases(play, 16);
+        var events = store.Read(Current().Scope)!.Events;
+        Assert.Equal(1, Current().TurnWork[0].CompletedGameTurns);
+        GameEvent Changed(string unit, string name) => events[^1] with
+        {
+            EventId = "test-change",
+            Revision = events.Count + 1,
+            Type = "conditions-changed",
+            Payload = new ConditionsChanged(unit, new Dictionary<string, ConditionState> { [name] = ConditionState.True }),
+        };
+        var lost = Planner().Replay([.. events, Changed("g2", condition)]);
+        Assert.False(lost.HasErrors);
+        Assert.False(lost.Current!.TurnWork[0].Working);
+        Assert.Equal(1, lost.Current.TurnWork[0].CompletedGameTurns);
+        Assert.Equal(ConditionState.False, GameState.Condition(lost.Current.Unit("g1")!, "asl:ti"));
+        // A condition that is not Pinned or a loss of Good Order leaves the work going.
+        var kept = Planner().Replay([.. events, Changed("g2", Conditions.Concealed)]);
+        Assert.False(kept.HasErrors);
+        Assert.True(kept.Current!.TurnWork[0].Working);
+    }
+
     [Fact]
     public async Task TurnWorkReplayRejectsSkippedBoundariesAndRetainsPriorProgressOnTiLoss()
     {

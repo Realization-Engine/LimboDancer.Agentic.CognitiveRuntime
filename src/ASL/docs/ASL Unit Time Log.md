@@ -1836,3 +1836,4 @@ One session under the user's word of 2026-10-27 ("Run Pass 72 without my interve
 | The whole-pass Studio check: 15 games played, the hex audit, 320 pixels, the measurement (the hidden page set aside) | 23:31 | 23:46 | 0:15 |  |  |
 | PR 44 Rules-boundary fix | 06:59 | 07:09 | 0:10 | | 13 inline rule decisions moved into Rules calculators, 24 Rules tests, backlog section 76 (b1193806) |
 | PR 44 merge gate (base, baseline, build, proofs) | 07:09 | 07:34 | 0:25 | | proofs equal: 3316 replay lines, 266512 sweep lines; gate.sh early-check fix for CODE_MOVE |
+| G10.11 Pack-TI loss (backlog 76): change, tests, gate | 07:48 | 08:12 | 0:24 | | 153765b6; proofs equal (3316 replay, 53667 sweep); gate VOID as expected: no game uses Animal Packing |
