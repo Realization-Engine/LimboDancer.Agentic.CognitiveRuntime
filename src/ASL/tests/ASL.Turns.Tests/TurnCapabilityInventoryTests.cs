@@ -20,6 +20,21 @@ public sealed class TurnCapabilityInventoryTests
     }
 
     [Fact]
+    public void LaterPassTimingContractDoesNotPromoteSpotterCommandsOrRemovePendingRules()
+    {
+        var facts = new LimboDancer.Domains.Asl.Rules.TurnSpotterTimingFacts("a",
+            new(1, 1, "a", "pfph", LimboDancer.Domains.Asl.Rules.TurnCheckpoint.DuringPhase), false,
+            LimboDancer.Domains.Asl.Rules.TurnSpotterChange.None);
+        Assert.Equal(LimboDancer.Domains.Asl.Rules.TurnSpotterTimingState.InitialDesignationWindow,
+            LimboDancer.Domains.Asl.Rules.TurnSpotterTimingRules.Evaluate(facts).State);
+        Assert.Equal(TurnSupport.Pending, TurnGuideProfiles.Get("existing-engine-fire-v1").CommandSupport("spotter", true));
+        var inventory = TurnCapabilityInventory.Load(Catalog);
+        Assert.Contains(inventory.Gaps, gap => gap.WorkItem == "B5-D1");
+        Assert.Equal(TurnSupport.Pending, inventory.Bindings.Single(row => row.Id == "spotter").PendingRuleSupport);
+        Assert.Equal(538, inventory.Bindings.Count(row => row.Kind == TurnInventoryKind.Topic));
+    }
+
+    [Fact]
     public void InventoryAccountsForEveryIdentityAndReferenceLinkWithoutPromotingCapabilities()
     {
         var inventory = TurnCapabilityInventory.Load(Catalog);

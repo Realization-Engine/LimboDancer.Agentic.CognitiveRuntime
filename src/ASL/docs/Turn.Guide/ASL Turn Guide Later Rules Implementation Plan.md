@@ -6,7 +6,7 @@ Date: 2026-10-27
 
 B5-D1 through B5-D9 are reinstated as active tracked requirements. **The remaining nine packages are explicitly deferred to later ASL.Rules passes.** Deferred describes their place after the accepted B5/U1 baseline, not removal from this plan or from the UI. The user has authorized independent implementation of this plan and commits as work completes. This supersedes the earlier statement that there is no next task; it does not reopen completed B5-R acceptance.
 
-There are **36 numbered tasks**, four per retained package. All begin Pending. Dependencies below determine execution order; tasks within a package run in numeric order. A task may use multiple commits but does not acquire an unbounded list of unnamed follow-ups. New findings attach to an existing task, with a recorded scope change if they cannot fit. A blocked source or rule interpretation remains explicitly blocked, never counted as implemented. Each package remains pending until all four tasks meet their exit gates.
+There are **36 numbered tasks**, four per retained package. The ledger below records completion; uncompleted tasks remain Pending or In progress. Dependencies below determine execution order; tasks within a package run in numeric order. A task may use multiple commits but does not acquire an unbounded list of unnamed follow-ups. New findings attach to an existing task, with a recorded scope change if they cannot fit. A blocked source or rule interpretation remains explicitly blocked, never counted as implemented. Each package remains pending until all four tasks meet their exit gates.
 
 ## Common implementation and acceptance contract
 
@@ -61,4 +61,12 @@ Each package's fourth task is acceptance of its preceding scope, including negat
 
 Start D1.1, then D1.2-D1.4. Continue D2, D3, D4, D5 and D6 in order; then D7, D8 and D9 respecting the table's dependencies. D9.1 may run early to supply the core-topic matrix. If an authoritative source blocks a task, record the exact missing source and continue independent ready tasks. Do not manufacture rules to clear the queue.
 
-Current ledger: 0/36 complete; D1.1 is the first active task. B5-D1 through B5-D9 all retain Pending rule support. The legacy baseline remains accepted independently of this new plan.
+Current ledger: 1/36 complete; D1.1 is complete and D1.2 is in progress. B5-D1 through B5-D9 all retain Pending rule support. The legacy baseline remains accepted independently of this new plan.
+
+### D1.1 acceptance
+
+`TurnSpotterTimingRules` owns C9.3 timing: original designation in the owning side's PFPh/DFPh; replacement only at an owner MPh opening following recorded elimination, break or capture; and retention by a surviving Good Order half-squad. Unknown origin/loss/successor facts do not open a window. Invalid or future positions are rejected. A current MPh label without the opening checkpoint is insufficient, and a loss during that MPh cannot use the same opening.
+
+Source: local Chapter C 9.3 and 9.31, with replacement ASOP 3.11A from the reconciled Movement catalog. Candidate eligibility, movement, LOS, fire counters, Opportunity Fire and actual designation commands belong to D1.2/D1.3. No live command or capability is promoted by this read-only contract.
+
+Validation: 18 focused Rules tests pass. All 180 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered, without exclusions. An inventory regression proves that the new contract retains the pending Spotter command, B5-D1 package and all 538 reference topics.

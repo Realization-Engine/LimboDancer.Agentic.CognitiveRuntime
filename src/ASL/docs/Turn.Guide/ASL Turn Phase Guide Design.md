@@ -649,3 +649,10 @@ Occupied-target verification: 65 focused MapStudio tests pass with no skips, inc
 ### Reinstated later-pass implementation
 
 B5-D1 through B5-D9 are retained requirements for the eventual all-Passes implementation. The remaining nine packages are explicitly deferred to later ASL.Rules passes and are now tracked in the [36-task later-pass implementation plan](ASL%20Turn%20Guide%20Later%20Rules%20Implementation%20Plan.md). Rules owns semantics; Units persists authoritative facts; Play executes and discloses; ASL.Turns coordinates; Blazor renders. Starting or completing a planning task never promotes a pending capability. Every catalog option and package remains visible during implementation.
+
+
+### D1.1: rule-owned Spotter timing
+
+The later-pass implementation now has a typed `TurnSpotterTimingRules` contract in ASL.Rules. Hosts supply the authoritative owner, turn position and opening checkpoint, designation history, actual loss reason/position, and evidence for a Good Order reduction survivor. The verdict distinguishes retained assignment, original designation window, replacement window, outside window and not evaluated. It grants no candidate eligibility or firing permission. Missing history remains unknown; current unit condition cannot substitute for loss history.
+
+C9.3 keeps the original assignment until elimination, break or capture. A surviving Good Order half-squad retains spotting ability. A replacement requires an owner MPh opening following the loss; loss during an MPh cannot reuse that opening. The full rule history, candidate checks and governed commands remain D1.2 work, so the guide continues to display Spotter integration as pending. Sources and acceptance results are recorded in the later-pass plan. D1.1 passes 18 focused Rules tests; ASL.Turns passes 180 tests with 100% line and branch coverage (821/821 and 466/466).
