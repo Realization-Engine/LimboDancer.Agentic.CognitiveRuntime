@@ -8,7 +8,7 @@ public enum TurnCheckpoint
 {
     DuringPhase, MovementStart, PrepFireComplete, OpportunityDesignation, UnitMovement,
     BecomesTi, MovementEnd, ClearanceResolution, OrdinaryStatusCleanup,
-    ConcealmentComplete, PlayerTurnEnd, AdvancingFireEnd, Immediate
+    ConcealmentComplete, PlayerTurnEnd, AdvancingFireEnd, Immediate, PrepFireOpening
 }
 public enum TurnObligationState
 {

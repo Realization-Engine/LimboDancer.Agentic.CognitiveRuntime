@@ -35,6 +35,19 @@ public sealed class TurnCapabilityInventoryTests
     }
 
     [Fact]
+    public void WhiteSmokeTimingDoesNotPromoteAtmosphereCommandsOrEraseOtherSources()
+    {
+        var inventory = TurnCapabilityInventory.Load(Catalog);
+        Assert.Equal(TurnSupport.Pending, inventory.Bindings.Single(row => row.Id == "smoke").PendingRuleSupport);
+        var snapshot = TurnAtmosphere.Compose([], [], ["unclassified-white-looking-counter"]);
+        Assert.Equal(7, snapshot.PendingRules.Length);
+        Assert.All(snapshot.PendingRules, item => Assert.Equal(TurnSupport.Pending, item.CommandSupport));
+        Assert.Equal("unclassified-white-looking-counter", Assert.Single(snapshot.UnclassifiedSmoke));
+        Assert.Equal(9, inventory.Gaps.Length);
+        Assert.Equal(538, inventory.Bindings.Count(row => row.Kind == TurnInventoryKind.Topic));
+    }
+
+    [Fact]
     public void InventoryAccountsForEveryIdentityAndReferenceLinkWithoutPromotingCapabilities()
     {
         var inventory = TurnCapabilityInventory.Load(Catalog);

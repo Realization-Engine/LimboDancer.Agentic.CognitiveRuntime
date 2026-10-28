@@ -61,7 +61,7 @@ Each package's fourth task is acceptance of its preceding scope, including negat
 
 Start D1.1, then D1.2-D1.4. Continue D2, D3, D4, D5 and D6 in order; then D7, D8 and D9 respecting the table's dependencies. D9.1 may run early to supply the core-topic matrix. If an authoritative source blocks a task, record the exact missing source and continue independent ready tasks. Do not manufacture rules to clear the queue.
 
-Current ledger: 1/36 complete; D1.1 is complete and D1.2 is in progress. B5-D1 through B5-D9 all retain Pending rule support. The legacy baseline remains accepted independently of this new plan.
+Current ledger: 1/36 complete; D1.1 is complete; D1.2 and D2.1 are in progress. The replacement marker/movement source dependency is recorded below. B5-D1 through B5-D9 all retain Pending rule support. The legacy baseline remains accepted independently of this new plan.
 
 ### D1.1 acceptance
 
@@ -125,3 +125,12 @@ Units transfers each retained mortar assignment, phase spotting/SW-use evidence 
 Validation: the full Play suite passed 1,134 tests before the final evidence/disclosure tightening. The final change passes 74 focused Play tests, including both HS choices, failed NTC, Guard succession, changed retries, altered lineage, legacy records, private history, continued fire and movement restrictions. All 421 Units tests, 45 focused Spotter Rules tests and 37 affected component/page tests pass. ASL.Turns remains 182 passing tests, 825/825 lines and 470/470 branches (100%, no exclusions). All 538 topics, 38 dependencies and nine pending packages remain represented. D1.2 is not complete.
 
 Replacement source dependency: C9.3 and ASOP 3.11A establish replacement at the following owner's MPh opening. The reviewed local text and attributed Q&A do not settle the exact marker/movement effects to apply to that replacement designation. That execution path remains blocked on source clarification; no inferred Prep Fire marker or movement permission is admitted. Setup/DFF activation and wider-profile acceptance are also outstanding. Independent source-backed tasks may proceed under the execution-order policy while this point remains visible.
+
+
+### D2.1 progress: original white SMOKE rule contract
+
+`TurnWhiteSmokeRules` separates source, chemical, counter size/color, strength, owner, origin and applied-opening evidence. A24.5 establishes conventional/WP strength for an admitted ordnance/OBA placement; D13.31-.34 dispenser sources remain dispersed conventional smoke. Strength calculation is not placement permission. Unknown early-fire history does not justify full strength. Grenades, gray drift, Blaze, cave and Napalm sources are not silently treated as ordinary white counters.
+
+A24.4 and ASOP 2.11A cleanup is assessed only at an explicit `PrepFireOpening` checkpoint for the owner. One immutable snapshot orders all existing dispersed-counter removals before full-counter dispersal. A receipt prevents a newly dispersed counter from being removed by repeated assessment in the same opening; a newly created PFPh counter also waits for a later opening. Inactive and unknown counters do not acquire invented expiration evidence. Wind/Gust, linked drift, WP/Napalm consequences, causal source creation, durable receipts and governed cleanup still require integration before D2.1 is complete.
+
+Validation: 84 focused Rules tests pass, including the existing obligation/Spotter contracts. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches (100%, no exclusions). The inventory regression preserves all seven atmosphere gaps, unclassified counters, nine packages and 538 topics. No atmosphere command or profile is promoted by this read-only rule contract.
