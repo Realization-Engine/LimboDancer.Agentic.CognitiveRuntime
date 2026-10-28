@@ -547,3 +547,10 @@ Validation: all 457 Units tests pass, including 11 new load cases. All 68 focuse
 Rules now distinguishes forced-unload full-period recovery from preserved progress for an already-unloaded Pack-TI Gun. The G10.4 table, elimination modifier, terrain/SW Bank exception and cumulative Low Ammo arithmetic have explicit, tested outcomes. Missing facts cannot generate partial effects. Durable casualty/recovery receipts and atomic host effects remain required in D3.2/D3.3; live execution and all nine packages stay Pending. The detailed design records the source examples and remaining gates.
 
 Validation: 102 focused packing/work Rules tests pass, including 34 new vulnerability/recovery cases. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered (100%, no exclusions). Existing pending-inventory regressions still pass. No live host capability, game record, Studio process or dice source was changed.
+
+
+### D3.2 progress: casualty receipt persistence (2026-10-28)
+
+The scoped casualty codec now binds actors and causal casualty/die/effect references, replays Rules-owned outcomes, preserves cumulative or unknown ammunition state, and retains the distinction between full recovery and an existing period. Required persisted facts cannot silently default to false or zero. This remains separate from live game-event admission. Work-step authentication, restart/period integration and D3.3 atomic consequences remain pending, with all nine packages visible and D3.2 still In progress.
+
+Validation: all 464 Units tests pass, including seven new casualty-journal cases. All 107 focused packing/work Rules tests pass, including five new accumulation/terminal-state cases. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered (100%, no exclusions). The existing baseline and pending-inventory regressions remain green. No live game records, Studio process or ordinary dice source was changed.
