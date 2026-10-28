@@ -61,6 +61,22 @@
           ],
           "method": "Text extraction checked for Horse/Personnel separation, counter sizes and hidden/concealed handling. No new artwork or PDF copied into the repository.",
           "finding": "Horse counters are separate from their Personnel Riders; A13.32 distinguishes squad, HS and SMC capacities. G10-designated Mules retain distinct identities and cannot create an SMC Mule. Movement, Riders, reduction and vulnerability remain pending execution."
+        },
+        {
+          "date": "2026-10-28",
+          "rules": [
+            "G10.33",
+            "G10.4-.42",
+            "G10.7"
+          ],
+          "physicalPages": [
+            292
+          ],
+          "printedPages": [
+            "G17"
+          ],
+          "method": "Rechecked the existing column-ordered extraction for the vulnerability table and both printed recovery examples; prior complete-page visual review remains recorded above.",
+          "finding": "Forced unloading requires a full ordinary recovery period, whereas a casualty after the Gun has already unloaded does not erase its existing progress. Low Ammo occurrences accumulate. Involuntary-unload terrain eliminates listed SW except on a Bank. No live casualty, restart, CA or ammunition integration is certified."
         }
       ]
     }

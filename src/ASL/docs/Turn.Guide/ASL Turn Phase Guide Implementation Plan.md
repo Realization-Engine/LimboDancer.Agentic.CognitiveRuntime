@@ -540,3 +540,10 @@ The Units adapter now reads actual visible actor identities, possession, nationa
 Units now persists and replays a separate `animal-pack` containment role for an actual Gun/SW on a designated squad Mule. Rules checks weapon capability and single-load structure; disclosed reads retain unknown accompaniment, terrain, opening and empty-capacity facts. Loaded setups still cannot enter live play or close the phase. D3.2 remains In progress at 2/36 complete overall. The detailed design and later-rules plan preserve the assembly, work-step, atomic-effect and D3.3 consequence requirements, with all pending rules visible.
 
 Validation: all 457 Units tests pass, including 11 new load cases. All 68 focused packing/work Rules tests and both unloaded/loaded setup-to-guide phase-close tests pass. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered (100%, no exclusions). No live Studio process, ordinary dice or existing game records were changed.
+
+
+### D3.2 progress: restart consequence prerequisite (2026-10-28)
+
+Rules now distinguishes forced-unload full-period recovery from preserved progress for an already-unloaded Pack-TI Gun. The G10.4 table, elimination modifier, terrain/SW Bank exception and cumulative Low Ammo arithmetic have explicit, tested outcomes. Missing facts cannot generate partial effects. Durable casualty/recovery receipts and atomic host effects remain required in D3.2/D3.3; live execution and all nine packages stay Pending. The detailed design records the source examples and remaining gates.
+
+Validation: 102 focused packing/work Rules tests pass, including 34 new vulnerability/recovery cases. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered (100%, no exclusions). Existing pending-inventory regressions still pass. No live host capability, game record, Studio process or dice source was changed.
