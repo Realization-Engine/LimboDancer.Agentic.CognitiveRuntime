@@ -656,3 +656,10 @@ B5-D1 through B5-D9 are retained requirements for the eventual all-Passes implem
 The later-pass implementation now has a typed `TurnSpotterTimingRules` contract in ASL.Rules. Hosts supply the authoritative owner, turn position and opening checkpoint, designation history, actual loss reason/position, and evidence for a Good Order reduction survivor. The verdict distinguishes retained assignment, original designation window, replacement window, outside window and not evaluated. It grants no candidate eligibility or firing permission. Missing history remains unknown; current unit condition cannot substitute for loss history.
 
 C9.3 keeps the original assignment until elimination, break or capture. A surviving Good Order half-squad retains spotting ability. A replacement requires an owner MPh opening following the loss; loss during an MPh cannot reuse that opening. The full rule history, candidate checks and governed commands remain D1.2 work, so the guide continues to display Spotter integration as pending. Sources and acceptance results are recorded in the later-pass plan. D1.1 passes 18 focused Rules tests; ASL.Turns passes 180 tests with 100% line and branch coverage (821/821 and 466/466).
+
+
+### D1.2: observed Spotter loss survives rally
+
+Units now derives durable `MortarSpotterLoss` evidence from the authoritative journal, using ASL.Rules to distinguish elimination, capture and break from mere lineage consumption. The evidence retains the event, revision and phase occurrence. The fire-history adapter discloses it only when the relevant event is visible; withheld loss makes the assignment NotEvaluated. ASL.Turns keeps a recorded loss Lost after rally, and a historical read before the loss remains Retained. Neither the observed shot nor its loss proves an original designation or grants replacement permission.
+
+This is an implementation increment within D1.2. Explicit designation/replacement, reduced-squad inheritance and multi-mortar restrictions remain pending and visible. Validation: 20 Play and 23 Rules tests pass; all 180 ASL.Turns tests pass with 821/821 lines and 468/468 branches covered (100%, no exclusions).

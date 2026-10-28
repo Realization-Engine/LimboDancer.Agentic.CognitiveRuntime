@@ -70,3 +70,11 @@ Current ledger: 1/36 complete; D1.1 is complete and D1.2 is in progress. B5-D1 t
 Source: local Chapter C 9.3 and 9.31, with replacement ASOP 3.11A from the reconciled Movement catalog. Candidate eligibility, movement, LOS, fire counters, Opportunity Fire and actual designation commands belong to D1.2/D1.3. No live command or capability is promoted by this read-only contract.
 
 Validation: 18 focused Rules tests pass. All 180 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered, without exclusions. An inventory regression proves that the new contract retains the pending Spotter command, B5-D1 package and all 538 reference topics.
+
+### D1.2 progress: durable observed loss
+
+The first D1.2 increment preserves observed assignment losses in replay, including the causing event and phase occurrence. A later rally cannot erase a recorded break and make the guide call that old assignment retained. The disclosed fire history now uses both current state and durable loss evidence; a withheld loss yields NotEvaluated rather than leaking it or suggesting retention. Historical reads before the loss remain unchanged. Existing shot records remain observations, not manufactured original designations.
+
+Validation: 20 focused Play regressions and 23 focused Rules tests pass. All 180 ASL.Turns tests pass at 821/821 lines and 468/468 branches, without exclusions. Round-trip replay, rally, historical reads, owner/adjudicator views and withheld loss are covered across all admitted fire-history profiles.
+
+D1.2 remains In progress. Explicit designation/replacement events and commands, reduction successor inheritance, multi-mortar use and their acceptance gates are still required. No Spotter command capability is promoted by this increment; all nine packages remain pending.

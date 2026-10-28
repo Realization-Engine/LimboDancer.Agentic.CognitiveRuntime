@@ -533,6 +533,34 @@ public sealed class BacklogPass9Tests : IDisposable
         var lost = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", profile)).FireHistory!;
         Assert.Equal(TurnSpotterState.Lost, Assert.Single(lost.Spotters).State);
         Assert.NotEmpty(lost.EvaluationGaps);
+        var retainedLoss = Assert.Single(Current.MortarSpotterLosses);
+        Assert.Equal(TurnSpotterChange.Broken, retainedLoss.Change);
+        Assert.Equal("spotter-broken", retainedLoss.EventId);
+        Assert.Equal("pfph", retainedLoss.Occurrence!.Phase);
+        var rallied = loss with
+        {
+            EventId = "spotter-rallied",
+            Revision = loss.Revision + 1,
+            Payload = new ConditionsChanged("g2", new Dictionary<string, ConditionState> { [Conditions.Broken] = ConditionState.False }),
+        };
+        Assert.Equal(AppendStatus.Committed, store.Append(Scope, "spotter-rally", Revision, [rallied], Planner().Replay).Status);
+        Assert.False(Is(Current.Unit("g2")!, Conditions.Broken));
+        Assert.Equal(retainedLoss, Assert.Single(Current.MortarSpotterLosses));
+        Assert.Equal(TurnSpotterState.Lost, Assert.Single((await Planner().ReadTurnGuideProfileAsync(Scope,
+            Perspective.Side("german"), "pfph", profile)).FireHistory!.Spotters).State);
+        var afterRally = store.Read(Scope)!;
+        var roundTrip = GameEventReader.Read(Encoding.UTF8.GetBytes(GameEventWriter.Write(Scope, afterRally))).Record!;
+        Assert.Equal(retainedLoss, Assert.Single(Planner().Replay(roundTrip.Events).Current!.MortarSpotterLosses));
+        var hiddenLossStore = new FileGameStore(Path.Combine(root, "hidden-spotter-loss"));
+        var hiddenLossPlanner = new GamePlanner(hiddenLossStore, boards, Vocabulary, [Catalog], fireLos: los);
+        var hiddenLossEvents = roundTrip.Events.Select(item => item.EventId == loss.EventId ? item with { Visibility = RussianView } : item).ToArray();
+        Assert.Equal(AppendStatus.Committed, hiddenLossStore.Append(Scope, "hidden loss", 0, hiddenLossEvents, hiddenLossPlanner.Replay).Status);
+        Assert.Equal(TurnSpotterState.NotEvaluated, Assert.Single((await hiddenLossPlanner.ReadTurnGuideProfileAsync(Scope,
+            Perspective.Side("german"), "pfph", profile)).FireHistory!.Spotters).State);
+        Assert.Equal(TurnSpotterState.Lost, Assert.Single((await hiddenLossPlanner.ReadTurnGuideProfileAsync(Scope,
+            Perspective.Adjudicator, "pfph", profile)).FireHistory!.Spotters).State);
+        Assert.Equal(TurnSpotterState.Retained, Assert.Single((await Planner().ReadTurnGuideProfileAsync(Scope,
+            Perspective.Side("german"), "pfph", profile, shotRevision)).FireHistory!.Spotters).State);
     }
 
     [Fact]

@@ -309,6 +309,7 @@ public static partial class GameProjector
                     ? new(gameEvent.EventId, gameEvent.Revision, next.Turn, next.PhasingSide, next.Phase) : next.TurnPhaseOccurrence,
                 PlacedDcWindowReview = gameEvent.Payload is PlacedDcWindowReviewed ? next.PlacedDcWindowReview : null,
             };
+            next = MaintainSpotterLosses(previous, next, gameEvent);
             next = MaintainTurnWork(previous!, next, gameEvent.Payload);
             next = AssaultWeapons(next, gameEvent.Payload);
             next = KeepMovingStack(next, gameEvent.Payload);

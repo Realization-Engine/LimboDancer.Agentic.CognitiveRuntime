@@ -126,6 +126,16 @@ public sealed class TurnSpotterTimingRulesTests
         }).State);
     }
 
+    [Theory]
+    [InlineData(false, true, true, true, TurnSpotterChange.None)]
+    [InlineData(true, true, true, true, TurnSpotterChange.Eliminated)]
+    [InlineData(true, false, true, true, TurnSpotterChange.Captured)]
+    [InlineData(true, false, true, false, TurnSpotterChange.Broken)]
+    [InlineData(true, false, false, false, TurnSpotterChange.None)]
+    public void ObservedAssignmentLossDoesNotMistakeLineageConsumptionForElimination(bool active, bool eliminated,
+        bool broken, bool captured, TurnSpotterChange expected) =>
+        Assert.Equal(expected, TurnSpotterLossRules.ObservedLoss(active, eliminated, broken, captured));
+
     [Fact]
     public void InvalidAndFuturePositionsAreRejected()
     {

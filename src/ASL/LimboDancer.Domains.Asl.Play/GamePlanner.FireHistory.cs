@@ -67,11 +67,13 @@ public sealed partial class GamePlanner
                 var holder = (weapon as EquipmentInstance)?.Holding?.Holder;
                 var crew = perspective.IsAdjudicator ? state.Unit(holder ?? string.Empty)
                     : currentView.Units.FirstOrDefault(candidate => candidate.Id == holder);
-                var known = unit is not null && crew is not null;
+                var loss = state.MortarSpotterLosses.LastOrDefault(item => item.Gun == pair.Weapon && item.Spotter == pair.Spotter);
+                var lossVisible = loss is null || history.Events.Single(item => item.EventId == loss.EventId).IsVisibleTo(perspective);
+                var known = unit is not null && crew is not null && lossVisible;
                 return new TurnSpotterRead(pair.Weapon, pair.Spotter, known, unit?.Status == InstanceStatus.Active,
                     unit?.Side == crew?.Side, unit is not null && GameState.Condition(unit, Conditions.Broken) == ConditionState.True,
                     unit is not null && GameState.Condition(unit, Conditions.Captured) == ConditionState.True,
-                    shots.Any(item => item.InCurrentPhase && item.Weapon == pair.Weapon && item.Spotter == pair.Spotter));
+                    shots.Any(item => item.InCurrentPhase && item.Weapon == pair.Weapon && item.Spotter == pair.Spotter), loss is not null && lossVisible);
             }).ToImmutableArray();
         return TurnFireHistory.Compose([.. shots], observations);
     }

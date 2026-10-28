@@ -18,7 +18,7 @@ public sealed record TurnFireRecord(TurnFireKind Kind, int GameTurn, string Phas
 
 /// <summary>Authorized present facts. Unknown observations never imply a usable or lost Spotter.</summary>
 public sealed record TurnSpotterRead(string Weapon, string Spotter, bool Known, bool Active,
-    bool SameSide, bool Broken, bool Captured, bool SpottedThisPhase);
+    bool SameSide, bool Broken, bool Captured, bool SpottedThisPhase, bool RecordedLoss = false);
 
 public sealed record TurnSpotterHistory(string Weapon, string Spotter, int FirstObservedGameTurn, string FirstObservedPhase,
     TurnSpotterState State, bool? SpottedThisPhase);
@@ -61,7 +61,7 @@ public static class TurnFireHistory
             bool? spotted = null;
             if (known is { Known: true })
             {
-                state = ScenarioA1OrdnanceEligibility.RetainsMortarSpotter(known.Active, known.SameSide, known.Broken, known.Captured)
+                state = !known.RecordedLoss && ScenarioA1OrdnanceEligibility.RetainsMortarSpotter(known.Active, known.SameSide, known.Broken, known.Captured)
                     ? TurnSpotterState.Retained : TurnSpotterState.Lost;
                 spotted = known.SpottedThisPhase;
             }

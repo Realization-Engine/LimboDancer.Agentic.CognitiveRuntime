@@ -241,6 +241,10 @@ public sealed record SupportWeaponDirector(string Gun, string Leader);
 /// <summary>A light mortar's Spotter (C9.3; ruling R9.4).</summary>
 public sealed record MortarSpotter(string Gun, string Spotter);
 
+/// <summary>Observed C9.3 assignment loss. A later rally cannot erase it or establish a replacement designation.</summary>
+public sealed record MortarSpotterLoss(string Gun, string Spotter, string EventId, long Revision,
+    Rules.TurnSpotterChange Change, Rules.TurnPhaseOccurrence? Occurrence);
+
 /// <summary>A squad's one SW use this phase (A7.351): the SW, a Spotter's mortar, or <c>panzerfaust</c>.</summary>
 public sealed record SupportWeaponUse(string Unit, string Weapon);
 

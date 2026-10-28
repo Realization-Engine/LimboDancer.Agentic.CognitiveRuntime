@@ -40,6 +40,10 @@ public sealed class TurnFireHistoryTests
         Assert.Null(unknown.SpottedThisPhase);
         var lost = Assert.Single(TurnFireHistory.Compose([Shot()], [Read with { Broken = true }]).Spotters);
         Assert.Equal(TurnSpotterState.Lost, lost.State);
+        var rallied = Assert.Single(TurnFireHistory.Compose([Shot()], [Read with { RecordedLoss = true }]).Spotters);
+        Assert.Equal(TurnSpotterState.Lost, rallied.State);
+        Assert.Equal(TurnSpotterState.NotEvaluated, Assert.Single(TurnFireHistory.Compose([Shot()],
+            [Read with { Known = false, RecordedLoss = true }]).Spotters).State);
         var replaced = TurnFireHistory.Compose([Shot(), Shot("s2")], [Read, Read with { Spotter = "s2" }]);
         Assert.Equal(TurnSpotterState.Superseded, replaced.Spotters[0].State);
         Assert.Null(replaced.Spotters[0].SpottedThisPhase);
