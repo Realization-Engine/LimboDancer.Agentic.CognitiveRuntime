@@ -8,6 +8,30 @@ namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 public sealed partial class TurnGuideComponentTests
 {
     [Fact]
+    public void LiveGuideFollowsPhaseCloseButPreservesDeliberateBrowsing()
+    {
+        var actual = "afph";
+        Task<LimboDancer.Domains.Asl.Play.TurnHostGuide> Read(string browsed)
+        {
+            var scope = new TurnEvaluationContext("game", "german", "german", "existing-engine-work-v1", actual, $"{actual}:phase", "test");
+            return Task.FromResult(Guide() with
+            {
+                Guide = new TurnGuideService(Catalog, []).Describe(new(scope, browsed, false), new(scope, []))
+            });
+        }
+        var cut = context.Render<LiveTurnGuide>(p => p.Add(c => c.ScopeKey, "game/german").Add(c => c.ActualPhase, actual).Add(c => c.ReadGuide, Read));
+        actual = "rtph";
+        cut.Render(p => p.Add(c => c.ActualPhase, actual).Add(c => c.Revision, 1));
+        Assert.Equal("true", cut.Find("[data-phase=rtph]").GetAttribute("aria-pressed"));
+        cut.Find("[data-phase=rph]").Click();
+        actual = "aph";
+        cut.Render(p => p.Add(c => c.ActualPhase, actual).Add(c => c.Revision, 2));
+        Assert.Equal("true", cut.Find("[data-phase=rph]").GetAttribute("aria-pressed"));
+        Assert.Contains("Actual phase: APH", cut.Markup, StringComparison.Ordinal);
+        Assert.Contains("Pending rules:", cut.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AuditRetainsEveryDependencyLinkAndNavigatesAcrossPhases()
     {
         string? requested = null;

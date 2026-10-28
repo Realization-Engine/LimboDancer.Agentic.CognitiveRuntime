@@ -8265,7 +8265,10 @@ else if (state is not null)
             // Pass 29: the busy state is drawn before the gate is asked, so the pickers show as disabled even when the answer is quick.
             StateHasChanged();
             await DrawBusy();
-            var revision = (long)(history?.Events.Count ?? 0);
+            // A guide route may be prepared from newer host evidence than the page's last render.
+            // Confirm the revision actually submitted to the gate, while retaining the usual stale-write check.
+            var revision = arguments.TryGetProperty("expectedRevision", out var expected) && expected.TryGetInt64(out var submittedRevision)
+                ? submittedRevision : (long)(history?.Events.Count ?? 0);
             proposed = new Proposal(action, arguments, await Run(() => Live.Play.ProposeAsync(action, arguments, Live.Principal)), revision);
         }
         finally

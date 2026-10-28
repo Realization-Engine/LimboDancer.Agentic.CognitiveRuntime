@@ -608,3 +608,12 @@ The [U1 audit](ASL%20Turn%20Guide%20U1%20Audit.md) reconciles the initial compon
 Refresh is available during normal use and suppresses outdated asynchronous reads. Topic request buttons match complete route identity and live scope; execution still uses the existing governed path. No consideration flag or source reference grants permission. The audit records deliberate preview adaptations and remaining later-pass rule work.
 
 Verification: 30 focused MapStudio component, page, workspace and navigation tests pass. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Browser inspection confirms readable attention rows and the expanded cross-phase audit with its source evidence and related topic controls. No backend library source changed.
+
+
+### U1 live scenario acceptance
+
+The [live scenario acceptance](ASL%20Turn%20Guide%20Live%20Scenario%20Acceptance.md) continues The Tractor Works on the real board through UI placement, authorized opening review, guided DC proposal/confirmation, resolved obligations and governed phase close. A separate interruption branch rejects stale confirmation and retains Unknown evidence and the close block. All pending rules remain visible.
+
+The Play confirmation revision is the expected revision actually submitted with the command, including routes prepared from newer host evidence. Confirm still re-reads the journal and rejects an intervening change. The live guide follows phase changes while browsing the current phase and preserves deliberate browsing elsewhere. Opening-review authorship remains outside Studio and requires its separate existing permission. No capability, rules contract or ASL.Turns source changes.
+
+Verification: 33 focused MapStudio tests pass, including both real-board scenario cases. The isolated browser rehearsal confirms refusal before detonation, governed detonation, resolved obligation and confirmed advance to Rout. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions).

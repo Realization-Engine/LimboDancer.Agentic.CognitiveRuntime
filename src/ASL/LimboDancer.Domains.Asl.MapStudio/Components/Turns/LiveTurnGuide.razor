@@ -30,6 +30,7 @@
     {
         if (scope == ScopeKey && revision == Revision && actualPhase == ActualPhase) return;
         if (scope != ScopeKey) { host = null; phase = ActualPhase; }
+        else if (phase == actualPhase) { phase = ActualPhase; }
         scope = ScopeKey; revision = Revision; actualPhase = ActualPhase;
         await Load();
     }
