@@ -151,6 +151,26 @@ public static class ScenarioA1OrdnanceCalculator
     }
 
     /// <summary>
+    /// A hero's DRM on the To Hit DR of a non-MG SW (A15.23, p. 83; pass 72, ruling R72.8): "a -1 DRM to its To Hit or IFT DR", taken on the To Hit DR of a light
+    /// mortar or a LATW, never again on the IFT DR of its hit nor on a To Kill DR (C13.25); and the +1 of one man firing "other SW normally requiring two men",
+    /// the PSK (C13.45, C13.48), which the -1 negates. Only a shot that carries the pass's fact (<see cref="OrdnanceShot.HeroWeapons"/>) takes them.
+    /// </summary>
+    internal static IEnumerable<FireModifier> HeroDrm(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference)
+    {
+        if (shot.HeroWeapons != true || shot.Vehicle is not null || gun.GunType is not ("mortar" or "latw")
+            || reference.Fire.Definitions.GetValueOrDefault(shot.Crew!.DefinitionId ?? string.Empty)?.IsHero != true)
+        {
+            yield break;
+        }
+
+        yield return new FireModifier("hero:" + shot.Crew.UnitId, -1, "A15.23");
+        if (gun.LatwType == "psk")
+        {
+            yield return new FireModifier("hero-two-man:" + shot.Crew.UnitId, 1, "C13.45");
+        }
+    }
+
+    /// <summary>
     /// The reasons a shot cannot be committed before any roll: empty when every outcome the dice can reach is decided. The
     /// shot must stop only at its missing To Hit DR, and the Fire package must decide both a normal hit and a Critical Hit on
     /// every unit in the target Location.
@@ -435,11 +455,12 @@ public static class ScenarioA1OrdnanceCalculator
         var crew = shot.Crew!;
         // C5.8, A21.13 (ruling R8.8): a squad or HS of the Gun's nationality mans it as non-qualified Infantry, with Case H.
         // C9.2, C13.31 (rulings R9.2, R9.7): any Personnel unit of its nationality fires a light mortar or a PF; a berserk unit may fire a PF. The SW
-        // Chart (pass 9b): a lone SMC does not fire a PSK at full effect.
+        // Chart (pass 9b): a lone SMC does not fire a PSK at full effect. C13.45, C13.48, A15.23 (p. 184; pass 72, ruling R72.8): "A BAZ can be used by one SMC
+        // only if that SMC is a Hero", with the +1 of HeroDrm; a lone leader stays refused (ruling R9.11), and two SMC together are pass 110's.
         if ((shot.Vehicle is null ? reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!) is not { } crewDefinition
                 || crewDefinition.Nationality != gun.Nationality
                 || (mortar || latw || machineGun ? !Personnel.Contains(crewDefinition.Kind) : shot.NonQualified == true ? !crewDefinition.IsMmc : !ScenarioA1Definitions.IsCrew(crewDefinition.Kind))
-                || (gun.LatwType == "psk" && crewDefinition.Kind is "asl:leader" or "asl:hero")
+                || (gun.LatwType == "psk" && (crewDefinition.Kind == "asl:leader" || (crewDefinition.Kind == "asl:hero" && shot.HeroWeapons != true)))
                 : crew.DefinitionId != gun.Id || shot.NonQualified == true)
             || crew.Broken == true || (crew.Berserk == true && !pf))
         {
@@ -841,6 +862,7 @@ public static class ScenarioA1OrdnanceCalculator
             }
 
             drm.AddRange(Leadership(shot, reference));
+            drm.AddRange(HeroDrm(shot, gun, reference));
         }
         else if (CaseC(shot, gun) is { } caseC)
         {

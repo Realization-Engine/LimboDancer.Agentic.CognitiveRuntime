@@ -285,3 +285,27 @@ Built on 2026-10-27, about 21:27 to 22:00, by a building agent to a brief (`brie
 - `p72-ammo-shortage-mmg`: an MMG at its lowered B# (the same read as 5c's game; not played again).
 - `p72-ammo-shortage-fire-lane` (German MPh): after the German move to [A2], the Russian LMG's Defensive First Fire with a Fire Lane to [A1] is refused: "The firing side's OB has Ammunition Shortages, which prevent placement of Fire Lanes; its MG may fire without one (A19.131, A9.22)".
 - Tests, by method (the agent's report): Rules 23 methods (one test of its own fixed and rerun); Play 8. Strict builds exit 0.
+
+## 12. The hero's weapons: 72.1, part III (increment 5e)
+
+Built on 2026-10-27, about 22:04 to 22:23, by a building agent to a brief (`brief_5e.md`), ruling R72.8, its diff read and its games played in the Studio by the session.
+
+### 12.1 Departures from the frame, first
+
+- **A new optional fact guards the -1 and the PSK:** `OrdnanceShot.HeroWeapons` (`heroWeapons`), since an ordnance shot carries no `unitSubstitution` stamp. A shot recorded before the pass has none and replays as resolved; a lone hero's PSK is lifted only with the fact.
+- **A hero's light mortar forfeits his inherent FP already** (the projector's `GunCrewsFired`); one gap is left: A7.353's crew exception still lets him add halved inherent FP later in the same phase (Subsequent First Fire, FPF, Final Fire adjacent), where A15.23 forfeits it for the phase. A backlog row (it needs the phase of the SW's use as state).
+- **A MG fired as ordnance at an AFV by a hero** (A9.61) keeps no hero DRM. A backlog row.
+- **Texts for the fixes:** the PSK is named "The PSK -" in the proposal and record; the proposal's DRM list reads "hero:1-4-9 hero G1 -1" (the record's own line is worded: "- 1 (hero's SW, 1-4-9 hero G1, A15.23)"). `ordnance.crew-outside` does not say a lone leader may not fire a PSK.
+
+### 12.2 What is built
+
+- Rules: `ScenarioA1OrdnanceCalculator.HeroDrm` (a hero crew, the fact, no vehicle, a light mortar or LATW): `hero:<id>` -1 (A15.23), and `hero-two-man:<id>` +1 for a PSK (C13.45, C13.48), on the To Hit DRM only, in the LATW, Area (mortar), and Armor (at a vehicle) paths; the To Kill and a hit's IFT take none. The PSK's crew check refuses a leader, and a hero only without the fact. The fire calculator no longer refuses a hero's ATR: A15.24's `heroic:` -1 applies within its range, and `hero-mg` stays MG-only.
+- Play: `LiveOrdnance.FromState` sets the fact for a hero crew; the verifier keeps the state's value only when the record carries it. `RefusalReasons`' `fire.weapon-outside`: "a hero fires one MG, ATR, or FT".
+- MapStudio: the labels "hero's SW, {0}" and "hero alone with a two-man SW, {0}".
+
+### 12.3 The games and the tests
+
+- `p72-hero-psk` (board 3, German PFPh): a lone German hero's PSK at a T-34 in [A1]; dice 2 3, 6 6: "DR 2, 3 = 5 - 1 (hero's SW, A15.23) + 1 (hero alone with a two-man SW, C13.45) = Final DR 5: hit ... TK DR 6, 6 = 12: a dud".
+- `p72-hero-atr` (Russian PFPh): a Russian hero's ATR as Small Arms at [A1]: "1 FP ... DRM - 1 (heroic, A15.24)"; no `hero-mg`.
+- `p72-hero-mortar` (German PFPh): a German hero's 50mm mortar at [A1]: "DR 2, 3 = 5 - 1 (hero's SW, A15.23) = Final DR 4: hit"; the IFT DR 6, 5 with no hero DRM.
+- Tests, by method (the agent's report): Rules 8, Play 9 (the hero, PSK, ATR, mortar, and PF methods of passes 9, 9b, 15). Strict builds exit 0.

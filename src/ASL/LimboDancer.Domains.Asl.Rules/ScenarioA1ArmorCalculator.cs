@@ -392,6 +392,9 @@ internal static class ScenarioA1ArmorCalculator
         drm.AddRange(ScenarioA1OrdnanceCalculator.PassEightFirerDrm(shot));
         drm.AddRange(ScenarioA1OrdnanceCalculator.Leadership(shot, reference));
 
+        // A15.23, C13.25 (pass 72, ruling R72.8): a hero's DRM modify the To Hit DR of a PF, PSK, or ATR at a vehicle, never its To Kill DR.
+        drm.AddRange(ScenarioA1OrdnanceCalculator.HeroDrm(shot, gun, reference));
+
         // D3.44, D3.45 (p. 200; pass 55, rulings R55.16, R55.18): the vehicle's Armor Leader modifies its MA's To Hit DR, BU or not; an
         // Inexperienced Crew adds one.
         if (ScenarioA1ArmorLeaders.Modifier(shot.Vehicle?.ArmorLeadership) is { } armorLeader)

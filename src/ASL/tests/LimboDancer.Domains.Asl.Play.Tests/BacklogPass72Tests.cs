@@ -42,6 +42,9 @@ public sealed class BacklogPass72Tests : IDisposable
     // The game's special rules, as a card's tokens (increment 5c); none unless a test sets them.
     private string[] ssrs = [];
 
+    // The scenario year (increment 5e: a PSK needs one from September 1943); none unless a test sets it.
+    private int? year;
+
     public BacklogPass72Tests() => store = new FileGameStore(root);
 
     public void Dispose()
@@ -186,6 +189,11 @@ public sealed class BacklogPass72Tests : IDisposable
         if (ssrs.Length > 0)
         {
             start["specialRules"] = ssrs;
+        }
+
+        if (year is { } scenarioYear)
+        {
+            start["scenarioYear"] = scenarioYear;
         }
 
         Committed(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
@@ -689,5 +697,67 @@ public sealed class BacklogPass72Tests : IDisposable
         });
         Assert.NotEqual(PlayOutcome.Committed, refused.Outcome);
         Assert.Contains(refused.Reasons, reason => reason.Contains(ScenarioA1FireEligibility.AmmunitionShortageFireLaneRefusal, StringComparison.Ordinal));
+    }
+
+    // Increment 5e: the hero's weapons (ruling R72.8).
+
+    private static readonly string[] RussianHero = ["rh"];
+
+    private static Dictionary<string, object> Latw(string id, string definition, string holder, string side) => new()
+    {
+        ["id"] = id,
+        ["kind"] = "asl:latw",
+        ["definition"] = definition,
+        ["side"] = side,
+        ["holding"] = new
+        {
+            holder,
+            role = "possessed"
+        },
+        ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+    };
+
+    [Fact]
+    public async Task ALoneHeroFiresAPskAtATankWithTheTwoManDrmNegated()
+    {
+        // C13.45, C13.48 (p. 184), A15.23 (ruling R72.8): in the German AFPh of July 1944 the German hero in C5 fires his PSK at the Russian T-34 in C3, two hexes
+        // off: the PSK's 9, Case C3 +2 for the AFPh, his -1 and the +1 of one man firing a two-man SW. The DR 2 + 3 (7) hits; the To Kill DR 6 + 6 is a dud and
+        // takes no hero DRM (C13.25). The record carries the pass's fact, and the game replays without error. Before the pass a lone hero was refused the PSK.
+        year = 1944;
+        await Setup(Unit("gh", "asl:hero", "attacker-hero", "C5", "german"), Latw("psk", "attacker-psk", "gh", "german"), Vehicle("ru-t", "defender-tank", "C3", "russian", "east"));
+        await AdvanceTo("afph");
+        var before = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Once(2, 3, 6, 6, 3, 4, 3, 4), new Dictionary<string, object> { ["gunId"] = "psk", ["target"] = L("C3"), ["targetVehicle"] = "ru-t" }));
+        var fired = Assert.Single(Since(before).Select(item => item.Payload).OfType<OrdnanceFired>());
+        Assert.True(fired.Facts.Deserialize<OrdnanceShot>(LiveFire.Json)!.HeroWeapons);
+        var shot = fired.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json)!;
+        Assert.Equal([("hero:gh", -1m), ("hero-two-man:gh", 1m)],
+            shot.ToHit!.Drm.Where(item => item.Name.StartsWith("hero", StringComparison.Ordinal)).Select(item => (item.Name, item.Value)));
+        Assert.True(shot.ToHit.Hit);
+        Assert.DoesNotContain(shot.Kill!.Modifications, item => item.Name.StartsWith("hero", StringComparison.Ordinal));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AHeroFiresAnAtrAtASquadAsSmallArmsWithHisHeroicDrm()
+    {
+        // C13.24, A15.23, A15.24 (ruling R72.8): in the German DFPh the Russian hero in C4 fires his ATR as Small Arms at the German 4-6-7 in C6, two hexes off:
+        // 1 FP, A15.24's -1 within the ATR's Normal Range, no hero-mg +1, no inherent FP of his own. The DR 5 + 4 is a Final 8, no effect. Before the pass a hero was
+        // refused the ATR.
+        await Setup(Squad("g1", "C6", "german"), Unit("rh", "asl:hero", "defender-hero", "C4", "russian"), Latw("atr", "defender-atr", "rh", "russian"));
+        await AdvanceTo("dfph");
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(5, 4), new
+        {
+            firers = RussianHero,
+            weapons = new Dictionary<string, string[]> { ["rh"] = ["atr"] },
+            target = L("C6"),
+        }));
+        var fire = Assert.Single(Since(before).Select(item => item.Payload).OfType<FireResolved>());
+        var arithmetic = fire.Resolution.Deserialize<FireResolution>(LiveFire.Json)!.Arithmetic!;
+        Assert.Equal([("heroic:rh", -1m)], arithmetic.Drm.Where(item => item.Name.StartsWith("hero", StringComparison.Ordinal)).Select(item => (item.Name, item.Value)));
+        Assert.DoesNotContain(arithmetic.Firers, item => item.UnitId == "rh");
+        Assert.Equal(1m, arithmetic.TotalFirepower);
+        NoReplayErrors();
     }
 }

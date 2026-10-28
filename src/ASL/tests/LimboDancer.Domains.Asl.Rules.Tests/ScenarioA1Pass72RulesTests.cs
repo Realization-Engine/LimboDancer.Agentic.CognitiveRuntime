@@ -673,4 +673,112 @@ public sealed class ScenarioA1Pass72RulesTests
                 AmmunitionShortage = null
             }, gunner, mg, true, 6, 2, true)));
     }
+
+    // Increment 5e: the hero's weapons (A15.23, A15.24, C13.25, C13.45; ruling R72.8).
+
+    private static FireAttack OrdnanceHit(string phase, string side, FireTarget[] targets) =>
+        new(phase, side, null, null, FireAt, [], null, null, true, new FireLos(false, 0, true, false), 7, "open-ground", targets, 2, null);
+
+    private static OrdnanceShot Stamped(OrdnanceShot shot, bool stamped) => shot with
+    {
+        HeroWeapons = stamped ? true : null,
+        Rolls = new OrdnanceRolls([2, 3], null, null, new FireRolls([6, 5], null, null, null), null)
+        {
+            ToKill = [6, 6],
+            PanzerfaustCheck = 1,
+            CrewSurvival = [6, 6],
+            CrewCheck = [3, 4],
+            ShockCheck = [3, 4],
+        },
+    };
+
+    // A LATW (or a PF) of the firer's side at the enemy tank, from a unit of the given definition, in the PFPh.
+    private static OrdnanceShot AtTheTank(string nationality, string weapon, string firer, string tank, string ammunition, int range, bool stamped) =>
+        Stamped(new OrdnanceShot("PFPh", "phasing", nationality, new OrdnanceGun("sw", weapon, false, 0, false, false),
+            new OrdnanceCrew("hero", firer, false, false, false, false, false), FireAt, range, 0, false, true, 0, OrdnanceHit("PFPh", "phasing", []), null)
+        {
+            VehicleTarget = new OrdnanceVehicleTarget("tank", tank, "side", "side", false, false, false, false, true),
+            Ammunition = ammunition,
+            ScenarioYear = 1944,
+            Panzerfaust = weapon == OrdnanceTargetTypes.Panzerfaust ? new OrdnancePanzerfaust(0, 4, false, false) : null,
+        }, stamped);
+
+    private static FireModifier[] HeroDrm(IEnumerable<FireModifier> drm) => [.. drm.Where(item => item.Name.StartsWith("hero", StringComparison.Ordinal))];
+
+    [Fact]
+    public void AHerosLightMortarTakesItsMinusOneOnTheToHitDrOnly()
+    {
+        // A15.23 (p. 83; ruling R72.8): the German hero's 50mm mortar at the Russian squad 5 hexes off takes -1 on its To Hit DR; the hit's IFT DR takes neither
+        // it nor A15.24's heroic DRM. C9.2 (p. 179): a lone SMC firing a light mortar loses its Multiple ROF.
+        var target = new FireTarget("ru-s", "defender-squad", FireAt, false, false, false, false, false, false, false) { KnownEnemyInLos = true, Captors = [] };
+        var mortar = new OrdnanceShot("PFPh", "phasing", "german", new OrdnanceGun("de-mtr", "attacker-light-mortar", false, 0, false, false),
+            new OrdnanceCrew("de-h", "attacker-hero", false, false, false, false, false), FireAt, 5, 0, false, true, 0, OrdnanceHit("PFPh", "phasing", [target]), null)
+        {
+            TargetType = OrdnanceTargetTypes.Area,
+        };
+        var result = ScenarioA1OrdnanceCalculator.Resolve(Stamped(mortar, true), Ordnance);
+        Assert.True(result.Disposition == OrdnanceResolution.Resolved, string.Join("; ", result.Reasons));
+        var hero = Assert.Single(HeroDrm(result.ToHit!.Drm));
+        Assert.Equal(("hero:de-h", -1m, "A15.23"), (hero.Name, hero.Value, hero.Rule));
+        Assert.True(result.ToHit.Hit);
+        Assert.Empty(HeroDrm(result.Hit!.Arithmetic!.Drm));
+        Assert.Equal(0, result.Gun!.RateOfFire);
+
+        // A record made before the pass carries no fact and takes no -1, as it was resolved.
+        Assert.Empty(HeroDrm(ScenarioA1OrdnanceCalculator.Resolve(Stamped(mortar, false), Ordnance).ToHit!.Drm));
+    }
+
+    [Fact]
+    public void AHerosPfAndAtrAtAVehicleTakeTheMinusOneOnTheToHitDrAndNeverOnTheToKill()
+    {
+        // A15.23, C13.25 (p. 183; ruling R72.8): "Leadership/Hero modifiers do not apply to ATR To Kill DR, but do modify any To Hit DR"; so a PF's.
+        foreach (var shot in new[]
+        {
+            AtTheTank("german", OrdnanceTargetTypes.Panzerfaust, "attacker-hero", "defender-tank", "heat", 2, true),
+            AtTheTank("russian", "defender-atr", "defender-hero", "attacker-tank", "ap", 3, true),
+        })
+        {
+            var result = ScenarioA1OrdnanceCalculator.Resolve(shot, Ordnance);
+            Assert.True(result.Disposition == OrdnanceResolution.Resolved, string.Join("; ", result.Reasons));
+            Assert.Equal(["hero:hero"], HeroDrm(result.ToHit!.Drm).Select(item => item.Name));
+            Assert.Empty(HeroDrm(result.Kill!.Modifications));
+        }
+    }
+
+    [Fact]
+    public void ALoneHeroFiresAPskWithTheTwoManPlusOneNegatedAndALoneLeaderStaysRefused()
+    {
+        // C13.45, C13.48 (p. 184), A15.23 (ruling R72.8): "A BAZ can be used by one SMC only if that SMC is a Hero": +1 for one man firing a SW that needs two,
+        // negated by his -1, both named in the arithmetic.
+        var hero = ScenarioA1OrdnanceCalculator.Resolve(AtTheTank("german", "attacker-psk", "attacker-hero", "defender-tank", "heat", 2, true), Ordnance);
+        Assert.True(hero.Disposition == OrdnanceResolution.Resolved, string.Join("; ", hero.Reasons));
+        Assert.Equal([("hero:hero", -1m), ("hero-two-man:hero", 1m)], HeroDrm(hero.ToHit!.Drm).Select(item => (item.Name, item.Value)));
+        Assert.Equal(0m, HeroDrm(hero.ToHit.Drm).Sum(item => item.Value));
+
+        // Ruling R9.11: a lone leader fires no PSK; nor a hero in a shot without the pass's fact, which no record before the pass could hold.
+        Assert.Contains("asl.a1.ordnance.crew-outside",
+            ScenarioA1OrdnanceCalculator.Resolve(AtTheTank("german", "attacker-psk", "attacker-leader-8-1", "defender-tank", "heat", 2, true), Ordnance).Reasons);
+        Assert.Contains("asl.a1.ordnance.crew-outside",
+            ScenarioA1OrdnanceCalculator.Resolve(AtTheTank("german", "attacker-psk", "attacker-hero", "defender-tank", "heat", 2, false), Ordnance).Reasons);
+    }
+
+    [Fact]
+    public void AHerosAtrAsSmallArmsTakesTheHeroicDrmAndNoHeroMgDrm()
+    {
+        // C13.24, C13.25 (p. 183), A15.23, A15.24 (ruling R72.8): the Russian hero fires his ATR as Small Arms at the German squad 2 hexes off, within its Normal
+        // Range of 12: A15.24's -1, no hero-mg +1 (it is no MG), no second -1, and no inherent FP of his own.
+        var hero = new FireFirer("ru-h", "defender-hero", FireFrom, false, false, false, false, true)
+        {
+            Weapons = [new FireWeapon("ru-atr", "defender-atr", false, false, false)],
+            UsesSupportWeapon = true,
+        };
+        var result = Resolved(new FireAttack("PFPh", "phasing", true, FireFrom, FireAt, [hero], null, 2, true, new FireLos(false, 0, true, false), null, "open-ground",
+            [new FireTarget("de-t", "attacker-squad", FireAt, false, false, false, false, false, false, false)], 3, new FireRolls([5, 4], null, null, null)) with
+        {
+            UnitSubstitution = true,
+            CoweringMarksAndWeaponResidual = true,
+        }, [3, 4]);
+        Assert.Equal([("heroic:ru-h", -1m)], HeroDrm(result.Arithmetic!.Drm).Select(item => (item.Name, item.Value)));
+        Assert.DoesNotContain(result.Arithmetic.Firers, item => item.UnitId == "ru-h");
+    }
 }

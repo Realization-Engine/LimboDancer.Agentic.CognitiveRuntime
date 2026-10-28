@@ -393,6 +393,10 @@ public static class DisplayText
         ["berserk-leader"] = "berserk leader {0}",
         ["heroic"] = "heroic, {0}",
         ["hero-mg"] = "hero's MG, {0}",
+
+        // Pass 72 (A15.23, C13.45; ruling R72.8): a hero's -1 with a non-MG SW, and the +1 of one man firing a PSK.
+        ["hero"] = "hero's SW, {0}",
+        ["hero-two-man"] = "hero alone with a two-man SW, {0}",
         ["created-leader"] = "the leader created",
         ["smc-combining"] = "SMC combining, {0}",
         ["tem"] = "{1} TEM",

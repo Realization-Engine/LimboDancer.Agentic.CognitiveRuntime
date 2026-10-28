@@ -322,6 +322,10 @@ public static class LiveOrdnance
 
             // A19.131 (pass 72, ruling R72.12): the side's Ammunition Shortage lowers its Depletion Numbers and a SW's B#; Rules says which.
             AmmunitionShortage = ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, side) ? true : null,
+
+            // A15.23 (pass 72, ruling R72.8): a hero's SW shot is recorded under the pass's rule; Rules gives his DRM.
+            HeroWeapons = crew.Kind == "asl:hero" && (mortar || gun.Kind == "asl:latw") ? true : null,
+
             // C13.48 (pass 60): a LATW at Personnel names its round, and a PSK's date is read from the year.
             ScenarioYear = ScenarioA1OrdnanceEligibility.RecordsYear(vehicleTarget is not null, ammunition is not null || gun.Kind == "asl:latw", state.Side(side)?.Nationality)
                 ? state.ScenarioYear : null,
@@ -598,6 +602,9 @@ public static class LiveOrdnance
             // D.8A (pass 60, ruling R60.7): a PF's hit on an AFV attacks its Vulnerable crew Collaterally.
             SpecificCollateral = vehicle is null ? null : true,
             Panzerfaust = new OrdnancePanzerfaust(state.PanzerfaustShots.GetValueOrDefault(unit.Side!), PanzerfaustAllowance(state, unit.Side!), null, Is(unit, Conditions.Heroic)),
+
+            // A15.23 (pass 72, ruling R72.8): a hero's PF shot is recorded under the pass's rule.
+            HeroWeapons = unit.Kind == "asl:hero" ? true : null,
         };
         if (director is not null)
         {
@@ -810,6 +817,13 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         // The map facts are taken as recorded; the state reads of pass 8 are recomputed (table player, pass 8): Bore Sighting (C6.43), overstacking
         // (A5.12, A5.131), and Emplacement. A SW is where its possessor is; a PF where its firer is.
         var merged = ScenarioA1OrdnanceEligibility.WithRecordedMapFacts(expected, recorded);
+
+        // A15.23 (pass 72, ruling R72.8): a hero's shot recorded before the pass carries no HeroWeapons fact and replays without his DRM; one that carries it is
+        // held to the state's.
+        merged = merged with
+        {
+            HeroWeapons = recorded.HeroWeapons == true ? merged.HeroWeapons : null,
+        };
 
         // Pass 50 (ruling R45.4's rule for a new fact): a record made before the pass says nothing of the vehicle's other weapons, and is compared without.
         if (merged.Vehicle is { Weapons: not null } withWeapons && recorded.Vehicle is { Weapons: null }
