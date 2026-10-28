@@ -28,7 +28,7 @@ public static class RefusalReasons
         ["fire.spraying-fire-outside"] = "Spraying Fire is by MGs, and by squads whose Range is underscored, to a range of three hexes; every member of the group must be capable of it, in the PFPh, AFPh, or DFPh, and never at its own Location (A7.34, A9.5, A9.52)",
         ["fire.mg-direction-outside"] = "a MG fires beyond 16 hexes only when an Infantry leader directs it (A9.4)",
         ["fire.firers-of-two-sides"] = "the firers belong to two sides",
-        ["fire.weapon-outside"] = "a MG, ATR, or FT is malfunctioned, not its firer's side's, already fired, or more than the firer may use; a hero fires one MG or FT (A7.35, A9.1, A15.23)",
+        ["fire.weapon-outside"] = "a MG, ATR, or FT is malfunctioned, not its firer's side's, already fired, or more than the firer may use; a hero fires one MG, ATR, or FT (A7.35, A9.1, A15.23)",
         ["fire.flamethrower-outside"] = "a FT attacks alone, with no other firer, weapon, inherent FP, or leader, from an unpinned unit; at Long Range only through a LOS with no Hindrance, and never at a target more than two levels away (A22.31 to A22.33; ruling R15.1)",
         ["fire.mol-outside"] = "one unpinned MMC or hero per attack makes a MOL Check, in a PBF or TPBF attack that is not Subsequent First Fire or FPF, with no vehicle in the target Location unless it names that AFV; a squad adds its inherent FP and fires no SW (A22.611, A22.612; ruling R15.4)",
         ["fire.target-vehicle-outside"] = "only a FT, a MOL, or a Placed or Thrown DC names a vehicle, and only an enemy AFV in the target Location: fire at an unarmored vehicle without naming it (A22.34, A22.612, A23.5; ruling R60.15)",
@@ -99,7 +99,8 @@ public static class RefusalReasons
         ["ordnance.canister-gun-outside"] = "this Gun has no Canister: its counter lists none, or its Gun Size has no Canister FP (37mm 12, 75mm 20, 105mm 24; C8.4)",
         ["ordnance.canister-outside"] = "a fact of the Canister shot is outside the reviewed cases: it names one of the five aims of its Covered Arc and no vehicle (C8.4)",
         ["ordnance.canister-movement-phase"] = "Canister as Defensive First Fire in the MPh is not built; fire it in the PFPh, AFPh, or DFPh (C8.4)",
-        ["ordnance.crew-outside"] = "the Gun is not manned by a crew of its side able to fire it (A21.13)",
+        // Pass 72 (the reviews' known items): a lone leader with a PSK is refused here too (C13.45, ruling R9.11); a hero alone may fire it (A15.23).
+        ["ordnance.crew-outside"] = "the Gun is not manned by a crew of its side able to fire it (A21.13); a lone leader may not fire a PSK, which one SMC fires only as a hero (C13.45, A15.23)",
         ["ordnance.gun-already-fired"] = "the Gun has fired and did not keep its Multiple ROF (C2.24)",
         ["ordnance.out-of-range"] = "the target is beyond the Gun's range, nearer than its minimum range, or in its own hex (C2.25, C5.5)",
         ["ordnance.elevation-outside"] = "the target is at another level at a range less than the elevation difference between them: a Gun fires at another level only at a range of at least that difference (C2.6)",

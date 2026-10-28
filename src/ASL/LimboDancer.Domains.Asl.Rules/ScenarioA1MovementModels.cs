@@ -257,8 +257,8 @@ public sealed record BerserkNeighbourFacts(string Id, bool Active, string? Side,
 /// <summary>One SW a berserk unit holds, with the portage its catalog definition prints (null when none).</summary>
 public sealed record BerserkCarriedFacts(string ItemId, int? Portage);
 
-/// <summary>One berserk mover as the abandonment of its SW reads it (A15.431): whether it has moved this MPh, a SMC, and what it holds in the state's order.</summary>
-public sealed record BerserkAbandonFacts(string Id, bool FirstStep, bool Smc, IReadOnlyList<BerserkCarriedFacts> Carried);
+/// <summary>One berserk mover as the abandonment of its SW reads it (A15.431): a SMC, and what it holds in the state's order.</summary>
+public sealed record BerserkAbandonFacts(string Id, bool Smc, IReadOnlyList<BerserkCarriedFacts> Carried);
 
 /// <summary>One mover against Assault Movement and Double Time (A4.5, A4.42, A4.61, E1.51): its conditions, whether its CX counter left at this MPh's start, a SMC, and the PP it carries (null when one is not recorded).</summary>
 public sealed record MoveTimingUnitFacts(string Id, bool Wounded, bool Berserk, bool Cx, bool NoDoubleTime, bool Smc, int? PortageSum);

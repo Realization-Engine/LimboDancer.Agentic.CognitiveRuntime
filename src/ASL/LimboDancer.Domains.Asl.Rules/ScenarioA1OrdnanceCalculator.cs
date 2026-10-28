@@ -151,6 +151,28 @@ public static class ScenarioA1OrdnanceCalculator
     }
 
     /// <summary>
+    /// A hero's DRM on the To Hit DR of a non-MG SW (A15.23, p. 83; pass 72, ruling R72.8): "a -1 DRM to its To Hit or IFT DR", taken on the To Hit DR of a light
+    /// mortar or a LATW, never again on the IFT DR of its hit nor on a To Kill DR (C13.25); and the +1 of one man firing "other SW normally requiring two men",
+    /// the PSK (C13.45, C13.48), which the -1 negates. Only a shot that carries the pass's fact (<see cref="OrdnanceShot.HeroWeapons"/>) takes them, and only for a
+    /// light mortar or a LATW: the planner stamps every hero's shot, and this member decides the weapon.
+    /// </summary>
+    internal static IEnumerable<FireModifier> HeroDrm(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference)
+    {
+        if (shot.HeroWeapons != true || shot.Vehicle is not null || gun.GunType is not ("mortar" or "latw")
+            || reference.Fire.Definitions.GetValueOrDefault(shot.Crew!.DefinitionId ?? string.Empty)?.IsHero != true)
+        {
+            yield break;
+        }
+
+        yield return new FireModifier("hero:" + shot.Crew.UnitId, -1, "A15.23");
+        if (gun.LatwType == "psk")
+        {
+            // A15.23 (p. 83; the reviews R3.4): the +1 for one man firing a SW normally requiring two is the hero rule's own.
+            yield return new FireModifier("hero-two-man:" + shot.Crew.UnitId, 1, "A15.23");
+        }
+    }
+
+    /// <summary>
     /// The reasons a shot cannot be committed before any roll: empty when every outcome the dice can reach is decided. The
     /// shot must stop only at its missing To Hit DR, and the Fire package must decide both a normal hit and a Critical Hit on
     /// every unit in the target Location.
@@ -435,11 +457,12 @@ public static class ScenarioA1OrdnanceCalculator
         var crew = shot.Crew!;
         // C5.8, A21.13 (ruling R8.8): a squad or HS of the Gun's nationality mans it as non-qualified Infantry, with Case H.
         // C9.2, C13.31 (rulings R9.2, R9.7): any Personnel unit of its nationality fires a light mortar or a PF; a berserk unit may fire a PF. The SW
-        // Chart (pass 9b): a lone SMC does not fire a PSK at full effect.
+        // Chart (pass 9b): a lone SMC does not fire a PSK at full effect. C13.45, C13.48, A15.23 (p. 184; pass 72, ruling R72.8): "A BAZ can be used by one SMC
+        // only if that SMC is a Hero", with the +1 of HeroDrm; a lone leader stays refused (ruling R9.11), and two SMC together are pass 110's.
         if ((shot.Vehicle is null ? reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!) is not { } crewDefinition
                 || crewDefinition.Nationality != gun.Nationality
                 || (mortar || latw || machineGun ? !Personnel.Contains(crewDefinition.Kind) : shot.NonQualified == true ? !crewDefinition.IsMmc : !ScenarioA1Definitions.IsCrew(crewDefinition.Kind))
-                || (gun.LatwType == "psk" && crewDefinition.Kind is "asl:leader" or "asl:hero")
+                || (gun.LatwType == "psk" && (crewDefinition.Kind == "asl:leader" || (crewDefinition.Kind == "asl:hero" && shot.HeroWeapons != true)))
                 : crew.DefinitionId != gun.Id || shot.NonQualified == true)
             || crew.Broken == true || (crew.Berserk == true && !pf))
         {
@@ -841,6 +864,7 @@ public static class ScenarioA1OrdnanceCalculator
             }
 
             drm.AddRange(Leadership(shot, reference));
+            drm.AddRange(HeroDrm(shot, gun, reference));
         }
         else if (CaseC(shot, gun) is { } caseC)
         {
@@ -1417,7 +1441,7 @@ public static class ScenarioA1OrdnanceCalculator
     /// <summary>A21.12 (pass 65, ruling R65.22): "All attacks by captured ordnance must use the red To Hit Numbers", under a Temporary crew's penalty.</summary>
     internal static string CapturedColor(OrdnanceShot shot, string color) => shot.CapturedPenalty is > 0 ? "red" : color;
 
-    /// <summary>The Gun's B#, two lower while Intensive Firing (C5.62), and lower in Extreme Winter (E3.741; ruling R16.14).</summary>
+    /// <summary>The Gun's B#, two lower while Intensive Firing (C5.62), lower in Extreme Winter (E3.741; ruling R16.14), and a SW's under Ammunition Shortage (A19.131).</summary>
     internal static int Breakdown(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) =>
         gun.Breakdown - (shot.IntensiveFire == true ? 2 : 0) - (shot.BreakdownReduction ?? 0)
 
@@ -1426,7 +1450,12 @@ public static class ScenarioA1OrdnanceCalculator
 
         // A19.32 (referee, pass 9b): the B# or X# of a SW Inexperienced Personnel use is one lower.
         - (gun.GunType is "mortar" or "latw" or ScenarioA1MachineGunKill.GunType && gun.LatwType != "pf"
-            && reference.Fire.Definitions.GetValueOrDefault(shot.Crew?.DefinitionId ?? string.Empty)?.Class is "green" or "conscript" ? 1 : 0);
+            && reference.Fire.Definitions.GetValueOrDefault(shot.Crew?.DefinitionId ?? string.Empty)?.Class is "green" or "conscript" ? 1 : 0)
+
+        // A19.131 (p. 86; pass 72, ruling R72.12): "all SW Original B#/X# [EXC: DC] ... are decreased by one during an Ammunition Shortage"; A21.11 (p. 88): "do
+        // not apply to captured Gun/SW". A vehicle's or Gun's circled B# (D3.71) is pass 105's.
+        - (shot.AmmunitionShortage == true && shot.Vehicle is null && gun.GunType is "mortar" or "latw" or ScenarioA1MachineGunKill.GunType && gun.LatwType != "pf"
+            && ScenarioA1FireEligibility.CapturedBy(gun.Nationality, shot.FiringNationality) is null && shot.CapturedPenalty is not > 0 ? 1 : 0);
 
     /// <summary>
     /// Whether the shot keeps the Multiple ROF, and the fire counter it leaves otherwise (C2.24, A8.1, C5.6): Prep Fire in the PFPh and

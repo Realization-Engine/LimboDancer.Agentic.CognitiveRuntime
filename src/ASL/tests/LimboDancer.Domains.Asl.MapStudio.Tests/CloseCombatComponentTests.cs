@@ -333,6 +333,11 @@ public sealed class CloseCombatComponentTests : IDisposable
         Assert.Empty(panel.FindAll("#fire-mol"));
         Assert.Equal(["", "lmg1"], panel.FindAll("#fire-lane-weapon option").Select(option => option.GetAttribute("value")));
         Assert.Equal(["", "l2"], panel.FindAll("#fire-partner option").Select(option => option.GetAttribute("value")));
+
+        // Pass 72 (A19.131; the reviews R4.13): under Ammunition Shortage, with no captured MG chosen, no Fire Lane is offered.
+        panel.Render(parameters => parameters.Add(item => item.LanesOffered, false));
+        Assert.Empty(panel.FindAll("#fire-lane-weapon"));
+        Assert.Empty(panel.FindAll("#fire-lane-to"));
     }
 
     // Ruling R27.3 (UI and table player review, pass 27): every view reads the OVR's CC as a status; only a view that may act proposes it.

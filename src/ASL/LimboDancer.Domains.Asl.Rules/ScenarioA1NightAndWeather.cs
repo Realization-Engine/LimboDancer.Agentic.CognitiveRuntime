@@ -41,7 +41,7 @@ public static class ScenarioA1NightAndWeather
     }
 
     /// <summary>
-    /// Why the SSRs of a new game are refused (rulings R16.1, R16.9, R23.5 for HIP, and R70.15 for Fanaticism), or null. <paramref name="hipAllowanceKnown"/> reads the setup's HIP
+    /// Why the SSRs of a new game are refused (rulings R16.1, R16.9, R23.5 for HIP, R70.15 for Fanaticism, and R72.10 for Unit Substitution), or null. <paramref name="hipAllowanceKnown"/> reads the setup's HIP
     /// allowance of a rule and a side (S10), asked for a well-formed <c>hip:</c> rule.
     /// </summary>
     public static string? RulesBar(IReadOnlyList<string> rules, Func<string, string, bool> hipAllowanceKnown, bool hasMonth, bool hasYear)
@@ -58,6 +58,12 @@ public static class ScenarioA1NightAndWeather
         if (rules.FirstOrDefault(rule => rule.StartsWith(ScenarioA1GameStart.FanaticRule, StringComparison.Ordinal) && ScenarioA1GameStart.FanaticToken(rule) is null) is { } fanatic)
         {
             return $"play.fanatic-rule: '{fanatic}' is not fanatic:<side> or fanatic:<side>:<group>, the side or OB group whose Personnel are Fanatic (A10.8; ruling R70.15)";
+        }
+
+        // A19.131, A19.132 (pass 72, ruling R72.10): Ammunition Shortage names a side; an SSR ELR for underscored units a side, an OB group, and 0 to 4.
+        if (ScenarioA1UnitSubstitution.RulesBar(rules) is { } substitution)
+        {
+            return substitution;
         }
 
         var weather = rules.Where(rule => rule.StartsWith("weather:", StringComparison.Ordinal)).Select(rule => rule["weather:".Length..]).ToArray();
@@ -301,6 +307,10 @@ public static class ScenarioA1NightAndWeather
 
             // Pass 45 (ruling R45.4): every attack planned from the pass on marks its cowering units and leaves its weapons' own Residual FP.
             CoweringMarksAndWeaponResidual = true,
+
+            // Pass 72 (rulings R72.9, R72.13): every attack planned from the pass on lowers an Inexperienced user's MG B# too (A19.32), and its underscored
+            // units' SSR ELR is checked against the state.
+            UnitSubstitution = true,
 
             // Referee, pass 31 (A11.141): units in Melee take and cause no Leader Loss check.
             TargetsInMelee = targetsInMelee ? true : null,

@@ -485,6 +485,10 @@ public sealed class ScenarioA1FireReference
         ["attacker-elite-squad-5-4-8"] = "attacker-2nd-line-squad",
         ["attacker-elite-half-squad-2-3-8"] = "attacker-2nd-line-half-squad",
 
+        // Pass 72 (A19.132, p. 86; ruling R72.13): under an SSR ELR the 8-3-8 is Replaced normally, by the 4-3-6 Conscript, the only German MMC of lower
+        // Class none of whose factors exceeds its own (the 4-4-7 and 4-6-7 have a longer range). Without the SSR, R15.9's two HS stand and this is not read.
+        ["attacker-elite-squad-8-3-8"] = "attacker-conscript-squad",
+
         // Pass 27 (ruling R27.1; A25.84): the Axis Minor elite by the 1st Line 3-4-7, and the 5-3-7 and 3-4-7 by the Conscript, with their HS.
         ["axis-minor-elite-squad"] = "axis-minor-squad",
         ["axis-minor-square-squad"] = "axis-minor-conscript-squad",
@@ -576,6 +580,13 @@ public sealed class ScenarioA1FireReference
     /// Replacement, or for an underscored HS never Replaced the one ruled for it (ruling R19.7); null when none exists.
     /// </summary>
     public static string? CasualtyHalfSquadOf(string halfSquadId) => ReplacementOf(halfSquadId) ?? CasualtyHalfSquads.GetValueOrDefault(halfSquadId);
+
+    /// <summary>
+    /// The unit that Replaces a MMC with an underscored Morale Factor under an SSR ELR (A19.132, p. 86; pass 72, ruling R72.13), "normally regardless of the
+    /// severity of the quality drop": its Replacement, or for the German 3-3-8, never Replaced under R15.9, the 2-3-7 ruled for it (ruling R19.7); null when
+    /// none exists (a Finnish elite MMC, ruling R15.13), and the unit is Disrupted (A19.12).
+    /// </summary>
+    public static string? UnderscoredReplacementOf(string definitionId) => CasualtyHalfSquadOf(definitionId);
 
     /// <summary>The unit a definition is Battle Hardened into (A15.3), or null for the highest quality or an unreviewed one.</summary>
     public static string? HardenedOf(string definitionId) => Hardened.GetValueOrDefault(definitionId) ?? Step(definitionId, 1);

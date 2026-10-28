@@ -323,6 +323,9 @@ public static class DisplayText
         ["fire-ift"] = "IFT DR",
         ["ordnance-canister"] = "Canister IFT DR",
         ["fire-cower-selection"] = "Random Selection dr for Cowering",
+
+        // Pass 72 (A19.131, ruling R72.11): the MMC an Original 12 under Ammunition Shortage Replaces.
+        ["fire-shortage-selection"] = "Random Selection dr for Ammunition Shortage",
         ["fire-check"] = "MC or TC DR",
         ["fire-heat-of-battle"] = "Heat of Battle DR",
         ["fire-leader-loss"] = "Leader Loss DR",
@@ -390,6 +393,10 @@ public static class DisplayText
         ["berserk-leader"] = "berserk leader {0}",
         ["heroic"] = "heroic, {0}",
         ["hero-mg"] = "hero's MG, {0}",
+
+        // Pass 72 (A15.23, C13.45; ruling R72.8): a hero's -1 with a non-MG SW, and the +1 of one man firing a PSK.
+        ["hero"] = "hero's SW, {0}",
+        ["hero-two-man"] = "hero alone with a two-man SW, {0}",
         ["created-leader"] = "the leader created",
         ["smc-combining"] = "SMC combining, {0}",
         ["tem"] = "{1} TEM",

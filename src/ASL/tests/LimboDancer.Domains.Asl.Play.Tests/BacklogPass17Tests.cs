@@ -344,6 +344,13 @@ public sealed class BacklogPass17Tests
     [InlineData("weather:rain", true)]
     [InlineData("weather:fog", false)]
     [InlineData("weather:extreme-winter", false)]
+    // Pass 72 (A19.131, A19.132; ruling R72.10): the Unit Substitution tokens name a side of the card, an OB group of it by its game id, and an ELR of 0 to 4.
+    [InlineData("ammo-shortage:german", true)]
+    [InlineData("ammo-shortage:russian", false)]
+    [InlineData("underscored-elr:german:3", true)]
+    [InlineData("underscored-elr:german:german-1:2", true)]
+    [InlineData("underscored-elr:german:german-2:2", false)]
+    [InlineData("underscored-elr:german:5", false)]
     public void TheSsrTokensAreCheckedAsANewGameChecksThem(string token, bool accepted)
     {
         var changed = Json("gambit");

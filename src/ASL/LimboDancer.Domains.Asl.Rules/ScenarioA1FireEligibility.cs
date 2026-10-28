@@ -200,6 +200,7 @@ public static class ScenarioA1FireEligibility
             Berserk = facts.Berserk ? true : null,
             Inexperienced = facts.Inexperienced,
             Flamethrowers = facts.Flamethrowers,
+            UnderscoredElr = facts.UnderscoredElr,
         };
     }
 
@@ -344,18 +345,24 @@ public static class ScenarioA1FireEligibility
     /// <summary>
     /// Who the attack hits (A8.1, A7.308, A15.41; ruling R21.1): every active unit in the target Location in id order, in the MPh the moving stack
     /// only; vehicles apart from Infantry; the target side's units not attacked (not moving) as a berserk leader's companions; a target outside the
-    /// catalog refuses the attack.
+    /// catalog refuses the attack. Pass 72 (A7.21, A7.211, A7.212, A15.432; rulings R72.7, R72.21): outside the MPh's moving stack, an attack with a firer in
+    /// the target Location (<paramref name="firerInTarget"/>), Infantry or a vehicle firing at range 0 (A7.211), is TPBF, an attack refused before the pass (its
+    /// firer was its own target); it attacks the units of the side other than <paramref name="firingSide"/> only.
     /// </summary>
-    public static TargetSelection SelectTargets(IReadOnlyList<TargetUnitStateFacts> units, bool moversKnown)
+    public static TargetSelection SelectTargets(IReadOnlyList<TargetUnitStateFacts> units, bool moversKnown, string? firingSide = null, bool firerInTarget = false)
     {
         ArgumentNullException.ThrowIfNull(units);
-        var attacked = units.Where(unit => unit.Active && (!moversKnown || unit.Mover == true)).OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
+        var tpbfSide = !moversKnown && firerInTarget ? firingSide : null;
+        var attacked = units.Where(unit => unit.Active && (!moversKnown || unit.Mover == true) && (tpbfSide is null || unit.Side != tpbfSide))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
         var targets = attacked.Where(unit => !unit.Vehicle).ToArray();
         var vehicles = attacked.Where(unit => unit.Vehicle).ToArray();
         var companions = !moversKnown || targets.Length == 0 ? [] : units
             .Where(unit => unit.Active && unit.Mover != true && unit.Side == targets[0].Side && unit.HasDefinition && !unit.Vehicle)
             .OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
-        var refusal = targets.Any(unit => !unit.HasDefinition && !unit.Dummy) ? "play.fire-target: the target Location holds a unit outside the catalog" : null;
+        // A TPBF attack needs an enemy unit in the firer's Location (A7.21): with only the firing side's units there it is refused, as it was before the pass.
+        var refusal = tpbfSide is not null && attacked.Length == 0 ? "play.fire-target: the firer's own Location holds no enemy unit to attack (A7.21)"
+            : targets.Any(unit => !unit.HasDefinition && !unit.Dummy) ? "play.fire-target: the target Location holds a unit outside the catalog" : null;
         return new TargetSelection([.. targets.Select(unit => unit.Id)], [.. vehicles.Select(unit => unit.Id)], [.. companions.Select(unit => unit.Id)], refusal);
     }
 
@@ -463,6 +470,7 @@ public static class ScenarioA1FireEligibility
             Mol = facts.Mol ? true : null,
             Inexperienced = facts.Inexperienced,
             Berserk = facts.Berserk ? true : null,
+            UnderscoredElr = facts.UnderscoredElr,
         };
     }
 
@@ -1036,6 +1044,20 @@ public static class ScenarioA1FireEligibility
         };
     }
 
+    /// <summary>The refusal of a Fire Lane under Ammunition Shortage (A19.131, A9.22; pass 72, ruling R72.12).</summary>
+    public const string AmmunitionShortageFireLaneRefusal =
+        "play.fire-lane: the firing side's OB has Ammunition Shortages, which prevent placement of Fire Lanes; its MG may fire without one (A19.131, A9.22)";
+
+    /// <summary>
+    /// Whether the page offers the firing side a Fire Lane (A19.131, A9.22; pass 72, ruling R72.12; the reviews R4.13): not while its OB has Ammunition
+    /// Shortages, unless a weapon it fires is captured (A21.11), which <see cref="FireLaneDeclarationBar"/> lets lay one; the captured read is asked only then.
+    /// </summary>
+    public static bool FireLaneOffered(bool ammunitionShortage, Func<bool> anyCaptured)
+    {
+        ArgumentNullException.ThrowIfNull(anyCaptured);
+        return !ammunitionShortage || anyCaptured();
+    }
+
     /// <summary>
     /// A9.22 (ruling R12.7): a Fire Lane goes with MPh Defensive First Fire by an unpinned Infantry unit's Good Order MG, within its Normal Range at a
     /// same-level target, not TPBF or a Snap Shot.
@@ -1043,6 +1065,14 @@ public static class ScenarioA1FireEligibility
     public static string? FireLaneDeclarationBar(FireLaneDeclarationFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);
+
+        // A19.131 (p. 86; pass 72, ruling R72.12): Ammunition Shortages "do prevent placement of Fire Lanes"; A9.22's Good Order MG is "not ... restricted by
+        // Ammunition Shortage". A21.11: a captured MG takes no Ammunition Shortage penalty.
+        if (facts.Attack.AmmunitionShortage == true && facts.Mg is { Captured: not true })
+        {
+            return AmmunitionShortageFireLaneRefusal;
+        }
+
         var range = facts.Manning?.Range ?? facts.Attack.Range;
         return facts.Phase != "mph" || facts.Attack.FireKind != ScenarioA1FireCalculator.FirstFire || facts.Manning is null || !facts.MgIsMg
             || facts.MgRange is not { } mgRange || facts.MgFirepower is null

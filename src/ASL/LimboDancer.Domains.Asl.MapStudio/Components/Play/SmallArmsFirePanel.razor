@@ -117,7 +117,7 @@
         <LocationField Id="fire-spray" Label="Spray also" Name="the Location sprayed" Value="@Spray" OnChange="@OnSpray"
             Title="A7.34, A9.5: MGs, and squads whose Range is underscored (to three hexes), attack a second Location that shares a hexside with the target, or the next level of its building hex, as Area Fire on the same DR. Every member of the group must be capable of it." />
     }
-    @if (Phase == "mph")
+    @if (Phase == "mph" && LanesOffered)
     {
         <label title="A9.22: with Defensive First Fire by an unpinned squad's MG at a same-level target within Normal Range, a Fire Lane along the Hex Grain to this Location.">Fire Lane of
             <select id="fire-lane-weapon" value="@LaneWeapon" @onchange="@(args => OnLaneWeapon.InvokeAsync(args.Value as string ?? string.Empty))">
@@ -300,6 +300,10 @@
 
     [Parameter]
     public string LaneTo { get; set; } = string.Empty;
+
+    /// <summary>Whether a Fire Lane is offered at all (A19.131: Ammunition Shortages prevent placement of Fire Lanes; pass 72, the reviews R4.13).</summary>
+    [Parameter]
+    public bool LanesOffered { get; set; } = true;
 
     /// <summary>The SMC that may partner a firing leader, or none to hide the choice when no leader fires.</summary>
     [Parameter]

@@ -57,6 +57,9 @@ internal static class ScenarioA1AreaCalculator
         }
 
         drm.AddRange(ScenarioA1OrdnanceCalculator.Leadership(shot, reference));
+
+        // A15.23 (pass 72, ruling R72.8): a hero's -1 on the To Hit DR, never on the IFT DR of the units hit.
+        drm.AddRange(ScenarioA1OrdnanceCalculator.HeroDrm(shot, gun, reference));
         if (shot.FirerOverstack is { } over && over > 0)
         {
             drm.Add(new FireModifier("overstack-firer", over, "A5.12"));

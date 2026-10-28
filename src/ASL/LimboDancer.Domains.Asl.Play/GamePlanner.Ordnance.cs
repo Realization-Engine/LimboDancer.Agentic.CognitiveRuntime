@@ -1574,6 +1574,7 @@ public sealed partial class GamePlanner
             "weaponSelection" => (unit.Split(',').Length, "fire-weapon-selection"),
             "firerSelection" => (unit.Split(',').Length, "fire-firer-selection"),
             "cowerSelection" => (unit.Split(',').Length, "fire-cower-selection"),
+            "shortageSelection" => (unit.Split(',').Length, "fire-shortage-selection"),
             "checks" => (2, "fire-check"),
             "leaderLoss" => (2, "fire-leader-loss"),
             "heatOfBattle" => (2, "fire-heat-of-battle"),
@@ -1618,6 +1619,9 @@ public sealed partial class GamePlanner
             "weaponSelection" => rolls with { WeaponSelection = Selection(rolls.WeaponSelection) },
             "firerSelection" => rolls with { FirerSelection = Selection(rolls.FirerSelection) },
             "cowerSelection" => rolls with { CowerSelection = Selection(rolls.CowerSelection) },
+
+            // A19.131 (pass 72, ruling R72.11): the Random Selection of the MMC an Original 12 under Ammunition Shortage Replaces.
+            "shortageSelection" => rolls with { ShortageSelection = Selection(rolls.ShortageSelection) },
             "checks" => rolls with { Checks = Add(rolls.Checks, unit, values) },
             "leaderLoss" => rolls with { LeaderLoss = Add(rolls.LeaderLoss, unit, values) },
             "heatOfBattle" => rolls with { HeatOfBattle = Add(rolls.HeatOfBattle, unit, values) },

@@ -37,6 +37,15 @@ public sealed record FireView(string EventId, string Group, string Target, strin
         get; init;
     }
 
+    /// <summary>
+    /// The Unit Replacement of the firing side's MMC an Original 12 under Ammunition Shortage brought, in lines (A19.131; pass 72, ruling R72.11); null when
+    /// none. They name only the firing side's units, so the firing side reads them even from a record withheld from it.
+    /// </summary>
+    public IReadOnlyList<string>? Shortage
+    {
+        get; init;
+    }
+
     /// <summary>Whether several units fire, so the record's verb agrees: "fire", not "fires".</summary>
     public bool Several
     {
@@ -60,6 +69,12 @@ public sealed record FireView(string EventId, string Group, string Target, strin
 
     /// <summary>What the attack did to each MG used in it (pass 31c, play test P-17): a kept rate of fire, a malfunction. Null when none was used or the record is withheld.</summary>
     public IReadOnlyList<FireWeaponEffect>? Weapons
+    {
+        get; init;
+    }
+
+    /// <summary>The lowered B# or X# of each weapon that malfunctioned or was removed, with its causes, by the weapon's id (pass 72, the reviews R3.3); null when none.</summary>
+    public IReadOnlyDictionary<string, string>? WeaponNumbers
     {
         get; init;
     }
@@ -138,7 +153,13 @@ public static class FireText
     /// What an attack did to a MG, in words (A9.2, A9.7); null when there is nothing a player needs to be told. A MG that kept its rate of fire may
     /// fire again in the phase, which the page said nowhere before (play test P-17).
     /// </summary>
-    public static string? WeaponText(FireWeaponEffect weapon)
+    public static string? WeaponText(FireWeaponEffect weapon) => WeaponText(weapon, null);
+
+    /// <summary>
+    /// What an attack did to a MG, in words, with the lowered B# or X# the record's facts give it and their causes (<paramref name="number"/>, pass 72, the
+    /// reviews R3.3): "the DR reached its B10 (B11, less 1 for Ammunition Shortage, A19.131)".
+    /// </summary>
+    public static string? WeaponText(FireWeaponEffect weapon, string? number)
     {
         ArgumentNullException.ThrowIfNull(weapon);
         // A.11, A9.7 (pass 45): a weapon whose lowered B# became an X# is removed, not malfunctioned.
@@ -150,8 +171,8 @@ public static class FireText
                 : selection.Length > 0 ? $"{weapon.EquipmentId}'s {mg.ToUpperInvariant()} did not malfunction{selection}" : null;
         }
 
-        return weapon.Removed == true ? $"{weapon.EquipmentId} is removed: the DR reached its X# (A.11, A9.7)"
-            : weapon.Malfunctioned ? $"{weapon.EquipmentId} malfunctioned (A9.7)"
+        return weapon.Removed == true ? $"{weapon.EquipmentId} is removed: the DR reached its {number ?? "X#"} (A.11, A9.7)"
+            : weapon.Malfunctioned ? number is null ? $"{weapon.EquipmentId} malfunctioned (A9.7)" : $"{weapon.EquipmentId} malfunctioned: the DR reached its {number} (A9.7)"
             : weapon.RateOfFireRetained ? $"{weapon.EquipmentId} kept its rate of fire and may fire again this phase (A9.2)"
             : null;
     }
@@ -207,6 +228,34 @@ public static class FireText
         }
 
         return parts.Count == 0 ? "unaffected" : string.Join(", ", parts);
+    }
+
+    /// <summary>
+    /// The Unit Replacement of an Original 12 under Ammunition Shortage, one line for each MMC it fell on (A19.131, A.9; pass 72, ruling R72.11), with the
+    /// firer's Location as the record names it: "r1 in bd03:A3:0: the Original 12 under Ammunition Shortage (Random Selection dr 5, A.9): Replaced by
+    /// defender-conscript-squad (A19.131)", which a view reads with names and the hex in brackets. With <paramref name="selection"/>, every candidate's Random
+    /// Selection dr (the reviews R3.10): "(Random Selection: r1 dr 5, r2 dr 2, A.9)". Null when there is none.
+    /// </summary>
+    public static IReadOnlyList<string>? ShortageLines(IReadOnlyList<FireUnitEffect>? effects, IReadOnlyList<FireFirer>? firers,
+        IReadOnlyList<(string UnitId, int Dr)>? selection = null)
+    {
+        if (effects is not { Count: > 0 })
+        {
+            return null;
+        }
+
+        var drs = selection is { Count: > 1 }
+            ? $" (Random Selection: {string.Join(", ", selection.Select(item => $"{item.UnitId} dr {item.Dr.ToString(CultureInfo.InvariantCulture)}"))}, A.9)" : null;
+        return [.. effects.Select(effect =>
+        {
+            var at = firers?.FirstOrDefault(firer => firer.UnitId == effect.UnitId)?.LocationId;
+            var what = effect.SplitIntoHalfSquads == true ? $"Replaced by its two HS, {effect.FinalDefinitionId}"
+                : effect.FinalDefinitionId != effect.DefinitionId ? $"Replaced by {effect.FinalDefinitionId}" + (effect.Broken ? ", broken" : string.Empty)
+                : effect.Events.Contains("ammunition-shortage-berserk") ? "incapable of further quality loss but berserk, so not broken"
+                : "incapable of further quality loss, so broken";
+            return $"{effect.UnitId}{(at is null ? string.Empty : " in " + at)}: the Original 12 under Ammunition Shortage"
+                + (drs ?? (effect.RandomSelectionDr is { } dr ? $" (Random Selection dr {dr.ToString(CultureInfo.InvariantCulture)}, A.9)" : string.Empty)) + $": {what} (A19.131)";
+        })];
     }
 
     /// <summary>A MC, NTC, LLMC, or LLTC with its arithmetic, for example "NMC 4, 4 = 8 against 7: failed".</summary>
