@@ -1,0 +1,33 @@
+@using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Rules
+<fieldset class="turn-opening-review" disabled="@Busy">
+    <legend>Opening review for @Offer.SubjectId (@Offer.OwnerSide)</legend>
+    <p>Adjudicator: record what has been checked before this Placed DC attack. Resolved includes consequences and any declined optional choices. Leave unverified tasks Unknown.</p>
+    <label>Drifting SMOKE (5.11B) <select class="turn-review-drift" @bind="drift">@Choices</select></label>
+    <label>Opening Dispersed WP (5.12A) <select class="turn-review-wp" @bind="wp">@Choices</select></label>
+    <label>Gusts and SMOKE (5.13A) <select class="turn-review-gusts" @bind="gusts">@Choices</select></label>
+    <label>Glider contents (5.21A) <select class="turn-review-gliders" @bind="gliders">@Choices</select></label>
+    <label>Rule basis and reason <textarea class="turn-review-basis" @bind="basis" @bind:event="oninput"></textarea></label>
+    <p>Pending rules remain pending. This records timing evidence; it does not execute opening tasks or authorize detonation. A later recorded game action expires this review.</p>
+    @if (string.IsNullOrWhiteSpace(basis)) { <p>Enter the rule basis and reason before proposing this review.</p> }
+    <button type="button" class="turn-review-propose" disabled="@(Busy || string.IsNullOrWhiteSpace(basis))" @onclick="Submit">Propose opening review</button>
+</fieldset>
+@code {
+    [Parameter, EditorRequired] public TurnOpeningReviewOffer Offer { get; set; } = null!;
+    [Parameter] public EventCallback<TurnOpeningReviewRequest> ReviewRequested { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    private string basis = string.Empty;
+    private TurnOpeningEvidence drift, wp, gusts, gliders;
+    private string? token;
+    protected override void OnParametersSet()
+    {
+        if (token == Offer.Token) return;
+        token = Offer.Token; basis = string.Empty;
+        drift = wp = gusts = gliders = TurnOpeningEvidence.Unknown;
+    }
+    private Task Submit() => Busy || string.IsNullOrWhiteSpace(basis) ? Task.CompletedTask
+        : ReviewRequested.InvokeAsync(new(Offer, basis.Trim(), new(drift, wp, gusts, gliders)));
+    private RenderFragment Choices => @<text>
+        <option value="Unknown">Unknown</option><option value="Resolved">Resolved</option><option value="NotApplicable">Not applicable</option>
+    </text>;
+}

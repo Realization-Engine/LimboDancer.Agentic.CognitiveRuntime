@@ -1,10 +1,13 @@
 using System.Text.Json;
+using System.Text;
+using ASL.Turns;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Los;
 using LimboDancer.Domains.Asl.Maps.Read;
 using LimboDancer.Domains.Asl.Rules;
+using LimboDancer.Domains.Asl.Units;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.State;
 using LimboDancer.Domains.Asl.Units.Vocabulary;
@@ -27,6 +30,7 @@ public sealed class BacklogPass9Tests : IDisposable
     private static readonly string[] G3 = ["g3"];
     private static readonly string[] GH = ["gh"];
     private static readonly string[] R1 = ["r1"];
+    private static readonly string[] RussianView = ["russian"];
     private static readonly string[] R2 = ["r2"];
     private static readonly string[] R4R5 = ["r4", "r5"];
     private static readonly string[] R1R2 = ["r1", "r2"];
@@ -431,8 +435,9 @@ public sealed class BacklogPass9Tests : IDisposable
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 
-    [Fact]
-    public async Task ASpottedMortarFiresBeyondItsOwnLosAndKeepsItsSpotter()
+    [Theory]
+    [MemberData(nameof(TurnGuideAcceptanceCases.FireProfiles), MemberType = typeof(TurnGuideAcceptanceCases))]
+    public async Task ASpottedMortarFiresBeyondItsOwnLosAndKeepsItsSpotter(string profile)
     {
         // C9.3, C9.31 (R9.4): from B10, with no LOS of its own, the mortar fires at B6 along the LOS of the HS in adjacent B9: +2 and ROF 2. The HS
         // loses its fire for the phase; another unit may not spot for the mortar while the HS is Good Order.
@@ -450,6 +455,506 @@ public sealed class BacklogPass9Tests : IDisposable
         Assert.True(Is(Current.Unit("g2")!, Conditions.PrepFire));
         Refused(await Shoot("de-mtr", "bd01:B6:0", "g3", null, 2, 6), "play.ordnance-spotter-kept");
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+        var shotRevision = Revision;
+        var guide = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile);
+        var history = guide.FireHistory!;
+        var record = Assert.Single(history.Shots);
+        Assert.Equal(TurnFireKind.Ordnance, record.Kind);
+        Assert.Equal("g1", Assert.Single(record.Firers));
+        Assert.Equal("de-mtr", record.Weapon);
+        Assert.Equal("g2", record.Spotter);
+        Assert.True(record.RateOfFireKept);
+        Assert.True(record.InCurrentPhase);
+        Assert.Equal(TurnSpotterState.Retained, Assert.Single(history.Spotters).State);
+        Assert.True(Assert.Single(history.Spotters).SpottedThisPhase);
+        Assert.NotEmpty(history.EvaluationGaps);
+        var enemy = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("russian"), "pfph", profile);
+        Assert.Empty(enemy.FireHistory!.Shots);
+        Assert.Empty(enemy.FireHistory.Spotters);
+        Assert.Null((await Planner().ReadTurnGuideAsync(Scope, Perspective.Side("german"), "pfph")).FireHistory);
+        Assert.Equal(JsonSerializer.Serialize(guide), JsonSerializer.Serialize(await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)));
+        Assert.Equal(shotRevision, Revision);
+        var written = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(written)).Record!;
+        Assert.Equal(written, GameEventWriter.Write(Scope, loaded));
+        var copyStore = new FileGameStore(Path.Combine(root, "fire-copy"));
+        var copyPlanner = new GamePlanner(copyStore, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, copyStore.Append(Scope, loaded.Label, 0, loaded.Events, copyPlanner.Replay).Status);
+        Assert.Equal(AppendStatus.Replay, copyStore.Append(Scope, loaded.Label, 0, loaded.Events, copyPlanner.Replay).Status);
+        Assert.Equal(JsonSerializer.Serialize(history), JsonSerializer.Serialize((await copyPlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)).FireHistory));
+        var withheld = loaded.Events.Select(item => item.Payload is OrdnanceFired ? item with { Visibility = RussianView } : item).ToArray();
+        var privateStore = new FileGameStore(Path.Combine(root, "private-fire-copy"));
+        var privatePlanner = new GamePlanner(privateStore, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, privateStore.Append(Scope, loaded.Label, 0, withheld, privatePlanner.Replay).Status);
+        var undisclosed = (await privatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)).FireHistory!;
+        Assert.Empty(undisclosed.Shots);
+        Assert.Empty(undisclosed.Spotters);
+        Assert.Single((await privatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "pfph", profile)).FireHistory!.Shots);
+        await Advance();
+        var next = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", profile)).FireHistory!;
+        Assert.False(Assert.Single(next.Shots).InCurrentPhase);
+        Assert.False(Assert.Single(next.Spotters).SpottedThisPhase);
+        Assert.Equal(TurnSpotterState.Retained, Assert.Single(next.Spotters).State);
+        var old = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile, shotRevision);
+        Assert.Equal(JsonSerializer.Serialize(history), JsonSerializer.Serialize(old.FireHistory));
+        Assert.Equal(TurnCloseDisposition.ReadOnly, old.PhaseClose.Disposition);
+        // CCPh may require concealment dice on this board; only the governed command draws them.
+        for (var phase = 0; phase < 15; phase++)
+        {
+            Committed(await Do(GameActions.AdvancePhase, new DiceRoller(_ => 5), new
+            {
+            }));
+        }
+        Assert.Equal("pfph", Current.Phase);
+        var later = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)).FireHistory!;
+        Assert.False(Assert.Single(later.Shots).InCurrentPhase);
+        var beforeHiddenShot = Revision;
+        Committed(await Shoot("de-mtr", "bd01:B6:0", "g2", null, 5, 6));
+        var laterPrivateStore = new FileGameStore(Path.Combine(root, "later-private-shot"));
+        var laterPrivatePlanner = new GamePlanner(laterPrivateStore, boards, Vocabulary, [Catalog], fireLos: los);
+        var laterPrivateEvents = store.Read(Scope)!.Events.Select(item => item.Revision > beforeHiddenShot && item.Payload is OrdnanceFired
+            ? item with
+            {
+                Visibility = RussianView
+            } : item).ToArray();
+        Assert.Equal(AppendStatus.Committed, laterPrivateStore.Append(Scope, "private later shot", 0, laterPrivateEvents, laterPrivatePlanner.Replay).Status);
+        var privateUse = (await laterPrivatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)).FireHistory!;
+        Assert.Single(privateUse.Shots);
+        Assert.False(Assert.Single(privateUse.Spotters).SpottedThisPhase);
+        Assert.True(Assert.Single((await laterPrivatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "pfph", profile)).FireHistory!.Spotters).SpottedThisPhase);
+        var last = store.Read(Scope)!.Events[^1];
+        var loss = last with
+        {
+            EventId = "spotter-broken",
+            Revision = last.Revision + 1,
+            Type = "conditions-changed",
+            Payload = new ConditionsChanged("g2", new Dictionary<string, ConditionState> { [Conditions.Broken] = ConditionState.True }),
+        };
+        Assert.Equal(AppendStatus.Committed, store.Append(Scope, "spotter-loss", Revision, [loss], Planner().Replay).Status);
+        var lost = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", profile)).FireHistory!;
+        Assert.Equal(TurnSpotterState.Lost, Assert.Single(lost.Spotters).State);
+        Assert.NotEmpty(lost.EvaluationGaps);
+        var retainedLoss = Assert.Single(Current.MortarSpotterLosses);
+        Assert.Equal(TurnSpotterChange.Broken, retainedLoss.Change);
+        Assert.Equal("spotter-broken", retainedLoss.EventId);
+        Assert.Equal("pfph", retainedLoss.Occurrence!.Phase);
+        var rallied = loss with
+        {
+            EventId = "spotter-rallied",
+            Revision = loss.Revision + 1,
+            Payload = new ConditionsChanged("g2", new Dictionary<string, ConditionState> { [Conditions.Broken] = ConditionState.False }),
+        };
+        Assert.Equal(AppendStatus.Committed, store.Append(Scope, "spotter-rally", Revision, [rallied], Planner().Replay).Status);
+        Assert.False(Is(Current.Unit("g2")!, Conditions.Broken));
+        Assert.Equal(retainedLoss, Assert.Single(Current.MortarSpotterLosses));
+        var afterRallyRevision = Revision;
+        Refused(await Shoot("de-mtr", "bd01:B6:0", "g2", null), "play.ordnance-spotter-lost");
+        Refused(await Shoot("de-mtr", "bd01:B6:0", "g3", null), "play.ordnance-spotter-lost");
+        Assert.Equal(afterRallyRevision, Revision);
+        Assert.Equal(TurnSpotterState.Lost, Assert.Single((await Planner().ReadTurnGuideProfileAsync(Scope,
+            Perspective.Side("german"), "pfph", profile)).FireHistory!.Spotters).State);
+        var afterRally = store.Read(Scope)!;
+        var roundTrip = GameEventReader.Read(Encoding.UTF8.GetBytes(GameEventWriter.Write(Scope, afterRally))).Record!;
+        Assert.Equal(retainedLoss, Assert.Single(Planner().Replay(roundTrip.Events).Current!.MortarSpotterLosses));
+        var hiddenLossStore = new FileGameStore(Path.Combine(root, "hidden-spotter-loss"));
+        var hiddenLossPlanner = new GamePlanner(hiddenLossStore, boards, Vocabulary, [Catalog], fireLos: los);
+        var hiddenLossEvents = roundTrip.Events.Select(item => item.EventId == loss.EventId ? item with { Visibility = RussianView } : item).ToArray();
+        Assert.Equal(AppendStatus.Committed, hiddenLossStore.Append(Scope, "hidden loss", 0, hiddenLossEvents, hiddenLossPlanner.Replay).Status);
+        Assert.Equal(TurnSpotterState.NotEvaluated, Assert.Single((await hiddenLossPlanner.ReadTurnGuideProfileAsync(Scope,
+            Perspective.Side("german"), "pfph", profile)).FireHistory!.Spotters).State);
+        Assert.Equal(TurnSpotterState.Lost, Assert.Single((await hiddenLossPlanner.ReadTurnGuideProfileAsync(Scope,
+            Perspective.Adjudicator, "pfph", profile)).FireHistory!.Spotters).State);
+        Assert.Equal(TurnSpotterState.Retained, Assert.Single((await Planner().ReadTurnGuideProfileAsync(Scope,
+            Perspective.Side("german"), "pfph", profile, shotRevision)).FireHistory!.Spotters).State);
+    }
+
+    [Theory]
+    [InlineData(false, ConditionState.False, true)]
+    [InlineData(true, ConditionState.False, false)]
+    [InlineData(false, ConditionState.True, false)]
+    [InlineData(false, ConditionState.Unknown, false)]
+    public async Task ReducedSpotterRetainsOnlyItsProvenGoodOrderHalfSquad(bool priorLoss, ConditionState broken, bool retained)
+    {
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"), Mortar("de-mtr", "attacker-light-mortar", "g1", "german"),
+            Squad("g2", "bd01:B9:0", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        los.Blocked.Add(At("bd01:B10:0"));
+        await Advance();
+        Committed(await Shoot("de-mtr", "bd01:B6:0", "g2", null, 2, 6));
+        void Append(string id, string type, EventPayload payload)
+        {
+            var item = store.Read(Scope)!.Events[^1] with
+            {
+                EventId = id,
+                Revision = Revision + 1,
+                Type = type,
+                Payload = payload
+            };
+            Assert.Equal(AppendStatus.Committed, store.Append(Scope, id, Revision, [item], Planner().Replay).Status);
+        }
+        if (priorLoss)
+        {
+            Append("spotter-break", "conditions-changed", new ConditionsChanged("g2",
+                new Dictionary<string, ConditionState> { [Conditions.Broken] = ConditionState.True }));
+        }
+        var conditions = new Dictionary<string, ConditionState>(Current.Unit("g2")!.Conditions)
+        {
+            [Conditions.Broken] = broken,
+            [Conditions.Berserk] = ConditionState.False,
+            [Conditions.Captured] = ConditionState.False,
+            [Conditions.Melee] = ConditionState.False,
+        };
+        Append("spotter-reduced", "lineage", new LineageRecorded(LineageAction.Reduced, ["g2"],
+            [new NewInstance("gh", "asl:half-squad", "attacker-half-squad", "german", null, null, conditions)]));
+        const string profile = "existing-engine-fire-v1";
+        var history = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)).FireHistory!;
+        var assignment = Assert.Single(history.Spotters);
+        Assert.Equal(retained ? "gh" : "g2", Assert.Single(Current.MortarSpotters).Spotter);
+        Assert.Equal(retained ? TurnSpotterState.Retained : broken == ConditionState.Unknown
+            ? TurnSpotterState.NotEvaluated : TurnSpotterState.Lost, assignment.State);
+        Assert.Equal(retained ? "gh" : null, assignment.Successor);
+        if (!retained)
+        {
+            Assert.Empty(Current.MortarSpotterSuccessors);
+            return;
+        }
+        Assert.Equal("spotter-reduced", Assert.Single(Current.MortarSpotterSuccessors).EventId);
+        Assert.Contains(Current.SpottedThisPhase, item => item.Spotter == "gh");
+        var events = store.Read(Scope)!.Events;
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(GameEventWriter.Write(Scope, store.Read(Scope)!))).Record!;
+        Assert.Equal(Assert.Single(Current.MortarSpotterSuccessors), Assert.Single(Planner().Replay(loaded.Events).Current!.MortarSpotterSuccessors));
+        var privateStore = new FileGameStore(Path.Combine(root, "private-succession"));
+        var privatePlanner = new GamePlanner(privateStore, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, privateStore.Append(Scope, "private succession", 0,
+            events.Select(item => item.EventId == "spotter-reduced" ? item with { Visibility = RussianView } : item).ToArray(), privatePlanner.Replay).Status);
+        var hidden = Assert.Single((await privatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)).FireHistory!.Spotters);
+        Assert.Equal(TurnSpotterState.NotEvaluated, hidden.State);
+        Assert.Null(hidden.Successor);
+        Committed(await Shoot("de-mtr", "bd01:B6:0", "gh", null, 2, 6));
+        Assert.Equal("gh", Assert.Single((await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)).FireHistory!.Spotters).Successor);
+    }
+
+    [Fact]
+    public async Task GuardDeploymentCarriesSpottingUseAndMovementRestrictionToItsSuccessors()
+    {
+        var spotter = Squad("g2", "bd01:B9:0", "german");
+        var conditions = (Dictionary<string, bool>)spotter["conditions"];
+        conditions[Conditions.Berserk] = false;
+        conditions[Conditions.Captured] = false;
+        conditions[Conditions.Melee] = false;
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"),
+            Mortar("m1", "attacker-light-mortar", "g1", "german"), spotter,
+            Unit("r1", "asl:half-squad", "defender-half-squad", "bd01:B9:0", "russian"));
+        var captured = store.Read(Scope)!.Events[^1] with
+        {
+            EventId = "fixture-prisoner",
+            Revision = Revision + 1,
+            Type = "instance-captured",
+            Payload = new InstanceCaptured("r1", "g2")
+        };
+        Assert.Equal(AppendStatus.Committed, store.Append(Scope, "guard fixture", Revision, [captured], Planner().Replay).Status);
+        await Advance();
+        Committed(await Do(GameActions.DesignateSpotter, NoRoll(), new
+        {
+            gunId = "m1",
+            spotter = "g2"
+        }));
+        Assert.Contains("g2", Current.NoMoveThisPlayerTurn);
+        var request = JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = "guard-spotter-deploy",
+            expectedRevision = Revision,
+            squadId = "g2",
+            spotterHalf = "second"
+        });
+        Committed(await Commit(Play(), GameActions.Deploy, request));
+        var chosen = Assert.Single(Current.MortarSpotters).Spotter;
+        Assert.Equal("guard-spotter-deploy-g2-2", chosen);
+        Assert.Contains(Current.SpottedThisPhase, item => item.Spotter == chosen);
+        Assert.Contains(Current.SupportWeaponUses, item => item.Unit == chosen);
+        Assert.Contains("guard-spotter-deploy-g2-1", Current.NoMoveThisPlayerTurn);
+        Assert.Contains(chosen, Current.NoMoveThisPlayerTurn);
+        Assert.Equal(GamePlanStatus.Replay, (await Planner().PlanAsync(GameActions.Deploy, request, Tenant)).Status);
+        var changed = JsonSerializer.SerializeToNode(request)!.AsObject();
+        changed["spotterHalf"] = "first";
+        Assert.Equal(GamePlanStatus.Refused, (await Planner().PlanAsync(GameActions.Deploy, JsonSerializer.SerializeToElement(changed), Tenant)).Status);
+        await Advance();
+        Assert.Contains(chosen, Current.NoMoveThisPlayerTurn);
+    }
+
+    [Theory]
+    [InlineData("first", true)]
+    [InlineData("second", true)]
+    [InlineData("second", false)]
+    public async Task DeployingSpotterChoosesOneHalfSquadAndBindsTheChoiceBeforeTheRoll(string selected, bool passed)
+    {
+        var spotter = Squad("g2", "bd01:B9:0", "german");
+        var conditions = (Dictionary<string, bool>)spotter["conditions"];
+        conditions[Conditions.Berserk] = false;
+        conditions[Conditions.Captured] = false;
+        conditions[Conditions.Melee] = false;
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"),
+            Mortar("m1", "attacker-light-mortar", "g1", "german"), spotter,
+            Unit("leader", "asl:leader", "attacker-leader-8-1", "bd01:B9:0", "german"),
+            Squad("r1", "bd01:B6:0", "russian"));
+        await Advance();
+        Committed(await Shoot("m1", "bd01:B6:0", "g2", null, 2, 6));
+        await Advance(15);
+        Assert.Equal("rph", Current.Phase);
+        Assert.Equal("german", Current.PhasingSide);
+        var before = Revision;
+        Refused(await Do(GameActions.Deploy, NoRoll(), new
+        {
+            squadId = "g2",
+            leader = "leader"
+        }), "play.deploy-spotter");
+        Refused(await Do(GameActions.Deploy, NoRoll(), new
+        {
+            squadId = "g2",
+            leader = "leader",
+            spotterHalf = "third"
+        }), "play.deploy-spotter");
+        Assert.Equal(before, Revision);
+        var request = JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = "chosen-deployment",
+            expectedRevision = before,
+            squadId = "g2",
+            leader = "leader",
+            spotterHalf = selected,
+            proposedBy = "german"
+        });
+        Committed(await Commit(Play(passed ? Once(1, 1) : Once(6, 6)), GameActions.Deploy, request));
+        Assert.Equal(selected, Assert.Single(Since(before).Select(item => item.Payload).OfType<DeploymentAttempted>()).SpotterHalf);
+        Assert.All(Since(before).Where(item => item.Payload is DeploymentAttempted or LineageRecorded), item =>
+        {
+            Assert.False(item.IsVisibleTo(Perspective.Side("russian")));
+            Assert.True(item.IsVisibleTo(Perspective.Side("german")));
+            Assert.True(item.IsVisibleTo(Perspective.Adjudicator));
+        });
+        Assert.Equal(GamePlanStatus.Replay, (await Planner().PlanAsync(GameActions.Deploy, request, Tenant)).Status);
+        var changed = JsonSerializer.SerializeToNode(request)!.AsObject();
+        changed["spotterHalf"] = selected == "first" ? "second" : "first";
+        Assert.Equal(GamePlanStatus.Refused, (await Planner().PlanAsync(GameActions.Deploy, JsonSerializer.SerializeToElement(changed), Tenant)).Status);
+        var written = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(written)).Record!;
+        Assert.Equal(written, GameEventWriter.Write(Scope, loaded));
+        Assert.False(Planner().Replay(loaded.Events).HasErrors);
+        if (!passed)
+        {
+            Assert.Empty(Current.MortarSpotterSuccessors);
+            Assert.Equal("g2", Assert.Single(Current.MortarSpotters).Spotter);
+            return;
+        }
+        var lineageEvent = Assert.Single(Since(before), item => item.Payload is LineageRecorded);
+        var lineage = (LineageRecorded)lineageEvent.Payload;
+        var successor = lineage.Produced[selected == "first" ? 0 : 1].Id;
+        Assert.Equal(successor, lineage.SpotterSuccessor);
+        Assert.Equal(successor, Assert.Single(Current.MortarSpotters).Spotter);
+        Assert.Equal(successor, Assert.Single(Current.MortarSpotterSuccessors).Successor);
+        var snapshot = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "rph", "existing-engine-fire-v1")).FireHistory!;
+        Assert.Equal(successor, Assert.Single(snapshot.Spotters).Successor);
+        Assert.Equal(TurnSpotterState.Retained, Assert.Single(snapshot.Spotters).State);
+        // Each altered journal is built from one read, and the lineage event is found by its id. FileGameStore's parse cache is process-wide and
+        // cleared when full, so a second read made while other tests run may parse new objects; record equality (by reference for the payload's
+        // lists) then matched nothing, and the "altered" journal was the original one (the flaky failures at the switched replay and the hidden read).
+        var journal = store.Read(Scope)!.Events;
+        GameEvent[] Altered(Func<GameEvent, GameEvent> change)
+        {
+            var altered = journal.Select(item => item.EventId == lineageEvent.EventId ? change(item) : item).ToArray();
+            Assert.Single(altered.Where((item, index) => !ReferenceEquals(item, journal[index])));
+            return altered;
+        }
+        GameEvent[] WithSuccessor(string? spotterSuccessor) => Altered(item => item with
+        {
+            Payload = lineage with
+            {
+                SpotterSuccessor = spotterSuccessor
+            }
+        });
+        void RefusedSuccession(GameEvent[] events) => Assert.Contains(Planner().Replay(events).Diagnostics,
+            item => item.Severity == UnitDiagnosticSeverity.Error && item.Code == "UNIT-SPOTTER-SUCCESSION");
+        RefusedSuccession(WithSuccessor("unrelated"));
+        RefusedSuccession(WithSuccessor(lineage.Produced.Single(half => half.Id != successor).Id));
+        Assert.Empty(Current.SpotterDeploymentChoices);
+        var legacyStore = new FileGameStore(Path.Combine(root, "legacy-deployment"));
+        var legacyPlanner = new GamePlanner(legacyStore, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, legacyStore.Append(Scope, "legacy", 0, WithSuccessor(null), legacyPlanner.Replay).Status);
+        Assert.Equal(TurnSpotterState.NotEvaluated, Assert.Single((await legacyPlanner.ReadTurnGuideProfileAsync(Scope,
+            Perspective.Side("german"), "rph", "existing-engine-fire-v1")).FireHistory!.Spotters).State);
+        var hiddenStore = new FileGameStore(Path.Combine(root, "private-deployment"));
+        var hiddenPlanner = new GamePlanner(hiddenStore, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, hiddenStore.Append(Scope, "private", 0,
+            Altered(item => item with { Visibility = RussianView }), hiddenPlanner.Replay).Status);
+        var hidden = Assert.Single((await hiddenPlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "rph", "existing-engine-fire-v1")).FireHistory!.Spotters);
+        Assert.Null(hidden.Successor);
+        Assert.Equal(TurnSpotterState.NotEvaluated, hidden.State);
+        Assert.Equal(successor, Assert.Single((await hiddenPlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "rph", "existing-engine-fire-v1")).FireHistory!.Spotters).Successor);
+        await Advance();
+        Committed(await Shoot("m1", "bd01:B6:0", successor, null, 2, 6));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OriginalSpotterDeclarationHasGovernedProvenanceBeforeFiring(bool concealedMortar)
+    {
+        var spotter = Unit("g2", "asl:half-squad", "attacker-half-squad", "bd01:B9:0", "german");
+        var known = (Dictionary<string, bool>)spotter["conditions"];
+        known[Conditions.Berserk] = false;
+        known[Conditions.Captured] = false;
+        known[Conditions.Melee] = false;
+        await Setup("german", 7, 1942,
+            Squad("g1", "bd01:B10:0", "german", concealedMortar ? [Conditions.Concealed] : []),
+            Mortar("m1", "attacker-light-mortar", "g1", "german"),
+            spotter,
+            Squad("g3", "bd01:B3:0", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        Refused(await Do(GameActions.DesignateSpotter, NoRoll(), new
+        {
+            gunId = "m1",
+            spotter = "g2"
+        }), "play.spotter");
+        await Advance();
+        Refused(await Do(GameActions.DesignateSpotter, NoRoll(), new
+        {
+            gunId = "m1",
+            spotter = "g3"
+        }), "play.spotter");
+        Refused(await Do(GameActions.DesignateSpotter, NoRoll(), new
+        {
+            gunId = "m1",
+            spotter = "g2",
+            proposedBy = "russian"
+        }), "play.");
+        var before = Revision;
+        var request = JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = "original-spotter",
+            expectedRevision = before,
+            gunId = "m1",
+            spotter = "g2",
+            proposedBy = "german"
+        });
+        var offered = await Planner().PlanAsync(GameActions.DesignateSpotter, request, Tenant);
+        Assert.True(offered.Status == GamePlanStatus.Ready, string.Join("; ", offered.Reasons));
+        Assert.Equal(before, Revision);
+        Committed(await Commit(Play(), GameActions.DesignateSpotter, request));
+        var declaration = Assert.Single(Current.MortarSpotterDesignations);
+        Assert.Equal("g2", declaration.Spotter);
+        Assert.Equal("german", declaration.Owner);
+        Assert.Equal("pfph", declaration.Occurrence.Phase);
+        Assert.True(Is(Current.Unit("g2")!, Conditions.PrepFire));
+        Assert.Empty(Current.MortarSpotterUses);
+        var disclosed = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", "existing-engine-fire-v1")).FireHistory!;
+        Assert.Equal("g2", Assert.Single(disclosed.Declarations).Spotter);
+        Assert.Empty(disclosed.Shots);
+        Assert.Empty(disclosed.Spotters);
+        Assert.Empty((await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("russian"), "pfph", "existing-engine-fire-v1")).FireHistory!.Declarations);
+        Assert.Single((await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "pfph", "existing-engine-fire-v1")).FireHistory!.Declarations);
+        Assert.Empty((await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", "existing-engine-fire-v1", before)).FireHistory!.Declarations);
+        var recorded = store.Read(Scope)!.Events[^1];
+        Assert.IsType<MortarSpotterDesignated>(recorded.Payload);
+        Assert.Equal(!concealedMortar, recorded.IsVisibleTo(Perspective.Side("russian")));
+        Assert.True(recorded.IsVisibleTo(Perspective.Adjudicator));
+        foreach (var withheldId in new[] { recorded.EventId, declaration.Occurrence.EventId })
+        {
+            var privateStore = new FileGameStore(Path.Combine(root, "private-declaration-" + withheldId.Replace(':', '-')));
+            var privatePlanner = new GamePlanner(privateStore, boards, Vocabulary, [Catalog], fireLos: los);
+            var withheldEvents = store.Read(Scope)!.Events.Select(item => item.EventId == withheldId ? item with { Visibility = RussianView } : item).ToArray();
+            Assert.Equal(AppendStatus.Committed, privateStore.Append(Scope, "private declaration", 0, withheldEvents, privatePlanner.Replay).Status);
+            Assert.Empty((await privatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", "existing-engine-fire-v1")).FireHistory!.Declarations);
+            Assert.Single((await privatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "pfph", "existing-engine-fire-v1")).FireHistory!.Declarations);
+        }
+        Assert.Equal(GamePlanStatus.Replay, (await Planner().PlanAsync(GameActions.DesignateSpotter, request, Tenant)).Status);
+        var changed = JsonSerializer.SerializeToNode(request)!.AsObject();
+        changed["spotter"] = "g3";
+        Assert.Equal(GamePlanStatus.Refused, (await Planner().PlanAsync(GameActions.DesignateSpotter, JsonSerializer.SerializeToElement(changed), Tenant)).Status);
+        changed["attemptId"] = "stale-spotter";
+        Assert.Equal(GamePlanStatus.Stale, (await Planner().PlanAsync(GameActions.DesignateSpotter, JsonSerializer.SerializeToElement(changed), Tenant)).Status);
+        Refused(await Do(GameActions.DesignateSpotter, NoRoll(), new
+        {
+            gunId = "m1",
+            spotter = "g2"
+        }), "play.spotter");
+        var written = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(written)).Record!;
+        Assert.Equal(written, GameEventWriter.Write(Scope, loaded));
+        Assert.Equal(declaration, Assert.Single(Planner().Replay(loaded.Events).Current!.MortarSpotterDesignations));
+        if (!concealedMortar)
+        {
+            Committed(await Shoot("m1", "bd01:B6:0", "g2", null, 2, 6));
+        }
+        await Advance();
+        Assert.Contains("g2", Current.NoMoveThisPlayerTurn);
+        Assert.NotEmpty((await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", "existing-engine-fire-v1")).FireHistory!.EvaluationGaps);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OneSpotterSharesMortarsOnlyAtTheSameLocationAndTargetForThePlayerTurn(bool squadSpotter)
+    {
+        await Setup("german", 7, 1942,
+            Squad("g1", "bd01:B10:0", "german"), Mortar("m1", "attacker-light-mortar", "g1", "german"),
+            Squad("g3", "bd01:B10:0", "german"), Mortar("m2", "attacker-light-mortar", "g3", "german"),
+            Squad("g4", "bd01:C10:0", "german"), Mortar("m3", "attacker-light-mortar", "g4", "german"),
+            squadSpotter ? Squad("g2", "bd01:B9:0", "german") : Unit("g2", "asl:half-squad", "attacker-half-squad", "bd01:B9:0", "german"),
+            Squad("r1", "bd01:B6:0", "russian"), Squad("r2", "bd01:B5:0", "russian"));
+        await Advance();
+        Committed(await Shoot("m1", "bd01:B6:0", "g2", null, 2, 6));
+        var before = Revision;
+        Refused(await Shoot("m2", "bd01:B5:0", "g2", null), "play.ordnance-spotter-used");
+        Refused(await Shoot("m3", "bd01:B6:0", "g2", null), "play.ordnance-spotter-used");
+        Assert.Equal(before, Revision);
+        var legacy = store.Read(Scope)!.Events.Select(item => item.Payload is OrdnanceFired shot ? item with
+        {
+            Payload = shot with
+            {
+                Facts = JsonSerializer.SerializeToElement(shot.Facts.Deserialize<OrdnanceShot>(LiveFire.Json)! with
+                {
+                    SpotterUseVersion = null
+                }, LiveFire.Json)
+            }
+        } : item).ToArray();
+        Assert.False(Planner().Replay(legacy).HasErrors);
+        var unknownVersion = legacy.Select(item => item.Payload is OrdnanceFired shot ? item with
+        {
+            Payload = shot with
+            {
+                Facts = JsonSerializer.SerializeToElement(shot.Facts.Deserialize<OrdnanceShot>(LiveFire.Json)! with
+                {
+                    SpotterUseVersion = 2
+                }, LiveFire.Json)
+            }
+        } : item).ToArray();
+        Assert.True(Planner().Replay(unknownVersion).HasErrors);
+        Committed(await Shoot("m2", "bd01:B6:0", "g2", null, 2, 6));
+        Assert.Equal(2, Current.SpottedThisPhase.Count(item => item.Spotter == "g2"));
+        Assert.Equal(2, Current.MortarSpotterUses.Count);
+        Assert.All(store.Read(Scope)!.Events.Select(item => item.Payload).OfType<OrdnanceFired>(),
+            shot => Assert.Equal(1, shot.Facts.Deserialize<OrdnanceShot>(LiveFire.Json)!.SpotterUseVersion));
+        Refused(await Shoot("m1", "bd01:B5:0", "g2", null), "play.ordnance-spotter-used");
+        if (squadSpotter)
+        {
+            Committed(await Fire(G2, "bd01:B6:0", 6, 6));
+        }
+        var written = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(written)).Record!;
+        Assert.Equal(JsonSerializer.Serialize(Current.MortarSpotterUses), JsonSerializer.Serialize(Planner().Replay(loaded.Events).Current!.MortarSpotterUses));
+        await Advance();
+        Assert.Empty(Current.SpottedThisPhase);
+        Assert.Equal(2, Current.MortarSpotterUses.Count);
+        for (var phase = 0; phase < 6; phase++)
+        {
+            Committed(await Do(GameActions.AdvancePhase, new DiceRoller(_ => 5), new
+            {
+            }));
+        }
+        Assert.Equal("russian", Current.PhasingSide);
+        Assert.Equal(2, Current.PlayerTurnOrdinal);
+        Assert.Empty(Current.MortarSpotterUses);
     }
 
     [Fact]
@@ -470,8 +975,9 @@ public sealed class BacklogPass9Tests : IDisposable
         Refused(await Shoot("de-mtr", "bd01:B4:0", null, null, 5, 6), "play.ordnance-mortar-moved");
     }
 
-    [Fact]
-    public async Task SmokeGrenadesHinderDefensiveFireAndLeaveAtTheEndOfTheMph()
+    [Theory]
+    [MemberData(nameof(TurnGuideAcceptanceCases.AtmosphereProfiles), MemberType = typeof(TurnGuideAcceptanceCases))]
+    public async Task SmokeGrenadesHinderDefensiveFireAndLeaveAtTheEndOfTheMph(string profile)
     {
         // A24.1, A24.2, A24.8 (R9.5, R9.6): the German 4-6-7 in B8 places SMOKE there on a dr of 1 for 1 MF; the Russian squad in B10 fires at it
         // with +2 Hindrance and no FFMO. A squad entering B8 pays one more MF. The counter leaves at the end of the MPh.
@@ -482,6 +988,15 @@ public sealed class BacklogPass9Tests : IDisposable
         Committed(await Smoke(G1, "bd01:B8:0", "g1", "bd01:B8:0", 1));
         Assert.Single(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
         Assert.Equal(G1, Current.SmokeAttempts);
+        var smokeRevision = Revision;
+        var smokeGuide = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", profile);
+        Assert.Equal(TurnSmokeState.Active, Assert.Single(smokeGuide.Atmosphere!.Grenades).State);
+        Assert.True(Assert.Single(smokeGuide.Atmosphere.Grenades).AttemptSpentThisPhase);
+        Assert.Empty(smokeGuide.Atmosphere.UnclassifiedSmoke);
+        Assert.Equal(7, smokeGuide.Atmosphere.PendingRules.Length);
+        var enemySmoke = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("russian"), "mph", profile)).Atmosphere!;
+        Assert.Empty(enemySmoke.Grenades);
+        Assert.NotEmpty(enemySmoke.PendingRules);
         var before = Revision;
         Committed(await Fire(R1, "bd01:B8:0", 6, 6));
         var record = LastFire(before);
@@ -498,6 +1013,35 @@ public sealed class BacklogPass9Tests : IDisposable
         await Advance();
         Assert.DoesNotContain(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+        var afterSmoke = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "dfph", profile)).Atmosphere!;
+        Assert.Equal(TurnSmokeState.RemovedAtMovementEnd, Assert.Single(afterSmoke.Grenades).State);
+        Assert.False(Assert.Single(afterSmoke.Grenades).AttemptSpentThisPhase);
+        var oldSmoke = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", profile, smokeRevision);
+        Assert.Equal(JsonSerializer.Serialize(smokeGuide.Atmosphere), JsonSerializer.Serialize(oldSmoke.Atmosphere));
+        Assert.Equal(TurnCloseDisposition.ReadOnly, oldSmoke.PhaseClose.Disposition);
+        var stored = store.Read(Scope)!;
+        var disk = GameEventReader.Read(Encoding.UTF8.GetBytes(GameEventWriter.Write(Scope, stored))).Record!;
+        var copied = new FileGameStore(Path.Combine(root, "smoke-copy"));
+        var reader = new GamePlanner(copied, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, copied.Append(Scope, disk.Label, 0, disk.Events, reader.Replay).Status);
+        Assert.Equal(AppendStatus.Replay, copied.Append(Scope, disk.Label, 0, disk.Events, reader.Replay).Status);
+        var count = copied.Read(Scope)!.Events.Count;
+        Assert.Equal(JsonSerializer.Serialize(afterSmoke), JsonSerializer.Serialize((await reader.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "dfph", profile)).Atmosphere));
+        Assert.Equal(count, copied.Read(Scope)!.Events.Count);
+        var missingLinks = disk.Events.Select(item => item.Payload is InstanceCreated { Instance.Kind: "asl:smoke" }
+            ? item with
+            {
+                Causes = []
+            } : item).ToArray();
+        var legacy = new FileGameStore(Path.Combine(root, "smoke-legacy"));
+        var legacyReader = new GamePlanner(legacy, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, legacy.Append(Scope, disk.Label, 0, missingLinks, legacyReader.Replay).Status);
+        var incomplete = (await legacyReader.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", profile, smokeRevision)).Atmosphere!;
+        Assert.Equal(TurnSmokeState.NotEvaluated, Assert.Single(incomplete.Grenades).State);
+        Assert.Null(Assert.Single(incomplete.Grenades).Counter);
+        Assert.Single(incomplete.UnclassifiedSmoke);
+        Assert.Equal(TurnSmokeState.NotEvaluated, Assert.Single((await legacyReader.ReadTurnGuideProfileAsync(Scope,
+            Perspective.Side("german"), "dfph", profile)).Atmosphere!.Grenades).State);
     }
 
     [Fact]
@@ -509,6 +1053,9 @@ public sealed class BacklogPass9Tests : IDisposable
         var before = Revision;
         Committed(await Smoke(G1, "bd01:A8:0", "g1", "bd01:B8:0", 6));
         Assert.DoesNotContain(Current.Entities, item => item.Kind == "asl:smoke");
+        var failedSmoke = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", "existing-engine-atmosphere-v1")).Atmosphere!;
+        Assert.Equal(TurnSmokeState.FailedAttempt, Assert.Single(failedSmoke.Grenades).State);
+        Assert.True(Assert.Single(failedSmoke.Grenades).AttemptSpentThisPhase);
         Assert.Equal(4, Since(before).Select(item => item.Payload).OfType<MovementStepped>().Single().HalfMf);
         await Pass();
         Assert.True(Current.Unit("g1")!.MovementEnded);

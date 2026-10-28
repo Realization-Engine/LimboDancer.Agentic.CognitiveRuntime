@@ -11,8 +11,42 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public static class GameActions
 {
+    public const string WindowAdjudicationPermission = "asl.game.adjudicate-window";
+    public static readonly ActionDescriptor ReviewPlacedDcWindow = Descriptor("asl.game.review-placed-dc-window", "Review Placed DC timing",
+        "Record external AFPh opening-task evidence for one Placed DC at the current state; does not authorize an attack.",
+        WindowAdjudicationPermission, "asl.game.sequence-v1", """
+        { "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "review"],
+          "properties": { "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 }, "review": { "type": "object" } }
+        }
+        """);
+
+    public const string WorkAdjudicationPermission = "asl.game.adjudicate-work";
+    public static readonly ActionDescriptor RecordTurnWork = Descriptor("asl.game.record-turn-work", "Record work adjudication",
+        "Record externally adjudicated packing or replenishment facts and lifecycle changes. This does not certify unintegrated rules.",
+        WorkAdjudicationPermission, "asl.game.sequence-v1", """
+        { "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "workId", "operation", "ruleBasis"],
+          "properties": { "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 }, "workId": { "type": "string" },
+            "operation": { "type": "string", "enum": ["start", "interrupt", "resume", "cancel", "complete"] },
+            "ruleBasis": { "type": "string" }, "declaration": { "type": "object" } }
+        }
+        """);
+
     public const string SetupPermission = "asl.game.setup";
     public const string PlayPermission = "asl.game.play";
+
+    public static readonly ActionDescriptor DesignateSpotter = Descriptor("asl.game.designate-spotter", "Designate a mortar Spotter",
+        "Record an original daytime Spotter in the owner's PFPh/DFPh and apply its SW-use fire marker. Replacement, setup activation and night remain pending.",
+        PlayPermission, "asl.game.sequence-v1", """
+        { "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "gunId", "spotter"],
+          "properties": { "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 }, "gunId": { "type": "string" }, "spotter": { "type": "string" } }
+        }
+        """);
 
     public static readonly ActionDescriptor Setup = Descriptor("asl.game.setup", "Set up a game",
         "Start a live game on the boards in play, or add placements to one still in setup, as checked against the boards and the catalog; or place non-OB \"?\" once both sides have set up (A12.12).",
@@ -78,7 +112,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor Deploy = Descriptor("asl.game.deploy", "Deploy a squad",
-        "In the RPh, a Good Order squad with a Good Order leader of its nationality in its Location takes a NTC modified by his leadership to become two HS; the first keeps its SW unless some are named for the second (A1.31; ruling R13.4).",
+        "In the RPh, a Good Order squad with a Good Order leader of its nationality in its Location takes a NTC modified by his leadership to become two HS; the first keeps its SW unless some are named for the second. A squad with a retained Spotter assignment must choose which HS keeps spotting (A1.31; C9.3; ruling R13.4).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -87,7 +121,8 @@ public static class GameActions
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "squadId": { "type": "string" }, "leader": { "type": "string" },
-            "secondWeapons": { "type": "array", "items": { "type": "string" } }
+            "secondWeapons": { "type": "array", "items": { "type": "string" } },
+            "spotterHalf": { "type": "string", "enum": ["first", "second"] }
           }
         }
         """);
@@ -713,7 +748,7 @@ public static class GameActions
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
-            "equipmentId": { "type": "string" }, "vehicle": { "type": "string" }
+            "equipmentId": { "type": "string" }, "vehicle": { "type": "string" }, "guideRoute": { "type": "string" }, "guideProfile": { "type": "string" }
           }
         }
         """, JsonSerializer.SerializeToElement(new
@@ -845,7 +880,7 @@ public static class GameActions
     {
         get;
     } =
-        [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
+        [Setup, AdvancePhase, DesignateSpotter, RecordTurnWork, ReviewPlacedDcWindow, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
             Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp,
             InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt, AbandonVehicle, RecrewVehicle, Scrounge, VoluntaryBreak, RemoveConcealment, Search, StreetFightingReturn];

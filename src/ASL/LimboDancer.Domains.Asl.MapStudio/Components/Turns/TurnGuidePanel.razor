@@ -1,0 +1,188 @@
+@using LimboDancer.Domains.Asl.Units.State
+@using ASL.Turns
+@using LimboDancer.Domains.Asl.Play
+
+<section class="turn-guide" aria-label="ASL Turn Phase Guide">
+    <header>
+        <p class="muted">ASL / Turn Phase Guide</p>
+        <h2>@phase.Name</h2>
+        <p>@(Host is null ? "Reference guide. No live game is being evaluated." : $"Actual phase: {Host.Guide.ActualPhaseId.ToUpperInvariant()}. Browsing: {phase.Name}.")</p>
+        @if (Host?.Guide.Historical == true) { <p role="status">Historical view: read-only.</p> }
+        <nav aria-label="Turn phases" class="turn-phases">
+            @foreach (var item in Catalog.Phases)
+            {
+                <button type="button" data-phase="@item.Id" aria-pressed="@(phase.Id == item.Id ? "true" : "false")" @onclick="() => PhaseChanged.InvokeAsync(item.Id)">@item.Name</button>
+            }
+        </nav>
+        <p>All options remain visible, including pending rules. Considered marks are private reminders, not completed game actions.</p>
+    </header>
+    <TurnDependencyAudit TopicRequested="NavigateTopic" />
+    <div class="turn-layout">
+        <aside aria-label="Phase checklist">
+            <label>Find an option <input type="search" @bind="query" @bind:event="oninput" /></label>
+            <button type="button" @onclick="() => query = string.Empty">Show all options</button>
+            <p role="status">@Visible.Count() of @Snapshot.Options.Length options shown. @Snapshot.Options.Count(option => considered.Contains(option.Topic.Id)) private reminders in this phase.</p>
+            @foreach (var group in Visible.GroupBy(option => option.Topic.GroupIndex))
+            {
+                <details open>
+                    <summary>@phase.Groups[group.Key]</summary>
+                    @foreach (var option in group)
+                    {
+                        <button type="button" class="turn-topic" data-topic="@option.Topic.Id" aria-pressed="@(selected == option.Topic.Id ? "true" : "false")" @onclick="() => SelectTopic(option.Topic.Id)">
+                            @option.Topic.Title
+                            <small>@option.Topic.Who · @(considered.Contains(option.Topic.Id) ? "Considered" : "To consider") · @Attention(option) · Pending rules retained</small>
+                        </button>
+                    }
+                </details>
+            }
+            @if (!Visible.Any()) { <p>No matching options. Show all options to restore the complete checklist.</p> }
+        </aside>
+        <article aria-label="Option details">
+            @if (Selected is { } detail)
+            {
+                var topic = detail.Topic;
+                var binding = Inventory.Bindings.Single(item => item.Kind == TurnInventoryKind.Topic && item.Id == topic.Id);
+                <h3>@topic.Title</h3>
+                @if (!Visible.Contains(detail)) { <p>The selected option is outside the current search.</p> }
+                <p>@topic.Prompt</p>
+                <p><strong>Type:</strong> @topic.Kind</p>
+                <p><strong>Who:</strong> @topic.Who <strong>When:</strong> @topic.Timing</p>
+                <ul>@foreach (var check in topic.Checks) { <li>@check</li> }</ul>
+                <p><strong>Effect:</strong> @topic.Effect</p>
+                <p><strong>Example:</strong> @topic.Example</p>
+                <label><input class="turn-considered" type="checkbox" checked="@considered.Contains(topic.Id)" @onchange="e => Consider(topic.Id, e.Value is true)" /> Considered for my planning</label>
+                <h4>Guidance and integration</h4>
+                @foreach (var decision in detail.Decisions)
+                {
+                    <p class="turn-decision"><strong>@(decision.Applicability == TurnApplicability.NotEvaluated ? "Not yet evaluated" : decision.Applicability.ToString()):</strong> @decision.Reason</p>
+                    @if (ActionRequested.HasDelegate && OfferedAction(topic.Id, decision) is { } action)
+                    {
+                        <button type="button" class="turn-action" disabled="@Busy" @onclick="() => ActionRequested.InvokeAsync(action)">Request governed command check</button>
+                    }
+                }
+                @if (topic.Id == "afph:placed" && Host is { Guide.Historical: false, Guide.ActualPhaseId: "afph", Guide.BrowsedPhaseId: "afph" })
+                {
+                    @if (Host.Guide.ViewerId == Perspective.AdjudicatorName)
+                    {
+                        @if (CanReviewOpening && ReviewRequested.HasDelegate)
+                        {
+                            @foreach (var offer in Host.OpeningReviews)
+                            {
+                                <TurnOpeningReview @key="offer.Token" Offer="offer" ReviewRequested="ReviewRequested" Busy="Busy" />
+                            }
+                            @if (Host.OpeningReviews.IsEmpty) { <p>No current review offer. Missing placement or phase evidence cannot be supplied by this form.</p> }
+                        }
+                        else { <p>Opening-review access is not enabled for this host. Selecting the adjudicator view does not grant permission.</p> }
+                    }
+                    else if (!Host.DecisionWindows.IsEmpty)
+                    {
+                        <p>An authorized adjudicator records opening evidence. Return to the owning side to request the DC attack. Pending rules still require review.</p>
+                    }
+                }
+                <p class="turn-pending"><strong>Pending rules:</strong> @topic.IntegrationNote</p>
+                <p><strong>Source review:</strong> @SourceLabel(binding.SourceReview)</p>
+                @foreach (var gap in Inventory.Gaps.Where(gap => binding.GapIds.Contains(gap.Id))) { <p>@gap.WorkItem: @gap.Reason</p> }
+                <h4>Terms and acronyms</h4>
+                <dl>@foreach (var term in topic.Terms) { <dt><a href="@($"acronyms?q={Uri.EscapeDataString(term)}")">@term</a></dt><dd>@phase.Glossary.GetValueOrDefault(term, "See the acronym index and cited rules.")</dd> }</dl>
+                <p><strong>Rules / ASOP:</strong> @topic.References</p>
+                <p>Source pages: @string.Join(", ", topic.SourcePages). @phase.Source.Edition</p>
+                <h4>Cross-phase dependencies</h4>
+                @foreach (var dependency in Catalog.DependenciesFor(topic.Id))
+                {
+                    <details><summary>@dependency.Title</summary><p>Origin: @dependency.Origin</p><p>Due: @dependency.Due</p>
+                        <ul>@foreach (var check in dependency.Checks) { <li>@check</li> }</ul>
+                        <p>@dependency.Example</p><p>@dependency.References</p><p>Pending integration: @dependency.IntegrationNote</p>
+                        <div class="turn-related">@foreach (var id in dependency.TopicIds)
+                        {
+                            var related = Catalog.FindTopic(id)!;
+                            <button type="button" data-related-topic="@id" @onclick="() => NavigateTopic(id)">@related.PhaseId.ToUpperInvariant(): @related.Title</button>
+                        }</div>
+                    </details>
+                }
+            }
+        </article>
+    </div>
+    <details class="turn-glossary"><summary>@phase.Name glossary</summary>
+        <dl>@foreach (var term in Snapshot.Glossary.OrderBy(item => item.Key, StringComparer.Ordinal)) { <dt>@term.Key</dt><dd>@term.Value</dd> }</dl>
+    </details>
+    @if (Host is not null)
+    {
+        <TurnGuideEvidence Host="Host" />
+        @if (!Host.Guide.Historical && CloseRequested.HasDelegate)
+        {
+            <button type="button" class="turn-close" disabled="@Busy" @onclick="() => CloseRequested.InvokeAsync()">Review phase close</button>
+        }
+    }
+</section>
+
+@code {
+    private static readonly TurnGuideCatalog Catalog = TurnGuideCatalog.Load();
+    private static readonly TurnGuideService Reference = new(Catalog, []);
+    private static readonly TurnCapabilityInventory Inventory = Reference.Inventory;
+    [Parameter] public string Phase { get; set; } = "rph";
+    [Parameter] public EventCallback<string> PhaseChanged { get; set; }
+    [Parameter] public TurnHostGuide? Host { get; set; }
+    [Parameter] public EventCallback<TurnPlacedDcAction> ActionRequested { get; set; }
+    [Parameter] public EventCallback<TurnOpeningReviewRequest> ReviewRequested { get; set; }
+    [Parameter] public bool CanReviewOpening { get; set; }
+    [Parameter] public EventCallback CloseRequested { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    private TurnPhase phase = Catalog.Phases[0];
+    private TurnGuideSnapshot Snapshot = null!;
+    private string selected = string.Empty;
+    private string query = string.Empty;
+    private readonly Dictionary<string, string> selections = new(StringComparer.Ordinal);
+    private readonly HashSet<string> considered = new(StringComparer.Ordinal);
+    private string? scope;
+    private IEnumerable<TurnOptionGuidance> Visible => Snapshot.Options.Where(option => string.IsNullOrWhiteSpace(query)
+        || $"{option.Topic.Title} {option.Topic.Prompt} {option.Topic.References} {string.Join(" ", option.Topic.Terms)}".Contains(query, StringComparison.OrdinalIgnoreCase));
+    private TurnOptionGuidance? Selected => Snapshot.Options.FirstOrDefault(option => option.Topic.Id == selected);
+    protected override void OnParametersSet()
+    {
+        var nextScope = Host is null ? "reference" : $"{Host.Guide.GameId}/{Host.Guide.ViewerId}/{Host.Profile.Id}/{Host.Profile.Version}";
+        if (scope != nextScope) { considered.Clear(); selections.Clear(); query = string.Empty; selected = string.Empty; scope = nextScope; }
+        var previousPhase = phase.Id;
+        phase = Catalog.Phases.FirstOrDefault(item => item.Id == (Host?.Guide.BrowsedPhaseId ?? Phase)) ?? Catalog.Phases[0];
+        if (Host is not null) { Snapshot = Host.Guide; }
+        else
+        {
+            var context = new TurnEvaluationContext("reference", "reader", "reference", "existing-engine", phase.Id, phase.Id + ":phase", "reference");
+            Snapshot = Reference.Describe(new(context, phase.Id, false), new(context, []));
+        }
+        if (previousPhase != phase.Id || !Snapshot.Options.Any(item => item.Topic.Id == selected))
+        {
+            selected = selections.GetValueOrDefault(phase.Id, Snapshot.Options[0].Topic.Id);
+            query = string.Empty;
+        }
+    }
+    private TurnPlacedDcAction? OfferedAction(string topicId, TurnDecision decision) =>
+        Host is { Guide.Historical: false } && Host.Guide.BrowsedPhaseId == Host.Guide.ActualPhaseId
+            && topicId == TurnPlacedDcGuidance.TopicId && decision.DecisionOwnerSideId == Host.Guide.ViewerId
+            && !string.IsNullOrEmpty(decision.ActionRoute)
+            ? Host.Actions.FirstOrDefault(action => action.Token == decision.ActionRoute && action.SubjectId == decision.SubjectId
+                && action.Profile == Host.Profile.Id && action.ActionId == TurnPlacedDcGuidance.ActionId) : null;
+    private void SelectTopic(string id) { selected = id; selections[phase.Id] = id; }
+    private async Task NavigateTopic(string id)
+    {
+        var topic = Catalog.FindTopic(id)!;
+        selections[topic.PhaseId] = id;
+        query = string.Empty;
+        if (topic.PhaseId == phase.Id) SelectTopic(id);
+        else await PhaseChanged.InvokeAsync(topic.PhaseId);
+    }
+    private static string Attention(TurnOptionGuidance option) => string.Join(" / ", option.Decisions.Select(decision => decision.Attention switch
+    {
+        TurnAttentionKind.RequiredDecision => "Required consideration",
+        TurnAttentionKind.OptionalChoice => "Optional choice",
+        TurnAttentionKind.Informational => "Information",
+        _ => "Evaluation missing",
+    }).Distinct(StringComparer.Ordinal));
+    private static string SourceLabel(TurnSourceReview review) => review switch
+    {
+        TurnSourceReview.SourceMissing => "Source not yet available",
+        TurnSourceReview.InterpretationOpen => "Interpretation remains open",
+        TurnSourceReview.NotReviewed => "Not yet reviewed",
+        _ => "Reconciled with source",
+    };
+    private void Consider(string id, bool value) { if (value) considered.Add(id); else considered.Remove(id); }
+}

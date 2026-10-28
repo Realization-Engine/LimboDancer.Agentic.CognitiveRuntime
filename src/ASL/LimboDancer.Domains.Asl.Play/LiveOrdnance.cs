@@ -81,10 +81,14 @@ public static class LiveOrdnance
     /// MA shot as a Gun Duel's first shot (C2.2401; pass 55, ruling R55.19): Bounding First Fire made while the DEFENDER's window is open.
     /// </summary>
     public static (OrdnanceShot? Shot, string? Reason) FromState(GameState state, string gunId, BoardLocation target, string? targetVehicle = null,
-        string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null, bool gunDuel = false)
+        string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null, bool gunDuel = false, bool legacySpotterUse = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
+        if (TurnWorkEffects.PackedGunBar(state.PackedGuns.Contains(gunId)) is { } packedBar)
+        {
+            return (null, packedBar);
+        }
         if (gunId.EndsWith(":pf", StringComparison.Ordinal))
         {
             return Panzerfaust(state, gunId, target, targetVehicle, director);
@@ -340,7 +344,7 @@ public static class LiveOrdnance
         };
         if (mortar)
         {
-            var (supported, supportReason) = MortarSupport(state, gun.Id, crew, spotter, director, phase);
+            var (supported, supportReason) = MortarSupport(state, gun.Id, crew, spotter, director, phase, target, legacySpotterUse);
             if (supported is null)
             {
                 return (null, supportReason);
@@ -349,13 +353,14 @@ public static class LiveOrdnance
             shot = shot with
             {
                 Spotter = supported.Value.Spotter,
+                SpotterUseVersion = supported.Value.Spotter is not null && !legacySpotterUse ? 1 : null,
                 Director = supported.Value.Director,
             };
         }
         else if (gun.Kind == "asl:latw" && spotter is null)
         {
             // Rulings R9.10, R9.11: an ATR or PSK fires its own ammunition, may be directed by a leader, and a PSK takes the Backblast.
-            var (supported, supportReason) = MortarSupport(state, gun.Id, crew, null, director, phase);
+            var (supported, supportReason) = MortarSupport(state, gun.Id, crew, null, director, phase, target);
             if (supported is null)
             {
                 return (null, supportReason);
@@ -474,15 +479,22 @@ public static class LiveOrdnance
     /// Adjacency and LOS are the planner's map reads.
     /// </summary>
     private static ((OrdnanceSpotter? Spotter, FireDirector? Director)? Support, string? Reason) MortarSupport(GameState state, string gun, UnitInstance firer, string? spotter,
-        string? director, string phase)
+        string? director, string phase, BoardLocation target, bool legacySpotterUse = false)
     {
-        var kept = state.MortarSpotters.FirstOrDefault(item => item.Gun == gun)?.Spotter is { } recorded && state.Unit(recorded) is { Status: InstanceStatus.Active } still
-            && !Is(still, Conditions.Broken) && !Is(still, Conditions.Captured) && still.Side == firer.Side ? still : null;
-        return ScenarioA1OrdnanceEligibility.MortarSupport(gun, kept?.Id, spotter, () => SpotterFacts(state, gun, firer, spotter!), director,
+        var assignment = state.MortarSpotters.FirstOrDefault(item => item.Gun == gun);
+        if (!legacySpotterUse && spotter is not null && TurnSpotterLossRules.FireBar(state.MortarSpotterLosses
+            .Any(item => item.Gun == gun && item.Spotter == assignment?.Spotter)) is { } lost)
+        {
+            return (null, lost);
+        }
+        var kept = assignment?.Spotter is { } recorded && state.Unit(recorded) is { } still
+            && ScenarioA1OrdnanceEligibility.RetainsMortarSpotter(still.Status == InstanceStatus.Active, still.Side == firer.Side,
+                Is(still, Conditions.Broken), Is(still, Conditions.Captured)) ? still : null;
+        return ScenarioA1OrdnanceEligibility.MortarSupport(gun, kept?.Id, spotter, () => SpotterFacts(state, gun, firer, spotter!, target, legacySpotterUse), director,
             () => DirectorFacts(state, gun, firer, director!), phase);
     }
 
-    private static OrdnanceSpotterFacts SpotterFacts(GameState state, string gun, UnitInstance firer, string spotter)
+    private static OrdnanceSpotterFacts SpotterFacts(GameState state, string gun, UnitInstance firer, string spotter, BoardLocation target, bool legacySpotterUse)
     {
         if (state.Unit(spotter) is not { Status: InstanceStatus.Active, Definition: not null } unit)
         {
@@ -492,7 +504,10 @@ public static class LiveOrdnance
 
         return new OrdnanceSpotterFacts(unit.Id, true, unit.Definition.Definition, unit.Side == firer.Side, Is(unit, Conditions.Captured), Is(unit, Conditions.Melee),
             Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), unit.Kind == "asl:squad", LiveFire.Fired(unit) || Is(unit, Conditions.FirstFire),
-            state.SpottedThisPhase.Any(item => item.Spotter == unit.Id && item.Gun != gun), state.SpottedThisPhase.Any(item => item.Spotter == unit.Id),
+            legacySpotterUse ? state.SpottedThisPhase.Any(item => item.Spotter == unit.Id && item.Gun != gun)
+                : !TurnSpotterUseRules.Compatible([.. state.MortarSpotterUses.Where(item => item.Spotter == unit.Id)
+                .Select(item => new TurnSpotterUse(item.Gun, item.Location?.ToString(), item.Target.ToString()))],
+                gun, state.Location(gun)?.Location.ToString(), target.ToString()), state.SpottedThisPhase.Any(item => item.Spotter == unit.Id),
             SquadSupport(state, unit));
     }
 
@@ -608,7 +623,7 @@ public static class LiveOrdnance
         };
         if (director is not null)
         {
-            var (support, reason) = MortarSupport(state, gunId, unit, null, director, phase);
+            var (support, reason) = MortarSupport(state, gunId, unit, null, director, phase, target);
             if (support is null)
             {
                 return (null, reason);
@@ -806,9 +821,14 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "The ordnance record's facts are incomplete.";
         }
 
+        if (recorded.SpotterUseVersion is not null and not 1)
+        {
+            return "Unknown Spotter use validation version.";
+        }
+
         // C2.2401 (pass 55): a record that names itself a Gun Duel's first shot is read as one; the projector holds the fact to the answered choice.
         var (expected, reason) = LiveOrdnance.FromState(state, fired.Gun, fired.Target, recorded.VehicleTarget?.VehicleId, recorded.Ammunition, recorded.IntensiveFire == true,
-            recorded.Spotter?.UnitId, recorded.Director?.UnitId, recorded.GunDuel == true);
+            recorded.Spotter?.UnitId, recorded.Director?.UnitId, recorded.GunDuel == true, recorded.SpotterUseVersion is null);
         if (expected is null)
         {
             return reason;

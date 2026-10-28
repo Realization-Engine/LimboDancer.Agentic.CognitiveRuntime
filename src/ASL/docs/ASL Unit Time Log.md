@@ -1834,3 +1834,5 @@ One session under the user's word of 2026-10-27 ("Run Pass 72 without my interve
 | Fix Round A (the charge, Battle Hardening), its Studio check | 22:36 | 22:57 | 0:21 |  |  |
 | Fix Round B (fire, ordnance, substitution, hero, texts, perf); R4.3 by the session | 22:58 | 23:30 | 0:32 |  |  |
 | The whole-pass Studio check: 15 games played, the hex audit, 320 pixels, the measurement (the hidden page set aside) | 23:31 | 23:46 | 0:15 |  |  |
+| PR 44 Rules-boundary fix | 06:59 | 07:09 | 0:10 | | 13 inline rule decisions moved into Rules calculators, 24 Rules tests, backlog section 76 (b1193806) |
+| PR 44 merge gate (base, baseline, build, proofs) | 07:09 | 07:34 | 0:25 | | proofs equal: 3316 replay lines, 266512 sweep lines; gate.sh early-check fix for CODE_MOVE |

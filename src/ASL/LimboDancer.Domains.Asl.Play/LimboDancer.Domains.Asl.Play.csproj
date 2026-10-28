@@ -12,6 +12,7 @@
     <InternalsVisibleTo Include="LimboDancer.Domains.Asl.Play.Tests" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ASL.Turns\ASL.Turns.csproj" />
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Units\LimboDancer.Domains.Asl.Units.csproj" />
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Rules\LimboDancer.Domains.Asl.Rules.csproj" />
     <ProjectReference Include="..\LimboDancer.Dice\LimboDancer.Dice.csproj" />

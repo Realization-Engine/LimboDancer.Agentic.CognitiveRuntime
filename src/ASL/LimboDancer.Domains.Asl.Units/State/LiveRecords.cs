@@ -205,6 +205,12 @@ public sealed record CarriedMan(string Man, string Carrier);
 /// <summary>A DC Placement (A23.3; ruling R15.2).</summary>
 public sealed record DcPlacement(string Unit, string Charge, BoardLocation Target, bool Cx, bool TargetsConcealed)
 {
+    /// <summary>Owner at placement, persisted by B5. Null in legacy records; never inferred from a later custodian.</summary>
+    public string? OwnerSide
+    {
+        get; init;
+    }
+
     /// <summary>
     /// The Target Facings of each enemy AFV in the target Location through the hexside the DC was Placed across (A23.5; pass 60, the second referee):
     /// they stand "even if the AFV changes its CA" before the detonation. Null in a record made before the pass, whose detonation reads them then.
@@ -234,6 +240,20 @@ public sealed record SupportWeaponDirector(string Gun, string Leader);
 
 /// <summary>A light mortar's Spotter (C9.3; ruling R9.4).</summary>
 public sealed record MortarSpotter(string Gun, string Spotter);
+
+/// <summary>Observed C9.3 assignment loss. A later rally cannot erase it or establish a replacement designation.</summary>
+public sealed record MortarSpotterLoss(string Gun, string Spotter, string EventId, long Revision,
+    Rules.TurnSpotterChange Change, Rules.TurnPhaseOccurrence? Occurrence);
+
+/// <summary>The C9.3 Good Order half-squad that inherits an observed assignment, with journal provenance.</summary>
+public sealed record MortarSpotterSuccessor(string Gun, string Predecessor, string Successor, string EventId, long Revision);
+
+/// <summary>Explicit original designation with authoritative journal provenance, distinct from observing a shot.</summary>
+public sealed record MortarSpotterDesignation(string Gun, string Spotter, string Owner, string EventId, long Revision,
+    Rules.TurnPhaseOccurrence Occurrence);
+
+/// <summary>Observed C9.31 firing locations and targets, retained for the entire Player Turn.</summary>
+public sealed record MortarSpotterUse(string Gun, string Spotter, BoardLocation? Location, BoardLocation Target);
 
 /// <summary>A squad's one SW use this phase (A7.351): the SW, a Spotter's mortar, or <c>panzerfaust</c>.</summary>
 public sealed record SupportWeaponUse(string Unit, string Weapon);
@@ -702,7 +722,14 @@ public sealed record UnitsSearched(IReadOnlyList<string> Units, BoardLocation Lo
 /// <c>deployment-attempted</c>: a squad's attempt to Deploy in its RPh (A1.31; ruling R13.4): the directing leader (none for Guards), the NTC roll,
 /// the squad's Morale Level, the leadership DRM, and whether it passed; a passed attempt's lineage follows.
 /// </summary>
-public sealed record DeploymentAttempted(string Squad, string? Leader, string Roll, int Morale, int Drm, bool Passed) : EventPayload;
+public sealed record DeploymentAttempted(string Squad, string? Leader, string Roll, int Morale, int Drm, bool Passed) : EventPayload
+{
+    /// <summary>Choice bound before the NTC, including an unsuccessful attempt.</summary>
+    public string? SpotterHalf
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// <c>rph-action-taken</c>: units whose RPh action is spent by a Recombination or a Transfer (A1.32, A4.431; rulings R13.4, R13.5), with the action.

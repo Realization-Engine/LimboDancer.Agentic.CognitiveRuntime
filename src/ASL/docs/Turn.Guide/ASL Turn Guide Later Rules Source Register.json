@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "reviewed": "2026-10-28",
+  "scope": "Supplemental source review for later Rules tasks. Does not replace the accepted eASLRB 3.01 baseline or certify live command support.",
+  "documents": [
+    {
+      "id": "easlrb-3-14-local",
+      "fileName": "eASLRB_v3_14.pdf",
+      "sha256": "d2fedd572b5256d35a6ef4a787da72102211b4d595f090bea81a4c7ee107dfee",
+      "pageCount": 716,
+      "editionNote": "Filename identifies 3.14; the credits on physical page 5 print Version 3.13, January 2026. Preserve both facts; do not silently relabel either.",
+      "copiedIntoRepository": false,
+      "reviewMethod": "Column-ordered text extraction plus visual review of complete rendered physical pages 291 and 292 (printed G16-G17).",
+      "rules": [
+        "G10.1-.11",
+        "G10.2-.21",
+        "G10.3-.33",
+        "G10.4-.42",
+        "G10.5-.61",
+        "G10.7"
+      ],
+      "pages": [
+        {
+          "physical": 291,
+          "printed": "G16"
+        },
+        {
+          "physical": 292,
+          "printed": "G17"
+        }
+      ],
+      "bindings": [
+        "rph:packStart",
+        "rph:packHalf",
+        "rph:packReverse",
+        "ccph:pinTi",
+        "pack"
+      ],
+      "findings": [
+        "Packing uses designated squad Mules, eligible Guns or listed SW, and qualified Personnel in the same terrain and Location. Normal Guns require a non-PRC Good Order same-nationality crew; G10.7 substitutes a qualified MMC for listed SW.",
+        "G10.3 period is max(1, 12 minus M# plus one for non-MTR), doubled at night. G10.7 SW use M# 12. Start/resume/release uses the first-RPh work step; losing crew Pack-TI invalidates only the current Game Turn.",
+        "Midpoint unloading/loading uses the following Player-Turn RPh, not necessarily a first-RPh. Assembly/limber/repair exceptions, reversal, involuntary unloading, prohibited terrain, vulnerability and cumulative Low Ammo remain explicit later integration requirements."
+      ],
+      "interpretation": "G10.33 reversal uses net complete Game Turns already spent, with the ordinary minimum. Its specific elapsed-time rule does not apply the night multiplier a second time. Involuntary unloading instead requires the normal full G10.3 period.",
+      "executionSupport": "Pending: this source review resolves missing text only. D3.2-D3.4 must integrate real actors, consequences and command/guide evidence.",
+      "additionalReviews": [
+        {
+          "date": "2026-10-28",
+          "rules": [
+            "A12.2-.3",
+            "A13.1-.32",
+            "A13.51-.52"
+          ],
+          "physicalPages": [
+            80,
+            81
+          ],
+          "printedPages": [
+            "A38",
+            "A39"
+          ],
+          "method": "Text extraction checked for Horse/Personnel separation, counter sizes and hidden/concealed handling. No new artwork or PDF copied into the repository.",
+          "finding": "Horse counters are separate from their Personnel Riders; A13.32 distinguishes squad, HS and SMC capacities. G10-designated Mules retain distinct identities and cannot create an SMC Mule. Movement, Riders, reduction and vulnerability remain pending execution."
+        },
+        {
+          "date": "2026-10-28",
+          "rules": [
+            "G10.33",
+            "G10.4-.42",
+            "G10.7"
+          ],
+          "physicalPages": [
+            292
+          ],
+          "printedPages": [
+            "G17"
+          ],
+          "method": "Rechecked the existing column-ordered extraction for the vulnerability table and both printed recovery examples; prior complete-page visual review remains recorded above.",
+          "finding": "Forced unloading requires a full ordinary recovery period, whereas a casualty after the Gun has already unloaded does not erase its existing progress. Low Ammo occurrences accumulate. Involuntary-unload terrain eliminates listed SW except on a Bank. No live casualty, restart, CA or ammunition integration is certified."
+        },
+        {
+          "date": "2026-10-28",
+          "rules": [
+            "A9.11",
+            "A9.21",
+            "A21.1-.13",
+            "C9.2",
+            "G10.7"
+          ],
+          "physicalPages": [
+            62,
+            88,
+            179,
+            292
+          ],
+          "method": "Text extraction reviewed for MMC use, captured/non-qualified-use requirements and physical covered-arc distinctions. This adds no visual-review claim and does not replace the accepted baseline.",
+          "finding": "Same-nationality MMC qualification is bounded to MMG, HMG and light mortars. C9.2 gives light mortars no CA; A9.21 SW MG fire restrictions do not establish a physical Gun facing. Foreign/SSR exceptions and the specialized 37mm INF SW representation remain pending; no live command is admitted."
+        },
+        {
+          "date": "2026-10-28",
+          "rules": [
+            "G10.4-.41",
+            "ASOP 1.13B"
+          ],
+          "physicalPages": [
+            292,
+            678
+          ],
+          "method": "Text review of G10.41 and both printed examples; ASOP 1.13B extraction checked for start/release versus halfway timing. Existing G10 full-page visual review is retained.",
+          "finding": "An already-unloaded Gun retains its existing Unpacking progress after Mule casualties, as the Turn 5 example releases in Turn 6. Further loss during full recovery does not restart its duration. Casualty effects occur immediately and do not create a new ASOP work step. Live source authentication, atomic effects and replacement-Mule routes remain pending."
+        },
+        {
+          "date": "2026-10-28",
+          "rules": [
+            "A9.8",
+            "G10.2",
+            "G10.7"
+          ],
+          "physicalPages": [
+            65,
+            291,
+            292
+          ],
+          "method": "Text review of required dismantling, the light-mortar four-PP threshold and Russian .50-calibre MG exception against the existing pinned counter model. Prior G10 visual review and ASOP 1.13B timing reconciliation are retained.",
+          "finding": "Known non-Russian MMG/HMG and 76-82mm mortars require dm; light mortars require dm at four or more PP. Missing PP or Russian MG subtype evidence cannot establish impossibility of dismantling. Unobserved enemy or unbound legacy loads cannot prove empty Mule capacity. These facts do not admit live packing."
+        },
+        {
+          "date": "2026-10-28",
+          "rules": [
+            "E10.1-.4",
+            "D.7",
+            "Accessible glossary",
+            "ASOP 8.43B"
+          ],
+          "physicalPages": [
+            11,
+            192,
+            244,
+            681
+          ],
+          "method": "Local supplemental PDF text reviewed against Chapter E/D and glossary transcriptions; ASOP 8.43B checked for retained replenishment TI and completion timing. No source PDF copied or baseline edition replaced.",
+          "finding": "D4.1 contracts cover ordinary 15/20-PP selection with specified-vehicle exceptions, exact caliber/barrel compatibility, normal-Infantry-advance accessibility, all seven D.7 Immobile conditions and up to two eligible recipients. TI/Prep Fire/radioless refusal alone is not Immobile. Actual source authorization, assignment persistence and governed effects remain D4.2-D4.4; B5-D4 stays Pending."
+        }
+      ]
+    }
+  ]
+}

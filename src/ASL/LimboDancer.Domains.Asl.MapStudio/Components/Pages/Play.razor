@@ -1,3 +1,5 @@
+@using ASL.Turns
+@using LimboDancer.Domains.Asl.MapStudio.Components.Turns
 @page "/games/play"
 @using System.Globalization
 @using System.Text.Json
@@ -323,6 +325,11 @@ else
                                  Consequences="@([.. ConsequencesOf(proposal).Select(item => item.Text.EndsWith('.') ? item.Text : item.Text + ".")])" ConfirmLabel="@ConfirmLabel(ConsequencesOf(proposal))"
                                  CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@CancelProposal">
                 <Lead>
+                    @if (Viewer.IsAdjudicator && proposal.Action == GameActions.ReviewPlacedDcWindow
+                        && proposal.Arguments.GetProperty("review").Deserialize<LimboDancer.Domains.Asl.Rules.TurnPlacedDcReview>() is { } openingReview)
+                    {
+                        <TurnOpeningReviewSummary Review="@openingReview" />
+                    }
                     @* Pass 31c (design D14; play test P-14): a fire's arithmetic before the dice, for the firing side and the adjudicator. *@
                     @if (proposal.Result is { Outcome: PlayOutcome.NeedsConfirmation, Plan.Fire: { } previewed } && (Viewer.IsAdjudicator || Viewer.Name == previewed.FiringSide)
                         && FirePreview(previewed.Attack) is { Arithmetic: { } preview } shownPreview)
@@ -457,6 +464,51 @@ else if (state is not null)
             {
                 <div class="play-tab-context" id="play-tab-context">@pickers</div>
             }
+            @if (state is not null && handOver is null)
+            {
+                @if (state.Ended is null && history?.Current is not null && !(SetupOpen && SetupView is not null && SetupIncomplete))
+                {
+                    @* The user, 2026-10-22: while the other side's decision holds play up, the view says so first and offers the hand-over as its main
+                       action; the banner's hand-over alone, there in every phase, was no signal. *@
+                    @if (AwaitingBlocks && AwaitingView is { } awaitedSide)
+                    {
+                        <div class="play-waiting" id="play-waiting" role="status">
+                            <p class="play-waiting-title">Waiting for the @DisplayText.Side(awaitedSide) side</p>
+                            <p id="play-waiting-why">@WaitingWhy</p>
+                            <button type="button" class="primary" id="play-waiting-hand-over" @onclick="HandOverToAwaiting">Hand the screen to the @DisplayText.Side(awaitedSide) side</button>
+                        </div>
+                    }
+                    @* Table player, pass 28c: what play waits on comes first. *@
+                    @if (state.Choice is { } choice && ChoiceShown(choice))
+                    {
+                        <PendingChoicePanel Key="@choice.Key" Side="@choice.Side" Description="@GamePlanner.DescribeChoice(choice)" MayAnswer="@MayAnswer(choice.Side)"
+                            Options="@ChoiceOptions(choice)" OnChoose="@(option => ProposeChoose(choice.Key, option))" />
+                    }
+                    @foreach (var surrender in state.PendingSurrenders)
+                    {
+                        var captorSide = surrender.Captors.Select(state.Unit).OfType<UnitInstance>().Select(unit => unit.Side).FirstOrDefault();
+                        <PendingSurrenderPanel @key="surrender.Event" Unit="@surrender.Unit" MayAnswer="@MayAnswer(captorSide)" Captors="@(MayAnswer(captorSide) ? surrender.Captors : [])"
+                            OnTake="@(captor => ProposeTakePrisoner(surrender.Unit, captor))" OnReject="@(() => ProposeRejectSurrender(surrender.Unit))"
+                            OnFree="@(() => ProposeFreeSurrender(surrender.Unit))" />
+                    }
+                    @foreach (var open in state.OpenAttempts)
+                    {
+                        <OpenEntryDeclaration EventId="@open.EventId" Unit="@open.Unit" Target="@open.Target.ToString()" OnDecline='@(() => ProposeDeclaration(open.Unit, "decline"))'
+                            OnElect='@(() => ProposeDeclaration(open.Unit, "elect"))' />
+                    }
+                    @* Pass 31 (ruling R5.8; play test P-09): while a choice or a surrender waits, nothing else is proposed. *@
+                    @if (WaitsOnAnswer)
+                    {
+                        <p id="play-answer-first" class="muted">Every other action waits until the answer above is given (ruling R5.8).</p>
+                    }
+                }
+                <button type="button" id="play-turn-guide-toggle" aria-expanded="@turnGuideOpen" @onclick="() => turnGuideOpen = !turnGuideOpen">Turn Phase Guide</button>
+                @if (turnGuideOpen)
+                {
+                    <LiveTurnGuide @key="AskedBy" ScopeKey="@AskedBy" Revision="@state.Revision" ActualPhase="@state.Phase"
+                        ReadGuide="ReadTurnGuide" ActionRequested="ProposeTurnDecision" ReviewRequested="ProposeOpeningReview" CanReviewOpening="Live.CanReviewOpening" CloseRequested="ProposeAdvance" Busy="@busy" />
+                }
+            }
             @* Table player, pass 29: the hex picked on the map is offered to every typed Location of the actions. *@
             <CascadingValue Name="PickedLocation" Value="@highlight?.ToString()">
             @* Pass 31c (design D13): a typed Location can be armed, and the next hex clicked on the map fills it. Setup has its own picking. *@
@@ -495,39 +547,6 @@ else if (state is not null)
             else if (state is not null && history?.Current is not null && !(SetupOpen && SetupView is not null && SetupIncomplete))
             {
                 <h3 class="@PlayHeadingClass">Play</h3>
-                @* The user, 2026-10-22: while the other side's decision holds play up, the view says so first and offers the hand-over as its main
-                   action; the banner's hand-over alone, there in every phase, was no signal. *@
-                @if (AwaitingBlocks && AwaitingView is { } awaitedSide)
-                {
-                    <div class="play-waiting" id="play-waiting" role="status">
-                        <p class="play-waiting-title">Waiting for the @DisplayText.Side(awaitedSide) side</p>
-                        <p id="play-waiting-why">@WaitingWhy</p>
-                        <button type="button" class="primary" id="play-waiting-hand-over" @onclick="HandOverToAwaiting">Hand the screen to the @DisplayText.Side(awaitedSide) side</button>
-                    </div>
-                }
-                @* Table player, pass 28c: what play waits on comes first. *@
-                @if (state.Choice is { } choice && ChoiceShown(choice))
-                {
-                    <PendingChoicePanel Key="@choice.Key" Side="@choice.Side" Description="@GamePlanner.DescribeChoice(choice)" MayAnswer="@MayAnswer(choice.Side)"
-                        Options="@ChoiceOptions(choice)" OnChoose="@(option => ProposeChoose(choice.Key, option))" />
-                }
-                @foreach (var surrender in state.PendingSurrenders)
-                {
-                    var captorSide = surrender.Captors.Select(state.Unit).OfType<UnitInstance>().Select(unit => unit.Side).FirstOrDefault();
-                    <PendingSurrenderPanel @key="surrender.Event" Unit="@surrender.Unit" MayAnswer="@MayAnswer(captorSide)" Captors="@(MayAnswer(captorSide) ? surrender.Captors : [])"
-                        OnTake="@(captor => ProposeTakePrisoner(surrender.Unit, captor))" OnReject="@(() => ProposeRejectSurrender(surrender.Unit))"
-                        OnFree="@(() => ProposeFreeSurrender(surrender.Unit))" />
-                }
-                @foreach (var open in state.OpenAttempts)
-                {
-                    <OpenEntryDeclaration EventId="@open.EventId" Unit="@open.Unit" Target="@open.Target.ToString()" OnDecline='@(() => ProposeDeclaration(open.Unit, "decline"))'
-                        OnElect='@(() => ProposeDeclaration(open.Unit, "elect"))' />
-                }
-                @* Pass 31 (ruling R5.8; play test P-09): while a choice or a surrender waits, nothing else is proposed. *@
-                @if (WaitsOnAnswer)
-                {
-                    <p id="play-answer-first" class="muted">Every other action waits until the answer above is given (ruling R5.8).</p>
-                }
                 <fieldset class="plain" id="play-actions" disabled="@WaitsOnAnswer">
                 <div class="toolbar">
                     @* Pass 31 (ruling R31.6; play test P-07): the phase is ended by the side that acts in it. *@
@@ -607,7 +626,15 @@ else if (state is not null)
                         <span class="toolbar-note">An unbroken Guard squad Deploys into two HS at any time, with no leader and no NTC; its SW stay with the first HS (A20.5).</span>
                         @foreach (var guard in guardSquads)
                         {
-                            <button class="propose-guard-deploy" data-unit="@guard" @onclick="@(() => ProposeGuardDeploy(guard))">Propose: @WordsAt(guard) Deploys</button>
+                            @if (GamePlanner.RequiresSpotterSuccessor(state, guard))
+                            {
+                                <button class="propose-guard-deploy" data-unit="@guard" @onclick="@(() => ProposeGuardDeploy(guard, "first"))">Propose: @WordsAt(guard) Deploys, first HS keeps spotting</button>
+                                <button class="propose-guard-deploy" data-unit="@guard" @onclick="@(() => ProposeGuardDeploy(guard, "second"))">Propose: @WordsAt(guard) Deploys, second HS keeps spotting</button>
+                            }
+                            else
+                            {
+                                <button class="propose-guard-deploy" data-unit="@guard" @onclick="@(() => ProposeGuardDeploy(guard))">Propose: @WordsAt(guard) Deploys</button>
+                            }
                         }
                     </div>
                     </ActionSection>
@@ -631,7 +658,8 @@ else if (state is not null)
                     <ActionSection Title="Deploy and Recombine" Key="deploy-and-recombine">
                 <DeployActionPanel Squads="@deployShown" Leaders="@([.. LeadersWith(deploySquad).Select(leader => leader.Id)])" Weapons="@DeployWeapons"
                         Squad="@deploySquad" Leader="@deployLeader" Second="@deployWeapons"
-                        OnSquad="@(id => { deploySquad = id; deployLeader = string.Empty; deployWeapons.Clear(); })" OnLeader="@(id => deployLeader = id)"
+                        SpotterChoiceRequired="@GamePlanner.RequiresSpotterSuccessor(state, deploySquad)" SpotterHalf="@deploySpotterHalf" OnSpotterHalf="@(value => deploySpotterHalf = value)"
+                        OnSquad="@(id => { deploySquad = id; deployLeader = deploySpotterHalf = string.Empty; deployWeapons.Clear(); })" OnLeader="@(id => deployLeader = id)"
                         OnWeapon="@(pick => Toggle(deployWeapons, pick.Id, pick.On))" OnPropose="@ProposeDeploy" />
                     <RecombineActionPanel HalfSquads="@recombineShown" Partners="@([.. RecombinePartners.Select(unit => unit.Id)])"
                         Leaders="@([.. LeadersWith(recombineOne).Select(leader => leader.Id)])" One="@recombineOne" Two="@recombineTwo" Leader="@recombineLeader"
@@ -2850,8 +2878,16 @@ else if (state is not null)
     }
 
     /// <summary>The reasons the review lists: for a setup, the gate's count of events is left out and a refusal's reasons are shown as links instead.</summary>
-    private IReadOnlyList<string> ReviewReasons(Proposal proposal) => !PlacesCounters(proposal) || setupReview is null ? Reasons(proposal)
+    private IReadOnlyList<string> ReviewReasons(Proposal proposal) => PendingDcConsequences(proposal)
+        ? ["The attack is committed, with a required decision still pending. Finish its consequences before the DC is removed and the phase can close."]
+        : !PlacesCounters(proposal) || setupReview is null ? Reasons(proposal)
         : SetupProblems is not null ? [] : [.. Reasons(proposal).Where(reason => !reason.StartsWith("play.setup:", StringComparison.Ordinal))];
+
+    // A committed attack may have paused for an existing target-side choice. Do not present its planned removal as complete.
+    private bool PendingDcConsequences(Proposal proposal) => proposal.Action == GameActions.DetonateDc
+        && proposal.Result.Outcome is PlayOutcome.Committed or PlayOutcome.Replay
+        && state is { Choice: not null } && proposal.Arguments.TryGetProperty("equipmentId", out var equipment)
+        && state.PlacedCharges.Any(charge => charge.Charge == equipment.GetString());
 
     // The plans of the card chosen for a new game, counted once per card text.
     private (string? Card, string? Sha256, int Count, int Others) chosenPlans;
@@ -4040,6 +4076,7 @@ else if (state is not null)
     private string swUnit = string.Empty;
     private string deploySquad = string.Empty;
     private string deployLeader = string.Empty;
+    private string deploySpotterHalf = string.Empty;
     private readonly HashSet<string> deployWeapons = new(StringComparer.Ordinal);
     private string recombineOne = string.Empty;
     private string recombineTwo = string.Empty;
@@ -7358,7 +7395,7 @@ else if (state is not null)
         voluntaryBreak.Clear();
         removeConcealment.Clear();
         swWeapon = swUnit = string.Empty;
-        deploySquad = deployLeader = string.Empty;
+        deploySquad = deployLeader = deploySpotterHalf = string.Empty;
         deployWeapons.Clear();
         recombineOne = recombineTwo = recombineLeader = string.Empty;
         retainDm.Clear();
@@ -7697,6 +7734,28 @@ else if (state is not null)
         }
 
         return Propose(GameActions.Move, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    private bool turnGuideOpen;
+    private Task<TurnHostGuide> ReadTurnGuide(string phase) => Live.Planner.ReadTurnGuideProfileAsync(
+        new GameScope(LivePlay.Tenant, gameId), Viewer, phase, "existing-engine-work-v1");
+
+    private async Task ProposeTurnDecision(TurnPlacedDcAction action)
+    {
+        if (busy || handOver is not null) return;
+        var asked = AskedBy;
+        var arguments = await Live.Planner.PreparePlacedDcDecisionAsync(new GameScope(LivePlay.Tenant, gameId), Viewer, action, Attempt("turn-guide"));
+        if (AskedBy != asked) return;
+        if (arguments is null) { status = "This guidance has changed. Refresh the guide before requesting the action."; Refresh(); return; }
+        await Propose(GameActions.DetonateDc, arguments.Value);
+    }
+
+    private async Task ProposeOpeningReview(TurnOpeningReviewRequest request)
+    {
+        if (busy || handOver is not null || !Viewer.IsAdjudicator || !Live.CanReviewOpening) return;
+        var arguments = Live.Planner.PrepareOpeningReview(new GameScope(LivePlay.Tenant, gameId), Viewer, request, Attempt("opening-review"));
+        if (arguments is null) { status = "This opening review has changed. Refresh the guide and review it again."; Refresh(); return; }
+        await Propose(GameActions.ReviewPlacedDcWindow, arguments.Value);
     }
 
     private Task ProposeAdvance()
@@ -8190,14 +8249,26 @@ else if (state is not null)
     private IReadOnlyList<string> GuardSquads => state is null ? []
         : [.. Live.Planner.GuardSquadsAtWill(state, Viewer.IsAdjudicator ? null : viewAs).Where(id => ActingUnits.Any(unit => unit.Id == id))];
 
-    private Task ProposeGuardDeploy(string squad) => Propose(GameActions.Deploy, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    private Task ProposeGuardDeploy(string squad, string? spotterHalf = null)
     {
-        ["gameId"] = gameId, ["attemptId"] = Attempt("deploy"), ["expectedRevision"] = (long)history!.Events.Count, ["squadId"] = squad,
-    }));
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("deploy"), ["expectedRevision"] = (long)history!.Events.Count, ["squadId"] = squad,
+        };
+        if (spotterHalf is not null)
+        {
+            arguments["spotterHalf"] = spotterHalf;
+        }
+        return Propose(GameActions.Deploy, JsonSerializer.SerializeToElement(arguments));
+    }
 
     private Task ProposeDeploy()
     {
         var arguments = new Dictionary<string, object> { ["gameId"] = gameId, ["attemptId"] = Attempt("deploy"), ["expectedRevision"] = (long)history!.Events.Count, ["squadId"] = deploySquad };
+        if (state is not null && GamePlanner.RequiresSpotterSuccessor(state, deploySquad) && deploySpotterHalf.Length > 0)
+        {
+            arguments["spotterHalf"] = deploySpotterHalf;
+        }
         if (deployLeader.Length > 0)
         {
             arguments["leader"] = deployLeader;
@@ -8249,8 +8320,11 @@ else if (state is not null)
             // Pass 29: the busy state is drawn before the gate is asked, so the pickers show as disabled even when the answer is quick.
             StateHasChanged();
             await DrawBusy();
-            var revision = (long)(history?.Events.Count ?? 0);
-            proposed = new Proposal(action, arguments, await Run(() => Live.Play.ProposeAsync(action, arguments, Live.Principal)), revision);
+            // A guide route may be prepared from newer host evidence than the page's last render.
+            // Confirm the revision actually submitted to the gate, while retaining the usual stale-write check.
+            var revision = arguments.TryGetProperty("expectedRevision", out var expected) && expected.TryGetInt64(out var submittedRevision)
+                ? submittedRevision : (long)(history?.Events.Count ?? 0);
+            proposed = new Proposal(action, arguments, await Run(() => Live.Play.ProposeAsync(action, arguments, Live.PrincipalFor(action, Viewer))), revision);
         }
         finally
         {
@@ -8406,7 +8480,7 @@ else if (state is not null)
         {
             StateHasChanged();
             await DrawBusy();
-            result = await Run(() => Live.Play.ConfirmAsync(proposal.Action, proposal.Arguments, Live.Principal, proposal.Result.Correlation));
+            result = await Run(() => Live.Play.ConfirmAsync(proposal.Action, proposal.Arguments, Live.PrincipalFor(proposal.Action, Viewer), proposal.Result.Correlation));
         }
         finally
         {
@@ -8574,7 +8648,7 @@ else if (state is not null)
             }
             else if (proposal.Action == GameActions.Deploy || proposal.Action == GameActions.Recombine)
             {
-                deploySquad = deployLeader = string.Empty;
+                deploySquad = deployLeader = deploySpotterHalf = string.Empty;
                 deployWeapons.Clear();
                 recombineOne = recombineTwo = recombineLeader = string.Empty;
             }

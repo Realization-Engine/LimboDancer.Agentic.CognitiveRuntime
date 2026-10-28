@@ -411,6 +411,12 @@
           "xunit.extensibility.core": "[2.9.2]"
         }
       },
+      "asl.turns": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Domains.Asl.Rules": "[1.0.0, )"
+        }
+      },
       "aslacronyms": {
         "type": "Project",
         "dependencies": {
@@ -451,6 +457,7 @@
       "limbodancer.domains.asl.play": {
         "type": "Project",
         "dependencies": {
+          "ASL.Turns": "[1.0.0, )",
           "LimboDancer.Dice": "[1.0.0, )",
           "LimboDancer.Domains.Asl.Rules": "[1.0.0, )",
           "LimboDancer.Domains.Asl.Units": "[1.0.0, )",

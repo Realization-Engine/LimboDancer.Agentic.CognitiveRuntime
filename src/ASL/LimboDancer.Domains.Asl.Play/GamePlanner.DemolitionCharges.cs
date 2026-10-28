@@ -98,6 +98,7 @@ public sealed partial class GamePlanner
             .Select(unit => TargetFacingsFrom(state, unit, from, target) is { } read ? new DcTargetFacing(unit.Id, read.Hull, read.Turret) : null).OfType<DcTargetFacing>()];
         var placement = new DcPlacement(placer.Id, charge.Id, target, doubleTime || Is(placer, Conditions.Cx), concealed)
         {
+            OwnerSide = placer.Side,
             Facings = facings.Length > 0 ? facings : null,
         };
         var placing = Event(scope, attemptId, 1, expected, "movement-step", new MovementStepped(ids, from, halfMf, current?.Assault ?? assault, step)
@@ -142,6 +143,12 @@ public sealed partial class GamePlanner
         if (!Text(arguments, "equipmentId", out var chargeId) || state.PlacedCharges.FirstOrDefault(item => item.Charge == chargeId && item.Operable) is not { } placed)
         {
             return Refused(scope, label, expected, "play.dc-detonate: name a DC operably Placed this Player Turn (A23.3)");
+        }
+
+        if ((arguments.TryGetProperty("guideRoute", out _) || arguments.TryGetProperty("guideProfile", out _))
+            && !GuidedDcMatches(state, arguments, chargeId))
+        {
+            return Refused(scope, label, expected, "play.guide-window: stale or unavailable Placed DC route");
         }
 
         if (state.Phase != "afph")

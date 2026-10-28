@@ -24,10 +24,11 @@ public sealed class LivePlay
 
     private readonly ILogger<LivePlay>? logger;
 
-    public LivePlay(UnitLibrary units, IBoardProvider boards, DiceRoller? roller = null, ILogger<LivePlay>? logger = null)
+    public LivePlay(UnitLibrary units, IBoardProvider boards, DiceRoller? roller = null, ILogger<LivePlay>? logger = null, RuntimePrincipal? openingReviewer = null)
     {
         ArgumentNullException.ThrowIfNull(units);
         this.logger = logger;
+        this.openingReviewer = openingReviewer;
         Root = Path.Combine(units.UnitsRoot, "live");
         Store = new FileGameStore(Root);
         Catalogs = [.. UnitCatalogs.Names.Select(name => UnitCatalogs.Read(name, units.Vocabulary)?.Catalog).OfType<UnitCatalog>()];
@@ -95,6 +96,14 @@ public sealed class LivePlay
     }
 
     public RuntimePrincipal Principal { get; } = GamePlay.Principal("studio-user", Tenant, GameActions.SetupPermission, GameActions.PlayPermission);
+
+    // Trusted host configuration supplies this principal. View selection alone never creates permission.
+    private readonly RuntimePrincipal? openingReviewer;
+    public bool CanReviewOpening => openingReviewer is { IsAuthenticated: true } reviewer && reviewer.TenantId == Tenant
+        && reviewer.Permissions.Contains(GameActions.WindowAdjudicationPermission);
+
+    public RuntimePrincipal PrincipalFor(LimboDancer.Abstractions.Actions.ActionDescriptor action, Perspective perspective) =>
+        action == GameActions.ReviewPlacedDcWindow && perspective.IsAdjudicator && CanReviewOpening ? openingReviewer! : Principal;
 
     public IReadOnlyList<GameScope> Games() => Store.List(Tenant);
 

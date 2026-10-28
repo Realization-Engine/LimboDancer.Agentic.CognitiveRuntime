@@ -1,0 +1,27 @@
+@using ASL.Turns
+<details class="turn-audit">
+    <summary>Cross-phase timing audit (@Catalog.Dependencies.Length dependencies)</summary>
+    <label>Dependency
+        <select value="@selected" @onchange="e => selected = e.Value?.ToString() ?? selected">
+            @foreach (var item in Catalog.Dependencies) { <option value="@item.Id">@item.Title</option> }
+        </select>
+    </label>
+    @{ var dependency = Catalog.Dependencies.Single(item => item.Id == selected); }
+    <h3>@dependency.Title</h3>
+    <p>Origin: @dependency.Origin</p><p>Due: @dependency.Due</p>
+    <ul>@foreach (var check in dependency.Checks) { <li>@check</li> }</ul>
+    <p>@dependency.Example</p><p>@dependency.References · Source pages: @string.Join(", ", dependency.SourcePages)</p>
+    <p>Pending integration: @dependency.IntegrationNote</p>
+    <nav aria-label="Related phase options" class="turn-related">
+        @foreach (var id in dependency.TopicIds)
+        {
+            var topic = Catalog.FindTopic(id)!;
+            <button type="button" data-related-topic="@id" @onclick="() => TopicRequested.InvokeAsync(id)">@topic.PhaseId.ToUpperInvariant(): @topic.Title</button>
+        }
+    </nav>
+</details>
+@code {
+    private static readonly TurnGuideCatalog Catalog = TurnGuideCatalog.Load();
+    [Parameter] public EventCallback<string> TopicRequested { get; set; }
+    private string selected = Catalog.Dependencies[0].Id;
+}

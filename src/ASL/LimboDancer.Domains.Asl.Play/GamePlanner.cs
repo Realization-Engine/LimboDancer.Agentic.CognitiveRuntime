@@ -1,3 +1,4 @@
+using ASL.Turns;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -261,8 +262,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
     }
 
-    public async Task<GamePlan> PlanAsync(ActionDescriptor action, JsonElement arguments, Guid tenant, string? actor = null,
-        CancellationToken cancellationToken = default)
+    public Task<GamePlan> PlanAsync(ActionDescriptor action, JsonElement arguments, Guid tenant, string? actor = null,
+        CancellationToken cancellationToken = default) =>
+        PlanCoreAsync(action, arguments, tenant, actor, assessmentOnly: false, cancellationToken);
+
+    private async Task<GamePlan> PlanCoreAsync(ActionDescriptor action, JsonElement arguments, Guid tenant, string? actor,
+        bool assessmentOnly, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(action);
         if (!Common(arguments, out var gameId, out var attemptId, out var expected))
@@ -274,10 +279,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var record = store.Read(scope);
         var existing = record?.Events ?? [];
         var label = record?.Label ?? gameId;
-        if (existing.FirstOrDefault(item => item.EventId == EventId(attemptId, 1)) is { } committed)
+        if (!assessmentOnly && existing.FirstOrDefault(item => item.EventId == EventId(attemptId, 1)) is { } committed)
         {
             // DICE-10: the same attempt with different inputs is not a replay.
-            return ReusedWithOtherInputs(action, arguments, committed)
+            return ReusedWithOtherInputs(action, arguments, committed, existing, attemptId)
                 ? Refused(scope, label, expected, $"play.attempt-reused: the attempt '{attemptId}' was committed with different inputs")
                 : new GamePlan(GamePlanStatus.Replay, scope, label, expected, [], ["play.replay"]);
         }
@@ -285,6 +290,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         if (existing.Count != expected)
         {
             return new GamePlan(GamePlanStatus.Stale, scope, label, expected, [], [$"play.stale: the game is at revision {existing.Count}"]);
+        }
+
+        // D3.2 counter identity is setup-only until the A13/G10 execution and casualty routes are admitted.
+        if (action.Id.Value != GameActions.Setup.Id.Value
+            && existing.Any(item => item.Payload is InstanceCreated { Instance.Kind: "asl:horse" })
+            && TurnHorseRules.PlayIntegrationRefusal(Replay(existing).Current?.Entities.Any(item => item.Kind == "asl:horse" && item.Status == InstanceStatus.Active) == true) is { } horsePending)
+        {
+            return Refused(scope, label, expected, horsePending);
         }
 
         // Pass 32.i: the bars every request meets, in their order; Rules decides each over a read made only when it is checked.
@@ -337,10 +350,18 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, unbuilt);
         }
 
+        if (action.Id.Value != GameActions.RecordTurnWork.Id.Value && Replay(existing).Current is { } workState
+            && PackedGunArguments.Any(name => Text(arguments, name, out var id) && workState.PackedGuns.Contains(id)))
+        {
+            return Refused(scope, label, expected, TurnWorkEffects.PackedGunBar(true)!);
+        }
         var plan = action.Id.Value switch
         {
+            "asl.game.designate-spotter" => PlanSpotterDesignation(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.review-placed-dc-window" => PlanPlacedDcWindow(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.record-turn-work" => PlanTurnWork(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label, actor ?? "unknown"),
-            "asl.game.advance-phase" => PlanAdvance(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.advance-phase" => BuildPhaseClosePlan(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.enter-empty-building" => await PlanEntryAsync(scope, arguments, existing, attemptId, expected, label, cancellationToken),
             "asl.game.declare-overrun" => await PlanDeclareAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
             "asl.game.enter-building" => await PlanEnterBuildingAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
@@ -464,6 +485,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                     Reasons = [.. plan.Reasons, $"play.result: {(won.Winner is { } winner ? $"{winner} wins at once" : "a draw")}: {won.Reason}"]
                 };
             }
+        }
+
+        if (action.Id.Value == TurnPlacedDcGuidance.ActionId && arguments.TryGetProperty("guideRoute", out _)
+            && plan.Status == GamePlanStatus.Ready && plan.Roll is { } guidedRoll)
+        {
+            var digest = GuidedDcRequestHash(arguments);
+            plan = plan with
+            {
+                Roll = guidedRoll with
+                {
+                    Build = draw => guidedRoll.Build(draw).Select((item, index) => index == 0 ? item with { GuidedDecisionHash = digest } : item).ToArray()
+                }
+            };
         }
 
         // A plan with a roll has no events until the store draws it; its outcomes are checked when they are built.
@@ -706,12 +740,17 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             : new GamePlan(GamePlanStatus.Ready, scope, label, expected, list, [ScenarioA1GameStart.SetupText(list.Count)]);
     }
 
-    private GamePlan PlanAdvance(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
+    private GamePlan BuildPhaseClosePlan(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
         string actor)
     {
         if (Replay(existing).Current is not { } state)
         {
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
+        }
+
+        if (state.TurnWork.Any(work => TurnWorkLifecycle.CompletionDue(work, state.Turn, TurnWorkWindowOf(state))))
+        {
+            return Refused(scope, label, expected, "play.work-due: record completion or interruption before closing the work release window");
         }
 
         // Pass 32.i: the phase's end and what it requires, in the old order; Rules decides each bar over the state's reads and the other slices' reads.
@@ -1722,8 +1761,49 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     /// Whether a committed attempt was for other inputs than these: an entry's first event names its unit and target, so
     /// an entry attempt reused for another unit or location is not a replay (DICE-10).
     /// </summary>
-    private static bool ReusedWithOtherInputs(ActionDescriptor action, JsonElement arguments, GameEvent committed)
+    private static bool ReusedWithOtherInputs(ActionDescriptor action, JsonElement arguments, GameEvent committed, IReadOnlyList<GameEvent> existing, string attemptId)
     {
+        if (action.Id.Value == "asl.game.deploy")
+        {
+            var attempt = existing.Skip((int)committed.Revision - 1)
+                .TakeWhile((item, index) => item.EventId == EventId(attemptId, index + 1)).Select(item => item.Payload).ToArray();
+            var deployment = attempt.OfType<DeploymentAttempted>().FirstOrDefault();
+            var lineage = attempt.OfType<LineageRecorded>().FirstOrDefault();
+            var recordedChoice = deployment?.SpotterHalf ?? (lineage?.SpotterSuccessor is { } successor
+                ? successor == lineage.Produced[0].Id ? "first" : "second" : null);
+            var requestedChoice = Text(arguments, "spotterHalf", out var choice) ? choice : null;
+            return recordedChoice != requestedChoice;
+        }
+        if (committed.GuidedDecisionHash is { } digest)
+        {
+            return action.Id.Value != TurnPlacedDcGuidance.ActionId || GuidedDcRequestHash(arguments) != digest;
+        }
+        if (action.Id.Value == TurnPlacedDcGuidance.ActionId
+            && (arguments.TryGetProperty("guideRoute", out _) || arguments.TryGetProperty("guideProfile", out _)))
+        {
+            return true;
+        }
+
+        if (action.Id.Value == "asl.game.designate-spotter")
+        {
+            return committed.Payload is not MortarSpotterDesignated designation
+                || !Text(arguments, "gunId", out var gun) || gun != designation.Gun
+                || !Text(arguments, "spotter", out var spotter) || spotter != designation.Spotter;
+        }
+        if (action.Id.Value == "asl.game.review-placed-dc-window")
+        {
+            try
+            {
+                return committed.Payload is not PlacedDcWindowReviewed recorded
+                    || !arguments.TryGetProperty("review", out var node)
+                    || node.Deserialize<TurnPlacedDcReview>(JsonSerializerOptions.Web) != recorded.Review;
+            }
+            catch (JsonException)
+            {
+                return true;
+            }
+        }
+
         if (action.Id.Value == "asl.game.declare-overrun")
         {
             var declared = Text(arguments, "unitId", out var declaringUnit) ? declaringUnit : null;

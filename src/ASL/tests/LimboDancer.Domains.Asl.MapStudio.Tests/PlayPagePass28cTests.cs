@@ -102,6 +102,26 @@ public sealed class PlayPagePass28cTests : IDisposable
 
     private GameState Current => live.History("village")!.Current!;
 
+    [Fact]
+    public void TurnGuideReadsWithoutWritingAndUsesExistingPhaseConfirmation()
+    {
+        var page = Started();
+        var before = Current.Revision;
+        page.Find("#play-turn-guide-toggle").Click();
+        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll(".turn-guide [data-topic]")));
+        Assert.Equal(before, Current.Revision);
+        page.Find(".turn-guide [data-phase='ccph']").Click();
+        page.WaitForAssertion(() => Assert.Contains("Close Combat", page.Find(".turn-guide h2").TextContent, StringComparison.Ordinal));
+        Assert.Equal("rph", Current.Phase);
+        Assert.Equal(before, Current.Revision);
+        page.Find(".turn-close").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.Equal(before, Current.Revision);
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Equal("pfph", Current.Phase));
+    }
+
+
     // Backlog section 37, built in pass 28c: a page opened on a game shows nothing of either side until its viewer says who they are.
     [Fact]
     public void APageOpenedOnAGameWaitsBehindTheHandOver()

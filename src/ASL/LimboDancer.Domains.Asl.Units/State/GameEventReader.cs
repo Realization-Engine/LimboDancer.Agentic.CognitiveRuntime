@@ -116,13 +116,42 @@ public static class GameEventReader
         var payload = type is null ? null : ReadPayload(type, payloadElement, path + ".payload", fields, diagnostics);
         return id is null || revision is null || timeText is null || source is null || type is null || payload is null
             ? null
-            : new GameEvent(scope, id, revision.Value, time, source, type, payload, rulePackage, causes, visibility);
+            : new GameEvent(scope, id, revision.Value, time, source, type, payload, rulePackage, causes, visibility)
+            {
+                GuidedDecisionHash = fields.OptionalString(item, "guidedDecisionHash", path)
+            };
     }
 
     private static EventPayload? ReadPayload(string type, JsonElement payload, string path, JsonFields fields, List<UnitDiagnostic> diagnostics)
     {
         switch (type)
         {
+            case "mortar-spotter-designated":
+                var mortar = fields.RequiredString(payload, "gun", path);
+                var mortarSpotter = fields.RequiredString(payload, "spotter", path);
+                return mortar is null || mortarSpotter is null ? null : new MortarSpotterDesignated(mortar, mortarSpotter);
+            case "placed-dc-window-reviewed":
+                try
+                {
+                    return payload.Deserialize<PlacedDcWindowReviewed>(JsonSerializerOptions.Web)
+                        ?? Missing(diagnostics, "Missing window review.", path);
+                }
+                catch (JsonException)
+                {
+                    return Missing(diagnostics, "Invalid typed window review.", path);
+                }
+            case "turn-work-recorded":
+            case "turn-work-effects-recorded":
+            case "turn-work-audited":
+                try
+                {
+                    return payload.Deserialize<TurnWorkRecorded>(JsonSerializerOptions.Web)
+                        ?? Missing(diagnostics, "Missing work record.", path);
+                }
+                catch (JsonException)
+                {
+                    return Missing(diagnostics, "Invalid typed work record.", path);
+                }
             case "game-started":
                 var sides = new List<SideState>();
                 foreach (var (side, sidePath) in fields.Objects(payload, "sides", path))
@@ -276,7 +305,10 @@ public static class GameEventReader
                     }
                 }
 
-                return action is null ? null : new LineageRecorded(action.Value, fields.StringList(payload, "consumed", path), produced);
+                return action is null ? null : new LineageRecorded(action.Value, fields.StringList(payload, "consumed", path), produced)
+                {
+                    SpotterSuccessor = fields.OptionalString(payload, "spotterSuccessor", path)
+                };
             case "instance-eliminated":
                 return fields.RequiredString(payload, "id", path) is { } eliminated ? new InstanceEliminated(eliminated) : null;
             case "entry-attempted":
@@ -497,6 +529,7 @@ public static class GameEventReader
                             fields.OptionalBoolean(payload, "dcConcealed", path))
                         {
                             Facings = dcFacings,
+                            OwnerSide = fields.OptionalString(payload, "dcOwnerSide", path),
                         },
                     };
             case "bore-sighted":
@@ -797,7 +830,10 @@ public static class GameEventReader
                 return deploySquad is null || deployRoll is null || deployMorale is null || deployDrm is null
                     ? Missing(diagnostics, "A Deployment attempt names its squad, roll, Morale Level, and DRM.", path)
                     : new DeploymentAttempted(deploySquad, fields.OptionalString(payload, "leader", path), deployRoll, deployMorale.Value, deployDrm.Value,
-                        fields.OptionalBoolean(payload, "passed", path));
+                        fields.OptionalBoolean(payload, "passed", path))
+                    {
+                        SpotterHalf = fields.OptionalString(payload, "spotterHalf", path)
+                    };
             case "rph-action-taken":
                 var actionName = fields.RequiredString(payload, "action", path);
                 return actionName is null ? Missing(diagnostics, "An RPh action names its kind.", path)
@@ -1130,6 +1166,20 @@ public static class GameEventReader
             armorLeader = new ArmorLeader(morale, leadership);
         }
 
+        Rules.TurnHorseIdentity? horse = null;
+        if (item.TryGetProperty("horse", out var horseElement) && horseElement.ValueKind != JsonValueKind.Null)
+        {
+            try
+            {
+                horse = horseElement.Deserialize<Rules.TurnHorseIdentity>(JsonSerializerOptions.Web);
+            }
+            catch (JsonException)
+            {
+                diagnostics.Add(UnitDiagnostic.Error("UNIT-PACK-001", "Invalid typed Horse identity.", path));
+                return null;
+            }
+        }
+
         return id is null || kind is null
             ? null
             : new NewInstance(id, kind, fields.OptionalString(item, "definition", path), fields.OptionalString(item, "side", path), position,
@@ -1137,6 +1187,7 @@ public static class GameEventReader
             {
                 Group = fields.OptionalString(item, "group", path),
                 ArmorLeader = armorLeader,
+                Horse = horse,
 
                 // Pass 70 (ruling R70.28): the Carrier a Carrier HS left.
                 CrewOf = fields.OptionalString(item, "crewOf", path),
@@ -1273,8 +1324,9 @@ public static class GameEventReader
                 "rider" => ContainmentRole.Rider,
                 "in-fortification" => ContainmentRole.InFortification,
                 "crew" => ContainmentRole.Crew,
+                "animal-pack" => ContainmentRole.AnimalPack,
                 null => (ContainmentRole?)null,
-                var other => Invalid<ContainmentRole>(diagnostics, $"'{other}' is not passenger, rider, crew, or in-fortification.", positionPath),
+                var other => Invalid<ContainmentRole>(diagnostics, $"'{other}' is not passenger, rider, crew, in-fortification, or animal-pack.", positionPath),
             };
             return role is null ? null : new ContainedPosition(container, role.Value);
         }

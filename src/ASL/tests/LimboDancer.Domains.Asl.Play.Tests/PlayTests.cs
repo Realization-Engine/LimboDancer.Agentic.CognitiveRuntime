@@ -18,7 +18,7 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 /// Governed writes (Governed Writes Design): setup, the sequence of play, and the reviewed empty-building entry, each
 /// committed only through the Execution Gate, on a synthetic verified board 01 whose E4 is a wooden building.
 /// </summary>
-public sealed class PlayTests : IDisposable
+public sealed partial class PlayTests : IDisposable
 {
     private static readonly Guid Tenant = Guid.Parse("7b1d2c3e-0000-4000-8000-00000000c303");
     private static readonly UnitVocabulary Vocabulary = UnitVocabulary.Asl();
@@ -441,7 +441,7 @@ public sealed class PlayTests : IDisposable
     [Fact]
     public void TheActionsAreRegisteredWritesThatNeedConfirmation()
     {
-        Assert.Equal(["asl.game.setup", "asl.game.advance-phase", "asl.game.enter-empty-building", "asl.game.enter-building", "asl.game.declare-overrun", "asl.game.fire",
+        Assert.Equal(["asl.game.setup", "asl.game.advance-phase", "asl.game.designate-spotter", "asl.game.record-turn-work", "asl.game.review-placed-dc-window", "asl.game.enter-empty-building", "asl.game.enter-building", "asl.game.declare-overrun", "asl.game.fire",
                 "asl.game.rally", "asl.game.repair", "asl.game.move", "asl.game.pass-fire", "asl.game.end-move",
                 "asl.game.advance", "asl.game.ambush", "asl.game.close-combat", "asl.game.take-prisoner", "asl.game.fire-ordnance", "asl.game.recover-shock", "asl.game.turn-gun", "asl.game.hook-gun",
                 "asl.game.move-vehicle", "asl.game.overrun", "asl.game.vehicle-close-combat",

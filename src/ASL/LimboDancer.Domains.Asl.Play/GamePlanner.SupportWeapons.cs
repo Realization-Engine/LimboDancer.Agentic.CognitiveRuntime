@@ -207,6 +207,10 @@ public sealed partial class GamePlanner
     /// Deployment (A1.31; ruling R13.4): in its RPh a Good Order squad with a Good Order leader of its nationality in its Location takes a NTC modified
     /// by his leadership; passed, it becomes two HS, the first keeping its SW unless some are named for the second.
     /// </summary>
+    /// <summary>Authoritative assignment fact for a disclosed unit's Deployment form. Eligibility is checked on proposal.</summary>
+    public static bool RequiresSpotterSuccessor(GameState state, string squadId) => state.MortarSpotters.Any(item => item.Spotter == squadId
+        && !state.MortarSpotterLosses.Any(loss => loss.Gun == item.Gun && loss.Spotter == item.Spotter));
+
     private GamePlan PlanDeploy(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor)
     {
         if (Replay(existing).Current is not { } state)
@@ -274,6 +278,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, leaderReason);
         }
 
+        var retainedSpotter = RequiresSpotterSuccessor(state, squad.Id);
+        var spotterHalf = Text(arguments, "spotterHalf", out var selectedHalf) ? selectedHalf : null;
+        if (TurnSpotterLossRules.DeploymentChoiceRefusal(retainedSpotter, spotterHalf) is { } spotterRefusal)
+        {
+            return Refused(scope, label, expected, spotterRefusal);
+        }
+
         var held = Held(state, squad.Id);
         string[] second = [.. Strings(arguments, "secondWeapons")];
         if (second.FirstOrDefault(id => held.All(item => item.Id != id)) is { } stray)
@@ -295,8 +306,11 @@ public sealed partial class GamePlanner
         {
             var conditions = RevealedIf(squad.Conditions, lost.Contains(squad.Id, StringComparer.Ordinal));
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "lineage", new LineageRecorded(LineageAction.Deployed, [squad.Id],
-                [new NewInstance(first, "asl:half-squad", half, squad.Side, null, null, conditions), new NewInstance(other, "asl:half-squad", half, squad.Side, null, null, conditions)]),
-                package, null, cause is null ? null : [cause]));
+                [new NewInstance(first, "asl:half-squad", half, squad.Side, null, null, conditions), new NewInstance(other, "asl:half-squad", half, squad.Side, null, null, conditions)])
+            {
+                SpotterSuccessor = spotterHalf is null ? null : spotterHalf == "first" ? first : other
+            },
+                package, spotterHalf is null ? null : [squad.Side!], cause is null ? null : [cause]));
             foreach (var weapon in held)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "equipment-transferred",
@@ -326,7 +340,7 @@ public sealed partial class GamePlanner
             var events = new List<GameEvent>
             {
                 Event(scope, attemptId, 1, expected, "dice-rolled", new DiceRolled(rollId, "deployment", 2, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null),
-                Event(scope, attemptId, 2, expected, "deployment-attempted", new DeploymentAttempted(squad.Id, leader?.Id, rollId, morale, drm, passed), package, null),
+                Event(scope, attemptId, 2, expected, "deployment-attempted", new DeploymentAttempted(squad.Id, leader?.Id, rollId, morale, drm, passed) { SpotterHalf = spotterHalf }, package, spotterHalf is null ? null : [squad.Side!]),
             };
             AddLoss(events);
             if (passed)

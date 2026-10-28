@@ -35,6 +35,7 @@ public static class ScenarioA1SequenceCalculator
         ["asl.game.ambush-withdraw"] = ["unitIds"],
         ["asl.game.guard-prisoners"] = ["guardId"],
         ["asl.game.fire-ordnance"] = ["gunId"],
+        ["asl.game.designate-spotter"] = ["gunId", "spotter"],
         ["asl.game.recover-shock"] = ["vehicleId"],
         ["asl.game.turn-gun"] = ["gunId"],
         ["asl.game.hook-gun"] = ["vehicleId"],

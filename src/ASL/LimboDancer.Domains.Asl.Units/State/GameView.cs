@@ -109,8 +109,8 @@ public sealed record GameView(
         var stacked = new HashSet<(string Side, BoardLocation Location)>();
         if (beforePlay || outOfInspection is { Count: > 0 })
         {
-            foreach (var stack in active.OfType<UnitInstance>().Where(unit => Enemy(unit) && !Is(unit, Conditions.Hidden)
-                && state.Location(unit.Id) is not null && (beforePlay || OutOfInspection(unit))).GroupBy(unit => (unit.Side, state.Location(unit.Id)!.Location)))
+            foreach (var stack in active.Where(item => item is UnitInstance || item.Kind == "asl:horse").Where(unit => Enemy(unit) && !Is(unit, Conditions.Hidden)
+                && state.Location(unit.Id) is not null && (beforePlay || OutOfInspection(unit))).GroupBy(unit => (Side: unit.Side!, state.Location(unit.Id)!.Location)))
             {
                 stacked.Add(stack.Key);
                 if (Rules.ScenarioA1Visibility.TopCounter(stack.Select(unit => (unit.Id, Concealed(unit), unit.Position is ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider or ContainmentRole.Crew }))) is { } top)
@@ -126,7 +126,7 @@ public sealed record GameView(
 
         // The facts of one counter the verdicts read.
         Rules.CounterFacts FactsOf(IGameObject item) => new(Enemy(item), Is(item, Conditions.Hidden), Is(item, Conditions.Concealed), Dummy(item),
-            item is UnitInstance { Group: { } group } && outOfSight?.Contains(group) == true, item is UnitInstance, tops.Contains(item.Id),
+            item is UnitInstance { Group: { } group } && outOfSight?.Contains(group) == true, item is UnitInstance || item.Kind == "asl:horse", tops.Contains(item.Id),
             item is EquipmentInstance && Beneath(item))
         {
             OutOfInspection = OutOfInspection(item),
@@ -172,12 +172,26 @@ public sealed record GameView(
             units.Add(unit.ArmorLeader is { } leader && !Rules.ScenarioA1ArmorLeaders.Shown(Enemy(unit), leader.Revealed) ? WithoutLeader(unit) : unit);
         }
 
+        var horses = new List<EntityInstance>();
+        foreach (var horse in active.OfType<EntityInstance>().Where(item => item.Kind == "asl:horse" && !Withheld(item, sealAllowed: true)))
+        {
+            var presence = Rules.ScenarioA1Visibility.UnitPresence(FactsOf(horse), beforePlay);
+            if (presence == Rules.CounterPresence.Shown)
+            {
+                horses.Add(horse);
+            }
+            else if (state.Location(horse.Id) is { } location)
+            {
+                sealedUnits.Add((horse.Side!, location.Location, presence == Rules.CounterPresence.SealedUninspected));
+            }
+        }
+
         var sealedPresences = sealedUnits
             .OrderBy(item => item.Location.ToString(), StringComparer.Ordinal).ThenBy(item => item.Side, StringComparer.Ordinal).ThenBy(item => item.Uninspected)
             .Select((item, index) => new SealedPresence($"sealed-{index + 1}", item.Side, item.Location) { Uninspected = item.Uninspected, OutOfLos = item.Uninspected && !beforePlay })
             .ToArray();
         EquipmentInstance[] equipment = [.. active.OfType<EquipmentInstance>().Where(item => !Withheld(item, sealAllowed: false))];
-        EntityInstance[] entities = [.. active.OfType<EntityInstance>().Where(item => !Withheld(item, sealAllowed: false))];
+        EntityInstance[] entities = [.. active.OfType<EntityInstance>().Where(item => item.Kind != "asl:horse" && !Withheld(item, sealAllowed: false)), .. horses];
 
         // Referee, pass 23: a setup event names what it creates, so a side reads only those of its own instances, of the instances it may see now, and of
         // instances no longer in play; the creation of a counter it may not see stays out of its list.

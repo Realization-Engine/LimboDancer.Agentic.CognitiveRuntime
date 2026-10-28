@@ -1,0 +1,593 @@
+# ASL Turn Phase Guide Implementation Plan
+
+Date: 2026-10-27
+
+Status: The original backend-first plan is complete for its admitted baseline. The user has reinstated B5-D1 through B5-D9 as tracked later-pass implementation requirements; the [Later Rules Implementation Plan](ASL%20Turn%20Guide%20Later%20Rules%20Implementation%20Plan.md) now defines the active 36-task queue. B0 through B5, all six B5-R acceptance slices, U1, and the UI audit/browser follow-ups through occupied-target DC consequences and phase close are implemented and verified. Zero required tasks remain in this plan. B5-D1 through B5-D9 remain explicitly deferred to later ASL.Rules passes; this completion does not claim full ASL execution. Historical sections below retain their implementation-time evidence and limitations; this status, the stage table, and the latest acceptance sections govern current progress.
+
+References: [Design](ASL%20Turn%20Phase%20Guide%20Design.md), [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md).
+
+## 1. Working boundary
+
+Build and prove `ASL.Turns` independently of any renderer. Its tests live in `ASL.Turns.Tests`. Rules keeps rule semantics; Units keeps authoritative event/state projection; Play adapts facts and executes governed actions. No UI project, bUnit, browser state or component lifecycle is needed for backend tests.
+
+Keep all reviewed options visible from the start, including partial, pending, deferred and source-gap entries. Current baseline: 538 topics, 38 dependency chains and 191 links. These counts are completeness checks for the current sources, not a universal ASL coverage claim.
+
+Run focused tests only for changed behavior and direct dependencies. Broaden when an observed failure or shared-contract change warrants it, and record why. Do not use passing reference tests as evidence of live rules support.
+
+## 2. Stages
+
+| Stage | Deliverable | Depends on | Exit gate |
+|---|---|---|---|
+| B0, implemented | New library/test projects, headless immutable reference catalog, relocated documentation and saved mock-up | Reviewed inventories | Complete baseline loads without UI/Play dependencies; focused tests pass. |
+| B1, contracts implemented | Stable identity/timing manifest, contextual term IDs and typed capabilities | B0 | No prose parsing for legality, unregistered capability is Not evaluated, all IDs/links traceable. |
+| B2, implemented | Pure guidance request/result and read composition | B1 | Fixed facts yield deterministic snapshots; no writes, dice or UI state. |
+| B3, bounded slice implemented | Rule-owned timing and obligation lifecycle for Stun, CX, Trip Flare and non-Flame Clearance | B2 and relevant Rules families | Due, interrupt, resolve and retained history proved at exact boundaries. |
+| B4, implemented | Play/Units adapters and shared phase-close assessment | B2-B3 | Existing command validation and guidance agree without duplicate cleanup; disclosure and stale checks pass. |
+| B5, accepted | Close B5-R1 through B5-R6 against the admitted baseline | B4 and completed B5 slices | All six acceptance records pass; pending/deferred rules stay visible. Full ASL execution is not this gate. |
+| U1, implemented | Reference and Live Blazor consumers | Backend readiness gate | UI renders backend results and routes intentions without rule calculations. |
+
+The previous UI-first P1-P7 plan is superseded by this order. The full final scope remains intact; deferring UI does not defer reference content.
+
+## 3. B0: Implemented foundation
+
+- Added `src/ASL/ASL.Turns/ASL.Turns.csproj` and `TurnGuideCatalog.cs`, with namespace `ASL.Turns`.
+- Added `src/ASL/tests/ASL.Turns.Tests/ASL.Turns.Tests.csproj`, with namespace `ASL.Turns.Tests`, normal xUnit/test SDK references and no UI reference.
+- Added both projects to the ASL solution and generated dependency lock files.
+- Embedded the reviewed catalogs from `docs/Turn.Guide`. The library exposes immutable phases, topics, terms, ledgers and dependency definitions with qualified IDs and reference lookups.
+- Preserved pending notes, source metadata, separate phase glossaries and the Rally schema difference. An absent Rally JSON ledger does not replace the reviewed walkthrough ledger.
+
+At the B0 commit, `dotnet test src/ASL/tests/ASL.Turns.Tests/ASL.Turns.Tests.csproj --no-restore` passed five tests. B1 expands this baseline and adds the coverage gate below. These verify the full inventory/links, pending visibility, qualified/case-sensitive identity, documented flare deadlines and absence of UI/Play assembly dependencies. No live timing engine is claimed.
+
+## 4. B1: Stable schema and capability contracts, implemented
+
+The library now exposes typed source review, evaluator/command support and applicability dimensions. An immutable capability catalog retains all topics; missing registrations stay Not evaluated. Explicit sub-action/profile registrations require evidence for partial or integrated support. The design documents the distinction between production registration and existing Rules implementation.
+
+The versioned timing manifest assigns stable group IDs and source-reference windows to all 538 topics. It preserves printed steps, imports Rally's ten-step ledger and uses explicit unclassified supplemental windows. Validation rejects unknown/duplicate/missing links, incorrect phase ownership and incomplete multi-window mappings. Group identities survive label and numeric-position changes. Contextual term IDs preserve phase and case. Typed due payloads distinguish event, window, owner-relative phase, Player Turn and completed Game Turn intervals without executing them.
+
+The existing JSON remains authoritative for topic text, sources and glossaries. The identity manifest adds keys and bindings only. No normalization generator or second content catalog is introduced. No IDs are renamed; aliases are required before any future rename. External acronym mappings and executable capability/profile registrations require reviewed evidence during B2/B3 integration, not guessed IDs or parsed integration prose. Existing interpretation and module-source gaps remain visible.
+
+Required validation: `./src/ASL/tests/ASL.Turns.Tests/Test-Coverage.ps1`. Current result is 62 passing tests, 242/242 lines and 132/132 branches covered for the entire library. Keep both coverage measures at 100%; test the behavior and failure paths rather than adding exclusions. The gate uses fresh reports so stale successful runs cannot mask a regression.
+
+## 5. B2: Headless guidance composition, implemented
+
+Added `TurnGuideService`, immutable request/context/facts/verdict contracts and consumer-neutral snapshots with source, vocabulary, timing, capability and decision data. Composition retains every browsed-phase topic and its pending notes. It consumes authorized host verdicts rather than evaluating rule prose. Missing evaluator registrations or subjects remain NotEvaluated. Required, optional, informational and evaluation-gap attention remain distinct.
+
+Context equality rejects stale/wrong game, viewer, side, profile, phase, window or evaluation stamp. Audience filtering happens before validating visible verdicts. Exact profile and current-window filtering prevent unrelated facts from creating legality. Historical reads, browsing another phase, another side's decision and absent command support suppress action routes. All writes remain outside the library.
+
+Snapshots do not reveal internal stamps or other viewers' verdict data. The host remains responsible for authentication, disclosure-safe reasons/handles and action revalidation. There is no live GamePlanner/Rules adapter, phase-close engine or obligation scheduler in B2. Production capability registrations stay unverified until those integration proofs exist; the Movement/Rout test registrations are fixtures only.
+
+The required coverage gate passes **88 tests, 336/336 lines and 176/176 branches**. Tests prove full reference inventory, pending visibility, required/optional distinction, historical read-only output, unknown-subject behavior, stale scopes, deterministic reads, input immutability and hidden-world equivalence. Use `./src/ASL/tests/ASL.Turns.Tests/Test-Coverage.ps1` to reproduce and enforce both 100% thresholds.
+
+## 6. B3: Typed clocks and obligation instances, bounded slice implemented
+
+`ASL.Turns` now references Rules and calls `TurnObligationRules` through `TurnObligationService.Assess`. Rules evaluates Stun/CX release, activation-dependent Trip Flare expiry and qualified non-Flame Clearance timing. It uses existing Stun/CX predicates where available. The source audit supplies the additional timing boundaries; no projector mutation is duplicated.
+
+The evidence contract includes stable origin identity, owner and decision owner, typed positions/deadlines, completed-interval receipts, terminal outcome evidence and prerequisite keys. Read-only coordination validates chronology, detects cycles/missing prerequisites, orders child effects before dependents and rejects parent resolution before child evidence. Missing origins and unsupported families remain NotEvaluated. All 38 definitions and all 538 reference topics remain available; command support is Pending until governed integration is proven.
+
+The assessment is internal and may contain hidden facts. B4 must provide authenticated projection, origin extraction, coherent as-of history, task-specific eligibility and existing-command enforcement. The present save/reload tests exercise the evidence contract, not Units migration. Duration rules for packing/replenishment are still pending even though partial progress receipts can be retained.
+
+Validation: **116 tests; 425/425 lines and 234/234 branches for ASL.Turns**. The focused Rules suite passes **28 tests**, covering new timing boundaries and existing sequence behavior. Tests include Stun versus next-RPh timing, CX owner-relative release and provenance, early/late flares, Clearance before cleanup, interruption with retained progress, Game Turn versus Player Turn clocks, distinct instances, prerequisite order, terminal chronology, legacy gaps, deterministic replay and repeated reads.
+
+## 7. B4: Adapters, disclosure and closure parity, implemented
+
+Play now references ASL.Turns. GamePlanner.ReadTurnGuideAsync combines the complete phase reference snapshot, disclosed obligations and shared phase-close assessment. AssessTurnPhaseCloseAsync accepts StateStamp, authenticated Perspective and retain-DM selections. These are server APIs, not network endpoints. The caller must authenticate Perspective, as with ViewOf; a client-selected adjudicator is not authorization.
+
+TurnHistoryAdapter derives Stun/CX activation and terminal evidence from actual projected transitions. Repeated reads and planner recreation reconstruct obligations without writes. Historical reads use the requested revision and are read-only. Setup markers have unknown origins and remain NotEvaluated. Other families retain their catalog entries and pending support, including Trip Flare and Clearance whose B3 timing contracts exist but whose host evidence/command integration is not admitted.
+
+The host persists phases, not ASOP substeps. Reserved <phase>:phase context composes reference guidance while suppressing live verdicts and action routes. It never substitutes the first ASOP window. Production topic capability registrations remain empty until specific Rules/command evidence is admitted; all 538 topics and 38 dependency definitions remain available.
+
+Actual phase-advance commands and assessment share the full PlanCoreAsync pipeline and BuildPhaseClosePlan (formerly PlanAdvance), including global guards, proposer checks, phase-specific refusals and consequences. Assessment bypasses only committed-attempt replay detection using an ephemeral, undisclosed probe ID. It never commits or invokes a deferred roll delegate. Existing projector cleanup retains sole mutation ownership. Assessment reports planned event types without creating replacement cleanup events. PhaseEndBar remains a legacy proposer-only check.
+
+Adjudicators receive exact reasons, event-type effects, roll requirement and Ready/Blocked/Stale/ConsequencePending classification. A consequence-only plan is not a completed phase transition. Side views always receive fixed GovernedCheckRequired wording without hidden readiness, reasons, counts or roll flags. They use the existing governed action to confirm closure. Side obligation disclosure requires own visible counters and visible origin/outcome events. Internal revisions, origin IDs and prerequisite graphs never leave the API. Historical views return ReadOnly. Finer side readiness disclosure remains future work.
+
+Validation: the full ASL.Turns coverage gate passes at 452/452 lines and 254/254 branches (100% each), without source exclusions. Host tests compare assessment to command plans across all eight phases over two player turns; prove invalid retain-DM refusal parity beyond PhaseEndBar; reject wrong perspectives, missing games and stale map/revision stamps; compare entire side responses before/after hidden enemy/revision changes; and exercise actual Double Time/CX and Stun cleanup, historical reconstruction and repeat-read safety.
+
+B5 owns the finite integration work in B5-R1 through B5-R6. Remaining rule-family execution is retained under B5-D1 through B5-D9 for later Rules passes. Clearance-before-status and concealment-before-illumination end-to-end integration remain pending. B4 does not claim the whole rulebook is executable or the UI gate is satisfied.
+
+## 8. B5: Persistence and profiles, Placed DC slice implemented
+
+B5 adds a bounded Placed DC integration (A23.3-.4; ASOP 3.32A and 5.22A), not blanket support for every remaining rule family.
+
+**Durable facts and compatibility.** New governed DC placements write optional `dcOwnerSide` on the existing `movement-step` event. Units reads/writes it and rejects a recorded owner that differs from the placer at that revision. Origin ID, sequence, phase, target, CX and concealed-target facts already exist in the event log, so no duplicate obligation store or generic resolution event is introduced. The existing schema version remains 1: the new field is additive and omitted for legacy null values. Older events replay exactly as before, but the guide keeps their missing placement ownership incomplete (`NotEvaluated`, command support `Pending`), even if later completion evidence exists. No automatic migration guesses ownership from a later counter or custodian.
+
+**Lifecycle and authority.** The history adapter creates a distinct `placedDc` candidate from each placement event, preserves its original owner and follows projected operability. Rules schedules it before AFPh and marks an operable DC due in AFPh or overdue afterward. The placer's subsequent ordinary firing eligibility does not erase that obligation. A supported placement interrupted before becoming operable is `Interrupted`. Completion requires a recorded Placed DC attack followed by removal of that charge; removal alone is not proof of detonation. The original governed detonation/choice/follow-up path and projector remain the sole mutation owners. The existing shared phase-close planner blocks a due executable DC attack. Reads do not draw dice, complete attacks or bypass confirmation.
+
+**Profiles.** `TurnGuideProfiles` names integration evidence and a version. `existing-engine` admits Stun/CX command integration only when origin facts exist; `existing-engine-dc-v1` adds the reviewed Placed DC path. `ReadTurnGuideAsync` preserves the baseline; `ReadTurnGuideProfileAsync` explicitly selects the expanded profile and returns its identity/evidence. Unknown profiles fail instead of implying full support. Profile version participates in the internal evaluation context. Profiles describe admitted host integration, not scenario applicability or a claim that all night, water, aerial or module rules are supported.
+
+**Disclosure and pending content.** All 538 topics and 38 dependency definitions remain present regardless of profile. Missing origins and unregistered families remain pending. A profile's command support does not manufacture an executable topic route: the host still lacks persisted ASOP substeps and uses phase-level reference guidance. Side projection requires original ownership, visible origin/outcome events and disclosed subject identity. A completed own DC remains visible after counter removal only when its identity was visible at placement. Adjudicators retain terminal history. Side closure remains the fixed `GovernedCheckRequired` result, including when an opposing hidden obligation exists.
+
+**Proof and remaining work.** Tests exercise new/legacy wire round-trips, owner mismatch rejection, disk reload, idempotent append retry, historical reads, interruption, AFPh closure blocking, detonation completion, post-removal disclosure and repeated-read safety. Rules tests cover phase boundaries and continued obligation despite placer ineligibility. ASL.Turns passes 127 tests with 465/465 lines and 264/264 branches covered (100% each, no source exclusions). Coverage is for ASL.Turns, not the entire existing Rules, Units or Play assemblies.
+
+Scope correction, 2026-10-27: the remaining rule-family execution described here is assigned to B5-D1 through B5-D9 in the deferred register below. It no longer makes B5 an open-ended sequence of rule implementations. B5-R1 through B5-R6 close integration readiness for the admitted baseline, including a live topic decision route with exact window evidence. Historical implementation sections below retain their original evidence and limitations; the finite backlog controls future scope.
+
+### B5 fire and Spotter history slice, implemented 2026-10-27
+
+The explicit `existing-engine-fire-v1` profile adds `TurnHostGuide.FireHistory` through `ReadTurnGuideProfileAsync`. Existing profiles keep that optional result absent. This profile retains the admitted Stun/CX/Placed DC commands; `spotter` command integration remains Pending. All 538 reference topics and 38 dependency definitions remain available.
+
+`TurnFireHistory.Compose` is pure and receives already-disclosed typed records. A shot records its actual Game Turn, phasing side, phase, firers, optional weapon/Spotter, recorded ordnance ROF result and whether it belongs to the current phase occurrence. Direct fire has no fabricated ROF value. The host uses the last actual phase-change event, so a later Player Turn's identically named phase does not revive an earlier shot's phase status. These are recorded attacks, not every declaration, attempt, weapon-use restriction or pending response, and never permission to fire again.
+
+Spotter history keeps the first **observed firing use**, not an invented original designation time. Repeated shots with the same assignment keep that observation; a later disclosed assignment preserves the former as Superseded. Present disclosed facts yield Retained, Lost or NotEvaluated. The existing C9.3 retention predicate is shared by the live ordnance command and this projection: active, same side, not broken, not captured. A pinned Spotter is not automatically discarded by that retention check. Per-phase spotting use resets through the existing projector while the recorded relationship remains. Retained does not certify LOS, ammunition, target legality, replacement permission or a future firing opportunity.
+
+No new persistence format or migration is needed: `FireResolved` and `OrdnanceFired`, their verified facts/ROF, and projected historical states already preserve this slice's evidence. The adapter reads ownership and phase at the shot, not from a later custodian. Disk read/write/replay and duplicate append tests reconstruct identical history. Reads neither alter markers nor roll dice. Missing prior designation evidence stays unknown rather than being reconstructed from a present marker.
+
+Disclosure precedes composition. The adjudicator can inspect recorded firing history. A side receives only its own disclosed firing participants, weapon and Spotter, checked against the view at the shot and event visibility. Raw revisions, event IDs, targets, resolutions and hidden payloads are absent. Withheld attacks are omitted even if a public fire report exists; there is no hidden-attack count. Current Spotter observations require disclosed participants; absent observations are NotEvaluated. Historical reads use the requested revision and stay read-only. Fixed evaluation-gap text accompanies even an empty history.
+
+The reviewed dependency remains broader than this slice (C9.3-.31; ASOP 2.22A, 3.11A, 4.21D). Original designation before the first shot, replacement at the owner's MPh opening, Opportunity Fire and its C9.3/A6.11 breakdown obligation remain visible as pending. This does not endorse current command timing as complete rulebook coverage. Vehicle/PRC combinations and other fire dependencies also remain pending. The guide introduces no alternate firing or phase-close authority.
+
+Validation: 131 ASL.Turns tests; 516/516 executable lines and 288/288 branches covered (100%, no exclusions). Tests cover ordinary fire and mortar shots, earliest observed assignment, ROF history, missing observations, lost/superseded relationships, phase reset, repeated phase names, actual command refusal to change a retained Spotter, disk round-trip/replay/retry, historical reads, hidden-world invariance and withheld-event omission. Shared Rules retention checks and existing ordnance regressions are also exercised.
+
+### B5 smoke, drift, cave WP and dust slice, implemented 2026-10-27
+
+`existing-engine-atmosphere-v1` adds `TurnHostGuide.Atmosphere` and includes the previous fire/Spotter history. Older profiles keep Atmosphere absent. The admitted live slice is ordinary infantry grenade attempt/cleanup history plus recorded Wind Change/Gust history. Drift, cave WP and dust are represented by distinct typed pending-rule entries; this milestone does **not** implement their domain mutations or claim complete atmospheric-rule coverage. The broad `smoke`, `driftGusts`, `caveWp` and `vehicleDust` dependencies remain Pending. All 538 reference topics and 38 dependencies stay available.
+
+**Authoritative evidence.** The host reads the existing `MovementStepped.Smoke`, `InstanceCreated.Causes`, `PhaseChanged` and `WindChanged` events. No duplicate event, migration or guide-owned counter store is needed. A grenade counter must be the immediately following, causally linked SMOKE creation at the attempt's target, with the existing grenade suffix. Its source owner is the placing unit's side at the attempt, never the current ATTACKER or the anonymous counter's side. Timing is restricted to the existing ordinary-grenade command path; no arbitrary SMOKE entity is classified by its location or suffix alone.
+
+**Lifecycle.** A failed attempt remains `FailedAttempt` and its attempt remains spent for that phase occurrence. A linked active counter is `Active`. `RemovedAtMovementEnd` requires the actual active-to-eliminated transition across a phase change for which the shared Rules predicate `RemovesSmokeGrenades` applies. Counter absence alone is NotEvaluated. Historical reads stop at the requested revision; repeated reads/restarts neither clear counters nor refund attempts. Legacy logs lacking causal links still replay unchanged but report NotEvaluated, with any visible active counter listed as unclassified. No origin or cleanup receipt is invented.
+
+**Pending families and ordering.** `TurnAtmosphereGap` carries a typed family, dependency, reference, timing, missing facts and Pending command support. Seven entries remain visible even in an empty game:
+
+- White SMOKE: preserve owner/type/size/dispersal; owner's PFPh removal of previously dispersed counters precedes dispersal of remaining ones.
+- Drift: preserve source links, wind direction/force and shortening/removal evidence; immediate invalidation is separate from first-RPh/AFPh placement.
+- Gusts: preserve the recorded RPh event for later AFPh processing. AFPh drift precedes WP, which precedes Gusts. History is not an applied-effect receipt.
+- Cave WP: preserve cave/type/size, original timing and eligible connection identities; half-inch cave smoke survives MPh and expires after concealment at Player Turn end. Ordinary drift/Gusts treatment does not apply, and a disclosed tunnel opening does not disclose a hidden pillbox.
+- Vehicle Dust: preserve source vehicle, creation/shift/impulse, Motion and disabling-state history. Source departure/wind, next friendly PFPh checks and continuing-Motion initial MP are distinct triggers.
+- Ambient Dust: preserve Desert profile and intensity changes; do not substitute Vehicle Dust or SMOKE timing.
+- FFE Dust: preserve its own source and duration/effect evidence; do not reuse Vehicle Dust wind/Gust rules. Detailed execution/source reconciliation remains pending.
+
+The existing Wind Change event already records Gusts, even though current projected state does not preserve a general drift/Gust engine. The guide exposes that durable history at RPh and AFPh without rerolling or claiming its smoke/fire-spread effects occurred. Future execution needs typed source ownership, kind/size, drift/cave links, wind direction/force, Motion/impulse facts, effect receipts, Rules predicates and governed commands before support can be promoted. Existing phase-close behavior is unchanged; reference reminders never become unsupported automatic cleanup.
+
+**Disclosure.** Side grenade histories require a disclosed own source unit and visible attempt, creation and cleanup evidence. Adjudicators can inspect both sides. Wind rows require visible events. Unclassified counters come only from GameView-visible SMOKE entities; no hidden graph, global revision, die IDs or raw payload escapes. Missing classification grants no timing or action route. The side's phase-close assessment remains conservative.
+
+**Validation.** 140 ASL.Turns tests pass with 572/572 lines and 304/304 branches covered (100%, no exclusions). The focused Play suite passes 40 tests and the Rules sequence suite passes 15. Tests cover lifecycle/failed attempts, all pending families, unknown metadata, causal links and missing-link legacy replay, anonymous-counter ownership, cleanup through the existing projector, history/restart/retry, hidden-world invariance and real recorded Gusts retained at AFPh without mutation.
+
+### B5 packing and replenishment progress slice, implemented 2026-10-27
+
+`TurnWorkProgress.Assess` adds a headless internal evidence ledger. It shares the stable `TurnObligationKey` identity with the obligation model and preserves linked participant IDs, the work kind, original B#, origin sequence, first Game Turn, eligibility and interval receipts. This is a trusted host contract, not a client-writable progress counter. Callers must prove each receipt came from the corresponding first RPh or second CCPh and disclose any resulting instances before returning them to players. The current host has no such authoritative declarations/events, so it exposes gaps only rather than interpreting TI markers as work commitments.
+
+**Complete intervals and replay.** A countable interval has both first-RPh and second-CCPh receipts and is not interrupted. A first boundary alone, second boundary alone or unknown boundaries is incomplete. Interrupted intervals never add progress, and previously completed Game Turns remain counted. The ledger rejects duplicate work origins, wrong games, future/out-of-history receipts, duplicate Game Turns or boundary IDs, reversed/equal endpoints and overlapping known boundaries, including incomplete intervals. Repeated reads and serialization/reload reconstruct the same result. These tests prove the evidence contract; they are not a claim of new Units journal events or live save migration.
+
+**Rules ownership.** `TurnWorkRules` owns the E10.3 table: original B# at most 9, 10 and 11 require one, two and three complete Game Turns respectively. Missing/out-of-scope B# leaves duration unknown. E10.4 offload/transfer uses four complete Game Turns. Verified accumulated progress reaching its duration yields `CompletionPending` only at the second CCPh window, never automatic resolution. Unknown eligibility/origin remains NotEvaluated; current ineligibility reports Interrupted while retaining earlier counts. Nothing rolls the supply depletion DR, clears TI, restores ammunition or moves an Ammo Supply counter.
+
+The source was checked in the local Chapter E markdown, E10.3-.4, and its page-244 replenishment table image (`eASLRB_v3_01-p244-3.png`). E10.3 requires CE and preserves the distinction between complete prior turns and an interrupted turn; MP expenditure, firing and CC attack remain rule-specific eligibility evidence for a future adapter. Compatible supply/locations, up to two identically armed recipients, special ammunition, depletion on Original 12 and supply/portage consequences still require governed integration.
+
+**Packing is explicitly incomplete.** Animal Packing can retain evidenced complete, interrupted and incomplete intervals, but no base duration is guessed. G10.11/G10.3-.31 duration/minimum, night doubling, linked Gun/Mule/crew roles, midpoint loading/unloading and reversal remain pending. Its release belongs at next first RPh ASOP 1.13B after sufficient complete Game Turns, not ordinary CCPh TI cleanup. The current Rules evaluator therefore returns an unknown packing duration and does not announce completion. The reviewed catalog remains the reference for these pending requirements.
+
+**Host/profile boundary.** `existing-engine-work-v1` retains the earlier fire/atmospheric history and returns five `WorkProgressGaps`. It does not expose internal ledger keys, participants, receipts or a generic start/update/resolve command. The `pack` and `ammo` dependency command capabilities remain Pending in every profile. All 538 topics and 38 dependencies remain visible. B3's older `TurnProgressReceipt` alone cannot prove these two-boundary intervals and is not silently promoted to sufficient evidence.
+
+Next integration needs typed, rule-specific Play/Units declarations, participant roles and eligibility histories; authoritative complete-interval/interruption receipts; packing duration/midpoint/reversal rules; governed completion and depletion consequences; and authenticated instance disclosure. No new rule-family gate or mutation owner has been introduced, and the full UI readiness gate remains pending.
+
+Validation: 146 ASL.Turns tests pass, with 651/651 executable lines and 366/366 branches covered (100%, no source exclusions). The focused Rules suite passes 28 tests; 4 host-guide tests pass, including the work profile's pending visibility and hidden-world invariance. Coverage applies to the entire ASL.Turns assembly, not the existing Rules or Play assemblies.
+
+## 9. Gate before building Blazor
+
+Headless tests must demonstrate:
+
+1. Complete reviewed reference inventory and pending-rule visibility.
+2. Stable typed request/results and capability/source distinctions.
+3. At least one supported live decision path and cross-phase lifecycle with origin, due window, interruption and resolution evidence.
+4. No UI dependency, side effects from reads or alternate command authority.
+5. Viewer-safe output, correct decision ownership and stale request rejection.
+6. Shared phase-close semantics and exactly-once replay for the admitted slice.
+
+B5-R6 records proof of these six criteria. Only after that acceptance may U1 build a thin consumer using existing site styling and action panels. Client consideration/bookmarks remain private preferences, not domain lifecycle. Full eventual rule coverage continues through the planned Rules passes; do not label the initial slice as complete ASL execution.
+
+## 10. Test ownership
+
+`ASL.Turns.Tests` owns content, coordination and backend contracts. Existing Rules tests own rule verdicts; Units tests own events/projection/replay; Play tests own governed command enforcement and adapters. Add renderer tests only at U1. Run the narrow project/class filters relevant to each change, with no blanket whole-solution test requirement.
+
+U1 is implemented below. Further rule admissions follow the deferred register and require their own evidence; they are not additional B5 slices. B5-D1 through B5-D9 are later Rules-pass work, not additional B5 completion gates. Verify production capability registrations against actual Rules/Play proofs before admitting live support. The repository mock-up is preserved as design evidence, not a requirement to construct UI now.
+
+B4 final verification: 123 ASL.Turns tests and 77 focused Play regression tests pass. Coverage is 100% for ASL.Turns, not a claim of full Play assembly coverage.
+
+B5 final focused verification: 127 Turns tests, 35 Rules tests, 69 Units tests and 79 Play tests pass. The Turns coverage gate measures 465/465 lines and 264/264 branches, both 100%.
+
+B5 fire/Spotter final validation: 131 Turns tests, 39 Rules tests and 45 Play tests pass. ASL.Turns coverage is 516/516 lines and 288/288 branches (100%).
+
+
+### B5 live work adjudication and completion slice, implemented 2026-10-27
+
+This slice adds live, persisted work lifecycles. It is an **adjudication integration**, not full automated implementation of G10 or E10. The previous progress-only section describes the earlier baseline; its statement that no live work records exist is superseded here.
+
+**Authority and missing facts.** `asl.game.record-turn-work` requires the separate `asl.game.adjudicate-work` permission. Ordinary play permission does not authorize it, and no UI is added. A host must grant that permission only to its trusted adjudicator. The authenticated execution gate still checks permission, confirmation, expected revision and attempt identity. `proposedBy` does not grant permission. A start records identity, owner, subject, distinct participants, kind, original B# and a nonempty rule basis. Packing additionally requires an explicit adjudicated whole-Game-Turn duration. This value records an external ruling, including any night/minimum adjustment; it is not a newly implemented packing-duration formula. A missing duration is refused. E10.3 replenishment still derives one/two/three turns from original B# <=9/10/11, and E10.4 transfer derives four, without a duration override.
+
+**Events and replay.** Units reads and writes typed `turn-work-recorded` journal payloads for start, interrupt, resume, cancel and complete. `GameState.TurnWork` is projected from those records and actual phase changes; old records yield an empty list, never invented work from a TI marker. First-RPh starts/resumptions open a whole-Game-Turn interval. Both Player Turns must pass in order, including both CCPhs. Replay rejects skipped phase boundaries. Interrupted intervals do not accrue progress; earlier completed intervals remain in the adjudicated ledger. Packing resumption itself remains an external adjudication, including whether prior progress is reusable. Cancel/start a new identity when the ruling requires restarting. Completed/cancelled identities cannot be completed again or reused.
+
+**TI ownership and interruptions.** A declaration cannot take over existing TI or share participants with another open work assignment. This deliberately leaves simultaneous two-vehicle replenishment pending. The projector retains work-owned TI across ordinary CCPh cleanup and clears it on interruption, cancellation or completion. Participant removal/location change, movement expenditure, firing, a recorded CC attack, explicit TI removal or subject buttoning-up interrupt the interval. Unrelated concealment updates do not. Other packing-specific eligibility changes, role changes, supply depletion from another operation, and exact ASOP substep eligibility still require adjudicator intervention. Ordinary GameState phase data cannot prove the declaration occurred before every relevant first-RPh activity.
+
+**Completion and phase closure.** Replenishment/transfer become due in the second CCPh after the requisite full intervals, including that current interval. Packing becomes due in the following first RPh, not the preceding CCPh. Rules owns the transition predicates. Play phase-close planning, the guide's shared close assessment and Units replay refuse to leave a due release window until the work is completed, interrupted or cancelled. Replenishment completion uses a system-generated two-die Ammunition DR inside the atomic store commit. Original 12 records supply depletion. The journal validates the referenced roll and prevents its reuse. Planning/guide reads never draw dice. Repeated committed attempts replay without a second roll or completion.
+
+**What completion means here.** The work lifecycle becomes completed, its owned TI is released, and the Ammunition DR/depletion result is durable. This slice does **not** mutate packing containment, Gun/Mule/crew roles, midpoint loads/unloads, ammunition availability in combat, Ammo Supply counters, dumps, wrecks or portage capacities. Those effects need their rule-specific model and governed consequences. A completion record must not be presented as full packing or ammo rules integration. No substitute arbitrary counter-mutation endpoint is exposed.
+
+**Disclosure and profile.** `existing-engine-work-v1` now has version `b5-work-2` and exposes `TurnHostGuide.Work`. The adjudicator can read all work; a side receives only its own work with all participants currently disclosed and all recorded work changes visible. Raw journal IDs, dice and adjudicator notes are absent from the guide. Historical reads use the selected revision. Work summaries always carry `RuleAutomation = Pending`; broad `pack` and `ammo` dependency support remains Pending. The catalog still contains all 538 topics, 38 dependencies and 191 links.
+
+**Source and remaining work.** E10.3-.4 and the local Ammo Replenishment Table support the replenishment interval and DR mechanics. The cross-phase catalog identifies G10.11/G10.3-.31 and first-RPh ASOP 1.13B. The full Chapter G packing source remains absent from the local Markdown set. Next admission work must reconcile that source, implement duration/night/minimum/midpoint/reversal rules, model participant roles and compatible supplies, integrate Low Ammo/special ammo and supply effects, support shared supply vehicles, and replace external eligibility attestations with rule-owned host facts. These gaps remain visible now.
+
+**Validation.** ASL.Turns passes 147 tests with 659/659 lines and 366/366 branches covered (100%, no source exclusions). Live host tests exercise permission denial, persistence through FileGameStore and JSON round-trip, historical/owner/opponent disclosure, replay-safe completion, system dice, retained TI through both Player Turns, interruption/resumption/cancellation, invalid declarations, duplicate identity and skipped-boundary rejection. Rules tests cover replenishment, four-turn transfer, packing's externally supplied duration and following-first-RPh release, invalid transitions and depletion.
+
+
+Additional validation: 33 focused Rules tests, 421 Units regression tests, and 9 focused Play/guide/action-registration tests pass. The full Play run passed 1,067 tests and identified the registration-list expectation for the new action; that expectation was updated and passed in the final focused run. The final TI ownership regression also passes: cancellation of interrupted work preserves independently acquired TI. Hidden Ammunition DR evidence suppresses the corresponding side summary.
+
+
+### B5 packing and replenishment completion effects, implemented 2026-10-27
+
+This slice extends the permissioned work-adjudication route with **opt-in completion effects**. It supersedes the preceding slice's statement that completion changes only the work lifecycle and TI. It does not certify G10 packing eligibility/duration or all E10 supply rules. Broad `pack` and `ammo` rule automation stays Pending, and every reviewed option remains in the catalog.
+
+**Bind the effect at declaration.** `TurnWorkDeclaration.CompletionEffects` holds a typed `TurnWorkEffectSpec`. Its closed choices are `PackGun`, `UnpackGun`, and `Replenish`; each binds the exact crew or supply identity/vehicle within the original participants. Rules validates kind/role consistency and derives the completion result. The complete operation takes no replacement declaration or arbitrary mutation list. Old records with no specification remain lifecycle-only, even if already completed. No migration guesses effects from TI, elapsed time, participants, or a historical completion record.
+
+**Packing assembly and manning.** An adjudicated PackGun completion records the Gun in `GameState.PackedGuns` and removes its manning link. UnpackGun removes that assembly state and mans it with the crew bound at declaration. The Gun stays in its existing map Location. Both declaration and completion require an active own Gun and Good Order own Personnel in that Location, with the expected prior assembly/manning state. Ordinary fire, turn, recovery/transfer, towing and Manhandling routes cannot bypass packed state: the planner rejects requests naming the packed Gun and authoritative replay rejects the corresponding ordinary use/transfer/move events. Animal loading, containment and transport are not inferred from this assembly change. Those depend on the separate midpoint/animal rules and remain pending.
+
+**Durable supply and Low Ammo facts.** `GameState.TurnAmmoSupplies` stores typed counter identities, their owner, bound vehicle and availability; depleted identities remain as unavailable records rather than being reusable. `LowAmmoVehicles` stores explicit adjudicated Low Ammo facts. On a replenishment declaration, `CreateSupply` can record an adjudicated new supply counter with a fresh identity; `RecordLowAmmo` can record the subject's externally adjudicated depletion. These are explicit factual assertions under `asl.game.adjudicate-work`, not facts inferred from a weapon's special-ammo depletion. Without those flags, the facts must already exist. Existing identities cannot be overwritten, and one vehicle cannot acquire a second available supply through this route. Invalid declarations publish none of the proposed facts. Cancelling work does not erase independently recorded supply or Low Ammo facts.
+
+**Replenishment effects.** This admitted path requires active own vehicles in the same Location, an available supply bound to the declared source vehicle, recorded Low Ammo on the recipient, and no Passengers in the supply vehicle. Accessible-but-different Locations remain pending. Completion clears that recipient's Low Ammo fact and its entries in the existing C8.9 `DepletedAmmunition` table; other vehicles are unchanged. This restores the actual special-ammunition choices used by the existing ordnance planner. The Ammunition DR is still generated inside the atomic store commit. Original 12 makes the bound supply unavailable; it does not undo the recipient's successful replenishment. A depleted supply cannot support another declaration unless a separately adjudicated new counter with a fresh identity is recorded.
+
+**Passenger capacity.** Rules returns zero usable Passenger PP while a vehicle has an available Ammo Supply counter (E10.12). `GamePlanner.PassengerCapacity` uses that predicate, so the existing boarding/towing capacity checks observe it. When replenishment depletes that supply, capacity is recalculated from the vehicle's ordinary current definition and towing state, not from a cached pre-work number. This implements supply depletion's capacity effect, not a supply-transfer or portage editor.
+
+**Atomicity and visibility.** The versioned `turn-work-effects-recorded` completion event projects lifecycle completion, effects, the consumed roll and TI release together. All operations on effect-bearing work use that event type and the `asl.turn-work-effects.v1` package. Older journal readers reject the unknown event type instead of silently ignoring its effect specification. Current replay rejects a downgrade to the legacy event type; lifecycle-only work retains `turn-work-recorded`. Hosts must support profile version `b5-work-3` before offering effect specifications. Current participant/resource facts are rechecked before effects. If they no longer match, replay and the store reject the entire completion, without clearing TI or partially applying effects. Attempt replay does not run effects twice. Guide summaries expose `EffectKind` and `EffectStatus` (`NotSpecified`, `AwaitingCompletion`, `Applied`, `Cancelled`) only through the existing authorized work projection. They disclose no new source IDs or adjudicator notes. `RuleAutomation` remains Pending even when the bound effects are Applied. `existing-engine-work-v1` now has profile version `b5-work-3`.
+
+**Remaining all-Passes work.** Automatic packing duration/night/minimum/eligibility, midpoint/reversal, Gun/Mule/crew transport roles, animal loading/unloading and transport remain pending. The local Markdown set still lacks the full Chapter G source; PackGun/UnpackGun are explicitly recorded assembly adjudications. E10 eligibility, caliber/barrel compatibility, simultaneous two-recipient supply, Accessible Locations, Ammo Dumps, four-turn transfer/offload counter relocation, immobilized-source wreck effects, supply destruction/capture/explosion and movement restrictions remain pending. Low Ammo's D3.71/B# firing behavior and automatic Low Ammo generation are not integrated by this slice; C8.9 special-ammo restoration is. Supply counters are authoritative typed state records; general counter rendering/selection remains future UI/host work. The full catalog remains 538 topics, 38 dependencies and 191 links.
+
+**Verification.** Tests cover assembly/manning round-trip and replay, packed-Gun rejection, frozen effect targets, stale-crew rejection with an unchanged persisted journal, and legacy records with unspecified effects. Fixed-dice host tests cause real APCR depletion through the ordnance planner, complete replenishment with both non-depleting and Original-12 DRs, preserve another vehicle's depleted ammo, verify Passenger capacity, reject duplicate/depleted supply reuse, reload the journal, and attempt APCR again through the normal fire path. Headless disclosure tests distinguish pending, applied, cancelled and unspecified effects without promoting rule-family support.
+
+
+Completion-effects validation: 148 ASL.Turns tests pass with 666/666 lines and 374/374 branches covered (100%, no exclusions). The focused Rules suite passes 38 tests, Units passes 421 tests, and the relevant Play/Gun/ordnance/vehicle/guide regression selection passes 57 tests. Journal versioning is additionally checked by the final focused work/guide suite.
+
+
+### B5 ammunition supply transfer and offload completion effects, implemented 2026-10-27
+
+This slice extends the existing permissioned `asl.game.record-turn-work` route. `TransferSupply` and `OffloadSupply` are explicit completion specifications for the existing `AmmoTransfer` four-Game-Turn lifecycle. It supersedes the previous slice's pending transfer/offload relocation and Immobilized-source wreck effects. Automatic E10 eligibility and the broader Ammo Dump rules remain Pending. No catalog topics or dependency links are removed.
+
+**Rule reconciliation.** E10.4 moves the Ammo Supply counter at the end of the completing CCPh and flips the original vehicle to its wreck side if Immobilized. E10.12 restricts removal of an available counter to an Immobile source. This bounded path therefore requires Immobilized or Bogged state for both transfer and offload; it does not infer Immobility from a stopped vehicle or its TI counter. Other forms of Immobility and any broader offload interpretation remain pending. The existing ASOP 8.43B work-completion entry and E10.3 full-Game-Turn boundaries remain the timing contract. Completion occurs in the second Player Turn's CCPh after four full Game Turns, not after four Player Turns. No Ammunition DR is made for relocation, and no Low Ammo or C8.9 depletion is cleared.
+
+**Frozen source and destination.** The declaration's subject is the source vehicle. `SupplyId` and `SupplyVehicle` bind its available supply; transfer also binds `DestinationVehicle` among the participants. Offload instead freezes `DumpLocation`, which must match the source's current Location at both declaration and completion. Offload permits a single source participant, so no fictitious second vehicle or crew must be invented. All other work retains its existing minimum participant requirement. `CreateSupply` optionally attests an initial supply fact under the existing adjudication permission; otherwise that bound supply must already exist. Invalid proposals do not publish new facts.
+
+**Atomic state effects.** Completion relocates the same `TurnAmmoSupply` identity, owner and availability. Its representation is either a vehicle binding or a stationary `DumpLocation`, never both. Transfer clears the source binding and assigns the recipient; offload sets Vehicle to null and retains the exact Location string. Available supply then makes the recipient's usable Passenger capacity zero; the source's ordinary capacity is restored. An Immobilized source is converted through the existing non-burning wreck projection. A merely Bogged source remains active. The supported source has no explicit occupants or held equipment; their disposition requires separate rules and is refused rather than guessed. This does not add a generic counter-placement endpoint.
+
+**Validation and continuity.** The source must be an active own vehicle with the bound available supply and supported Immobile state. Transfer requires an active own vehicle in the same Location, without an available supply or Passengers. E10.11 recipient qualification remains an external adjudication; Accessible-but-different Locations are not yet admitted. Current source, destination and supply facts are rechecked on completion. A stale fact rejects the whole append, preserving the prior supply, TI and lifecycle. Cancellation releases work-owned TI but leaves the supply at its source. Completed work cannot execute twice or accept a replacement specification. The existing `turn-work-effects-recorded` journal protocol persists the specification and derives all effects in replay. Old readers reject the new unsupported effect kinds. The work profile is now `b5-work-4`.
+
+**Headless disclosure.** Authorized guide summaries show TransferSupply/OffloadSupply and AwaitingCompletion/Applied/Cancelled through the existing disclosure model. They do not expose the supply identity, destination or adjudication notes. Applied effects do not promote `RuleAutomation` from Pending. The relocated vehicle supply can feed the existing replenishment path; dump-backed replenishment is still refused by that vehicle-only adapter and remains visible as pending.
+
+**Remaining all-Passes work.** Accessible Locations, automatic E10.11 qualification and caliber compatibility, other forms of Immobility, explicit occupant/towed-equipment disposition, full Ammo Dump benefit/replenishment and SSR/DYO setup, supply capture/destruction/explosion, the E10.4 transition-turn MP restriction and E10.21 firing-benefit movement restriction, automatic unarmored Ammo Vehicle immobilization handling, simultaneous recipients, and D3.71/B# firing behavior remain pending. Animal transport and automatic packing eligibility/duration remain pending from earlier slices. This implementation is not a claim of full E10 integration.
+
+**Tests.** Rules tests distinguish four Game Turns from early completion, reject an Ammunition DR and malformed destinations, and derive relocation without replenishment. Live tests cover transfer/offload from Immobilized and Bogged sources, source wrecking versus survival, supply identity and passenger capacity, historical replay and persisted reload, retargeting refusal, stale-source atomic rollback, cancellation and invalid source/destination facts. Guide tests retain Pending automation and suppress private destination details for both effect kinds.
+
+
+Supply transfer/offload validation: 150 ASL.Turns tests pass with 666/666 lines and 374/374 branches covered (100%, no exclusions). The focused Rules suite passes 40 tests, the relevant Play/Gun/ordnance/vehicle/guide selection passes 67 tests, and the Units regression suite passes 421 tests.
+
+
+## 11. Finite B5 completion backlog, agreed scope 2026-10-27
+
+**Remaining count: zero required B5 slices.** B5-R1 through B5-R6 are implemented and verified below; B5 is accepted and U1 is eligible. The six stable R IDs remain the entire completion commitment. Earlier completed slices stay complete. The nine B5-D entries below are deferred rule-family work packages, not nine more B5 slices and not a promise that each will fit one implementation commit. R1 adds reference metadata, not executable topic registrations.
+
+**Finish line.** B5 finishes when a headless consumer can discover every reviewed option, distinguish executable, adjudicated, missing-fact and pending paths, exercise one evidenced live topic decision route, and trust replay, disclosure and phase-close assessment for the admitted baseline. B5 does not require all eventual ASL.Rules passes to be complete. U1 may then build the thin UI while showing unsupported options. The eventual all-Passes design target is unchanged.
+
+**Frozen admitted baseline.** Preserve the admitted subsets originally recorded through `existing-engine-work-v1` version `b5-work-4` (R2 versions and safety restrictions below now govern new requests): Stun/CX and the bounded Placed DC integration; recorded fire/Spotter and grenade/Wind history; work progress; permissioned work adjudication; packing assembly/manning, replenishment and supply transfer/offload effects. This list is an integration inventory, not a statement that every topic or rule in those families is executable. `pack`, `ammo`, broader atmosphere and Spotter automation stay Pending. No new rule family must be implemented to close B5.
+
+| ID | Required slice | Depends on | Concrete deliverable and completion evidence | Status |
+|---|---|---|---|---|
+| B5-R1 | Complete capability and pending-work inventory | Completed B5 baseline | A checked inventory maps every current topic/dependency to source review, evaluator/command evidence or an explicit gap and B5-D owner. Preserve 538 topics, 38 dependencies and 191 links; add count, identity and mapping tests. Missing or unregistered support remains NotEvaluated/Pending, never silently available or absent. | Implemented, 2026-10-27; 162 tests, 100% lines/branches |
+| B5-R2 | Audit and bound the admitted host capabilities | B5-R1 | Reconcile each profile and permissioned work effect against actual Rules, Units and Play proofs. Record exact supported conditions, missing facts, source gaps and refusal boundaries. Fix unsafe admitted paths or narrow/refuse them; do not implement a deferred family merely to make an overbroad claim true. Tests prove that pending eligibility and adjudicated effects cannot be mistaken for automatic rule support. Version profiles when their contract changes. | Implemented, 2026-10-27; audited bounds and versioned guards |
+| B5-R3 | Durable decision-window evidence | B5-R2 | Define and persist or reconstruct only the exact timing evidence needed by the B5-R4 Placed DC route: phase occurrence, owner/decision authority, origin, prerequisite state and relevant source timing. If the existing journal is insufficient, add the smallest authoritative evidence. Prove historical replay, repeated phase names and legacy missing-evidence behavior. Do not invent ASOP substep completion from a phase label. | Implemented, 2026-10-27; durable scoped evidence, replay and disclosure proofs |
+| B5-R4 | One complete headless live topic decision route | B5-R3 | Connect the reviewed AFPh Placed DC topic to its existing governed detonation/choice/follow-up path. Return typed action information only for an admitted, authorized, evidenced window. Execute through normal proposal, confirmation, expected revision and attempt identity. Prove success, unavailable/missing evidence, wrong viewer, stale request, interruption/resolution and closure parity. All other topics retain their honest reference/pending status unless already independently proven. | Implemented, 2026-10-27; scoped live route through the existing governed command |
+| B5-R5 | Cross-profile replay and disclosure acceptance | B5-R4 | A bounded matrix covers every shipped profile: new and legacy records, historical reads, repeat reads, retry/idempotency, terminal effects and missing facts. Exercise authorized adjudicator, owning side and opposing side views; hidden-world changes must not leak through results, counts, errors or close assessment. Reuse existing tests where sufficient and add only missing proofs. | Implemented; evidence in section 11.7 |
+| B5-R6 | B5 acceptance and U1 handoff | B5-R1 through B5-R5 | Publish a capability/evidence matrix and a headless consumer example using the B5-R4 route, cross-phase obligations and pending disclosures. Check every item in section 9 against named tests. Verify catalog completeness and the deferred register; pass the full ASL.Turns 100% line/branch coverage gate without exclusions plus relevant Rules/Units/Play checks. Mark B5 complete and U1 eligible only when every acceptance item passes. No Blazor implementation is part of this slice. | Accepted; evidence in section 11.8 |
+
+### 11.1 Deferred ASL.Rules pass register
+
+These IDs identify retained requirements, not invented numbered Rules passes. Assign an actual pass number when its rule implementation is scheduled. Each future admission requires rulebook/ASOP reconciliation, Rules-owned predicates, durable facts, replay, disclosure and governed command proofs. Existing partial implementations and references remain available while the missing semantics stay pending.
+
+| ID | Deferred rule-family work | Retained scope and gap | B5 treatment |
+|---|---|---|---|
+| B5-D1 | Fire and Spotter execution | Original designation, replacement windows, Opportunity Fire and required breakdown, artillery and remaining vehicle/PRC fire dependencies. | Preserve observed firing/Spotter history; it is not permission for a new shot or designation. Missing execution remains visible. |
+| B5-D2 | Atmosphere execution | White SMOKE removal/dispersal, drift/Gust effects, cave WP, vehicle/FFE/ambient dust and their distinct cleanup triggers. | Preserve admitted grenade/Wind history and typed gaps. Do not collapse differing timing into generic cleanup. |
+| B5-D3 | Packing and animal transport | Full G10 source reconciliation, eligibility, duration/night/minimum, Gun/Mule/crew roles, midpoint/reversal, loading/unloading and transport. The full Chapter G source remains absent from the local Markdown set. | Keep adjudicated work and assembly effects, with automatic packing support Pending and source gaps explicit. |
+| B5-D4 | Ammunition supply and Ammo Dumps | E10.11 qualification, compatibility, Accessible Locations, additional Immobility cases, occupant/towed-equipment disposition, simultaneous recipients, dump use/replenishment and SSR/DYO setup, transition-turn and firing-benefit MP restrictions, immobilization handling, capture/destruction/explosion, automatic Low Ammo and D3.71/B# firing behavior. | Preserve bounded replenishment and relocation effects. Refuse unsupported effect contexts; Applied never means full E10 integration. |
+| B5-D5 | Tunnels and airborne | Tunnel entry/transit/emergence and airborne arrival/landing histories, eligibility, timing, interruption and consequences. | Retain reviewed topics, dependencies and explicit unsupported host-fact/command gaps. No fabricated live obligation from reference text. |
+| B5-D6 | Close Combat declarations and heroes | Remaining CC declarations, hero creation/use, ownership, timing and cross-phase consequences. | Preserve any independently proven current engine paths; guide integration is pending where evidence is absent. |
+| B5-D7 | Water, aerial and module profiles | Water/amphibious, aerial, night/weather and module-specific facts, applicability, timing and rule execution. | Keep reference topics visible. An absent integration profile is not evidence of scenario inapplicability. |
+| B5-D8 | Trip Flare and Clearance execution | Host facts and governed command integration for existing bounded timing predicates; clearance-before-status and concealment-before-illumination ordering proofs. | Existing Rules predicates remain partial evidence, not live host support. Keep mandatory-rule explanations visible without manufacturing executable obligations. |
+| B5-D9 | Core phase rules and guide integration | Remaining Rally, movement, Rout, terrain/hazard, status, possession, prisoner and turn-boundary rule/host integration. Existing engine features require evidence before guide admission. | Explicit owner for ordinary core topics not covered by D1-D8; pending integration does not assert those engine rules are absent. |
+
+### 11.2 Visibility, change control and verification
+
+- Deferred means implementation is scheduled after B5, not that an option disappears or a rule becomes optional. Keep source, timing, applicability and integration support separate. Unknown facts remain unknown. `NotApplicable` requires scenario evidence; it is never a synonym for missing code.
+- Use the existing typed support vocabulary. A planning deferral does not bulk-change runtime Pending values to Deferred or mark capabilities integrated. B5-R1 now supplies the explicit mapping; hosts continue reporting their actual capability and missing facts.
+- Required but unsupported consequences remain visible with their source and manual/adjudicated limitation. A consideration mark cannot satisfy a mandatory effect. No generic “resolve anything” action is introduced, and pending rules do not become invented executable phase-close blockers. Preserve the existing governed closure authority and viewer-safe assessment.
+- Fixes needed to keep an already-admitted path safe belong to B5-R2 or the relevant acceptance slice. Broader rule semantics belong to B5-D1 through B5-D9. If a fix needs a later pass, narrow the advertised support and refuse the unsupported path while preserving the option.
+- Keep the six IDs stable. Implementation can span several commits without adding more exit gates. Expanding the admitted baseline or reopening the B5 finish line requires an explicit scope decision and a recorded reason; newly found rule gaps attach to the deferred register by default.
+- Every implementation slice retains 100% line and branch coverage for the entire ASL.Turns assembly, without source exclusions. Run relevant dependent tests when code changes. The R1 coverage gate passes 162 ASL.Turns tests, 738/738 lines and 424/424 branches. Historical dependent-suite results remain recorded under the slices that ran them; they are not relabeled as new R1 runs.
+
+All six required B5 slices are accepted. U1 and its acceptance follow-ups are complete. There is no next required B5 or U1 task in this plan. The B5-D register remains deferred Rules-pass work, not unfinished baseline acceptance.
+
+
+### 11.3 B5-R1 implementation and evidence
+
+The embedded [capability inventory](ASL%20Turn%20Capability%20Inventory.json), schema version 1, explicitly binds 538 topic IDs and 38 dependency IDs. Its 576 rows join the unchanged catalog for titles, references, source pages and all 191 dependency links. There is no runtime keyword classification, prose-derived capability or default ownership bucket: each identity's authored mapping is serialized in the manifest. The loader rejects omissions, extra/unknown identities, duplicate identity coverage, unknown owners/profiles, dangling or duplicate evidence/gap links and unused records.
+
+Nine gap records give a retained reason and B5-D owner. D9 was added during the complete inventory because D1-D8 did not own ordinary core Rally/Rout/movement/terrain/status/possession topics. This corrects the deferred register without adding an R slice, expanding admitted execution, or changing the all-Passes target. Multiple gap IDs may apply to a topic through its own scope and linked dependencies. The exact owner memberships are explicit data, not exclusive topic categories.
+
+Eight evidence records distinguish RulePredicate, GovernedSubset, ObservedHistory and AdjudicatedEffect, each with a bounded scope, applicable shipped profile IDs and repository code/test references. They retain the existing Stun/CX, Placed DC, Trip Flare/Clearance timing, fire/Spotter history, atmosphere history and work timing/effects evidence. This is evidence inventory, not the detailed safety audit scheduled for R2. Profile versions remain unchanged because no live capability is added.
+
+Source review describes the existing reviewed reference scope, not new rule execution proof: 569 bindings are Reconciled, five include the unresolved Chapter G packing SourceMissing scope, and two retain the prisoner-drop/source-order InterpretationOpen issue. A mixed topic carrying a missing-source dependency stays flagged even if some of its references are available. Source references/pages remain in the canonical catalog rather than being copied into a second source ledger.
+
+`TurnCapabilityInventory.Load/Read` returns immutable, validated metadata. `TurnGuideService.Inventory` exposes it to a headless consumer; it can also be loaded independently. Join a topic by `(Topic, topic.Id)` or a dependency by `(Dependency, dependency.Id)`, then resolve EvidenceIds and GapIds within the inventory. The existing Play guide response is unchanged; this slice does not serialize the complete inventory into each game response. The R2 audit below now bounds those host capabilities; R3/R4 still own exact-window topic routing.
+
+Every row retains NotEvaluated unregistered support/applicability and Pending rule support. Those fields describe the unregistered remainder, not a downgrade of the separately evidenced subset. The inventory is never passed to `TurnCapabilityCatalog` as executable registrations. Tests across all five shipped profiles and eight phases prove that all topics remain present and no action route is invented. Profile-supported dependency subsets must have appropriately scoped governed evidence; packing/ammo and Clearance commands remain Pending.
+
+Validation: 162 ASL.Turns tests pass with 738/738 lines and 424/424 branches covered, 100% without exclusions. Tests cover all identities/links, owner/evidence resolution, strict schema failures, source-gap distinctions, round-trip/repeated reads and no promotion across profiles. The manifest's repository evidence paths were checked to exist. Content and capabilities are public reference metadata and contain no game facts or viewer-dependent counts.
+
+
+R1 host regression verification: all four Play TurnGuide tests pass after the service begins loading the inventory. No game commands or event formats changed.
+
+
+## B5-R2 admitted host capability audit, implemented 2026-10-27
+
+This audit covers the shipped guide profiles, their bounded evidence and the permissioned work action. It does not admit a new rule family or a live topic action route. All 538 topics, 38 dependencies and 191 links remain present; B5-D1 through B5-D9 retain deferred execution. R3/R4 still own exact decision-window evidence and topic routing, and R5 still owns the broader acceptance matrix.
+
+### Audited capability matrix
+
+| Admitted subset | Required facts and authority | Current boundary, refusal or pending behavior | Evidence checked |
+|---|---|---|---|
+| Stun/CX lifecycle and cleanup | Recorded origin and stable owner, supported Rules verdict, authorized subject/origin/outcome. Existing phase/action authority. | Missing origins or a NotEvaluated verdict report Pending command support. Setup markers do not fabricate origins. Only the existing cleanup subset is admitted; no topic route is created. | TurnObligationRules, TurnHistoryAdapter, GamePlanner.TurnGuide, TurnGuideProfileTests, PlayTests.TurnGuide |
+| Placed DC | Recorded MPh placement owner, operability, disclosed attack/removal evidence; normal governed detonation/choice/follow-up. | Legacy missing owner remains unknown. Removal alone does not prove detonation. Phase-level guide reads do not establish an ASOP substep or grant a topic action. | TurnObligationRules, GamePlanner.TurnGuide, BacklogPass15Tests |
+| Fire/Spotter history | Disclosed firing events, event-time owner, real phase occurrence, disclosed current holder/Spotter facts. Read-only. | Observed use/ROF is not permission to fire, designate or replace. Original designation, replacement and Opportunity Fire consequences remain pending. Current-phase use is now derived only from disclosed shots, preventing hidden shots from leaking through the Spotter summary. | GamePlanner.FireHistory, TurnFireHistoryTests, BacklogPass9Tests |
+| Grenade and Wind/Gust history | Disclosed attempt and owner, immediately causal grenade creation at the recorded Location, recorded cleanup boundary. Read-only. | Unknown origin remains unknown; unmatched visible SMOKE is not reclassified. White SMOKE, drift, cave WP and dust execution remain pending. | GamePlanner.Atmosphere, TurnAtmosphereTests, BacklogPass9Tests |
+| Work lifecycle without effects | Separate `asl.game.adjudicate-work` authority, rule basis, first-RPh declaration/resume, active own uncaptured participants, externally adjudicated packing duration or Rules E10 interval. | Lifecycle-only work remains an external adjudication, not certification of vehicle/Gun eligibility or completion effects. No arbitrary counter mutation is introduced. | GamePlanner.TurnWork, GameProjector.TurnWork, TurnWorkLifecycle, PlayTests.TurnWork |
+| PackGun / UnpackGun effects | Frozen Gun/crew roles, active own Good Order crew and Gun in one Location, expected current assembly/manning; external G10 eligibility/duration. | Rechecked on resume, every subsequent non-work event and completion. Invalid roles, assembly or crew facts interrupt the current interval. Animal transport, midpoint/reversal and automatic duration remain pending. | GameProjector.WorkEffects, TurnWorkEffects, PlayTests.WorkEffects |
+| Replenish effects | Bound available supply, active own co-located vehicles, explicit recipient Low Ammo, no source Passengers, **known CE** posture, system Ammunition DR on completion. | Unknown, withheld, inapplicable or BU posture is refused. Loss of known CE interrupts the current interval; resume rechecks all bound facts. Qualification/compatibility, Accessible Locations, simultaneous recipients and B# combat behavior remain pending. | E10.3-.31; TurnWorkEffects, GameProjector.WorkEffects, BacklogPass7Tests.WorkEffects/WorkAudit |
+| TransferSupply / OffloadSupply effects | Available bound supply; supported Immobile source (Immobilized/Bogged); frozen same-Location recipient or dump. Recipient has no supply or Passengers; source has no explicit occupants/held equipment. | Recheck source, recipient and binding at resume and completion and after other events. Preserve identity/availability; Immobilized source wrecks. Broader Immobility, Accessible Locations, dump use, occupant/equipment disposition, movement restrictions and supply destruction remain pending. | E10.12, E10.4-.6; TurnWorkEffects, GameProjector.WorkEffects, BacklogPass7Tests.SupplyEffects |
+
+**Read and mutation authority.** `TurnGuideProfile.Bounds` exposes typed scope, required facts, pending restrictions and authority labels for the actual profile. The labels describe existing authority; they grant none. All profile versions advance (`b5-r2-base`, `b5-r2-dc`, `b5-r2-fire`, `b5-r2-atmosphere`, `b5-work-5`) so evaluation stamps distinguish the audited contract. `AssessedCommandSupport` combines the existing profile/origin boundary with a supported assessed state; NotEvaluated or unknown states cannot advertise integrated command support. Pack/ammo automatic rule support remains Pending even when an adjudicated effect is Applied. No inventory row is converted into an executable topic registration.
+
+### Work safety fixes and compatibility
+
+The audit found that the previous effect path checked CE loss only after an explicit BU change, not known CE at admission, and that resume did not revalidate effect bindings. The new admitted path requires explicit CE for replenishment effects. It rechecks active own uncaptured participants and supplied effect facts at start/resume, after non-work events and at completion. Capture, ownership loss, crew/assembly changes, source mobility or loss of CE can interrupt work immediately. Only previously completed Game Turns survive; the current incomplete interval does not. Work-owned TI is released on interruption, and an invalid resume records no state. Missing eligibility is not inferred from the fact that work was once declared.
+
+New work uses `turn-work-audited` with package `asl.turn-work.v2`. The projector derives `HostAuditVersion = 1` from the event type, not from a caller-supplied assertion, and keeps all later transitions in that protocol. Unknown old readers reject that type. Old lifecycle/effects events keep HostAuditVersion 0 and their original replay semantics, including existing completions; they are not retroactively rejected for newly required CE facts. The live planner offers only cancellation for old open work. Redeclaration uses a fresh work identity and current facts, with no imported progress. There is no automatic upgrade, duration compensation or hidden migration. Cancellation leaves independent supply/Low Ammo facts intact and does not apply completion effects. The host disclosure exposes the audit version so a consumer can distinguish the boundary.
+
+The existing action permission, confirmation, expected revision and attempt-id retry rules remain authoritative. A profile, a supplied `proposedBy`, or an external rule basis cannot grant work-adjudication authority. The projector preserves atomicity: invalid admissions/resumptions/completions publish neither partial supply facts nor partial effects. Profile integration is not a universal permission to act, and no history read mutates state or rolls dice.
+
+### Audit outcome and remaining work
+
+The original profile scopes remain bounded rather than being expanded to full ASL rules. Explicit pending explanations accompany the typed bounds; the nine deferred packages remain owned and visible. Work effect guards and the hidden-Spotter-use fix close demonstrated gaps in already admitted behavior. Exact UI decision windows/routes, full rule semantics, and broader cross-profile acceptance remain R3/R4/R5 or deferred Rules work as recorded in the plan. This audit does not claim to finish those milestones.
+
+ASL.Turns validation: 168 tests pass, with 780/780 lines and 446/446 branches covered (100%, no exclusions). New tests cover every profile boundary, unknown profiles/states, permission labels, legacy/audited disclosure, missing CE states, interruption/resume, captured participants, protocol downgrade/upgrade rejection, old completed replay and withheld current-phase Spotter use. Dependent regression results are recorded after the final run below.
+
+
+B5-R2 final verification: 168 ASL.Turns tests pass with 780/780 lines and 446/446 branches covered (100%, no exclusions). All 46 focused Play work/guide/fire-history tests, 43 focused Rules tests and 421 Units regression tests pass. Four required B5 slices remain; B5-R3 is next.
+
+
+### 11.5 B5-R3 implementation and evidence
+
+B5-R3 reconstructs a stable phase occurrence from journal event identity and retains the DC's placement origin, original recorded owner and Game Turn. The journal did not establish opening-task completion, so the bounded `placed-dc-window-reviewed` event supplies explicit externally adjudicated evidence for ASOP 5.11B, 5.12A, 5.13A and 5.21A. Unknown prerequisites remain unknown. The normal host gate requires the separate `asl.game.adjudicate-window` permission, confirmation, current revision and bound attempt inputs. The Rules predicate binds one operable charge to its own AFPh occurrence and owner. Any following event expires the review. See the [design contract](ASL%20Turn%20Phase%20Guide%20Design.md#b5-r3-durable-placed-dc-decision-window-evidence).
+
+| Acceptance concern | Proof |
+|---|---|
+| Exact occurrence, owner, origin, operability and prerequisite states | `TurnPlacedDcWindowRulesTests.AllRequiredFactsAreBoundAndNoPhaseLabelReopensAnOldWindow` rejects mismatched/repeated occurrence identities, wrong phases/turns/sides, invalid enums and incomplete observations. |
+| Stable headless contract and honest pending disclosure | `TurnDecisionWindowTests` checks serialized evidence, historical flags, matching/missing/stale reviews, source timing and explicit pending statements. |
+| Governed authority and retry identity | `BacklogPass15Tests.DurableWindowReviewBindsOccurrenceOriginAuthorityAndOpeningEvidence` denies ordinary play authority, confirms the authorized review and rejects changed inputs under the same attempt. |
+| Replay, invalidation, legacy and hidden evidence | The same integration test round-trips the file journal, reloads it, reads before/after review revisions, expires evidence on an intervening condition event and detonation, rejects legacy missing-owner review, and withholds enemy/hidden-origin/hidden-entry/hidden-review evidence. |
+| Preserve existing behavior and all pending topics | Focused BacklogPass15 and guide/action registration regressions retain normal detonation and closure behavior. The full Turns suite retains the 538-topic, 38-dependency, 191-link inventory and no executable topic registrations. |
+
+**R4 handoff.** The new outcome `ReadyForCommandAssessment` is timing evidence, not an available action. R4 must select the reviewed Placed DC topic and exact subject, re-read authoritative evidence and the current stamp, assess the existing detonation/choice/follow-up path, and admit a route only for the authorized live owner. Intervening choice/follow-up events require fresh timing review. A historical response is read-only. Global guide context remains phase-only. No ASOP-wide scheduler, automatic opening-rule execution, or new rule family has been admitted.
+
+The supported profiles now use `b5-r3-dc`, `b5-r3-fire`, `b5-r3-atmosphere` and `b5-work-6`; base remains `b5-r2-base`. All nine B5-D packages remain pending. Exactly three required B5 slices remain: R4, R5 and R6.
+
+
+B5-R3 final verification: all 170 ASL.Turns tests pass, covering 789/789 lines and 450/450 branches (100%, no exclusions). All 22 focused Play tests, 21 focused Rules tests and 421 Units regression tests pass. Three required B5 slices remain; B5-R4 is next.
+
+
+### 11.6 B5-R4 implementation and evidence
+
+The `afph:placed` topic is connected to the existing `asl.game.detonate-dc` command in the four DC-capable profiles. A typed route is offered only for an owning-side live AFPh read with disclosed R3 evidence and a Ready result from the full existing command assessment. Other topics remain pending. All 538 topics, 38 dependencies and 191 links are retained. See the [R4 design contract](ASL%20Turn%20Phase%20Guide%20Design.md#b5-r4-one-complete-headless-placed-dc-route).
+
+`TurnPlacedDcGuidance` supplies the bounded registrations and pure verdict composition. The host composes only this topic in its subject-specific ASOP window, leaving the overall phase context unchanged. `PreparePlacedDcDecisionAsync` prepares an offered route for the trusted host; the host uses the same prepared arguments for normal proposal and confirmation. The existing command rechecks route evidence at each gate. Permission, target validation, dice, defender choices, follow-ups, removal and closure remain owned by the original command path. No new attack or cleanup executor is introduced.
+
+An opaque process-local route token is bound to scope, state stamp, owner, charge and profile/version. Refresh uncommitted routes after restart. A canonical request digest on the first committed event gives durable retry identity: identical original requests replay without rolling, while changed requests cannot reuse the committed attempt. This optional envelope metadata preserves old journal serialization. The guide does not expose command arguments, revisions, raw plans or detailed command refusal reasons.
+
+| Acceptance concern | Proof |
+|---|---|
+| One bounded registration; all pending options retained | `TurnPlacedDcGuidanceTests` checks all five profiles and eight phases, 538 topics, the four explicit registrations, readiness composition and typed route serialization. Existing inventory tests retain 38 dependencies and 191 links. |
+| Authorized live owner, missing evidence and read-only contexts | `PlacedDcRouteExecutesThroughNormalConfirmationAndDurableRetry` checks no route before review, opposing/adjudicator/historical/base/other-phase views, forged routes, ordinary permission denial and no journal change during proposal/read. |
+| Real execution and durable retries | The same test confirms the attack through GamePlay, verifies removal and resolved obligation, compares closure behavior, retries without dice, rejects changed inputs, round-trips the journal and verifies Replay after a file-store reload. |
+| Stale prepared requests and unknown prerequisites | `PlacedDcRouteRejectsStaleConfirmationAndCannotTreatUnknownReviewAsPermission` rejects a stale confirmation and a forged current revision with expired evidence, preserving the live charge and blocking closure. |
+| Existing defender authority and follow-ups | `PlacedDcRouteKeepsExistingBattleHardeningChoiceAndRemovalFollowUp` commits an attack that pauses for the defender, offers no repeat detonation route, rejects imported timing evidence as a bypass of the pending choice, and completes the existing Choose/removal path. |
+| Interrupted and legacy placements | `APlacedDcIsOperableOnceItsPlacerMovesOnAndDetonatesInTheAfph` explicitly verifies no action for interrupted placement or legacy missing-owner evidence. R3 source-disclosure tests remain in the regression run. |
+
+**R5 handoff.** Broaden the acceptance matrix across every shipped profile and supported read perspective, including live versus historical evidence, legacy records, retry, resolution and disclosure. Keep the R4 route bounded; do not add a new rule family to complete that matrix. R6 remains the final acceptance and UI handoff. Exactly two required B5 slices remain, R5 and R6; all nine B5-D packages remain deferred.
+
+
+B5-R4 final verification: all 178 ASL.Turns tests pass, covering 819/819 lines and 464/464 branches (100%, no exclusions). All 25 focused Play tests and 421 Units regression tests pass. The Rules predicates were unchanged; R3 Rules results remain historical evidence, not new R4 runs. Two required B5 slices remain; B5-R5 is next.
+
+
+### 11.7 B5-R5 implementation and acceptance matrix
+
+R5 completes the bounded cross-profile replay and disclosure gate. The new comparison exposed a passive disclosure bug: an opposing private choice changed the owning player's Placed DC applicability and action count in all four DC-capable profiles. Passive routes now request the governed command check using `GovernedCheckRequired`; they do not certify private command readiness. This supersedes the R4 read-path Ready requirement. Preparation, proposal, permission, confirmation, fresh-state validation and execution remain governed by the existing command pipeline. The blocked proposal is rejected without dice or journal writes.
+
+| Shipped profile | Current version | Accepted scope |
+|---|---|---|
+| `existing-engine` | `b5-r2-base` | Reference topics, disclosed status and phase-close assessment; optional family payloads absent. |
+| `existing-engine-dc-v1` | `b5-r5-dc` | Base plus disclosed placement lifecycle, durable timing and conditional owning-player route. |
+| `existing-engine-fire-v1` | `b5-r5-fire` | DC plus observed firing and Spotter history. |
+| `existing-engine-atmosphere-v1` | `b5-r5-atmosphere` | Fire plus grenade lifecycle and recorded Wind/Gust history. |
+| `existing-engine-work-v1` | `b5-work-8` | Atmosphere plus adjudicated work progress and bounded completion effects; rule automation remains Pending. |
+
+| Acceptance concern | Named proof |
+|---|---|
+| All five profiles retain catalog identity, order, pending explanations and bounded payloads | `TurnGuideAcceptanceCases.AssertProfile`, used throughout the new matrix; existing Turns inventory tests retain all 538 topics, 38 dependencies and 191 links. |
+| New records, missing review, repeat reads, three perspectives, reload, historical-prefix equivalence, terminal resolution and durable retry | `AcceptanceProfilesReplayDcLifecycleWithoutPromotingPendingRules`. |
+| Legacy missing ownership, withheld origin/entry/review, private review detail and error invariance | `AcceptanceProfilesRetainLegacyGapsAndWithholdPrivateEvidence`. |
+| Complete passive-response equality when only an opposing private choice differs; actual governed denial without writes or dice | `AcceptancePrivateChoiceCannotChangePassiveOwnerRouteDisclosure`. |
+| Completed packing effects, legacy work, reload, repeat reads, historical-prefix equality and withheld/private work evidence | `AcceptanceProfilesKeepCompletedEffectsAdjudicatedAndLegacyWorkExplicit`. |
+| Observed fire and Spotter history across all three applicable profiles | `ASpottedMortarFiresBeyondItsOwnLosAndKeepsItsSpotter`, including existing replay, historical and withheld evidence assertions. |
+| Grenade lifecycle across both applicable profiles | `SmokeGrenadesHinderDefensiveFireAndLeaveAtTheEndOfTheMph`. |
+| Recorded Wind/Gust across both applicable profiles, including historical reads without applying or rerolling it | `RecordedGustRemainsVisibleAtAdvancingFireWithoutBeingAppliedOrRerolled`. |
+| Hidden unit/revision disclosure across every profile and existing route/work/supply behavior | Expanded TurnGuide disclosure theory and the focused Play regression selection. |
+
+Comparisons cover complete serialized passive responses, including counts and close assessment, with disclosed phase, own facts and review currency held constant. R3's any-event review invalidation remains an explicit freshness boundary. Historical reads against the full journal equal reads against its prefix. This is bounded acceptance for admitted histories, not a claim of universal noninterference for future rules or malformed journals. Route tokens remain process-local and state-bound; committed retry identity remains durable.
+
+All nine B5-D packages remain deferred and visible. No new rule family or UI renderer is admitted. R6 alone remains: publish the final capability/evidence matrix and headless consumer example, check section 9, and decide B5 completion and U1 eligibility from those proofs.
+
+**R5 verification:** 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered, both 100%, without exclusions. The focused Play matrix/regression run passes 94 tests; the additional Wind/Gust theory passes two cases, for 96 focused Play cases across the two runs. Rules and Units source are unchanged; earlier direct Rules/Units suite results remain historical evidence, not new R5 runs.
+
+
+### 11.8 B5-R6 final acceptance and U1 handoff
+
+All six section 9 criteria pass against named evidence in the [B5 acceptance and U1 handoff](ASL%20Turn%20Guide%20B5%20Acceptance%20and%20U1%20Handoff.md). That document publishes the final capability/evidence matrix and links the compiled `HeadlessConsumerBrowsesEveryPhaseAndConfirmsAnOfferedDecision` example. The example browses all eight phases and 538 topics with missing facts visible, uses the owning-side conditional route after separate authorized review, preserves proposal/confirmation authority, observes resolved obligations, rejects the expired route, and proves exact retry and historical read-only behavior. Existing tests supply interruption, cleanup parity, disclosure and durable reload proofs.
+
+At B5-R6 acceptance, B5 was complete for the admitted baseline and U1 became eligible for implementation. Section 12 records the subsequently completed U1 implementation and follow-ups. U1 consumes existing snapshots and action panels, preserves source and pending states, and keeps consideration flags private. It must not calculate legality, resolve obligations from checkboxes, infer missing facts, or create a second phase-close authority. All nine B5-D packages remain deferred and visible; the eventual all-Passes target is unchanged. R6 changes no runtime contracts, journal schemas or profile versions.
+
+**R6 verification:** 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). All 97 focused Play acceptance/regression cases, 49 focused Rules cases and 421 Units cases pass. The consumer example also passes a final targeted rerun after strengthening its pre-proposal revision assertion. Coverage applies to the entire ASL.Turns assembly, not the Play, Rules or Units assemblies.
+
+
+## 12. U1 implementation
+
+U1 now supplies the Reference `/turn-guide` page and a live Turn Phase Guide in Play's Actions pane. See the design's U1 section for the component boundaries, preview mapping, disclosure, asynchronous refresh and command routing. The reference mode and live mode share the same thin renderer. All pending options remain available; private considered marks never affect game state. Historical inputs remain read-only. The existing Studio view selection and proposal/confirmation panels retain authority.
+
+The preview is still the frozen design artifact. The implementation uses shared site styling and responsive checklist/detail columns. Component tests and a real Play-page integration test cover reference completeness, safe host intents and phase-close confirmation. U1 introduces no rule implementation or backend version change.
+
+
+U1 final verification: 22 focused MapStudio component, page, workspace and navigation tests pass. The new tests retain all 538 topics and verify offered actions, historical read-only behavior, private marks, scope changes, stale read suppression, safe errors and normal phase-close confirmation. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Browser inspection verified the shared-theme checklist/detail layout, unclipped rows, selected-state styling and Rally-to-Advancing-Fire navigation. Backend libraries were unchanged.
+
+
+### 12.1 U1 audit acceptance
+
+The [U1 audit](ASL%20Turn%20Guide%20U1%20Audit.md) closes identified display, navigation and refresh gaps without expanding backend rule support. Tests enumerate every dependency link, retain all phase topics, check selection/reminder scoping, render unknown and pending evidence honestly, suppress malformed action requests, and reject stale refresh completions. All nine B5-D packages remain deferred and visible.
+
+Verification: 30 focused MapStudio component, page, workspace and navigation tests pass. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Browser inspection confirms readable attention rows and the expanded cross-phase audit with its source evidence and related topic controls. No backend library source changed.
+
+
+### 12.2 U1 live scenario acceptance
+
+The [live scenario acceptance](ASL%20Turn%20Guide%20Live%20Scenario%20Acceptance.md) continues The Tractor Works on the real board through UI placement, authorized opening review, guided DC proposal/confirmation, resolved obligations and governed phase close. A separate interruption branch rejects stale confirmation and retains Unknown evidence and the close block. All pending rules remain visible.
+
+The Play confirmation revision is the expected revision actually submitted with the command, including routes prepared from newer host evidence. Confirm still re-reads the journal and rejects an intervening change. The live guide follows phase changes while browsing the current phase and preserves deliberate browsing elsewhere. Opening-review authorship remains outside Studio and requires its separate existing permission. No capability, rules contract or ASL.Turns source changes.
+
+Verification: 33 focused MapStudio tests pass, including both real-board scenario cases. The isolated browser rehearsal confirms refusal before detonation, governed detonation, resolved obligation and confirmed advance to Rout. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions).
+
+
+### 12.3 Authorized opening-review workflow
+
+The [opening-review workflow](ASL%20Turn%20Guide%20Opening%20Review%20Workflow.md) completes the live UI path for the admitted Placed DC route. GamePlanner supplies current-state review offers and prepares server-owned timing identities. The form defaults all four opening tasks to Unknown and requires a reason; the existing confirmation panel displays the complete evidence before a governed write. The owner separately confirms detonation and phase close. Pending rules remain visible.
+
+Authorization is supplied by trusted server configuration, disabled by default. Adjudicator view selection alone grants no permission. The reviewer is restricted to the review action; ordinary play permissions remain unchanged. The previous external-only UI limitation is superseded when this host authorization is enabled. Tests use an explicitly authorized test reviewer.
+
+Verification: 43 focused MapStudio tests pass, including all three real-board scenario cases (not skipped). All 45 focused Play tests pass, including review preparation, timing, replay and disclosure acceptance. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). No ASL.Turns or Rules source changed.
+
+
+### 12.4 Full opening-review browser acceptance
+
+The [opening-review browser acceptance](ASL%20Turn%20Guide%20Opening%20Review%20Workflow.md#full-live-browser-acceptance) completes the user-authorized local path: cancel an incomplete proposal, commit a reasoned four-task review, hand over to the owner, refuse premature phase close, confirm guided DC detonation, then confirm Rout. The journal records review at 143, detonation at 144-146 and phase change at 147. BB3 is empty, so this is lifecycle acceptance rather than occupied-target consequence coverage.
+
+The confirmation summary uses full opening-task names, ASOP references and readable evidence labels; the same evidence-only explanation remains accurate after commit. It does not derive legality. Regressions verify mixed task values, a still-blocked close after complete review, and resolved obligations plus pending rules after reopening the game. The eventual all-Passes target and deferred B5-D inventory remain unchanged. Local reviewer authorization remains a server setting with disabled checked-in defaults.
+
+Verification for this follow-up: 44 focused MapStudio tests pass, with no skips; all three real-board scenarios also pass after strengthening the no-write-on-reopen assertion. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Restarting the local server and reloading the browser preserves German Rout, the resolved DC obligation and pending disclosures, with no obsolete review, detonation or confirmation controls. No ASL.Turns, Rules, permission defaults or journal contracts changed.
+
+
+### 12.5 Occupied-target continuation acceptance
+
+[Occupied-target acceptance](ASL%20Turn%20Guide%20Opening%20Review%20Workflow.md#occupied-target-consequences-and-phase-close) covers a K/4 casualty reduction with a failed MC and a separate pending Battle Hardening decision. The existing engine owns casualty lineage, conditions, pending decisions, continuation and DC removal. Phase close remains a separately governed command and cannot bypass the due charge or required answer.
+
+Required live decisions and handover controls precede the guide so reference content cannot bury the next required action. A committed DC receipt must distinguish an unfinished consequence from completed removal, using existing host state. Neither rendering rule adds a capability or changes an obligation. Pending integrations and the eventual all-Passes target remain unchanged.
+
+Occupied-target verification: 65 focused MapStudio tests pass with no skips, including all five real-board guide scenarios and existing pending-choice/handover regressions. All 179 ASL.Turns tests pass at 821/821 lines and 466/466 branches (100%, no exclusions). The browser confirms casualty reduction, failed morale and DM, separately confirmed phase close, and durable replay after restart. The interrupted browser branch declines Battle Hardening after restart; a fresh verification branch accepts it, records replacement by the elite squad, and also closes into Rout. Both continuations record one completed fire resolution and one DC removal. The corrected receipt and priority of required decisions were inspected in the browser. Normal random dice have been restored; the explicitly approved local reviewer remains enabled, with checked-in defaults unchanged.
+
+
+### 12.6 Current-plan closeout
+
+The completed sequence is B0-B5, U1, preview/backend audit, the initial live Placed DC scenario, authorized opening review, full browser review/detonation/close acceptance, and occupied-target casualty and interrupted-consequence acceptance. The latest implementation commit is `1f68e280`; its verification is recorded in section 12.5. There are no additional U stages or required acceptance tasks defined in this plan.
+
+The eventual all-Passes design remains the target. B5-D1 through B5-D9 describe future rule-family admissions, each requiring its own bounded source, facts, command, disclosure and replay evidence. They stay visible in the current UI and are not silently promoted into support by this closeout. Earlier references to a next slice or remaining counts in individual B-stage validation records are historical statements, not the current queue.
+
+
+## 13. Reinstated later Rules passes
+
+The remaining nine packages are explicitly deferred to later ASL.Rules passes. They remain required for the eventual all-Passes design and are now scheduled by the [finite later-pass plan](ASL%20Turn%20Guide%20Later%20Rules%20Implementation%20Plan.md). The user authorizes independent execution and commits. This new scope supersedes section 12.6's no-next-task statement while preserving the completed baseline. Runtime support remains Pending until each specific rule path is evidenced and admitted.
+
+
+### D3.1 acceptance: G10 source and packing rule contracts
+
+The missing-source dependency is resolved by the locally available `eASLRB_v3_14.pdf`, SHA-256 `d2fedd572b5256d35a6ef4a787da72102211b4d595f090bea81a4c7ee107dfee`, physical pages 291-292 (printed G16-G17). Complete page renders were checked against column-ordered extraction. The filename says 3.14; the credits on physical page 5 print Version 3.13, January 2026. Both facts are preserved in `ASL Turn Guide Later Rules Source Register.json`. The PDF is not copied into the repository, and the accepted 3.01 source baseline is not silently replaced.
+
+`TurnPackingRules` defines ordinary G10 participant/weapon/terrain/assembly eligibility, including 76-82mm mortars, other Guns/mortars allowed by a note or DYO, designated squad Mules and the qualified-MMC exception for listed SW. Unknown qualification remains NotEvaluated. It computes the M#-based period, one-Game-Turn minimum, night doubling and G10.7 effective M# 12. G10.11/.32 distinguishes interrupted crew activity from allowed unloaded-Gun handling. The existing lifecycle passes the printed G10.3 example: Turn 2 counts, interruption loses Turn 3, Turns 4-5 finish the period, and release waits for the first RPh of Turn 6. G10.33 reversal uses net elapsed complete Game Turns; involuntary unloading restarts the full ordinary period. The specific reversal formula uses elapsed time directly rather than doubling already elapsed night turns again.
+
+Five packing-related source-review flags are now Reconciled, with execution support still Pending. This certifies the source/contract task only. D3.2 must persist actual Gun/Mule/crew roles, midpoint load state, exact opening evidence and reversal/restart records. D3.3 must integrate movement/transport, prohibited unload terrain, G10.4-.42 vulnerability, cumulative Low Ammo and missing-Mule recovery consequences. D3.4 must prove those paths in replay, disclosure, phase close and the live guide. Existing B5 adjudicated durations and assembly effects remain bounded legacy behavior.
+
+Validation: 43 focused packing/work Rules tests and all 24 Turn Guide component tests pass. The component test proves that reconciled packing sources still show pending execution. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered, without exclusions. Source reconciliation does not promote a packing command, remove any of the nine packages, or hide any of the 538 topics.
+
+
+### D3.2 progress: packing period transitions (2026-10-28)
+
+The Rules layer now has a serializable G10 packing period contract for bound actor identities, exact first/second RPh progression, midpoint load receipts, crew-only interruption, later-turn resume, reversal and full release. The later-rules plan and design record its source, tests and remaining integration boundaries. This is an increment within D3.2; the ledger remains 2/36 complete. Journal events, governed commands, atomic piece effects, disclosure and phase-close integration remain pending. Legacy adjudicated work is unchanged and all nine packages retain Pending support.
+
+
+### D3.2 progress: versioned packing journal (2026-10-28)
+
+A tenant/game-bound JSON codec now replays period entries and preserves actor specifications, work-step origins and causal receipts for interruption, reversal, midpoint and release. Seven new journal tests pass as part of all 428 Units tests; ASL.Turns retains 183 passing tests and 100% line/branch coverage. This format is not yet a live game-event protocol. Actual Horse/Mule actors, source-verified openings, atomic effects and governed commands remain required before admission. The detailed later-rules plan records these boundaries; D3.2 stays In progress and all nine packages stay Pending.
+
+
+### D3.2 progress: Horse/Mule actor foundation (2026-10-28)
+
+Horse counters now have typed setup identities in Units, including explicit unknown size/designation, scenario-rule binding, normal event serialization and protected hidden/concealed views. Vocabulary 1.20.0 preserves earlier minor-version compatibility. Horse-containing setups remain blocked from live play and phase close until transport, vulnerability and packing integration are admitted. The detailed design and later-rules plan retain those requirements. D3.2 is not complete, and all pending options remain visible.
+
+
+### D3.2 progress: disclosed actor facts (2026-10-28)
+
+The Units adapter now reads actual visible actor identities, possession, nationality, status and pinned counter data into Rules-owned packing classification and eligibility. Work-step, terrain, load, SW qualification and unresolved assembly facts remain unknown. Opponent reads cannot distinguish a hidden actor from a missing one. All 446 Units tests, 67 focused Rules tests and 183 ASL.Turns tests pass; ASL.Turns retains 100% line/branch coverage. D3.2 remains In progress, with no new live command or profile admitted.
+
+
+### D3.2 progress: physical Mule load relationships (2026-10-28)
+
+Units now persists and replays a separate `animal-pack` containment role for an actual Gun/SW on a designated squad Mule. Rules checks weapon capability and single-load structure; disclosed reads retain unknown accompaniment, terrain, opening and empty-capacity facts. Loaded setups still cannot enter live play or close the phase. D3.2 remains In progress at 2/36 complete overall. The detailed design and later-rules plan preserve the assembly, work-step, atomic-effect and D3.3 consequence requirements, with all pending rules visible.
+
+Validation: all 457 Units tests pass, including 11 new load cases. All 68 focused packing/work Rules tests and both unloaded/loaded setup-to-guide phase-close tests pass. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered (100%, no exclusions). No live Studio process, ordinary dice or existing game records were changed.
+
+
+### D3.2 progress: restart consequence prerequisite (2026-10-28)
+
+Rules now distinguishes forced-unload full-period recovery from preserved progress for an already-unloaded Pack-TI Gun. The G10.4 table, elimination modifier, terrain/SW Bank exception and cumulative Low Ammo arithmetic have explicit, tested outcomes. Missing facts cannot generate partial effects. Durable casualty/recovery receipts and atomic host effects remain required in D3.2/D3.3; live execution and all nine packages stay Pending. The detailed design records the source examples and remaining gates.
+
+Validation: 102 focused packing/work Rules tests pass, including 34 new vulnerability/recovery cases. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered (100%, no exclusions). Existing pending-inventory regressions still pass. No live host capability, game record, Studio process or dice source was changed.
+
+
+### D3.2 progress: casualty receipt persistence (2026-10-28)
+
+The scoped casualty codec now binds actors and causal casualty/die/effect references, replays Rules-owned outcomes, preserves cumulative or unknown ammunition state, and retains the distinction between full recovery and an existing period. Required persisted facts cannot silently default to false or zero. This remains separate from live game-event admission. Work-step authentication, restart/period integration and D3.3 atomic consequences remain pending, with all nine packages visible and D3.2 still In progress.
+
+Validation: all 464 Units tests pass, including seven new casualty-journal cases. All 107 focused packing/work Rules tests pass, including five new accumulation/terminal-state cases. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered (100%, no exclusions). The existing baseline and pending-inventory regressions remain green. No live game records, Studio process or ordinary dice source was changed.
+
+
+### D3.2 progress: full Unpacking recovery periods (2026-10-28)
+
+The period journal now binds a full recovery start to its prior casualty receipts, same actors/owner, explicit scope and later first-RPh work step. Rules supports a surviving HS Mule or an eliminated Mule, full day/night duration, crew interruption/resumption and release without an invented second unload. Existing-period casualties cannot be used to reset progress. The detailed design retains real host evidence, atomic effects, replacement actors and live acceptance as pending. D3.2 and all nine packages remain incomplete and visible.
+
+Validation: all 468 Units tests and 114 focused packing/work Rules tests pass, including four new recovery-journal cases and seven new Rules recovery cases. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered (100%, no exclusions). Ordinary/legacy packing replay and pending-inventory regressions remain green. No live capability, game record, Studio process or dice source was changed.
+
+
+### D3.2 progress: SW actor qualification (2026-10-28)
+
+The actor adapter now proves same-nationality MMC qualification for MMG, HMG and light-mortar packing from disclosed counter facts. Unknown/foreign-use exceptions and the 37mm INF SW stay pending. The vulnerability contract also preserves the distinction between a Gun's physical CA and SW fire restrictions, avoiding a fictitious random facing for ordinary SW. The detailed design/source register records the correction and remaining limits; no live capability or package is promoted.
+
+Validation: all 473 Units tests and 121 focused packing/work Rules tests pass. New/updated cases cover actual MMC versus SMC roles, same-nationality versus unknown/foreign/hidden facts, SW facing, and the pending 37mm placement path. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered (100%, no exclusions). No live game records, Studio process or ordinary dice were changed.
+
+
+### D3.2 progress: existing-period casualty continuation (2026-10-28)
+
+Rules and scoped replay now preserve an already-unloaded Gun's earned Unpacking progress after G10.41 Mule casualties, including further loss during full recovery. The printed Turn 5 casualty still releases in Turn 6. Casualty evidence binds the exact preceding period state, retains the existing work-step reference, preserves cumulative/unknown ammunition facts and cannot reset progress or substitute actors. Fresh surviving-crew eligibility remains required after a separate crew interruption. The design and later-Rules plan record G10.41/ASOP reconciliation and the remaining live host, terrain, atomic-effect and replacement-Mule requirements. D3.2 remains In progress and all nine packages remain Pending, with 2/36 tasks complete.
+
+Validation: 480 Units tests, 126 focused packing/work Rules tests and 183 ASL.Turns tests pass. ASL.Turns retains 825/825 lines and 470/470 branches (100%, no exclusions). No live game records, Studio process or dice source changed.
+
+
+### D3.2 progress: empty-load and assembly facts (2026-10-28)
+
+Actual-counter reads now prove empty Mule capacity for its owner/adjudicator where the complete inventory and absence of unbound own legacy loads support it. Opponent hidden-load worlds remain indistinguishable. Rules also distinguishes required dismantling from limbering and uses known light-mortar PP without defaulting missing source values. Russian MG subtype exceptions, 37mm SW, common terrain/accompaniment and actual host work-step/effect admission remain pending. The detailed design and source register record these limits; D3.2 stays In progress, the ledger stays 2/36, and all nine packages remain Pending.
+
+Validation: 486 Units, 148 focused packing/work Rules and 183 ASL.Turns tests pass. ASL.Turns retains 825/825 lines and 470/470 branches (100%, no exclusions).
+
+
+### D4.1 complete: source-backed E10 eligibility (2026-10-28)
+
+The next independent Rules contract now covers Ammo Vehicle selection, ordinary 15/20-PP thresholds, exact caliber/barrel compatibility, same/Accessible Locations, all seven D.7 Immobile conditions, and complete one/two-recipient assignments. It keeps missing authorization, hidden or incomplete assignments, posture and weapon facts unknown. Replenishment requires Low Ammo; firing benefit excludes Bounding (First) Fire. The detailed design and source register record the rulebook/ASOP reconciliation. No live command is promoted and existing bounded host/legacy behavior is preserved.
+
+D4.1's contract gate is complete, bringing the finite ledger to 3/36. D4.2-D4.4 still own durable source/assignment binding, dumps, governed effects, automatic ammunition rules and live acceptance. D1.2, D2.1 and D3.2 remain In progress; all nine packages remain Pending and visible. Independent baseline-prerequisite contracts may proceed while another package's host integration remains open.
+
+Validation: 169 focused ammunition/packing/work Rules tests and 183 ASL.Turns tests pass; ASL.Turns retains 825/825 lines and 470/470 branches (100%, no exclusions).

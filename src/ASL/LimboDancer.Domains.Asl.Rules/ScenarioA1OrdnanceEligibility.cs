@@ -91,6 +91,10 @@ public static class ScenarioA1OrdnanceEligibility
         };
     }
 
+    /// <summary>C9.3: existing retained-assignment check, not permission to replace or fire.</summary>
+    public static bool RetainsMortarSpotter(bool active, bool sameSide, bool broken, bool captured) =>
+        active && sameSide && !broken && !captured;
+
     /// <summary>
     /// A light mortar's Spotter and directing leader (C9.3, A7.531; rulings R9.2, R9.4): the Spotter is an active unit of the firer's side, the one
     /// already spotting for the mortar while it is Good Order (<paramref name="keptSpotter"/>), unless it is the firer; the leader is an active leader
@@ -116,10 +120,10 @@ public static class ScenarioA1OrdnanceEligibility
                 return (null, $"play.ordnance-spotter-kept: {keptSpotter} spots for {gun} while it is Good Order (C9.3)");
             }
 
-            // C9.31 EX, A7.352 (table player, pass 9): a unit spots for one mortar a phase; a HS, crew, or SMC that has fired does not spot.
+            // C9.31, A7.352: other mortars must share this Location and target throughout the Player Turn; a non-squad cannot also fire.
             if (unit.SpottedOtherMortar || (!unit.Squad && unit.FiredOrFirstFire && !unit.SpottedThisPhase))
             {
-                return (null, $"play.ordnance-spotter-used: {unit.Id} has spotted for another mortar or fired this phase (C9.31, A7.352)");
+                return (null, $"play.ordnance-spotter-used: {unit.Id} has incompatible mortar use this Player Turn or fired this phase (C9.31, A7.352)");
             }
 
             if (unit.Squad && !unit.SpottedThisPhase && SquadSupportRefusal(unit.Support, phase, false) is { } spotterRefusal)

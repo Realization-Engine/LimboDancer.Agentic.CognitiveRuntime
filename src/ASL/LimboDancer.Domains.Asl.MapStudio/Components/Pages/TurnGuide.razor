@@ -1,0 +1,5 @@
+@page "/turn-guide"
+@using LimboDancer.Domains.Asl.MapStudio.Components.Turns
+<PageTitle>Turn Phase Guide - ASL Map Studio</PageTitle>
+<TurnGuidePanel Phase="@phase" PhaseChanged="value => phase = value" />
+@code { private string phase = "rph"; }

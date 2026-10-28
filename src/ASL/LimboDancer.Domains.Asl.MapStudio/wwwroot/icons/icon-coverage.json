@@ -1365,17 +1365,25 @@
         },
         {
           "kind": "button",
-          "label": "Stop picking",
-          "dynamic": false,
-          "id": "play-picking-stop",
+          "label": "Hand the screen to the @DisplayText.Side(awaitedSide) side",
+          "dynamic": true,
+          "id": "play-waiting-hand-over",
           "status": "needed",
           "strip": "Play"
         },
         {
           "kind": "button",
-          "label": "Hand the screen to the @DisplayText.Side(awaitedSide) side",
-          "dynamic": true,
-          "id": "play-waiting-hand-over",
+          "label": "Turn Phase Guide",
+          "dynamic": false,
+          "id": "play-turn-guide-toggle",
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
+          "label": "Stop picking",
+          "dynamic": false,
+          "id": "play-picking-stop",
           "status": "needed",
           "strip": "Play"
         },
@@ -1401,6 +1409,20 @@
           "id": "propose-remove-concealment",
           "status": "needed",
           "strip": "Play play-remove-concealment"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @WordsAt(guard) Deploys, first HS keeps spotting",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play guard-deploy"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @WordsAt(guard) Deploys, second HS keeps spotting",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "Play guard-deploy"
         },
         {
           "kind": "button",
@@ -3646,6 +3668,121 @@
           "dynamic": false,
           "status": "needed",
           "strip": "RevisionNavigator"
+        }
+      ]
+    },
+    {
+      "name": "LiveTurnGuide",
+      "path": "Components/Turns/LiveTurnGuide.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Refresh guide",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "LiveTurnGuide"
+        }
+      ]
+    },
+    {
+      "name": "TurnDependencyAudit",
+      "path": "Components/Turns/TurnDependencyAudit.razor",
+      "pages": [
+        "/games/play",
+        "/turn-guide"
+      ],
+      "usedBy": [
+        "TurnGuidePanel"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@topic.PhaseId.ToUpperInvariant(): @topic.Title",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "TurnDependencyAudit"
+        }
+      ]
+    },
+    {
+      "name": "TurnGuidePanel",
+      "path": "Components/Turns/TurnGuidePanel.razor",
+      "pages": [
+        "/games/play",
+        "/turn-guide"
+      ],
+      "usedBy": [
+        "LiveTurnGuide",
+        "TurnGuide"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@item.Name",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "TurnGuidePanel"
+        },
+        {
+          "kind": "button",
+          "label": "Show all options",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "TurnGuidePanel"
+        },
+        {
+          "kind": "button",
+          "label": "@option.Topic.Title @option.Topic.Who \u00B7 @(considered.Contains(option.Topic.Id...",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "TurnGuidePanel"
+        },
+        {
+          "kind": "button",
+          "label": "Request governed command check",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "TurnGuidePanel"
+        },
+        {
+          "kind": "button",
+          "label": "@related.PhaseId.ToUpperInvariant(): @related.Title",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "TurnGuidePanel"
+        },
+        {
+          "kind": "button",
+          "label": "Review phase close",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "TurnGuidePanel"
+        }
+      ]
+    },
+    {
+      "name": "TurnOpeningReview",
+      "path": "Components/Turns/TurnOpeningReview.razor",
+      "pages": [
+        "/games/play",
+        "/turn-guide"
+      ],
+      "usedBy": [
+        "TurnGuidePanel"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Propose opening review",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "TurnOpeningReview"
         }
       ]
     },

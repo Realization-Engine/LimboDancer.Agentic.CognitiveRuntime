@@ -289,6 +289,13 @@ public sealed record OrdnanceShot(
         get; init;
     }
 
+    /// <summary>C9.31 Player Turn use validation version; null preserves historical pre-integration replay.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? SpotterUseVersion
+    {
+        get; init;
+    }
+
     /// <summary>The leader who directs a SW's To Hit DR with his leadership modifier (A7.531, C9.2, C13.35; ruling R9.2); null for none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public FireDirector? Director

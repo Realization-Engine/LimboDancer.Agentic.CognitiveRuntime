@@ -383,6 +383,9 @@ public enum ContainmentRole
     /// and attacked only as the vehicle's crew; it leaves again, as itself, when the vehicle is next Abandoned.
     /// </summary>
     Crew,
+
+    /// <summary>A Gun or listed SW physically loaded on a designated squad Mule (G10.2/.7). This is not Personnel possession.</summary>
+    AnimalPack,
 }
 
 /// <summary>Inside another instance; its location is the container's (ASL-UNIT-025).</summary>
@@ -663,7 +666,13 @@ public sealed record EntityInstance(
     string? Side,
     Position Position,
     IReadOnlyDictionary<string, ConditionState> Conditions,
-    InstanceStatus Status) : IGameObject;
+    InstanceStatus Status) : IGameObject
+{
+    public Rules.TurnHorseIdentity? Horse
+    {
+        get; init;
+    }
+}
 
 /// <summary>What a conclusion records about the state it read (ASL-UNIT-041).</summary>
 public sealed record StateStamp(GameScope Scope, long Revision, string MapVersion);

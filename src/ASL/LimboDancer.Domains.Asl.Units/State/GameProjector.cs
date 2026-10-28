@@ -11,7 +11,7 @@ namespace LimboDancer.Domains.Asl.Units.State;
 /// invariants (ASL-UNIT-021 to 026), and every map position against the location chains of the exact board versions
 /// in play (ASL-UNIT-024). The first event that breaks a rule stops the replay; nothing after it is projected.
 /// </summary>
-public static class GameProjector
+public static partial class GameProjector
 {
     public static GameHistory Project(IReadOnlyList<GameEvent> events, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
         ILocationChains? chains = null, IReadOnlyCollection<string>? liveSources = null, IFireRecordVerifier? fire = null,
@@ -59,7 +59,7 @@ public static class GameProjector
     private static int Errors(List<UnitDiagnostic> diagnostics) =>
         diagnostics.Count(diagnostic => diagnostic.Severity == UnitDiagnosticSeverity.Error);
 
-    internal sealed class Replay(UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs, ILocationChains? chains, IReadOnlyCollection<string> liveSources,
+    internal sealed partial class Replay(UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs, ILocationChains? chains, IReadOnlyCollection<string> liveSources,
         IFireRecordVerifier? fireVerifier, IRallyRecordVerifier? rallyVerifier, ICloseCombatRecordVerifier? closeCombatVerifier,
         IOrdnanceRecordVerifier? ordnanceVerifier, List<UnitDiagnostic> diagnostics)
     {
@@ -108,6 +108,29 @@ public static class GameProjector
                 return null;
             }
 
+            if (previous is not null && gameEvent.Payload is InstanceMoved horseMove && previous.Find(horseMove.Id)?.Kind == "asl:horse")
+            {
+                return Fail<GameState>("UNIT-PACK-002", "Horse movement requires the pending A13/G10 transport route; a generic move cannot supply it.");
+            }
+            if (previous is not null && !GameState.IsSetupEvent(gameEvent.Payload)
+                && Rules.TurnHorseRules.PlayIntegrationRefusal(previous.Entities.Any(item => item.Kind == "asl:horse" && item.Status == InstanceStatus.Active)) is { } horsePending)
+            {
+                return Fail<GameState>("UNIT-PACK-003", horsePending);
+            }
+            var packedTarget = gameEvent.Payload switch
+            {
+                EquipmentTransferred transfer => transfer.Id,
+                InstanceMoved move => move.Id,
+                GunTurned turned => turned.Gun,
+                OrdnanceFired fired => fired.Gun,
+                MortarSpotterDesignated declaration => declaration.Gun,
+                MovementStepped movement => movement.PushedGun,
+                _ => null,
+            };
+            if (previous is not null && Rules.TurnWorkEffects.PackedGunBar(packedTarget is not null && previous.PackedGuns.Contains(packedTarget)) is { } packedBar)
+            {
+                return Fail<GameState>("UNIT-WORK-003", packedBar);
+            }
             var next = gameEvent.Payload switch
             {
                 GameStarted started when previous is null => Start(gameEvent, started),
@@ -115,6 +138,9 @@ public static class GameProjector
                 GameStarted => Fail<GameState>("UNIT-STATE-004", "A game starts only once."),
                 _ when previous.Ended is not null => Fail<GameState>("UNIT-STATE-045", "The game has ended (A3.9; ruling R20.1); nothing more happens in it."),
                 GameEnded ended => End(previous, ended),
+                MortarSpotterDesignated designation => DesignateSpotter(previous, designation, gameEvent),
+                PlacedDcWindowReviewed review => RecordPlacedDcWindow(previous, review, gameEvent.Type),
+                TurnWorkRecorded work => RecordTurnWork(previous, work, gameEvent.Type),
                 PhaseChanged phase => ChangePhase(previous, phase),
                 InstanceCreated created => CreateInPlay(previous, created),
                 InstanceMoved moved => Move(previous, moved),
@@ -288,6 +314,14 @@ public static class GameProjector
                 };
             }
 
+            next = next with
+            {
+                TurnPhaseOccurrence = gameEvent.Payload is PhaseChanged or GameStarted
+                    ? new(gameEvent.EventId, gameEvent.Revision, next.Turn, next.PhasingSide, next.Phase) : next.TurnPhaseOccurrence,
+                PlacedDcWindowReview = gameEvent.Payload is PlacedDcWindowReviewed ? next.PlacedDcWindowReview : null,
+            };
+            next = MaintainSpotterLosses(previous, next, gameEvent);
+            next = MaintainTurnWork(previous!, next, gameEvent.Payload);
             next = AssaultWeapons(next, gameEvent.Payload);
             next = KeepMovingStack(next, gameEvent.Payload);
             next = KeepEncirclements(next);
@@ -542,6 +576,21 @@ public static class GameProjector
 
         private GameState? ChangePhase(GameState state, PhaseChanged change)
         {
+            // The work facts of this phase change; Rules decides and words the refusal (E10.3-.4; G10).
+            if (state.TurnWork.Count > 0)
+            {
+                var working = state.TurnWork.Any(item => item.Working);
+                var window = WorkWindow(state);
+                var other = state.Sides.FirstOrDefault(side => side.Id != state.PhasingSide);
+                var inOrder = !working || other is not null && Rules.ScenarioA1SequenceCalculator.NextPhase(state.Phase, state.Turn, state.PhasingSide,
+                    other.Id, state.FirstSide) == (change.Turn, change.Phase, change.PhasingSide);
+                if (Rules.TurnWorkLifecycle.PhaseChangeRefusal(working, state.TurnWork.Any(item => Rules.TurnWorkLifecycle.CompletionDue(item, state.Turn, window)),
+                    inOrder, window, state.Turn, change.Turn, Rules.TurnWorkRules.Window(change.Phase, change.PhasingSide == state.FirstSide)) is { } workRefusal)
+                {
+                    return Fail<GameState>("UNIT-WORK-002", workRefusal);
+                }
+            }
+
             // Pass 32.i: the state is read here, in the old order, and Rules decides and words each check of the phase change.
             if (Rules.ScenarioA1SequenceProjection.TurnRefusal(change.Turn, state.Turn) is { } turnRefusal)
             {
@@ -659,6 +708,7 @@ public static class GameProjector
                     SupportWeaponDirectors = [],
                     PhaseFirers = [],
                     SpottedThisPhase = [],
+                    MortarSpotterUses = newPlayerTurn ? [] : state.MortarSpotterUses,
                     MovedWeapons = newPlayerTurn ? [] : state.MovedWeapons,
                     HazardousMovers = newPlayerTurn ? [] : state.HazardousMovers,
                     // A23.3 (ruling R15.2): a DC Placement lasts its Player Turn.
@@ -673,6 +723,7 @@ public static class GameProjector
                         : Rules.ScenarioA1SequenceProjection.RemovesStarshells(state.Phase) ? [.. state.Entities.Where(entity => !Rules.ScenarioA1SequenceProjection.Starshell(entity.Kind))]
                         : state.Entities, cleared),
                     Turn = change.Turn,
+                    PlayerTurnOrdinal = newPlayerTurn ? state.PlayerTurnOrdinal + 1 : state.PlayerTurnOrdinal,
                     Phase = change.Phase,
                     PhasingSide = change.PhasingSide,
                     FiresThisPhase = [],
@@ -1426,12 +1477,14 @@ public static class GameProjector
             var spotters = state.MortarSpotters;
             if (fired.Facts.TryGetProperty("spotter", out var spotter) && spotter.TryGetProperty("unitId", out var spotterId) && spotterId.GetString() is { } id)
             {
+                var alreadySpotted = state.SpottedThisPhase.Any(item => item.Spotter == id);
                 spotters = [.. spotters.Where(item => item.Gun != fired.Gun), new MortarSpotter(fired.Gun, id)];
                 state = state with
                 {
-                    SpottedThisPhase = [.. state.SpottedThisPhase.Where(item => item.Spotter != id), new MortarSpotter(fired.Gun, id)]
+                    SpottedThisPhase = [.. state.SpottedThisPhase.Where(item => item.Gun != fired.Gun), new MortarSpotter(fired.Gun, id)],
+                    MortarSpotterUses = [.. state.MortarSpotterUses, new(fired.Gun, id, state.Location(fired.Gun)?.Location, fired.Target)]
                 };
-                if (state.Unit(id) is { } spotting)
+                if (!alreadySpotted && state.Unit(id) is { } spotting)
                 {
                     uses = Use(uses, spotting, fired.Gun);
                 }
@@ -2323,6 +2376,11 @@ public static class GameProjector
         private GameState? StepMovement(GameState state, MovementStepped moving)
         {
             var movers = moving.Movers.Select(id => Active(state, id) as UnitInstance).ToArray();
+            if (moving.DcPlacement is { OwnerSide: { } owner } placement &&
+                (string.IsNullOrWhiteSpace(owner) || state.Unit(placement.Unit)?.Side != owner))
+            {
+                return Fail<GameState>("UNIT-STATE-DC-OWNER", "Recorded DC placement owner does not match its placer.");
+            }
 
             // Pass 32.b: the record's fields and the state are read here, and Rules decides (ScenarioA1MovementCalculator.VerifyStepStart and
             // VerifyStepRecord); the SMOKE attempt's check between them is its own calculator's (pass 32.a), made where it was made.
@@ -3490,8 +3548,17 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-041", "A Deployment attempt is a Good Order squad's RPh action, and its NTC agrees with its DR (A1.31).");
             }
 
+            if (deployment.SpotterHalf is { } selected
+                && Rules.TurnSpotterLossRules.DeploymentChoiceRefusal(state.MortarSpotters.Any(item => item.Spotter == squad.Id
+                    && !state.MortarSpotterLosses.Any(loss => loss.Gun == item.Gun && loss.Spotter == item.Spotter)), selected) is { } refusal)
+            {
+                return Fail<GameState>("UNIT-SPOTTER-SUCCESSION", refusal);
+            }
             return state with
             {
+                SpotterDeploymentChoices = deployment is { Passed: true, SpotterHalf: { } choice }
+                    ? new Dictionary<string, string>(state.SpotterDeploymentChoices, StringComparer.Ordinal) { [squad.Id] = choice }
+                    : state.SpotterDeploymentChoices,
                 RallyPhaseActions = [.. state.RallyPhaseActions, squad.Id, .. deployment.Leader is { } directing ? [directing] : Array.Empty<string>()],
             };
         }
@@ -3895,6 +3962,19 @@ public static class GameProjector
                 return null;
             }
 
+            if (instance.Kind == "asl:horse" || instance.Horse is not null)
+            {
+                if (instance.Kind != "asl:horse" || state.SetupClosed || instance.Side is null || instance.Position is not MapPosition
+                    || instance.Definition is not null || instance.Holding is not null || instance.ArmorLeader is not null || instance.CrewOf is not null || instance.Group is not null)
+                {
+                    return Fail<GameState>("UNIT-PACK-001", "Horse identities belong to own on-map Horse counters during setup; unit/vehicle roles and OB-group integration remain unsupported.");
+                }
+                if (Rules.TurnHorseRules.SetupRefusal(instance.Horse, instance.Horse?.DesignationRule is { } rule && state.SpecialRules.Contains(rule, StringComparer.Ordinal)) is { } horseRefusal)
+                {
+                    return Fail<GameState>("UNIT-PACK-001", horseRefusal);
+                }
+            }
+
             // D3.4, D3.41, D3.45 (pass 55, rulings R55.15, R55.18): a vehicle, and nothing else, may set up with an Armor Leader of a listed grade;
             // Rules decides. D3.43 (pass 65, ruling R65.20): a crew counter that left its vehicle carries him, dormant, until it re-crews; a Carrier's HS is
             // its crew (D6.82).
@@ -3957,7 +4037,7 @@ public static class GameProjector
             {
                 return state with
                 {
-                    Entities = [.. state.Entities, new EntityInstance(instance.Id, instance.Kind, instance.Side, position, instance.Conditions, InstanceStatus.Active)]
+                    Entities = [.. state.Entities, new EntityInstance(instance.Id, instance.Kind, instance.Side, position, instance.Conditions, InstanceStatus.Active) { Horse = instance.Horse }]
                 };
             }
 
@@ -4486,8 +4566,26 @@ public static class GameProjector
                 return Fail<GameState>(sizeRefusal.Code, sizeRefusal.Text);
             }
 
+            if (lineage.SpotterSuccessor is { } spotterSuccessor
+                && (lineage.Action != LineageAction.Deployed || consumed.Count != 1
+                    || lineage.Produced.Count(item => item.Id == spotterSuccessor) != 1
+                    || !Rules.TurnSpotterLossRules.DeploymentSuccessorValid(
+                        state.MortarSpotters.Any(item => item.Spotter == consumed[0].Id
+                            && !state.MortarSpotterLosses.Any(loss => loss.Gun == item.Gun && loss.Spotter == item.Spotter)),
+                        GameState.GoodOrder(consumed[0], vocabulary) == ConditionState.True,
+                        state.SpotterDeploymentChoices.GetValueOrDefault(consumed[0].Id), spotterSuccessor,
+                        [.. lineage.Produced.Select(item => item.Id)],
+                        state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Custodian == consumed[0].Id))))
+            {
+                return Fail<GameState>("UNIT-SPOTTER-SUCCESSION", "Deployment names one produced HS to retain an active Good Order Spotter assignment (A1.31; C9.3).");
+            }
+
             var ids = consumed.Select(unit => unit.Id).ToArray();
-            var next = state;
+            var next = state with
+            {
+                SpotterDeploymentChoices = state.SpotterDeploymentChoices.Where(item => !ids.Contains(item.Key, StringComparer.Ordinal))
+                    .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal),
+            };
 
             // A10.6 (backlog pass 15): a unit Replaced or Reduced by its own Rally attempt has attempted to rally this Player Turn.
             if (ids.Any(id => state.RallyAttemptsThisPlayerTurn.Contains(id, StringComparer.Ordinal)))
@@ -4828,7 +4926,7 @@ public static class GameProjector
         /// once its placer leaves the Placement Location or ends its move neither broken, pinned, captured, nor eliminated; a placer so affected first keeps
         /// its DC. A DC no longer in play is gone. Every Placement ends with its Player Turn's CCPh.
         /// </summary>
-        private static GameState KeepPlacedCharges(GameState next, EventPayload payload)
+        private GameState KeepPlacedCharges(GameState next, EventPayload payload)
         {
             var charges = next.PlacedCharges;
             if (payload is MovementStepped { DcPlacement: { } placed } step)
@@ -4837,6 +4935,9 @@ public static class GameProjector
                 {
                     // A23.5 (pass 60): the AFVs' Target Facings as Placed; none from a record made before the pass.
                     Facings = placed.Facings,
+                    OriginEventId = eventId,
+                    OwnerSide = placed.OwnerSide,
+                    OriginGameTurn = next.Turn,
                 }];
             }
 
@@ -5171,7 +5272,12 @@ public static class GameProjector
                 if (item.Position is ContainedPosition contained)
                 {
                     var container = state.Find(contained.Container);
-                    var needs = contained.Role == ContainmentRole.InFortification ? "asl:fortification" : "asl:vehicle";
+                    var needs = contained.Role switch
+                    {
+                        ContainmentRole.InFortification => "asl:fortification",
+                        ContainmentRole.AnimalPack => "asl:horse",
+                        _ => "asl:vehicle"
+                    };
                     if (container is null || container.Status != InstanceStatus.Active)
                     {
                         Error("UNIT-STATE-011", $"'{item.Id}' is in '{contained.Container}', which is not active in the game.");
@@ -5179,6 +5285,10 @@ public static class GameProjector
                     else if (!vocabulary.IsA(container.Kind, needs))
                     {
                         Error("UNIT-STATE-011", $"'{item.Id}' is {contained.Role} in a {container.Kind}, which is not a {needs}.");
+                    }
+                    else if (contained.Role == ContainmentRole.AnimalPack)
+                    {
+                        CheckAnimalPack(state, item, container);
                     }
                     else if (InCycle(state, item.Id))
                     {
@@ -5219,6 +5329,30 @@ public static class GameProjector
                         Error("UNIT-STATE-014", $"'{prisoner.Id}' and its custodian '{custodian.Id}' are in different Locations (A20.5, p. 87).");
                     }
                 }
+            }
+        }
+
+        private void CheckAnimalPack(GameState state, IGameObject item, IGameObject container)
+        {
+            if (state.SetupClosed || item is not EquipmentInstance equipment)
+            {
+                Error("UNIT-PACK-004", "Animal-Pack containment is an equipment setup assertion; live loading remains pending.");
+                return;
+            }
+            var definition = equipment.Definition is { } reference
+                ? catalogs.FirstOrDefault(source => source.Identity == reference.Catalog
+                    && (source.Publication == CatalogPublication.Published || state.Synthetic && source.Publication == CatalogPublication.Synthetic))?.Definition(reference.Definition) : null;
+            var weapon = definition is null ? Rules.TurnPackingWeapon.Unknown : Rules.TurnPackingRules.ClassifyWeapon(equipment.Kind,
+                definition.Printed("front", "asl:gun-type") is { State: PrintedState.Printed } type ? type.Value?.Text : null,
+                definition.Printed("front", "asl:caliber") is { State: PrintedState.Printed } caliber ? caliber.Value?.Number : null,
+                definition.Printed("front", "asl:size") is { State: PrintedState.Printed } size ? size.Value?.Text : null);
+            var note = definition?.Printed("front", "asl:animal-pack") is { State: PrintedState.Printed, TraitPresent: true };
+            var soleLoad = state.Objects.Count(other => other.Status == InstanceStatus.Active
+                && other.Position is ContainedPosition { Role: ContainmentRole.AnimalPack } load && load.Container == container.Id) == 1;
+            if (Rules.TurnPackingRules.LoadRefusal(weapon, note, (container as EntityInstance)?.Horse, soleLoad,
+                item.Side is not null && item.Side == container.Side, equipment.Holding is not null) is { } refusal)
+            {
+                Error("UNIT-PACK-004", refusal);
             }
         }
 

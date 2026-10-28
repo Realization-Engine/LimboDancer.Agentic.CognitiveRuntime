@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text;
+using ASL.Turns;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
@@ -19,7 +21,7 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 /// underscored Morale Factors, Green MMC, a hero's MG, a hero created concealed, and a berserk unit's kept SW. A board 01 grid of Open Ground, fixed dice,
 /// and a clear LOS everywhere.
 /// </summary>
-public sealed class BacklogPass15Tests : IDisposable
+public sealed partial class BacklogPass15Tests : IDisposable
 {
     private static readonly Guid Tenant = Guid.Parse("7b1d2c3e-0000-4000-8000-00000000f515");
     private static readonly GameScope Scope = new(Tenant, "pass15");
@@ -329,6 +331,15 @@ public sealed class BacklogPass15Tests : IDisposable
         Assert.True(Is(Current.Unit("g1")!, Conditions.PrepFire));
     }
 
+    private async Task<TurnHostGuide> ReadCopiedDcHistory(IReadOnlyList<GameEvent> events, Perspective perspective)
+    {
+        var copied = new FileGameStore(Path.Combine(root, Guid.NewGuid().ToString("N")));
+        var planner = new GamePlanner(copied, new InMemoryBoardCatalog([Board()]), Vocabulary, [Catalog], fireLos: new ClearLos());
+        Assert.Equal(AppendStatus.Committed, copied.Append(Scope, "B5 replay", 0, events, planner.Replay).Status);
+        Assert.Equal(AppendStatus.Replay, copied.Append(Scope, "B5 replay", 0, events, planner.Replay).Status);
+        return await planner.ReadTurnGuideProfileAsync(Scope, perspective, "afph", "existing-engine-dc-v1");
+    }
+
     [Fact]
     public async Task APlacedDcIsOperableOnceItsPlacerMovesOnAndDetonatesInTheAfph()
     {
@@ -343,6 +354,59 @@ public sealed class BacklogPass15Tests : IDisposable
             placeDcAt = L("E4"),
         }));
         Assert.False(Current.PlacedCharges.Single().Operable);
+        var placementRevision = Revision;
+        var initial = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", "existing-engine-dc-v1");
+        Assert.Equal(TurnObligationState.Scheduled, Assert.Single(initial.Obligations).State);
+        Assert.Equal(TurnSupport.IntegratedSubset, Assert.Single(initial.Obligations).CommandSupport);
+        Assert.Equal(114, initial.Guide.Options.Length);
+        var placementEvent = store.Read(Scope)!.Events.Single(item => item.Payload is MovementStepped { DcPlacement: not null });
+        var placementStep = (MovementStepped)placementEvent.Payload;
+        Assert.Equal("german", placementStep.DcPlacement!.OwnerSide);
+        var serialized = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(serialized)).Record!;
+        Assert.False(Planner().Replay(loaded.Events).HasErrors);
+        Assert.Equal(serialized, GameEventWriter.Write(Scope, loaded));
+        var legacy = loaded.Events.Select(item => item.EventId == placementEvent.EventId ? item with
+        {
+            Payload = placementStep with
+            {
+                DcPlacement = placementStep.DcPlacement with
+                {
+                    OwnerSide = null
+                }
+            }
+        } : item).ToArray();
+        Assert.False(Planner().Replay(legacy).HasErrors);
+        var legacyGuide = await ReadCopiedDcHistory(legacy, Perspective.Side("german"));
+        Assert.Equal(TurnObligationState.NotEvaluated, Assert.Single(legacyGuide.Obligations).State);
+        Assert.Empty(legacyGuide.Actions);
+        Assert.Equal(TurnSupport.Pending, Assert.Single(legacyGuide.Obligations).CommandSupport);
+        var interrupted = placementEvent with
+        {
+            EventId = "pin-before-operable",
+            Revision = placementRevision + 1,
+            Type = "conditions-changed",
+            Payload = new ConditionsChanged("g1", new Dictionary<string, ConditionState> { [Conditions.Pinned] = ConditionState.True }),
+        };
+        var interruptedGuide = await ReadCopiedDcHistory([.. loaded.Events, interrupted], Perspective.Side("german"));
+        Assert.Equal(TurnObligationState.Interrupted, Assert.Single(interruptedGuide.Obligations).State);
+        Assert.Empty(interruptedGuide.Actions);
+        var invalidOwner = legacy.Select(item => item.EventId == placementEvent.EventId ? item with
+        {
+            Payload = placementStep with
+            {
+                DcPlacement = placementStep.DcPlacement with
+                {
+                    OwnerSide = "russian"
+                }
+            }
+        } : item).ToArray();
+        Assert.True(Planner().Replay(invalidOwner).HasErrors);
+        var baseline = await Planner().ReadTurnGuideAsync(Scope, Perspective.Side("german"), "mph");
+        Assert.Equal(TurnSupport.Pending, Assert.Single(baseline.Obligations).CommandSupport);
+        var enemy = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("russian"), "mph", "existing-engine-dc-v1");
+        Assert.Empty(enemy.Obligations);
+        await Assert.ThrowsAsync<ArgumentException>(() => Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "mph", "all-asl"));
         Committed(await Do(GameActions.PassFire, NoRoll(), new
         {
         }));
@@ -356,6 +420,9 @@ public sealed class BacklogPass15Tests : IDisposable
         // The AFPh does not end before the DC detonates (A23.4).
         await Advance(2);
         Assert.Equal("afph", Current.Phase);
+        var due = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "afph", "existing-engine-dc-v1");
+        Assert.Equal(TurnObligationState.Due, Assert.Single(due.Obligations).State);
+        Assert.Equal(TurnCloseDisposition.Blocked, due.PhaseClose.Disposition);
         Refused(await Do(GameActions.AdvancePhase, NoRoll(), new
         {
         }), "play.dc-detonate-pending");
@@ -369,6 +436,22 @@ public sealed class BacklogPass15Tests : IDisposable
         Assert.DoesNotContain(arithmetic.Drm, item => item.Name == "advancing-fire");
         Assert.Equal(InstanceStatus.Eliminated, Current.Find("dc")!.Status);
         Assert.Empty(Current.PlacedCharges);
+        var completed = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "afph", "existing-engine-dc-v1");
+        Assert.Equal(TurnObligationState.Resolved, Assert.Single(completed.Obligations).State);
+        var recordedFire = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "afph", "existing-engine-fire-v1")).FireHistory!;
+        Assert.Equal(TurnFireKind.Fire, Assert.Single(recordedFire.Shots).Kind);
+        Assert.Null(Assert.Single(recordedFire.Shots).RateOfFireKept);
+        Assert.Empty(recordedFire.Spotters);
+        var ownCompleted = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "afph", "existing-engine-dc-v1");
+        Assert.Equal(TurnObligationState.Resolved, Assert.Single(ownCompleted.Obligations).State);
+        var diskReload = await ReadCopiedDcHistory(store.Read(Scope)!.Events, Perspective.Adjudicator);
+        Assert.Equal(TurnObligationState.Resolved, Assert.Single(diskReload.Obligations).State);
+        var revision = Revision;
+        Assert.Equal(JsonSerializer.Serialize(completed), JsonSerializer.Serialize(await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "afph", "existing-engine-dc-v1")));
+        Assert.Equal(revision, Revision);
+        var past = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", "existing-engine-dc-v1", placementRevision);
+        Assert.Equal(TurnObligationState.Scheduled, Assert.Single(past.Obligations).State);
+        Assert.Equal(TurnCloseDisposition.ReadOnly, past.PhaseClose.Disposition);
         await Advance();
     }
 

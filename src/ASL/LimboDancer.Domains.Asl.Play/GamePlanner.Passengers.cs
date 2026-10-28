@@ -24,10 +24,10 @@ public sealed partial class GamePlanner
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(vehicle);
         var definition = VehicleDefinition(vehicle);
-        return ScenarioA1PassengerCalculator.PassengerCapacity(ScenarioA1CarrierRules.PassengerCapacity(definition?.VehicleClass, definition?.PassengerCapacity,
+        return TurnWorkEffects.PassengerCapacity(ScenarioA1PassengerCalculator.PassengerCapacity(ScenarioA1CarrierRules.PassengerCapacity(definition?.VehicleClass, definition?.PassengerCapacity,
                 definition?.MainArmament, definition?.Caliber, definition?.AntiAircraftMg),
             state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id)
-                .Select(gun => gun.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Caliber : null));
+                .Select(gun => gun.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Caliber : null)), state.TurnAmmoSupplies.Any(supply => supply.Available && supply.Vehicle == vehicle.Id));
     }
 
     /// <summary>Whether a Carrier's inherent HS is aboard and may unload as its Passengers do (D6.83; pass 65, ruling R65.18); Rules decides.</summary>

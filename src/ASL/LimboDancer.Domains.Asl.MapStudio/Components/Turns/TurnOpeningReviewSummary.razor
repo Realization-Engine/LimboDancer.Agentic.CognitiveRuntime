@@ -1,0 +1,21 @@
+@using LimboDancer.Domains.Asl.Rules
+<div class="turn-review-summary">
+    <p>Opening review for @Review.Charge (@Review.Owner)</p>
+    <ul>
+        <li>Drifting SMOKE (5.11B): @Label(Review.Opening.Drift)</li>
+        <li>Opening Dispersed WP (5.12A): @Label(Review.Opening.Wp)</li>
+        <li>Gusts and SMOKE (5.13A): @Label(Review.Opening.Gusts)</li>
+        <li>Glider contents (5.21A): @Label(Review.Opening.Gliders)</li>
+    </ul>
+    <p>@Review.RuleBasis</p>
+    <p>Pending rules remain pending. This review records evidence only. Return to the owning side for a separate detonation proposal.</p>
+</div>
+@code {
+    [Parameter, EditorRequired] public TurnPlacedDcReview Review { get; set; } = null!;
+    private static string Label(TurnOpeningEvidence evidence) => evidence switch
+    {
+        TurnOpeningEvidence.Resolved => "Resolved",
+        TurnOpeningEvidence.NotApplicable => "Not applicable",
+        _ => "Unknown"
+    };
+}

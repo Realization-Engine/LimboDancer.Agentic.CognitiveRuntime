@@ -52,6 +52,10 @@ public static class GameEventWriter
         writer.WriteString("time", item.Time.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fffffff'Z'", CultureInfo.InvariantCulture));
         writer.WriteString("source", item.Source);
         writer.WriteString("type", item.Type);
+        if (item.GuidedDecisionHash is { } digest)
+        {
+            writer.WriteString("guidedDecisionHash", digest);
+        }
         if (item.RulePackage is not null)
         {
             writer.WriteString("rulePackage", item.RulePackage);
@@ -81,6 +85,22 @@ public static class GameEventWriter
     {
         switch (payload)
         {
+            case MortarSpotterDesignated designation:
+                writer.WriteString("gun", designation.Gun);
+                writer.WriteString("spotter", designation.Spotter);
+                break;
+            case PlacedDcWindowReviewed review:
+                foreach (var property in JsonSerializer.SerializeToElement(review, JsonSerializerOptions.Web).EnumerateObject())
+                {
+                    property.WriteTo(writer);
+                }
+                break;
+            case TurnWorkRecorded work:
+                foreach (var property in JsonSerializer.SerializeToElement(work, JsonSerializerOptions.Web).EnumerateObject())
+                {
+                    property.WriteTo(writer);
+                }
+                break;
             case GameStarted started:
                 writer.WriteStartArray("sides");
                 foreach (var side in started.Sides)
@@ -286,6 +306,10 @@ public static class GameEventWriter
                 break;
             case LineageRecorded lineage:
                 writer.WriteString("action", lineage.Action.ToString().ToLowerInvariant());
+                if (lineage.SpotterSuccessor is { } successor)
+                {
+                    writer.WriteString("spotterSuccessor", successor);
+                }
                 Strings(writer, "consumed", lineage.Consumed);
                 writer.WriteStartArray("produced");
                 foreach (var produced in lineage.Produced)
@@ -510,6 +534,10 @@ public static class GameEventWriter
                 if (moving.DcPlacement is { } placement)
                 {
                     writer.WriteString("dcBy", placement.Unit);
+                    if (placement.OwnerSide is { } ownerSide)
+                    {
+                        writer.WriteString("dcOwnerSide", ownerSide);
+                    }
                     writer.WriteString("dc", placement.Charge);
                     writer.WriteString("dcAt", placement.Target.ToString());
                     if (placement.Cx)
@@ -948,6 +976,10 @@ public static class GameEventWriter
                 break;
             case DeploymentAttempted deployment:
                 writer.WriteString("squad", deployment.Squad);
+                if (deployment.SpotterHalf is { } spotterHalf)
+                {
+                    writer.WriteString("spotterHalf", spotterHalf);
+                }
                 if (deployment.Leader is { } deployLeader)
                 {
                     writer.WriteString("leader", deployLeader);
@@ -1303,6 +1335,12 @@ public static class GameEventWriter
         WriteHolding(writer, instance.Holding);
         WriteConditions(writer, instance.Conditions);
 
+        if (instance.Horse is { } horse)
+        {
+            writer.WritePropertyName("horse");
+            JsonSerializer.Serialize(writer, horse, JsonSerializerOptions.Web);
+        }
+
         // Pass 55 (ruling R55.15): a vehicle's Armor Leader; whether he is revealed is the state's, never the record's.
         if (instance.ArmorLeader is { } armorLeader)
         {
@@ -1346,6 +1384,7 @@ public static class GameEventWriter
                     ContainmentRole.Passenger => "passenger",
                     ContainmentRole.Rider => "rider",
                     ContainmentRole.Crew => "crew",
+                    ContainmentRole.AnimalPack => "animal-pack",
                     _ => "in-fortification",
                 });
                 break;

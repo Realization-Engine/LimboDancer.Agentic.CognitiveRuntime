@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ASL.Turns</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../LimboDancer.Domains.Asl.Rules/LimboDancer.Domains.Asl.Rules.csproj" />
+    <EmbeddedResource Include="../docs/Turn.Guide/ASL Turn Capability Inventory.json" LogicalName="ASL.Turns.Inventory.json" />
+    <EmbeddedResource Include="../docs/Turn.Guide/ASL Turn Timing Schema.json" LogicalName="ASL.Turns.Timing.json" />
+    <EmbeddedResource Include="../docs/Turn.Guide/*Checklist Catalog.json" LogicalName="ASL.Turns.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../docs/Turn.Guide/ASL Cross-Phase Dependency Catalog.json" LogicalName="ASL.Turns.Dependencies.json" />
+  </ItemGroup>
+</Project>

@@ -35,6 +35,23 @@ public sealed record GameState(
     IReadOnlyList<EquipmentInstance> Equipment,
     IReadOnlyList<EntityInstance> Entities)
 {
+    /// <summary>Player Turn ordinal since this journal began, independent of its initial Game Turn number.</summary>
+    public int PlayerTurnOrdinal { get; init; } = 1;
+
+    public Rules.TurnPhaseOccurrence? TurnPhaseOccurrence
+    {
+        get; init;
+    }
+    public Rules.TurnPlacedDcReview? PlacedDcWindowReview
+    {
+        get; init;
+    }
+    public IReadOnlyList<Rules.TurnLiveWork> TurnWork { get; init; } = [];
+    public IReadOnlyList<string> TurnWorkRolls { get; init; } = [];
+    public IReadOnlyList<TurnAmmoSupply> TurnAmmoSupplies { get; init; } = [];
+    public IReadOnlyList<string> LowAmmoVehicles { get; init; } = [];
+    public IReadOnlyList<string> PackedGuns { get; init; } = [];
+
     /// <summary>The SSRs in force, as <c>game-started</c> named them; empty means none.</summary>
     public IReadOnlyList<string> SpecialRules { get; init; } = [];
 
@@ -171,7 +188,16 @@ public sealed record GameState(
     public IReadOnlyList<string> SmokeAttempts { get; init; } = [];
 
     /// <summary>Each light mortar's Spotter (C9.3; ruling R9.4): the unit that spots for it until it is broken, eliminated, or captured.</summary>
+    /// <summary>Successful new Deployment choices awaiting their lineage consequence.</summary>
+    public IReadOnlyDictionary<string, string> SpotterDeploymentChoices { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
     public IReadOnlyList<MortarSpotter> MortarSpotters { get; init; } = [];
+
+    /// <summary>Losses of observed assignments, retained across phase changes and rally; not proof of original designation.</summary>
+    public IReadOnlyList<MortarSpotterLoss> MortarSpotterLosses { get; init; } = [];
+    public IReadOnlyList<MortarSpotterSuccessor> MortarSpotterSuccessors { get; init; } = [];
+    public IReadOnlyList<MortarSpotterUse> MortarSpotterUses { get; init; } = [];
+    public IReadOnlyList<MortarSpotterDesignation> MortarSpotterDesignations { get; init; } = [];
 
     /// <summary>The PF shots each side has taken this scenario (C13.31; ruling R9.7), by side id.</summary>
     public IReadOnlyDictionary<string, int> PanzerfaustShots { get; init; } = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -549,6 +575,19 @@ public sealed record GameState(
 /// </summary>
 public sealed record PlacedCharge(string Charge, string Unit, BoardLocation From, BoardLocation Target, bool Cx, bool TargetsConcealed, bool Operable)
 {
+    public string? OriginEventId
+    {
+        get; init;
+    }
+    public string? OwnerSide
+    {
+        get; init;
+    }
+    public int OriginGameTurn
+    {
+        get; init;
+    }
+
     /// <summary>The Target Facings of each enemy AFV there as the DC was Placed (A23.5; pass 60); null from a record made before the pass.</summary>
     public IReadOnlyList<DcTargetFacing>? Facings
     {

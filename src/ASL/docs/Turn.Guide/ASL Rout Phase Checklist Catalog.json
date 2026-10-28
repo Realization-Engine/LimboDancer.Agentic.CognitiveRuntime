@@ -1,0 +1,1920 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "edition": "eASLRB v3.01",
+    "file": "E:/RPG/Dennis-Landi-Games/Squad Leader Apocalypse/References/AdvancedSquadLeader/wgv-2025-08-07_06-00am/eASLRB_v3_01.pdf",
+    "sha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+    "pageNumbering": "Physical PDF pages, one-based",
+    "reconciled": "2026-10-26",
+    "scope": "All four printed RtPh ASOP steps and identified supplemental in-volume rules. Scenario, module and equipment profiles require their own reconciliation.",
+    "asopPdfPages": [
+      680
+    ]
+  },
+  "groups": [
+    "Phase ownership and obligation review",
+    "6.11B · Opening break and DM decisions",
+    "6.12B · Disrupted surrender first",
+    "6.21B · Decide who routes and with what",
+    "6.21B · Select destination and route",
+    "6.21B · Interdiction and enemy responses",
+    "6.21B · Surrender and capture consequences",
+    "6.21B · Hazards and route-linked effects",
+    "6.21B · Special rout procedures",
+    "6.31B · End-of-phase Blaze deadline",
+    "Supplemental terrain, protection and status"
+  ],
+  "options": [
+    {
+      "id": "handoff",
+      "g": 0,
+      "title": "Separate required rout, permission and surrender",
+      "who": "BOTH",
+      "kind": "Phase handoff",
+      "refs": "A3.6; A10.5-.62; A19.12; A20.21",
+      "sourcePages": [
+        680,
+        47,
+        66,
+        67,
+        68,
+        86,
+        87
+      ],
+      "terms": [
+        "RtPh",
+        "DM",
+        "Surrender",
+        "Interdiction"
+      ],
+      "prompt": "Who must act, who may stay, and whose decision comes next?",
+      "checks": [
+        "ATTACKER routs first, then DEFENDER. Ordinary routs are one unit at a time; leader accompaniment and prisoner movement use their explicit exceptions.",
+        "Evaluate must-rout, may-rout, destination, Interdiction and surrender separately. Each uses different enemy status, range and knowledge conditions.",
+        "Carry forward Blaze, DM, Disruption, weapons, wounds and scenario profiles. Optional consideration cannot close a required route or result."
+      ],
+      "effect": "Show a side-owned queue with reasons, distinct from a list of optional topics.",
+      "example": "A DM unit in safe cover may stay; another unit must leave; a third must surrender.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "knowledge",
+      "g": 0,
+      "title": "Preserve each router’s own enemy knowledge",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.51; A10.533; A12.15",
+      "sourcePages": [
+        680,
+        66,
+        67,
+        68,
+        87
+      ],
+      "terms": [
+        "Known enemy",
+        "LOS",
+        "HIP",
+        "ADJACENT"
+      ],
+      "prompt": "Which enemies constrain this unit’s route?",
+      "checks": [
+        "Do not use hidden/concealed enemy state to reject a reference route or expose a private threat. Use lawful Known status for the specific router.",
+        "Remember armed enemies seen earlier during this rout even after LOS is lost. A newly Known enemy can require a new destination.",
+        "Preserve A20.21’s distinct test involving possible unconcealed Interdictors, even if not Known to the router. Adjudicate without leaking hidden identities."
+      ],
+      "effect": "Propose a viewer-safe threat record and explicit re-evaluation points rather than a misleading universally safe route.",
+      "example": "Turning a corner does not erase the armed enemy the router already saw.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "voluntaryBreak",
+      "g": 1,
+      "title": "Consider voluntary breaking before anyone routs",
+      "who": "BOTH",
+      "kind": "Optional opening choice",
+      "refs": "A10.41; B25.4",
+      "sourcePages": [
+        680,
+        66,
+        143
+      ],
+      "terms": [
+        "Voluntary Break",
+        "DM",
+        "LOS",
+        "Known enemy"
+      ],
+      "prompt": "Would an eligible voluntary break enable escape?",
+      "checks": [
+        "At phase start, require the specified armed unbroken Known enemy ground unit within LOS/Normal Range, or ADJACENCY to an unbroken enemy ground unit.",
+        "Pin does not itself bar this choice, but breaking must not immediately Reduce or eliminate the unit. Apply explicit Blaze provisions separately.",
+        "Record broken/DM state and reevaluate rout and surrender. Voluntary Break is not a guaranteed escape or an option offered midway through an ordinary rout."
+      ],
+      "effect": "Preview the resulting obligations before the player commits.",
+      "example": "A pinned eligible Infantry unit can break now, but its destination still needs a legal route.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.11B",
+      "steps": [
+        "6.11B"
+      ]
+    },
+    {
+      "id": "dm",
+      "g": 1,
+      "title": "Apply required Desperation Morale",
+      "who": "BOTH",
+      "kind": "Required status update",
+      "refs": "A10.62",
+      "sourcePages": [
+        680,
+        68,
+        224
+      ],
+      "terms": [
+        "DM",
+        "Open Ground",
+        "ADJACENT",
+        "Blaze"
+      ],
+      "prompt": "Which broken units must acquire DM now?",
+      "checks": [
+        "Check Known armed enemy ADJACENCY, the start-of-RtPh Open Ground/LOS/Normal Range condition and terrain Blaze, with applicable special profiles.",
+        "DM grants ordinary rout permission but does not alone require departure. Non-DM safe broken units do not receive free ordinary routs.",
+        "Do not remove DM at this phase’s close. Night retention and later Rally have their own rules."
+      ],
+      "effect": "Display the triggering condition and separate it from the must-rout verdict.",
+      "example": "A broken squad in a building can be DM yet have no duty to leave.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.11B",
+      "steps": [
+        "6.11B"
+      ]
+    },
+    {
+      "id": "disruptedOpening",
+      "g": 2,
+      "title": "Resolve Disrupted units’ opening surrender",
+      "who": "BOTH",
+      "kind": "Conditional opening obligation",
+      "refs": "A19.12; A20.3; E1.54",
+      "sourcePages": [
+        680,
+        86,
+        87,
+        224
+      ],
+      "terms": [
+        "Disrupted",
+        "Surrender",
+        "No Quarter",
+        "Known enemy"
+      ],
+      "prompt": "Does this Disrupted unit have a qualifying captor?",
+      "checks": [
+        "Check the start-of-RtPh ADJACENT Good Order armed Known enemy Personnel not in Melee condition; same-Location surrender also has its own immediate rule.",
+        "Resolve applicable opening surrenders before ordinary routs. Legal escape routes do not ordinarily exempt a Disrupted unit.",
+        "Apply No Quarter and night exceptions, then reevaluate restricted rout permission rather than treating Disrupted as ordinary broken."
+      ],
+      "effect": "Queue a compulsory decision with the eligible captor response.",
+      "example": "A Disrupted squad can surrender despite having a route to nearby woods.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.12B",
+      "steps": [
+        "6.12B"
+      ]
+    },
+    {
+      "id": "interrogationOpening",
+      "g": 2,
+      "title": "Resolve applicable Interrogation after opening capture",
+      "who": "Captor and prisoner owner",
+      "kind": "Conditional result chain",
+      "refs": "E2.1-.3",
+      "sourcePages": [
+        680,
+        228
+      ],
+      "terms": [
+        "Interrogation",
+        "HIP",
+        "SSR"
+      ],
+      "prompt": "Is Interrogation in use, and has this prisoner already been checked?",
+      "checks": [
+        "When E2 applies, the captor makes the immediate roll for each captured unit; never repeat it for the same prisoner merely because no benefit resulted.",
+        "Apply prisoner/Guard modifiers, substitutions for unavailable results and the LOS/eight-hex disclosure limits.",
+        "Let the interrogated player resolve qualifying ties and disclose only the required information."
+      ],
+      "effect": "Attach an optional-rule obligation to the actual capture, not a generic reveal button.",
+      "example": "A capture can reveal limited information, but not the opponent’s entire hidden setup.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 6.12B",
+      "steps": [
+        "6.12B"
+      ]
+    },
+    {
+      "id": "mustRout",
+      "g": 3,
+      "title": "Identify compulsory departure",
+      "who": "Routing side",
+      "kind": "Required eligibility review",
+      "refs": "A10.5; B25.4",
+      "sourcePages": [
+        680,
+        66,
+        68,
+        143,
+        151,
+        224
+      ],
+      "terms": [
+        "Open Ground",
+        "Known enemy",
+        "ADJACENT",
+        "Failure to Rout"
+      ],
+      "prompt": "May this broken unit remain where it is?",
+      "checks": [
+        "Test the same Open Ground hex in LOS/Normal Range of a Known non-Melee enemy, and same-Location/ADJACENT armed unbroken Known enemy conditions separately.",
+        "A leader without SW still counts as armed for legal rout paths and Failure to Rout, even though it cannot Interdict alone.",
+        "Check Melee, night, pillbox and Blaze provisions before deciding the result. Surrender can replace an ordinary rout."
+      ],
+      "effect": "State the precise reason departure is compulsory rather than marking every broken unit mandatory.",
+      "example": "An adjacent unarmed prisoner and an adjacent armed leader have different effects.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "optionalRout",
+      "g": 3,
+      "title": "Choose whether an otherwise safe DM unit routes",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.5; A10.62",
+      "sourcePages": [
+        680,
+        66,
+        67,
+        68
+      ],
+      "terms": [
+        "DM",
+        "RtPh",
+        "MF"
+      ],
+      "prompt": "Would moving toward future rally help this unit?",
+      "checks": [
+        "An ordinarily eligible broken unit under DM may rout even when not required. A safe unit without DM normally cannot.",
+        "Once begun, its rout follows normal destination, enemy and stopping rules. It is not free movement toward any leader.",
+        "Staying is a valid optional choice; do not treat a marked topic as having moved the unit."
+      ],
+      "effect": "Separate “remain” from resolving a compulsory route.",
+      "example": "A safe DM squad chooses to stay in cover rather than undertake a constrained rout.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "disruptedRout",
+      "g": 3,
+      "title": "Apply Disrupted rout limits and exceptions",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A19.12; A20.3; E1.54",
+      "sourcePages": [
+        680,
+        86,
+        87,
+        224
+      ],
+      "terms": [
+        "Disrupted",
+        "Low Crawl",
+        "No Quarter"
+      ],
+      "prompt": "Can this Disrupted unit rout at all?",
+      "checks": [
+        "Use A19.12’s listed Blaze, Open Ground, Water Obstacle and adjacent in-Melee/berserk/vehicle cases; do not offer unrestricted voluntary rout.",
+        "Ordinary daytime Disrupted units cannot Low Crawl. Apply A20.3 No Quarter and E1.54 night exceptions explicitly.",
+        "Preserve Disruption until rally or capture; routing does not cure it."
+      ],
+      "effect": "Show the specific exception rather than one blanket “Disrupted cannot move” rule.",
+      "example": "An adjacent vehicle can require a Disrupted unit to rout even though it cannot receive surrender.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "budget",
+      "g": 3,
+      "title": "Establish the actual rout MF allowance",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.5; A17.2; E4.31; G14.41",
+      "sourcePages": [
+        680,
+        66,
+        85,
+        232,
+        315
+      ],
+      "terms": [
+        "MF",
+        "Wound",
+        "Skis",
+        "Seaborne Evacuation"
+      ],
+      "prompt": "What budget applies to this subject?",
+      "checks": [
+        "Ordinary broken units, including Conscripts, receive six MF; wounded SMC normally receive three. Do not add ordinary leader, road or Double Time bonuses.",
+        "Track MF already spent and apply explicit exceptions: skiing downhill and evacuation loading have their own rules.",
+        "No fresh budget is awarded after a result, destination change or failed route proposal."
+      ],
+      "effect": "Show starting allowance, expenditures and remaining allowance independently.",
+      "example": "A wounded leader cannot assume the squad’s six-MF budget.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "load",
+      "g": 3,
+      "title": "Choose the required legal SW load before routing",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.4; A17.2",
+      "sourcePages": [
+        680,
+        66,
+        69,
+        85
+      ],
+      "terms": [
+        "SW",
+        "IPC",
+        "PP"
+      ],
+      "prompt": "Which weapons must stay with the unit and which must be abandoned?",
+      "checks": [
+        "Before routing abandon excess over IPC. If several SW exceed capacity, choose a combination exactly at IPC, or the highest total below IPC when exact is impossible.",
+        "Carry required weapons within capacity; do not discard a legal load merely for convenience. Once routing starts, no Recovery or Abandonment is permitted.",
+        "Wounded SMC IPC and an accompanying leader’s separate load remain distinct. A leader cannot increase the broken unit’s portage capacity."
+      ],
+      "effect": "Offer legal load combinations and commit them before the first rout step.",
+      "example": "A squad leaves an overweight HMG, while a lighter legal SW load must accompany it.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "recovery",
+      "g": 3,
+      "title": "Offer an eligible SMC the triggered Recovery attempt",
+      "who": "Eligible SMC owner",
+      "kind": "Triggered optional response",
+      "refs": "A4.44",
+      "sourcePages": [
+        680,
+        50,
+        66,
+        69
+      ],
+      "terms": [
+        "SW",
+        "SMC",
+        "Good Order"
+      ],
+      "prompt": "Has rout, surrender or elimination just left equipment behind?",
+      "checks": [
+        "An eligible Infantry SMC in the Location can immediately attempt the specified Recovery when the unit surrenders, is eliminated or routes away unable to carry its SW.",
+        "Check unpinned Good Order, non-Bypass, enemy and terrain restrictions, then the proper Recovery dr/modifiers.",
+        "This does not permit the routing unit to Recover mid-route or grant arbitrary RtPh equipment transfers."
+      ],
+      "effect": "Attach the separate SMC response to the equipment-drop event.",
+      "example": "A leader staying behind may attempt to Recover the HMG its broken squad cannot carry.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "leader",
+      "g": 3,
+      "title": "Choose an eligible leader to accompany the rout",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.711; A17.2",
+      "sourcePages": [
+        680,
+        69,
+        85
+      ],
+      "terms": [
+        "Voluntary Rout",
+        "Interdiction",
+        "SW",
+        "Wound"
+      ],
+      "prompt": "Is accompaniment worth the leader’s risk?",
+      "checks": [
+        "Require a non-berserk, non-pinned leader already stacked with the broken unit before it routes. It must remain with that unit throughout RtPh.",
+        "It adds applicable leadership to Interdiction NMC but makes no separate Interdiction NMC; if its accompanied unit fails that MC, the leader is eliminated.",
+        "It remains unbroken, carries only its own prior SW, and cannot improve the broken unit’s IPC. Check its own wounded movement limit."
+      ],
+      "effect": "Preview both the leadership benefit and elimination risk before attaching it.",
+      "example": "An 8-1 accompanies a squad but shares the severe consequence of a failed Interdiction check.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "prisoners",
+      "g": 3,
+      "title": "Move prisoners with a routing Guard",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A20.5-.53",
+      "sourcePages": [
+        680,
+        87
+      ],
+      "terms": [
+        "Guard",
+        "Surrender",
+        "US#"
+      ],
+      "prompt": "Does this router have prisoners?",
+      "checks": [
+        "Guarded prisoners accompany a Guard that routes; they do not independently rout or constrain enemy rout as armed units.",
+        "Retain Guard identity/capacity and relevant restrictions. Do not add a free RtPh prisoner abandonment or transfer action.",
+        "If a Guard is lost, resolve the specified reassignment or unguarded status rather than silently deleting the prisoners."
+      ],
+      "effect": "Treat this as an explicit accompaniment exception, not an ordinary multi-unit rout stack.",
+      "example": "A routing Guard brings its prisoners while retaining the required relationship.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "destination",
+      "g": 4,
+      "title": "Designate the nearest eligible destination",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.51",
+      "sourcePages": [
+        680,
+        66,
+        67
+      ],
+      "terms": [
+        "MF",
+        "Known enemy",
+        "LOS"
+      ],
+      "prompt": "Which building or woods destination is required?",
+      "checks": [
+        "At the start of this unit’s rout calculate nearest in MF, not hex distance, and designate a legal building/woods destination even if overstacked.",
+        "Remove non-traversable paths and apply the option not to use known minefields/FFE. Resolve permitted ignored destinations explicitly.",
+        "Do not force the exact shortest route if the destination can still be reached this RtPh; preserve enemy and terrain restrictions."
+      ],
+      "effect": "Show candidate costs, ties and reasons a nearer candidate may be ignored.",
+      "example": "A three-hex route can be nearer in MF than a two-hex uphill route.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "ignore",
+      "g": 4,
+      "title": "Choose permitted destinations to ignore",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.51 EXC",
+      "sourcePages": [
+        680,
+        67,
+        69,
+        137
+      ],
+      "terms": [
+        "Known enemy",
+        "MF",
+        "RtPh"
+      ],
+      "prompt": "May this building or woods hex be ignored?",
+      "checks": [
+        "A unit in a building may ignore its starting building under the rule, including when a destination is refigured; rowhouses use their special building identity.",
+        "A building/woods hex no farther from a Known enemy than the starting hex may also be ignored, even when the route passes through it.",
+        "Record the player’s lawful choice and reason. Do not silently remove all dangerous-looking destinations."
+      ],
+      "effect": "Make optional exclusions visible before route selection.",
+      "example": "The router may leave its own building rather than automatically going upstairs.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "noCover",
+      "g": 4,
+      "title": "Choose a legal route when no required cover is reachable",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.51",
+      "sourcePages": [
+        680,
+        67
+      ],
+      "terms": [
+        "MF",
+        "Low Crawl",
+        "Known enemy"
+      ],
+      "prompt": "Is any non-ignorable building/woods reachable this RtPh?",
+      "checks": [
+        "If none is reachable, the unit may rout to any terrain consistent with the remaining restrictions; it need not head toward the nearest unreachable cover.",
+        "Do not confuse this exception with Low Crawl’s destination-direction rules or with insufficient MF caused by an arbitrary detour.",
+        "Surrender and end-position tests still apply."
+      ],
+      "effect": "Explain why the destination search ended without a compulsory cover hex.",
+      "example": "All qualifying cover is beyond this unit’s legal budget, so other legal destinations become choices.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "direction",
+      "g": 4,
+      "title": "Apply enemy-distance and ADJACENCY restrictions per step",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.51; D6.1",
+      "sourcePages": [
+        680,
+        66,
+        67,
+        205
+      ],
+      "terms": [
+        "Known enemy",
+        "ADJACENT",
+        "LOS"
+      ],
+      "prompt": "Does the next step violate a particular enemy restriction?",
+      "checks": [
+        "Do not decrease range to a Known armed enemy while in its LOS, or after leaving that LOS during this rout, even if that enemy is broken or Disrupted; preserve the Passenger exception.",
+        "Do not move ADJACENT to a Known enemy except when leaving its Location. If already ADJACENT to an armed Known enemy, do not remain ADJACENT to that same enemy by routing.",
+        "Test exact Locations, vertical relationships and source exceptions instead of a generic circle of forbidden hexes."
+      ],
+      "effect": "Identify the lawful, viewer-visible reason for each restriction.",
+      "example": "A broken enemy can constrain direction although it cannot Interdict.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "lowCrawl",
+      "g": 4,
+      "title": "Compare Low Crawl with an ordinary rout",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.52; A20.21; E1.54",
+      "sourcePages": [
+        680,
+        67,
+        87,
+        224
+      ],
+      "terms": [
+        "Low Crawl",
+        "Interdiction",
+        "MF",
+        "Surrender"
+      ],
+      "prompt": "Is one Location without Interdiction a legal alternative?",
+      "checks": [
+        "Ordinarily Low Crawl spends the whole allowance for one Location and still obeys destination direction and enemy restrictions.",
+        "It cannot ordinarily enter marsh, a Water Obstacle or a non-dry stream, or leave an enemy-occupied Location. Apply night exceptions explicitly.",
+        "It prevents Interdiction, not FFE or mines, and may still require surrender under A20.21. Do not present it as a universal escape."
+      ],
+      "effect": "Show avoided Interdiction separately from hazards and surrender eligibility.",
+      "example": "A path offering only Low Crawl can still lead to compulsory daytime surrender to an eligible adjacent enemy.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "refigure",
+      "g": 4,
+      "title": "Refigure after a newly Known enemy blocks the destination",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.51; A10.533",
+      "sourcePages": [
+        680,
+        66,
+        67,
+        68
+      ],
+      "terms": [
+        "Known enemy",
+        "MF",
+        "LOS"
+      ],
+      "prompt": "Has new lawful information prevented the designated route?",
+      "checks": [
+        "Recalculate the destination from the current point when a newly Known enemy prevents the original one.",
+        "Preserve MF expenditure and remembered enemy constraints; do not restart the rout.",
+        "Resolve the event that changed knowledge before accepting the next route step."
+      ],
+      "effect": "Invalidate only affected choices and show why a new destination is required.",
+      "example": "An enemy revealed around a corner changes the remaining route, not the allowance already spent.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "stop",
+      "g": 4,
+      "title": "Check whether the rout must stop or can continue",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.51",
+      "sourcePages": [
+        680,
+        66,
+        67
+      ],
+      "terms": [
+        "RtPh",
+        "ADJACENT",
+        "MF"
+      ],
+      "prompt": "Has the unit reached a valid stopping Location?",
+      "checks": [
+        "On reaching building/woods not ADJACENT to a Known enemy, normally stop, even if overstacked.",
+        "Use the explicit continuation permission when the next entered hex is another building/woods Location, and preserve ignored-destination rules.",
+        "Complete endpoint, surrender and Failure-to-Rout checks before ending this unit’s rout. Ending one rout is not ending the side’s RtPh."
+      ],
+      "effect": "Show “end this rout” separately from remaining unit obligations.",
+      "example": "A unit reaching woods cannot continue through an open gap merely because it has spare MF.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "openGround",
+      "g": 5,
+      "title": "Determine Open Ground relative to each potential Interdictor",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.531; B1.13-.17",
+      "sourcePages": [
+        680,
+        67,
+        113,
+        146,
+        147
+      ],
+      "terms": [
+        "Open Ground",
+        "TEM",
+        "LOS",
+        "SMOKE"
+      ],
+      "prompt": "Could this enemy apply hypothetical FFMO here?",
+      "checks": [
+        "Use the actual protection, elevation, hexside, SMOKE and Hindrance relationship, not the base terrain name.",
+        "Shellhole/fortification protection depends on the announced entry expenditure. Make that choice before Interdiction is claimed.",
+        "No actual Defensive First Fire occurs in RtPh. A hypothetical fire test does not open a shot window."
+      ],
+      "effect": "Show which protection prevents Interdiction for each evaluated enemy without revealing hidden units.",
+      "example": "A bare hill hex may still be protected from a lower enemy by Height Advantage.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "interdictor",
+      "g": 5,
+      "title": "Check who can Interdict",
+      "who": "Enemy side",
+      "kind": "Eligibility review",
+      "refs": "A10.532; A20.52",
+      "sourcePages": [
+        680,
+        67,
+        68,
+        87
+      ],
+      "terms": [
+        "Interdiction",
+        "FP",
+        "CA",
+        "BU"
+      ],
+      "prompt": "Is this enemy capable of the required hypothetical fire?",
+      "checks": [
+        "Require unbroken status, at least one FP, no applicable Hindrance and range within both Normal Range and 16 hexes.",
+        "Check functioning weapon, CA and positive penalties, Pin, CX, Encirclement, Melee, Spotted Fire and halved FP with the mortar exception. A leader without SW cannot Interdict.",
+        "Vehicle BU/Stun/CA and Guard restrictions matter. Previously exhausting actual fire does not by itself prevent Interdiction."
+      ],
+      "effect": "Keep fire capability for Interdiction distinct from remaining actual shots.",
+      "example": "A spent but otherwise eligible squad can Interdict; a CX squad cannot.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "interdiction",
+      "g": 5,
+      "title": "Resolve the one applicable Interdiction NMC",
+      "who": "BOTH",
+      "kind": "Required result",
+      "refs": "A10.53; A10.3; A17.11",
+      "sourcePages": [
+        680,
+        66,
+        67,
+        69,
+        85
+      ],
+      "terms": [
+        "Interdiction",
+        "NMC",
+        "Wound",
+        "MF"
+      ],
+      "prompt": "Does this entered hex require a check?",
+      "checks": [
+        "For a qualifying non-Low-Crawl route, resolve one Interdiction NMC per Open Ground hex entered, not one per enemy claiming it.",
+        "Failure causes Casualty Reduction; a surviving HS continues as allowed. An original 12 for a broken unit eliminates it. Apply SMC wound severity and leader accompaniment consequences.",
+        "A pin stops further rout; check remaining enemy ADJACENCY and Failure to Rout. Do not apply the check to stationary co-occupants."
+      ],
+      "effect": "Resolve the result and revised subject before offering another step.",
+      "example": "Several eligible enemies still cause only one Interdiction check in that entered hex.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "reveal",
+      "g": 5,
+      "title": "Consider voluntary concealment loss during a rout",
+      "who": "Enemy side",
+      "kind": "Optional response",
+      "refs": "A10.533; A12.14",
+      "sourcePages": [
+        680,
+        68,
+        76
+      ],
+      "terms": [
+        "HIP",
+        "Known enemy",
+        "Interdiction"
+      ],
+      "prompt": "Should a concealed enemy become Known at this window?",
+      "checks": [
+        "An eligible concealment-loss choice can establish Interdiction or force a route change. Preserve its exact timing.",
+        "Do not retrospectively eliminate a unit based on information revealed after the completed route’s legal window; apply the next-unit/phase-close timing in A10.533.",
+        "Keep the enemy decision private until its lawful disclosure."
+      ],
+      "effect": "Provide a distinct opposing-player response rather than revealing enemies automatically to simplify routing.",
+      "example": "Revealing before the next rout begins can require a still-exposed unit to continue.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "repulse",
+      "g": 5,
+      "title": "Resolve entry into a concealed enemy Location",
+      "who": "BOTH",
+      "kind": "Required encounter",
+      "refs": "A10.533; A12.15",
+      "sourcePages": [
+        680,
+        68,
+        79,
+        87
+      ],
+      "terms": [
+        "Known enemy",
+        "HIP",
+        "Failure to Rout"
+      ],
+      "prompt": "Did the attempted entry meet an unrevealed non-Dummy unit?",
+      "checks": [
+        "Resolve required reveal by Random Selection and repulse to the last occupied hex. Do not pre-reject the route with hidden knowledge.",
+        "The unit ends its rout there and the prescribed surrender/Failure-to-Rout consequences apply, with relevant exceptions.",
+        "This forced reveal is distinct from voluntary surrender acceptance and does not itself invoke No Quarter."
+      ],
+      "effect": "Show the actual reveal, repulse and adjudicated outcome as one event chain.",
+      "example": "A seemingly valid destination can reveal an enemy only when entry triggers the rule.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "surrender",
+      "g": 6,
+      "title": "Determine compulsory ordinary RtPh surrender",
+      "who": "BOTH",
+      "kind": "Conditional obligation",
+      "refs": "A20.21; A10.53",
+      "sourcePages": [
+        680,
+        86,
+        87
+      ],
+      "terms": [
+        "Surrender",
+        "Low Crawl",
+        "Interdiction",
+        "ADJACENT"
+      ],
+      "prompt": "Is there a qualifying adjacent captor and no qualifying escape?",
+      "checks": [
+        "Check Known Good Order armed enemy Infantry/Cavalry ADJACENT to the broken Infantry.",
+        "If unable to rout away, or able only by Interdiction exposure or Low Crawl, surrender may be mandatory regardless of the chosen route or whether a possible unconcealed Interdictor is Known.",
+        "Apply Pin and other explicit exceptions. Disrupted, Encircled and HOB-surrender cases have additional rules even with a safe route."
+      ],
+      "effect": "Evaluate surrender before presenting a false choice of safe Low Crawl.",
+      "example": "A broken squad cannot choose Low Crawl merely to evade an otherwise mandatory surrender.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "exempt",
+      "g": 6,
+      "title": "Apply surrender exemptions and ineligible captors",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A20.21; A10.8; E1.54",
+      "sourcePages": [
+        680,
+        69,
+        87,
+        224
+      ],
+      "terms": [
+        "Surrender",
+        "No Quarter",
+        "Disrupted"
+      ],
+      "prompt": "Does this unit or enemy profile change capture?",
+      "checks": [
+        "Partisans, Gurkhas, Commissars, SS facing Russians, Fanatics, Japanese and units faced with No Quarter do not surrender by this method.",
+        "If only adjacent armed enemies are vehicles, berserk or in Melee, route away as required, even if Disrupted, or apply Failure to Rout; that elimination does not invoke No Quarter.",
+        "At night E1.54 replaces ordinary RtPh surrender. Do not turn a source-profile gap into an assumed exemption."
+      ],
+      "effect": "Explain exactly which exemption or captor condition applies.",
+      "example": "A vehicle can prevent a legal stay without being a recipient of RtPh surrender.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "accept",
+      "g": 6,
+      "title": "Choose the captor and accept or reject the surrender",
+      "who": "Captor",
+      "kind": "Required capture decision",
+      "refs": "A20.21; A20.3",
+      "sourcePages": [
+        680,
+        87
+      ],
+      "terms": [
+        "Surrender",
+        "Guard",
+        "No Quarter"
+      ],
+      "prompt": "Which eligible unit receives this surrender, and is it accepted?",
+      "checks": [
+        "The captor chooses among qualifying receiving units. A stack surrenders simultaneously and must be accepted or rejected as a stack.",
+        "Rejection at capture eliminates the surrendering subjects and invokes the specified side’s No Quarter consequences; the opposite side’s acceptance ability is unchanged.",
+        "Do not silently choose rejection or process a group as independent accept/reject choices."
+      ],
+      "effect": "Switch decision ownership to the captor with explicit consequences.",
+      "example": "The routing player does not choose the enemy Guard or rejection policy.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "capture",
+      "g": 6,
+      "title": "Assign Guards, abandon SW and resolve excess prisoners",
+      "who": "Captor and routing side",
+      "kind": "Required capture results",
+      "refs": "A20.21; A20.24; A20.5-.53",
+      "sourcePages": [
+        680,
+        50,
+        87
+      ],
+      "terms": [
+        "Guard",
+        "SW",
+        "US#",
+        "Surrender"
+      ],
+      "prompt": "What changes when surrender is accepted?",
+      "checks": [
+        "Abandon SW first, with any eligible separate Recovery response. The captor does not automatically possess the equipment.",
+        "Assign unarmed identity and Guard capacity. Excess prisoners are freed as Unarmed as prescribed; preserve crew/SMC records and victory accounting.",
+        "Surrendering units are not subjected to FFE or minefield attacks during the transfer. Do not run an ordinary rout hazard pipeline on capture movement."
+      ],
+      "effect": "Apply capture as a distinct state transition with equipment and Guard consequences.",
+      "example": "An accepted stack can exceed available guarding capacity without becoming extra eliminated units.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "interrogation",
+      "g": 6,
+      "title": "Resolve applicable Interrogation on later capture",
+      "who": "Captor and prisoner owner",
+      "kind": "Conditional result chain",
+      "refs": "E2.1-.3",
+      "sourcePages": [
+        680,
+        228
+      ],
+      "terms": [
+        "Interrogation",
+        "HIP",
+        "Guard"
+      ],
+      "prompt": "Did a capture during routing create an E2 obligation?",
+      "checks": [
+        "If the optional Interrogation rules apply, roll immediately for each captured Personnel unit, once per prisoner.",
+        "Use the same modifier, range/LOS, substitute-result and disclosure rules as for an opening capture.",
+        "Do not omit this because the opening surrender queue has already been completed."
+      ],
+      "effect": "Attach Interrogation to the capture event wherever it occurs.",
+      "example": "A later surrender produces the same conditional interrogation procedure.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "failure",
+      "g": 6,
+      "title": "Resolve Failure to Rout at the proper point",
+      "who": "BOTH",
+      "kind": "Conditional required result",
+      "refs": "A10.5; A10.51-.53; A20.21; E1.54",
+      "sourcePages": [
+        680,
+        66,
+        67,
+        68,
+        87,
+        224
+      ],
+      "terms": [
+        "Failure to Rout",
+        "Surrender",
+        "ADJACENT"
+      ],
+      "prompt": "Can this unit complete its required legal departure?",
+      "checks": [
+        "Check the actual route/endpoint and any pin or repulse consequence. Do not eliminate a safe optional non-router merely for having no attractive route.",
+        "Apply surrender before substituting elimination where required, and preserve unit/nationality and night exceptions.",
+        "Distinguish Failure to Rout from casualty elimination, rejected surrender and the separate terrain-Blaze deadline."
+      ],
+      "effect": "Show the unresolved requirement and exact governing outcome.",
+      "example": "A unit pinned adjacent during Interdiction may have a different immediate outcome from a safe unit that simply stops.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "mines",
+      "g": 7,
+      "title": "Resolve minefield entry and exit attacks",
+      "who": "BOTH",
+      "kind": "Required hazard resolution",
+      "refs": "B28.41-.413",
+      "sourcePages": [
+        680,
+        148
+      ],
+      "terms": [
+        "MF",
+        "MC",
+        "Interdiction"
+      ],
+      "prompt": "Does this step enter or leave a minefield?",
+      "checks": [
+        "Resolve the appropriate attack against only the routing subjects. On exit, resolve in the original hex before entry into the next one.",
+        "A failed exit can prevent the next entry and its effects. A reduced surviving HS may continue as permitted.",
+        "Mines resolve before applicable Interdiction. Low Crawl does not provide general mine immunity; known A-P minefields can be avoided under the route rules."
+      ],
+      "effect": "Show exit and entry as separate hazard events with their actual Locations.",
+      "example": "Crossing between two mined hexes may cause two attacks, but only if the exit succeeds.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "ffe",
+      "g": 7,
+      "title": "Resolve existing FFE against routing subjects",
+      "who": "BOTH",
+      "kind": "Required hazard resolution",
+      "refs": "C1.51-.54; A10.51-.52",
+      "sourcePages": [
+        680,
+        67,
+        165,
+        166
+      ],
+      "terms": [
+        "FFE",
+        "WP",
+        "MC",
+        "Low Crawl"
+      ],
+      "prompt": "Has this subject entered a Blast Area or become more vulnerable?",
+      "checks": [
+        "Existing HE/WP FFE can attack qualifying entry or increased vulnerability, including within a hex. Resolve only the routing unit/stack, not stationary occupants or terrain.",
+        "Use current mission profile, protection, critical-hit and friendly-FFE effects. C1.51 limits FFMO/FFNAM to MPh, so do not apply them to RtPh attacks.",
+        "FFE does not Interdict. Low Crawl is not FFE immunity, and rout does not advance the mission’s phase counter or allow new Contact/Access."
+      ],
+      "effect": "Keep attack triggers separate from both Interdiction and normal artillery-phase resolution.",
+      "example": "A router entering an FFE is attacked while a stationary unit in the same hex is not attacked by that entry event.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "specialFfe",
+      "g": 7,
+      "title": "Use the actual SMOKE, rocket, Barrage or NOBA profile",
+      "who": "BOTH",
+      "kind": "Conditional hazard profile",
+      "refs": "C1.71-.72; C1.9; E12.5; G14.65-.661",
+      "sourcePages": [
+        680,
+        166,
+        167,
+        247,
+        317,
+        318
+      ],
+      "terms": [
+        "FFE",
+        "WP",
+        "SSR"
+      ],
+      "prompt": "Which existing mission rules affect this route?",
+      "checks": [
+        "Apply WP/SMOKE, rocket, Barrage and naval profile differences rather than treating every overlay as generic HE.",
+        "Retain the profile’s blast area, immunity, Reverse Slope and other target conditions. Ordinary Smoke affects movement/LOS; it does not become a generic damage attack.",
+        "No new mission adjustment or terrain-wide damage is created by the routing event."
+      ],
+      "effect": "Keep all ASOP-named mission families visible even without an integrated evaluator.",
+      "example": "A route across a naval Blast Area uses its specific protection rules.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "panji",
+      "g": 7,
+      "title": "Resolve Panji entry and movement beneath it",
+      "who": "BOTH",
+      "kind": "Required hazard resolution",
+      "refs": "G9.31; G9.41-.45; G9.5-.6",
+      "sourcePages": [
+        680,
+        289,
+        290
+      ],
+      "terms": [
+        "Panji",
+        "Low Crawl",
+        "MC",
+        "Interdiction"
+      ],
+      "prompt": "Did the route cross a Covered hexside?",
+      "checks": [
+        "Apply the Panji MC and listed exceptions, including Low Crawl and qualifying trench/subterranean entry. Resolve it before Interdiction.",
+        "Preserve above/below status, extra MF to move beneath and exit restrictions. A broken unit may avoid a Covered hexside placing it above when an alternate legal path exists.",
+        "Do not replace Panji MC with Interdiction or assume a passed MC automatically places the unit beneath the obstacle."
+      ],
+      "effect": "Show hazard and position as separate consequences.",
+      "example": "A survivor above the Panji counter may need another expenditure before it can leave.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "flare",
+      "g": 7,
+      "title": "Check trip flare activation and duration",
+      "who": "Flare owner and routing side",
+      "kind": "Conditional required trigger",
+      "refs": "E1.95-.953",
+      "sourcePages": [
+        680,
+        227
+      ],
+      "terms": [
+        "Trip Flare",
+        "NVR",
+        "MF"
+      ],
+      "prompt": "Does this entry or expenditure trigger a hidden trip flare?",
+      "checks": [
+        "Check all qualifying ground-unit/stack entries and expenditures, including friendly units, with passage and action exceptions.",
+        "Resolve the activation dr, depletion and illumination at the triggering event. Do not reveal untriggered hidden flare placement in a route preview.",
+        "A RtPh activation uses the purple-on-white side and lasts until the next Player Turn’s AFPh cleanup."
+      ],
+      "effect": "Schedule illumination and its future removal separately.",
+      "example": "A flare triggered now does not disappear at the end of the current CCPh.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "column",
+      "g": 7,
+      "title": "Check Column Disbandment as routing proceeds",
+      "who": "BOTH",
+      "kind": "Conditional formation result",
+      "refs": "E11.53-.536",
+      "sourcePages": [
+        680,
+        246
+      ],
+      "terms": [
+        "Column",
+        "MF",
+        "FFE"
+      ],
+      "prompt": "Did this expenditure or attack trigger Disbandment?",
+      "checks": [
+        "Outside MPh, check after attacks and as each routing unit expends MF, not only at phase end.",
+        "Apply actual proximity, OBA, minefield/wire and other Column conditions. Do not infer Column status from a line of units.",
+        "Resolve prescribed concealment loss, DEFENDER Pin and wagon Motion effects where applicable."
+      ],
+      "effect": "Attach the formation consequence to the triggering route event.",
+      "example": "A nearby rout expenditure can force a Column review before the next step.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "night",
+      "g": 8,
+      "title": "Use the night Rout procedure",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "E1.54",
+      "sourcePages": [
+        680,
+        224,
+        143,
+        203
+      ],
+      "terms": [
+        "NVR",
+        "Low Crawl",
+        "DM",
+        "Failure to Rout"
+      ],
+      "prompt": "Is E1.54 governing this unit?",
+      "checks": [
+        "Broken units use Low Crawl at night and are not eliminated for Failure to Rout. Ordinary RtPh capture/surrender is unavailable, even for Disrupted units.",
+        "Night Low Crawl is always available to broken units, including the listed enemy-Location, marsh, fording and tunnel exceptions; no specific terrain destination is required, but Known-enemy direction restrictions remain.",
+        "Broken Inherent Crews still spend their entire RtPh exiting the vehicle. Do not let night’s Failure-to-Rout exemption erase the separate Blaze deadline."
+      ],
+      "effect": "Switch the explanation to the night profile instead of accumulating misleading daytime warnings.",
+      "example": "A Disrupted unit at night can have a Low Crawl choice that is unavailable in ordinary daylight.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "skis",
+      "g": 8,
+      "title": "Choose ski mode and use its explicit rout rules",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "E4.2; E4.31-.33",
+      "sourcePages": [
+        680,
+        231,
+        232
+      ],
+      "terms": [
+        "Skis",
+        "MF",
+        "Low Crawl"
+      ],
+      "prompt": "Should this unit don or remove skis?",
+      "checks": [
+        "Eligible routing units may change mode: removing skis has no MF cost; donning normally costs two MF, one for Finnish Infantry. Apply Pin/TI restrictions.",
+        "Skiers must first remove skis to Low Crawl. Use the correct snow/terrain movement profile.",
+        "The downhill two-MF-per-Crest-Line bonus can exceed normal broken/wounded limits under E4.31; do not suppress this explicit exception with a universal six-MF cap."
+      ],
+      "effect": "Show mode, change cost and downhill allowance separately.",
+      "example": "A Finnish router can have different preparation cost and a specific downhill bonus.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "evacuation",
+      "g": 8,
+      "title": "Consider routing onto an evacuation LC or amphibian",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "G14.41-.42",
+      "sourcePages": [
+        680,
+        315
+      ],
+      "terms": [
+        "Seaborne Evacuation",
+        "LC",
+        "PP",
+        "MF"
+      ],
+      "prompt": "Does this evacuation profile permit a loading destination?",
+      "checks": [
+        "Only the Evacuating side in a Seaborne Evacuation uses this special building-equivalent destination rule.",
+        "Ignore Immobile/burning craft and those lacking required capacity. A unit loading this RtPh has only four MF and pays normal applicable loading cost.",
+        "Apply current craft status, loading and exit-value rules; this is not general permission to board any transport while routing."
+      ],
+      "effect": "Show qualifying craft as destination candidates with capacity and total loading cost.",
+      "example": "The nearest LC is ignored because it lacks room; a farther eligible craft may be considered.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "crewExit",
+      "g": 8,
+      "title": "Resolve a broken Inherent Crew’s initial rout out",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "D5.311; E1.54",
+      "sourcePages": [
+        680,
+        203,
+        224
+      ],
+      "terms": [
+        "MF",
+        "RtPh",
+        "BU"
+      ],
+      "prompt": "Must this crew leave its vehicle?",
+      "checks": [
+        "Where D5.311 causes a broken Inherent Crew, it spends all initial-RtPh MF being placed beneath its vehicle.",
+        "Apply the vehicle’s Stop/Abandoned and crew state consequences; do not grant a second ordinary six-MF rout after placing the crew.",
+        "Retain this procedure at night and distinguish it from Stun, Shock, Bail Out or an ordinary optional Abandon action."
+      ],
+      "effect": "Represent the crew exit as its own complete initial-rout procedure.",
+      "example": "A newly broken Inherent Crew is placed beneath the vehicle rather than routed six additional MF.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "paratroops",
+      "g": 8,
+      "title": "Apply newly landed paratroop Rout immunity",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "E9.42; E9.5",
+      "sourcePages": [
+        680,
+        244
+      ],
+      "terms": [
+        "Paratroops",
+        "RtPh",
+        "Surrender"
+      ],
+      "prompt": "Did these paratroops land this Player Turn?",
+      "checks": [
+        "They may not rout and are not subject to Rout rules, including surrender and Failure to Rout, in their landing Player Turn.",
+        "Broken DEFENDER occupants may rout from the landing hex when not yet in Melee. Do not extend the newcomer’s immunity to those defenders."
+      ],
+      "effect": "Explain the asymmetric landing exception and each unit’s separate status.",
+      "example": "The defender can need to leave a hex while the just-landed paratroops remain exempt.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 6.21B",
+      "steps": [
+        "6.21B"
+      ]
+    },
+    {
+      "id": "blazeEnd",
+      "g": 9,
+      "title": "Resolve Infantry that could not leave terrain Blaze",
+      "who": "BOTH",
+      "kind": "Required phase-close result",
+      "refs": "B25.4",
+      "sourcePages": [
+        680,
+        143,
+        224
+      ],
+      "terms": [
+        "Blaze",
+        "RtPh",
+        "Failure to Rout"
+      ],
+      "prompt": "Has each affected Infantry unit escaped before the deadline?",
+      "checks": [
+        "Eliminate Infantry unable to leave terrain Blaze by the end of this RtPh, including applicable pillbox occupants.",
+        "This is separate from Failure to Rout and survives night’s exemption. Melee/pinned units cannot use the special RtPh exit and are eliminated if trapped.",
+        "Vehicles/Cavalry have their next friendly MPh deadline, not a generic Infantry RtPh deadline."
+      ],
+      "effect": "Close each carried AFPh Blaze obligation only with actual escape or the prescribed outcome.",
+      "example": "An Infantry unit cannot survive terrain Blaze merely because night prevents Failure-to-Rout elimination.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "ASOP 6.31B",
+      "steps": [
+        "6.31B"
+      ]
+    },
+    {
+      "id": "blazeEscape",
+      "g": 10,
+      "title": "Choose the applicable Blaze escape procedure",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "B25.4; A10.41",
+      "sourcePages": [
+        680,
+        143
+      ],
+      "terms": [
+        "Blaze",
+        "Voluntary Break",
+        "Interdiction"
+      ],
+      "prompt": "How can this occupant leave before the deadline?",
+      "checks": [
+        "Eligible unbroken Infantry may voluntarily break to rout out. A non-pinned unit unable to break voluntarily can use the specified Accessible-Location exit as if withdrawing from Melee, even if berserk.",
+        "Units actually in Melee or pinned cannot use that exit. The special movers remain vulnerable to Interdiction, mines and OBA, and ATTACKER still goes first.",
+        "Do not eliminate the unit early merely because normal rout choices are absent; evaluate the explicit escape provision."
+      ],
+      "effect": "Keep exceptional unbroken escape separate from ordinary broken rout.",
+      "example": "A non-pinned berserk occupant may need the special Blaze exit path.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "shelter",
+      "g": 10,
+      "title": "Choose shellhole or entrenchment protection on entry",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.51; A10.531; B27.41",
+      "sourcePages": [
+        680,
+        66,
+        67,
+        113,
+        146,
+        147
+      ],
+      "terms": [
+        "MF",
+        "Open Ground",
+        "Interdiction"
+      ],
+      "prompt": "Will the unit pay for shelter as it enters?",
+      "checks": [
+        "Extra fortification entry/exit costs do not count in calculating the nearest building/woods destination.",
+        "For the actual route, announce combined entry and shelter costs before Interdiction is claimed. A capacity-eligible foxhole can then prevent Interdiction.",
+        "Use the special shortest-path/shelter option even when spending for protection prevents reaching cover this RtPh. It is not permission for arbitrary detours."
+      ],
+      "effect": "Compare exposed transit with paid protection, retaining the destination calculation separately.",
+      "example": "The router can pay into a foxhole en route instead of being forced to risk Interdiction to reach woods.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "pillbox",
+      "g": 10,
+      "title": "Apply pillbox and bunker rout exceptions",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "B30.41-.8; B25.4",
+      "sourcePages": [
+        680,
+        151,
+        143
+      ],
+      "terms": [
+        "Pillbox",
+        "ADJACENT",
+        "Known enemy",
+        "Tunnel"
+      ],
+      "prompt": "Is this destination or starting Location a pillbox?",
+      "checks": [
+        "Treat a pillbox as building-equivalent for rout with its special Known-enemy rule. A broken occupant is not ordinarily forced to rout merely by nearby enemies.",
+        "Apply entry/exit restrictions from enemy ground units in the hex, and tunnel/bunker exceptions. Use combined protection costs where permitted.",
+        "Do not treat the pillbox as immunity to terrain Blaze. Its concealed contents also have special disclosure/Knowledge treatment."
+      ],
+      "effect": "Use the actual interior/exterior Location relation, not one hex-wide permission.",
+      "example": "An enemy outside can block ordinary exit while a valid tunnel route requires separate evaluation.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "tunnel",
+      "g": 10,
+      "title": "Consider a tunnel route",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "B8.62; E1.54",
+      "sourcePages": [
+        680,
+        118,
+        224
+      ],
+      "terms": [
+        "Tunnel",
+        "Interdiction",
+        "Known enemy"
+      ],
+      "prompt": "Can the unit complete this passage under its profile?",
+      "checks": [
+        "Normally start at one entrance and end at the opposite entrance in the same RtPh; no lingering in the tunnel.",
+        "It is immune to Interdiction inside and can pass toward/adjacent to enemies, but emergence must satisfy remembered-enemy distance and ADJACENCY restrictions.",
+        "The unit is not concealed on emergence. Apply the explicit night exception rather than inventing ordinary Low Crawl permission."
+      ],
+      "effect": "Evaluate passage and emergence separately without displaying private tunnel connections to the opponent.",
+      "example": "A passage under an enemy is not necessarily a legal exit beside that enemy.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "wire",
+      "g": 10,
+      "title": "Pay Wire costs and check escape",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "B26.4-.41",
+      "sourcePages": [
+        680,
+        145
+      ],
+      "terms": [
+        "MF",
+        "Surrender",
+        "Failure to Rout"
+      ],
+      "prompt": "Can this router get beneath Wire and reach a legal endpoint?",
+      "checks": [
+        "Use the Wire exit dr and appropriate rout movement costs; surrender has its stated exception.",
+        "A failed escape can cause Failure to Rout or surrender under the actual enemy/exposure conditions.",
+        "Do not bypass Wire costs or move the unit beneath automatically when the route is chosen."
+      ],
+      "effect": "Include the unresolved die-dependent cost in the route explanation.",
+      "example": "A unit can have a destination yet be unable to reach it after its Wire roll.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "crest",
+      "g": 10,
+      "title": "Leave broken Crest status",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "B20.96; A10.5",
+      "sourcePages": [
+        680,
+        133,
+        165
+      ],
+      "terms": [
+        "MF",
+        "RtPh",
+        "TEM"
+      ],
+      "prompt": "Does broken Crest status require departure from that position?",
+      "checks": [
+        "Broken Crest Infantry must leave Crest status in the following RtPh.",
+        "Apply actual costs and routing restrictions; leaving Crest is not necessarily the same as changing hex.",
+        "Reevaluate protection and any FFE increased-vulnerability trigger at the actual change."
+      ],
+      "effect": "Show compulsory position change independently from ordinary destination selection.",
+      "example": "A unit can owe a Crest departure even though the map hex has not changed.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "terrain",
+      "g": 10,
+      "title": "Apply vertical, rowhouse, water and special-terrain routes",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "A10.51-.52; B16.4; B21.43; B23.71; G8; G11",
+      "sourcePages": [
+        680,
+        66,
+        67,
+        130,
+        135,
+        137,
+        287,
+        301
+      ],
+      "terms": [
+        "MF",
+        "ADJACENT",
+        "Low Crawl",
+        "SSR"
+      ],
+      "prompt": "Does this route use a special Location or movement rule?",
+      "checks": [
+        "Check stairs, accessible levels, rowhouse passage and entry costs; ordinary broken units cannot use Bypass. Do not confuse rowhouse passage with ordinary woods/building Bypass.",
+        "Broken units in a Water Obstacle must rout even if Disrupted, and ordinary Low Crawl is barred there. Marsh consumes the stated allowance; night can change Low Crawl permission.",
+        "Keep PTO paddy-bank, jungle/bamboo, cave and other profile rules visible with exact evaluation pending when unsupported."
+      ],
+      "effect": "Avoid ground-level-only or terrain-name-only route assumptions.",
+      "example": "An upstairs Location may remove ADJACENCY while an adjacent same-level hex does not.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "seaborneStatus",
+      "g": 10,
+      "title": "Apply Seaborne Assault and Evacuation status overlays",
+      "who": "Routing side",
+      "kind": "Routing choice",
+      "refs": "G14.23; G14.32; G14.41",
+      "sourcePages": [
+        680,
+        314,
+        315
+      ],
+      "terms": [
+        "Seaborne Evacuation",
+        "LC",
+        "MF"
+      ],
+      "prompt": "Does this subject have beach or required-debarkation rules?",
+      "checks": [
+        "Apply Assaulting/Evacuating-side Fanatic and Beach/pier/wading consequences, including their specified break-result exceptions.",
+        "Required ASAP debarkation has a broken-at-start-of-RtPh provision; do not wait automatically for the next MPh.",
+        "Keep these rules distinct from the Evacuation-only permission to rout onto a craft."
+      ],
+      "effect": "Project profile-specific obligations and morale effects before computing the route.",
+      "example": "A beach-unit status rule can change results without granting a new ordinary transport choice.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "results",
+      "g": 10,
+      "title": "Resolve casualty, wound and morale consequences before continuing",
+      "who": "BOTH",
+      "kind": "Required consequence chain",
+      "refs": "A10.3; A10.53; A17; A15; A14",
+      "sourcePages": [
+        680,
+        66,
+        67,
+        69,
+        82,
+        84,
+        85
+      ],
+      "terms": [
+        "MC",
+        "Wound",
+        "HOB",
+        "MF"
+      ],
+      "prompt": "What changed in the routing subject?",
+      "checks": [
+        "Complete casualty reduction, wound severity, relevant leader effects and HOB as required by the actual result, then recalculate remaining capability.",
+        "Track MF already spent if wounded or pinned. Do not refresh the route allowance or transfer a destroyed unit’s remaining movement to a replacement without the rule.",
+        "Ordinary Sniper activation is limited to its named fire phases, not RtPh. Do not import an AFPh SAN trigger simply because a rout MC rolled that number."
+      ],
+      "effect": "Link every follow-up to its original hazard and current subject.",
+      "example": "A surviving HS may continue, while a wounded/pinned SMC needs a different continuation check.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "finish",
+      "g": 10,
+      "title": "Finish each side’s routs and hand off to Advance",
+      "who": "BOTH",
+      "kind": "Phase handoff",
+      "refs": "A3.6-.7; A10.5; B25.4",
+      "sourcePages": [
+        680,
+        47,
+        66,
+        68,
+        143,
+        227
+      ],
+      "terms": [
+        "RtPh",
+        "APh",
+        "DM"
+      ],
+      "prompt": "Are both sides’ required routs and effects complete?",
+      "checks": [
+        "Finish ATTACKER obligations before DEFENDER routs, while preserving opposing capture/reveal decisions at their actual windows.",
+        "Resolve remaining route endpoints and the Blaze deadline. Optional considered topics cannot clear those obligations.",
+        "Do not remove DM, PIN, TI or trip flares through generic RtPh cleanup; their own removal windows remain in force."
+      ],
+      "effect": "Expose separate end-unit, end-side and end-phase states in the eventual live component.",
+      "example": "Completing the last attacker rout does not skip the defender’s units.",
+      "status": "Partially integrated; complete rule path remains to be verified.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "boundaries",
+      "g": 10,
+      "title": "Keep other-phase actions out of Rout",
+      "who": "BOTH",
+      "kind": "Boundary explanation",
+      "refs": "A10.4-.53; A10.711; E1.54; A20.5",
+      "sourcePages": [
+        680,
+        50,
+        66,
+        67,
+        69,
+        224,
+        232,
+        315
+      ],
+      "terms": [
+        "RtPh",
+        "MPh",
+        "RPh",
+        "APh"
+      ],
+      "prompt": "Is this a legal RtPh choice or another phase’s action?",
+      "checks": [
+        "No Rally attempts, ordinary movement bonuses, shooting, DFF/SFF/FPF, Search or unrestricted equipment handling are added here.",
+        "Interdiction is not a shot, and leader accompaniment is not a generic unbroken-unit movement action.",
+        "Keep explicit exceptions such as triggered SMC Recovery, ski mode, evacuation loading and Blaze escape discoverable."
+      ],
+      "effect": "Explain the proper window and exception instead of an unexplained disabled action.",
+      "example": "A leader may accompany a legal rout but cannot freely move elsewhere during RtPh.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    },
+    {
+      "id": "sourceProfile",
+      "g": 10,
+      "title": "Preserve pending rules and source completeness",
+      "who": "BOTH",
+      "kind": "Coverage boundary",
+      "refs": "ASOP 6; SSR; Chapters F/G/H/W",
+      "sourcePages": [
+        680,
+        680
+      ],
+      "terms": [
+        "SSR",
+        "Source gap"
+      ],
+      "prompt": "Are scenario sources and evaluators available?",
+      "checks": [
+        "All printed RtPh ASOP clauses and identified in-volume families are represented. This is not proof of every module/SSR/equipment permutation.",
+        "Pending integration, missing source and known illegality are different states. Do not hide reference options because the current pass has not implemented them.",
+        "Live route candidates, counts and reasons must be viewer-safe; the browser must not receive secret enemy data merely to filter it visually."
+      ],
+      "effect": "Show unknown applicability explicitly and retain the source-backed catalog.",
+      "example": "A deferred cave route stays discoverable without claiming it has been evaluated.",
+      "status": "Rules integration pending; reference available.",
+      "timing": "Rule-specific RtPh timing; supplemental to ASOP",
+      "steps": []
+    }
+  ],
+  "glossary": {
+    "RtPh": "Rout Phase. ATTACKER completes its routs first, then DEFENDER; ordinary routs proceed one unit at a time with explicit accompaniment exceptions.",
+    "DM": "Desperation Morale. It can permit a broken unit to rout without itself requiring that unit to rout. Do not remove DM at RtPh end.",
+    "Surrender": "Rule-required transfer to a qualifying captor. The router does not freely substitute Low Crawl when A20.21 requires surrender.",
+    "Interdiction": "A10.53 NMC when an eligible routing unit enters qualifying Open Ground exposed to a capable enemy. Not an actual fire attack or expenditure of remaining shots.",
+    "Known enemy": "Enemy Known to the particular routing unit under the rules. Preserve that unit’s previously seen armed enemies during its rout; do not substitute omniscient map knowledge.",
+    "LOS": "Line of Sight. Guidance uses only information the viewing player may know.",
+    "HIP": "Hidden Initial Placement. No guide prompt may leak hidden opposing information.",
+    "ADJACENT": "Locations satisfying the rules’ LOS and Infantry-advance relationship. It is more specific than neighboring hexes, including vertical relationships.",
+    "Voluntary Break": "A10.41 start-of-RtPh decision, permitted only with the stated enemy exposure and no immediate Reduction/elimination, plus specific exceptions such as Blaze escape.",
+    "Open Ground": "For rout and Interdiction, the hypothetical FFMO test relative to a particular enemy, not simply the printed terrain label.",
+    "Blaze": "Terrain fire with an end-of-RtPh Infantry escape deadline. Night immunity to Failure to Rout does not cancel this separate elimination rule.",
+    "Disrupted": "A19.12 status with its own opening surrender and restricted rout rules. Ordinary daytime Low Crawl is unavailable; night and No Quarter require explicit treatment.",
+    "No Quarter": "A20.3 side-specific consequence of rejecting surrender or other specified events. It changes future surrender handling, not the legality of rout paths.",
+    "Interrogation": "E2 optional-rule procedure, when in use, immediately after capture or surrender. One roll per prisoner, with controlled disclosure.",
+    "SSR": "Scenario Special Rule. It can add or modify applicability and must be included in the scenario profile.",
+    "Failure to Rout": "Elimination under the applicable routing conditions after checking surrender and exceptions. Distinct from capture and from Blaze elimination.",
+    "MF": "Movement Factors. Ordinary broken routers have six, wounded SMC three; explicit ski and evacuation rules can alter the calculation.",
+    "Low Crawl": "Normally one Location using the entire rout allotment, avoiding Interdiction but not automatically avoiding surrender, mines or FFE. Night has major exceptions.",
+    "Wound": "A17 injury with severity, reduced morale/leadership, IPC and movement consequences. Track MF already spent if it occurs mid-rout.",
+    "Skis": "E4 equipment whose mode changes and downhill bonus have explicit RtPh permission. Low Crawl requires removing skis.",
+    "Seaborne Evacuation": "G14.4 scenario profile allowing eligible Infantry to rout onto qualifying LC/amphibians as buildings, with a four-MF loading budget.",
+    "SW": "Support Weapon. Using one affects its possessor’s capability accounting.",
+    "IPC": "Inherent Portage Capacity. A broken router must choose the prescribed load before routing, with no mid-route Recovery or Abandonment.",
+    "PP": "Portage Points, used to evaluate the required legal load and transport capacity.",
+    "SMC": "Single-Man Counter, such as a leader or Hero.",
+    "Good Order": "The defined unit status, separate from merely unbroken. Apply the exact status requirement of each action.",
+    "Voluntary Rout": "A10.711 accompaniment by an eligible unbroken leader already stacked with the broken unit. It is not unrestricted movement by unbroken units.",
+    "Guard": "Unit assigned to prisoners. Capacity, fire restrictions and accompaniment are separate from the act of accepting surrender.",
+    "US#": "Unit Size Number. Used for purposes including prisoner guarding capacity and the dr to Set a DC; it is not a weapon Usage Number.",
+    "TEM": "Terrain Effects Modifier.",
+    "SMOKE": "The umbrella for Smoke and WP effects; preserve ammunition type, owner and source.",
+    "FP": "Firepower.",
+    "CA": "Covered Arc.",
+    "BU": "Buttoned Up. The alternative protected crew posture, with weapon and observation consequences.",
+    "NMC": "Normal Morale Check.",
+    "MC": "Morale Check.",
+    "FFE": "Fire For Effect. Existing HE/WP FFE can attack the routing subject on qualifying entry or increased vulnerability; it does not itself Interdict.",
+    "WP": "White Phosphorus, with its own height, NMC and ignition rules.",
+    "Panji": "G9 obstacle with Covered hexsides and above/below states. Its entry MC and movement-under procedure are distinct from Interdiction.",
+    "Trip Flare": "E1.95 hidden device with entry/expenditure triggers. A flare set off in RtPh persists until the next Player Turn’s AFPh cleanup.",
+    "NVR": "Night Visibility Range. Night Rout also has specific E1.54 rules beyond visibility changes.",
+    "Column": "E11 formation whose Disbandment is checked as each routing unit expends MF and after attacks; it is not recreated from ordinary counter alignment.",
+    "LC": "Landing Craft, governed by its own transport, fire, beaching and grounding rules.",
+    "Paratroops": "E9 landing troops. Unlike ordinary glider contents they may not attack during the Player Turn they land.",
+    "Pillbox": "Separate Location equivalent to a building for rout, with special Known-enemy, entry/exit, ordinary forced-rout and Blaze rules.",
+    "Tunnel": "B8.62 special rout connection between entrances, with emergence conditions and immunity to Interdiction while inside.",
+    "HOB": "Heat of Battle, a triggered resolution rather than an optional action.",
+    "APh": "Advance Phase, following Rout. AFPh fire and the advance are different windows.",
+    "MPh": "Movement Phase. THE MPh contains a separate start, during and end for each moving unit or stack.",
+    "RPh": "Rally Phase. Each Player Turn begins with one; both sides have activities here.",
+    "Source gap": "A missing or unreconciled scenario/module/equipment source. Separate this from integration pending and from known illegality."
+  },
+  "asopLedger": [
+    {
+      "step": "6.11B",
+      "clauses": "Voluntary Break at start; required DM for units that must rout.",
+      "optionIds": [
+        "voluntaryBreak",
+        "dm"
+      ]
+    },
+    {
+      "step": "6.12B",
+      "clauses": "Opening Disrupted surrender and conditional Interrogation.",
+      "optionIds": [
+        "disruptedOpening",
+        "interrogationOpening"
+      ]
+    },
+    {
+      "step": "6.21B",
+      "clauses": "All routs with Disrupted/night/evacuation profiles; leader accompaniment; ski changes; surrender/No Quarter/Interrogation; Failure to Rout; Interdiction/Panji; trip flares; routing-subject FFE/mine attacks; Column Disbandment.",
+      "optionIds": [
+        "mustRout",
+        "optionalRout",
+        "disruptedRout",
+        "budget",
+        "load",
+        "recovery",
+        "leader",
+        "prisoners",
+        "destination",
+        "ignore",
+        "noCover",
+        "direction",
+        "lowCrawl",
+        "refigure",
+        "stop",
+        "openGround",
+        "interdictor",
+        "interdiction",
+        "reveal",
+        "repulse",
+        "surrender",
+        "exempt",
+        "accept",
+        "capture",
+        "interrogation",
+        "failure",
+        "mines",
+        "ffe",
+        "specialFfe",
+        "panji",
+        "flare",
+        "column",
+        "night",
+        "skis",
+        "evacuation",
+        "crewExit",
+        "paratroops"
+      ]
+    },
+    {
+      "step": "6.31B",
+      "clauses": "Eliminate Infantry unable to leave terrain Blaze by the end of RtPh.",
+      "optionIds": [
+        "blazeEnd"
+      ]
+    }
+  ]
+}

@@ -19,6 +19,12 @@ public sealed record GameEvent(
     IReadOnlyList<string> Causes,
     IReadOnlyList<string>? Visibility)
 {
+    /// <summary>Optional canonical request digest for an admitted guide action. Not rule evidence or authorization.</summary>
+    public string? GuidedDecisionHash
+    {
+        get; init;
+    }
+
     public bool IsVisibleTo(Perspective perspective)
     {
         ArgumentNullException.ThrowIfNull(perspective);
@@ -28,6 +34,9 @@ public sealed record GameEvent(
 
 /// <summary>What an event says happened. Each payload has one event type name.</summary>
 public abstract record EventPayload;
+
+/// <summary>C9.3 explicit original declaration; the projector derives owner, timing and SW-use effects.</summary>
+public sealed record MortarSpotterDesignated(string Gun, string Spotter) : EventPayload;
 
 /// <summary>An instance to create: from a catalog definition for units, by kind alone for equipment and entities.</summary>
 public sealed record NewInstance(
@@ -39,6 +48,12 @@ public sealed record NewInstance(
     Holding? Holding,
     IReadOnlyDictionary<string, ConditionState> Conditions)
 {
+    /// <summary>Explicit Horse/Mule setup identity; absent on all legacy instances.</summary>
+    public Rules.TurnHorseIdentity? Horse
+    {
+        get; init;
+    }
+
     /// <summary>The OB group the new unit belongs to (ruling R18.3); null to keep the group of the units it comes from.</summary>
     public string? Group
     {
@@ -196,7 +211,14 @@ public enum LineageAction
 }
 
 /// <summary><c>lineage</c>: instances consumed and the instances produced from them.</summary>
-public sealed record LineageRecorded(LineageAction Action, IReadOnlyList<string> Consumed, IReadOnlyList<NewInstance> Produced) : EventPayload;
+public sealed record LineageRecorded(LineageAction Action, IReadOnlyList<string> Consumed, IReadOnlyList<NewInstance> Produced) : EventPayload
+{
+    /// <summary>Chosen HS that retains an active Spotter assignment on Deployment. Absent in legacy records.</summary>
+    public string? SpotterSuccessor
+    {
+        get; init;
+    }
+}
 
 /// <summary><c>instance-eliminated</c>.</summary>
 public sealed record InstanceEliminated(string Id) : EventPayload;
