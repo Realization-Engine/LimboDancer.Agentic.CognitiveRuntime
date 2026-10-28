@@ -77,6 +77,24 @@
           ],
           "method": "Rechecked the existing column-ordered extraction for the vulnerability table and both printed recovery examples; prior complete-page visual review remains recorded above.",
           "finding": "Forced unloading requires a full ordinary recovery period, whereas a casualty after the Gun has already unloaded does not erase its existing progress. Low Ammo occurrences accumulate. Involuntary-unload terrain eliminates listed SW except on a Bank. No live casualty, restart, CA or ammunition integration is certified."
+        },
+        {
+          "date": "2026-10-28",
+          "rules": [
+            "A9.11",
+            "A9.21",
+            "A21.1-.13",
+            "C9.2",
+            "G10.7"
+          ],
+          "physicalPages": [
+            62,
+            88,
+            179,
+            292
+          ],
+          "method": "Text extraction reviewed for MMC use, captured/non-qualified-use requirements and physical covered-arc distinctions. This adds no visual-review claim and does not replace the accepted baseline.",
+          "finding": "Same-nationality MMC qualification is bounded to MMG, HMG and light mortars. C9.2 gives light mortars no CA; A9.21 SW MG fire restrictions do not establish a physical Gun facing. Foreign/SSR exceptions and the specialized 37mm INF SW representation remain pending; no live command is admitted."
         }
       ]
     }

@@ -71,13 +71,58 @@ public sealed partial class TurnHorseIdentityTests
     [InlineData("attacker-light-mortar", "asl:light-mortar", TurnPackingWeapon.LightMortar)]
     [InlineData("attacker-mmg", "asl:mg", TurnPackingWeapon.MediumMachineGun)]
     [InlineData("attacker-hmg", "asl:mg", TurnPackingWeapon.HeavyMachineGun)]
-    public void ListedSupportWeaponsKeepTheirSeparateQualificationAndEffectiveDuration(string definition, string kind, TurnPackingWeapon expected)
+    public void SameNationalityMmcQualifiesForListedSupportWeaponsWithoutGrantingPackingPermission(string definition, string kind, TurnPackingWeapon expected)
     {
         var read = ReadActors(PackingState(definition, kind));
         Assert.Equal(expected, read.Weapon);
         Assert.Equal(1, read.RequiredGameTurns);
-        Assert.Null(read.Facts.QualifiedMmcForSw);
+        Assert.True(read.Facts.QualifiedMmcForSw);
         Assert.Equal(TurnPackingEligibility.NotEvaluated, read.Verdict.State);
+    }
+
+    [Theory]
+    [InlineData("attacker-squad", "asl:squad", true)]
+    [InlineData("attacker-half-squad", "asl:half-squad", true)]
+    [InlineData("attacker-crew", "asl:crew", true)]
+    [InlineData("attacker-leader-8-0", "asl:leader", false)]
+    public void SwPackingQualificationUsesActualVisibleMmcRoles(string definition, string kind, bool expected)
+    {
+        var state = PackingState("attacker-mmg", "asl:mg");
+        state = state with
+        {
+            Units = [state.Units[0] with { Kind = kind, Definition = Catalog.Value.Reference(Catalog.Value.Definition(definition)!) }]
+        };
+        var read = ReadActors(state);
+        Assert.Equal(expected, read.Facts.QualifiedMmcForSw);
+        Assert.Equal(expected ? TurnPackingEligibility.NotEvaluated : TurnPackingEligibility.Ineligible, read.Verdict.State);
+        Assert.Null(read.Facts.FirstRallyWorkWindow);
+        Assert.Null(read.Facts.SameLocationAndTerrain);
+    }
+
+    [Fact]
+    public void SwQualificationKeepsForeignMissingAndHiddenEvidenceUnknown()
+    {
+        var state = PackingState("attacker-light-mortar", "asl:light-mortar");
+        var foreign = state with
+        {
+            Units = [state.Units[0] with { Definition = Catalog.Value.Reference(Catalog.Value.Definition("defender-crew")!) }]
+        };
+        Assert.False(ReadActors(foreign).Facts.SameNationality);
+        Assert.Null(ReadActors(foreign).Facts.QualifiedMmcForSw);
+        Assert.Null(ReadActors(state, catalogs: []).Facts.QualifiedMmcForSw);
+        var hidden = state with
+        {
+            Units = [state.Units[0] with { Conditions = new Dictionary<string, ConditionState> { [Conditions.Hidden] = ConditionState.True } }]
+        };
+        var disclosed = ReadActors(hidden, perspective: Perspective.Side("russian"));
+        var absent = ReadActors(hidden with
+        {
+            Units = [],
+            Equipment = [] // Remove the absent holder's SW too; a dangling holding relationship is not an equivalent valid state.
+        }, perspective: Perspective.Side("russian"));
+        Assert.Null(disclosed.Facts.QualifiedMmcForSw);
+        Assert.Equal(absent.Facts, disclosed.Facts);
+        Assert.True(ReadActors(hidden).Facts.QualifiedMmcForSw);
     }
 
     [Fact]

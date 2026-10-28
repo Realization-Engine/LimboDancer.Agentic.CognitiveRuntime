@@ -65,6 +65,24 @@ public static class TurnPackingRules
                 : "Ordinary G10 (Un)Packing requirements are proven; the host must still bind the actors, opening and governed command.");
     }
 
+    /// <summary>G10.7, A9.11 and C9.2: bounded same-nationality MMC qualification. Foreign-use exceptions and the 37mm INF SW need their own evidence.</summary>
+    public static bool? SameNationalitySwQualification(TurnPackingWeapon weapon, bool? mmc, bool? sameNationality)
+    {
+        if (!Enum.IsDefined(weapon))
+        {
+            throw new ArgumentException("Unknown packing weapon class.", nameof(weapon));
+        }
+        if (!IsSupportWeapon(weapon))
+        {
+            return null;
+        }
+        if (mmc == false)
+        {
+            return false;
+        }
+        return mmc == true && sameNationality == true && weapon != TurnPackingWeapon.InfantryGun37 ? true : null;
+    }
+
     /// <summary>Classify known counter facts for G10.2/.7. Gun permission, DYO and qualified use remain separate facts.</summary>
     public static TurnPackingWeapon ClassifyWeapon(string? kind, string? gunType, int? caliber, string? mgSize) => kind switch
     {

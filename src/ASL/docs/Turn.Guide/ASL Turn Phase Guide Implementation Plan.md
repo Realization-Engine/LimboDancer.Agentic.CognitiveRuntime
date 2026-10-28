@@ -561,3 +561,10 @@ Validation: all 464 Units tests pass, including seven new casualty-journal cases
 The period journal now binds a full recovery start to its prior casualty receipts, same actors/owner, explicit scope and later first-RPh work step. Rules supports a surviving HS Mule or an eliminated Mule, full day/night duration, crew interruption/resumption and release without an invented second unload. Existing-period casualties cannot be used to reset progress. The detailed design retains real host evidence, atomic effects, replacement actors and live acceptance as pending. D3.2 and all nine packages remain incomplete and visible.
 
 Validation: all 468 Units tests and 114 focused packing/work Rules tests pass, including four new recovery-journal cases and seven new Rules recovery cases. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered (100%, no exclusions). Ordinary/legacy packing replay and pending-inventory regressions remain green. No live capability, game record, Studio process or dice source was changed.
+
+
+### D3.2 progress: SW actor qualification (2026-10-28)
+
+The actor adapter now proves same-nationality MMC qualification for MMG, HMG and light-mortar packing from disclosed counter facts. Unknown/foreign-use exceptions and the 37mm INF SW stay pending. The vulnerability contract also preserves the distinction between a Gun's physical CA and SW fire restrictions, avoiding a fictitious random facing for ordinary SW. The detailed design/source register records the correction and remaining limits; no live capability or package is promoted.
+
+Validation: all 473 Units tests and 121 focused packing/work Rules tests pass. New/updated cases cover actual MMC versus SMC roles, same-nationality versus unknown/foreign/hidden facts, SW facing, and the pending 37mm placement path. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered (100%, no exclusions). No live game records, Studio process or ordinary dice were changed.

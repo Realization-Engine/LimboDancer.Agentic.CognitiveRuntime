@@ -7,6 +7,29 @@ public sealed class TurnPackingRulesTests
     private static readonly TurnPackingFacts Eligible = new(TurnPackingWeapon.Gun, true, true, true, true, true, true,
         true, true, null, true, true, true, true);
 
+    [Theory]
+    [InlineData(TurnPackingWeapon.LightMortar)]
+    [InlineData(TurnPackingWeapon.MediumMachineGun)]
+    [InlineData(TurnPackingWeapon.HeavyMachineGun)]
+    public void SameNationalityMmcSwQualificationDoesNotInventForeignUseOrMissingFacts(TurnPackingWeapon weapon)
+    {
+        Assert.True(TurnPackingRules.SameNationalitySwQualification(weapon, true, true));
+        Assert.False(TurnPackingRules.SameNationalitySwQualification(weapon, false, true));
+        Assert.Null(TurnPackingRules.SameNationalitySwQualification(weapon, true, false));
+        Assert.Null(TurnPackingRules.SameNationalitySwQualification(weapon, true, null));
+        Assert.Null(TurnPackingRules.SameNationalitySwQualification(weapon, null, true));
+    }
+
+    [Fact]
+    public void SpecializedOrUnclassifiedWeaponsDoNotAcquireSwQualificationByNameAlone()
+    {
+        Assert.Null(TurnPackingRules.SameNationalitySwQualification(TurnPackingWeapon.InfantryGun37, true, true));
+        Assert.False(TurnPackingRules.SameNationalitySwQualification(TurnPackingWeapon.InfantryGun37, false, true));
+        Assert.Null(TurnPackingRules.SameNationalitySwQualification(TurnPackingWeapon.Unknown, true, true));
+        Assert.Null(TurnPackingRules.SameNationalitySwQualification(TurnPackingWeapon.Gun, true, true));
+        Assert.Throws<ArgumentException>(() => TurnPackingRules.SameNationalitySwQualification((TurnPackingWeapon)99, true, true));
+    }
+
     [Fact]
     public void LoadStructureRequiresKnownWeaponCapabilityAndOneOwnDesignatedSquadMule()
     {

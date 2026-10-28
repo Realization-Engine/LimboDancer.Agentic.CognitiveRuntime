@@ -71,12 +71,14 @@ public static class TurnPackingActorReader
         }
         var horse = mule is { Kind: "asl:horse" } ? mule.Horse : null;
         var canPackByNote = weaponDefinition?.Printed("front", "asl:animal-pack") is { State: PrintedState.Printed, TraitPresent: true } ? true : (bool?)null;
+        bool? sameNationality = weaponDefinition is not null && personnelDefinition is not null ? weaponDefinition.Nationality == personnelDefinition.Nationality : null;
+        var swQualification = TurnPackingRules.SameNationalitySwQualification(weaponClass,
+            personnel is not null ? vocabulary.IsA(personnel.Kind, "asl:mmc") : null, sameNationality);
         var facts = new TurnPackingFacts(weaponClass, canPackByNote,
             view.Phase != "rph" || view.PhasingSide != state.FirstSide ? false : null,
             colocated, horse?.Mule, horse is { Size: not TurnHorseSize.Unknown } ? horse.Size == TurnHorseSize.Squad : null,
             available, personnel is not null ? vocabulary.IsA(personnel.Kind, "asl:crew") : null,
-            weaponDefinition is not null && personnelDefinition is not null ? weaponDefinition.Nationality == personnelDefinition.Nationality : null,
-            null, personnel is not null ? Boolean(GameState.GoodOrder(personnel, vocabulary)) : null,
+            sameNationality, swQualification, personnel is not null ? Boolean(GameState.GoodOrder(personnel, vocabulary)) : null,
             personnel is not null ? Negate(Boolean(GameState.Condition(personnel, Conditions.Pinned))) : null,
             personnel?.Position switch
             {
