@@ -150,7 +150,12 @@ public static partial class GameProjector
                     Fired: payload is FireResolved fire && fire.Firers.Any(participants.Contains),
                     OrdnanceFired: payload is OrdnanceFired ordnance && (participants.Contains(ordnance.Gun) || participants.Contains(ordnance.Crew)),
                     CloseCombat: payload is CloseCombatResolved cc && (cc.Attackers.Any(participants.Contains) || cc.Defenders.Any(participants.Contains)),
-                    VehicleStepped: payload is VehicleStepped vehicle && participants.Contains(vehicle.Vehicle)));
+                    VehicleStepped: payload is VehicleStepped vehicle && participants.Contains(vehicle.Vehicle),
+                    // G10.11: only the Personnel crew can lose Pack-TI early; the Gun and the Mule keep it until the Period ends.
+                    PackingCrewLostPackTi: item.Declaration.Kind == TurnWorkKind.AnimalPacking && participants.Any(id =>
+                        next.Unit(id) is { Status: InstanceStatus.Active } crew && vocabulary.IsA(crew.Kind, "asl:personnel")
+                        && !TurnPackingRules.CrewRetainsPackTi(true, GameState.GoodOrder(crew, vocabulary) == ConditionState.True,
+                            GameState.Condition(crew, Conditions.Pinned) != ConditionState.True, TurnPackingCrewActivity.None, false))));
                 if (interrupted)
                 {
                     work[i] = TurnWorkLifecycle.Change(item, "interrupt", previous.Turn, WorkWindow(previous));

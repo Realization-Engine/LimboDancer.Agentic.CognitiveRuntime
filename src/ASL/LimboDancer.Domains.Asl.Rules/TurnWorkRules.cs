@@ -18,9 +18,12 @@ public enum TurnWorkIntervalOutcome
     Interrupted, Complete, Incomplete
 }
 
-/// <summary>What happened to a work participant at one event, as recorded facts; <see cref="TurnWorkRules.Interrupted"/> decides.</summary>
+/// <summary>
+/// What happened to a work participant at one event, as recorded facts; <see cref="TurnWorkRules.Interrupted"/> decides.
+/// <see cref="PackingCrewLostPackTi"/> is <see cref="TurnPackingRules.CrewRetainsPackTi"/>'s verdict on an Animal-Packing crew (G10.11).
+/// </summary>
 public sealed record TurnWorkActivity(bool AuditedEligibilityLost, bool ParticipantGoneOrMoved, bool TiCleared, bool SubjectButtonedUp,
-    bool Moved, bool Fired, bool OrdnanceFired, bool CloseCombat, bool VehicleStepped);
+    bool Moved, bool Fired, bool OrdnanceFired, bool CloseCombat, bool VehicleStepped, bool PackingCrewLostPackTi);
 
 /// <summary>E10.3-.4 complete Game Turns. This evaluates progress, never clears TI, rolls depletion or moves supply.</summary>
 public static class TurnWorkRules
@@ -62,12 +65,14 @@ public static class TurnWorkRules
     /// <summary>
     /// Whether an event interrupts work in progress (E10.3; G10.11): the TI is not owned by phase cleanup, so an explicit TI or BU change,
     /// a participant leaving play or its Location, movement, fire, ordnance fire, Close Combat or a vehicle step ends the current interval.
+    /// An Animal-Packing crew that becomes pinned or not in Good Order loses Pack-TI at once, and the Game Turn no longer counts (G10.11, G10.3).
     /// </summary>
     public static bool Interrupted(TurnWorkActivity activity)
     {
         ArgumentNullException.ThrowIfNull(activity);
         return activity.AuditedEligibilityLost || activity.ParticipantGoneOrMoved || activity.TiCleared || activity.SubjectButtonedUp
-            || activity.Moved || activity.Fired || activity.OrdnanceFired || activity.CloseCombat || activity.VehicleStepped;
+            || activity.Moved || activity.Fired || activity.OrdnanceFired || activity.CloseCombat || activity.VehicleStepped
+            || activity.PackingCrewLostPackTi;
     }
 
     /// <summary>

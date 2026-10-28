@@ -21,13 +21,13 @@ public sealed class TurnRuleBoundaryTests
     [Fact]
     public void AnyRecordedActivityInterruptsWorkAndNoneKeepsIt()
     {
-        var none = new TurnWorkActivity(false, false, false, false, false, false, false, false, false);
+        var none = new TurnWorkActivity(false, false, false, false, false, false, false, false, false, false);
         Assert.False(TurnWorkRules.Interrupted(none));
         foreach (var one in new[]
         {
             none with { AuditedEligibilityLost = true }, none with { ParticipantGoneOrMoved = true }, none with { TiCleared = true },
             none with { SubjectButtonedUp = true }, none with { Moved = true }, none with { Fired = true }, none with { OrdnanceFired = true },
-            none with { CloseCombat = true }, none with { VehicleStepped = true },
+            none with { CloseCombat = true }, none with { VehicleStepped = true }, none with { PackingCrewLostPackTi = true },
         })
         {
             Assert.True(TurnWorkRules.Interrupted(one));
