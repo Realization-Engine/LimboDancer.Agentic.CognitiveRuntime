@@ -98,11 +98,13 @@ public sealed partial class TurnGuideComponentTests : IDisposable
     }
 
     [Fact]
-    public void PendingSourceGapsAndDependenciesAreNotHiddenByReferenceMode()
+    public void ReconciledPackingSourceStillShowsPendingExecutionAndDependencies()
     {
         var cut = context.Render<TurnGuidePanel>();
         cut.Find("[data-topic='rph:packStart']").Click();
-        Assert.Contains("Source not yet available", cut.Markup, StringComparison.Ordinal);
+        Assert.Contains("Reconciled with source", cut.Markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("Source not yet available", cut.Markup, StringComparison.Ordinal);
+        Assert.Contains("Pending", cut.Markup, StringComparison.Ordinal);
         Assert.Contains("B5-D3", cut.Markup, StringComparison.Ordinal);
         Assert.Contains("Cross-phase dependencies", cut.Markup, StringComparison.Ordinal);
         Assert.NotEmpty(cut.FindAll("article a[href^='acronyms']"));

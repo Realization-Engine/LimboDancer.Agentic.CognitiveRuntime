@@ -80,7 +80,10 @@ public sealed class TurnCapabilityInventoryTests
             Assert.NotEmpty(dependency.References);
             Assert.All(dependency.TopicIds, id => Assert.Contains(inventory.Bindings, row => row.Kind == TurnInventoryKind.Topic && row.Id == id));
         }
-        Assert.Equal(TurnSourceReview.SourceMissing, inventory.Bindings.Single(item => item.Id == "pack").SourceReview);
+        Assert.Equal(TurnSourceReview.Reconciled, inventory.Bindings.Single(item => item.Id == "pack").SourceReview);
+        Assert.Equal(TurnSupport.Pending, inventory.Bindings.Single(item => item.Id == "pack").PendingRuleSupport);
+        Assert.Contains(inventory.Evidence.Single(item => item.Id == "work-timing").References,
+            reference => reference.EndsWith("Later Rules Source Register.json", StringComparison.Ordinal));
         Assert.Equal(TurnSourceReview.InterpretationOpen, inventory.Bindings.Single(item => item.Id == "mph:dropDuring").SourceReview);
         Assert.Equal(TurnSourceReview.Reconciled, inventory.Bindings.Single(item => item.Id == "rph:assisted").SourceReview);
         Assert.Equal(TurnEvidenceKind.AdjudicatedEffect, inventory.Evidence.Single(item => item.Id == "work-effects").Kind);

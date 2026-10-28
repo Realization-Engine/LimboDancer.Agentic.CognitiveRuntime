@@ -14,7 +14,7 @@
     {
       "id": "packing",
       "workItem": "B5-D3",
-      "reason": "Automatic packing eligibility/duration, night/minimum, midpoint/reversal and animal transport remain pending; full Chapter G packing source is absent from local Markdown."
+      "reason": "G10 source is reconciled in the later-Rules source register. Automatic participant/period integration, midpoint/reversal, vulnerability and animal transport remain pending beyond adjudicated work."
     },
     {
       "id": "supply",
@@ -154,7 +154,8 @@
       ],
       "references": [
         "src/ASL/LimboDancer.Domains.Asl.Rules/TurnWorkRules.cs",
-        "src/ASL/tests/ASL.Turns.Tests/TurnWorkProgressTests.cs"
+        "src/ASL/tests/ASL.Turns.Tests/TurnWorkProgressTests.cs",
+        "src/ASL/docs/Turn.Guide/ASL Turn Guide Later Rules Source Register.json"
       ]
     },
     {
@@ -300,7 +301,7 @@
     {
       "id": "rph:packStart",
       "kind": "Topic",
-      "sourceReview": "SourceMissing",
+      "sourceReview": "Reconciled",
       "evidenceIds": [
         "work-effects",
         "work-timing"
@@ -313,7 +314,7 @@
     {
       "id": "rph:packHalf",
       "kind": "Topic",
-      "sourceReview": "SourceMissing",
+      "sourceReview": "Reconciled",
       "evidenceIds": [
         "work-effects",
         "work-timing"
@@ -325,7 +326,7 @@
     {
       "id": "rph:packReverse",
       "kind": "Topic",
-      "sourceReview": "SourceMissing",
+      "sourceReview": "Reconciled",
       "evidenceIds": [
         "work-effects",
         "work-timing"
@@ -5045,7 +5046,7 @@
     {
       "id": "ccph:pinTi",
       "kind": "Topic",
-      "sourceReview": "SourceMissing",
+      "sourceReview": "Reconciled",
       "evidenceIds": [
         "status-host",
         "status-timing",
@@ -5411,7 +5412,7 @@
     {
       "id": "pack",
       "kind": "Dependency",
-      "sourceReview": "SourceMissing",
+      "sourceReview": "Reconciled",
       "evidenceIds": [
         "work-timing",
         "work-effects"

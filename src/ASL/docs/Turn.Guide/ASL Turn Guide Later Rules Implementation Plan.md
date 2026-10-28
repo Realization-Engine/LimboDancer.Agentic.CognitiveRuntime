@@ -28,10 +28,10 @@ Each package's fourth task is acceptance of its preceding scope, including negat
 | D2.2 | Drift, Gust effects and cave WP opening sequence, including applicable morale/Flame consequences and authoritative substep evidence. | D2.1 |
 | D2.3 | Vehicle, FFE and ambient dust: separate creation, shift, departure, wind, Motion and cleanup rules with source-specific histories and commands. | D2.2 |
 | D2.4 | Atmosphere acceptance: ordering, interrupted consequences, historical/disclosed reads and phase close without generic cleanup or premature readiness. | D2.3 |
-| D3.1 | Reconcile full G10 authoritative source; define eligibility, base duration, night/minimum adjustments and interruption/restart contracts. Missing Chapter G source is a blocking dependency, not an inferred rule. | Authoritative G10 source |
+| D3.1 | Reconcile full G10 authoritative source; define eligibility, base duration, night/minimum adjustments and interruption/restart contracts. The local PDF supplement now resolves the source dependency. | Verified G10 supplement |
 | D3.2 | Persist Gun/Mule/crew identities and midpoint loads/unloads; implement duration progress, reversal and restart using real participant roles. | D3.1 |
-| D3.3 | Governed packing/unpacking and animal transport integrate assembly, containment, movement and completion effects, preserving legacy adjudication records. | D3.2 |
-| D3.4 | Packing acceptance: night/minimum, midpoint/reversal, loss of eligibility, loading/transport, replay/disclosure and release timing in the live guide. | D3.3 |
+| D3.3 | Governed packing/unpacking and animal transport integrate assembly, containment, movement, prohibited unload terrain, vulnerability/cumulative Low Ammo and missing-Mule recovery, preserving legacy adjudication records. | D3.2 |
+| D3.4 | Packing acceptance: night/minimum, midpoint/reversal, loss of eligibility, loading/transport, Mule-loss consequences, replay/disclosure and release timing in the live guide. | D3.3 |
 | D4.1 | Rule-owned E10 eligibility, caliber/barrel compatibility, Accessible Locations, Immobility and participant/capacity contracts. | Accepted B5/U1 |
 | D4.2 | Simultaneous recipients, Ammo Dump setup/use/replenishment and SSR/DYO facts; integrate transfer/offload occupant and towed-equipment disposition. | D4.1 |
 | D4.3 | Automatic Low Ammo and D3.71/B# behavior; supply movement restrictions, immobilization, capture/destruction/explosion and their mandatory consequences. | D4.2 |
@@ -61,7 +61,7 @@ Each package's fourth task is acceptance of its preceding scope, including negat
 
 Start D1.1, then D1.2-D1.4. Continue D2, D3, D4, D5 and D6 in order; then D7, D8 and D9 respecting the table's dependencies. D9.1 may run early to supply the core-topic matrix. If an authoritative source blocks a task, record the exact missing source and continue independent ready tasks. Do not manufacture rules to clear the queue.
 
-Current ledger: 1/36 complete; D1.1 is complete; D1.2 and D2.1 are in progress. The replacement marker/movement source dependency is recorded below. B5-D1 through B5-D9 all retain Pending rule support. The legacy baseline remains accepted independently of this new plan.
+Current ledger: 2/36 complete; D1.1 and D3.1 are complete; D1.2 and D2.1 are in progress. The replacement marker/movement source dependency is recorded below. B5-D1 through B5-D9 all retain Pending rule support. The legacy baseline remains accepted independently of this new plan.
 
 ### D1.1 acceptance
 
@@ -134,3 +134,14 @@ Replacement source dependency: C9.3 and ASOP 3.11A establish replacement at the 
 A24.4 and ASOP 2.11A cleanup is assessed only at an explicit `PrepFireOpening` checkpoint for the owner. One immutable snapshot orders all existing dispersed-counter removals before full-counter dispersal. A receipt prevents a newly dispersed counter from being removed by repeated assessment in the same opening; a newly created PFPh counter also waits for a later opening. Inactive and unknown counters do not acquire invented expiration evidence. Wind/Gust, linked drift, WP/Napalm consequences, causal source creation, durable receipts and governed cleanup still require integration before D2.1 is complete.
 
 Validation: 84 focused Rules tests pass, including the existing obligation/Spotter contracts. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches (100%, no exclusions). The inventory regression preserves all seven atmosphere gaps, unclassified counters, nine packages and 538 topics. No atmosphere command or profile is promoted by this read-only rule contract.
+
+
+### D3.1 acceptance: G10 source and packing rule contracts
+
+The missing-source dependency is resolved by the locally available `eASLRB_v3_14.pdf`, SHA-256 `d2fedd572b5256d35a6ef4a787da72102211b4d595f090bea81a4c7ee107dfee`, physical pages 291-292 (printed G16-G17). Complete page renders were checked against column-ordered extraction. The filename says 3.14; the credits on physical page 5 print Version 3.13, January 2026. Both facts are preserved in `ASL Turn Guide Later Rules Source Register.json`. The PDF is not copied into the repository, and the accepted 3.01 source baseline is not silently replaced.
+
+`TurnPackingRules` defines ordinary G10 participant/weapon/terrain/assembly eligibility, including 76-82mm mortars, other Guns/mortars allowed by a note or DYO, designated squad Mules and the qualified-MMC exception for listed SW. Unknown qualification remains NotEvaluated. It computes the M#-based period, one-Game-Turn minimum, night doubling and G10.7 effective M# 12. G10.11/.32 distinguishes interrupted crew activity from allowed unloaded-Gun handling. The existing lifecycle passes the printed G10.3 example: Turn 2 counts, interruption loses Turn 3, Turns 4-5 finish the period, and release waits for the first RPh of Turn 6. G10.33 reversal uses net elapsed complete Game Turns; involuntary unloading restarts the full ordinary period. The specific reversal formula uses elapsed time directly rather than doubling already elapsed night turns again.
+
+Five packing-related source-review flags are now Reconciled, with execution support still Pending. This certifies the source/contract task only. D3.2 must persist actual Gun/Mule/crew roles, midpoint load state, exact opening evidence and reversal/restart records. D3.3 must integrate movement/transport, prohibited unload terrain, G10.4-.42 vulnerability, cumulative Low Ammo and missing-Mule recovery consequences. D3.4 must prove those paths in replay, disclosure, phase close and the live guide. Existing B5 adjudicated durations and assembly effects remain bounded legacy behavior.
+
+Validation: 43 focused packing/work Rules tests and all 24 Turn Guide component tests pass. The component test proves that reconciled packing sources still show pending execution. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered, without exclusions. Source reconciliation does not promote a packing command, remove any of the nine packages, or hide any of the 538 topics.

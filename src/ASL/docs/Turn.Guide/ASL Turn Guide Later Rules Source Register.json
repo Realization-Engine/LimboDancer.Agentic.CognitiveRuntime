@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "reviewed": "2026-10-27",
+  "scope": "Supplemental source review for later Rules tasks. Does not replace the accepted eASLRB 3.01 baseline or certify live command support.",
+  "documents": [
+    {
+      "id": "easlrb-3-14-local",
+      "fileName": "eASLRB_v3_14.pdf",
+      "sha256": "d2fedd572b5256d35a6ef4a787da72102211b4d595f090bea81a4c7ee107dfee",
+      "pageCount": 716,
+      "editionNote": "Filename identifies 3.14; the credits on physical page 5 print Version 3.13, January 2026. Preserve both facts; do not silently relabel either.",
+      "copiedIntoRepository": false,
+      "reviewMethod": "Column-ordered text extraction plus visual review of complete rendered physical pages 291 and 292 (printed G16-G17).",
+      "rules": [
+        "G10.1-.11",
+        "G10.2-.21",
+        "G10.3-.33",
+        "G10.4-.42",
+        "G10.5-.61",
+        "G10.7"
+      ],
+      "pages": [
+        {
+          "physical": 291,
+          "printed": "G16"
+        },
+        {
+          "physical": 292,
+          "printed": "G17"
+        }
+      ],
+      "bindings": [
+        "rph:packStart",
+        "rph:packHalf",
+        "rph:packReverse",
+        "ccph:pinTi",
+        "pack"
+      ],
+      "findings": [
+        "Packing uses designated squad Mules, eligible Guns or listed SW, and qualified Personnel in the same terrain and Location. Normal Guns require a non-PRC Good Order same-nationality crew; G10.7 substitutes a qualified MMC for listed SW.",
+        "G10.3 period is max(1, 12 minus M# plus one for non-MTR), doubled at night. G10.7 SW use M# 12. Start/resume/release uses the first-RPh work step; losing crew Pack-TI invalidates only the current Game Turn.",
+        "Midpoint unloading/loading uses the following Player-Turn RPh, not necessarily a first-RPh. Assembly/limber/repair exceptions, reversal, involuntary unloading, prohibited terrain, vulnerability and cumulative Low Ammo remain explicit later integration requirements."
+      ],
+      "interpretation": "G10.33 reversal uses net complete Game Turns already spent, with the ordinary minimum. Its specific elapsed-time rule does not apply the night multiplier a second time. Involuntary unloading instead requires the normal full G10.3 period.",
+      "executionSupport": "Pending: this source review resolves missing text only. D3.2-D3.4 must integrate real actors, consequences and command/guide evidence."
+    }
+  ]
+}
