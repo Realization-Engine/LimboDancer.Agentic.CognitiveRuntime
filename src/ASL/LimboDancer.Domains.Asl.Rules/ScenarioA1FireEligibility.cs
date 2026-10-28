@@ -360,7 +360,9 @@ public static class ScenarioA1FireEligibility
         var companions = !moversKnown || targets.Length == 0 ? [] : units
             .Where(unit => unit.Active && unit.Mover != true && unit.Side == targets[0].Side && unit.HasDefinition && !unit.Vehicle)
             .OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
-        var refusal = targets.Any(unit => !unit.HasDefinition && !unit.Dummy) ? "play.fire-target: the target Location holds a unit outside the catalog" : null;
+        // A TPBF attack needs an enemy unit in the firer's Location (A7.21): with only the firing side's units there it is refused, as it was before the pass.
+        var refusal = tpbfSide is not null && attacked.Length == 0 ? "play.fire-target: the firer's own Location holds no enemy unit to attack (A7.21)"
+            : targets.Any(unit => !unit.HasDefinition && !unit.Dummy) ? "play.fire-target: the target Location holds a unit outside the catalog" : null;
         return new TargetSelection([.. targets.Select(unit => unit.Id)], [.. vehicles.Select(unit => unit.Id)], [.. companions.Select(unit => unit.Id)], refusal);
     }
 
