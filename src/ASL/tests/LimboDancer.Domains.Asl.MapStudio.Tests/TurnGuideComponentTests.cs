@@ -8,7 +8,7 @@ using LimboDancer.Domains.Asl.Rules;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 
-public sealed class TurnGuideComponentTests : IDisposable
+public sealed partial class TurnGuideComponentTests : IDisposable
 {
     private readonly BunitContext context = new();
     private static readonly TurnGuideCatalog Catalog = TurnGuideCatalog.Load();

@@ -3981,3 +3981,10 @@ button[data-working]::after {
 .turn-guide dd { margin:0 0 .6rem; color:var(--muted); }
 
 .turn-guide .turn-topic { height:auto; min-height:2rem; white-space:normal; line-height:1.5; }
+
+/* U1 audit: reference navigation and disclosed evidence. */
+.turn-audit, .turn-glossary { padding:1rem; border-top:1px solid var(--line); }
+.turn-audit select { max-width:100%; }
+.turn-related { display:flex; flex-wrap:wrap; gap:.4rem; }
+.turn-related button { height:auto; white-space:normal; text-align:left; }
+.turn-work { border-left:3px solid var(--line); padding-left:.7rem; }

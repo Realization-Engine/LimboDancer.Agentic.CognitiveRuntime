@@ -447,3 +447,10 @@ The preview is still the frozen design artifact. The implementation uses shared 
 
 
 U1 final verification: 22 focused MapStudio component, page, workspace and navigation tests pass. The new tests retain all 538 topics and verify offered actions, historical read-only behavior, private marks, scope changes, stale read suppression, safe errors and normal phase-close confirmation. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Browser inspection verified the shared-theme checklist/detail layout, unclipped rows, selected-state styling and Rally-to-Advancing-Fire navigation. Backend libraries were unchanged.
+
+
+### 12.1 U1 audit acceptance
+
+The [U1 audit](ASL%20Turn%20Guide%20U1%20Audit.md) closes identified display, navigation and refresh gaps without expanding backend rule support. Tests enumerate every dependency link, retain all phase topics, check selection/reminder scoping, render unknown and pending evidence honestly, suppress malformed action requests, and reject stale refresh completions. All nine B5-D packages remain deferred and visible.
+
+Verification: 30 focused MapStudio component, page, workspace and navigation tests pass. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Browser inspection confirms readable attention rows and the expanded cross-phase audit with its source evidence and related topic controls. No backend library source changed.

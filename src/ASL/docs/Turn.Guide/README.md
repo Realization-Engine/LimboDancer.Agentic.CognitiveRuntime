@@ -7,6 +7,7 @@ All turn-guide analysis, design, phase catalogs, walkthroughs and dependency aud
 - [B5 acceptance and U1 handoff](ASL%20Turn%20Guide%20B5%20Acceptance%20and%20U1%20Handoff.md)
 - [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md)
 - [Capability and pending-work inventory](ASL%20Turn%20Capability%20Inventory.json)
+- [U1 audit](ASL%20Turn%20Guide%20U1%20Audit.md)
 - [Backend design](ASL%20Turn%20Phase%20Guide%20Design.md)
 - [Backend-first implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md)
 - [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md)
@@ -103,3 +104,6 @@ U1: open Reference > Turn Phase Guide (`/turn-guide`), or the Turn Phase Guide b
 
 
 U1 final verification: 22 focused MapStudio component, page, workspace and navigation tests pass. The new tests retain all 538 topics and verify offered actions, historical read-only behavior, private marks, scope changes, stale read suppression, safe errors and normal phase-close confirmation. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Browser inspection verified the shared-theme checklist/detail layout, unclipped rows, selected-state styling and Rally-to-Advancing-Fire navigation. Backend libraries were unchanged.
+
+
+U1 audit follow-up: restored cross-phase audit navigation and per-phase selection memory, exposed missing live evidence and attention labels, and added normal refresh and stricter action-identity matching. 30 focused MapStudio component, page, workspace and navigation tests pass. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Browser inspection confirms readable attention rows and the expanded cross-phase audit with its source evidence and related topic controls. No backend library source changed.

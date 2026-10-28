@@ -599,3 +599,12 @@ Tests: `TurnGuideComponentTests` covers all eight phases/538 topics, pending/sou
 
 
 U1 final verification: 22 focused MapStudio component, page, workspace and navigation tests pass. The new tests retain all 538 topics and verify offered actions, historical read-only behavior, private marks, scope changes, stale read suppression, safe errors and normal phase-close confirmation. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Browser inspection verified the shared-theme checklist/detail layout, unclipped rows, selected-state styling and Rally-to-Advancing-Fire navigation. Backend libraries were unchanged.
+
+
+### U1 audit follow-up
+
+The [U1 audit](ASL%20Turn%20Guide%20U1%20Audit.md) reconciles the initial component against the frozen preview and accepted backend. The global dependency browser now retains all 38 chains and 191 topic links; topic selection is remembered by phase, reminder counts are phase-local, and the complete phase glossary remains available. Checklist attention labels come directly from backend decisions, alongside pending-rule explanations. Disclosed work lifecycle, opening-review prerequisites, spent attempts and unknown firing/Spotter observations now render explicitly. A support section preserves profile scope and pending remainders.
+
+Refresh is available during normal use and suppresses outdated asynchronous reads. Topic request buttons match complete route identity and live scope; execution still uses the existing governed path. No consideration flag or source reference grants permission. The audit records deliberate preview adaptations and remaining later-pass rule work.
+
+Verification: 30 focused MapStudio component, page, workspace and navigation tests pass. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Browser inspection confirms readable attention rows and the expanded cross-phase audit with its source evidence and related topic controls. No backend library source changed.

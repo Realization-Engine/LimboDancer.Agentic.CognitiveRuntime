@@ -1,12 +1,25 @@
 @using LimboDancer.Domains.Asl.Play
 <section class="turn-evidence" aria-label="Disclosed game guidance">
+    <details class="turn-support"><summary>What this guide can evaluate</summary>
+        <p>@Host.Guide.CoverageNote</p>
+        @foreach (var bound in Host.Profile.Bounds)
+        {
+            <p>@bound.Scope</p>
+            <ul>@foreach (var gap in bound.Pending) { <li>Pending: @gap</li> }</ul>
+        }
+    </details>
     <h3>Cross-phase obligations</h3>
     @if (Host.Obligations.IsEmpty) { <p>No disclosed obligations. This does not certify that the phase is complete.</p> }
     @foreach (var item in Host.Obligations) { <p>@item.SubjectId: @item.DefinitionId · @item.State · Command support: @item.CommandSupport</p>
-        @if (item.Deadline is { } deadline) { <p>Due window: @deadline.Kind. Owner: @deadline.OwnerSide.</p> } }
+        @if (item.Deadline is { } deadline) { <p>Due window: @deadline.Kind. Owner: @deadline.OwnerSide. Earliest Player Turn: @deadline.EarliestPlayerTurn.</p> } }
     @foreach (var item in Host.DecisionWindows)
     {
-        <details><summary>@item.SubjectId: @item.Timing</summary><p>@string.Join("; ", item.SourceTiming)</p>
+        <details><summary>@item.SubjectId: @item.Timing</summary><p>@item.WindowId · @string.Join("; ", item.SourceTiming)</p>
+            @if (item.Opening is { } opening)
+            {
+                <p>Opening review: Drift: @opening.Drift; WP: @opening.Wp; Gusts: @opening.Gusts; Gliders: @opening.Gliders.</p>
+            }
+            else { <p>Opening review: not supplied.</p> }
             @foreach (var gap in item.Pending) { <p>@gap</p> }
         </details>
     }
@@ -19,23 +32,33 @@
     @if (Host.FireHistory is { } fire)
     {
         <details><summary>Fire and Spotter history</summary>
-            @foreach (var shot in fire.Shots) { <p>@string.Join(", ", shot.Firers): @shot.Kind, turn @shot.GameTurn @shot.Phase, weapon @shot.Weapon, Spotter @shot.Spotter. ROF retained: @shot.RateOfFireKept</p> }
-            @foreach (var spotter in fire.Spotters) { <p>@spotter.Weapon / @spotter.Spotter: @spotter.State</p> }
+            @foreach (var shot in fire.Shots) { <p>@string.Join(", ", shot.Firers): @shot.Kind, turn @shot.GameTurn @shot.Phase, weapon @shot.Weapon, Spotter @shot.Spotter. ROF retained: @Known(shot.RateOfFireKept). In the current phase: @Known(shot.InCurrentPhase)</p> }
+            @foreach (var spotter in fire.Spotters) { <p>@spotter.Weapon / @spotter.Spotter: @spotter.State. First observed: turn @spotter.FirstObservedGameTurn @spotter.FirstObservedPhase. Spotted this phase: @Known(spotter.SpottedThisPhase)</p> }
             @foreach (var gap in fire.EvaluationGaps) { <p>Pending: @gap</p> }
         </details>
     }
     @if (Host.Atmosphere is { } atmosphere)
     {
         <details><summary>Smoke and weather history</summary>
-            @foreach (var grenade in atmosphere.Grenades) { <p>@grenade.Unit: @grenade.State · turn @grenade.GameTurn @grenade.Phase</p> }
-            @foreach (var wind in atmosphere.Wind) { <p>Wind recorded: turn @wind.GameTurn @wind.Phase. Gust: @wind.Gust</p> }
+            @foreach (var grenade in atmosphere.Grenades) { <p>@grenade.Unit: @grenade.State · turn @grenade.GameTurn @grenade.Phase · Owner: @grenade.OwnerSide · Counter: @(grenade.Counter ?? "Not supplied") · Attempt spent this phase: @Known(grenade.AttemptSpentThisPhase)</p> }
+            @foreach (var wind in atmosphere.Wind) { <p>Wind recorded: turn @wind.GameTurn @wind.Phase, @wind.PhasingSide. Gust: @Known(wind.Gust)</p> }
             @foreach (var smoke in atmosphere.UnclassifiedSmoke) { <p>Unclassified smoke: @smoke</p> }
             @foreach (var gap in atmosphere.PendingRules) { <p>Pending @gap.Family: @gap.MissingFacts @gap.Timing (@gap.Reference)</p> }
         </details>
     }
     <details><summary>Work and completion effects</summary>
-        @foreach (var work in Host.Work) { <p>@work.Subject: @work.Kind · @work.CompletedGameTurns / @work.RequiredGameTurns Game Turns · @work.EffectStatus · Rules: @work.RuleAutomation</p> }
+        @if (Host.Work.IsEmpty) { <p>No disclosed work entries. Pending rules still apply.</p> }
+        @foreach (var work in Host.Work)
+        {
+            <div class="turn-work"><p>@work.Subject: @work.Kind · @work.CompletedGameTurns / @work.RequiredGameTurns Game Turns</p>
+                <p>Working: @Known(work.Working); Completed: @Known(work.Completed); Cancelled: @Known(work.Cancelled); Completion due: @Known(work.CompletionDue); Supply depleted: @Known(work.SupplyDepleted).</p>
+                <p>Completion effect: @(work.EffectKind?.ToString() ?? "Not specified") · @work.EffectStatus. Rule automation: @work.RuleAutomation.</p>
+            </div>
+        }
         @foreach (var gap in Host.WorkProgressGaps) { <p>Pending: @gap</p> }
     </details>
 </section>
-@code { [Parameter, EditorRequired] public TurnHostGuide Host { get; set; } = null!; }
+@code {
+    [Parameter, EditorRequired] public TurnHostGuide Host { get; set; } = null!;
+    private static string Known(bool? value) => value switch { true => "Yes", false => "No", _ => "Unknown" };
+}
