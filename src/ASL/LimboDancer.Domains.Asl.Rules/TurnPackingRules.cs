@@ -26,16 +26,32 @@ public sealed record TurnPackingVerdict(TurnPackingEligibility State, string Rea
 /// <summary>G10 ordinary eligibility and period rules. Animal identities, midpoint actions, transport and vulnerability consequences are separate host work.</summary>
 public static class TurnPackingRules
 {
-    public static TurnPackingVerdict Evaluate(TurnPackingFacts facts)
+    public static TurnPackingVerdict Evaluate(TurnPackingFacts facts) => EvaluateCore(facts, false, true);
+
+    /// <summary>G10.41 recovery of a surviving, already-unloaded weapon. The historical Mule may be a HS or eliminated; no loading permission is granted.</summary>
+    public static TurnPackingVerdict EvaluateRecovery(TurnPackingFacts facts, TurnPackingCasualtyState casualty)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(casualty);
+        if (!casualty.WeaponAlive || casualty.Loaded || casualty.Recovery != TurnPackingRecovery.FullOrdinaryPeriod
+            || casualty.Weapon != facts.Weapon || casualty.MuleSize is not (TurnHorseSize.Squad or TurnHorseSize.HalfSquad)
+            || casualty.MuleAlive && !casualty.MulePackTi)
+        {
+            return new(TurnPackingEligibility.Ineligible, "A full Unpacking recovery requires the surviving unloaded weapon and its G10.4 casualty history.");
+        }
+        return EvaluateCore(facts, true, casualty.MuleAlive);
+    }
+
+    private static TurnPackingVerdict EvaluateCore(TurnPackingFacts facts, bool recovery, bool muleAlive)
     {
         ArgumentNullException.ThrowIfNull(facts);
         if (!Enum.IsDefined(facts.Weapon))
         {
             throw new ArgumentException("Unknown packing weapon class.", nameof(facts));
         }
-        bool?[] required = [facts.FirstRallyWorkWindow, facts.SameLocationAndTerrain, facts.MuleDesignated,
-            facts.SquadMule, facts.MuleAvailableForSubject, facts.GoodOrder, facts.Unpinned, facts.NonPrc,
-            facts.DismantledOrLimberedIfPossible,
+        bool?[] required = [facts.FirstRallyWorkWindow, facts.SameLocationAndTerrain, recovery && !muleAlive ? true : facts.MuleDesignated,
+            recovery ? true : facts.SquadMule, recovery ? true : facts.MuleAvailableForSubject, facts.GoodOrder, facts.Unpinned, facts.NonPrc,
+            recovery ? true : facts.DismantledOrLimberedIfPossible,
             facts.Weapon switch { TurnPackingWeapon.Unknown => null, TurnPackingWeapon.Gun or TurnPackingWeapon.OtherMortar => facts.GunAllowedByNoteOrDyo, _ => true },
             facts.Weapon == TurnPackingWeapon.Unknown ? null : IsSupportWeapon(facts.Weapon) ? facts.QualifiedMmcForSw : Both(facts.CrewCounter, facts.SameNationality)];
         if (required.Any(item => item == false))
@@ -44,7 +60,9 @@ public static class TurnPackingRules
         }
         return required.Any(item => item is null)
             ? new(TurnPackingEligibility.NotEvaluated, "Supply all G10 source and participant facts; unknowns are not eligibility.")
-            : new(TurnPackingEligibility.Eligible, "Ordinary G10 (Un)Packing requirements are proven; the host must still bind the actors, opening and governed command.");
+            : new(TurnPackingEligibility.Eligible, recovery
+                ? "G10.41 Unpacking recovery facts are proven; the host must bind surviving actors, casualty and the first-RPh work step."
+                : "Ordinary G10 (Un)Packing requirements are proven; the host must still bind the actors, opening and governed command.");
     }
 
     /// <summary>Classify known counter facts for G10.2/.7. Gun permission, DYO and qualified use remain separate facts.</summary>

@@ -16,7 +16,13 @@ public sealed record TurnPackingPeriod(TurnPackingSpecification Specification, T
     bool FirstHalfCompleted, bool PersonnelPackTi, bool Loaded, TurnPackingRally? MidpointAt, bool Completed,
     TurnPackingRally? InterruptedAt)
 {
-    public bool WeaponAndMulePackTi => !Completed;
+    public TurnPackingCasualtyState? RecoveryOrigin
+    {
+        get; init;
+    }
+    public bool WeaponPackTi => !Completed;
+    public bool MulePackTi => !Completed && (RecoveryOrigin?.MuleAlive ?? true);
+    public bool WeaponAndMulePackTi => WeaponPackTi && MulePackTi;
 }
 
 /// <summary>G10.3/.31/.33 period transitions. A host must prove actors and boundary facts and commit the resulting load/release effects atomically.</summary>
@@ -38,7 +44,27 @@ public static class TurnPackingPeriods
             direction == TurnPackingDirection.Unpack, null, false, null);
     }
 
-    public static bool MidpointDue(TurnPackingPeriod period) => period.PersonnelPackTi && !period.Completed && period.MidpointAt is null
+    /// <summary>Begin the full G10.41 period after a proven forced unload. The Mule identity remains historical even when eliminated.</summary>
+    public static TurnPackingPeriod StartRecovery(TurnPackingSpecification specification, TurnPackingCasualtyState casualty,
+        TurnPackingRally rally, TurnPackingFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ValidateSpecification(specification);
+        ValidateRally(rally);
+        if (!rally.FirstRally || facts.Weapon != specification.Weapon
+            || TurnPackingRules.EvaluateRecovery(facts, casualty).State != TurnPackingEligibility.Eligible)
+        {
+            throw new InvalidDataException("Full Unpacking recovery starts with fresh eligibility at a first-RPh work step after its casualty.");
+        }
+        var duration = TurnPackingRules.RequiredGameTurns(specification.Weapon, specification.ManhandlingNumber, specification.Night)
+            ?? throw new InvalidDataException("Recovery duration is unknown.");
+        return new(specification, TurnPackingDirection.Unpack, duration, 0, rally, false, true, false, null, false, null)
+        {
+            RecoveryOrigin = casualty
+        };
+    }
+
+    public static bool MidpointDue(TurnPackingPeriod period) => period.RecoveryOrigin is null && period.PersonnelPackTi && !period.Completed && period.MidpointAt is null
         && period.CompletedGameTurns * 2L + (period.FirstHalfCompleted ? 1 : 0) >= period.RequiredGameTurns;
 
     public static bool CompletionDue(TurnPackingPeriod period) => period.PersonnelPackTi && !period.Completed
@@ -105,7 +131,17 @@ public static class TurnPackingPeriods
         {
             throw new InvalidDataException("Resume the interrupted crew only at a later Game Turn's first RPh work step.");
         }
-        RequireEligibility(period.Specification, facts);
+        if (period.RecoveryOrigin is { } recovery)
+        {
+            if (facts.Weapon != period.Specification.Weapon || TurnPackingRules.EvaluateRecovery(facts, recovery).State != TurnPackingEligibility.Eligible)
+            {
+                throw new InvalidDataException("Resume requires fresh eligibility for the surviving recovery participants.");
+            }
+        }
+        else
+        {
+            RequireEligibility(period.Specification, facts);
+        }
         return period with
         {
             PersonnelPackTi = true
@@ -115,7 +151,7 @@ public static class TurnPackingPeriods
     public static TurnPackingPeriod Reverse(TurnPackingPeriod period)
     {
         RequireOpen(period);
-        if (!period.PersonnelPackTi || !period.LastRally.FirstRally || MidpointDue(period) || CompletionDue(period))
+        if (period.RecoveryOrigin is not null || !period.PersonnelPackTi || !period.LastRally.FirstRally || MidpointDue(period) || CompletionDue(period))
         {
             throw new InvalidDataException("Voluntary reversal needs all participants Pack-TI at a first RPh work step before completion.");
         }
@@ -132,7 +168,7 @@ public static class TurnPackingPeriods
     public static TurnPackingPeriod Complete(TurnPackingPeriod period)
     {
         RequireOpen(period);
-        if (!CompletionDue(period) || period.MidpointAt is null)
+        if (!CompletionDue(period) || period.MidpointAt is null && period.RecoveryOrigin is null)
         {
             throw new InvalidDataException("Release requires the complete period, midpoint receipt and following first RPh work step.");
         }
@@ -180,6 +216,13 @@ public static class TurnPackingPeriods
             || period.CompletedGameTurns > period.RequiredGameTurns || period.FirstHalfCompleted && (!period.PersonnelPackTi || period.LastRally.FirstRally))
         {
             throw new InvalidDataException("Packing period is terminal or inconsistent.");
+        }
+        if (period.RecoveryOrigin is { } recovery && (period.Direction != TurnPackingDirection.Unpack || period.Loaded
+            || period.MidpointAt is not null || !recovery.WeaponAlive || recovery.Loaded || recovery.Weapon != period.Specification.Weapon
+            || recovery.Recovery != TurnPackingRecovery.FullOrdinaryPeriod
+            || period.RequiredGameTurns != TurnPackingRules.RequiredGameTurns(period.Specification.Weapon, period.Specification.ManhandlingNumber, period.Specification.Night)))
+        {
+            throw new InvalidDataException("Recovery must retain its full ordinary period and proven prior physical unload.");
         }
         if (period.InterruptedAt is { } interruption)
         {
