@@ -748,7 +748,8 @@ public sealed partial class GamePlanner
     /// <summary>
     /// The berserk attackers of a CC attack on a vehicle that return to normal (A15.46; pass 72, ruling R72.7), as Rules decides it: the vehicle destroyed, the
     /// berserk attackers the attack left, and, only when Rules asks, the Known enemy units of the Location as the sequential CC reads them (the planner's
-    /// index, Riders among them), the vehicle read as gone, as <see cref="NextAfter"/> reads it.
+    /// index, Riders among them), the vehicle read as gone, as <see cref="NextAfter"/> reads it, and its PRC with it: "the PRC of a vehicle ... are eliminated if
+    /// the vehicle is destroyed" (A11.5, p. 74; ruling R72.20).
     /// </summary>
     private string[] BerserkReturnsAfterVehicleKill(GameState state, BoardLocation location, UnitInstance vehicle, IReadOnlyList<UnitInstance> attackers, bool destroyed,
         VehicleCloseCombatResolution resolution)
@@ -759,7 +760,18 @@ public sealed partial class GamePlanner
         KnownEnemyCount Known()
         {
             VehicleCcUnitFacts[] known = [.. VehicleCcUnits(state, location).Where(unit => unit.Side != side && unit.Known)];
-            return new KnownEnemyCount(known.Length, known.Count(unit => unit.Id != vehicle.Id && !lost.Contains(unit.Id)));
+            var gone = new HashSet<string>(lost, StringComparer.Ordinal) { vehicle.Id };
+            if (destroyed)
+            {
+                var index = MemoOf(state).Objects(state);
+                gone.UnionWith(index.Aboard(vehicle.Id).Select(unit => unit.Id));
+                if (index.CrewOf(vehicle.Id) is { } crew)
+                {
+                    gone.Add(crew.Id);
+                }
+            }
+
+            return new KnownEnemyCount(known.Length, known.Count(unit => !gone.Contains(unit.Id)));
         }
 
         return [.. ScenarioA1SequenceCalculator.BerserkReturnsAfterAttack(new BerserkAttackFacts(state.Phase, false, destroyed, berserk), Known)];

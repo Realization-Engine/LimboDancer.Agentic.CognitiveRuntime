@@ -73,6 +73,12 @@ public sealed record FireView(string EventId, string Group, string Target, strin
         get; init;
     }
 
+    /// <summary>The lowered B# or X# of each weapon that malfunctioned or was removed, with its causes, by the weapon's id (pass 72, the reviews R3.3); null when none.</summary>
+    public IReadOnlyDictionary<string, string>? WeaponNumbers
+    {
+        get; init;
+    }
+
     /// <summary>
     /// A text of this record in the view's words (pass 31c, design D11): the units and counters its arithmetic and effects name by id, as the view
     /// could name them just before the attack. The records give it; without one a text keeps its identifiers.
@@ -147,7 +153,13 @@ public static class FireText
     /// What an attack did to a MG, in words (A9.2, A9.7); null when there is nothing a player needs to be told. A MG that kept its rate of fire may
     /// fire again in the phase, which the page said nowhere before (play test P-17).
     /// </summary>
-    public static string? WeaponText(FireWeaponEffect weapon)
+    public static string? WeaponText(FireWeaponEffect weapon) => WeaponText(weapon, null);
+
+    /// <summary>
+    /// What an attack did to a MG, in words, with the lowered B# or X# the record's facts give it and their causes (<paramref name="number"/>, pass 72, the
+    /// reviews R3.3): "the DR reached its B10 (B11, less 1 for Ammunition Shortage, A19.131)".
+    /// </summary>
+    public static string? WeaponText(FireWeaponEffect weapon, string? number)
     {
         ArgumentNullException.ThrowIfNull(weapon);
         // A.11, A9.7 (pass 45): a weapon whose lowered B# became an X# is removed, not malfunctioned.
@@ -159,8 +171,8 @@ public static class FireText
                 : selection.Length > 0 ? $"{weapon.EquipmentId}'s {mg.ToUpperInvariant()} did not malfunction{selection}" : null;
         }
 
-        return weapon.Removed == true ? $"{weapon.EquipmentId} is removed: the DR reached its X# (A.11, A9.7)"
-            : weapon.Malfunctioned ? $"{weapon.EquipmentId} malfunctioned (A9.7)"
+        return weapon.Removed == true ? $"{weapon.EquipmentId} is removed: the DR reached its {number ?? "X#"} (A.11, A9.7)"
+            : weapon.Malfunctioned ? number is null ? $"{weapon.EquipmentId} malfunctioned (A9.7)" : $"{weapon.EquipmentId} malfunctioned: the DR reached its {number} (A9.7)"
             : weapon.RateOfFireRetained ? $"{weapon.EquipmentId} kept its rate of fire and may fire again this phase (A9.2)"
             : null;
     }
@@ -221,15 +233,19 @@ public static class FireText
     /// <summary>
     /// The Unit Replacement of an Original 12 under Ammunition Shortage, one line for each MMC it fell on (A19.131, A.9; pass 72, ruling R72.11), with the
     /// firer's Location as the record names it: "r1 in bd03:A3:0: the Original 12 under Ammunition Shortage (Random Selection dr 5, A.9): Replaced by
-    /// defender-conscript-squad (A19.131)", which a view reads with names and the hex in brackets. Null when there is none.
+    /// defender-conscript-squad (A19.131)", which a view reads with names and the hex in brackets. With <paramref name="selection"/>, every candidate's Random
+    /// Selection dr (the reviews R3.10): "(Random Selection: r1 dr 5, r2 dr 2, A.9)". Null when there is none.
     /// </summary>
-    public static IReadOnlyList<string>? ShortageLines(IReadOnlyList<FireUnitEffect>? effects, IReadOnlyList<FireFirer>? firers)
+    public static IReadOnlyList<string>? ShortageLines(IReadOnlyList<FireUnitEffect>? effects, IReadOnlyList<FireFirer>? firers,
+        IReadOnlyList<(string UnitId, int Dr)>? selection = null)
     {
         if (effects is not { Count: > 0 })
         {
             return null;
         }
 
+        var drs = selection is { Count: > 1 }
+            ? $" (Random Selection: {string.Join(", ", selection.Select(item => $"{item.UnitId} dr {item.Dr.ToString(CultureInfo.InvariantCulture)}"))}, A.9)" : null;
         return [.. effects.Select(effect =>
         {
             var at = firers?.FirstOrDefault(firer => firer.UnitId == effect.UnitId)?.LocationId;
@@ -238,7 +254,7 @@ public static class FireText
                 : effect.Events.Contains("ammunition-shortage-berserk") ? "incapable of further quality loss but berserk, so not broken"
                 : "incapable of further quality loss, so broken";
             return $"{effect.UnitId}{(at is null ? string.Empty : " in " + at)}: the Original 12 under Ammunition Shortage"
-                + (effect.RandomSelectionDr is { } dr ? $" (Random Selection dr {dr.ToString(CultureInfo.InvariantCulture)}, A.9)" : string.Empty) + $": {what} (A19.131)";
+                + (drs ?? (effect.RandomSelectionDr is { } dr ? $" (Random Selection dr {dr.ToString(CultureInfo.InvariantCulture)}, A.9)" : string.Empty)) + $": {what} (A19.131)";
         })];
     }
 

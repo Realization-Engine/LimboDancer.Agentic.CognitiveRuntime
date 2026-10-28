@@ -199,12 +199,13 @@ public static class LiveFire
             boarding = new FireEmbarking(bailedHere, true, null);
         }
 
-        // A7.21, A15.432 (pass 72, ruling R72.7): outside the MPh's moving stack, a firer on foot in the target Location fires TPBF at the other side's units
-        // there; before the pass such an attack was refused, its firer among its own targets, so no record holds one.
+        // A7.21, A7.211, A15.432 (pass 72, rulings R72.7, R72.21): whether a firer, Infantry or a vehicle, stands in the target Location; Rules decides that
+        // the attack is TPBF at the other side's units there outside the MPh's moving stack. Before the pass such an attack was refused, its firer among its
+        // own targets, so no record holds one.
         UnitInstance UnitAt(string id) => atTarget.First(unit => unit.Id == id);
-        var tpbfSide = movers is null && firers.Any(item => atTarget.Any(unit => unit.Id == item.Unit.Id)) ? side : null;
         var selection = ScenarioA1FireEligibility.SelectTargets([.. atTarget.Select(unit => new TargetUnitStateFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side,
-            IsVehicle(unit), unit.Kind == UnitKinds.Dummy, unit.Definition is not null, movers?.Contains(unit.Id)))], movers is not null, tpbfSide);
+            IsVehicle(unit), unit.Kind == UnitKinds.Dummy, unit.Definition is not null, movers?.Contains(unit.Id)))], movers is not null, side,
+            firers.Any(item => atTarget.Any(unit => unit.Id == item.Unit.Id)));
         if (selection.Refusal is { } outside)
         {
             return (null, outside);
@@ -1037,9 +1038,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                 Captors = target.Captors,
             };
 
-            // Pass 72 (ruling R72.13): a record that carries a unit's SSR ELR as an underscored MMC has it checked against the state; one made before the pass
-            // carries none and resolves as it did.
-            if (target.UnderscoredElr is null)
+            // Pass 72 (rulings R72.13, R72.19): a record stamped with the pass has every unit's SSR ELR as an underscored MMC checked against the state; one made
+            // before the pass carries none and resolves as it did.
+            if (recorded.UnitSubstitution != true && target.UnderscoredElr is null)
             {
                 expected = expected with
                 {

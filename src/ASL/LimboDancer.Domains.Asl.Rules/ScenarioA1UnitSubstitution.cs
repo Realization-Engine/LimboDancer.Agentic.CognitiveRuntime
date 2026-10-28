@@ -19,7 +19,8 @@ public static class ScenarioA1UnitSubstitution
     public static string? AmmunitionShortageToken(string token)
     {
         ArgumentNullException.ThrowIfNull(token);
-        return token.Split(':') is ["ammo-shortage", { Length: > 0 } side] ? side : null;
+        // The reviews R4.8: the prefix is tested before the split, since every SSR of the game passes here.
+        return token.StartsWith(AmmunitionShortageRule, StringComparison.Ordinal) && token.Split(':') is ["ammo-shortage", { Length: > 0 } side] ? side : null;
     }
 
     /// <summary>
@@ -30,6 +31,11 @@ public static class ScenarioA1UnitSubstitution
     public static (string Side, string? Group, int Elr)? UnderscoredElrToken(string token)
     {
         ArgumentNullException.ThrowIfNull(token);
+        if (!token.StartsWith(UnderscoredElrRule, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
         return token.Split(':') switch
         {
             ["underscored-elr", { Length: > 0 } side, var n] when Elr(n) is { } elr => (side, null, elr),

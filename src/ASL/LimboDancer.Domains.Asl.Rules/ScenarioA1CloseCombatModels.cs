@@ -260,6 +260,16 @@ public sealed record CloseCombatFacts(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Pass 72 (A15.46, p. 84; ruling R72.20): the stamp of a round recorded from the pass on: a concealed enemy unit left in the Location is no Known enemy unit,
+    /// so it does not keep a berserk unit berserk, as fire reads it. Null in a record made before the pass, which counts every enemy unit as it did.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? KnownEnemiesOnly
+    {
+        get; init;
+    }
 }
 
 /// <summary>A defending unit's Final DR in one attack, with its own DRM (A11.16), and the result for it.</summary>

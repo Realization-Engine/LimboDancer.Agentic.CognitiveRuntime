@@ -556,6 +556,11 @@ public static class ScenarioCards
         int? Value(string face, string name) => definition.Printed(face, name)?.Value?.Number;
         string? Text(string face, string name) => definition.Printed(face, name)?.Value?.Text;
         var strength = $"{Value("front", "asl:firepower")}-{Value("front", "asl:range")}-{Value("front", "asl:morale")}";
+
+        // Pass 72 (the reviews' known items): a weapon prints its FP and range only where the counter has them; a PSK, PF, or BAZ prints none, so it reads "PSK",
+        // never "PSK -".
+        string Numbers(params int?[] values) => values.All(value => value is not null) ? " " + string.Join("-", values) : string.Empty;
+        var fpRange = Numbers(Value("front", "asl:firepower"), Value("front", "asl:range"));
         return definition.Kind switch
         {
             "asl:squad" => $"{strength} {definition.Class} squad",
@@ -565,11 +570,11 @@ public static class ScenarioCards
             "asl:leader" when Value("front", "asl:leadership") is { } modifier =>
                 $"{Value("front", "asl:morale")}{(modifier > 0 ? "+" : "-")}{Math.Abs(modifier)} {(definition.Id.Contains("commissar", StringComparison.Ordinal) ? "Commissar" : "leader")}",
             "asl:hero" => "hero",
-            "asl:mg" => $"{Text("front", "asl:size")} MG {Value("front", "asl:firepower")}-{Value("front", "asl:range")}",
+            "asl:mg" => $"{Text("front", "asl:size")} MG{fpRange}",
             "asl:light-mortar" => $"{Value("front", "asl:caliber")}mm light mortar",
-            "asl:latw" => $"{Text("front", "asl:latw-type")?.ToUpperInvariant()} {Value("front", "asl:firepower")}-{Value("front", "asl:range")}",
-            "asl:ft" => $"FT {Value("front", "asl:firepower")}-{Value("front", "asl:range")}",
-            "asl:dc" => $"DC {Value("front", "asl:firepower")}",
+            "asl:latw" => $"{Text("front", "asl:latw-type")?.ToUpperInvariant() ?? "LATW"}{fpRange}",
+            "asl:ft" => $"FT{fpRange}",
+            "asl:dc" => $"DC{Numbers(Value("front", "asl:firepower"))}",
             _ => definition.Id,
         };
     }

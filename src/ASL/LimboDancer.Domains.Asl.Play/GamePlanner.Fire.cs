@@ -1243,18 +1243,22 @@ public sealed partial class GamePlanner
     /// <summary>
     /// The berserk firers of an attack that return to normal (A15.46; pass 72, ruling R72.7), as Rules decides it from the attack's own facts and resolution:
     /// whether every firer is in the target Location, the berserk firers the attack left, and, only when Rules asks, the Known enemy units in the target
-    /// Location from the planner's index (those on foot, the vehicles, and those aboard them) against those the attack eliminated or wrecked.
+    /// Location from the planner's index (those on foot, the vehicles, and those aboard them) against those the attack eliminated or wrecked, a wrecked
+    /// vehicle's PRC with it (A11.5; ruling R72.20). The index is taken only for an attack with a berserk firer (the reviews R4.5).
     /// </summary>
     private string[] BerserkReturnsAfterFire(GameState state, FireAttack facts, FireResolution resolution)
     {
         var firers = facts.Firers ?? [];
+        if (!firers.Any(item => item.Berserk == true) || !BoardLocation.TryParse(facts.TargetLocationId, out var location))
+        {
+            return [];
+        }
+
         var objects = MemoOf(state).Objects(state);
-        // A19.131 (pass 72, ruling R72.11): a firer Replaced under Ammunition Shortage is no longer the unit that fired.
-        var lost = (resolution.FirerEffects ?? []).Where(effect => effect.Eliminated).Concat(ScenarioA1FireFollowUps.ShortageReplaced(resolution))
-            .Select(effect => effect.UnitId).ToHashSet(StringComparer.Ordinal);
+        var lost = (resolution.FirerEffects ?? []).Where(effect => effect.Eliminated).Select(effect => effect.UnitId).ToHashSet(StringComparer.Ordinal);
         string[] berserk = [.. firers.Select(item => item.UnitId).OfType<string>().Where(id => !lost.Contains(id) && objects.Unit(id) is { } unit && Is(unit, Conditions.Berserk))
             .Order(StringComparer.Ordinal)];
-        if (berserk.Length == 0 || !BoardLocation.TryParse(facts.TargetLocationId, out var location))
+        if (berserk.Length == 0)
         {
             return [];
         }
@@ -1266,13 +1270,19 @@ public sealed partial class GamePlanner
             UnitInstance[] here = [.. objects.At(location!).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active)];
             UnitInstance[] known = [.. here.Concat(here.Where(LiveFire.IsVehicle).SelectMany(vehicle => objects.Aboard(vehicle.Id)))
                 .Where(unit => unit.Side != side && KnownEnemy(unit))];
+            string[] wrecked = [.. (resolution.VehicleEffects ?? []).Where(effect => ScenarioA1FireFollowUps.VehicleEffect(effect, facts.FireKind, false).Wrecked)
+                .Select(effect => effect.VehicleId)];
             var gone = resolution.Effects.Where(effect => effect.Eliminated).Select(effect => effect.UnitId)
-                .Concat((resolution.VehicleEffects ?? []).Where(effect => ScenarioA1FireFollowUps.VehicleEffect(effect, facts.FireKind, false).Wrecked).Select(effect => effect.VehicleId))
+                .Concat(wrecked).Concat(wrecked.SelectMany(vehicle => objects.Aboard(vehicle)).Select(unit => unit.Id))
                 .ToHashSet(StringComparer.Ordinal);
             return new KnownEnemyCount(known.Length, known.Count(unit => !gone.Contains(unit.Id)));
         }
 
-        return [.. ScenarioA1SequenceCalculator.BerserkReturnsAfterAttack(new BerserkAttackFacts(state.Phase, ownLocation, false, berserk), Known)];
+        // A19.131 (pass 72, ruling R72.11): Rules leaves out a firer Replaced under Ammunition Shortage, which is no longer the unit that fired.
+        return [.. ScenarioA1SequenceCalculator.BerserkReturnsAfterAttack(new BerserkAttackFacts(state.Phase, ownLocation, false, berserk)
+        {
+            Replaced = ScenarioA1FireFollowUps.ShortageReplaced(resolution).Select(effect => effect.UnitId).ToArray() is { Length: > 0 } replaced ? replaced : null,
+        }, Known)];
     }
 
     /// <summary>

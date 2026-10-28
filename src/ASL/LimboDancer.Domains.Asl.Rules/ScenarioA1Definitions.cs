@@ -252,6 +252,15 @@ public static class ScenarioA1Definitions
     /// </summary>
     public static string DepletionNumberWords(int number, bool elite, bool shortage = false) => DepletionWords(number, elite, shortage: shortage);
 
+    /// <summary>A weapon's B# or X# as a recorded attack lowered it, in a record's words (<see cref="ScenarioA1FireCalculator.BreakdownWords"/>); null as printed.</summary>
+    public static string? BreakdownWords(FireAttack attack, FireWeaponEffect effect) => ScenarioA1FireCalculator.BreakdownWords(attack, effect, OrdnanceReference.Value.Fire);
+
+    /// <summary>
+    /// Whether an Ammunition Shortage lowered a recorded shot's Depletion Number (A19.131): never for a captured Gun (A21.11, p. 88; pass 72, ruling R72.18).
+    /// </summary>
+    public static bool DepletionShortage(OrdnanceShot? shot) =>
+        shot is not null && OrdnanceReference.Value.Guns.TryGetValue(shot.Gun?.DefinitionId ?? string.Empty, out var gun) && ScenarioA1ArmorCalculator.DepletionShortage(shot, gun);
+
     /// <summary>
     /// The Depletion Number a shot's declared ammunition is fired under, in words (C8.9; pass 55, ruling R55.7), or null when it has none: what
     /// the proposal and the record of the shot say.
@@ -260,7 +269,7 @@ public static class ScenarioA1Definitions
     {
         ArgumentNullException.ThrowIfNull(shot);
         return OrdnanceReference.Value.Guns.TryGetValue(shot.Gun?.DefinitionId ?? string.Empty, out var gun) && ScenarioA1ArmorCalculator.ShotDepletion(shot, gun) is { } number
-            ? DepletionWords(number, shot.Elite == true, shortage: shot.AmmunitionShortage == true) : null;
+            ? DepletionWords(number, shot.Elite == true, shortage: ScenarioA1ArmorCalculator.DepletionShortage(shot, gun)) : null;
     }
 
     /// <summary>

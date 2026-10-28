@@ -658,11 +658,13 @@ public sealed class ScenarioA1Pass72RulesTests
         Assert.Null(alone.ShortageEffects);
         Assert.True(Assert.Single(alone.WeaponEffects!).Malfunctioned);
 
-        // A19.131, A.11 (p. 43; ruling R72.12): the LMG's B# is one lower, and the lowered B# makes it an X#, so an Original DR of that B# removes it. Without
-        // the Shortage the same DR does nothing to it.
+        // A19.131, A.11 (p. 43; ruling R72.18): the LMG's B# is one lower and its Original B# becomes its X# (a B11 LMG is B10 and X11), so an Original DR
+        // of the lowered B# malfunctions it and one of the printed B# removes it. Without the Shortage the lower DR does nothing to it.
         var printed = Fire.Definitions["defender-lmg"].Breakdown!.Value;
         var lowered = Assert.Single(Resolved(Short(Dr(printed - 1), true, WithLmg(Squad("ru-1"), inherent: false)), []).WeaponEffects!);
-        Assert.Equal((printed - 1, true, (bool?)true), (lowered.BreakdownNumber, lowered.Malfunctioned, lowered.Removed));
+        Assert.Equal((printed - 1, true, (bool?)null), (lowered.BreakdownNumber, lowered.Malfunctioned, lowered.Removed));
+        var reached = Assert.Single(Resolved(Short(Dr(printed), true, WithLmg(Squad("ru-1"), inherent: false)), []).WeaponEffects!);
+        Assert.Equal((printed - 1, true, (bool?)true), (reached.BreakdownNumber, reached.Malfunctioned, reached.Removed));
         var normal = Assert.Single(Resolved(Short(Dr(printed - 1), false, WithLmg(Squad("ru-1"), inherent: false)), []).WeaponEffects!);
         Assert.Equal((printed, false), (normal.BreakdownNumber, normal.Malfunctioned));
     }
@@ -860,5 +862,118 @@ public sealed class ScenarioA1Pass72RulesTests
         }, [3, 4]);
         Assert.Equal([("heroic:ru-h", -1m)], HeroDrm(result.Arithmetic!.Drm).Select(item => (item.Name, item.Value)));
         Assert.DoesNotContain(result.Arithmetic.Firers, item => item.UnitId == "ru-h");
+    }
+
+    // The reviews' fixes, Round B (rulings R72.18 to R72.22).
+
+    [Fact]
+    public void AnUnderscoredSquadUnderBothSsrsIsStillReplacedByItsTwoHalfSquadsOnAShortage()
+    {
+        // Ruling R72.22 (A19.132, A19.13, p. 86): A19.132's SSR ELR reaches ELR failures only; the Shortage's Unit Replacement keeps A19.13's EXC, so the German
+        // 8-3-8 under an SSR ELR of 3 still becomes its two 3-3-8 HS.
+        var engineers = Squad("de-1", Engineer) with
+        {
+            UnderscoredElr = 3
+        };
+        var split = Assert.Single(Resolved(Short([6, 6], true, engineers), []).ShortageEffects!);
+        Assert.Equal(("attacker-elite-half-squad-3-3-8", (bool?)true, false), (split.FinalDefinitionId, split.SplitIntoHalfSquads, split.Broken));
+    }
+
+    [Fact]
+    public void ALoweredBreakdownNumberIsSaidWithItsPrintedNumberAndItsCause()
+    {
+        // A19.131, A.11 (ruling R72.18; the reviews R3.3): the LMG's B# one lower for the Shortage, and its X# the printed B# when the DR reaches it.
+        var printed = Fire.Definitions["defender-lmg"].Breakdown!.Value;
+        var malfunctioned = Short(Dr(printed - 1), true, WithLmg(Squad("ru-1"), inherent: false));
+        Assert.Equal($"B{printed - 1} (B{printed}, less 1 for Ammunition Shortage, A19.131)",
+            ScenarioA1FireCalculator.BreakdownWords(malfunctioned, Assert.Single(Resolved(malfunctioned, []).WeaponEffects!), Fire));
+        var removed = Short(Dr(printed), true, WithLmg(Squad("ru-1"), inherent: false));
+        Assert.Equal($"X{printed} (B{printed}, lowered to B{printed - 1}: less 1 for Ammunition Shortage, A19.131)",
+            ScenarioA1FireCalculator.BreakdownWords(removed, Assert.Single(Resolved(removed, []).WeaponEffects!), Fire));
+
+        // A B# as printed says nothing more.
+        var normal = Short(Dr(printed), false, WithLmg(Squad("ru-1"), inherent: false));
+        Assert.Null(ScenarioA1FireCalculator.BreakdownWords(normal, Assert.Single(Resolved(normal, []).WeaponEffects!), Fire));
+    }
+
+    [Fact]
+    public void ACapturedGunsDepletionNumberIsNotLoweredUnderAmmunitionShortage()
+    {
+        // A21.11 (p. 88; ruling R72.18): "Ammunition Shortage (19.131) penalties do not apply to captured Gun/SW", so its Depletion Number either.
+        var shot = new OrdnanceShot("PFPh", "phasing", "british", new OrdnanceGun("gun", "british-at-gun", false, 0, false, false),
+            new OrdnanceCrew("crew", "defender-crew", false, false, false, false, false), FireAt, 3, 0, false, true, 0, null, null)
+        {
+            Ammunition = "he",
+            ScenarioYear = 1944,
+            AmmunitionShortage = true,
+        };
+        Assert.True(ScenarioA1Definitions.DepletionShortage(shot));
+        Assert.False(ScenarioA1Definitions.DepletionShortage(shot with
+        {
+            CapturedPenalty = 1
+        }));
+        Assert.False(ScenarioA1Definitions.DepletionShortage(shot with
+        {
+            AmmunitionShortage = null
+        }));
+    }
+
+    [Fact]
+    public void AFirerReplacedUnderAmmunitionShortageDoesNotReturnToNormal()
+    {
+        // A19.131, A15.46 (the reviews R3.11): Rules leaves out the berserk firer the attack Replaced; the other returns to normal.
+        var facts = new BerserkAttackFacts("afph", true, false, BerserkPair) { Replaced = ["g1"] };
+        Assert.Equal(["g2"], ScenarioA1SequenceCalculator.BerserkReturnsAfterAttack(facts, () => new KnownEnemyCount(1, 0)));
+        Assert.Equal("g1 eliminated every Known enemy unit in its Location by its FT in the AFPh, so it is no longer berserk and returns to Good Order (A15.46)",
+            ScenarioA1SequenceCalculator.BerserkClearedText("g1", false, tpbf: false, flamethrower: true));
+        Assert.Contains("by its TPBF or FT in the AFPh", ScenarioA1SequenceCalculator.BerserkClearedText("g1", false, tpbf: false), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AConcealedEnemyLeftInCcKeepsNoBerserkUnitBerserkFromThePassOn(bool stamped)
+    {
+        // A15.46 (p. 84; ruling R72.20): "all ... Known enemy units in its Location": the German squad kills the Russian HS, and a concealed Russian HS is left;
+        // a round recorded from the pass on counts Known units only, one recorded before counts every enemy unit as it did.
+        CloseCombatUnit[] units = [Unit("g1", "attacker-squad", "german") with { Berserk = true }, Unit("r1", "defender-half-squad", "russian"),
+            Unit("r2", "defender-half-squad", "russian") with { Concealed = true }];
+        var facts = new CloseCombatFacts("CCPh", "bd01:G5:0", "open-ground", "german", CloseCombatFacts.Simultaneous, null, units, [], [],
+            [new CloseCombatDeclaration(["g1"], ["r1"])], new CloseCombatRolls(new Dictionary<string, IReadOnlyList<int>> { ["0"] = [2, 3] }))
+        {
+            KnownEnemiesOnly = stamped ? true : null,
+        };
+        var result = ScenarioA1CloseCombatCalculator.Resolve(facts, CloseCombat);
+        Assert.True(result.Effects.Single(item => item.UnitId == "r1").Eliminated);
+        Assert.Equal(stamped ? true : (bool?)null, result.Effects.Single(item => item.UnitId == "g1").BerserkEnded);
+    }
+
+    [Fact]
+    public void ATpbfIsSelectedOnlyWhenAFirerStandsInTheTargetLocation()
+    {
+        // A7.21, A7.211 (rulings R72.7, R72.21): Play hands the fact that a firer, Infantry or a vehicle, is in the target Location; Rules attacks the other
+        // side's units there only, and never in the MPh's moving stack.
+        TargetUnitStateFacts[] here = [new("g1", true, "german", false, false, true, null), new("r1", true, "russian", false, false, true, null)];
+        Assert.Equal(["r1"], ScenarioA1FireEligibility.SelectTargets(here, false, "german", firerInTarget: true).Targets);
+        Assert.Equal(["g1", "r1"], ScenarioA1FireEligibility.SelectTargets(here, false, "german").Targets);
+    }
+
+    [Fact]
+    public void TheHerosDrmReadsInTheProposalAsTheRecordSaysIt()
+    {
+        // A15.23 (the reviews' known items): "hero's SW, gh", not "hero:gh"; the PSK's +1 is the hero rule's own.
+        Assert.Equal(("hero's SW, gh", "hero alone with a two-man SW, gh"),
+            (ScenarioA1OrdnanceEligibility.CaseWords("hero:gh"), ScenarioA1OrdnanceEligibility.CaseWords("hero-two-man:gh")));
+        var hero = ScenarioA1OrdnanceCalculator.Resolve(AtTheTank("german", "attacker-psk", "attacker-hero", "defender-tank", "heat", 2, true), Ordnance);
+        Assert.Equal("A15.23", HeroDrm(hero.ToHit!.Drm).Single(item => item.Name == "hero-two-man:hero").Rule);
+    }
+
+    [Fact]
+    public void TheFireLaneIsOfferedUnderAmmunitionShortageOnlyWithACapturedWeapon()
+    {
+        // A19.131, A9.22, A21.11 (the reviews R4.13): the captured read is asked only under the Shortage.
+        Assert.True(ScenarioA1FireEligibility.FireLaneOffered(false, () => throw new InvalidOperationException("The weapons were read.")));
+        Assert.False(ScenarioA1FireEligibility.FireLaneOffered(true, () => false));
+        Assert.True(ScenarioA1FireEligibility.FireLaneOffered(true, () => true));
     }
 }

@@ -72,6 +72,20 @@ public static class ScenarioA1FireCalculator
     }
 
     /// <summary>
+    /// A weapon's B# as the recorded attack lowered it, in words for its record line (A9.7, A.11; pass 72, the reviews R3.3): the number and each cause, "B10
+    /// (B11, less 1 for Ammunition Shortage, A19.131)", or for a weapon the attack removed its X#, "X11 (B11, lowered to B10: ...)". Null for a weapon the
+    /// attack did not use, a FT, and a B# as printed. It reads the record's facts only, as the resolution did.
+    /// </summary>
+    public static string? BreakdownWords(FireAttack attack, FireWeaponEffect effect, ScenarioA1FireReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(effect);
+        ArgumentNullException.ThrowIfNull(reference);
+        return (attack.Firers ?? []).SelectMany(firer => firer.Weapons ?? []).FirstOrDefault(weapon => weapon.EquipmentId == effect.EquipmentId) is { } weapon
+            ? new Resolution(attack, reference).BreakdownWords(weapon, effect.Removed == true) : null;
+    }
+
+    /// <summary>
     /// The reasons an attack cannot be committed before any roll (Fire in Live Play, unit step 18): empty when every
     /// outcome the dice can reach is decided. Every reason the package gives other than a missing roll depends on the
     /// facts alone, so the check is exact: the facts must stop only at the missing IFT roll, the target side's ELR (and
@@ -4233,6 +4247,45 @@ public static class ScenarioA1FireCalculator
         /// </summary>
         private int Shortage(FireWeapon weapon) => attack.AmmunitionShortage == true && weapon.Captured != true ? 1 : 0;
 
+        /// <summary>
+        /// The words of a weapon's lowered B#, with its printed one and each cause, as <see cref="WeaponEffects"/> lowers it: "B10 (B11, less 1 for Ammunition
+        /// Shortage, A19.131)"; for a weapon the attack removed, its X#, the printed B# less Extreme Winter's (A.11): "X11 (B11, ...)". Null for a FT, a weapon
+        /// outside the catalog, and a B# as printed.
+        /// </summary>
+        internal string? BreakdownWords(FireWeapon weapon, bool removed)
+        {
+            if (reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty) is not { IsFt: false } definition)
+            {
+                return null;
+            }
+
+            var printed = definition.Breakdown ?? 12;
+            List<(int Less, string Cause)> causes = [];
+            void Cause(int less, string cause)
+            {
+                if (less > 0)
+                {
+                    causes.Add((less, cause));
+                }
+            }
+
+            Cause(IsSustained(attack, weapon, reference) ? 2 : 0, "in Sustained Fire, A9.3");
+            Cause(Inexperience(weapon), "in Inexperienced hands, A19.32");
+            Cause(weapon.Captured == true ? 2 : 0, "captured, A21.11");
+            Cause(attack.BreakdownReduction ?? 0, "in Extreme Winter, E3.741");
+            Cause(Shortage(weapon), "for Ammunition Shortage, A19.131");
+            if (causes.Count == 0)
+            {
+                return null;
+            }
+
+            var lowered = printed - causes.Sum(item => item.Less);
+            var said = string.Join("; ", causes.Select(item => $"less {item.Less.ToString(CultureInfo.InvariantCulture)} {item.Cause}"));
+            return removed
+                ? $"X{(printed - (attack.BreakdownReduction ?? 0)).ToString(CultureInfo.InvariantCulture)} (B{printed.ToString(CultureInfo.InvariantCulture)}, lowered to B{lowered.ToString(CultureInfo.InvariantCulture)}: {said})"
+                : $"B{lowered.ToString(CultureInfo.InvariantCulture)} (B{printed.ToString(CultureInfo.InvariantCulture)}, {said})";
+        }
+
         /// <summary>What the attack did to each MG: malfunction on the Original DR (A9.7, A9.71) and Multiple ROF on the colored die (A9.2).</summary>
         private List<FireWeaponEffect>? WeaponEffects(FireArithmetic arithmetic, bool malfunction = true)
         {
@@ -4298,10 +4351,11 @@ public static class ScenarioA1FireCalculator
                 // removed on a DR at least its printed B# (the page's LMG in Sustained Fire: B10, X12). A FT's own removal is ruling R15.1's.
                 var definition = reference.Definitions[weapon.DefinitionId!];
                 var printed = definition.Breakdown ?? 12;
-                // A19.131 (pass 72, ruling R72.12): Ammunition Shortage lowers the B# ("A.11 would apply") and the X# with it, as Extreme Winter does.
+                // A19.131 (pass 72, ruling R72.18, amending R72.12): Ammunition Shortage lowers the B# by one and, by A.11, its Original B# becomes its X#:
+                // a B11 LMG is B10 and X11. Only a printed X# (a FT's removal number, above) is itself one lower.
                 var lowered = sustained || weapon.Captured == true || Inexperience(weapon) > 0 || Shortage(weapon) > 0;
                 var removed = attack.CoweringMarksAndWeaponResidual == true && !definition.IsFt && malfunctioned.Contains(id) && lowered
-                    && original >= printed - (attack.BreakdownReduction ?? 0) - Shortage(weapon);
+                    && original >= printed - (attack.BreakdownReduction ?? 0);
                 return new FireWeaponEffect(id, breakdown[id], malfunctioned.Contains(id), retained, sustained,
                     retained ? null : sustained ? "final-fire" : operatorUnit is null ? counter : OwnCounter(operatorUnit), selection.TryGetValue(id, out var dr) ? dr : null)
                 {

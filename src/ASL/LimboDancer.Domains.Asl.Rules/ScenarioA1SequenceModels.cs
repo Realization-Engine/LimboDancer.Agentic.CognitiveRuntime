@@ -21,7 +21,17 @@ public sealed record BerserkMassacreFacts(IReadOnlyList<string> Units, IReadOnly
 /// TPBF, A7.21, or its FT, which fires there unmultiplied, A22.1); whether it was a CC attack that destroyed an enemy vehicle there; and the attacking group's
 /// berserk units that survive it, in id order.
 /// </summary>
-public sealed record BerserkAttackFacts(string? Phase, bool OwnLocation, bool VehicleDestroyedInCc, IReadOnlyList<string> BerserkAttackers);
+public sealed record BerserkAttackFacts(string? Phase, bool OwnLocation, bool VehicleDestroyedInCc, IReadOnlyList<string> BerserkAttackers)
+{
+    /// <summary>
+    /// The attacking units the attack Replaced under Ammunition Shortage (A19.131; pass 72, rulings R72.11, R3.11 of the reviews): each is no longer the unit
+    /// that attacked, so it does not return to normal. Null is none.
+    /// </summary>
+    public IReadOnlyList<string>? Replaced
+    {
+        get; init;
+    }
+}
 
 /// <summary>The Known enemy units in the attacking group's Location before the attack and those left after it (A15.46).</summary>
 public readonly record struct KnownEnemyCount(int Before, int After);

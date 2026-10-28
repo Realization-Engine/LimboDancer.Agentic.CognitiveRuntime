@@ -153,7 +153,8 @@ public static class ScenarioA1OrdnanceCalculator
     /// <summary>
     /// A hero's DRM on the To Hit DR of a non-MG SW (A15.23, p. 83; pass 72, ruling R72.8): "a -1 DRM to its To Hit or IFT DR", taken on the To Hit DR of a light
     /// mortar or a LATW, never again on the IFT DR of its hit nor on a To Kill DR (C13.25); and the +1 of one man firing "other SW normally requiring two men",
-    /// the PSK (C13.45, C13.48), which the -1 negates. Only a shot that carries the pass's fact (<see cref="OrdnanceShot.HeroWeapons"/>) takes them.
+    /// the PSK (C13.45, C13.48), which the -1 negates. Only a shot that carries the pass's fact (<see cref="OrdnanceShot.HeroWeapons"/>) takes them, and only for a
+    /// light mortar or a LATW: the planner stamps every hero's shot, and this member decides the weapon.
     /// </summary>
     internal static IEnumerable<FireModifier> HeroDrm(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference)
     {
@@ -166,7 +167,8 @@ public static class ScenarioA1OrdnanceCalculator
         yield return new FireModifier("hero:" + shot.Crew.UnitId, -1, "A15.23");
         if (gun.LatwType == "psk")
         {
-            yield return new FireModifier("hero-two-man:" + shot.Crew.UnitId, 1, "C13.45");
+            // A15.23 (p. 83; the reviews R3.4): the +1 for one man firing a SW normally requiring two is the hero rule's own.
+            yield return new FireModifier("hero-two-man:" + shot.Crew.UnitId, 1, "A15.23");
         }
     }
 

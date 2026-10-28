@@ -323,8 +323,8 @@ public static class LiveOrdnance
             // A19.131 (pass 72, ruling R72.12): the side's Ammunition Shortage lowers its Depletion Numbers and a SW's B#; Rules says which.
             AmmunitionShortage = ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, side) ? true : null,
 
-            // A15.23 (pass 72, ruling R72.8): a hero's SW shot is recorded under the pass's rule; Rules gives his DRM.
-            HeroWeapons = crew.Kind == "asl:hero" && (mortar || gun.Kind == "asl:latw") ? true : null,
+            // A15.23 (pass 72, ruling R72.8): a hero's shot is recorded under the pass's rule; Rules says which weapons take his DRM (the reviews R1.6, R4.11).
+            HeroWeapons = crew.Kind == "asl:hero" ? true : null,
 
             // C13.48 (pass 60): a LATW at Personnel names its round, and a PSK's date is read from the year.
             ScenarioYear = ScenarioA1OrdnanceEligibility.RecordsYear(vehicleTarget is not null, ammunition is not null || gun.Kind == "asl:latw", state.Side(side)?.Nationality)

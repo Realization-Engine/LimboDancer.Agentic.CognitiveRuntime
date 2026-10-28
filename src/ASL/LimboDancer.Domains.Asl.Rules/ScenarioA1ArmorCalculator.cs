@@ -174,11 +174,19 @@ internal static class ScenarioA1ArmorCalculator
     /// <summary>
     /// The Depletion Number a shot's ammunition is fired under (C8.9, p. 179; pass 55, ruling R55.7), one more for an Elite force (C8.2), or null
     /// when it has none: a LATW's (C8.3), AP or HE the counter gives no number, and a shot that names no ammunition, which is HE that is not
-    /// Special Ammunition (C2.21). Intensive Fire does not change it (C8.92). One less under Ammunition Shortage (A19.131; pass 72, ruling R72.12).
+    /// Special Ammunition (C2.21). Intensive Fire does not change it (C8.92). One less under Ammunition Shortage (A19.131; pass 72, ruling R72.12), but not
+    /// for a captured Gun (A21.11, p. 88; ruling R72.18).
     /// </summary>
     internal static int? ShotDepletion(OrdnanceShot shot, GunDefinition gun) =>
         gun.GunType == "latw" || shot.Ammunition is not { } ammunition ? null
-            : Depletion(gun, ammunition, shot.ScenarioYear, shot.Hit?.ScenarioMonth, shot.Elite == true, shot.AmmunitionShortage == true);
+            : Depletion(gun, ammunition, shot.ScenarioYear, shot.Hit?.ScenarioMonth, shot.Elite == true, DepletionShortage(shot, gun));
+
+    /// <summary>
+    /// Whether Ammunition Shortage lowers the shot's Depletion Number (A19.131): A21.11 (p. 88), "Ammunition Shortage (19.131) penalties do not apply to captured
+    /// Gun/SW" (pass 72, ruling R72.18), the captured test the B#'s is (<see cref="ScenarioA1OrdnanceCalculator"/>).
+    /// </summary>
+    internal static bool DepletionShortage(OrdnanceShot shot, GunDefinition gun) =>
+        shot.AmmunitionShortage == true && ScenarioA1FireEligibility.CapturedBy(gun.Nationality, shot.FiringNationality) is null && shot.CapturedPenalty is not > 0;
 
     /// <summary>
     /// C8.9: an Original To Hit DR below the Depletion Number uses the ammunition; one equal to it uses it and the firer "runs out of that Special

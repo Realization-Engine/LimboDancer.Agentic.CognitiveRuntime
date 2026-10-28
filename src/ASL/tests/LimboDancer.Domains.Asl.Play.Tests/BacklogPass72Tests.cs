@@ -764,4 +764,70 @@ public sealed class BacklogPass72Tests : IDisposable
         Assert.Equal(1m, arithmetic.TotalFirepower);
         NoReplayErrors();
     }
+
+    // The reviews' fixes, Round B (rulings R72.18 to R72.22).
+
+    private static readonly string[] BothSides = ["german", "russian"];
+
+    [Fact]
+    public async Task ABerserkSquadThatDestroysATankCarryingARiderInCcReturnsToNormal()
+    {
+        // A11.5 (p. 74), A15.46 (ruling R72.20): "the PRC of a vehicle ... are eliminated if the vehicle is destroyed", so the Russian HS riding the tank in C4 is
+        // no Known enemy unit left once the berserk German 4-6-7 destroys the tank in CC (1 + 2 against its CCV of 5): the squad returns to normal.
+        year = 1944;
+        var rider = Unit("r1", "asl:half-squad", "defender-half-squad", "C4", "russian");
+        rider["position"] = new Dictionary<string, string> { ["in"] = "ru-t", ["role"] = "rider" };
+        await Setup(Squad("g1", "C5", "german"), Vehicle("ru-t", "defender-tank", "C4", "russian", "east"), rider);
+        await AdvanceTo("aph");
+        Committed(await Do(GameActions.Advance, Once(3, 4), new
+        {
+            unitIds = G1,
+            to = L("C4"),
+        }));
+        MakeBerserk("g1");
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        Assert.Equal("ccph", Current.Phase);
+        var before = Revision;
+        Committed(await Do(GameActions.VehicleCloseCombat, Once(1, 2, 6, 6), new Dictionary<string, object> { ["location"] = L("C4"), ["attackers"] = G1, ["vehicleId"] = "ru-t" }));
+        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("ru-t")!.Status);
+        Assert.Equal(G1, BerserkEnded(before));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ACcRoundRecordsThePassStampAndAnOlderRoundReplaysWithoutIt()
+    {
+        // A15.46 (ruling R72.20): a CC round planned from the pass on carries knownEnemiesOnly; the verifier takes it as recorded, so a record without it replays.
+        await Setup(Squad("g1", "C5", "german"), Unit("r1", "asl:half-squad", "defender-half-squad", "C4", "russian"));
+        await AdvanceTo("aph");
+        Committed(await Do(GameActions.Advance, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("C4"),
+        }));
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        var before = Revision;
+        // A11.11: both DR are 12, no effect.
+        Committed(await Do(GameActions.CloseCombat, Once(6, 6, 6, 6), new
+        {
+            location = L("C4"),
+            attacks = new object[] { new { attackers = G1, defenders = RussianGunner }, new { attackers = RussianGunner, defenders = G1 } },
+            declaredSides = BothSides,
+        }));
+        var combat = Assert.Single(Since(before).Select(item => item.Payload).OfType<CloseCombatResolved>());
+        Assert.True(combat.Facts.GetProperty("knownEnemiesOnly").GetBoolean());
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public void ACardNamesAWeaponWithoutPrintedNumbersWithNoDash()
+    {
+        // The reviews' known items: a PSK prints no FP or range, so it reads "PSK", never "PSK -" (nor "The PSK -" in a record).
+        Assert.Equal("PSK", ScenarioCards.Describe(Catalog.Definition("attacker-psk")!));
+        Assert.DoesNotContain(" -", ScenarioCards.Describe(Catalog.Definition("attacker-ft")!), StringComparison.Ordinal);
+    }
 }
