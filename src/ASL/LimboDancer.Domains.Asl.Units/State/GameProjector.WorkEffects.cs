@@ -63,12 +63,13 @@ public static partial class GameProjector
                 }
                 if (subject is not UnitInstance || !vocabulary.IsA(subject.Kind, "asl:vehicle")
                     || state.Unit(effect.SupplyVehicle!) is not { Status: InstanceStatus.Active, Position: MapPosition } vehicle
-                    || !vocabulary.IsA(vehicle.Kind, "asl:vehicle") || vehicle.Side != declaration.Owner
-                    || supply is not { Available: true } || supply.Vehicle != vehicle.Id || supply.Owner != declaration.Owner
-                    || state.Location(subject.Id)?.Location != state.Location(vehicle.Id)?.Location
-                    || !state.LowAmmoVehicles.Contains(subject.Id, StringComparer.Ordinal)
-                    || state.Units.Any(unit => unit.Status == InstanceStatus.Active
-                        && unit.Position is ContainedPosition { Role: ContainmentRole.Passenger } aboard && aboard.Container == vehicle.Id))
+                    || !vocabulary.IsA(vehicle.Kind, "asl:vehicle")
+                    || !TurnWorkEffects.ReplenishmentReady(vehicle.Side == declaration.Owner,
+                        supply is { Available: true } && supply.Vehicle == vehicle.Id && supply.Owner == declaration.Owner,
+                        state.Location(subject.Id)?.Location == state.Location(vehicle.Id)?.Location,
+                        state.LowAmmoVehicles.Contains(subject.Id, StringComparer.Ordinal),
+                        state.Units.Any(unit => unit.Status == InstanceStatus.Active
+                            && unit.Position is ContainedPosition { Role: ContainmentRole.Passenger } aboard && aboard.Container == vehicle.Id)))
                 {
                     throw new InvalidDataException("Replenishment effects need recorded Low Ammo, available compatible adjudicated supply, co-located vehicles and no supply-vehicle Passengers.");
                 }
@@ -77,11 +78,11 @@ public static partial class GameProjector
             {
                 var packed = state.PackedGuns.Contains(subject.Id, StringComparer.Ordinal);
                 if (subject is not EquipmentInstance { Kind: "asl:gun" } gun
-                    || state.Unit(effect.Crew!) is not { Status: InstanceStatus.Active } crew || crew.Side != declaration.Owner
-                    || !vocabulary.IsA(crew.Kind, "asl:personnel") || GameState.GoodOrder(crew, vocabulary) != ConditionState.True
-                    || state.Location(crew.Id)?.Location != state.Location(gun.Id)?.Location
-                    || (effect.Kind == TurnWorkEffectKind.PackGun ? packed || gun.Holding != new Holding(crew.Id, HoldingRole.Manned)
-                        : !packed || gun.Holding is not null))
+                    || state.Unit(effect.Crew!) is not { Status: InstanceStatus.Active } crew || !vocabulary.IsA(crew.Kind, "asl:personnel")
+                    || !TurnWorkEffects.PackingReady(effect.Kind, crew.Side == declaration.Owner,
+                        GameState.GoodOrder(crew, vocabulary) == ConditionState.True,
+                        state.Location(crew.Id)?.Location == state.Location(gun.Id)?.Location, packed,
+                        gun.Holding == new Holding(crew.Id, HoldingRole.Manned), gun.Holding is not null))
                 {
                     throw new InvalidDataException("Packing effects need the recorded Gun/crew in one Location and the expected assembly/manning state.");
                 }
@@ -93,11 +94,12 @@ public static partial class GameProjector
             var effect = work.Declaration.CompletionEffects!;
             var supply = state.TurnAmmoSupplies.FirstOrDefault(item => item.Id == effect.SupplyId);
             if (subject is not UnitInstance source || !vocabulary.IsA(source.Kind, "asl:vehicle")
-                || supply is not { Available: true, DumpLocation: null } || supply.Vehicle != source.Id || supply.Owner != source.Side
-                || !TurnWorkEffects.CanRelocateSupply(GameState.Condition(source, Conditions.Immobilized) == ConditionState.True,
-                    GameState.Condition(source, Conditions.Bogged) == ConditionState.True)
-                || state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Position is ContainedPosition aboard && aboard.Container == source.Id)
-                || state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == source.Id))
+                || !TurnWorkEffects.RelocationSourceReady(
+                    supply is { Available: true, DumpLocation: null } && supply.Vehicle == source.Id && supply.Owner == source.Side,
+                    GameState.Condition(source, Conditions.Immobilized) == ConditionState.True,
+                    GameState.Condition(source, Conditions.Bogged) == ConditionState.True,
+                    state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Position is ContainedPosition aboard && aboard.Container == source.Id),
+                    state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == source.Id)))
             {
                 throw new InvalidDataException("Supply relocation needs an available bound supply on an Immobile own vehicle, without explicit occupants or held equipment; their disposition remains pending.");
             }
@@ -109,11 +111,12 @@ public static partial class GameProjector
                 }
             }
             else if (state.Unit(effect.DestinationVehicle!) is not { Status: InstanceStatus.Active, Position: MapPosition } destination
-                || !vocabulary.IsA(destination.Kind, "asl:vehicle") || destination.Side != source.Side
-                || state.Location(destination.Id)?.Location != state.Location(source.Id)?.Location
-                || state.TurnAmmoSupplies.Any(item => item.Available && item.Vehicle == destination.Id)
-                || state.Units.Any(unit => unit.Status == InstanceStatus.Active
-                    && unit.Position is ContainedPosition { Role: ContainmentRole.Passenger } aboard && aboard.Container == destination.Id))
+                || !vocabulary.IsA(destination.Kind, "asl:vehicle")
+                || !TurnWorkEffects.TransferDestinationReady(destination.Side == source.Side,
+                    state.Location(destination.Id)?.Location == state.Location(source.Id)?.Location,
+                    state.TurnAmmoSupplies.Any(item => item.Available && item.Vehicle == destination.Id),
+                    state.Units.Any(unit => unit.Status == InstanceStatus.Active
+                        && unit.Position is ContainedPosition { Role: ContainmentRole.Passenger } aboard && aboard.Container == destination.Id)))
             {
                 throw new InvalidDataException("Supply transfer needs a co-located active own, externally qualified vehicle without supply or Passengers.");
             }

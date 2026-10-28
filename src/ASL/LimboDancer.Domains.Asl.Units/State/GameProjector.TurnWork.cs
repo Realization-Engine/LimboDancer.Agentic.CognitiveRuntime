@@ -97,9 +97,7 @@ public static partial class GameProjector
             }
         }
 
-        internal static TurnWorkWindow WorkWindow(GameState state) => state.Phase == "rph" && state.PhasingSide == state.FirstSide
-            ? TurnWorkWindow.FirstRally : state.Phase == "ccph" && state.PhasingSide != state.FirstSide
-                ? TurnWorkWindow.SecondCloseCombat : TurnWorkWindow.Unknown;
+        internal static TurnWorkWindow WorkWindow(GameState state) => TurnWorkRules.Window(state.Phase, state.PhasingSide == state.FirstSide);
 
         private bool AuditedWorkStillValid(GameState state, TurnLiveWork work)
         {
@@ -137,19 +135,22 @@ public static partial class GameProjector
                 {
                     continue;
                 }
-                // Phase cleanup cannot own this TI. Explicit counter changes, movement, firing and CC interrupt work.
+                // The event's facts for each participant; Rules decides whether they interrupt the work.
                 var participants = item.Declaration.Participants;
-                var interrupted = item.HostAuditVersion == 1 && !AuditedWorkStillValid(next, item)
-                    || participants.Any(id => next.Find(id) is not { Status: InstanceStatus.Active }
-                    || previous.Location(id)?.Location != next.Location(id)?.Location)
-                    || payload is ConditionsChanged conditions && participants.Contains(conditions.Id)
-                        && (conditions.Conditions.GetValueOrDefault("asl:ti") == ConditionState.False && conditions.Conditions.ContainsKey("asl:ti")
-                            || conditions.Id == item.Declaration.Subject && conditions.Conditions.GetValueOrDefault(Conditions.ButtonedUp) == ConditionState.True)
-                    || payload is MovementStepped movement && movement.Movers.Any(participants.Contains)
-                    || payload is FireResolved fire && fire.Firers.Any(participants.Contains)
-                    || payload is OrdnanceFired ordnance && (participants.Contains(ordnance.Gun) || participants.Contains(ordnance.Crew))
-                    || payload is CloseCombatResolved cc && (cc.Attackers.Any(participants.Contains) || cc.Defenders.Any(participants.Contains))
-                    || payload is VehicleStepped vehicle && participants.Contains(vehicle.Vehicle);
+                var changed = payload as ConditionsChanged;
+                var interrupted = TurnWorkRules.Interrupted(new(
+                    AuditedEligibilityLost: item.HostAuditVersion == 1 && !AuditedWorkStillValid(next, item),
+                    ParticipantGoneOrMoved: participants.Any(id => next.Find(id) is not { Status: InstanceStatus.Active }
+                        || previous.Location(id)?.Location != next.Location(id)?.Location),
+                    TiCleared: changed is not null && participants.Contains(changed.Id)
+                        && changed.Conditions.GetValueOrDefault("asl:ti") == ConditionState.False && changed.Conditions.ContainsKey("asl:ti"),
+                    SubjectButtonedUp: changed is not null && changed.Id == item.Declaration.Subject && participants.Contains(changed.Id)
+                        && changed.Conditions.GetValueOrDefault(Conditions.ButtonedUp) == ConditionState.True,
+                    Moved: payload is MovementStepped movement && movement.Movers.Any(participants.Contains),
+                    Fired: payload is FireResolved fire && fire.Firers.Any(participants.Contains),
+                    OrdnanceFired: payload is OrdnanceFired ordnance && (participants.Contains(ordnance.Gun) || participants.Contains(ordnance.Crew)),
+                    CloseCombat: payload is CloseCombatResolved cc && (cc.Attackers.Any(participants.Contains) || cc.Defenders.Any(participants.Contains)),
+                    VehicleStepped: payload is VehicleStepped vehicle && participants.Contains(vehicle.Vehicle)));
                 if (interrupted)
                 {
                     work[i] = TurnWorkLifecycle.Change(item, "interrupt", previous.Turn, WorkWindow(previous));

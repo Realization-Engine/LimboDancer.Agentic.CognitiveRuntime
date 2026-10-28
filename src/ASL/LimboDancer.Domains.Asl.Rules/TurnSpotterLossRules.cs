@@ -19,6 +19,18 @@ public static class TurnSpotterLossRules
             ? "play.deploy-spotter: there is no retained Spotter assignment to pass to a half-squad."
         : null;
 
+    /// <summary>
+    /// A Deployment's named Spotter successor (A1.31; C9.3): the squad still holds an unlost assignment and is Good Order, and the successor
+    /// is the half the owner chose before the NTC. A record made before the choice was recorded is checked by the squad's custody instead.
+    /// </summary>
+    public static bool DeploymentSuccessorValid(bool assignmentHeld, bool squadGoodOrder, string? recordedChoice, string successor,
+        IReadOnlyList<string> producedIds, bool legacyCustodyHeld)
+    {
+        ArgumentNullException.ThrowIfNull(producedIds);
+        return assignmentHeld && squadGoodOrder
+            && (recordedChoice is not null ? producedIds[recordedChoice == "first" ? 0 : 1] == successor : legacyCustodyHeld);
+    }
+
     public static bool RetainsDeployedSquad(bool deployedSquad, bool chosenProducedHalf, bool sameSide, bool goodOrder, bool recordedLoss) =>
         deployedSquad && chosenProducedHalf && sameSide && goodOrder && !recordedLoss;
 

@@ -68,17 +68,17 @@ public static class TurnWorkProgress
 
                 lastEnd = interval.SecondCloseCombatSequence ?? interval.FirstRallySequence ?? lastEnd;
 
-                if (interval.Interrupted)
+                switch (TurnWorkRules.Interval(interval.Interrupted, interval.FirstRallySequence is not null, interval.SecondCloseCombatSequence is not null))
                 {
-                    interrupted.Add(interval.GameTurn);
-                }
-                else if (interval.FirstRallySequence is not null && interval.SecondCloseCombatSequence is not null)
-                {
-                    completed++;
-                }
-                else
-                {
-                    incomplete.Add(interval.GameTurn);
+                    case TurnWorkIntervalOutcome.Interrupted:
+                        interrupted.Add(interval.GameTurn);
+                        break;
+                    case TurnWorkIntervalOutcome.Complete:
+                        completed++;
+                        break;
+                    default:
+                        incomplete.Add(interval.GameTurn);
+                        break;
                 }
             }
             var verdict = TurnWorkRules.Evaluate(item.Kind, item.OriginalBNumber, completed, item.Eligible,

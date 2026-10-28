@@ -161,7 +161,7 @@ public sealed partial class PlayTests
             Payload = payload,
         };
         var jumped = Planner().Replay([.. events, Add(new PhaseChanged(1, "ccph", "russian"), "phase-changed")]);
-        Assert.True(jumped.HasErrors);
+        Assert.Contains(jumped.Diagnostics, item => item.Code == "UNIT-WORK-002");
         var duplicate = Planner().Replay([.. events, Add(new TurnWorkRecorded("work", "start", declaration, null, "duplicate"), "turn-work-recorded")]);
         Assert.True(duplicate.HasErrors);
         await WorkPhases(play, 16);

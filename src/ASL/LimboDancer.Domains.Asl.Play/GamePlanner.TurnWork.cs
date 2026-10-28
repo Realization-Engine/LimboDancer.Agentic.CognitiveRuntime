@@ -11,9 +11,7 @@ public sealed partial class GamePlanner
 {
     private static readonly string[] PackedGunArguments = ["gunId", "equipmentId", "pushGun"];
 
-    private static TurnWorkWindow TurnWorkWindowOf(GameState state) => state.Phase == "rph" && state.PhasingSide == state.FirstSide
-        ? TurnWorkWindow.FirstRally : state.Phase == "ccph" && state.PhasingSide != state.FirstSide
-            ? TurnWorkWindow.SecondCloseCombat : TurnWorkWindow.Unknown;
+    private static TurnWorkWindow TurnWorkWindowOf(GameState state) => TurnWorkRules.Window(state.Phase, state.PhasingSide == state.FirstSide);
 
     private GamePlan PlanTurnWork(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing,
         string attemptId, long expected, string label, string actor)
@@ -50,7 +48,7 @@ public sealed partial class GamePlanner
         }
         var eventType = audited ? TurnWorkRecorded.AuditedType : effects ? TurnWorkRecorded.EffectsType : TurnWorkRecorded.LifecycleType;
         var package = audited ? "asl.turn-work.v2" : effects ? "asl.turn-work-effects.v1" : "asl.turn-work.v1";
-        var needsRoll = operation == "complete" && held?.Declaration.Kind == TurnWorkKind.AmmoReplenishment;
+        var needsRoll = operation == "complete" && held is not null && TurnWorkLifecycle.RequiresAmmunitionDr(held.Declaration.Kind);
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult>? draw)
         {
             var events = new List<GameEvent>();

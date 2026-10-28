@@ -57,7 +57,7 @@ public static partial class GameProjector
                 MortarSpotterDesignations = [.. marked.MortarSpotterDesignations,
                     new(gun.Id, unit.Id, owner, gameEvent.EventId, gameEvent.Revision, occurrence)],
                 SpottedThisPhase = [.. marked.SpottedThisPhase, new(gun.Id, unit.Id)],
-                NoMoveThisPlayerTurn = state.Phase == "pfph" ? [.. marked.NoMoveThisPlayerTurn, unit.Id] : marked.NoMoveThisPlayerTurn,
+                NoMoveThisPlayerTurn = TurnSpotterDesignationRules.BarsMovement(state.Phase) ? [.. marked.NoMoveThisPlayerTurn, unit.Id] : marked.NoMoveThisPlayerTurn,
                 SupportWeaponUses = facts.UsedAsSpotter ? marked.SupportWeaponUses
                     : [.. ScenarioA1FireFollowUps.SupportWeaponUse([.. marked.SupportWeaponUses.Select(item => (item.Unit, item.Weapon))],
                         unit.Id, facts.Squad, fired, gun.Id).Select(item => new SupportWeaponUse(item.Unit, item.Weapon))],

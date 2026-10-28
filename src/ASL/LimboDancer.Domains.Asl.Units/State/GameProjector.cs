@@ -576,21 +576,19 @@ public static partial class GameProjector
 
         private GameState? ChangePhase(GameState state, PhaseChanged change)
         {
-            if (state.TurnWork.Any(item => item.Working))
+            // The work facts of this phase change; Rules decides and words the refusal (E10.3-.4; G10).
+            if (state.TurnWork.Count > 0)
             {
+                var working = state.TurnWork.Any(item => item.Working);
+                var window = WorkWindow(state);
                 var other = state.Sides.FirstOrDefault(side => side.Id != state.PhasingSide);
-                if (other is null || Rules.ScenarioA1SequenceCalculator.NextPhase(state.Phase, state.Turn, state.PhasingSide, other.Id, state.FirstSide)
-                    != (change.Turn, change.Phase, change.PhasingSide))
+                var inOrder = !working || other is not null && Rules.ScenarioA1SequenceCalculator.NextPhase(state.Phase, state.Turn, state.PhasingSide,
+                    other.Id, state.FirstSide) == (change.Turn, change.Phase, change.PhasingSide);
+                if (Rules.TurnWorkLifecycle.PhaseChangeRefusal(working, state.TurnWork.Any(item => Rules.TurnWorkLifecycle.CompletionDue(item, state.Turn, window)),
+                    inOrder, window, state.Turn, change.Turn, Rules.TurnWorkRules.Window(change.Phase, change.PhasingSide == state.FirstSide)) is { } workRefusal)
                 {
-                    return Fail<GameState>("UNIT-WORK-002", "Active work requires every phase boundary in order.");
+                    return Fail<GameState>("UNIT-WORK-002", workRefusal);
                 }
-            }
-            if (state.TurnWork.Any(item => Rules.TurnWorkLifecycle.CompletionDue(item, state.Turn, WorkWindow(state)))
-                || state.TurnWork.Any(item => item.Working) && change.Turn != state.Turn
-                    && (WorkWindow(state) != Rules.TurnWorkWindow.SecondCloseCombat || change.Turn != state.Turn + 1
-                        || change.Phase != "rph" || change.PhasingSide != state.FirstSide))
-            {
-                return Fail<GameState>("UNIT-WORK-002", "Resolve due work before closing its release window; work cannot skip Game Turn boundaries.");
             }
 
             // Pass 32.i: the state is read here, in the old order, and Rules decides and words each check of the phase change.
@@ -4571,12 +4569,13 @@ public static partial class GameProjector
             if (lineage.SpotterSuccessor is { } spotterSuccessor
                 && (lineage.Action != LineageAction.Deployed || consumed.Count != 1
                     || lineage.Produced.Count(item => item.Id == spotterSuccessor) != 1
-                    || !state.MortarSpotters.Any(item => item.Spotter == consumed[0].Id
-                        && !state.MortarSpotterLosses.Any(loss => loss.Gun == item.Gun && loss.Spotter == item.Spotter))
-                    || GameState.GoodOrder(consumed[0], vocabulary) != ConditionState.True
-                    || (state.SpotterDeploymentChoices.TryGetValue(consumed[0].Id, out var selectedHalf)
-                        ? lineage.Produced[selectedHalf == "first" ? 0 : 1].Id != spotterSuccessor
-                        : !state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Custodian == consumed[0].Id))))
+                    || !Rules.TurnSpotterLossRules.DeploymentSuccessorValid(
+                        state.MortarSpotters.Any(item => item.Spotter == consumed[0].Id
+                            && !state.MortarSpotterLosses.Any(loss => loss.Gun == item.Gun && loss.Spotter == item.Spotter)),
+                        GameState.GoodOrder(consumed[0], vocabulary) == ConditionState.True,
+                        state.SpotterDeploymentChoices.GetValueOrDefault(consumed[0].Id), spotterSuccessor,
+                        [.. lineage.Produced.Select(item => item.Id)],
+                        state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Custodian == consumed[0].Id))))
             {
                 return Fail<GameState>("UNIT-SPOTTER-SUCCESSION", "Deployment names one produced HS to retain an active Good Order Spotter assignment (A1.31; C9.3).");
             }

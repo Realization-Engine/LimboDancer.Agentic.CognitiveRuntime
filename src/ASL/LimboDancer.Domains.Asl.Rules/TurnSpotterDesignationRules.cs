@@ -14,6 +14,9 @@ public static class TurnSpotterDesignationRules
         _ => throw new ArgumentException("An admitted original designation uses PFPh or DFPh.", nameof(phase)),
     };
 
+    /// <summary>A Spotter designated in the PFPh takes the Prep Fire counter (<see cref="FireCounter"/>) and so may not move this Player Turn.</summary>
+    public static bool BarsMovement(string phase) => phase == "pfph";
+
     public static string? Refusal(TurnSpotterDesignationFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);

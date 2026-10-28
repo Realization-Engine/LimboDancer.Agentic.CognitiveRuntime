@@ -58,6 +58,26 @@ public static class TurnWorkLifecycle
             : window == TurnWorkWindow.SecondCloseCombat && work.OpenGameTurn == turn
                 && work.CompletedGameTurns + 1 >= work.RequiredGameTurns);
 
+    /// <summary>Completing Ammo Replenishment takes an Ammunition DR (E10.3); no other work does.</summary>
+    public static bool RequiresAmmunitionDr(TurnWorkKind kind) => kind == TurnWorkKind.AmmoReplenishment;
+
+    /// <summary>
+    /// The refusal of a phase change while work is open (E10.3-.4; G10): active work needs every phase boundary in order, due work must be
+    /// resolved before its release window closes, and active work crosses a Game Turn only from the second player's CCPh into the next
+    /// Game Turn's first-player RPh. The wording is the event check's own.
+    /// </summary>
+    public static string? PhaseChangeRefusal(bool anyWorking, bool anyDue, bool nextPhaseInOrder, TurnWorkWindow window, int turn, int nextTurn,
+        TurnWorkWindow nextWindow)
+    {
+        if (anyWorking && !nextPhaseInOrder)
+        {
+            return "Active work requires every phase boundary in order.";
+        }
+        return anyDue || anyWorking && nextTurn != turn
+            && (window != TurnWorkWindow.SecondCloseCombat || nextTurn != turn + 1 || nextWindow != TurnWorkWindow.FirstRally)
+            ? "Resolve due work before closing its release window; work cannot skip Game Turn boundaries." : null;
+    }
+
     public static TurnLiveWork Change(TurnLiveWork work, string operation, int turn, TurnWorkWindow window, int? ammunitionDr = null)
     {
         ArgumentNullException.ThrowIfNull(work);
@@ -87,7 +107,7 @@ public static class TurnWorkLifecycle
                     OpenGameTurn = turn
                 };
             case "complete" when CompletionDue(work, turn, window):
-                if (work.Declaration.Kind == TurnWorkKind.AmmoReplenishment ? ammunitionDr is not (>= 2 and <= 12) : ammunitionDr is not null)
+                if (RequiresAmmunitionDr(work.Declaration.Kind) ? ammunitionDr is not (>= 2 and <= 12) : ammunitionDr is not null)
                 {
                     throw new InvalidDataException("Replenishment requires its recorded Ammunition DR; other work takes no DR.");
                 }

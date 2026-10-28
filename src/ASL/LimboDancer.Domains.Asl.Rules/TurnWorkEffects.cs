@@ -67,6 +67,34 @@ public static class TurnWorkEffects
 
     public static bool ReplenishmentPostureSupported(bool? buttonedUp) => buttonedUp == false;
 
+    /// <summary>
+    /// Replenishment's state at declaration and completion (E10.3): recorded Low Ammo, an own supply vehicle whose available supply is bound
+    /// to it, both vehicles in one Location, and no Passengers aboard the supply vehicle.
+    /// </summary>
+    public static bool ReplenishmentReady(bool ownSupplyVehicle, bool supplyBoundAndAvailable, bool coLocated, bool lowAmmoRecorded,
+        bool supplyVehicleHasPassengers) =>
+        ownSupplyVehicle && supplyBoundAndAvailable && coLocated && lowAmmoRecorded && !supplyVehicleHasPassengers;
+
+    /// <summary>
+    /// Packing's state (G10): an own Good Order crew in the Gun's Location; packing needs the Gun manned by that crew and not yet packed,
+    /// unpacking a packed Gun that nobody holds.
+    /// </summary>
+    public static bool PackingReady(TurnWorkEffectKind kind, bool ownCrew, bool crewGoodOrder, bool coLocated, bool gunPacked,
+        bool crewMansGun, bool gunHeld) =>
+        ownCrew && crewGoodOrder && coLocated
+        && (kind == TurnWorkEffectKind.PackGun ? !gunPacked && crewMansGun : gunPacked && !gunHeld);
+
+    /// <summary>
+    /// The source of a supply transfer or offload (E10.4, E10.12): its available supply, not yet in a dump, bound to it and its side; an
+    /// Immobile vehicle; no occupants and no held equipment.
+    /// </summary>
+    public static bool RelocationSourceReady(bool supplyBoundAndAvailable, bool immobilized, bool bogged, bool hasOccupants, bool holdsEquipment) =>
+        supplyBoundAndAvailable && CanRelocateSupply(immobilized, bogged) && !hasOccupants && !holdsEquipment;
+
+    /// <summary>The destination of a supply transfer (E10.4): an own vehicle in the source's Location with no supply and no Passengers.</summary>
+    public static bool TransferDestinationReady(bool sameSide, bool coLocated, bool hasSupply, bool hasPassengers) =>
+        sameSide && coLocated && !hasSupply && !hasPassengers;
+
     public static int? PassengerCapacity(int? ordinary, bool hasAmmoSupply) => hasAmmoSupply ? 0 : ordinary;
     public static string? PackedGunBar(bool packed) => packed ? "play.packed-gun: unpack the Gun before using it; animal loading/transport remains pending (G10)" : null;
 }
