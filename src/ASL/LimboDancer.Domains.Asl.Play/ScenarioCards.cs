@@ -121,6 +121,16 @@ public sealed record ScenarioCard(
     /// </summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public bool Minimal => Rules.ScenarioA1ResultTables.CardIsMinimal(Sides.Count, Sides.Select(side => side.Groups.Count));
+
+    /// <summary>
+    /// The minigame bundle the card belongs to (the Rules-first plan, section 7.1; the proving slice, ruling RPS.7); null for every other card, so no
+    /// card's text or SHA-256 changes. A game started from the card takes it into its record.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? Minigame
+    {
+        get; init;
+    }
 }
 
 /// <summary>A card and why it is refused, if it is: each diagnostic is a code and a message.</summary>

@@ -6,7 +6,17 @@ using LimboDancer.Domains.Asl.Units.Documents;
 namespace LimboDancer.Domains.Asl.Units.State;
 
 /// <summary>A recorded event stream: a synthetic game fixture until a live source is chosen (ASL-UNIT-050, D2).</summary>
-public sealed record GameRecord(string Label, bool Synthetic, IReadOnlyList<GameEvent> Events);
+public sealed record GameRecord(string Label, bool Synthetic, IReadOnlyList<GameEvent> Events)
+{
+    /// <summary>
+    /// The minigame bundle a game was started from (the Rules-first plan, section 7.1; the proving slice, ruling RPS.6), written as "minigame" only
+    /// when set: empty for every other game. It is taken from the card at the game's first commit and kept by every later one, never set by hand.
+    /// </summary>
+    public string? Minigame
+    {
+        get; init;
+    }
+}
 
 public sealed record GameRecordResult(GameRecord? Record, IReadOnlyList<UnitDiagnostic> Diagnostics)
 {
@@ -55,6 +65,7 @@ public static class GameEventReader
             var game = fields.RequiredString(root, "game", "$");
             var label = fields.RequiredString(root, "label", "$") ?? string.Empty;
             var synthetic = fields.OptionalBoolean(root, "synthetic", "$");
+            var minigame = fields.OptionalString(root, "minigame", "$");
             if (tenantText is not null && !Guid.TryParse(tenantText, out _))
             {
                 diagnostics.Add(UnitDiagnostic.Error(Code, $"The tenant '{tenantText}' is not a GUID.", "$"));
@@ -77,7 +88,10 @@ public static class GameEventReader
 
             return diagnostics.Any(diagnostic => diagnostic.Severity == UnitDiagnosticSeverity.Error)
                 ? new GameRecordResult(null, diagnostics)
-                : new GameRecordResult(new GameRecord(label, synthetic, events), diagnostics);
+                : new GameRecordResult(new GameRecord(label, synthetic, events)
+                {
+                    Minigame = string.IsNullOrEmpty(minigame) ? null : minigame,
+                }, diagnostics);
         }
     }
 

@@ -60,6 +60,12 @@ public interface IGameStore
     /// </summary>
     public AppendResult AppendRolled(GameScope scope, string label, long expectedRevision, string firstEventId, PlannedRoll roll, DiceRoller roller,
         Func<IReadOnlyList<GameEvent>, GameHistory> replay);
+
+    /// <summary>
+    /// The minigame bundle a game was started from, or null (the Rules-first plan, section 7.1; ruling RPS.10): what the lists ask of every game to leave
+    /// minigames out. A store may answer from the whole record; the file store reads only the file's header.
+    /// </summary>
+    public string? MinigameOf(GameScope scope) => Read(scope)?.Minigame;
 }
 
 /// <summary>
@@ -80,6 +86,68 @@ public sealed class FileGameStore(string root) : IGameStore
     {
         ArgumentNullException.ThrowIfNull(scope);
         return Parse(PathOf(scope));
+    }
+
+    // The proving slice (ruling RPS.10; the memory and performance guidelines): each file's "minigame" read from its header, kept while the file's time
+    // and length are those it was read at, so a list of games opens no whole record.
+    private static readonly ConcurrentDictionary<string, (DateTime Time, long Length, string? Minigame)> Headers = new(StringComparer.OrdinalIgnoreCase);
+
+    public string? MinigameOf(GameScope scope)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        var file = new FileInfo(PathOf(scope));
+        if (!file.Exists)
+        {
+            return null;
+        }
+
+        if (Headers.TryGetValue(file.FullName, out var kept) && kept.Time == file.LastWriteTimeUtc && kept.Length == file.Length)
+        {
+            return kept.Minigame;
+        }
+
+        var minigame = HeaderMinigame(file.FullName);
+        Headers[file.FullName] = (file.LastWriteTimeUtc, file.Length, minigame);
+        return minigame;
+    }
+
+    /// <summary>The "minigame" of a game file's header: read up to the "events" array and no further; null when there is none before it.</summary>
+    private static string? HeaderMinigame(string path)
+    {
+        var buffer = new byte[4096];
+        int read;
+        using (var stream = File.OpenRead(path))
+        {
+            read = stream.ReadAtLeast(buffer, buffer.Length, throwOnEndOfStream: false);
+        }
+
+        var reader = new System.Text.Json.Utf8JsonReader(buffer.AsSpan(0, read), isFinalBlock: read < buffer.Length, state: default);
+        try
+        {
+            while (reader.Read())
+            {
+                if (reader.TokenType != System.Text.Json.JsonTokenType.PropertyName || reader.CurrentDepth != 1)
+                {
+                    continue;
+                }
+
+                if (reader.ValueTextEquals("events"u8))
+                {
+                    return null;
+                }
+
+                if (reader.ValueTextEquals("minigame"u8) && reader.Read() && reader.TokenType == System.Text.Json.JsonTokenType.String)
+                {
+                    return reader.GetString();
+                }
+            }
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
+
+        return null;
     }
 
     /// <summary>The record in a file: the one parsed last when the file's bytes are those it was parsed from, and a new parse otherwise.</summary>
@@ -180,7 +248,13 @@ public sealed class FileGameStore(string root) : IGameStore
             }
 
             // The log is written only if it reads back: a batch built in memory must meet the rules a stored log meets.
-            var text = GameEventWriter.Write(scope, new GameRecord(current?.Label ?? label, Synthetic: false, all));
+            // The proving slice (ruling RPS.6): a game takes its minigame from the card its game-started names, at its first commit, and keeps it.
+            var minigame = current is not null ? current.Minigame
+                : Minigames.BundleOfCard(all.Select(item => item.Payload).OfType<GameStarted>().FirstOrDefault()?.Scenario?.Id);
+            var text = GameEventWriter.Write(scope, new GameRecord(current?.Label ?? label, Synthetic: false, all)
+            {
+                Minigame = minigame,
+            });
             var written = new UTF8Encoding(false).GetBytes(text);
             var reread = GameEventReader.Read(written);
             if (reread.HasErrors)

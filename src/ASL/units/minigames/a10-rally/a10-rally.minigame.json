@@ -1,0 +1,71 @@
+{
+  "id": "a10-rally",
+  "title": "A10.6 Rally",
+  "card": "a10-rally",
+  "rules": ["A10.6", "A10.61"],
+  "contracts": ["a10.6-rally"],
+  "example": null,
+  "checks": [
+    {
+      "name": "A broken squad with a Good Order leader in woods may attempt to rally",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a10.6-rally",
+      "facts": {
+        "phase": "RPh",
+        "rallyingSide": "phasing",
+        "locationId": "bd04:H5:0",
+        "terrain": "woods",
+        "unitId": "g-squad",
+        "unitDefinition": "defender-squad",
+        "unitBroken": true,
+        "unitDisrupted": false,
+        "unitWounded": false,
+        "unitDesperationMorale": false,
+        "unitConcealed": false,
+        "unitAttemptedThisPlayerTurn": false,
+        "unitOtherActionThisPhase": false,
+        "leaderId": "g-leader",
+        "leaderDefinition": "defender-leader",
+        "leaderBroken": false,
+        "leaderWounded": false,
+        "leaderConcealed": false,
+        "goodOrderLeaderInLocation": true,
+        "brokenLeaderInLocation": false,
+        "firstMmcRallyOfOwnPlayerTurn": false,
+        "knownEnemyInLos": false,
+        "captors": "none"
+      },
+      "expect": {
+        "outcome": "may-attempt"
+      }
+    },
+    {
+      "name": "A squad that is not broken does not rally",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a10.6-rally",
+      "facts": {
+        "phase": "RPh",
+        "rallyingSide": "phasing",
+        "locationId": "bd04:H5:0",
+        "terrain": "woods",
+        "unitId": "g-squad",
+        "unitDefinition": "defender-squad",
+        "unitBroken": false,
+        "unitDisrupted": false,
+        "unitWounded": false,
+        "unitDesperationMorale": false,
+        "unitConcealed": false,
+        "unitAttemptedThisPlayerTurn": false,
+        "unitOtherActionThisPhase": false,
+        "goodOrderLeaderInLocation": false,
+        "brokenLeaderInLocation": false,
+        "firstMmcRallyOfOwnPlayerTurn": false
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    }
+  ]
+}

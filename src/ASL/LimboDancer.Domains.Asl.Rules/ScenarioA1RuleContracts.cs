@@ -156,6 +156,7 @@ public static class ScenarioA1RuleContracts
             Flag("firstMmcRallyOfOwnPlayerTurn", "No MMC of its side has rallied this Player Turn (A10.63 Self-Rally)"),
             Flag("enemyGoodOrderInLosWithin16", "A Good Order enemy unit within 16 hexes has a LOS to it (A12.141)", mayBeUnknown: true),
             Flag("knownEnemyInLos", "A Known enemy unit has a LOS to it (A15)", mayBeUnknown: true),
+            new("captors", ContractFactType.Text, true, ContractDisclosure.All, "The prisoners it guards (A20.4), comma-separated, or \"none\""),
         ],
         ["may-attempt", "refused", ContractVerdict.NotEvaluated],
         [
@@ -185,6 +186,12 @@ public static class ScenarioA1RuleContracts
             facts.Flag("firstMmcRallyOfOwnPlayerTurn"), facts.Flag("enemyGoodOrderInLosWithin16"), null)
         {
             KnownEnemyInLos = facts.Flag("knownEnemyInLos"),
+            Captors = facts.Text("captors") switch
+            {
+                null => null,
+                "none" => [],
+                var list => [.. list.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)],
+            },
         };
 
         var refusals = ScenarioA1RallyCalculator.Precheck(attempt, reference);
@@ -276,6 +283,7 @@ public static class ScenarioA1RuleContracts
         [new("A12.14", 77), new("E1.31", 223)],
         [
             new("advancerId", ContractFactType.Unit, false, ContractDisclosure.Owner, "The concealed unit that advances") { Concerns = "advancerId" },
+            new("to", ContractFactType.Hex, false, ContractDisclosure.All, "The Location it advances into"),
             Flag("night", "The scenario is at night"),
             new("terrain", ContractFactType.Text, false, ContractDisclosure.All, "The terrain of the Location it advances into"),
             Flag("enemyGoodOrderInLosWithin16", "A Good Order enemy unit within 16 hexes has a LOS to that Location", mayBeUnknown: true,

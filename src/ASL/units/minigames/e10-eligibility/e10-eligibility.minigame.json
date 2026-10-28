@@ -1,0 +1,97 @@
+{
+  "id": "e10-eligibility",
+  "title": "E10.1 Ammo Vehicle eligibility",
+  "card": "e10-eligibility",
+  "rules": ["E10.1", "E10.11", "E10.2"],
+  "contracts": ["e10.1-eligibility"],
+  "example": null,
+  "checks": [
+    {
+      "name": "A supply vehicle replenishes a CE tank of its caliber in its Location",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "e10.1-eligibility",
+      "facts": {
+        "supplyId": "g-supply",
+        "supplyOwner": "german",
+        "supplyActive": true,
+        "supplyAuthorized": true,
+        "supplyAvailable": true,
+        "supplyCaliberMm": 75,
+        "supplyBarrel": "Standard",
+        "recipientId": "g-tank",
+        "recipientOwner": "german",
+        "recipientActive": true,
+        "recipientIsVehicle": true,
+        "recipientHasLowAmmoBNumber": true,
+        "recipientLowAmmo": true,
+        "recipientCrewExposed": true,
+        "recipientSameOrAccessibleLocation": true,
+        "recipientCaliberMm": 75,
+        "recipientBarrel": "Standard",
+        "completeRecipientInventory": true,
+        "use": "Replenishment"
+      },
+      "expect": {
+        "outcome": "eligible"
+      }
+    },
+    {
+      "name": "A tank neither in the same nor an Accessible Location is not supplied (E10.2)",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "e10.1-eligibility",
+      "facts": {
+        "supplyId": "g-supply",
+        "supplyOwner": "german",
+        "supplyActive": true,
+        "supplyAuthorized": true,
+        "supplyAvailable": true,
+        "supplyCaliberMm": 75,
+        "supplyBarrel": "Standard",
+        "recipientId": "g-tank",
+        "recipientOwner": "german",
+        "recipientActive": true,
+        "recipientIsVehicle": true,
+        "recipientHasLowAmmoBNumber": true,
+        "recipientLowAmmo": true,
+        "recipientCrewExposed": true,
+        "recipientSameOrAccessibleLocation": false,
+        "recipientCaliberMm": 75,
+        "recipientBarrel": "Standard",
+        "completeRecipientInventory": true,
+        "use": "Replenishment"
+      },
+      "expect": {
+        "outcome": "ineligible"
+      }
+    },
+    {
+      "name": "The Russian viewer does not know whether the German supply vehicle still carries ammunition",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "e10.1-eligibility",
+      "facts": {
+        "supplyId": "g-supply",
+        "supplyOwner": "german",
+        "supplyActive": true,
+        "supplyBarrel": "Standard",
+        "recipientId": "g-tank",
+        "recipientOwner": "german",
+        "recipientActive": true,
+        "recipientIsVehicle": true,
+        "recipientHasLowAmmoBNumber": true,
+        "recipientLowAmmo": true,
+        "recipientCrewExposed": true,
+        "recipientSameOrAccessibleLocation": true,
+        "recipientCaliberMm": 75,
+        "recipientBarrel": "Standard",
+        "completeRecipientInventory": true,
+        "use": "Replenishment"
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    }
+  ]
+}
