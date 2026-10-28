@@ -328,12 +328,7 @@ else
                     @if (Viewer.IsAdjudicator && proposal.Action == GameActions.ReviewPlacedDcWindow
                         && proposal.Arguments.GetProperty("review").Deserialize<LimboDancer.Domains.Asl.Rules.TurnPlacedDcReview>() is { } openingReview)
                     {
-                        <div class="turn-review-summary">
-                            <p>Opening review for @openingReview.Charge (@openingReview.Owner)</p>
-                            <p>Drift: @openingReview.Opening.Drift; WP: @openingReview.Opening.Wp; Gusts: @openingReview.Opening.Gusts; Gliders: @openingReview.Opening.Gliders.</p>
-                            <p>@openingReview.RuleBasis</p>
-                            <p>Pending rules remain pending. Confirm records evidence only. Return to the owning side for a separate detonation proposal.</p>
-                        </div>
+                        <TurnOpeningReviewSummary Review="@openingReview" />
                     }
                     @* Pass 31c (design D14; play test P-14): a fire's arithmetic before the dice, for the firing side and the adjudicator. *@
                     @if (proposal.Result is { Outcome: PlayOutcome.NeedsConfirmation, Plan.Fire: { } previewed } && (Viewer.IsAdjudicator || Viewer.Name == previewed.FiringSide)

@@ -188,7 +188,7 @@ public sealed class TurnGuideScenarioTests : IDisposable
         page.Find(".turn-review-propose").Click();
         page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.Equal(before, Current.Revision);
-        Assert.Contains("WP: " + wp, page.Find(".turn-review-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Opening Dispersed WP (5.12A): " + (wp == "NotApplicable" ? "Not applicable" : wp), page.Find(".turn-review-summary").TextContent, StringComparison.Ordinal);
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.Equal(before + 1, Current.Revision);
@@ -246,6 +246,10 @@ public sealed class TurnGuideScenarioTests : IDisposable
         Assert.Equal(before, Current.Revision);
         Assert.Equal(TurnCloseDisposition.Blocked, (await live.Planner.ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "afph", "existing-engine-work-v1")).PhaseClose.Disposition);
         ReviewInUi(page);
+        before = Current.Revision;
+        page.Find(".turn-close").Click();
+        page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.Equal(before, Current.Revision); // Complete evidence alone never discharges the attack obligation.
         SaveBrowserSeed();
         page.Find(".turn-refresh").Click();
         page.WaitForAssertion(() => Assert.Single(page.FindAll(".turn-action")));
@@ -260,6 +264,17 @@ public sealed class TurnGuideScenarioTests : IDisposable
         Assert.Equal("rtph", Current.Phase);
         page.WaitForAssertion(() => Assert.Equal("true", page.Find(".turn-guide [data-phase=rtph]").GetAttribute("aria-pressed")));
         Assert.False(live.Planner.Replay(live.Store.Read(Scope)!.Events).HasErrors);
+        before = Current.Revision;
+        page.Dispose();
+        var reopened = context.Render<PlayPage>();
+        reopened.OpenGame(Game);
+        reopened.ViewAs("german");
+        reopened.Find("#play-turn-guide-toggle").Click();
+        reopened.WaitForAssertion(() => Assert.Contains("Resolved", reopened.Find(".turn-evidence").TextContent, StringComparison.Ordinal));
+        Assert.Equal("true", reopened.Find(".turn-guide [data-phase=rtph]").GetAttribute("aria-pressed"));
+        Assert.Contains("Pending rules:", reopened.Find(".turn-guide").TextContent, StringComparison.Ordinal);
+        Assert.Empty(reopened.FindAll(".turn-action, .turn-opening-review, #play-confirm"));
+        Assert.Equal(before, Current.Revision); // Reopening and reading guidance must not append events.
     }
 
     [TurnGuideScenarioFact]

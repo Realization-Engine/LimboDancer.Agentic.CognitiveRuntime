@@ -38,3 +38,23 @@ Headless tests cover offer disclosure, historical and wrong-phase suppression, m
 All 538 topics, 38 dependency chains, 191 links and nine B5-D packages remain available. The all-Passes target is unchanged. Verification: 43 focused MapStudio tests pass, including all three real-board scenario cases (not skipped). All 45 focused Play tests pass, including review preparation, timing, replay and disclosure acceptance. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). No ASL.Turns or Rules source changed.
 
 Live browser verification after explicit user approval confirms the reviewer form on localhost:5178. The guide uses its containing panel width to stack checklist and detail content, so review fields use the available width inside Play even on a wide screen. The enabled reviewer is scoped to the current local server process; checked-in defaults remain disabled.
+
+## Full live browser acceptance
+
+The user-authorized local reviewer completed the route in the browser on 2026-10-27 (America/New_York), using `turn-guide-opening-demo` on localhost:5178. This isolated Tractor Works continuation began at revision 142 in German AFPh, with `g-dc-3` operably Placed in unoccupied BB3. No review was seeded in this continuation.
+
+| Browser action | Observed result |
+|---|---|
+| Propose four Unknown assessments with a reason, then cancel | Confirmation displays all four values; cancellation returns to Play without a journal event. |
+| Set all four opening tasks to Not applicable with a scenario-specific ASOP reason; propose and confirm as adjudicator | Exactly one owner-visible review event at revision 143. The charge remains due; review does not roll dice or detonate it. |
+| Hand over to German and request phase close | The gate refuses because the Placed DC is still due, despite complete opening evidence. |
+| Request the guided DC check, then explicitly confirm | 30 FP detonation; system dice 1,6, fire resolution and removal at revisions 144-146. The obligation becomes Resolved and the offered route disappears. |
+| Review and separately confirm phase close | Revision 147 begins German Rout. The guide follows Rout and retains pending-rule labels and the resolved obligation. |
+
+BB3 has no targets, so the 4MC result produces no casualty effects. This accepts opening-review, decision, obligation and phase-close integration; it does not claim browser coverage of occupied-target consequences, malfunction, or every ASL opening rule. Automated backend tests retain those separate responsibilities.
+
+The browser exposed a presentation gap: confirmation displayed internal enum spelling (`NotApplicable`) and abbreviated the reviewed tasks. `TurnOpeningReviewSummary` now lists the four full task names and ASOP steps with readable evidence labels. Its evidence-only wording also remains accurate on the committed receipt. It renders supplied evidence and performs no rule evaluation.
+
+Regression acceptance additionally refuses phase close after a complete UI review and reopens the game after Rout to verify resolved obligations, pending disclosure and absence of obsolete review/attack/confirmation controls. The mixed-evidence summary test prevents independent task assessments from being conflated. All 538 topics, 38 chains, 191 links and nine B5-D packages remain unchanged.
+
+Verification for this follow-up: 44 focused MapStudio tests pass, with no skips; all three real-board scenarios also pass after strengthening the no-write-on-reopen assertion. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Restarting the local server and reloading the browser preserves German Rout, the resolved DC obligation and pending disclosures, with no obsolete review, detonation or confirmation controls. No ASL.Turns, Rules, permission defaults or journal contracts changed.

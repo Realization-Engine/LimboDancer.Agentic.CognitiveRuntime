@@ -9,6 +9,22 @@ namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 
 public sealed partial class TurnGuideComponentTests
 {
+    [Fact]
+    public void ReviewSummaryPreservesIndependentEvidenceAndPendingBoundary()
+    {
+        var review = new TurnPlacedDcReview("dc", "placement", "phase", "german", "ASOP: WP remains unverified.",
+            new(TurnOpeningEvidence.Resolved, TurnOpeningEvidence.Unknown, TurnOpeningEvidence.NotApplicable, TurnOpeningEvidence.Resolved));
+        var cut = context.Render<TurnOpeningReviewSummary>(p => p.Add(c => c.Review, review));
+        var items = cut.FindAll("li").Select(item => item.TextContent).ToArray();
+        Assert.Equal("Drifting SMOKE (5.11B): Resolved", items[0]);
+        Assert.Equal("Opening Dispersed WP (5.12A): Unknown", items[1]);
+        Assert.Equal("Gusts and SMOKE (5.13A): Not applicable", items[2]);
+        Assert.Equal("Glider contents (5.21A): Resolved", items[3]);
+        Assert.Contains(review.RuleBasis, cut.Markup, StringComparison.Ordinal);
+        Assert.Contains("Pending rules remain pending", cut.Markup, StringComparison.Ordinal);
+        Assert.Contains("separate detonation proposal", cut.Markup, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("missing")]
     [InlineData("permission")]

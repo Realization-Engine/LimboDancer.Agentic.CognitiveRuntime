@@ -626,3 +626,12 @@ The [opening-review workflow](ASL%20Turn%20Guide%20Opening%20Review%20Workflow.m
 Authorization is supplied by trusted server configuration, disabled by default. Adjudicator view selection alone grants no permission. The reviewer is restricted to the review action; ordinary play permissions remain unchanged. The previous external-only UI limitation is superseded when this host authorization is enabled. Tests use an explicitly authorized test reviewer.
 
 Verification: 43 focused MapStudio tests pass, including all three real-board scenario cases (not skipped). All 45 focused Play tests pass, including review preparation, timing, replay and disclosure acceptance. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). No ASL.Turns or Rules source changed.
+
+
+### Full opening-review browser acceptance
+
+The [opening-review browser acceptance](ASL%20Turn%20Guide%20Opening%20Review%20Workflow.md#full-live-browser-acceptance) completes the user-authorized local path: cancel an incomplete proposal, commit a reasoned four-task review, hand over to the owner, refuse premature phase close, confirm guided DC detonation, then confirm Rout. The journal records review at 143, detonation at 144-146 and phase change at 147. BB3 is empty, so this is lifecycle acceptance rather than occupied-target consequence coverage.
+
+The confirmation summary uses full opening-task names, ASOP references and readable evidence labels; the same evidence-only explanation remains accurate after commit. It does not derive legality. Regressions verify mixed task values, a still-blocked close after complete review, and resolved obligations plus pending rules after reopening the game. The eventual all-Passes target and deferred B5-D inventory remain unchanged. Local reviewer authorization remains a server setting with disabled checked-in defaults.
+
+Verification for this follow-up: 44 focused MapStudio tests pass, with no skips; all three real-board scenarios also pass after strengthening the no-write-on-reopen assertion. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). Restarting the local server and reloading the browser preserves German Rout, the resolved DC obligation and pending disclosures, with no obsolete review, detonation or confirmation controls. No ASL.Turns, Rules, permission defaults or journal contracts changed.
