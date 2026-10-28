@@ -205,3 +205,27 @@ Built on 2026-10-27, 19:10 to about 20:10, by a building agent to a brief (`brie
 - `p72-charge-tank-and-squad` (board 3): a German tank and squad in [A2]; the charge enters [A2] and the German side may fire.
 - Tests, by method (the agent's report): Rules 26 and Play 26 methods passed (`ScenarioA1Pass72RulesTests`, `BacklogPass72Tests`, and the charge, A15.46, portage, and Battle Hardening methods of passes 5, 10, 15, 27, and 70 that assert the changed members and texts); after the wording fix, 2 more. `ChargeSearches` stays 1 on a fall back.
 - The measurement after 5a: level with the base (section 7; the notes).
+
+## 9. The return to normal: 72.1, part II (increment 5b)
+
+Built on 2026-10-27, about 20:12 to 20:47, by a building agent to a brief (`brief_5b.md`), ruling R72.7, its diff read and its games played in the Studio by the session; one game rewritten after the Studio check.
+
+### 9.1 Departures from the frame, first
+
+- **TPBF in the firer's own Location was refused in Play** (frame A had read it as built: it was, in Rules only). `LiveFire.FromState` listed every unit in the target Location as a target, the firer included, and the Fire package refused the attack ("unit listed twice"). `ScenarioA1FireEligibility.SelectTargets` gains an optional `tpbfSide`: outside the MPh's moving stack, when a firer on foot stands in the target Location, only the other side's units there are attacked (A7.21, A7.212). Every such attack was refused before the pass, so no record holds one. **For the referee's review:** where else this opens a fire that was refused (a Location shared after CC without Melee, a vehicle's Location).
+- **A FT in its own Location is built** (A22.1 lets a FT fire TPBF; the Fire package already handled it), so no backlog row.
+- **The verdict reads whether the firer stands in the target Location;** the record says "by its TPBF or FT in the AFPh". CC needs no phase (A15.46: "or CC"; CC Reaction Fire in the MPh counts).
+- **Left conservative:** a PRC killed with its vehicle by fire is not subtracted (the unit stays berserk); Riders and Passengers left after a CC wreck count as Known enemies.
+- **The second game** first had the berserk squad advance into the tank's Location in the APh, which A15.431 forbids; it now starts in the CCPh with both in [A2], on the German side.
+
+### 9.2 What is built
+
+- Rules: `BerserkAttackFacts`, `KnownEnemyCount`, `ScenarioA1SequenceCalculator.BerserkReturnsAfterAttack` (CC that destroyed a vehicle, or AFPh fire from inside the target Location, with a Known enemy before and none after; the Location read only when the attack can qualify), `BerserkClearedText`; `SelectTargets`'s `tpbfSide`.
+- Play: `BerserkReturnsAfterFire` at the end of `AddFireEvents` (resumed attacks included) and `BerserkReturnsAfterVehicleKill` in vehicle CC (the Location read with the vehicle gone, as `NextAfter` does): `conditions-changed` (berserk off), caused by the fire or the CC record. No new event, key, or roll.
+- MapStudio: `PlayRecords` words a berserk-off change caused by a fire or a vehicle CC record.
+
+### 9.3 The games and the tests
+
+- `p72-berserk-tpbf-return` (board 3, Russian AFPh): a berserk 4-4-7 and a German HS in [A2]; dice 1 1: "4 FP x 3 (TPBF) x 0.5 (Advancing Fire) = 6", 1KIA, then "4-4-7 squad R1 in [A2] eliminated every Known enemy unit in its Location by its TPBF or FT in the AFPh, so it is no longer berserk and returns to Good Order (A15.46)".
+- `p72-berserk-vehicle-cc-return` (board 3, German CCPh): a berserk 4-6-7 and a lone T-34 in [A2]; "Infantry attack the vehicle", dice 1 2 against Kill Number 5: wrecked, and the same return line by destroying the vehicle in CC.
+- Tests, by method (the agent's report): Rules 25 (including, by a slip, one whole class, `ScenarioA1SequenceRulesTests`); Play 15 and 1 more (the pass's class and five shared-Location fire methods for the targets change). Strict builds exit 0.

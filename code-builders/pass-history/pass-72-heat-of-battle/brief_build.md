@@ -63,6 +63,7 @@ I am the session that briefs you. I review your diff, check the work in the Stud
 - A proposal that names a unit the plan creates names it by its definition, never its raw id.
 - A record line that withholds a name is not enough: the events written beside it must withhold it too.
 - Main moves under the branch: read `git log --oneline -5` before you start, and never touch Codex's files.
+- **5a's game was laid out by a terrain approximation and failed in the Studio:** check every LOS pair and route a games script relies on with the game's own LosCalculator (`code-builders/boards/los-survey`, "pair" and "routes" modes, built into the scratch folder above and registered with `outside_outputs.sh register <path>`).
 - A Sniper DR trigger reader (pass 71, `GamePlanner.Snipers.cs`) reads every recorded roll of a planned step; a new roll kind you add is read by it: say whether it is a trigger (A14.1) and make sure it is classified.
 
 ## Report (your closing message, under 900 words)

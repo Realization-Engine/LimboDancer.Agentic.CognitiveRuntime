@@ -705,6 +705,13 @@ public sealed partial class GamePlanner
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [recordId]));
             }
 
+            // A15.46 (pass 72, ruling R72.7): the berserk attackers that destroyed the vehicle and left no other Known enemy unit in the Location return to normal.
+            foreach (var id in BerserkReturnsAfterVehicleKill(state, location, vehicle, units, destroyed, resolution))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                    new ConditionsChanged(id, ConditionChanges(ScenarioA1SequenceCalculator.BerserkEndsConditions())), package, null, [recordId]));
+            }
+
             // D7.21: the attackers of CC Reaction Fire carry a First Fire counter (Final Fire when already marked First Fire), and a CC counter while the
             // vehicle survives.
             if (reaction)
@@ -736,6 +743,26 @@ public sealed partial class GamePlanner
             Roll = new PlannedRoll("cc-vehicle", Build),
             FirstEventId = EventId(attemptId, 1),
         };
+    }
+
+    /// <summary>
+    /// The berserk attackers of a CC attack on a vehicle that return to normal (A15.46; pass 72, ruling R72.7), as Rules decides it: the vehicle destroyed, the
+    /// berserk attackers the attack left, and, only when Rules asks, the Known enemy units of the Location as the sequential CC reads them (the planner's
+    /// index, Riders among them), the vehicle read as gone, as <see cref="NextAfter"/> reads it.
+    /// </summary>
+    private string[] BerserkReturnsAfterVehicleKill(GameState state, BoardLocation location, UnitInstance vehicle, IReadOnlyList<UnitInstance> attackers, bool destroyed,
+        VehicleCloseCombatResolution resolution)
+    {
+        var lost = resolution.Effects.Where(effect => effect.Eliminated).Select(effect => effect.UnitId).ToHashSet(StringComparer.Ordinal);
+        string[] berserk = [.. attackers.Where(unit => Is(unit, Conditions.Berserk) && !lost.Contains(unit.Id)).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
+        var side = attackers[0].Side;
+        KnownEnemyCount Known()
+        {
+            VehicleCcUnitFacts[] known = [.. VehicleCcUnits(state, location).Where(unit => unit.Side != side && unit.Known)];
+            return new KnownEnemyCount(known.Length, known.Count(unit => unit.Id != vehicle.Id && !lost.Contains(unit.Id)));
+        }
+
+        return [.. ScenarioA1SequenceCalculator.BerserkReturnsAfterAttack(new BerserkAttackFacts(state.Phase, false, destroyed, berserk), Known)];
     }
 
     /// <summary>

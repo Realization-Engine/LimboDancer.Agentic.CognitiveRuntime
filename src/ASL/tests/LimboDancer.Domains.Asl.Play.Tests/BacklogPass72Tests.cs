@@ -349,4 +349,176 @@ public sealed class BacklogPass72Tests : IDisposable
         Assert.Equal(HeldAfterTheCharge, Current.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == "g1").Select(item => item.Id).Order(StringComparer.Ordinal));
         NoReplayErrors();
     }
+
+    // Increment 5b: the return to normal (A15.46; ruling R72.7).
+
+    private static DiceRoller Once(params int[] values)
+    {
+        var queue = new Queue<int>(values);
+        return new(_ => queue.Dequeue() - 1);
+    }
+
+    /// <summary>Ends phases until the game is in <paramref name="phase"/> of the German Player Turn.</summary>
+    private async Task AdvanceTo(string phase)
+    {
+        for (var index = 0; index < 8 && Current.Phase != phase; index++)
+        {
+            Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+            {
+            }));
+        }
+
+        Assert.Equal((phase, "german"), (Current.Phase, Current.PhasingSide));
+    }
+
+    /// <summary>Makes a unit berserk with a written condition, as a Heat of Battle result would (the 5a test of a unit made berserk in mid move does the same).</summary>
+    private void MakeBerserk(string unit)
+    {
+        var existing = store.Read(Scope)!.Events;
+        var berserk = existing[^1] with
+        {
+            EventId = "berserk-" + unit,
+            Revision = existing.Count + 1,
+            Type = "conditions-changed",
+            Payload = new ConditionsChanged(unit, new Dictionary<string, ConditionState> { [Conditions.Berserk] = ConditionState.True }),
+            Causes = [],
+            Visibility = null,
+        };
+        Assert.Equal(AppendStatus.Committed, store.Append(Scope, nameof(BacklogPass72Tests), existing.Count, [berserk], Planner().Replay).Status);
+    }
+
+    /// <summary>The units a plan's events took the berserk status from.</summary>
+    private string[] BerserkEnded(long since) => [.. Since(since).Select(item => item.Payload).OfType<ConditionsChanged>()
+        .Where(change => change.Conditions.TryGetValue(Conditions.Berserk, out var berserk) && berserk == ConditionState.False).Select(change => change.Id)];
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ABerserkSquadsHalvedTpbfInTheAfphEliminatesTheLastKnownEnemyAndItReturnsToNormal(bool concealedLeft)
+    {
+        // A15.46, A15.432 (p. 84; ruling R72.7): the berserk German 4-6-7 shares C5 with the Russian HS, not in Melee. In the AFPh it fires TPBF at its own
+        // Location (4 FP x 3, halved: 6 FP); the DR 1 + 1 is a 1KIA on the HS. With no other Known enemy unit there, it returns to normal; a concealed Russian
+        // squad left there is not Known (A12.1) and changes nothing. The attack's targets are the Russian units only (A7.212); before the pass the firer was
+        // listed among them and the attack refused.
+        Dictionary<string, object>[] placements = [Squad("g1", "C5", "german", Conditions.Berserk), Unit("r1", "asl:half-squad", "defender-half-squad", "C5", "russian")];
+        await Setup(concealedLeft ? [.. placements, Squad("r2", "C5", "russian", Conditions.Concealed)] : placements);
+        await AdvanceTo("afph");
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(1, 1, 3, 3, 4, 4, 4, 4), new Dictionary<string, object> { ["firers"] = G1, ["target"] = L("C5") }));
+        var fire = Assert.Single(Since(before).Select(item => item.Payload).OfType<FireResolved>());
+        var resolution = fire.Resolution.GetRawText();
+        Assert.Contains("triple-point-blank-fire", resolution, StringComparison.Ordinal);
+        Assert.Contains("advancing-fire", resolution, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"g1\"", fire.Facts.GetProperty("targets").GetRawText(), StringComparison.Ordinal);
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("r1")!.Status);
+        if (concealedLeft)
+        {
+            // The concealed squad is attacked on the halved FP's column (A12.13: 2 FP, a K/1) and survives its MC (3 + 3) as a HS, not Known.
+            Assert.Contains(Current.Units, unit => unit.Status == InstanceStatus.Active && unit.Side == "russian" && Current.Location(unit.Id)?.Location == At("C5"));
+        }
+
+        Assert.Equal(G1, BerserkEnded(before));
+        Assert.False(Is(Current.Unit("g1")!, Conditions.Berserk));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ABerserkSquadsFtInItsOwnLocationInTheAfphEliminatesTheLastKnownEnemyAndItReturnsToNormal()
+    {
+        // A15.46 (p. 84), A22.1 (p. 89: "never increased for PBF/TPBF", "not for use in the AFPh"; ruling R72.7): the berserk German 4-6-7 fires its FT alone at
+        // its own Location, 24 FP neither tripled nor halved; the DR eliminates the Russian HS there, and the squad returns to normal.
+        await Setup(Squad("g1", "C5", "german", Conditions.Berserk), new Dictionary<string, object>
+        {
+            ["id"] = "ft",
+            ["kind"] = "asl:ft",
+            ["definition"] = "attacker-ft",
+            ["side"] = "german",
+            ["holding"] = new
+            {
+                holder = "g1",
+                role = "possessed"
+            },
+            ["conditions"] = new Dictionary<string, bool>(),
+        }, Unit("r1", "asl:half-squad", "defender-half-squad", "C5", "russian"));
+        await AdvanceTo("afph");
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(1, 2, 6, 6, 6, 6), new
+        {
+            firers = G1,
+            weapons = new Dictionary<string, string[]> { ["g1"] = ["ft"] },
+            withoutInherent = G1,
+            target = L("C5"),
+        }));
+        var fire = Assert.Single(Since(before).Select(item => item.Payload).OfType<FireResolved>());
+        Assert.Equal(24m, fire.Resolution.GetProperty("arithmetic").GetProperty("totalFirepower").GetDecimal());
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("r1")!.Status);
+        Assert.Equal(G1, BerserkEnded(before));
+        Assert.False(Is(Current.Unit("g1")!, Conditions.Berserk));
+        NoReplayErrors();
+    }
+
+    private static readonly string[] ToTheCcph = ["dfph", "afph", "rtph", "aph", "ccph"];
+
+    [Fact]
+    public async Task ABerserkSquadSetUpWithALoneTankInItsLocationDestroysItInTheCcphAndReturnsToNormal()
+    {
+        // The Studio game p72-berserk-vehicle-cc-return (games_5b.py, game b): the game file writes the berserk 4-6-7 and the lone enemy tank into C4 with
+        // "instance-created" events (the Setup action refuses a vehicle beside an enemy, ruling R25.3, but the file does not pass through it), then
+        // "phase-changed" events to the CCPh. The projector reads them; the planner takes the CC attack on the tank, whose destruction returns the squad.
+        await Setup(Squad("g1", "C4", "german", Conditions.Berserk));
+        var existing = store.Read(Scope)!.Events;
+        EventPayload[] written =
+        [
+            new InstanceCreated(new NewInstance("ru-t", "asl:vehicle", "defender-tank", "russian", new MapPosition(At("C4"), Facing: LimboDancer.Domains.Asl.Units.Documents.UnitFacing.East),
+                null, new Dictionary<string, ConditionState> { [Conditions.Concealed] = ConditionState.False, [Conditions.Hidden] = ConditionState.False })),
+            .. ToTheCcph.Select(phase => (EventPayload)new PhaseChanged(1, phase, "german")),
+        ];
+        GameEvent[] appended = [.. written.Select((payload, index) => existing[^1] with
+        {
+            EventId = $"file-{index + 1}",
+            Revision = existing.Count + index + 1,
+            Type = payload is InstanceCreated ? "instance-created" : "phase-changed",
+            Payload = payload,
+            Causes = [],
+            Visibility = null,
+        })];
+        Assert.Equal(AppendStatus.Committed, store.Append(Scope, nameof(BacklogPass72Tests), existing.Count, appended, Planner().Replay).Status);
+        NoReplayErrors();
+        Assert.Equal("ccph", Current.Phase);
+        var before = Revision;
+        Committed(await Do(GameActions.VehicleCloseCombat, Once(1, 2, 6, 6), new Dictionary<string, object> { ["location"] = L("C4"), ["attackers"] = G1, ["vehicleId"] = "ru-t" }));
+        // One roll: 1 + 2 = 3 against the record's Kill Number 5, "eliminated" (a wreck).
+        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("ru-t")!.Status);
+        Assert.Equal(G1, BerserkEnded(before));
+        NoReplayErrors();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ABerserkSquadThatDestroysTheTankInCcReturnsToNormalOnlyWhenNoKnownEnemyIsLeft(bool infantryLeft)
+    {
+        // A15.46 (p. 84; ruling R72.7): the German 4-6-7 advances into C4, the Russian tank's Location (its PAATC 3 + 4 against 7, A11.6), and is made berserk
+        // there. In the CCPh it attacks the tank and destroys it: alone there, the tank was the last Known enemy unit, and the squad returns to normal; with a
+        // Russian HS beside it, the squad stays berserk. (A lone truck would be captured as the CCPh begins, A11.52.)
+        Dictionary<string, object>[] placements = [Squad("g1", "C5", "german"), Vehicle("ru-t", "defender-tank", "C4", "russian", "east")];
+        await Setup(infantryLeft ? [.. placements, Unit("r1", "asl:half-squad", "defender-half-squad", "C4", "russian")] : placements);
+        await AdvanceTo("aph");
+        Committed(await Do(GameActions.Advance, Once(3, 4), new
+        {
+            unitIds = G1,
+            to = L("C4"),
+        }));
+        MakeBerserk("g1");
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        Assert.Equal("ccph", Current.Phase);
+        var before = Revision;
+        Committed(await Do(GameActions.VehicleCloseCombat, Once(1, 2, 6, 6), new Dictionary<string, object> { ["location"] = L("C4"), ["attackers"] = G1, ["vehicleId"] = "ru-t" }));
+        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("ru-t")!.Status);
+        Assert.Equal(infantryLeft ? [] : G1, BerserkEnded(before));
+        Assert.Equal(infantryLeft, Is(Current.Unit("g1")!, Conditions.Berserk));
+        NoReplayErrors();
+    }
 }

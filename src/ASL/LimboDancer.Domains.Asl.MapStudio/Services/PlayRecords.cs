@@ -508,6 +508,9 @@ public sealed partial class PlayRecords
                 BuildingMoppedUp mopped => MopUpText(item.EventId, mopped, before),
                 PhaseChanged phase => $"The {DisplayText.Side(phase.PhasingSide)} {GameText.PhaseLabel(phase.Phase)} of Turn {phase.Turn} begins",
                 GameEnded => "The game ends",
+                // A15.46 (pass 72, ruling R72.7): a berserk unit's return to normal written after the fire or the CC attack on a vehicle that cleared its Location.
+                ConditionsChanged calmed when calmed.Conditions.Count == 1 && calmed.Conditions.TryGetValue(Conditions.Berserk, out var berserkNow) && berserkNow == ConditionState.False
+                    && BerserkClearedBy(item) is { } byVehicle => ScenarioA1SequenceCalculator.BerserkClearedText(calmed.Id + In(before, calmed.Id), byVehicle),
                 _ => null,
             };
             if (text is not null)
@@ -623,6 +626,17 @@ public sealed partial class PlayRecords
 
         return parts.Count == 0 ? null : $"{check.Location}: {string.Join("; ", parts)}";
     }
+
+    /// <summary>
+    /// The attack a berserk unit's return to normal follows (A15.46; pass 72, ruling R72.7), read from its event's one cause: true for a CC attack on a vehicle,
+    /// false for a fire attack, null for any other cause (the end of a charge, Battle Hardening, and CC against Infantry, whose own record says it).
+    /// </summary>
+    private bool? BerserkClearedBy(GameEvent item) => item.Causes is [var cause] ? events.FirstOrDefault(other => other.EventId == cause)?.Payload switch
+    {
+        VehicleCloseCombatResolved => true,
+        FireResolved => false,
+        _ => null,
+    } : null;
 
     /// <summary>
     /// A CC attack with a vehicle in one line (A11.5, A11.51, A11.62, A21.2; pass 65, the table player): Infantry attacking the vehicle, a capture attempt

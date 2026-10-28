@@ -1212,11 +1212,51 @@ public sealed partial class GamePlanner
                 [fireId]));
         }
 
+        // A15.46 (pass 72, ruling R72.7): the berserk firers whose TPBF or FT in the AFPh eliminated every Known enemy unit in their Location return to normal.
+        foreach (var id in BerserkReturnsAfterFire(state, facts, resolution))
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                new ConditionsChanged(id, ConditionChanges(ScenarioA1SequenceCalculator.BerserkEndsConditions())), package, null, [fireId]));
+        }
+
         // A15.5: a unit that surrendered to ADJACENT captors waits for the captor's choice, last, since nothing else happens until then.
         foreach (var (id, captors) in ScenarioA1FireFollowUps.SurrenderPendings(resolution, attemptId))
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(id, captors), package, null, [fireId]));
         }
+    }
+
+    /// <summary>
+    /// The berserk firers of an attack that return to normal (A15.46; pass 72, ruling R72.7), as Rules decides it from the attack's own facts and resolution:
+    /// whether every firer is in the target Location, the berserk firers the attack left, and, only when Rules asks, the Known enemy units in the target
+    /// Location from the planner's index (those on foot, the vehicles, and those aboard them) against those the attack eliminated or wrecked.
+    /// </summary>
+    private string[] BerserkReturnsAfterFire(GameState state, FireAttack facts, FireResolution resolution)
+    {
+        var firers = facts.Firers ?? [];
+        var objects = MemoOf(state).Objects(state);
+        var lost = (resolution.FirerEffects ?? []).Where(effect => effect.Eliminated).Select(effect => effect.UnitId).ToHashSet(StringComparer.Ordinal);
+        string[] berserk = [.. firers.Select(item => item.UnitId).OfType<string>().Where(id => !lost.Contains(id) && objects.Unit(id) is { } unit && Is(unit, Conditions.Berserk))
+            .Order(StringComparer.Ordinal)];
+        if (berserk.Length == 0 || !BoardLocation.TryParse(facts.TargetLocationId, out var location))
+        {
+            return [];
+        }
+
+        var ownLocation = firers.All(item => item.LocationId == facts.TargetLocationId);
+        var side = objects.Unit(berserk[0])!.Side;
+        KnownEnemyCount Known()
+        {
+            UnitInstance[] here = [.. objects.At(location!).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active)];
+            UnitInstance[] known = [.. here.Concat(here.Where(LiveFire.IsVehicle).SelectMany(vehicle => objects.Aboard(vehicle.Id)))
+                .Where(unit => unit.Side != side && KnownEnemy(unit))];
+            var gone = resolution.Effects.Where(effect => effect.Eliminated).Select(effect => effect.UnitId)
+                .Concat((resolution.VehicleEffects ?? []).Where(effect => ScenarioA1FireFollowUps.VehicleEffect(effect, facts.FireKind, false).Wrecked).Select(effect => effect.VehicleId))
+                .ToHashSet(StringComparer.Ordinal);
+            return new KnownEnemyCount(known.Length, known.Count(unit => !gone.Contains(unit.Id)));
+        }
+
+        return [.. ScenarioA1SequenceCalculator.BerserkReturnsAfterAttack(new BerserkAttackFacts(state.Phase, ownLocation, false, berserk), Known)];
     }
 
     /// <summary>

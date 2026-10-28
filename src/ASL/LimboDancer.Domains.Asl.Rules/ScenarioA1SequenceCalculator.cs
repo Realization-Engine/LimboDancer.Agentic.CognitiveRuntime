@@ -336,6 +336,33 @@ public static class ScenarioA1SequenceCalculator
     /// <summary>A15.431, A15.46, in words.</summary>
     public static string BerserkEndsText(string unitId) => $"play.berserk-ends: {unitId} sees no Known enemy unit and returns to normal (A15.431, A15.46)";
 
+    /// <summary>
+    /// A15.46 (p. 84; pass 72, ruling R72.7): a berserk unit returns to Good Order when it, or the group it attacks with, "eliminates all (but at least one)
+    /// Known enemy units in its Location" by TPBF (halved) or FT in the AFPh, or by CC. The attack is the group's TPBF or FT in the AFPh, every firer in the
+    /// target Location (A15.432: its survivors are not yet held in Melee), or a CC attack that destroyed an enemy vehicle in the Location (CC against Infantry
+    /// is the CC calculator's own); it had at least one Known enemy unit there to eliminate, and leaves none. A concealed or hidden unit is not Known, so it
+    /// neither counts nor keeps the group berserk. The berserk units of the group that survive it return to normal; the Location's Known enemy units are read
+    /// only when the attack can qualify. CC Reaction Fire (D7.21) is CC too, so no phase is asked of it.
+    /// </summary>
+    public static IReadOnlyList<string> BerserkReturnsAfterAttack(BerserkAttackFacts facts, Func<KnownEnemyCount> knownEnemies)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(knownEnemies);
+        var qualifies = facts.VehicleDestroyedInCc || (facts.Phase == "afph" && facts.OwnLocation);
+        if (facts.BerserkAttackers.Count == 0 || !qualifies)
+        {
+            return [];
+        }
+
+        var known = knownEnemies();
+        return known.Before > 0 && known.After == 0 ? facts.BerserkAttackers : [];
+    }
+
+    /// <summary>A15.46, in words, for the record line: the berserk unit cleared its Location by its fire there in the AFPh, or by destroying the vehicle in CC.</summary>
+    public static string BerserkClearedText(string unit, bool vehicleDestroyedInCc) =>
+        $"{unit} eliminated every Known enemy unit in its Location {(vehicleDestroyedInCc ? "by destroying the enemy vehicle in CC" : "by its TPBF or FT in the AFPh")}, "
+        + "so it is no longer berserk and returns to Good Order (A15.46)";
+
     /// <summary>A11.16, A19.12 (ruling R29.11): a broken unit held in Melee in a Location whose CC is not yet declared must attempt to withdraw first; the withdrawal read is asked only then.</summary>
     public static bool WithdrawalRequired(string? phase, bool active, bool onMap, bool closeCombatDeclared, Func<bool> mustWithdraw)
     {

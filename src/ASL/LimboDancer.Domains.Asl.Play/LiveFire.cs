@@ -199,9 +199,12 @@ public static class LiveFire
             boarding = new FireEmbarking(bailedHere, true, null);
         }
 
+        // A7.21, A15.432 (pass 72, ruling R72.7): outside the MPh's moving stack, a firer on foot in the target Location fires TPBF at the other side's units
+        // there; before the pass such an attack was refused, its firer among its own targets, so no record holds one.
         UnitInstance UnitAt(string id) => atTarget.First(unit => unit.Id == id);
+        var tpbfSide = movers is null && firers.Any(item => atTarget.Any(unit => unit.Id == item.Unit.Id)) ? side : null;
         var selection = ScenarioA1FireEligibility.SelectTargets([.. atTarget.Select(unit => new TargetUnitStateFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side,
-            IsVehicle(unit), unit.Kind == UnitKinds.Dummy, unit.Definition is not null, movers?.Contains(unit.Id)))], movers is not null);
+            IsVehicle(unit), unit.Kind == UnitKinds.Dummy, unit.Definition is not null, movers?.Contains(unit.Id)))], movers is not null, tpbfSide);
         if (selection.Refusal is { } outside)
         {
             return (null, outside);

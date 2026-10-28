@@ -289,4 +289,41 @@ public sealed class ScenarioA1Pass72RulesTests
         Assert.Null(refusal);
         Assert.Equal(["mmg", "m4"], abandoned);
     }
+
+    private static readonly string[] BerserkPair = ["g1", "g2"];
+
+    // Increment 5b: the return to normal after fire in the AFPh and after a vehicle destroyed in CC (A15.46; ruling R72.7).
+
+    [Theory]
+    // A15.46 (p. 84): the group's halved TPBF eliminates the one Known enemy unit in its Location: both berserk firers return to normal.
+    [InlineData("afph", true, false, 1, 0, true)]
+    // One Known enemy unit is left: still berserk.
+    [InlineData("afph", true, false, 2, 1, false)]
+    // A FT at an ADJACENT hex fires from another Location: no return. A FT at its own Location (A22.1: "never increased for PBF/TPBF") is the first row's case.
+    [InlineData("afph", false, false, 1, 0, false)]
+    // A concealed enemy unit is not Known: Play counts only the Known, so one left is no count at all (the Play test of a concealed HS left).
+    // "but at least one": a Location with no Known enemy unit to eliminate gives no return.
+    [InlineData("afph", true, false, 0, 0, false)]
+    // Not the AFPh: TPBF in the DFPh, or the PFPh, gives no return.
+    [InlineData("dfph", true, false, 1, 0, false)]
+    // A CC attack that destroys the enemy vehicle there, no other Known enemy unit left: the berserk attackers return to normal; Infantry left, not.
+    [InlineData("ccph", false, true, 1, 0, true)]
+    [InlineData("ccph", false, true, 2, 1, false)]
+    public void ABerserkGroupReturnsToNormalWhenItsAttackClearsItsLocation(string phase, bool ownLocation, bool vehicleDestroyed, int before, int after, bool returns)
+    {
+        var facts = new BerserkAttackFacts(phase, ownLocation, vehicleDestroyed, BerserkPair);
+        Assert.Equal(returns ? BerserkPair : [], ScenarioA1SequenceCalculator.BerserkReturnsAfterAttack(facts, () => new KnownEnemyCount(before, after)));
+    }
+
+    [Fact]
+    public void TheLocationIsReadOnlyForAnAttackThatCanReturnABerserkUnit()
+    {
+        // A15.46: no berserk attacker, fire outside the AFPh, or fire from another Location: the Known enemy units are never read.
+        static KnownEnemyCount Unread() => throw new InvalidOperationException("The Location was read.");
+        Assert.Empty(ScenarioA1SequenceCalculator.BerserkReturnsAfterAttack(new BerserkAttackFacts("afph", true, false, []), Unread));
+        Assert.Empty(ScenarioA1SequenceCalculator.BerserkReturnsAfterAttack(new BerserkAttackFacts("pfph", true, false, BerserkPair), Unread));
+        Assert.Empty(ScenarioA1SequenceCalculator.BerserkReturnsAfterAttack(new BerserkAttackFacts("afph", false, false, BerserkPair), Unread));
+        Assert.Equal("4-4-7 squad R1 in [G5] eliminated every Known enemy unit in its Location by destroying the enemy vehicle in CC, so it is no longer berserk and "
+            + "returns to Good Order (A15.46)", ScenarioA1SequenceCalculator.BerserkClearedText("4-4-7 squad R1 in [G5]", true));
+    }
 }

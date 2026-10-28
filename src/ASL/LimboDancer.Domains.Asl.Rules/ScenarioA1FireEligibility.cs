@@ -344,12 +344,14 @@ public static class ScenarioA1FireEligibility
     /// <summary>
     /// Who the attack hits (A8.1, A7.308, A15.41; ruling R21.1): every active unit in the target Location in id order, in the MPh the moving stack
     /// only; vehicles apart from Infantry; the target side's units not attacked (not moving) as a berserk leader's companions; a target outside the
-    /// catalog refuses the attack.
+    /// catalog refuses the attack. Pass 72 (A7.21, A7.212, A15.432; ruling R72.7): <paramref name="tpbfSide"/> is the firing side when a firer on foot stands
+    /// in the target Location, an attack refused before the pass (its firer was its own target); its TPBF attacks the units of the other side only.
     /// </summary>
-    public static TargetSelection SelectTargets(IReadOnlyList<TargetUnitStateFacts> units, bool moversKnown)
+    public static TargetSelection SelectTargets(IReadOnlyList<TargetUnitStateFacts> units, bool moversKnown, string? tpbfSide = null)
     {
         ArgumentNullException.ThrowIfNull(units);
-        var attacked = units.Where(unit => unit.Active && (!moversKnown || unit.Mover == true)).OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
+        var attacked = units.Where(unit => unit.Active && (!moversKnown || unit.Mover == true) && (tpbfSide is null || unit.Side != tpbfSide))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
         var targets = attacked.Where(unit => !unit.Vehicle).ToArray();
         var vehicles = attacked.Where(unit => unit.Vehicle).ToArray();
         var companions = !moversKnown || targets.Length == 0 ? [] : units
