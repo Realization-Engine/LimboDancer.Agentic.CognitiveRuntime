@@ -47,6 +47,29 @@ public static class TurnPackingRules
             : new(TurnPackingEligibility.Eligible, "Ordinary G10 (Un)Packing requirements are proven; the host must still bind the actors, opening and governed command.");
     }
 
+    /// <summary>Classify known counter facts for G10.2/.7. Gun permission, DYO and qualified use remain separate facts.</summary>
+    public static TurnPackingWeapon ClassifyWeapon(string? kind, string? gunType, int? caliber, string? mgSize) => kind switch
+    {
+        "asl:light-mortar" => TurnPackingWeapon.LightMortar,
+        "asl:mg" => mgSize switch { "medium" => TurnPackingWeapon.MediumMachineGun, "heavy" => TurnPackingWeapon.HeavyMachineGun, _ => TurnPackingWeapon.Unknown },
+        "asl:gun" when gunType == "mtr" => caliber is null ? TurnPackingWeapon.Unknown
+            : caliber is >= 76 and <= 82 ? TurnPackingWeapon.Mortar76To82 : TurnPackingWeapon.OtherMortar,
+        "asl:gun" when gunType is "at" or "inf" or "art" or "aa" or "rcl" => TurnPackingWeapon.Gun,
+        _ => TurnPackingWeapon.Unknown
+    };
+
+    /// <summary>Combine the host's disclosed actor binding with the rule facts; a missing actor is unknown, not a false permission.</summary>
+    public static TurnPackingVerdict EvaluateActors(TurnPackingFacts facts, bool? actorsBound)
+    {
+        var verdict = Evaluate(facts);
+        if (actorsBound == false)
+        {
+            return new(TurnPackingEligibility.Ineligible, "Packing needs distinct active own weapon, Mule and Personnel actors with the required possession (G10.2-.3).");
+        }
+        return actorsBound is null && verdict.State != TurnPackingEligibility.Ineligible
+            ? new(TurnPackingEligibility.NotEvaluated, "One or more actor identities, roles, owners or possession facts are unavailable to this viewer.") : verdict;
+    }
+
     public static int? RequiredGameTurns(TurnPackingWeapon weapon, int? manhandlingNumber, bool night)
     {
         if (!Enum.IsDefined(weapon))

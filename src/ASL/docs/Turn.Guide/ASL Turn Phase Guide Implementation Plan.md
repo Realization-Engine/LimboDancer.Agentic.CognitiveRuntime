@@ -528,3 +528,8 @@ A tenant/game-bound JSON codec now replays period entries and preserves actor sp
 ### D3.2 progress: Horse/Mule actor foundation (2026-10-28)
 
 Horse counters now have typed setup identities in Units, including explicit unknown size/designation, scenario-rule binding, normal event serialization and protected hidden/concealed views. Vocabulary 1.20.0 preserves earlier minor-version compatibility. Horse-containing setups remain blocked from live play and phase close until transport, vulnerability and packing integration are admitted. The detailed design and later-rules plan retain those requirements. D3.2 is not complete, and all pending options remain visible.
+
+
+### D3.2 progress: disclosed actor facts (2026-10-28)
+
+The Units adapter now reads actual visible actor identities, possession, nationality, status and pinned counter data into Rules-owned packing classification and eligibility. Work-step, terrain, load, SW qualification and unresolved assembly facts remain unknown. Opponent reads cannot distinguish a hidden actor from a missing one. All 446 Units tests, 67 focused Rules tests and 183 ASL.Turns tests pass; ASL.Turns retains 100% line/branch coverage. D3.2 remains In progress, with no new live command or profile admitted.

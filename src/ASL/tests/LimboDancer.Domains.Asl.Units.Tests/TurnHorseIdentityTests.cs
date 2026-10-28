@@ -6,7 +6,7 @@ using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.Units.Tests;
 
-public sealed class TurnHorseIdentityTests
+public sealed partial class TurnHorseIdentityTests
 {
     private static readonly Lazy<UnitCatalog> Catalog = new(() => UnitCatalogs.Read(UnitCatalogs.ScenarioA1, UnitsTestData.Asl.Value)!.Catalog!);
     private const string Designation = "scenario-mule-designation";
