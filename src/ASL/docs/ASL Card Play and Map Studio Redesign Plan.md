@@ -1830,6 +1830,8 @@ Moved in, with no estimate: a berserk charge into a Location holding an enemy ve
 
 **Pass 73: Infantry VI: the movement and fire leftovers** (18 rows of the inventory; new tasks). Counters: none. Needs first: 40, 45; 72, since a malfunctioned weapon's Residual FP (A8.221) reads Ammunition Shortage.
 
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 20 rows: 18 partly, 2 not built. Claims: 20 open. A rule decided outside Rules on 1 row. Wiring: 0 of 20. Minigames: 0.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 73.1 Infantry OVR and entry: a second Infantry OVR against a SMC already in Melee, a SMC in an AFV, the Disrupted exception; the OVR offered on a lone SMC revealed outside the reviewed building case | A4.14 (p. 49), A4.15 (p. 49), A4.151 (p. 49), A4.152 (p. 49), A12.15 (p. 78) | 0:40 |
@@ -1860,6 +1862,8 @@ Moved here by pass 72 (2026-10-27), with no task renumbered: a berserk Dash acro
 
 **Pass 74: Infantry VII: prisoners, Interrogation, and Control** (24 rows of the inventory). Counters: none. Needs first: 40; 70 (the capture of Passengers, and the concealment and HIP that Interrogation reveals). Interrogation (E2.1) is rolled on a capture or a surrender, so it is built with the prisoners.
 
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 24 rows: 2 built with a deviation, 10 partly, 12 not built. Claims: 24 open. A rule decided outside Rules on 1 row. Wiring: 0 of 24. Minigames: 0.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 74.1 (was 75.5) Prisoners: Commissars and stacks at surrender, the exchange, Massacre of any Unarmed unit, a Guard's Deployment, escape by nationality, rearming, Scrounging, the double VP | A20.21 (p. 86), A20.221 (p. 87), A20.4 (p. 87), A20.5 (p. 87), A20.51 (p. 87), A20.53 (p. 87), A20.55 (p. 88), A20.551 (p. 88), A20.552 (p. 88), A26.222 (p. 100) | 0:40 |
@@ -1873,6 +1877,8 @@ Moved in, with no estimate: a Guard's attack on a unit that enters its Location 
 Turns tasks that reach this pass from another: D9 (pass 73) covers this pass's prisoner and turn-boundary topics.
 
 **Pass 75: Infantry VIII: MOL and DC** (12 rows of the inventory). Counters: none. Needs first: 45 for DC between levels; 65 (Passengers); 70 (Searching, which Set DC Clearance reads).
+
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 12 rows: 2 built with a deviation, 6 partly, 4 not built. Claims: 12 open. A rule decided outside Rules on 3 rows. A Turns calculator on 1 row. Wiring: 0 of 12. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1888,6 +1894,8 @@ Turns tasks that reach this pass from another: D8.2 (pass 115) takes A23.72, Cle
 
 **Pass 80: Nationalities I: the catalog's counters** (new; 14 rows of the inventory). Counters: none. Needs first: 35.
 
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 17 rows: 12 partly, 5 not built. Claims: 17 open. A rule decided outside Rules on 1 row. Wiring: 0 of 17. Minigames: 0.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 80.1 Italians and Axis Minors: who may Deploy, the capture DRM, no escape, Lax, 1PAATC, broken morale against Romanians | A25.61 (p. 97), A25.63 (p. 97), A25.64 (p. 97), A25.65 (p. 97), A25.8 (p. 97), A25.81 (p. 97), A25.82 (p. 98) | 0:25 |
@@ -1899,6 +1907,8 @@ Turns tasks that reach this pass from another: D8.2 (pass 115) takes A23.72, Cle
 Turns tasks that reach this pass from another: D6 (pass 73) names the CC and hero rows of this pass.
 
 **Pass 85: SMOKE, wind, and Environmental Conditions** (new; 33 rows of the inventory). Counters: s# and WP# on Guns and mortars (the British mortar's s7 is already in the catalog, unread); a smoke dispenser value on each vehicle whose counter prints one (the audit says the PzKpfw IIIH does; not checked against the Vehicle Listing). Needs first: 35.
+
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 33 rows: 1 built with a deviation, 7 partly, 25 not built. Claims: 33 open. A Turns calculator on 3 rows. Wiring: 0 of 33. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1921,6 +1931,8 @@ Turns tasks that reach this pass from another: D6 (pass 73) names the CC and her
 | D2.4 Atmosphere acceptance | none | Becomes track 3 acceptance: ordering, interrupted consequences, historical and disclosed reads, phase close without generic cleanup | Not started |
 
 **Pass 90: Night** (planned at 2:45 of build; 47 rows of the inventory, the four Trip Flare rows included since 2026-10-28). Counters: none. Needs first: 35.
+
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 47 rows: 1 built with a deviation, 13 partly, 33 not built. Claims: 47 open. A Turns calculator on 2 rows. Wiring: 0 of 47. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1951,6 +1963,8 @@ Moved here by the Rules-first plan (2026-10-28, question 9), with no task renumb
 
 **Pass 95: Weather II** (new; 25 rows of the inventory). Counters: Winter Camouflage as a unit property; a Drift marker. Needs first: 85 (wind); 90 (Random Location).
 
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 26 rows: 10 partly, 5 refused, 11 not built. Claims: 26 open. Wiring: 0 of 26. Minigames: 0.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 95.1 Fog, by level and density, with the wind's effect | E3.31 (p. 229), E3.311 (p. 229), E3.312 (p. 229) | 1:00 |
@@ -1964,6 +1978,8 @@ Moved here by the Rules-first plan (2026-10-28, question 9), with no task renumb
 Turns tasks that reach this pass from another: D2.3 (pass 85) and D7.3 (pass 90) take weather's dust and execution with this pass.
 
 **Pass 100: Position and cover** (new; 43 rows of the inventory). Counters: Wall Advantage and HD as kept states (no catalog counter). Needs first: 55 (levels for ordnance), 40.
+
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 55 rows: 8 built with a deviation, 29 partly, 5 refused, 13 not built. Claims: 55 open. A rule decided outside Rules on 6 rows. Wiring: 0 of 55. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1982,6 +1998,8 @@ Moved here by pass 60 (2026-10-15), with no task renumbered: a Critical Hit's HD
 Moved here by pass 65 (2026-10-24), with no task renumbered: unloading, a Passenger's fire, and Bailing Out in Bypass (D6.5, D6.1, D6.21, with 100.2); D9.3's exception for units Abandoning, Surviving, unloading, or Bailing Out (with 100.7).
 
 **Pass 105: Armored combat IV: equipment and formations** (new; 68 rows of the inventory). Counters: an armored car; a non-turreted AFV; an AFV with Secondary Armament; a partially armored AFV; a vehicle FT; an AA Gun with IFE of 40mm or less; an AFV with a G and one with Sz; a radioless trait on the T-34 M41. Needs first: 50, 55, 65, 100 (Armored Assault for D14.33).
+
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 2 built with a deviation, 69 partly, 4 refused, 48 not built. Claims: 123 open. A rule decided outside Rules on 6 rows. A Turns calculator on 2 rows. Wiring: 0 of 123. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2007,6 +2025,8 @@ Moved here by pass 72 (2026-10-27), with no task renumbered: the circled B# of v
 Turns tasks that reach this pass from another: D4.3 (pass 175) takes D3.71's circled B# and Low Ammo with this pass; D6 (pass 73) names this pass's CC rows.
 
 **Pass 110: Guns and anti-tank weapons II** (new; 77 rows of the inventory). Counters: R# and X# on the Guns; a Gun that is not QSU, with LF or RFNM; a medium mortar with its dm side; a bazooka; a PIAT; a MOL-Projector; an RCL; a Gun of 100mm or more (many values manufactured, R0.3). Needs first: 35; 60 (HE Equivalency for C13.4x).
+
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 3 built with a deviation, 72 partly, 2 refused, 46 not built. Claims: 123 open. A rule decided outside Rules on 6 rows. A Turns calculator on 1 row. Wiring: 0 of 123. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2046,6 +2066,8 @@ Turns tasks that reach this pass from another: D6 (pass 73) names this pass's CC
 
 **Pass 115: Fortifications I** (planned at 3:35 of build; 74 rows of the inventory). Counters: foxholes 1S, 2S, 3S; trenches; roadblocks; pillboxes by strength (the vocabulary has the kinds, the catalog no definitions). Needs first: 35.
 
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 83 rows: 14 partly, 1 refused, 68 not built. Claims: 83 open. A Turns calculator on 2 rows. Wiring: 0 of 83. Minigames: 0.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 115.1 Positions inside a Location; setup of each kind; hidden Fortifications; where none may be placed | A2.8 (p. 47), A5.6 (p. 53), A12.33 (p. 80), B27.1 (p. 146), B27.12 (p. 146), B3.5 (p. 114), E1.16 (p. 223) | 0:40 |
@@ -2071,6 +2093,8 @@ Turns tasks that reach this pass from another: D8.3 and D8.4 (pass 90) order Cle
 
 **Pass 120: Fortifications II** (planned at 3:15 of build; 42 rows of the inventory). Counters: Wire; minefields by strength; A-T mines; a Flail Tank. Needs first: 115.
 
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 50 rows: 10 partly, 40 not built. Claims: 50 open. A rule decided outside Rules on 1 row. Wiring: 0 of 50. Minigames: 0.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 120.1 Wire, for Infantry and vehicles, and its Clearance | B26.1 (p. 145), B26.31 (p. 145), B26.32 (p. 145), B26.4 (p. 145), B26.41 (p. 145), B26.43 (p. 146), B26.44 (p. 146), B26.45 (p. 146), B26.46 (p. 146), B26.51 (p. 146), B26.53 (p. 146), B24.73 (p. 142) | 1:00 |
@@ -2089,6 +2113,8 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: the Specific and Ge
 Moved here by pass 72 (2026-10-27), with no task renumbered: Wire as 1 MF in a berserk charge's route, and minefields in it (A15.431, A15.45, with 120.1 and 120.2; ruling R72.2).
 
 **Pass 125: Terrain I: Depressions and water** (planned at 5:30 of build; 57 rows of the inventory). Counters: Crest, ford, and Current markers as states; a depth setting on a card. Needs first: 35, 40.
+
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 60 rows: 11 partly, 15 refused, 34 not built. Claims: 60 open. A rule decided outside Rules on 1 row. Wiring: 0 of 60. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2113,6 +2139,8 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: a stream read from 
 
 **Pass 130: Terrain II: the refused ground terrain** (new; 63 rows of the inventory; pass 135 until 2026-10-16). Counters: a Shellhole counter; Climb markers; overlay art and data (no source for it is in the repository). Needs first: 35, 40; 125 (the wadis and streams an overlay joins, A2.76; shellholes in a gully, B2.4).
 
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 77 rows: 1 built with a deviation, 29 partly, 21 refused, 26 not built. Claims: 77 open. A rule decided outside Rules on 3 rows. Wiring: 0 of 77. Minigames: 0.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 130.1 Shellholes, Runways, Elevated Roads | B2.3 (p. 113), B2.4 (p. 113), B7.3 (p. 117), B7.4 (p. 117), B5.2 (p. 115), B5.21 (p. 115), B5.22 (p. 115), B5.3 (p. 115), B5.4 (p. 115), B5.41 (p. 115), B5.42 (p. 115) | 1:00 |
@@ -2128,6 +2156,8 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: a stream read from 
 Moved here by passes 35, 40, and 45, with no task renumbered (their leading rules named in tasks 130.2 and 130.7 since 2026-10-16): the orchard's season in the LOS (B14.2, from pass 35); a hex of two in-hex features, the refused terrain and hexsides of the chart, the road's second target point, the woods-road hex for a vehicle, and the Road Bonus beside the counters that cancel it (A2.4, A4.13, A4.131, A4.132, B3.4, B13.31, B13.32, B13.41, from pass 40, its question F2); the Fire Lane's Alternate Hex Grain and Snap Shot, its hard Hindrances, and Spraying Fire at Bypass and road points (A9.22, A9.221, A9.222, A9.5, from pass 45, which found they need a LOS to a hexside or along a hexspine). Moved here on 2026-10-16 from pass 145: graveyard roads for vehicles (B3.41), with the graveyard; Convoy, the rest of that row, is pass 175's.
 
 **Pass 135: Terrain III: buildings and rubble** (planned at 3:05 of build; 43 rows of the inventory; pass 140 until 2026-10-16). Counters: Breach and rubble as states. Needs first: 45 (levels); 100 (vertex LOS for Rowhouses); 115 (Clearance); 125 (rubble in a gully, B24.2); 130 (Scaling, a way down from an upper level, A7.72).
+
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 51 rows: 22 partly, 7 refused, 22 not built. Claims: 51 open. Wiring: 0 of 51. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2153,6 +2183,8 @@ Turns tasks that reach this pass from another: D6 (pass 73) names this pass's CC
 
 **Pass 140: Terrain IV: bridges** (new; 18 rows of the inventory; pass 130 until 2026-10-16). Counters: pontoon and foot bridge counters; a bridge's weight limit as a state; vehicle weights. Needs first: 125 (the Location beneath a bridge); 135 (the rubble counter a destroyed bridge leaves at the level below it, B6.331); 75 (Set DC) for destruction.
 
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 19 rows: 2 partly, 6 refused, 11 not built. Claims: 19 open. Wiring: 0 of 19. Minigames: 0.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 140.1 Printed bridges: the bridge Location and the one beneath, movement, TEM, the Hindrance from below | B6.1 (p. 115), B6.2 (p. 115), B6.3 (p. 116), B6.31 (p. 116), B6.32 (p. 116), B6.4 (p. 116), B6.43 (p. 116), B1.15 (p. 113) | 1:00 |
@@ -2164,6 +2196,8 @@ Turns tasks that reach this pass from another: D6 (pass 73) names this pass's CC
 Moved here on 2026-10-16 from pass 125, with no estimate changed: the Sunken Lane (B4.43), whose rules are the One-Lane bridge's. A wooden bridge burns as a stone building does (B6.5), and Flame and Blaze are pass 185's; recommended for this pass's design: move B6.5's burning to pass 185 and build the wooden bridge's Collapse here.
 
 **Pass 145: Terrain V: bocage, sewers, and the village** (new; 100 rows of the inventory). Counters: a "Sewer" marker; Rail Cars; PFZ and Debris counters; map data for Narrow Streets, Steeples, railroads, and Towers (no in-scope board prints them, by the audit's reading). Needs first: 100 (Wall Advantage, vertex LOS); 115; 125 (gullies and streams under a PFZ, B36.23; the Sunken Road of a RR crossing, B32.44); 130 (runways under Debris, B37.62; Scaling a Tower, B34.42; vineyard for a PFZ, B36.21); 135 (Falling Rubble, B31.15, B37.5); 140 (railroad bridges and crossings, B32.14, B32.43; Debris on a bridge, B37.63; one lane in a Narrow Street, B31.11).
+
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 99 rows: 5 partly, 8 refused, 86 not built. Claims: 99 open. Wiring: 0 of 99. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2189,6 +2223,8 @@ Moved here by pass 71 (2026-10-26), with no task renumbered: subterranean Locati
 
 **Pass 150: Offboard artillery I** (planned at 3:30 of build; 36 rows of the inventory). Counters: a radio for each nationality; batteries by caliber; the OBA ACCESS and accuracy columns of the National Capabilities Chart. Needs first: 45 (Residual FP), 60 (Indirect Fire against vehicles).
 
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 43 rows: 8 partly, 35 not built. Claims: 43 open. Wiring: 0 of 43. Minigames: 0.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 150.1 Radios, Contact and Maintenance, Battery Access and its draw pile | C1.1 (p. 163), C1.2 (p. 163), C1.21 (p. 163), C1.211 (p. 163), C1.22 (p. 163) | 0:40 |
@@ -2209,6 +2245,8 @@ Turns tasks that reach this pass from another: D1.3 (pass 110) admits the artill
 
 **Pass 155: Offboard artillery II: missions, Bombardment, and Barrage** (new; 44 rows of the inventory). Counters: a field phone; an IR-capable mortar; Barrage and mission markers. Needs first: 150; 85 (SMOKE).
 
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 44 rows: 44 not built. Claims: 44 open. Wiring: 0 of 44. Minigames: 0.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 155.1 Field Phones, the Offboard Observer, Pre-Registered Fire | C1.23 (p. 163), C1.63 (p. 166), C1.73 (p. 166), C1.731 (p. 166), C1.732 (p. 166), C1.733 (p. 166) | 0:40 |
@@ -2221,6 +2259,8 @@ Turns tasks that reach this pass from another: D1.3 (pass 110) admits the artill
 Turns tasks that reach this pass from another: D1.3 (pass 110) admits the artillery dependencies; D2.3 (pass 85) takes FFE dust with this pass.
 
 **Pass 160: Air support** (planned at 3:00 of build; 38 rows of the inventory). Counters: Fighter-Bombers and Stukas by year band; AA Guns; Aerial AF for each AFV. Needs first: 105 (IFE and AA Guns), 85 (weather states are built; SMOKE Hindrance to Aerial LOS).
+
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 39 rows: 2 partly, 37 not built. Claims: 39 open. Wiring: 0 of 39. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2238,6 +2278,8 @@ Moved here by pass 60 (2026-10-15), with no task renumbered: Case A for an aircr
 Turns tasks that reach this pass from another: D7.2 (pass 125) takes aerial play with this pass.
 
 **Pass 165: Special units: Cavalry and skis** (planned at 3:40 of build; 36 rows of the inventory). Counters: Horse counters in three sizes; Ski counters; an Ahkio. Needs first: 40 (Infantry OVR), 65 (Bailing Out), 95 (snow).
+
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 55 rows: 4 partly, 35 not built, 16 not audited. Claims: 55 open. A Turns calculator on 11 rows. Wiring: 0 of 55. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2264,6 +2306,8 @@ Turns tasks that reach this pass from another: D6 (pass 73) names this pass's CC
 
 **Pass 170: Airborne and waterborne** (new; 61 rows of the inventory). Counters: boats and rafts; gliders; parachute counters. Needs first: 125 (water), 160 (Light AA), 85 (wind).
 
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 61 rows: 61 not built. Claims: 61 open. Wiring: 0 of 61. Minigames: 0.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 170.1 Boats: on land, on water, under fire, in Close Combat | E5.2 (p. 233), E5.3 (p. 234), E5.4 (p. 234), E5.5 (p. 234), E5.6 (p. 234) | 1:40 |
@@ -2285,6 +2329,8 @@ Moved here by pass 71 (2026-10-26), with no task renumbered: a wounded man's 4 M
 Turns tasks that reach this pass from another: D5.4 (pass 145) accepts airborne arrival with tunnels; D7.2 (pass 125) takes water and aerial play with this pass.
 
 **Pass 175: Transport and unusual vehicles** (new; 107 rows of the inventory). Counters: a wagon; motorcycles in three sizes and bicycles; an amphibian and a DD tank; an Aerosan; a trailer and a portee vehicle; an Ammo Supply counter. Needs first: 125 (water) for D16; 105 (Impulse Movement) for E11; 95 (snow terrain) for D17; 65 (Riders) for D15 and D17.
+
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 108 rows: 1 partly, 107 not built. Claims: 108 open. A Turns calculator on 6 rows. Wiring: 0 of 108. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2316,6 +2362,8 @@ Turns tasks that reach this pass from another: D7.2 (pass 125) takes amphibious 
 
 **Pass 180: Nationalities II: new formations and nations** (new; 54 rows of the inventory). Counters: SS, Volksgrenadier, and Assault Engineer MMC; U.S. paratroops and British Airborne; Partisans; Free French and Vichy; Allied Minor and Ethiopian sets; crews, SW, and a Gun for the nations that lack them. Needs first: 105 (Impulse Movement) for Human Wave; 115 (entrenching); 85 (WP); 110 (PF and PSK for other nations).
 
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 56 rows: 3 partly, 53 not built. Claims: 56 open. Wiring: 0 of 56. Minigames: 0.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 180.1 The SS, Volksgrenadiers, Assault Engineers | A25.01 (p. 93), A25.11 (p. 93), A25.111 (p. 93), A25.12 (p. 93), A25.13 (p. 93) | 0:40 |
@@ -2332,6 +2380,8 @@ Turns tasks that reach this pass from another: D7.2 (pass 125) takes amphibious 
 Turns tasks that reach this pass from another: D6 (pass 73) names this pass's CC rows.
 
 **Pass 185: Fire** (planned at 3:00 of build; 32 rows of the inventory). Counters: Flame and Blaze as states; the Kindle and Spread numbers of the Terrain Chart. Needs first: 85 (EC and wind), 135 (rubble), 75 (who Kindled).
+
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 35 rows: 6 partly, 29 not built. Claims: 35 open. Wiring: 0 of 35. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|

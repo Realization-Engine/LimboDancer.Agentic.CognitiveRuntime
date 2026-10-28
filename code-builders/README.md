@@ -14,7 +14,7 @@ Until 2026-10-13 these lived outside the repository, by an early rule not to com
 | `build-and-test/` | The Studio build, a filtered test run, the whitespace formatter, the commit helpers, and `how_to_reach_main.sh`, which says whether a branch needs a pull request and a CI run or may go straight. |
 | `test-games/` | `game_file.py`, the library that writes a small Studio test game as a file (it replaces the libraries of passes 45, 50, and 55), and the readers of recorded games. |
 | `rulebook/` | Page dumps, term and counter scans, and page renders of the rulebook PDF. |
-| `documents/` | The multi-file edit helper, and the checkers of the rule inventory and the rule coverage. |
+| `documents/` | The multi-file edit helper; the rule inventory's reader by column name (`inventory_table.py`), which every inventory tool uses; the checkers of the rule inventory and the rule coverage; and `pass_rules_status.py`, which writes each rule pass's Rules status line from the inventory and, with `--check`, stops the gate's strict stage when one differs. |
 | `boards/` | Hex facts, building and woods-road listings, the scenario cards' survey. `los-survey/` reads LOS over a card's setup areas with the game's own `LosCalculator` (build it outside the repository; its header says how). |
 | `claude-hooks/` | The Bash guard that refuses the shell slips the standing rules name, and its test. |
 | `pass-history/` | The one-time scripts of each pass, as they ran. |
