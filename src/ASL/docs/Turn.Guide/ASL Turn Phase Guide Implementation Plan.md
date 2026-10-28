@@ -582,3 +582,12 @@ Validation: 480 Units tests, 126 focused packing/work Rules tests and 183 ASL.Tu
 Actual-counter reads now prove empty Mule capacity for its owner/adjudicator where the complete inventory and absence of unbound own legacy loads support it. Opponent hidden-load worlds remain indistinguishable. Rules also distinguishes required dismantling from limbering and uses known light-mortar PP without defaulting missing source values. Russian MG subtype exceptions, 37mm SW, common terrain/accompaniment and actual host work-step/effect admission remain pending. The detailed design and source register record these limits; D3.2 stays In progress, the ledger stays 2/36, and all nine packages remain Pending.
 
 Validation: 486 Units, 148 focused packing/work Rules and 183 ASL.Turns tests pass. ASL.Turns retains 825/825 lines and 470/470 branches (100%, no exclusions).
+
+
+### D4.1 complete: source-backed E10 eligibility (2026-10-28)
+
+The next independent Rules contract now covers Ammo Vehicle selection, ordinary 15/20-PP thresholds, exact caliber/barrel compatibility, same/Accessible Locations, all seven D.7 Immobile conditions, and complete one/two-recipient assignments. It keeps missing authorization, hidden or incomplete assignments, posture and weapon facts unknown. Replenishment requires Low Ammo; firing benefit excludes Bounding (First) Fire. The detailed design and source register record the rulebook/ASOP reconciliation. No live command is promoted and existing bounded host/legacy behavior is preserved.
+
+D4.1's contract gate is complete, bringing the finite ledger to 3/36. D4.2-D4.4 still own durable source/assignment binding, dumps, governed effects, automatic ammunition rules and live acceptance. D1.2, D2.1 and D3.2 remain In progress; all nine packages remain Pending and visible. Independent baseline-prerequisite contracts may proceed while another package's host integration remains open.
+
+Validation: 169 focused ammunition/packing/work Rules tests and 183 ASL.Turns tests pass; ASL.Turns retains 825/825 lines and 470/470 branches (100%, no exclusions).

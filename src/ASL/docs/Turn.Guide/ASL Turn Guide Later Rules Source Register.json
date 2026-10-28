@@ -123,6 +123,23 @@
           ],
           "method": "Text review of required dismantling, the light-mortar four-PP threshold and Russian .50-calibre MG exception against the existing pinned counter model. Prior G10 visual review and ASOP 1.13B timing reconciliation are retained.",
           "finding": "Known non-Russian MMG/HMG and 76-82mm mortars require dm; light mortars require dm at four or more PP. Missing PP or Russian MG subtype evidence cannot establish impossibility of dismantling. Unobserved enemy or unbound legacy loads cannot prove empty Mule capacity. These facts do not admit live packing."
+        },
+        {
+          "date": "2026-10-28",
+          "rules": [
+            "E10.1-.4",
+            "D.7",
+            "Accessible glossary",
+            "ASOP 8.43B"
+          ],
+          "physicalPages": [
+            11,
+            192,
+            244,
+            681
+          ],
+          "method": "Local supplemental PDF text reviewed against Chapter E/D and glossary transcriptions; ASOP 8.43B checked for retained replenishment TI and completion timing. No source PDF copied or baseline edition replaced.",
+          "finding": "D4.1 contracts cover ordinary 15/20-PP selection with specified-vehicle exceptions, exact caliber/barrel compatibility, normal-Infantry-advance accessibility, all seven D.7 Immobile conditions and up to two eligible recipients. TI/Prep Fire/radioless refusal alone is not Immobile. Actual source authorization, assignment persistence and governed effects remain D4.2-D4.4; B5-D4 stays Pending."
         }
       ]
     }
