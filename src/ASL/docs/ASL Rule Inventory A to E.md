@@ -63,7 +63,7 @@ The 2127 rows of A to E are 105 numbered sections, 57 rules of the chapters' int
 | Pass 75: Infantry VIII: MOL and DC (proposed; until 2026-10-26 Infantry IV: the small sections, and Interrogation, with all five) | 12 |
 | Pass 80: Nationalities I: the catalog's counters (proposed) | 17 |
 | Pass 85: SMOKE, wind, and Environmental Conditions (proposed) | 33 |
-| Pass 90: Night (planned) | 43 |
+| Pass 90: Night (planned) | 47 |
 | Pass 95: Weather II (proposed) | 26 |
 | Pass 100: Position and cover (proposed) | 55 |
 | Pass 105: Armored combat IV: equipment and formations (proposed) | 123 |
@@ -78,7 +78,7 @@ The 2127 rows of A to E are 105 numbered sections, 57 rules of the chapters' int
 | Pass 150: Offboard artillery I (planned) | 43 |
 | Pass 155: Offboard artillery II: missions, Bombardment, and Barrage (proposed) | 44 |
 | Pass 160: Air support (planned) | 39 |
-| Pass 165: Special units: Cavalry and skis (planned) | 39 |
+| Pass 165: Special units: Cavalry and skis (planned) | 55 |
 | Pass 170: Airborne and waterborne (proposed) | 61 |
 | Pass 175: Transport and unusual vehicles (proposed) | 108 |
 | Pass 180: Nationalities II: new formations and nations (proposed) | 56 |
@@ -86,15 +86,15 @@ The 2127 rows of A to E are 105 numbered sections, 57 rules of the chapters' int
 | Left out, if the user agrees (question 2): optional by its own text; the card's check of the printed total stays | 7 |
 | Deferred with Chapter H: a DYO chart, purchase, or dr; a card's SSR names the value | 5 |
 | Deferred with Chapter F: the rule serves North Africa only | 1 |
-| Deferred with Chapter G: the rule serves the Pacific only | 5 |
+| Deferred with Chapter G: the rule serves the Pacific only | 1 |
 | Left out: an optional rule by the rulebook's own mark | 6 |
 | Stands by its ruling | 10 |
-| Claim wave 1 (question 8) | 136 |
+| Claim wave 1 (question 8) | 120 |
 | Claim wave 2 (question 8) | 899 |
 | Passes 190 and 195, the DYO purchase (question 8) | 58 |
 | **All** | **2467** |
 
-The last three lines are the rows beyond Chapter E, by the plan's question 8: wave 1 is claimed now (G10 Animal Pack and the ASOP), wave 2 once track 1 has imported that theater's boards and counters (F, the rest of G, and W), and H1 stays with the DYO passes.
+The last three lines are the rows beyond Chapter E, by the plan's question 8: wave 1 is claimed now (the ASOP; G10 Animal Pack is claimed now too, in pass 165 since first task 3 of 2026-10-28), wave 2 once track 1 has imported that theater's boards and counters (F, the rest of G, and W), and H1 stays with the DYO passes.
 
 ## 3. Reading the tables
 
@@ -2696,10 +2696,10 @@ The last three lines are the rows beyond Chapter E, by the plan's question 8: wa
 | E1.94 | Fires | 227 | partly | GamePlanner.Night.cs: Illuminated (burning wrecks, two hexes); ScenarioA1NightAndWeather.cs: Illuminated | ScenarioA1NightAndWeather.cs: Illuminated (from Where, not read) | none found | Pass 185 |  | open |  | Only a burning wreck Illuminates, at a fixed two hexes. Missing: terrain Blazes and their range of twice the Blazing levels, Illumination at all levels, Kindling at night (loss of "?" and a Gunflash). | audit |
 | E1.941 | Shadows | 227 | not built |  | none |  | Pass 185 |  | open |  | No shadows behind obstacles in a Blaze's zone (ruling R16.8 records it). | audit |
 | E1.942 | Flame | 227 | not built |  | none |  | Pass 185 |  | open |  | A Flame does not Illuminate its Location. | audit |
-| E1.95 | Trip Flares | 227 | not built |  | Turns work, Turn Guide B5 (not read against the PDF): TurnObligationRules.cs: Evaluate (the obligation's deadline) |  | Deferred with Chapter G: the rule serves the Pacific only |  | open |  | No trip flares (1944-5 PTO, U.S. Scenario Defender; Chapter G terrain). | audit |
-| E1.951 | Effects | 227 | not built |  | Turns work, Turn Guide B5 (not read against the PDF): TurnObligationRules.cs: Evaluate (the obligation's deadline) |  | Deferred with Chapter G: the rule serves the Pacific only |  | open |  | No Trip Flare counter. | audit |
-| E1.952 | Elimination | 227 | not built |  | none |  | Deferred with Chapter G: the rule serves the Pacific only |  | open |  | No trip flare elimination. | audit |
-| E1.953 | Search & Recon | 227 | not built |  | none |  | Deferred with Chapter G: the rule serves the Pacific only |  | open |  | No Search or Recon of trip flares. | audit |
+| E1.95 | Trip Flares | 227 | not built |  | Turns work, Turn Guide B5 (not read against the PDF): TurnObligationRules.cs: Evaluate (the obligation's deadline) |  | Pass 90 |  | open |  | No trip flares (1944-5 PTO, U.S. Scenario Defender; Chapter G terrain). Joined pass 90 on 2026-10-28 (the Rules-first plan, question 9). | audit |
+| E1.951 | Effects | 227 | not built |  | Turns work, Turn Guide B5 (not read against the PDF): TurnObligationRules.cs: Evaluate (the obligation's deadline) |  | Pass 90 |  | open |  | No Trip Flare counter. Joined pass 90 on 2026-10-28 (the Rules-first plan, question 9). | audit |
+| E1.952 | Elimination | 227 | not built |  | none |  | Pass 90 |  | open |  | No trip flare elimination. Joined pass 90 on 2026-10-28 (the Rules-first plan, question 9). | audit |
+| E1.953 | Search & Recon | 227 | not built |  | none |  | Pass 90 |  | open |  | No Search or Recon of trip flares. Joined pass 90 on 2026-10-28 (the Rules-first plan, question 9). | audit |
 
 #### E2 Interrogation (page 228)
 
@@ -3576,22 +3576,22 @@ The last three lines are the rows beyond Chapter E, by the plan's question 8: wa
 
 | § | Title | Page | Status | Where | Rules calculator | Test | Pass or ruling | Owner | Claim state | Minigames | Note | By |
 |---|---|---:|---|---|---|---|---|---|---|---|---|---|
-| G10 | Animal Pack | 291 | not audited |  |  |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.1 | (none) | 291 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnHorseRules.cs; TurnPackingRules.cs |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.11 | Pack-TI | 291 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingPeriod.cs; TurnPackingRules.cs; TurnWorkRules.cs |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.2 | Animal Packing | 291 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingRules.cs |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.21 | Stacking | 291 | not audited |  |  |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.3 | (Un)Packing | 291 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingPeriod.cs; TurnPackingRules.cs; TurnPackingVulnerabilityRules.cs; TurnWorkRules.cs |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.31 | (none) | 291 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingPeriod.cs; TurnPackingVulnerabilityRules.cs |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.32 | dm | 292 | not audited |  |  |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.33 | (none) | 292 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingRules.cs; TurnPackingVulnerabilityRules.cs |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.4 | Vulnerability | 292 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingCasualtyRules.cs; TurnPackingRules.cs; TurnPackingVulnerabilityRules.cs |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.41 | (none) | 292 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingCasualtyRules.cs; TurnPackingPeriod.cs; TurnPackingRules.cs; TurnPackingVulnerabilityRules.cs |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.42 | (none) | 292 | not audited |  |  |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.5 | Column | 292 | not audited |  |  |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.6 | DYO | 292 | not audited |  |  |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.61 | Guns | 292 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingRules.cs |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
-| G10.7 | SW | 292 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingRules.cs; TurnPackingVulnerabilityRules.cs |  | Claim wave 1 (question 8) |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10 | Animal Pack | 291 | not audited |  |  |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.1 | (none) | 291 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnHorseRules.cs; TurnPackingRules.cs |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.11 | Pack-TI | 291 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingPeriod.cs; TurnPackingRules.cs; TurnWorkRules.cs |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.2 | Animal Packing | 291 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingRules.cs |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.21 | Stacking | 291 | not audited |  |  |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.3 | (Un)Packing | 291 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingPeriod.cs; TurnPackingRules.cs; TurnPackingVulnerabilityRules.cs; TurnWorkRules.cs |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.31 | (none) | 291 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingPeriod.cs; TurnPackingVulnerabilityRules.cs |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.32 | dm | 292 | not audited |  |  |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.33 | (none) | 292 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingRules.cs; TurnPackingVulnerabilityRules.cs |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.4 | Vulnerability | 292 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingCasualtyRules.cs; TurnPackingRules.cs; TurnPackingVulnerabilityRules.cs |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.41 | (none) | 292 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingCasualtyRules.cs; TurnPackingPeriod.cs; TurnPackingRules.cs; TurnPackingVulnerabilityRules.cs |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.42 | (none) | 292 | not audited |  |  |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.5 | Column | 292 | not audited |  |  |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.6 | DYO | 292 | not audited |  |  |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.61 | Guns | 292 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingRules.cs |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
+| G10.7 | SW | 292 | not audited |  | Turns work, D3.1 and D3.2 (not read against the PDF): TurnPackingRules.cs; TurnPackingVulnerabilityRules.cs |  | Pass 165 |  | open |  | Added from the PDF (eASLRB v3.01) on 2026-10-28, not audited. | script |
 
 #### G11 Caves (pages 292 to 302)
 
