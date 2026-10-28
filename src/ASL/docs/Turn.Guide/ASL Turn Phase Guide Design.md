@@ -672,3 +672,12 @@ A recorded squad reduction now transfers a retained observed spotting assignment
 The guide preserves the first observed assignment and names its disclosed half-squad successor. Hidden lineage yields NotEvaluated and omits the successor identity. Original designation and replacement commands remain pending; this exception grants no new firing permission and does not complete D1.2.
 
 Validation: 24 focused Play tests, 29 focused Rules tests and 24 Turn Guide component tests pass. All 181 ASL.Turns tests pass at 823/823 lines and 470/470 branches (100%, no exclusions). Coverage includes prior loss, broken/unknown survivors, hidden lineage, serialized replay and continued firing.
+
+
+### D1.2 progress: shared mortar use
+
+C9.31 now permits one Spotter to serve multiple mortars only when their recorded firing Location and target agree for the entire Player Turn. The state preserves each use across phase changes, clears it at the next Player Turn, and carries it to a retained reduction successor. Different levels are different Locations. Once mortars share the Spotter, changing the target is refused; earlier shots cannot be forgotten to permit another mortar. Phase SW-use records retain every mortar served.
+
+New spotted-shot facts carry `SpotterUseVersion = 1`; legacy records with no version retain their earlier replay validation, and unsupported versions are rejected. This preserves committed history while applying the new contract to new commands. Missing historical Locations cannot justify multi-mortar sharing. Original designation, replacement and the additional source-clarification cases remain pending, so D1.2 is still In progress and B5-D1 remains pending.
+
+Validation: all 1,128 Play tests pass with no skips, including 25 focused pass-9 cases. All 30 focused Spotter Rules tests pass. All 181 ASL.Turns tests pass with 823/823 lines and 470/470 branches covered (100%, no exclusions).

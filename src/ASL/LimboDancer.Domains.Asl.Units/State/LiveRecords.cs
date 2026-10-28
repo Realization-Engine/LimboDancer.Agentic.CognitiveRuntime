@@ -248,6 +248,9 @@ public sealed record MortarSpotterLoss(string Gun, string Spotter, string EventI
 /// <summary>The C9.3 Good Order half-squad that inherits an observed assignment, with journal provenance.</summary>
 public sealed record MortarSpotterSuccessor(string Gun, string Predecessor, string Successor, string EventId, long Revision);
 
+/// <summary>Observed C9.31 firing locations and targets, retained for the entire Player Turn.</summary>
+public sealed record MortarSpotterUse(string Gun, string Spotter, BoardLocation? Location, BoardLocation Target);
+
 /// <summary>A squad's one SW use this phase (A7.351): the SW, a Spotter's mortar, or <c>panzerfaust</c>.</summary>
 public sealed record SupportWeaponUse(string Unit, string Weapon);
 

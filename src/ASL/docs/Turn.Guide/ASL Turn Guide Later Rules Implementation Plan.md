@@ -21,7 +21,7 @@ Each package's fourth task is acceptance of its preceding scope, including negat
 | Task | Deliverable and specific exit evidence | Prerequisite |
 |---|---|---|
 | D1.1 | Rules-owned C9.3 original/replacement Spotter timing contract: original PFPh/DFPh ownership, loss reasons, next owner MPh opening, unknown evidence, and reduction-survivor exception. Source-backed boundary tests; no firing permission implied. | Accepted B5/U1 |
-| D1.2 | Durable Spotter designation, loss, replacement and reduced-squad successor history; governed designation/replacement, same-Location/same-target multi-mortar use, and legacy unknown handling. Replayed lifecycle and command refusals prove the contract. | D1.1 |
+| D1.2 | Durable Spotter designation, loss, replacement and reduced-squad successor history; governed designation/replacement (including setup predesignation and Defensive First Fire activation), deployment to a chosen half-squad, concealed/HIP disclosure, same-Location/same-target multi-mortar use, and legacy unknown handling. Replayed lifecycle and command refusals prove the contract. | D1.1 |
 | D1.3 | Opportunity Fire declarations and required no-shot breakdown; remaining fire, artillery and vehicle/PRC dependency admissions. Audit existing execution, fill missing facts/commands, and connect reviewed phase topics without guessing eligibility. | D1.2 |
 | D1.4 | Fire/Spotter package acceptance across profiles: initial/replacement Spotter, failed eligibility, Opportunity Fire carryover/breakdown, artillery and vehicle/PRC consequences, stale/disclosure/replay and live guide proof. | D1.3 |
 | D2.1 | White SMOKE creation, dispersal/removal and distinct owner-relative cleanup; persisted type/size/source provenance and legacy unknown cases. | Accepted B5/U1 |
@@ -87,3 +87,19 @@ A recorded squad reduction now transfers a retained observed spotting assignment
 The guide preserves the first observed assignment and names its disclosed half-squad successor. Hidden lineage yields NotEvaluated and omits the successor identity. Original designation and replacement commands remain pending; this exception grants no new firing permission and does not complete D1.2.
 
 Validation: 24 focused Play tests, 29 focused Rules tests and 24 Turn Guide component tests pass. All 181 ASL.Turns tests pass at 823/823 lines and 470/470 branches (100%, no exclusions). Coverage includes prior loss, broken/unknown survivors, hidden lineage, serialized replay and continued firing.
+
+
+### D1.2 source clarification register
+
+The local C9.3/.31 text remains the implementation basis. The [Perry Sez Q&A compilation, version 35](https://www.klasm.com/ASL/ErrataQA/QA/GS%20Perry%20Sez%20ch.pdf), pages 2 and 112-113, adds review requirements: deployment may transfer spotting to a chosen half-squad; setup predesignation takes effect at a firing-phase opening, including Defensive First Fire; concealed/HIP identities require private recording; vehicle mortar MA may use spotted fire; a berserk original does not by itself allow replacement. This is a third-party compilation of attributed rulings, not a new local rulebook edition. Its provenance must remain explicit.
+
+These findings expand the existing D1.2/D1.3 acceptance scope without adding numbered tasks or treating them as implemented. Marker/movement effects and activation ordering must be reconciled before admitting designation commands. The narrower timing contract and observed-history increments do not certify these paths. All affected reference topics remain pending.
+
+
+### D1.2 progress: shared mortar use
+
+C9.31 now permits one Spotter to serve multiple mortars only when their recorded firing Location and target agree for the entire Player Turn. The state preserves each use across phase changes, clears it at the next Player Turn, and carries it to a retained reduction successor. Different levels are different Locations. Once mortars share the Spotter, changing the target is refused; earlier shots cannot be forgotten to permit another mortar. Phase SW-use records retain every mortar served.
+
+New spotted-shot facts carry `SpotterUseVersion = 1`; legacy records with no version retain their earlier replay validation, and unsupported versions are rejected. This preserves committed history while applying the new contract to new commands. Missing historical Locations cannot justify multi-mortar sharing. Original designation, replacement and the additional source-clarification cases remain pending, so D1.2 is still In progress and B5-D1 remains pending.
+
+Validation: all 1,128 Play tests pass with no skips, including 25 focused pass-9 cases. All 30 focused Spotter Rules tests pass. All 181 ASL.Turns tests pass with 823/823 lines and 470/470 branches covered (100%, no exclusions).

@@ -699,6 +699,7 @@ public static partial class GameProjector
                     SupportWeaponDirectors = [],
                     PhaseFirers = [],
                     SpottedThisPhase = [],
+                    MortarSpotterUses = newPlayerTurn ? [] : state.MortarSpotterUses,
                     MovedWeapons = newPlayerTurn ? [] : state.MovedWeapons,
                     HazardousMovers = newPlayerTurn ? [] : state.HazardousMovers,
                     // A23.3 (ruling R15.2): a DC Placement lasts its Player Turn.
@@ -1469,7 +1470,8 @@ public static partial class GameProjector
                 spotters = [.. spotters.Where(item => item.Gun != fired.Gun), new MortarSpotter(fired.Gun, id)];
                 state = state with
                 {
-                    SpottedThisPhase = [.. state.SpottedThisPhase.Where(item => item.Spotter != id), new MortarSpotter(fired.Gun, id)]
+                    SpottedThisPhase = [.. state.SpottedThisPhase.Where(item => item.Gun != fired.Gun), new MortarSpotter(fired.Gun, id)],
+                    MortarSpotterUses = [.. state.MortarSpotterUses, new(fired.Gun, id, state.Location(fired.Gun)?.Location, fired.Target)]
                 };
                 if (state.Unit(id) is { } spotting)
                 {

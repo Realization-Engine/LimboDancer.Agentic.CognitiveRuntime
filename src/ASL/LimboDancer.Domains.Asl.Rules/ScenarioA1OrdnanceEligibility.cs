@@ -120,10 +120,10 @@ public static class ScenarioA1OrdnanceEligibility
                 return (null, $"play.ordnance-spotter-kept: {keptSpotter} spots for {gun} while it is Good Order (C9.3)");
             }
 
-            // C9.31 EX, A7.352 (table player, pass 9): a unit spots for one mortar a phase; a HS, crew, or SMC that has fired does not spot.
+            // C9.31, A7.352: other mortars must share this Location and target throughout the Player Turn; a non-squad cannot also fire.
             if (unit.SpottedOtherMortar || (!unit.Squad && unit.FiredOrFirstFire && !unit.SpottedThisPhase))
             {
-                return (null, $"play.ordnance-spotter-used: {unit.Id} has spotted for another mortar or fired this phase (C9.31, A7.352)");
+                return (null, $"play.ordnance-spotter-used: {unit.Id} has incompatible mortar use this Player Turn or fired this phase (C9.31, A7.352)");
             }
 
             if (unit.Squad && !unit.SpottedThisPhase && SquadSupportRefusal(unit.Support, phase, false) is { } spotterRefusal)

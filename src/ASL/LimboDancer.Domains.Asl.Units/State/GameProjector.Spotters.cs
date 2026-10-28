@@ -30,6 +30,8 @@ public static partial class GameProjector
                         MortarSpotterSuccessors = [.. next.MortarSpotterSuccessors,
                             new(assignment.Gun, assignment.Spotter, survivor!.Id, gameEvent.EventId, gameEvent.Revision)],
                         SpottedThisPhase = [.. next.SpottedThisPhase.Select(item => item == assignment ? item with { Spotter = survivor.Id } : item)],
+                        MortarSpotterUses = [.. next.MortarSpotterUses.Select(item => item.Spotter == assignment.Spotter
+                            ? item with { Spotter = survivor.Id } : item)],
                         SupportWeaponUses = [.. next.SupportWeaponUses.Select(item => item.Unit == assignment.Spotter
                             ? item with { Unit = survivor.Id } : item)],
                     };

@@ -629,6 +629,65 @@ public sealed class BacklogPass9Tests : IDisposable
     }
 
     [Fact]
+    public async Task OneSpotterSharesMortarsOnlyAtTheSameLocationAndTargetForThePlayerTurn()
+    {
+        await Setup("german", 7, 1942,
+            Squad("g1", "bd01:B10:0", "german"), Mortar("m1", "attacker-light-mortar", "g1", "german"),
+            Squad("g3", "bd01:B10:0", "german"), Mortar("m2", "attacker-light-mortar", "g3", "german"),
+            Squad("g4", "bd01:C10:0", "german"), Mortar("m3", "attacker-light-mortar", "g4", "german"),
+            Unit("g2", "asl:half-squad", "attacker-half-squad", "bd01:B9:0", "german"),
+            Squad("r1", "bd01:B6:0", "russian"), Squad("r2", "bd01:B5:0", "russian"));
+        await Advance();
+        Committed(await Shoot("m1", "bd01:B6:0", "g2", null, 2, 6));
+        var before = Revision;
+        Refused(await Shoot("m2", "bd01:B5:0", "g2", null), "play.ordnance-spotter-used");
+        Refused(await Shoot("m3", "bd01:B6:0", "g2", null), "play.ordnance-spotter-used");
+        Assert.Equal(before, Revision);
+        var legacy = store.Read(Scope)!.Events.Select(item => item.Payload is OrdnanceFired shot ? item with
+        {
+            Payload = shot with
+            {
+                Facts = JsonSerializer.SerializeToElement(shot.Facts.Deserialize<OrdnanceShot>(LiveFire.Json)! with
+                {
+                    SpotterUseVersion = null
+                }, LiveFire.Json)
+            }
+        } : item).ToArray();
+        Assert.False(Planner().Replay(legacy).HasErrors);
+        var unknownVersion = legacy.Select(item => item.Payload is OrdnanceFired shot ? item with
+        {
+            Payload = shot with
+            {
+                Facts = JsonSerializer.SerializeToElement(shot.Facts.Deserialize<OrdnanceShot>(LiveFire.Json)! with
+                {
+                    SpotterUseVersion = 2
+                }, LiveFire.Json)
+            }
+        } : item).ToArray();
+        Assert.True(Planner().Replay(unknownVersion).HasErrors);
+        Committed(await Shoot("m2", "bd01:B6:0", "g2", null, 2, 6));
+        Assert.Equal(2, Current.SpottedThisPhase.Count(item => item.Spotter == "g2"));
+        Assert.Equal(2, Current.MortarSpotterUses.Count);
+        Assert.All(store.Read(Scope)!.Events.Select(item => item.Payload).OfType<OrdnanceFired>(),
+            shot => Assert.Equal(1, shot.Facts.Deserialize<OrdnanceShot>(LiveFire.Json)!.SpotterUseVersion));
+        Refused(await Shoot("m1", "bd01:B5:0", "g2", null), "play.ordnance-spotter-used");
+        var written = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(written)).Record!;
+        Assert.Equal(JsonSerializer.Serialize(Current.MortarSpotterUses), JsonSerializer.Serialize(Planner().Replay(loaded.Events).Current!.MortarSpotterUses));
+        await Advance();
+        Assert.Empty(Current.SpottedThisPhase);
+        Assert.Equal(2, Current.MortarSpotterUses.Count);
+        for (var phase = 0; phase < 6; phase++)
+        {
+            Committed(await Do(GameActions.AdvancePhase, new DiceRoller(_ => 5), new
+            {
+            }));
+        }
+        Assert.Equal("russian", Current.PhasingSide);
+        Assert.Empty(Current.MortarSpotterUses);
+    }
+
+    [Fact]
     public async Task AMortarKeepsItsMinimumRangeAndDoesNotFireFromABuildingOrAfterMoving()
     {
         // C9.4: not at 1 hex (minimum 2); B23.423: not from the wooden building C7; A4.41: not in the AFPh after it moved.
