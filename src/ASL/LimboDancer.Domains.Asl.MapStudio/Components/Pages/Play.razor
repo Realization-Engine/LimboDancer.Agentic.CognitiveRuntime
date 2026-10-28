@@ -31,9 +31,20 @@
     // The game and view pickers: from 1024px with a game open, at the top of the Play tab (the user, 2026-10-17); in the lobby, on the
     // hand-over screen, and under 1024px, where there is no Play tab, in the context above.
     RenderFragment pickers = @<text>
-        <LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
+        <LiveGameToolbar Games="@ListedGames" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
                          ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" BoardLabel="@ViewTarget"
                          BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, Viewer.IsAdjudicator || state.Ended is not null ? state.Revision : null, highlight?.ToString()) : null)" />
+        @* The Rules-first proving slice (ruling RPS.10): minigames are left out of the game and card lists unless shown. *@
+        <label class="play-show-minigames" title="List the minigames' games and cards too">
+            <input type="checkbox" id="play-show-minigames" checked="@showMinigames" @onchange="@(args => showMinigames = args.Value is true)" />
+            Show minigames
+        </label>
+        @if (state is not null && handOver is null)
+        {
+            @* Ruling RPS.11: the workbench opens on this game, at this revision, read from this view. *@
+            <a id="play-workbench" href="@($"games/workbench?game={Uri.EscapeDataString(gameId)}&revision={state.Revision}&viewer={Uri.EscapeDataString(Viewer.Name)}")"
+               title="Ask a rule about this position on the Rule Workbench">Rule Workbench</a>
+        }
         @if (gameId.StartsWith("campaign-", StringComparison.Ordinal))
         {
             <CampaignContextPanel GameId="@gameId" />
@@ -56,7 +67,7 @@
     @if (Scripted is { } scripted)
     {
         <ScriptedDicePanel Queued="@([.. scripted.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scripted.Clear())" Problem="@scriptedProblem" />
-        <FollowRecordPanel Games="@([.. Live.Games().Select(scope => scope.Game)])" Start="StartFollowing" Problem="@followProblem" />
+        <FollowRecordPanel Games="@ListedGames" Start="StartFollowing" Problem="@followProblem" />
     }
 }
 else
@@ -441,7 +452,7 @@ else if (state is not null)
                 @if (Scripted is { } scriptedDice)
                 {
                     <ScriptedDicePanel Queued="@([.. scriptedDice.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scriptedDice.Clear())" Problem="@scriptedProblem" />
-                    <FollowRecordPanel Games="@([.. Live.Games().Select(scope => scope.Game)])" Source="@(followGame == gameId ? followSource : null)"
+                    <FollowRecordPanel Games="@ListedGames" Source="@(followGame == gameId ? followSource : null)"
                                        Revision="@state.Revision" Of="@followOf" Running="@(followRun is not null)" Start="StartFollowing" Next="@(() => FollowNext())"
                                        Run="FollowRun" Problem="@followProblem" />
                 }
@@ -1667,7 +1678,13 @@ else if (state is not null)
     private string CardTitle(string name) => CardRead(name)?.Card is { } card ? card.Title : name;
 
     /// <summary>The cards a new game may start from (K02).</summary>
-    private IReadOnlyList<CardPicker.Choice> CardChoices => [.. Live.Cards.Names.Select(name => new CardPicker.Choice(name, CardTitle(name), Live.Cards.IsUser(name)))];
+    private IReadOnlyList<CardPicker.Choice> CardChoices => [.. Live.Cards.Names.Concat(showMinigames ? ScenarioCards.MinigameNames : [])
+        .Select(name => new CardPicker.Choice(name, CardTitle(name), Live.Cards.IsUser(name)))];
+
+    // The Rules-first proving slice (ruling RPS.10): the minigames' games and cards are listed only when shown; the game open is always listed.
+    private bool showMinigames;
+
+    private IReadOnlyList<string> ListedGames => Live.GameNames(showMinigames || Live.MinigameOf(gameId) is not null);
 
     /// <summary>The start the chosen card gives, worded for the summary (K03); null before a card is chosen.</summary>
     private CardStartSummary.StartLines? NewStart => ChosenCard is not { } card ? null : new(

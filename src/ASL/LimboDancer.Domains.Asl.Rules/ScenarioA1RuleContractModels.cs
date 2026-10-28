@@ -31,6 +31,9 @@ public enum ContractDisclosure
     /// <summary>The side that owns the unit the fact concerns, and the adjudicator.</summary>
     Owner,
 
+    /// <summary>The side that does not own the unit the fact concerns, and the adjudicator: what that side's own units see, which may be hidden from the owner.</summary>
+    Opponent,
+
     /// <summary>The adjudicator alone, who sees the whole state.</summary>
     Adjudicator,
 }
@@ -50,7 +53,7 @@ public sealed record ContractFact(string Name, ContractFactType Type, bool MayBe
         get; init;
     }
 
-    /// <summary>For an Owner fact, the name of the Unit fact it concerns; the viewer must be that unit's side.</summary>
+    /// <summary>For an Owner or Opponent fact, the name of the Unit fact it concerns; the viewer must be that unit's side, or its opponent.</summary>
     public string? Concerns
     {
         get; init;

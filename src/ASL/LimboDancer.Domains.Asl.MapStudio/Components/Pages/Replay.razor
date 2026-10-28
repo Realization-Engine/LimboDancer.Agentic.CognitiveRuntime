@@ -37,6 +37,10 @@
                 }
             </select>
         </label>
+        <label title="List the minigames' games too">
+            <input type="checkbox" id="replay-show-minigames" checked="@showMinigames" @onchange="@(args => { showMinigames = args.Value is true; games = ListedGames(); })" />
+            Show minigames
+        </label>
         @if (history?.Current is { } current)
         {
             <PerspectivePicker Id="replay-perspective" Choices="@ViewChoices(current)" Value="@(handOver ?? viewAs)" ValueChanged="@ChangeView" />
@@ -46,6 +50,8 @@
             {
                 <a id="replay-view" href="@Games.BoardLink(ViewTarget(linkedState), GameLibrary.LivePrefix + gameId, Viewer, linked.Last, highlight?.ToString())"
                    title="The board viewer, at this step, read as @DisplayText.ViewName(viewAs)">View on @ViewTarget(linkedState)</a>
+                <a id="replay-workbench" href="@($"games/workbench?game={Uri.EscapeDataString(gameId)}&revision={linked.Last}&viewer={Uri.EscapeDataString(viewAs)}")"
+                   title="Ask a rule about this step, read as @DisplayText.ViewName(viewAs), on the Rule Workbench">Workbench</a>
             }
         }
     </div>
@@ -314,7 +320,12 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     // The live games, read when a game is opened rather than on every render.
     private IReadOnlyList<string> games = [];
 
-    protected override void OnInitialized() => games = [.. Live.Games().Select(scope => scope.Game)];
+    protected override void OnInitialized() => games = ListedGames();
+
+    // The Rules-first proving slice (ruling RPS.10): minigames are left out unless shown, and the game open is always listed.
+    private bool showMinigames;
+
+    private List<string> ListedGames() => [.. Live.GameNames(showMinigames || Live.MinigameOf(gameId) is not null)];
 
     private static IReadOnlyList<PerspectivePicker.Choice> ViewChoices(GameState state) =>
         [.. state.Perspectives.Select(perspective => new PerspectivePicker.Choice(perspective.Name, perspective.IsAdjudicator ? "the adjudicator" : DisplayText.Side(perspective.Name)))];
@@ -332,7 +343,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         (viewCache, mapCache, standingCache, unitCache, changeCache, panelCache) = (default, default, default, default, default, default);
         (playOnName, playOnProblem) = (null, null);
         cards.Clear();
-        games = [.. Live.Games().Select(scope => scope.Game)];
+        games = ListedGames();
         entry = game.Length == 0 ? null : GamesLibrary.Load(GameLibrary.LivePrefix + game);
         history = entry?.History;
         if (history?.Current is not { } current)

@@ -39,7 +39,7 @@
       }
     },
     {
-      "name": "The German viewer cannot know whether a hidden enemy sees the Location, so the verdict is not evaluated for it",
+      "name": "The German viewer cannot know whether a hidden Russian sees the Location, so the verdict is not evaluated for it",
       "position": "setup",
       "viewer": "german",
       "contract": "a12.14-advance-concealment",
@@ -51,6 +51,21 @@
       },
       "expect": {
         "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "The Russian viewer, who knows what its own units see but not what is under the German \"?\", sees the concealment lost",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a12.14-advance-concealment",
+      "facts": {
+        "to": "bd04:H5:0",
+        "night": false,
+        "terrain": "open-ground",
+        "enemyGoodOrderInLosWithin16": true
+      },
+      "expect": {
+        "outcome": "loses-concealment"
       }
     },
     {

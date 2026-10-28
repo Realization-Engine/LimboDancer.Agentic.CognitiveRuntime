@@ -67,10 +67,11 @@ public sealed class MinigameBundleTests : IDisposable
         Assert.Equal(Minigames.All.Count, Minigames.All.Select(bundle => bundle.Id).Distinct().Count());
         foreach (var bundle in Minigames.All)
         {
-            var read = ScenarioCards.Read(bundle.Card, Catalog);
+            var read = ScenarioCards.Read(bundle.Card, Catalog)!;
             Assert.True(read.IsValid, $"{bundle.Id}: {string.Join("; ", read.Diagnostics)}");
-            Assert.Equal(bundle.Id, read.Card!.Minigame);
-            Assert.Equal(bundle.Id, Minigames.BundleOfCard(read.Card.Id));
+            var card = read.Card!;
+            Assert.Equal(bundle.Id, card.Minigame);
+            Assert.Equal(bundle.Id, Minigames.BundleOfCard(card.Id));
             Assert.NotEmpty(bundle.Checks);
             foreach (var rule in bundle.Rules)
             {
@@ -114,7 +115,10 @@ public sealed class MinigameBundleTests : IDisposable
         Assert.DoesNotContain("minigame", text, StringComparison.Ordinal);
         Assert.Null(GameEventReader.Read(System.Text.Encoding.UTF8.GetBytes(text)).Record!.Minigame);
 
-        var minigame = GameEventWriter.Write(scope, plain with { Minigame = "a10-rally" });
+        var minigame = GameEventWriter.Write(scope, plain with
+        {
+            Minigame = "a10-rally"
+        });
         Assert.Equal("a10-rally", GameEventReader.Read(System.Text.Encoding.UTF8.GetBytes(minigame)).Record!.Minigame);
 
         var store = new FileGameStore(root);

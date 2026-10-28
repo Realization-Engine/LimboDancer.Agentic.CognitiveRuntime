@@ -108,6 +108,16 @@ public sealed class LivePlay
     public IReadOnlyList<GameScope> Games() => Store.List(Tenant);
 
     /// <summary>
+    /// The live games a list shows (the Rules-first proving slice, ruling RPS.10): every game when minigames are shown, otherwise those that are not a
+    /// minigame's. A game's minigame is read from its file's header, kept while the file is unchanged.
+    /// </summary>
+    public IReadOnlyList<string> GameNames(bool showMinigames) =>
+        [.. Games().Where(scope => showMinigames || Store.MinigameOf(scope) is null).Select(scope => scope.Game)];
+
+    /// <summary>The minigame bundle a live game was started from, or null.</summary>
+    public string? MinigameOf(string game) => string.IsNullOrEmpty(game) ? null : Store.MinigameOf(new GameScope(Tenant, game));
+
+    /// <summary>
     /// The game-to-card index (pass 28, ruling R28.4): the live games whose <c>game-started</c> names the card, read from each game's record on request,
     /// with nothing stored beside them.
     /// </summary>

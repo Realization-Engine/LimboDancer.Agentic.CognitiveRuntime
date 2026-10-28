@@ -70,8 +70,8 @@ public sealed class ScenarioA1RuleContractTests
                 Assert.True(Inventory.Value.Contains($"\n| {rule.Rule} |", StringComparison.Ordinal), $"{contract.Id}: {rule.Rule} is not a row of the inventory");
             }
 
-            // An owner's fact names the Unit fact whose owner may know it.
-            foreach (var fact in contract.Facts.Where(fact => fact.Disclosure == ContractDisclosure.Owner))
+            // An owner's or an opponent's fact names the Unit fact whose side decides who may know it.
+            foreach (var fact in contract.Facts.Where(fact => fact.Disclosure is ContractDisclosure.Owner or ContractDisclosure.Opponent))
             {
                 Assert.Contains(contract.Facts, other => other.Name == fact.Concerns && other.Type == ContractFactType.Unit);
             }
@@ -152,7 +152,13 @@ public sealed class ScenarioA1RuleContractTests
     public void TheConcealmentContractReadsTheEnemyLosOnlyWhenNightAndTerrainLeaveItOpen()
     {
         var contract = ScenarioA1RuleContracts.Find("a12.14-advance-concealment")!;
-        JsonObject Position(bool night, string terrain) => new() { ["advancerId"] = "g-squad", ["to"] = "bd04:H5:0", ["night"] = night, ["terrain"] = terrain };
+        JsonObject Position(bool night, string terrain) => new()
+        {
+            ["advancerId"] = "g-squad",
+            ["to"] = "bd04:H5:0",
+            ["night"] = night,
+            ["terrain"] = terrain
+        };
         Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(contract, Position(false, "open-ground")).Outcome);
         Assert.Equal("keeps-concealment", ScenarioA1RuleContracts.Evaluate(contract, Position(true, "open-ground")).Outcome);
         Assert.Equal("keeps-concealment", ScenarioA1RuleContracts.Evaluate(contract, Position(false, "woods")).Outcome);

@@ -276,18 +276,19 @@ public static class ScenarioA1RuleContracts
 
     /// <summary>
     /// A12.14 (p. 77) and E1.31 (p. 223), as <see cref="ScenarioA1AdvanceCalculator.LosesConcealment"/> decides whether a concealed unit advancing into a
-    /// Location loses its "?" (the proving slice: what a viewer may know). Whether a Good Order enemy within 16 hexes sees it is the adjudicator's
-    /// fact, since an enemy may be hidden; the calculator reads it only when night and terrain leave the question open.
+    /// Location loses its "?" (the proving slice: what a viewer may know). Whether a Good Order enemy within 16 hexes sees it is the opponent's fact:
+    /// that side knows what its own units see, and the owner does not, since an enemy may be hidden. What is under the "?" is the owner's, and the
+    /// calculator does not need it. The LOS is read only when night and terrain leave the question open.
     /// </summary>
     private static RuleContract AdvanceConcealment() => new("a12.14-advance-concealment", "Concealment lost on advancing",
         [new("A12.14", 77), new("E1.31", 223)],
         [
-            new("advancerId", ContractFactType.Unit, false, ContractDisclosure.Owner, "The concealed unit that advances") { Concerns = "advancerId" },
+            new("advancerId", ContractFactType.Unit, true, ContractDisclosure.Owner, "The concealed unit that advances") { Concerns = "advancerId" },
             new("to", ContractFactType.Hex, false, ContractDisclosure.All, "The Location it advances into"),
             Flag("night", "The scenario is at night"),
             new("terrain", ContractFactType.Text, false, ContractDisclosure.All, "The terrain of the Location it advances into"),
             Flag("enemyGoodOrderInLosWithin16", "A Good Order enemy unit within 16 hexes has a LOS to that Location", mayBeUnknown: true,
-                disclosure: ContractDisclosure.Adjudicator),
+                disclosure: ContractDisclosure.Opponent) with { Concerns = "advancerId" },
         ],
         ["loses-concealment", "keeps-concealment", ContractVerdict.NotEvaluated],
         [new("conditions-changed", "the advancer's \"?\" removed (Concealed false), one event for each concealed advancer")],

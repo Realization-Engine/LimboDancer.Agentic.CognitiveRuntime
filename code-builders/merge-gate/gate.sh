@@ -184,6 +184,8 @@ base)
 strict)
   # The Rules-first plan, question 10 (the user, 2026-10-28): the redesign plan's Rules status lines may not drift from the inventory.
   python "$R/code-builders/documents/pass_rules_status.py" --check < /dev/null || stop "a pass's Rules status line differs from the rule inventory (run code-builders/documents/pass_rules_status.py and commit)"
+  # The proving slice (2026-10-28): the inventory's Minigames column is the bundles' manifests', written by script.
+  python "$R/code-builders/documents/minigames_column.py" --check < /dev/null || stop "the inventory's Minigames column differs from the bundles' manifests (run code-builders/documents/minigames_column.py and commit)"
   # The claim board (questions 1 to 3, 2026-10-28): the ledger is sound, and every Rules file the branch changes is held by its claim.
   python "$R/code-builders/documents/claim_check.py" --base "$BASEFULL" --branch "$(git -C "$R" branch --show-current)" < /dev/null || stop "the claim board's check failed (above; AGENTS.md says how to claim)"
   CHANGED=$( (git -C "$R" -c core.quotepath=false diff --name-only "$BASEFULL" -- 'src/ASL/tests/*.cs'; git -C "$R" ls-files --others --exclude-standard -- 'src/ASL/tests/*.cs') | sort -u)
