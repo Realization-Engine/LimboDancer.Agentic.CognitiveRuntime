@@ -204,6 +204,12 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         : plan.Events.Select(item => item.Payload).OfType<PaatcTaken>().FirstOrDefault() is { } paatc && !plan.Events.Any(item => item.Payload is AdvanceMoved or ChoiceMade)
         // A PAATC that stopped the action (A11.6): its units are still in play, pinned on a failure.
         ? paatc.Units.All(id => state.Unit(id) is { } unit && (paatc.Passed || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True))
+        : plan.Events.Select(item => item.Payload).OfType<ChoiceMade>().FirstOrDefault() is { } hardeningAnswer
+            && hardeningAnswer.Key.StartsWith(Rules.ScenarioA1ChargeCalculator.HardeningChoice + ":", StringComparison.Ordinal)
+        // A berserk unit's Battle Hardening answered (A15.44; pass 72, ruling R72.4): nothing waits for it but the next unit's choice, and the unit is berserk no more.
+        ? (state.Choice is null || plan.Events.Any(item => item.Payload is ChoicePending))
+            && (state.Unit(hardeningAnswer.Key[(Rules.ScenarioA1ChargeCalculator.HardeningChoice.Length + 1)..]) is not { Status: InstanceStatus.Active } still
+                || GameState.Condition(still, Conditions.Berserk) != ConditionState.True)
         : plan.Events.Select(item => item.Payload).OfType<ChoiceMade>().FirstOrDefault() is { } sniperAnswer && (sniperAnswer.Key.StartsWith(ChoicePending.SniperCheck + ":", StringComparison.Ordinal)
             || sniperAnswer.Key.StartsWith(ChoicePending.Sniper + ":", StringComparison.Ordinal))
         // A Sniper Check answered (A14.4; pass 71, ruling R71.10), or the Sniper player's choice (A14.2; ruling R71.12): nothing waits for it but a later

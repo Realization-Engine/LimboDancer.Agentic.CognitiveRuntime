@@ -12,8 +12,11 @@ public readonly record struct ChargeMoveFacts(int To, string? Lane, int HalfMf);
 /// </summary>
 public sealed record ChargeSearchStep(int Target, int HalfMf, bool Plain, IReadOnlyList<string> Lanes);
 
-/// <summary>What a Location holds that bars a charge into it (ruling R11.16): an enemy vehicle, enemy Infantry. A Gun's crew no longer does (ruling R70.27).</summary>
-public readonly record struct ChargeOccupantFacts(bool EnemyVehicle, bool EnemyInfantry);
+/// <summary>
+/// A charge step's entry as the movement rules give it (A15.431, A15.45; pass 72, ruling R72.4): its half MF, or, when refused, the movement model's refusal
+/// and the name of the terrain of the Location it would enter as the map reads it.
+/// </summary>
+public readonly record struct ChargeEntryFacts(int? HalfMf, string? Refusal, string? Terrain);
 
 /// <summary>
 /// A fact reader for the berserk charge's search (A15.43, A15.431; the pass 32 design, D4): Locations are indexes into the caller's table, hexsides 0 to 5
@@ -33,8 +36,11 @@ public interface IChargeFactReader
     /// <summary>Whether the card's playable area holds the Location (A2.1).</summary>
     public bool Playable(int location);
 
-    /// <summary>The half MF of a charge step between two Locations as the movement rules decide it, or null when the entry is not reviewed; 16 for all the MF.</summary>
-    public int? EntryCost(int fromLocation, int toLocation);
+    /// <summary>
+    /// The half MF of a charge step between two Locations as the movement rules decide it (16 for all the MF), or, with no half MF, the refusal and the entered
+    /// Location's terrain (pass 72, ruling R72.4).
+    /// </summary>
+    public ChargeEntryFacts EntryCost(int fromLocation, int toLocation);
 
     /// <summary>The Location across a hexside of a hex, or null.</summary>
     public int? Across(int location, int side);
@@ -59,7 +65,4 @@ public interface IChargeFactReader
 
     /// <summary>The distance in hexes between two Locations, or null when the map cannot give it.</summary>
     public int? Distance(int one, int two);
-
-    /// <summary>What a Location holds that may bar a charge into it.</summary>
-    public ChargeOccupantFacts Occupants(int location);
 }

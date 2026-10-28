@@ -176,3 +176,32 @@ Each to be checked against the store's older records before it enters `SKIP_JSON
 - **When:** after 5a in the Studio first, before any costly test; again at the whole-pass check.
 
 **Build outputs outside the repository.** My Studio in `asl-gate-work/studio-6670` (registered by `build_studio.sh`); the gate's own (the base build, the proof tools, registered by `gate.sh`); the filtered test runs' `asl-gate-work/test-classes-bin/<project>` (registered by `run_test_classes.sh`); any strict build of a test project by an agent, registered as it is made. All are removed at the latest by the gate's `ci` stage; the last task confirms `outside_outputs.sh list` is empty.
+
+## 8. The charge: 72.1, part I (increment 5a)
+
+Built on 2026-10-27, 19:10 to about 20:10, by a building agent to a brief (`brief_5a.md`), rulings R72.3 to R72.6, its diff read and its games played in the Studio by the session, one round of fixes after the Studio check.
+
+### 8.1 Departures from the frame, first
+
+- **A15.45's comparison applies only where a rule bar refused a step cheaper than the target's route.** Everywhere else A15.43 stands unchanged (the nearest target, the shortest route in MF), so an ordinary charge charges as before. R72.3's comparison itself is as written: the charge stays while the route's hex count is no more than the next group's range; a tie stays.
+- **What a rule bar is:** a cliff, a Water Obstacle terrain (Water, Shallow Water, River, Shallow River, Canal, Ocean, Shallow Ocean, a Pond), and building Locations that do not connect (level, stairwell, Rooftop, Cellar). Everything else is a gap of the model, including marsh from below, slopes, unreviewed hexsides, and bridged hexes. **Two cases are read as gaps that are bars on the page:** a pond hexside around a hex with no water at its center, and a bridged hex (the movement model reads no bridge). Each keeps R30.5 (ends in place, stays berserk): a backlog row.
+- **The Battle Hardening choice** reuses the kind `battle-hardening` with its own key, `berserkHardening:<unit>`, apart from the fire and rally keys; it is offered in the plan that ends the MPh, after `phase-changed` (so the unit, no longer berserk, cannot move again), one unit at a time. The answer is not recorded among a fire or rally record's choices.
+- **A15.46 with a surviving vehicle** (R72.5's read): the CC calculator did not count a Known enemy vehicle; a new fact on the CC facts, `vehicleSides`, keeps a berserk unit berserk while one survives. A record without it resolves as before.
+- **The page's undecided-charge line,** older than the pass, named raw ids, raw Locations, and the text's code; it is reworded through the page's `Words` ("4-4-7 squad R1 in [A8] is berserk and stays in place: ..."), and the MPh-end line names each unit's hex (found in the Studio check). No page test asserts the line: no MapStudio fixture gives an undecided charge.
+
+### 8.2 What is built
+
+- `ScenarioA1ChargeCalculator`: one single-source search with every enemy Location (and the charge's previous target) terminal, tracking each route's hex count and the cost at which a bar or a gap was first met; `Steps` reads the targets in range groups; `RuleBar`, `NoneReachable`, `HardeningDue`, `Hardening`, and their texts. `ChargeEntryFacts` (half MF, refusal, terrain) from `IChargeFactReader.EntryCost`.
+- `ScenarioA1CloseCombatRules.ChargeBarred`'s refusal removed, with `ChargeOccupantFacts` and `IChargeFactReader.Occupants`.
+- The MPh's end (GamePlanner.cs): the hardening list, the choice after the phase change, locations read through `LocationOf`. The choice's answer (GamePlanner.Choices.cs, GameGate, the projector): `conditions-changed` (berserk off), then `lineage` Replaced, or Fanatic for an elite unit, as the hardening path does; declined, the unit is Good Order.
+- `CloseCombatFacts.VehicleSides` (`vehicleSides`), written by `LiveCloseCombat` for a sequential round, read by the A15.46 check; the verifier takes an older record's absence as recorded.
+- `MfAllotment` counts a berserk unit's 1 PP SW only up to its IPC; the abandonment is read at every step (R72.6).
+- The dead `GamePlanner.ChargeBarred(GameState, ...)` deleted; the stale comment at GamePlanner.Fire.cs:274 rewritten.
+
+### 8.3 The games and the tests
+
+- `p72-charge-next-nearest` (board 7, Russian MPh): a berserk 4-4-7 in [A8]; a German squad in [A3] at range 5 across the river, in LOS; another in [G8] at range 6, in LOS, reached by land. The panel: "4-4-7 squad R1 in [A8] is berserk and charges [G8] ... next step [A9]". (The first layout, from a terrain approximation, put the far target where [A3] cannot see it; the LosCalculator was read for the second.)
+- `p72-charge-unreachable` (board 7): the only German squad across the river. The MPh's end offers the Russian side "take it" or "decline it"; taken: berserk off and the squad Replaced by the elite squad.
+- `p72-charge-tank-and-squad` (board 3): a German tank and squad in [A2]; the charge enters [A2] and the German side may fire.
+- Tests, by method (the agent's report): Rules 26 and Play 26 methods passed (`ScenarioA1Pass72RulesTests`, `BacklogPass72Tests`, and the charge, A15.46, portage, and Battle Hardening methods of passes 5, 10, 15, 27, and 70 that assert the changed members and texts); after the wording fix, 2 more. `ChargeSearches` stays 1 on a fall back.
+- The measurement after 5a: level with the base (section 7; the notes).

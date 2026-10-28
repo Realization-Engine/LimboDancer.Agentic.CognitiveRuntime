@@ -132,8 +132,15 @@ public static class LiveCloseCombat
         var hand = ScenarioA1CloseCombatFactBuilders.HandToHand(rounds, entry?.HandToHand == true, round, handToHand);
 
         // A11.12's EXC (ruling R70.30): a sequential round's units attacked before are those Infantry attacked; a vehicle's attacks are counted apart.
+        // A15.46 (pass 72, ruling R72.5): the sides of the Known vehicles there, which the round's units leave out: a surviving vehicle keeps a berserk unit berserk.
+        string[] vehicleSides = sequential ? [.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)
+            && ScenarioA1ChargeCalculator.ChargeTarget(GameState.Condition(unit, Conditions.Concealed) != ConditionState.True, true, Is(unit, Conditions.Abandoned)))
+            .Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)] : [];
         return (ScenarioA1CloseCombatFactBuilders.Round(state.Phase, location.ToString(), terrain, state.PhasingSide, round, entry?.Ambusher, units,
-            (sequential ? entry?.InfantryAttacked : entry?.Attacked) ?? [], entry?.Attacking ?? [], attacks, hand), null);
+            (sequential ? entry?.InfantryAttacked : entry?.Attacked) ?? [], entry?.Attacking ?? [], attacks, hand) with
+        {
+            VehicleSides = vehicleSides.Length > 0 ? vehicleSides : null,
+        }, null);
     }
 
     /// <summary>The rolls of a CC record, rebuilt from its roll ids and the recorded dice, in the package's shape.</summary>
@@ -546,7 +553,10 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             {
                 Manning = unit.UnitId is { } id ? manning.GetValueOrDefault(id) : null,
                 Guns = recordsGuns ? unit.Guns : null,
-            })]
+            })],
+
+            // Pass 72 (ruling R72.5): a record made before the pass names no vehicle sides and resolves as it did; a record since must name the state's.
+            VehicleSides = recorded.VehicleSides is null ? null : expected.VehicleSides,
         };
         if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

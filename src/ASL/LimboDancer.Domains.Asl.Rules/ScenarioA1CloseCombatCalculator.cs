@@ -909,12 +909,12 @@ public static class ScenarioA1CloseCombatCalculator
             }
 
             // A15.46: a berserk unit returns to normal when its group's attack eliminated every enemy unit in its Location that was
-            // eliminated, at least one, and none is left (ruling R29.15).
+            // eliminated, at least one, and none is left (ruling R29.15); a Known enemy vehicle there is left too (pass 72, ruling R72.5).
             foreach (var attack in arithmetic)
             {
                 var berserk = attack.Attackers.Select(id => units[id]).Where(unit => unit.Facts.Berserk == true && !unit.Eliminated).ToArray();
                 var enemies = units.Values.Where(unit => unit.Facts.Side != attack.Side && unit.Facts.Captured != true).ToArray();
-                var enemiesLeft = enemies.Any(unit => !unit.Eliminated);
+                var enemiesLeft = enemies.Any(unit => !unit.Eliminated) || facts.VehicleSides?.Any(side => side != attack.Side) == true;
                 var byThisGroup = enemies.Where(unit => unit.Eliminated).All(unit => attack.Defenders.Contains(unit.Id));
                 if (berserk.Length > 0 && !enemiesLeft && byThisGroup && attack.Defending.Any(item => units[item.UnitId].Eliminated))
                 {

@@ -14,17 +14,10 @@ public sealed class ScenarioA1CloseCombatRulesTests
     private sealed class Row : IChargeFactReader
     {
         private readonly HashSet<int> unplayable = [];
-        private readonly Dictionary<int, ChargeOccupantFacts> occupants = [];
 
         public Row Unplayable(int location)
         {
             unplayable.Add(location);
-            return this;
-        }
-
-        public Row Holding(int location, ChargeOccupantFacts facts)
-        {
-            occupants[location] = facts;
             return this;
         }
 
@@ -47,7 +40,7 @@ public sealed class ScenarioA1CloseCombatRulesTests
 
         public bool Playable(int location) => !unplayable.Contains(location);
 
-        public int? EntryCost(int fromLocation, int toLocation) => 2;
+        public ChargeEntryFacts EntryCost(int fromLocation, int toLocation) => new(2, null, null);
 
         public int? Across(int location, int side) => null;
 
@@ -64,8 +57,6 @@ public sealed class ScenarioA1CloseCombatRulesTests
         public bool LosClear(int fromLocation, int toLocation) => true;
 
         public int? Distance(int one, int two) => Math.Abs(one - two);
-
-        public ChargeOccupantFacts Occupants(int location) => occupants.GetValueOrDefault(location);
     }
 
     [Fact]
@@ -161,18 +152,6 @@ public sealed class ScenarioA1CloseCombatRulesTests
     }
 
     [Fact]
-    public void AStepIntoAVehicleAndInfantryLocationLeavesTheChargeUndecided()
-    {
-        // Pass 70 (ruling R70.27): a Gun's crew no longer bars the step; an enemy vehicle with enemy Infantry still does (R11.16).
-        var row = new Row().Holding(1, new ChargeOccupantFacts(true, true));
-        var (steps, _, undecided) = ScenarioA1ChargeCalculator.Steps(row, 0, [1], null, () => new ChargeNodeFacts(0, null, null));
-        Assert.Empty(steps);
-        // Pass 70's fixes: CC between Infantry beside a vehicle is built; the words no longer say it is not.
-        Assert.StartsWith("play.berserk-vehicle: a berserk charge into bd01:B1:0", undecided, StringComparison.Ordinal);
-        Assert.DoesNotContain("CC between Infantry beside a vehicle, which is not built", undecided, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void AChargeKeepsToItsLocationUntilACloserEnemyAppears()
     {
         var row = new Row();
@@ -235,15 +214,14 @@ public sealed class ScenarioA1CloseCombatRulesTests
     }
 
     [Fact]
-    public void TheDueLinesAndTheBarredCharge()
+    public void TheDueLinesAndNothingLeft()
     {
+        // Pass 72 (ruling R72.5): a charge into a Location holding an enemy vehicle and enemy Infantry is no longer barred, so ChargeBarred is gone.
         Assert.Equal("bd01:A1:0: the german side attacks or passes (A11.31)", ScenarioA1CloseCombatRules.DueOpenLine("bd01:A1:0", "german", null));
         Assert.Equal("bd01:A1:0: its round after the Ambush drs (A11.12)", ScenarioA1CloseCombatRules.DueOpenLine("bd01:A1:0", null, null));
         Assert.Equal("bd01:A1:0: the Ambush drs (A11.4)", ScenarioA1CloseCombatRules.DueAmbushLine("bd01:A1:0", null));
         Assert.True(ScenarioA1CloseCombatRules.NothingLeft(true, 1, false));
         Assert.False(ScenarioA1CloseCombatRules.NothingLeft(true, 0, false));
-        Assert.Null(ScenarioA1CloseCombatRules.ChargeBarred(true, false, "bd01:A1:0"));
-        Assert.StartsWith("play.berserk-vehicle", ScenarioA1CloseCombatRules.ChargeBarred(true, true, "bd01:A1:0"), StringComparison.Ordinal);
     }
 
     [Fact]

@@ -724,7 +724,7 @@ else if (state is not null)
                             else
                             {
                                 <p class="muted" data-charge="@charging.Id" data-undecided="true">
-                                    @charging.Id is berserk, but its charge@(target is { } at ? $" at {at}" : "") is not decided here: @undecided
+                                    @ChargeUndecidedLine(charging, target, undecided)
                                 </p>
                             }
                         }
@@ -8703,6 +8703,18 @@ else if (state is not null)
 
     /// <summary>A refusal in the page's words, without its code and with the units' names for their ids, as the route and rally panels say it.</summary>
     private string PlainReason(string reason) => Said(reason) ?? reason;
+
+    /// <summary>
+    /// A berserk unit's charge the model does not decide (ruling R30.5), or one that reaches no Known enemy unit (A15.45, A15.44; pass 72, ruling R72.4), in the
+    /// page's words: the unit by its name and hex, every hex in brackets, no code.
+    /// </summary>
+    private string ChargeUndecidedLine(UnitInstance unit, BoardLocation? target, string undecided)
+    {
+        var why = Words(DisplayText.Reason(undecided).Text);
+        return ScenarioA1ChargeCalculator.NoneReachable(undecided)
+            ? $"{WordsAt(unit.Id)} is berserk and stays in place: {why}"
+            : $"{WordsAt(unit.Id)} is berserk, but its charge{(target is { } at ? $" at {PlaceOf(at)}" : string.Empty)} is not decided here: {why}";
+    }
 
     // The Play streamlining plan, S4: why the Rally attempt chosen would be refused, asked of the planner once a state, unit, and leader.
     private (GameState? State, string Unit, string Leader, string? Bar) rallyBarMemo;

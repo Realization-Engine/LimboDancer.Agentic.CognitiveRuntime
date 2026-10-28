@@ -1541,8 +1541,10 @@ public static class GameProjector
                 Choice = null
             };
             // A12.41 (ruling R11.12): the reveal or the PAATC follows the answer at once, as its own events; so does a forced "?" loss (A12.14; pass 70,
-            // ruling R70.21), and so does a Sniper Check (A14.4; pass 71, ruling R71.10) and the Sniper player's choice (A14.2; ruling R71.12).
-            if (pending.Kind is ChoicePending.Paatc or ChoicePending.ConcealmentLoss or ChoicePending.SniperCheck or ChoicePending.Sniper)
+            // ruling R70.21), and so does a Sniper Check (A14.4; pass 71, ruling R71.10) and the Sniper player's choice (A14.2; ruling R71.12). So does the
+            // Battle Hardening of a berserk unit that could reach no Known enemy unit (A15.44; pass 72, ruling R72.4), which no record declares among its choices.
+            if (pending.Kind is ChoicePending.Paatc or ChoicePending.ConcealmentLoss or ChoicePending.SniperCheck or ChoicePending.Sniper
+                || pending.Key.StartsWith(Rules.ScenarioA1ChargeCalculator.HardeningChoice + ":", StringComparison.Ordinal))
             {
                 return next;
             }

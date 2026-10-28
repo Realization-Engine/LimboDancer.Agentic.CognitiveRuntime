@@ -271,7 +271,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, inMotion);
         }
 
-        // A15.432: berserk fire (TPBF in the AFPh, and the DFPh) is not reviewed; A11.15: units held in Melee fire only in CC; A20.52:
+        // A15.432: a berserk unit never fires in its PFPh (it fires in the AFPh, its TPBF halved, and the DFPh); A11.15: units held in Melee fire only in CC; A20.52:
         // a Guard's fire is not reviewed; A20.54, A11.15: fire at a Location holding prisoners or units in Melee is not reviewed. Rules decides it (pass 32.c).
         if (ScenarioA1FireEligibility.GroupFireBar(firerIds.Concat(directors).Select(state.Unit).OfType<UnitInstance>().Select(unit => (unit.Id, FireBarFacts(state, unit)))) is { } barred)
         {

@@ -110,6 +110,13 @@ public sealed partial class GamePlanner
                 choice.Resume.TryGetProperty("dr", out var dr) ? dr.GetInt32() : 0);
         }
 
+        // A15.44, A15.3 (pass 72, ruling R72.4): the owner's Battle Hardening of a berserk unit that can reach no Known enemy unit, by its hex.
+        if (choice.Key.StartsWith(ScenarioA1ChargeCalculator.HardeningChoice + ":", StringComparison.Ordinal))
+        {
+            return ScenarioA1ChargeCalculator.HardeningChoiceText(choice.Resume.TryGetProperty("location", out var stuck) && BoardLocation.TryParse(stuck.GetString() ?? string.Empty, out var stuckAt)
+                ? $"[{stuckAt.Hex}]" : subject);
+        }
+
         // A12.14 (pass 70, ruling R70.21): the viewing side's option, by the stack's hex.
         if (choice.Kind == ChoicePending.ConcealmentLoss)
         {
@@ -197,6 +204,12 @@ public sealed partial class GamePlanner
         if (pending.Kind == ChoicePending.GunDuel)
         {
             return PlanGunDuelAnswer(scope, existing, attemptId, expected, label, actor, pending, made, option, summary);
+        }
+
+        // A15.44, A15.3 (pass 72, ruling R72.4): the berserk unit that could reach no Known enemy unit is Battle Hardened or simply Good Order.
+        if (pending.Key.StartsWith(ScenarioA1ChargeCalculator.HardeningChoice + ":", StringComparison.Ordinal))
+        {
+            return PlanBerserkHardeningAnswer(scope, attemptId, expected, label, state, pending, made, option, summary);
         }
 
         var resume = pending.Resume;
@@ -300,6 +313,70 @@ public sealed partial class GamePlanner
             Roll = new PlannedRoll("choice", Build),
             FirstEventId = EventId(attemptId, 1),
         };
+    }
+
+    /// <summary>
+    /// The owner's Battle Hardening choice for a berserk unit that could reach no Known enemy unit (A15.44, A15.3; pass 72, ruling R72.4): kind
+    /// <c>battle-hardening</c>, its resume data the unit, its Location (for the words), and the units whose choices follow, decided as the MPh ended.
+    /// </summary>
+    private ChoicePending BerserkHardeningPending(GameState state, UnitInstance unit, IReadOnlyList<string> rest) =>
+        new($"{ScenarioA1ChargeCalculator.HardeningChoice}:{unit.Id}", ChoicePending.BattleHardening, unit.Side, [ChoicePending.Take, ChoicePending.Decline],
+            JsonSerializer.SerializeToElement(new Dictionary<string, object?>
+            {
+                ["unit"] = unit.Id,
+                ["location"] = LocationOf(state, unit.Id)?.Location.ToString(),
+                ["rest"] = rest,
+            }));
+
+    /// <summary>
+    /// The answer to a berserk unit's Battle Hardening (A15.44, A15.3, E1.533; pass 72, ruling R72.4): it loses berserk status; taken, it is Replaced by the
+    /// unit of the next higher quality as the rally path Replaces it, or becomes Fanatic when it is of the best quality; refused, it is simply Good Order.
+    /// The next unit's choice follows. Rules decides what the hardening makes of it; the events are written here.
+    /// </summary>
+    private GamePlan PlanBerserkHardeningAnswer(GameScope scope, string attemptId, long expected, string label, GameState state, PendingChoice pending, GameEvent made,
+        string option, string summary)
+    {
+        var events = new List<GameEvent> { made };
+        var reasons = new List<string> { summary };
+        if (pending.Resume.TryGetProperty("unit", out var unitId) && state.Unit(unitId.GetString() ?? string.Empty) is { Status: InstanceStatus.Active } unit)
+        {
+            var taken = option == ChoicePending.Take;
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                new ConditionsChanged(unit.Id, ConditionChanges(ScenarioA1SequenceCalculator.BerserkEndsConditions())), null, null, [made.EventId]));
+            var (next, fanatic) = taken && unit.Definition is { } definition ? ScenarioA1ChargeCalculator.Hardening(definition.Definition, Is(unit, Conditions.Fanatic)) : (null, false);
+            var reference = next is null ? null : FireReference.Value.Definitions.GetValueOrDefault(next);
+            if (reference is not null)
+            {
+                // A15.3: an unbroken, unpinned unit of the next higher quality, its "?" and the rest of its conditions kept, as the rally path writes it.
+                var produced = unit.Conditions.Where(item => item.Key != Conditions.Concealed && item.Key != Conditions.Hidden)
+                    .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
+                produced[Conditions.Berserk] = ConditionState.False;
+                foreach (var (condition, value) in ScenarioA1RallyRules.ReplacedUnitConditions(true, false, null, null))
+                {
+                    produced[ConditionName(condition)] = value is { } set ? (set ? ConditionState.True : ConditionState.False) : GameState.Condition(unit, ConditionName(condition));
+                }
+
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "lineage", new LineageRecorded(LineageAction.Replaced, [unit.Id],
+                    [new NewInstance($"{attemptId}-{unit.Id}", reference.Kind, reference.Id, unit.Side, unit.Position, null, produced)]), null, null, [made.EventId]));
+            }
+            else if (fanatic)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                    new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.Fanatic] = ConditionState.True }), null, null, [made.EventId]));
+            }
+
+            reasons.Add(ScenarioA1ChargeCalculator.HardeningText(unit.Id, taken, reference is not null, fanatic && reference is null));
+        }
+
+        // The next berserk unit's choice, decided as the MPh ended.
+        string[] rest = pending.Resume.TryGetProperty("rest", out var restList) && restList.ValueKind == JsonValueKind.Array
+            ? [.. restList.EnumerateArray().Select(item => item.GetString()).OfType<string>().Where(id => state.Unit(id) is { Status: InstanceStatus.Active })] : [];
+        if (rest.Length > 0)
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending", BerserkHardeningPending(state, state.Unit(rest[0])!, rest[1..]), null, null));
+        }
+
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [.. reasons]);
     }
 
     /// <summary>

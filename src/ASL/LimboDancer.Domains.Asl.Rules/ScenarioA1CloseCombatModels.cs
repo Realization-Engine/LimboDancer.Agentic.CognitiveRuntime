@@ -250,6 +250,16 @@ public sealed record CloseCombatFacts(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The sides with a Known vehicle in the Location, which a sequential round's units leave out (A15.46, p. 84; pass 72, ruling R72.5): a berserk unit returns to
+    /// normal only when no Known enemy unit is left, a vehicle included. Null when there is none, and in a record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? VehicleSides
+    {
+        get; init;
+    }
 }
 
 /// <summary>A defending unit's Final DR in one attack, with its own DRM (A11.16), and the result for it.</summary>
