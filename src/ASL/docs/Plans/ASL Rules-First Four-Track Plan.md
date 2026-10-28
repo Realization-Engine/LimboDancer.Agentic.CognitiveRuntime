@@ -1,6 +1,6 @@
 # ASL Rules-First Four-Track Plan
 
-**Status:** Proposal, 2026-10-28. Not approved. Nothing in it is built. It records the direction the user gave in the discussion of 2026-10-28 and turns it into tracks, tasks, and open questions. Until it is approved, the [redesign plan](<../ASL Card Play and Map Studio Redesign Plan.md>) and the [Turn Guide later Rules plan](<../Turn.Guide/ASL Turn Guide Later Rules Implementation Plan.md>) stand as written, except that pass 73 does not start without the user's word.
+**Status:** First tasks started, 2026-10-28. The user's word of 2026-10-28 starts the first tasks of section 15, beginning with Step 0; the rest of the plan stays a proposal, and questions 1 to 7 and 10 of section 14 are open. Nothing in it is built yet. It records the direction the user gave in the discussion of 2026-10-28 and turns it into tracks, tasks, and open questions. Until it is approved, the [redesign plan](<../ASL Card Play and Map Studio Redesign Plan.md>) and the [Turn Guide later Rules plan](<../Turn.Guide/ASL Turn Guide Later Rules Implementation Plan.md>) stand as written, except that pass 73 does not start without the user's word.
 
 **Kept by:** Claude. Codex sessions read it through `AGENTS.md` once it is approved.
 
