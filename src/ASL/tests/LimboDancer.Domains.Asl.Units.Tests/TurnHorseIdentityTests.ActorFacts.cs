@@ -53,7 +53,7 @@ public sealed partial class TurnHorseIdentityTests
         Assert.True(read.Facts.NonPrc);
         Assert.Null(read.Facts.FirstRallyWorkWindow);
         Assert.Null(read.Facts.SameLocationAndTerrain);
-        Assert.Null(read.Facts.MuleAvailableForSubject);
+        Assert.True(read.Facts.MuleAvailableForSubject);
         Assert.Null(read.Facts.DismantledOrLimberedIfPossible);
         Assert.Equal(TurnPackingEligibility.NotEvaluated, read.Verdict.State);
         Assert.Equal(before, JsonSerializer.Serialize(state));
@@ -203,7 +203,11 @@ public sealed partial class TurnHorseIdentityTests
             Equipment = [state.Equipment[0] with { Holding = null }]
         });
         Assert.Null(unpossessed.ActorsBound);
-        Assert.Equal(legacy.Facts, unpossessed.Facts);
+        Assert.True(unpossessed.Facts.MuleAvailableForSubject);
+        Assert.Equal(legacy.Facts with
+        {
+            MuleAvailableForSubject = true
+        }, unpossessed.Facts);
         Assert.Equal(legacy.Verdict, unpossessed.Verdict);
         var otherHolder = state with
         {

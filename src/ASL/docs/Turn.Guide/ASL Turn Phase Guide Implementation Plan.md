@@ -575,3 +575,10 @@ Validation: all 473 Units tests and 121 focused packing/work Rules tests pass. N
 Rules and scoped replay now preserve an already-unloaded Gun's earned Unpacking progress after G10.41 Mule casualties, including further loss during full recovery. The printed Turn 5 casualty still releases in Turn 6. Casualty evidence binds the exact preceding period state, retains the existing work-step reference, preserves cumulative/unknown ammunition facts and cannot reset progress or substitute actors. Fresh surviving-crew eligibility remains required after a separate crew interruption. The design and later-Rules plan record G10.41/ASOP reconciliation and the remaining live host, terrain, atomic-effect and replacement-Mule requirements. D3.2 remains In progress and all nine packages remain Pending, with 2/36 tasks complete.
 
 Validation: 480 Units tests, 126 focused packing/work Rules tests and 183 ASL.Turns tests pass. ASL.Turns retains 825/825 lines and 470/470 branches (100%, no exclusions). No live game records, Studio process or dice source changed.
+
+
+### D3.2 progress: empty-load and assembly facts (2026-10-28)
+
+Actual-counter reads now prove empty Mule capacity for its owner/adjudicator where the complete inventory and absence of unbound own legacy loads support it. Opponent hidden-load worlds remain indistinguishable. Rules also distinguishes required dismantling from limbering and uses known light-mortar PP without defaulting missing source values. Russian MG subtype exceptions, 37mm SW, common terrain/accompaniment and actual host work-step/effect admission remain pending. The detailed design and source register record these limits; D3.2 stays In progress, the ledger stays 2/36, and all nine packages remain Pending.
+
+Validation: 486 Units, 148 focused packing/work Rules and 183 ASL.Turns tests pass. ASL.Turns retains 825/825 lines and 470/470 branches (100%, no exclusions).

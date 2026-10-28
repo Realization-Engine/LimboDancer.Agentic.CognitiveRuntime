@@ -92,6 +92,30 @@ public static class TurnPackingRules
         return mmc == true && sameNationality == true && weapon != TurnPackingWeapon.InfantryGun37 ? true : null;
     }
 
+    /// <summary>G10.2/.7 and A9.8 assembly facts, not permission to dismantle. Russian .50-calibre exceptions need specific identification.</summary>
+    public static bool? AssemblyReady(TurnPackingWeapon weapon, string? nationality, int? portage,
+        bool? dismantled, bool? limbered)
+    {
+        if (!Enum.IsDefined(weapon))
+        {
+            throw new ArgumentException("Unknown packing weapon class.", nameof(weapon));
+        }
+        if (portage < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(portage));
+        }
+        return weapon switch
+        {
+            TurnPackingWeapon.Unknown or TurnPackingWeapon.InfantryGun37 => null,
+            TurnPackingWeapon.Mortar76To82 => dismantled,
+            TurnPackingWeapon.LightMortar => dismantled == true || portage is >= 0 and < 4 ? true : portage >= 4 ? dismantled : null,
+            TurnPackingWeapon.MediumMachineGun or TurnPackingWeapon.HeavyMachineGun => dismantled == true ? true
+                : !string.IsNullOrWhiteSpace(nationality) && nationality != "russian" ? dismantled : null,
+            // General Gun/other-MTR limber and Ordnance Note exceptions are not inferred from an absent trait.
+            _ => dismantled == true || limbered == true ? true : null
+        };
+    }
+
     /// <summary>Classify known counter facts for G10.2/.7. Gun permission, DYO and qualified use remain separate facts.</summary>
     public static TurnPackingWeapon ClassifyWeapon(string? kind, string? gunType, int? caliber, string? mgSize) => kind switch
     {

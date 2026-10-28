@@ -108,6 +108,21 @@
           ],
           "method": "Text review of G10.41 and both printed examples; ASOP 1.13B extraction checked for start/release versus halfway timing. Existing G10 full-page visual review is retained.",
           "finding": "An already-unloaded Gun retains its existing Unpacking progress after Mule casualties, as the Turn 5 example releases in Turn 6. Further loss during full recovery does not restart its duration. Casualty effects occur immediately and do not create a new ASOP work step. Live source authentication, atomic effects and replacement-Mule routes remain pending."
+        },
+        {
+          "date": "2026-10-28",
+          "rules": [
+            "A9.8",
+            "G10.2",
+            "G10.7"
+          ],
+          "physicalPages": [
+            65,
+            291,
+            292
+          ],
+          "method": "Text review of required dismantling, the light-mortar four-PP threshold and Russian .50-calibre MG exception against the existing pinned counter model. Prior G10 visual review and ASOP 1.13B timing reconciliation are retained.",
+          "finding": "Known non-Russian MMG/HMG and 76-82mm mortars require dm; light mortars require dm at four or more PP. Missing PP or Russian MG subtype evidence cannot establish impossibility of dismantling. Unobserved enemy or unbound legacy loads cannot prove empty Mule capacity. These facts do not admit live packing."
         }
       ]
     }

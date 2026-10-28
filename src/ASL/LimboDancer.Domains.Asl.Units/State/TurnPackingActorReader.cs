@@ -50,6 +50,15 @@ public static class TurnPackingActorReader
         bool? available = mule is { Kind: "asl:horse" }
             && shown.Any(item => item.Id != actors.Weapon && item.Position is ContainedPosition { Role: ContainmentRole.AnimalPack } other && other.Container == actors.Mule)
                 ? false : loadedOn == actors.Mule && mule is { Kind: "asl:horse" } ? true : null;
+        // Only the owning side/adjudicator has the complete load inventory. Unbound legacy packing is not evidence of an empty Mule.
+        if (available is null && mule is { Kind: "asl:horse", Status: InstanceStatus.Active, Side: not null }
+            && weapon is { Status: InstanceStatus.Active } && weapon.Side == mule.Side
+            && (perspective.IsAdjudicator || perspective.Name == mule.Side)
+            && !shown.Any(item => item.Side == mule.Side && state.PackedGuns.Contains(item.Id, StringComparer.Ordinal)
+                && item.Position is not ContainedPosition { Role: ContainmentRole.AnimalPack }))
+        {
+            available = true;
+        }
         // G10.2 possession while Animal-Packed depends on accompaniment. Legacy PackedGuns alone cannot identify a Mule or prove that relationship.
         if (bound == true)
         {
@@ -87,8 +96,10 @@ public static class TurnPackingActorReader
                 ContainedPosition => false,
                 _ => null
             },
-            weapon is not null && (GameState.Condition(weapon, Conditions.Dismantled) == ConditionState.True
-                || GameState.Condition(weapon, "asl:limbered") == ConditionState.True) ? true : null);
+            TurnPackingRules.AssemblyReady(weaponClass, weaponDefinition?.Nationality,
+                weaponDefinition?.Printed("front", "asl:portage") is { State: PrintedState.Printed, Value.Number: { } pp } ? pp : null,
+                weapon is null ? null : Boolean(GameState.Condition(weapon, Conditions.Dismantled)),
+                weapon is null ? null : Boolean(GameState.Condition(weapon, "asl:limbered"))));
         return new(view.Stamp, actors, weapon?.Side, weaponClass, number, state.Night, bound, facts,
             TurnPackingRules.EvaluateActors(facts, bound), TurnPackingRules.RequiredGameTurns(weaponClass, number, state.Night))
         {
