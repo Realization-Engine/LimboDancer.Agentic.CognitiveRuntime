@@ -523,3 +523,8 @@ The Rules layer now has a serializable G10 packing period contract for bound act
 ### D3.2 progress: versioned packing journal (2026-10-28)
 
 A tenant/game-bound JSON codec now replays period entries and preserves actor specifications, work-step origins and causal receipts for interruption, reversal, midpoint and release. Seven new journal tests pass as part of all 428 Units tests; ASL.Turns retains 183 passing tests and 100% line/branch coverage. This format is not yet a live game-event protocol. Actual Horse/Mule actors, source-verified openings, atomic effects and governed commands remain required before admission. The detailed later-rules plan records these boundaries; D3.2 stays In progress and all nine packages stay Pending.
+
+
+### D3.2 progress: Horse/Mule actor foundation (2026-10-28)
+
+Horse counters now have typed setup identities in Units, including explicit unknown size/designation, scenario-rule binding, normal event serialization and protected hidden/concealed views. Vocabulary 1.20.0 preserves earlier minor-version compatibility. Horse-containing setups remain blocked from live play and phase close until transport, vulnerability and packing integration are admitted. The detailed design and later-rules plan retain those requirements. D3.2 is not complete, and all pending options remain visible.

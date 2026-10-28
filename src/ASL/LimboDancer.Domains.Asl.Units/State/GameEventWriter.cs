@@ -1335,6 +1335,12 @@ public static class GameEventWriter
         WriteHolding(writer, instance.Holding);
         WriteConditions(writer, instance.Conditions);
 
+        if (instance.Horse is { } horse)
+        {
+            writer.WritePropertyName("horse");
+            JsonSerializer.Serialize(writer, horse, JsonSerializerOptions.Web);
+        }
+
         // Pass 55 (ruling R55.15): a vehicle's Armor Leader; whether he is revealed is the state's, never the record's.
         if (instance.ArmorLeader is { } armorLeader)
         {

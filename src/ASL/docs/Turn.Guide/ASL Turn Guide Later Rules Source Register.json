@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewed": "2026-10-27",
+  "reviewed": "2026-10-28",
   "scope": "Supplemental source review for later Rules tasks. Does not replace the accepted eASLRB 3.01 baseline or certify live command support.",
   "documents": [
     {
@@ -42,7 +42,27 @@
         "Midpoint unloading/loading uses the following Player-Turn RPh, not necessarily a first-RPh. Assembly/limber/repair exceptions, reversal, involuntary unloading, prohibited terrain, vulnerability and cumulative Low Ammo remain explicit later integration requirements."
       ],
       "interpretation": "G10.33 reversal uses net complete Game Turns already spent, with the ordinary minimum. Its specific elapsed-time rule does not apply the night multiplier a second time. Involuntary unloading instead requires the normal full G10.3 period.",
-      "executionSupport": "Pending: this source review resolves missing text only. D3.2-D3.4 must integrate real actors, consequences and command/guide evidence."
+      "executionSupport": "Pending: this source review resolves missing text only. D3.2-D3.4 must integrate real actors, consequences and command/guide evidence.",
+      "additionalReviews": [
+        {
+          "date": "2026-10-28",
+          "rules": [
+            "A12.2-.3",
+            "A13.1-.32",
+            "A13.51-.52"
+          ],
+          "physicalPages": [
+            80,
+            81
+          ],
+          "printedPages": [
+            "A38",
+            "A39"
+          ],
+          "method": "Text extraction checked for Horse/Personnel separation, counter sizes and hidden/concealed handling. No new artwork or PDF copied into the repository.",
+          "finding": "Horse counters are separate from their Personnel Riders; A13.32 distinguishes squad, HS and SMC capacities. G10-designated Mules retain distinct identities and cannot create an SMC Mule. Movement, Riders, reduction and vulnerability remain pending execution."
+        }
+      ]
     }
   ]
 }

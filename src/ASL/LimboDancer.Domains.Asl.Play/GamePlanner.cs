@@ -292,6 +292,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return new GamePlan(GamePlanStatus.Stale, scope, label, expected, [], [$"play.stale: the game is at revision {existing.Count}"]);
         }
 
+        // D3.2 counter identity is setup-only until the A13/G10 execution and casualty routes are admitted.
+        if (action.Id.Value != GameActions.Setup.Id.Value
+            && existing.Any(item => item.Payload is InstanceCreated { Instance.Kind: "asl:horse" })
+            && TurnHorseRules.PlayIntegrationRefusal(Replay(existing).Current?.Entities.Any(item => item.Kind == "asl:horse" && item.Status == InstanceStatus.Active) == true) is { } horsePending)
+        {
+            return Refused(scope, label, expected, horsePending);
+        }
+
         // Pass 32.i: the bars every request meets, in their order; Rules decides each over a read made only when it is checked.
         // Pass 20 (ruling R20.1): nothing happens in a game that has ended.
         if (ScenarioA1SequenceCalculator.GameOverBar(existing.Count > 0 && existing[^1].Payload is GameEnded over ? over.Turn : null) is { } gameOver)

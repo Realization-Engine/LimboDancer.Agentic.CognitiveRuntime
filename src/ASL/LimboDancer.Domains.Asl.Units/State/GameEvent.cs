@@ -48,6 +48,12 @@ public sealed record NewInstance(
     Holding? Holding,
     IReadOnlyDictionary<string, ConditionState> Conditions)
 {
+    /// <summary>Explicit Horse/Mule setup identity; absent on all legacy instances.</summary>
+    public Rules.TurnHorseIdentity? Horse
+    {
+        get; init;
+    }
+
     /// <summary>The OB group the new unit belongs to (ruling R18.3); null to keep the group of the units it comes from.</summary>
     public string? Group
     {

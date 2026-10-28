@@ -663,7 +663,13 @@ public sealed record EntityInstance(
     string? Side,
     Position Position,
     IReadOnlyDictionary<string, ConditionState> Conditions,
-    InstanceStatus Status) : IGameObject;
+    InstanceStatus Status) : IGameObject
+{
+    public Rules.TurnHorseIdentity? Horse
+    {
+        get; init;
+    }
+}
 
 /// <summary>What a conclusion records about the state it read (ASL-UNIT-041).</summary>
 public sealed record StateStamp(GameScope Scope, long Revision, string MapVersion);

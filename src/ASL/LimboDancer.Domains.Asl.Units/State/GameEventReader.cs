@@ -1166,6 +1166,20 @@ public static class GameEventReader
             armorLeader = new ArmorLeader(morale, leadership);
         }
 
+        Rules.TurnHorseIdentity? horse = null;
+        if (item.TryGetProperty("horse", out var horseElement) && horseElement.ValueKind != JsonValueKind.Null)
+        {
+            try
+            {
+                horse = horseElement.Deserialize<Rules.TurnHorseIdentity>(JsonSerializerOptions.Web);
+            }
+            catch (JsonException)
+            {
+                diagnostics.Add(UnitDiagnostic.Error("UNIT-PACK-001", "Invalid typed Horse identity.", path));
+                return null;
+            }
+        }
+
         return id is null || kind is null
             ? null
             : new NewInstance(id, kind, fields.OptionalString(item, "definition", path), fields.OptionalString(item, "side", path), position,
@@ -1173,6 +1187,7 @@ public static class GameEventReader
             {
                 Group = fields.OptionalString(item, "group", path),
                 ArmorLeader = armorLeader,
+                Horse = horse,
 
                 // Pass 70 (ruling R70.28): the Carrier a Carrier HS left.
                 CrewOf = fields.OptionalString(item, "crewOf", path),

@@ -1,6 +1,6 @@
 {
   "pack": "asl",
-  "version": "1.19.0",
+  "version": "1.20.0",
   "label": "ASL Personnel, support weapons, Guns, vehicles, and entities that are not units",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
@@ -402,6 +402,7 @@
       "name": "asl:sniper", "label": "Sniper", "extends": "asl:entity", "faces": ["front", "pinned"], "attributes": ["asl:san"], "rule": "A14.01 to A14.31, pp. 81 to 82",
       "accessibleName": { "default": "{side} {kind}, SAN {san}" }
     },
+    { "name": "asl:horse", "label": "Horse", "extends": "asl:entity", "faces": ["front", "reverse"], "rule": "A13.1-.32; G10.1-.2", "accessibleName": { "default": "{side} {kind} {identity}" } },
     { "name": "asl:fortification", "label": "Fortification", "extends": "asl:entity" },
     {
       "name": "asl:foxhole", "label": "foxhole", "extends": "asl:fortification", "attributes": ["asl:capacity"], "rule": "B27.1 to B27.12, p. 146",

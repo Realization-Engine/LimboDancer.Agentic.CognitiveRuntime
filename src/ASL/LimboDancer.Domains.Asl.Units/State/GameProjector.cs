@@ -108,6 +108,15 @@ public static partial class GameProjector
                 return null;
             }
 
+            if (previous is not null && gameEvent.Payload is InstanceMoved horseMove && previous.Find(horseMove.Id)?.Kind == "asl:horse")
+            {
+                return Fail<GameState>("UNIT-PACK-002", "Horse movement requires the pending A13/G10 transport route; a generic move cannot supply it.");
+            }
+            if (previous is not null && !GameState.IsSetupEvent(gameEvent.Payload)
+                && Rules.TurnHorseRules.PlayIntegrationRefusal(previous.Entities.Any(item => item.Kind == "asl:horse" && item.Status == InstanceStatus.Active)) is { } horsePending)
+            {
+                return Fail<GameState>("UNIT-PACK-003", horsePending);
+            }
             var packedTarget = gameEvent.Payload switch
             {
                 EquipmentTransferred transfer => transfer.Id,
@@ -3953,6 +3962,19 @@ public static partial class GameProjector
                 return null;
             }
 
+            if (instance.Kind == "asl:horse" || instance.Horse is not null)
+            {
+                if (instance.Kind != "asl:horse" || state.SetupClosed || instance.Side is null || instance.Position is not MapPosition
+                    || instance.Definition is not null || instance.Holding is not null || instance.ArmorLeader is not null || instance.CrewOf is not null || instance.Group is not null)
+                {
+                    return Fail<GameState>("UNIT-PACK-001", "Horse identities belong to own on-map Horse counters during setup; unit/vehicle roles and OB-group integration remain unsupported.");
+                }
+                if (Rules.TurnHorseRules.SetupRefusal(instance.Horse, instance.Horse?.DesignationRule is { } rule && state.SpecialRules.Contains(rule, StringComparer.Ordinal)) is { } horseRefusal)
+                {
+                    return Fail<GameState>("UNIT-PACK-001", horseRefusal);
+                }
+            }
+
             // D3.4, D3.41, D3.45 (pass 55, rulings R55.15, R55.18): a vehicle, and nothing else, may set up with an Armor Leader of a listed grade;
             // Rules decides. D3.43 (pass 65, ruling R65.20): a crew counter that left its vehicle carries him, dormant, until it re-crews; a Carrier's HS is
             // its crew (D6.82).
@@ -4015,7 +4037,7 @@ public static partial class GameProjector
             {
                 return state with
                 {
-                    Entities = [.. state.Entities, new EntityInstance(instance.Id, instance.Kind, instance.Side, position, instance.Conditions, InstanceStatus.Active)]
+                    Entities = [.. state.Entities, new EntityInstance(instance.Id, instance.Kind, instance.Side, position, instance.Conditions, InstanceStatus.Active) { Horse = instance.Horse }]
                 };
             }
 
