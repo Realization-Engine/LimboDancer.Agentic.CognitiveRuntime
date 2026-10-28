@@ -8,8 +8,10 @@
 #   base      the baseline of the games made before the pass: the base's own sources built, text list, replay digest, sweep. Kept under
 #             baseline-cache/<key> and reused while the base commit, the older games, BOTH_SKIP, the sweep list, and the tool are the same.
 #             Run it once when the branch is cut (about 25 min alone); the gate then finds it made.
-#   strict    the pass's changed test files formatted, then the solution built with warnings as errors. Run it before the documents commit:
-#             the pass's test script builds with warnings not as errors, and nothing else compiles a test file strictly before the gate.
+#   strict    each pass's Rules status line checked against the rule inventory (documents/pass_rules_status.py --check; the Rules-first
+#             plan's question 10, 2026-10-28), then the pass's changed test files formatted, then the solution built with warnings as errors.
+#             Run it before the documents commit: the pass's test script builds with warnings not as errors, and nothing else compiles a
+#             test file strictly before the gate.
 #   strict-check   says whether the strict build passed for the tree as it stands. A review or a prompt says so only when this does.
 #
 # The gate's stages, in order. The whole test suite and the Linux check are CI's, on the pass's pull request (the user, 2026-10-13):
@@ -180,6 +182,8 @@ base)
   base
   ;;
 strict)
+  # The Rules-first plan, question 10 (the user, 2026-10-28): the redesign plan's Rules status lines may not drift from the inventory.
+  python "$R/code-builders/documents/pass_rules_status.py" --check < /dev/null || stop "a pass's Rules status line differs from the rule inventory (run code-builders/documents/pass_rules_status.py and commit)"
   CHANGED=$( (git -C "$R" -c core.quotepath=false diff --name-only "$BASEFULL" -- 'src/ASL/tests/*.cs'; git -C "$R" ls-files --others --exclude-standard -- 'src/ASL/tests/*.cs') | sort -u)
   for project in $(echo "$CHANGED" | cut -d/ -f4 | sort -u); do
     FILES=$(echo "$CHANGED" | grep "/$project/" | sed 's#^src/ASL/##' | while read -r f; do [ -f "$R/src/ASL/$f" ] && echo "$f"; done)
