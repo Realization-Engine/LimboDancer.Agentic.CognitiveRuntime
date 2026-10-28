@@ -7,6 +7,7 @@ using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Los;
 using LimboDancer.Domains.Asl.Maps.Read;
 using LimboDancer.Domains.Asl.Rules;
+using LimboDancer.Domains.Asl.Units;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.State;
 using LimboDancer.Domains.Asl.Units.Vocabulary;
@@ -755,42 +756,37 @@ public sealed class BacklogPass9Tests : IDisposable
         var snapshot = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "rph", "existing-engine-fire-v1")).FireHistory!;
         Assert.Equal(successor, Assert.Single(snapshot.Spotters).Successor);
         Assert.Equal(TurnSpotterState.Retained, Assert.Single(snapshot.Spotters).State);
-        var invalid = store.Read(Scope)!.Events.Select(item => item == lineageEvent
-            ? item with
+        // Each altered journal is built from one read, and the lineage event is found by its id. FileGameStore's parse cache is process-wide and
+        // cleared when full, so a second read made while other tests run may parse new objects; record equality (by reference for the payload's
+        // lists) then matched nothing, and the "altered" journal was the original one (the flaky failures at the switched replay and the hidden read).
+        var journal = store.Read(Scope)!.Events;
+        GameEvent[] Altered(Func<GameEvent, GameEvent> change)
+        {
+            var altered = journal.Select(item => item.EventId == lineageEvent.EventId ? change(item) : item).ToArray();
+            Assert.Single(altered.Where((item, index) => !ReferenceEquals(item, journal[index])));
+            return altered;
+        }
+        GameEvent[] WithSuccessor(string? spotterSuccessor) => Altered(item => item with
+        {
+            Payload = lineage with
             {
-                Payload = lineage with
-                {
-                    SpotterSuccessor = "unrelated"
-                }
-            } : item).ToArray();
-        Assert.True(Planner().Replay(invalid).HasErrors);
-        var switched = store.Read(Scope)!.Events.Select(item => item == lineageEvent
-            ? item with
-            {
-                Payload = lineage with
-                {
-                    SpotterSuccessor = lineage.Produced.Single(half => half.Id != successor).Id
-                }
-            } : item).ToArray();
-        Assert.True(Planner().Replay(switched).HasErrors);
+                SpotterSuccessor = spotterSuccessor
+            }
+        });
+        void RefusedSuccession(GameEvent[] events) => Assert.Contains(Planner().Replay(events).Diagnostics,
+            item => item.Severity == UnitDiagnosticSeverity.Error && item.Code == "UNIT-SPOTTER-SUCCESSION");
+        RefusedSuccession(WithSuccessor("unrelated"));
+        RefusedSuccession(WithSuccessor(lineage.Produced.Single(half => half.Id != successor).Id));
         Assert.Empty(Current.SpotterDeploymentChoices);
-        var legacy = store.Read(Scope)!.Events.Select(item => item == lineageEvent
-            ? item with
-            {
-                Payload = lineage with
-                {
-                    SpotterSuccessor = null
-                }
-            } : item).ToArray();
         var legacyStore = new FileGameStore(Path.Combine(root, "legacy-deployment"));
         var legacyPlanner = new GamePlanner(legacyStore, boards, Vocabulary, [Catalog], fireLos: los);
-        Assert.Equal(AppendStatus.Committed, legacyStore.Append(Scope, "legacy", 0, legacy, legacyPlanner.Replay).Status);
+        Assert.Equal(AppendStatus.Committed, legacyStore.Append(Scope, "legacy", 0, WithSuccessor(null), legacyPlanner.Replay).Status);
         Assert.Equal(TurnSpotterState.NotEvaluated, Assert.Single((await legacyPlanner.ReadTurnGuideProfileAsync(Scope,
             Perspective.Side("german"), "rph", "existing-engine-fire-v1")).FireHistory!.Spotters).State);
         var hiddenStore = new FileGameStore(Path.Combine(root, "private-deployment"));
         var hiddenPlanner = new GamePlanner(hiddenStore, boards, Vocabulary, [Catalog], fireLos: los);
         Assert.Equal(AppendStatus.Committed, hiddenStore.Append(Scope, "private", 0,
-            store.Read(Scope)!.Events.Select(item => item == lineageEvent ? item with { Visibility = RussianView } : item).ToArray(), hiddenPlanner.Replay).Status);
+            Altered(item => item with { Visibility = RussianView }), hiddenPlanner.Replay).Status);
         var hidden = Assert.Single((await hiddenPlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "rph", "existing-engine-fire-v1")).FireHistory!.Spotters);
         Assert.Null(hidden.Successor);
         Assert.Equal(TurnSpotterState.NotEvaluated, hidden.State);
