@@ -3994,3 +3994,10 @@ button[data-working]::after {
 .turn-opening-review select, .turn-opening-review textarea { display:block; width:100%; max-width:100%; }
 .turn-opening-review textarea { min-height:5rem; }
 .turn-opening-review button { height:auto; white-space:normal; }
+
+/* Live Play embeds the guide in a narrow pane even on a wide screen. */
+.turn-guide { container-type:inline-size; }
+@container (max-width:700px) {
+    .turn-layout { grid-template-columns:1fr; }
+    .turn-layout aside { border-right:0; border-bottom:1px solid var(--line); max-height:40vh; }
+}
