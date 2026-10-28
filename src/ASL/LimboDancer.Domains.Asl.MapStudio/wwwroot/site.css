@@ -3988,3 +3988,9 @@ button[data-working]::after {
 .turn-related { display:flex; flex-wrap:wrap; gap:.4rem; }
 .turn-related button { height:auto; white-space:normal; text-align:left; }
 .turn-work { border-left:3px solid var(--line); padding-left:.7rem; }
+
+.turn-opening-review { margin:1rem 0; min-width:0; border:1px solid var(--line); padding:.75rem; }
+.turn-opening-review label { display:block; margin:.6rem 0; }
+.turn-opening-review select, .turn-opening-review textarea { display:block; width:100%; max-width:100%; }
+.turn-opening-review textarea { min-height:5rem; }
+.turn-opening-review button { height:auto; white-space:normal; }

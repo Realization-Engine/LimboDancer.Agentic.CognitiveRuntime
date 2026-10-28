@@ -13,6 +13,7 @@ public sealed record TurnHostGuide(TurnGuideSnapshot Guide, ImmutableArray<TurnH
 {
     public TurnGuideProfile Profile { get; init; } = TurnGuideProfiles.Get("existing-engine");
     public ImmutableArray<TurnPlacedDcAction> Actions { get; init; } = [];
+    public ImmutableArray<TurnOpeningReviewOffer> OpeningReviews { get; init; } = [];
     public ImmutableArray<TurnDecisionWindow> DecisionWindows { get; init; } = [];
     public ImmutableArray<TurnWorkDisclosure> Work { get; init; } = [];
     public ImmutableArray<string> WorkProgressGaps { get; init; } = [];
@@ -95,6 +96,7 @@ public sealed partial class GamePlanner
             Profile = profile,
             DecisionWindows = decisionWindows,
             Actions = routed.Actions,
+            OpeningReviews = profile.IntegratedDependencies.Contains("placedDc") ? OpeningReviewOffers(state, perspective, historical, browsedPhase) : [],
             Work = profile.Id == "existing-engine-work-v1" ? ReadWork(history, revision, perspective) : [],
             // Adjudicated work does not certify missing packing or supply rules.
             WorkProgressGaps = profile.Id == "existing-engine-work-v1"

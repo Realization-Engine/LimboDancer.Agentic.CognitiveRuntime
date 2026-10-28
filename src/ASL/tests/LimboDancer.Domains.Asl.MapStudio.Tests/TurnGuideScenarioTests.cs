@@ -44,7 +44,7 @@ public sealed class TurnGuideScenarioTests : IDisposable
         var library = new UnitLibrary(options);
         var boards = new VaslBoardProvider(options);
         var maps = new MapService(options, boards);
-        live = new LivePlay(library, boards, dice.Roller);
+        live = new LivePlay(library, boards, dice.Roller, openingReviewer: GamePlay.Principal("scenario-referee", LivePlay.Tenant, GameActions.WindowAdjudicationPermission));
         var games = new GameLibrary(library, boards, live);
         context.Services.AddSingleton(library);
         context.Services.AddSingleton(live);
@@ -172,6 +172,58 @@ public sealed class TurnGuideScenarioTests : IDisposable
         Assert.Equal(PlayOutcome.Committed, (await live.Play.ConfirmAsync(GameActions.ReviewPlacedDcWindow, args, referee, proposal.Correlation)).Outcome);
     }
 
+    private void ReviewInUi(IRenderedComponent<PlayPage> page, string wp = "NotApplicable")
+    {
+        Assert.Empty(page.FindAll(".turn-opening-review"));
+        page.ViewAs(Perspective.AdjudicatorName);
+        page.Find("[data-topic='afph:placed']").Click();
+        page.WaitForAssertion(() => Assert.Single(page.FindAll(".turn-opening-review")));
+        Assert.True(page.Find(".turn-review-propose").HasAttribute("disabled"));
+        page.Find(".turn-review-drift").Change("NotApplicable");
+        page.Find(".turn-review-wp").Change(wp);
+        page.Find(".turn-review-gusts").Change("NotApplicable");
+        page.Find(".turn-review-gliders").Change("NotApplicable");
+        page.Find(".turn-review-basis").Input("ASOP 5.11B-5.21A: checked this Tractor Works opening.");
+        var before = Current.Revision;
+        page.Find(".turn-review-propose").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.Equal(before, Current.Revision);
+        Assert.Contains("WP: " + wp, page.Find(".turn-review-summary").TextContent, StringComparison.Ordinal);
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.Equal(before + 1, Current.Revision);
+        Assert.Single(Current.PlacedCharges);
+        Assert.Empty(page.FindAll(".turn-action"));
+        page.ViewAs("german");
+        page.Find("[data-topic='afph:placed']").Click();
+        Assert.Empty(page.FindAll(".turn-opening-review"));
+    }
+
+    [TurnGuideScenarioFact]
+    public async Task OpeningReviewUnknownCancelAndStaleAreSafeInTheUi()
+    {
+        var page = await PlaceAndReachAfph();
+        ReviewInUi(page, "Unknown");
+        Assert.Empty(page.FindAll(".turn-action"));
+        page.ViewAs(Perspective.AdjudicatorName);
+        page.Find("[data-topic='afph:placed']").Click();
+        page.Find(".turn-review-basis").Input("Partial review remains Unknown.");
+        var before = Current.Revision;
+        page.Find(".turn-review-propose").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        page.Find("#play-cancel").Click();
+        Assert.Equal(before, Current.Revision);
+        page.Find(".turn-review-propose").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        await Review(); // A different authorized host commits while this proposal is waiting.
+        before = Current.Revision;
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Stale", page.Find("#play-outcome").TextContent, StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(before, Current.Revision);
+        page.ViewAs("german");
+        Assert.Empty(page.FindAll(".turn-review-summary, .turn-opening-review, #play-confirm"));
+    }
+
     // Optional isolated browser rehearsal, generated only by explicit request. Never overwrite an existing game.
     private void SaveBrowserSeed()
     {
@@ -193,7 +245,7 @@ public sealed class TurnGuideScenarioTests : IDisposable
         page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.Equal(before, Current.Revision);
         Assert.Equal(TurnCloseDisposition.Blocked, (await live.Planner.ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "afph", "existing-engine-work-v1")).PhaseClose.Disposition);
-        await Review();
+        ReviewInUi(page);
         SaveBrowserSeed();
         page.Find(".turn-refresh").Click();
         page.WaitForAssertion(() => Assert.Single(page.FindAll(".turn-action")));

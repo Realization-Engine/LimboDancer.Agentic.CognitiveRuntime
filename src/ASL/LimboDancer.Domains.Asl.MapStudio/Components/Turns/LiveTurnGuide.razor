@@ -7,7 +7,7 @@
 <div hidden="@(loading || failed)">
     @if (host is not null)
     {
-        <TurnGuidePanel Host="host" PhaseChanged="Browse" ActionRequested="ActionRequested" CloseRequested="CloseRequested" Busy="@(Busy || loading || failed)" />
+        <TurnGuidePanel Host="host" PhaseChanged="Browse" ActionRequested="ActionRequested" ReviewRequested="ReviewRequested" CanReviewOpening="CanReviewOpening" CloseRequested="CloseRequested" Busy="@(Busy || loading || failed)" />
     }
 </div>
 @code {
@@ -16,6 +16,8 @@
     [Parameter] public string ActualPhase { get; set; } = "rph";
     [Parameter, EditorRequired] public string ScopeKey { get; set; } = string.Empty;
     [Parameter] public EventCallback<TurnPlacedDcAction> ActionRequested { get; set; }
+    [Parameter] public EventCallback<TurnOpeningReviewRequest> ReviewRequested { get; set; }
+    [Parameter] public bool CanReviewOpening { get; set; }
     [Parameter] public EventCallback CloseRequested { get; set; }
     [Parameter] public bool Busy { get; set; }
     private TurnHostGuide? host;

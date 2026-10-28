@@ -325,6 +325,16 @@ else
                                  Consequences="@([.. ConsequencesOf(proposal).Select(item => item.Text.EndsWith('.') ? item.Text : item.Text + ".")])" ConfirmLabel="@ConfirmLabel(ConsequencesOf(proposal))"
                                  CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@CancelProposal">
                 <Lead>
+                    @if (Viewer.IsAdjudicator && proposal.Action == GameActions.ReviewPlacedDcWindow
+                        && proposal.Arguments.GetProperty("review").Deserialize<LimboDancer.Domains.Asl.Rules.TurnPlacedDcReview>() is { } openingReview)
+                    {
+                        <div class="turn-review-summary">
+                            <p>Opening review for @openingReview.Charge (@openingReview.Owner)</p>
+                            <p>Drift: @openingReview.Opening.Drift; WP: @openingReview.Opening.Wp; Gusts: @openingReview.Opening.Gusts; Gliders: @openingReview.Opening.Gliders.</p>
+                            <p>@openingReview.RuleBasis</p>
+                            <p>Pending rules remain pending. Confirm records evidence only. Return to the owning side for a separate detonation proposal.</p>
+                        </div>
+                    }
                     @* Pass 31c (design D14; play test P-14): a fire's arithmetic before the dice, for the firing side and the adjudicator. *@
                     @if (proposal.Result is { Outcome: PlayOutcome.NeedsConfirmation, Plan.Fire: { } previewed } && (Viewer.IsAdjudicator || Viewer.Name == previewed.FiringSide)
                         && FirePreview(previewed.Attack) is { Arithmetic: { } preview } shownPreview)
@@ -465,7 +475,7 @@ else if (state is not null)
                 @if (turnGuideOpen)
                 {
                     <LiveTurnGuide @key="AskedBy" ScopeKey="@AskedBy" Revision="@state.Revision" ActualPhase="@state.Phase"
-                        ReadGuide="ReadTurnGuide" ActionRequested="ProposeTurnDecision" CloseRequested="ProposeAdvance" Busy="@busy" />
+                        ReadGuide="ReadTurnGuide" ActionRequested="ProposeTurnDecision" ReviewRequested="ProposeOpeningReview" CanReviewOpening="Live.CanReviewOpening" CloseRequested="ProposeAdvance" Busy="@busy" />
                 }
             }
             @* Table player, pass 29: the hex picked on the map is offered to every typed Location of the actions. *@
@@ -7715,6 +7725,14 @@ else if (state is not null)
         await Propose(GameActions.DetonateDc, arguments.Value);
     }
 
+    private async Task ProposeOpeningReview(TurnOpeningReviewRequest request)
+    {
+        if (busy || handOver is not null || !Viewer.IsAdjudicator || !Live.CanReviewOpening) return;
+        var arguments = Live.Planner.PrepareOpeningReview(new GameScope(LivePlay.Tenant, gameId), Viewer, request, Attempt("opening-review"));
+        if (arguments is null) { status = "This opening review has changed. Refresh the guide and review it again."; Refresh(); return; }
+        await Propose(GameActions.ReviewPlacedDcWindow, arguments.Value);
+    }
+
     private Task ProposeAdvance()
     {
         var arguments = new Dictionary<string, object> { ["gameId"] = gameId, ["attemptId"] = Attempt("advance"), ["expectedRevision"] = (long)history!.Events.Count };
@@ -8269,7 +8287,7 @@ else if (state is not null)
             // Confirm the revision actually submitted to the gate, while retaining the usual stale-write check.
             var revision = arguments.TryGetProperty("expectedRevision", out var expected) && expected.TryGetInt64(out var submittedRevision)
                 ? submittedRevision : (long)(history?.Events.Count ?? 0);
-            proposed = new Proposal(action, arguments, await Run(() => Live.Play.ProposeAsync(action, arguments, Live.Principal)), revision);
+            proposed = new Proposal(action, arguments, await Run(() => Live.Play.ProposeAsync(action, arguments, Live.PrincipalFor(action, Viewer))), revision);
         }
         finally
         {
@@ -8425,7 +8443,7 @@ else if (state is not null)
         {
             StateHasChanged();
             await DrawBusy();
-            result = await Run(() => Live.Play.ConfirmAsync(proposal.Action, proposal.Arguments, Live.Principal, proposal.Result.Correlation));
+            result = await Run(() => Live.Play.ConfirmAsync(proposal.Action, proposal.Arguments, Live.PrincipalFor(proposal.Action, Viewer), proposal.Result.Correlation));
         }
         finally
         {

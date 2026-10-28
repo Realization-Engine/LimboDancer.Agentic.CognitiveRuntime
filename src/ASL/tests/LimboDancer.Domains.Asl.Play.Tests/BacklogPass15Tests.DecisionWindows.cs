@@ -102,6 +102,7 @@ public sealed partial class BacklogPass15Tests
             }
         } : item).ToArray();
         Assert.Equal(TurnDecisionTiming.NotEvaluated, Assert.Single((await ReadCopiedDcHistory(legacy, Perspective.Adjudicator)).DecisionWindows).Timing);
+        Assert.Empty((await ReadCopiedDcHistory(legacy, Perspective.Adjudicator)).OpeningReviews);
         Assert.True(Planner().Replay([.. legacy, loaded.Events[^1]]).HasErrors);
         var hiddenEntry = loaded.Events.Select(item => item.EventId == entry.EventId ? item with
         {

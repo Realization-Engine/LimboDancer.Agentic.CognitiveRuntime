@@ -30,15 +30,15 @@ public static class Program
         builder.Services.AddSingleton(services => new FigureArtLab(services.GetRequiredService<IWebHostEnvironment>()));
         if (ScriptedDice.Enabled(builder.Environment, builder.Configuration))
         {
-            // UI test runs only: the Play page queues the dice (ScriptedDice).
             builder.Services.AddSingleton<ScriptedDice>();
-            builder.Services.AddSingleton(services => new LivePlay(services.GetRequiredService<UnitLibrary>(), services.GetRequiredService<IBoardProvider>(),
-                services.GetRequiredService<ScriptedDice>().Roller));
         }
-        else
-        {
-            builder.Services.AddSingleton<LivePlay>();
-        }
+        // Disabled by default. Only trusted server configuration enables this local shared-table reviewer.
+        // A network deployment needs authenticated role mapping instead of Studio's local view selector.
+        var openingReviewer = builder.Configuration.GetValue<bool>("Play:OpeningReviewEnabled")
+            ? LimboDancer.Domains.Asl.Play.GamePlay.Principal("studio-opening-reviewer", LivePlay.Tenant,
+                LimboDancer.Domains.Asl.Play.GameActions.WindowAdjudicationPermission) : null;
+        builder.Services.AddSingleton(services => new LivePlay(services.GetRequiredService<UnitLibrary>(), services.GetRequiredService<IBoardProvider>(),
+            services.GetService<ScriptedDice>()?.Roller, services.GetService<ILogger<LivePlay>>(), openingReviewer));
 
         builder.Services.AddSingleton<CampaignImport>();
         builder.Services.AddSingleton<GameLibrary>();

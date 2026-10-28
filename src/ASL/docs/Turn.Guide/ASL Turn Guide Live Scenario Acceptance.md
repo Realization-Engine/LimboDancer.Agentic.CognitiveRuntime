@@ -8,7 +8,7 @@ Date: 2026-10-27
 
 The older setup predates mandatory Sniper placement. The fixture completes that step using today's legal placement candidates and governed setup command. German engineer `g-engineer-3`, carrying `g-dc-3`, Places the charge from BB4 ground level into adjacent BB3 ground level. The chosen engineer has the required MF; the engineer carrying both a FT and DC does not. The scenario branch is a test continuation, not a reproduction of the original recorded play or an assertion that every scenario SSR is integrated.
 
-The opening review is deliberately a separate authorized host operation. Studio's ordinary principal cannot submit it. The test first proves that denial, then proposes and confirms the review as a referee holding `WindowAdjudicationPermission`. There is still no Studio review-authoring screen. No new permission is granted to the Studio user. Drift, WP, Gusts and gliders are recorded as not applicable for this branch; the interruption case replaces WP evidence with Unknown.
+The opening review is deliberately a separate authorized host operation. Studio's ordinary principal cannot submit it. The test first proves that denial, then proposes and confirms the review as a referee holding `WindowAdjudicationPermission`. At the time of this acceptance there was no Studio review-authoring screen. The later [opening-review workflow](ASL%20Turn%20Guide%20Opening%20Review%20Workflow.md) adds it behind explicit host authorization. No new permission is granted to the Studio user. Drift, WP, Gusts and gliders are recorded as not applicable for this branch; the interruption case replaces WP evidence with Unknown.
 
 ## Acceptance path
 

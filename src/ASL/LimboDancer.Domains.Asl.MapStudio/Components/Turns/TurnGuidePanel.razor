@@ -1,3 +1,4 @@
+@using LimboDancer.Domains.Asl.Units.State
 @using ASL.Turns
 @using LimboDancer.Domains.Asl.Play
 
@@ -59,6 +60,25 @@
                         <button type="button" class="turn-action" disabled="@Busy" @onclick="() => ActionRequested.InvokeAsync(action)">Request governed command check</button>
                     }
                 }
+                @if (topic.Id == "afph:placed" && Host is { Guide.Historical: false, Guide.ActualPhaseId: "afph", Guide.BrowsedPhaseId: "afph" })
+                {
+                    @if (Host.Guide.ViewerId == Perspective.AdjudicatorName)
+                    {
+                        @if (CanReviewOpening && ReviewRequested.HasDelegate)
+                        {
+                            @foreach (var offer in Host.OpeningReviews)
+                            {
+                                <TurnOpeningReview @key="offer.Token" Offer="offer" ReviewRequested="ReviewRequested" Busy="Busy" />
+                            }
+                            @if (Host.OpeningReviews.IsEmpty) { <p>No current review offer. Missing placement or phase evidence cannot be supplied by this form.</p> }
+                        }
+                        else { <p>Opening-review access is not enabled for this host. Selecting the adjudicator view does not grant permission.</p> }
+                    }
+                    else if (!Host.DecisionWindows.IsEmpty)
+                    {
+                        <p>An authorized adjudicator records opening evidence. Return to the owning side to request the DC attack. Pending rules still require review.</p>
+                    }
+                }
                 <p class="turn-pending"><strong>Pending rules:</strong> @topic.IntegrationNote</p>
                 <p><strong>Source review:</strong> @SourceLabel(binding.SourceReview)</p>
                 @foreach (var gap in Inventory.Gaps.Where(gap => binding.GapIds.Contains(gap.Id))) { <p>@gap.WorkItem: @gap.Reason</p> }
@@ -103,6 +123,8 @@
     [Parameter] public EventCallback<string> PhaseChanged { get; set; }
     [Parameter] public TurnHostGuide? Host { get; set; }
     [Parameter] public EventCallback<TurnPlacedDcAction> ActionRequested { get; set; }
+    [Parameter] public EventCallback<TurnOpeningReviewRequest> ReviewRequested { get; set; }
+    [Parameter] public bool CanReviewOpening { get; set; }
     [Parameter] public EventCallback CloseRequested { get; set; }
     [Parameter] public bool Busy { get; set; }
     private TurnPhase phase = Catalog.Phases[0];

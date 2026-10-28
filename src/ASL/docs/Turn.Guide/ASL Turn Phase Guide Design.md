@@ -617,3 +617,12 @@ The [live scenario acceptance](ASL%20Turn%20Guide%20Live%20Scenario%20Acceptance
 The Play confirmation revision is the expected revision actually submitted with the command, including routes prepared from newer host evidence. Confirm still re-reads the journal and rejects an intervening change. The live guide follows phase changes while browsing the current phase and preserves deliberate browsing elsewhere. Opening-review authorship remains outside Studio and requires its separate existing permission. No capability, rules contract or ASL.Turns source changes.
 
 Verification: 33 focused MapStudio tests pass, including both real-board scenario cases. The isolated browser rehearsal confirms refusal before detonation, governed detonation, resolved obligation and confirmed advance to Rout. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions).
+
+
+### Authorized opening-review workflow
+
+The [opening-review workflow](ASL%20Turn%20Guide%20Opening%20Review%20Workflow.md) completes the live UI path for the admitted Placed DC route. GamePlanner supplies current-state review offers and prepares server-owned timing identities. The form defaults all four opening tasks to Unknown and requires a reason; the existing confirmation panel displays the complete evidence before a governed write. The owner separately confirms detonation and phase close. Pending rules remain visible.
+
+Authorization is supplied by trusted server configuration, disabled by default. Adjudicator view selection alone grants no permission. The reviewer is restricted to the review action; ordinary play permissions remain unchanged. The previous external-only UI limitation is superseded when this host authorization is enabled. Tests use an explicitly authorized test reviewer.
+
+Verification: 43 focused MapStudio tests pass, including all three real-board scenario cases (not skipped). All 45 focused Play tests pass, including review preparation, timing, replay and disclosure acceptance. All 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). No ASL.Turns or Rules source changed.
