@@ -148,6 +148,7 @@ Each to be checked against the store's older records before it enters `SKIP_JSON
 
 **F11. Ammunition Shortage's Unit Replacement (A19.131).**
 - **R72.11:** when a side's on-board OB has Ammunition Shortage, an attack with an Original 12 IFT DR in which any MMC of that side used its Inherent FP Replaces one such MMC after the attack is resolved, chosen by Random Selection among them (A.9) after any SW malfunction or elimination; the Replaced unit keeps its broken or unbroken status (only the MMC "incapable of further quality loss" is broken, and a berserk one is not); an underscored squad is Replaced by its two HS, an underscored HS and a crew are incapable and break. No effect on CC, Sniper, or Residual FP attacks, nor on a To Hit DR of 12. The Random Selection dr and the Replacement are public events.
+- **R72.16** (decided at 5d): on a tie for the highest Random Selection dr every tied MMC is Replaced, as A.9 says ("all of the applicable units which rolled that number are affected equally"); R72.11's "one such MMC" is read so.
 
 **F12. Ammunition Shortage's numbers (A19.131, A.11, A21.11).**
 - **R72.12:** under Ammunition Shortage every SW's Original B# and X# is one lower (not a DC, not a captured SW, A21.11), in IFT fire and as ordnance, and a lowered B# becomes an X# by A.11 as the existing reduction does; Ammunition Depletion Numbers are one lower; no Fire Lane may be declared. The fact is recorded on the attack or shot so the verifier checks it against the card, not taken as recorded like Extreme Winter's reduction. Vehicles' and Guns' circled B# go to pass 105 (R72.2).
@@ -255,3 +256,32 @@ Built on 2026-10-27, about 21:00 to 21:23, by a building agent to a brief (`brie
 - `p72-underscored-elr` (board 3, `underscored-elr:german:3`, Russian PFPh): two 4-4-7 in [A3] fire at a German 8-3-8 in [A2]; dice 3 4, then 5 5: "2MC; 8-3-8 squad in [A2]: now 4-3-6 squad, broken".
 - `p72-inexperienced-mg` (board 3, Russian PFPh): a Conscript 4-2-6 with a LMG in [A3] fires the LMG at [A1]; dice 4 6: recorded `breakdownNumber` 10, `malfunctioned` true; the records: "The LMG malfunctioned (A9.7)" (the line does not cite A19.32: for the fixes).
 - Tests, by method (the agent's report): Rules 17 methods (two of its own rows fixed and rerun, 7 passed); Play 13 methods, all but the ten Pass17 rows passed. Strict builds exit 0.
+
+## 11. Ammunition Shortage: 72.2, part II (increment 5d)
+
+Built on 2026-10-27, about 21:27 to 22:00, by a building agent to a brief (`brief_5d.md`), rulings R72.11, R72.12, R72.16, its diff read and its games played in the Studio by the session.
+
+### 11.1 Departures from the frame, first
+
+- **A tie Replaces every tied MMC** (A.9; ruling R72.16).
+- **The X# under the Shortage** is the printed B# less Extreme Winter's reduction less 1, as the existing reduction does, so a B11 LMG is B10 and X10; the Inexperienced and captured reductions keep the X# at the printed B#. **For the referee:** the two are not consistent.
+- **Ordnance takes the B# only:** the ordnance package has no X# removal (no removal on a To Hit 12). A backlog row. The SW's ordnance B# is one lower (a light mortar, an ATR or PSK, a SW MG at an AFV; not a PF, a vehicle's MA, or a captured SW).
+- **Who can be Replaced:** squads, HS, and crews; an underscored HS is incapable and breaks; an FPF firer its own NMC eliminated, Reduced, or Replaced is skipped, one it only broke is Replaced broken.
+- **Spraying Fire is read once,** on the second Location's part after both.
+- **No Shortage** on vehicle fire, Residual FP, a DC, or the HE hit's IFT (none has firers).
+- **A FT's removal number takes the -1** (A19.131 excepts only the DC; for the referee with 5c's FT question). A captured MG's Fire Lane is not refused (A21.11).
+- **An ordnance shot's fact is checked against the state with no stamp:** a shot recorded between 5c and 5d in a game holding the token would be refused (session test games only).
+- **Not unit-tested:** the ordnance SW's B#.
+
+### 11.2 What is built
+
+- Rules: `FireAttack.AmmunitionShortage` (`ammunitionShortage`), `FireRolls.ShortageSelection` (`shortageSelection`, a dr of purpose `fire-shortage-selection`, no Sniper trigger), `FireResolution.ShortageEffects` (`shortageEffects`); `ShortageReplacements` after the weapon effects and the FPF checks; `Shortage(weapon)`; the Fire Lane refusal; `OrdnanceShot.AmmunitionShortage`; the Depletion Numbers one lower with their words.
+- Play: the facts from the state (the fire verifier only on a stamped record); the new roll; the shortage effects written after the MG events (the Replacing unit keeps the fire counter); `BerserkReturnsAfterFire` leaves Replaced firers out.
+- MapStudio: the record lines (shown to the firing side even where its fire record is withheld), the roll's word, the Depletion words.
+
+### 11.3 The games and the tests
+
+- `p72-ammo-shortage-replacement` (board 3, `ammo-shortage:russian`, Russian PFPh): two 4-4-7 in [A3], one with a LMG, fire at [A2]; dice 6 6, 1 1, 2 5: "4-4-7 squad R2 in [A3]: the Original 12 under Ammunition Shortage (Random Selection dr 5, A.9): Replaced by 4-2-6 squad (A19.131)".
+- `p72-ammo-shortage-mmg`: an MMG at its lowered B# (the same read as 5c's game; not played again).
+- `p72-ammo-shortage-fire-lane` (German MPh): after the German move to [A2], the Russian LMG's Defensive First Fire with a Fire Lane to [A1] is refused: "The firing side's OB has Ammunition Shortages, which prevent placement of Fire Lanes; its MG may fire without one (A19.131, A9.22)".
+- Tests, by method (the agent's report): Rules 23 methods (one test of its own fixed and rerun); Play 8. Strict builds exit 0.

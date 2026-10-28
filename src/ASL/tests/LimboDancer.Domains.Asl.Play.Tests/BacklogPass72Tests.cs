@@ -588,4 +588,106 @@ public sealed class BacklogPass72Tests : IDisposable
         Assert.True(Is(Current.Find("m1")!, Conditions.Malfunctioned));
         NoReplayErrors();
     }
+
+    // Increment 5d: Ammunition Shortage (rulings R72.11, R72.12).
+
+    [Fact]
+    public async Task UnderAmmunitionShortageARussianFireGroupsOriginal12ReplacesOneSquadInPublic()
+    {
+        // A19.131 (p. 86; ruling R72.11): the SSR ammo-shortage:russian. In the German DFPh the two Russian 4-4-7 in C4 fire PBF with their Inherent FP at the
+        // German 4-6-7 in C5: the Original 12 (6 + 6) does nothing to it; the doubles make both Russian squads cower (the Cowering dr 1, 1); the Random Selection
+        // dr 2 for r1 and 5 for r2 picks r2, Replaced by an unbroken 4-2-6 Conscript in C4. The record carries the fact, the effects are public, and the game
+        // replays without error.
+        ssrs = ["ammo-shortage:russian"];
+        await Setup(Squad("g1", "C5", "german"), Squad("r1", "C4", "russian"), Squad("r2", "C4", "russian"));
+        await AdvanceTo("dfph");
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(6, 6, 1, 1, 2, 5), new Dictionary<string, object> { ["firers"] = RussianPair, ["target"] = L("C5") }));
+        var events = Since(before);
+        var fire = Assert.Single(events.Select(item => item.Payload).OfType<FireResolved>());
+        Assert.True(fire.Facts.GetProperty("ammunitionShortage").GetBoolean());
+        var effect = Assert.Single(fire.Resolution.GetProperty("shortageEffects").EnumerateArray());
+        Assert.Equal(("r2", "defender-conscript-squad", 5), (effect.GetProperty("unitId").GetString(), effect.GetProperty("finalDefinitionId").GetString(),
+            effect.GetProperty("randomSelectionDr").GetInt32()));
+        Assert.Contains(events, item => item.Payload is DiceRolled { Purpose: "fire-shortage-selection", Count: 2 } && item.Visibility is null);
+        var lineage = Assert.Single(events, item => item.Payload is LineageRecorded { Action: LineageAction.Replaced } replaced && replaced.Consumed.Contains("r2"));
+        Assert.Null(lineage.Visibility);
+
+        var conscript = Assert.Single(Current.Units, unit => unit.Status == InstanceStatus.Active && unit.Side == "russian" && unit.Id != "r1");
+        Assert.Equal(("defender-conscript-squad", At("C4"), false), (conscript.Definition!.Definition, Current.Location(conscript.Id)!.Location, Is(conscript, Conditions.Broken)));
+
+        // It has fired: it takes the Final Fire counter r2 would have taken.
+        Assert.True(Is(conscript, Conditions.FinalFire));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AFireRecordMadeBeforeTheShortageFactVerifiesAsItWasRecorded()
+    {
+        // Absent-safety (ruling R72.12): in a game under ammo-shortage:russian, a fire record without the pass's stamp, as one made before it would be, carries no
+        // Ammunition Shortage and verifies as recorded; a stamped record that leaves the fact out is refused, since the state gives it.
+        ssrs = ["ammo-shortage:russian"];
+        await Setup(Squad("g1", "C5", "german"), Squad("r1", "C4", "russian"), Squad("r2", "C4", "russian"));
+        await AdvanceTo("dfph");
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(3, 4, 2, 2), new Dictionary<string, object> { ["firers"] = RussianPair, ["target"] = L("C5") }));
+        var all = store.Read(Scope)!.Events;
+        var index = all.ToList().FindIndex((int)before, item => item.Payload is FireResolved);
+        var fire = (FireResolved)all[index].Payload;
+        var state = Planner().Replay([.. all.Take(index)]).Current!;
+        var rolls = all.Select(item => item.Payload).OfType<DiceRolled>().ToDictionary(roll => roll.Roll, StringComparer.Ordinal);
+        var verifier = new FireRecordVerifier(new ScenarioA1FirePackage().Reference);
+        Assert.Null(verifier.Verify(state, fire, rolls));
+
+        JsonElement Without(params string[] names)
+        {
+            var facts = System.Text.Json.Nodes.JsonNode.Parse(fire.Facts.GetRawText())!.AsObject();
+            foreach (var name in names)
+            {
+                facts.Remove(name);
+            }
+
+            return JsonSerializer.SerializeToElement(facts);
+        }
+
+        Assert.Null(verifier.Verify(state, fire with
+        {
+            Facts = Without("unitSubstitution", "ammunitionShortage")
+        }, rolls));
+        Assert.NotNull(verifier.Verify(state, fire with
+        {
+            Facts = Without("ammunitionShortage")
+        }, rolls));
+    }
+
+    [Fact]
+    public async Task AFireLaneIsRefusedUnderAmmunitionShortage()
+    {
+        // A19.131 (ruling R72.12): Ammunition Shortages "do prevent placement of Fire Lanes": the Russian 4-4-7 in C3 declares a Fire Lane with its LMG's
+        // Defensive First Fire at the German squad moving into C5, and is refused.
+        ssrs = ["ammo-shortage:russian"];
+        await Setup(Squad("g1", "C6", "german"), Squad("r1", "C3", "russian"), new Dictionary<string, object>
+        {
+            ["id"] = "m1",
+            ["kind"] = "asl:mg",
+            ["definition"] = "defender-lmg",
+            ["side"] = "russian",
+            ["holding"] = new
+            {
+                holder = "r1",
+                role = "possessed"
+            },
+            ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+        });
+        Committed(await Move("C5"));
+        var refused = await Do(GameActions.Fire, NoRoll(), new
+        {
+            firers = RussianGunner,
+            weapons = new Dictionary<string, string[]> { ["r1"] = ["m1"] },
+            target = L("C5"),
+            fireLane = new Dictionary<string, string> { ["weapon"] = "m1", ["to"] = L("C6") },
+        });
+        Assert.NotEqual(PlayOutcome.Committed, refused.Outcome);
+        Assert.Contains(refused.Reasons, reason => reason.Contains(ScenarioA1FireEligibility.AmmunitionShortageFireLaneRefusal, StringComparison.Ordinal));
+    }
 }

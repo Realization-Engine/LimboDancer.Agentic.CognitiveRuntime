@@ -94,10 +94,11 @@ internal static class ScenarioA1ArmorCalculator
     }
 
     /// <summary>
-    /// The Depletion Number of an ammunition at a date (C8.9, C8.91, C8.3, C8.8), one more for Elite forces (C8.2, p. 178), or null when the Gun
-    /// has none then. A number holds from its year, and from its month when the counter gives one, until the next listed one.
+    /// The Depletion Number of an ammunition at a date (C8.9, C8.91, C8.3, C8.8), one more for Elite forces (C8.2, p. 178), one less under Ammunition
+    /// Shortage (A19.131, p. 86; pass 72, ruling R72.12), or null when the Gun has none then. A number holds from its year, and from its month when the
+    /// counter gives one, until the next listed one.
     /// </summary>
-    public static int? Depletion(GunDefinition gun, string ammunition, int? year, int? month, bool elite = false)
+    public static int? Depletion(GunDefinition gun, string ammunition, int? year, int? month, bool elite = false, bool shortage = false)
     {
         ArgumentNullException.ThrowIfNull(gun);
         var type = TypeOf(ammunition);
@@ -107,20 +108,20 @@ internal static class ScenarioA1ArmorCalculator
             return null;
         }
 
-        int? Elite(int number) => elite ? number + 1 : number;
+        int? Adjusted(int number) => number + (elite ? 1 : 0) - (shortage ? 1 : 0);
 
         // C8.3: HEAT is available to the Germans from May 1942, to the U.S., Britain, and Russia from 1943.
         if (type == "H" && entries.All(entry => entry.Year is null))
         {
             var from = gun.Nationality == "german" ? (Year: 1942, Month: 5) : (Year: 1943, Month: 1);
-            return year > from.Year || (year == from.Year && (month ?? 0) >= from.Month) ? Elite(entries[0].Number) : null;
+            return year > from.Year || (year == from.Year && (month ?? 0) >= from.Month) ? Adjusted(entries[0].Number) : null;
         }
 
         // A number with no year holds whatever the date (C8.8's AP# and HE#); a dated one needs the scenario's year, and its month where it names one.
         var held = entries.Where(entry => entry.Year is null
                 || entry.Year < year || (entry.Year == year && (entry.Month is not { } first || (month ?? 0) >= first)))
             .OrderBy(entry => entry.Year ?? 0).ToArray();
-        return held.Length > 0 ? Elite(held[^1].Number) : null;
+        return held.Length > 0 ? Adjusted(held[^1].Number) : null;
     }
 
     /// <summary>
@@ -173,11 +174,11 @@ internal static class ScenarioA1ArmorCalculator
     /// <summary>
     /// The Depletion Number a shot's ammunition is fired under (C8.9, p. 179; pass 55, ruling R55.7), one more for an Elite force (C8.2), or null
     /// when it has none: a LATW's (C8.3), AP or HE the counter gives no number, and a shot that names no ammunition, which is HE that is not
-    /// Special Ammunition (C2.21). Intensive Fire does not change it (C8.92).
+    /// Special Ammunition (C2.21). Intensive Fire does not change it (C8.92). One less under Ammunition Shortage (A19.131; pass 72, ruling R72.12).
     /// </summary>
     internal static int? ShotDepletion(OrdnanceShot shot, GunDefinition gun) =>
         gun.GunType == "latw" || shot.Ammunition is not { } ammunition ? null
-            : Depletion(gun, ammunition, shot.ScenarioYear, shot.Hit?.ScenarioMonth, shot.Elite == true);
+            : Depletion(gun, ammunition, shot.ScenarioYear, shot.Hit?.ScenarioMonth, shot.Elite == true, shot.AmmunitionShortage == true);
 
     /// <summary>
     /// C8.9: an Original To Hit DR below the Depletion Number uses the ammunition; one equal to it uses it and the firer "runs out of that Special

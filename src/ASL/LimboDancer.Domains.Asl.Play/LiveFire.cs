@@ -325,6 +325,9 @@ public static class LiveFire
             MgBoreSighted = boreSighted ? true : null,
             Embarking = boarding,
             GunCrews = GunCrews(state, selection.Targets),
+
+            // A19.131 (pass 72, rulings R72.11, R72.12): the firing side's Ammunition Shortage, from the game's special rules; Rules says what it does.
+            AmmunitionShortage = state.SpecialRules.Count > 0 && ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, side) ? true : null,
         }, null);
     }
 
@@ -722,6 +725,7 @@ public static class LiveFire
         Dictionary<string, int>? weaponSelection = null;
         Dictionary<string, int>? firerSelection = null;
         Dictionary<string, int>? cowerSelection = null;
+        Dictionary<string, int>? shortageSelection = null;
         Dictionary<string, IReadOnlyList<int>>? checks = null;
         Dictionary<string, IReadOnlyList<int>>? leaderLoss = null;
         Dictionary<string, int>? wounds = null;
@@ -799,6 +803,15 @@ public static class LiveFire
                     }
 
                     break;
+
+                // A19.131 (pass 72, ruling R72.11): the Random Selection of the MMC an Original 12 under Ammunition Shortage Replaces.
+                case "shortageSelection":
+                    if (!Select(ref shortageSelection, unit, roll))
+                    {
+                        return null;
+                    }
+
+                    break;
                 case "checks" when roll.Count == 2:
                     (checks ??= new(StringComparer.Ordinal))[unit] = roll.Values;
                     break;
@@ -853,6 +866,7 @@ public static class LiveFire
             WeaponSelection = weaponSelection,
             FirerSelection = firerSelection,
             CowerSelection = cowerSelection,
+            ShortageSelection = shortageSelection,
             HeatOfBattle = heat,
             BerserkChecks = berserk,
             CrewChecks = crewChecks,
@@ -1288,6 +1302,10 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
             // Pass 72 (rulings R72.9, R72.13): and the Inexperienced MG B# and the underscored units' SSR ELR.
             UnitSubstitution = recorded.UnitSubstitution,
+
+            // Pass 72 (rulings R72.11, R72.12): a record that carries the pass's stamp has its Ammunition Shortage checked against the state; an older one
+            // carries none and resolves as it did.
+            AmmunitionShortage = recorded.UnitSubstitution == true ? expected.AmmunitionShortage : recorded.AmmunitionShortage,
 
             // Backlog pass 12 (rulings R12.6, R12.7): Spraying Fire is the firer's declaration; a Fire Lane's Residual FP is the lane's in the state.
             SprayingFire = recorded.SprayingFire,

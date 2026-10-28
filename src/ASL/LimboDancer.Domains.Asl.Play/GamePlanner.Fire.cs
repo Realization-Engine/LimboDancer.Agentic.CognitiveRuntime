@@ -1162,6 +1162,20 @@ public sealed partial class GamePlanner
             }
         }
 
+        // A19.131 (pass 72, ruling R72.11): after the SW's malfunction or removal, the Unit Replacement of an Original 12 under Ammunition Shortage, public. A
+        // unit that takes a firer's place has fired: it is given the fire counter the firer would have taken.
+        foreach (var effect in resolution.ShortageEffects ?? [])
+        {
+            var fired = effect.FinalDefinitionId != effect.DefinitionId && resolution.FireCounterUnitIds.Contains(effect.UnitId) && state.Unit(effect.UnitId) is { } firer
+                ? ConditionChanges(ScenarioA1FireFollowUps.FireMarkerConditions(effect.UnitId, facts, resolution, Is(firer, Conditions.FirstFire),
+                    Is(firer, Conditions.Concealed) || Is(firer, Conditions.Hidden)))
+                : null;
+            if (EffectEvent(state, effect, attemptId, false, fired) is { } replaced)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, replaced.Type, replaced.Payload, package, null, [fireId]));
+            }
+        }
+
         // D7.17 (ruling R11.11): an OVR's Original 12 malfunctions a weapon that added FP, or immobilizes a vehicle with none; a wreck keeps no weapons.
         if (resolution.OverrunEffect is { } overrunEffect && state.Unit(overrunEffect.VehicleId) is { Status: InstanceStatus.Active })
         {
@@ -1235,7 +1249,9 @@ public sealed partial class GamePlanner
     {
         var firers = facts.Firers ?? [];
         var objects = MemoOf(state).Objects(state);
-        var lost = (resolution.FirerEffects ?? []).Where(effect => effect.Eliminated).Select(effect => effect.UnitId).ToHashSet(StringComparer.Ordinal);
+        // A19.131 (pass 72, ruling R72.11): a firer Replaced under Ammunition Shortage is no longer the unit that fired.
+        var lost = (resolution.FirerEffects ?? []).Where(effect => effect.Eliminated).Concat(ScenarioA1FireFollowUps.ShortageReplaced(resolution))
+            .Select(effect => effect.UnitId).ToHashSet(StringComparer.Ordinal);
         string[] berserk = [.. firers.Select(item => item.UnitId).OfType<string>().Where(id => !lost.Contains(id) && objects.Unit(id) is { } unit && Is(unit, Conditions.Berserk))
             .Order(StringComparer.Ordinal)];
         if (berserk.Length == 0 || !BoardLocation.TryParse(facts.TargetLocationId, out var location))
@@ -1561,7 +1577,9 @@ public sealed partial class GamePlanner
         new(ScenarioA1FireFollowUps.HeroId(attemptId, creator.Id, suffix), "asl:hero", hero, creator.Side, creator.Position, null,
             ConditionChanges(ScenarioA1FireFollowUps.HeroConditions(concealed, condition => GameState.Condition(creator, ConditionName(condition)) == ConditionState.True)));
 
-    private static (string Type, EventPayload Payload)? EffectEvent(GameState state, FireUnitEffect effect, string attemptId, bool attackedWhileBroken)
+    /// <param name="fired">The fire counter a unit Replaced after the attack takes with it (A19.131; pass 72), or null.</param>
+    private static (string Type, EventPayload Payload)? EffectEvent(GameState state, FireUnitEffect effect, string attemptId, bool attackedWhileBroken,
+        IReadOnlyDictionary<string, ConditionState>? fired = null)
     {
         var unit = state.Unit(effect.UnitId)!;
         // Rules decides the conditions and the lineage (pass 32.c); the dictionaries are built here in the order given.
@@ -1578,7 +1596,7 @@ public sealed partial class GamePlanner
             var reference = FireReference.Value.Definitions[effect.FinalDefinitionId];
             var produced = unit.Conditions.Where(item => item.Key != Conditions.Concealed && item.Key != Conditions.Hidden)
                 .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
-            foreach (var (name, value) in conditions)
+            foreach (var (name, value) in conditions.Concat(fired ?? new Dictionary<string, ConditionState>()))
             {
                 produced[name] = value;
             }

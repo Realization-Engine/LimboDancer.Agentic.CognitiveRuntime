@@ -323,6 +323,9 @@ public static class DisplayText
         ["fire-ift"] = "IFT DR",
         ["ordnance-canister"] = "Canister IFT DR",
         ["fire-cower-selection"] = "Random Selection dr for Cowering",
+
+        // Pass 72 (A19.131, ruling R72.11): the MMC an Original 12 under Ammunition Shortage Replaces.
+        ["fire-shortage-selection"] = "Random Selection dr for Ammunition Shortage",
         ["fire-check"] = "MC or TC DR",
         ["fire-heat-of-battle"] = "Heat of Battle DR",
         ["fire-leader-loss"] = "Leader Loss DR",

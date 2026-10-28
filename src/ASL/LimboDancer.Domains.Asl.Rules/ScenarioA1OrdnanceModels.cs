@@ -56,6 +56,17 @@ public sealed record OrdnanceShot(
         get; init;
     }
 
+    /// <summary>
+    /// Whether an SSR cites the firer's side's on-board OB as afflicted by Ammunition Shortages (A19.131, p. 86; pass 72, ruling R72.12): its Depletion Numbers
+    /// are one lower, and so is a SW's B# (not a captured one, A21.11): the game's special rule <c>ammo-shortage:&lt;side&gt;</c>, read from the state when the
+    /// shot is verified. Null is false: a shot recorded before increment 5d had none. A vehicle's or Gun's circled B# is pass 105's.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? AmmunitionShortage
+    {
+        get; init;
+    }
+
     /// <summary>The scenario year, which decides the special ammunition's Depletion Number (C8.9, C8.91); null when the game names none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? ScenarioYear

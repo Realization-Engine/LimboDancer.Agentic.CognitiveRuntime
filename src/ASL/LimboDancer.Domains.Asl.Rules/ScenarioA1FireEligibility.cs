@@ -1040,6 +1040,10 @@ public static class ScenarioA1FireEligibility
         };
     }
 
+    /// <summary>The refusal of a Fire Lane under Ammunition Shortage (A19.131, A9.22; pass 72, ruling R72.12).</summary>
+    public const string AmmunitionShortageFireLaneRefusal =
+        "play.fire-lane: the firing side's OB has Ammunition Shortages, which prevent placement of Fire Lanes; its MG may fire without one (A19.131, A9.22)";
+
     /// <summary>
     /// A9.22 (ruling R12.7): a Fire Lane goes with MPh Defensive First Fire by an unpinned Infantry unit's Good Order MG, within its Normal Range at a
     /// same-level target, not TPBF or a Snap Shot.
@@ -1047,6 +1051,14 @@ public static class ScenarioA1FireEligibility
     public static string? FireLaneDeclarationBar(FireLaneDeclarationFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);
+
+        // A19.131 (p. 86; pass 72, ruling R72.12): Ammunition Shortages "do prevent placement of Fire Lanes"; A9.22's Good Order MG is "not ... restricted by
+        // Ammunition Shortage". A21.11: a captured MG takes no Ammunition Shortage penalty.
+        if (facts.Attack.AmmunitionShortage == true && facts.Mg is { Captured: not true })
+        {
+            return AmmunitionShortageFireLaneRefusal;
+        }
+
         var range = facts.Manning?.Range ?? facts.Attack.Range;
         return facts.Phase != "mph" || facts.Attack.FireKind != ScenarioA1FireCalculator.FirstFire || facts.Manning is null || !facts.MgIsMg
             || facts.MgRange is not { } mgRange || facts.MgFirepower is null

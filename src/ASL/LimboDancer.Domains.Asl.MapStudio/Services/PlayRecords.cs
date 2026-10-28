@@ -577,6 +577,12 @@ public sealed partial class PlayRecords
             changed = [.. changed, .. prc.Select(line => fire.Say(line))];
         }
 
+        // A19.131 (pass 72, ruling R72.11): the firing side's MMC an Original 12 under Ammunition Shortage Replaced, after the attack.
+        if (fire.Shortage is { Count: > 0 } shortage)
+        {
+            changed = [.. changed, .. shortage.Select(line => fire.Say(line))];
+        }
+
         // The table player's review of pass 55: a Canister attack on a Location where the view knows of no unit.
         if (fire.NoKnownTarget)
         {
@@ -746,7 +752,7 @@ public sealed partial class PlayRecords
                 {
                     // The UI review of pass 55: the number is the record's own, never the catalog's of a later day.
                     var fact = canisterShot.Facts.Deserialize<OrdnanceShot>(LiveFire.Json);
-                    var number = ScenarioA1Definitions.DepletionNumberWords(canister.DepletionNumber, fact?.Elite == true);
+                    var number = ScenarioA1Definitions.DepletionNumberWords(canister.DepletionNumber, fact?.Elite == true, fact?.AmmunitionShortage == true);
                     var round = canisterResolution.AmmunitionUse switch
                     {
                         "none" => $"the DR is above the {number}: it had no Canister, attacks nothing, "
@@ -883,7 +889,8 @@ public sealed partial class PlayRecords
                 }
 
                 // C8.9, C8.2 (pass 55): the number the shot was fired under, with the one an Elite force adds, as the record itself names it.
-                var depletion = resolution.DepletionNumber is { } recordedNumber ? ScenarioA1Definitions.DepletionNumberWords(recordedNumber, shot?.Elite == true)
+                // A19.131 (pass 72, ruling R72.12): and the one an Ammunition Shortage takes away.
+                var depletion = resolution.DepletionNumber is { } recordedNumber ? ScenarioA1Definitions.DepletionNumberWords(recordedNumber, shot?.Elite == true, shot?.AmmunitionShortage == true)
                     : "Depletion Number";
                 if (resolution.AmmunitionUse == "none")
                 {
@@ -1031,6 +1038,9 @@ public sealed partial class PlayRecords
 
                         // Pass 60 (ruling R60.17): what the KIA did to its victims' weapons.
                         WeaponDestruction = resolution.WeaponDestruction is { Count: > 0 } ? FireText.WeaponDestructionLines(resolution.WeaponDestruction) : null,
+
+                        // Pass 72 (ruling R72.11): the Unit Replacement of an Original 12 under Ammunition Shortage.
+                        Shortage = FireText.ShortageLines(resolution.ShortageEffects, facts?.Firers),
                         BrokenBefore = before.Where(target => target.Broken == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
                         PinnedBefore = before.Where(target => target.Pinned == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
                     });
@@ -1052,6 +1062,11 @@ public sealed partial class PlayRecords
 
                         // The LOS is the map's, and both sides see that the shot went nowhere (A6.11).
                         LosBlocked = withheld.Payload is FireResolved unseen && unseen.Resolution.Deserialize<FireResolution>(LiveFire.Json)?.LosBlocked == true,
+
+                        // Pass 72 (ruling R72.11): the firing side's own units an Original 12 under Ammunition Shortage Replaced, which its public events show.
+                        Shortage = withheld.Payload is FireResolved own && own.Resolution.TryGetProperty("shortageEffects", out _)
+                            ? FireText.ShortageLines(own.Resolution.Deserialize<FireResolution>(LiveFire.Json)?.ShortageEffects, own.Facts.Deserialize<FireAttack>(LiveFire.Json)?.Firers)
+                            : null,
                     });
                 }
             }

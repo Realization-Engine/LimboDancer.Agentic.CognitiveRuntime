@@ -390,7 +390,7 @@ public sealed class ScenarioA1Pass72RulesTests
             new FireRolls([3, 4], null, null, null));
 
     /// <summary>Resolves an attack, answering each check with the dice given and every other roll with the lowest it takes.</summary>
-    private static FireResolution Resolved(FireAttack attack, IReadOnlyList<int> checks)
+    private static FireResolution Resolved(FireAttack attack, IReadOnlyList<int> checks, IReadOnlyDictionary<string, int>? shortage = null)
     {
         var rolls = attack.Rolls!;
         for (var step = 0; step < 20; step++)
@@ -423,6 +423,8 @@ public sealed class ScenarioA1Pass72RulesTests
             {
                 "randomSelection" => rolls with { RandomSelection = Add(rolls.RandomSelection, 1) },
                 "weaponSelection" => rolls with { WeaponSelection = Add(rolls.WeaponSelection, 1) },
+                "cowerSelection" => rolls with { CowerSelection = Add(rolls.CowerSelection, 1) },
+                "shortageSelection" => rolls with { ShortageSelection = shortage ?? throw new InvalidOperationException(key) },
                 "checks" => rolls with { Checks = Add(rolls.Checks, checks) },
                 _ => throw new InvalidOperationException(key),
             };
@@ -521,5 +523,154 @@ public sealed class ScenarioA1Pass72RulesTests
         Assert.Equal((printed - 1, true), Pair(Lmg(Gunner("british-green-squad", "british-lmg", true), dice, stamped: true)));
 
         static (int, bool) Pair(FireWeaponEffect effect) => (effect.BreakdownNumber, effect.Malfunctioned);
+    }
+
+    // Increment 5d: Ammunition Shortage (A19.131; rulings R72.11, R72.12).
+
+    private static readonly ScenarioA1OrdnanceReference Ordnance = new ScenarioA1OrdnancePackage().Reference;
+
+    private static FireFirer Squad(string id, string definition = "defender-squad") => new(id, definition, FireFrom, false, false, false, false, false);
+
+    // A fire group at a German squad (a Russian one for a German group) two hexes off in the open, on the IFT DR given, the firing side short of ammunition.
+    private static FireAttack Short(int[] dice, bool shortage, params FireFirer[] firers) =>
+        new FireAttack("PFPh", "phasing", true, FireFrom, FireAt, firers, null, 2, true, new FireLos(false, 0, true, false), null, "open-ground",
+            [new FireTarget("de-t", Fire.Definitions[firers[0].DefinitionId!].Nationality == "russian" ? "attacker-squad" : "defender-squad", FireAt, false, false, false,
+                false, false, false, false)], 3, new FireRolls(dice, null, null, null)) with
+        {
+            AmmunitionShortage = shortage ? true : null,
+            UnitSubstitution = true,
+            CoweringMarksAndWeaponResidual = true,
+        };
+
+    private static readonly Dictionary<string, int> SecondPicked = new(StringComparer.Ordinal) { ["ru-1"] = 2, ["ru-2"] = 5 };
+    private static readonly Dictionary<string, int> Tied = new(StringComparer.Ordinal) { ["ru-1"] = 4, ["ru-2"] = 4 };
+    private static readonly string[] BothSquads = ["ru-1", "ru-2"];
+
+    [Fact]
+    public void AnOriginal12WithInherentFpReplacesTheMmcTheRandomSelectionPicks()
+    {
+        // A19.131 (p. 86; ruling R72.11): two Russian 4-4-7 fire with their Inherent FP; the Original 12 under Ammunition Shortage Replaces the one with the higher
+        // Random Selection dr (A.9) by the next lower quality unit, the 4-2-6 Conscript, which keeps its unbroken status.
+        var replaced = Assert.Single(Resolved(Short([6, 6], true, Squad("ru-1"), Squad("ru-2")), [], SecondPicked).ShortageEffects!);
+        Assert.Equal(("ru-2", "defender-conscript-squad", false, (int?)5), (replaced.UnitId, replaced.FinalDefinitionId, replaced.Broken, replaced.RandomSelectionDr));
+        Assert.Contains("ammunition-shortage-replaced", replaced.Events);
+
+        // A.9: "all of the applicable units which rolled that number are affected equally".
+        Assert.Equal(BothSquads, Resolved(Short([6, 6], true, Squad("ru-1"), Squad("ru-2")), [], Tied).ShortageEffects!.Select(item => item.UnitId));
+
+        // No Ammunition Shortage, or no Original 12: no Replacement.
+        Assert.Null(Resolved(Short([6, 6], false, Squad("ru-1"), Squad("ru-2")), []).ShortageEffects);
+        Assert.Null(Resolved(Short([5, 6], true, Squad("ru-1"), Squad("ru-2")), []).ShortageEffects);
+    }
+
+    private static FireFirer WithLmg(FireFirer firer, bool inherent, bool captured = false) => firer with
+    {
+        Weapons = [new FireWeapon("mg", "defender-lmg", false, false, false) { Captured = captured ? true : null }],
+        UsesInherentFp = inherent ? null : false,
+        UsesSupportWeapon = true,
+    };
+
+    [Fact]
+    public void ASquadFiringOnlyItsLmgIsNotReplacedAndItsLoweredBreakdownNumberIsItsX()
+    {
+        // A19.131: only a MMC "using its Inherent FP" suffers Unit Replacement; a squad firing its LMG alone does not, though the 12 malfunctions the LMG.
+        var alone = Resolved(Short([6, 6], true, WithLmg(Squad("ru-1"), inherent: false)), []);
+        Assert.Null(alone.ShortageEffects);
+        Assert.True(Assert.Single(alone.WeaponEffects!).Malfunctioned);
+
+        // A19.131, A.11 (p. 43; ruling R72.12): the LMG's B# is one lower, and the lowered B# makes it an X#, so an Original DR of that B# removes it. Without
+        // the Shortage the same DR does nothing to it.
+        var printed = Fire.Definitions["defender-lmg"].Breakdown!.Value;
+        var lowered = Assert.Single(Resolved(Short(Dr(printed - 1), true, WithLmg(Squad("ru-1"), inherent: false)), []).WeaponEffects!);
+        Assert.Equal((printed - 1, true, (bool?)true), (lowered.BreakdownNumber, lowered.Malfunctioned, lowered.Removed));
+        var normal = Assert.Single(Resolved(Short(Dr(printed - 1), false, WithLmg(Squad("ru-1"), inherent: false)), []).WeaponEffects!);
+        Assert.Equal((printed, false), (normal.BreakdownNumber, normal.Malfunctioned));
+    }
+
+    [Fact]
+    public void ACapturedMgKeepsItsBreakdownNumberUnderAmmunitionShortage()
+    {
+        // A21.11 (p. 88): "Ammunition Shortage (19.131) penalties do not apply to captured Gun/SW": a German squad's captured Russian LMG is two lower, not three.
+        var printed = Fire.Definitions["defender-lmg"].Breakdown!.Value;
+        var captured = Assert.Single(Resolved(Short(Dr(3), true, WithLmg(Squad("de-1", "attacker-squad"), inherent: false, captured: true)), [2, 3]).WeaponEffects!);
+        Assert.Equal(printed - 2, captured.BreakdownNumber);
+    }
+
+    [Fact]
+    public void AnEliteUnderscoredSquadIsReplacedByItsTwoHalfSquads()
+    {
+        // Ruling R72.11 (A19.13): the German 8-3-8, firing alone (no Random Selection), becomes its two 3-3-8 HS, unbroken as it was.
+        var split = Assert.Single(Resolved(Short([6, 6], true, Squad("de-1", Engineer)), []).ShortageEffects!);
+        Assert.Equal(("attacker-elite-half-squad-3-3-8", (bool?)true, false, (int?)null), (split.FinalDefinitionId, split.SplitIntoHalfSquads, split.Broken, split.RandomSelectionDr));
+    }
+
+    [Fact]
+    public void AConscriptIncapableOfQualityLossIsBrokenUnlessBerserk()
+    {
+        // A19.131: "Any MMC subject to, but incapable of, further quality loss is broken after resolution of the attack, unless berserk."
+        var broken = Assert.Single(Resolved(Short([6, 6], true, Squad("ru-1", "defender-conscript-squad")), []).ShortageEffects!);
+        Assert.Equal(("defender-conscript-squad", true), (broken.FinalDefinitionId, broken.Broken));
+        Assert.Contains("ammunition-shortage-broken", broken.Events);
+        var berserk = Assert.Single(Resolved(Short([6, 6], true, Squad("ru-1", "defender-conscript-squad") with
+        {
+            Berserk = true
+        }), []).ShortageEffects!);
+        Assert.Equal(("defender-conscript-squad", false), (berserk.FinalDefinitionId, berserk.Broken));
+        Assert.Contains("ammunition-shortage-berserk", berserk.Events);
+    }
+
+    [Fact]
+    public void ADcKeepsItsBreakdownNumberUnderAmmunitionShortage()
+    {
+        // A19.131: "all SW Original B#/X# [EXC: DC]": a 1st Line owner's Placed DC still malfunctions on 10 (A23.4), not on 9.
+        var charge = new FireDemolitionCharge("ru-dc", "defender-dc", FireDemolitionCharge.Placed, "ru-1", "defender-squad", false, false, false, null);
+        FireAttack Placed(int[] dice) => new FireAttack("AFPh", "phasing", null, FireFrom, FireAt, null, null, 1, true, null, null, "stone-building",
+            [new FireTarget("de-s", "attacker-squad", FireAt, false, false, false, false, false, false, false)], 3, new FireRolls(dice, null, null, null))
+        {
+            DemolitionCharge = charge,
+            AmmunitionShortage = true,
+            UnitSubstitution = true,
+        };
+        Assert.NotEqual(true, Resolved(Placed([4, 5]), [3, 3]).DemolitionChargeMalfunctioned);
+        Assert.True(Resolved(Placed([4, 6]), [3, 3]).DemolitionChargeMalfunctioned);
+    }
+
+    [Fact]
+    public void DepletionNumbersAreOneLowerUnderAmmunitionShortage()
+    {
+        // A19.131 (ruling R72.12): "Ammunition Depletion Numbers are decreased by one"; the 6-Pounder's HE8 of 1944 is 7, and Elite's one more makes it 8 again.
+        var sixPounder = Ordnance.Guns["british-at-gun"];
+        Assert.Equal((8, 7, 8), (ScenarioA1Definitions.DepletionNumber(sixPounder, "he", 1944, 6), ScenarioA1Definitions.DepletionNumber(sixPounder, "he", 1944, 6, shortage: true),
+            ScenarioA1Definitions.DepletionNumber(sixPounder, "he", 1944, 6, elite: true, shortage: true)));
+        Assert.Equal("HE (Depletion Number 7: 8, less 1 for Ammunition Shortage, A19.131)",
+            ScenarioA1Definitions.AmmunitionChoices("british-at-gun", false, 1944, 6, false, [], shortage: true)[0].Label);
+        Assert.Equal("Depletion Number 7 (8, less 1 for Ammunition Shortage, A19.131)", ScenarioA1Definitions.DepletionNumberWords(7, false, true));
+    }
+
+    [Fact]
+    public void AFireLaneIsRefusedUnderAmmunitionShortage()
+    {
+        // A19.131: Ammunition Shortages "do prevent placement of Fire Lanes" (A9.22's Good Order MG is "not ... restricted by Ammunition Shortage"); a captured
+        // MG takes no Ammunition Shortage penalty (A21.11).
+        var gunner = WithLmg(Squad("ru-1"), inherent: true);
+        var attack = Short([3, 4], true, gunner) with
+        {
+            Phase = "MPh",
+            FiringSide = "non-phasing",
+            FireKind = ScenarioA1FireCalculator.FirstFire,
+        };
+        var mg = gunner.Weapons![0];
+        Assert.Equal(ScenarioA1FireEligibility.AmmunitionShortageFireLaneRefusal,
+            ScenarioA1FireEligibility.FireLaneDeclarationBar(new FireLaneDeclarationFacts("mph", attack, gunner, mg, true, 6, 2, true)));
+        Assert.NotEqual(ScenarioA1FireEligibility.AmmunitionShortageFireLaneRefusal,
+            ScenarioA1FireEligibility.FireLaneDeclarationBar(new FireLaneDeclarationFacts("mph", attack, gunner, mg with
+            {
+                Captured = true
+            }, true, 6, 2, true)));
+        Assert.NotEqual(ScenarioA1FireEligibility.AmmunitionShortageFireLaneRefusal,
+            ScenarioA1FireEligibility.FireLaneDeclarationBar(new FireLaneDeclarationFacts("mph", attack with
+            {
+                AmmunitionShortage = null
+            }, gunner, mg, true, 6, 2, true)));
     }
 }

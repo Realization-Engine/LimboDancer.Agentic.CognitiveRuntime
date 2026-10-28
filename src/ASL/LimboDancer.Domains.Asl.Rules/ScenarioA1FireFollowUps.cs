@@ -166,7 +166,7 @@ public static class ScenarioA1FireFollowUps
         var key = missing["asl.a1.fire.roll-missing:".Length..];
         var split = key.IndexOf(':', StringComparison.Ordinal);
         var (kind, unit) = split < 0 ? (key, string.Empty) : (key[..split], key[(split + 1)..]);
-        var selected = kind is "randomSelection" or "weaponSelection" or "firerSelection" or "cowerSelection" ? unit.Split(',') : [];
+        var selected = kind is "randomSelection" or "weaponSelection" or "firerSelection" or "cowerSelection" or "shortageSelection" ? unit.Split(',') : [];
         var (count, purpose) = kind switch
         {
             "attack" => (2, dcAtAfv ? "fire-dc-second" : "fire-ift"),
@@ -174,6 +174,10 @@ public static class ScenarioA1FireFollowUps
             "weaponSelection" => (selected.Length, "fire-weapon-selection"),
             "firerSelection" => (selected.Length, "fire-firer-selection"),
             "cowerSelection" => (selected.Length, "fire-cower-selection"),
+
+            // A19.131, A.9 (pass 72, ruling R72.11): the Random Selection of the MMC an Original 12 under Ammunition Shortage Replaces, a dr each and no DR,
+            // so no Sniper trigger (A14.1).
+            "shortageSelection" => (selected.Length, "fire-shortage-selection"),
             "checks" => (2, "fire-check"),
             "leaderLoss" => (2, "fire-leader-loss"),
             "heatOfBattle" => (2, "fire-heat-of-battle"),
@@ -311,9 +315,20 @@ public static class ScenarioA1FireFollowUps
 
         // A8.31, A19.13 (pass 45): an FPF firer its own NMC eliminated, Reduced, or Replaced is no longer the unit that fired; the unit that takes its
         // place keeps the Final Fire counter it already had.
-        var gone = (resolution.FirerEffects ?? []).Where(effect => effect.Eliminated || effect.FinalDefinitionId != effect.DefinitionId)
+        // A19.131 (pass 72, ruling R72.11): so is a firer an Original 12 under Ammunition Shortage Replaced; the unit that takes its place is given its counter.
+        var gone = (resolution.FirerEffects ?? []).Concat(ShortageReplaced(resolution)).Where(effect => effect.Eliminated || effect.FinalDefinitionId != effect.DefinitionId)
             .Select(effect => effect.UnitId).ToHashSet(StringComparer.Ordinal);
         return resolution.FireCounterUnitIds.Where(id => !alone.Contains(id) && !gone.Contains(id) && !inactive(id));
+    }
+
+    /// <summary>
+    /// The firers an Original 12 under Ammunition Shortage Replaced (A19.131; pass 72, ruling R72.11): the unit, or the two HS, that takes each one's place
+    /// has fired, and takes the fire counter it would have had (<see cref="FireMarkerConditions"/>) with its other conditions.
+    /// </summary>
+    public static IEnumerable<FireUnitEffect> ShortageReplaced(FireResolution resolution)
+    {
+        ArgumentNullException.ThrowIfNull(resolution);
+        return (resolution.ShortageEffects ?? []).Where(effect => effect.FinalDefinitionId != effect.DefinitionId);
     }
 
     /// <summary>A unit's fire marker: the counter, a Final Fire counter replacing a First Fire one, and the "?" a concealed firer or firing vehicle loses (A12.2; ruling R6.7).</summary>

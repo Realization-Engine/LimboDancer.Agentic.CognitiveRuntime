@@ -218,10 +218,11 @@ public static class ScenarioA1Definitions
 
     /// <summary>
     /// The Depletion Number of an ammunition (<c>apcr</c>, <c>apds</c>, <c>heat</c>, <c>he</c>, <c>ap</c>, <c>canister</c>) for a Gun at a date
-    /// (C8.9, C8.91, C8.3, C8.8; pp. 178 and 179), one more for Elite forces (C8.2); null when the Gun has none then.
+    /// (C8.9, C8.91, C8.3, C8.8; pp. 178 and 179), one more for Elite forces (C8.2), one less under Ammunition Shortage (A19.131); null when the Gun has
+    /// none then.
     /// </summary>
-    public static int? DepletionNumber(GunDefinition gun, string ammunition, int? year, int? month, bool elite = false) =>
-        ScenarioA1ArmorCalculator.Depletion(gun, ammunition, year, month, elite);
+    public static int? DepletionNumber(GunDefinition gun, string ammunition, int? year, int? month, bool elite = false, bool shortage = false) =>
+        ScenarioA1ArmorCalculator.Depletion(gun, ammunition, year, month, elite, shortage);
 
     /// <summary>The start of the game's special rule that makes a side's force Elite for its Depletion Numbers (C8.2; pass 55, ruling R55.6); the side's id follows.</summary>
     public const string EliteAmmunitionRule = "elite-ammunition:";
@@ -236,13 +237,20 @@ public static class ScenarioA1Definitions
         return side is not null && specialRules.Contains(EliteAmmunitionRule + side, StringComparer.Ordinal);
     }
 
-    /// <summary>A Depletion Number in words, with the one an Elite force adds (C8.2): "Depletion Number 7 (6, and 1 for Elite, C8.2)".</summary>
-    private static string DepletionWords(int number, bool elite, string open = " (", string close = ")") =>
+    /// <summary>
+    /// A Depletion Number in words, with the one an Elite force adds (C8.2): "Depletion Number 7 (6, and 1 for Elite, C8.2)"; and the one an Ammunition
+    /// Shortage takes away (A19.131; pass 72, ruling R72.12): "Depletion Number 6 (7, less 1 for Ammunition Shortage, A19.131)".
+    /// </summary>
+    private static string DepletionWords(int number, bool elite, string open = " (", string close = ")", bool shortage = false) =>
         "Depletion Number " + number.ToString(System.Globalization.CultureInfo.InvariantCulture)
-            + (elite ? open + (number - 1).ToString(System.Globalization.CultureInfo.InvariantCulture) + ", and 1 for Elite, C8.2" + close : string.Empty);
+            + (elite || shortage ? open + (number - (elite ? 1 : 0) + (shortage ? 1 : 0)).ToString(System.Globalization.CultureInfo.InvariantCulture)
+                + (elite ? ", and 1 for Elite, C8.2" : string.Empty) + (shortage ? ", less 1 for Ammunition Shortage, A19.131" : string.Empty) + close : string.Empty);
 
-    /// <summary>A recorded Depletion Number in a record's words, with the one an Elite force added (C8.2): what a record says of the number it names.</summary>
-    public static string DepletionNumberWords(int number, bool elite) => DepletionWords(number, elite);
+    /// <summary>
+    /// A recorded Depletion Number in a record's words, with the one an Elite force added (C8.2) and the one an Ammunition Shortage took away (A19.131): what
+    /// a record says of the number it names.
+    /// </summary>
+    public static string DepletionNumberWords(int number, bool elite, bool shortage = false) => DepletionWords(number, elite, shortage: shortage);
 
     /// <summary>
     /// The Depletion Number a shot's declared ammunition is fired under, in words (C8.9; pass 55, ruling R55.7), or null when it has none: what
@@ -252,7 +260,7 @@ public static class ScenarioA1Definitions
     {
         ArgumentNullException.ThrowIfNull(shot);
         return OrdnanceReference.Value.Guns.TryGetValue(shot.Gun?.DefinitionId ?? string.Empty, out var gun) && ScenarioA1ArmorCalculator.ShotDepletion(shot, gun) is { } number
-            ? DepletionWords(number, shot.Elite == true) : null;
+            ? DepletionWords(number, shot.Elite == true, shortage: shot.AmmunitionShortage == true) : null;
     }
 
     /// <summary>
@@ -263,7 +271,8 @@ public static class ScenarioA1Definitions
     /// and only at Infantry behind a wall or in a building or rubble, which the shot decides. Nothing to choose when the Gun has only an HE that is
     /// assumed (C2.21); its HE is then not named.
     /// </summary>
-    public static IReadOnlyList<AmmunitionChoice> AmmunitionChoices(string definition, bool vehicleTarget, int? year, int? month, bool elite, IReadOnlyList<string> depleted)
+    public static IReadOnlyList<AmmunitionChoice> AmmunitionChoices(string definition, bool vehicleTarget, int? year, int? month, bool elite, IReadOnlyList<string> depleted,
+        bool shortage = false)
     {
         ArgumentNullException.ThrowIfNull(depleted);
         if (!OrdnanceReference.Value.Guns.TryGetValue(definition, out var gun) || gun.GunType == "latw")
@@ -281,10 +290,10 @@ public static class ScenarioA1Definitions
         return [.. offered.Select(ammunition =>
         {
             var special = ammunition is "apcr" or "apds" or "heat" || ScenarioA1ArmorCalculator.Lists(gun, ammunition);
-            var number = special ? ScenarioA1ArmorCalculator.Depletion(gun, ammunition, year, month, elite) : null;
+            var number = special ? ScenarioA1ArmorCalculator.Depletion(gun, ammunition, year, month, elite, shortage) : null;
             var name = AmmunitionName(ammunition);
             var fp = vehicleTarget ? null : ScenarioA1HeEquivalency.Firepower(ammunition, ScenarioA1HeEquivalency.Gun, gun.Caliber, heFirepower);
-            return new AmmunitionChoice(ammunition, number is { } held ? $"{name} ({DepletionWords(held, elite, ": ", string.Empty)})" : name, number,
+            return new AmmunitionChoice(ammunition, number is { } held ? $"{name} ({DepletionWords(held, elite, ": ", string.Empty, shortage)})" : name, number,
                 depleted.Contains(ammunition, StringComparer.Ordinal) ? "it has run out (C8.9)"
                     : special && number is null ? NoneAtTheDate(ammunition, ScenarioA1ArmorCalculator.StartMonthUnknown(gun, ammunition, year, month)) : null)
             {

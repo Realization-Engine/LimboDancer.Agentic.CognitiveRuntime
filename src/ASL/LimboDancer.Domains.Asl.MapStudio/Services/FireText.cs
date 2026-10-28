@@ -37,6 +37,15 @@ public sealed record FireView(string EventId, string Group, string Target, strin
         get; init;
     }
 
+    /// <summary>
+    /// The Unit Replacement of the firing side's MMC an Original 12 under Ammunition Shortage brought, in lines (A19.131; pass 72, ruling R72.11); null when
+    /// none. They name only the firing side's units, so the firing side reads them even from a record withheld from it.
+    /// </summary>
+    public IReadOnlyList<string>? Shortage
+    {
+        get; init;
+    }
+
     /// <summary>Whether several units fire, so the record's verb agrees: "fire", not "fires".</summary>
     public bool Several
     {
@@ -207,6 +216,30 @@ public static class FireText
         }
 
         return parts.Count == 0 ? "unaffected" : string.Join(", ", parts);
+    }
+
+    /// <summary>
+    /// The Unit Replacement of an Original 12 under Ammunition Shortage, one line for each MMC it fell on (A19.131, A.9; pass 72, ruling R72.11), with the
+    /// firer's Location as the record names it: "r1 in bd03:A3:0: the Original 12 under Ammunition Shortage (Random Selection dr 5, A.9): Replaced by
+    /// defender-conscript-squad (A19.131)", which a view reads with names and the hex in brackets. Null when there is none.
+    /// </summary>
+    public static IReadOnlyList<string>? ShortageLines(IReadOnlyList<FireUnitEffect>? effects, IReadOnlyList<FireFirer>? firers)
+    {
+        if (effects is not { Count: > 0 })
+        {
+            return null;
+        }
+
+        return [.. effects.Select(effect =>
+        {
+            var at = firers?.FirstOrDefault(firer => firer.UnitId == effect.UnitId)?.LocationId;
+            var what = effect.SplitIntoHalfSquads == true ? $"Replaced by its two HS, {effect.FinalDefinitionId}"
+                : effect.FinalDefinitionId != effect.DefinitionId ? $"Replaced by {effect.FinalDefinitionId}" + (effect.Broken ? ", broken" : string.Empty)
+                : effect.Events.Contains("ammunition-shortage-berserk") ? "incapable of further quality loss but berserk, so not broken"
+                : "incapable of further quality loss, so broken";
+            return $"{effect.UnitId}{(at is null ? string.Empty : " in " + at)}: the Original 12 under Ammunition Shortage"
+                + (effect.RandomSelectionDr is { } dr ? $" (Random Selection dr {dr.ToString(CultureInfo.InvariantCulture)}, A.9)" : string.Empty) + $": {what} (A19.131)";
+        })];
     }
 
     /// <summary>A MC, NTC, LLMC, or LLTC with its arithmetic, for example "NMC 4, 4 = 8 against 7: failed".</summary>

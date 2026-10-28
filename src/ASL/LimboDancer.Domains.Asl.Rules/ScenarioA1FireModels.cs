@@ -312,6 +312,18 @@ public sealed record FireAttack(
     }
 
     /// <summary>
+    /// Whether an SSR cites the firing side's on-board OB as afflicted by Ammunition Shortages (A19.131, p. 86; pass 72, rulings R72.11, R72.12): the B# and
+    /// X# of its SW (not a DC, not a captured SW) are one lower, and an Original 12 IFT DR by a fire group in which a MMC used its Inherent FP Replaces one
+    /// such MMC. The planner's read of the <c>ammo-shortage:</c> SSR; the verifier checks it against the state for an attack that carries
+    /// <see cref="UnitSubstitution"/>. Null is false, and every record made before increment 5d has none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? AmmunitionShortage
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Pass 31 (ruling R31.3; A7.81): pinned Infantry fires its MG as Area Fire and keeps no Multiple ROF. The planner records it with every attack
     /// from the pass on; an attack recorded before it has none, and replays as it was resolved.
     /// </summary>
@@ -1394,6 +1406,16 @@ public sealed record FireRolls(
         get; init;
     }
 
+    /// <summary>
+    /// One dr per MMC that used its Inherent FP, when an Original 12 under Ammunition Shortage falls on a fire group of two or more of them (A19.131, A.9;
+    /// pass 72, ruling R72.11): the highest is Replaced, ties with it.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, int>? ShortageSelection
+    {
+        get; init;
+    }
+
     /// <summary>The Heat of Battle DR of each unit whose Original MC DR was 2 (A15.1).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyDictionary<string, IReadOnlyList<int>>? HeatOfBattle
@@ -1737,6 +1759,18 @@ public sealed record FireResolution(
     /// <summary>The NMC FPF inflicts on its firers and directing leader (A8.31); null for other fire.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<FireUnitEffect>? FirerEffects
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Unit Replacement an Original 12 IFT DR under Ammunition Shortage brings on the firing side's MMC that used its Inherent FP (A19.131, p. 86; pass 72,
+    /// ruling R72.11), after the attack and its SW's malfunction or removal: the one Random Selection picks (ties with it), Replaced by the next lower quality
+    /// unit with its broken or unbroken status, an underscored squad by its two HS, and one incapable of further quality loss broken unless berserk. Null
+    /// when none is.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireUnitEffect>? ShortageEffects
     {
         get; init;
     }

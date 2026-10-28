@@ -1188,6 +1188,7 @@ public static class ScenarioA1FireCalculator
         || rolls.WeaponSelection?.Values.Any(dr => dr is < 1 or > 6) == true
         || rolls.FirerSelection?.Values.Any(dr => dr is < 1 or > 6) == true
         || rolls.CowerSelection?.Values.Any(dr => dr is < 1 or > 6) == true
+        || rolls.ShortageSelection?.Values.Any(dr => dr is < 1 or > 6) == true
         || rolls.HeatOfBattle?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
         || rolls.BerserkChecks?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
         || rolls.CrewChecks?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
@@ -1748,6 +1749,9 @@ public static class ScenarioA1FireCalculator
 
             var overrunEffect = attack.Overrun is { } overrunning ? OverrunEffect(overrunning, arithmetic) : null;
             var firerEffects = attack.FireKind == FinalProtectiveFire ? FinalProtectiveFireChecks(arithmetic) : null;
+
+            // A19.131 (pass 72, ruling R72.11): after the SW's malfunction or removal, the Unit Replacement of an Original 12 under Ammunition Shortage.
+            var shortageEffects = ShortageReplacements(arithmetic, firerEffects);
             var vehicleEffects = vehicles.Count == 0 || vehicleSpared ? null : VehicleEffects(arithmetic);
             var destruction = WeaponDestruction();
             if (undecided.Count != 0)
@@ -1779,6 +1783,7 @@ public static class ScenarioA1FireCalculator
                 CoweredUnitIds = cowering.Count == 0 ? null : [.. (attack.Firers ?? []).Select(item => item.UnitId!).Where(cowering.Contains)],
                 WeaponEffects = weapons,
                 FirerEffects = firerEffects,
+                ShortageEffects = shortageEffects,
                 CompanionEffects = companions,
                 VehicleEffects = vehicleEffects,
                 OverrunEffect = overrunEffect,
@@ -4025,6 +4030,17 @@ public static class ScenarioA1FireCalculator
                 multipliers.Aggregate((decimal)printed, (value, item) => value * item.Value));
         }
 
+        /// <summary>
+        /// Whether a firer adds its inherent FP (A7.351, A7.352): a squad keeps it with one SW, not two; a HS loses it with any; A15.23 (ruling R15.11): so does
+        /// a hero.
+        /// </summary>
+        private static bool UsesInherent(FireFirer firer, FireDefinition definition)
+        {
+            var weapons = firer.Weapons ?? [];
+            return firer.UsesInherentFp != false && !(definition.Kind == "asl:squad" && weapons.Count >= 2)
+                && !((definition.Kind == "asl:half-squad" || definition.IsHero) && weapons.Count >= 1);
+        }
+
         private IEnumerable<FirerFirepower> Firepower(bool vsConcealed)
         {
             foreach (var firer in attack.Firers!)
@@ -4033,9 +4049,7 @@ public static class ScenarioA1FireCalculator
                 var range = RangeOf(attack, firer)!.Value;
                 var weapons = firer.Weapons ?? [];
 
-                // A7.351, A7.352: a squad keeps its inherent FP with one SW, not two; a HS loses it with any; A15.23 (ruling R15.11): so does a hero.
-                var inherent = firer.UsesInherentFp != false && !(definition.Kind == "asl:squad" && weapons.Count >= 2)
-                    && !((definition.Kind == "asl:half-squad" || definition.IsHero) && weapons.Count >= 1);
+                var inherent = UsesInherent(firer, definition);
 
                 // A22.611, A22.6111 (ruling R15.4): a HS, crew, or SMC that fails its MOL Check has spent its attack; a MOL user broken by the colored dr
                 // adds nothing.
@@ -4213,6 +4227,12 @@ public static class ScenarioA1FireCalculator
             return inexperienced ? 1 : 0;
         }
 
+        /// <summary>
+        /// A19.131 (p. 86; pass 72, ruling R72.12): "all SW Original B#/X# [EXC: DC] ... are decreased by one during an Ammunition Shortage", a FT's removal number
+        /// included; A21.11 (p. 88): "Ammunition Shortage (19.131) penalties do not apply to captured Gun/SW". A DC is no weapon of this list.
+        /// </summary>
+        private int Shortage(FireWeapon weapon) => attack.AmmunitionShortage == true && weapon.Captured != true ? 1 : 0;
+
         /// <summary>What the attack did to each MG: malfunction on the Original DR (A9.7, A9.71) and Multiple ROF on the colored die (A9.2).</summary>
         private List<FireWeaponEffect>? WeaponEffects(FireArithmetic arithmetic, bool malfunction = true)
         {
@@ -4226,11 +4246,11 @@ public static class ScenarioA1FireCalculator
             // A22.3, A22.5 (ruling R15.1): a FT's removal number is ten, two lower for a non-elite user and two lower again when captured.
             var breakdown = weapons.ToDictionary(weapon => weapon.EquipmentId!,
                 weapon => reference.Definitions[weapon.DefinitionId!] is { IsFt: true } ft
-                    ? -(attack.BreakdownReduction ?? 0) + AssaultWeaponRemoval(ft, (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is { } user
+                    ? -(attack.BreakdownReduction ?? 0) - Shortage(weapon) + AssaultWeaponRemoval(ft, (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is { } user
                         ? reference.Definitions[user.DefinitionId!] : null, weapon.Captured == true,
                         (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true)?.Inexperienced == true)
                     : (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? 2 : 0) - Inexperience(weapon)
-                    - (weapon.Captured == true ? 2 : 0) - (attack.BreakdownReduction ?? 0), StringComparer.Ordinal);
+                    - (weapon.Captured == true ? 2 : 0) - (attack.BreakdownReduction ?? 0) - Shortage(weapon), StringComparer.Ordinal);
             var reached = malfunction ? weapons.Where(weapon => original >= breakdown[weapon.EquipmentId!]).Select(weapon => weapon.EquipmentId!).ToArray() : [];
             var malfunctioned = new HashSet<string>(StringComparer.Ordinal);
             var selection = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -4278,9 +4298,10 @@ public static class ScenarioA1FireCalculator
                 // removed on a DR at least its printed B# (the page's LMG in Sustained Fire: B10, X12). A FT's own removal is ruling R15.1's.
                 var definition = reference.Definitions[weapon.DefinitionId!];
                 var printed = definition.Breakdown ?? 12;
-                var lowered = sustained || weapon.Captured == true || Inexperience(weapon) > 0;
+                // A19.131 (pass 72, ruling R72.12): Ammunition Shortage lowers the B# ("A.11 would apply") and the X# with it, as Extreme Winter does.
+                var lowered = sustained || weapon.Captured == true || Inexperience(weapon) > 0 || Shortage(weapon) > 0;
                 var removed = attack.CoweringMarksAndWeaponResidual == true && !definition.IsFt && malfunctioned.Contains(id) && lowered
-                    && original >= printed - (attack.BreakdownReduction ?? 0);
+                    && original >= printed - (attack.BreakdownReduction ?? 0) - Shortage(weapon);
                 return new FireWeaponEffect(id, breakdown[id], malfunctioned.Contains(id), retained, sustained,
                     retained ? null : sustained ? "final-fire" : operatorUnit is null ? counter : OwnCounter(operatorUnit), selection.TryGetValue(id, out var dr) ? dr : null)
                 {
@@ -4362,6 +4383,77 @@ public static class ScenarioA1FireCalculator
             }
 
             return firers.Select(item => item.Effect()).ToList();
+        }
+
+        /// <summary>
+        /// A19.131 (p. 86; pass 72, ruling R72.11): "any MMC of that side which rolls an Original 12 DR on the IFT while using its Inherent FP suffers Unit
+        /// Replacement after the attack which caused it is resolved. Any MMC subject to, but incapable of, further quality loss is broken after resolution of the
+        /// attack, unless berserk. Not all members of a FG would be subject to Unit Replacement; determine the MMC affected by Random Selection after malfunction
+        /// or elimination of applicable SW." Read after the SW's effects and an FPF firer's NMC: a firer that NMC eliminated, Reduced, or Replaced is no longer
+        /// the unit that fired. A.9 (p. 43): the highest dr is affected, and "all of the applicable units which rolled that number are affected equally". The
+        /// Replaced unit keeps its broken or unbroken status; an underscored squad becomes its two HS (A19.13); an underscored HS and a crew are incapable. "No
+        /// effect on CC, Sniper, or Residual FP attacks": the first two are no fire attack, and Residual FP has no firers. Spraying Fire is one attack on one DR
+        /// (A9.5): it is read once, with its second Location, after both are resolved. Null when none is affected.
+        /// </summary>
+        private List<FireUnitEffect>? ShortageReplacements(FireArithmetic arithmetic, IReadOnlyList<FireUnitEffect>? firerEffects)
+        {
+            if (attack.AmmunitionShortage != true || arithmetic.OriginalDr != 12 || undecided.Count != 0 || (attack.SprayingFire == true && attack.SprayShare != true)
+                || attack.FireKind == ResidualFire || attack.VehicleFire is not null)
+            {
+                return null;
+            }
+
+            var after = (firerEffects ?? []).ToDictionary(effect => effect.UnitId, StringComparer.Ordinal);
+            var candidates = (attack.Firers ?? []).Where(firer => reference.Definitions.GetValueOrDefault(firer.DefinitionId ?? string.Empty) is { } definition
+                    && (definition.IsMmc || definition.Kind == "asl:crew") && UsesInherent(firer, definition)
+                    && !(after.TryGetValue(firer.UnitId!, out var nmc) && (nmc.Eliminated || nmc.FinalDefinitionId != nmc.DefinitionId)))
+                .ToArray();
+            if (candidates.Length == 0)
+            {
+                return null;
+            }
+
+            var drs = new Dictionary<string, int>(StringComparer.Ordinal);
+            if (candidates.Length > 1)
+            {
+                foreach (var firer in candidates)
+                {
+                    if (attack.Rolls!.ShortageSelection?.TryGetValue(firer.UnitId!, out var dr) != true)
+                    {
+                        undecided.Add("asl.a1.fire.roll-missing:shortageSelection:" + string.Join(",", candidates.Select(item => item.UnitId)));
+                        return null;
+                    }
+
+                    drs[firer.UnitId!] = dr;
+                    usedRolls.Add("shortageSelection:" + firer.UnitId);
+                }
+            }
+
+            var highest = drs.Count == 0 ? 0 : drs.Values.Max();
+            return [.. candidates.Where(firer => drs.Count == 0 || drs[firer.UnitId!] == highest).Select(firer =>
+            {
+                var id = firer.DefinitionId!;
+                var definition = reference.Definitions[id];
+                var nmc = after.GetValueOrDefault(firer.UnitId!);
+                var broken = nmc?.Broken ?? firer.Broken == true;
+                var pinned = nmc?.Pinned ?? firer.Pinned == true;
+                var half = definition is { Kind: "asl:squad", UnderscoredMorale: true } ? ScenarioA1FireReference.HalfSquadOf(id) : null;
+                var replacement = half ?? (definition.UnderscoredMorale == true ? null : ScenarioA1FireReference.ReplacementOf(id));
+                int? dr = drs.TryGetValue(firer.UnitId!, out var selected) ? selected : null;
+                if (replacement is not null)
+                {
+                    return new FireUnitEffect(firer.UnitId!, id, replacement, dr, false, broken, pinned, false, false, false,
+                        [half is not null ? "ammunition-shortage-half-squads" : "ammunition-shortage-replaced"], [])
+                    {
+                        SplitIntoHalfSquads = half is not null ? true : null,
+                    };
+                }
+
+                // Incapable of further quality loss: broken, unless berserk.
+                var berserk = firer.Berserk == true;
+                return new FireUnitEffect(firer.UnitId!, id, id, dr, false, broken || !berserk, pinned, false, false, false,
+                    [berserk ? "ammunition-shortage-berserk" : "ammunition-shortage-broken"], []);
+            })];
         }
 
         private void Apply(string result, IReadOnlyList<TargetState> group)
@@ -5038,6 +5130,7 @@ public static class ScenarioA1FireCalculator
                 .Concat(rolls.WeaponSelection?.Keys.Select(id => "weaponSelection:" + id) ?? [])
                 .Concat(rolls.FirerSelection?.Keys.Select(id => "firerSelection:" + id) ?? [])
                 .Concat(rolls.CowerSelection?.Keys.Select(id => "cowerSelection:" + id) ?? [])
+                .Concat(rolls.ShortageSelection?.Keys.Select(id => "shortageSelection:" + id) ?? [])
                 .Concat(rolls.HeatOfBattle?.Keys.Select(id => "heatOfBattle:" + id) ?? [])
                 .Concat(rolls.BerserkChecks?.Keys.Select(id => "berserkCheck:" + id) ?? [])
                 .Concat(rolls.CrewChecks?.Keys.Select(id => "crewCheck:" + id) ?? [])
