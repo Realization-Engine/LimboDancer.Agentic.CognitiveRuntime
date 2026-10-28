@@ -200,6 +200,7 @@ public static class ScenarioA1FireEligibility
             Berserk = facts.Berserk ? true : null,
             Inexperienced = facts.Inexperienced,
             Flamethrowers = facts.Flamethrowers,
+            UnderscoredElr = facts.UnderscoredElr,
         };
     }
 
@@ -465,6 +466,7 @@ public static class ScenarioA1FireEligibility
             Mol = facts.Mol ? true : null,
             Inexperienced = facts.Inexperienced,
             Berserk = facts.Berserk ? true : null,
+            UnderscoredElr = facts.UnderscoredElr,
         };
     }
 

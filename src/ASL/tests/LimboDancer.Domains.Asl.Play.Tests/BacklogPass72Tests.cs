@@ -39,6 +39,9 @@ public sealed class BacklogPass72Tests : IDisposable
     // The hexes a test floods: Water, a Water Obstacle (B21.1), whose entry the movement model refuses.
     private readonly HashSet<string> water = new(StringComparer.Ordinal);
 
+    // The game's special rules, as a card's tokens (increment 5c); none unless a test sets them.
+    private string[] ssrs = [];
+
     public BacklogPass72Tests() => store = new FileGameStore(root);
 
     public void Dispose()
@@ -167,24 +170,30 @@ public sealed class BacklogPass72Tests : IDisposable
     /// <summary>A German game against the Russians, left in the German MPh.</summary>
     private async Task Setup(params Dictionary<string, object>[] placements)
     {
+        var start = new Dictionary<string, object>
+        {
+            ["label"] = nameof(BacklogPass72Tests),
+            ["catalog"] = $"asl-scenario-a1@{LiveFire.CatalogVersion}",
+            ["boards"] = Bd01,
+            ["firstSide"] = "german",
+            ["sides"] = new object[]
+            {
+                new { id = "german", nationality = "german", elr = 3, friendlyEdge = "left" },
+                new { id = "russian", nationality = "russian", elr = 2, friendlyEdge = "right" },
+            },
+            ["scenarioMonth"] = 7,
+        };
+        if (ssrs.Length > 0)
+        {
+            start["specialRules"] = ssrs;
+        }
+
         Committed(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
         {
             gameId = Scope.Game,
             attemptId = "setup-1",
             expectedRevision = 0,
-            start = new Dictionary<string, object>
-            {
-                ["label"] = nameof(BacklogPass72Tests),
-                ["catalog"] = $"asl-scenario-a1@{LiveFire.CatalogVersion}",
-                ["boards"] = Bd01,
-                ["firstSide"] = "german",
-                ["sides"] = new object[]
-                {
-                    new { id = "german", nationality = "german", elr = 3, friendlyEdge = "left" },
-                    new { id = "russian", nationality = "russian", elr = 2, friendlyEdge = "right" },
-                },
-                ["scenarioMonth"] = 7,
-            },
+            start,
             placements,
         })));
         for (var index = 0; index < 2; index++)
@@ -519,6 +528,64 @@ public sealed class BacklogPass72Tests : IDisposable
         Assert.Equal(InstanceStatus.Wrecked, Current.Unit("ru-t")!.Status);
         Assert.Equal(infantryLeft ? [] : G1, BerserkEnded(before));
         Assert.Equal(infantryLeft, Is(Current.Unit("g1")!, Conditions.Berserk));
+        NoReplayErrors();
+    }
+
+    // Increment 5c: the SSR tokens, A19.132's SSR ELR, and A19.32's MG B# (rulings R72.9, R72.10, R72.13).
+
+    private static readonly string[] RussianPair = ["r1", "r2"];
+    private static readonly string[] RussianGunner = ["r1"];
+
+    [Fact]
+    public async Task UnderAnSsrElrOfThreeAFailedMcReplacesTheGermanEngineerSquadByTheConscript()
+    {
+        // A19.132 (p. 86; ruling R72.13): the SSR underscored-elr:german:3. In the German DFPh the two Russian 4-4-7 in C4 fire PBF at the German 8-3-8 in C5:
+        // 16 FP, the DR 3 + 4 a 2MC; its check 5 + 5 (12) fails Morale Level 8 by four, beyond the SSR's ELR of 3 (R15.9's 5 would only break it). It is
+        // Replaced by a broken 4-3-6 Conscript; the record carries the target's SSR ELR and the pass's stamp, and the game replays without error.
+        ssrs = ["underscored-elr:german:3"];
+        await Setup(Unit("g1", "asl:squad", "attacker-elite-squad-8-3-8", "C5", "german"), Squad("r1", "C4", "russian"), Squad("r2", "C4", "russian"));
+        Assert.Contains("underscored-elr:german:3", Current.SpecialRules);
+        await AdvanceTo("dfph");
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(3, 4, 5, 5), new Dictionary<string, object> { ["firers"] = RussianPair, ["target"] = L("C5") }));
+        var fire = Assert.Single(Since(before).Select(item => item.Payload).OfType<FireResolved>());
+        Assert.True(fire.Facts.GetProperty("unitSubstitution").GetBoolean());
+        Assert.Equal(3, fire.Facts.GetProperty("targets")[0].GetProperty("underscoredElr").GetInt32());
+        var replaced = Assert.Single(Current.Units, unit => unit.Status == InstanceStatus.Active && unit.Side == "german");
+        Assert.Equal(("attacker-conscript-squad", At("C5"), true), (replaced.Definition!.Definition, Current.Location(replaced.Id)!.Location, Is(replaced, Conditions.Broken)));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AConscriptSquadsLmgMalfunctionsAtItsLoweredBreakdownNumber()
+    {
+        // A19.32 (p. 86; ruling R72.9, R9.10 lifted): in the German DFPh the Russian 4-2-6 Conscript in C3 fires its LMG with its inherent FP at the German 4-6-7
+        // in C5, two hexes off. Its Original DR 4 + 6 (10) is one below the LMG's B11: in a Conscript's hands its B# is 10, so it malfunctions.
+        await Setup(Squad("g1", "C5", "german"), Unit("r1", "asl:squad", "defender-conscript-squad", "C3", "russian"), new Dictionary<string, object>
+        {
+            ["id"] = "m1",
+            ["kind"] = "asl:mg",
+            ["definition"] = "defender-lmg",
+            ["side"] = "russian",
+            ["holding"] = new
+            {
+                holder = "r1",
+                role = "possessed"
+            },
+            ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+        });
+        await AdvanceTo("dfph");
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(4, 6, 2, 3), new
+        {
+            firers = RussianGunner,
+            weapons = new Dictionary<string, string[]> { ["r1"] = ["m1"] },
+            target = L("C5"),
+        }));
+        var fire = Assert.Single(Since(before).Select(item => item.Payload).OfType<FireResolved>());
+        var effect = fire.Resolution.GetProperty("weaponEffects")[0];
+        Assert.Equal((10, true), (effect.GetProperty("breakdownNumber").GetInt32(), effect.GetProperty("malfunctioned").GetBoolean()));
+        Assert.True(Is(Current.Find("m1")!, Conditions.Malfunctioned));
         NoReplayErrors();
     }
 }

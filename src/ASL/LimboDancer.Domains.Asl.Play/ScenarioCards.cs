@@ -420,6 +420,11 @@ public static class ScenarioCards
             FanaticTokens = [.. rule.Tokens.Where(token => token.StartsWith(ScenarioA1GameStart.FanaticRule, StringComparison.Ordinal))
                 .Select(token => (token, ScenarioA1GameStart.FanaticToken(token) is { } named && card.Sides.FirstOrDefault(side => side.Side == named.Side) is { } fanatic
                     && (named.Group is null || fanatic.Groups.Select((_, index) => GroupId(fanatic.Side, index)).Contains(named.Group, StringComparer.Ordinal))))],
+
+            // Ruling R72.10 (A19.131, A19.132): so is a Unit Substitution token, which Rules parses.
+            SubstitutionTokens = [.. rule.Tokens.Where(ScenarioA1UnitSubstitution.IsSubstitutionToken)
+                .Select(token => (token, ScenarioA1UnitSubstitution.Named(token) is { } named && card.Sides.FirstOrDefault(side => side.Side == named.Side) is { } substituted
+                    && (named.Group is null || substituted.Groups.Select((_, index) => GroupId(substituted.Side, index)).Contains(named.Group, StringComparer.Ordinal))))],
         })], RuleStatuses, CitableRules));
 
         var start = new JsonObject

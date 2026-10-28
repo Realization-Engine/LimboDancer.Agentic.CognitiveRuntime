@@ -37,6 +37,15 @@ public sealed record CardRuleFacts(int Number, string Status, int Tokens, string
     {
         get; init;
     } = [];
+
+    /// <summary>
+    /// Its <c>ammo-shortage:</c> and <c>underscored-elr:</c> tokens (A19.131, A19.132; pass 72, ruling R72.10), each with whether it is well formed and names a
+    /// side of the card, and an OB group of that side when it names one; empty for none.
+    /// </summary>
+    public IReadOnlyList<(string Token, bool Named)> SubstitutionTokens
+    {
+        get; init;
+    } = [];
 }
 
 /// <summary>A structured Victory Condition of a card as facts (ruling R21.3), with the fields its type reads.</summary>
@@ -418,6 +427,16 @@ public static class ScenarioA1SetupCalculator
                 if (!named)
                 {
                     yield return $"card.ssr: SSR {rule.Number}'s '{token}' names no side of the card, or no OB group of that side (A10.8; ruling R70.15)";
+                }
+            }
+
+            // Ruling R72.10 (A19.131, A19.132): a Unit Substitution token is well formed and names a side of the card, and an OB group of that side when it names one.
+            foreach (var (token, named) in rule.SubstitutionTokens)
+            {
+                if (!named)
+                {
+                    yield return $"card.ssr: SSR {rule.Number}'s '{token}' is not ammo-shortage:<side> or underscored-elr:<side>[:<group>]:<n> with n from 0 to 4, "
+                        + "naming a side of the card and an OB group of that side (A19.131, A19.132; ruling R72.10)";
                 }
             }
         }

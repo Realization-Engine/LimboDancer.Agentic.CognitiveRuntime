@@ -154,6 +154,7 @@ Each to be checked against the store's older records before it enters `SKIP_JSON
 
 **F13. An SSR ELR for underscored units (A19.132, R15.9).**
 - **R72.13:** a target, and an FPF firer, carry an `underscoredElr` fact from the token; `ElrOf` reads it in place of R15.9's 5, and a failure beyond it Replaces the unit by the normal table. The German 8-3-8 has no entry: it is Replaced by the 4-3-6 Conscript, the only lower-Class German MMC none of whose factors exceeds the 8-3-8's (A19.13: none may increase, the Class must decrease; the 4-4-7 and 4-6-7 have a longer range). The Finnish 8-3-8 stays as R15.13 has it. R15.9 still holds where no token is given.
+- **R72.15** (decided at 5c): with an SSR ELR, an underscored unit with no table entry but a HS of R19.7 is Replaced by that HS (the German 3-3-8 by the 2-3-7: lesser Class, no factor higher, A19.13); only one with neither is Disrupted (A19.12).
 
 **F14. A19.31.**
 - **R72.14:** built; verified and recorded only, with the per-unit `state.At` of `Experience.Inexperienced` read through the index if 5c touches it.
@@ -229,3 +230,28 @@ Built on 2026-10-27, about 20:12 to 20:47, by a building agent to a brief (`brie
 - `p72-berserk-tpbf-return` (board 3, Russian AFPh): a berserk 4-4-7 and a German HS in [A2]; dice 1 1: "4 FP x 3 (TPBF) x 0.5 (Advancing Fire) = 6", 1KIA, then "4-4-7 squad R1 in [A2] eliminated every Known enemy unit in its Location by its TPBF or FT in the AFPh, so it is no longer berserk and returns to Good Order (A15.46)".
 - `p72-berserk-vehicle-cc-return` (board 3, German CCPh): a berserk 4-6-7 and a lone T-34 in [A2]; "Infantry attack the vehicle", dice 1 2 against Kill Number 5: wrecked, and the same return line by destroying the vehicle in CC.
 - Tests, by method (the agent's report): Rules 25 (including, by a slip, one whole class, `ScenarioA1SequenceRulesTests`); Play 15 and 1 more (the pass's class and five shared-Location fire methods for the targets change). Strict builds exit 0.
+
+## 10. The SSR tokens, A19.132, and A19.32: 72.2, part I (increment 5c)
+
+Built on 2026-10-27, about 21:00 to 21:23, by a building agent to a brief (`brief_5c.md`), rulings R72.9, R72.10, R72.13, R72.14, its diff read and its games played in the Studio by the session.
+
+### 10.1 Departures from the frame, first
+
+- **The German 3-3-8 under an SSR ELR becomes the 2-3-7** (the agent's decision, now ruling R72.15 below): with the token, Replacement goes through `ScenarioA1FireReference.UnderscoredReplacementOf`, which is `ReplacementOf` or, where that has nothing, the HS of R19.7 (`CasualtyHalfSquadOf`). A19.13 allows it (lesser Class, no factor higher), so A19.12's Disruption does not apply. No table row was added: `ScenarioA1Pass19bTests.TheTablesKnowTheCardSquads` asserts `ReplacementOf(3-3-8)` is null.
+- **A19.32's -1 is applied to every SW but the FT** under the stamp. **For the referee's review:** A19.32 reads "any SW"; whether a FT has a B# or X# the -1 can reach.
+- **A PRC (a Passenger 8-3-8) keeps R15.9:** `FirePrc` gets no `underscoredElr`. A backlog row.
+- **Morale checks carry no stamp:** their verifier checks `underscoredElr` against the state only when the record carries it.
+- **Unverified before the gate:** the ten new token rows of `BacklogPass17Tests.TheSsrTokensAreCheckedAsANewGameChecksThem` and `ScenarioA1Pass19bTests.EveryPackageKnowsTheCardCounters` walk up to the repository's root, which the filtered runs (built outside the repository) do not have. The gate's suite runs them.
+
+### 10.2 What is built
+
+- `Rules/ScenarioA1UnitSubstitution.cs`: the tokens `ammo-shortage:<side>` and `underscored-elr:<side>[:<group>]:<n>` (n 0 to 4), their readers (`AmmunitionShortage(rules, side)`, `UnderscoredElr(rules, side, group, definition)`: underscored MMC only, a group's token before the side's), `RulesBar`; called from `ScenarioA1NightAndWeather.RulesBar` and the card's `RuleDiagnostics` (`card.ssr:`).
+- New facts: `FireAttack.UnitSubstitution` (`unitSubstitution`, the pass's stamp, beside pass 45's); `FireTarget.UnderscoredElr` and `FireFirer.UnderscoredElr` (`underscoredElr`), copied to FPF firers.
+- `ElrOf` returns `UnderscoredElr ?? 5` for an underscored MMC; `Replace` takes the table path when it is set; the German 8-3-8 is Replaced by the 4-3-6 (a new row). `AtrInexperience` became `Inexperience`: with the stamp, every SW but the FT is one lower in Inexperienced hands (the `Inexperienced` fact, or Conscript class where it is absent); without it, R9.10's ATR-only read by class.
+- Play: `LiveFire.UnderscoredElr(state, unit)`; the verifier takes the stamp from the record and the SSR ELR from the state only on a stamped record.
+
+### 10.3 The games and the tests
+
+- `p72-underscored-elr` (board 3, `underscored-elr:german:3`, Russian PFPh): two 4-4-7 in [A3] fire at a German 8-3-8 in [A2]; dice 3 4, then 5 5: "2MC; 8-3-8 squad in [A2]: now 4-3-6 squad, broken".
+- `p72-inexperienced-mg` (board 3, Russian PFPh): a Conscript 4-2-6 with a LMG in [A3] fires the LMG at [A1]; dice 4 6: recorded `breakdownNumber` 10, `malfunctioned` true; the records: "The LMG malfunctioned (A9.7)" (the line does not cite A19.32: for the fixes).
+- Tests, by method (the agent's report): Rules 17 methods (two of its own rows fixed and rerun, 7 passed); Play 13 methods, all but the ten Pass17 rows passed. Strict builds exit 0.

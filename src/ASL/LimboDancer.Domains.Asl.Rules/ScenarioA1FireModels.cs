@@ -300,6 +300,18 @@ public sealed record FireAttack(
     }
 
     /// <summary>
+    /// Pass 72 (A19.32, A19.132, p. 86; rulings R72.9, R72.13): the B# and X# of any SW used by Inexperienced Personnel are one lower, a MG's included
+    /// (ruling R9.10 lifted), read from the user's <see cref="FireFirer.Inexperienced"/> fact or, where it is absent, by Conscript class; and the verifier reads
+    /// the targets' and firers' <see cref="FireTarget.UnderscoredElr"/> from the state. The planner records it with every attack from the pass on; an attack
+    /// recorded before it has none, and replays as it was resolved (an Inexperienced MG keeps its printed B#).
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? UnitSubstitution
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Pass 31 (ruling R31.3; A7.81): pinned Infantry fires its MG as Area Fire and keeps no Multiple ROF. The planner records it with every attack
     /// from the pass on; an attack recorded before it has none, and replays as it was resolved.
     /// </summary>
@@ -1039,6 +1051,16 @@ public sealed record FireFirer(
         get; init;
     }
 
+    /// <summary>
+    /// The SSR ELR of a firer with an underscored Morale Factor (A19.132; pass 72, ruling R72.13), for the NMC FPF inflicts on it: in place of R15.9's 5.
+    /// Null when no <c>underscored-elr:</c> SSR names the unit's side or OB group, and in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? UnderscoredElr
+    {
+        get; init;
+    }
+
     /// <summary>Whether a Known enemy unit is in the firer's LOS (A15.44), the planner's read; needed when an FPF NMC can reach Heat of Battle.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? KnownEnemyInLos
@@ -1211,6 +1233,17 @@ public sealed record FireTarget(
     /// <summary>Whether a Green or Conscript MMC is Inexperienced (A19.2), for the Heat of Battle DRM; required for those classes.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Inexperienced
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The SSR ELR of a MMC with an underscored Morale Factor (A19.132, p. 86; pass 72, ruling R72.13): in place of R15.9's 5, and a failure beyond it
+    /// Replaces the unit by the normal table. Null when no <c>underscored-elr:</c> SSR names the unit's side or OB group, and in every record made before the
+    /// pass, which resolves as it did.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? UnderscoredElr
     {
         get; init;
     }

@@ -326,4 +326,200 @@ public sealed class ScenarioA1Pass72RulesTests
         Assert.Equal("4-4-7 squad R1 in [G5] eliminated every Known enemy unit in its Location by destroying the enemy vehicle in CC, so it is no longer berserk and "
             + "returns to Good Order (A15.46)", ScenarioA1SequenceCalculator.BerserkClearedText("4-4-7 squad R1 in [G5]", true));
     }
+
+    // Increment 5c: the SSR tokens, A19.132's SSR ELR for underscored units, and A19.32's MG B# in Inexperienced hands (rulings R72.9, R72.10, R72.13, R72.14).
+
+    private static readonly ScenarioA1FireReference Fire = new ScenarioA1FirePackage().Reference;
+    private static readonly string[] Shortage = ["ammo-shortage:german"];
+    private static readonly string[] SideElr = ["underscored-elr:german:3"];
+    private static readonly string[] GroupElr = ["underscored-elr:german:2", "underscored-elr:german:german-2:1"];
+    private static readonly string[] MalformedElr = ["underscored-elr:german:5"];
+    private static readonly string[] MalformedShortage = ["ammo-shortage:"];
+    private static readonly string[] TokenStatus = ["token"];
+    private const string Engineer = "attacker-elite-squad-8-3-8";
+    private const string FireFrom = "bd01:F5:0";
+    private const string FireAt = "bd01:G5:0";
+
+    [Fact]
+    public void TheUnitSubstitutionTokensAreParsedAndAMalformedOneIsRefused()
+    {
+        // A19.131, A19.132 (p. 86; ruling R72.10): ammo-shortage:<side>, and underscored-elr:<side>[:<group>]:<n> with n from 0 to 4 ("an ELR ≤ 4").
+        Assert.Equal("german", ScenarioA1UnitSubstitution.AmmunitionShortageToken("ammo-shortage:german"));
+        Assert.Null(ScenarioA1UnitSubstitution.AmmunitionShortageToken("ammo-shortage:"));
+        Assert.Null(ScenarioA1UnitSubstitution.AmmunitionShortageToken("ammo-shortage:german:x"));
+        Assert.Equal<(string, string?, int)?>(("german", null, 3), ScenarioA1UnitSubstitution.UnderscoredElrToken("underscored-elr:german:3"));
+        Assert.Equal<(string, string?, int)?>(("russian", "russian-2", 0), ScenarioA1UnitSubstitution.UnderscoredElrToken("underscored-elr:russian:russian-2:0"));
+        Assert.Null(ScenarioA1UnitSubstitution.UnderscoredElrToken("underscored-elr:german:5"));
+        Assert.Null(ScenarioA1UnitSubstitution.UnderscoredElrToken("underscored-elr:german"));
+        Assert.Null(ScenarioA1UnitSubstitution.UnderscoredElrToken("underscored-elr:german:-1"));
+
+        // The readers: Ammunition Shortage by side; the SSR ELR only for a MMC with an underscored Morale Factor, its group's token before its side's.
+        Assert.True(ScenarioA1UnitSubstitution.AmmunitionShortage(Shortage, "german"));
+        Assert.False(ScenarioA1UnitSubstitution.AmmunitionShortage(Shortage, "russian"));
+        Assert.Equal(3, ScenarioA1UnitSubstitution.UnderscoredElr(SideElr, "german", null, Fire.Definitions[Engineer]));
+        Assert.Null(ScenarioA1UnitSubstitution.UnderscoredElr(SideElr, "german", null, Fire.Definitions["attacker-squad"]));
+        Assert.Null(ScenarioA1UnitSubstitution.UnderscoredElr(SideElr, "russian", null, Fire.Definitions["defender-nkvd-squad"]));
+        Assert.Equal(1, ScenarioA1UnitSubstitution.UnderscoredElr(GroupElr, "german", "german-2", Fire.Definitions[Engineer]));
+        Assert.Equal(2, ScenarioA1UnitSubstitution.UnderscoredElr(GroupElr, "german", "german-1", Fire.Definitions[Engineer]));
+        Assert.Null(ScenarioA1UnitSubstitution.UnderscoredElr([], "german", null, Fire.Definitions[Engineer]));
+
+        // A new game refuses a malformed token; a card's names a side of the card (and one of its OB groups).
+        Assert.StartsWith("play.unit-substitution-rule: 'underscored-elr:german:5'", ScenarioA1NightAndWeather.RulesBar(MalformedElr, (_, _) => true, true, true),
+            StringComparison.Ordinal);
+        Assert.StartsWith("play.unit-substitution-rule: 'ammo-shortage:'", ScenarioA1NightAndWeather.RulesBar(MalformedShortage, (_, _) => true, true, true),
+            StringComparison.Ordinal);
+        Assert.Null(ScenarioA1NightAndWeather.RulesBar(GroupElr, (_, _) => true, true, true));
+        Assert.Null(ScenarioA1NightAndWeather.RulesBar(Shortage, (_, _) => true, true, true));
+        var rule = new CardRuleFacts(1, "token", 1, null, "The German OB has an ELR of 3 for its underscored units.", [], [])
+        {
+            SubstitutionTokens = [("underscored-elr:soviet:3", false), ("ammo-shortage:german", true)]
+        };
+        Assert.Contains("card.ssr: SSR 1's 'underscored-elr:soviet:3' is not", Assert.Single(ScenarioA1SetupCalculator.RuleDiagnostics([rule], TokenStatus, [])),
+            StringComparison.Ordinal);
+    }
+
+    // A 4-4-7 squad of the other side: a German one at a Russian target, a Russian one at any other.
+    private static FireFirer Rifle(string id, string target) =>
+        new(id, Fire.Definitions[target].Nationality == "russian" ? "attacker-2nd-line-squad" : "defender-squad", FireFrom, false, false, false, false, false);
+
+    // Two 4-4-7 squads at the underscored unit in the open, Point Blank: 16 FP; the IFT DR 3 + 4 is a 2MC.
+    private static FireAttack AtTheEngineers(string definition, int? underscoredElr) =>
+        new FireAttack("PFPh", "phasing", true, FireFrom, FireAt, [Rifle("f-1", definition), Rifle("f-2", definition)], null, 1, true, new FireLos(false, 0, true, false), null,
+            "open-ground",
+            [new FireTarget("de-t", definition, FireAt, false, false, false, false, false, false, false) { UnderscoredElr = underscoredElr }], 3,
+            new FireRolls([3, 4], null, null, null));
+
+    /// <summary>Resolves an attack, answering each check with the dice given and every other roll with the lowest it takes.</summary>
+    private static FireResolution Resolved(FireAttack attack, IReadOnlyList<int> checks)
+    {
+        var rolls = attack.Rolls!;
+        for (var step = 0; step < 20; step++)
+        {
+            var result = ScenarioA1FireCalculator.Resolve(attack with
+            {
+                Rolls = rolls
+            }, Fire);
+            if (result.Reasons is not [{ } reason] || !reason.StartsWith("asl.a1.fire.roll-missing:", StringComparison.Ordinal))
+            {
+                Assert.True(result.Disposition == FireResolution.Resolved, string.Join("; ", result.Reasons));
+                return result;
+            }
+
+            var key = reason["asl.a1.fire.roll-missing:".Length..];
+            var split = key.IndexOf(':', StringComparison.Ordinal);
+            var (kind, ids) = (key[..split], key[(split + 1)..].Split(','));
+            Dictionary<string, T> Add<T>(IReadOnlyDictionary<string, T>? existing, T value)
+            {
+                var next = existing?.ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal) ?? new(StringComparer.Ordinal);
+                foreach (var id in ids)
+                {
+                    next[id] = value;
+                }
+
+                return next;
+            }
+
+            rolls = kind switch
+            {
+                "randomSelection" => rolls with { RandomSelection = Add(rolls.RandomSelection, 1) },
+                "weaponSelection" => rolls with { WeaponSelection = Add(rolls.WeaponSelection, 1) },
+                "checks" => rolls with { Checks = Add(rolls.Checks, checks) },
+                _ => throw new InvalidOperationException(key),
+            };
+        }
+
+        throw new InvalidOperationException("The attack asked for too many rolls.");
+    }
+
+    [Fact]
+    public void AnSsrElrReplacesTheUnderscoredEngineerSquadByTheConscriptWhereR159OnlyBreaksIt()
+    {
+        // A19.132 (p. 86; ruling R72.13): the 2MC on 5 + 5 (12) fails the 8-3-8's Morale Level 8 by four. With the SSR ELR of 3 that is beyond its ELR, and it is
+        // Replaced normally, by a broken 4-3-6 Conscript.
+        var replaced = Assert.Single(Resolved(AtTheEngineers(Engineer, 3), [5, 5]).Effects);
+        Assert.Equal(("attacker-conscript-squad", true), (replaced.FinalDefinitionId, replaced.Broken));
+        Assert.Contains("replaced-elr", replaced.Events);
+        Assert.DoesNotContain("replaced-by-two-half-squads", replaced.Events);
+
+        // Without the SSR, R15.9's ELR of 5 holds: failed by four, the squad only breaks.
+        var broken = Assert.Single(Resolved(AtTheEngineers(Engineer, null), [5, 5]).Effects);
+        Assert.Equal((Engineer, true), (broken.FinalDefinitionId, broken.Broken));
+        Assert.DoesNotContain("replaced-elr", broken.Events);
+
+        // Failed by six (6 + 6 is an Original 12, a Casualty MC; so 6 + 5 Encircled), beyond 5: its two broken 3-3-8, as before the pass.
+        var split = Assert.Single(Resolved(AtTheEngineers(Engineer, null) with
+        {
+            Targets = [new FireTarget("de-t", Engineer, FireAt, false, false, false, false, false, false, false) { Encircled = true }]
+        }, [6, 5]).Effects);
+        Assert.Equal(("attacker-elite-half-squad-3-3-8", true), (split.FinalDefinitionId, split.Broken));
+        Assert.Contains("replaced-by-two-half-squads", split.Events);
+    }
+
+    [Theory]
+    // A19.132 (ruling R72.13): the 3-3-8 by the 2-3-7 ruled for it (ruling R19.7), the elite 2-4-8 HS by the 2-4-7, the NKVD 6-2-8 and 3-2-8 by the Conscript.
+    [InlineData("attacker-elite-half-squad-3-3-8", "attacker-2nd-line-half-squad", false)]
+    [InlineData("attacker-elite-half-squad", "attacker-half-squad", false)]
+    [InlineData("defender-nkvd-squad", "defender-conscript-squad", false)]
+    [InlineData("defender-nkvd-half-squad", "defender-conscript-half-squad", false)]
+    // The Finnish 8-3-8 and 3-3-8 are in neither of A25.72's progressions (ruling R15.13): never Replaced, so Disrupted (A19.12).
+    [InlineData("finnish-elite-squad", "finnish-elite-squad", true)]
+    [InlineData("finnish-elite-half-squad", "finnish-elite-half-squad", true)]
+    public void EveryUnderscoredMmcUnderAnSsrElrIsReplacedNormally(string definition, string replacement, bool disrupted)
+    {
+        Assert.True(Fire.Definitions[definition] is { IsMmc: true, UnderscoredMorale: true }, definition);
+        var morale = Fire.Definitions[definition].Morale!.Value;
+
+        // A check four over the Morale Level (the 2MC's +2 included), not an Original 12.
+        var total = morale + 4 - 2;
+        int[] checks = [Math.Min(6, total - 1), total - Math.Min(6, total - 1)];
+        var effect = Assert.Single(Resolved(AtTheEngineers(definition, 0), checks).Effects);
+        Assert.Equal((replacement, true, disrupted), (effect.FinalDefinitionId, effect.Broken, effect.Disrupted));
+    }
+
+    private static FireFirer Gunner(string definition, string weapon, bool? inexperienced) => new FireFirer("ru-1", definition, FireFrom, false, false, false, false, true)
+    {
+        Weapons = [new FireWeapon("mg", weapon, false, false, false)],
+        Inexperienced = inexperienced,
+    };
+
+    // A squad and its LMG at a German squad 2 hexes off in the open; the IFT DR is given.
+    private static FireWeaponEffect Lmg(FireFirer gunner, int[] dice, bool stamped) =>
+        Assert.Single(Resolved(new FireAttack("PFPh", "phasing", true, FireFrom, FireAt, [gunner], null, 2, true, new FireLos(false, 0, true, false), null, "open-ground",
+            [new FireTarget("de-t", "attacker-squad", FireAt, false, false, false, false, false, false, false)], 3, new FireRolls(dice, null, null, null)) with
+        {
+            UnitSubstitution = stamped ? true : null,
+            CoweringMarksAndWeaponResidual = stamped ? true : null,
+        }, [2, 3]).WeaponEffects!);
+
+    /// <summary>An IFT DR of a total, not doubles (no Cowering).</summary>
+    private static int[] Dr(int total) => [total - Math.Min(6, total - 1), Math.Min(6, total - 1)];
+
+    [Fact]
+    public void AConscriptsMgBreaksDownOneLowerWithThePassStampAndAsRecordedWithout()
+    {
+        // A19.32 (p. 86; ruling R72.9, R9.10 lifted): the Russian LMG's B# one lower in a Conscript's hands; an Original DR of B# - 1 malfunctions it, and as
+        // A.11 has it the lowered B# makes the printed one its X#, which this DR does not reach.
+        var printed = Fire.Definitions["defender-lmg"].Breakdown!.Value;
+        var dice = Dr(printed - 1);
+        var conscript = Gunner("defender-conscript-squad", "defender-lmg", null);
+        var stamped = Lmg(conscript, dice, stamped: true);
+        Assert.Equal((printed - 1, true, (bool?)null), (stamped.BreakdownNumber, stamped.Malfunctioned, stamped.Removed));
+
+        // Without the stamp, as dl-tractor-works-01 revision 1267 was recorded: B11 and an Original DR of 10, no malfunction.
+        var recorded = Lmg(conscript, dice, stamped: false);
+        Assert.Equal((printed, false), (recorded.BreakdownNumber, recorded.Malfunctioned));
+    }
+
+    [Fact]
+    public void AGreenSquadStackedWithALeaderKeepsItsMgsBreakdownNumber()
+    {
+        // A19.3 (p. 86): "A Green MMC stacked with an unbroken leader is exempt"; its Inexperienced fact is false, so its B# stays. Without the leader it is
+        // Inexperienced and its B# is one lower.
+        var printed = Fire.Definitions["british-lmg"].Breakdown!.Value;
+        var dice = Dr(printed - 1);
+        Assert.Equal((printed, false), Pair(Lmg(Gunner("british-green-squad", "british-lmg", false), dice, stamped: true)));
+        Assert.Equal((printed - 1, true), Pair(Lmg(Gunner("british-green-squad", "british-lmg", true), dice, stamped: true)));
+
+        static (int, bool) Pair(FireWeaponEffect effect) => (effect.BreakdownNumber, effect.Malfunctioned);
+    }
 }

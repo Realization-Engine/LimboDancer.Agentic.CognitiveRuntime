@@ -4194,13 +4194,26 @@ public static class ScenarioA1FireCalculator
             return multipliers;
         }
 
-        /// <summary>What the attack did to each MG: malfunction on the Original DR (A9.7, A9.71) and Multiple ROF on the colored die (A9.2).</summary>
-        /// <summary>A19.32 (referee, pass 9b): an ATR's B# is one lower in Inexperienced hands; the MG's is in backlog section 19.</summary>
-        private int AtrInexperience(FireWeapon weapon) =>
-            reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsAtr == true
-            && (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is { } operatorUnit
-            && reference.Definitions.GetValueOrDefault(operatorUnit.DefinitionId ?? string.Empty)?.Class is "green" or "conscript" ? 1 : 0;
+        /// <summary>
+        /// A19.32 (p. 86: "The Breakdown Number (even inherent B#/X#; 9.7) of any SW used by Inexperienced Personnel is reduced by one"): one lower in
+        /// Inexperienced hands. With the pass 72 stamp (ruling R72.9) any SW here, a MG included, by the user's Inexperienced fact (A19.3: a Green MMC stacked
+        /// with an unbroken leader is not), or by Conscript class where the fact is absent; a FT's is its removal number's (ruling R15.1). Without it, as
+        /// recorded before the pass (referee, pass 9b): an ATR's only, by Green or Conscript class (ruling R9.10).
+        /// </summary>
+        private int Inexperience(FireWeapon weapon)
+        {
+            var definition = reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty);
+            if (definition is null || definition.IsFt || (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is not { } operatorUnit)
+            {
+                return 0;
+            }
 
+            var @class = reference.Definitions.GetValueOrDefault(operatorUnit.DefinitionId ?? string.Empty)?.Class;
+            var inexperienced = attack.UnitSubstitution == true ? operatorUnit.Inexperienced ?? @class == "conscript" : definition.IsAtr && @class is "green" or "conscript";
+            return inexperienced ? 1 : 0;
+        }
+
+        /// <summary>What the attack did to each MG: malfunction on the Original DR (A9.7, A9.71) and Multiple ROF on the colored die (A9.2).</summary>
         private List<FireWeaponEffect>? WeaponEffects(FireArithmetic arithmetic, bool malfunction = true)
         {
             var weapons = (attack.Firers ?? []).SelectMany(item => item.Weapons ?? []).ToArray();
@@ -4216,7 +4229,7 @@ public static class ScenarioA1FireCalculator
                     ? -(attack.BreakdownReduction ?? 0) + AssaultWeaponRemoval(ft, (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is { } user
                         ? reference.Definitions[user.DefinitionId!] : null, weapon.Captured == true,
                         (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true)?.Inexperienced == true)
-                    : (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? 2 : 0) - AtrInexperience(weapon)
+                    : (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? 2 : 0) - Inexperience(weapon)
                     - (weapon.Captured == true ? 2 : 0) - (attack.BreakdownReduction ?? 0), StringComparer.Ordinal);
             var reached = malfunction ? weapons.Where(weapon => original >= breakdown[weapon.EquipmentId!]).Select(weapon => weapon.EquipmentId!).ToArray() : [];
             var malfunctioned = new HashSet<string>(StringComparer.Ordinal);
@@ -4265,7 +4278,7 @@ public static class ScenarioA1FireCalculator
                 // removed on a DR at least its printed B# (the page's LMG in Sustained Fire: B10, X12). A FT's own removal is ruling R15.1's.
                 var definition = reference.Definitions[weapon.DefinitionId!];
                 var printed = definition.Breakdown ?? 12;
-                var lowered = sustained || weapon.Captured == true || AtrInexperience(weapon) > 0;
+                var lowered = sustained || weapon.Captured == true || Inexperience(weapon) > 0;
                 var removed = attack.CoweringMarksAndWeaponResidual == true && !definition.IsFt && malfunctioned.Contains(id) && lowered
                     && original >= printed - (attack.BreakdownReduction ?? 0);
                 return new FireWeaponEffect(id, breakdown[id], malfunctioned.Contains(id), retained, sustained,
@@ -4291,6 +4304,7 @@ public static class ScenarioA1FireCalculator
                 new FireTarget(firer.UnitId, firer.DefinitionId, firer.LocationId, false, firer.Pinned, firer.Concealed, false, false, firer.Wounded == true, false)
                 {
                     Elr = firer.Elr,
+                    UnderscoredElr = firer.UnderscoredElr,
                     Fanatic = firer.Fanatic,
                     Inexperienced = firer.Inexperienced,
                     KnownEnemyInLos = firer.KnownEnemyInLos,
@@ -4691,7 +4705,10 @@ public static class ScenarioA1FireCalculator
             unit.TakeHeatOfBattle(outcome, outcome.HardenedDefinitionId is { } next ? reference.Definitions[next] : null, second);
         }
 
-        /// <summary>A1.23, A19.13 (referee, pass 15): a MMC with an underscored Morale Factor has an ELR of 5; any other unit its side's.</summary>
+        /// <summary>
+        /// A1.23, A19.13 (referee, pass 15): a MMC with an underscored Morale Factor has an ELR of 5, or the ELR an SSR assigns it (A19.132; pass 72, ruling
+        /// R72.13); any other unit its side's.
+        /// </summary>
         private int? ElrOf(TargetState unit, bool firingSide)
         {
             // A19.11 (p. 86; pass 70, ruling R70.7): "unarmed ... units are never subject to Replacement due to ELR failure", so no failure exceeds theirs.
@@ -4702,7 +4719,9 @@ public static class ScenarioA1FireCalculator
 
             // Ruling R18.3: a unit's own ELR, from its OB group, before its side's; a unit ELR never Replaces needs none (A19.11).
             var elr = unit.Target.Elr ?? (ElrImmune(unit.Definition.Id, reference) && (firingSide ? attack.FiringSideElr : attack.TargetSideElr) is null ? 5 : Elr(firingSide));
-            return unit.Definition is { IsMmc: true, UnderscoredMorale: true } && elr is not null ? 5 : elr;
+            // A19.132 (p. 86; ruling R72.13): "Whenever a SSR ... specifically assigns an ELR ≤ 4 to units with an underscored Morale Factor, they suffer Unit
+            // Replacement normally": the SSR's ELR in place of R15.9's 5.
+            return unit.Definition is { IsMmc: true, UnderscoredMorale: true } && elr is not null ? unit.Target.UnderscoredElr ?? 5 : elr;
         }
 
         private int? Elr(bool firingSide)
@@ -4729,8 +4748,10 @@ public static class ScenarioA1FireCalculator
             }
 
             // A19.13 (ruling R15.9): a squad with an underscored Morale Factor is Replaced by its two broken HS; such a HS is Disrupted instead,
-            // unless Fanatic (A19.12).
-            if (unit.Definition is { IsMmc: true, UnderscoredMorale: true })
+            // unless Fanatic (A19.12). A19.132 (p. 86; pass 72, ruling R72.13): under an SSR ELR it "suffer[s] Unit Replacement normally regardless of the
+            // severity of the quality drop", by the table below.
+            var underscored = unit.Definition is { IsMmc: true, UnderscoredMorale: true };
+            if (underscored && unit.Target.UnderscoredElr is null)
             {
                 if (unit.Definition.Kind == "asl:squad" && ScenarioA1FireReference.HalfSquadOf(unit.Definition.Id) is { } own)
                 {
@@ -4751,7 +4772,7 @@ public static class ScenarioA1FireCalculator
             }
 
             // A19.13: Replaced by a broken unit of lesser quality; A19.12: Disrupted when none exists.
-            var replacement = ScenarioA1FireReference.ReplacementOf(unit.Definition.Id);
+            var replacement = underscored ? ScenarioA1FireReference.UnderscoredReplacementOf(unit.Definition.Id) : ScenarioA1FireReference.ReplacementOf(unit.Definition.Id);
             if (replacement is null && NeverDisrupted(unit) is { } notDisrupted)
             {
                 unit.Note(notDisrupted);
