@@ -126,6 +126,10 @@ public static class GameEventReader
     {
         switch (type)
         {
+            case "mortar-spotter-designated":
+                var mortar = fields.RequiredString(payload, "gun", path);
+                var mortarSpotter = fields.RequiredString(payload, "spotter", path);
+                return mortar is null || mortarSpotter is null ? null : new MortarSpotterDesignated(mortar, mortarSpotter);
             case "placed-dc-window-reviewed":
                 try
                 {

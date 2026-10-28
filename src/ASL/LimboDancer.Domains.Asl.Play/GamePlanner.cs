@@ -349,6 +349,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
         var plan = action.Id.Value switch
         {
+            "asl.game.designate-spotter" => PlanSpotterDesignation(scope, arguments, existing, attemptId, expected, label),
             "asl.game.review-placed-dc-window" => PlanPlacedDcWindow(scope, arguments, existing, attemptId, expected, label),
             "asl.game.record-turn-work" => PlanTurnWork(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label, actor ?? "unknown"),
@@ -1747,6 +1748,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return true;
         }
 
+        if (action.Id.Value == "asl.game.designate-spotter")
+        {
+            return committed.Payload is not MortarSpotterDesignated designation
+                || !Text(arguments, "gunId", out var gun) || gun != designation.Gun
+                || !Text(arguments, "spotter", out var spotter) || spotter != designation.Spotter;
+        }
         if (action.Id.Value == "asl.game.review-placed-dc-window")
         {
             try

@@ -87,6 +87,12 @@ public sealed partial class GamePlanner
                     unit is not null && GameState.Condition(unit, Conditions.Captured) == ConditionState.True,
                     shots.Any(item => item.InCurrentPhase && item.Weapon == pair.Weapon && (item.Spotter == pair.Spotter || item.Spotter == currentSpotter)), loss is not null && lossVisible, known && currentSpotter != pair.Spotter ? currentSpotter : null);
             }).ToImmutableArray();
-        return TurnFireHistory.Compose([.. shots], observations);
+        return TurnFireHistory.Compose([.. shots], observations) with
+        {
+            Declarations = [.. state.MortarSpotterDesignations.Where(item => (perspective.IsAdjudicator || item.Owner == perspective.Name)
+                && history.Events.Single(entry => entry.EventId == item.EventId).IsVisibleTo(perspective)
+                && history.Events.Single(entry => entry.EventId == item.Occurrence.EventId).IsVisibleTo(perspective))
+                .Select(item => new TurnSpotterDeclaration(item.Gun, item.Spotter, item.Owner, item.Occurrence.GameTurn, item.Occurrence.Phase))],
+        };
     }
 }

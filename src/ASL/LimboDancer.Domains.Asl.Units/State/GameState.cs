@@ -35,6 +35,9 @@ public sealed record GameState(
     IReadOnlyList<EquipmentInstance> Equipment,
     IReadOnlyList<EntityInstance> Entities)
 {
+    /// <summary>Player Turn ordinal since this journal began, independent of its initial Game Turn number.</summary>
+    public int PlayerTurnOrdinal { get; init; } = 1;
+
     public Rules.TurnPhaseOccurrence? TurnPhaseOccurrence
     {
         get; init;
@@ -191,6 +194,7 @@ public sealed record GameState(
     public IReadOnlyList<MortarSpotterLoss> MortarSpotterLosses { get; init; } = [];
     public IReadOnlyList<MortarSpotterSuccessor> MortarSpotterSuccessors { get; init; } = [];
     public IReadOnlyList<MortarSpotterUse> MortarSpotterUses { get; init; } = [];
+    public IReadOnlyList<MortarSpotterDesignation> MortarSpotterDesignations { get; init; } = [];
 
     /// <summary>The PF shots each side has taken this scenario (C13.31; ruling R9.7), by side id.</summary>
     public IReadOnlyDictionary<string, int> PanzerfaustShots { get; init; } = new Dictionary<string, int>(StringComparer.Ordinal);

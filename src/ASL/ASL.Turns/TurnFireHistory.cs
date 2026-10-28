@@ -22,8 +22,14 @@ public sealed record TurnSpotterRead(string Weapon, string Spotter, bool Known, 
 
 public sealed record TurnSpotterHistory(string Weapon, string Spotter, int FirstObservedGameTurn, string FirstObservedPhase,
     TurnSpotterState State, bool? SpottedThisPhase, string? Successor = null);
+/// <summary>Disclosed explicit declaration, distinct from the first shot that observed a Spotter. No journal identities.</summary>
+public sealed record TurnSpotterDeclaration(string Weapon, string Spotter, string OwnerSide, int GameTurn, string Phase);
+
 public sealed record TurnFireHistorySnapshot(ImmutableArray<TurnFireRecord> Shots,
-    ImmutableArray<TurnSpotterHistory> Spotters, ImmutableArray<string> EvaluationGaps);
+    ImmutableArray<TurnSpotterHistory> Spotters, ImmutableArray<string> EvaluationGaps)
+{
+    public ImmutableArray<TurnSpotterDeclaration> Declarations { get; init; } = [];
+}
 
 /// <summary>Composes disclosed evidence only. A past shot or retained ROF is never permission to fire again.</summary>
 public static class TurnFireHistory
@@ -71,7 +77,7 @@ public static class TurnFireHistory
         }
         return new(shots, [.. assignments],
             ["Recorded fire and ROF are history, not current firing eligibility. Undisclosed attacks are omitted.",
-             "Original Spotter designation before a shot, replacement timing, Opportunity Fire and its breakdown check remain pending.",
+             "Explicit daytime original declarations are recorded when supplied; setup activation, replacement commands, Opportunity Fire and its breakdown check remain pending.",
              "Vehicle/PRC fire combinations and other unregistered rule families remain pending."]);
     }
 }

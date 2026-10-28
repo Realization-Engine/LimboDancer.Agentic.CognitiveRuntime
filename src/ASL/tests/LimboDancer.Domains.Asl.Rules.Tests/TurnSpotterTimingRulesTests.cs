@@ -97,6 +97,13 @@ public sealed class TurnSpotterTimingRulesTests
     }
 
     [Fact]
+    public void RecordedLossRequiresReplacementBeforeFurtherSpottedFire()
+    {
+        Assert.Null(TurnSpotterLossRules.FireBar(false));
+        Assert.Contains("replacement", TurnSpotterLossRules.FireBar(true)!, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void UnknownAndInconsistentOriginsNeverOpenAWindow()
     {
         Assert.Equal(TurnSpotterTimingState.NotEvaluated, TurnSpotterTimingRules.Evaluate(Initial with

@@ -114,6 +114,7 @@ public static partial class GameProjector
                 InstanceMoved move => move.Id,
                 GunTurned turned => turned.Gun,
                 OrdnanceFired fired => fired.Gun,
+                MortarSpotterDesignated declaration => declaration.Gun,
                 MovementStepped movement => movement.PushedGun,
                 _ => null,
             };
@@ -128,6 +129,7 @@ public static partial class GameProjector
                 GameStarted => Fail<GameState>("UNIT-STATE-004", "A game starts only once."),
                 _ when previous.Ended is not null => Fail<GameState>("UNIT-STATE-045", "The game has ended (A3.9; ruling R20.1); nothing more happens in it."),
                 GameEnded ended => End(previous, ended),
+                MortarSpotterDesignated designation => DesignateSpotter(previous, designation, gameEvent),
                 PlacedDcWindowReviewed review => RecordPlacedDcWindow(previous, review, gameEvent.Type),
                 TurnWorkRecorded work => RecordTurnWork(previous, work, gameEvent.Type),
                 PhaseChanged phase => ChangePhase(previous, phase),
@@ -714,6 +716,7 @@ public static partial class GameProjector
                         : Rules.ScenarioA1SequenceProjection.RemovesStarshells(state.Phase) ? [.. state.Entities.Where(entity => !Rules.ScenarioA1SequenceProjection.Starshell(entity.Kind))]
                         : state.Entities, cleared),
                     Turn = change.Turn,
+                    PlayerTurnOrdinal = newPlayerTurn ? state.PlayerTurnOrdinal + 1 : state.PlayerTurnOrdinal,
                     Phase = change.Phase,
                     PhasingSide = change.PhasingSide,
                     FiresThisPhase = [],
@@ -1467,13 +1470,14 @@ public static partial class GameProjector
             var spotters = state.MortarSpotters;
             if (fired.Facts.TryGetProperty("spotter", out var spotter) && spotter.TryGetProperty("unitId", out var spotterId) && spotterId.GetString() is { } id)
             {
+                var alreadySpotted = state.SpottedThisPhase.Any(item => item.Spotter == id);
                 spotters = [.. spotters.Where(item => item.Gun != fired.Gun), new MortarSpotter(fired.Gun, id)];
                 state = state with
                 {
                     SpottedThisPhase = [.. state.SpottedThisPhase.Where(item => item.Gun != fired.Gun), new MortarSpotter(fired.Gun, id)],
                     MortarSpotterUses = [.. state.MortarSpotterUses, new(fired.Gun, id, state.Location(fired.Gun)?.Location, fired.Target)]
                 };
-                if (state.Unit(id) is { } spotting)
+                if (!alreadySpotted && state.Unit(id) is { } spotting)
                 {
                     uses = Use(uses, spotting, fired.Gun);
                 }

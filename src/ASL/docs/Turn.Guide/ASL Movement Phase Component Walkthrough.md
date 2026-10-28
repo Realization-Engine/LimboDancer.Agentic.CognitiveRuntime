@@ -124,7 +124,7 @@ ID: `order`. **Who:** ATTACKER. **Type:** Sequence obligation.
 
 ### 3.11A-3.13A · Start of the phase
 
-#### Replace a lost or non-Good-Order mortar Spotter
+#### Review replacement of a lost mortar Spotter
 
 ID: `spotter`. **Who:** ATTACKER. **Type:** Optional opening choice.
 
@@ -132,7 +132,7 @@ ID: `spotter`. **Who:** ATTACKER. **Type:** Optional opening choice.
 
 **Consider:** Does a mortar need a replacement Spotter?
 
-- This opening window replaces a Spotter eliminated or no longer in Good Order.
+- C9.3 requires recorded elimination, break or capture before replacement at a following owner MPh opening. Non-Good-Order status alone, such as Berserk, does not permit replacement.
 - Check spotting qualifications and commitments under C9.3; do not treat this as unrestricted mid-move designation.
 
 **Checklist behavior:** Associate the replacement with its mortar and preserve all spotting commitments.

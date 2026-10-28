@@ -93,7 +93,7 @@
     {
       "id": "spotter",
       "g": 1,
-      "title": "Replace a lost or non-Good-Order mortar Spotter",
+      "title": "Review replacement of a lost mortar Spotter",
       "who": "ATTACKER",
       "kind": "Optional opening choice",
       "refs": "C9.3",
@@ -106,7 +106,7 @@
       ],
       "prompt": "Does a mortar need a replacement Spotter?",
       "checks": [
-        "This opening window replaces a Spotter eliminated or no longer in Good Order.",
+        "C9.3 requires recorded elimination, break or capture before replacement at a following owner MPh opening. Non-Good-Order status alone, such as Berserk, does not permit replacement.",
         "Check spotting qualifications and commitments under C9.3; do not treat this as unrestricted mid-move designation."
       ],
       "effect": "Associate the replacement with its mortar and preserve all spotting commitments.",

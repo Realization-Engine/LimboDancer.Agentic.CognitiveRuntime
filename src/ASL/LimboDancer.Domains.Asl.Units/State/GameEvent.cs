@@ -35,6 +35,9 @@ public sealed record GameEvent(
 /// <summary>What an event says happened. Each payload has one event type name.</summary>
 public abstract record EventPayload;
 
+/// <summary>C9.3 explicit original declaration; the projector derives owner, timing and SW-use effects.</summary>
+public sealed record MortarSpotterDesignated(string Gun, string Spotter) : EventPayload;
+
 /// <summary>An instance to create: from a catalog definition for units, by kind alone for equipment and entities.</summary>
 public sealed record NewInstance(
     string Id,

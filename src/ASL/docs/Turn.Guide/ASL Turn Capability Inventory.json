@@ -121,7 +121,7 @@
     {
       "id": "fire-history",
       "kind": "ObservedHistory",
-      "scope": "Disclosed shot, ROF and first observed Spotter use/retention history; no new-shot or original-designation permission. Current-phase use comes only from disclosed shots.",
+      "scope": "Disclosed shots, ROF, explicit daytime original declarations, first observed Spotter use, durable loss and successor history. This read evidence grants no firing or designation permission; guided topic routes and wider designation profiles remain pending.",
       "profiles": [
         "existing-engine-fire-v1",
         "existing-engine-atmosphere-v1",

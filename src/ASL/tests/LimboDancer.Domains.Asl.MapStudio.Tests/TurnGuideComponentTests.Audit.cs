@@ -125,7 +125,10 @@ public sealed partial class TurnGuideComponentTests
                 new(TurnOpeningEvidence.Resolved, TurnOpeningEvidence.Unknown, TurnOpeningEvidence.NotApplicable, TurnOpeningEvidence.Resolved), [], ["WP remains pending."])],
             FireHistory = new([new(TurnFireKind.Ordnance, 1, "german", "pfph", ["crew"], "gun", "spotter", null, false)],
                 [new("gun", "spotter", 1, "pfph", TurnSpotterState.NotEvaluated, null),
-                 new("mortar", "squad", 1, "pfph", TurnSpotterState.Retained, true, "half-squad")], ["Spotter execution pending."]),
+                 new("mortar", "squad", 1, "pfph", TurnSpotterState.Retained, true, "half-squad")], ["Spotter execution pending."])
+            {
+                Declarations = [new("mortar", "squad", "german", 1, "pfph")]
+            },
             Atmosphere = new([new("squad", "german", 1, "mph", "smoke", TurnSmokeState.Active, true)], [], [], []),
             Work = [new("work", "gun", TurnWorkKind.AnimalPacking, 2, 2, false, false, true, false, true, TurnSupport.Pending)
                 { EffectKind = TurnWorkEffectKind.PackGun, EffectStatus = TurnWorkEffectStatus.Cancelled }],
@@ -138,6 +141,7 @@ public sealed partial class TurnGuideComponentTests
         Assert.Contains("ROF retained: Unknown", text, StringComparison.Ordinal);
         Assert.Contains("Spotted this phase: Unknown", text, StringComparison.Ordinal);
         Assert.Contains("Recorded half-squad successor: half-squad", text, StringComparison.Ordinal);
+        Assert.Contains("Original designation: squad for mortar", text, StringComparison.Ordinal);
         Assert.Contains("Attempt spent this phase: Yes", text, StringComparison.Ordinal);
         Assert.Contains("Cancelled: Yes", text, StringComparison.Ordinal);
         Assert.Contains("Completion due: No", text, StringComparison.Ordinal);

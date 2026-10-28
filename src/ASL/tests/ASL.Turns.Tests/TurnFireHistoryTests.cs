@@ -51,6 +51,23 @@ public sealed class TurnFireHistoryTests
     }
 
     [Fact]
+    public void ExplicitDeclarationIsSeparateFromObservedFireAndKeepsPendingGaps()
+    {
+        var empty = TurnFireHistory.Compose([], []);
+        Assert.Empty(empty.Declarations);
+        var recorded = empty with
+        {
+            Declarations = [new("m", "s", "a", 2, "pfph")]
+        };
+        var declaration = Assert.Single(recorded.Declarations);
+        Assert.Equal(("m", "s", "a", 2, "pfph"), (declaration.Weapon, declaration.Spotter, declaration.OwnerSide, declaration.GameTurn, declaration.Phase));
+        Assert.Empty(recorded.Shots);
+        Assert.Empty(recorded.Spotters);
+        Assert.NotEmpty(recorded.EvaluationGaps);
+        Assert.Equal(JsonSerializer.Serialize(recorded), JsonSerializer.Serialize(JsonSerializer.Deserialize<TurnFireHistorySnapshot>(JsonSerializer.Serialize(recorded))));
+    }
+
+    [Fact]
     public void DisclosedSuccessorKeepsTheOriginalObservedAssignment()
     {
         var read = Read with

@@ -1622,7 +1622,7 @@
         {
           "phase": "mph",
           "topic": "spotter",
-          "label": "Movement: Replace a lost or non-Good-Order mortar Spotter"
+          "label": "Movement: Review replacement of a lost mortar Spotter"
         },
         {
           "phase": "dfph",

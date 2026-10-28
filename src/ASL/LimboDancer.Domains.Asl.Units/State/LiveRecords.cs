@@ -248,6 +248,10 @@ public sealed record MortarSpotterLoss(string Gun, string Spotter, string EventI
 /// <summary>The C9.3 Good Order half-squad that inherits an observed assignment, with journal provenance.</summary>
 public sealed record MortarSpotterSuccessor(string Gun, string Predecessor, string Successor, string EventId, long Revision);
 
+/// <summary>Explicit original designation with authoritative journal provenance, distinct from observing a shot.</summary>
+public sealed record MortarSpotterDesignation(string Gun, string Spotter, string Owner, string EventId, long Revision,
+    Rules.TurnPhaseOccurrence Occurrence);
+
 /// <summary>Observed C9.31 firing locations and targets, retained for the entire Player Turn.</summary>
 public sealed record MortarSpotterUse(string Gun, string Spotter, BoardLocation? Location, BoardLocation Target);
 

@@ -85,6 +85,10 @@ public static class GameEventWriter
     {
         switch (payload)
         {
+            case MortarSpotterDesignated designation:
+                writer.WriteString("gun", designation.Gun);
+                writer.WriteString("spotter", designation.Spotter);
+                break;
             case PlacedDcWindowReviewed review:
                 foreach (var property in JsonSerializer.SerializeToElement(review, JsonSerializerOptions.Web).EnumerateObject())
                 {
