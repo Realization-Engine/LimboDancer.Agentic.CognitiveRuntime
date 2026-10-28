@@ -1,29 +1,21 @@
-"""Pass 35 documents: the inventory's two count tables of section 2, rewritten from its rows."""
+"""The inventory's two count tables of section 2, rewritten from its rows."""
 import os as _os
 import sys as _sys
-_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), ".."))
-from paths import REPO, WORK  # noqa: E402
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import inventory_table  # noqa: E402
 import collections
 import re
 
-P = REPO + "/src/ASL/docs/ASL Rule Inventory A to E.md"
-text = open(P, encoding="utf-8", newline="").read()
-nl = "\r\n" if "\r\n" in text else "\n"
-lines = text.split(nl)
-STATUSES = ["built", "built with a deviation", "partly", "refused", "not built", "not applicable"]
-
-by_chapter = collections.OrderedDict((letter, collections.Counter()) for letter in "ABCDE")
+STATUSES = inventory_table.STATUSES
+P = inventory_table.PATH
+lines, nl = inventory_table.read_lines()
+rows = inventory_table.rows(lines)
+by_chapter = collections.OrderedDict()
 by_pass = collections.Counter()
-chapter = None
-for line in lines:
-    if line.startswith("### Chapter "):
-        chapter = line[len("### Chapter "):][0]
-    if chapter and line.startswith("| "):
-        c = [cell.strip() for cell in line.split("|")[1:-1]]
-        if len(c) == 9 and re.match(r"^[A-E][0-9.]", c[0]) and c[3] in STATUSES:
-            by_chapter[chapter][c[3]] += 1
-            if c[6]:
-                by_pass[c[6]] += 1
+for row in rows:
+    by_chapter.setdefault(row["chapter"], collections.Counter())[row["Status"]] += 1
+    if inventory_table.pass_of(row):
+        by_pass[inventory_table.pass_of(row)] += 1
 
 total = collections.Counter()
 for counter in by_chapter.values():
@@ -38,13 +30,14 @@ end = next(i for i, line in enumerate(lines) if line.startswith("## 3. Reading t
 changed = 0
 for i in range(end):
     line = lines[i]
-    m = re.match(r"^\| ([A-E])\. ([^|]+) \| \d+ \| \d+ \| \d+ \| \d+ \| \d+ \| \d+ \| \d+ \|$", line)
+    m = re.match(r"^\| ([A-Z])\. ([^|]+) \| \d+ \| \d+ \| \d+ \| \d+ \| \d+ \| \d+ \| \d+ \|$", line)
     if m:
-        counter = by_chapter[m.group(1)]
+        counter = by_chapter.get(m.group(1), collections.Counter())
         lines[i] = f"| {m.group(1)}. {m.group(2)} | {sum(counter.values())} | " + " | ".join(str(counter[s]) for s in STATUSES) + " |"
         changed += 1
-    elif line.startswith("| **A to E** |"):
-        lines[i] = f"| **A to E** | **{rows_all}** | " + " | ".join(f"**{total[s]}**" for s in STATUSES) + " |"
+    elif re.match(r"^\| \*\*[^*]+\*\* \| \*\*\d+\*\* \|", line):
+        label = re.match(r"^\| (\*\*[^*]+\*\*) \|", line).group(1)
+        lines[i] = f"| {label} | **{rows_all}** | " + " | ".join(f"**{total[s]}**" for s in STATUSES) + " |"
         changed += 1
     elif line.startswith("| Pass 35: "):
         lines[i] = "| Pass 35: Repairs: wrong results in rules already built (built 2026-10-09: 18 of its rows are built, 26 moved to the pass that takes what is left, and B14.2 moved to pass 135) | 0 |"

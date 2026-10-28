@@ -1,28 +1,23 @@
-"""Pass 35 documents: the coverage document's count cell of each section row (sections 3 to 6), recomputed from the inventory.
+"""The coverage document's count cell of each section row (sections 3 to 6), recomputed from the inventory.
 
-    python docs_coverage_counts.py --check   lists the rows whose cell differs from the inventory's count
-    python docs_coverage_counts.py           rewrites those cells
+    python coverage_counts.py --check   lists the rows whose cell differs from the inventory's count
+    python coverage_counts.py           rewrites those cells
 """
 import os as _os
 import sys as _sys
-_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), ".."))
-from paths import REPO, WORK  # noqa: E402
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import inventory_table  # noqa: E402
+from paths import REPO  # noqa: E402
 import collections
 import re
 import sys
 
-D = REPO + "/src/ASL/docs/"
-inv = open(D + "ASL Rule Inventory A to E.md", encoding="utf-8").read().splitlines()
-STATUSES = ["built", "built with a deviation", "partly", "refused", "not built", "not applicable"]
 WORD = {"built": "built", "built with a deviation": "deviation", "partly": "partly", "refused": "refused", "not built": "not built"}
 
 by_section = collections.defaultdict(collections.Counter)
-for line in inv:
-    if line.startswith("| "):
-        c = [cell.strip() for cell in line.split("|")[1:-1]]
-        if len(c) == 9 and re.match(r"^[A-E][0-9.]", c[0]) and c[3] in STATUSES:
-            section = c[0].split(".")[0]
-            by_section[section][c[3]] += 1
+inventory_lines, _ = inventory_table.read_lines()
+for row in inventory_table.rows(inventory_lines):
+    by_section[row["§"].split(".")[0]][row["Status"]] += 1
 
 
 def cell(section):
@@ -31,13 +26,11 @@ def cell(section):
     return f"{total}: " + ", ".join(f"{counter[s]} {WORD[s]}" for s in WORD if counter[s])
 
 
-P = D + "ASL Rule Coverage.md"
-text = open(P, encoding="utf-8", newline="").read()
-nl = "\r\n" if "\r\n" in text else "\n"
-lines = text.split(nl)
+P = REPO + "/src/ASL/docs/ASL Rule Coverage.md"
+lines, nl = inventory_table.read_lines(P)
 start = next(i for i, line in enumerate(lines) if line.startswith("## 3. "))
 end = next(i for i, line in enumerate(lines) if line.startswith("## 7. "))
-pattern = re.compile(r"^\| ([A-E]\d*) \| ([^|]*) \| ([^|]*) \| (\d+: [^|]*?) \|")
+pattern = re.compile(r"^\| ([A-Z]\d*) \| ([^|]*) \| ([^|]*) \| (\d+: [^|]*?) \|")
 differ = 0
 for i in range(start, end):
     m = pattern.match(lines[i])
