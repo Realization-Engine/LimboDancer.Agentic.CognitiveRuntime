@@ -61,7 +61,7 @@ Each package's fourth task is acceptance of its preceding scope, including negat
 
 Start D1.1, then D1.2-D1.4. Continue D2, D3, D4, D5 and D6 in order; then D7, D8 and D9 respecting the table's dependencies. D9.1 may run early to supply the core-topic matrix. If an authoritative source blocks a task, record the exact missing source and continue independent ready tasks. Do not manufacture rules to clear the queue.
 
-Current ledger: 2/36 complete; D1.1 and D3.1 are complete; D1.2 and D2.1 are in progress. The replacement marker/movement source dependency is recorded below. B5-D1 through B5-D9 all retain Pending rule support. The legacy baseline remains accepted independently of this new plan.
+Current ledger: 2/36 complete; D1.1 and D3.1 are complete; D1.2, D2.1 and D3.2 are in progress. The replacement marker/movement source dependency is recorded below. B5-D1 through B5-D9 all retain Pending rule support. The legacy baseline remains accepted independently of this new plan.
 
 ### D1.1 acceptance
 
@@ -145,3 +145,14 @@ The missing-source dependency is resolved by the locally available `eASLRB_v3_14
 Five packing-related source-review flags are now Reconciled, with execution support still Pending. This certifies the source/contract task only. D3.2 must persist actual Gun/Mule/crew roles, midpoint load state, exact opening evidence and reversal/restart records. D3.3 must integrate movement/transport, prohibited unload terrain, G10.4-.42 vulnerability, cumulative Low Ammo and missing-Mule recovery consequences. D3.4 must prove those paths in replay, disclosure, phase close and the live guide. Existing B5 adjudicated durations and assembly effects remain bounded legacy behavior.
 
 Validation: 43 focused packing/work Rules tests and all 24 Turn Guide component tests pass. The component test proves that reconciled packing sources still show pending execution. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered, without exclusions. Source reconciliation does not promote a packing command, remove any of the nine packages, or hide any of the 538 topics.
+
+
+### D3.2 progress: packing period transitions (2026-10-28)
+
+`TurnPackingPeriods` now owns a serializable G10.3/.31/.33 transition contract with distinct weapon, Mule and Personnel identities. Consecutive first/second RPh work boundaries credit complete Game Turns and detect odd- or even-length midpoints. A due midpoint must be resolved before the next boundary; its receipt preserves the physical load state. Full release waits for the following first RPh. Night uses the D3.1 duration contract.
+
+Crew interruption retains prior complete Game Turns and any already completed physical load/unload, discards the interrupted Game Turn, and leaves the weapon and Mule Pack-TI. Its recorded boundary prevents resuming in that same Game Turn. Resume requires fresh eligibility at a later first RPh. Voluntary reversal retains physical load, starts the net-elapsed period and requires a new midpoint receipt. Repeated, skipped, future or contradictory boundary/load transitions are refused. G10.3/.31's printed example now runs through Turn 3 interruption, Turn 4 second-RPh unloading and Turn 6 first-RPh release.
+
+This is the Rules transition layer, not a live command or proof that supplied serialized state is authoritative. D3.2 remains In progress: the host must bind these identities to actual pieces and location, prove each ASOP 1.13B occurrence from the journal, record versioned start/interruption/resume/reversal/midpoint/release events, and commit legal load and Pack-TI effects atomically. Midpoint terrain/CA choices, involuntary unloading and missing-Mule recovery require the D3.3 consequence path. The existing adjudicated work protocol is unchanged; its generic TI behavior is not certified as this G10 lifecycle. Disclosure, shared close obligations and live-guide acceptance still require integration. All nine packages and every pending reference option remain visible.
+
+Validation: all 1,325 Rules tests pass with no skips. Seven new period tests exercise JSON round trips, the printed example, night and odd/even midpoints, reversal, interruption before/after unloading, terminal release, eligibility and altered history. ASL.Turns remains 183 passing tests with 825/825 lines and 470/470 branches covered (100%, no exclusions). No command or capability is promoted by this increment.

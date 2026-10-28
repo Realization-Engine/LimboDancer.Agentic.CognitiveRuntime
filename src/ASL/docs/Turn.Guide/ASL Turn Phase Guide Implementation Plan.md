@@ -513,3 +513,8 @@ The missing-source dependency is resolved by the locally available `eASLRB_v3_14
 Five packing-related source-review flags are now Reconciled, with execution support still Pending. This certifies the source/contract task only. D3.2 must persist actual Gun/Mule/crew roles, midpoint load state, exact opening evidence and reversal/restart records. D3.3 must integrate movement/transport, prohibited unload terrain, G10.4-.42 vulnerability, cumulative Low Ammo and missing-Mule recovery consequences. D3.4 must prove those paths in replay, disclosure, phase close and the live guide. Existing B5 adjudicated durations and assembly effects remain bounded legacy behavior.
 
 Validation: 43 focused packing/work Rules tests and all 24 Turn Guide component tests pass. The component test proves that reconciled packing sources still show pending execution. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered, without exclusions. Source reconciliation does not promote a packing command, remove any of the nine packages, or hide any of the 538 topics.
+
+
+### D3.2 progress: packing period transitions (2026-10-28)
+
+The Rules layer now has a serializable G10 packing period contract for bound actor identities, exact first/second RPh progression, midpoint load receipts, crew-only interruption, later-turn resume, reversal and full release. The later-rules plan and design record its source, tests and remaining integration boundaries. This is an increment within D3.2; the ledger remains 2/36 complete. Journal events, governed commands, atomic piece effects, disclosure and phase-close integration remain pending. Legacy adjudicated work is unchanged and all nine packages retain Pending support.
