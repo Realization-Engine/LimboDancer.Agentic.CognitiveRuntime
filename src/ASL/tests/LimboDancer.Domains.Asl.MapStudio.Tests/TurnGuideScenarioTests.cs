@@ -23,15 +23,15 @@ public sealed class TurnGuideScenarioFactAttribute : FactAttribute
 }
 
 /// <summary>The recorded Tractor Works setup continued through the real Play page and governed commands.</summary>
-public sealed class TurnGuideScenarioTests : IDisposable
+public sealed partial class TurnGuideScenarioTests : IDisposable
 {
-    private const string Game = "turn-guide-tractor";
+    private string game = "turn-guide-tractor";
     private readonly string root = Path.Combine(Path.GetTempPath(), "asl-turn-scenario-" + Guid.NewGuid().ToString("N"));
     private readonly BunitContext context = new();
     private readonly ScriptedDice dice = new();
     private readonly LivePlay live;
-    private static GameScope Scope => new(LivePlay.Tenant, Game);
-    private GameState Current => live.History(Game)!.Current!;
+    private GameScope Scope => new(LivePlay.Tenant, game);
+    private GameState Current => live.History(game)!.Current!;
 
     public TurnGuideScenarioTests()
     {
@@ -56,7 +56,7 @@ public sealed class TurnGuideScenarioTests : IDisposable
         var directory = Path.Combine(live.Root, LivePlay.Tenant.ToString("N"));
         Directory.CreateDirectory(directory);
         File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "p31c-tw.game.json"), Path.Combine(directory, "p31c-tw.game.json"));
-        Assert.Equal(AppendStatus.Committed, live.PlayOn("p31c-tw", 133, Game, "isolated guide acceptance").Status);
+        Assert.Equal(AppendStatus.Committed, live.PlayOn("p31c-tw", 133, game, "isolated guide acceptance").Status);
         Assert.False(live.Planner.Replay(live.Store.Read(Scope)!.Events).HasErrors);
         Assert.Equal("rph", Current.Phase);
     }
@@ -73,9 +73,10 @@ public sealed class TurnGuideScenarioTests : IDisposable
     private async Task Do(LimboDancer.Abstractions.Actions.ActionDescriptor action, object arguments)
     {
         var node = JsonSerializer.SerializeToNode(arguments)!.AsObject();
-        node["gameId"] = Game;
-        node["attemptId"] = $"scenario-{action.Id.Value}-{Current.Revision}";
-        node["expectedRevision"] = Current.Revision;
+        node["gameId"] = game;
+        var revision = live.Store.Read(Scope)?.Events.Count ?? 0;
+        node["attemptId"] = $"scenario-{action.Id.Value}-{revision}";
+        node["expectedRevision"] = revision;
         var args = JsonSerializer.SerializeToElement(node);
         var proposed = await live.Play.ProposeAsync(action, args, live.Principal);
         Assert.True(proposed.Outcome == PlayOutcome.NeedsConfirmation, string.Join("; ", proposed.Reasons));
@@ -111,7 +112,7 @@ public sealed class TurnGuideScenarioTests : IDisposable
             });
         }
         var page = context.Render<PlayPage>();
-        page.OpenGame(Game);
+        page.OpenGame(game);
         page.ViewAs("german");
         page.Find("#play-one-click").Change(false);
         page.Find("#play-turn-guide-toggle").Click();
@@ -158,7 +159,7 @@ public sealed class TurnGuideScenarioTests : IDisposable
                 TurnOpeningEvidence.NotApplicable, TurnOpeningEvidence.NotApplicable));
         var args = JsonSerializer.SerializeToElement(new
         {
-            gameId = Game,
+            gameId = game,
             attemptId = "opening-" + Current.Revision,
             expectedRevision = Current.Revision,
             review
@@ -183,7 +184,7 @@ public sealed class TurnGuideScenarioTests : IDisposable
         page.Find(".turn-review-wp").Change(wp);
         page.Find(".turn-review-gusts").Change("NotApplicable");
         page.Find(".turn-review-gliders").Change("NotApplicable");
-        page.Find(".turn-review-basis").Input("ASOP 5.11B-5.21A: checked this Tractor Works opening.");
+        page.Find(".turn-review-basis").Input("ASOP 5.11B-5.21A: checked this isolated scenario opening.");
         var before = Current.Revision;
         page.Find(".turn-review-propose").Click();
         page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
@@ -233,7 +234,7 @@ public sealed class TurnGuideScenarioTests : IDisposable
         }
         var directory = Path.Combine(destination, "units", "live", LivePlay.Tenant.ToString("N"));
         Directory.CreateDirectory(directory);
-        File.Copy(Path.Combine(live.Root, LivePlay.Tenant.ToString("N"), Game + ".game.json"), Path.Combine(directory, Game + ".game.json"));
+        File.Copy(Path.Combine(live.Root, LivePlay.Tenant.ToString("N"), game + ".game.json"), Path.Combine(directory, game + ".game.json"));
     }
 
     [TurnGuideScenarioFact]
@@ -267,7 +268,7 @@ public sealed class TurnGuideScenarioTests : IDisposable
         before = Current.Revision;
         page.Dispose();
         var reopened = context.Render<PlayPage>();
-        reopened.OpenGame(Game);
+        reopened.OpenGame(game);
         reopened.ViewAs("german");
         reopened.Find("#play-turn-guide-toggle").Click();
         reopened.WaitForAssertion(() => Assert.Contains("Resolved", reopened.Find(".turn-evidence").TextContent, StringComparison.Ordinal));

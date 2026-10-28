@@ -466,6 +466,42 @@ else if (state is not null)
             }
             @if (state is not null && handOver is null)
             {
+                @if (state.Ended is null && history?.Current is not null && !(SetupOpen && SetupView is not null && SetupIncomplete))
+                {
+                    @* The user, 2026-10-22: while the other side's decision holds play up, the view says so first and offers the hand-over as its main
+                       action; the banner's hand-over alone, there in every phase, was no signal. *@
+                    @if (AwaitingBlocks && AwaitingView is { } awaitedSide)
+                    {
+                        <div class="play-waiting" id="play-waiting" role="status">
+                            <p class="play-waiting-title">Waiting for the @DisplayText.Side(awaitedSide) side</p>
+                            <p id="play-waiting-why">@WaitingWhy</p>
+                            <button type="button" class="primary" id="play-waiting-hand-over" @onclick="HandOverToAwaiting">Hand the screen to the @DisplayText.Side(awaitedSide) side</button>
+                        </div>
+                    }
+                    @* Table player, pass 28c: what play waits on comes first. *@
+                    @if (state.Choice is { } choice && ChoiceShown(choice))
+                    {
+                        <PendingChoicePanel Key="@choice.Key" Side="@choice.Side" Description="@GamePlanner.DescribeChoice(choice)" MayAnswer="@MayAnswer(choice.Side)"
+                            Options="@ChoiceOptions(choice)" OnChoose="@(option => ProposeChoose(choice.Key, option))" />
+                    }
+                    @foreach (var surrender in state.PendingSurrenders)
+                    {
+                        var captorSide = surrender.Captors.Select(state.Unit).OfType<UnitInstance>().Select(unit => unit.Side).FirstOrDefault();
+                        <PendingSurrenderPanel @key="surrender.Event" Unit="@surrender.Unit" MayAnswer="@MayAnswer(captorSide)" Captors="@(MayAnswer(captorSide) ? surrender.Captors : [])"
+                            OnTake="@(captor => ProposeTakePrisoner(surrender.Unit, captor))" OnReject="@(() => ProposeRejectSurrender(surrender.Unit))"
+                            OnFree="@(() => ProposeFreeSurrender(surrender.Unit))" />
+                    }
+                    @foreach (var open in state.OpenAttempts)
+                    {
+                        <OpenEntryDeclaration EventId="@open.EventId" Unit="@open.Unit" Target="@open.Target.ToString()" OnDecline='@(() => ProposeDeclaration(open.Unit, "decline"))'
+                            OnElect='@(() => ProposeDeclaration(open.Unit, "elect"))' />
+                    }
+                    @* Pass 31 (ruling R5.8; play test P-09): while a choice or a surrender waits, nothing else is proposed. *@
+                    @if (WaitsOnAnswer)
+                    {
+                        <p id="play-answer-first" class="muted">Every other action waits until the answer above is given (ruling R5.8).</p>
+                    }
+                }
                 <button type="button" id="play-turn-guide-toggle" aria-expanded="@turnGuideOpen" @onclick="() => turnGuideOpen = !turnGuideOpen">Turn Phase Guide</button>
                 @if (turnGuideOpen)
                 {
@@ -511,39 +547,6 @@ else if (state is not null)
             else if (state is not null && history?.Current is not null && !(SetupOpen && SetupView is not null && SetupIncomplete))
             {
                 <h3 class="@PlayHeadingClass">Play</h3>
-                @* The user, 2026-10-22: while the other side's decision holds play up, the view says so first and offers the hand-over as its main
-                   action; the banner's hand-over alone, there in every phase, was no signal. *@
-                @if (AwaitingBlocks && AwaitingView is { } awaitedSide)
-                {
-                    <div class="play-waiting" id="play-waiting" role="status">
-                        <p class="play-waiting-title">Waiting for the @DisplayText.Side(awaitedSide) side</p>
-                        <p id="play-waiting-why">@WaitingWhy</p>
-                        <button type="button" class="primary" id="play-waiting-hand-over" @onclick="HandOverToAwaiting">Hand the screen to the @DisplayText.Side(awaitedSide) side</button>
-                    </div>
-                }
-                @* Table player, pass 28c: what play waits on comes first. *@
-                @if (state.Choice is { } choice && ChoiceShown(choice))
-                {
-                    <PendingChoicePanel Key="@choice.Key" Side="@choice.Side" Description="@GamePlanner.DescribeChoice(choice)" MayAnswer="@MayAnswer(choice.Side)"
-                        Options="@ChoiceOptions(choice)" OnChoose="@(option => ProposeChoose(choice.Key, option))" />
-                }
-                @foreach (var surrender in state.PendingSurrenders)
-                {
-                    var captorSide = surrender.Captors.Select(state.Unit).OfType<UnitInstance>().Select(unit => unit.Side).FirstOrDefault();
-                    <PendingSurrenderPanel @key="surrender.Event" Unit="@surrender.Unit" MayAnswer="@MayAnswer(captorSide)" Captors="@(MayAnswer(captorSide) ? surrender.Captors : [])"
-                        OnTake="@(captor => ProposeTakePrisoner(surrender.Unit, captor))" OnReject="@(() => ProposeRejectSurrender(surrender.Unit))"
-                        OnFree="@(() => ProposeFreeSurrender(surrender.Unit))" />
-                }
-                @foreach (var open in state.OpenAttempts)
-                {
-                    <OpenEntryDeclaration EventId="@open.EventId" Unit="@open.Unit" Target="@open.Target.ToString()" OnDecline='@(() => ProposeDeclaration(open.Unit, "decline"))'
-                        OnElect='@(() => ProposeDeclaration(open.Unit, "elect"))' />
-                }
-                @* Pass 31 (ruling R5.8; play test P-09): while a choice or a surrender waits, nothing else is proposed. *@
-                @if (WaitsOnAnswer)
-                {
-                    <p id="play-answer-first" class="muted">Every other action waits until the answer above is given (ruling R5.8).</p>
-                }
                 <fieldset class="plain" id="play-actions" disabled="@WaitsOnAnswer">
                 <div class="toolbar">
                     @* Pass 31 (ruling R31.6; play test P-07): the phase is ended by the side that acts in it. *@
@@ -2866,8 +2869,16 @@ else if (state is not null)
     }
 
     /// <summary>The reasons the review lists: for a setup, the gate's count of events is left out and a refusal's reasons are shown as links instead.</summary>
-    private IReadOnlyList<string> ReviewReasons(Proposal proposal) => !PlacesCounters(proposal) || setupReview is null ? Reasons(proposal)
+    private IReadOnlyList<string> ReviewReasons(Proposal proposal) => PendingDcConsequences(proposal)
+        ? ["The attack is committed, with a required decision still pending. Finish its consequences before the DC is removed and the phase can close."]
+        : !PlacesCounters(proposal) || setupReview is null ? Reasons(proposal)
         : SetupProblems is not null ? [] : [.. Reasons(proposal).Where(reason => !reason.StartsWith("play.setup:", StringComparison.Ordinal))];
+
+    // A committed attack may have paused for an existing target-side choice. Do not present its planned removal as complete.
+    private bool PendingDcConsequences(Proposal proposal) => proposal.Action == GameActions.DetonateDc
+        && proposal.Result.Outcome is PlayOutcome.Committed or PlayOutcome.Replay
+        && state is { Choice: not null } && proposal.Arguments.TryGetProperty("equipmentId", out var equipment)
+        && state.PlacedCharges.Any(charge => charge.Charge == equipment.GetString());
 
     // The plans of the card chosen for a new game, counted once per card text.
     private (string? Card, string? Sha256, int Count, int Others) chosenPlans;
