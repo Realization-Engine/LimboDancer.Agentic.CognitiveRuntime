@@ -1838,3 +1838,4 @@ One session under the user's word of 2026-10-27 ("Run Pass 72 without my interve
 | PR 44 merge gate (base, baseline, build, proofs) | 07:09 | 07:34 | 0:25 | | proofs equal: 3316 replay lines, 266512 sweep lines; gate.sh early-check fix for CODE_MOVE |
 | G10.11 Pack-TI loss (backlog 76): change, tests, gate | 07:48 | 08:12 | 0:24 | | 153765b6; proofs equal (3316 replay, 53667 sweep); gate VOID as expected: no game uses Animal Packing |
 | Campaign CI lock files for ASL.Turns | 13:03 | 13:07 | 0:04 | | two lock files, locked restore and strict build pass locally |
+| Rules-first plan Step 0: the Rules calculator column | 15:45 | 16:23 | 0:38 | | 121 Play/Units-only rows read by four agents, 38 residuals hand-checked, 840 rows from Where by script, 23 residuals found in passing; backlog 77. Start estimated: the clock was not read at the session's start, its first commit was 15:53 |

@@ -1516,3 +1516,12 @@ Written on 2026-10-28. The review of `codex/asl-turns-backend` (PR 44) against t
 | ASL.Turns labels made outside Rules: an obligation's prerequisite is unmet while a child is not Resolved (`TurnObligations.cs`); Spotter supersession (`TurnFireHistory.cs`); grenade smoke states (`TurnAtmosphere.cs`); a timely Placed DC as "Required" (`TurnPlacedDcGuidance.cs`) | The Rules-boundary review (2026-10-28) | C9.3; A24.1; A23.3 | Rules calculators for each label | Display only; none gates a command. |
 | Rule prose hard-coded in C# that can drift from the calculators (`TurnAtmosphere.cs`; `TurnWorkProgress.cs`, the work durations) | The Rules-boundary review (2026-10-28) | E10.3-.4; G10 | Text generated from `TurnWorkRules` or moved to the Turn Guide catalogs | Shown as written. |
 | A Spotter designation is private to its owner when the gun, the Spotter or the gun's holder is Hidden or Concealed (`GamePlanner.Spotters.cs`) | The Rules-boundary review (2026-10-28) | A12 | A Rules disclosure verdict | The other side does not see the designation. |
+
+## 77. Added by Step 0 of the Rules-first four-track plan
+
+Written on 2026-10-28. Reading the rule inventory's rows for its Rules calculator column found two places where two paths may decide one rule differently. Neither was tested; each is a lead for the claim that takes the rule. The rule decisions found outside Rules are not listed here: they are in the inventory's Rules calculator column, as residuals, and become claims.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| The projector's CA change check (`ScenarioA1OrdnanceProjection.TurnGunAllowed`, asked by `GameProjector.TurnGun`) does not test TI, while the planner's (`ScenarioA1GunCalculator.TurnGunRefused`) does | Step 0 (2026-10-28) | C3.22 | The claim of C3.22; one calculator for both | The planner refuses a TI Gun's CA change, so no recorded game holds one; a game file could, and would replay. |
+| The ordnance path counts the target Location's stack without `ScenarioA1Stacking.TargetPenaltyApplies` (`GamePlanner.Ordnance.cs`, `LiveOrdnance.cs`), which the fire path asks for the MPh limit on moving units | Step 0 (2026-10-28) | A5.13 | The claim of A5.13 | An ordnance attack in the MPh may take an overstacking DRM the fire path would not. |
