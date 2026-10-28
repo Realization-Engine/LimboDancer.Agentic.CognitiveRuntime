@@ -76,7 +76,7 @@ public sealed record VehicleFirerFacts(
     }
 }
 
-/// <summary>A unit in a target Location as the state has it (A10.8, A15.21, A19.2, A22.4): its id, definition, Location text, conditions, Dummy, its group's ELR (null outside a group), its Green Inexperience, and the FT it possesses.</summary>
+/// <summary>A unit in a target Location as the state has it (A10.8, A15.21, A19.2, A22.4): its id, definition, Location text, conditions, Dummy, its group's ELR (null outside a group), its Green Inexperience, the FT it possesses, and its SSR ELR as an underscored MMC (A19.132; null without the SSR).</summary>
 public sealed record TargetUnitFacts(
     string Id,
     string? Definition,
@@ -93,7 +93,8 @@ public sealed record TargetUnitFacts(
     bool Heroic,
     bool Berserk,
     bool? Inexperienced,
-    int? Flamethrowers);
+    int? Flamethrowers,
+    int? UnderscoredElr = null);
 
 /// <summary>A unit against the spending of its fire for the phase (A7.1, A8.4, A9.2, C2.24, D3.5, A7.351, A22.3): the phase, its fire and First Fire counters, whether it is a vehicle; and three reads made only when asked, as the planner made them: whether its last shot kept its Multiple ROF, whether it has used a SW this phase, and whether it holds an unfired, working MG, FT, or ATR.</summary>
 public sealed record FireSpentFacts(string? Phase, bool Fired, bool FirstFire, bool Vehicle, Func<bool> RateOfFireKept, Func<bool> SupportWeaponUsed, Func<bool> UnfiredWeaponHeld)
@@ -133,7 +134,7 @@ public sealed record FirerLimitFacts(string Id, string? Phase, bool BoundingFire
 /// <summary>A leader's MG partner as the state finds it (A9.12; ruling R12.4): the named id, whether it is an active leader or hero of the leader's side in his Location, not a firer or director, unfired, and unbroken.</summary>
 public sealed record PartnerFacts(string Id, bool Active, bool LeaderOrHero, bool SameSide, bool SameLocation, bool FirerOrDirector, bool Fired, bool Broken);
 
-/// <summary>An Infantry firer's facts for the record (A7.351, A7.352, A7.25, A22.611, A19.2; rulings R12.1, R15.4, R15.10): its conditions, the phase, whether its only fire this phase is one SW use, whether it fired a Gun as a non-squad, whether it fires a MG alone or is a leader, its partner, whether it makes the MOL Check, and its Green Inexperience.</summary>
+/// <summary>An Infantry firer's facts for the record (A7.351, A7.352, A7.25, A22.611, A19.2; rulings R12.1, R15.4, R15.10): its conditions, the phase, whether its only fire this phase is one SW use, whether it fired a Gun as a non-squad, whether it fires a MG alone or is a leader, its partner, whether it makes the MOL Check, its Green Inexperience, and its SSR ELR as an underscored MMC (A19.132; null without the SSR).</summary>
 public sealed record FirerRecordFacts(
     string Id,
     string Definition,
@@ -161,7 +162,8 @@ public sealed record FirerRecordFacts(
     string? Partner,
     bool Mol,
     bool? Inexperienced,
-    bool Berserk = false);
+    bool Berserk = false,
+    int? UnderscoredElr = null);
 
 /// <summary>A directing leader's facts for the record (A7.531): its conditions and whether it directed a SW use this phase.</summary>
 public sealed record DirectorRecordFacts(string Id, string Definition, string At, bool Broken, bool Pinned, bool Concealed, bool Fired, bool FirstFire, bool DirectedSupportWeapon, bool Wounded, bool Cx);

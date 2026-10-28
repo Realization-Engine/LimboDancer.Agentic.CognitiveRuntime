@@ -25,7 +25,8 @@ public static class LiveOrdnance
 
     /// <summary>
     /// The ammunition a Gun or tank may be asked to fire now, at a vehicle or at Infantry (C8.1, C2.21; pass 55): Rules says which, with each
-    /// one's Depletion Number at the game's date, one more under the side's Elite rule (C8.2), and why one it has run out of is not offered.
+    /// one's Depletion Number at the game's date, one more under the side's Elite rule (C8.2), one less under its Ammunition Shortage (A19.131), and why one
+    /// it has run out of is not offered.
     /// </summary>
     public static IReadOnlyList<AmmunitionChoice> AmmunitionChoices(GameState state, string gunId, bool vehicleTarget)
     {
@@ -38,7 +39,8 @@ public static class LiveOrdnance
         };
         return definition is null ? []
             : ScenarioA1Definitions.AmmunitionChoices(definition, vehicleTarget, state.ScenarioYear, state.ScenarioMonth, ScenarioA1Definitions.EliteAmmunition(state.SpecialRules, side),
-                [.. state.DepletedAmmunition.Where(item => item.Gun == gunId).Select(item => item.Ammunition)]);
+                [.. state.DepletedAmmunition.Where(item => item.Gun == gunId).Select(item => item.Ammunition)],
+                ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, side));
     }
 
     /// <summary>A Gun's or MA's caliber in millimeters, its Gun Size (C2.2); null for a definition that is no ordnance.</summary>
@@ -317,6 +319,13 @@ public static class LiveOrdnance
 
             // C8.2 (pass 55, ruling R55.6): the game's special rule makes the side's force Elite for its Depletion Numbers.
             Elite = ScenarioA1Definitions.EliteAmmunition(state.SpecialRules, side) ? true : null,
+
+            // A19.131 (pass 72, ruling R72.12): the side's Ammunition Shortage lowers its Depletion Numbers and a SW's B#; Rules says which.
+            AmmunitionShortage = ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, side) ? true : null,
+
+            // A15.23 (pass 72, ruling R72.8): a hero's shot is recorded under the pass's rule; Rules says which weapons take his DRM (the reviews R1.6, R4.11).
+            HeroWeapons = crew.Kind == "asl:hero" ? true : null,
+
             // C13.48 (pass 60): a LATW at Personnel names its round, and a PSK's date is read from the year.
             ScenarioYear = ScenarioA1OrdnanceEligibility.RecordsYear(vehicleTarget is not null, ammunition is not null || gun.Kind == "asl:latw", state.Side(side)?.Nationality)
                 ? state.ScenarioYear : null,
@@ -593,6 +602,9 @@ public static class LiveOrdnance
             // D.8A (pass 60, ruling R60.7): a PF's hit on an AFV attacks its Vulnerable crew Collaterally.
             SpecificCollateral = vehicle is null ? null : true,
             Panzerfaust = new OrdnancePanzerfaust(state.PanzerfaustShots.GetValueOrDefault(unit.Side!), PanzerfaustAllowance(state, unit.Side!), null, Is(unit, Conditions.Heroic)),
+
+            // A15.23 (pass 72, ruling R72.8): a hero's PF shot is recorded under the pass's rule.
+            HeroWeapons = unit.Kind == "asl:hero" ? true : null,
         };
         if (director is not null)
         {
@@ -805,6 +817,13 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         // The map facts are taken as recorded; the state reads of pass 8 are recomputed (table player, pass 8): Bore Sighting (C6.43), overstacking
         // (A5.12, A5.131), and Emplacement. A SW is where its possessor is; a PF where its firer is.
         var merged = ScenarioA1OrdnanceEligibility.WithRecordedMapFacts(expected, recorded);
+
+        // A15.23 (pass 72, ruling R72.8): a hero's shot recorded before the pass carries no HeroWeapons fact and replays without his DRM; one that carries it is
+        // held to the state's.
+        merged = merged with
+        {
+            HeroWeapons = recorded.HeroWeapons == true ? merged.HeroWeapons : null,
+        };
 
         // Pass 50 (ruling R45.4's rule for a new fact): a record made before the pass says nothing of the vehicle's other weapons, and is compared without.
         if (merged.Vehicle is { Weapons: not null } withWeapons && recorded.Vehicle is { Weapons: null }

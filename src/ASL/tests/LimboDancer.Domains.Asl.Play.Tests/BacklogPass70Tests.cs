@@ -528,6 +528,21 @@ public sealed class BacklogPass70Tests : IDisposable
         var check = Assert.Single(ChecksSince(before));
         var effect = Assert.Single(ResolutionOf(check).Effects);
         Assert.Equal(("r2", "LLMC", 6, true), (effect.UnitId, effect.Checks[0].Kind, effect.Checks[0].FinalDr, effect.Checks[0].Passed));
+
+        // Pass 72 (ruling R72.19): the record carries the pass's stamp, so the verifier checks every unit's SSR ELR against the state; one without it, as a
+        // record made before the pass, verifies as it did.
+        Assert.True(check.Facts.GetProperty("unitSubstitution").GetBoolean());
+        var all = store.Read(Scope)!.Events;
+        var index = all.ToList().FindIndex((int)before, item => item.Payload is MoraleCheckResolved);
+        var state = Planner().Replay([.. all.Take(index)]).Current!;
+        var rolls = all.Select(item => item.Payload).OfType<DiceRolled>().ToDictionary(roll => roll.Roll, StringComparer.Ordinal);
+        var unstamped = System.Text.Json.Nodes.JsonNode.Parse(check.Facts.GetRawText())!.AsObject();
+        unstamped.Remove("unitSubstitution");
+        Assert.Null(FireRecordVerifier.Shared.VerifyMoraleCheck(state, check, rolls));
+        Assert.Null(FireRecordVerifier.Shared.VerifyMoraleCheck(state, check with
+        {
+            Facts = JsonSerializer.SerializeToElement(unstamped)
+        }, rolls));
         NoReplayErrors();
     }
 

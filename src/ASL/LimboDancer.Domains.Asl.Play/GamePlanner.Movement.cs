@@ -235,10 +235,11 @@ public sealed partial class GamePlanner
             charge = target;
 
             // A15.431: before its charge a berserk unit abandons every SW of more than one PP; its 1PP SW beyond its IPC (A4.42: three for
-            // a MMC, one for a SMC) are its own choice, which is not reviewed. The SW held and their printed portage are read here; Rules decides.
+            // a MMC, one for a SMC) are its own choice, which is not reviewed; one made berserk in mid move abandons them with its next step (ruling R72.6).
+            // The SW held and their printed portage are read here; Rules decides.
             var carriedBy = movers.ToDictionary(unit => unit.Id, unit => state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == unit.Id).ToArray(), StringComparer.Ordinal);
             var (noPortage, abandonedIds) = ScenarioA1MovementCalculator.BerserkAbandons(
-                [.. movers.Select(unit => new BerserkAbandonFacts(unit.Id, unit.MfSpent == 0 && !unit.HalfMfSpent, vocabulary.IsA(unit.Kind, "asl:smc"),
+                [.. movers.Select(unit => new BerserkAbandonFacts(unit.Id, vocabulary.IsA(unit.Kind, "asl:smc"),
                     [.. carriedBy[unit.Id].Select(item => new BerserkCarriedFacts(item.Id, item.Definition is { } reference
                         ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:portage")?.Value?.Number
                         : null))]))],

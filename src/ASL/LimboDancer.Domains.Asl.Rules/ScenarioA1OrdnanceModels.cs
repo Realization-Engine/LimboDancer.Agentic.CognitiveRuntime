@@ -56,6 +56,28 @@ public sealed record OrdnanceShot(
         get; init;
     }
 
+    /// <summary>
+    /// Whether an SSR cites the firer's side's on-board OB as afflicted by Ammunition Shortages (A19.131, p. 86; pass 72, ruling R72.12): its Depletion Numbers
+    /// are one lower, and so is a SW's B# (not a captured one, A21.11): the game's special rule <c>ammo-shortage:&lt;side&gt;</c>, read from the state when the
+    /// shot is verified. Null is false: a shot recorded before increment 5d had none. A vehicle's or Gun's circled B# is pass 105's.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? AmmunitionShortage
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the shot is a hero's under A15.23 (p. 83; pass 72, ruling R72.8): his -1 on the To Hit DR of a non-MG SW, and the +1 of a SW that needs two men
+    /// (C13.45, C13.48). The planner records it with every hero's SW shot from the pass on, and the verifier takes it from the record. Null is false: a hero's
+    /// light mortar, PF, or ATR shot recorded before increment 5e took no -1, and replays as it was resolved.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? HeroWeapons
+    {
+        get; init;
+    }
+
     /// <summary>The scenario year, which decides the special ammunition's Depletion Number (C8.9, C8.91); null when the game names none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? ScenarioYear

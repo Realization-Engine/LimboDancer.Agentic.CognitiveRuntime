@@ -199,9 +199,13 @@ public static class LiveFire
             boarding = new FireEmbarking(bailedHere, true, null);
         }
 
+        // A7.21, A7.211, A15.432 (pass 72, rulings R72.7, R72.21): whether a firer, Infantry or a vehicle, stands in the target Location; Rules decides that
+        // the attack is TPBF at the other side's units there outside the MPh's moving stack. Before the pass such an attack was refused, its firer among its
+        // own targets, so no record holds one.
         UnitInstance UnitAt(string id) => atTarget.First(unit => unit.Id == id);
         var selection = ScenarioA1FireEligibility.SelectTargets([.. atTarget.Select(unit => new TargetUnitStateFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side,
-            IsVehicle(unit), unit.Kind == UnitKinds.Dummy, unit.Definition is not null, movers?.Contains(unit.Id)))], movers is not null);
+            IsVehicle(unit), unit.Kind == UnitKinds.Dummy, unit.Definition is not null, movers?.Contains(unit.Id)))], movers is not null, side,
+            firers.Any(item => atTarget.Any(unit => unit.Id == item.Unit.Id)));
         if (selection.Refusal is { } outside)
         {
             return (null, outside);
@@ -294,7 +298,7 @@ public static class LiveFire
                 unit.Group is not null ? state.ElrOf(unit) : null, Is(unit, Conditions.FirstFire), Is(unit, Conditions.FinalFire), state.Phase, swOnly,
                 state.GunCrewsFired.Contains(unit.Id, StringComparer.Ordinal), unit.Kind == "asl:squad", leader, withoutInherent?.Contains(unit.Id) == true, used,
                 Is(unit, Conditions.Fanatic), Is(unit, Conditions.Wounded), Is(unit, Conditions.Cx), Is(unit, Conditions.BoundingFire), state.Encircled(unit), partner,
-                molUser == unit.Id, GreenInexperienced(state, unit), Is(unit, Conditions.Berserk))));
+                molUser == unit.Id, GreenInexperienced(state, unit), Is(unit, Conditions.Berserk), UnderscoredElr(state, unit))));
         }
 
         FireDirector Director((UnitInstance Unit, BoardLocation At) item) =>
@@ -322,6 +326,9 @@ public static class LiveFire
             MgBoreSighted = boreSighted ? true : null,
             Embarking = boarding,
             GunCrews = GunCrews(state, selection.Targets),
+
+            // A19.131 (pass 72, rulings R72.11, R72.12): the firing side's Ammunition Shortage, from the game's special rules; Rules says what it does.
+            AmmunitionShortage = state.SpecialRules.Count > 0 && ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, side) ? true : null,
         }, null);
     }
 
@@ -719,6 +726,7 @@ public static class LiveFire
         Dictionary<string, int>? weaponSelection = null;
         Dictionary<string, int>? firerSelection = null;
         Dictionary<string, int>? cowerSelection = null;
+        Dictionary<string, int>? shortageSelection = null;
         Dictionary<string, IReadOnlyList<int>>? checks = null;
         Dictionary<string, IReadOnlyList<int>>? leaderLoss = null;
         Dictionary<string, int>? wounds = null;
@@ -796,6 +804,15 @@ public static class LiveFire
                     }
 
                     break;
+
+                // A19.131 (pass 72, ruling R72.11): the Random Selection of the MMC an Original 12 under Ammunition Shortage Replaces.
+                case "shortageSelection":
+                    if (!Select(ref shortageSelection, unit, roll))
+                    {
+                        return null;
+                    }
+
+                    break;
                 case "checks" when roll.Count == 2:
                     (checks ??= new(StringComparer.Ordinal))[unit] = roll.Values;
                     break;
@@ -850,6 +867,7 @@ public static class LiveFire
             WeaponSelection = weaponSelection,
             FirerSelection = firerSelection,
             CowerSelection = cowerSelection,
+            ShortageSelection = shortageSelection,
             HeatOfBattle = heat,
             BerserkChecks = berserk,
             CrewChecks = crewChecks,
@@ -909,7 +927,16 @@ public static class LiveFire
             // Ruling R18.3: a unit of an OB group takes its group's ELR.
             unit.Group is not null ? state.ElrOf(unit) : null,
             Is(unit, Conditions.Fanatic), Is(unit, Conditions.Heroic), Is(unit, Conditions.Berserk),
-            GreenInexperienced(state, unit), Flamethrowers(state, unit)));
+            GreenInexperienced(state, unit), Flamethrowers(state, unit), UnderscoredElr(state, unit)));
+
+    /// <summary>
+    /// The SSR ELR of a MMC with an underscored Morale Factor (A19.132; pass 72, ruling R72.13): Rules reads it from the game's special rules, the unit's side
+    /// and OB group, and its definition; null without an <c>underscored-elr:</c> SSR, as in every game before the pass.
+    /// </summary>
+    internal static int? UnderscoredElr(GameState state, UnitInstance unit) =>
+        state.SpecialRules.Count == 0 ? null
+            : ScenarioA1UnitSubstitution.UnderscoredElr(state.SpecialRules, unit.Side, unit.Group,
+                unit.Definition is { } reference ? CatalogReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null);
 
     // A7.1: a unit fires in one fire phase per Player Turn; A7.531: a directing leader is marked too.
     internal static bool Fired(IGameObject item) => ScenarioA1FireEligibility.Fired(Is(item, Conditions.PrepFire), Is(item, Conditions.FinalFire));
@@ -1010,6 +1037,17 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                 KnownEnemyInLos = target.KnownEnemyInLos,
                 Captors = target.Captors,
             };
+
+            // Pass 72 (rulings R72.13, R72.19): a record stamped with the pass has every unit's SSR ELR as an underscored MMC checked against the state; one made
+            // before the pass carries none and resolves as it did.
+            if (recorded.UnitSubstitution != true && target.UnderscoredElr is null)
+            {
+                expected = expected with
+                {
+                    UnderscoredElr = null
+                };
+            }
+
             if (unit.Side != side || JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(target, LiveFire.Json))
             {
                 return $"The morale check record's facts of {unit.Id} do not match the game state.";
@@ -1156,6 +1194,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                     // Pass 45 (ruling R45.4): a firer's berserk state is a fact of attacks planned from the pass on; an older record has none.
                     Berserk = recorded.CoweringMarksAndWeaponResidual == true ? fact.Berserk : record.Berserk,
 
+                    // Pass 72 (ruling R72.13): a firer's SSR ELR as an underscored MMC is checked against the state for an attack planned from the pass on.
+                    UnderscoredElr = recorded.UnitSubstitution == true ? fact.UnderscoredElr : record.UnderscoredElr,
+
                     // Pass 65 (ruling R65.10): a Passenger's Mounted Fire is the planner's read of its vehicle, recorded with the attack.
                     Mounted = record.Mounted,
                 })],
@@ -1173,6 +1214,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                     // Pass 71 (ruling R71.14): whether a wound pins the target (A17.2) is written with the attack and taken from the record; an older one has none.
                     // A recorded pin the state does not give is refused (R3's finding 2).
                     WoundPins = LiveFire.RecordedWoundPins(state, fact.UnitId, record.WoundPins),
+
+                    // Pass 72 (ruling R72.13): so is a target's.
+                    UnderscoredElr = recorded.UnitSubstitution == true ? fact.UnderscoredElr : record.UnderscoredElr,
                 })],
             // D3.52, C5.11 (pass 50): the hexspines a vehicle's MG must turn its CA, and its hex's terrain, are map reads recorded with the attack.
             VehicleFire = expected.VehicleFire is { Weapons: { } stateWeapons } armedVehicle && recorded.VehicleFire is { Weapons: { } recordedWeapons } recordedVehicle
@@ -1256,6 +1300,13 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             // Pass 45 (ruling R45.4): so are the Cowering marks and the Residual FP by weapon.
             CoweringMarksAndWeaponResidual = recorded.CoweringMarksAndWeaponResidual,
             TargetsInMelee = recorded.TargetsInMelee,
+
+            // Pass 72 (rulings R72.9, R72.13): and the Inexperienced MG B# and the underscored units' SSR ELR.
+            UnitSubstitution = recorded.UnitSubstitution,
+
+            // Pass 72 (rulings R72.11, R72.12): a record that carries the pass's stamp has its Ammunition Shortage checked against the state; an older one
+            // carries none and resolves as it did.
+            AmmunitionShortage = recorded.UnitSubstitution == true ? expected.AmmunitionShortage : recorded.AmmunitionShortage,
 
             // Backlog pass 12 (rulings R12.6, R12.7): Spraying Fire is the firer's declaration; a Fire Lane's Residual FP is the lane's in the state.
             SprayingFire = recorded.SprayingFire,

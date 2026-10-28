@@ -630,11 +630,22 @@ public static class ScenarioA1OrdnanceEligibility
 
     /// <summary>
     /// A To Hit DRM's recorded name in a proposal's words (review of pass 50): "case-c2" reads "Case C2", "case-q:woods" reads "Case Q (woods)",
-    /// and "case-a:maintained" reads "Case A (the CA change its turret already made)"; any other name is left as it is.
+    /// and "case-a:maintained" reads "Case A (the CA change its turret already made)"; a hero's DRM (A15.23; pass 72, the reviews' known items) reads as the
+    /// record says it, "hero's SW, gh"; any other name is left as it is.
     /// </summary>
     public static string CaseWords(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
+        if (name.StartsWith("hero:", StringComparison.Ordinal))
+        {
+            return "hero's SW, " + name["hero:".Length..];
+        }
+
+        if (name.StartsWith("hero-two-man:", StringComparison.Ordinal))
+        {
+            return "hero alone with a two-man SW, " + name["hero-two-man:".Length..];
+        }
+
         if (!name.StartsWith("case-", StringComparison.Ordinal))
         {
             return name;

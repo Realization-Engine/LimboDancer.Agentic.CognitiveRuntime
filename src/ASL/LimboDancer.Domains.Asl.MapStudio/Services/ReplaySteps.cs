@@ -502,6 +502,12 @@ public static class ReplaySteps
                 + (PlayRecords.SanUnchanged(before, reduced.Side) ? "stays at the printed SAN at night" : "falls") + end, false);
         }
 
+        // A15.44, A15.3 (pass 72, ruling R72.17; the review R3.1): a Battle Hardening answered, said before the next unit's choice its step may also hold.
+        if (First<ChoiceMade>(payloads) is { } made && before.Choice is { Kind: ChoicePending.BattleHardening } hardening)
+        {
+            return ("other", hardening.Side, $"The {DisplayText.Side(hardening.Side)} side {(made.Option == ChoicePending.Take ? "takes" : "refuses")} Battle Hardening{end}", false);
+        }
+
         if (First<ChoicePending>(payloads) is { } waiting)
         {
             // A14.4 (pass 71, ruling R71.10): the attacked side may take a Sniper Check.
@@ -520,6 +526,12 @@ public static class ReplaySteps
             if (waiting.Kind == ChoicePending.GunDuel)
             {
                 return ("fire", defender, $"A shot is declared, and the {DisplayText.Side(waiting.Side)} side may answer with a Gun Duel", false);
+            }
+
+            // A15.44, A15.3 (pass 72, ruling R72.17; the review R3.1): a Battle Hardening its owner takes or refuses.
+            if (waiting.Kind == ChoicePending.BattleHardening)
+            {
+                return ("other", waiting.Side, $"The {DisplayText.Side(waiting.Side)} side is to take or refuse Battle Hardening", false);
             }
 
             return ("other", null, $"A choice waits for the {DisplayText.Side(waiting.Side)} side", false);

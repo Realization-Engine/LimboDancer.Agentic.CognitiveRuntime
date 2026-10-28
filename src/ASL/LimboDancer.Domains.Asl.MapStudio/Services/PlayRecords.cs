@@ -34,6 +34,7 @@ public sealed partial class PlayRecords
     private IReadOnlyList<(string EventId, string Text)>? snipers;
     private IReadOnlyList<(string EventId, string Kind, string Text)>? rallyAndRepair;
     private Dictionary<string, string>? when;
+    private Dictionary<string, GameEvent>? byId;
     private (bool Read, string? Text) latest;
 
     /// <summary>
@@ -498,6 +499,8 @@ public sealed partial class PlayRecords
                 // C2.2401 (pass 55): the ATTACKER's answer to a declared shot; the declaration and a void return shot are among the ordnance records.
                 ChoiceMade answered when before?.Choice is { Kind: ChoicePending.GunDuel } duel && GunDuelParties(duel.Resume) is (var answeredFirer, var answeredVehicle) =>
                     ScenarioA1GunDuels.AnswerText(answered.Option, answeredVehicle, answeredFirer),
+                // A15.44, A15.3 (pass 72, ruling R72.17; the reviews R3.1, R4.2): the Battle Hardening answer says the unit, its hex, and what it became.
+                ChoiceMade hardened when hardened.Key.StartsWith(ScenarioA1ChargeCalculator.HardeningChoice + ":", StringComparison.Ordinal) => HardeningLine(item, hardened, before),
                 ChoiceMade => "A choice the game waited for was answered",
                 SurrenderPending surrender => $"{surrender.Unit}{In(before, surrender.Unit)} surrenders, and its captor is to be chosen (A20.21)",
                 SurrenderRejected refused => $"The surrender of {refused.Unit} is refused (A20.3)",
@@ -508,6 +511,10 @@ public sealed partial class PlayRecords
                 BuildingMoppedUp mopped => MopUpText(item.EventId, mopped, before),
                 PhaseChanged phase => $"The {DisplayText.Side(phase.PhasingSide)} {GameText.PhaseLabel(phase.Phase)} of Turn {phase.Turn} begins",
                 GameEnded => "The game ends",
+                // A15.46 (pass 72, ruling R72.7): a berserk unit's return to normal written after the fire or the CC attack on a vehicle that cleared its Location.
+                ConditionsChanged calmed when calmed.Conditions.Count == 1 && calmed.Conditions.TryGetValue(Conditions.Berserk, out var berserkNow) && berserkNow == ConditionState.False
+                    && BerserkClearedBy(item, before) is { } clearedBy => ScenarioA1SequenceCalculator.BerserkClearedText(calmed.Id + In(before, calmed.Id), clearedBy.Vehicle,
+                        clearedBy.Tpbf, clearedBy.Ft),
                 _ => null,
             };
             if (text is not null)
@@ -574,6 +581,12 @@ public sealed partial class PlayRecords
             changed = [.. changed, .. prc.Select(line => fire.Say(line))];
         }
 
+        // A19.131 (pass 72, ruling R72.11): the firing side's MMC an Original 12 under Ammunition Shortage Replaced, after the attack.
+        if (fire.Shortage is { Count: > 0 } shortage)
+        {
+            changed = [.. changed, .. shortage.Select(line => fire.Say(line))];
+        }
+
         // The table player's review of pass 55: a Canister attack on a Location where the view knows of no unit.
         if (fire.NoKnownTarget)
         {
@@ -622,6 +635,63 @@ public sealed partial class PlayRecords
         }
 
         return parts.Count == 0 ? null : $"{check.Location}: {string.Join("; ", parts)}";
+    }
+
+    /// <summary>
+    /// A Battle Hardening answer in words (A15.44, A15.3; pass 72, ruling R72.17): the unit and its Location before the answer, taken or refused, and what the
+    /// answer's own events made of it: the unit of the next higher quality its lineage produced, or Fanatic. Only the events of the answer's attempt are read.
+    /// </summary>
+    private string HardeningLine(GameEvent item, ChoiceMade made, GameState? before)
+    {
+        var unitId = made.Key[(ScenarioA1ChargeCalculator.HardeningChoice.Length + 1)..];
+        var attempt = AttemptOf(item.EventId);
+        var caused = events.Where(other => AttemptOf(other.EventId) == attempt && other.Causes.Contains(item.EventId, StringComparer.Ordinal)).Select(other => other.Payload).ToArray();
+        var next = caused.OfType<LineageRecorded>().Where(lineage => lineage.Consumed.Contains(unitId, StringComparer.Ordinal)).SelectMany(lineage => lineage.Produced)
+            .Select(produced => produced.Definition).FirstOrDefault();
+        var fanatic = caused.OfType<ConditionsChanged>().Any(changed => changed.Id == unitId && changed.Conditions.TryGetValue(Conditions.Fanatic, out var set) && set == ConditionState.True);
+        return DisplayText.Reason(ScenarioA1ChargeCalculator.HardeningText(unitId, before?.Location(unitId)?.Location.ToString(), made.Option == ChoicePending.Take, next, fanatic)).Text;
+    }
+
+    /// <summary>
+    /// The attack a berserk unit's return to normal follows (A15.46; pass 72, ruling R72.7), read from its event's one cause: true for a CC attack on a vehicle,
+    /// false for a fire attack, null for any other cause (the end of a charge, Battle Hardening, and CC against Infantry, whose own record says it). For a fire
+    /// attack, whether its firers fired their TPBF (inherent FP or a weapon other than a FT) and a FT, as the record has it (the reviews R3.9). The causes are
+    /// read from one dictionary of the list's events by id, built on the first such line (the reviews R4.6).
+    /// </summary>
+    private (bool Vehicle, bool Tpbf, bool Ft)? BerserkClearedBy(GameEvent item, GameState? before)
+    {
+        if (item.Causes is not [var cause])
+        {
+            return null;
+        }
+
+        if (byId is null)
+        {
+            byId = new Dictionary<string, GameEvent>(events.Count, StringComparer.Ordinal);
+            foreach (var each in events)
+            {
+                byId.TryAdd(each.EventId, each);
+            }
+        }
+
+        var caused = byId.GetValueOrDefault(cause);
+        switch (caused?.Payload)
+        {
+            case VehicleCloseCombatResolved:
+                return (true, false, false);
+
+            // A fire record withheld from the view says nothing of its weapons: "by its TPBF or FT".
+            case FireResolved when !caused!.IsVisibleTo(viewer):
+                return (false, false, false);
+            case FireResolved fired:
+                var firers = fired.Facts.ValueKind == JsonValueKind.Object ? fired.Facts.Deserialize<FireAttack>(LiveFire.Json)?.Firers ?? [] : [];
+                bool Ft(FireWeapon weapon) => before?.Find(weapon.EquipmentId ?? string.Empty) is EquipmentInstance { Kind: "asl:ft" };
+                var ft = firers.Any(firer => (firer.Weapons ?? []).Any(Ft));
+                var tpbf = !ft || firers.Any(firer => firer.UsesInherentFp != false || (firer.Weapons ?? []).Any(weapon => !Ft(weapon)));
+                return (false, tpbf, ft);
+            default:
+                return null;
+        }
     }
 
     /// <summary>
@@ -732,7 +802,7 @@ public sealed partial class PlayRecords
                 {
                     // The UI review of pass 55: the number is the record's own, never the catalog's of a later day.
                     var fact = canisterShot.Facts.Deserialize<OrdnanceShot>(LiveFire.Json);
-                    var number = ScenarioA1Definitions.DepletionNumberWords(canister.DepletionNumber, fact?.Elite == true);
+                    var number = ScenarioA1Definitions.DepletionNumberWords(canister.DepletionNumber, fact?.Elite == true, ScenarioA1Definitions.DepletionShortage(fact));
                     var round = canisterResolution.AmmunitionUse switch
                     {
                         "none" => $"the DR is above the {number}: it had no Canister, attacks nothing, "
@@ -869,7 +939,8 @@ public sealed partial class PlayRecords
                 }
 
                 // C8.9, C8.2 (pass 55): the number the shot was fired under, with the one an Elite force adds, as the record itself names it.
-                var depletion = resolution.DepletionNumber is { } recordedNumber ? ScenarioA1Definitions.DepletionNumberWords(recordedNumber, shot?.Elite == true)
+                // A19.131 (pass 72, ruling R72.12): and the one an Ammunition Shortage takes away.
+                var depletion = resolution.DepletionNumber is { } recordedNumber ? ScenarioA1Definitions.DepletionNumberWords(recordedNumber, shot?.Elite == true, ScenarioA1Definitions.DepletionShortage(shot))
                     : "Depletion Number";
                 if (resolution.AmmunitionUse == "none")
                 {
@@ -1010,6 +1081,11 @@ public sealed partial class PlayRecords
                         Several = fire.Firers.Count > 1,
                         LosBlocked = resolution.LosBlocked == true,
                         Weapons = resolution.WeaponEffects,
+
+                        // Pass 72 (the reviews R3.3): a malfunctioned or removed weapon's lowered number and its causes, from the record's own facts.
+                        WeaponNumbers = facts is null ? null : (resolution.WeaponEffects ?? []).Where(weapon => weapon.Malfunctioned || weapon.Removed == true)
+                            .Select(weapon => (weapon.EquipmentId, Words: ScenarioA1Definitions.BreakdownWords(facts, weapon))).Where(item => item.Words is not null)
+                            .ToDictionary(item => item.EquipmentId, item => item.Words!, StringComparer.Ordinal) is { Count: > 0 } numbers ? numbers : null,
                         Vehicles = resolution.VehicleEffects,
 
                         // Pass 60 (rulings R60.15, R60.16): the AFV a FT, MOL, or DC named.
@@ -1017,6 +1093,9 @@ public sealed partial class PlayRecords
 
                         // Pass 60 (ruling R60.17): what the KIA did to its victims' weapons.
                         WeaponDestruction = resolution.WeaponDestruction is { Count: > 0 } ? FireText.WeaponDestructionLines(resolution.WeaponDestruction) : null,
+
+                        // Pass 72 (ruling R72.11): the Unit Replacement of an Original 12 under Ammunition Shortage.
+                        Shortage = FireText.ShortageLines(resolution.ShortageEffects, facts?.Firers, resolution.ShortageEffects is { Count: > 0 } ? ShortageSelection(fire) : null),
                         BrokenBefore = before.Where(target => target.Broken == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
                         PinnedBefore = before.Where(target => target.Pinned == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
                     });
@@ -1038,6 +1117,12 @@ public sealed partial class PlayRecords
 
                         // The LOS is the map's, and both sides see that the shot went nowhere (A6.11).
                         LosBlocked = withheld.Payload is FireResolved unseen && unseen.Resolution.Deserialize<FireResolution>(LiveFire.Json)?.LosBlocked == true,
+
+                        // Pass 72 (ruling R72.11): the firing side's own units an Original 12 under Ammunition Shortage Replaced, which its public events show.
+                        Shortage = withheld.Payload is FireResolved own && own.Resolution.TryGetProperty("shortageEffects", out _)
+                            ? FireText.ShortageLines(own.Resolution.Deserialize<FireResolution>(LiveFire.Json)?.ShortageEffects, own.Facts.Deserialize<FireAttack>(LiveFire.Json)?.Firers,
+                                ShortageSelection(own))
+                            : null,
                     });
                 }
             }
@@ -1662,6 +1747,19 @@ public sealed partial class PlayRecords
 
     // The rolls of the history by id, for the Sniper lines' triggers and checks: read once.
     private Dictionary<string, GameEvent>? dice;
+
+    /// <summary>
+    /// Every candidate's Random Selection dr of a fire record's Unit Replacement under Ammunition Shortage (A19.131, A.9; pass 72, the reviews R3.10), from its
+    /// <c>shortageSelection:</c> rolls the view may see, in unit id order.
+    /// </summary>
+    private (string UnitId, int Dr)[] ShortageSelection(FireResolved fire)
+    {
+        const string prefix = "shortageSelection:";
+        return [.. fire.Rolls.Where(item => item.Key.StartsWith(prefix, StringComparison.Ordinal))
+            .Select(item => (UnitId: item.Key[prefix.Length..], Roll: DiceOf(item.Value)))
+            .Where(item => item.Roll is { Payload: DiceRolled { Values.Count: > 0 } } roll && roll.IsVisibleTo(viewer))
+            .Select(item => (item.UnitId, ((DiceRolled)item.Roll!.Payload).Values[0])).OrderBy(item => item.UnitId, StringComparer.Ordinal)];
+    }
 
     private GameEvent? DiceOf(string roll)
     {

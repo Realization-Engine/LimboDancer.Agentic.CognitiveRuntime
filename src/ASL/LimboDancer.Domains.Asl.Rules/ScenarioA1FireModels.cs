@@ -300,6 +300,30 @@ public sealed record FireAttack(
     }
 
     /// <summary>
+    /// Pass 72 (A19.32, A19.132, p. 86; rulings R72.9, R72.13): the B# and X# of any SW used by Inexperienced Personnel are one lower, a MG's included
+    /// (ruling R9.10 lifted), read from the user's <see cref="FireFirer.Inexperienced"/> fact or, where it is absent, by Conscript class; and the verifier reads
+    /// the targets' and firers' <see cref="FireTarget.UnderscoredElr"/> from the state. The planner records it with every attack from the pass on; an attack
+    /// recorded before it has none, and replays as it was resolved (an Inexperienced MG keeps its printed B#).
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? UnitSubstitution
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether an SSR cites the firing side's on-board OB as afflicted by Ammunition Shortages (A19.131, p. 86; pass 72, rulings R72.11, R72.12): the B# and
+    /// X# of its SW (not a DC, not a captured SW) are one lower, and an Original 12 IFT DR by a fire group in which a MMC used its Inherent FP Replaces one
+    /// such MMC. The planner's read of the <c>ammo-shortage:</c> SSR; the verifier checks it against the state for an attack that carries
+    /// <see cref="UnitSubstitution"/>. Null is false, and every record made before increment 5d has none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? AmmunitionShortage
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Pass 31 (ruling R31.3; A7.81): pinned Infantry fires its MG as Area Fire and keeps no Multiple ROF. The planner records it with every attack
     /// from the pass on; an attack recorded before it has none, and replays as it was resolved.
     /// </summary>
@@ -1039,6 +1063,16 @@ public sealed record FireFirer(
         get; init;
     }
 
+    /// <summary>
+    /// The SSR ELR of a firer with an underscored Morale Factor (A19.132; pass 72, ruling R72.13), for the NMC FPF inflicts on it: in place of R15.9's 5.
+    /// Null when no <c>underscored-elr:</c> SSR names the unit's side or OB group, and in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? UnderscoredElr
+    {
+        get; init;
+    }
+
     /// <summary>Whether a Known enemy unit is in the firer's LOS (A15.44), the planner's read; needed when an FPF NMC can reach Heat of Battle.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? KnownEnemyInLos
@@ -1216,6 +1250,17 @@ public sealed record FireTarget(
     }
 
     /// <summary>
+    /// The SSR ELR of a MMC with an underscored Morale Factor (A19.132, p. 86; pass 72, ruling R72.13): in place of R15.9's 5, and a failure beyond it
+    /// Replaces the unit by the normal table. Null when no <c>underscored-elr:</c> SSR names the unit's side or OB group, and in every record made before the
+    /// pass, which resolves as it did.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? UnderscoredElr
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Whether the unit is berserk (A15.42): Morale Level 10, Casualty Reduction instead of breaking, never pinned, no leader
     /// loss checks, and no leadership from a friendly leader; null is false.
     /// </summary>
@@ -1357,6 +1402,16 @@ public sealed record FireRolls(
     /// <summary>One dr per FPF firer, when a Casualty MC falls on two or more of them (A8.31).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyDictionary<string, int>? FirerSelection
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// One dr per MMC that used its Inherent FP, when an Original 12 under Ammunition Shortage falls on a fire group of two or more of them (A19.131, A.9;
+    /// pass 72, ruling R72.11): the highest is Replaced, ties with it.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, int>? ShortageSelection
     {
         get; init;
     }
@@ -1704,6 +1759,18 @@ public sealed record FireResolution(
     /// <summary>The NMC FPF inflicts on its firers and directing leader (A8.31); null for other fire.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<FireUnitEffect>? FirerEffects
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Unit Replacement an Original 12 IFT DR under Ammunition Shortage brings on the firing side's MMC that used its Inherent FP (A19.131, p. 86; pass 72,
+    /// ruling R72.11), after the attack and its SW's malfunction or removal: the one Random Selection picks (ties with it), Replaced by the next lower quality
+    /// unit with its broken or unbroken status, an underscored squad by its two HS, and one incapable of further quality loss broken unless berserk. Null
+    /// when none is.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireUnitEffect>? ShortageEffects
     {
         get; init;
     }

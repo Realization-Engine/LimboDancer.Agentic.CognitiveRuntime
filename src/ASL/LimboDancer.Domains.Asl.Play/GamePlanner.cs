@@ -854,9 +854,18 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, ScenarioA1SequenceCalculator.RecallMoveText(recalled.Id));
         }
 
+        // A15.45, A15.44, E1.533 (pass 72, ruling R72.4): a berserk unit whose charge reaches no Known enemy unit in its LOS past rule bars alone stayed in place;
+        // as the MPh ends it loses berserk status, and its owner takes or refuses its Battle Hardening, one unit at a time, once the phase has changed.
+        // The review (R4.7): only the MPh's berserk units are read further, so no other unit's Location is looked up at a phase advance.
+        UnitInstance[] berserk = state.Phase == "mph" ? [.. state.Units.Where(unit => Is(unit, Conditions.Berserk))] : [];
+        string[] hardening = [.. berserk.Where(unit => ScenarioA1ChargeCalculator.HardeningDue(state.Phase, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide,
+            Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), LocationOf(state, unit.Id) is not null,
+            () => ChargeSteps(state, [unit], LocationOf(state, unit.Id)!.Location, state.Movement?.Members.Contains(unit.Id) == true ? state.Movement : null).Undecided))
+            .Select(unit => unit.Id).Order(StringComparer.Ordinal)];
+
         // A15.431, A15.46: at the end of its MPh a berserk unit with no Known enemy unit in its LOS returns to normal.
-        foreach (var unit in state.Units.Where(unit => ScenarioA1SequenceCalculator.BerserkReturns(state.Phase, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide,
-            Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), state.Location(unit.Id) is not null, () => KnownEnemyInLos(state, unit.Side, state.Location(unit.Id)!.Location))))
+        foreach (var unit in berserk.Where(unit => ScenarioA1SequenceCalculator.BerserkReturns(state.Phase, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide,
+            Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), LocationOf(state, unit.Id) is not null, () => KnownEnemyInLos(state, unit.Side, LocationOf(state, unit.Id)!.Location))))
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
                 new ConditionsChanged(unit.Id, ConditionChanges(ScenarioA1SequenceCalculator.BerserkEndsConditions())), null, null));
@@ -942,6 +951,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         AddConcealmentGains(scope, attemptId, expected, actor, gains, events, null, reasons);
         Finish(events, reasons);
+
+        // Ruling R72.4: the MPh's end draws no dice (no "?" gain, Wind Change, or leader loss is due then), so the first Battle Hardening choice follows here.
+        if (!ending && hardening.Length > 0 && state.Unit(hardening[0]) is { } hardened)
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending", BerserkHardeningPending(state, hardened, hardening[1..]), null, null));
+            reasons.Add(ScenarioA1ChargeCalculator.HardeningDueText([.. hardening.Select(id => (id, LocationOf(state, id)!.Location.ToString()))]));
+        }
+
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [ending
             ? $"play.game-ended: Game Turn {state.Turn} was the card's last{(turn > state.Turn ? string.Empty : ", a half turn")}, so the game ends (A3.9; ruling R20.1)"
             : ScenarioA1SequenceCalculator.AdvanceText(turn, phase, phasing), .. reasons]);

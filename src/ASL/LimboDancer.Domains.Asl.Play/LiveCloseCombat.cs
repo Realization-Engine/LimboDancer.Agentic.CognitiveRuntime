@@ -117,7 +117,10 @@ public static class LiveCloseCombat
         // A4.152 (ruling R27.3): the CC of an Infantry OVR follows its entry at once, with no Ambush (A11.4 is for units that advance into CC).
         if (overrun)
         {
-            return (ScenarioA1CloseCombatFactBuilders.Overrun(location.ToString(), terrain, state.PhasingSide, units, attacks), null);
+            return (ScenarioA1CloseCombatFactBuilders.Overrun(location.ToString(), terrain, state.PhasingSide, units, attacks) with
+            {
+                KnownEnemiesOnly = true,
+            }, null);
         }
 
         if (ScenarioA1CloseCombatFactBuilders.AmbushFirstBar(entry is not null, ScenarioA1CloseCombatCalculator.AmbushPossible(terrain, units, units.Any(unit => state.HiddenPlaced.Contains(unit.UnitId!, StringComparer.Ordinal))),
@@ -132,8 +135,20 @@ public static class LiveCloseCombat
         var hand = ScenarioA1CloseCombatFactBuilders.HandToHand(rounds, entry?.HandToHand == true, round, handToHand);
 
         // A11.12's EXC (ruling R70.30): a sequential round's units attacked before are those Infantry attacked; a vehicle's attacks are counted apart.
+        // A15.46 (pass 72, ruling R72.5): the sides of the Known vehicles there, which the round's units leave out: a surviving vehicle keeps a berserk unit berserk.
+        // A Known vehicle as the planner reads it (review R4, finding 3): neither concealed nor hidden, and not captured.
+        string[] vehicleSides = sequential ? [.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)
+            && !Is(unit, Conditions.Hidden) && !Is(unit, Conditions.Captured)
+            && ScenarioA1ChargeCalculator.ChargeTarget(GameState.Condition(unit, Conditions.Concealed) != ConditionState.True, true, Is(unit, Conditions.Abandoned)))
+            .Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)] : [];
         return (ScenarioA1CloseCombatFactBuilders.Round(state.Phase, location.ToString(), terrain, state.PhasingSide, round, entry?.Ambusher, units,
-            (sequential ? entry?.InfantryAttacked : entry?.Attacked) ?? [], entry?.Attacking ?? [], attacks, hand), null);
+            (sequential ? entry?.InfantryAttacked : entry?.Attacked) ?? [], entry?.Attacking ?? [], attacks, hand) with
+        {
+            VehicleSides = vehicleSides.Length > 0 ? vehicleSides : null,
+
+            // A15.46 (pass 72, ruling R72.20): the round's stamp: a concealed enemy unit left does not keep a berserk unit berserk.
+            KnownEnemiesOnly = true,
+        }, null);
     }
 
     /// <summary>The rolls of a CC record, rebuilt from its roll ids and the recorded dice, in the package's shape.</summary>
@@ -546,7 +561,13 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             {
                 Manning = unit.UnitId is { } id ? manning.GetValueOrDefault(id) : null,
                 Guns = recordsGuns ? unit.Guns : null,
-            })]
+            })],
+
+            // Pass 72 (ruling R72.5): a record made before the pass names no vehicle sides and resolves as it did; a record since must name the state's.
+            VehicleSides = recorded.VehicleSides is null ? null : expected.VehicleSides,
+
+            // Pass 72 (ruling R72.20): the stamp is taken as recorded; a record made before the pass has none and counts every enemy unit as it did.
+            KnownEnemiesOnly = recorded.KnownEnemiesOnly,
         };
         if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

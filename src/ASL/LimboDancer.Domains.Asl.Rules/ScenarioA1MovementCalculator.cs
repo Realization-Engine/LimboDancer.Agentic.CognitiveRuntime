@@ -10,8 +10,9 @@ public static class ScenarioA1MovementCalculator
     /// <summary>
     /// The MF a unit may spend this phase (A4.11, A4.42, A4.5, A4.52; rulings R5.1 and R5.4): its allotment (a MMC's four or three, a SMC's
     /// six or three, a berserk unit's eight), plus the MF Double Time adds, at most eight (seven for Conscripts), less one MF for each PP it
-    /// carries beyond its IPC (three for a MMC, one for a SMC, none for a wounded SMC; one less while CX). A berserk unit counts only its 1PP SW,
-    /// since it abandons the others before it charges (A15.431). Null when the catalog does not decide it. <paramref name="allowance"/> is the
+    /// carries beyond its IPC (three for a MMC, one for a SMC, none for a wounded SMC; one less while CX). A berserk unit counts only the 1PP SW within its
+    /// IPC, since it abandons the others before it charges, and at once when it becomes berserk in mid move (A15.431, p. 84; pass 72, ruling R72.6): its MF
+    /// are eight less those it spent. Null when the catalog does not decide it. <paramref name="allowance"/> is the
     /// unit's allotment as the catalog gives it, read for a real unit; <paramref name="portage"/> the PP of each SW it possesses, null when one is
     /// not recorded, read once the allotment is known.
     /// </summary>
@@ -34,7 +35,7 @@ public static class ScenarioA1MovementCalculator
         }
 
         var ipc = (facts.Smc ? (facts.Wounded ? 0 : 1) : 3) - (cx ? 1 : 0) + ipcBonus;
-        var pp = facts.Berserk ? carried.Where(item => item == 1).Sum() : carried.Sum();
+        var pp = facts.Berserk ? Math.Min(carried.Where(item => item == 1).Sum(), Math.Max(ipc, 0)) : carried.Sum();
 
         // B3.4, A4.12 (ruling R10.8): the Road Bonus and a leader's bonus add to the allotment.
         return allotment + bonusMf - Math.Max(0, pp - Math.Max(ipc, 0));
@@ -389,14 +390,16 @@ public static class ScenarioA1MovementCalculator
     /// <summary>
     /// A15.431: before its charge a berserk unit abandons every SW of more than one PP; its 1PP SW beyond its IPC (A4.42: three for
     /// a MMC, one for a SMC) are its own choice, which is not reviewed. Backlog pass 15 (ruling R15.14): the owner names the 1PP SW it keeps
-    /// within its IPC; with none named, those first in id order are kept. Returns the first refusal, or the SW abandoned in order.
+    /// within its IPC; with none named, those first in id order are kept. Pass 72 (ruling R72.6): a unit that becomes berserk in mid move abandons
+    /// them by the same limits with its next step, so the abandonment is read at every step (a charging unit holds nothing more after its first).
+    /// Returns the first refusal, or the SW abandoned in order.
     /// </summary>
     public static (string? Refusal, IReadOnlyList<string> Abandoned) BerserkAbandons(IReadOnlyList<BerserkAbandonFacts> movers, IReadOnlyList<string> keepNamed)
     {
         ArgumentNullException.ThrowIfNull(movers);
         ArgumentNullException.ThrowIfNull(keepNamed);
         var abandoned = new List<string>();
-        foreach (var unit in movers.Where(unit => unit.FirstStep))
+        foreach (var unit in movers)
         {
             if (unit.Carried.Any(item => item.Portage is null))
             {

@@ -54,6 +54,17 @@ public sealed record MoraleCheckFacts(string? Check, IReadOnlyList<FireTarget>? 
     {
         get; init;
     }
+
+    /// <summary>
+    /// Pass 72 (A19.132; ruling R72.19): the stamp of a check recorded from the pass on, as an attack's <see cref="FireAttack.UnitSubstitution"/>: the verifier
+    /// checks each unit's <see cref="FireTarget.UnderscoredElr"/> against the state. A check recorded before the pass has none, and a unit's SSR ELR it carries
+    /// is checked only where it is present. The member does not read it. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? UnitSubstitution
+    {
+        get; init;
+    }
 }
 
 /// <summary>

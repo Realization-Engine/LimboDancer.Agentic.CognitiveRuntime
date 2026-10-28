@@ -896,20 +896,6 @@ public sealed partial class GamePlanner
     private static bool IsGuard(GameState state, UnitInstance unit) =>
         state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id);
 
-    /// <summary>
-    /// Why a berserk unit may not step into a Location (A15.431, A15.432): it holds an enemy vehicle with enemy Infantry. A charge at a vehicle enters its
-    /// Location for the sequential CC there (ruling R27.2), and one at a Gun's crew for CC with it (pass 70, ruling R70.27). Null when the step is allowed.
-    /// </summary>
-    private static string? ChargeBarred(GameState state, string side, BoardLocation to)
-    {
-        var there = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
-        var enemies = there.Where(unit => unit.Side != side).ToArray();
-
-        // Ruling R10.15: a charge into concealed units reveals them, one into prisoners enters, and one onto a lone SMC is an Infantry OVR. Table player,
-        // pass 27: CC between Infantry in a Location holding a vehicle is not built (R11.16).
-        return ScenarioA1CloseCombatRules.ChargeBarred(enemies.Any(LiveFire.IsVehicle), enemies.Any(unit => !LiveFire.IsVehicle(unit)), to.ToString());
-    }
-
     /// <summary>A map of unit ids in the arguments, such as each SMC's MMC or each withdrawing unit's destination.</summary>
     private static Dictionary<string, string>? Map(JsonElement arguments, string name) =>
         arguments.TryGetProperty(name, out var map) && map.ValueKind == JsonValueKind.Object
@@ -1304,15 +1290,27 @@ public sealed partial class GamePlanner
     /// The half MF to enter a Location from an ADJACENT one as the movement rules of step 22 decide it, or null when the entry is not
     /// reviewed (a level change, hexside terrain, or terrain the review does not admit).
     /// </summary>
-    private int? EntryCost(GameState state, BoardLocation from, BoardLocation to) => InfantryStep(state, from, to).Entry switch
-    {
-        null => null,
+    private int? EntryCost(GameState state, BoardLocation from, BoardLocation to) => ChargeEntry(state, from, to).HalfMf;
 
-        // B16.4 (ruling R10.15): marsh takes a berserk unit's whole eight MF; from below only by Minimum Move, which a berserk unit does not make.
-        { MinimumMoveOnly: true } => null,
-        { AllMf: true } => 16,
-        { } entry => entry.HalfMf,
-    };
+    /// <summary>
+    /// A charge step's entry (pass 72, rulings R72.4, R72.17): its half MF as <see cref="EntryCost"/> gives it, or the movement model's refusal, the terrain the
+    /// map reads in the Location entered, and whether its hex holds a bridge, for Rules to tell a rule bar from a gap of the model.
+    /// </summary>
+    private ChargeEntryFacts ChargeEntry(GameState state, BoardLocation from, BoardLocation to)
+    {
+        var (entry, reason) = InfantryStep(state, from, to);
+        return entry switch
+        {
+            null => ReadLocation(state, to) is { } read
+                ? new ChargeEntryFacts(null, reason, (read.Level.Terrain ?? read.Hex.Center.Terrain)?.Name) { Bridged = read.Hex.Bridge is not null }
+                : new ChargeEntryFacts(null, reason, null),
+
+            // B16.4 (ruling R10.15): marsh takes a berserk unit's whole eight MF; from below only by Minimum Move, which a berserk unit does not make.
+            { MinimumMoveOnly: true } => new ChargeEntryFacts(null, null, null),
+            { AllMf: true } => new ChargeEntryFacts(16, null, null),
+            { } step => new ChargeEntryFacts(step.HalfMf, null, null),
+        };
+    }
 
     /// <summary>A step of a berserk charge (A15.431; ruling R27.2): the Location charged, the least half MF of the step, whether it may be taken
     /// as an ordinary step, and the Bypass lanes (hexsides, lowercase, comma-separated) it may be taken in.</summary>
@@ -1394,7 +1392,7 @@ public sealed partial class GamePlanner
 
         public bool Playable(int location) => planner.PlayableBar(state, locations[location]) is null;
 
-        public int? EntryCost(int fromLocation, int toLocation) => planner.EntryCost(state, locations[fromLocation], locations[toLocation]);
+        public ChargeEntryFacts EntryCost(int fromLocation, int toLocation) => planner.ChargeEntry(state, locations[fromLocation], locations[toLocation]);
 
         public int? Across(int location, int side) => planner.Across(state, locations[location], (HexsideDirection)side) is { } exit ? Index(exit) : null;
 
@@ -1418,12 +1416,6 @@ public sealed partial class GamePlanner
         public bool LosClear(int fromLocation, int toLocation) => planner.Los(state, locations[fromLocation], locations[toLocation]) is { Status: LosStatus.Clear };
 
         public int? Distance(int one, int two) => planner.HexDistance(state, locations[one], locations[two]);
-
-        public ChargeOccupantFacts Occupants(int location)
-        {
-            var enemies = planner.ObjectsAt(state, locations[location]).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side).ToArray();
-            return new ChargeOccupantFacts(enemies.Any(LiveFire.IsVehicle), enemies.Any(unit => !LiveFire.IsVehicle(unit)));
-        }
     }
 
     /// <summary>

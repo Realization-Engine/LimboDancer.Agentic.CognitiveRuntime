@@ -18,7 +18,7 @@
         {
             <FireArithmeticBreakdown Arithmetic="@Record.Arithmetic" Say="@Record.Say" />
         }
-        @if (Record.Weapons?.Select(FireText.WeaponText).OfType<string>().ToArray() is { Length: > 0 } weapons)
+        @if (Record.Weapons?.Select(weapon => FireText.WeaponText(weapon, Record.WeaponNumbers?.GetValueOrDefault(weapon.EquipmentId))).OfType<string>().ToArray() is { Length: > 0 } weapons)
         {
             <ul class="fire-weapons">
                 @foreach (var line in weapons)

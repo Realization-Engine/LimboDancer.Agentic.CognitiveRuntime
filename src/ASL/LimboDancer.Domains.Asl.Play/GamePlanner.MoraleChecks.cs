@@ -146,9 +146,11 @@ public sealed partial class GamePlanner
         }
 
         var recordId = EventId(attemptId, events.Count + 1);
+        // Pass 72 (ruling R72.19): the record's stamp, so the verifier checks every unit's SSR ELR against the state.
         var recorded = facts with
         {
-            Rolls = null
+            Rolls = null,
+            UnitSubstitution = true,
         };
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "morale-check-resolved", new MoraleCheckResolved([.. named.Select(unit => unit.UnitId!)], at.ToString(), cause,
             rollIds, JsonSerializer.SerializeToElement(recorded, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json)),

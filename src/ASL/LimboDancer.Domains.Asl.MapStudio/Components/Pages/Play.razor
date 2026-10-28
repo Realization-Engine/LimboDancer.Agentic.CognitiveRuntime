@@ -724,7 +724,7 @@ else if (state is not null)
                             else
                             {
                                 <p class="muted" data-charge="@charging.Id" data-undecided="true">
-                                    @charging.Id is berserk, but its charge@(target is { } at ? $" at {at}" : "") is not decided here: @undecided
+                                    @ChargeUndecidedLine(charging, target, undecided)
                                 </p>
                             }
                         }
@@ -1111,7 +1111,7 @@ else if (state is not null)
                         MolAllowed='@state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal)' Mol="@fireMol" Targets="@byRange.Targets" Target="@fireTarget"
                         VehicleChoices="@(fireMol.Length > 0 || FireWeapons.Any(weapon => weapon.Kind == "asl:ft" && fireWeapons.Contains(weapon.Id)) ? NamedVehicleChoices(firing, FireTarget) : [])"
                         Vehicle="@fireVehicle" OnVehicle="@(id => fireVehicle = id)"
-                        FreeTarget="@fireFreeTarget" SnapShot="@fireSnapShot" Spray="@fireSpray" LaneWeapon="@fireLaneWeapon" LaneTo="@fireLaneTo" Partners="@FirePartners(firing)"
+                        FreeTarget="@fireFreeTarget" SnapShot="@fireSnapShot" Spray="@fireSpray" LaneWeapon="@fireLaneWeapon" LaneTo="@fireLaneTo" LanesOffered="@FireLanesOffered(firing)" Partners="@FirePartners(firing)"
                         Partner="@firePartner" OnFrom="@(at => { fireFrom = at; fireAlso.Clear(); PruneFire(); })" OnFirer="@(pick => Toggle(fireFirers, pick.Id, pick.On))"
                         OnWeapon="@(pick => Toggle(fireWeapons, pick.Id, pick.On))" OnAlone="@(pick => Toggle(fireAlone, pick.Id, pick.On))" OnDirector="@(id => fireDirector = id)"
                         OnMol="@(id => fireMol = id)" OnTarget="@(at => fireTarget = at)" OnFreeTarget="@(at => fireFreeTarget = at)" OnSnapShot="@(on => fireSnapShot = on)"
@@ -5965,6 +5965,15 @@ else if (state is not null)
                 || (item.Definition is { } weaponDefinition && LiveOrdnance.LatwType(weaponDefinition.Definition) == "atr")))
             .OrderBy(item => item.Id, StringComparer.Ordinal)];
 
+    /// <summary>
+    /// Whether the fire panel offers a Fire Lane (A19.131, A9.22; pass 72, the reviews R4.13): Rules says, from the side's Ammunition Shortage SSR and, only under
+    /// it, whether a weapon chosen to fire is captured (A21.11).
+    /// </summary>
+    private bool FireLanesOffered(string side) => state is null || state.Phase != "mph" || ScenarioA1FireEligibility.FireLaneOffered(
+        state.SpecialRules.Count > 0 && ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, side),
+        () => FireWeapons.Any(weapon => fireWeapons.Contains(weapon.Id) && state.Unit(weapon.Holding!.Holder) is { } holder
+            && LiveFire.CapturedBy(weapon.Definition?.Definition, holder) == true));
+
     /// <summary>The target: any Location typed in, or else the one chosen from the Locations the firing side knows to hold an enemy.</summary>
     private string FireTarget => fireFreeTarget.Trim() is { Length: > 0 } typed ? typed : fireTarget;
 
@@ -8703,6 +8712,18 @@ else if (state is not null)
 
     /// <summary>A refusal in the page's words, without its code and with the units' names for their ids, as the route and rally panels say it.</summary>
     private string PlainReason(string reason) => Said(reason) ?? reason;
+
+    /// <summary>
+    /// A berserk unit's charge the model does not decide (ruling R30.5), or one that reaches no Known enemy unit (A15.45, A15.44; pass 72, ruling R72.4), in the
+    /// page's words: the unit by its name and hex, every hex in brackets, no code.
+    /// </summary>
+    private string ChargeUndecidedLine(UnitInstance unit, BoardLocation? target, string undecided)
+    {
+        var why = Words(DisplayText.Reason(undecided).Text);
+        return ScenarioA1ChargeCalculator.NoneReachable(undecided)
+            ? $"{WordsAt(unit.Id)} is berserk and stays in place: {why}"
+            : $"{WordsAt(unit.Id)} is berserk, but its charge{(target is { } at ? $" at {PlaceOf(at)}" : string.Empty)} is not decided here: {why}";
+    }
 
     // The Play streamlining plan, S4: why the Rally attempt chosen would be refused, asked of the planner once a state, unit, and leader.
     private (GameState? State, string Unit, string Leader, string? Bar) rallyBarMemo;
