@@ -61,19 +61,31 @@ public sealed partial class GamePlanner
         var observations = shots.Where(item => item.Weapon is not null && item.Spotter is not null)
             .Select(item => (Weapon: item.Weapon!, Spotter: item.Spotter!)).Distinct().Select(pair =>
             {
-                var unit = perspective.IsAdjudicator ? state.Unit(pair.Spotter) : currentView.Units.FirstOrDefault(unit => unit.Id == pair.Spotter);
+                var currentSpotter = pair.Spotter;
+                var successionVisible = true;
+                foreach (var succession in state.MortarSpotterSuccessors.Where(item => item.Gun == pair.Weapon))
+                {
+                    if (succession.Predecessor != currentSpotter)
+                    {
+                        continue;
+                    }
+                    successionVisible &= history.Events.Single(item => item.EventId == succession.EventId).IsVisibleTo(perspective);
+                    currentSpotter = succession.Successor;
+                }
+                var unit = perspective.IsAdjudicator ? state.Unit(currentSpotter) : currentView.Units.FirstOrDefault(unit => unit.Id == currentSpotter);
                 var weapon = perspective.IsAdjudicator ? state.Find(pair.Weapon) : currentView.Equipment.FirstOrDefault(gun => gun.Id == pair.Weapon);
                 // The command compares the Spotter with the current firer, not the weapon's printed nationality.
                 var holder = (weapon as EquipmentInstance)?.Holding?.Holder;
                 var crew = perspective.IsAdjudicator ? state.Unit(holder ?? string.Empty)
                     : currentView.Units.FirstOrDefault(candidate => candidate.Id == holder);
-                var loss = state.MortarSpotterLosses.LastOrDefault(item => item.Gun == pair.Weapon && item.Spotter == pair.Spotter);
+                var loss = state.MortarSpotterLosses.LastOrDefault(item => item.Gun == pair.Weapon && item.Spotter == currentSpotter);
                 var lossVisible = loss is null || history.Events.Single(item => item.EventId == loss.EventId).IsVisibleTo(perspective);
-                var known = unit is not null && crew is not null && lossVisible;
+                var known = (unit is not null || loss is not null) && crew is not null && lossVisible && successionVisible
+                    && (unit?.Status != InstanceStatus.Consumed || loss is not null);
                 return new TurnSpotterRead(pair.Weapon, pair.Spotter, known, unit?.Status == InstanceStatus.Active,
                     unit?.Side == crew?.Side, unit is not null && GameState.Condition(unit, Conditions.Broken) == ConditionState.True,
                     unit is not null && GameState.Condition(unit, Conditions.Captured) == ConditionState.True,
-                    shots.Any(item => item.InCurrentPhase && item.Weapon == pair.Weapon && item.Spotter == pair.Spotter), loss is not null && lossVisible);
+                    shots.Any(item => item.InCurrentPhase && item.Weapon == pair.Weapon && (item.Spotter == pair.Spotter || item.Spotter == currentSpotter)), loss is not null && lossVisible, known && currentSpotter != pair.Spotter ? currentSpotter : null);
             }).ToImmutableArray();
         return TurnFireHistory.Compose([.. shots], observations);
     }

@@ -663,3 +663,12 @@ C9.3 keeps the original assignment until elimination, break or capture. A surviv
 Units now derives durable `MortarSpotterLoss` evidence from the authoritative journal, using ASL.Rules to distinguish elimination, capture and break from mere lineage consumption. The evidence retains the event, revision and phase occurrence. The fire-history adapter discloses it only when the relevant event is visible; withheld loss makes the assignment NotEvaluated. ASL.Turns keeps a recorded loss Lost after rally, and a historical read before the loss remains Retained. Neither the observed shot nor its loss proves an original designation or grants replacement permission.
 
 This is an implementation increment within D1.2. Explicit designation/replacement, reduced-squad inheritance and multi-mortar restrictions remain pending and visible. Validation: 20 Play and 23 Rules tests pass; all 180 ASL.Turns tests pass with 821/821 lines and 468/468 branches covered (100%, no exclusions).
+
+
+### D1.2 progress: reduced Spotter successor
+
+A recorded squad reduction now transfers a retained observed spotting assignment to its surviving Good Order half-squad. The journal-derived succession carries event provenance, preserves phase SW use, and permits the successor to continue an otherwise legal ROF shot. Earlier loss prevents inheritance. A broken survivor records the actual break; an unknown survivor remains NotEvaluated. Mere lineage consumption never invents elimination or a replacement window.
+
+The guide preserves the first observed assignment and names its disclosed half-squad successor. Hidden lineage yields NotEvaluated and omits the successor identity. Original designation and replacement commands remain pending; this exception grants no new firing permission and does not complete D1.2.
+
+Validation: 24 focused Play tests, 29 focused Rules tests and 24 Turn Guide component tests pass. All 181 ASL.Turns tests pass at 823/823 lines and 470/470 branches (100%, no exclusions). Coverage includes prior loss, broken/unknown survivors, hidden lineage, serialized replay and continued firing.

@@ -33,7 +33,8 @@
     {
         <details><summary>Fire and Spotter history</summary>
             @foreach (var shot in fire.Shots) { <p>@string.Join(", ", shot.Firers): @shot.Kind, turn @shot.GameTurn @shot.Phase, weapon @shot.Weapon, Spotter @shot.Spotter. ROF retained: @Known(shot.RateOfFireKept). In the current phase: @Known(shot.InCurrentPhase)</p> }
-            @foreach (var spotter in fire.Spotters) { <p>@spotter.Weapon / @spotter.Spotter: @spotter.State. First observed: turn @spotter.FirstObservedGameTurn @spotter.FirstObservedPhase. Spotted this phase: @Known(spotter.SpottedThisPhase)</p> }
+            @foreach (var spotter in fire.Spotters) { <p>@spotter.Weapon / @spotter.Spotter: @spotter.State. First observed: turn @spotter.FirstObservedGameTurn @spotter.FirstObservedPhase. Spotted this phase: @Known(spotter.SpottedThisPhase)</p>
+                @if (spotter.Successor is { } successor) { <p>Recorded half-squad successor: @successor. Retention does not grant firing permission.</p> } }
             @foreach (var gap in fire.EvaluationGaps) { <p>Pending: @gap</p> }
         </details>
     }

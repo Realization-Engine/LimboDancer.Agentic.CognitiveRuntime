@@ -18,10 +18,10 @@ public sealed record TurnFireRecord(TurnFireKind Kind, int GameTurn, string Phas
 
 /// <summary>Authorized present facts. Unknown observations never imply a usable or lost Spotter.</summary>
 public sealed record TurnSpotterRead(string Weapon, string Spotter, bool Known, bool Active,
-    bool SameSide, bool Broken, bool Captured, bool SpottedThisPhase, bool RecordedLoss = false);
+    bool SameSide, bool Broken, bool Captured, bool SpottedThisPhase, bool RecordedLoss = false, string? Successor = null);
 
 public sealed record TurnSpotterHistory(string Weapon, string Spotter, int FirstObservedGameTurn, string FirstObservedPhase,
-    TurnSpotterState State, bool? SpottedThisPhase);
+    TurnSpotterState State, bool? SpottedThisPhase, string? Successor = null);
 public sealed record TurnFireHistorySnapshot(ImmutableArray<TurnFireRecord> Shots,
     ImmutableArray<TurnSpotterHistory> Spotters, ImmutableArray<string> EvaluationGaps);
 
@@ -45,7 +45,7 @@ public static class TurnFireHistory
             }
             if (latest.TryGetValue(shot.Weapon, out var index))
             {
-                if (assignments[index].Spotter == shot.Spotter)
+                if (assignments[index].Spotter == shot.Spotter || assignments[index].Successor == shot.Spotter)
                 {
                     continue;
                 }
@@ -59,13 +59,15 @@ public static class TurnFireHistory
             var known = observations.GetValueOrDefault((shot.Weapon, shot.Spotter));
             var state = TurnSpotterState.NotEvaluated;
             bool? spotted = null;
+            string? successor = null;
             if (known is { Known: true })
             {
                 state = !known.RecordedLoss && ScenarioA1OrdnanceEligibility.RetainsMortarSpotter(known.Active, known.SameSide, known.Broken, known.Captured)
                     ? TurnSpotterState.Retained : TurnSpotterState.Lost;
                 spotted = known.SpottedThisPhase;
+                successor = known.Successor;
             }
-            assignments.Add(new(shot.Weapon, shot.Spotter, shot.GameTurn, shot.Phase, state, spotted));
+            assignments.Add(new(shot.Weapon, shot.Spotter, shot.GameTurn, shot.Phase, state, spotted, successor));
         }
         return new(shots, [.. assignments],
             ["Recorded fire and ROF are history, not current firing eligibility. Undisclosed attacks are omitted.",

@@ -6,21 +6,45 @@ public static partial class GameProjector
 {
     internal sealed partial class Replay
     {
-        private static GameState MaintainSpotterLosses(GameState? previous, GameState next, GameEvent gameEvent)
+        private GameState MaintainSpotterLosses(GameState? previous, GameState next, GameEvent gameEvent)
         {
             if (previous is null)
             {
                 return next;
             }
+            var reduced = gameEvent.Payload as LineageRecorded;
+            var predecessor = reduced?.Consumed.Count == 1 ? previous.Unit(reduced.Consumed[0]) : null;
+            var survivor = reduced?.Produced.Count == 1 ? next.Unit(reduced.Produced[0].Id) : null;
+            var inherited = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var assignment in previous.MortarSpotters.Where(item => item.Spotter == predecessor?.Id))
+            {
+                if (TurnSpotterLossRules.RetainsReducedSquad(reduced?.Action == LineageAction.Reduced && predecessor?.Kind == "asl:squad",
+                    survivor is { Kind: "asl:half-squad", Status: InstanceStatus.Active }, survivor?.Side == predecessor?.Side,
+                    survivor is not null && GameState.GoodOrder(survivor, vocabulary) == ConditionState.True,
+                    previous.MortarSpotterLosses.Any(item => item.Gun == assignment.Gun && item.Spotter == assignment.Spotter)))
+                {
+                    inherited.Add(assignment.Gun);
+                    next = next with
+                    {
+                        MortarSpotters = [.. next.MortarSpotters.Select(item => item == assignment ? item with { Spotter = survivor!.Id } : item)],
+                        MortarSpotterSuccessors = [.. next.MortarSpotterSuccessors,
+                            new(assignment.Gun, assignment.Spotter, survivor!.Id, gameEvent.EventId, gameEvent.Revision)],
+                        SpottedThisPhase = [.. next.SpottedThisPhase.Select(item => item == assignment ? item with { Spotter = survivor.Id } : item)],
+                        SupportWeaponUses = [.. next.SupportWeaponUses.Select(item => item.Unit == assignment.Spotter
+                            ? item with { Unit = survivor.Id } : item)],
+                    };
+                }
+            }
             var losses = next.MortarSpotterLosses.ToList();
             foreach (var assignment in previous.MortarSpotters)
             {
-                if (losses.Any(item => item.Gun == assignment.Gun && item.Spotter == assignment.Spotter))
+                if (inherited.Contains(assignment.Gun) || losses.Any(item => item.Gun == assignment.Gun && item.Spotter == assignment.Spotter))
                 {
                     continue;
                 }
                 var before = previous.Unit(assignment.Spotter);
-                var after = next.Unit(assignment.Spotter);
+                var after = predecessor?.Id == assignment.Spotter && reduced?.Action == LineageAction.Reduced
+                    ? survivor : next.Unit(assignment.Spotter);
                 var change = TurnSpotterLossRules.ObservedLoss(
                     before?.Status == InstanceStatus.Active, after?.Status == InstanceStatus.Eliminated,
                     after is not null && GameState.Condition(after, Conditions.Broken) == ConditionState.True,

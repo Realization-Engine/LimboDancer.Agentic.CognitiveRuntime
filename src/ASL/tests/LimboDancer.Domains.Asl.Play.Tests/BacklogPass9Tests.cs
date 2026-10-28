@@ -563,6 +563,71 @@ public sealed class BacklogPass9Tests : IDisposable
             Perspective.Side("german"), "pfph", profile, shotRevision)).FireHistory!.Spotters).State);
     }
 
+    [Theory]
+    [InlineData(false, ConditionState.False, true)]
+    [InlineData(true, ConditionState.False, false)]
+    [InlineData(false, ConditionState.True, false)]
+    [InlineData(false, ConditionState.Unknown, false)]
+    public async Task ReducedSpotterRetainsOnlyItsProvenGoodOrderHalfSquad(bool priorLoss, ConditionState broken, bool retained)
+    {
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"), Mortar("de-mtr", "attacker-light-mortar", "g1", "german"),
+            Squad("g2", "bd01:B9:0", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        los.Blocked.Add(At("bd01:B10:0"));
+        await Advance();
+        Committed(await Shoot("de-mtr", "bd01:B6:0", "g2", null, 2, 6));
+        void Append(string id, string type, EventPayload payload)
+        {
+            var item = store.Read(Scope)!.Events[^1] with
+            {
+                EventId = id,
+                Revision = Revision + 1,
+                Type = type,
+                Payload = payload
+            };
+            Assert.Equal(AppendStatus.Committed, store.Append(Scope, id, Revision, [item], Planner().Replay).Status);
+        }
+        if (priorLoss)
+        {
+            Append("spotter-break", "conditions-changed", new ConditionsChanged("g2",
+                new Dictionary<string, ConditionState> { [Conditions.Broken] = ConditionState.True }));
+        }
+        var conditions = new Dictionary<string, ConditionState>(Current.Unit("g2")!.Conditions)
+        {
+            [Conditions.Broken] = broken,
+            [Conditions.Berserk] = ConditionState.False,
+            [Conditions.Captured] = ConditionState.False,
+            [Conditions.Melee] = ConditionState.False,
+        };
+        Append("spotter-reduced", "lineage", new LineageRecorded(LineageAction.Reduced, ["g2"],
+            [new NewInstance("gh", "asl:half-squad", "attacker-half-squad", "german", null, null, conditions)]));
+        const string profile = "existing-engine-fire-v1";
+        var history = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)).FireHistory!;
+        var assignment = Assert.Single(history.Spotters);
+        Assert.Equal(retained ? "gh" : "g2", Assert.Single(Current.MortarSpotters).Spotter);
+        Assert.Equal(retained ? TurnSpotterState.Retained : broken == ConditionState.Unknown
+            ? TurnSpotterState.NotEvaluated : TurnSpotterState.Lost, assignment.State);
+        Assert.Equal(retained ? "gh" : null, assignment.Successor);
+        if (!retained)
+        {
+            Assert.Empty(Current.MortarSpotterSuccessors);
+            return;
+        }
+        Assert.Equal("spotter-reduced", Assert.Single(Current.MortarSpotterSuccessors).EventId);
+        Assert.Contains(Current.SpottedThisPhase, item => item.Spotter == "gh");
+        var events = store.Read(Scope)!.Events;
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(GameEventWriter.Write(Scope, store.Read(Scope)!))).Record!;
+        Assert.Equal(Assert.Single(Current.MortarSpotterSuccessors), Assert.Single(Planner().Replay(loaded.Events).Current!.MortarSpotterSuccessors));
+        var privateStore = new FileGameStore(Path.Combine(root, "private-succession"));
+        var privatePlanner = new GamePlanner(privateStore, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, privateStore.Append(Scope, "private succession", 0,
+            events.Select(item => item.EventId == "spotter-reduced" ? item with { Visibility = RussianView } : item).ToArray(), privatePlanner.Replay).Status);
+        var hidden = Assert.Single((await privatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)).FireHistory!.Spotters);
+        Assert.Equal(TurnSpotterState.NotEvaluated, hidden.State);
+        Assert.Null(hidden.Successor);
+        Committed(await Shoot("de-mtr", "bd01:B6:0", "gh", null, 2, 6));
+        Assert.Equal("gh", Assert.Single((await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)).FireHistory!.Spotters).Successor);
+    }
+
     [Fact]
     public async Task AMortarKeepsItsMinimumRangeAndDoesNotFireFromABuildingOrAfterMoving()
     {

@@ -245,6 +245,9 @@ public sealed record MortarSpotter(string Gun, string Spotter);
 public sealed record MortarSpotterLoss(string Gun, string Spotter, string EventId, long Revision,
     Rules.TurnSpotterChange Change, Rules.TurnPhaseOccurrence? Occurrence);
 
+/// <summary>The C9.3 Good Order half-squad that inherits an observed assignment, with journal provenance.</summary>
+public sealed record MortarSpotterSuccessor(string Gun, string Predecessor, string Successor, string EventId, long Revision);
+
 /// <summary>A squad's one SW use this phase (A7.351): the SW, a Spotter's mortar, or <c>panzerfaust</c>.</summary>
 public sealed record SupportWeaponUse(string Unit, string Weapon);
 

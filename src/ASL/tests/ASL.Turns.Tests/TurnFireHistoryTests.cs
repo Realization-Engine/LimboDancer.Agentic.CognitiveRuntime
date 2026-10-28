@@ -51,6 +51,25 @@ public sealed class TurnFireHistoryTests
     }
 
     [Fact]
+    public void DisclosedSuccessorKeepsTheOriginalObservedAssignment()
+    {
+        var read = Read with
+        {
+            Successor = "hs",
+            SpottedThisPhase = true
+        };
+        var history = TurnFireHistory.Compose([Shot(), Shot("hs")], [read, Read with { Spotter = "hs" }]);
+        var retained = Assert.Single(history.Spotters);
+        Assert.Equal("s1", retained.Spotter);
+        Assert.Equal("hs", retained.Successor);
+        Assert.Equal(TurnSpotterState.Retained, retained.State);
+        Assert.True(retained.SpottedThisPhase);
+        var hidden = Assert.Single(TurnFireHistory.Compose([Shot()], [read with { Known = false }]).Spotters);
+        Assert.Equal(TurnSpotterState.NotEvaluated, hidden.State);
+        Assert.Null(hidden.Successor);
+    }
+
+    [Fact]
     public void DirectFireAndUnspottedOrIncompleteShotsNeverInventAssignments()
     {
         var shots = ImmutableArray.Create(Shot() with

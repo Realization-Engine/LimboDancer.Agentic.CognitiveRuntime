@@ -136,6 +136,17 @@ public sealed class TurnSpotterTimingRulesTests
         bool broken, bool captured, TurnSpotterChange expected) =>
         Assert.Equal(expected, TurnSpotterLossRules.ObservedLoss(active, eliminated, broken, captured));
 
+    [Theory]
+    [InlineData(true, true, true, true, false, true)]
+    [InlineData(false, true, true, true, false, false)]
+    [InlineData(true, false, true, true, false, false)]
+    [InlineData(true, true, false, true, false, false)]
+    [InlineData(true, true, true, false, false, false)]
+    [InlineData(true, true, true, true, true, false)]
+    public void ReductionRequiresAGoodOrderHalfSquadAndNoPriorLoss(bool reduced, bool halfSquad, bool sameSide,
+        bool goodOrder, bool lost, bool retained) =>
+        Assert.Equal(retained, TurnSpotterLossRules.RetainsReducedSquad(reduced, halfSquad, sameSide, goodOrder, lost));
+
     [Fact]
     public void InvalidAndFuturePositionsAreRejected()
     {

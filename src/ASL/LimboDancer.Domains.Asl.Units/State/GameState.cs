@@ -189,6 +189,7 @@ public sealed record GameState(
 
     /// <summary>Losses of observed assignments, retained across phase changes and rally; not proof of original designation.</summary>
     public IReadOnlyList<MortarSpotterLoss> MortarSpotterLosses { get; init; } = [];
+    public IReadOnlyList<MortarSpotterSuccessor> MortarSpotterSuccessors { get; init; } = [];
 
     /// <summary>The PF shots each side has taken this scenario (C13.31; ruling R9.7), by side id.</summary>
     public IReadOnlyDictionary<string, int> PanzerfaustShots { get; init; } = new Dictionary<string, int>(StringComparer.Ordinal);
