@@ -50,8 +50,11 @@ if [ "$CODE_MOVE" = "1" ]; then TW="$SWEEP_GAME"; else TW=$(python "$G/pick_swee
 # Every other whole game in the store, but the pass's own (which are replayed, not swept): the other full games and the previous pass's.
 STORE_GAMES=$(ls "$S/store/$T/" 2>/dev/null | sed -n 's/\.game\.json$//p' | grep -vE -- '-r[0-9]+$' | grep -vxF -e "$SWEEP_GAME" $(for g in $OWN; do printf -- '-e %s ' "$g"; done) | sed 's/^/=/' | paste -sd, -)
 SWEEP_OLD="$TW${STORE_GAMES:+,$STORE_GAMES}"
-# The few games of the proofs' early check: three cuts of the swept game, early, middle, and late.
-EARLY=$(echo "$TW" | tr ',' '\n' | grep -E -- '-r[0-9]+$' | awk '{ cut[NR] = $0 } END { if (NR) print cut[1] "," cut[int((NR + 1) / 2)] "," cut[NR] }')
+# The few games of the proofs' early check: three cuts of the swept game, early, middle, and late. A code move sweeps the whole game, whose
+# list names no cut, so its three are taken from the rule pass's pick (2026-10-28: the early sweep of PR 44's gate was empty without this).
+EARLY_FROM="$TW"
+if [ "$CODE_MOVE" = "1" ]; then EARLY_FROM=$(python "$G/pick_sweep_cuts.py" "$SWEEP_GAME" 2 < /dev/null); fi
+EARLY=$(echo "$EARLY_FROM" | tr ',' '\n' | grep -E -- '-r[0-9]+$' | awk '{ cut[NR] = $0 } END { if (NR) print cut[1] "," cut[int((NR + 1) / 2)] "," cut[NR] }')
 exact() { echo "$1" | tr ' ' ',' | tr -s ',' | sed -e 's/^,//' -e 's/,$//' -e 's/[^,][^,]*/=&/g'; }
 OWN_COMMA=$(echo "$OWN" | tr ' ' ',' | tr -s ',' | sed -e 's/^,//' -e 's/,$//')
 OWN_EXACT=$(exact "$OWN"); EXTRA_EXACT=$(exact "$SWEEP_EXTRA")
@@ -240,6 +243,7 @@ proofs)
   [ "$(cat "$BEFORE/DONE" 2>/dev/null)" = "$BASEFULL" ] || stop "no finished baseline of ${BASEFULL:0:8} in $BEFORE"
   [ -s "$BEFORE/replay.txt" ] && [ -s "$BEFORE/sweep.txt" ] && [ -s "$BEFORE/textlist.txt" ] || stop "the baseline in $BEFORE lacks a file"
   rm -rf "$AFTER"; mkdir -p "$AFTER"
+  [ -n "$EARLY" ] || stop "no cut of $SWEEP_GAME for the early check"
   run gate_side sweep "$AFTER/sweep-early.txt" "$EARLY"
   python "$G/early_sweep_check.py" "$BEFORE/sweep.txt" "$AFTER/sweep-early.txt" < /dev/null || exit 1
   python "$G/text_list.py" "$AFTER/textlist.txt" < /dev/null
