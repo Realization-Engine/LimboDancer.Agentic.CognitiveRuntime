@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: The current backend-first plan is complete for its admitted baseline. B0 through B5, all six B5-R acceptance slices, U1, and the UI audit/browser follow-ups through occupied-target DC consequences and phase close are implemented and verified. Zero required tasks remain in this plan. B5-D1 through B5-D9 remain explicitly deferred to later ASL.Rules passes; this completion does not claim full ASL execution. Historical sections below retain their implementation-time evidence and limitations; this status, the stage table, and the latest acceptance sections govern current progress.
+Status: The original backend-first plan is complete for its admitted baseline. The user has reinstated B5-D1 through B5-D9 as tracked later-pass implementation requirements; the [Later Rules Implementation Plan](ASL%20Turn%20Guide%20Later%20Rules%20Implementation%20Plan.md) now defines the active 36-task queue. B0 through B5, all six B5-R acceptance slices, U1, and the UI audit/browser follow-ups through occupied-target DC consequences and phase close are implemented and verified. Zero required tasks remain in this plan. B5-D1 through B5-D9 remain explicitly deferred to later ASL.Rules passes; this completion does not claim full ASL execution. Historical sections below retain their implementation-time evidence and limitations; this status, the stage table, and the latest acceptance sections govern current progress.
 
 References: [Design](ASL%20Turn%20Phase%20Guide%20Design.md), [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md).
 
@@ -497,3 +497,8 @@ Occupied-target verification: 65 focused MapStudio tests pass with no skips, inc
 The completed sequence is B0-B5, U1, preview/backend audit, the initial live Placed DC scenario, authorized opening review, full browser review/detonation/close acceptance, and occupied-target casualty and interrupted-consequence acceptance. The latest implementation commit is `1f68e280`; its verification is recorded in section 12.5. There are no additional U stages or required acceptance tasks defined in this plan.
 
 The eventual all-Passes design remains the target. B5-D1 through B5-D9 describe future rule-family admissions, each requiring its own bounded source, facts, command, disclosure and replay evidence. They stay visible in the current UI and are not silently promoted into support by this closeout. Earlier references to a next slice or remaining counts in individual B-stage validation records are historical statements, not the current queue.
+
+
+## 13. Reinstated later Rules passes
+
+The remaining nine packages are explicitly deferred to later ASL.Rules passes. They remain required for the eventual all-Passes design and are now scheduled by the [finite later-pass plan](ASL%20Turn%20Guide%20Later%20Rules%20Implementation%20Plan.md). The user authorizes independent execution and commits. This new scope supersedes section 12.6's no-next-task statement while preserving the completed baseline. Runtime support remains Pending until each specific rule path is evidenced and admitted.
