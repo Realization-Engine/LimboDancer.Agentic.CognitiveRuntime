@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 
-Status: Backend-first plan. B5-R1 through B5-R6 are implemented and verified. B5 is accepted for the admitted baseline; zero required slices remain and U1 is implemented. The finite backlog below is authoritative; later Rules work is tracked separately as B5-D1 through B5-D9. B0, B1, B2 and the bounded B3 obligation slice are implemented and tested. B4 and the bounded B5 Placed DC, fire/Spotter, atmosphere history and work-progress, live work adjudication and bounded completion-effect slices are implemented; additional families remain planned. UI work is intentionally last.
+Status: The current backend-first plan is complete for its admitted baseline. B0 through B5, all six B5-R acceptance slices, U1, and the UI audit/browser follow-ups through occupied-target DC consequences and phase close are implemented and verified. Zero required tasks remain in this plan. B5-D1 through B5-D9 remain explicitly deferred to later ASL.Rules passes; this completion does not claim full ASL execution. Historical sections below retain their implementation-time evidence and limitations; this status, the stage table, and the latest acceptance sections govern current progress.
 
 References: [Design](ASL%20Turn%20Phase%20Guide%20Design.md), [Analysis](ASL%20Turn%20Phase%20Guide%20Analysis.md), [Cross-phase audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md).
 
@@ -296,7 +296,7 @@ These IDs identify retained requirements, not invented numbered Rules passes. As
 - Keep the six IDs stable. Implementation can span several commits without adding more exit gates. Expanding the admitted baseline or reopening the B5 finish line requires an explicit scope decision and a recorded reason; newly found rule gaps attach to the deferred register by default.
 - Every implementation slice retains 100% line and branch coverage for the entire ASL.Turns assembly, without source exclusions. Run relevant dependent tests when code changes. The R1 coverage gate passes 162 ASL.Turns tests, 738/738 lines and 424/424 branches. Historical dependent-suite results remain recorded under the slices that ran them; they are not relabeled as new R1 runs.
 
-The next implementation request is **B5-R5: cross-profile replay and disclosure acceptance**. Two required slices remain. B5-D work does not decrement that count.
+All six required B5 slices are accepted. U1 and its acceptance follow-ups are complete. There is no next required B5 or U1 task in this plan. The B5-D register remains deferred Rules-pass work, not unfinished baseline acceptance.
 
 
 ### 11.3 B5-R1 implementation and evidence
@@ -434,7 +434,7 @@ All nine B5-D packages remain deferred and visible. No new rule family or UI ren
 
 All six section 9 criteria pass against named evidence in the [B5 acceptance and U1 handoff](ASL%20Turn%20Guide%20B5%20Acceptance%20and%20U1%20Handoff.md). That document publishes the final capability/evidence matrix and links the compiled `HeadlessConsumerBrowsesEveryPhaseAndConfirmsAnOfferedDecision` example. The example browses all eight phases and 538 topics with missing facts visible, uses the owning-side conditional route after separate authorized review, preserves proposal/confirmation authority, observes resolved obligations, rejects the expired route, and proves exact retry and historical read-only behavior. Existing tests supply interruption, cleanup parity, disclosure and durable reload proofs.
 
-B5 is complete for this admitted baseline. U1 is eligible but not implemented. It consumes existing snapshots and action panels, preserves source and pending states, and keeps consideration flags private. It must not calculate legality, resolve obligations from checkboxes, infer missing facts, or create a second phase-close authority. All nine B5-D packages remain deferred and visible; the eventual all-Passes target is unchanged. R6 changes no runtime contracts, journal schemas or profile versions.
+At B5-R6 acceptance, B5 was complete for the admitted baseline and U1 became eligible for implementation. Section 12 records the subsequently completed U1 implementation and follow-ups. U1 consumes existing snapshots and action panels, preserves source and pending states, and keeps consideration flags private. It must not calculate legality, resolve obligations from checkboxes, infer missing facts, or create a second phase-close authority. All nine B5-D packages remain deferred and visible; the eventual all-Passes target is unchanged. R6 changes no runtime contracts, journal schemas or profile versions.
 
 **R6 verification:** 179 ASL.Turns tests pass with 821/821 lines and 466/466 branches covered (100%, no exclusions). All 97 focused Play acceptance/regression cases, 49 focused Rules cases and 421 Units cases pass. The consumer example also passes a final targeted rerun after strengthening its pre-proposal revision assertion. Coverage applies to the entire ASL.Turns assembly, not the Play, Rules or Units assemblies.
 
@@ -490,3 +490,10 @@ Verification for this follow-up: 44 focused MapStudio tests pass, with no skips;
 Required live decisions and handover controls precede the guide so reference content cannot bury the next required action. A committed DC receipt must distinguish an unfinished consequence from completed removal, using existing host state. Neither rendering rule adds a capability or changes an obligation. Pending integrations and the eventual all-Passes target remain unchanged.
 
 Occupied-target verification: 65 focused MapStudio tests pass with no skips, including all five real-board guide scenarios and existing pending-choice/handover regressions. All 179 ASL.Turns tests pass at 821/821 lines and 466/466 branches (100%, no exclusions). The browser confirms casualty reduction, failed morale and DM, separately confirmed phase close, and durable replay after restart. The interrupted browser branch declines Battle Hardening after restart; a fresh verification branch accepts it, records replacement by the elite squad, and also closes into Rout. Both continuations record one completed fire resolution and one DC removal. The corrected receipt and priority of required decisions were inspected in the browser. Normal random dice have been restored; the explicitly approved local reviewer remains enabled, with checked-in defaults unchanged.
+
+
+### 12.6 Current-plan closeout
+
+The completed sequence is B0-B5, U1, preview/backend audit, the initial live Placed DC scenario, authorized opening review, full browser review/detonation/close acceptance, and occupied-target casualty and interrupted-consequence acceptance. The latest implementation commit is `1f68e280`; its verification is recorded in section 12.5. There are no additional U stages or required acceptance tasks defined in this plan.
+
+The eventual all-Passes design remains the target. B5-D1 through B5-D9 describe future rule-family admissions, each requiring its own bounded source, facts, command, disclosure and replay evidence. They stay visible in the current UI and are not silently promoted into support by this closeout. Earlier references to a next slice or remaining counts in individual B-stage validation records are historical statements, not the current queue.
