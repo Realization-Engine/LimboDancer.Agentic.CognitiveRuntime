@@ -1,0 +1,31 @@
+B4.42 | A | ScenarioA1VehicleTerrainCosts.cs: EntryCost (terrainKey null refusal) | - | GamePlanner.VehicleTerrain.cs: VehicleCost (forward); ScenarioA1VehicleTerrainCosts.cs: EntryCost | Elevated Road not in FireTerrain; nothing of B4.42 built
+B5.42 | A | ScenarioA1VehicleTerrainCosts.cs: EntryCost (terrainKey null refusal) | - | GamePlanner.VehicleTerrain.cs: VehicleCost (forward); ScenarioA1VehicleTerrainCosts.cs: EntryCost | sunken road refused the same way, assumed
+B6.1 | E | none | - | VaslCompatibleHexFactDerivation.cs: FixBridgesTunnelWater; GameTypes.cs: MapPosition.OnBridge; GameProjector.cs: UNIT-STATE-010 check | map fact and state shape; refusal by absence
+B6.43 | A | ScenarioA1VehicleTerrainCosts.cs: EntryCost | - | GamePlanner.VehicleTerrain.cs: VehicleCost (forward); ScenarioA1VehicleTerrainCosts.cs: EntryCost | uncertain: no path reaches a bridge Location
+B10.52 | A | ScenarioA1VehicleTerrainCosts.cs: EntryCost | - | GamePlanner.VehicleTerrain.cs: VehicleCost (forward); ScenarioA1VehicleTerrainCosts.cs: EntryCost | Double-Crest deviation decided in Rules
+B13.31 | B | ScenarioA1Definitions.cs: IsWoodsRoadHex, RoadRateTargetTerrain | GamePlanner.Fire.cs:1842-1848 FireMapFacts: B13.31 EXC vehicle on woods-road reads open-ground; Fire.cs:1832-1833 road-rate gate | GamePlanner.Map.cs: IsWoodsRoad, TerrainKey; GamePlanner.Fire.cs: FireMapFacts; ScenarioA1Definitions.cs: IsWoodsRoadHex, RoadRateTargetTerrain | matches the note
+B13.32 | A | ScenarioA1OverrunCalculator.cs: OverrunTargetTerrain; ScenarioA1FireCalculator.cs: TEM | - | GamePlanner.Overrun.cs: OverrunAttack (forward); ScenarioA1OverrunCalculator.cs: OverrunTargetTerrain | note stale
+B13.41 | B | ScenarioA1VehicleTerrainCosts.cs: EntryCost, TurnCost, VehicleBogDrm | GamePlanner.VehicleTerrain.cs:280-284 VehicleTurnCost: VCA change 1 MP when Bypassing or any road | GamePlanner.VehicleTerrain.cs: VehicleCost, VehicleTurnCost; ScenarioA1VehicleTerrainCosts.cs: EntryCost, TurnCost | turn clause in Play
+B13.42 | A | ScenarioA1VehicleTerrainCosts.cs: EntryCost | - | GamePlanner.VehicleTerrain.cs: VehicleCost (forward); ScenarioA1VehicleTerrainCosts.cs: EntryCost |
+B14.1 | D | ScenarioA1Definitions.cs: FireTerrain | - | LosCalculator.cs: inherent and partial-orchard checks; GamePlanner.Map.cs: TerrainKey | LOS in Maps
+B16.41 | A | ScenarioA1VehicleTerrainCosts.cs: EntryCost; ScenarioA1MovementCalculator.cs: EntryCost | - | GamePlanner.VehicleTerrain.cs: VehicleCost; GamePlanner.Movement.cs; ScenarioA1VehicleTerrainCosts.cs: EntryCost; ScenarioA1MovementCalculator.cs: EntryCost | refusal texts cite the chart and C10.3
+B20.46 | A | ScenarioA1VehicleTerrainCosts.cs: EntryCost | - | GamePlanner.VehicleTerrain.cs: VehicleCost (forward); ScenarioA1VehicleTerrainCosts.cs: EntryCost | gully refused in Rules
+B23.21 | D | ScenarioA1ResultTables.cs: EntryHalfMf; ScenarioA1Definitions.cs: OrdinaryBuildings | - | LosCalculator.cs; GamePlanner.Map.cs: TerrainKey; GamePlanner.Movement.cs: EntryHalfMf (forward) | costs in Rules, height in Maps
+B23.24 | D | ScenarioA1Definitions.cs: OrdinaryBuildings | - | LosCalculator.cs; GamePlanner.cs: OrdinaryBuildings (forward); VaslCompatibleHexFactDerivation.cs | SSR Level 3 not built
+B23.41 | A | ScenarioA1VehicleTerrainCosts.cs: EntryCost | - | GamePlanner.VehicleTerrain.cs: VehicleCost (forward); ScenarioA1VehicleTerrainCosts.cs: EntryCost |
+B23.423 | A | ScenarioA1OrdnanceMapRules.cs: SupportWeaponLocationRefusal, IsBuilding; ScenarioA1MovementCalculator.cs: EntryCost; ScenarioA1EntryCalculator.cs: PushedExit | - | GamePlanner.Ordnance.cs: SupportWeaponMapFacts; GamePlanner.Movement.cs; ScenarioA1OrdnanceMapRules.cs: SupportWeaponLocationRefusal |
+B23.73 | E | none | - | VaslCompatibleHexFactDerivation.cs; VaslMapBuilder.cs; GamePlanner.Map.cs: TerrainKey | map fact derivation
+B24.1 | A | ScenarioA1Definitions.cs: FireTerrain, IsRubbleTerrain | - | GamePlanner.Map.cs: TerrainKey; GamePlanner.Terrain.cs: IsRubbleTerrain (forward); ScenarioA1Definitions.cs: IsRubbleTerrain |
+B25.141 | A | ScenarioA1VehicleTerrainCosts.cs: WreckEntryHalfMp, BlazeEntryHalfMf | - | GamePlanner.Wrecks.cs: BlazeEntryHalfMf, WreckEntryHalfMp (forward); ScenarioA1VehicleTerrainCosts.cs |
+B28.1 | E | none | - | UnitPlausibility.cs: Check | counter-data plausibility
+B28.5 | E | none | - | UnitPlausibility.cs: Check | counter-data plausibility
+B34.41 | A | ScenarioA1VehicleTerrainCosts.cs: EntryCost | - | GamePlanner.VehicleTerrain.cs: VehicleCost (forward); ScenarioA1VehicleTerrainCosts.cs: EntryCost |
+B35.3 | A | ScenarioA1VehicleTerrainCosts.cs: EntryCost | - | GamePlanner.VehicleTerrain.cs: VehicleCost (forward); ScenarioA1VehicleTerrainCosts.cs: EntryCost |
+C.5A | D | none | - | LosCalculator.cs: LosResult.Range; GamePlanner.Ordnance.cs: OrdnanceMapFacts | range from Maps
+C.5B | A | ScenarioA1OrdnanceMapRules.cs: CoveredArcTurn, VcaRefusal, BoundingArcRefusal | - | GamePlanner.Ordnance.cs: OrdnanceMapFacts, Bearing; ScenarioA1OrdnanceMapRules.cs: CoveredArcTurn |
+C2.23 | E | none | - | GamePlanner.Ordnance.cs: OrdnanceMapFacts; UnitFacing.cs | facing data shape
+C2.27 | A | ScenarioA1ResultTables.cs: Manhandling; ScenarioA1GunCalculator.cs: Towable | - | GamePlanner.Guns.cs: PushPlan, PlanHookGun; OrdnanceRecords.cs: ManhandlingRolled.For |
+C2.8 | B | ScenarioA1OrdnanceEligibility.cs: HaltedRefusal | GamePlanner.Guns.cs:91-98 PushPlan and 197-208 PlanHookGun: who becomes TI chosen in Play | GamePlanner.Guns.cs: PushPlan, PlanHookGun; LiveOrdnance.cs: FromState; ScenarioA1OrdnanceEligibility.cs: HaltedRefusal |
+C3.2 | A | ScenarioA1OrdnanceMapRules.cs: CoveredArcTurn, GunTargetStatus, WithinArc | - | GamePlanner.Ordnance.cs: OrdnanceMapFacts, Bearing, GunTargetStatus; ScenarioA1OrdnanceMapRules.cs |
+C3.22 | A | ScenarioA1GunCalculator.cs: TurnGunRefused; ScenarioA1OrdnanceProjection.cs: TurnGunAllowed | - | GamePlanner.Guns.cs: PlanTurnGun; GameProjector.cs: TurnGun; ScenarioA1GunCalculator.cs: TurnGunRefused | projector TurnGunAllowed lacks the TI test
+C6.15 | A | ScenarioA1OrdnanceMapRules.cs: MpInLos | - | GamePlanner.Ordnance.cs: MpInLos (forward); ScenarioA1OrdnanceMapRules.cs: MpInLos |
