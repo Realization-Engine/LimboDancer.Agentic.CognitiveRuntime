@@ -108,6 +108,7 @@ jobs:
               src/ASL/tests/LimboDancer.Domains.Asl.Units.Rendering.Tests
               src/ASL/tests/LimboDancer.Domains.Asl.Units.CounterSheets.Tests
               src/ASL/tests/LimboDancer.Dice.Tests
+              src/ASL/tests/ASL.Turns.Tests
             cli: true
 
     steps:
