@@ -30,14 +30,23 @@ public static class TurnPackingRules
 
     /// <summary>G10.41 recovery of a surviving, already-unloaded weapon. The historical Mule may be a HS or eliminated; no loading permission is granted.</summary>
     public static TurnPackingVerdict EvaluateRecovery(TurnPackingFacts facts, TurnPackingCasualtyState casualty)
+        => EvaluateUnloadedContinuation(facts, casualty, true);
+
+    /// <summary>Continue a proven unloaded period after G10.41 losses, without requiring a replacement squad Mule.</summary>
+    public static TurnPackingVerdict EvaluateUnloadedContinuation(TurnPackingFacts facts, TurnPackingCasualtyState casualty)
+        => EvaluateUnloadedContinuation(facts, casualty, false);
+
+    private static TurnPackingVerdict EvaluateUnloadedContinuation(TurnPackingFacts facts, TurnPackingCasualtyState casualty, bool fullPeriod)
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(casualty);
-        if (!casualty.WeaponAlive || casualty.Loaded || casualty.Recovery != TurnPackingRecovery.FullOrdinaryPeriod
+        if (!casualty.WeaponAlive || casualty.Loaded
+            || (fullPeriod ? casualty.Recovery != TurnPackingRecovery.FullOrdinaryPeriod
+                : casualty.Recovery is not (TurnPackingRecovery.FullOrdinaryPeriod or TurnPackingRecovery.ContinueExistingPeriod))
             || casualty.Weapon != facts.Weapon || casualty.MuleSize is not (TurnHorseSize.Squad or TurnHorseSize.HalfSquad)
             || casualty.MuleAlive && !casualty.MulePackTi)
         {
-            return new(TurnPackingEligibility.Ineligible, "A full Unpacking recovery requires the surviving unloaded weapon and its G10.4 casualty history.");
+            return new(TurnPackingEligibility.Ineligible, "Unpacking continuation requires the surviving unloaded weapon and its matching G10.4 casualty history.");
         }
         return EvaluateCore(facts, true, casualty.MuleAlive);
     }

@@ -5,16 +5,17 @@ namespace LimboDancer.Domains.Asl.Units.State;
 
 public enum TurnPackingOperation
 {
-    Start, Rally, Midpoint, Interrupt, Resume, Reverse, Complete, RecoveryStart
+    Start, Rally, Midpoint, Interrupt, Resume, Reverse, Complete, RecoveryStart, Casualty
 }
 
 /// <summary>Evidence identifying an ASOP 1.13B work step, not inferred from a phase name. The admitting host must verify its source.</summary>
 public sealed record TurnPackingWorkStep(string EventId, long Revision, TurnPackingRally Rally);
 
-/// <summary>A versioned period journal entry. Eligibility evidence belongs only to Start/Resume; it is not an adjudication permission.</summary>
+/// <summary>A versioned period journal entry. Eligibility evidence belongs only to Start/RecoveryStart/Resume; it is not an adjudication permission.</summary>
 public sealed record TurnPackingJournalEntry(int Version, string EventId, long Revision, string? PreviousEventId,
     TurnPackingOperation Operation, TurnPackingWorkStep WorkStep, TurnPackingSpecification? Specification = null,
-    TurnPackingDirection? Direction = null, TurnPackingFacts? Eligibility = null, TurnPackingCasualtyDocument? Recovery = null);
+    TurnPackingDirection? Direction = null, TurnPackingFacts? Eligibility = null, TurnPackingCasualtyDocument? Recovery = null,
+    TurnPackingCasualtyDocument? Casualty = null);
 
 public sealed record TurnPackingJournalDocument(int SchemaVersion, GameScope Scope, IReadOnlyList<TurnPackingJournalEntry> Entries);
 
@@ -47,14 +48,14 @@ public static class TurnPackingJournal
         {
             throw new InvalidDataException("Unsupported packing journal schema, missing entries or different game scope.");
         }
-        // Keep legacy parsing unchanged; recovery facts must be validated before missing JSON can turn into defaults.
-        if (document.Entries.Any(entry => entry is { Recovery: not null }))
+        // Keep legacy parsing unchanged; nested casualty facts must be validated before missing JSON can turn into defaults.
+        if (document.Entries.Any(entry => entry is { Recovery: not null } or { Casualty: not null }))
         {
             using var raw = JsonDocument.Parse(json);
             var rawEntries = raw.RootElement.EnumerateObject().Last(property => property.Name.Equals("entries", StringComparison.OrdinalIgnoreCase)).Value;
             foreach (var entry in rawEntries.EnumerateArray().Where(entry => entry.ValueKind == JsonValueKind.Object))
             {
-                foreach (var property in entry.EnumerateObject().Where(property => property.Name.Equals("recovery", StringComparison.OrdinalIgnoreCase) && property.Value.ValueKind != JsonValueKind.Null))
+                foreach (var property in entry.EnumerateObject().Where(property => (property.Name.Equals("recovery", StringComparison.OrdinalIgnoreCase) || property.Name.Equals("casualty", StringComparison.OrdinalIgnoreCase)) && property.Value.ValueKind != JsonValueKind.Null))
                 {
                     _ = TurnPackingCasualtyJournal.Read(property.Value.GetRawText(), expectedScope);
                 }
@@ -98,7 +99,7 @@ public static class TurnPackingJournal
             }
             if (entry.Operation is TurnPackingOperation.Start or TurnPackingOperation.RecoveryStart)
             {
-                if (period is not null || entry.Specification is null || entry.Direction is null || entry.Eligibility is null)
+                if (entry.Casualty is not null || period is not null || entry.Specification is null || entry.Direction is null || entry.Eligibility is null)
                 {
                     throw new InvalidDataException("Start binds the specification, direction and eligibility exactly once.");
                 }
@@ -139,12 +140,14 @@ public static class TurnPackingJournal
             else
             {
                 if (period is null || entry.Specification is not null || entry.Direction is not null || entry.Recovery is not null
-                    || (entry.Operation == TurnPackingOperation.Resume) != (entry.Eligibility is not null))
+                    || (entry.Operation == TurnPackingOperation.Resume) != (entry.Eligibility is not null)
+                    || (entry.Operation == TurnPackingOperation.Casualty) != (entry.Casualty is not null))
                 {
                     throw new InvalidDataException("Packing changes retain their original actors and specification; only Resume supplies fresh eligibility.");
                 }
                 period = entry.Operation switch
                 {
+                    TurnPackingOperation.Casualty => ApplyCasualty(period, entry, prior!, scope, eventIds, steps),
                     TurnPackingOperation.Rally => TurnPackingPeriods.NextRally(period, entry.WorkStep.Rally),
                     TurnPackingOperation.Midpoint => TurnPackingPeriods.ApplyMidpoint(period),
                     TurnPackingOperation.Interrupt => TurnPackingPeriods.Interrupt(period),
@@ -158,6 +161,40 @@ public static class TurnPackingJournal
             prior = entry;
         }
         return new(period!, receipts.AsReadOnly());
+    }
+
+    private static TurnPackingPeriod ApplyCasualty(TurnPackingPeriod period, TurnPackingJournalEntry entry,
+        TurnPackingJournalEntry prior, GameScope? scope, HashSet<string> eventIds, HashSet<string> steps)
+    {
+        if (scope is null)
+        {
+            throw new InvalidDataException("A period casualty requires its game scope.");
+        }
+        var document = TurnPackingCasualtyJournal.Read(JsonSerializer.Serialize(entry.Casualty, JsonSerializerOptions.Web), scope);
+        var history = TurnPackingCasualtyJournal.Replay(document.Origin, document.Entries);
+        if (history.Origin.Owner != period.Specification.Owner || history.Origin.Actors != period.Specification.Actors
+            || history.Origin.ExistingPeriodId != period.Specification.Id
+            || history.Origin.Source != new TurnPackingEvidenceSource(prior.EventId, prior.Revision)
+            || history.Receipts[^1].Entry.Revision >= entry.Revision)
+        {
+            throw new InvalidDataException("A casualty must bind this period's owner, actors and immediately preceding state revision.");
+        }
+        var state = history.Origin.State;
+        foreach (var receipt in history.Receipts)
+        {
+            var casualty = receipt.Entry;
+            string[] sources = [casualty.Casualty.EventId, casualty.Roll.EventId, casualty.EventId];
+            foreach (var source in sources)
+            {
+                if (steps.Contains(source) || !eventIds.Add(source))
+                {
+                    throw new InvalidDataException("Period casualties cannot reuse an earlier casualty, die, work step or period event.");
+                }
+            }
+            period = TurnPackingPeriods.ApplyUnloadedCasualty(period, state, casualty.MuleLoss, casualty.OriginalDr, casualty.Terrain);
+            state = period.LatestCasualty!;
+        }
+        return period;
     }
 
     private static void ValidateScope(GameScope scope)

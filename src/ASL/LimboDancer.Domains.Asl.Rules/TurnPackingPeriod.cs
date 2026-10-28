@@ -20,8 +20,12 @@ public sealed record TurnPackingPeriod(TurnPackingSpecification Specification, T
     {
         get; init;
     }
+    public TurnPackingCasualtyState? LatestCasualty
+    {
+        get; init;
+    }
     public bool WeaponPackTi => !Completed;
-    public bool MulePackTi => !Completed && (RecoveryOrigin?.MuleAlive ?? true);
+    public bool MulePackTi => !Completed && (LatestCasualty?.MuleAlive ?? RecoveryOrigin?.MuleAlive ?? true);
     public bool WeaponAndMulePackTi => WeaponPackTi && MulePackTi;
 }
 
@@ -61,6 +65,29 @@ public static class TurnPackingPeriods
         return new(specification, TurnPackingDirection.Unpack, duration, 0, rally, false, true, false, null, false, null)
         {
             RecoveryOrigin = casualty
+        };
+    }
+
+    /// <summary>G10.41: an already-unloaded Gun retains earned progress. Crew casualties/interruption are a separate transition.</summary>
+    public static TurnPackingPeriod ApplyUnloadedCasualty(TurnPackingPeriod period, TurnPackingCasualtyState origin,
+        TurnPackingMuleLoss loss, int originalDr, TurnPackingUnloadTerrain terrain)
+    {
+        RequireOpen(period);
+        ArgumentNullException.ThrowIfNull(origin);
+        var previous = period.LatestCasualty ?? period.RecoveryOrigin;
+        if (period.Direction != TurnPackingDirection.Unpack || period.Loaded || CompletionDue(period)
+            || period.MidpointAt is null && period.RecoveryOrigin is null
+            || (previous is not null ? origin != previous
+                : origin.Weapon != period.Specification.Weapon || origin.Loaded || !origin.WeaponAlive || !origin.MuleAlive
+                    || !origin.MulePackTi || origin.MuleSize != TurnHorseSize.Squad
+                    || origin.Recovery != TurnPackingRecovery.ContinueExistingPeriod))
+        {
+            throw new InvalidDataException("An unloaded casualty must match the active period and its last casualty state, before release is due.");
+        }
+        var transition = TurnPackingCasualtyRules.Apply(origin, loss, originalDr, terrain);
+        return period with
+        {
+            LatestCasualty = transition.State
         };
     }
 
@@ -131,9 +158,9 @@ public static class TurnPackingPeriods
         {
             throw new InvalidDataException("Resume the interrupted crew only at a later Game Turn's first RPh work step.");
         }
-        if (period.RecoveryOrigin is { } recovery)
+        if ((period.LatestCasualty ?? period.RecoveryOrigin) is { } recovery)
         {
-            if (facts.Weapon != period.Specification.Weapon || TurnPackingRules.EvaluateRecovery(facts, recovery).State != TurnPackingEligibility.Eligible)
+            if (facts.Weapon != period.Specification.Weapon || TurnPackingRules.EvaluateUnloadedContinuation(facts, recovery).State != TurnPackingEligibility.Eligible)
             {
                 throw new InvalidDataException("Resume requires fresh eligibility for the surviving recovery participants.");
             }
@@ -151,7 +178,7 @@ public static class TurnPackingPeriods
     public static TurnPackingPeriod Reverse(TurnPackingPeriod period)
     {
         RequireOpen(period);
-        if (period.RecoveryOrigin is not null || !period.PersonnelPackTi || !period.LastRally.FirstRally || MidpointDue(period) || CompletionDue(period))
+        if (period.RecoveryOrigin is not null || period.LatestCasualty is not null || !period.PersonnelPackTi || !period.LastRally.FirstRally || MidpointDue(period) || CompletionDue(period))
         {
             throw new InvalidDataException("Voluntary reversal needs all participants Pack-TI at a first RPh work step before completion.");
         }
@@ -223,6 +250,14 @@ public static class TurnPackingPeriods
             || period.RequiredGameTurns != TurnPackingRules.RequiredGameTurns(period.Specification.Weapon, period.Specification.ManhandlingNumber, period.Specification.Night)))
         {
             throw new InvalidDataException("Recovery must retain its full ordinary period and proven prior physical unload.");
+        }
+        if (period.LatestCasualty is { } casualty && (period.Direction != TurnPackingDirection.Unpack || period.Loaded
+            || period.MidpointAt is null && period.RecoveryOrigin is null || casualty.Loaded || !casualty.WeaponAlive
+            || casualty.Weapon != period.Specification.Weapon || casualty.MuleSize is not (TurnHorseSize.Squad or TurnHorseSize.HalfSquad)
+            || casualty.MulePackTi != casualty.MuleAlive || casualty.LowAmmoOccurrences < 0
+            || casualty.Recovery != (period.RecoveryOrigin is null ? TurnPackingRecovery.ContinueExistingPeriod : TurnPackingRecovery.FullOrdinaryPeriod)))
+        {
+            throw new InvalidDataException("The latest casualty must retain the unloaded weapon and existing period requirement.");
         }
         if (period.InterruptedAt is { } interruption)
         {

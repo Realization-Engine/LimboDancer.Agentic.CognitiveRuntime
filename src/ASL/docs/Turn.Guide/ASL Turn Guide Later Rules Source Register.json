@@ -95,6 +95,19 @@
           ],
           "method": "Text extraction reviewed for MMC use, captured/non-qualified-use requirements and physical covered-arc distinctions. This adds no visual-review claim and does not replace the accepted baseline.",
           "finding": "Same-nationality MMC qualification is bounded to MMG, HMG and light mortars. C9.2 gives light mortars no CA; A9.21 SW MG fire restrictions do not establish a physical Gun facing. Foreign/SSR exceptions and the specialized 37mm INF SW representation remain pending; no live command is admitted."
+        },
+        {
+          "date": "2026-10-28",
+          "rules": [
+            "G10.4-.41",
+            "ASOP 1.13B"
+          ],
+          "physicalPages": [
+            292,
+            678
+          ],
+          "method": "Text review of G10.41 and both printed examples; ASOP 1.13B extraction checked for start/release versus halfway timing. Existing G10 full-page visual review is retained.",
+          "finding": "An already-unloaded Gun retains its existing Unpacking progress after Mule casualties, as the Turn 5 example releases in Turn 6. Further loss during full recovery does not restart its duration. Casualty effects occur immediately and do not create a new ASOP work step. Live source authentication, atomic effects and replacement-Mule routes remain pending."
         }
       ]
     }

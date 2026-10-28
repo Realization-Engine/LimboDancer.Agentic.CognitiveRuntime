@@ -568,3 +568,10 @@ Validation: all 468 Units tests and 114 focused packing/work Rules tests pass, i
 The actor adapter now proves same-nationality MMC qualification for MMG, HMG and light-mortar packing from disclosed counter facts. Unknown/foreign-use exceptions and the 37mm INF SW stay pending. The vulnerability contract also preserves the distinction between a Gun's physical CA and SW fire restrictions, avoiding a fictitious random facing for ordinary SW. The detailed design/source register records the correction and remaining limits; no live capability or package is promoted.
 
 Validation: all 473 Units tests and 121 focused packing/work Rules tests pass. New/updated cases cover actual MMC versus SMC roles, same-nationality versus unknown/foreign/hidden facts, SW facing, and the pending 37mm placement path. All 183 ASL.Turns tests pass with 825/825 lines and 470/470 branches covered (100%, no exclusions). No live game records, Studio process or ordinary dice were changed.
+
+
+### D3.2 progress: existing-period casualty continuation (2026-10-28)
+
+Rules and scoped replay now preserve an already-unloaded Gun's earned Unpacking progress after G10.41 Mule casualties, including further loss during full recovery. The printed Turn 5 casualty still releases in Turn 6. Casualty evidence binds the exact preceding period state, retains the existing work-step reference, preserves cumulative/unknown ammunition facts and cannot reset progress or substitute actors. Fresh surviving-crew eligibility remains required after a separate crew interruption. The design and later-Rules plan record G10.41/ASOP reconciliation and the remaining live host, terrain, atomic-effect and replacement-Mule requirements. D3.2 remains In progress and all nine packages remain Pending, with 2/36 tasks complete.
+
+Validation: 480 Units tests, 126 focused packing/work Rules tests and 183 ASL.Turns tests pass. ASL.Turns retains 825/825 lines and 470/470 branches (100%, no exclusions). No live game records, Studio process or dice source changed.
