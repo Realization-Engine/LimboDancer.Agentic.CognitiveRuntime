@@ -307,6 +307,8 @@ Each carries a proposal.
    - Records the Turns work against its rows.
    - Adds rows beyond Chapter E (question 8): F, G, W, the H Notes, and the ASOP, each with the PDF edition it was read from and its claim wave. The inventory's title ("A to E") no longer fits; renaming the file is a separate change that goes by pull request.
    - Regenerates the counts table by script from the rows.
+
+   **Progress (2026-10-28, branch `step0/inventory-ledger`).** Done: the Rules calculator column (121 rows read, 38 claims found, 23 more in passing), the Turns work on 23 rows of A to E and on G10, the Owner, Claim state, and Minigames columns (every row with a rule open), 1,093 rows beyond E (F, G, H1, W, the ASOP; "not audited"), and both count tables written and checked by script. Two figures above were wrong: by the Where cells there are 108 rows that cite Play or Units and no Rules code, not 103, and 49 that cite Maps alone; and the counts table did match its rows. Left: the check of the "no in-scope board prints" notes, which waits for the `MapHexIndex` (first task 5). The inventory's own section 1 (point 5) and section 3 say how each part was made.
 1. Commit or move Codex's open Turns documents out of the main checkout (section 10).
 2. Add the Owner and Claim state columns to the inventory, and the claim board and the one-rule-one-calculator rule to `AGENTS.md`.
 3. Merge the Turns tasks into the redesign plan's pass sections (section 11.2), move the Trip Flare rows to pass 90 (question 9), write the Rules status script, and add each pass's first status line (section 11.1).
