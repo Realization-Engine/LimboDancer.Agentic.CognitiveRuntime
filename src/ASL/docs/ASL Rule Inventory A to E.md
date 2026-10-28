@@ -4518,3 +4518,16 @@ The last three lines are the rows beyond Chapter E, by the plan's question 8: wa
 
 **E.1 (page 222)** says Chapter E "is composed entirely of Optional rules and SSR": none of it applies unless a card cites it or the players agree. The rows of Chapter E are judged as rules all the same, since the aim is complete coverage of A to E.
 
+## 6. Claims
+
+The claim board of the [Rules-first four-track plan](<Plans/ASL Rules-First Four-Track Plan.md>) (section 4; questions 1 to 3, ruled by the user on 2026-10-28). `AGENTS.md` says how a claim is made, built, and reviewed; `code-builders/documents/claim_check.py` checks this table against the rows' Owner and Claim state cells, in the merge gate's strict stage and in CI.
+
+- **Claim**: its id, the rule section it takes (A10), or a subsection group where the section is large (A7.3); an id that is not a rule section names its work (proving-slice).
+- **Agent**: Claude or Codex, the agent that holds it. **Reviewer**: the other agent, or "sub-agent" when only one is working.
+- **Branch**: the branch the claim's work is done on.
+- **Calculator files**: the files of the Rules project the claim will change, by file name, comma-separated. While the claim is claimed or built it holds them: no other claim may list them, and a branch may change a Rules file only when a claim of that branch lists it.
+- **State**: claimed, built, reviewed, wired, or accepted (the plan's section 4.3). Every row the claim owns carries the same state in its Claim state cell, and its Owner cell reads "claim (agent)", for example "C9.3 (Codex)".
+
+| Claim | Agent | Reviewer | Branch | Calculator files | State | Opened | Note |
+|---|---|---|---|---|---|---|---|
+

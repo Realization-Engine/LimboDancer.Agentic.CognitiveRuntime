@@ -9,7 +9,7 @@
 #             baseline-cache/<key> and reused while the base commit, the older games, BOTH_SKIP, the sweep list, and the tool are the same.
 #             Run it once when the branch is cut (about 25 min alone); the gate then finds it made.
 #   strict    each pass's Rules status line checked against the rule inventory (documents/pass_rules_status.py --check; the Rules-first
-#             plan's question 10, 2026-10-28), then the pass's changed test files formatted, then the solution built with warnings as errors.
+#             plan's question 10, 2026-10-28) and the claim board (documents/claim_check.py), then the pass's changed test files formatted, then the solution built with warnings as errors.
 #             Run it before the documents commit: the pass's test script builds with warnings not as errors, and nothing else compiles a
 #             test file strictly before the gate.
 #   strict-check   says whether the strict build passed for the tree as it stands. A review or a prompt says so only when this does.
@@ -184,6 +184,8 @@ base)
 strict)
   # The Rules-first plan, question 10 (the user, 2026-10-28): the redesign plan's Rules status lines may not drift from the inventory.
   python "$R/code-builders/documents/pass_rules_status.py" --check < /dev/null || stop "a pass's Rules status line differs from the rule inventory (run code-builders/documents/pass_rules_status.py and commit)"
+  # The claim board (questions 1 to 3, 2026-10-28): the ledger is sound, and every Rules file the branch changes is held by its claim.
+  python "$R/code-builders/documents/claim_check.py" --base "$BASEFULL" --branch "$(git -C "$R" branch --show-current)" < /dev/null || stop "the claim board's check failed (above; AGENTS.md says how to claim)"
   CHANGED=$( (git -C "$R" -c core.quotepath=false diff --name-only "$BASEFULL" -- 'src/ASL/tests/*.cs'; git -C "$R" ls-files --others --exclude-standard -- 'src/ASL/tests/*.cs') | sort -u)
   for project in $(echo "$CHANGED" | cut -d/ -f4 | sort -u); do
     FILES=$(echo "$CHANGED" | grep "/$project/" | sed 's#^src/ASL/##' | while read -r f; do [ -f "$R/src/ASL/$f" ] && echo "$f"; done)
