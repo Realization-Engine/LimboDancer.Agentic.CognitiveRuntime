@@ -6,7 +6,7 @@ Date: 2026-10-27. **Merged into the pass sections on 2026-10-28** (first task 3 
 
 The 36 tasks of this plan are merged into the pass sections of the [redesign plan](<../ASL Card Play and Map Studio Redesign Plan.md>), section 22.1, each split into its Rules part (a claim on the board of the Rules-first plan) and its wiring part (track 3). A package's fourth task becomes the track 3 acceptance of the phases it touches. The table below maps each task to its pass; what remains is written there, not here. The full task register is in this file's history (git, before 2026-10-28). The catalogs, walkthroughs, and source register in this folder stay, and the pass sections cite them.
 
-This file keeps its history: the ledger and the acceptance and progress records that follow, as they were. On 2026-10-28 the ledger read 3 of 36 complete (D1.1, D3.1, D4.1), with D1.2, D2.1, and D3.2 in progress, and the [D4.2 design](<ASL Turn Guide D4.2 Design.md>) prepared for review and not approved (Codex's review note of that day: implementation awaits design approval; commits may follow a successful Studio check and only the unit tests of the changed behavior; full suites and ASL.Turns coverage belong at the gate and CI).
+This file keeps its history: the ledger and the acceptance and progress records that follow, as they were. On 2026-10-28 the ledger read 3 of 36 complete (D1.1, D3.1, D4.1), with D1.2, D2.1, and D3.2 in progress, and the [D4.2 design](<ASL Turn Guide D4.2 Design.md>) prepared for review and not approved. Codex's review note of that day recorded the user's direction, which is the way of working of the Rules-first plan: implementation awaits design approval; commits may follow a successful Studio check and only the unit tests of the changed behavior; full suites and ASL.Turns coverage belong at the gate and CI. D9.1's core-topic matrix is the rule inventory's Owner column.
 
 | Package | Its tasks' pass section |
 |---|---|
@@ -22,13 +22,13 @@ This file keeps its history: the ledger and the acceptance and progress records 
 
 ## Common implementation and acceptance contract
 
-Kept as written: track 3 accepts each wiring part against it. The per-commit coverage sentence of its last paragraph gave way on 2026-10-28 to the user's direction above (full suites and coverage at the gate and CI).
+Kept as written: track 3 accepts each wiring part against it. The per-commit coverage sentence of its last paragraph gave way on 2026-10-28 to the user's direction recorded above (full suites and coverage at the gate and CI), and is marked where it stands.
 
 Each semantic task reconciles the local rulebook and ASOP, names the supported conditions and exceptions, puts verdicts in ASL.Rules, persists authoritative facts in Units, and uses governed Play commands. Do not invent an ASOP checkpoint from a phase label, migrate unknown legacy facts by guessing, or add a generic adjudication shortcut in place of missing rules. Existing source gaps stay visible until an authoritative source is supplied and reviewed.
 
 Each integration task proves proposal/confirmation, stale rejection, replay/retry, interruption, consequence completion, phase-close parity and owner/opponent/adjudicator disclosure for its admitted cases. The UI consumes those results without a second rule engine. Every reference topic, dependency and deferred package remains visible. NotApplicable requires evidence; pending implementation cannot produce it.
 
-Each package's fourth task is acceptance of its preceding scope, including negative cases, legacy records and a live consumer where commands are admitted. It is not permission to narrow away missing package requirements. ASL.Turns must retain 100% line and branch coverage without exclusions on every implementation commit; focused Rules, Units, Play and UI checks follow changed contracts. Record actual results, not inherited pass counts. No package becomes complete solely because tests for a smaller subset pass.
+Each package's fourth task is acceptance of its preceding scope, including negative cases, legacy records and a live consumer where commands are admitted. It is not permission to narrow away missing package requirements. ASL.Turns must retain 100% line and branch coverage without exclusions on every implementation commit (superseded 2026-10-28: checked at the merge gate and in CI); focused Rules, Units, Play and UI checks follow changed contracts. Record actual results, not inherited pass counts. No package becomes complete solely because tests for a smaller subset pass.
 
 ## History: acceptance and progress records
 

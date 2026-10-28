@@ -6,9 +6,9 @@ Prepared against main `747fc9dc154bb024ab5c2cbe0cbe7cfc90124271`. Preparation re
 
 ## 1. Scope and approval boundary
 
-D4.2 in the [later Rules plan](<ASL Turn Guide Later Rules Implementation Plan.md>) follows the completed D4.1 eligibility contract. It adds durable simultaneous-recipient assignments, Ammo Dump setup and replenishment, source-backed SSR/DYO facts, and transfer/offload disposition. B5-D4 stays Pending until D4.4 passes. All nine packages and every reference topic remain visible.
+D4.2, first a task of the [later Rules plan](<ASL Turn Guide Later Rules Implementation Plan.md>) and since 2026-10-28 part of pass 175 in the [redesign plan](<../ASL Card Play and Map Studio Redesign Plan.md>) (section 22.1), follows the completed D4.1 eligibility contract. It adds durable simultaneous-recipient assignments, Ammo Dump setup and replenishment, source-backed SSR/DYO facts, and transfer/offload disposition. B5-D4 stays Pending until D4.4, now the track 3 acceptance of pass 175's ammunition work, passes. All nine packages and every reference topic remain visible.
 
-The remaining nine packages are explicitly deferred to later ASL.Rules passes. D4.2 is a bounded implementation task within that work, not acceptance of all E10 or an implementation of the entire existing Pass 175 inventory.
+The nine packages' tasks sit in their home passes (2026-10-28), each split into a Rules claim on the [rule inventory](<../ASL Rule Inventory A to E.md>) and a track 3 wiring part of the [Rules-first plan](<../Plans/ASL Rules-First Four-Track Plan.md>). D4.2 is a bounded task within pass 175, not acceptance of all E10 or an implementation of the entire existing Pass 175 inventory.
 
 User rulings on 2026-10-28 supersede older Turn Guide validation and autonomy wording:
 
@@ -62,7 +62,7 @@ Relevant passages read on their pages include:
 - p. 494: French ordnance note G has date-dependent Low Ammo status.
 - p. 502: the Polish Dion-Bouton also needs supply to fire at all.
 
-The A-to-E inventory still calls E10 unbuilt under Pass 175 despite the bounded Turn Guide work. Update each reached row to describe its actual contract/command coverage and remaining dependency; do not replace all rows with Built. The circled-B# catalog/automatic Low Ammo gap remains linked to Pass 105 and D4.3.
+The rule inventory still calls E10 unbuilt under Pass 175; since 2026-10-28 its Rules calculator column names `TurnAmmoEligibilityRules` on E10.1, E10.11, and E10.2, and the work calculators on E10.12, E10.3, and E10.4. Claim each reached row by a commit that fills its Owner cell, and update it to describe its actual contract/command coverage and remaining dependency; do not replace all rows with Built. The circled-B# catalog/automatic Low Ammo gap remains linked to Pass 105 and D4.3.
 
 ## 3. Current implementation and concrete gaps
 
@@ -124,12 +124,12 @@ These are proposals, not implemented rules or assertions that the source explici
 | D42-R2 | E10.3 allows two simultaneous recipients and requires a DR after each completes; it does not explicitly order two periods ending at the same checkpoint if one DR is 12. Sequential API calls would otherwise make the first call determine the second's entitlement. | Freeze all recipients that completed at that checkpoint; resolve their restorations and one DR each as one batch, then mark the shared source depleted if any roll is 12. A recipient not yet due is not restored. This needs an explicit ruling or authoritative clarification. |
 | D42-R3 | E10.4 orders a wreck flip for an Immobilized emptied source. C10.1 destroys a towed Gun when its vehicle is destroyed; D5.6 ties survival to elimination. The administrative flip's effect on PRC/towed equipment is not explicit in the read text. | Do not call the general combat-wreck helper blindly. Obtain a ruling on whether the flip constitutes elimination for these clauses. Until resolved, refuse only the affected occupied/towing completion with an explicit dependency; do not claim D4.2 complete. Existing legal unloading/unhooking may prepare an empty source but is not a substitute for implementing the requested disposition cases. |
 | D42-R4 | One source must serve two recipients, but current participant exclusivity and blanket TI clearing prevent that. Recipient CE loss and source activity have different potential scopes. | Track source-level participation and per-recipient periods. Recipient loss interrupts that recipient; source movement/fire/CC or loss interrupts all dependent periods. Rules retains source TI while any qualifying work requires it. Confirm this reading alongside R2. |
-| D42-R5 | Newly admitted transfer/offload without the E10.4 MP restriction would create a knowingly illegal route, although general restrictions are listed in D4.3. | Bring the relocation-specific no-MP consequence into D4.2 as a prerequisite. Leave wider fire-benefit movement rules and automatic Low Ammo in D4.3; update both task rows to prevent duplicate ownership. |
-| D42-R6 | E10 inventory ownership is Pass 175, but D4.2 is a smaller slice and does not fulfill that pass's broader scope. | Use a dedicated D4.2 branch and gate configuration, with a D4.2-specific gate identifier supported by the existing script. Record this as partial Pass 175 work, not Pass 175 completion. Confirm the identifier before the baseline is created. |
+| D42-R5 | Newly admitted transfer/offload without the E10.4 MP restriction would create a knowingly illegal route, although general restrictions are listed in D4.3. | Bring the relocation-specific no-MP consequence into D4.2 as a prerequisite. Leave wider fire-benefit movement rules and automatic Low Ammo in D4.3; record the split in the rule inventory's Owner and Claim state cells and in pass 175's section, so no rule has two owners. |
+| D42-R6 | E10 inventory ownership is Pass 175, but D4.2 is a smaller slice and does not fulfill that pass's broader scope. | Use a dedicated D4.2 branch in Codex's own worktree and a gate configuration, with a D4.2-specific gate identifier supported by the existing script. Claim the reached rows on the rule inventory; pass 175's script-written Rules status line then shows partial work, not Pass 175 completion. Confirm the identifier before the baseline is created. |
 
 ## 6. Finite implementation sequence after approval
 
-These are six increments within D4.2, not six additions to the 36-task ledger.
+These are six increments within D4.2's pass 175 work, not new claims or tasks.
 
 1. **Rules and source contract:** approved rulings, source authorization/selection and typed participant facts; move reached boundary decisions into Rules. Add versioned setup evidence and a small Studio setup/read route so the increment can be exercised before its commit.
 2. **Durable assignments:** one/two recipients, complete inventory, source identity, unknown evidence, role-specific TI ownership and historical disclosure. Show assignments in Studio, including a third-recipient refusal.
@@ -177,4 +177,4 @@ Preparation created no build, game or PDF-render output. During implementation, 
 
 ## 9. Review requested
 
-Approve or amend D42-R1 through R6, especially simultaneous depletion and the administrative-wreck disposition. The rest of the proposed architecture preserves the accepted backend and puts all new rule decisions in Rules. After approval, record the rulings and boundaries in the main design, finite plan, source register and backlog before implementing the affected route. D4.2 remains Pending until every approved in-scope route, including disposition, has its acceptance evidence.
+Approve or amend D42-R1 through R6, especially simultaneous depletion and the administrative-wreck disposition. The rest of the proposed architecture preserves the accepted backend and puts all new rule decisions in Rules. After approval, record the rulings and boundaries in the main design, pass 175's section of the redesign plan, the rule inventory, the source register and the backlog before implementing the affected route. D4.2 remains Pending until every approved in-scope route, including disposition, has its acceptance evidence.

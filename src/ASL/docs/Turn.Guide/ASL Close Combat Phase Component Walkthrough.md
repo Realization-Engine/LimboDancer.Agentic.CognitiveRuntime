@@ -26,7 +26,7 @@ Closing status belongs to units as well as Locations. A tank can hold Infantry w
 
 ## Coverage boundaries
 
-The preview now completes the eight ordinary phase catalogs, but remains a design reference. It does not roll dice, adjudicate a position, execute rules or claim all implementation passes are complete. The next work is a cross-phase event and expiry audit, scenario-profile source completion, and a Blazor integration contract with the existing Rules/Play projection and decision mechanisms.
+The preview now completes the eight ordinary phase catalogs, but remains a design reference. It does not roll dice, adjudicate a position, execute rules or claim all implementation passes are complete. The cross-phase audit is done ([ASL Cross-Phase Dependencies and Cleanup Audit](ASL%20Cross-Phase%20Dependencies%20and%20Cleanup%20Audit.md)) and U1 is built. Since 2026-10-28 the remaining rule work is claimed on the rule inventory, and each phase is wired and accepted under track 3 of the [Rules-first plan](../Plans/ASL%20Rules-First%20Four-Track%20Plan.md).
 
 The catalog contains 78 topics and 79 contextual vocabulary labels.
 

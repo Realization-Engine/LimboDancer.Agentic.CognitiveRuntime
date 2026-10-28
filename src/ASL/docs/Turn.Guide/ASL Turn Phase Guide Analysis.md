@@ -2,7 +2,7 @@
 
 Date: 2026-10-26
 
-Status: Backend-first exploration, reopened 2026-10-27. The ASL.Turns reference foundation exists; bounded Rules timing, host history adapters and shared phase-close assessment now exist; additional families and obligation execution remain pending. No UI component is implemented.
+Status: Backend-first exploration, reopened 2026-10-27. The ASL.Turns reference foundation exists; bounded Rules timing, host history adapters and shared phase-close assessment now exist; additional families and obligation execution remain pending. U1 has since been implemented, with reference and live Blazor consumers (the B5 acceptance and U1 handoff record).
 
 Backend decision, 2026-10-27: [Design](ASL%20Turn%20Phase%20Guide%20Design.md) and [Implementation Plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md) now put ASL.Turns and ASL.Turns.Tests first. The headless mechanism owns content, guidance contracts, obligation coordination and closure assessment. Rules remains authoritative for semantics; Play adapts facts and executes governed commands. UI construction waits for backend proofs.
 
@@ -72,7 +72,7 @@ Build ASL.Turns as an independent back-end library describing all eight ASL Play
 
 The strongest design is a phase guide backed by an option catalog, with a contextual checklist layered over it. The catalog answers “What can happen here?” The checklist answers “What requires attention in this position, whose decision is it, and when does the opportunity close?” Neither should suggest that exercising every optional action is good play.
 
-The existing program of passes targets Chapters A to E, with explicit rulings and deferred Chapters F, G, and H. Represent those boundaries honestly: planned A to E options are included regardless of integration status; known deferred chapter families remain discoverable as deferred reference topics. Complete coverage of deferred chapters requires their own content inventory. Completion of the current passes must not be described as implementation of every ASL module.
+The program of passes targeted Chapters A to E. Since 2026-10-28 the rule inventory also holds not-yet-audited rows for F, G, H1, W, and the ASOP: G10 Animal Pack is claimed with pass 165, and F, the rest of G, and W are a second claim wave once their boards and counters are imported. Represent those boundaries honestly: planned options are included regardless of integration status; second-wave chapter families remain discoverable as deferred reference topics. Completion of the current passes must not be described as implementation of every ASL module.
 
 ## 2. Recent progress and reusable foundations
 
@@ -152,7 +152,7 @@ The initial content effort must account for all of these families, rather than s
 | Terrain and engineering | Entrenching, clearance, fortifications, obstacles, mines, wire, demolition, buildings and levels, rubble, fire, bridges, water, and associated movement or labor procedures. |
 | Environment and special operations | Wind, weather, night, illumination, concealment and cloaking, snow and ice, special movement, cavalry, skis, air support and AA, airborne and waterborne procedures, and special transport. |
 | Scenario and turn administration | Reinforcements, SSR-defined timing, victory and game-end checks, turn ownership, compulsory effects, marker transitions, and any scenario-specific overrides. |
-| Deferred rule families | Discoverable Desert, PTO, and DYO topics with their explicit scope labels. Do not imply complete coverage of these chapters from the A to E inventory. |
+| Deferred rule families | Discoverable Desert, PTO, Korean War, and DYO topics with their explicit scope labels. Their inventory rows are not audited; do not read them as coverage. G10 Animal Pack is in scope with pass 165. |
 
 These are coverage headings, not assertions that every named procedure is legal in every phase. An option can have multiple timing records and can be an automatic effect, a mandatory decision, an optional action, or a modifier to another action.
 
@@ -298,7 +298,7 @@ Compare later prototypes against the same replay position and viewer. Measure ad
 
 ## 10. Backend-first evaluation and delivery
 
-The first foundation is implemented: ASL.Turns and ASL.Turns.Tests load and validate all 538 topics, 38 dependency definitions and 191 links, without UI services. B1 now supplies typed capability contracts and stable timing bindings while retaining unknown/pending content. The next stages are pure snapshot composition, representative rule-owned obligation lifecycles, and Play/Units adapters with shared closure assessment. Durable missing facts and additional rule profiles follow in bounded slices.
+The first foundation is implemented: ASL.Turns and ASL.Turns.Tests load and validate all 538 topics, 38 dependency definitions and 191 links, without UI services. B1 now supplies typed capability contracts and stable timing bindings while retaining unknown/pending content. The stages that followed (snapshot composition, rule-owned obligation lifecycles, Play and Units adapters with shared closure assessment, B5, and U1) are built; the remaining rule work is taken from the claim board of the Rules-first plan (2026-10-28).
 
 Before any Blazor construction, prove deterministic reads, pending visibility, correct owner-relative clocks, interruption and completion evidence, stale rejection, viewer-safe output, no duplicate cleanup, and agreement between guidance and governed command validation. The test library remains independent of the UI. Existing Rules, Units and Play test projects verify their own boundaries.
 
@@ -313,7 +313,7 @@ The saved design preview in this folder is reference evidence. Production does n
 - [Advancing Fire walkthrough and source ledger](ASL%20Advancing%20Fire%20Phase%20Component%20Walkthrough.md), for all nine AFPh steps, detailed fire exceptions, demolition and terrain obligations, pending integrations and source limits.
 - [Defensive Fire walkthrough and source ledger](ASL%20Defensive%20Fire%20Phase%20Component%20Walkthrough.md), for all eight printed DFPh steps, prior-use restrictions, labor, aircraft, day/night cleanup and source limits.
 - [Movement walkthrough and source ledger](ASL%20Movement%20Phase%20Component%20Walkthrough.md), for all 20 printed MPh ASOP steps, supplemental movement and response procedures, physical PDF locators and explicit source limits.
-- [Rule inventory A to E](../ASL%20Rule%20Inventory%20A%20to%20E.md), [Rule Coverage](../ASL%20Rule%20Coverage.md), and [Redesign Plan](../ASL%20Card%20Play%20and%20Map%20Studio%20Redesign%20Plan.md), especially the scope decisions and complete-coverage pass schedule.
+- [Rule inventory A to E](../ASL%20Rule%20Inventory%20A%20to%20E.md), [Rule Coverage](../ASL%20Rule%20Coverage.md), and [Redesign Plan](../ASL%20Card%20Play%20and%20Map%20Studio%20Redesign%20Plan.md), especially the scope decisions and the pass groupings, which since 2026-10-28 guide what is claimed together on the claim board of the [Rules-first plan](../Plans/ASL%20Rules-First%20Four-Track%20Plan.md).
 - [Acronym Search Analysis](../ASL%20Acronym%20Search%20Analysis.md) and [Acronym Search Design](../ASL%20Acronym%20Search%20Design.md), plus the committed catalog and components under `LimboDancer.Domains.Asl.MapStudio`.
 - [Play Streamlining Analysis](../ASL%20Map%20Studio%20Play%20Streamlining%20Analysis.md), for existing interaction goals and movement-response friction.
 - [Pass 71 Design](../Passes/ASL%20Unit%20Backlog%20Pass%2071%20Design.md), for current sniper, wound, and disclosure integration context.

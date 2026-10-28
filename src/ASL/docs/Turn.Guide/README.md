@@ -1,6 +1,6 @@
 # ASL Turn Guide
 
-Current planning status: **B5-R1 through B5-R6 are accepted; no required B5 slices remain. U1 is implemented**, with reference and live Blazor consumers. The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and nine deferred rule-family packages, B5-D1 through B5-D9. D9 adds the ordinary core-phase rules missing from the original eight packages; it does not add a required B5 slice.
+Current planning status: **B5-R1 through B5-R6 are accepted; no required B5 slices remain. U1 is implemented**, with reference and live Blazor consumers. The [implementation plan](ASL%20Turn%20Phase%20Guide%20Implementation%20Plan.md#11-finite-b5-completion-backlog-agreed-scope-2026-10-27) defines the finite acceptance gate and the nine rule-family packages, B5-D1 through B5-D9. D9 adds the ordinary core-phase rules missing from the original eight packages; it does not add a required B5 slice. On 2026-10-28 the packages' 36 tasks were merged into the pass sections of the [redesign plan](../ASL%20Card%20Play%20and%20Map%20Studio%20Redesign%20Plan.md) (section 22.1), under the [Rules-first four-track plan](../Plans/ASL%20Rules-First%20Four-Track%20Plan.md): each task's Rules part is a claim on the [rule inventory](../ASL%20Rule%20Inventory%20A%20to%20E.md), the one ledger, and its wiring part belongs to track 3. The [later Rules plan](ASL%20Turn%20Guide%20Later%20Rules%20Implementation%20Plan.md) keeps their acceptance contract, history, and the map from task to pass; the [D4.2 design](ASL%20Turn%20Guide%20D4.2%20Design.md) awaits approval in pass 175.
 
 All turn-guide analysis, design, phase catalogs, walkthroughs and dependency audit live in this folder.
 
@@ -30,7 +30,7 @@ The preview is a frozen copy of the conversation mock-up, including its content 
 
 Projects: [ASL.Turns](../../ASL.Turns/ASL.Turns.csproj) and [ASL.Turns.Tests](../../tests/ASL.Turns.Tests/ASL.Turns.Tests.csproj). The library loads all 538 topics and 38 dependency definitions without UI services. Bounded host obligations and the Placed DC route are accepted; unsupported rule families remain pending.
 
-B1 adds typed capabilities and stable timing references. Run `./src/ASL/tests/ASL.Turns.Tests/Test-Coverage.ps1` from the repository root to enforce 100% line and branch coverage for ASL.Turns. Current B3 verification: 116 passing tests, 425/425 lines and 234/234 branches; 28 focused Rules tests also pass.
+B1 adds typed capabilities and stable timing references. Run `./src/ASL/tests/ASL.Turns.Tests/Test-Coverage.ps1` from the repository root to enforce 100% line and branch coverage for ASL.Turns; since 2026-10-28 it runs at the merge gate and in CI, and a commit needs a successful Studio check and the unit tests of the changed behavior. Current B3 verification: 116 passing tests, 425/425 lines and 234/234 branches; 28 focused Rules tests also pass.
 
 B2 adds `TurnGuideService.Describe`, an immutable snapshot composer over authorized host verdicts. See design section 4 and implementation plan section 5 for the implemented API and its trust boundary.
 
