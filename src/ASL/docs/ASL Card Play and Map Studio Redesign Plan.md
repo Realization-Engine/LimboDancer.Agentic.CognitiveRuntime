@@ -1817,7 +1817,7 @@ Moved here from pass 75 (2026-10-25, at the user's word, after weighing whether 
 
 Moved in, with no estimate: Stun of an AFV by a Sniper (D5.34, from pass 65, with 71.1); the voluntary removal's Sniper exception (A12.14, A14.2, from pass 70, with 71.1); the SMC crew's Stun wound in the projector, with no Wound Severity dr and a second wound eliminating (D5.34, A17.11, from pass 70, with 71.2).
 
-**Pass 72: Infantry V: Heat of Battle and Unit Substitution** (10 rows of the inventory). Counters: none. Needs first: 40; 71, since a berserk unit (A15.431), a wounded SMC (A17.2), and an Inexperienced unit (A19.31) all change the same movement allowance, and the two passes run one after the other.
+**Pass 72: Infantry V: Heat of Battle and Unit Substitution** (10 rows of the inventory). Counters: none. Needs first: 40; 71, since a berserk unit (A15.431), a wounded SMC (A17.2), and an Inexperienced unit (A19.31) all change the same movement allowance, and the two passes run one after the other. **Status, 2026-10-27: built to the merge gate on `feature/asl-backlog-pass-72`, cut from b0a36132; the gate not run. The user's word of 2026-10-27 ("Run Pass 72 without my intervention up to the merge gate.") ends at the gate, and the gate, the push, the pull request, and the merge are each the user's to start.** The two tasks are built, in five increments (5a to 5e) in five commits and two rounds of the reviews' fixes (76cac041, 1fa0a214); no increment was left out (ruling R72.1). Of the 10 inventory rows, 5 are built (3 of them with a deviation) and the remainders of 5 went to the pass that takes what is left (pass 73 1, pass 105 1, pass 110 1, pass 120 1, pass 180 1); the item moved in is built. The calibrated forecast was about 2:50 of building (about 5:20 to the gate) against the plan's 1:40 (2:55 in all); the build took 3:15 by the clock (19:10 to 22:25). Rulings R72.1 to R72.22 are open to a veto. What the pass moved went to pass 73 (a berserk Dash, with 73.3; a heroic leader's heroic qualities in fire), pass 105 (the circled B# and Low Ammo under Ammunition Shortage, with 105.7; a hero's AAMG as a Rider, with 105.1), pass 110 (a hero firing a Gun, with 110.6, and a bazooka, a MOL-Projector, or a RCL, with 110.7 to 110.9), pass 120 (Wire and minefields in a charge's route), pass 150 (an FFE in a charge's route; OBA's Scarce Ammo), pass 185 (a Blaze as a charge bar), and the backlog (the ordnance package's Inexperienced B# read by class only), each with its reason in the [design](<Passes/ASL Unit Backlog Pass 72 Design.md>), sections 2, 8.1 to 12.1, and 13, the [review](<Passes/Scenario A1 Backlog Pass 72 Review 2026-10-27.md>), and the backlog's section 75.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1842,6 +1842,8 @@ Moved in, with no estimate: a berserk charge into a Location holding an enemy ve
 | **Pass 73 total** (build 4:00) | | **5:15** |
 
 For the frame: Human Wave's entry (A4.14) needs Impulse Movement and waits with Human Wave (pass 180); the SMC's move away into minefields, an FFE, or Wire (A4.151) waits for passes 115, 120, and 150; the SS against Russians (A19.12) needs the SS MMC that pass 180 adds. The frame decides whether each moves to that pass or stays refused until then. A9.8's row stays with pass 110 for its other parts, and A8.31's row with no pass: 73.6 and 73.5 take only the backlog's items from them.
+
+Moved here by pass 72 (2026-10-27), with no task renumbered: a berserk Dash across a road (A15.431, with 73.3); a heroic leader's heroic qualities in fire, which `FireFirer` does not carry (A15.21; ruling R72.2).
 
 **Pass 74: Infantry VII: prisoners, Interrogation, and Control** (24 rows of the inventory). Counters: none. Needs first: 40; 70 (the capture of Passengers, and the concealment and HIP that Interrogation reveals). Interrogation (E2.1) is rolled on a capture or a surrender, so it is built with the prisoners.
 
@@ -1957,6 +1959,8 @@ Moved here by pass 60 (2026-10-15), with no task renumbered: the upper superstru
 
 Moved here by pass 65 (2026-10-24), with no task renumbered: D5.311's unarmored Target Facing, and an OT AFV treated as unarmored (D5.311, with 105.1); the one-man turret of a SMC crew (D5.343, with 105.1); A9.74's dr for a PRC's SW, and Riders in an OVR (A9.74, D6.22, with 105.4); a vehicle and its Passengers in one FG, and a Passenger's Bounding First Fire (D6.64, D6.65, D3.3, D3.5); D6.5's interleaving of the interim move, and the Road Bonus above four MF after unloading (D6.5, A4.11); a pin or break on a Rider by an ordnance, mortar, FT, MOL, or DC hit, and an entry from off board with Riders (D6.23, D6.21); a re-crewing's failure under D5.43, MG Removal of a heavier MG or a mortar, an Armor Leader on the `instance-moved` paths, and the broken crew's +1 for Survival (D5.42, D5.43, D6.631, D3.43, D5.6); the red CS# on the IFT's Vehicle line (D5.7); the start dr in a Motion attempt (A21.22, D2.401); a Disabled AAMG that is not the MA (D10.52); a CE or BU choice at setup (A2.52, D5.3).
 
+Moved here by pass 72 (2026-10-27), with no task renumbered: the circled B# of vehicles and Guns and the Low Ammo counter at start under Ammunition Shortage (A19.131, D3.71, with 105.7); a hero firing an AFV's AAMG as a Rider (A15.23, with 105.1; ruling R72.2).
+
 **Pass 110: Guns and anti-tank weapons II** (new; 77 rows of the inventory). Counters: R# and X# on the Guns; a Gun that is not QSU, with LF or RFNM; a medium mortar with its dm side; a bazooka; a PIAT; a MOL-Projector; an RCL; a Gun of 100mm or more (many values manufactured, R0.3). Needs first: 35; 60 (HE Equivalency for C13.4x).
 
 | Task | Rules | Estimate |
@@ -1981,6 +1985,8 @@ Moved here by pass 60 (2026-10-15), with no task renumbered: a hit on another ve
 Moved here by pass 65 (2026-10-24), with no task renumbered: A7.308's Random Selection on the ordnance Infantry Target Type and a mortar's hit (A7.308, C1.55, C3.32); Ordnance First Fire at (un)loaders (D6.5); a wreck under the IFT beside other vehicles or of the other side, and under Infantry Target Type and mortar hits (D10.1); the American exemption and A21.22's squad exchange for a HS (D10.52, A21.22, with 110.6); unhooking a towed Gun as its vehicle's crew Abandons (D5.41, with 110.2); the Specific Collateral Attack after a Gun's HEAT with no HE FP (D.8A).
 
 Moved here by pass 70 (2026-10-25), with no task renumbered: CC against a wreck, with the rest of D10.1 (D10.1, A11; ruling R70.2); a mortar's minimum range in Interdiction (A10.532); a crew manning a Gun that is not Emplaced, under concealment, and a non-Emplaced Gun's Case H loss (A12.2).
+
+Moved here by pass 72 (2026-10-27), with no task renumbered: a hero firing a Gun, at most 82mm as captured and above 82mm once a Game Turn, with the CA bar of C2.27 (A15.23, with 110.6); a hero firing a bazooka, a MOL-Projector, or a RCL (A15.23, with 110.7 to 110.9; ruling R72.2).
 
 **Pass 115: Fortifications I** (planned at 3:35 of build; 74 rows of the inventory). Counters: foxholes 1S, 2S, 3S; trenches; roadblocks; pillboxes by strength (the vocabulary has the kinds, the catalog no definitions). Needs first: 35.
 
@@ -2015,6 +2021,8 @@ Moved here by pass 71 (2026-10-26), with no task renumbered: Entrenching as a Sn
 Moved here by pass 60 (2026-10-15), with no task renumbered: the mine column of the AFV Destruction Table (C7.7).
 
 Moved here by pass 65 (2026-10-24), with no task renumbered: the Specific and General Collateral Attacks, and the Immobilization TC, after a mine's attack (D.8, D5.5, D8.1).
+
+Moved here by pass 72 (2026-10-27), with no task renumbered: Wire as 1 MF in a berserk charge's route, and minefields in it (A15.431, A15.45, with 120.1 and 120.2; ruling R72.2).
 
 **Pass 125: Terrain I: Depressions and water** (planned at 5:30 of build; 57 rows of the inventory). Counters: Crest, ford, and Current markers as states; a depth setting on a card. Needs first: 35, 40.
 
@@ -2115,6 +2123,8 @@ Moved here by pass 60 (2026-10-15), with no task renumbered: the OBA share of ru
 
 Moved here by pass 65 (2026-10-24), with no task renumbered: the General Collateral Attack by OBA on a vehicle's PRC (D.8B).
 
+Moved here by pass 72 (2026-10-27), with no task renumbered: an FFE in a berserk charge's route (A15.45, with 150.3); OBA's Scarce Ammo under Ammunition Shortage (A19.131, p. 391; ruling R72.2).
+
 **Pass 155: Offboard artillery II: missions, Bombardment, and Barrage** (new; 44 rows of the inventory). Counters: a field phone; an IR-capable mortar; Barrage and mission markers. Needs first: 150; 85 (SMOKE).
 
 | Task | Rules | Estimate |
@@ -2214,6 +2224,8 @@ Moved here by pass 71 (2026-10-26), with no task renumbered: a wounded man's 4 M
 | 185.5 Illumination by fire at night | E1.94 (p. 227), E1.941 (p. 227), E1.942 (p. 227) | 0:40 |
 | Overhead | | 1:15 |
 | **Pass 185 total** (build 3:40) | | **4:55** |
+
+Moved here by pass 72 (2026-10-27), with no task renumbered: a Blaze as a bar to a berserk charge (A15.45, with 185.1; ruling R72.2).
 
 **(d) Left out by a ruling, not built.** Each row of the inventory that no pass takes, with the reason.
 
