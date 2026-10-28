@@ -33,7 +33,18 @@
             }
         </fieldset>
     }
-    <button id="propose-deploy" disabled="@(!Squads.Any(squad => squad.Id == Squad))" aria-describedby="propose-deploy-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: deploy</button>
+    @if (SpotterChoiceRequired)
+    {
+        <label>Half-squad retaining the Spotter assignment
+            <select id="deploy-spotter" value="@SpotterHalf" @onchange="@(args => OnSpotterHalf.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">choose</option>
+                <option value="first">First half-squad</option>
+                <option value="second">Second half-squad</option>
+            </select>
+        </label>
+        <span class="toolbar-note">The chosen half-squad retains spotting if Deployment succeeds. Other Spotter rules remain pending.</span>
+    }
+    <button id="propose-deploy" disabled="@(!Squads.Any(squad => squad.Id == Squad) || (SpotterChoiceRequired && SpotterHalf.Length == 0))" aria-describedby="propose-deploy-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: deploy</button>
     @if (!Squads.Any(squad => squad.Id == Squad))
     {
         <span id="propose-deploy-ready" class="toolbar-note">Choose the squad that Deploys.</span>
@@ -69,6 +80,15 @@
 
     [Parameter]
     public string Squad { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool SpotterChoiceRequired { get; set; }
+
+    [Parameter]
+    public string SpotterHalf { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnSpotterHalf { get; set; }
 
     [Parameter]
     public string Leader { get; set; } = string.Empty;

@@ -154,6 +154,27 @@ public sealed class TurnSpotterTimingRulesTests
         bool goodOrder, bool lost, bool retained) =>
         Assert.Equal(retained, TurnSpotterLossRules.RetainsReducedSquad(reduced, halfSquad, sameSide, goodOrder, lost));
 
+    [Theory]
+    [InlineData(true, null, true)]
+    [InlineData(true, "first", false)]
+    [InlineData(true, "second", false)]
+    [InlineData(true, "third", true)]
+    [InlineData(false, null, false)]
+    [InlineData(false, "first", true)]
+    public void DeploymentRequiresAChoiceOnlyForAnExistingAssignment(bool assigned, string? choice, bool refused) =>
+        Assert.Equal(refused, TurnSpotterLossRules.DeploymentChoiceRefusal(assigned, choice) is not null);
+
+    [Theory]
+    [InlineData(true, true, true, true, false, true)]
+    [InlineData(false, true, true, true, false, false)]
+    [InlineData(true, false, true, true, false, false)]
+    [InlineData(true, true, false, true, false, false)]
+    [InlineData(true, true, true, false, false, false)]
+    [InlineData(true, true, true, true, true, false)]
+    public void DeploymentRetentionRequiresAChosenGoodOrderHalfSquadWithoutPriorLoss(bool deployed, bool chosen, bool sameSide,
+        bool goodOrder, bool lost, bool retained) =>
+        Assert.Equal(retained, TurnSpotterLossRules.RetainsDeployedSquad(deployed, chosen, sameSide, goodOrder, lost));
+
     [Fact]
     public void InvalidAndFuturePositionsAreRejected()
     {

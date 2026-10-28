@@ -45,6 +45,24 @@ public sealed class RallyAndRecordComponentTests : IDisposable
         Assert.True(none.Find("#propose-deploy").HasAttribute("disabled"));
     }
 
+    [Fact]
+    public void DeployPanelRequiresTheBackendRequestedSpotterChoice()
+    {
+        string? selected = null;
+        var panel = context.Render<DeployActionPanel>(parameters => parameters
+            .Add(item => item.Squads, [new PlayChoice("g1", "g1")]).Add(item => item.Leaders, []).Add(item => item.Weapons, [])
+            .Add(item => item.Squad, "g1").Add(item => item.SpotterChoiceRequired, true)
+            .Add(item => item.OnSpotterHalf, (string value) => selected = value));
+        Assert.True(panel.Find("#propose-deploy").HasAttribute("disabled"));
+        Assert.Contains("remain pending", panel.Markup, StringComparison.Ordinal);
+        panel.Find("#deploy-spotter").Change("second");
+        Assert.Equal("second", selected);
+        panel.Render(parameters => parameters.Add(item => item.SpotterHalf, "second"));
+        Assert.False(panel.Find("#propose-deploy").HasAttribute("disabled"));
+        panel.Render(parameters => parameters.Add(item => item.SpotterChoiceRequired, false));
+        Assert.Empty(panel.FindAll("#deploy-spotter"));
+    }
+
     // A04: a weapon nobody possesses may only be Recovered.
     [Fact]
     public void TheSupportWeaponPanelOffersOnlyRecoveryForALooseWeapon()

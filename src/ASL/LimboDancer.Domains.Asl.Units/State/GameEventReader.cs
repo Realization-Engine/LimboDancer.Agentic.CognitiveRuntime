@@ -305,7 +305,10 @@ public static class GameEventReader
                     }
                 }
 
-                return action is null ? null : new LineageRecorded(action.Value, fields.StringList(payload, "consumed", path), produced);
+                return action is null ? null : new LineageRecorded(action.Value, fields.StringList(payload, "consumed", path), produced)
+                {
+                    SpotterSuccessor = fields.OptionalString(payload, "spotterSuccessor", path)
+                };
             case "instance-eliminated":
                 return fields.RequiredString(payload, "id", path) is { } eliminated ? new InstanceEliminated(eliminated) : null;
             case "entry-attempted":
@@ -827,7 +830,10 @@ public static class GameEventReader
                 return deploySquad is null || deployRoll is null || deployMorale is null || deployDrm is null
                     ? Missing(diagnostics, "A Deployment attempt names its squad, roll, Morale Level, and DRM.", path)
                     : new DeploymentAttempted(deploySquad, fields.OptionalString(payload, "leader", path), deployRoll, deployMorale.Value, deployDrm.Value,
-                        fields.OptionalBoolean(payload, "passed", path));
+                        fields.OptionalBoolean(payload, "passed", path))
+                    {
+                        SpotterHalf = fields.OptionalString(payload, "spotterHalf", path)
+                    };
             case "rph-action-taken":
                 var actionName = fields.RequiredString(payload, "action", path);
                 return actionName is null ? Missing(diagnostics, "An RPh action names its kind.", path)

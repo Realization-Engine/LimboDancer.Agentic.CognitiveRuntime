@@ -14,14 +14,20 @@ public static partial class GameProjector
             }
             var reduced = gameEvent.Payload as LineageRecorded;
             var predecessor = reduced?.Consumed.Count == 1 ? previous.Unit(reduced.Consumed[0]) : null;
-            var survivor = reduced?.Produced.Count == 1 ? next.Unit(reduced.Produced[0].Id) : null;
+            var survivor = reduced?.Produced.Count == 1 ? next.Unit(reduced.Produced[0].Id)
+                : reduced?.SpotterSuccessor is { } chosen ? next.Unit(chosen) : null;
             var inherited = new HashSet<string>(StringComparer.Ordinal);
             foreach (var assignment in previous.MortarSpotters.Where(item => item.Spotter == predecessor?.Id))
             {
                 if (TurnSpotterLossRules.RetainsReducedSquad(reduced?.Action == LineageAction.Reduced && predecessor?.Kind == "asl:squad",
                     survivor is { Kind: "asl:half-squad", Status: InstanceStatus.Active }, survivor?.Side == predecessor?.Side,
                     survivor is not null && GameState.GoodOrder(survivor, vocabulary) == ConditionState.True,
-                    previous.MortarSpotterLosses.Any(item => item.Gun == assignment.Gun && item.Spotter == assignment.Spotter)))
+                    previous.MortarSpotterLosses.Any(item => item.Gun == assignment.Gun && item.Spotter == assignment.Spotter))
+                    || TurnSpotterLossRules.RetainsDeployedSquad(reduced?.Action == LineageAction.Deployed && predecessor?.Kind == "asl:squad",
+                        survivor is { Kind: "asl:half-squad", Status: InstanceStatus.Active } && reduced!.Produced.Any(item => item.Id == survivor.Id),
+                        survivor?.Side == predecessor?.Side,
+                        survivor is not null && GameState.GoodOrder(survivor, vocabulary) == ConditionState.True,
+                        previous.MortarSpotterLosses.Any(item => item.Gun == assignment.Gun && item.Spotter == assignment.Spotter)))
                 {
                     inherited.Add(assignment.Gun);
                     next = next with
@@ -32,6 +38,9 @@ public static partial class GameProjector
                         SpottedThisPhase = [.. next.SpottedThisPhase.Select(item => item == assignment ? item with { Spotter = survivor.Id } : item)],
                         MortarSpotterUses = [.. next.MortarSpotterUses.Select(item => item.Spotter == assignment.Spotter
                             ? item with { Spotter = survivor.Id } : item)],
+                        NoMoveThisPlayerTurn = previous.NoMoveThisPlayerTurn.Contains(assignment.Spotter, StringComparer.Ordinal)
+                            ? [.. next.NoMoveThisPlayerTurn.Concat(reduced!.Produced.Select(item => item.Id)).Distinct(StringComparer.Ordinal)]
+                            : next.NoMoveThisPlayerTurn,
                         SupportWeaponUses = [.. next.SupportWeaponUses.Select(item => item.Unit == assignment.Spotter
                             ? item with { Unit = survivor.Id } : item)],
                     };

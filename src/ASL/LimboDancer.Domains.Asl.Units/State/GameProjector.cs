@@ -3539,8 +3539,17 @@ public static partial class GameProjector
                 return Fail<GameState>("UNIT-STATE-041", "A Deployment attempt is a Good Order squad's RPh action, and its NTC agrees with its DR (A1.31).");
             }
 
+            if (deployment.SpotterHalf is { } selected
+                && Rules.TurnSpotterLossRules.DeploymentChoiceRefusal(state.MortarSpotters.Any(item => item.Spotter == squad.Id
+                    && !state.MortarSpotterLosses.Any(loss => loss.Gun == item.Gun && loss.Spotter == item.Spotter)), selected) is { } refusal)
+            {
+                return Fail<GameState>("UNIT-SPOTTER-SUCCESSION", refusal);
+            }
             return state with
             {
+                SpotterDeploymentChoices = deployment is { Passed: true, SpotterHalf: { } choice }
+                    ? new Dictionary<string, string>(state.SpotterDeploymentChoices, StringComparer.Ordinal) { [squad.Id] = choice }
+                    : state.SpotterDeploymentChoices,
                 RallyPhaseActions = [.. state.RallyPhaseActions, squad.Id, .. deployment.Leader is { } directing ? [directing] : Array.Empty<string>()],
             };
         }
@@ -4535,8 +4544,25 @@ public static partial class GameProjector
                 return Fail<GameState>(sizeRefusal.Code, sizeRefusal.Text);
             }
 
+            if (lineage.SpotterSuccessor is { } spotterSuccessor
+                && (lineage.Action != LineageAction.Deployed || consumed.Count != 1
+                    || lineage.Produced.Count(item => item.Id == spotterSuccessor) != 1
+                    || !state.MortarSpotters.Any(item => item.Spotter == consumed[0].Id
+                        && !state.MortarSpotterLosses.Any(loss => loss.Gun == item.Gun && loss.Spotter == item.Spotter))
+                    || GameState.GoodOrder(consumed[0], vocabulary) != ConditionState.True
+                    || (state.SpotterDeploymentChoices.TryGetValue(consumed[0].Id, out var selectedHalf)
+                        ? lineage.Produced[selectedHalf == "first" ? 0 : 1].Id != spotterSuccessor
+                        : !state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Custodian == consumed[0].Id))))
+            {
+                return Fail<GameState>("UNIT-SPOTTER-SUCCESSION", "Deployment names one produced HS to retain an active Good Order Spotter assignment (A1.31; C9.3).");
+            }
+
             var ids = consumed.Select(unit => unit.Id).ToArray();
-            var next = state;
+            var next = state with
+            {
+                SpotterDeploymentChoices = state.SpotterDeploymentChoices.Where(item => !ids.Contains(item.Key, StringComparer.Ordinal))
+                    .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal),
+            };
 
             // A10.6 (backlog pass 15): a unit Replaced or Reduced by its own Rally attempt has attempted to rally this Player Turn.
             if (ids.Any(id => state.RallyAttemptsThisPlayerTurn.Contains(id, StringComparer.Ordinal)))

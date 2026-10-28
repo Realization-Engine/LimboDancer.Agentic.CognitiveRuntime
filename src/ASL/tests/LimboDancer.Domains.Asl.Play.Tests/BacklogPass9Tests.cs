@@ -632,6 +632,173 @@ public sealed class BacklogPass9Tests : IDisposable
         Assert.Equal("gh", Assert.Single((await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)).FireHistory!.Spotters).Successor);
     }
 
+    [Fact]
+    public async Task GuardDeploymentCarriesSpottingUseAndMovementRestrictionToItsSuccessors()
+    {
+        var spotter = Squad("g2", "bd01:B9:0", "german");
+        var conditions = (Dictionary<string, bool>)spotter["conditions"];
+        conditions[Conditions.Berserk] = false;
+        conditions[Conditions.Captured] = false;
+        conditions[Conditions.Melee] = false;
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"),
+            Mortar("m1", "attacker-light-mortar", "g1", "german"), spotter,
+            Unit("r1", "asl:half-squad", "defender-half-squad", "bd01:B9:0", "russian"));
+        var captured = store.Read(Scope)!.Events[^1] with
+        {
+            EventId = "fixture-prisoner",
+            Revision = Revision + 1,
+            Type = "instance-captured",
+            Payload = new InstanceCaptured("r1", "g2")
+        };
+        Assert.Equal(AppendStatus.Committed, store.Append(Scope, "guard fixture", Revision, [captured], Planner().Replay).Status);
+        await Advance();
+        Committed(await Do(GameActions.DesignateSpotter, NoRoll(), new
+        {
+            gunId = "m1",
+            spotter = "g2"
+        }));
+        Assert.Contains("g2", Current.NoMoveThisPlayerTurn);
+        var request = JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = "guard-spotter-deploy",
+            expectedRevision = Revision,
+            squadId = "g2",
+            spotterHalf = "second"
+        });
+        Committed(await Commit(Play(), GameActions.Deploy, request));
+        var chosen = Assert.Single(Current.MortarSpotters).Spotter;
+        Assert.Equal("guard-spotter-deploy-g2-2", chosen);
+        Assert.Contains(Current.SpottedThisPhase, item => item.Spotter == chosen);
+        Assert.Contains(Current.SupportWeaponUses, item => item.Unit == chosen);
+        Assert.Contains("guard-spotter-deploy-g2-1", Current.NoMoveThisPlayerTurn);
+        Assert.Contains(chosen, Current.NoMoveThisPlayerTurn);
+        Assert.Equal(GamePlanStatus.Replay, (await Planner().PlanAsync(GameActions.Deploy, request, Tenant)).Status);
+        var changed = JsonSerializer.SerializeToNode(request)!.AsObject();
+        changed["spotterHalf"] = "first";
+        Assert.Equal(GamePlanStatus.Refused, (await Planner().PlanAsync(GameActions.Deploy, JsonSerializer.SerializeToElement(changed), Tenant)).Status);
+        await Advance();
+        Assert.Contains(chosen, Current.NoMoveThisPlayerTurn);
+    }
+
+    [Theory]
+    [InlineData("first", true)]
+    [InlineData("second", true)]
+    [InlineData("second", false)]
+    public async Task DeployingSpotterChoosesOneHalfSquadAndBindsTheChoiceBeforeTheRoll(string selected, bool passed)
+    {
+        var spotter = Squad("g2", "bd01:B9:0", "german");
+        var conditions = (Dictionary<string, bool>)spotter["conditions"];
+        conditions[Conditions.Berserk] = false;
+        conditions[Conditions.Captured] = false;
+        conditions[Conditions.Melee] = false;
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"),
+            Mortar("m1", "attacker-light-mortar", "g1", "german"), spotter,
+            Unit("leader", "asl:leader", "attacker-leader-8-1", "bd01:B9:0", "german"),
+            Squad("r1", "bd01:B6:0", "russian"));
+        await Advance();
+        Committed(await Shoot("m1", "bd01:B6:0", "g2", null, 2, 6));
+        await Advance(15);
+        Assert.Equal("rph", Current.Phase);
+        Assert.Equal("german", Current.PhasingSide);
+        var before = Revision;
+        Refused(await Do(GameActions.Deploy, NoRoll(), new
+        {
+            squadId = "g2",
+            leader = "leader"
+        }), "play.deploy-spotter");
+        Refused(await Do(GameActions.Deploy, NoRoll(), new
+        {
+            squadId = "g2",
+            leader = "leader",
+            spotterHalf = "third"
+        }), "play.deploy-spotter");
+        Assert.Equal(before, Revision);
+        var request = JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = "chosen-deployment",
+            expectedRevision = before,
+            squadId = "g2",
+            leader = "leader",
+            spotterHalf = selected,
+            proposedBy = "german"
+        });
+        Committed(await Commit(Play(passed ? Once(1, 1) : Once(6, 6)), GameActions.Deploy, request));
+        Assert.Equal(selected, Assert.Single(Since(before).Select(item => item.Payload).OfType<DeploymentAttempted>()).SpotterHalf);
+        Assert.All(Since(before).Where(item => item.Payload is DeploymentAttempted or LineageRecorded), item =>
+        {
+            Assert.False(item.IsVisibleTo(Perspective.Side("russian")));
+            Assert.True(item.IsVisibleTo(Perspective.Side("german")));
+            Assert.True(item.IsVisibleTo(Perspective.Adjudicator));
+        });
+        Assert.Equal(GamePlanStatus.Replay, (await Planner().PlanAsync(GameActions.Deploy, request, Tenant)).Status);
+        var changed = JsonSerializer.SerializeToNode(request)!.AsObject();
+        changed["spotterHalf"] = selected == "first" ? "second" : "first";
+        Assert.Equal(GamePlanStatus.Refused, (await Planner().PlanAsync(GameActions.Deploy, JsonSerializer.SerializeToElement(changed), Tenant)).Status);
+        var written = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(written)).Record!;
+        Assert.Equal(written, GameEventWriter.Write(Scope, loaded));
+        Assert.False(Planner().Replay(loaded.Events).HasErrors);
+        if (!passed)
+        {
+            Assert.Empty(Current.MortarSpotterSuccessors);
+            Assert.Equal("g2", Assert.Single(Current.MortarSpotters).Spotter);
+            return;
+        }
+        var lineageEvent = Assert.Single(Since(before), item => item.Payload is LineageRecorded);
+        var lineage = (LineageRecorded)lineageEvent.Payload;
+        var successor = lineage.Produced[selected == "first" ? 0 : 1].Id;
+        Assert.Equal(successor, lineage.SpotterSuccessor);
+        Assert.Equal(successor, Assert.Single(Current.MortarSpotters).Spotter);
+        Assert.Equal(successor, Assert.Single(Current.MortarSpotterSuccessors).Successor);
+        var snapshot = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "rph", "existing-engine-fire-v1")).FireHistory!;
+        Assert.Equal(successor, Assert.Single(snapshot.Spotters).Successor);
+        Assert.Equal(TurnSpotterState.Retained, Assert.Single(snapshot.Spotters).State);
+        var invalid = store.Read(Scope)!.Events.Select(item => item == lineageEvent
+            ? item with
+            {
+                Payload = lineage with
+                {
+                    SpotterSuccessor = "unrelated"
+                }
+            } : item).ToArray();
+        Assert.True(Planner().Replay(invalid).HasErrors);
+        var switched = store.Read(Scope)!.Events.Select(item => item == lineageEvent
+            ? item with
+            {
+                Payload = lineage with
+                {
+                    SpotterSuccessor = lineage.Produced.Single(half => half.Id != successor).Id
+                }
+            } : item).ToArray();
+        Assert.True(Planner().Replay(switched).HasErrors);
+        Assert.Empty(Current.SpotterDeploymentChoices);
+        var legacy = store.Read(Scope)!.Events.Select(item => item == lineageEvent
+            ? item with
+            {
+                Payload = lineage with
+                {
+                    SpotterSuccessor = null
+                }
+            } : item).ToArray();
+        var legacyStore = new FileGameStore(Path.Combine(root, "legacy-deployment"));
+        var legacyPlanner = new GamePlanner(legacyStore, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, legacyStore.Append(Scope, "legacy", 0, legacy, legacyPlanner.Replay).Status);
+        Assert.Equal(TurnSpotterState.NotEvaluated, Assert.Single((await legacyPlanner.ReadTurnGuideProfileAsync(Scope,
+            Perspective.Side("german"), "rph", "existing-engine-fire-v1")).FireHistory!.Spotters).State);
+        var hiddenStore = new FileGameStore(Path.Combine(root, "private-deployment"));
+        var hiddenPlanner = new GamePlanner(hiddenStore, boards, Vocabulary, [Catalog], fireLos: los);
+        Assert.Equal(AppendStatus.Committed, hiddenStore.Append(Scope, "private", 0,
+            store.Read(Scope)!.Events.Select(item => item == lineageEvent ? item with { Visibility = RussianView } : item).ToArray(), hiddenPlanner.Replay).Status);
+        var hidden = Assert.Single((await hiddenPlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "rph", "existing-engine-fire-v1")).FireHistory!.Spotters);
+        Assert.Null(hidden.Successor);
+        Assert.Equal(TurnSpotterState.NotEvaluated, hidden.State);
+        Assert.Equal(successor, Assert.Single((await hiddenPlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "rph", "existing-engine-fire-v1")).FireHistory!.Spotters).Successor);
+        await Advance();
+        Committed(await Shoot("m1", "bd01:B6:0", successor, null, 2, 6));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

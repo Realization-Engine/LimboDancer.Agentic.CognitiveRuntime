@@ -626,7 +626,15 @@ else if (state is not null)
                         <span class="toolbar-note">An unbroken Guard squad Deploys into two HS at any time, with no leader and no NTC; its SW stay with the first HS (A20.5).</span>
                         @foreach (var guard in guardSquads)
                         {
-                            <button class="propose-guard-deploy" data-unit="@guard" @onclick="@(() => ProposeGuardDeploy(guard))">Propose: @WordsAt(guard) Deploys</button>
+                            @if (GamePlanner.RequiresSpotterSuccessor(state, guard))
+                            {
+                                <button class="propose-guard-deploy" data-unit="@guard" @onclick="@(() => ProposeGuardDeploy(guard, "first"))">Propose: @WordsAt(guard) Deploys, first HS keeps spotting</button>
+                                <button class="propose-guard-deploy" data-unit="@guard" @onclick="@(() => ProposeGuardDeploy(guard, "second"))">Propose: @WordsAt(guard) Deploys, second HS keeps spotting</button>
+                            }
+                            else
+                            {
+                                <button class="propose-guard-deploy" data-unit="@guard" @onclick="@(() => ProposeGuardDeploy(guard))">Propose: @WordsAt(guard) Deploys</button>
+                            }
                         }
                     </div>
                     </ActionSection>
@@ -650,7 +658,8 @@ else if (state is not null)
                     <ActionSection Title="Deploy and Recombine" Key="deploy-and-recombine">
                 <DeployActionPanel Squads="@deployShown" Leaders="@([.. LeadersWith(deploySquad).Select(leader => leader.Id)])" Weapons="@DeployWeapons"
                         Squad="@deploySquad" Leader="@deployLeader" Second="@deployWeapons"
-                        OnSquad="@(id => { deploySquad = id; deployLeader = string.Empty; deployWeapons.Clear(); })" OnLeader="@(id => deployLeader = id)"
+                        SpotterChoiceRequired="@GamePlanner.RequiresSpotterSuccessor(state, deploySquad)" SpotterHalf="@deploySpotterHalf" OnSpotterHalf="@(value => deploySpotterHalf = value)"
+                        OnSquad="@(id => { deploySquad = id; deployLeader = deploySpotterHalf = string.Empty; deployWeapons.Clear(); })" OnLeader="@(id => deployLeader = id)"
                         OnWeapon="@(pick => Toggle(deployWeapons, pick.Id, pick.On))" OnPropose="@ProposeDeploy" />
                     <RecombineActionPanel HalfSquads="@recombineShown" Partners="@([.. RecombinePartners.Select(unit => unit.Id)])"
                         Leaders="@([.. LeadersWith(recombineOne).Select(leader => leader.Id)])" One="@recombineOne" Two="@recombineTwo" Leader="@recombineLeader"
@@ -4067,6 +4076,7 @@ else if (state is not null)
     private string swUnit = string.Empty;
     private string deploySquad = string.Empty;
     private string deployLeader = string.Empty;
+    private string deploySpotterHalf = string.Empty;
     private readonly HashSet<string> deployWeapons = new(StringComparer.Ordinal);
     private string recombineOne = string.Empty;
     private string recombineTwo = string.Empty;
@@ -7376,7 +7386,7 @@ else if (state is not null)
         voluntaryBreak.Clear();
         removeConcealment.Clear();
         swWeapon = swUnit = string.Empty;
-        deploySquad = deployLeader = string.Empty;
+        deploySquad = deployLeader = deploySpotterHalf = string.Empty;
         deployWeapons.Clear();
         recombineOne = recombineTwo = recombineLeader = string.Empty;
         retainDm.Clear();
@@ -8230,14 +8240,26 @@ else if (state is not null)
     private IReadOnlyList<string> GuardSquads => state is null ? []
         : [.. Live.Planner.GuardSquadsAtWill(state, Viewer.IsAdjudicator ? null : viewAs).Where(id => ActingUnits.Any(unit => unit.Id == id))];
 
-    private Task ProposeGuardDeploy(string squad) => Propose(GameActions.Deploy, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    private Task ProposeGuardDeploy(string squad, string? spotterHalf = null)
     {
-        ["gameId"] = gameId, ["attemptId"] = Attempt("deploy"), ["expectedRevision"] = (long)history!.Events.Count, ["squadId"] = squad,
-    }));
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("deploy"), ["expectedRevision"] = (long)history!.Events.Count, ["squadId"] = squad,
+        };
+        if (spotterHalf is not null)
+        {
+            arguments["spotterHalf"] = spotterHalf;
+        }
+        return Propose(GameActions.Deploy, JsonSerializer.SerializeToElement(arguments));
+    }
 
     private Task ProposeDeploy()
     {
         var arguments = new Dictionary<string, object> { ["gameId"] = gameId, ["attemptId"] = Attempt("deploy"), ["expectedRevision"] = (long)history!.Events.Count, ["squadId"] = deploySquad };
+        if (state is not null && GamePlanner.RequiresSpotterSuccessor(state, deploySquad) && deploySpotterHalf.Length > 0)
+        {
+            arguments["spotterHalf"] = deploySpotterHalf;
+        }
         if (deployLeader.Length > 0)
         {
             arguments["leader"] = deployLeader;
@@ -8617,7 +8639,7 @@ else if (state is not null)
             }
             else if (proposal.Action == GameActions.Deploy || proposal.Action == GameActions.Recombine)
             {
-                deploySquad = deployLeader = string.Empty;
+                deploySquad = deployLeader = deploySpotterHalf = string.Empty;
                 deployWeapons.Clear();
                 recombineOne = recombineTwo = recombineLeader = string.Empty;
             }

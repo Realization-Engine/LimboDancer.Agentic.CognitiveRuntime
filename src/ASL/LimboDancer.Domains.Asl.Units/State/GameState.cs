@@ -188,6 +188,9 @@ public sealed record GameState(
     public IReadOnlyList<string> SmokeAttempts { get; init; } = [];
 
     /// <summary>Each light mortar's Spotter (C9.3; ruling R9.4): the unit that spots for it until it is broken, eliminated, or captured.</summary>
+    /// <summary>Successful new Deployment choices awaiting their lineage consequence.</summary>
+    public IReadOnlyDictionary<string, string> SpotterDeploymentChoices { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
     public IReadOnlyList<MortarSpotter> MortarSpotters { get; init; } = [];
 
     /// <summary>Losses of observed assignments, retained across phase changes and rally; not proof of original designation.</summary>

@@ -112,7 +112,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor Deploy = Descriptor("asl.game.deploy", "Deploy a squad",
-        "In the RPh, a Good Order squad with a Good Order leader of its nationality in its Location takes a NTC modified by his leadership to become two HS; the first keeps its SW unless some are named for the second (A1.31; ruling R13.4).",
+        "In the RPh, a Good Order squad with a Good Order leader of its nationality in its Location takes a NTC modified by his leadership to become two HS; the first keeps its SW unless some are named for the second. A squad with a retained Spotter assignment must choose which HS keeps spotting (A1.31; C9.3; ruling R13.4).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -121,7 +121,8 @@ public static class GameActions
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "squadId": { "type": "string" }, "leader": { "type": "string" },
-            "secondWeapons": { "type": "array", "items": { "type": "string" } }
+            "secondWeapons": { "type": "array", "items": { "type": "string" } },
+            "spotterHalf": { "type": "string", "enum": ["first", "second"] }
           }
         }
         """);

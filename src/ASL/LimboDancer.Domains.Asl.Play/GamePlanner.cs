@@ -282,7 +282,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         if (!assessmentOnly && existing.FirstOrDefault(item => item.EventId == EventId(attemptId, 1)) is { } committed)
         {
             // DICE-10: the same attempt with different inputs is not a replay.
-            return ReusedWithOtherInputs(action, arguments, committed)
+            return ReusedWithOtherInputs(action, arguments, committed, existing, attemptId)
                 ? Refused(scope, label, expected, $"play.attempt-reused: the attempt '{attemptId}' was committed with different inputs")
                 : new GamePlan(GamePlanStatus.Replay, scope, label, expected, [], ["play.replay"]);
         }
@@ -1736,8 +1736,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     /// Whether a committed attempt was for other inputs than these: an entry's first event names its unit and target, so
     /// an entry attempt reused for another unit or location is not a replay (DICE-10).
     /// </summary>
-    private static bool ReusedWithOtherInputs(ActionDescriptor action, JsonElement arguments, GameEvent committed)
+    private static bool ReusedWithOtherInputs(ActionDescriptor action, JsonElement arguments, GameEvent committed, IReadOnlyList<GameEvent> existing, string attemptId)
     {
+        if (action.Id.Value == "asl.game.deploy")
+        {
+            var attempt = existing.Skip((int)committed.Revision - 1)
+                .TakeWhile((item, index) => item.EventId == EventId(attemptId, index + 1)).Select(item => item.Payload).ToArray();
+            var deployment = attempt.OfType<DeploymentAttempted>().FirstOrDefault();
+            var lineage = attempt.OfType<LineageRecorded>().FirstOrDefault();
+            var recordedChoice = deployment?.SpotterHalf ?? (lineage?.SpotterSuccessor is { } successor
+                ? successor == lineage.Produced[0].Id ? "first" : "second" : null);
+            var requestedChoice = Text(arguments, "spotterHalf", out var choice) ? choice : null;
+            return recordedChoice != requestedChoice;
+        }
         if (committed.GuidedDecisionHash is { } digest)
         {
             return action.Id.Value != TurnPlacedDcGuidance.ActionId || GuidedDcRequestHash(arguments) != digest;

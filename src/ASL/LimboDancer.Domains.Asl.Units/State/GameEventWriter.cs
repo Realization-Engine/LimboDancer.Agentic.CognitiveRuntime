@@ -306,6 +306,10 @@ public static class GameEventWriter
                 break;
             case LineageRecorded lineage:
                 writer.WriteString("action", lineage.Action.ToString().ToLowerInvariant());
+                if (lineage.SpotterSuccessor is { } successor)
+                {
+                    writer.WriteString("spotterSuccessor", successor);
+                }
                 Strings(writer, "consumed", lineage.Consumed);
                 writer.WriteStartArray("produced");
                 foreach (var produced in lineage.Produced)
@@ -972,6 +976,10 @@ public static class GameEventWriter
                 break;
             case DeploymentAttempted deployment:
                 writer.WriteString("squad", deployment.Squad);
+                if (deployment.SpotterHalf is { } spotterHalf)
+                {
+                    writer.WriteString("spotterHalf", spotterHalf);
+                }
                 if (deployment.Leader is { } deployLeader)
                 {
                     writer.WriteString("leader", deployLeader);

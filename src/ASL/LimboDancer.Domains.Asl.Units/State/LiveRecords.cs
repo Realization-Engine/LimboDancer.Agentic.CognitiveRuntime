@@ -722,7 +722,14 @@ public sealed record UnitsSearched(IReadOnlyList<string> Units, BoardLocation Lo
 /// <c>deployment-attempted</c>: a squad's attempt to Deploy in its RPh (A1.31; ruling R13.4): the directing leader (none for Guards), the NTC roll,
 /// the squad's Morale Level, the leadership DRM, and whether it passed; a passed attempt's lineage follows.
 /// </summary>
-public sealed record DeploymentAttempted(string Squad, string? Leader, string Roll, int Morale, int Drm, bool Passed) : EventPayload;
+public sealed record DeploymentAttempted(string Squad, string? Leader, string Roll, int Morale, int Drm, bool Passed) : EventPayload
+{
+    /// <summary>Choice bound before the NTC, including an unsuccessful attempt.</summary>
+    public string? SpotterHalf
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// <c>rph-action-taken</c>: units whose RPh action is spent by a Recombination or a Transfer (A1.32, A4.431; rulings R13.4, R13.5), with the action.

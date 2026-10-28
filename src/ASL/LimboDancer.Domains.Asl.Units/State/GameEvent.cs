@@ -205,7 +205,14 @@ public enum LineageAction
 }
 
 /// <summary><c>lineage</c>: instances consumed and the instances produced from them.</summary>
-public sealed record LineageRecorded(LineageAction Action, IReadOnlyList<string> Consumed, IReadOnlyList<NewInstance> Produced) : EventPayload;
+public sealed record LineageRecorded(LineageAction Action, IReadOnlyList<string> Consumed, IReadOnlyList<NewInstance> Produced) : EventPayload
+{
+    /// <summary>Chosen HS that retains an active Spotter assignment on Deployment. Absent in legacy records.</summary>
+    public string? SpotterSuccessor
+    {
+        get; init;
+    }
+}
 
 /// <summary><c>instance-eliminated</c>.</summary>
 public sealed record InstanceEliminated(string Id) : EventPayload;

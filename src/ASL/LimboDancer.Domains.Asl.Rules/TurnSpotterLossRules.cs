@@ -10,6 +10,18 @@ public static class TurnSpotterLossRules
     public static bool RetainsReducedSquad(bool reducedSquad, bool activeHalfSquad, bool sameSide, bool goodOrder, bool recordedLoss) =>
         reducedSquad && activeHalfSquad && sameSide && goodOrder && !recordedLoss;
 
+    public static string? DeploymentChoiceRefusal(bool assigned, string? choice) =>
+        choice is not null && choice is not ("first" or "second")
+            ? "play.deploy-spotter: choose the first or second half-squad to retain spotting (A1.31; C9.3)."
+        : assigned && choice is null
+            ? "play.deploy-spotter: choose which half-squad retains the Spotter assignment (A1.31; C9.3)."
+        : !assigned && choice is not null
+            ? "play.deploy-spotter: there is no retained Spotter assignment to pass to a half-squad."
+        : null;
+
+    public static bool RetainsDeployedSquad(bool deployedSquad, bool chosenProducedHalf, bool sameSide, bool goodOrder, bool recordedLoss) =>
+        deployedSquad && chosenProducedHalf && sameSide && goodOrder && !recordedLoss;
+
     public static TurnSpotterChange ObservedLoss(bool previouslyActive, bool eliminated, bool broken, bool captured) =>
         !previouslyActive ? TurnSpotterChange.None
         : eliminated ? TurnSpotterChange.Eliminated
