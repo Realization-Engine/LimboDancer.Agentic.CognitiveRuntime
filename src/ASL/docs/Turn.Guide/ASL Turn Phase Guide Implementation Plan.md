@@ -518,3 +518,8 @@ Validation: 43 focused packing/work Rules tests and all 24 Turn Guide component 
 ### D3.2 progress: packing period transitions (2026-10-28)
 
 The Rules layer now has a serializable G10 packing period contract for bound actor identities, exact first/second RPh progression, midpoint load receipts, crew-only interruption, later-turn resume, reversal and full release. The later-rules plan and design record its source, tests and remaining integration boundaries. This is an increment within D3.2; the ledger remains 2/36 complete. Journal events, governed commands, atomic piece effects, disclosure and phase-close integration remain pending. Legacy adjudicated work is unchanged and all nine packages retain Pending support.
+
+
+### D3.2 progress: versioned packing journal (2026-10-28)
+
+A tenant/game-bound JSON codec now replays period entries and preserves actor specifications, work-step origins and causal receipts for interruption, reversal, midpoint and release. Seven new journal tests pass as part of all 428 Units tests; ASL.Turns retains 183 passing tests and 100% line/branch coverage. This format is not yet a live game-event protocol. Actual Horse/Mule actors, source-verified openings, atomic effects and governed commands remain required before admission. The detailed later-rules plan records these boundaries; D3.2 stays In progress and all nine packages stay Pending.
