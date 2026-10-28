@@ -1,0 +1,16 @@
+# Review R1: Heat of Battle (task 72.1, 5a, 5b, 5e; head db15561b)
+
+The read-only referee's findings, condensed in layout only. Pages read: pp. 83, 84, 102, 224, 54 and 55 (A7.21 to A7.212), 74 (A11.5), 183 and 184.
+
+1. MAJOR. `ScenarioA1ChargeCalculator.SearchFrom`, `Refused` (135, `BarCost ??= cost`), `BarCodes` (21), `Steps` (263): `BarCost` is the first refused step anywhere in the explored map, not on the route; `BarCodes` counts building connections (`play.move-level`, `-stairwell`, `-upper-level`), so in built-up terrain the comparison applies to nearly every charge and the nearest target is dropped on any detour. Fix: bars are A15.45's terrains only (cliff, Water Obstacle); compare only when a bar lies across the route (a relaxed cost ignoring bars, cheaper than the real one). The swept charge of `dl-tractor-works-02` (r-squad-10) may re-plan.
+2. MAJOR. `Steps` (259-291): the comparison uses the next group's range even when that group is unreachable; the nearest is skipped for a farther unit, or Battle Hardening is offered though the nearest can be reached. Fix: compare against the next group that has a reachable target; none, keep the nearest.
+3. MINOR. GamePlanner.cs 859, 865; `Steps` 241: a unit whose only target is the held hex, out of LOS and barred, both returns to normal (A15.431) and is offered Battle Hardening. Fix: `HardeningDue` false with no Known enemy in LOS.
+4. MINOR. `Steps` 289, `UnreachableText`, `HardeningDueText`: the verdict holds where a target is cut off by other enemy Locations (terminals) or a building connection, and hardens a unit that can reach a Known enemy out of LOS; the text names a cliff or water falsely. Fix: after 1, the A15.44 verdict only when no Known enemy terminal was reached.
+5. NOTE (against R72.3). The tie: "still closer" is strict; at equality the targets are equidistant and A15.43 gives the ATTACKER the choice. Fix: at a tie, the steps of both groups.
+6. MINOR (boundary). `GamePlanner.ChargeEntry` (CloseCombat.cs:1305) decides a bridge; `LiveFire.FromState` (205) decides when TPBF selection applies; `LiveOrdnance` (~327) decides which weapons carry `heroWeapons`. Fix: `Bridged` on `ChargeEntryFacts`, a firer-in-target fact to `SelectTargets`, `heroWeapons` for any hero crew.
+7. NOTE. `tpbfSide` admits vehicle firers though the comment says "on foot"; A7.211 seems to allow it. Fix: confirm and correct the comment.
+8. MINOR. `BerserkReturnsAfterVehicleKill` (~760), `BerserkReturnsAfterFire`: A11.5 (p. 74) eliminates a vehicle's PRC with it; Riders counted as Known enemies left keep a berserk unit berserk. Fix: subtract the destroyed vehicle's PRC.
+9. NOTE. The CC and ordnance verifiers accept a post-pass record that drops `vehicleSides` or `heroWeapons`; no regression.
+10. NOTE (older than the pass). `ScenarioA1CloseCombatCalculator` 916: CC's A15.46 counts concealed enemies; the fire path and `vehicleSides` count Known only. Fix: filter concealed, or a backlog row.
+
+Checked and right: `tpbfSide`'s new attacks fall in A7.21's window and Melee is kept out (`MeleeLocationBar`); A15.46's conditions; Battle Hardening at the MPh's end (timing, refusal, Fanatic, unbroken and unpinned); 5e's hero DRM; R72.6.

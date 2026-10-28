@@ -309,3 +309,16 @@ Built on 2026-10-27, about 22:04 to 22:23, by a building agent to a brief (`brie
 - `p72-hero-atr` (Russian PFPh): a Russian hero's ATR as Small Arms at [A1]: "1 FP ... DRM - 1 (heroic, A15.24)"; no `hero-mg`.
 - `p72-hero-mortar` (German PFPh): a German hero's 50mm mortar at [A1]: "DR 2, 3 = 5 - 1 (hero's SW, A15.23) = Final DR 4: hit"; the IFT DR 6, 5 with no hero DRM.
 - Tests, by method (the agent's report): Rules 8, Play 9 (the hero, PSK, ATR, mortar, and PF methods of passes 9, 9b, 15). Strict builds exit 0.
+
+## 13. The four reviews, their fixes, and the Studio check
+
+Four read-only reviews ran in parallel on db15561b (2026-10-27, 22:26 to about 22:40): R1, the referee for Heat of Battle; R2, the referee for Unit Substitution; R3, the table player; R4, the UI, the Rules boundary, and memory and performance. Their reports are kept in the pass's folder (`review_r1_heat_of_battle.md` to `review_r4_ui_boundary.md`); the fix brief is `brief_fixes.md`. `gate.sh 72 b0a36132 strict` ran beside them and passed (0 warnings, 0 errors; the formatter changed nothing).
+
+**Decided at the reviews (2026-10-27, under the same word; open to a veto):**
+- **R72.17** (amends R72.3 and R72.4; R1's findings 1 to 5, R3's 7): a rule bar is A15.45's terrain only, a cliff or an unbridged Water Obstacle; a building connection is ordinary movement the shortest route already prices. A15.45's comparison applies to a nearest target only when a bar lies across its would-be route (the route that ignores bars is cheaper than the real one), against the range of the next group that has a reachable target; with none, the charge stays on the nearest. "Still closer" is strict: at a tie the targets are equidistant and the ATTACKER chooses (A15.43). A15.44's verdict needs a Known enemy unit in LOS, none reachable, and only bars keeping them out of reach; a target cut off only by other enemy Locations, or a gap, keeps R30.5; a unit with no Known enemy in LOS returns to normal (A15.431) and is never hardened. As built in 5a, the bar test counted building connections and any refused step on the map, so ordinary charges in built-up terrain changed, against 5a's own claim (section 8.1).
+- **R72.18** (amends R72.12; R2's 1, R3's 2): under Ammunition Shortage a SW's B# is one lower and its Original B# becomes its X# (A.11 and its example, p. 43): a B11 LMG is B10 and X11; only a printed X# is itself lowered. Depletion Numbers are not lowered for a captured Gun (A21.11).
+- **R72.19** (R2's 4): a morale check record carries the stamp `unitSubstitution`, and with it its `underscoredElr` is checked against the state.
+- **R72.20** (R1's 8 and 10): a destroyed vehicle's PRC are eliminated with it (A11.5, p. 74) and are not Known enemies left for A15.46; CC's A15.46 counts Known enemy units only, as fire does.
+- **R72.21** (R1's 7): a vehicle's fire at range 0 into its own Location outside the MPh is TPBF (A7.211, p. 55) and stays allowed.
+- **R72.22** (R2's 6): A19.132 reaches ELR failures only; the Shortage's Replacement keeps A19.13's EXC.
+- R2's finding 2 settles 5c's question: the FT takes A19.32's -1 through `AssaultWeaponRemoval` (R15.1), so leaving it out of `Inexperience` avoids a double count.
