@@ -6,7 +6,6 @@
 @inject GameLibrary GamesLibrary
 @inject UnitLibrary Library
 @inject NavigationManager Navigation
-@inject LivePlay Live
 
 <PageTitle>Game inspector - ASL Map Studio</PageTitle>
 
@@ -121,8 +120,7 @@ else
     // The Rules-first proving slice (ruling RPS.10): a live game that is a minigame's is listed only when minigames are shown.
     private bool showMinigames;
 
-    private List<string> ListedNames() => [.. GamesLibrary.OpenNames.Where(name => showMinigames || !name.StartsWith(GameLibrary.LivePrefix, StringComparison.Ordinal)
-        || Live.MinigameOf(name[GameLibrary.LivePrefix.Length..]) is null)];
+    private List<string> ListedNames() => [.. GamesLibrary.OpenNames.Where(name => showMinigames || GamesLibrary.MinigameOf(name) is null)];
 
     private IReadOnlyList<PerspectivePicker.Choice> PerspectiveChoices => state is null ? [] : [.. state.Perspectives.Select(option => new PerspectivePicker.Choice(option.Name, option.IsAdjudicator ? "the adjudicator" : DisplayText.Side(option.Name)))];
 

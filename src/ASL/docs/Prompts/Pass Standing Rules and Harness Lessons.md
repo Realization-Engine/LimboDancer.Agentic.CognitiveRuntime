@@ -147,6 +147,7 @@ A prompt written for the next session (the user, 2026-10-12) holds what only tha
 - After a commit the Play page opens the Actions tab under 1024 pixels and moves the focus to the actions: tests of the narrow layout must expect that.
 - Only board 01 has real terrain in tests (`Board01Fixture`), and its fixture has no LOS data: use an `IFireLosReader` stub. `WideBoards` gives a page test a board of 12 by 6 hexes. The played games `guards-dl-01` and `p31c-tw` are fixtures.
 - `dotnet test` at `-v:q` prints no failed test names: use `--logger trx` and read the file.
+- **A page's blast radius includes its injections and its buttons (the proving slice, 2026-10-28).** A new `@inject` on a page fails every bUnit test of that page whose context does not register the service (six `GameStatesTests` went red in CI): prefer a service the page already has, or grep the page's tests and register it. A new page, button, or tab changes `wwwroot/icons/icon-coverage.json`: run `IconCoverageTests` with `ASL_ICONS_UPDATE_COVERAGE=1` and commit the file with the change.
 
 **The merge gate**
 

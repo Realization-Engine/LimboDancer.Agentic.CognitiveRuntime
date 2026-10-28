@@ -53,6 +53,13 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
     /// </summary>
     public IReadOnlyList<string> OpenNames => [.. Names.Where(name => !StillPlayed(name))];
 
+    /// <summary>
+    /// The minigame bundle a listed game was started from (the Rules-first proving slice, ruling RPS.10): a live game's, read from its file's header;
+    /// null for every other game.
+    /// </summary>
+    public string? MinigameOf(string name) =>
+        name.StartsWith(LivePrefix, StringComparison.Ordinal) ? live?.MinigameOf(name[LivePrefix.Length..]) : null;
+
     /// <summary>Whether a name is a live game that has not ended, read from its record alone, without a replay.</summary>
     public bool StillPlayed(string name)
     {
