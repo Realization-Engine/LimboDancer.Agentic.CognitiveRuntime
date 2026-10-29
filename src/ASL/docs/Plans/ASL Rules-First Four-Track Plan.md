@@ -44,9 +44,11 @@ Tracks 1 and 2 run at once. Track 3 starts by capability as soon as that capabil
 
 ### 4.1 The unit of a claim
 
-A claim is a rule section, or a subsection group, whose rules share one calculator. The 105 numbered sections are the starting cut; a large section (A7, B23, C8, D3) is split by subsection. A claim names its rows and the calculator files it will change. Two agents never hold the same calculator file at once.
+A claim is a rule section, or a subsection group, whose rules share one calculator. The 105 numbered sections are the starting cut; a large section (A7, B23, C8, D3) is split by subsection. A claim names its rows and the calculator files it will change. Two agents never hold the same calculator file at once, with one exception (2026-10-29): a large file many rules use, which a claim changes only at its edges (a call into its own calculator, a field on a record), is held "shared", and several claims may hold it so at once. Files outside Rules are not held; the claim check warns when two open claims' branches change the same one (section 10).
 
 The board covers the rulebook beyond Chapter E as question 8 rules: the H Notes, the ASOP, and G10 with A to E, and F, G, and W in a second wave once their boards and counters are imported.
+
+**ASOP rows (2026-10-29).** An ASOP row is a step of the sequence, not a rule, and most steps cite many sections (2.22A designates a Spotter, C9.3, and runs the whole of Prep Fire). A claim takes in its claim commit the ASOP rows whose steps cite only its own rules (3.11A cites C9.3 alone); `code-builders/documents/asop_steps.py` lists them from the PDF. A step that cites other sections too is taken by track 3 when it accepts that phase (section 9).
 
 ### 4.2 The ledger and the lock
 
@@ -226,7 +228,8 @@ Two preparatory tasks open the track:
 ## 10. Coordination between Claude and Codex
 
 - **Separate checkouts.** The main checkout is Claude's; Codex works only in its own worktree. Codex's uncommitted Turns documents now in the main checkout (the plan's review update and the D4.2 design) are committed or moved to its worktree first.
-- **Shared numbers are settled at rebase.** The vocabulary version, event type names, backlog section numbers, and gate configurations are taken when a branch is rebased on main before its merge, not when it is cut.
+- **Shared numbers are settled at rebase.** The vocabulary version, event type names, backlog section numbers, and gate configurations are taken when a branch is rebased on main before its merge, not when it is cut. Since 2026-10-29 the branch merges main rather than rebasing (no force push), and `code-builders/documents/settle_documents.py` settles the documents two claims both edit: rows changed on different sides, lines both appended, the generated parts rewritten from the rows, and a colliding backlog section renumbered. Only a cell or a sentence both sides changed is left to a person.
+- **Shared code outside Rules.** Play, Units, ASL.Turns, and MapStudio are not held. `claim_check.py` warns when this branch changes a file another open claim's branch changes too, and `--touched` lists what each open claim's branch changes, so the agents agree who goes first before the conflict is large.
 - **One gate.** Each branch's gate baseline is cut from current main. Unwired claims change no replay, so most claims' gates show no differences; a wiring change in track 3 is gated as a pass is today.
 - **`AGENTS.md`** gains the claim board and the one-rule-one-calculator rule once this plan is approved.
 - **The branch `asl-narrative-extensions`** (named counters and name pools) is independent of this plan and is left alone.
@@ -325,3 +328,5 @@ Each carries a proposal.
 6. Open the claim board.
 
    **Progress (2026-10-28).** Opened at the user's word: "Before we bring codex into it. Open the claim board and do your first claim as proposed. Then let's evaluate how that went. Work independently up to the merge." `AGENTS.md` says the board is open. Claude takes the first claim, C9.3 Spotters (question 5), alone, with a sub-agent as reviewer, and stops before its merge so the user can judge how the board worked before Codex joins.
+
+   **The evaluation's five issues addressed (2026-10-29, branch `board/claim-fixes`, at the user's word "Address all these issues, now").** The documents two claims both edit are settled by `settle_documents.py` when a branch merges main (section 10). Files outside Rules are watched by `claim_check.py`'s overlap warning and `--touched` (section 10). Large shared calculators are held "shared" (section 4.1), and C9.3's three ordnance files are marked so. ASOP rows go to the claim whose rules alone a step cites, and to track 3 otherwise (section 4.1), so C9.3 takes ASOP 3.11A. The Rule Workbench lets a side pick its own unit for an owner's fact that names itself (the proving slice's design, section 6).

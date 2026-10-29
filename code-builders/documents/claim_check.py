@@ -4,15 +4,22 @@
     python claim_check.py                                      the ledger alone
     python claim_check.py --base <commit> --branch <name>      the ledger, and the branch's changes from <base> to HEAD
     python claim_check.py --branch <name> --files a.cs,b.cs    the ledger, and the named Rules files as if the branch changed them
+    python claim_check.py --touched [--base <commit>]          the ledger, and the files each holding claim's branch changes (default base origin/main)
 
 The ledger:
 - each claim has a unique id, an agent (Claude or Codex), a reviewer that is the other agent or "sub-agent", a branch, and a state of
   claimed, built, reviewed, wired, or accepted;
 - each Owner cell reads "claim (agent)" and names a claim of that agent; each claim owns at least one row;
 - each owned row's Claim state is its claim's state; a row with no owner is open (or blank, when not applicable);
-- no Rules file is listed by two claims that hold files (claimed or built).
+- no Rules file is held by two claims that hold files (claimed or built), unless every one of them lists it "(shared)": a shared hold is for a
+  file the claim changes only at its edges (a call into its own calculator, a field on a record), not where its rule is decided.
 The branch: every changed file of the Rules project (src/ASL/LimboDancer.Domains.Asl.Rules, its tests excluded) is listed by a claim of
 that branch that holds files. Prints every fault and exits 1 if there is any.
+
+Overlaps (warnings, never faults; the plan's section 10): with --base, every file outside the Rules project that this branch changes and that
+the branch of another holding claim changes too, by that branch's commits as this checkout sees them (a local branch, else origin's). Play,
+Units, MapStudio, and the like are not held, so two claims may touch one of their files; the warning says so early, while it is cheap to
+agree who goes first. Documents (*.md) are left out: settle_documents.py merges them.
 """
 import collections
 import os
@@ -31,6 +38,7 @@ HOLDING = {"claimed", "built"}
 RULES_DIR = "src/ASL/LimboDancer.Domains.Asl.Rules/"
 CLAIMS_HEADER = "| Claim | Agent | Reviewer | Branch | Calculator files | State | Opened | Note |"
 OWNER = re.compile(r"^(\S+) \((Claude|Codex)\)$")
+HELD_FILE = re.compile(r"^(\S+\.cs)( \(shared\))?$")
 
 
 def read_claims(lines, faults):
@@ -57,8 +65,16 @@ def read_claims(lines, faults):
             faults.append(f"claim {claim}: state {state!r} is not one of {', '.join(STATES)}")
         if not branch:
             faults.append(f"claim {claim}: no branch")
-        claims[claim] = {"agent": agent, "branch": branch, "state": state,
-                         "files": [name.strip() for name in files.split(",") if name.strip()], "rows": []}
+        held = collections.OrderedDict()
+        for entry in (name.strip() for name in files.split(",")):
+            if not entry:
+                continue
+            m = HELD_FILE.match(entry)
+            if not m:
+                faults.append(f"claim {claim}: held file {entry!r} must read 'Name.cs' or 'Name.cs (shared)'")
+                continue
+            held[m.group(1)] = bool(m.group(2))
+        claims[claim] = {"agent": agent, "branch": branch, "state": state, "files": held, "rows": []}
     return claims
 
 
@@ -89,17 +105,37 @@ def check_ledger(lines, faults):
         if not claim["rows"]:
             faults.append(f"claim {name} owns no row of the inventory")
         if claim["state"] in HOLDING:
-            for file in claim["files"]:
-                holders[file].append(name)
-    for file, names in holders.items():
-        if len(names) > 1:
-            faults.append(f"{file} is held by two claims at once: {', '.join(names)}")
+            for file, shared in claim["files"].items():
+                holders[file].append((name, shared))
+    for file, held in holders.items():
+        if len(held) > 1 and not all(shared for _, shared in held):
+            whole = ", ".join(name for name, shared in held if not shared)
+            faults.append(f"{file} is held by two claims at once: {', '.join(name for name, _ in held)} ({whole} holding it whole)")
     return claims
 
 
+def git(*args):
+    return subprocess.run(["git", "-C", REPO, *args], capture_output=True, text=True)
+
+
+def changed_files(base, ref="HEAD"):
+    out = git("diff", "--name-only", f"{base}...{ref}")
+    return out.stdout.splitlines() if out.returncode == 0 else None
+
+
 def changed_rules_files(base):
-    out = subprocess.run(["git", "-C", REPO, "diff", "--name-only", f"{base}...HEAD", "--", RULES_DIR], capture_output=True, text=True, check=True)
-    return [os.path.basename(path) for path in out.stdout.splitlines() if path.endswith(".cs")]
+    return [os.path.basename(path) for path in changed_files(base) or [] if path.startswith(RULES_DIR) and path.endswith(".cs")]
+
+
+def outside_rules(paths):
+    return {path for path in paths if path.startswith("src/") and not path.startswith(RULES_DIR) and not path.endswith(".md")}
+
+
+def branch_ref(branch):
+    for ref in (f"refs/heads/{branch}", f"refs/remotes/origin/{branch}"):
+        if git("rev-parse", "--verify", "--quiet", ref).returncode == 0:
+            return ref
+    return None
 
 
 def check_branch(claims, branch, files, faults):
@@ -107,6 +143,38 @@ def check_branch(claims, branch, files, faults):
     for file in files:
         if file not in held:
             faults.append(f"{file} is a Rules file this branch changes, and no claim of branch {branch} holds it (claim it first: AGENTS.md)")
+
+
+def others(claims, branch):
+    """The other holding claims' branches this checkout can see, with the files each changes from the base."""
+    seen = {}
+    for name, claim in claims.items():
+        if claim["state"] in HOLDING and claim["branch"] != branch and claim["branch"] not in seen:
+            seen[claim["branch"]] = (name, branch_ref(claim["branch"]))
+    return seen
+
+
+def overlaps(claims, branch, base):
+    mine = outside_rules(changed_files(base) or [])
+    warnings = []
+    for other, (name, ref) in others(claims, branch).items():
+        if ref is None:
+            continue
+        theirs = changed_files(base, ref)
+        for path in sorted(mine & outside_rules(theirs or [])):
+            warnings.append(f"{path} is changed by this branch and by {other} (claim {name}); it is not held, so agree who goes first")
+    return warnings
+
+
+def touched(claims, base):
+    for name, (claim_name, ref) in others(claims, None).items():
+        if ref is None:
+            print(f"{name} (claim {claim_name}): no such branch in this checkout or on origin")
+            continue
+        paths = changed_files(base, ref) or []
+        print(f"{name} (claim {claim_name}, {ref}): {len(paths)} files")
+        for path in sorted(p for p in paths if p.startswith("src/") and not p.endswith(".md")):
+            print("   ", path)
 
 
 def main():
@@ -122,12 +190,17 @@ def main():
     files = None
     if value("--files") is not None:
         files = [name.strip() for name in value("--files").split(",") if name.strip()]
-    elif value("--base") is not None:
+    elif value("--base") is not None and "--touched" not in args:
         files = changed_rules_files(value("--base"))
     if files is not None:
         if not branch:
             sys.exit("--base or --files needs --branch")
         check_branch(claims, branch, files, faults)
+    if "--touched" in args:
+        touched(claims, value("--base") or "origin/main")
+    elif value("--base") is not None:
+        for warning in overlaps(claims, branch, value("--base")):
+            print("WARNING:", warning)
     for fault in faults:
         print("FAULT:", fault)
     held = sum(1 for claim in claims.values() if claim["state"] in HOLDING)
