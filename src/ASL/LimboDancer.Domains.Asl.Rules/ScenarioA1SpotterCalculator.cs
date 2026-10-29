@@ -157,6 +157,12 @@ public static class ScenarioA1SpotterCalculator
             return candidate;
         }
 
+        // A4.8 (p. 52): "A TI unit may not move, advance, fire, or perform other labor tasks"; C9.3 makes spotting the use of a SW (C931).
+        if (facts.SpotterTemporarilyImmobilized == true)
+        {
+            return "A TI unit may not fire, and spotting is the use of a SW, so it may not spot (A4.8, C9.3).";
+        }
+
         if (facts.Night)
         {
             return "Night designation and E1.89 fire-marker handling remain pending.";

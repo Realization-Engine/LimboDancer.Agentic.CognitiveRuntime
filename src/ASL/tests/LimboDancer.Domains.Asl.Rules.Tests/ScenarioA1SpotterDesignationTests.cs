@@ -11,6 +11,31 @@ public sealed class ScenarioA1SpotterDesignationTests
         new("s", false, false, false, false, null, false), false);
 
     [Fact]
+    public void ATiSpotterMayNotSpotAndATiMortarIsNotDesignated()
+    {
+        // A4.8 (p. 52), C9.3 (the review of Wiring Prompt 001, C931): each is its own fact, so neither stands in for the other.
+        Assert.Contains("A4.8", ScenarioA1SpotterCalculator.DesignationRefusal(Eligible with
+        {
+            SpotterTemporarilyImmobilized = true
+        }), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1SpotterCalculator.DesignationRefusal(Eligible with
+        {
+            SpotterTemporarilyImmobilized = false
+        }));
+        Assert.Contains("Temporarily Immobilized", ScenarioA1SpotterCalculator.DesignationRefusal(Eligible with
+        {
+            TemporarilyImmobilized = true,
+            SpotterTemporarilyImmobilized = false
+        }), StringComparison.Ordinal);
+
+        // A caller that does not gather the Spotter's TI yet keeps its old answer.
+        Assert.Null(ScenarioA1SpotterCalculator.DesignationRefusal(Eligible with
+        {
+            SpotterTemporarilyImmobilized = null
+        }));
+    }
+
+    [Fact]
     public void OriginalDaytimeDeclarationDoesNotGrantAReplacementOrAnUnbuiltProfile()
     {
         Assert.Equal(UnitCondition.PrepFire, ScenarioA1SpotterCalculator.FireCounter("pfph"));

@@ -12,7 +12,7 @@ internal static class ScenarioA1SpotterContract
     [
         "mortar", "mortarTemporarilyImmobilized", "hasDesignation", "spotterActive", "spotterSameSide", "spotterPersonnel", "spotterGoodOrder",
         "spotterCaptured", "spotterMelee", "spotterIsMortarCrew", "spotterSquad", "spotterFired", "spotterFirstFire", "spotterFiredThisPhase",
-        "spotterUsedSupportWeapon", "spotterSpottedThisPhase", "sharesLocation",
+        "spotterUsedSupportWeapon", "spotterSpottedThisPhase", "sharesLocation", "spotterTemporarilyImmobilized",
     ];
 
     [RuleContract]
@@ -38,6 +38,7 @@ internal static class ScenarioA1SpotterContract
             Owners("spotterFiredThisPhase", "It fired its inherent FP this phase, with no SW"),
             Owners("spotterUsedSupportWeapon", "It has used a SW this phase"),
             Owners("spotterSpottedThisPhase", "It has already spotted this phase"),
+            Owners("spotterTemporarilyImmobilized", "It is TI (A4.8)"),
             new("hexRange", ContractFactType.Number, true, ContractDisclosure.Owner, "The hex range from the mortar to the unit") { Concerns = "spotterId" },
             Owners("sharesLocation", "Every other mortar it spots for is in this mortar's Location"),
             ScenarioA1RuleContracts.Flag("night", "The scenario is at night"),
@@ -88,7 +89,7 @@ internal static class ScenarioA1SpotterContract
             squad, counter || firstFire, facts.Flag("spotterSpottedThisPhase")!.Value,
             // "Fired this phase" is its inherent FP alone (weapon "0"): C9.31's example lets such a squad spot for one mortar.
             new SquadSupportFacts(facts.Text("spotterId")!, squad, firstFire, counter, firedHere, firedHere ? "0" : null, facts.Flag("spotterUsedSupportWeapon")!.Value),
-            facts.Flag("pendingDecision")!.Value);
+            facts.Flag("pendingDecision")!.Value, facts.Flag("spotterTemporarilyImmobilized")!.Value);
         return ScenarioA1SpotterCalculator.DesignationRefusal(designation) is { } refusal
             ? new ContractVerdict("refused", [new ContractReason(refusal, "C9.3", 179)], [])
             : new ContractVerdict("may-designate",
