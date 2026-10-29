@@ -16,6 +16,9 @@ The ledger:
 The branch: every changed file of the Rules project (src/ASL/LimboDancer.Domains.Asl.Rules, its tests excluded) is listed by a claim of
 that branch that holds files. Prints every fault and exits 1 if there is any.
 
+Scope (warnings, never faults; the Rules conventions, section 2): for a claim's branch, every code file it changes outside the Rules project,
+its tests, the minigame bundles, and the Rule Workbench, since callers are track 3's.
+
 Overlaps (warnings, never faults; the plan's section 10): with --base, every file outside the Rules project that this branch changes and that
 the branch of another holding claim changes too, by that branch's commits as this checkout sees them (a local branch, else origin's). Play,
 Units, MapStudio, and the like are not held, so two claims may touch one of their files; the warning says so early, while it is cheap to
@@ -127,6 +130,17 @@ def changed_rules_files(base):
     return [os.path.basename(path) for path in changed_files(base) or [] if path.startswith(RULES_DIR) and path.endswith(".cs")]
 
 
+# What a claim may change (the Rules conventions, section 2): the Rules library, its tests, its minigame bundle, and the Rule Workbench.
+CLAIM_SCOPE = (RULES_DIR, "src/ASL/tests/LimboDancer.Domains.Asl.Rules.Tests/", "src/ASL/units/minigames/",
+               "src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Workbench.razor",
+               "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/MinigameBundleTests.cs")
+
+
+def out_of_scope(paths):
+    """The code files a claim's branch changes outside its scope: Play, Units, ASL.Turns, Maps, and the Studio's other pages are track 3's."""
+    return sorted(path for path in paths if path.startswith("src/") and not path.endswith(".md") and not path.startswith(CLAIM_SCOPE))
+
+
 def outside_rules(paths):
     return {path for path in paths if path.startswith("src/") and not path.startswith(RULES_DIR) and not path.endswith(".md")}
 
@@ -201,6 +215,9 @@ def main():
     elif value("--base") is not None:
         for warning in overlaps(claims, branch, value("--base")):
             print("WARNING:", warning)
+        if any(claim["branch"] == branch for claim in claims.values()):
+            for path in out_of_scope(changed_files(value("--base")) or []):
+                print(f"WARNING: {path} is outside a claim's scope (the Rules conventions, section 2): its callers are track 3's")
     for fault in faults:
         print("FAULT:", fault)
     held = sum(1 for claim in claims.values() if claim["state"] in HOLDING)
