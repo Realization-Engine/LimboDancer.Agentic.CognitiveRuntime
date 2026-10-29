@@ -1387,7 +1387,7 @@
         },
         {
           "kind": "button",
-          "label": "Turn Phase Guide",
+          "label": "Current phase guide",
           "dynamic": false,
           "id": "play-turn-guide-toggle",
           "status": "needed",
