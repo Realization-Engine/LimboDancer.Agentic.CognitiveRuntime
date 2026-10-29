@@ -591,5 +591,10 @@
         ]
       }
     }
-  ]
+  ],
+  "units": {
+    "g-crew": "german",
+    "g-squad": "german",
+    "r-squad": "russian"
+  }
 }

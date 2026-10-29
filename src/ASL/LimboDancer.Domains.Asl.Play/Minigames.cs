@@ -8,19 +8,23 @@ public sealed record MinigameExpectation(string Outcome, IReadOnlyList<string>? 
 
 /// <summary>
 /// A proof of a minigame (the Rules-first plan, section 7.1): a position (a setup, or a revision of the bundle's game), the viewer, the contract, the facts
-/// entered by hand, and the verdict expected. In the proving slice every check's facts are entered by hand (ruling RPS.12).
+/// entered by hand, and the verdict expected. In the proving slice every check's facts are entered by hand (ruling RPS.12). A Unit fact the viewer
+/// picked as the enemy's "?" stack names its side in <paramref name="Sealed"/>: its handle carries the side and no identity, so the fact stays unknown
+/// to the contract (the review of Wiring Prompt 001, PS4).
 /// </summary>
-public sealed record MinigameCheck(string Name, string Position, string Viewer, string Contract, JsonObject Facts, MinigameExpectation Expect);
+public sealed record MinigameCheck(string Name, string Position, string Viewer, string Contract, JsonObject Facts, MinigameExpectation Expect,
+    IReadOnlyDictionary<string, string>? Sealed = null);
 
 /// <summary>The rulebook or Training Manual example a minigame reproduces, with its physical page.</summary>
 public sealed record MinigameExample(string Source, int Page);
 
 /// <summary>
 /// A minigame's manifest, <c>src/ASL/units/minigames/&lt;id&gt;/&lt;id&gt;.minigame.json</c> (ruling RPS.8): the bundle id, its card, the rules it proves, the
-/// contracts it exercises, the example it reproduces, and its checks. The manifest is the one source of the link between a rule and its minigames.
+/// contracts it exercises, the example it reproduces, its checks, and the side of each unit its checks name, so a check gives only the facts its viewer
+/// may know (the review of the C9.3 replacement, finding 3). The manifest is the one source of the link between a rule and its minigames.
 /// </summary>
 public sealed record MinigameManifest(string Id, string Title, string Card, IReadOnlyList<string> Rules, IReadOnlyList<string> Contracts,
-    MinigameExample? Example, IReadOnlyList<MinigameCheck> Checks);
+    MinigameExample? Example, IReadOnlyList<MinigameCheck> Checks, IReadOnlyDictionary<string, string>? Units = null);
 
 /// <summary>
 /// The minigame registry (the plan's section 7.1; ruling RPS.9): the bundles embedded from <c>src/ASL/units/minigames</c>, read once, and the questions

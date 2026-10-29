@@ -2,8 +2,13 @@
   "id": "a12-advance-concealment",
   "title": "A12.14 concealment lost on advancing",
   "card": "a12-advance-concealment",
-  "rules": ["A12.14", "E1.31"],
-  "contracts": ["a12.14-advance-concealment"],
+  "rules": [
+    "A12.14",
+    "E1.31"
+  ],
+  "contracts": [
+    "a12.14-advance-concealment"
+  ],
   "example": null,
   "checks": [
     {
@@ -66,6 +71,9 @@
       },
       "expect": {
         "outcome": "loses-concealment"
+      },
+      "sealed": {
+        "advancerId": "german"
       }
     },
     {
@@ -83,5 +91,8 @@
         "outcome": "keeps-concealment"
       }
     }
-  ]
+  ],
+  "units": {
+    "g-squad": "german"
+  }
 }

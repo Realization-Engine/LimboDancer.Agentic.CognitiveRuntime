@@ -2,8 +2,13 @@
   "id": "a10-rally",
   "title": "A10.6 Rally",
   "card": "a10-rally",
-  "rules": ["A10.6", "A10.61"],
-  "contracts": ["a10.6-rally"],
+  "rules": [
+    "A10.6",
+    "A10.61"
+  ],
+  "contracts": [
+    "a10.6-rally"
+  ],
   "example": null,
   "checks": [
     {
@@ -67,5 +72,9 @@
         "outcome": "refused"
       }
     }
-  ]
+  ],
+  "units": {
+    "g-leader": "german",
+    "g-squad": "german"
+  }
 }
