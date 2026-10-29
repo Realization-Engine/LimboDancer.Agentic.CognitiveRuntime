@@ -60,8 +60,8 @@ Alternative considered: GitHub issues with an assignee. They are atomic too, but
 
 ### 4.3 What "built" means for a claim
 
-1. **The rulebook read.** Every rule of the claim read on its PDF page, cited by rule and physical page, and the whole rulebook searched for its cross-references.
-2. **The calculator,** in `LimboDancer.Domains.Asl.Rules` under its conventions, taking facts and returning a verdict.
+1. **The rulebook read and the code mapped.** Every rule of the claim read on its PDF page, cited by rule and physical page, and the whole rulebook searched for its cross-references. Every place the code decides, gathers, or records the rule today listed in the design, from `code-builders/documents/rule_sites.py` and a reading of each site (the Rules project's conventions, section 2, added 2026-10-29 after the C9.3 claim found about twelve places where the plan named two). A claim on a rule already built is its audit by the same steps.
+2. **The calculator,** in `LimboDancer.Domains.Asl.Rules` under its conventions (section 2 for a claim), taking facts and returning a verdict.
 3. **The wiring contract** (section 5).
 4. **The minigame bundle** (section 7.1): its card, setups, and manifest with its checks, all passing on the workbench in Claude's Studio (port 6670) or Codex's equivalent.
 5. **Tests,** written after the Studio check under the standing rule that the Studio comes first: the calculator's boundaries, refusals, and hidden-information cases. The bundle's checks run through the shared minigame test class. Only the claim's own test methods and its bundle's checks run.
