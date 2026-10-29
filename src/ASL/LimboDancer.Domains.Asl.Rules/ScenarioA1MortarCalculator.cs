@@ -57,14 +57,21 @@ public static class ScenarioA1MortarCalculator
     public static bool FiresAsLight(int? caliber, bool loneSmc) => IsLight(caliber) || (loneSmc && caliber is > 0 and <= LoneSmcCaliber);
 
     /// <summary>
-    /// Ruling RC9.4 (C9.2, A21.13): a lone SMC firing a mortar loses its Multiple ROF; it fires one as a light mortar or not at all. Two SMC firing
-    /// together are one combined unit (A7.5, A9.12, the SW Chart's note C) and are not lone.
+    /// Ruling RC9.4 (C9.2, A21.13, A15.23): a lone SMC firing a mortar loses its Multiple ROF: one of 82mm or less it fires as a light mortar, and a
+    /// larger one only a hero fires, "only once per Game Turn". Two SMC firing together are one combined unit (A7.5, A9.12, the SW Chart's note C)
+    /// and are not lone.
     /// </summary>
     public static bool MultipleRofKept(bool loneSmc) => !loneSmc;
 
-    /// <summary>A21.13: a lone SMC fires a mortar only as a light mortar, so only one of 82mm or less.</summary>
-    public static string? LoneSmcRefusal(int? caliber, bool loneSmc) =>
-        loneSmc && !FiresAsLight(caliber, loneSmc) ? "A lone SMC fires only a mortar of 82mm or less, as a light mortar (A21.13)." : null;
+    /// <summary>
+    /// A21.13 (p. 88): a lone SMC fires a crew-served weapon "only if heroic", except that it may fire a mortar of 82mm or less as a light mortar.
+    /// So a lone SMC that is not a hero fires no larger mortar. A hero may (A15.23, p. 83), within that rule's own limits.
+    /// </summary>
+    public static string? LoneSmcRefusal(int? caliber, bool loneSmc, bool hero = false) =>
+        loneSmc && !hero && !FiresAsLight(caliber, loneSmc) ? "A lone SMC that is not a hero fires only a mortar of 82mm or less, as a light mortar (A21.13)." : null;
+
+    /// <summary>A15.23 (p. 83): a lone hero fires a mortar over 82mm as a captured Gun, once per Game Turn and only in the MPh or DFPh.</summary>
+    public static bool HeroFiresAsGun(int? caliber, bool loneSmc, bool hero) => loneSmc && hero && caliber is > LoneSmcCaliber;
 
     /// <summary>Ruling RC9.4 (C9.2, C6.521): a mortar may use Area Target Acquisition.</summary>
     public static bool UsesAreaAcquisition(bool isMortar) => isMortar;
@@ -89,11 +96,14 @@ public static class ScenarioA1MortarCalculator
     public static MortarShotVerdict Shot(MortarShotFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);
-        var refusal = TargetTypeRefusal(facts.Mortar, facts.AreaTargetType)
-            ?? VehicleTargetRefusal(facts.Mortar, facts.NamesVehicle)
-            ?? (facts.Mortar ? LoneSmcRefusal(facts.Caliber, facts.LoneSmc) : null)
-            ?? MinimumRangeRefusal(facts.Mortar, facts.Range, facts.MinimumRange);
-        return new MortarShotVerdict(refusal, facts.Mortar && FiresAsLight(facts.Caliber, facts.LoneSmc), MultipleRofKept(facts.Mortar && facts.LoneSmc));
+        (string? Text, string Rule, int Page) refusal =
+            TargetTypeRefusal(facts.Mortar, facts.AreaTargetType) is { } targetType ? (targetType, "C9.1", 179)
+            : VehicleTargetRefusal(facts.Mortar, facts.NamesVehicle) is { } vehicle ? (vehicle, "C9.1", 179)
+            : facts.Mortar && LoneSmcRefusal(facts.Caliber, facts.LoneSmc, facts.Hero) is { } lone ? (lone, "A21.13", 88)
+            : MinimumRangeRefusal(facts.Mortar, facts.Range, facts.MinimumRange) is { } range ? (range, "C9.4", 179)
+            : (null, string.Empty, 0);
+        return new MortarShotVerdict(refusal.Text, facts.Mortar && FiresAsLight(facts.Caliber, facts.LoneSmc), MultipleRofKept(facts.Mortar && facts.LoneSmc),
+            refusal.Text is null ? null : refusal.Rule, refusal.Text is null ? null : refusal.Page);
     }
 
     /// <summary>

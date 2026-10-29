@@ -64,6 +64,12 @@ public sealed class ScenarioA1MortarCalculatorTests
         Assert.Null(ScenarioA1MortarCalculator.LoneSmcRefusal(82, true));
         Assert.Contains("A21.13", ScenarioA1MortarCalculator.LoneSmcRefusal(120, true), StringComparison.Ordinal);
         Assert.Null(ScenarioA1MortarCalculator.LoneSmcRefusal(120, false));
+
+        // A21.13 "only if heroic", A15.23 (p. 83): a lone hero fires a larger mortar as a captured Gun.
+        Assert.Null(ScenarioA1MortarCalculator.LoneSmcRefusal(120, true, hero: true));
+        Assert.True(ScenarioA1MortarCalculator.HeroFiresAsGun(120, true, true));
+        Assert.False(ScenarioA1MortarCalculator.HeroFiresAsGun(82, true, true));
+        Assert.False(ScenarioA1MortarCalculator.HeroFiresAsGun(120, true, false));
     }
 
     [Fact]
@@ -96,6 +102,8 @@ public sealed class ScenarioA1MortarCalculatorTests
         Assert.Contains("To Kill", ScenarioA1MortarCalculator.Shot(Shot with
         {
             NamesVehicle = true,
+            Caliber = 120,
+            LoneSmc = true,
             Range = 1
         }).Refusal, StringComparison.Ordinal);
         Assert.Contains("A21.13", ScenarioA1MortarCalculator.Shot(Shot with
@@ -108,6 +116,33 @@ public sealed class ScenarioA1MortarCalculatorTests
         {
             Range = 1
         }).Refusal, StringComparison.Ordinal);
+
+        // Each refusal carries its own rule and page (the C9 claim's review, finding 5).
+        Assert.Equal(("C9.1", 179), Cited(Shot with
+        {
+            AreaTargetType = false
+        }));
+        Assert.Equal(("C9.1", 179), Cited(Shot with
+        {
+            NamesVehicle = true
+        }));
+        Assert.Equal(("A21.13", 88), Cited(Shot with
+        {
+            Caliber = 120,
+            LoneSmc = true
+        }));
+        Assert.Equal(("C9.4", 179), Cited(Shot with
+        {
+            Range = 1
+        }));
+        Assert.Null(ScenarioA1MortarCalculator.Shot(Shot with
+        {
+            Caliber = 120,
+            MinimumRange = 3,
+            Range = 3,
+            LoneSmc = true,
+            Hero = true
+        }).Refusal);
 
         // A lone SMC fires the light mortar and loses its Multiple ROF; with an 81mm mortar it fires it as light (A21.13).
         Assert.Equal(new MortarShotVerdict(null, true, false), ScenarioA1MortarCalculator.Shot(Shot with
@@ -122,6 +157,12 @@ public sealed class ScenarioA1MortarCalculatorTests
             LoneSmc = true
         }));
         Assert.Throws<ArgumentNullException>(() => ScenarioA1MortarCalculator.Shot(null!));
+    }
+
+    private static (string?, int?) Cited(MortarShotFacts facts)
+    {
+        var verdict = ScenarioA1MortarCalculator.Shot(facts);
+        return (verdict.RefusalRule, verdict.RefusalPage);
     }
 
     [Fact]

@@ -55,13 +55,13 @@ Revised at the build (the user, 2026-10-29: do what the rules allow; the backlog
 
 ## 5. The wiring row W-C9
 
-Capability: fire. Sites to rewire, each with what replaces it:
-- `LiveOrdnance.FromState`: the mortar's identity (line 244) asks `IsMortar`; its target type asks `TargetTypeRefusal`; its no-crew firer (lines 139 to 149) asks `CrewNeeded`.
-- `GameProjector.Ordnance` (lines 1333 to 1337): the no-crew firer asks `CrewNeeded`; its fixed facing for a mortar (near line 1408) asks `HasCoveredArc`.
-- `GamePlanner.OrdnanceShotFacts`: asks `VehicleTargetRefusal` and `MinimumRangeRefusal` before the shot's validation, so the refusals reach a shot made outside the page.
-- The Play page: `OrdnanceAmmunitionKind` and `OrdnanceTargetFields` ask `VehicleTargetRefusal`; `OrdnanceDirectors` asks `CrewNeeded` and `HasCoveredArc` for the light mortar; the facing shown only for Guns asks `HasCoveredArc`.
+Capability: fire. As written in the inventory's section 7 (revised at the build and after the review, section 9).
 
-Old members to remove once their callers move: none; the forwarding members stay. Behavior changes: a mortar shot naming a vehicle is refused, and a mortar with no recorded minimum range is refused.
+**Sites to rewire.** `LiveOrdnance.FromState`: the mortar's identity (near line 244) asks `IsMortar`, its target type `TargetTypeRefusal`, its no-crew firer (lines 139 to 149) `CrewNeeded`; `GameProjector.Ordnance`: the no-crew firer (lines 1333 to 1337) asks `CrewNeeded`, the fixed facing of a mortar (near line 1408) `HasCoveredArc`; `GamePlanner.OrdnanceShotFacts`: `VehicleTargetRefusal` and `MinimumRangeRefusal` before the shot's validation; the Play page: `OrdnanceAmmunitionKind` and `OrdnanceTargetFields` ask `VehicleTargetRefusal`, `OrdnanceDirectors` `CrewNeeded` and `HasCoveredArc`, the facing shown only for Guns `HasCoveredArc`; Play's one-firer limit, so that two SMC fire a light mortar as one unit (`MultipleRofKept`'s lone SMC, A7.5, A9.12); `ScenarioA1OrdnanceCalculator.Outside`'s admitted gun types ask `IsMortar`, so the catalog's 81mm "mtr" Gun fires as a mortar (its minimum range in `ScenarioA1OrdnanceMapRules.GunTargetStatus` with it); `Outside`'s single `mortar` flag splits by the calculator, since only a light mortar is a SW: the no-turn check (near line 432) asks `HasCoveredArc(IsLight)`, the any-Personnel crew check (near line 464) `CrewNeeded(IsLight)` or `FiresAsLight`, non-qualified use (C5.8, A21.13) stays open to a Gun mortar, and the hero's SW DRM (near line 161) and Ammunition Shortage (near lines 1458 and 1463) keep the light mortar's reading
+
+**Old members to remove.** None: the old members forward
+
+**Behavior changes.** A mortar shot naming a vehicle is refused; a mortar with no recorded minimum range is refused; two SMC may fire a light mortar together and keep its Multiple ROF; the 81mm Gun mortar may fire as a Gun with a CA and a crew, and a lone SMC fires it as light (A21.13); a lone hero fires a mortar over 82mm (A15.23)
 
 ## 6. Memory and performance
 
@@ -77,7 +77,7 @@ A sub-agent read the design against pp. 179 and the rules it leans on, and again
 
 ## 9. As built (2026-10-29)
 
-**Files.** `ScenarioA1MortarCalculator.cs`, `ScenarioA1MortarModels.cs` (`MortarShotFacts`, `MortarShotVerdict`), `ScenarioA1MortarContract.cs`; the minigame `units/minigames/c9-mortar` (a card on bd03 and seven checks); tests `ScenarioA1MortarCalculatorTests` and `ScenarioA1MortarContractTests`.
+**Files.** `ScenarioA1MortarCalculator.cs`, `ScenarioA1MortarModels.cs` (`MortarShotFacts`, `MortarShotVerdict`), `ScenarioA1MortarContract.cs`; the minigame `units/minigames/c9-mortar` (a card on bd03 and nine checks); tests `ScenarioA1MortarCalculatorTests` and `ScenarioA1MortarContractTests`.
 
 **Old members that forward,** each with the same answer in every case:
 - `ScenarioA1OrdnanceCalculator.Outside`: the minimum range asks `BelowMinimum`.
@@ -90,11 +90,13 @@ A sub-agent read the design against pp. 179 and the rules it leans on, and again
 
 **Where the build differs from the rulings,** each for the reason given:
 - RC9.3: of the three places section 2 named as reading Indirect Fire from the Area Target Type, only the gunshield reads it for Indirect Fire, and it now asks `IndirectFireOfHit`, which says why an Area hit stands for a mortar's (the recorded hit carries its Target Type, not its weapon, and the recorded records keep their shape). `ScenarioA1OrdnanceMapRules.HeightAdvantage` reads the Area Target Type for C6.8 (no Case Q), that Target Type's own rule, and is unchanged. The line in `ScenarioA1AreaCalculator.Run` is on the mortar's own path. The search of the recorded games: 84 games read, three with a light mortar, two mortar shots, none naming a vehicle, so `VehicleTargetRefusal` changes no recorded game.
-- RC9.4: `MultipleRofKept(loneSmc)` takes no caliber: a lone SMC fires a mortar as a light one or not at all, so it never keeps the Multiple ROF. `LoneSmcRefusal(caliber, loneSmc)` is added: A21.13 (p. 88) lets a lone SMC fire only a mortar of 82mm or less, and A15.23 holds a hero to Guns of 82mm or less.
+- RC9.4: `MultipleRofKept(loneSmc)` takes no caliber: a lone SMC fires a mortar as a light one or not at all, so it never keeps the Multiple ROF. `LoneSmcRefusal(caliber, loneSmc, hero)` is added: A21.13 (p. 88) lets a lone SMC fire a crew-served weapon "only if heroic", except a mortar of 82mm or less as a light one; so a lone SMC that is not a hero fires no larger mortar, and a hero may (A15.23, p. 83: a Gun over 82mm "only once per Game Turn and only during the MPh/DFPh", limits of A15.23's row that the contract names and does not judge). `MortarShotFacts` and the contract gained the hero fact.
 - RC9.6: `CriticalHitAllowed(originalToHitDr)` takes no `isMortar`: an Original 2 is a Critical Hit for any ordnance, and C3.7's other case, a Final DR below half the TH#, is the Infantry Target Type's, which a mortar never uses.
 - RC9.7: the contract's subject is the firer (`firerId`), not the mortar: the Studio check found that the map offers units, and a mortar is equipment its firer holds. Every fact is the firer's side's. Its numbers are read only as whole numbers an int holds. The squad firing with no crew is the calculator's `CrewNeeded`, tested there; the contract asks only whether the shot may be made.
-- RC9.8: the minigame's seven checks are hand-entered facts, as every contract fact of this claim is; Play gathers none of them until W-C9.
+- RC9.8: the minigame's nine checks (one from the opponent's view) are hand-entered facts, as every contract fact of this claim is; Play gathers none of them until W-C9.
 
 **Found and fixed elsewhere:** `ScenarioA1RuleContracts.Evaluate` on a `JsonObject` built in code read a number held as an int as no number; the fix is in PR 60, the C9.3 claim's file.
 
-**Checks.** Unit tests by method: the two new classes and the existing tests of each forward (26 passed); `ScenarioA1RuleContractTests` (7) and `MinigameBundleTests` (30, the seven new checks among them); the strict Rules build. In Claude's Studio (6670): the card started as the game `c9-mortar`, the German squad picked as the firer on the Workbench, "may-fire" at range 2 and "refused" (C9.4) at range 1.
+**Review of the build** (a sub-agent, read-only, 2026-10-29): five findings, all taken. A lone hero may fire a mortar over 82mm (A15.23), so the hero fact; a weapon that is not a mortar gives not-evaluated, not may-fire; the W-C9 row now splits `Outside`'s `mortar` flag by the calculator, so that the 81mm Gun mortar keeps its CA and its crew; section 5 copies the row; each refusal carries its own rule and page. Added: an opponent-view check in the bundle, and tests of the refusal order and of a non-mortar. The forwards were found to give the old answer in every case.
+
+**Checks.** Unit tests by method: the two new classes and the existing tests of each forward (26 passed before the review); after it, the two new classes with `ScenarioA1RuleContractTests` (14 passed) and `MinigameBundleTests` (32, the nine new checks among them); the strict Rules build. In Claude's Studio (6670): the card started as the game `c9-mortar`, the German squad picked as the firer on the Workbench, "may-fire" at range 2 and "refused" (C9.4) at range 1.
