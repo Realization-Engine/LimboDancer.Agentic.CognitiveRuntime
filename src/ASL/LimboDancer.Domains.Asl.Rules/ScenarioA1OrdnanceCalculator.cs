@@ -430,8 +430,8 @@ public static class ScenarioA1OrdnanceCalculator
         if ((shot.TargetType == OrdnanceTargetTypes.Area) != mortar
             || (latw && shot.VehicleTarget is null && gun.LatwType == "atr" && gun.Caliber != 20 && !AtrAtGun(shot, gun))
             || ((mortar || latw || machineGun) && (shot.HexspinesToTurn != 0 || shot.IntensiveFire == true || shot.BoreSighted == true || shot.NonQualified == true))
-            // C9.3 (referee, pass 9): a Spotter is designated in the PFPh or DFPh; Opportunity Fire, which would let it spot in the AFPh, is not built.
-            || (shot.Spotter is not null && (!mortar || shot.Phase is not ("PFPh" or "DFPh"))) || (shot.Director is not null && !mortar && !latw))
+            // C9.3: whether a spotted shot may be made now is ScenarioA1SpotterCalculator's (the C9.3 claim, review finding 4).
+            || (shot.Spotter is not null && !ScenarioA1SpotterCalculator.SpottedFireAllowed(mortar, shot.Phase)) || (shot.Director is not null && !mortar && !latw))
         {
             outside.Add(Prefix + "target-type-outside");
             return outside;

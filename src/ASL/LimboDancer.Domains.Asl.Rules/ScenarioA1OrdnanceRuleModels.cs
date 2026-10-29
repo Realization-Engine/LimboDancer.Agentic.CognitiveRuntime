@@ -50,7 +50,8 @@ public sealed record SquadSupportFacts(string Id, bool Squad, bool FirstFire, bo
 /// <summary>
 /// A named Spotter of a light mortar (C9.3, C9.31, A7.352) as the state has it: whether it is active with a definition, its definition, whether it
 /// is of the firer's side, Captured, in Melee, Broken, Pinned, a squad, has fired or is marked First Fire, has spotted this phase for this or
-/// another mortar, its facts against using a SW, whether it is Personnel, and whether it is the mortar's own crew.
+/// another mortar, its facts against using a SW, whether it is Personnel, whether it is the mortar's own crew, and whether it is Berserk (with Broken,
+/// Captured, and Melee, Good Order as the index has it).
 /// </summary>
 public sealed record OrdnanceSpotterFacts(
     string Id,
@@ -67,7 +68,8 @@ public sealed record OrdnanceSpotterFacts(
     bool SpottedThisPhase,
     SquadSupportFacts Support,
     bool Personnel,
-    bool MortarCrew);
+    bool MortarCrew,
+    bool Berserk);
 
 /// <summary>
 /// A named leader directing a SW (A7.531, A7.53) as the state has it: whether it is active with a definition, its definition, whether it is of the

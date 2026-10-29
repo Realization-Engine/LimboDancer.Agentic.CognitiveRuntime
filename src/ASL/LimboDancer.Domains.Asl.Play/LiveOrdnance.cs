@@ -501,7 +501,7 @@ public static class LiveOrdnance
         if (state.Unit(spotter) is not { Status: InstanceStatus.Active, Definition: not null } unit)
         {
             return new OrdnanceSpotterFacts(spotter, false, null, false, false, false, false, false, false, false, false, false,
-                new SquadSupportFacts(spotter, false, false, false, false, null, false), false, false);
+                new SquadSupportFacts(spotter, false, false, false, false, null, false), false, false, false);
         }
 
         // Ruling RC93.5: a legacy shot keeps its recorded reading of sharing, any other mortar this phase.
@@ -511,7 +511,7 @@ public static class LiveOrdnance
                 : !ScenarioA1SpotterCalculator.SharesWith([.. state.MortarSpotterUses.Where(item => item.Spotter == unit.Id)
                 .Select(item => new SpotterUse(item.Gun, item.Location?.ToString(), item.Target.ToString()))],
                 gun, state.Location(gun)?.Location.ToString(), target.ToString()), state.SpottedThisPhase.Any(item => item.Spotter == unit.Id),
-            SquadSupport(state, unit), ScenarioA1SpotterCalculator.Personnel(unit.Kind), unit.Id == firer.Id);
+            SquadSupport(state, unit), ScenarioA1SpotterCalculator.Personnel(unit.Kind), unit.Id == firer.Id, Is(unit, Conditions.Berserk));
     }
 
     private static OrdnanceDirectorFacts DirectorFacts(GameState state, string gun, UnitInstance firer, string director)

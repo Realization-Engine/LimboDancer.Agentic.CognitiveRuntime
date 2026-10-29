@@ -25,6 +25,7 @@ BASE = {
     "spotterIsMortarCrew": False,
     "spotterSquad": True,
     "spotterFired": False,
+    "spotterFirstFire": False,
     "spotterFiredThisPhase": False,
     "spotterUsedSupportWeapon": False,
     "spotterSpottedThisPhase": False,
@@ -44,7 +45,10 @@ CHECKS = [
     ("A squad that fired its inherent FP this phase may still spot for one mortar (C9.31's example)",
      {"spotterFired": True, "spotterFiredThisPhase": True}, "may-designate"),
     ("A squad that fired in an earlier phase may not use a SW, and so may not spot (A7.351)", {"spotterFired": True}, "refused"),
+    ("A squad marked First Fire may still be designated in its owner's DFPh (ASOP 4.21D)",
+     {"phase": "DFPh", "ownerPhasing": False, "spotterFirstFire": True}, "may-designate"),
     ("With the range not read, the question stays open", {"hexRange": None}, "not-evaluated"),
+    ("A range that is not a whole number of hexes is not read as one", {"hexRange": 1.5}, "not-evaluated"),
 ]
 
 manifest = {

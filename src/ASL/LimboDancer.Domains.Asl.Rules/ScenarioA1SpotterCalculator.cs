@@ -32,6 +32,12 @@ public static class ScenarioA1SpotterCalculator
     /// <summary>Ruling RC93.4: the Spotter is in the mortar's hex or an adjacent one, whatever its level and LOS; an unknown range is not in reach.</summary>
     public static bool InReach(int? hexRange) => hexRange is >= 0 and <= 1;
 
+    /// <summary>
+    /// C9.3 (referee, pass 9): only a mortar fires spotted, and only in the PFPh or DFPh, where its Spotter is designated. Opportunity Fire, which would let
+    /// it spot in the AFPh, is not built (backlog section 80).
+    /// </summary>
+    public static bool SpottedFireAllowed(bool mortar, string? phase) => mortar && phase is "PFPh" or "DFPh";
+
     /// <summary>The refusal Play gives a shot whose Spotter is out of reach.</summary>
     public static string ReachRefusal(string spotter) => $"play.ordnance-spotter: {spotter} spots only from the mortar's hex or an adjacent one (C9.3)";
 
@@ -62,7 +68,8 @@ public static class ScenarioA1SpotterCalculator
 
     /// <summary>
     /// Ruling RC93.6: the Spotter still serves its mortar: active, of its side, not broken or captured, and no loss recorded. A recorded loss is final:
-    /// a Spotter that broke and rallied does not return (a new Spotter is named once the original is broken).
+    /// the mortar fires spotted only "as long as the Spotter remains in Good Order" (C9.3), and ASOP 3.11A names the new Spotter for one "not in Good
+    /// Order", so a Spotter that broke and rallied does not resume by itself. Nothing bars designating the same unit again as the new Spotter.
     /// </summary>
     public static bool Retains(bool active, bool sameSide, bool broken, bool captured, bool recordedLoss) =>
         active && sameSide && !broken && !captured && !recordedLoss;
@@ -142,7 +149,7 @@ public static class ScenarioA1SpotterCalculator
 
         if (!facts.Mortar || facts.TemporarilyImmobilized)
         {
-            return "C9.3 requires an active mortar of the Spotter's side.";
+            return "C9.3 requires an active mortar that is not Temporarily Immobilized.";
         }
 
         if (CandidateRefusal(facts.Candidate) is { } candidate)

@@ -32,15 +32,15 @@ public static class ScenarioA1RuleContracts
     private static readonly string[] Barrels = [.. Enum.GetNames<TurnAmmoBarrel>()];
     private static readonly string[] Uses = [.. Enum.GetNames<TurnAmmoUse>()];
 
-    /// <summary>Every contract, each a method marked <see cref="RuleContractAttribute"/> in this assembly, by id, which is the order of their rules.</summary>
-    public static IReadOnlyList<RuleContract> All
-    {
-        get;
-    } = [.. typeof(ScenarioA1RuleContracts).Assembly.GetTypes()
+    // Built on first use, after every static field here is set: a contract in another file reads them (the claim's review, finding 12).
+    private static readonly Lazy<IReadOnlyList<RuleContract>> Registered = new(() => [.. typeof(ScenarioA1RuleContracts).Assembly.GetTypes()
         .SelectMany(type => type.GetMethods(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic))
         .Where(method => method.IsDefined(typeof(RuleContractAttribute), false) && method.GetParameters().Length == 0 && method.ReturnType == typeof(RuleContract))
         .Select(method => (RuleContract)method.Invoke(null, null)!)
-        .OrderBy(contract => contract.Id, StringComparer.Ordinal)];
+        .OrderBy(contract => contract.Id, StringComparer.Ordinal)]);
+
+    /// <summary>Every contract, each a method marked <see cref="RuleContractAttribute"/> in this assembly, by id, which is the order of their rules.</summary>
+    public static IReadOnlyList<RuleContract> All => Registered.Value;
 
     /// <summary>The contract with an id, or null.</summary>
     public static RuleContract? Find(string id) => All.FirstOrDefault(contract => string.Equals(contract.Id, id, StringComparison.Ordinal));

@@ -105,7 +105,7 @@ public static class ScenarioA1OrdnanceEligibility
         if (spotter is not null)
         {
             var unit = spotterFacts();
-            if (ScenarioA1SpotterCalculator.CandidateRefusal(new SpotterCandidateFacts(unit.ActiveWithDefinition, unit.SameSide, unit.Personnel, !unit.Broken,
+            if (ScenarioA1SpotterCalculator.CandidateRefusal(new SpotterCandidateFacts(unit.ActiveWithDefinition, unit.SameSide, unit.Personnel, !unit.Broken && !unit.Berserk,
                 unit.Captured, unit.Melee, unit.MortarCrew)) is { } candidate)
             {
                 return (null, $"play.ordnance-spotter: '{spotter}' may not spot: {candidate}");
