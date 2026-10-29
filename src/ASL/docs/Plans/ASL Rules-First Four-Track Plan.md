@@ -69,6 +69,8 @@ Alternative considered: GitHub issues with an assignee. They are atomic too, but
 7. **The rows updated** in the inventory and the coverage document, and anything left out given a backlog row.
 8. **The pass's Rules status refreshed** in the redesign plan (section 11.1).
 
+**No gate per rule claim; a batch gate every five** (the user, 2026-10-29, to speed up the Rules library). A rule claim changes the Rules library and its tests and leaves every old member's answer as it was (step 2), so no recorded game replays or sweeps differently, and the gate's replay and sweep, about 25 to 35 minutes a claim, would prove nothing its tests and CI do not. A rule claim therefore merges on its unit tests and a green CI run. `claim_check.py` makes that safe and regular: a rule claim's branch that changes code outside its scope is a fault, and after five rule claims merged since the last batch gate (recorded in the inventory's section 6) the sixth is held until the gate runs once on main against that commit (`gate.sh rules-batch`, with `CODE_MOVE=1`: no game may differ). Its `carry` stage files the baseline under the proved commit, so each batch after the first costs the build and the proofs alone, about 15 minutes. A difference is found after merge, among at most five claims each merged as its own commit, and is fixed forward. Wiring claims keep a gate each, since that is where behavior changes (section 9.1).
+
 ### 4.4 What goes on the board first
 
 - The 143 faults the audits found in rules already built, as claims of their own.

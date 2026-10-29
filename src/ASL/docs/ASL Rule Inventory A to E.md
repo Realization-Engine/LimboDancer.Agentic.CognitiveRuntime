@@ -4526,7 +4526,10 @@ The claim board of the [Rules-first four-track plan](<Plans/ASL Rules-First Four
 - **Agent**: Claude or Codex, the agent that holds it. **Reviewer**: the other agent, or "sub-agent" when only one is working.
 - **Branch**: the branch the claim's work is done on.
 - **Calculator files**: the files of the Rules project the claim will change, by file name, comma-separated. While the claim is claimed or built it holds them: no other claim may list them, and a branch may change a Rules file only when a claim of that branch lists it. A file written "Name.cs (shared)" is one the claim changes only at its edges (a call into its own calculator, a field on a record); several claims may hold a file shared at once, never when one of them holds it whole (2026-10-29). Files outside the Rules project are not listed: `claim_check.py` warns when two open claims' branches change the same one.
-- **State**: claimed, built, reviewed, wired, or accepted (the plan's section 4.3). Every row the claim owns carries the same state in its Claim state cell, and its Owner cell reads "claim (agent)", for example "C9.3 (Codex)".
+- **State**: claimed, built, reviewed, wired, or accepted (the plan's section 4.3).
+- **The batch gate** (the plan's section 4.3, the user, 2026-10-29): a rule claim merges on CI without a gate of its own; after every fifth rule claim merged since the commit below, the merge gate runs on main (`gate.sh rules-batch <commit> baseline`, `build`, `proofs`, `carry`), and the commit it proved replaces the one below. `claim_check.py` counts the merges and holds the next rule claim at five.
+
+**Last batch gate:** `f525ea78` (2026-10-29: the merge of the C9.3 claim, whose own gate proved it; the first batch gate builds its baseline from this commit). Every row the claim owns carries the same state in its Claim state cell, and its Owner cell reads "claim (agent)", for example "C9.3 (Codex)".
 
 | Claim | Agent | Reviewer | Branch | Calculator files | State | Opened | Note |
 |---|---|---|---|---|---|---|---|

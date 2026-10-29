@@ -88,6 +88,29 @@ def main():
     f = []
     c.check_wiring_branch(wiring, "wire/wire-fire-1", ["src/ASL/LimboDancer.Domains.Asl.Units/State/GameProjector.cs"], f)
     check("a wiring branch may not change a file it does not hold", any("held by none" in x for x in f), f)
+    # The batch gate: merges of rule claims' branches since the recorded commit, read from a faked git log.
+    class Out:
+        def __init__(self, stdout, returncode=0):
+            self.stdout, self.returncode = stdout, returncode
+
+    def batch(merged, branch):
+        log = "\n".join(f"Merge pull request #{i} from Org/claim/r{i}" for i in range(merged)) + "\nMerge pull request #99 from Org/board/x"
+        real = c.git
+        c.git = lambda *args: Out(log) if args[0] == "log" else Out("", 0)
+        try:
+            rules = {f"R{i}": dict(rule("built"), branch=f"claim/r{i}") for i in range(6)}
+            f = []
+            c.batch_gate(["**Last batch gate:** `abc1234` (note)"], rules, branch, f)
+            return f
+        finally:
+            c.git = real
+
+    check("four rule claims since the batch gate hold nothing", not batch(4, "claim/r5"))
+    check("five hold the next rule claim", any("batch gate" in x for x in batch(5, "claim/r5")))
+    check("five only warn on a branch that is not a rule claim's", not batch(5, "board/x"))
+    f = []
+    c.batch_gate(["no record"], {}, "x", f)
+    check("the inventory must record the last batch gate", any("records no last batch gate" in x for x in f), f)
     print(f"failures: {failures}")
     sys.exit(1 if failures else 0)
 

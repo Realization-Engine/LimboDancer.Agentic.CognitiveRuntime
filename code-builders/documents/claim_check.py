@@ -22,8 +22,13 @@ every wiring row wired or later; each wiring claim ("wire-<capability>") owns a 
 claim's branch changes only the paths it holds (under src/ASL/), their tests, and Rules files (a warning: only to remove the old members its
 rows name).
 
-Scope (warnings, never faults; the Rules conventions, section 2): for a claim's branch, every code file it changes outside the Rules project,
-its tests, the minigame bundles, and the Rule Workbench, since callers are track 3's.
+Scope (faults; the Rules conventions, section 2): for a rule claim's branch, every code file it changes outside the Rules project, its
+tests, the minigame bundles, and the Rule Workbench, since callers are track 3's, and a rule claim merges without a gate of its own only
+while it stays in Rules (the plan's section 4.3, 2026-10-29).
+
+The batch gate (the plan's section 4.3): the rule claims merged into main since the commit the inventory's section 6 records as the last
+batch gate, by the merge commits' branches. At five, a rule claim's branch is a fault until the batch gate runs on main
+(`gate.sh rules-batch <commit> ...`) and its new commit is recorded; any other branch gets a warning.
 
 Overlaps (warnings, never faults; the plan's section 10): with --base, every file outside the Rules project that this branch changes and that
 the branch of another holding claim changes too, by that branch's commits as this checkout sees them (a local branch, else origin's). Play,
@@ -237,6 +242,34 @@ def check_wiring_branch(wiring, branch, paths, faults):
             faults.append(f"{path} is changed by wiring branch {branch} and held by none of its wiring claims (add it by a commit to main first)")
 
 
+LAST_BATCH = re.compile(r"^\*\*Last batch gate:\*\* `([0-9a-f]{7,40})`")
+MERGE = re.compile(r"^Merge pull request #\d+ from [^/\s]+/(\S+)$")
+BATCH_SIZE = 5
+
+
+def batch_gate(lines, claims, branch, faults):
+    """The rule claims merged into main since the last batch gate (the plan's section 4.3). At five, the next rule claim waits for one."""
+    m = next((LAST_BATCH.match(line) for line in lines if LAST_BATCH.match(line)), None)
+    if m is None:
+        faults.append("the inventory's section 6 records no last batch gate ('**Last batch gate:** `<commit>`')")
+        return
+    main = "origin/main" if git("rev-parse", "--verify", "--quiet", "origin/main").returncode == 0 else "HEAD"
+    out = git("log", "--merges", "--first-parent", "--format=%s", f"{m.group(1)}..{main}")
+    if out.returncode != 0:
+        print(f"NOTE: the last batch gate {m.group(1)} is not in this checkout's history; merges since it are not counted")
+        return
+    branches = {claim["branch"] for claim in claims.values()}
+    merged = [b.group(1) for subject in out.stdout.splitlines() if (b := MERGE.match(subject)) and b.group(1) in branches]
+    print(f"rule claims merged since the last batch gate {m.group(1)}: {len(merged)} of {BATCH_SIZE}" + (f" ({', '.join(merged)})" if merged else ""))
+    if len(merged) >= BATCH_SIZE:
+        message = (f"{len(merged)} rule claims merged since the last batch gate {m.group(1)}: run it on main "
+                   f"(gate.sh rules-batch {m.group(1)} ...) and record the new commit in the inventory's section 6")
+        if any(claim["branch"] == branch for claim in claims.values()):
+            faults.append(message + " before this rule claim merges")
+        else:
+            print("WARNING:", message)
+
+
 def git(*args):
     return subprocess.run(["git", "-C", REPO, *args], capture_output=True, text=True)
 
@@ -342,8 +375,11 @@ def main():
         for warning in overlaps(claims, branch, value("--base")):
             print("WARNING:", warning)
         if any(claim["branch"] == branch for claim in claims.values()):
+            # A rule claim merges without a gate of its own only because it stays in its scope (the plan's section 4.3, 2026-10-29).
             for path in out_of_scope(changed_files(value("--base")) or []):
-                print(f"WARNING: {path} is outside a claim's scope (the Rules conventions, section 2): its callers are track 3's")
+                faults.append(f"{path} is outside a rule claim's scope (the Rules conventions, section 2): its callers are track 3's, "
+                              "and a rule claim merges without a gate only while it stays in Rules")
+    batch_gate(lines, claims, branch, faults)
     for fault in faults:
         print("FAULT:", fault)
     held = sum(1 for claim in claims.values() if claim["state"] in HOLDING)

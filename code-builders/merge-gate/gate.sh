@@ -19,6 +19,8 @@
 #   build     the solution with warnings as errors into bin/gate; the proof tool compiled against it          (about 4 min)
 #   proofs    text list, replay digest, sweep on the gate's side, each compared with the baseline            (about 7 min; it first sweeps
 #             a few older games and stops if a plan's hash alone differs, which is a fault of the skip lists)
+#   carry     only for the rule claims' batch gate on main (pass "rules-batch", passrules-batch.conf): after proofs that differ in nothing,
+#             files the base's baseline under the head's key, so the next batch gate needs no base stage
 #   ci        once the branch is pushed and its pull request opened, at the user's word: says whether the CI run of the branch's head has
 #             passed. CI runs the locked restore, the strict build, the Node viewport test, every test project, and the source checks on
 #             Linux, on the branch merged with main (about 14 min). The merge waits for it.
@@ -42,7 +44,7 @@ PASS="$1"; BASE="$2"; STAGE="$3"
 SWEEP_GAME="dl-tractor-works-02"
 GATE="$R/src/ASL/LimboDancer.Domains.Asl.MapStudio/bin/gate/Debug/net10.0"
 MAINTOOL="$S/proof-main/bin/Debug/net10.0"
-if [ -z "$PASS" ] || [ -z "$BASE" ] || [ -z "$STAGE" ]; then sed -n 2,29p "$0"; exit 2; fi
+if [ -z "$PASS" ] || [ -z "$BASE" ] || [ -z "$STAGE" ]; then sed -n 2,31p "$0"; exit 2; fi
 if [ ! -f "$G/pass-configs/pass$PASS.conf" ]; then echo "STOP: write $G/pass-configs/pass$PASS.conf first (pass55.conf is the form)"; exit 2; fi
 OWN=""; SWEEP_EXTRA=""; TRIAL_EXTRA=""; SKIP_JSON=""; SKIP_ADD=""; BOTH_SKIP=""; PRESENT=""; ABSENT=""; CODE_MOVE=""
 source "$G/pass-configs/pass$PASS.conf"
@@ -275,6 +277,22 @@ proofs)
   fi
   echo "$SIGNATURE" > "$AFTER/DONE"
   ;;
+carry)
+  # The rule claims' batch gate (the Rules-first plan, section 4.3; the user, 2026-10-29). When a code move's proofs differ in nothing, the
+  # head answers every older game as the base does, so the base's baseline is the head's: it is filed under the head's key, and the next
+  # batch gate, whose base is this head, reuses it instead of making one (about 25 minutes).
+  [ "$CODE_MOVE" = "1" ] || stop "carry is for a gate that must differ in nothing (CODE_MOVE=1)"
+  [ -f "$AFTER/DONE" ] || stop "no finished proofs in $AFTER"
+  [ ! -s "$AFTER/replay-games.txt" ] && [ ! -s "$AFTER/sweep-pairs.txt" ] || stop "the proofs found differences: nothing is carried"
+  [ -z "$(git -C "$R" status --porcelain --untracked-files=no -- src/ASL)" ] || stop "src/ASL has uncommitted changes: the head is not what was proved"
+  KEY=$(python "$G/baseline_key.py" "$BASEFULL" "$BOTH_SKIP" "$SWEEP_OLD" "$OWN" < /dev/null) || stop "no key for the base's baseline"
+  [ -f "$S/baseline-cache/$KEY/DONE" ] || stop "no baseline $KEY of ${BASEFULL:0:8} to carry"
+  HEADFULL=$(git -C "$R" rev-parse HEAD)
+  NEXT=$(python "$G/baseline_key.py" "$HEADFULL" "$BOTH_SKIP" "$SWEEP_OLD" "$OWN" < /dev/null) || stop "no key for the head's baseline"
+  rm -rf "$S/baseline-cache/$NEXT"; cp -r "$S/baseline-cache/$KEY" "$S/baseline-cache/$NEXT"
+  echo "$(date "+%F %H:%M") carried from ${BASEFULL:0:8} by the batch gate" > "$S/baseline-cache/$NEXT/DONE"
+  echo "the baseline of ${HEADFULL:0:8} is $NEXT, carried from ${BASEFULL:0:8}; record ${HEADFULL:0:8} as the last batch gate in the inventory's section 6"
+  ;;
 docker)
   if [ -n "$(git -C "$R" status --porcelain --untracked-files=no)" ]; then stop "uncommitted changes; the container clones the committed branch"; fi
   IMAGE_SDK=$(MSYS_NO_PATHCONV=1 docker run --rm mcr.microsoft.com/dotnet/sdk:10.0 dotnet --version 2>/dev/null)
@@ -283,7 +301,7 @@ docker)
   grep -E "^(Passed!|Failed!)|^== " "$S/docker-$PASS.log" | cut -c1-140
   ;;
 *)
-  echo "STOP: no stage '$STAGE'"; sed -n 2,29p "$0"; exit 2
+  echo "STOP: no stage '$STAGE'"; sed -n 2,31p "$0"; exit 2
   ;;
 esac
 echo "[$(now)] DONE $STAGE"
