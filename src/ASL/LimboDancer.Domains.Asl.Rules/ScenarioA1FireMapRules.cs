@@ -90,14 +90,16 @@ public static class ScenarioA1FireMapRules
 
     /// <summary>A8.2 (rulings R6.6, R9.6): Residual FP has no LOS Hindrance, but the SMOKE of its Location applies: a burning wreck's and each grenade counter's +2, at most +3, never the outgoing +1 (B25.2, A24.8).</summary>
     public static FireAttack ResidualMapFacts(FireAttack attack, string terrain, int smokeSourcesAtTarget) =>
-        ResidualMapFacts(attack, terrain, ScenarioA1SmokeStrengthCalculator.CountedSources(smokeSourcesAtTarget));
+        Residual(attack, terrain, ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance * smokeSourcesAtTarget);
 
     /// <summary>A8.2 by value (the A24.5 claim, RA24.5): the target Location's SMOKE, its sources' Hindrance at most +3 (A24.2), never the outgoing +1.</summary>
-    public static FireAttack ResidualMapFacts(FireAttack attack, string terrain, IReadOnlyList<int> smokeHindrancesAtTarget)
+    public static FireAttack ResidualMapFacts(FireAttack attack, string terrain, IReadOnlyList<int> smokeHindrancesAtTarget) =>
+        Residual(attack, terrain, ScenarioA1SmokeStrengthCalculator.Total(smokeHindrancesAtTarget));
+
+    private static FireAttack Residual(FireAttack attack, string terrain, int smokeTotal)
     {
         ArgumentNullException.ThrowIfNull(attack);
-        ArgumentNullException.ThrowIfNull(smokeHindrancesAtTarget);
-        var smoke = Math.Min(3, smokeHindrancesAtTarget.Sum());
+        var smoke = Math.Min(3, smokeTotal);
         return attack with
         {
             TargetTerrain = terrain,

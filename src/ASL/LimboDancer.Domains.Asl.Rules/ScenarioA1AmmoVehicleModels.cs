@@ -30,11 +30,10 @@ public sealed record TurnAmmoEligibilityVerdict(TurnAmmoEligibility State, strin
 
 /// <summary>
 /// A shot that may fire on its Ammo Vehicle's B12 (E10.2, E10.21; RE10.3): the supply and the firing vehicle; the other vehicles the supply serves now
-/// (whose benefit it gave this Player Turn and that are still in its same or an Accessible Location); whether the shot is Bounding (First) Fire (null
-/// when not known); and whether the supply is an Ammo Dump (E10.6).
+/// (whose benefit it gave this Player Turn and that are still in its same or an Accessible Location); and whether the shot is Bounding (First) Fire
+/// (null when not known).
 /// </summary>
-public sealed record AmmoBenefitFacts(TurnAmmoSupplyFacts Supply, TurnAmmoRecipientFacts Firer, IReadOnlyList<string> ServedNow, bool? BoundingFirstFire,
-    bool IsDump = false);
+public sealed record AmmoBenefitFacts(TurnAmmoSupplyFacts Supply, TurnAmmoRecipientFacts Firer, IReadOnlyList<string> ServedNow, bool? BoundingFirstFire);
 
 /// <summary>
 /// A Replenishment's start (E10.3, E10.31; RE10.4): the supply and its recipients, whether the list of recipients is complete, whether every recipient
@@ -44,10 +43,11 @@ public sealed record AmmoReplenishmentFacts(TurnAmmoSupplyFacts Supply, IReadOnl
     bool? RecipientsTi, bool? SupplyTi, bool? SupplyHasPassengers, bool IsDump = false);
 
 /// <summary>
-/// A transfer or offload of an Ammo Supply (E10.4, E10.12; RE10.6): the source Immobile or its supply Depleted; to a Dump in the source's own Location, or
-/// to a vehicle of its side in the same or an Accessible Location that qualifies under E10.11 and holds no supply. Null when not known.
+/// A transfer or offload of an Ammo Supply (E10.4, E10.12; RE10.6, amended after the build's review): the source Immobile (a Depleted supply's counter is
+/// already removed, E10.3, so it has nothing to move); to a Dump in the source's own Location, or to a vehicle of its side in the same or an Accessible
+/// Location that qualifies under E10.11 and holds no supply. Null when not known.
 /// </summary>
-public sealed record AmmoTransferFacts(bool? SourceImmobile, bool? SupplyDepleted, bool ToDump, bool? DumpInSourceLocation, bool? DestinationSameSide,
+public sealed record AmmoTransferFacts(bool? SourceImmobile, bool ToDump, bool? DumpInSourceLocation, bool? DestinationSameSide,
     bool? DestinationSameOrAccessible, bool? DestinationQualifies, bool? DestinationHasSupply);
 
 /// <summary>The breakdown numbers a shot uses (D3.71, E10.2; RE10.11): its B# and its X#, either null when it has none.</summary>

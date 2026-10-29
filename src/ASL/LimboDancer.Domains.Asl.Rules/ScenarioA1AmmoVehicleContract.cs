@@ -20,7 +20,6 @@ internal static class ScenarioA1AmmoVehicleContract
         ScenarioA1RuleContracts.Flag("supplyAvailable", "It still carries ammunition (its Ammo Supply counter)", mayBeUnknown: true),
         new("supplyCaliberMm", ContractFactType.Number, true, ContractDisclosure.All, "The caliber of its ammunition, in mm"),
         new("supplyBarrel", ContractFactType.Choice, false, ContractDisclosure.All, "The barrel its ammunition fits") { Choices = Barrels },
-        ScenarioA1RuleContracts.Flag("isDump", "The supply is an Ammo Dump (E10.6)"),
     ];
 
     [RuleContract]
@@ -60,7 +59,8 @@ internal static class ScenarioA1AmmoVehicleContract
             ScenarioA1RuleContracts.Flag("recipientSameOrAccessible", "It is in the supply's same or an Accessible Location", mayBeUnknown: true),
             new("recipientCaliberMm", ContractFactType.Number, true, ContractDisclosure.All, "Its weapon's caliber, in mm"),
             new("recipientBarrel", ContractFactType.Choice, false, ContractDisclosure.All, "Its weapon's barrel") { Choices = Barrels },
-            ScenarioA1RuleContracts.Flag("otherRecipient", "The supply already Replenishes one other vehicle, identically armed"),
+            ScenarioA1RuleContracts.Flag("isDump", "The supply is an Ammo Dump (E10.6)"),
+            new("otherRecipients", ContractFactType.Number, false, ContractDisclosure.All, "Other vehicles the supply already Replenishes, identically armed"),
             ScenarioA1RuleContracts.Flag("recipientTi", "It is TI for the Replenishment", mayBeUnknown: true),
             ScenarioA1RuleContracts.Flag("supplyTi", "The Ammo Vehicle is TI for the Replenishment", mayBeUnknown: true),
             ScenarioA1RuleContracts.Flag("supplyHasPassengers", "Passengers are aboard the Ammo Vehicle", mayBeUnknown: true),
@@ -91,13 +91,14 @@ internal static class ScenarioA1AmmoVehicleContract
         var firer = new TurnAmmoRecipientFacts(facts.Text("firerId"), facts.Text("firerOwner"), facts.Flag("firerActive"), true, facts.Flag("firerHasBNumber"),
             null, facts.Flag("firerCrewExposed"), facts.Flag("firerSameOrAccessible"),
             new TurnAmmoArmament(Caliber(facts.Number("firerCaliberMm")), Enum.Parse<TurnAmmoBarrel>(facts.Text("firerBarrel")!)));
-        var served = Enumerable.Range(0, others).Select(index => $"served-{index}").ToList();
-        var verdict = ScenarioA1AmmoVehicleCalculator.Benefit(new(Supply(facts), firer, served, facts.Flag("boundingFirstFire"), facts.Flag("isDump")!.Value));
+        // Stand-ins named from the firer, so none is mistaken for it (the build's review, finding 4); two are enough to refuse.
+        var served = Enumerable.Range(0, Math.Min(others, 2)).Select(index => $"{firer.Id}:served-{index}").ToList();
+        var verdict = ScenarioA1AmmoVehicleCalculator.Benefit(new(Supply(facts), firer, served, facts.Flag("boundingFirstFire")));
         var numbers = ScenarioA1AmmoVehicleCalculator.BreakdownNumber(Whole(facts.Number("bNumber")), Whole(facts.Number("xNumber")), verdict.State == TurnAmmoEligibility.Eligible);
         return verdict.State switch
         {
             TurnAmmoEligibility.Eligible => new("b12", [new("Its B# is treated as a normal B12, with no X# (E10.2; RE10.11)", "E10.2", 244)], []),
-            TurnAmmoEligibility.Ineligible => new("printed-b", [new($"{verdict.Reason} It fires on B{numbers.BNumber?.ToString() ?? "#"}.", "E10.2", 244)], []),
+            TurnAmmoEligibility.Ineligible => new("printed-b", [new($"{verdict.Reason} It fires on B{numbers.BNumber?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "#"}.", "E10.2", 244)], []),
             _ => new(ContractVerdict.NotEvaluated, [new(verdict.Reason, "E10.2", 244)], []),
         };
     }
@@ -109,10 +110,16 @@ internal static class ScenarioA1AmmoVehicleContract
             facts.Flag("recipientHasBNumber"), facts.Flag("recipientLowAmmo"), facts.Flag("recipientCrewExposed"), facts.Flag("recipientSameOrAccessible"),
             new TurnAmmoArmament(Caliber(facts.Number("recipientCaliberMm")), Enum.Parse<TurnAmmoBarrel>(facts.Text("recipientBarrel")!)));
 
-        // The other recipient, when there is one, is identically armed and already qualified: it stands for the two-vehicle limit.
-        List<TurnAmmoRecipientFacts> recipients = facts.Flag("otherRecipient")!.Value
-            ? [recipient, recipient with { Id = recipient.Id + ":other", LowAmmo = true, CrewExposed = true, SameOrAccessibleLocation = true, Active = true, HasLowAmmoBNumber = true }]
-            : [recipient];
+        // The other recipients are identically armed and already qualified: they stand for the two-vehicle limit (the build's review, finding 3).
+        if (Whole(facts.Number("otherRecipients")) is not { } others)
+        {
+            return new(ContractVerdict.NotEvaluated, [new("the fact 'otherRecipients' is not a whole number", "E10.3", 244)], []);
+        }
+
+        List<TurnAmmoRecipientFacts> recipients = [recipient, .. Enumerable.Range(0, Math.Min(others, 2)).Select(index => recipient with
+        {
+            Id = $"{recipient.Id}:other-{index}", LowAmmo = true, CrewExposed = true, SameOrAccessibleLocation = true, Active = true, HasLowAmmoBNumber = true
+        })];
         var verdict = ScenarioA1AmmoVehicleCalculator.Replenishment(new(supply, recipients, true, facts.Flag("recipientTi"), facts.Flag("supplyTi"),
             facts.Flag("supplyHasPassengers"), facts.Flag("isDump")!.Value));
         return verdict.State switch

@@ -20,6 +20,7 @@ public sealed class ScenarioA1SmokeStrengthCalculatorTests
     [InlineData(TurnSmokeSource.InfantryGrenade, Smoke, TurnSmokeStrength.Unknown, 2)]
     [InlineData(TurnSmokeSource.InfantryGrenade, Wp, TurnSmokeStrength.Unknown, 1)]
     [InlineData(TurnSmokeSource.VehicleGrenade, Smoke, TurnSmokeStrength.Unknown, 2)]
+    [InlineData(TurnSmokeSource.VehicleGrenade, Wp, TurnSmokeStrength.Unknown, 1)]
     [InlineData(TurnSmokeSource.SmokeDischarger, Smoke, TurnSmokeStrength.Dispersed, 2)]
     [InlineData(TurnSmokeSource.SmokePots, Smoke, TurnSmokeStrength.Unknown, 2)]
     [InlineData(TurnSmokeSource.Drift, Smoke, TurnSmokeStrength.Dispersed, 2)]
@@ -29,6 +30,7 @@ public sealed class ScenarioA1SmokeStrengthCalculatorTests
 
     [Theory]
     [InlineData(TurnSmokeSource.InfantryGrenade, Smoke, TurnSmokeStrength.Dispersed)]
+    [InlineData(TurnSmokeSource.InfantryGrenade, Smoke, TurnSmokeStrength.Full)]
     [InlineData(TurnSmokeSource.Ordnance, Smoke, TurnSmokeStrength.Unknown)]
     [InlineData(TurnSmokeSource.Ordnance, TurnSmokeChemical.Unknown, TurnSmokeStrength.Full)]
     [InlineData(TurnSmokeSource.SmokeDischarger, Wp, TurnSmokeStrength.Dispersed)]
@@ -83,7 +85,7 @@ public sealed class ScenarioA1SmokeStrengthCalculatorTests
         Func<bool> crossedNever = static () => throw new InvalidOperationException("crossed is read only when neither end is in the Location");
         for (var count = -1; count <= 3; count++)
         {
-            var values = ScenarioA1SmokeStrengthCalculator.CountedSources(count);
+            int[] values = count >= 0 ? [.. Enumerable.Repeat(ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance, count)] : [2 * count];
             var old = Math.Min(3, 2 * count);
             Assert.Equal(old + 1, ScenarioA1VehicleSightRules.SmokeDrm(count, true, false, crossedNever));
             Assert.Equal(old, ScenarioA1VehicleSightRules.SmokeDrm(count, false, true, crossedNever));

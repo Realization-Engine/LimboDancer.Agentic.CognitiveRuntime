@@ -64,7 +64,11 @@ A sub-agent read the first draft against pp. 91 to 93, 143, and 212 and the code
 
 ## 10. As built (2026-10-29)
 
-- `ScenarioA1SmokeStrengthCalculator`: `Hindrance`, `PlacementStrength`, `CountedSources`, with `Supported` and `Dispenser` now shared by `TurnWhiteSmokeRules`. `ScenarioA1SmokeStrengthContract`: `a24.5-smoke-placement`.
+- `ScenarioA1SmokeStrengthCalculator`: `Hindrance`, `PlacementStrength`, `CountedSourceHindrance` (the +2 the count members multiply, allocation-free), `Total`, with `Supported` and `Dispenser` now shared by `TurnWhiteSmokeRules`. `ScenarioA1SmokeStrengthContract`: `a24.5-smoke-placement`.
 - Forwarding with the same answer: `TurnWhiteSmokeRules.InitialStrength`; the count overloads `SmokeDrm`, `OwnHexHindrance`, `TargetTem`, `ResidualMapFacts`, and `OverrunSmoke`, each beside its new by-value overload. None keeps a different answer.
 - Tests: `ScenarioA1SmokeStrengthCalculatorTests` (equality over every input of `InitialStrength`, the count members for counts -1 to 3, the `crossed` laziness). The bundle is `a24-smoke` (ids avoid a dot, as the other bundles do).
 - The wiring row W-A24.5 is in the inventory's section 7.
+
+## 11. Review of the build
+
+A sub-agent read the build read-only (2026-10-29), with the E10 claim's: every forwarding member gives the old answer on every input, the count members included, for negative and zero counts and the lazy `crossed`. Taken: a Full grenade now has no value, as RA24.2 says; the count members allocate nothing again (they multiply `CountedSourceHindrance`, and the by-value overloads sum with `Total`, no LINQ), per the Memory and Performance Guidelines.

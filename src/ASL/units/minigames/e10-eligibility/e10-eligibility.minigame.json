@@ -116,7 +116,6 @@
         "supplyAvailable": true,
         "supplyCaliberMm": 75,
         "supplyBarrel": "Standard",
-        "isDump": false,
         "firerId": "g-tank",
         "firerOwner": "german",
         "firerActive": true,
@@ -149,7 +148,6 @@
         "supplyAvailable": true,
         "supplyCaliberMm": 75,
         "supplyBarrel": "Standard",
-        "isDump": false,
         "firerId": "g-tank",
         "firerOwner": "german",
         "firerActive": true,
@@ -179,7 +177,6 @@
         "supplyAvailable": true,
         "supplyCaliberMm": 75,
         "supplyBarrel": "Standard",
-        "isDump": false,
         "firerId": "g-tank",
         "firerOwner": "german",
         "firerActive": true,
@@ -212,7 +209,6 @@
         "supplyAvailable": true,
         "supplyCaliberMm": 75,
         "supplyBarrel": "Standard",
-        "isDump": false,
         "firerId": "g-tank",
         "firerOwner": "german",
         "firerActive": true,
@@ -252,10 +248,10 @@
         "recipientSameOrAccessible": true,
         "recipientCaliberMm": 75,
         "recipientBarrel": "Standard",
-        "otherRecipient": false,
         "recipientTi": true,
         "supplyTi": true,
-        "supplyHasPassengers": false
+        "supplyHasPassengers": false,
+        "otherRecipients": 0
       },
       "expect": {
         "outcome": "may-start"
@@ -284,10 +280,10 @@
         "recipientSameOrAccessible": true,
         "recipientCaliberMm": 75,
         "recipientBarrel": "Standard",
-        "otherRecipient": true,
         "recipientTi": true,
         "supplyTi": true,
-        "supplyHasPassengers": false
+        "supplyHasPassengers": false,
+        "otherRecipients": 1
       },
       "expect": {
         "outcome": "may-start"
@@ -316,10 +312,10 @@
         "recipientSameOrAccessible": true,
         "recipientCaliberMm": 75,
         "recipientBarrel": "Standard",
-        "otherRecipient": false,
         "recipientTi": true,
         "supplyTi": true,
-        "supplyHasPassengers": false
+        "supplyHasPassengers": false,
+        "otherRecipients": 0
       },
       "expect": {
         "outcome": "refused"
@@ -348,16 +344,48 @@
         "recipientSameOrAccessible": true,
         "recipientCaliberMm": 75,
         "recipientBarrel": "Standard",
-        "otherRecipient": false,
         "recipientTi": true,
         "supplyTi": true,
-        "supplyHasPassengers": true
+        "supplyHasPassengers": true,
+        "otherRecipients": 0
       },
       "expect": {
         "outcome": "refused",
         "reasons": [
           "Passengers"
         ]
+      }
+    },
+    {
+      "name": "A third vehicle is refused: one Ammo Vehicle Replenishes at most two at once (E10.3)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e10.3-replenishment",
+      "facts": {
+        "supplyId": "g-supply",
+        "supplyOwner": "german",
+        "supplyActive": true,
+        "supplyAuthorized": true,
+        "supplyAvailable": true,
+        "supplyCaliberMm": 75,
+        "supplyBarrel": "Standard",
+        "isDump": false,
+        "recipientId": "g-tank",
+        "recipientOwner": "german",
+        "recipientActive": true,
+        "recipientHasBNumber": true,
+        "recipientLowAmmo": true,
+        "recipientCrewExposed": true,
+        "recipientSameOrAccessible": true,
+        "recipientCaliberMm": 75,
+        "recipientBarrel": "Standard",
+        "recipientTi": true,
+        "supplyTi": true,
+        "supplyHasPassengers": false,
+        "otherRecipients": 2
+      },
+      "expect": {
+        "outcome": "refused"
       }
     }
   ],

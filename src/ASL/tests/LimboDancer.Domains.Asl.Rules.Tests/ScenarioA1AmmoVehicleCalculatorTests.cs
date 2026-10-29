@@ -83,6 +83,12 @@ public sealed class ScenarioA1AmmoVehicleCalculatorTests
     [Fact]
     public void WithTheBenefitTheGunBreaksDownAsANormalB12WithNoXNumber()
     {
+        // The served list counts other vehicles once each, never the firer.
+        Assert.Null(ScenarioA1AmmoVehicleCalculator.BenefitRefusal(Shot(served: ["tank"])));
+        Assert.Null(ScenarioA1AmmoVehicleCalculator.BenefitRefusal(Shot(served: ["other", "other"])));
+        Assert.Null(ScenarioA1AmmoVehicleCalculator.ReplenishmentTurns(null));
+        Assert.Contains("Prove", ScenarioA1AmmoVehicleCalculator.SupplyRemovalRefusal(null, null)!, StringComparison.Ordinal);
+
         Assert.Equal(new AmmoBreakdown(12, null), ScenarioA1AmmoVehicleCalculator.BreakdownNumber(10, null, true));
         Assert.Equal(new AmmoBreakdown(12, null), ScenarioA1AmmoVehicleCalculator.BreakdownNumber(9, 10, true));
         Assert.Equal(new AmmoBreakdown(9, 10), ScenarioA1AmmoVehicleCalculator.BreakdownNumber(9, 10, false));
@@ -154,27 +160,31 @@ public sealed class ScenarioA1AmmoVehicleCalculatorTests
         var restored = ScenarioA1AmmoVehicleCalculator.Restored(true, ["WP", "s7"]);
         Assert.True(restored.LowAmmoEnded);
         Assert.Equal(["WP", "s7"], restored.AmmoTypes);
-        Assert.Equal(new AmmoRestored(false, []).LowAmmoEnded, ScenarioA1AmmoVehicleCalculator.Restored(false, ["WP"]).LowAmmoEnded);
+        Assert.False(ScenarioA1AmmoVehicleCalculator.Restored(false, ["WP"]).LowAmmoEnded);
         Assert.Empty(ScenarioA1AmmoVehicleCalculator.Restored(false, ["WP"]).AmmoTypes);
     }
 
     [Fact]
     public void ImmobilizationTransferOffloadAndTheMovementBar()
     {
-        Assert.False(ScenarioA1AmmoVehicleCalculator.WreckWhenImmobilized(false, true));
-        Assert.True(ScenarioA1AmmoVehicleCalculator.WreckWhenImmobilized(true, true));
-        Assert.True(ScenarioA1AmmoVehicleCalculator.WreckWhenImmobilized(false, false));
+        // E10.4 speaks only of the unarmored Ammo Vehicle; whether another vehicle is flipped is D8.1's (the build's review, finding 1).
+        Assert.True(ScenarioA1AmmoVehicleCalculator.KeepsSupplyingWhenImmobilized(false, true));
+        Assert.False(ScenarioA1AmmoVehicleCalculator.KeepsSupplyingWhenImmobilized(true, true));
+        Assert.False(ScenarioA1AmmoVehicleCalculator.KeepsSupplyingWhenImmobilized(false, false));
 
-        var transfer = new AmmoTransferFacts(true, false, false, null, true, true, true, false);
+        var transfer = new AmmoTransferFacts(true, false, null, true, true, true, false);
         Assert.Null(ScenarioA1AmmoVehicleCalculator.TransferRefusal(transfer));
         Assert.NotNull(ScenarioA1AmmoVehicleCalculator.TransferRefusal(transfer with
         {
             SourceImmobile = false
         }));
-        Assert.Null(ScenarioA1AmmoVehicleCalculator.TransferRefusal(transfer with
+        Assert.Equal(TurnAmmoEligibility.NotEvaluated, ScenarioA1AmmoVehicleCalculator.Transfer(transfer with
         {
-            SourceImmobile = false,
-            SupplyDepleted = true
+            SourceImmobile = null
+        }).State);
+        Assert.NotNull(ScenarioA1AmmoVehicleCalculator.TransferRefusal(transfer with
+        {
+            DestinationSameOrAccessible = false
         }));
         Assert.Contains("E10.11", ScenarioA1AmmoVehicleCalculator.TransferRefusal(transfer with
         {
@@ -185,8 +195,8 @@ public sealed class ScenarioA1AmmoVehicleCalculatorTests
             DestinationHasSupply = true
         }));
 
-        // RE10.6: an offload to a Dump needs an Immobile vehicle or a Depleted supply too, and forms in its own Location.
-        var offload = new AmmoTransferFacts(true, false, true, true, null, null, null, null);
+        // RE10.6: an offload to a Dump needs an Immobile vehicle too, and forms in its own Location.
+        var offload = new AmmoTransferFacts(true, true, true, null, null, null, null);
         Assert.Null(ScenarioA1AmmoVehicleCalculator.TransferRefusal(offload));
         Assert.NotNull(ScenarioA1AmmoVehicleCalculator.TransferRefusal(offload with
         {
@@ -222,7 +232,6 @@ public sealed class ScenarioA1AmmoVehicleCalculatorTests
         ["supplyAvailable"] = true,
         ["supplyCaliberMm"] = 75,
         ["supplyBarrel"] = "LongBarrel",
-        ["isDump"] = false,
     };
 
     [Fact]
@@ -248,6 +257,10 @@ public sealed class ScenarioA1AmmoVehicleCalculatorTests
         facts["servedOthers"] = 2;
         Assert.Equal("printed-b", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
         facts["servedOthers"] = 1;
+        Assert.Equal("b12", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
+        facts["servedOthers"] = 1.5m;
+        Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
+        facts["servedOthers"] = 1;
         facts["firerCrewExposed"] = null;
         Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
         Assert.All(contract.Facts, fact => Assert.Equal(ContractDisclosure.All, fact.Disclosure));
@@ -267,11 +280,26 @@ public sealed class ScenarioA1AmmoVehicleCalculatorTests
         facts["recipientSameOrAccessible"] = true;
         facts["recipientCaliberMm"] = 75;
         facts["recipientBarrel"] = "LongBarrel";
-        facts["otherRecipient"] = true;
+        facts["isDump"] = false;
+        facts["otherRecipients"] = 1;
         facts["recipientTi"] = true;
         facts["supplyTi"] = true;
         facts["supplyHasPassengers"] = false;
         Assert.Equal("may-start", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
+
+        // The two-vehicle limit (the build's review, finding 3): a third is refused.
+        facts["otherRecipients"] = 2;
+        Assert.Equal("refused", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
+        facts["otherRecipients"] = 0;
+
+        // A Dump is TI trivially and carries no Passengers.
+        facts["isDump"] = true;
+        facts["supplyTi"] = null;
+        facts["supplyHasPassengers"] = null;
+        Assert.Equal("may-start", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
+        facts["isDump"] = false;
+        facts["supplyTi"] = true;
+        facts["supplyHasPassengers"] = false;
         facts["recipientLowAmmo"] = false;
         Assert.Equal("refused", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
         facts["recipientLowAmmo"] = null;

@@ -29,7 +29,7 @@ public static class ScenarioA1SmokeStrengthCalculator
         var full = chemical == TurnSmokeChemical.Conventional ? 3 : 2;
         return source switch
         {
-            TurnSmokeSource.InfantryGrenade or TurnSmokeSource.VehicleGrenade => strength == TurnSmokeStrength.Dispersed ? null : full - 1,
+            TurnSmokeSource.InfantryGrenade or TurnSmokeSource.VehicleGrenade => strength == TurnSmokeStrength.Unknown ? full - 1 : null,
             TurnSmokeSource.Ordnance or TurnSmokeSource.OffboardArtillery => strength switch
             {
                 TurnSmokeStrength.Full => full,
@@ -68,10 +68,23 @@ public static class ScenarioA1SmokeStrengthCalculator
     }
 
     /// <summary>
-    /// The values a count of SMOKE sources stands for in the old count members (ruling RA24.5): +2 each, a smoke grenade's (and a Wreck Blaze's, B25.2).
-    /// A negative count, which no caller makes, keeps its old arithmetic as one value.
+    /// The Hindrance each source stands for in the old count members (ruling RA24.5): +2, a smoke grenade's (and a Wreck Blaze's, B25.2). The count
+    /// members multiply it, so they allocate nothing.
     /// </summary>
-    public static IReadOnlyList<int> CountedSources(int sources) => sources >= 0 ? [.. Enumerable.Repeat(2, sources)] : [2 * sources];
+    public const int CountedSourceHindrance = 2;
+
+    /// <summary>The sum of a Location's sources' Hindrance, with no allocation (the Memory and Performance Guidelines).</summary>
+    public static int Total(IReadOnlyList<int> hindrances)
+    {
+        ArgumentNullException.ThrowIfNull(hindrances);
+        var total = 0;
+        for (var index = 0; index < hindrances.Count; index++)
+        {
+            total += hindrances[index];
+        }
+
+        return total;
+    }
 
     /// <summary>Ordnance, OBA, and the dispensers: the sources whose placement A24.5 and D13.31 to D13.34 give a side.</summary>
     internal static bool Supported(TurnSmokeSource source) => source is TurnSmokeSource.Ordnance or TurnSmokeSource.OffboardArtillery || Dispenser(source);

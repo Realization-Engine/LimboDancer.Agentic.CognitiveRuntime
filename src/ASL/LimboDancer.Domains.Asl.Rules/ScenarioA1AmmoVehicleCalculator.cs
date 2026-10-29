@@ -106,6 +106,7 @@ public static class ScenarioA1AmmoVehicleCalculator
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(facts.ServedNow);
+        ArgumentNullException.ThrowIfNull(facts.Firer);
         var others = facts.ServedNow.Where(id => id != facts.Firer.Id).Distinct(StringComparer.Ordinal).Count();
         return Check([
             (Recipients(facts.Supply, [facts.Firer], true, TurnAmmoUse.FireBenefit, Not(facts.BoundingFirstFire)) switch
@@ -187,23 +188,25 @@ public static class ScenarioA1AmmoVehicleCalculator
         return lowAmmo ? new(true, [.. depletedTypes]) : new(false, []);
     }
 
-    /// <summary>E10.4 (RE10.6): an unarmored Ammo Vehicle that becomes Immobilized is not flipped to its Wreck side; it keeps supplying.</summary>
-    public static bool WreckWhenImmobilized(bool armored, bool ammoVehicle) => armored || !ammoVehicle;
+    /// <summary>
+    /// E10.4 (RE10.6): an unarmored Ammo Vehicle that becomes Immobilized is not flipped to its Wreck side; it is marked Immobilized and keeps supplying.
+    /// Whether any other vehicle is flipped is D8.1's, not E10's.
+    /// </summary>
+    public static bool KeepsSupplyingWhenImmobilized(bool armored, bool ammoVehicle) => ammoVehicle && !armored;
 
     /// <summary>
-    /// E10.4, E10.12 (RE10.6, a reading open to veto): may this Ammo Supply move? The source Immobile or its supply Depleted, for an offload too; the
-    /// destination a Dump in the source's own Location, or a vehicle of its side in the same or an Accessible Location that qualifies under E10.11 and
-    /// holds no supply.
+    /// E10.4, E10.12 (RE10.6, amended after the build's review): may this Ammo Supply move? The source Immobile, for an offload too (a Depleted supply's
+    /// counter is already removed, E10.3); the destination a Dump in the source's own Location, or a vehicle of its side in the same or an Accessible
+    /// Location that qualifies under E10.11 and holds no supply.
     /// </summary>
     public static TurnAmmoEligibilityVerdict Transfer(AmmoTransferFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);
-        bool? source = facts.SourceImmobile == true || facts.SupplyDepleted == true ? true
-            : facts.SourceImmobile is null || facts.SupplyDepleted is null ? null : false;
+        var source = facts.SourceImmobile;
         return Check(facts.ToDump
-            ? [(source, "Only an Immobile Ammo Vehicle, or a Depleted one, gives up its Ammo Supply (E10.12)."),
+            ? [(source, "Only an Immobile Ammo Vehicle gives up its Ammo Supply (E10.4, E10.12)."),
                 (facts.DumpInSourceLocation, "An Ammo Dump forms in the Ammo Vehicle's own Location (E10.4).")]
-            : [(source, "Only an Immobile Ammo Vehicle, or a Depleted one, gives up its Ammo Supply (E10.12)."),
+            : [(source, "Only an Immobile Ammo Vehicle gives up its Ammo Supply (E10.4, E10.12)."),
                 (facts.DestinationSameSide, "The new Ammo Vehicle is of the same side."),
                 (facts.DestinationSameOrAccessible, "The new Ammo Vehicle is in the same or an Accessible Location (E10.4)."),
                 (facts.DestinationQualifies, "The new Ammo Vehicle qualifies as one (E10.11)."),
