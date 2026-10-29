@@ -1,0 +1,206 @@
+{
+  "id": "d3-breakdown",
+  "title": "D3.7 Vehicle Breakdown",
+  "card": "d3-breakdown",
+  "rules": [
+    "D3.7",
+    "D3.71"
+  ],
+  "contracts": [
+    "d3.7-vehicle-breakdown"
+  ],
+  "example": {
+    "source": "D3.71, IS-3 example",
+    "page": 202
+  },
+  "checks": [
+    {
+      "name": "The IS-3's circled B11: an Original 11 is Low Ammo (D3.71)",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown",
+      "facts": {
+        "vehicleId": "r-is3",
+        "weapon": "MA",
+        "printedB": 11,
+        "circled": true,
+        "noteExtends": false,
+        "lowAmmo": false,
+        "ammunitionShortage": false,
+        "lowersB": 0,
+        "lowersBX": 0,
+        "drKind": "ToHit",
+        "originalDr": 11
+      },
+      "expect": {
+        "outcome": "low-ammo",
+        "reasons": [
+          "Low Ammo"
+        ]
+      }
+    },
+    {
+      "name": "The IS-3's Original 12 malfunctions the MA normally",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown",
+      "facts": {
+        "vehicleId": "r-is3",
+        "weapon": "MA",
+        "printedB": 11,
+        "circled": true,
+        "noteExtends": false,
+        "lowAmmo": false,
+        "ammunitionShortage": false,
+        "lowersB": 0,
+        "lowersBX": 0,
+        "drKind": "ToHit",
+        "originalDr": 12
+      },
+      "expect": {
+        "outcome": "malfunction"
+      }
+    },
+    {
+      "name": "Under Low Ammo, an 11 Disables the MA: the original B# is now the X# (A.11)",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown",
+      "facts": {
+        "vehicleId": "r-is3",
+        "weapon": "MA",
+        "printedB": 11,
+        "circled": true,
+        "noteExtends": false,
+        "lowAmmo": true,
+        "ammunitionShortage": false,
+        "lowersB": 0,
+        "lowersBX": 0,
+        "drKind": "ToHit",
+        "originalDr": 11
+      },
+      "expect": {
+        "outcome": "disabled",
+        "reasons": [
+          "X11"
+        ]
+      }
+    },
+    {
+      "name": "Under Low Ammo, a 10 malfunctions the MA: the new B# is one lower",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown",
+      "facts": {
+        "vehicleId": "r-is3",
+        "weapon": "MA",
+        "printedB": 11,
+        "circled": true,
+        "noteExtends": false,
+        "lowAmmo": true,
+        "ammunitionShortage": false,
+        "lowersB": 0,
+        "lowersBX": 0,
+        "drKind": "ToHit",
+        "originalDr": 10
+      },
+      "expect": {
+        "outcome": "malfunction"
+      }
+    },
+    {
+      "name": "Under Ammunition Shortage the circled B11 starts with Low Ammo: X10, B9 (A19.131)",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown",
+      "facts": {
+        "vehicleId": "r-is3",
+        "weapon": "MA",
+        "printedB": 11,
+        "circled": true,
+        "noteExtends": false,
+        "lowAmmo": false,
+        "ammunitionShortage": true,
+        "lowersB": 0,
+        "lowersBX": 0,
+        "drKind": "ToHit",
+        "originalDr": 10
+      },
+      "expect": {
+        "outcome": "disabled",
+        "reasons": [
+          "X10"
+        ]
+      }
+    },
+    {
+      "name": "A plain B10 malfunctions on a 10",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown",
+      "facts": {
+        "vehicleId": "r-is3",
+        "weapon": "MA",
+        "printedB": 10,
+        "circled": false,
+        "noteExtends": false,
+        "lowAmmo": false,
+        "ammunitionShortage": false,
+        "lowersB": 0,
+        "lowersBX": 0,
+        "drKind": "ToHit",
+        "originalDr": 10
+      },
+      "expect": {
+        "outcome": "malfunction"
+      }
+    },
+    {
+      "name": "A BMG takes no printed B#: an 11 does nothing on its IFT DR",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown",
+      "facts": {
+        "vehicleId": "r-is3",
+        "weapon": "BMG",
+        "printedB": 11,
+        "circled": true,
+        "noteExtends": false,
+        "lowAmmo": false,
+        "ammunitionShortage": false,
+        "lowersB": 0,
+        "lowersBX": 0,
+        "drKind": "Ift",
+        "originalDr": 11
+      },
+      "expect": {
+        "outcome": "none"
+      }
+    },
+    {
+      "name": "A BMG malfunctions on an Original 12",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown",
+      "facts": {
+        "vehicleId": "r-is3",
+        "weapon": "BMG",
+        "printedB": 11,
+        "circled": true,
+        "noteExtends": false,
+        "lowAmmo": false,
+        "ammunitionShortage": false,
+        "lowersB": 0,
+        "lowersBX": 0,
+        "drKind": "Ift",
+        "originalDr": 12
+      },
+      "expect": {
+        "outcome": "malfunction"
+      }
+    }
+  ],
+  "units": {
+    "r-is3": "russian"
+  }
+}

@@ -3078,6 +3078,7 @@ public static class ScenarioA1FireCalculator
         /// Multiple ROF on an Original colored dr at most its ROF, unless its crew is pinned (A7.82) or it fired in the AFPh (A7.25: only
         /// Opportunity Fire uses Multiple ROF in the AFPh).
         /// </summary>
+        // D3.7: keeps its answer (the D3.7 claim, RD3.6): no X# and no circled B#, which ScenarioA1VehicleBreakdownCalculator.Numbers and Outcome give (W-D3.7).
         private FireWeaponEffect VehicleWeaponEffect(FireVehicleFire vehicle, FireArithmetic arithmetic)
         {
             var definition = reference.Definitions[vehicle.DefinitionId!];
