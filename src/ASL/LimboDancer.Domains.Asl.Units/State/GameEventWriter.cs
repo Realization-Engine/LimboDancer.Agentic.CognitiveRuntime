@@ -31,6 +31,13 @@ public static class GameEventWriter
             writer.WriteString("game", scope.Game);
             writer.WriteString("label", record.Label);
             writer.WriteBoolean("synthetic", record.Synthetic);
+
+            // The proving slice (ruling RPS.6): only a minigame's record carries its bundle, so every other game file is written as it was.
+            if (!string.IsNullOrEmpty(record.Minigame))
+            {
+                writer.WriteString("minigame", record.Minigame);
+            }
+
             writer.WriteStartArray("events");
             foreach (var item in record.Events)
             {

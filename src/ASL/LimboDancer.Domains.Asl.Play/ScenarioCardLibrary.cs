@@ -37,7 +37,7 @@ public sealed partial class ScenarioCardLibrary(string? directory)
     /// <summary>The user's cards' names, in ordinal order.</summary>
     public IReadOnlyList<string> UserNames => Directory is { } root && System.IO.Directory.Exists(root)
         ? [.. System.IO.Directory.GetFiles(root, "*" + Suffix).Select(path => Path.GetFileName(path)[..^Suffix.Length])
-            .Where(name => NamePattern().IsMatch(name) && !ScenarioCards.Names.Contains(name, StringComparer.Ordinal)).Order(StringComparer.Ordinal)]
+            .Where(name => NamePattern().IsMatch(name) && !ScenarioCards.IsBuiltIn(name)).Order(StringComparer.Ordinal)]
         : [];
 
     /// <summary>Whether a name is one of the user's cards.</summary>
@@ -100,7 +100,7 @@ public sealed partial class ScenarioCardLibrary(string? directory)
     public string? PlansText(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
-        if (ScenarioCards.Names.Contains(name, StringComparer.Ordinal))
+        if (ScenarioCards.IsBuiltIn(name))
         {
             return ScenarioSetupPlans.EmbeddedText(name);
         }
@@ -152,7 +152,7 @@ public sealed partial class ScenarioCardLibrary(string? directory)
             return ["card.save: this library keeps no user cards"];
         }
 
-        if (!NamePattern().IsMatch(card.Id) || ScenarioCards.Names.Contains(card.Id, StringComparer.Ordinal))
+        if (!NamePattern().IsMatch(card.Id) || ScenarioCards.IsBuiltIn(card.Id))
         {
             return [$"card.id: a user card's id is 1 to 64 lower-case letters, digits, and hyphens, and not a built-in card's ('{card.Id}') (ruling R22.2)"];
         }
@@ -194,7 +194,7 @@ public sealed partial class ScenarioCardLibrary(string? directory)
     public static string Serialize(ScenarioCard card) => JsonSerializer.Serialize(card, Writing).ReplaceLineEndings("\n") + "\n";
 
     /// <summary>Whether a name may be a user card's: lower-case letters, digits, and hyphens, never a built-in card's (ruling R22.2).</summary>
-    public static bool ValidName(string name) => NamePattern().IsMatch(name) && !ScenarioCards.Names.Contains(name, StringComparer.Ordinal);
+    public static bool ValidName(string name) => NamePattern().IsMatch(name) && !ScenarioCards.IsBuiltIn(name);
 
     [GeneratedRegex(@"^[a-z0-9][a-z0-9-]{0,63}\z")]
     private static partial Regex NamePattern();

@@ -1525,3 +1525,15 @@ Written on 2026-10-28. Reading the rule inventory's rows for its Rules calculato
 |---|---|---|---|---|
 | The projector's CA change check (`ScenarioA1OrdnanceProjection.TurnGunAllowed`, asked by `GameProjector.TurnGun`) does not test TI, while the planner's (`ScenarioA1GunCalculator.TurnGunRefused`) does | Step 0 (2026-10-28) | C3.22 | The claim of C3.22; one calculator for both | The planner refuses a TI Gun's CA change, so no recorded game holds one; a game file could, and would replay. |
 | The ordnance path counts the target Location's stack without `ScenarioA1Stacking.TargetPenaltyApplies` (`GamePlanner.Ordnance.cs`, `LiveOrdnance.cs`), which the fire path asks for the MPh limit on moving units | Step 0 (2026-10-28) | A5.13 | The claim of A5.13 | An ordnance attack in the MPh may take an overstacking DRM the fire path would not. |
+
+## 78. Added by the proving slice (first task 4 of the Rules-first plan)
+
+Written on 2026-10-28. What the slice left out or simplified (its design, `Designs/ASL Rules-First Proving Slice Design.md`, section 6).
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| A bundle's checks at a position on gathered facts: each check today carries its facts by hand; a check on a played game's revision needs the game in the bundle's `games/` | The proving slice (ruling RPS.12) | A10.6, A12.14, E10.1 | Track 3: each rule's acceptance game | The workbench gathers the facts on a live game; the tests evaluate the manifests' hand-entered facts. |
+| The workbench shows a calculator's reason key ("asl.a1.rally.self-rally-with-leader-present") where the Play page shows its words | The proving slice | A10.6 | The rally's texts in its contract, or a shared key-to-text table in Rules | The key and the rule are shown; the meaning is the Play page's text. |
+| The rally contract has no facts for a rally's companions, No Quarter, a Commissar, or Extreme Winter, which Play gathers for its own Precheck | The proving slice | A10.6, A15, A20.4, A25.22, E3.742 | The rally's claim | In those cases the workbench's verdict may differ from the Play page's. |
+| Fact sources for every fact of E10 eligibility (only the participants' ids, sides, states, and whether the recipient is a vehicle are gathered) and the advance's terrain read from the Location rather than the step's facts | The proving slice (ruling RPS.5) | E10.1 to E10.2, A12.14 | Track 3: the E10 and advance wiring | The other facts are entered by hand and labelled so. |
+| A page test of the Rule Workbench; the keyboard on it; an icon for its "Pick on the map" button (the icon coverage file marks it needed) | The proving slice | | Track 4's controls, or the next workbench change | Checked in the Studio by dispatched clicks at 1600 and 320 pixels; the button is text only. |

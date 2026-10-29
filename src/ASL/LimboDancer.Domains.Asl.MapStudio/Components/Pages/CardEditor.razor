@@ -147,7 +147,7 @@ else
         (map, mapProblems) = Maps.Cards.Load(card.Boards);
         json = ScenarioCardLibrary.Serialize(card);
         diagnostics = [.. ScenarioCards.Validate(card, catalog),
-            .. ScenarioCards.Names.Contains(card.Id, StringComparer.Ordinal) ? [$"card.id: '{card.Id}' is a built-in card's name; save a copy under another id (ruling R22.2)"]
+            .. ScenarioCards.IsBuiltIn(card.Id) ? [$"card.id: '{card.Id}' is a built-in card's name; save a copy under another id (ruling R22.2)"]
                 : !ScenarioCardLibrary.ValidName(card.Id) ? [$"card.id: '{card.Id}' is not a card name: lower-case letters, digits, and hyphens, 64 at most (ruling R22.2)"]
                 : card.Id != source && Live.Cards.IsUser(card.Id) ? [$"card.id: you already have a card '{card.Id}'; choose another id, or edit that card (ruling R22.2)"] : Array.Empty<string>(),
             .. map is null ? Array.Empty<string>() : CardMaps.Check(card, map)];

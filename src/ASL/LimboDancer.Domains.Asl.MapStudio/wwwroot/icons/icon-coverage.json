@@ -82,7 +82,8 @@
       "pages": [
         "/boards/{BoardName}",
         "/games/play",
-        "/games/replay"
+        "/games/replay",
+        "/games/workbench"
       ],
       "usedBy": [
         "BoardWorkspace"
@@ -153,12 +154,14 @@
       "pages": [
         "/boards/{BoardName}",
         "/games/play",
-        "/games/replay"
+        "/games/replay",
+        "/games/workbench"
       ],
       "usedBy": [
         "BoardViewer",
         "Play",
-        "Replay"
+        "Replay",
+        "Workbench"
       ],
       "controls": [
         {
@@ -197,7 +200,8 @@
         "/author/{BoardName}",
         "/boards/{BoardName}",
         "/games/play",
-        "/games/replay"
+        "/games/replay",
+        "/games/workbench"
       ],
       "usedBy": [
         "Author",
@@ -226,7 +230,8 @@
       "pages": [
         "/boards/{BoardName}",
         "/games/play",
-        "/games/replay"
+        "/games/replay",
+        "/games/workbench"
       ],
       "usedBy": [
         "BoardInspector"
@@ -266,7 +271,8 @@
       "pages": [
         "/boards/{BoardName}",
         "/games/play",
-        "/games/replay"
+        "/games/replay",
+        "/games/workbench"
       ],
       "usedBy": [
         "BoardInspector"
@@ -312,7 +318,8 @@
       "pages": [
         "/boards/{BoardName}",
         "/games/play",
-        "/games/replay"
+        "/games/replay",
+        "/games/workbench"
       ],
       "usedBy": [
         "BoardInspector"
@@ -1917,6 +1924,23 @@
           "id": "art",
           "status": "needed",
           "strip": "UnitLab PageTabs"
+        }
+      ]
+    },
+    {
+      "name": "Workbench",
+      "path": "Components/Pages/Workbench.razor",
+      "pages": [
+        "/games/workbench"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Pick on the map",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "Workbench"
         }
       ]
     },

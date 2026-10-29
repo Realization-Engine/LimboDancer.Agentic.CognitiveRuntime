@@ -1,0 +1,407 @@
+@page "/games/workbench"
+@using System.Globalization
+@using System.Text.Json.Nodes
+@using LimboDancer.Domains.Asl.Maps.Coordinates
+@using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Rules
+@using LimboDancer.Domains.Asl.Units.State
+@inject LivePlay Live
+@inject GameLibrary GamesLibrary
+@inject GameMaps GameMaps
+@inject UnitLibrary Library
+@inject NavigationManager Navigation
+
+<PageTitle>Rule Workbench - ASL Map Studio</PageTitle>
+
+<PageHeader Title="Rule Workbench">
+    <RuleHelp Id="workbench-intro" DetailLabel="How this works" Summary="Ask one rule about a position of a game, as one viewer sees it. Nothing is rolled or written.">
+        The workbench evaluates a rule's calculator through its wiring contract on a game at a revision, from a side's view or the adjudicator's
+        (the Rules-first plan, section 6). A fact Play can read is gathered from the game; one it cannot yet read is entered by hand and marked so; one
+        the viewer may not know under the rules reaches the calculator as unknown. The events shown are a preview: the workbench never changes a game.
+    </RuleHelp>
+</PageHeader>
+
+<div class="toolbar" id="workbench-toolbar">
+    <label>
+        Game
+        <select id="workbench-game" value="@gameId" @onchange="@(args => Choose(args.Value as string ?? string.Empty))">
+            <option value="">choose a game</option>
+            @foreach (var game in GameList)
+            {
+                <option value="@game">@(Live.MinigameOf(game) is { } bundle ? $"{game} (minigame {bundle})" : game)</option>
+            }
+        </select>
+    </label>
+    @if (history is not null)
+    {
+        <label>
+            Revision
+            <input type="number" id="workbench-revision" min="1" max="@history.States.Count" value="@revision"
+                   @onchange="@(args => { revision = Math.Clamp(long.TryParse(args.Value as string, CultureInfo.InvariantCulture, out var at) ? at : revision, 1, history.States.Count); Changed(); })" />
+            <span class="muted">of @history.States.Count</span>
+        </label>
+        <label>
+            Viewer
+            <select id="workbench-viewer" value="@viewer" disabled="@ViewerLocked" title="@(ViewerLocked ? "A game still being played is read only from the view the link carried (ruling R31b.1)" : null)"
+                    @onchange="@(args => { viewer = args.Value as string ?? Perspective.AdjudicatorName; Changed(); })">
+                @foreach (var perspective in State?.Perspectives ?? [])
+                {
+                    <option value="@perspective.Name">@(perspective.IsAdjudicator ? "the adjudicator" : DisplayText.Side(perspective.Name))</option>
+                }
+            </select>
+        </label>
+        <label>
+            Contract
+            <select id="workbench-contract" value="@contractId" @onchange="@(args => { contractId = args.Value as string ?? string.Empty; picks.Clear(); hand.Clear(); Changed(); })">
+                <option value="">choose a rule</option>
+                @foreach (var contract in Contracts)
+                {
+                    <option value="@contract.Id">@string.Join(", ", contract.Rules.Select(rule => rule.Rule)) @contract.Title</option>
+                }
+            </select>
+        </label>
+        <label title="List every contract, not only those the game's minigame exercises">
+            <input type="checkbox" id="workbench-all-contracts" checked="@allContracts" @onchange="@(args => { allContracts = args.Value is true; Changed(); })" />
+            All contracts
+        </label>
+    }
+    <label title="List the minigames' games too; they come first">
+        <input type="checkbox" id="workbench-show-minigames" checked="@showMinigames" @onchange="@(args => showMinigames = args.Value is true)" />
+        Show minigames
+    </label>
+</div>
+
+@if (history is null)
+{
+    <p class="muted" id="workbench-empty">Choose a game: a minigame, or any live game.</p>
+}
+else if (State is { } state)
+{
+    <div class="workbench" id="workbench">
+        @if (MapLayers is { Board: { } board } layers)
+        {
+            @* The board viewer's wrapper, whose layout keeps the workspace within the page at every width. *@
+            <div class="viewer">
+                <BoardWorkspace @key="@($"{gameId}/{viewer}/{revision}")" Board="@board" Units="@layers.Overlay" UnitView="@layers.View" Marks="@layers.Marks"
+                                Vocabulary="@Library.Vocabulary" Selected="@(picked is { } at ? GameMaps.FactsAt(board, at) : null)"
+                                SelectedChanged="@(facts => Pick(facts is null ? null : GameMaps.LocationOf(board, facts.Index)))"
+                                IdPrefix="workbench-map" MapLabel="The game's map at this revision, as the viewer sees it" />
+            </div>
+        }
+
+        @if (Contract is { } contract)
+        {
+            <section id="workbench-facts" aria-label="Facts">
+                <h3>@contract.Title <span class="muted">(@string.Join(", ", contract.Rules.Select(rule => $"{rule.Rule}, p. {rule.Page}")); @contract.Place.Phase, ASOP @contract.Place.AsopStep)</span></h3>
+                @if (activePick is { } waiting)
+                {
+                    <p id="workbench-picking">Click the map to pick @waiting.</p>
+                }
+                <table class="data-table" id="workbench-fact-table">
+                    <thead><tr><th>Fact</th><th>Value</th><th>Source</th></tr></thead>
+                    <tbody>
+                        @foreach (var fact in contract.Facts)
+                        {
+                            var row = Row(contract, fact);
+                            <tr data-fact="@fact.Name" data-source="@row.Source">
+                                <td title="@fact.Description">@fact.Name</td>
+                                <td>
+                                    @if (row.Source == "hidden")
+                                    {
+                                        <span class="muted">not known to this viewer</span>
+                                    }
+                                    else if (row.Source == "gathered")
+                                    {
+                                        <span>@row.Value</span>
+                                    }
+                                    else if (fact.Type is ContractFactType.Hex or ContractFactType.Unit)
+                                    {
+                                        <span>@(PickLabel(fact.Name) ?? "none")</span>
+                                        <button type="button" class="workbench-pick" @onclick="@(() => activePick = fact.Name)">Pick on the map</button>
+                                        @if (fact.Type == ContractFactType.Unit && unitChoices is { } choices && activePick is null && choicesFor == fact.Name)
+                                        {
+                                            <select class="workbench-unit" @onchange="@(args => { if (args.Value is string id && id.Length > 0) { picks[fact.Name] = id; Changed(); } })">
+                                                <option value="">choose a unit</option>
+                                                @foreach (var choice in choices)
+                                                {
+                                                    <option value="@choice.Id">@choice.Label</option>
+                                                }
+                                            </select>
+                                        }
+                                    }
+                                    else if (fact.Type == ContractFactType.Flag)
+                                    {
+                                        <select class="workbench-hand" data-fact="@fact.Name" value="@(hand.GetValueOrDefault(fact.Name) ?? string.Empty)" @onchange="@(args => Enter(fact.Name, args.Value as string))">
+                                            <option value="">unknown</option>
+                                            <option value="true">yes</option>
+                                            <option value="false">no</option>
+                                        </select>
+                                    }
+                                    else if (fact.Choices is { } values)
+                                    {
+                                        <select class="workbench-hand" data-fact="@fact.Name" value="@(hand.GetValueOrDefault(fact.Name) ?? string.Empty)" @onchange="@(args => Enter(fact.Name, args.Value as string))">
+                                            <option value="">unknown</option>
+                                            @foreach (var value in values)
+                                            {
+                                                <option value="@value">@value</option>
+                                            }
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <input class="workbench-hand" data-fact="@fact.Name" value="@(hand.GetValueOrDefault(fact.Name) ?? string.Empty)" @onchange="@(args => Enter(fact.Name, args.Value as string))" />
+                                    }
+                                </td>
+                                <td>@(row.Source switch { "gathered" => "Gathered", "hidden" => "Hidden", _ => fact.Type is ContractFactType.Hex or ContractFactType.Unit ? "Picked" : "Pending: entered by hand" })</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="workbench-verdict" aria-label="Verdict">
+                <h3>Verdict</h3>
+                @{
+                    var verdict = Verdict(contract);
+                }
+                <p id="workbench-outcome" data-outcome="@verdict.Outcome"><strong>@verdict.Outcome</strong>@(HandEntered ? " (with facts entered by hand)" : string.Empty)</p>
+                <ul id="workbench-reasons">
+                    @foreach (var reason in verdict.Reasons)
+                    {
+                        <li>@reason.Text (@reason.Rule, p. @reason.Page)</li>
+                    }
+                </ul>
+                @foreach (var roll in verdict.Rolls)
+                {
+                    <p class="workbench-roll" data-target="@roll.Target">Required roll: @roll.Text. Nothing is rolled.</p>
+                }
+                <h3>Events <span class="muted">(preview, not written)</span></h3>
+                <ul id="workbench-events">
+                    @foreach (var item in contract.Events)
+                    {
+                        <li><code>@item.Type</code>: @item.Content</li>
+                    }
+                </ul>
+            </section>
+        }
+    </div>
+}
+
+@code {
+    private string gameId = string.Empty;
+    private long revision = 1;
+    private string viewer = Perspective.AdjudicatorName;
+    private string contractId = string.Empty;
+    private bool allContracts;
+    private bool showMinigames = true;
+    private GameEntry? entry;
+    private GameHistory? history;
+    private BoardLocation? picked;
+    private string? activePick;
+    private string? choicesFor;
+    private IReadOnlyList<(string Id, string Label)>? unitChoices;
+    private readonly Dictionary<string, string> picks = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> hand = new(StringComparer.Ordinal);
+    private (long Revision, string Viewer, GameMapLayers? Layers) mapCache;
+    private (long Revision, string Viewer, GameView? View) viewCache;
+
+    [SupplyParameterFromQuery(Name = "game")]
+    public string? GameQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "revision")]
+    public long? RevisionQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "viewer")]
+    public string? ViewerQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "contract")]
+    public string? ContractQuery { get; set; }
+
+    private Perspective Viewer => viewer == Perspective.AdjudicatorName ? Perspective.Adjudicator : Perspective.Side(viewer);
+
+    // Ruling R31b.1, kept here: a game still being played, other than a minigame's test position, is read only from the view the link carried, so the
+    // workbench shows no side what Play would hide from it.
+    private bool ViewerLocked => history?.Current is { } current && current.Ended is null && Live.MinigameOf(gameId) is null;
+
+    private GameState? State => history is null || history.States.Count == 0 ? null : history.At(Math.Clamp(revision, 1, history.States.Count));
+
+    // The minigames' games first (the plan's section 6.3), then the rest; minigames only when shown.
+    private IReadOnlyList<string> GameList => [.. Live.GameNames(showMinigames).OrderBy(game => Live.MinigameOf(game) is null).ThenBy(game => game, StringComparer.Ordinal)];
+
+    // The game's minigame's contracts, or every contract when asked or when the game is not a minigame.
+    private IReadOnlyList<RuleContract> Contracts => allContracts || Live.MinigameOf(gameId) is not { } bundle || Minigames.Find(bundle) is not { } manifest
+        ? ScenarioA1RuleContracts.All
+        : [.. ScenarioA1RuleContracts.All.Where(contract => manifest.Contracts.Contains(contract.Id))];
+
+    private RuleContract? Contract => ScenarioA1RuleContracts.Find(contractId);
+
+    private bool HandEntered => Contract is { } contract && contract.Facts.Any(fact => Row(contract, fact).Source == "pending" && hand.ContainsKey(fact.Name));
+
+    private GameView? View
+    {
+        get
+        {
+            if (history is null)
+            {
+                return null;
+            }
+
+            if (viewCache.View is null || viewCache.Revision != revision || viewCache.Viewer != viewer)
+            {
+                viewCache = (revision, viewer, Live.Planner.ViewOf(history, revision, Viewer));
+            }
+
+            return viewCache.View;
+        }
+    }
+
+    private GameMapLayers? MapLayers
+    {
+        get
+        {
+            if (entry is null || State is not { } state)
+            {
+                return null;
+            }
+
+            if (mapCache.Layers is null || mapCache.Revision != revision || mapCache.Viewer != viewer)
+            {
+                mapCache = (revision, viewer, GameMaps.Layers(entry, state.Map, Viewer, revision));
+            }
+
+            return mapCache.Layers;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (GameQuery is { Length: > 0 } game && game != gameId)
+        {
+            Load(game);
+            revision = RevisionQuery is { } at && history is not null ? Math.Clamp(at, 1, history.States.Count) : revision;
+            viewer = ViewerQuery ?? (ViewerLocked && history?.Current is { } current ? current.PhasingSide : viewer);
+            contractId = ContractQuery ?? (Contracts.Count == 1 ? Contracts[0].Id : contractId);
+        }
+    }
+
+    private void Choose(string game) => Navigation.NavigateTo(game.Length == 0 ? "games/workbench" : $"games/workbench?game={Uri.EscapeDataString(game)}");
+
+    private void Load(string game)
+    {
+        gameId = game;
+        entry = GamesLibrary.Load(GameLibrary.LivePrefix + game);
+        history = entry?.History;
+        revision = history?.States.Count ?? 1;
+        viewer = Perspective.AdjudicatorName;
+        contractId = Contracts.Count == 1 ? Contracts[0].Id : string.Empty;
+        picks.Clear();
+        hand.Clear();
+        Changed();
+    }
+
+    private void Changed()
+    {
+        (picked, activePick, choicesFor, unitChoices) = (null, null, null, null);
+        (mapCache, viewCache) = (default, default);
+    }
+
+    private void Enter(string fact, string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            hand.Remove(fact);
+        }
+        else
+        {
+            hand[fact] = value;
+        }
+    }
+
+    /// <summary>A map click: a Hex fact takes the Location; a Unit fact offers the units of that Location the viewer sees, each named with its hex.</summary>
+    private void Pick(BoardLocation? at)
+    {
+        picked = at;
+        if (at is null || activePick is not { } fact || Contract?.Facts.FirstOrDefault(item => item.Name == fact) is not { } wanted)
+        {
+            return;
+        }
+
+        if (wanted.Type == ContractFactType.Hex)
+        {
+            picks[fact] = at.ToString();
+            activePick = null;
+            return;
+        }
+
+        var place = DisplayText.Place(State?.Map.Boards.Count ?? 1, at);
+        unitChoices = View is { } view
+            ? [.. view.Units.Where(unit => view.Locations.TryGetValue(unit.Id, out var position) && position.Location == at)
+                .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => (unit.Id, $"{place}: {unit.Id} ({unit.Kind})"))]
+            : [];
+        (choicesFor, activePick) = (fact, null);
+    }
+
+    private string? PickLabel(string fact) => picks.TryGetValue(fact, out var value)
+        ? (BoardLocation.TryParse(value, out var at) && at is not null ? DisplayText.Place(State?.Map.Boards.Count ?? 1, at) : value)
+        : null;
+
+    private IReadOnlyDictionary<string, JsonNode?> Gathered(RuleContract contract) =>
+        State is { } state ? Live.Planner.ContractFacts(contract.Id, state, picks) : new Dictionary<string, JsonNode?>();
+
+    /// <summary>
+    /// A fact's row: hidden when the viewer may not know it (ruling RPS.4: the adjudicator knows all; an owner's fact is its unit's side's, an opponent's
+    /// the other side's), gathered when
+    /// Play read it, otherwise pending (entered by hand, or picked on the map).
+    /// </summary>
+    private (string Source, string? Value) Row(RuleContract contract, ContractFact fact)
+    {
+        var gathered = Gathered(contract);
+        var side = fact.Concerns is { } unitFact && UnitOf(gathered, unitFact) is { } unitId && State?.Unit(unitId) is { } unit ? unit.Side : null;
+        var known = Viewer.IsAdjudicator || fact.Disclosure switch
+        {
+            ContractDisclosure.All => true,
+            ContractDisclosure.Owner => side is not null && side == viewer,
+            ContractDisclosure.Opponent => side is not null && side != viewer,
+            _ => false,
+        };
+        if (!known)
+        {
+            return ("hidden", null);
+        }
+
+        // A fact the source returned is gathered, even unknown: Play leaves a fact unread where it does not apply (an unconcealed unit's LOS).
+        return gathered.TryGetValue(fact.Name, out var value)
+            ? ("gathered", value is null ? "not read: it does not apply here" : value.ToJsonString().Trim('"'))
+            : ("pending", null);
+    }
+
+    private string? UnitOf(IReadOnlyDictionary<string, JsonNode?> gathered, string unitFact) =>
+        picks.TryGetValue(unitFact, out var id) ? id : gathered.TryGetValue(unitFact, out var value) ? value?.GetValue<string>() : null;
+
+    private ContractVerdict Verdict(RuleContract contract)
+    {
+        var gathered = Gathered(contract);
+        var facts = new JsonObject();
+        foreach (var fact in contract.Facts)
+        {
+            var (source, _) = Row(contract, fact);
+            facts[fact.Name] = source switch
+            {
+                "hidden" => null,
+                "gathered" => gathered.GetValueOrDefault(fact.Name)?.DeepClone(),
+                _ => fact.Type is ContractFactType.Hex or ContractFactType.Unit
+                    ? (picks.TryGetValue(fact.Name, out var pick) ? JsonValue.Create(pick) : null)
+                    : hand.TryGetValue(fact.Name, out var text) ? Typed(fact, text) : null,
+            };
+        }
+
+        return ScenarioA1RuleContracts.Evaluate(contract, facts);
+    }
+
+    private static JsonNode? Typed(ContractFact fact, string text) => fact.Type switch
+    {
+        ContractFactType.Flag => bool.TryParse(text, out var flag) ? JsonValue.Create(flag) : null,
+        ContractFactType.Number => decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var number) ? JsonValue.Create(number) : null,
+        _ => JsonValue.Create(text),
+    };
+}

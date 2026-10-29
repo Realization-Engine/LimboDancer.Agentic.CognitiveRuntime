@@ -121,6 +121,16 @@ public sealed record ScenarioCard(
     /// </summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public bool Minimal => Rules.ScenarioA1ResultTables.CardIsMinimal(Sides.Count, Sides.Select(side => side.Groups.Count));
+
+    /// <summary>
+    /// The minigame bundle the card belongs to (the Rules-first plan, section 7.1; the proving slice, ruling RPS.7); null for every other card, so no
+    /// card's text or SHA-256 changes. A game started from the card takes it into its record.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? Minigame
+    {
+        get; init;
+    }
 }
 
 /// <summary>A card and why it is refused, if it is: each diagnostic is a code and a message.</summary>
@@ -195,11 +205,21 @@ public static class ScenarioCards
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
     };
 
-    /// <summary>The embedded card names, in ordinal order.</summary>
+    /// <summary>
+    /// The embedded scenario card names, in ordinal order. A minigame's card is embedded beside them and read by its name like any other, but it is not
+    /// one of the scenario cards (the proving slice, ruling RPS.10): <see cref="MinigameNames"/> lists those.
+    /// </summary>
     public static IReadOnlyList<string> Names => [.. typeof(ScenarioCards).Assembly.GetManifestResourceNames()
         .Where(name => name.StartsWith(Prefix, StringComparison.Ordinal) && name.EndsWith(Suffix, StringComparison.Ordinal))
         .Select(name => name[Prefix.Length..^Suffix.Length])
+        .Where(name => !Minigames.IsMinigameCard(name))
         .Order(StringComparer.Ordinal)];
+
+    /// <summary>The minigames' card names, in ordinal order: what a list shows when "Show minigames" is on.</summary>
+    public static IReadOnlyList<string> MinigameNames => [.. Minigames.All.Select(bundle => bundle.Card).Order(StringComparer.Ordinal)];
+
+    /// <summary>Whether a name is an embedded card's, a scenario's or a minigame's: read from the assembly, and never a user card's name.</summary>
+    public static bool IsBuiltIn(string name) => Names.Contains(name, StringComparer.Ordinal) || MinigameNames.Contains(name, StringComparer.Ordinal);
 
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string?> EmbeddedSha256 = new(StringComparer.Ordinal);
 
