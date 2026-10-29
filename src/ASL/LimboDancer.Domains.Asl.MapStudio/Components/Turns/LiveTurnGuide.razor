@@ -7,13 +7,14 @@
 <div hidden="@(loading || failed)">
     @if (host is not null)
     {
-        <TurnGuidePanel Host="host" PhaseChanged="Browse" ActionRequested="ActionRequested" ReviewRequested="ReviewRequested" CanReviewOpening="CanReviewOpening" CloseRequested="CloseRequested" Busy="@(Busy || loading || failed)" />
+        <TurnGuidePanel Host="host" CurrentPhaseOnly="true" PhaseTitle="@PhaseTitle" ActionRequested="ActionRequested" ReviewRequested="ReviewRequested" CanReviewOpening="CanReviewOpening" CloseRequested="CloseRequested" Busy="@(Busy || loading || failed)" />
     }
 </div>
 @code {
     [Parameter, EditorRequired] public Func<string, Task<TurnHostGuide>> ReadGuide { get; set; } = null!;
     [Parameter] public long Revision { get; set; }
     [Parameter] public string ActualPhase { get; set; } = "rph";
+    [Parameter] public string? PhaseTitle { get; set; }
     [Parameter, EditorRequired] public string ScopeKey { get; set; } = string.Empty;
     [Parameter] public EventCallback<TurnPlacedDcAction> ActionRequested { get; set; }
     [Parameter] public EventCallback<TurnOpeningReviewRequest> ReviewRequested { get; set; }
@@ -24,26 +25,23 @@
     private string? scope;
     private long revision = -1;
     private string? actualPhase;
-    private string phase = "rph";
     private bool loading;
     private bool failed;
     private int generation;
     protected override async Task OnParametersSetAsync()
     {
         if (scope == ScopeKey && revision == Revision && actualPhase == ActualPhase) return;
-        if (scope != ScopeKey) { host = null; phase = ActualPhase; }
-        else if (phase == actualPhase) { phase = ActualPhase; }
+        if (scope != ScopeKey) { host = null; }
         scope = ScopeKey; revision = Revision; actualPhase = ActualPhase;
         await Load();
     }
-    private async Task Browse(string value) { phase = value; await Load(); }
     private async Task Load()
     {
         var request = ++generation;
         loading = true; failed = false;
         try
         {
-            var result = await ReadGuide(phase);
+            var result = await ReadGuide(ActualPhase);
             if (request == generation) host = result;
         }
         catch (Exception)

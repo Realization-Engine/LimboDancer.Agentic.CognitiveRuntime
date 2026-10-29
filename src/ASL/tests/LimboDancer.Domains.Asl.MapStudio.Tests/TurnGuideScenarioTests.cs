@@ -118,17 +118,11 @@ public sealed partial class TurnGuideScenarioTests : IDisposable
         page.Find("#play-turn-guide-toggle").Click();
         page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll(".turn-guide [data-topic]")));
         var before = Current.Revision;
-        var topics = 0;
-        foreach (var phase in TurnGuideCatalog.Load().Phases)
-        {
-            page.Find($".turn-guide [data-phase='{phase.Id}']").Click();
-            page.WaitForAssertion(() => Assert.Equal(phase.Topics.Length, page.FindAll(".turn-guide [data-topic]").Count));
-            topics += page.FindAll(".turn-guide [data-topic]").Count;
-            Assert.Contains("Pending rules:", page.Find(".turn-guide").TextContent, StringComparison.Ordinal);
-        }
-        Assert.Equal(538, topics);
+        var phase = TurnGuideCatalog.Load().Phases.Single(item => item.Id == Current.Phase);
+        Assert.Equal(phase.Topics.Length, page.FindAll(".turn-guide [data-topic^='rph:']").Count);
+        Assert.Empty(page.FindAll(".turn-guide [data-phase]"));
+        Assert.Contains("Pending rules:", page.Find(".turn-guide").TextContent, StringComparison.Ordinal);
         Assert.Equal(before, Current.Revision);
-        page.Find(".turn-guide [data-phase=rph]").Click();
         Commit(page, ".turn-close");
         Commit(page, ".turn-close");
         Assert.Equal("mph", Current.Phase);
@@ -263,7 +257,7 @@ public sealed partial class TurnGuideScenarioTests : IDisposable
         Assert.Contains(live.Store.Read(Scope)!.Events, item => item.GuidedDecisionHash is not null);
         Commit(page, ".turn-close");
         Assert.Equal("rtph", Current.Phase);
-        page.WaitForAssertion(() => Assert.Equal("true", page.Find(".turn-guide [data-phase=rtph]").GetAttribute("aria-pressed")));
+        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll(".turn-guide [data-topic^='rtph:']")));
         Assert.False(live.Planner.Replay(live.Store.Read(Scope)!.Events).HasErrors);
         before = Current.Revision;
         page.Dispose();
@@ -272,7 +266,7 @@ public sealed partial class TurnGuideScenarioTests : IDisposable
         reopened.ViewAs("german");
         reopened.Find("#play-turn-guide-toggle").Click();
         reopened.WaitForAssertion(() => Assert.Contains("Resolved", reopened.Find(".turn-evidence").TextContent, StringComparison.Ordinal));
-        Assert.Equal("true", reopened.Find(".turn-guide [data-phase=rtph]").GetAttribute("aria-pressed"));
+        Assert.NotEmpty(reopened.FindAll(".turn-guide [data-topic^='rtph:']"));
         Assert.Contains("Pending rules:", reopened.Find(".turn-guide").TextContent, StringComparison.Ordinal);
         Assert.Empty(reopened.FindAll(".turn-action, .turn-opening-review, #play-confirm"));
         Assert.Equal(before, Current.Revision); // Reopening and reading guidance must not append events.

@@ -110,8 +110,9 @@ public sealed class PlayPagePass28cTests : IDisposable
         page.Find("#play-turn-guide-toggle").Click();
         page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll(".turn-guide [data-topic]")));
         Assert.Equal(before, Current.Revision);
-        page.Find(".turn-guide [data-phase='ccph']").Click();
-        page.WaitForAssertion(() => Assert.Contains("Close Combat", page.Find(".turn-guide h2").TextContent, StringComparison.Ordinal));
+        Assert.Empty(page.FindAll(".turn-guide [data-phase]"));
+        Assert.Equal("German Rally Phase", page.Find(".turn-guide h2").TextContent);
+        Assert.NotEmpty(page.FindAll(".turn-guide [data-topic^='rph:']"));
         Assert.Equal("rph", Current.Phase);
         Assert.Equal(before, Current.Revision);
         page.Find(".turn-close").Click();
@@ -119,6 +120,9 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.Equal(before, Current.Revision);
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.Equal("pfph", Current.Phase));
+        page.WaitForAssertion(() => Assert.Equal("German Prep Fire Phase", page.Find(".turn-guide h2").TextContent));
+        Assert.NotEmpty(page.FindAll(".turn-guide [data-topic^='pfph:']"));
+        Assert.Empty(page.FindAll(".turn-guide [data-topic^='rph:']"));
     }
 
 

@@ -513,10 +513,11 @@ else if (state is not null)
                         <p id="play-answer-first" class="muted">Every other action waits until the answer above is given (ruling R5.8).</p>
                     }
                 }
-                <button type="button" id="play-turn-guide-toggle" aria-expanded="@turnGuideOpen" @onclick="() => turnGuideOpen = !turnGuideOpen">Turn Phase Guide</button>
+                <button type="button" id="play-turn-guide-toggle" aria-expanded="@turnGuideOpen" @onclick="() => turnGuideOpen = !turnGuideOpen">Current phase guide</button>
                 @if (turnGuideOpen)
                 {
                     <LiveTurnGuide @key="AskedBy" ScopeKey="@AskedBy" Revision="@state.Revision" ActualPhase="@state.Phase"
+                        PhaseTitle="@($"{DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}")"
                         ReadGuide="ReadTurnGuide" ActionRequested="ProposeTurnDecision" ReviewRequested="ProposeOpeningReview" CanReviewOpening="Live.CanReviewOpening" CloseRequested="ProposeAdvance" Busy="@busy" />
                 }
             }
