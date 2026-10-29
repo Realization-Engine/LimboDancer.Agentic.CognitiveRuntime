@@ -6,7 +6,8 @@
     "C9.3"
   ],
   "contracts": [
-    "c9.3-spotter-designation"
+    "c9.3-spotter-designation",
+    "c9.3-spotter-replacement"
   ],
   "example": null,
   "checks": [
@@ -430,6 +431,164 @@
       },
       "expect": {
         "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "A broken Spotter's mortar takes a new Spotter at the start of its owner's next MPh (ASOP 3.11A)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c9.3-spotter-replacement",
+      "facts": {
+        "phase": "MPh",
+        "ownerPhasing": true,
+        "holderId": "g-crew",
+        "mortar": true,
+        "hasDesignation": true,
+        "lossCause": "broken",
+        "lossBeforeThisPhase": true,
+        "openingClosed": false,
+        "hexRange": 1,
+        "sharesLocation": true,
+        "spotterId": "g-squad",
+        "spotterActive": true,
+        "spotterSameSide": true,
+        "spotterPersonnel": true,
+        "spotterGoodOrder": true,
+        "spotterCaptured": false,
+        "spotterMelee": false,
+        "spotterIsMortarCrew": false,
+        "night": false,
+        "pendingDecision": false
+      },
+      "expect": {
+        "outcome": "may-replace",
+        "reasons": [
+          "ASOP 3.11A"
+        ]
+      }
+    },
+    {
+      "name": "Once a unit has moved this MPh, the opening has passed and no Spotter is replaced",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c9.3-spotter-replacement",
+      "facts": {
+        "phase": "MPh",
+        "ownerPhasing": true,
+        "holderId": "g-crew",
+        "mortar": true,
+        "hasDesignation": true,
+        "lossCause": "broken",
+        "lossBeforeThisPhase": true,
+        "openingClosed": true,
+        "hexRange": 1,
+        "sharesLocation": true,
+        "spotterId": "g-squad",
+        "spotterActive": true,
+        "spotterSameSide": true,
+        "spotterPersonnel": true,
+        "spotterGoodOrder": true,
+        "spotterCaptured": false,
+        "spotterMelee": false,
+        "spotterIsMortarCrew": false,
+        "night": false,
+        "pendingDecision": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "ASOP 3.11A"
+        ]
+      }
+    },
+    {
+      "name": "A Spotter lost during this MPh is replaced only at the owner's next MPh opening",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c9.3-spotter-replacement",
+      "facts": {
+        "phase": "MPh",
+        "ownerPhasing": true,
+        "holderId": "g-crew",
+        "mortar": true,
+        "hasDesignation": true,
+        "lossCause": "broken",
+        "lossBeforeThisPhase": false,
+        "openingClosed": false,
+        "hexRange": 1,
+        "sharesLocation": true,
+        "spotterId": "g-squad",
+        "spotterActive": true,
+        "spotterSameSide": true,
+        "spotterPersonnel": true,
+        "spotterGoodOrder": true,
+        "spotterCaptured": false,
+        "spotterMelee": false,
+        "spotterIsMortarCrew": false,
+        "night": false,
+        "pendingDecision": false
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "A reduced Spotting squad's Good Order half-squad keeps spotting, so no replacement is needed",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c9.3-spotter-replacement",
+      "facts": {
+        "phase": "MPh",
+        "ownerPhasing": true,
+        "holderId": "g-crew",
+        "mortar": true,
+        "hasDesignation": true,
+        "lossCause": "reduced",
+        "lossBeforeThisPhase": true,
+        "openingClosed": false,
+        "hexRange": 1,
+        "sharesLocation": true,
+        "spotterId": "g-squad",
+        "spotterActive": true,
+        "spotterSameSide": true,
+        "spotterPersonnel": true,
+        "spotterGoodOrder": true,
+        "spotterCaptured": false,
+        "spotterMelee": false,
+        "spotterIsMortarCrew": false,
+        "night": false,
+        "pendingDecision": false,
+        "reducedSurvivorGoodOrder": true
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "A Russian unit offered for the German mortar learns nothing of its loss: the holder's facts are unknown, so the question stays open",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "c9.3-spotter-replacement",
+      "facts": {
+        "phase": "MPh",
+        "ownerPhasing": true,
+        "holderId": "g-crew",
+        "spotterId": "r-squad",
+        "spotterActive": true,
+        "spotterSameSide": false,
+        "spotterPersonnel": true,
+        "spotterGoodOrder": true,
+        "spotterCaptured": false,
+        "spotterMelee": false,
+        "spotterIsMortarCrew": false,
+        "night": false,
+        "pendingDecision": false
+      },
+      "expect": {
+        "outcome": "not-evaluated",
+        "reasons": [
+          "mortar"
+        ]
       }
     }
   ]

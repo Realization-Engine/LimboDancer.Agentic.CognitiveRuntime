@@ -70,11 +70,12 @@ public static class ScenarioA1SpotterCalculator
     /// Ruling RC93.6: the Spotter still serves its mortar: active, of its side, not broken or captured, and no loss recorded. A recorded loss is final:
     /// the mortar fires spotted only "as long as the Spotter remains in Good Order" (C9.3), and ASOP 3.11A names the new Spotter for one "not in Good
     /// Order", so a Spotter that broke and rallied does not resume by itself. Nothing bars designating the same unit again as the new Spotter.
+    /// The recorded loss is one of the current assignment, never of an earlier one of the same pair of units (ruling RC93.14).
     /// </summary>
     public static bool Retains(bool active, bool sameSide, bool broken, bool captured, bool recordedLoss) =>
         active && sameSide && !broken && !captured && !recordedLoss;
 
-    /// <summary>Ruling RC93.6: the record still holds an assignment of this Spotter that was not lost.</summary>
+    /// <summary>Ruling RC93.6: the record still holds an assignment of this Spotter that was not lost (the current assignment's loss, RC93.14).</summary>
     public static bool HoldsAssignment(bool assigned, bool recordedLoss) => assigned && !recordedLoss;
 
     /// <summary>Ruling RC93.7: while the original Spotter is retained, no other unit spots for that mortar.</summary>
@@ -85,7 +86,10 @@ public static class ScenarioA1SpotterCalculator
     public static bool Supersedes(string earlierSpotter, string laterSpotter, string? recordedSuccessor) =>
         earlierSpotter != laterSpotter && laterSpotter != recordedSuccessor;
 
-    /// <summary>The refusal of a spotted shot after the assignment's recorded loss: a governed replacement comes first (C9.3).</summary>
+    /// <summary>
+    /// The refusal of a spotted shot after the current assignment's recorded loss (ruling RC93.14): a governed replacement comes first (C9.3), which
+    /// <see cref="Replacement"/> decides.
+    /// </summary>
     public static string? FireBar(bool recordedLoss) => recordedLoss
         ? "play.ordnance-spotter-lost: the recorded assignment was lost; a governed replacement is required (C9.3). Replacement execution remains pending."
         : null;
@@ -271,6 +275,131 @@ public static class ScenarioA1SpotterCalculator
             replacement ? "Replacement may be considered at the owner's MPh opening following the recorded loss; candidate eligibility remains to be checked."
                 : "Wait for an owner's MPh opening following the recorded loss. A phase label alone does not prove the opening checkpoint.");
     }
+
+    private static readonly string[] MovementEvents =
+    [
+        "movement-step", "vehicle-step", "instance-moved", "movement-ended", "motion-attempted", "entry-attempted", "overrun-declared", "gun-hooked",
+        "manhandling-rolled", "units-searched", "turn-work-recorded",
+    ];
+
+    private static readonly string[] ReplacementEvents = ["mortar-spotter-designated", "dice-rolled", "conditions-changed"];
+
+    /// <summary>
+    /// The step of the MPh's opening one recorded command took, from the event types it recorded (ruling RC93.11): a Spotter designation alone (with
+    /// its dice and conditions) is a 3.11A replacement; a Starshell is 3.12D; any movement or work of a unit is 3.22A (a berserk charge among them,
+    /// since both close the opening alike); anything else, or nothing, is <see cref="MovementOpeningStep.Other"/>, so an action Rules does not know
+    /// never keeps the opening open. Gliders are not built.
+    /// </summary>
+    public static MovementOpeningStep OpeningStepOf(IReadOnlyCollection<string> eventTypes)
+    {
+        ArgumentNullException.ThrowIfNull(eventTypes);
+        return eventTypes.Any(type => MovementEvents.Contains(type, StringComparer.Ordinal)) ? MovementOpeningStep.UnitMovement
+            : eventTypes.Contains("starshell-fired", StringComparer.Ordinal) ? MovementOpeningStep.Starshell
+            : eventTypes.Contains("mortar-spotter-designated", StringComparer.Ordinal)
+                && eventTypes.All(type => ReplacementEvents.Contains(type, StringComparer.Ordinal)) ? MovementOpeningStep.SpotterReplacement
+            : MovementOpeningStep.Other;
+    }
+
+    /// <summary>
+    /// Ruling RC93.11 (ASOP 3.1, p. 678): the MPh's opening is open while every step taken in this MPh is a 3.11A replacement, so several mortars'
+    /// Spotters may be replaced in turn; any other step closes it for the rest of the phase.
+    /// </summary>
+    public static bool OpeningOpen(IReadOnlyList<MovementOpeningStep> taken)
+    {
+        ArgumentNullException.ThrowIfNull(taken);
+        return taken.All(step => step == MovementOpeningStep.SpotterReplacement);
+    }
+
+    /// <summary>The checkpoint of the MPh that <see cref="Timing"/> reads (ruling RC93.11): its opening while it is open, a unit's movement after.</summary>
+    public static TurnCheckpoint OpeningCheckpoint(IReadOnlyList<MovementOpeningStep> taken) =>
+        OpeningOpen(taken) ? TurnCheckpoint.MovementStart : TurnCheckpoint.UnitMovement;
+
+    /// <summary>
+    /// May this unit be designated the mortar's new Spotter at the owner's MPh opening (C9.3; ASOP 3.11A; ruling RC93.12)? Checked in order: a decision
+    /// still open, the mortar, the candidate, night, the opening, the timing, then the range and the sharing. An unknown timing, range, or sharing
+    /// leaves it not evaluated. No TI check: a replacement uses nothing, and the new Spotter first spots in the opponent's DFPh, after its TI counter
+    /// is removed (A4.8). When allowed, the candidate holds a new assignment with no fire counter and no movement bar (ruling RC93.13).
+    /// </summary>
+    public static SpotterReplacementVerdict Replacement(SpotterReplacementFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(facts.StepsTaken);
+        if (facts.PendingDecision)
+        {
+            return Refused("Complete the outstanding decision or movement before designating a Spotter.");
+        }
+
+        if (!facts.Mortar)
+        {
+            return Refused("C9.3 requires an active mortar whose crew is on the map.");
+        }
+
+        if (CandidateRefusal(facts.Candidate) is { } candidate)
+        {
+            return Refused(candidate);
+        }
+
+        if (facts.Night)
+        {
+            return Refused("A Spotter at night (E1.89, E1.91) is not built.");
+        }
+
+        if (!OpeningOpen(facts.StepsTaken))
+        {
+            return Refused("A new Spotter is designated at the start of the owner's MPh, before any other action of the phase (ASOP 3.11A).");
+        }
+
+        var now = facts.Timing.Now.Phase == "mph" ? facts.Timing.Now with
+        {
+            Checkpoint = OpeningCheckpoint(facts.StepsTaken)
+        } : facts.Timing.Now;
+        var timing = Timing(facts.Timing with
+        {
+            Now = now
+        });
+        if (timing.State == SpotterTimingState.NotEvaluated)
+        {
+            return new(SpotterReplacementState.NotEvaluated, null, false, timing.Reason);
+        }
+
+        if (timing.State == SpotterTimingState.InitialDesignationWindow)
+        {
+            return Refused("A mortar with no Spotter designates its first in the PFPh or DFPh (ASOP 2.22A, 4.21D), not by replacement (C9.3).");
+        }
+
+        if (timing.State != SpotterTimingState.ReplacementWindow)
+        {
+            return Refused(timing.Reason);
+        }
+
+        if (facts.HexRange is null || facts.SharesLocation is null)
+        {
+            return new(SpotterReplacementState.NotEvaluated, null, false,
+                "Prove the mortar's same/adjacent hex and one Location with the Spotter's other mortars (C9.3).");
+        }
+
+        if (!InReach(facts.HexRange))
+        {
+            return Refused($"A Spotter is in the mortar's hex or an adjacent one; this one is {facts.HexRange} hexes away (C9.3).");
+        }
+
+        return facts.SharesLocation != true
+            ? Refused("A Spotter serves more than one mortar only when they are in one Location (C9.3, C9.31).")
+            : new(SpotterReplacementState.MayReplace, null, true,
+                "It may be designated the mortar's new Spotter at its owner's MPh opening, with no fire counter (C9.3; ASOP 3.11A).");
+    }
+
+    /// <summary>
+    /// What the fire that spots does to its Spotter (C9.3: spotting is the equivalent of using a SW; ruling RC93.13): that phase's fire counter unless
+    /// it already carries it (its designation this phase, or an earlier spotted shot), and in the PFPh no movement this Player Turn.
+    /// </summary>
+    public static SpottingMarksVerdict SpottingMarks(string phase, bool alreadyMarkedThisPhase) =>
+        new(alreadyMarkedThisPhase ? null : FireCounter(phase), BarsMovement(phase));
+
+    /// <summary>Why a unit may not be designated the mortar's new Spotter now, or null when it may or the question is open (<see cref="Replacement"/>).</summary>
+    public static string? ReplacementRefusal(SpotterReplacementFacts facts) => Replacement(facts).Refusal;
+
+    private static SpotterReplacementVerdict Refused(string refusal) => new(SpotterReplacementState.Refused, refusal, false, refusal);
 
     private static int Rank(TurnRulePosition position) => Array.IndexOf(Phases, position.Phase);
 

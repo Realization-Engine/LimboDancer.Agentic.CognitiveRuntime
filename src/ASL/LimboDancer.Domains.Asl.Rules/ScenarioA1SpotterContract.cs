@@ -54,11 +54,101 @@ internal static class ScenarioA1SpotterContract
         Decide = Verdict,
     };
 
-    private static ContractFact Owners(string name, string description) =>
+    private static ContractFact Owners(string name, string description, string concerns = "spotterId") =>
         ScenarioA1RuleContracts.Flag(name, description, mayBeUnknown: true, disclosure: ContractDisclosure.Owner) with
         {
-            Concerns = "spotterId"
+            Concerns = concerns
         };
+
+    // The replacement design, ruling RC93.16: the facts of the mortar and its lost assignment are the owner's of the unit that holds the mortar, so a
+    // viewer who picks its own unit as the candidate for the enemy's mortar learns nothing of the enemy's loss (the design's review, finding 3).
+    private const string Holder = "holderId";
+
+    private static readonly string[] LossCauses = ["eliminated", "broken", "captured", "reduced", "none", "unknown"];
+
+    private static readonly string[] ReplacementKnown =
+    [
+        "mortar", "hasDesignation", "openingClosed", "sharesLocation", "spotterActive", "spotterSameSide", "spotterPersonnel", "spotterGoodOrder",
+        "spotterCaptured", "spotterMelee", "spotterIsMortarCrew",
+    ];
+
+    [RuleContract]
+    private static RuleContract Replacement() => new("c9.3-spotter-replacement", "Mortar Spotter replacement", [new("C9.3", 179), new("ASOP 3.11A", 679)],
+        [
+            new("phase", ContractFactType.Choice, false, ContractDisclosure.All, "The phase") { Choices = ScenarioA1RuleContracts.Phases },
+            ScenarioA1RuleContracts.Flag("ownerPhasing", "The mortar's owner is the phasing side"),
+            // A mortar is equipment, which the map does not offer; the unit that holds it is picked instead (the C9 claim's lesson).
+            new(Holder, ContractFactType.Unit, false, ContractDisclosure.All, "The unit that holds the mortar") { Concerns = Holder },
+            Owners("mortar", "The weapon is an active mortar whose crew is on the map", Holder),
+            Owners("hasDesignation", "A Spotter has been designated for this mortar", Holder),
+            new("lossCause", ContractFactType.Choice, true, ContractDisclosure.Owner, "How its current Spotter's assignment was lost")
+            {
+                Choices = LossCauses, Concerns = Holder
+            },
+            Owners("reducedSurvivorGoodOrder", "A reduced Spotting squad left a Good Order half-squad, which keeps spotting", Holder),
+            Owners("lossBeforeThisPhase", "The loss was recorded before this MPh began", Holder),
+            Owners("openingClosed", "A step other than a Spotter replacement has been taken this MPh (ASOP 3.1)", Holder),
+            new("hexRange", ContractFactType.Number, true, ContractDisclosure.Owner, "The hex range from the mortar to the unit") { Concerns = Holder },
+            Owners("sharesLocation", "Every other mortar the unit spots for is in this mortar's Location", Holder),
+            new("spotterId", ContractFactType.Unit, false, ContractDisclosure.All, "The unit to be designated") { Concerns = "spotterId" },
+            Owners("spotterActive", "It is active on the map"),
+            Owners("spotterSameSide", "It is of the mortar's side"),
+            Owners("spotterPersonnel", "It is a Personnel unit"),
+            Owners("spotterGoodOrder", "It is Good Order (not broken or berserk)"),
+            Owners("spotterCaptured", "It is Captured"),
+            Owners("spotterMelee", "It is in Melee"),
+            Owners("spotterIsMortarCrew", "It is the mortar's own crew"),
+            ScenarioA1RuleContracts.Flag("night", "The scenario is at night"),
+            ScenarioA1RuleContracts.Flag("pendingDecision", "A decision or a move is still open"),
+        ],
+        ["may-replace", "refused", ContractVerdict.NotEvaluated],
+        [new("mortar-spotter-designated", "the mortar and its new Spotter, a new assignment; no fire counter")],
+        new("MPh", "3.11A"))
+    {
+        Decide = ReplacementVerdict,
+    };
+
+    private static ContractVerdict ReplacementVerdict(ContractFacts facts)
+    {
+        var cause = facts.Text("lossCause");
+        // Timing reads when the loss came for the three losses of C9.3; a squad's Reduction is decided by its survivor alone.
+        var lost = cause is "eliminated" or "broken" or "captured";
+        var unknown = ReplacementKnown.FirstOrDefault(name => facts.Flag(name) is null)
+            ?? (cause is null ? "lossCause" : null)
+            ?? (lost && facts.Flag("lossBeforeThisPhase") is null ? "lossBeforeThisPhase" : null)
+            ?? (facts.Number("hexRange") is not { } given || given < 0 || given > int.MaxValue || given != decimal.Truncate(given) ? "hexRange" : null);
+        if (unknown is not null)
+        {
+            return new ContractVerdict(ContractVerdict.NotEvaluated,
+                [new ContractReason($"the fact '{unknown}' is not known to this viewer, or not a whole number of hexes", "C9.3", 179)], []);
+        }
+
+        // The positions Timing reads: now is the second Player Turn, phased by the owner or its opponent; a loss before this MPh is in the first.
+        var now = new TurnRulePosition(1, 2, facts.Flag("ownerPhasing")!.Value ? "owner" : "opponent", facts.Text("phase")!.ToLowerInvariant(), TurnCheckpoint.DuringPhase);
+        TurnRulePosition? lossAt = !lost ? null : facts.Flag("lossBeforeThisPhase")!.Value ? new(1, 1, "opponent", "ccph", TurnCheckpoint.DuringPhase) : now;
+        var change = cause switch
+        {
+            "eliminated" => SpotterChange.Eliminated,
+            "broken" => SpotterChange.Broken,
+            "captured" => SpotterChange.Captured,
+            "reduced" => SpotterChange.SquadReduced,
+            "none" => SpotterChange.None,
+            _ => SpotterChange.Unknown,
+        };
+        var verdict = ScenarioA1SpotterCalculator.Replacement(new SpotterReplacementFacts(
+            new SpotterTimingFacts("owner", now, facts.Flag("hasDesignation"), change, lossAt, cause == "reduced" ? facts.Flag("reducedSurvivorGoodOrder") : null),
+            facts.Flag("openingClosed")!.Value ? [MovementOpeningStep.UnitMovement] : [],
+            facts.Flag("mortar")!.Value,
+            new SpotterCandidateFacts(facts.Flag("spotterActive")!.Value, facts.Flag("spotterSameSide")!.Value, facts.Flag("spotterPersonnel")!.Value,
+                facts.Flag("spotterGoodOrder")!.Value, facts.Flag("spotterCaptured")!.Value, facts.Flag("spotterMelee")!.Value, facts.Flag("spotterIsMortarCrew")!.Value),
+            (int)facts.Number("hexRange")!.Value, facts.Flag("sharesLocation"), facts.Flag("night")!.Value, facts.Flag("pendingDecision")!.Value));
+        return verdict.State switch
+        {
+            SpotterReplacementState.MayReplace => new ContractVerdict("may-replace", [new ContractReason(verdict.Reason, "ASOP 3.11A", 679)], []),
+            SpotterReplacementState.Refused => new ContractVerdict("refused", [new ContractReason(verdict.Reason, "C9.3", 179)], []),
+            _ => new ContractVerdict(ContractVerdict.NotEvaluated, [new ContractReason(verdict.Reason, "C9.3", 179)], []),
+        };
+    }
 
     private static ContractVerdict Verdict(ContractFacts facts)
     {
