@@ -87,6 +87,23 @@ public sealed class MinigameBundleTests : IDisposable
             }
 
             Assert.All(bundle.Checks, check => Assert.Contains(check.Contract, bundle.Contracts));
+
+            // A check is seen by one of the card's sides or by the adjudicator, and each unit it names has one of the card's sides.
+            var sides = card.Sides.Select(side => side.Side).ToHashSet(StringComparer.Ordinal);
+            Assert.All(bundle.Checks, check => Assert.True(check.Viewer == Adjudicator || sides.Contains(check.Viewer), $"{bundle.Id}: viewer '{check.Viewer}'"));
+            Assert.All(bundle.Units ?? new Dictionary<string, string>(), unit => Assert.True(sides.Contains(unit.Value), $"{bundle.Id}: {unit.Key} is '{unit.Value}'"));
+
+            // A "?" stack is picked for a Unit fact of the contract that the check leaves unknown, and is the other side's.
+            foreach (var check in bundle.Checks.Where(check => check.Sealed is not null))
+            {
+                var contract = ScenarioA1RuleContracts.Find(check.Contract)!;
+                Assert.All(check.Sealed!, pick =>
+                {
+                    Assert.Contains(contract.Facts, fact => fact.Name == pick.Key && fact.Type == ContractFactType.Unit);
+                    Assert.Null(check.Facts[pick.Key]);
+                    Assert.True(sides.Contains(pick.Value) && pick.Value != check.Viewer, $"{bundle.Id}: '{check.Name}' seals a {pick.Value} stack");
+                });
+            }
         }
 
         // No built-in card is a minigame's, and a card that is not one maps to no bundle.
@@ -98,13 +115,56 @@ public sealed class MinigameBundleTests : IDisposable
     [MemberData(nameof(Checks))]
     public void EveryCheckGivesItsExpectedVerdict(string bundleId, string checkName)
     {
-        var check = Minigames.Find(bundleId)!.Checks.Single(item => item.Name == checkName);
-        var verdict = ScenarioA1RuleContracts.Evaluate(ScenarioA1RuleContracts.Find(check.Contract)!, check.Facts);
+        var bundle = Minigames.Find(bundleId)!;
+        var check = bundle.Checks.Single(item => item.Name == checkName);
+        var contract = ScenarioA1RuleContracts.Find(check.Contract)!;
+        Assert.Null(HiddenFrom(bundle, check, contract));
+        var verdict = ScenarioA1RuleContracts.Evaluate(contract, check.Facts);
         Assert.True(check.Expect.Outcome == verdict.Outcome, $"{checkName}: {verdict.Outcome}, {string.Join("; ", verdict.Reasons.Select(reason => reason.Text))}");
         foreach (var text in check.Expect.Reasons ?? [])
         {
             Assert.Contains(verdict.Reasons, reason => reason.Text.Contains(text, StringComparison.Ordinal));
         }
+    }
+
+    private const string Adjudicator = "adjudicator";
+
+    /// <summary>
+    /// The first fact a check gives that its viewer may not know, as the Rule Workbench reads a contract's disclosure, or null: a fact disclosed to the
+    /// owner (or the opponent) is known only to the side (or the other side) of the unit it concerns, and the adjudicator knows every fact. Without it,
+    /// a check that claims one side's view proves only the verdict on its facts (the review of the C9.3 replacement, finding 3).
+    /// </summary>
+    private static string? HiddenFrom(MinigameManifest bundle, MinigameCheck check, RuleContract contract)
+    {
+        if (check.Viewer == Adjudicator)
+        {
+            return null;
+        }
+
+        foreach (var fact in contract.Facts.Where(fact => fact.Disclosure != ContractDisclosure.All && check.Facts[fact.Name] is not null))
+        {
+            // The unit is named, or picked as a "?" stack whose handle gives only its side (PS4).
+            var unit = fact.Concerns is null ? null : check.Facts[fact.Concerns]?.GetValue<string>();
+            var sealedSide = fact.Concerns is null ? null : check.Sealed?.GetValueOrDefault(fact.Concerns);
+            if (unit is null && sealedSide is null)
+            {
+                return $"'{fact.Name}' concerns a unit the check does not name, so no side may know it";
+            }
+
+            if ((unit is null ? sealedSide : bundle.Units?.GetValueOrDefault(unit)) is not { } side)
+            {
+                return $"'{unit}' has no side in the manifest's units";
+            }
+
+            unit ??= $"the {side} \"?\" stack";
+
+            if ((fact.Disclosure == ContractDisclosure.Owner) != (side == check.Viewer))
+            {
+                return $"the {check.Viewer} viewer may not know '{fact.Name}' of {unit}, a {side} unit";
+            }
+        }
+
+        return null;
     }
 
     [Fact]

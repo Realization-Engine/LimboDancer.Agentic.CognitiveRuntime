@@ -208,5 +208,9 @@
         "outcome": "not-evaluated"
       }
     }
-  ]
+  ],
+  "units": {
+    "g-leader": "german",
+    "g-squad": "german"
+  }
 }

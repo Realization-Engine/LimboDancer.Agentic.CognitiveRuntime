@@ -2,8 +2,14 @@
   "id": "e10-eligibility",
   "title": "E10.1 Ammo Vehicle eligibility",
   "card": "e10-eligibility",
-  "rules": ["E10.1", "E10.11", "E10.2"],
-  "contracts": ["e10.1-eligibility"],
+  "rules": [
+    "E10.1",
+    "E10.11",
+    "E10.2"
+  ],
+  "contracts": [
+    "e10.1-eligibility"
+  ],
   "example": null,
   "checks": [
     {
@@ -75,7 +81,6 @@
         "supplyId": "g-supply",
         "supplyOwner": "german",
         "supplyActive": true,
-        "supplyBarrel": "Standard",
         "recipientId": "g-tank",
         "recipientOwner": "german",
         "recipientActive": true,
@@ -93,5 +98,9 @@
         "outcome": "not-evaluated"
       }
     }
-  ]
+  ],
+  "units": {
+    "g-supply": "german",
+    "g-tank": "german"
+  }
 }
