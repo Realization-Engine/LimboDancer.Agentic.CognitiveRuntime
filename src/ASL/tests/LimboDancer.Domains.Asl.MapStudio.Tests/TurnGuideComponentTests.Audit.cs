@@ -8,7 +8,7 @@ namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 public sealed partial class TurnGuideComponentTests
 {
     [Fact]
-    public void LiveGuideFollowsPhaseCloseButPreservesDeliberateBrowsing()
+    public void LiveGuideAlwaysFollowsCurrentPhaseWithoutBrowsingControls()
     {
         var actual = "afph";
         Task<LimboDancer.Domains.Asl.Play.TurnHostGuide> Read(string browsed)
@@ -19,16 +19,56 @@ public sealed partial class TurnGuideComponentTests
                 Guide = new TurnGuideService(Catalog, []).Describe(new(scope, browsed, false), new(scope, []))
             });
         }
-        var cut = context.Render<LiveTurnGuide>(p => p.Add(c => c.ScopeKey, "game/german").Add(c => c.ActualPhase, actual).Add(c => c.ReadGuide, Read));
+        var cut = context.Render<LiveTurnGuide>(p => p.Add(c => c.ScopeKey, "game/german").Add(c => c.ActualPhase, actual).Add(c => c.ReadGuide, Read)
+            .Add(c => c.PhaseTitle, "German Advancing Fire Phase"));
+        Assert.Equal("German Advancing Fire Phase", cut.Find("h2").TextContent);
+        Assert.Empty(cut.FindAll("[data-phase], .turn-audit"));
+        Assert.NotEmpty(cut.FindAll("[data-topic^='afph:']"));
         actual = "rtph";
         cut.Render(p => p.Add(c => c.ActualPhase, actual).Add(c => c.Revision, 1));
-        Assert.Equal("true", cut.Find("[data-phase=rtph]").GetAttribute("aria-pressed"));
-        cut.Find("[data-phase=rph]").Click();
+        Assert.NotEmpty(cut.FindAll("[data-topic^='rtph:']"));
+        Assert.Empty(cut.FindAll("[data-topic^='afph:']"));
         actual = "aph";
         cut.Render(p => p.Add(c => c.ActualPhase, actual).Add(c => c.Revision, 2));
-        Assert.Equal("true", cut.Find("[data-phase=rph]").GetAttribute("aria-pressed"));
-        Assert.Contains("Actual phase: APH", cut.Markup, StringComparison.Ordinal);
+        Assert.NotEmpty(cut.FindAll("[data-topic^='aph:']"));
+        Assert.Empty(cut.FindAll("[data-topic^='rtph:'], [data-phase]"));
+        Assert.DoesNotContain("Browsing:", cut.Markup, StringComparison.Ordinal);
         Assert.Contains("Pending rules:", cut.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CurrentPhaseGuideKeepsDependenciesButLinksOtherPhasesToReference()
+    {
+        var cut = context.Render<TurnGuidePanel>(p => p.Add(c => c.CurrentPhaseOnly, true)
+            .Add(c => c.PhaseTitle, "German Rally Phase"));
+        Assert.Equal("German Rally Phase", cut.Find("h2").TextContent);
+        cut.Find("[data-topic='rph:packStart']").Click();
+        Assert.NotEmpty(cut.FindAll(".turn-related a[href^='turn-guide?phase=']"));
+        Assert.All(cut.FindAll("[data-related-topic]"), button =>
+            Assert.StartsWith("rph:", button.GetAttribute("data-related-topic"), StringComparison.Ordinal));
+        Assert.Empty(cut.FindAll("[data-phase], .turn-audit"));
+        Assert.Contains("Pending rules:", cut.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task LatePhaseReadCannotReplaceTheCurrentPhase()
+    {
+        var first = new TaskCompletionSource<LimboDancer.Domains.Asl.Play.TurnHostGuide>();
+        var cut = context.Render<LiveTurnGuide>(p => p.Add(c => c.ScopeKey, "game/german")
+            .Add(c => c.ActualPhase, "pfph").Add(c => c.ReadGuide, _ => first.Task));
+        cut.Render(p => p.Add(c => c.ActualPhase, "afph")
+            .Add(c => c.ReadGuide, _ => Task.FromResult(Guide())));
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("[data-topic^='afph:']")));
+        await cut.InvokeAsync(() => first.SetResult(Guide() with
+        {
+            Guide = Guide().Guide with
+            {
+                ActualPhaseId = "pfph",
+                BrowsedPhaseId = "pfph"
+            }
+        }));
+        Assert.Equal("afph", cut.FindComponent<TurnGuidePanel>().Instance.Host!.Guide.ActualPhaseId);
+        Assert.NotEmpty(cut.FindAll("[data-topic^='afph:']"));
     }
 
     [Fact]
