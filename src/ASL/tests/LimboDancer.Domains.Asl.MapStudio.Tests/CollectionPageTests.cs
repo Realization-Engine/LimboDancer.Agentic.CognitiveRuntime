@@ -115,6 +115,12 @@ public sealed class CollectionPageTests : IDisposable
         Assert.Empty(page.FindAll("#library-maps"));
         Assert.EndsWith("?terrain=flag%3Acliff", page.Find("#library-vasl tr[data-board] a").GetAttribute("href"), StringComparison.Ordinal);
 
+        // A second feature both boards hold keeps the same board, and the link carries both, in the order chosen, for the viewer to outline each.
+        page.Find("#library-terrain").Change("terrain:Woods");
+        Assert.Equal([rows[0]], page.FindAll("#library-vasl tr[data-board]").Select(row => row.GetAttribute("data-board")));
+        Assert.EndsWith("?terrain=flag%3Acliff&terrain=terrain%3AWoods", page.Find("#library-vasl tr[data-board] a").GetAttribute("href"), StringComparison.Ordinal);
+        page.Find("button[data-terrain='terrain:Woods']").Click();
+
         // Removing it gives the whole list back; a name the index does not hold is not taken.
         page.Find("button[data-terrain='flag:cliff']").Click();
         Assert.Equal(2, page.FindAll("#library-vasl tr[data-board]").Count);

@@ -116,7 +116,7 @@ else
             }
             else
             {
-                <VaslBoardTable Rows="@shownRows" LinkQuery="@(filter.TerrainIds is [var first, ..] ? "?terrain=" + Uri.EscapeDataString(first) : string.Empty)" />
+                <VaslBoardTable Rows="@shownRows" LinkQuery="@(filter.TerrainIds is { Count: > 0 } chosen ? "?" + string.Join('&', chosen.Select(id => "terrain=" + Uri.EscapeDataString(id))) : string.Empty)" />
             }
         }
     }

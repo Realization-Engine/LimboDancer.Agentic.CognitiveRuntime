@@ -2285,6 +2285,25 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
     max-width: 100%;
 }
 
+/* The board viewer's key to the outlined terrain: one line per feature, with its colour. */
+#viewer-terrain {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+
+#viewer-terrain .terrain-swatch {
+    display: inline-block;
+    width: 0.8rem;
+    height: 0.8rem;
+    margin-right: 0.4rem;
+    border: 3px solid;
+    border-radius: 2px;
+    vertical-align: -0.1rem;
+}
+
 /* A link button that cannot act now reads as plain text. */
 button.link:disabled {
     color: var(--muted);

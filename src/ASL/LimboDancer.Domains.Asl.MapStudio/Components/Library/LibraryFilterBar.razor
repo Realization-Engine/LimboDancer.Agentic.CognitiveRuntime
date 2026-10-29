@@ -35,8 +35,8 @@
     {
         <label>
             Has terrain
-            <input id="library-terrain" type="search" list="library-terrain-ids" placeholder="terrain:Woods" value="@pending"
-                   @oninput="@(args => pending = args.Value as string ?? string.Empty)" @onchange="@(args => Add(args.Value as string))"
+            <input id="library-terrain" type="search" list="library-terrain-ids" placeholder="terrain:Woods"
+                   @bind="pending" @bind:event="oninput" @onchange="@(args => Add(args.Value as string))"
                    @onkeydown="@(args => args.Key == "Enter" ? Add(pending) : Task.CompletedTask)" />
             <datalist id="library-terrain-ids">
                 @foreach (var id in TerrainIds)

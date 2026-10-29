@@ -259,7 +259,7 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary
     /// A hex outlined in the marks layer (pass 30: the setup's draft rows and the hexes that may take a non-OB "?"), with an optional short label at its
     /// centre; empty when the map has no such hex. The mark takes no pointer events, so a click reaches the hex and its counters.
     /// </summary>
-    public static string HexMark(StudioBoard board, BoardLocation at, string css, string fill, string stroke, int width, bool dashed, string? label)
+    public static string HexMark(StudioBoard board, BoardLocation at, string css, string fill, string stroke, double width, bool dashed, string? label)
     {
         ArgumentNullException.ThrowIfNull(board);
         ArgumentNullException.ThrowIfNull(at);
@@ -280,7 +280,7 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, UnitLibrary
             : string.Create(CultureInfo.InvariantCulture, $"<rect x=\"{x - halfWidth:0.##}\" y=\"{y - 11:0.##}\" width=\"{halfWidth * 2:0.##}\" height=\"22\" rx=\"11\" fill=\"#ffffff\" stroke=\"{stroke}\" stroke-width=\"2\"/>");
         var text = label is null ? string.Empty : frame + string.Create(CultureInfo.InvariantCulture,
             $"<text x=\"{x:0.##}\" y=\"{y + 5:0.##}\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"{stroke}\">{label}</text>");
-        return $"<g class=\"{css}\" data-location=\"{at with { Level = 0 }}\" pointer-events=\"none\"><polygon points=\"{points}\" fill=\"{fill}\" fill-opacity=\"0.3\" stroke=\"{stroke}\" stroke-width=\"{width}\""
+        return $"<g class=\"{css}\" data-location=\"{at with { Level = 0 }}\" pointer-events=\"none\"><polygon points=\"{points}\" fill=\"{fill}\" fill-opacity=\"0.3\" stroke=\"{stroke}\" stroke-width=\"{width.ToString("0.##", CultureInfo.InvariantCulture)}\""
             + (dashed ? " stroke-dasharray=\"8 5\"" : string.Empty) + $"/>{text}</g>";
     }
 
