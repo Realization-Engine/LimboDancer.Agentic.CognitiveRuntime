@@ -106,26 +106,31 @@ public sealed class CollectionPageTests : IDisposable
             new(rows[1], "verified", null, [new("terrain:Woods", "terrain", "Woods", ["A1"])]),
         ]).ToJson());
         page = context.Render<HomePage>();
-        page.WaitForAssertion(() => Assert.NotNull(page.Find("#library-terrain")), TimeSpan.FromSeconds(10));
-        Assert.Equal(["flag:cliff", "terrain:Woods"], page.FindAll("#library-terrain-ids option").Select(option => option.GetAttribute("value")));
+        // The dropdown of checkboxes offers every feature of the index, one box each, and its closed line says how many are offered.
+        page.WaitForAssertion(() => Assert.NotNull(page.Find(".library-terrains")), TimeSpan.FromSeconds(10));
+        Assert.Equal(["flag:cliff", "terrain:Woods"], page.FindAll("input.library-terrain").Select(box => box.GetAttribute("data-unit")));
+        Assert.Contains("choose (2 offered)", page.Find(".library-terrains summary").TextContent, StringComparison.Ordinal);
 
         // A feature only one board holds keeps that board, hides authored boards and maps, and its link carries the feature.
-        page.Find("#library-terrain").Change("flag:cliff");
+        page.Find("input.library-terrain[data-unit='flag:cliff']").Change(true);
         Assert.Equal([rows[0]], page.FindAll("#library-vasl tr[data-board]").Select(row => row.GetAttribute("data-board")));
         Assert.Empty(page.FindAll("#library-maps"));
         Assert.EndsWith("?terrain=flag%3Acliff", page.Find("#library-vasl tr[data-board] a").GetAttribute("href"), StringComparison.Ordinal);
 
         // A second feature both boards hold keeps the same board, and the link carries both, in the order chosen, for the viewer to outline each.
-        page.Find("#library-terrain").Change("terrain:Woods");
+        page.Find("input.library-terrain[data-unit='terrain:Woods']").Change(true);
         Assert.Equal([rows[0]], page.FindAll("#library-vasl tr[data-board]").Select(row => row.GetAttribute("data-board")));
         Assert.EndsWith("?terrain=flag%3Acliff&terrain=terrain%3AWoods", page.Find("#library-vasl tr[data-board] a").GetAttribute("href"), StringComparison.Ordinal);
-        page.Find("button[data-terrain='terrain:Woods']").Click();
+        Assert.True(page.Find("input.library-terrain[data-unit='terrain:Woods']").HasAttribute("checked"));
 
-        // Removing it gives the whole list back; a name the index does not hold is not taken.
-        page.Find("button[data-terrain='flag:cliff']").Click();
-        Assert.Equal(2, page.FindAll("#library-vasl tr[data-board]").Count);
-        page.Find("#library-terrain").Change("terrain:Nothing");
+        // Each chosen feature has a chip; a click on one removes it and unticks its box; unticking the other gives the whole list back.
+        Assert.Equal(["flag:cliff", "terrain:Woods"], page.FindAll("button[data-terrain]").Select(chip => chip.GetAttribute("data-terrain")));
+        page.Find("button[data-terrain='terrain:Woods']").Click();
+        Assert.False(page.Find("input.library-terrain[data-unit='terrain:Woods']").HasAttribute("checked"));
+        page.Find("input.library-terrain[data-unit='flag:cliff']").Change(false);
         Assert.Empty(page.FindAll("button[data-terrain]"));
+        Assert.Equal(2, page.FindAll("#library-vasl tr[data-board]").Count);
+        Assert.False(page.Find("input.library-terrain[data-unit='flag:cliff']").HasAttribute("checked"));
     }
 
     [Fact]

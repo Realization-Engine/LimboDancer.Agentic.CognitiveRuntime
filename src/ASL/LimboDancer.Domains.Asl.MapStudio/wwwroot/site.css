@@ -2269,6 +2269,26 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
     color: var(--muted);
 }
 
+/* The MapHexIndex Design (RMH.5): the library's "Has terrain" dropdown of checkboxes (pass 31c's) floats its list over the page, as a select does,
+   so opening it does not grow the filter bar. */
+.library-filters .library-terrains {
+    position: relative;
+}
+
+.library-filters .library-terrains .unit-dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: -1px;
+    z-index: 20;
+    min-width: calc(100% + 2px);
+    width: max-content;
+    max-width: min(24rem, calc(100vw - 2rem));
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0 0 var(--radius) var(--radius);
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.15);
+}
+
 /* The MapHexIndex Design (RMH.5): a chosen terrain, removed by a click. */
 .library-filters button.terrain-chip {
     padding: 0.1rem 0.5rem;
@@ -2278,11 +2298,6 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
     font-size: 0.8rem;
     max-width: 100%;
     overflow-wrap: anywhere;
-}
-
-#library-terrain {
-    width: 16rem;
-    max-width: 100%;
 }
 
 /* The board viewer's key to the outlined terrain: one line per feature, with its colour. */
