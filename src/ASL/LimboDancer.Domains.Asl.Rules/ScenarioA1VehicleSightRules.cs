@@ -44,12 +44,22 @@ public static class ScenarioA1VehicleSightRules
     public static bool HindersAtRange(bool mapHindranceAtRange, string? ownTerrain, int? month) => !mapHindranceAtRange || AddsToOwnHindrance(ownTerrain, month);
 
     /// <summary>
-    /// A24.2, A24.5, A24.8 (ruling R9.6): a Location's SMOKE, +2 per source and at most +3, with +1 more for fire traced out of or within it; none when
-    /// the LOS does not enter it.
+    /// A24.2, A24.5, A24.8 (ruling R9.6): a Location's SMOKE counted at <see cref="ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance"/> a source
+    /// (the A24.5 claim, RA24.5): the same answer for every count, with no allocation.
     /// </summary>
-    public static int SmokeDrm(int sources, bool firerThere, bool targetThere, Func<bool> crossed)
+    public static int SmokeDrm(int sources, bool firerThere, bool targetThere, Func<bool> crossed) =>
+        LocationSmoke(ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance * sources, firerThere, targetThere, crossed);
+
+    /// <summary>
+    /// A24.2, A24.8 (the A24.5 claim, RA24.5): a Location's SMOKE, the sum of its sources' Hindrance (<see cref="ScenarioA1SmokeStrengthCalculator.Hindrance"/>)
+    /// and at most +3, with +1 more for fire traced out of or within it; none when the LOS does not enter it, which is read only when neither end is there.
+    /// </summary>
+    public static int SmokeDrm(IReadOnlyList<int> hindrances, bool firerThere, bool targetThere, Func<bool> crossed) =>
+        LocationSmoke(ScenarioA1SmokeStrengthCalculator.Total(hindrances), firerThere, targetThere, crossed);
+
+    private static int LocationSmoke(int total, bool firerThere, bool targetThere, Func<bool> crossed)
     {
-        var drm = Math.Min(3, 2 * sources);
+        var drm = Math.Min(3, total);
         return firerThere ? drm + 1
             : targetThere ? drm
             : crossed() ? drm
@@ -71,5 +81,12 @@ public static class ScenarioA1VehicleSightRules
     /// A24.8), and +1 for a wreck or AFV there that is neither firer nor target (D9.4).
     /// </summary>
     public static int OwnHexHindrance(int smokeSources, bool wreckOrAfv) =>
-        (smokeSources > 0 ? SmokeDrm(smokeSources, true, true, () => false) : 0) + (wreckOrAfv ? 1 : 0);
+        (smokeSources > 0 ? SmokeDrm(smokeSources, true, true, static () => false) : 0) + (wreckOrAfv ? 1 : 0);
+
+    /// <summary>C5.5 Case R by value (the A24.5 claim, RA24.5): the hex's SMOKE sources' Hindrance as for fire within it, and +1 for a wreck or AFV.</summary>
+    public static int OwnHexHindrance(IReadOnlyList<int> smokeHindrances, bool wreckOrAfv)
+    {
+        ArgumentNullException.ThrowIfNull(smokeHindrances);
+        return (smokeHindrances.Count > 0 ? SmokeDrm(smokeHindrances, true, true, static () => false) : 0) + (wreckOrAfv ? 1 : 0);
+    }
 }

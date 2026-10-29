@@ -5,10 +5,15 @@
   "rules": [
     "E10.1",
     "E10.11",
-    "E10.2"
+    "E10.2",
+    "E10.21",
+    "E10.3",
+    "E10.31"
   ],
   "contracts": [
-    "e10.1-eligibility"
+    "e10.1-eligibility",
+    "e10.2-benefit",
+    "e10.3-replenishment"
   ],
   "example": null,
   "checks": [
@@ -96,6 +101,291 @@
       },
       "expect": {
         "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "A CE tank beside its Ammo Vehicle fires on a normal B12 (E10.2)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e10.2-benefit",
+      "facts": {
+        "supplyId": "g-supply",
+        "supplyOwner": "german",
+        "supplyActive": true,
+        "supplyAuthorized": true,
+        "supplyAvailable": true,
+        "supplyCaliberMm": 75,
+        "supplyBarrel": "Standard",
+        "firerId": "g-tank",
+        "firerOwner": "german",
+        "firerActive": true,
+        "firerHasBNumber": true,
+        "firerCrewExposed": true,
+        "firerSameOrAccessible": true,
+        "firerCaliberMm": 75,
+        "firerBarrel": "Standard",
+        "servedOthers": 0,
+        "boundingFirstFire": false,
+        "bNumber": 10
+      },
+      "expect": {
+        "outcome": "b12",
+        "reasons": [
+          "B12"
+        ]
+      }
+    },
+    {
+      "name": "No benefit in Bounding (First) Fire (E10.21)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e10.2-benefit",
+      "facts": {
+        "supplyId": "g-supply",
+        "supplyOwner": "german",
+        "supplyActive": true,
+        "supplyAuthorized": true,
+        "supplyAvailable": true,
+        "supplyCaliberMm": 75,
+        "supplyBarrel": "Standard",
+        "firerId": "g-tank",
+        "firerOwner": "german",
+        "firerActive": true,
+        "firerHasBNumber": true,
+        "firerCrewExposed": true,
+        "firerSameOrAccessible": true,
+        "firerCaliberMm": 75,
+        "firerBarrel": "Standard",
+        "servedOthers": 0,
+        "boundingFirstFire": true,
+        "bNumber": 10
+      },
+      "expect": {
+        "outcome": "printed-b"
+      }
+    },
+    {
+      "name": "One Ammo Vehicle serves no more than two vehicles at a time (E10.2)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e10.2-benefit",
+      "facts": {
+        "supplyId": "g-supply",
+        "supplyOwner": "german",
+        "supplyActive": true,
+        "supplyAuthorized": true,
+        "supplyAvailable": true,
+        "supplyCaliberMm": 75,
+        "supplyBarrel": "Standard",
+        "firerId": "g-tank",
+        "firerOwner": "german",
+        "firerActive": true,
+        "firerHasBNumber": true,
+        "firerCrewExposed": true,
+        "firerSameOrAccessible": true,
+        "firerCaliberMm": 75,
+        "firerBarrel": "Standard",
+        "servedOthers": 2,
+        "boundingFirstFire": false,
+        "bNumber": 10
+      },
+      "expect": {
+        "outcome": "printed-b",
+        "reasons": [
+          "no more than two"
+        ]
+      }
+    },
+    {
+      "name": "The Russian side sees the German tank's Low Ammo counter and the Ammo Supply (A12.16), so it may ask too",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "e10.2-benefit",
+      "facts": {
+        "supplyId": "g-supply",
+        "supplyOwner": "german",
+        "supplyActive": true,
+        "supplyAuthorized": true,
+        "supplyAvailable": true,
+        "supplyCaliberMm": 75,
+        "supplyBarrel": "Standard",
+        "firerId": "g-tank",
+        "firerOwner": "german",
+        "firerActive": true,
+        "firerHasBNumber": true,
+        "firerCrewExposed": true,
+        "firerSameOrAccessible": true,
+        "firerCaliberMm": 75,
+        "firerBarrel": "Standard",
+        "servedOthers": 0,
+        "boundingFirstFire": false,
+        "bNumber": 10
+      },
+      "expect": {
+        "outcome": "b12"
+      }
+    },
+    {
+      "name": "A Low Ammo tank and its TI Ammo Vehicle may start a Replenishment (E10.3)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e10.3-replenishment",
+      "facts": {
+        "supplyId": "g-supply",
+        "supplyOwner": "german",
+        "supplyActive": true,
+        "supplyAuthorized": true,
+        "supplyAvailable": true,
+        "supplyCaliberMm": 75,
+        "supplyBarrel": "Standard",
+        "isDump": false,
+        "recipientId": "g-tank",
+        "recipientOwner": "german",
+        "recipientActive": true,
+        "recipientHasBNumber": true,
+        "recipientLowAmmo": true,
+        "recipientCrewExposed": true,
+        "recipientSameOrAccessible": true,
+        "recipientCaliberMm": 75,
+        "recipientBarrel": "Standard",
+        "recipientTi": true,
+        "supplyTi": true,
+        "supplyHasPassengers": false,
+        "otherRecipients": 0
+      },
+      "expect": {
+        "outcome": "may-start"
+      }
+    },
+    {
+      "name": "A second identically armed vehicle may be Replenished at once (E10.3)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e10.3-replenishment",
+      "facts": {
+        "supplyId": "g-supply",
+        "supplyOwner": "german",
+        "supplyActive": true,
+        "supplyAuthorized": true,
+        "supplyAvailable": true,
+        "supplyCaliberMm": 75,
+        "supplyBarrel": "Standard",
+        "isDump": false,
+        "recipientId": "g-tank",
+        "recipientOwner": "german",
+        "recipientActive": true,
+        "recipientHasBNumber": true,
+        "recipientLowAmmo": true,
+        "recipientCrewExposed": true,
+        "recipientSameOrAccessible": true,
+        "recipientCaliberMm": 75,
+        "recipientBarrel": "Standard",
+        "recipientTi": true,
+        "supplyTi": true,
+        "supplyHasPassengers": false,
+        "otherRecipients": 1
+      },
+      "expect": {
+        "outcome": "may-start"
+      }
+    },
+    {
+      "name": "A tank without Low Ammo is not Replenished (E10.31)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e10.3-replenishment",
+      "facts": {
+        "supplyId": "g-supply",
+        "supplyOwner": "german",
+        "supplyActive": true,
+        "supplyAuthorized": true,
+        "supplyAvailable": true,
+        "supplyCaliberMm": 75,
+        "supplyBarrel": "Standard",
+        "isDump": false,
+        "recipientId": "g-tank",
+        "recipientOwner": "german",
+        "recipientActive": true,
+        "recipientHasBNumber": true,
+        "recipientLowAmmo": false,
+        "recipientCrewExposed": true,
+        "recipientSameOrAccessible": true,
+        "recipientCaliberMm": 75,
+        "recipientBarrel": "Standard",
+        "recipientTi": true,
+        "supplyTi": true,
+        "supplyHasPassengers": false,
+        "otherRecipients": 0
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "An Ammo Vehicle with Passengers aboard is refused (E10.12)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e10.3-replenishment",
+      "facts": {
+        "supplyId": "g-supply",
+        "supplyOwner": "german",
+        "supplyActive": true,
+        "supplyAuthorized": true,
+        "supplyAvailable": true,
+        "supplyCaliberMm": 75,
+        "supplyBarrel": "Standard",
+        "isDump": false,
+        "recipientId": "g-tank",
+        "recipientOwner": "german",
+        "recipientActive": true,
+        "recipientHasBNumber": true,
+        "recipientLowAmmo": true,
+        "recipientCrewExposed": true,
+        "recipientSameOrAccessible": true,
+        "recipientCaliberMm": 75,
+        "recipientBarrel": "Standard",
+        "recipientTi": true,
+        "supplyTi": true,
+        "supplyHasPassengers": true,
+        "otherRecipients": 0
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "Passengers"
+        ]
+      }
+    },
+    {
+      "name": "A third vehicle is refused: one Ammo Vehicle Replenishes at most two at once (E10.3)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e10.3-replenishment",
+      "facts": {
+        "supplyId": "g-supply",
+        "supplyOwner": "german",
+        "supplyActive": true,
+        "supplyAuthorized": true,
+        "supplyAvailable": true,
+        "supplyCaliberMm": 75,
+        "supplyBarrel": "Standard",
+        "isDump": false,
+        "recipientId": "g-tank",
+        "recipientOwner": "german",
+        "recipientActive": true,
+        "recipientHasBNumber": true,
+        "recipientLowAmmo": true,
+        "recipientCrewExposed": true,
+        "recipientSameOrAccessible": true,
+        "recipientCaliberMm": 75,
+        "recipientBarrel": "Standard",
+        "recipientTi": true,
+        "supplyTi": true,
+        "supplyHasPassengers": false,
+        "otherRecipients": 2
+      },
+      "expect": {
+        "outcome": "refused"
       }
     }
   ],
