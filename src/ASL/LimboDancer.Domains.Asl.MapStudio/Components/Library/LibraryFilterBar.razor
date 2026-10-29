@@ -33,18 +33,10 @@
     }
     else
     {
-        <label>
-            Has terrain
-            <input id="library-terrain" type="search" list="library-terrain-ids" placeholder="terrain:Woods"
-                   @bind="pending" @bind:event="oninput" @onchange="@(args => Add(args.Value as string))"
-                   @onkeydown="@(args => args.Key == "Enter" ? Add(pending) : Task.CompletedTask)" />
-            <datalist id="library-terrain-ids">
-                @foreach (var id in TerrainIds)
-                {
-                    <option value="@id"></option>
-                }
-            </datalist>
-        </label>
+        @* The Studio's dropdown of checkboxes (pass 31c), as Play's unit lists use it: its closed line names what is chosen, its list opens below it. *@
+        <UnitSelectionList Rows="@TerrainRows" Selected="@ChosenTerrain" CssClass="library-terrain" Legend="Has terrain"
+                           OnToggle="@(toggle => Change(toggle.On ? Value.WithTerrain(toggle.Id) : Value.WithoutTerrain(toggle.Id)))" />
+        @* The chosen terrain, each a chip that removes itself on a click (the user, 2026-10-28). *@
         @foreach (var id in Value.TerrainIds)
         {
             <button class="terrain-chip" data-terrain="@id" title="Stop asking for @id" @onclick="@(() => Change(Value.WithoutTerrain(id)))">@id ×</button>
@@ -94,18 +86,36 @@
     [Parameter]
     public IReadOnlyList<string>? TerrainIds { get; set; }
 
-    private string pending = string.Empty;
+    // The dropdown's rows, built once per index rather than on each render.
+    private (IReadOnlyList<string>? Ids, IReadOnlyList<UnitSelectionList.Row> Rows) terrainRows = (null, []);
 
-    // Only a known id is taken, so a half-typed name never empties the list.
-    private Task Add(string? id)
+    private IReadOnlyList<UnitSelectionList.Row> TerrainRows
     {
-        if (id is null || TerrainIds is null || !TerrainIds.Contains(id, StringComparer.Ordinal))
+        get
         {
-            return Task.CompletedTask;
-        }
+            if (!ReferenceEquals(terrainRows.Ids, TerrainIds))
+            {
+                terrainRows = (TerrainIds, TerrainIds is null ? [] : [.. TerrainIds.Select(id => new UnitSelectionList.Row(id, id))]);
+            }
 
-        pending = string.Empty;
-        return Change(Value.WithTerrain(id));
+            return terrainRows.Rows;
+        }
+    }
+
+    // The ticked terrain, rebuilt only when the filter's terrain changes.
+    private (string Key, HashSet<string> Set) chosenTerrain = (string.Empty, []);
+
+    private HashSet<string> ChosenTerrain
+    {
+        get
+        {
+            if (chosenTerrain.Key != Value.Terrain)
+            {
+                chosenTerrain = (Value.Terrain, [.. Value.TerrainIds]);
+            }
+
+            return chosenTerrain.Set;
+        }
     }
 
     [Parameter, EditorRequired]
