@@ -1019,6 +1019,13 @@
       "controls": [
         {
           "kind": "button",
+          "label": "@id \u00D7",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "LibraryFilterBar"
+        },
+        {
+          "kind": "button",
           "label": "Clear filters",
           "dynamic": false,
           "id": "library-clear",

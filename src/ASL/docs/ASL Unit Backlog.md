@@ -1537,3 +1537,14 @@ Written on 2026-10-28. What the slice left out or simplified (its design, `Desig
 | The rally contract has no facts for a rally's companions, No Quarter, a Commissar, or Extreme Winter, which Play gathers for its own Precheck | The proving slice | A10.6, A15, A20.4, A25.22, E3.742 | The rally's claim | In those cases the workbench's verdict may differ from the Play page's. |
 | Fact sources for every fact of E10 eligibility (only the participants' ids, sides, states, and whether the recipient is a vehicle are gathered) and the advance's terrain read from the Location rather than the step's facts | The proving slice (ruling RPS.5) | E10.1 to E10.2, A12.14 | Track 3: the E10 and advance wiring | The other facts are entered by hand and labelled so. |
 | A page test of the Rule Workbench; the keyboard on it; an icon for its "Pick on the map" button (the icon coverage file marks it needed) | The proving slice | | Track 4's controls, or the next workbench change | Checked in the Studio by dispatched clicks at 1600 and 320 pixels; the button is text only. |
+
+## 79. Added by the MapHexIndex (first task 5 of the Rules-first plan)
+
+Written on 2026-10-28. What the index left out or simplified (its design, `Designs/ASL MapHexIndex Design.md`).
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| What the 61 out-of-scope boards and the 1 failed board print: the index lists them with no features | The MapHexIndex (ruling RMH.4) | Pass 145's terrain | Track 1: the importer's scope widened for a board a minigame needs | A minigame uses only a verified board; terrain found only on a declined board is reported as such. |
+| Neighbouring-hex questions ("a gully next to a two-level building") in the index itself | The MapHexIndex (ruling RMH.6) | | A minigame that needs it | The index narrows the boards and the board viewer confirms by eye. |
+| The library's filter state is kept per session, not in the URL; the terrain chip has no icon (the icon coverage file marks it needed) | The MapHexIndex (ruling RMH.5) | | The next library change | A reload, a new tab, or a pasted library address starts with no filter; the board viewer's own address keeps its terrain. |
+| Terrain VASL has no type for (Narrow Street, Steeple, Rail Car, Manhole) cannot be found by any index | The MapHexIndex (ruling RMH.7) | Pass 145's terrain | Map data of our own for those terrains (Pass 145) | Pass 145 reads them as absent from the catalog, not from the boards. |

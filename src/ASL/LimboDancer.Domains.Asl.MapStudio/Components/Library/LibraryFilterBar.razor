@@ -27,6 +27,29 @@
         <input id="library-out-of-scope" type="checkbox" checked="@Value.OutOfScope" disabled="@(!Value.Shows("vasl"))" @onchange="@(args => Change(Value with { OutOfScope = args.Value is true }))" />
         Out-of-scope boards (@OutOfScopeCount)
     </label>
+    @if (TerrainIds is null)
+    {
+        <span id="library-terrain-none" class="muted">Has terrain: no MapHexIndex yet. <a href="fidelity">Run the fidelity batch</a> to write one.</span>
+    }
+    else
+    {
+        <label>
+            Has terrain
+            <input id="library-terrain" type="search" list="library-terrain-ids" placeholder="terrain:Woods"
+                   @bind="pending" @bind:event="oninput" @onchange="@(args => Add(args.Value as string))"
+                   @onkeydown="@(args => args.Key == "Enter" ? Add(pending) : Task.CompletedTask)" />
+            <datalist id="library-terrain-ids">
+                @foreach (var id in TerrainIds)
+                {
+                    <option value="@id"></option>
+                }
+            </datalist>
+        </label>
+        @foreach (var id in Value.TerrainIds)
+        {
+            <button class="terrain-chip" data-terrain="@id" title="Stop asking for @id" @onclick="@(() => Change(Value.WithoutTerrain(id)))">@id ×</button>
+        }
+    }
     <span id="library-count" role="status">@Shown of @Total shown</span>
     @if (!Value.IsDefault)
     {
@@ -35,9 +58,22 @@
 </div>
 
 @code {
-    /// <summary>The library's search and filters: text, the kind of entry, the VASL status, and whether out-of-scope boards show.</summary>
-    public sealed record Filter(string Search, string Type, string Status, bool OutOfScope)
+    /// <summary>
+    /// The library's search and filters: text, the kind of entry, the VASL status, whether out-of-scope boards show, and the MapHexIndex features a board
+    /// must hold (the MapHexIndex Design, ruling RMH.5), kept as one string of ids joined by "|" so the record compares by value.
+    /// </summary>
+    public sealed record Filter(string Search, string Type, string Status, bool OutOfScope, string Terrain = "")
     {
+        private const char Separator = '|';
+
+        /// <summary>The features asked for, in the order chosen.</summary>
+        public IReadOnlyList<string> TerrainIds => Terrain.Length == 0 ? [] : Terrain.Split(Separator);
+
+        public Filter WithTerrain(string id) => TerrainIds.Contains(id, StringComparer.Ordinal) ? this
+            : this with { Terrain = string.Join(Separator, TerrainIds.Append(id)) };
+
+        public Filter WithoutTerrain(string id) => this with { Terrain = string.Join(Separator, TerrainIds.Where(asked => asked != id)) };
+
         public const string AllTypes = "all";
 
         public const string AnyStatus = "any";
@@ -50,8 +86,26 @@
         public bool Matches(params string[] texts) =>
             Search.Trim().Length == 0 || texts.Any(text => text.Contains(Search.Trim(), StringComparison.OrdinalIgnoreCase));
 
-        // A VASL status narrows the list to VASL boards, since only they have one (table player, pass 22c).
-        public bool Shows(string type) => (Type == AllTypes || Type == type) && (Status == AnyStatus || type == "vasl");
+        // A VASL status or a terrain narrows the list to VASL boards, since only they have one (table player, pass 22c; ruling RMH.5).
+        public bool Shows(string type) => (Type == AllTypes || Type == type) && ((Status == AnyStatus && Terrain.Length == 0) || type == "vasl");
+    }
+
+    /// <summary>The newest MapHexIndex's feature ids, or null when no index has been saved.</summary>
+    [Parameter]
+    public IReadOnlyList<string>? TerrainIds { get; set; }
+
+    private string pending = string.Empty;
+
+    // Only a known id is taken, so a half-typed name never empties the list.
+    private Task Add(string? id)
+    {
+        if (id is null || TerrainIds is null || !TerrainIds.Contains(id, StringComparer.Ordinal))
+        {
+            return Task.CompletedTask;
+        }
+
+        pending = string.Empty;
+        return Change(Value.WithTerrain(id));
     }
 
     [Parameter, EditorRequired]

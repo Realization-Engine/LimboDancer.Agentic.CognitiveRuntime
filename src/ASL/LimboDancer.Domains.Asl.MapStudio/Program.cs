@@ -22,6 +22,7 @@ public static class Program
         builder.Services.AddSingleton<IBoardProvider, StudioBoardProvider>();
         builder.Services.AddSingleton<RenderCache>();
         builder.Services.AddSingleton<FidelityReportStore>();
+        builder.Services.AddSingleton<MapHexIndexStore>();
         builder.Services.AddSingleton<IFidelityBatch, VaslFidelityBatch>();
         builder.Services.AddSingleton<FidelityJobRunner>();
         builder.Services.AddSingleton<UnitLibrary>();

@@ -17,6 +17,7 @@ public sealed class CollectionPageTests : IDisposable
     private readonly string root = Path.Combine(Path.GetTempPath(), "asl-collection-pages-" + Guid.NewGuid().ToString("N"));
     private readonly BunitContext context = new();
     private readonly FidelityJobRunner runner;
+    private readonly StudioOptions options;
 
     public CollectionPageTests()
     {
@@ -33,7 +34,9 @@ public sealed class CollectionPageTests : IDisposable
         context.Services.AddSingleton<IBoardProvider>(new FakeBoardProvider(authored, maps));
         context.Services.AddSingleton(runner);
         context.Services.AddSingleton(new LibraryViewState());
+        context.Services.AddSingleton(new MapHexIndexStore(options));
         context.JSInterop.Mode = JSRuntimeMode.Loose;
+        this.options = options;
     }
 
     public void Dispose()
@@ -84,6 +87,45 @@ public sealed class CollectionPageTests : IDisposable
         again.WaitForAssertion(() => Assert.Single(again.FindAll("#library-vasl tr[data-board]")));
         Assert.Equal("synthetic", again.Find("#library-search").GetAttribute("value"));
         Assert.Empty(again.FindAll("#library-authored-empty"));
+    }
+
+    [Fact]
+    public void TheHasTerrainFilterKeepsTheBoardsHoldingEveryFeatureAndLinksTheViewerToIt()
+    {
+        // No index yet: the filter says so and points to the batch (ruling RMH.5).
+        var page = context.Render<HomePage>();
+        page.WaitForAssertion(() => Assert.Equal(2, page.FindAll("#library-vasl tr[data-board]").Count), TimeSpan.FromSeconds(10));
+        Assert.Contains("no MapHexIndex yet", page.Find("#library-terrain-none").TextContent, StringComparison.Ordinal);
+
+        var rows = page.FindAll("#library-vasl tr[data-board]").Select(row => row.GetAttribute("data-board")!).ToArray();
+        var folder = new MapHexIndexStore(options).Directory;
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "maphexindex-20261028T080000Z.json"), new Maps.Derivation.MapHexIndex("1.0.0", "test", null, null, "fidelity-20261028T080000Z",
+        [
+            new(rows[0], "verified", null, [new("flag:cliff", "flag", "cliff", ["G7"]), new("terrain:Woods", "terrain", "Woods", ["C3", "D4"])]),
+            new(rows[1], "verified", null, [new("terrain:Woods", "terrain", "Woods", ["A1"])]),
+        ]).ToJson());
+        page = context.Render<HomePage>();
+        page.WaitForAssertion(() => Assert.NotNull(page.Find("#library-terrain")), TimeSpan.FromSeconds(10));
+        Assert.Equal(["flag:cliff", "terrain:Woods"], page.FindAll("#library-terrain-ids option").Select(option => option.GetAttribute("value")));
+
+        // A feature only one board holds keeps that board, hides authored boards and maps, and its link carries the feature.
+        page.Find("#library-terrain").Change("flag:cliff");
+        Assert.Equal([rows[0]], page.FindAll("#library-vasl tr[data-board]").Select(row => row.GetAttribute("data-board")));
+        Assert.Empty(page.FindAll("#library-maps"));
+        Assert.EndsWith("?terrain=flag%3Acliff", page.Find("#library-vasl tr[data-board] a").GetAttribute("href"), StringComparison.Ordinal);
+
+        // A second feature both boards hold keeps the same board, and the link carries both, in the order chosen, for the viewer to outline each.
+        page.Find("#library-terrain").Change("terrain:Woods");
+        Assert.Equal([rows[0]], page.FindAll("#library-vasl tr[data-board]").Select(row => row.GetAttribute("data-board")));
+        Assert.EndsWith("?terrain=flag%3Acliff&terrain=terrain%3AWoods", page.Find("#library-vasl tr[data-board] a").GetAttribute("href"), StringComparison.Ordinal);
+        page.Find("button[data-terrain='terrain:Woods']").Click();
+
+        // Removing it gives the whole list back; a name the index does not hold is not taken.
+        page.Find("button[data-terrain='flag:cliff']").Click();
+        Assert.Equal(2, page.FindAll("#library-vasl tr[data-board]").Count);
+        page.Find("#library-terrain").Change("terrain:Nothing");
+        Assert.Empty(page.FindAll("button[data-terrain]"));
     }
 
     [Fact]

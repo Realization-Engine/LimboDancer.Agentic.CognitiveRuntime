@@ -21,7 +21,7 @@
                     }
                     else
                     {
-                        <a href="@($"boards/{row.Ref}")">@row.Title</a>
+                        <a href="@($"boards/{row.Ref}{LinkQuery}")">@row.Title</a>
                     }
                 </td>
                 @if (row.Status == LibraryStatus.NotChecked)
@@ -128,4 +128,8 @@
 
     [Parameter, EditorRequired]
     public IReadOnlyList<Row> Rows { get; set; } = [];
+
+    /// <summary>A query each board link carries, such as "?terrain=terrain%3AWoods" from the "Has terrain" filter (ruling RMH.5); empty by default.</summary>
+    [Parameter]
+    public string LinkQuery { get; set; } = string.Empty;
 }
