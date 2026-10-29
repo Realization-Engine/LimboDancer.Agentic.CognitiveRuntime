@@ -512,7 +512,7 @@ public static class ScenarioA1OrdnanceCalculator
                 : shot.Range < 1)
             || (gun.RangeMaximum is { } maximum && shot.Range > maximum)
             // C9.4: never nearer than a mortar's minimum range; C13.32: a PF's range by the scenario date.
-            || (gun.RangeMinimum is { } minimum && shot.Range < minimum) || (pf && shot.Range > PanzerfaustRange(shot.ScenarioYear, shot.Hit!.ScenarioMonth))
+            || ScenarioA1MortarCalculator.BelowMinimum(shot.Range, gun.RangeMinimum) || (pf && shot.Range > PanzerfaustRange(shot.ScenarioYear, shot.Hit!.ScenarioMonth))
             || (gun.ToHitTable.Count > 0 && shot.Range > gun.ToHitTable.Count))
         {
             outside.Add(Prefix + "out-of-range");
@@ -790,7 +790,9 @@ public static class ScenarioA1OrdnanceCalculator
         // full HE FP doubled.
         // C8.31 (pass 60, ruling R60.4): AP, APCR, APDS, HEAT, and a LATW's round at their HE Equivalency, on the same column.
         var area = shot.TargetType == OrdnanceTargetTypes.Area;
-        var firepower = area && !critical ? AreaFirepower(shot, gun, reference) : HeEquivalency(shot, reference) ?? reference.HeFirepower(gun.Caliber);
+        var full = HeEquivalency(shot, reference) ?? reference.HeFirepower(gun.Caliber);
+        // C9.5 (the C9 claim, ruling RC9.6): an Area Target Type Critical Hit takes the full HE FP, as the mortar calculator says.
+        var firepower = !area ? full : critical ? ScenarioA1MortarCalculator.CriticalFirepower(full) : AreaFirepower(shot, gun, reference);
         var others = shot.Hit!.Targets!.Where(item => !targets.Contains(item)).ToArray();
 
         // Ruling R5.8: each attack of a split hit answers the options of its own targets, a vehicle's Unlikely Kill among them.
