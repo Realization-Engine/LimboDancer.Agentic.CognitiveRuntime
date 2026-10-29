@@ -1,0 +1,135 @@
+{
+  "id": "a24-smoke",
+  "title": "A24.5 SMOKE Strength",
+  "card": "a24-smoke",
+  "rules": [
+    "A24.5"
+  ],
+  "contracts": [
+    "a24.5-smoke-placement"
+  ],
+  "example": null,
+  "checks": [
+    {
+      "name": "A smoke grenade is +2 and never Dispersed (A24.11)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a24.5-smoke-placement",
+      "facts": {
+        "source": "InfantryGrenade",
+        "chemical": "Conventional",
+        "ownerPrepFire": false
+      },
+      "expect": {
+        "outcome": "full",
+        "reasons": [
+          "+2"
+        ]
+      }
+    },
+    {
+      "name": "A WP grenade is +1",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a24.5-smoke-placement",
+      "facts": {
+        "source": "InfantryGrenade",
+        "chemical": "WhitePhosphorus",
+        "ownerPrepFire": false
+      },
+      "expect": {
+        "outcome": "full",
+        "reasons": [
+          "+1"
+        ]
+      }
+    },
+    {
+      "name": "Ordnance SMOKE fired as the first attack of its owner's PFPh is full strength, +3",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a24.5-smoke-placement",
+      "facts": {
+        "source": "Ordnance",
+        "chemical": "Conventional",
+        "ownerPrepFire": true,
+        "beforeNonSmokeFire": true
+      },
+      "expect": {
+        "outcome": "full",
+        "reasons": [
+          "+3"
+        ]
+      }
+    },
+    {
+      "name": "Ordnance SMOKE fired after a non-SMOKE attack takes the Dispersed side, +2",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a24.5-smoke-placement",
+      "facts": {
+        "source": "Ordnance",
+        "chemical": "Conventional",
+        "ownerPrepFire": true,
+        "beforeNonSmokeFire": false
+      },
+      "expect": {
+        "outcome": "dispersed",
+        "reasons": [
+          "+2"
+        ]
+      }
+    },
+    {
+      "name": "Full-strength WP is +2",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a24.5-smoke-placement",
+      "facts": {
+        "source": "Ordnance",
+        "chemical": "WhitePhosphorus",
+        "ownerPrepFire": true,
+        "beforeNonSmokeFire": true
+      },
+      "expect": {
+        "outcome": "full",
+        "reasons": [
+          "+2"
+        ]
+      }
+    },
+    {
+      "name": "A smoke discharger places white Dispersed SMOKE, +2 (D13.31)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a24.5-smoke-placement",
+      "facts": {
+        "source": "SmokeDischarger",
+        "chemical": "Conventional",
+        "ownerPrepFire": true,
+        "beforeNonSmokeFire": true
+      },
+      "expect": {
+        "outcome": "dispersed",
+        "reasons": [
+          "+2"
+        ]
+      }
+    },
+    {
+      "name": "With the PFPh's order of attacks unknown, the side stays open",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a24.5-smoke-placement",
+      "facts": {
+        "source": "Ordnance",
+        "chemical": "Conventional",
+        "ownerPrepFire": true
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    }
+  ],
+  "units": {}
+}
