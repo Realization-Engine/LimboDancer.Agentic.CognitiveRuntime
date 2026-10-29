@@ -72,6 +72,20 @@ public sealed class PlayComponentTests : IDisposable
         Assert.Empty(screen.FindAll("#play-handover"));
     }
 
+    // The review of Wiring Prompt 001 (backlog 83): the note speaks of the map below only when the page gives one, as Play does and Replay and the
+    // Rule Workbench do not.
+    [Fact]
+    public void TheHandOverNoteNamesAMapOnlyWhenOneIsShown()
+    {
+        var bare = context.Render<HandOverScreen>(parameters => parameters.Add(item => item.Next, "russian").Add(item => item.Label, "the russian side"));
+        Assert.DoesNotContain("map below", bare.Find("#play-handover-note").TextContent, StringComparison.Ordinal);
+
+        RenderFragment map = builder => builder.AddMarkupContent(0, "<div id=\"shared-map\"></div>");
+        var mapped = context.Render<HandOverScreen>(parameters => parameters.Add(item => item.Next, "russian").Add(item => item.Label, "the russian side")
+            .Add(item => item.Map, map));
+        Assert.Contains("map below", mapped.Find("#play-handover-note").TextContent, StringComparison.Ordinal);
+    }
+
     // A2.9 (ruling R23.3): a counter beneath an enemy stack's top before play reads as such, a "?" as concealed; the audit renders only when given.
     [Fact]
     public void TheUnitTableNamesWhatItCannotShow()
