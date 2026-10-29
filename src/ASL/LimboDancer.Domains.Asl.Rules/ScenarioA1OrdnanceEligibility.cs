@@ -91,14 +91,10 @@ public static class ScenarioA1OrdnanceEligibility
         };
     }
 
-    /// <summary>C9.3: existing retained-assignment check, not permission to replace or fire.</summary>
-    public static bool RetainsMortarSpotter(bool active, bool sameSide, bool broken, bool captured) =>
-        active && sameSide && !broken && !captured;
-
     /// <summary>
-    /// A light mortar's Spotter and directing leader (C9.3, A7.531; rulings R9.2, R9.4): the Spotter is an active unit of the firer's side, the one
-    /// already spotting for the mortar while it is Good Order (<paramref name="keptSpotter"/>), unless it is the firer; the leader is an active leader
-    /// in the firer's Location. Adjacency and LOS are the planner's map reads.
+    /// A light mortar's Spotter and directing leader (C9.3, A7.531; rulings R9.2, R9.4): whether the Spotter may spot, may replace the one retained
+    /// (<paramref name="keptSpotter"/>), and may share its use, is <see cref="ScenarioA1SpotterCalculator"/>'s (the C9.3 claim, ruling RC93.1); the
+    /// leader is an active leader in the firer's Location. Adjacency and LOS are the planner's map reads.
     /// </summary>
     public static ((OrdnanceSpotter? Spotter, FireDirector? Director)? Support, string? Reason) MortarSupport(string gun, string? keptSpotter, string? spotter,
         Func<OrdnanceSpotterFacts> spotterFacts, string? director, Func<OrdnanceDirectorFacts> directorFacts, string phase)
@@ -109,15 +105,16 @@ public static class ScenarioA1OrdnanceEligibility
         if (spotter is not null)
         {
             var unit = spotterFacts();
-            if (!unit.ActiveWithDefinition || !unit.SameSide || unit.Captured || unit.Melee)
+            if (ScenarioA1SpotterCalculator.CandidateRefusal(new SpotterCandidateFacts(unit.ActiveWithDefinition, unit.SameSide, unit.Personnel, !unit.Broken,
+                unit.Captured, unit.Melee, unit.MortarCrew)) is { } candidate)
             {
-                return (null, $"play.ordnance-spotter: '{spotter}' is not an active unit of the firer's side (C9.3)");
+                return (null, $"play.ordnance-spotter: '{spotter}' may not spot: {candidate}");
             }
 
             // C9.3 (ruling R9.4): a new Spotter is named only when the original is broken, eliminated, or captured.
-            if (keptSpotter is not null && keptSpotter != unit.Id)
+            if (ScenarioA1SpotterCalculator.KeptRefusal(gun, keptSpotter, unit.Id) is { } kept)
             {
-                return (null, $"play.ordnance-spotter-kept: {keptSpotter} spots for {gun} while it is Good Order (C9.3)");
+                return (null, kept);
             }
 
             // C9.31, A7.352: other mortars must share this Location and target throughout the Player Turn; a non-squad cannot also fire.

@@ -29,18 +29,20 @@ public static partial class GameProjector
                 state.SupportWeaponUses.Any(item => item.Unit == unit.Id));
             var gunAt = state.Location(gun.Id)?.Location;
             var spotterAt = state.Location(unit.Id)?.Location;
+            // C9.3 (the C9.3 claim, rulings RC93.3 to RC93.5): the facts are read here; whether the unit may be designated is the calculator's.
             var otherMortars = state.MortarSpotters.Where(item => item.Spotter == unit.Id && item.Gun != gun.Id).ToArray();
-            var facts = new TurnSpotterDesignationFacts(new(owner,
-                new(state.Turn, state.PlayerTurnOrdinal, state.PhasingSide, state.Phase, TurnCheckpoint.DuringPhase), hasDesignation, TurnSpotterChange.None),
-                gun.Definition is { } definition && SpotterOrdnance.Value.Guns.GetValueOrDefault(definition.Definition)?.GunType == "mortar",
-                gun.Status == InstanceStatus.Active && holder.Status == InstanceStatus.Active && unit.Status == InstanceStatus.Active && unit.Side == owner
-                    && holder.Position is MapPosition && unit.Position is MapPosition,
-                GameState.GoodOrder(unit, vocabulary) == ConditionState.True,
-                SpotterHexRange(gunAt, spotterAt) is { } range ? range <= 1 : null,
-                otherMortars.All(item => SpotterHexRange(gunAt, state.Location(item.Gun)?.Location) == 0), state.Night,
-                Is("asl:ti"), unit.Kind == "asl:squad", fired, state.SpottedThisPhase.Any(item => item.Spotter == unit.Id), support,
+            var candidate = new SpotterCandidateFacts(unit.Status == InstanceStatus.Active && unit.Position is MapPosition, unit.Side == owner,
+                ScenarioA1SpotterCalculator.Personnel(unit.Kind), GameState.GoodOrder(unit, vocabulary) == ConditionState.True,
+                Is(Conditions.Captured), Is(Conditions.Melee), unit.Id == holder.Id);
+            var facts = new SpotterDesignationFacts(new(owner,
+                new(state.Turn, state.PlayerTurnOrdinal, state.PhasingSide, state.Phase, TurnCheckpoint.DuringPhase), hasDesignation, SpotterChange.None),
+                gun.Definition is { } definition && SpotterOrdnance.Value.Guns.GetValueOrDefault(definition.Definition)?.GunType == "mortar"
+                    && gun.Status == InstanceStatus.Active && holder.Status == InstanceStatus.Active && holder.Position is MapPosition,
+                candidate, SpotterHexRange(gunAt, spotterAt),
+                ScenarioA1SpotterCalculator.SharesLocation(gunAt?.ToString(), [.. otherMortars.Select(item => state.Location(item.Gun)?.Location.ToString())]),
+                state.Night, Is("asl:ti"), unit.Kind == "asl:squad", fired, state.SpottedThisPhase.Any(item => item.Spotter == unit.Id), support,
                 state.Choice is not null || state.OpenAttempts.Count > 0 || state.PendingSurrenders.Count > 0 || state.Movement is not null);
-            if (TurnSpotterDesignationRules.Refusal(facts) is { } refusal)
+            if (ScenarioA1SpotterCalculator.DesignationRefusal(facts) is { } refusal)
             {
                 return Fail<GameState>("UNIT-SPOTTER-001", refusal);
             }
@@ -48,7 +50,7 @@ public static partial class GameProjector
             {
                 Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal)
                 {
-                    [ConditionName(TurnSpotterDesignationRules.FireCounter(state.Phase))] = ConditionState.True
+                    [ConditionName(ScenarioA1SpotterCalculator.FireCounter(state.Phase))] = ConditionState.True
                 }
             });
             return marked with
@@ -57,7 +59,7 @@ public static partial class GameProjector
                 MortarSpotterDesignations = [.. marked.MortarSpotterDesignations,
                     new(gun.Id, unit.Id, owner, gameEvent.EventId, gameEvent.Revision, occurrence)],
                 SpottedThisPhase = [.. marked.SpottedThisPhase, new(gun.Id, unit.Id)],
-                NoMoveThisPlayerTurn = TurnSpotterDesignationRules.BarsMovement(state.Phase) ? [.. marked.NoMoveThisPlayerTurn, unit.Id] : marked.NoMoveThisPlayerTurn,
+                NoMoveThisPlayerTurn = ScenarioA1SpotterCalculator.BarsMovement(state.Phase) ? [.. marked.NoMoveThisPlayerTurn, unit.Id] : marked.NoMoveThisPlayerTurn,
                 SupportWeaponUses = facts.UsedAsSpotter ? marked.SupportWeaponUses
                     : [.. ScenarioA1FireFollowUps.SupportWeaponUse([.. marked.SupportWeaponUses.Select(item => (item.Unit, item.Weapon))],
                         unit.Id, facts.Squad, fired, gun.Id).Select(item => new SupportWeaponUse(item.Unit, item.Weapon))],

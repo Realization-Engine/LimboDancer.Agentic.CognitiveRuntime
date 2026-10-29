@@ -482,14 +482,16 @@ public static class LiveOrdnance
         string? director, string phase, BoardLocation target, bool legacySpotterUse = false)
     {
         var assignment = state.MortarSpotters.FirstOrDefault(item => item.Gun == gun);
-        if (!legacySpotterUse && spotter is not null && TurnSpotterLossRules.FireBar(state.MortarSpotterLosses
-            .Any(item => item.Gun == gun && item.Spotter == assignment?.Spotter)) is { } lost)
+        var recordedLoss = state.MortarSpotterLosses.Any(item => item.Gun == gun && item.Spotter == assignment?.Spotter);
+        if (!legacySpotterUse && spotter is not null && ScenarioA1SpotterCalculator.FireBar(recordedLoss) is { } lost)
         {
             return (null, lost);
         }
+
+        // Ruling RC93.6: a legacy shot reads retention as it was recorded, without the loss history.
         var kept = assignment?.Spotter is { } recorded && state.Unit(recorded) is { } still
-            && ScenarioA1OrdnanceEligibility.RetainsMortarSpotter(still.Status == InstanceStatus.Active, still.Side == firer.Side,
-                Is(still, Conditions.Broken), Is(still, Conditions.Captured)) ? still : null;
+            && ScenarioA1SpotterCalculator.Retains(still.Status == InstanceStatus.Active, still.Side == firer.Side,
+                Is(still, Conditions.Broken), Is(still, Conditions.Captured), !legacySpotterUse && recordedLoss) ? still : null;
         return ScenarioA1OrdnanceEligibility.MortarSupport(gun, kept?.Id, spotter, () => SpotterFacts(state, gun, firer, spotter!, target, legacySpotterUse), director,
             () => DirectorFacts(state, gun, firer, director!), phase);
     }
@@ -499,16 +501,17 @@ public static class LiveOrdnance
         if (state.Unit(spotter) is not { Status: InstanceStatus.Active, Definition: not null } unit)
         {
             return new OrdnanceSpotterFacts(spotter, false, null, false, false, false, false, false, false, false, false, false,
-                new SquadSupportFacts(spotter, false, false, false, false, null, false));
+                new SquadSupportFacts(spotter, false, false, false, false, null, false), false, false);
         }
 
+        // Ruling RC93.5: a legacy shot keeps its recorded reading of sharing, any other mortar this phase.
         return new OrdnanceSpotterFacts(unit.Id, true, unit.Definition.Definition, unit.Side == firer.Side, Is(unit, Conditions.Captured), Is(unit, Conditions.Melee),
             Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), unit.Kind == "asl:squad", LiveFire.Fired(unit) || Is(unit, Conditions.FirstFire),
             legacySpotterUse ? state.SpottedThisPhase.Any(item => item.Spotter == unit.Id && item.Gun != gun)
-                : !TurnSpotterUseRules.Compatible([.. state.MortarSpotterUses.Where(item => item.Spotter == unit.Id)
-                .Select(item => new TurnSpotterUse(item.Gun, item.Location?.ToString(), item.Target.ToString()))],
+                : !ScenarioA1SpotterCalculator.SharesWith([.. state.MortarSpotterUses.Where(item => item.Spotter == unit.Id)
+                .Select(item => new SpotterUse(item.Gun, item.Location?.ToString(), item.Target.ToString()))],
                 gun, state.Location(gun)?.Location.ToString(), target.ToString()), state.SpottedThisPhase.Any(item => item.Spotter == unit.Id),
-            SquadSupport(state, unit));
+            SquadSupport(state, unit), ScenarioA1SpotterCalculator.Personnel(unit.Kind), unit.Id == firer.Id);
     }
 
     private static OrdnanceDirectorFacts DirectorFacts(GameState state, string gun, UnitInstance firer, string director)

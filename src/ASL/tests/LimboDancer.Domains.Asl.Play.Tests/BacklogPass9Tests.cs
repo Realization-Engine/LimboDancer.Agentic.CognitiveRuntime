@@ -535,7 +535,7 @@ public sealed class BacklogPass9Tests : IDisposable
         Assert.Equal(TurnSpotterState.Lost, Assert.Single(lost.Spotters).State);
         Assert.NotEmpty(lost.EvaluationGaps);
         var retainedLoss = Assert.Single(Current.MortarSpotterLosses);
-        Assert.Equal(TurnSpotterChange.Broken, retainedLoss.Change);
+        Assert.Equal(SpotterChange.Broken, retainedLoss.Change);
         Assert.Equal("spotter-broken", retainedLoss.EventId);
         Assert.Equal("pfph", retainedLoss.Occurrence!.Phase);
         var rallied = loss with

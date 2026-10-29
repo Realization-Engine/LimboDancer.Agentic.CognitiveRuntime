@@ -207,9 +207,12 @@ public sealed partial class GamePlanner
     /// Deployment (A1.31; ruling R13.4): in its RPh a Good Order squad with a Good Order leader of its nationality in its Location takes a NTC modified
     /// by his leadership; passed, it becomes two HS, the first keeping its SW unless some are named for the second.
     /// </summary>
-    /// <summary>Authoritative assignment fact for a disclosed unit's Deployment form. Eligibility is checked on proposal.</summary>
+    /// <summary>
+    /// Authoritative assignment fact for a disclosed unit's Deployment form: the squad holds a Spotter assignment (C9.3; ruling RC93.6, the
+    /// calculator's reading). Eligibility is checked on proposal.
+    /// </summary>
     public static bool RequiresSpotterSuccessor(GameState state, string squadId) => state.MortarSpotters.Any(item => item.Spotter == squadId
-        && !state.MortarSpotterLosses.Any(loss => loss.Gun == item.Gun && loss.Spotter == item.Spotter));
+        && ScenarioA1SpotterCalculator.HoldsAssignment(true, state.MortarSpotterLosses.Any(loss => loss.Gun == item.Gun && loss.Spotter == item.Spotter)));
 
     private GamePlan PlanDeploy(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor)
     {
@@ -280,7 +283,7 @@ public sealed partial class GamePlanner
 
         var retainedSpotter = RequiresSpotterSuccessor(state, squad.Id);
         var spotterHalf = Text(arguments, "spotterHalf", out var selectedHalf) ? selectedHalf : null;
-        if (TurnSpotterLossRules.DeploymentChoiceRefusal(retainedSpotter, spotterHalf) is { } spotterRefusal)
+        if (ScenarioA1SpotterCalculator.DeploymentChoiceRefusal(retainedSpotter, spotterHalf) is { } spotterRefusal)
         {
             return Refused(scope, label, expected, spotterRefusal);
         }

@@ -630,8 +630,12 @@ public static class ScenarioA1OrdnanceCalculator
     /// </summary>
     private static void SupportWeaponOutside(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, List<string> outside)
     {
+        // C9.3: who may spot is ScenarioA1SpotterCalculator's (ruling RC93.3); the recorded shot carries definitions and no sides, so its Spotter's
+        // side is read by nationality here (a named deviation).
         if (shot.Spotter is { } spotter && (reference.Fire.Definitions.GetValueOrDefault(spotter.DefinitionId!) is not { } spotting
-            || spotting.Nationality != gun.Nationality || !Personnel.Contains(spotting.Kind) || spotter.Broken == true || spotter.UnitId == shot.Crew!.UnitId))
+            || spotting.Nationality != gun.Nationality
+            || ScenarioA1SpotterCalculator.CandidateRefusal(new SpotterCandidateFacts(true, true, ScenarioA1SpotterCalculator.Personnel(spotting.Kind),
+                spotter.Broken != true, false, false, spotter.UnitId == shot.Crew!.UnitId)) is not null))
         {
             outside.Add(Prefix + "spotter-outside");
         }

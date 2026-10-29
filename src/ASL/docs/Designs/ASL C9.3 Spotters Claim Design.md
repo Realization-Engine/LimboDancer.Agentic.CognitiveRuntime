@@ -1,0 +1,45 @@
+# ASL C9.3 Spotters Claim Design
+
+**Status:** Design of the first claim on the open board (the [Rules-first plan](<../Plans/ASL Rules-First Four-Track Plan.md>), first task 6 and question 5), 2026-10-28, under the user's word: "Before we bring codex into it. Open the claim board and do your first claim as proposed. Then let's evaluate how that went. Work independently up to the merge." The rulings below were decided under that word, without the user, and are open to veto. Claim C9.3 (Claude; reviewer a sub-agent), branch `claim/c9.3-spotters`, rows C9.3 and C9.31.
+
+## 1. The rule (C9.3, C9.31; p. 179)
+
+Read on the PDF's page 179. One Good Order Personnel unit in the mortar's hex or an adjacent one, whatever its level and LOS to the mortar, may be the Spotter of any mortars in one hex that fire on the same target; otherwise each mortar needs its own. Spotting is a SW's use for movement and inherent FP; the Spotter is designated in its owner's PFPh or DFPh and marked with that phase's fire counter; a hidden Spotter is recorded as one. While it is Good Order the mortar may fire at any target in the Spotter's LOS, with the Hindrance of the Spotter's LOS. A pinned Spotter pins the crew for its spotted attacks. A new Spotter waits until the original is eliminated, broken, or captured, and until the owner's next MPh; a Reduced squad's Good Order HS keeps spotting. A mortar with no Spotter may not be designated for Opportunity Fire at a target out of its LOS, and one so designated that cannot fire still rolls for breakdown. C9.31: spotted fire takes +2 To Hit and the Multiple ROF one lower. Its example: a unit spots for more than one mortar in a Player Turn only if they are all in one Location and fire at one target.
+
+## 2. What decides C9.3 today
+
+A read-only map (2026-10-28) found the rule decided in many places, not the two the plan named:
+
+- **Rules:** `ScenarioA1OrdnanceCalculator.SupportWeaponOutside` and `Outside` (a shot's Spotter), `ScenarioA1OrdnanceEligibility.MortarSupport` and `RetainsMortarSpotter`, `ScenarioA1AreaCalculator.Run` (C9.31's +2 and ROF, the pinned Spotter), and the four Turns rules `TurnSpotterTimingRules`, `TurnSpotterDesignationRules`, `TurnSpotterLossRules`, `TurnSpotterUseRules`.
+- **Outside Rules, deciding a rule themselves:** Play's reach check (`GamePlanner.SupportWeaponMapFacts`: same hex, an adjacent step, or LOS range 1); the projector's reach and one-hex checks at designation (`GameProjector.DesignateSpotter`); "the assignment is held" in `GamePlanner.RequiresSpotterSuccessor` and twice inline in the projector; ASL.Turns' "superseded" assignment (`TurnFireHistory.Compose`); and the Play page's list of Spotter candidates.
+
+Where they disagree: who may spot (three checklists: by nationality in the shot's check, by side in the others, Melee and Captured in one, TI in another, the mortar's own crew barred in one only); reach (two different distance reads); sharing a Spotter (hex at designation, Location and target for the Player Turn at fire, any other gun this phase for legacy shots); "retained" (five readings, which part on a Spotter that broke and rallied).
+
+## 3. Rulings
+
+- **RC93.1 One calculator, `ScenarioA1SpotterCalculator`,** decides every C9.3 question: who may spot, reach, sharing, timing, designation, retention and loss, successors, and supersession. The four Turns files are folded into it and removed; their types lose the `Turn` prefix (question 7) and live in `ScenarioA1SpotterModels.cs`. C9.31's +2 and ROF stay in `ScenarioA1AreaCalculator.Run`, the one place that already decides them, with the fire they modify.
+- **RC93.2 The contract registry is shared, not held.** Each contract is its own file and registers itself; `ScenarioA1RuleContracts.All` gathers them. After this claim no claim needs to hold the registry. (The proving-slice claim held it, and every new contract had to change it: the first lesson of the open board.)
+- **RC93.3 Who may spot** is one check, `Candidate`: an active unit of the mortar's side (by side, as C9.3's "owning player" reads), Personnel, Good Order (not broken), not Captured, not in Melee, and not the mortar's own crew. The shot's validator keeps its nationality test as a check of the recorded shot, which carries definitions and no sides: a Spotter of another nationality on the same side is refused at fire as before, and this is named a deviation. TI (Temporarily Immobilized) stays a designation bar on the mortar, as it was.
+- **RC93.4 Reach** is `InReach(hexRange)`: the Spotter's hex is the mortar's or adjacent (range 0 or 1), whatever its level and LOS; an unknown range is not in reach. Play and the projector each gather the range from the map and ask the calculator; they no longer decide it.
+- **RC93.5 Sharing** follows the rule's example: one Spotter serves mortars in one Location (with its level) that fire at one target, for the Player Turn (`SharesWith`, the former `TurnSpotterUseRules.Compatible`). At designation, before a target is named, the other mortars it spots for must be in the mortar's Location (`SharesLocation`), where the projector compared hexes. Legacy shots (no `spotterUseVersion`) keep their recorded reading, "any other gun this phase", so older games replay as they did.
+- **RC93.6 Retained and held.** `Retains(active, sameSide, broken, captured, recordedLoss)`: the Spotter still serves its mortar. A recorded loss is final: a Spotter that broke and rallied does not return (C9.3: a new Spotter is named after the original is broken). `HoldsAssignment(assigned, recordedLoss)`: the record still holds an unlost assignment, the reading Play's Deployment and the projector's lineage check share.
+- **RC93.7 A different Spotter** (`KeptRefusal`, `Supersedes`): while the original is retained no other unit spots for that mortar; ASL.Turns' history marks an assignment superseded through the same calculator.
+- **RC93.8 What the code records, not decides:** the projector writing a shot's Spotter as the mortar's assignment, and Play putting the shot's phase marker on the Spotter, record verdicts already given (the shot passed `MortarSupport`; the marker is `ScenarioA1OrdnanceEventRules.ShotMarker`'s) and stay where they are.
+- **RC93.9 The contract `c9.3-spotter-designation`:** may this unit be designated the mortar's Spotter now? Its facts are the designation's, entered by hand on the workbench; the Spotter's identity is the owner's when it is hidden (C9.3: "recorded as a Spotter"). Its outcomes: may-designate, refused, not-evaluated; its events, the designation and the fire counter.
+- **RC93.10 The minigame `c9-spotter`** sits on an imported board, chosen with the MapHexIndex: a mortar behind a hill and a Spotter on the hill's edge, with checks for a squad in reach, a Spotter two hexes away, a broken one, one outside its owner's fire phase, and a second mortar in another Location.
+
+## 4. Out of the claim
+
+To the backlog: Opportunity Fire's mortar without a Spotter (C9.3's EXC, with Turns task D1.3); a hidden Spotter's record; a replacement designation's command and its MPh opening in play (Turns task D1.2's wiring); a squad's acquisition lost when it attacks and spots (C9.31's example); a leader stacked with a Spotter (the example).
+
+## 5. Memory and performance
+
+The calculator is pure and allocates only its verdicts; no new state, event, or cache. The projector's and Play's checks call it where they computed the same answer before.
+
+## 6. Build outputs outside the repository
+
+Claude's Studio in `asl-gate-work/studio-6670`, the filtered test builds, and the gate's own outputs, each registered as made and cleaned once CI passes.
+
+## 7. As built
+
+To be written at the end of the claim.

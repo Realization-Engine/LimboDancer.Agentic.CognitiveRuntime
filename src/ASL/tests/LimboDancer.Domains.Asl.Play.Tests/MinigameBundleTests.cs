@@ -63,7 +63,8 @@ public sealed class MinigameBundleTests : IDisposable
     [Fact]
     public void EveryBundleIsSound()
     {
-        Assert.Equal(3, Minigames.All.Count);
+        // Every bundle folder of the repository is embedded and read (the C9.3 claim: no claim edits this count when it adds its bundle).
+        Assert.Equal(Directory.GetDirectories(Path.Combine(RepositoryRoot(), "src", "ASL", "units", "minigames")).Length, Minigames.All.Count);
         Assert.Equal(Minigames.All.Count, Minigames.All.Select(bundle => bundle.Id).Distinct().Count());
         foreach (var bundle in Minigames.All)
         {

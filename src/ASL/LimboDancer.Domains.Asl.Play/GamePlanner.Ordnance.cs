@@ -455,10 +455,12 @@ public sealed partial class GamePlanner
         var sees = from;
         if (shot.Spotter is { UnitId: { } spotterId } && state.Location(spotterId)?.Location is { } spotterAt)
         {
-            // C9.3: a Spotter in the mortar's hex or an adjacent one, whatever its level and LOS to the mortar.
-            if (!(spotterAt.Board == from.Board && spotterAt.Hex == from.Hex) && !Step(state, from, spotterAt).Adjacent && Los(state, from, spotterAt)?.Range != 1)
+            // C9.3 (ruling RC93.4): the hex range from the mortar to its Spotter is read here; whether it is in reach is the calculator's.
+            int? range = spotterAt.Board == from.Board && spotterAt.Hex == from.Hex ? 0
+                : Step(state, from, spotterAt).Adjacent ? 1 : Los(state, from, spotterAt)?.Range;
+            if (!ScenarioA1SpotterCalculator.InReach(range))
             {
-                return (null, $"play.ordnance-spotter: {spotterId} spots only from the mortar's hex or an adjacent one (C9.3)");
+                return (null, ScenarioA1SpotterCalculator.ReachRefusal(spotterId));
             }
 
             sees = spotterAt;

@@ -125,15 +125,15 @@ public sealed class TurnRuleBoundaryTests
     public void DeploymentSuccessorIsTheChosenHalfOfAGoodOrderSquadStillHoldingTheAssignment()
     {
         string[] produced = ["a-1", "a-2"];
-        Assert.True(TurnSpotterLossRules.DeploymentSuccessorValid(true, true, "first", "a-1", produced, false));
-        Assert.True(TurnSpotterLossRules.DeploymentSuccessorValid(true, true, "second", "a-2", produced, false));
-        Assert.False(TurnSpotterLossRules.DeploymentSuccessorValid(true, true, "second", "a-1", produced, true));
-        Assert.False(TurnSpotterLossRules.DeploymentSuccessorValid(false, true, "first", "a-1", produced, true));
-        Assert.False(TurnSpotterLossRules.DeploymentSuccessorValid(true, false, "first", "a-1", produced, true));
+        Assert.True(ScenarioA1SpotterCalculator.DeploymentSuccessorValid(true, true, "first", "a-1", produced, false));
+        Assert.True(ScenarioA1SpotterCalculator.DeploymentSuccessorValid(true, true, "second", "a-2", produced, false));
+        Assert.False(ScenarioA1SpotterCalculator.DeploymentSuccessorValid(true, true, "second", "a-1", produced, true));
+        Assert.False(ScenarioA1SpotterCalculator.DeploymentSuccessorValid(false, true, "first", "a-1", produced, true));
+        Assert.False(ScenarioA1SpotterCalculator.DeploymentSuccessorValid(true, false, "first", "a-1", produced, true));
         // A record from before the choice was recorded: the squad's custody decides.
-        Assert.True(TurnSpotterLossRules.DeploymentSuccessorValid(true, true, null, "a-1", produced, true));
-        Assert.False(TurnSpotterLossRules.DeploymentSuccessorValid(true, true, null, "a-1", produced, false));
-        Assert.Throws<ArgumentNullException>(() => TurnSpotterLossRules.DeploymentSuccessorValid(true, true, "first", "a-1", null!, false));
+        Assert.True(ScenarioA1SpotterCalculator.DeploymentSuccessorValid(true, true, null, "a-1", produced, true));
+        Assert.False(ScenarioA1SpotterCalculator.DeploymentSuccessorValid(true, true, null, "a-1", produced, false));
+        Assert.Throws<ArgumentNullException>(() => ScenarioA1SpotterCalculator.DeploymentSuccessorValid(true, true, "first", "a-1", null!, false));
     }
 
     [Theory]
@@ -141,5 +141,5 @@ public sealed class TurnRuleBoundaryTests
     [InlineData("dfph", false)]
     [InlineData("mph", false)]
     public void APrepFireDesignationBarsMovement(string phase, bool expected) =>
-        Assert.Equal(expected, TurnSpotterDesignationRules.BarsMovement(phase));
+        Assert.Equal(expected, ScenarioA1SpotterCalculator.BarsMovement(phase));
 }
