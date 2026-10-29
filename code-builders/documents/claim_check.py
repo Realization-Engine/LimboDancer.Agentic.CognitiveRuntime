@@ -16,8 +16,19 @@ The ledger:
 The branch: every changed file of the Rules project (src/ASL/LimboDancer.Domains.Asl.Rules, its tests excluded) is listed by a claim of
 that branch that holds files. Prints every fault and exits 1 if there is any.
 
-Scope (warnings, never faults; the Rules conventions, section 2): for a claim's branch, every code file it changes outside the Rules project,
-its tests, the minigame bundles, and the Rule Workbench, since callers are track 3's.
+Wiring (the plan's section 9.1; the inventory's sections 7 and 8): each wiring row is "W-<rule claim>", names a rule claim of section 6, and is
+open with no owner or carries its wiring claim's state; a row is taken only once its rule claim is built; a rule claim at wired or later has
+every wiring row wired or later; each wiring claim ("wire-<capability>") owns a row, and no path is held whole by two wiring claims. A wiring
+claim's branch changes only the paths it holds (under src/ASL/), their tests, and Rules files (a warning: only to remove the old members its
+rows name).
+
+Scope (faults; the Rules conventions, section 2): for a rule claim's branch, every code file it changes outside the Rules project, its
+tests, the minigame bundles, and the Rule Workbench, since callers are track 3's, and a rule claim merges without a gate of its own only
+while it stays in Rules (the plan's section 4.3, 2026-10-29).
+
+The batch gate (the plan's section 4.3): the rule claims merged into main since the commit the inventory's section 6 records as the last
+batch gate, by the merge commits' branches. At five, a rule claim's branch is a fault until the batch gate runs on main
+(`gate.sh rules-batch <commit> ...`) and its new commit is recorded; any other branch gets a warning.
 
 Overlaps (warnings, never faults; the plan's section 10): with --base, every file outside the Rules project that this branch changes and that
 the branch of another holding claim changes too, by that branch's commits as this checkout sees them (a local branch, else origin's). Play,
@@ -117,6 +128,152 @@ def check_ledger(lines, faults):
     return claims
 
 
+WIRING_HEADER = "| Wiring | Rule claim | Capability | Sites to rewire | Old members to remove | Behavior changes | Owner | State |"
+WIRING_CLAIMS_HEADER = "| Claim | Agent | Reviewer | Branch | Held files | Capability | State | Opened | Note |"
+WIRING_ROW_STATES = ["open", "claimed", "wired", "reviewed", "accepted"]
+WIRING_STATES = ["claimed", "wired", "reviewed", "accepted"]
+WIRED_OR_LATER = {"wired", "reviewed", "accepted"}
+BUILT_OR_LATER = {"built", "reviewed", "wired", "accepted"}
+CAPABILITIES = {"fire", "movement", "rout", "rally", "close combat", "setup and work", "the turn's boundaries"}
+HELD_PATH = re.compile(r"^(\S+)( \(shared\))?$")
+
+
+def table(lines, header, width, faults, name):
+    """The rows of the table under this header, as lists of cells; a row of another width is a fault."""
+    at = next((i for i, line in enumerate(lines) if line == header), None)
+    if at is None:
+        faults.append(f"the inventory has no {name} table")
+        return []
+    rows = []
+    for line in lines[at + 2:]:
+        if not line.startswith("|"):
+            break
+        c = inventory_table.cells(line)
+        if len(c) != width:
+            faults.append(f"a {name} row has {len(c)} cells: {line[:80]}")
+            continue
+        rows.append(c)
+    return rows
+
+
+def check_wiring(lines, claims, faults):
+    """The wiring rows (section 7) and the wiring claims (section 8) of the plan's section 9.1."""
+    wiring = collections.OrderedDict()
+    for claim, agent, reviewer, branch, files, capability, state, opened, note in table(lines, WIRING_CLAIMS_HEADER, 9, faults, "wiring claims"):
+        if claim in wiring or claim in claims:
+            faults.append(f"wiring claim {claim} appears twice, or shares a rule claim's id")
+        if not claim.startswith("wire-"):
+            faults.append(f"wiring claim {claim}: its id begins 'wire-'")
+        if agent not in AGENTS:
+            faults.append(f"wiring claim {claim}: agent {agent!r} is not Claude or Codex")
+        if reviewer != "sub-agent" and (reviewer not in AGENTS or reviewer == agent):
+            faults.append(f"wiring claim {claim}: reviewer {reviewer!r} must be the other agent or sub-agent")
+        if state not in WIRING_STATES:
+            faults.append(f"wiring claim {claim}: state {state!r} is not one of {', '.join(WIRING_STATES)}")
+        if capability not in CAPABILITIES:
+            faults.append(f"wiring claim {claim}: capability {capability!r} is not one of the plan's section 9")
+        if not branch:
+            faults.append(f"wiring claim {claim}: no branch")
+        held = collections.OrderedDict()
+        for entry in (name.strip() for name in files.split(",")):
+            m = HELD_PATH.match(entry) if entry else None
+            if entry and not m:
+                faults.append(f"wiring claim {claim}: held file {entry!r} must read 'path' or 'path (shared)'")
+            elif m:
+                held[m.group(1)] = bool(m.group(2))
+        wiring[claim] = {"agent": agent, "branch": branch, "state": state, "files": held, "rows": [], "capability": capability}
+    seen = set()
+    for row, rule_claim, capability, sites, old, changes, owner, state in table(lines, WIRING_HEADER, 8, faults, "wiring"):
+        if row in seen:
+            faults.append(f"wiring row {row} appears twice")
+        seen.add(row)
+        if capability not in CAPABILITIES:
+            faults.append(f"wiring row {row}: capability {capability!r} is not one of the plan's section 9")
+        if row != f"W-{rule_claim}":
+            faults.append(f"wiring row {row}: its id is 'W-' and its rule claim's id ({rule_claim})")
+        rule = claims.get(rule_claim)
+        if rule is None:
+            faults.append(f"wiring row {row}: rule claim {rule_claim} is not in the claims table")
+        else:
+            rule.setdefault("wiring", []).append((row, state))
+        if state not in WIRING_ROW_STATES:
+            faults.append(f"wiring row {row}: state {state!r} is not one of {', '.join(WIRING_ROW_STATES)}")
+        if not owner:
+            if state != "open":
+                faults.append(f"wiring row {row}: no owner, so its state is open, not {state!r}")
+            continue
+        m = OWNER.match(owner)
+        holder = wiring.get(m.group(1)) if m else None
+        if holder is None:
+            faults.append(f"wiring row {row}: Owner {owner!r} does not name a wiring claim as 'claim (agent)'")
+            continue
+        if holder["agent"] != m.group(2):
+            faults.append(f"wiring row {row}: Owner says {m.group(2)}, the wiring claims table says {holder['agent']}")
+        if holder.get("capability") and holder["capability"] != capability:
+            faults.append(f"wiring row {row} is {capability}, its wiring claim {m.group(1)} wires {holder['capability']}")
+        if state != holder["state"]:
+            faults.append(f"wiring row {row}: state {state!r}, its wiring claim {m.group(1)} is {holder['state']}")
+        if rule is not None and rule["state"] not in BUILT_OR_LATER:
+            faults.append(f"wiring row {row} is taken while its rule claim {rule_claim} is {rule['state']}, not built")
+        holder["rows"].append(row)
+    for name, claim in claims.items():
+        if claim["state"] in WIRED_OR_LATER:
+            for row, state in claim.get("wiring", []):
+                if state not in WIRED_OR_LATER:
+                    faults.append(f"rule claim {name} is {claim['state']}, and its wiring row {row} is {state}")
+    holders = collections.defaultdict(list)
+    for name, claim in wiring.items():
+        if not claim["rows"]:
+            faults.append(f"wiring claim {name} owns no wiring row")
+        if claim["state"] == "claimed":
+            for path, shared in claim["files"].items():
+                holders[path].append((name, shared))
+    for path, held in holders.items():
+        if len(held) > 1 and not all(shared for _, shared in held):
+            faults.append(f"{path} is held by two wiring claims at once: {', '.join(name for name, _ in held)}")
+    return wiring
+
+
+def check_wiring_branch(wiring, branch, paths, faults):
+    """A wiring claim's branch changes only the files it holds and their tests; a Rules file only to remove the old members its rows name."""
+    held = {f"src/ASL/{path}" for claim in wiring.values() if claim["branch"] == branch and claim["state"] == "claimed" for path in claim["files"]}
+    for path in paths:
+        if not path.startswith("src/") or path.endswith(".md") or path.startswith("src/ASL/tests/") or path.startswith("src/ASL/units/minigames/"):
+            continue
+        if path.startswith(RULES_DIR):
+            print(f"WARNING: {path} is a Rules file; a wiring branch changes Rules only to remove the old members its rows name")
+        elif path not in held:
+            faults.append(f"{path} is changed by wiring branch {branch} and held by none of its wiring claims (add it by a commit to main first)")
+
+
+LAST_BATCH = re.compile(r"^\*\*Last batch gate:\*\* `([0-9a-f]{7,40})`")
+MERGE = re.compile(r"^Merge pull request #\d+ from [^/\s]+/(\S+)$")
+BATCH_SIZE = 5
+
+
+def batch_gate(lines, claims, branch, faults):
+    """The rule claims merged into main since the last batch gate (the plan's section 4.3). At five, the next rule claim waits for one."""
+    m = next((LAST_BATCH.match(line) for line in lines if LAST_BATCH.match(line)), None)
+    if m is None:
+        faults.append("the inventory's section 6 records no last batch gate ('**Last batch gate:** `<commit>`')")
+        return
+    main = "origin/main" if git("rev-parse", "--verify", "--quiet", "origin/main").returncode == 0 else "HEAD"
+    out = git("log", "--merges", "--first-parent", "--format=%s", f"{m.group(1)}..{main}")
+    if out.returncode != 0:
+        print(f"NOTE: the last batch gate {m.group(1)} is not in this checkout's history; merges since it are not counted")
+        return
+    branches = {claim["branch"] for claim in claims.values()}
+    merged = [b.group(1) for subject in out.stdout.splitlines() if (b := MERGE.match(subject)) and b.group(1) in branches]
+    print(f"rule claims merged since the last batch gate {m.group(1)}: {len(merged)} of {BATCH_SIZE}" + (f" ({', '.join(merged)})" if merged else ""))
+    if len(merged) >= BATCH_SIZE:
+        message = (f"{len(merged)} rule claims merged since the last batch gate {m.group(1)}: run it on main "
+                   f"(gate.sh rules-batch {m.group(1)} ...) and record the new commit in the inventory's section 6")
+        if any(claim["branch"] == branch for claim in claims.values()):
+            faults.append(message + " before this rule claim merges")
+        else:
+            print("WARNING:", message)
+
+
 def git(*args):
     return subprocess.run(["git", "-C", REPO, *args], capture_output=True, text=True)
 
@@ -200,7 +357,9 @@ def main():
     faults = []
     lines, _ = inventory_table.read_lines()
     claims = check_ledger(lines, faults)
+    wiring = check_wiring(lines, claims, faults)
     branch = value("--branch")
+    wiring_branch = any(claim["branch"] == branch for claim in wiring.values())
     files = None
     if value("--files") is not None:
         files = [name.strip() for name in value("--files").split(",") if name.strip()]
@@ -209,19 +368,28 @@ def main():
     if files is not None:
         if not branch:
             sys.exit("--base or --files needs --branch")
-        check_branch(claims, branch, files, faults)
+        if wiring_branch:
+            if value("--base") is not None:
+                check_wiring_branch(wiring, branch, changed_files(value("--base")) or [], faults)
+        else:
+            check_branch(claims, branch, files, faults)
     if "--touched" in args:
         touched(claims, value("--base") or "origin/main")
     elif value("--base") is not None:
         for warning in overlaps(claims, branch, value("--base")):
             print("WARNING:", warning)
         if any(claim["branch"] == branch for claim in claims.values()):
+            # A rule claim merges without a gate of its own only because it stays in its scope (the plan's section 4.3, 2026-10-29).
             for path in out_of_scope(changed_files(value("--base")) or []):
-                print(f"WARNING: {path} is outside a claim's scope (the Rules conventions, section 2): its callers are track 3's")
+                faults.append(f"{path} is outside a rule claim's scope (the Rules conventions, section 2): its callers are track 3's, "
+                              "and a rule claim merges without a gate only while it stays in Rules")
+    batch_gate(lines, claims, branch, faults)
     for fault in faults:
         print("FAULT:", fault)
     held = sum(1 for claim in claims.values() if claim["state"] in HOLDING)
-    print(f"claims: {len(claims)} ({held} holding files); Rules files checked: {'none' if files is None else len(files)}; faults: {len(faults)}")
+    open_rows = sum(1 for claim in claims.values() for _, state in claim.get("wiring", []) if state == "open")
+    print(f"claims: {len(claims)} ({held} holding files); wiring claims: {len(wiring)}; open wiring rows: {open_rows}; "
+          f"Rules files checked: {'none' if files is None else len(files)}; faults: {len(faults)}")
     sys.exit(1 if faults else 0)
 
 

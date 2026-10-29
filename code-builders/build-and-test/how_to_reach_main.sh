@@ -7,7 +7,8 @@
 #   code, project files, lock files, the workflow, and anything under code-builders;
 #   any commit that adds, removes, or renames a file, a document included: some tests read the whole repository, and the merge that
 #   brought code-builders in broke one of them (an architecture test that lists every .py file) while changing no file of the solution.
-# Straight to main, with the CI run read afterwards, only for edits to the text of documents that already exist (.md, outside code-builders).
+# Straight to main, with the CI run read afterwards, only for edits to the text of documents that already exist (.md, outside code-builders),
+# and a new Codex wiring prompt (src/ASL/docs/Prompts/Codex Wiring/Wiring Prompt NNN.md) added at a batch gate.
 #
 # It also says whether main has moved since the branch was cut, and which files changed on both sides. Exit 0 straight, 3 pull request.
 source "$(dirname "${BASH_SOURCE[0]}")/../paths.sh"
@@ -21,7 +22,10 @@ if [ "$FORK" != "$MAIN" ]; then
   echo "main has moved by $(git -C "$R" rev-list --count "$FORK..origin/main") commits since. Files changed on both sides (the user hears of these first):"
   comm -12 <(git -C "$R" -c core.quotepath=false diff --name-only "$FORK..origin/main" | sort) <(git -C "$R" -c core.quotepath=false diff --name-only "$FORK..$BRANCH" | sort) | sed 's/^/  /'
 fi
+# One exception (the user, 2026-10-29): a new Codex wiring prompt, written at a batch gate by wiring_prompt.py, is added straight to main
+# with the batch record, so each batch does not wait on a pull request. Only an added .md file in that one folder.
 REASONS=$(git -C "$R" -c core.quotepath=false diff --name-status "$FORK..$BRANCH" | awk -F'\t' '
+  $1 == "A" && $2 ~ /^src\/ASL\/docs\/Prompts\/Codex Wiring\/Wiring Prompt [0-9]+\.md$/ { next }
   $1 != "M" { print "  " $1 " " $NF "   (a file added, removed, or renamed)"; next }
   $2 ~ /^code-builders\// { print "  M " $2 "   (under code-builders)"; next }
   $2 !~ /\.md$/ { print "  M " $2 "   (not a document)"; next }')

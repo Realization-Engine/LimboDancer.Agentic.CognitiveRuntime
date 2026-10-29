@@ -4526,10 +4526,38 @@ The claim board of the [Rules-first four-track plan](<Plans/ASL Rules-First Four
 - **Agent**: Claude or Codex, the agent that holds it. **Reviewer**: the other agent, or "sub-agent" when only one is working.
 - **Branch**: the branch the claim's work is done on.
 - **Calculator files**: the files of the Rules project the claim will change, by file name, comma-separated. While the claim is claimed or built it holds them: no other claim may list them, and a branch may change a Rules file only when a claim of that branch lists it. A file written "Name.cs (shared)" is one the claim changes only at its edges (a call into its own calculator, a field on a record); several claims may hold a file shared at once, never when one of them holds it whole (2026-10-29). Files outside the Rules project are not listed: `claim_check.py` warns when two open claims' branches change the same one.
-- **State**: claimed, built, reviewed, wired, or accepted (the plan's section 4.3). Every row the claim owns carries the same state in its Claim state cell, and its Owner cell reads "claim (agent)", for example "C9.3 (Codex)".
+- **State**: claimed, built, reviewed, wired, or accepted (the plan's section 4.3).
+- **The batch gate** (the plan's section 4.3, the user, 2026-10-29): a rule claim merges on CI without a gate of its own; after every fifth rule claim merged since the commit below, the merge gate runs on main (`gate.sh rules-batch <commit> baseline`, `build`, `proofs`, `carry`), and the commit it proved replaces the one below. `claim_check.py` counts the merges and holds the next rule claim at five.
+
+**Last batch gate:** `f525ea78` (2026-10-29: the merge of the C9.3 claim, whose own gate proved it; the first batch gate builds its baseline from this commit). Every row the claim owns carries the same state in its Claim state cell, and its Owner cell reads "claim (agent)", for example "C9.3 (Codex)".
 
 | Claim | Agent | Reviewer | Branch | Calculator files | State | Opened | Note |
 |---|---|---|---|---|---|---|---|
 | proving-slice | Claude | Codex | task4/proving-slice | ScenarioA1RuleContractModels.cs | built | 2026-10-28 | First task 4 of the Rules-first plan (section 8): the wiring contract format and three contracts, the A10.6 rally (every fact gathered), E10.1 eligibility (facts entered by hand), and A12.14 concealment on advancing (what each viewer may know). The calculators are only read. |
 | C9.3 | Claude | sub-agent | claim/c9.3-spotters | ScenarioA1SpotterCalculator.cs, ScenarioA1SpotterContract.cs, ScenarioA1RuleContracts.cs, ScenarioA1OrdnanceEligibility.cs (shared), ScenarioA1OrdnanceCalculator.cs (shared), ScenarioA1OrdnanceRuleModels.cs (shared), TurnSpotterTimingRules.cs, TurnSpotterDesignationRules.cs, TurnSpotterLossRules.cs, TurnSpotterUseRules.cs, ScenarioA1SpotterModels.cs | built | 2026-10-28 | The first claim on the open board (plan question 5): C9.3 is decided today by the ScenarioA1 ordnance calculators and the four Turns spotter rules, and by checks in Play, Units, ASL.Turns, and the Play page; the claim makes them one calculator. It takes the contract registry from proving-slice so that later contracts need only their own file. |
 
+## 7. Wiring
+
+The wiring rows of the [Rules-first plan](<Plans/ASL Rules-First Four-Track Plan.md>), section 9.1 (the user, 2026-10-29): what track 3 must move onto a calculator a rule claim built. A rule claim adds its row when it reaches "built"; a wiring claim of section 8 takes it. `code-builders/documents/claim_check.py` checks this table with sections 6 and 8.
+
+- **Wiring**: `W-` and the rule claim's id. **Rule claim**: the claim of section 6 whose calculator is wired. **Capability**: the capability of the plan's section 9 whose wiring claim takes the row (fire, movement, rout, rally, close combat, setup and work, the turn's boundaries).
+- **Sites to rewire**: each place outside Rules that decides the rule today, as `file: member`, with the calculator method that replaces it; or a command or read that does not exist yet and must ask the calculator.
+- **Old members to remove**: the Rules members that keep their callers' answers until the wiring moves them (the Rules conventions, section 2, step 5).
+- **Behavior changes**: what play will allow or refuse differently once wired; each is a named difference at the wiring claim's gate.
+- **Owner**: "wiring claim (agent)", blank while open. **State**: open, claimed, wired, reviewed, or accepted; an owned row's state is its wiring claim's.
+
+| Wiring | Rule claim | Capability | Sites to rewire | Old members to remove | Behavior changes | Owner | State |
+|---|---|---|---|---|---|---|---|
+| W-C9.3 | C9.3 | fire | New: the replacement designation at the owner's MPh opening after a loss (ASOP 3.11A), asking `ScenarioA1SpotterCalculator.Timing` and `CandidateRefusal` (`GamePlanner.Spotters.cs`, `GameProjector.SpotterDesignation.cs`); one hex-range read for Play's `GamePlanner.SupportWeaponMapFacts` and the projector's `SpotterHexRange`, handed to `InReach` (backlog section 80) | None: the C9.3 claim moved its callers itself, before the rule that a claim builds Rules only | A broken, eliminated, or captured Spotter can be replaced at its owner's next MPh opening | | open |
+
+## 8. Wiring claims
+
+The claims of track 3 (the plan's section 9.1): each takes the open wiring rows of one capability whose rule claims are built. It is made like a rule claim, by one commit to main that adds its row here and fills its wiring rows' Owner and State; the push is the lock.
+
+- **Claim**: `wire-` and its capability, with a number when a capability is wired in parts (`wire-fire-1`). **Agent**, **Reviewer**, **Branch**: as in section 6.
+- **Held files**: the files outside Rules it will change, by path under `src/ASL/`, comma-separated, each whole or "(shared)". While the claim is claimed it holds them: no two wiring claims hold one file whole, and its branch changes only those files, their tests, and the Rules members its rows name for removal.
+- **Capability**: fire, movement, rout, rally, close combat, setup and work, or the turn's boundaries (the plan's section 9).
+- **State**: claimed, wired, reviewed, or accepted. When every wiring row of a rule claim is wired, the rule claim and its rows move to "wired".
+
+| Claim | Agent | Reviewer | Branch | Held files | Capability | State | Opened | Note |
+|---|---|---|---|---|---|---|---|---|

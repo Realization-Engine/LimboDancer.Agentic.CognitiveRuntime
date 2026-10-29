@@ -69,6 +69,10 @@ Alternative considered: GitHub issues with an assignee. They are atomic too, but
 7. **The rows updated** in the inventory and the coverage document, and anything left out given a backlog row.
 8. **The pass's Rules status refreshed** in the redesign plan (section 11.1).
 
+**No gate per rule claim; a batch gate every five** (the user, 2026-10-29, to speed up the Rules library). A rule claim changes the Rules library and its tests and leaves every old member's answer as it was (step 2), so no recorded game replays or sweeps differently, and the gate's replay and sweep, about 25 to 35 minutes a claim, would prove nothing its tests and CI do not. A rule claim therefore merges on its unit tests and a green CI run. `claim_check.py` makes that safe and regular: a rule claim's branch that changes code outside its scope is a fault, and after five rule claims merged since the last batch gate (recorded in the inventory's section 6) the sixth is held until the gate runs once on main against that commit (`gate.sh rules-batch`, with `CODE_MOVE=1`: no game may differ). Its `carry` stage files the baseline under the proved commit, so each batch after the first costs the build and the proofs alone, about 15 minutes. A difference is found after merge, among at most five claims each merged as its own commit, and is fixed forward. Wiring claims keep a gate each, since that is where behavior changes (section 9.1).
+
+**The prompt for Codex at each batch gate** (the user, 2026-10-29). With the batch gate's record, Claude writes Codex's prompt for the wiring the batch opened, by `code-builders/documents/wiring_prompt.py`, from the board: every open wiring row grouped by capability, the rows whose rule claims merged in this batch marked new, the wiring claims in progress, and the rule claims waiting for review, with Claude's note where one is needed. Each prompt is the next numbered file in `src/ASL/docs/Prompts/Codex Wiring/`, so the folder is the history of what Codex was handed; the user approved that these new files go straight to main with the record. The first, Wiring Prompt 001, covers the batch gate `f525ea78`.
+
 ### 4.4 What goes on the board first
 
 - The 143 faults the audits found in rules already built, as claims of their own.
@@ -224,6 +228,20 @@ Two preparatory tasks open the track:
 
 - **Split `GameProjector.cs`** (5,468 lines) into partial files by capability, so that several agents can wire at once without editing the same file.
 - **Move the game logic out of MapStudio `Services/`** into Play: live play, replay steps and differences, immediate proposals, movement plans, close combat declarations, scripted dice, and the like. MapStudio then holds only UI.
+
+### 9.1 Wiring on the claim board (the user, 2026-10-29)
+
+**The division of labor.** Claude takes the rule claims (track 2), which change the Rules library and its tests only (the Rules conventions, section 2); Codex takes the wiring (track 3), which moves Play, the Units projector, ASL.Turns, and the Studio's services onto the calculators. It is a default, not a lock: when one queue is empty, either agent takes from the other. Each reviews the other's work: Codex, who will call a calculator, reviews its facts and verdicts; Claude reviews the wiring against the rules.
+
+**The wiring table** (the inventory's section 7). A rule claim that reaches "built" adds one wiring row, `W-<claim>`, from its design's map: the sites outside Rules that decide the rule and the calculator method that replaces each; the old Rules members to remove once their callers have moved; and the behavior changes the wiring will bring (where the claim's reading differs from what play does today). A row is open, claimed, wired, reviewed, or accepted.
+
+**Wiring claims** (the inventory's section 8) are taken by capability (fire, movement, rout, rally, close combat, setup and work, the turn's boundaries), as above: one wiring claim takes the open rows of its capability whose rule claims are built. It is made like a rule claim, by one commit to main, and it holds the files outside Rules it will change, by path under `src/ASL/`, whole or `(shared)`: no two wiring claims hold one file whole. Its branch changes only the files it holds, its tests, and the Rules members its rows name for removal. Behavior changes land here, so a wiring claim runs the merge gate, and each replay or sweep difference is one of its rows' named changes; older recorded games keep their recorded reading.
+
+**States.** A wiring claim and its rows go claimed, wired, reviewed, accepted (when track 3 accepts the phases its capability serves). When every wiring row of a rule claim is wired, that rule claim and its inventory rows move to "wired" too, and to "accepted" with the phase.
+
+**The check.** `claim_check.py` reads both tables: one holder per file across the wiring claims; each wiring row's rule claim exists and is built or later before the row is claimed; a wiring claim's branch changes only what it holds; and a rule claim at "wired" has every wiring row wired.
+
+**Two working folders.** A wiring claim runs the merge gate, so Codex keeps its own working folder (`ASL_GATE_WORK`, which every tool under `code-builders` reads) and its own Studio port; AGENTS.md names them.
 
 ## 10. Coordination between Claude and Codex
 
