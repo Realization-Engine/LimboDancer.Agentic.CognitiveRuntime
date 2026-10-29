@@ -1,6 +1,6 @@
 # W-C9.3 fire wiring design
 
-**Status:** Revised for user approval on 2026-10-29 against main `6024cf2e`, after PRs 60, 63 and 64. No implementation authorized yet. Claim `wire-fire-1` (Codex, reviewer Claude), branch `codex/wire-fire-1`, takes the current W-C9.3 row, including its TI fact correction and viewer-safe contract reads. The inventory sections 7 and 8 are the ownership ledger. The earlier [read-only review](<ASL Wiring Prompt 001 Rule Review.md>) records the original findings and their disposition.
+**Status:** Revised against main `6024cf2e`, after PRs 60, 63 and 64, and approved by the user on 2026-10-29. Implementation is authorized for this design, after the separate W-C9 claim/design and rule reviews are finished. Claim `wire-fire-1` (Codex, reviewer Claude), branch `codex/wire-fire-1`, takes the current W-C9.3 row, including its TI fact correction and viewer-safe contract reads. The inventory sections 7 and 8 are the ownership ledger. The earlier [read-only review](<ASL Wiring Prompt 001 Rule Review.md>) records the original findings and their disposition.
 
 ## 1. Scope, prerequisites and exclusions
 
