@@ -79,6 +79,20 @@ No builds are performed for this design. After approval, set `ASL_GATE_WORK=E:/A
 
 Register each outside output when created with `outside_outputs.sh`; stop and remove this task's Studio/build outputs as soon as they are no longer needed, at the latest after CI passes. The final cleanup checks the registry and leaves other tasks' outputs untouched. The source worktree is `C:/Users/dland/.codex/worktrees/wire-fire-c93/LimboDancer.MCP`.
 
-## 9. Approval requested
+## 9. Approval recorded
 
-Approve this revised scope: call the built replacement/opening/mark APIs, bind TI and viewer facts correctly, preserve assignment occurrences and old replay readings, and merge wire-fire-1 before wire-fire-2. The user explicitly required approval before building. Rule review status updates are separate documentation work and do not authorize implementation.
+The user approved the revised W-C9.3 scope on 2026-10-29 and subsequently instructed Codex to proceed independently with implementation. The order remains wire-fire-1 before wire-fire-2. Code merging remains a separate user decision under AGENTS.md.
+
+## 10. As implemented, awaiting final gate and CI
+
+The command emits `asl.spotter.v2` for new original and replacement declarations. The projector preserves the v1/null reading, including its old TI binding. New command and projection paths share `MortarSpotterFacts`, ask the built designation or replacement calculator, and never treat a null replacement refusal as permission. Replacement updates the active assignment without fire, SW-use or movement marks.
+
+The shot version is an optional `SpotterWiringVersion` property on the `OrdnanceFired` event payload, rather than the event-envelope proposal in section 3. Version 1 selects current assignment-loss reads and actual spotted-shot marks; absence preserves the old reading. This keeps the serialized `OrdnanceShot` facts unchanged and gives the existing payload-only verifier the version directly. Reader and writer preserve absence, and verification refuses unknown versions.
+
+Command identity uses the established source plus `{attempt}-{positive index}` convention, requiring contiguous consecutive indices. Nonmatching event IDs form separate conservative commands. Replay groups all recorded event types of a command before applying it, and passes them to `OpeningStepOf`; the derived steps go to `OpeningCheckpoint`. A phase-change batch is excluded only when its boundary evidence is unambiguous. A globally numbered imported journal spanning several phase boundaries is treated conservatively, so movement cannot disappear into housekeeping. Continuing a partially replayed command with more events restarts that replay, because the completed batch can change the earlier opening answer. Tests include dice before a declaration, a later movement event in the same batch, and both incremental continuations.
+
+`GameState.SpotterOpening` and the loss record's `PlayerTurnOrdinal` are derived replay metadata marked `JsonIgnore`. They do not alter serialized legacy state shape. Active loss reads use the latest declaration revision as the occurrence boundary, preserving older losses without attaching them to a recovered unit's new assignment. History filters successor/loss evidence by that occurrence, respects current-assignment event visibility, and labels replacement declarations separately.
+
+For a candidate-list refresh, one `MortarSpotterAssignmentRead` indexes designation/loss history and sharing locations for the immutable state. All candidates reuse that context; stale state references are rejected and rebuilt. The context lasts only for the refresh and holds no viewer-specific verdict. This implements the once-per-read intent in section 7 without adding a process-wide cache or a new state memo store. Existing map memoization supplies geometry.
+
+The Workbench gathers replacement facts only where the selected holder identifies one active mortar. Several mortars held by one unit leave mortar-dependent facts unknown; adding an explicit gun subject is backlog section 84. The direct Play panel selects a specific mortar and has no such ambiguity. Original/replacement controls, viewer-safe contract reads, history labels and focused tests are implemented. This section does not claim completion of the replay gate, CI, final browser checks or merge approval; those results must be recorded from their logs.
