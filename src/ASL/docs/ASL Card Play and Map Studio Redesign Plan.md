@@ -1908,7 +1908,7 @@ Turns tasks that reach this pass from another: D6 (pass 73) names the CC and her
 
 **Pass 85: SMOKE, wind, and Environmental Conditions** (new; 33 rows of the inventory). Counters: s# and WP# on Guns and mortars (the British mortar's s7 is already in the catalog, unread); a smoke dispenser value on each vehicle whose counter prints one (the audit says the PzKpfw IIIH does; not checked against the Vehicle Listing). Needs first: 35.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 33 rows: 1 built with a deviation, 7 partly, 25 not built. Claims: 33 open. A Turns calculator on 3 rows. Wiring: 0 of 33. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 33 rows: 1 built with a deviation, 7 partly, 25 not built. Claims: 32 open, 1 claimed (owners: A24.5 (Claude)). A Turns calculator on 3 rows. Wiring: 0 of 33. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2330,7 +2330,7 @@ Turns tasks that reach this pass from another: D5.4 (pass 145) accepts airborne 
 
 **Pass 175: Transport and unusual vehicles** (new; 107 rows of the inventory). Counters: a wagon; motorcycles in three sizes and bicycles; an amphibian and a DD tank; an Aerosan; a trailer and a portee vehicle; an Ammo Supply counter. Needs first: 125 (water) for D16; 105 (Impulse Movement) for E11; 95 (snow terrain) for D17; 65 (Riders) for D15 and D17.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 108 rows: 1 partly, 107 not built. Claims: 107 open, 1 built (owners: proving-slice (Claude)). A Turns calculator on 6 rows. Wiring: 0 of 108. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 108 rows: 1 partly, 107 not built. Claims: 98 open, 10 claimed (owners: E10 (Claude)). A Turns calculator on 6 rows. Wiring: 0 of 108. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
