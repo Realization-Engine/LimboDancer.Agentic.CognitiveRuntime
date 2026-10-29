@@ -44,12 +44,16 @@ internal static class ScenarioA1VehicleBreakdownContract
     {
         var printedB = facts.Number("printedB");
         var printedX = facts.Number("printedX");
-        if (Whole(facts.Number("lowersB")) is not { } lowersB || Whole(facts.Number("lowersBX")) is not { } lowersBX
-            || Whole(facts.Number("originalDr")) is not (>= 2 and <= 12) || printedB is not null && Whole(printedB) is null
-            || printedX is not null && Whole(printedX) is null)
+        // A printed number under 2, or a lowering over 6, is no vehicle's (the build's review, finding 3): the question stays open.
+        if (Whole(facts.Number("lowersB")) is not { } lowersB || lowersB > 6 || Whole(facts.Number("lowersBX")) is not { } lowersBX || lowersBX > 6
+            || Whole(facts.Number("originalDr")) is not (>= 2 and <= 12) || printedB is not null && Whole(printedB) is not >= 2
+            || printedX is not null && Whole(printedX) is not >= 2)
         {
-            return new(ContractVerdict.NotEvaluated, [new("a number is not a whole number this contract reads, or the DR is not 2 to 12", "D3.7", 201)], []);
+            return new(ContractVerdict.NotEvaluated, [new("a number is not one this contract reads: a whole printed number of 2 or more, a lowering of 0 to 6, a DR of 2 to 12", "D3.7", 201)], []);
         }
+
+        // A19.131: an Ammunition Shortage "has no effect on CC" (the build's review, finding 2).
+        var kind = Enum.Parse<VehicleBreakdownDr>(facts.Text("drKind")!);
 
         var weapon = facts.Text("weapon") switch
         {
@@ -60,9 +64,9 @@ internal static class ScenarioA1VehicleBreakdownContract
             _ => VehicleBreakdownWeapon.MainArmament,
         };
         var numbers = ScenarioA1VehicleBreakdownCalculator.Numbers(new(weapon, Whole(printedB), Whole(printedX), facts.Flag("circled")!.Value,
-            facts.Flag("noteExtends")!.Value, facts.Flag("lowAmmo")!.Value, facts.Flag("ammunitionShortage")!.Value, lowersB, lowersBX));
-        var outcome = ScenarioA1VehicleBreakdownCalculator.Outcome(Whole(facts.Number("originalDr"))!.Value, numbers,
-            Enum.Parse<VehicleBreakdownDr>(facts.Text("drKind")!));
+            facts.Flag("noteExtends")!.Value, facts.Flag("lowAmmo")!.Value, facts.Flag("ammunitionShortage")!.Value && kind != VehicleBreakdownDr.CloseCombat,
+            lowersB, lowersBX));
+        var outcome = ScenarioA1VehicleBreakdownCalculator.Outcome(Whole(facts.Number("originalDr"))!.Value, numbers, kind);
         var x = numbers.XNumber is { } value ? string.Format(CultureInfo.InvariantCulture, ", X{0}", value) : string.Empty;
         var reason = string.Format(CultureInfo.InvariantCulture, "B{0}{1}{2}{3}", numbers.BNumber, numbers.Circled ? " circled" : string.Empty, x,
             numbers.LowAmmo ? ", under Low Ammo" : string.Empty);

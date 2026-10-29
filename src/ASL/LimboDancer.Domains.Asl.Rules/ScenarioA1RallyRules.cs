@@ -301,8 +301,9 @@ public static class ScenarioA1RallyRules
     public static string SwRepairSummary(string unitId, string equipmentId, int repairNumber) => $"play.repair: {unitId} attempts to repair {equipmentId} (R{repairNumber}; a 6 eliminates it)";
 
     /// <summary>
-    /// D3.7: a vehicle's MG is repaired in the RPh by an active vehicle. This and the next three members are the AAMG's old path, and keep their answers
-    /// (the D3.7 claim, RD3.6): they ask no shocked or stunned crew and allow no Hero Rider, where
+    /// D3.7: a vehicle's MG is repaired in the RPh by an active vehicle. The AAMG's old path (this member, <see cref="VehicleRepairWeaponBar"/>,
+    /// <see cref="VehicleRepairCrewBarAsPlanned"/>, and <see cref="VehicleRepairChange"/>) keeps its answers (the D3.7 claim, RD3.6): it asks no shocked
+    /// or stunned crew and allows no Hero Rider, where
     /// <see cref="ScenarioA1VehicleBreakdownCalculator.RepairRefusal"/> asks both; and a failed AAMG sets the MA's generic Disabled.
     /// </summary>
     public static string? VehicleRepairPhaseBar(string? phase, bool active) => phase != "rph" || !active ? "play.repair-phase: a vehicle's MG is repaired in the RPh (D3.7)" : null;

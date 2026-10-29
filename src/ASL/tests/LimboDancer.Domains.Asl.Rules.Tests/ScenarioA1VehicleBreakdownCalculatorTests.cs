@@ -53,6 +53,11 @@ public sealed class ScenarioA1VehicleBreakdownCalculatorTests
         // A printed X# (D3.7) is kept and lowered with the B#/X# lowerings.
         Assert.Equal(new VehicleBreakdownNumbers(10, 11, false, false), ScenarioA1VehicleBreakdownCalculator.Numbers(Ma(10, x: 11)));
         Assert.Equal(VehicleBreakdownOutcome.Disabled, On(11, Ma(10, x: 11)));
+
+        // A Low Ammo counter on an uncircled B# (E10 work, G10.41) turns it into the X# too (the build's review, finding 1): B12 becomes X12 and B11.
+        Assert.Equal(new VehicleBreakdownNumbers(11, 12, false, true), ScenarioA1VehicleBreakdownCalculator.Numbers(Ma(lowAmmo: true)));
+        Assert.Equal(VehicleBreakdownOutcome.Malfunction, On(11, Ma(lowAmmo: true)));
+        Assert.Equal(VehicleBreakdownOutcome.Disabled, On(12, Ma(lowAmmo: true)));
     }
 
     [Fact]
@@ -143,13 +148,22 @@ public sealed class ScenarioA1VehicleBreakdownCalculatorTests
             foreach (var flags in Enumerable.Range(0, 16))
             {
                 bool Bit(int bit) => (flags & (1 << bit)) != 0;
-                var refusal = ScenarioA1RallyRules.VehicleWeaponRepairBar("tank", weapon, Bit(0), Bit(1), Bit(2), Bit(3));
-                var expected = !ScenarioA1RallyRules.IsVehicleWeapon(weapon) ? "play.repair-weapon: tank has no weapon named '" + weapon + "' to repair (D3.7)"
-                    : ScenarioA1VehicleBreakdownCalculator.RepairRefusal(new("tank", weapon, Bit(0), Bit(1), Bit(2), Bit(3)));
-                Assert.Equal(expected, refusal);
+                Assert.Equal(OldVehicleWeaponRepairBar("tank", weapon, Bit(0), Bit(1), Bit(2), Bit(3)),
+                    ScenarioA1RallyRules.VehicleWeaponRepairBar("tank", weapon, Bit(0), Bit(1), Bit(2), Bit(3)));
             }
         }
     }
+
+    // The old body of ScenarioA1RallyRules.VehicleWeaponRepairBar, from main before the D3.7 claim, as the oracle the forward must equal (the build's
+    // review, finding 6).
+    private static string? OldVehicleWeaponRepairBar(string vehicleId, string weapon, bool malfunctioned, bool disabled, bool crewImpaired, bool repairedThisPhase) =>
+        !ScenarioA1RallyRules.IsVehicleWeapon(weapon) ? $"play.repair-weapon: {vehicleId} has no weapon named '{weapon}' to repair (D3.7)"
+        : disabled ? $"play.repair-weapon: {vehicleId}'s {ScenarioA1RallyRules.VehicleWeaponName(weapon)} is disabled for good (D3.7)"
+        : !malfunctioned ? $"play.repair-weapon: {vehicleId}'s {ScenarioA1RallyRules.VehicleWeaponName(weapon)} is not malfunctioned (D3.7)"
+        : repairedThisPhase ? $"play.repair-unit: {vehicleId}'s {ScenarioA1RallyRules.VehicleWeaponName(weapon)} has had its repair attempt this RPh (D3.7)"
+        : crewImpaired
+            ? $"play.repair-unit: {vehicleId}'s crew repairs nothing while it is shocked, stunned, or Recalled in this Player Turn, which is treated as a Stun, or while the vehicle is Abandoned (D3.7, D5.341)"
+        : null;
 
     [Fact]
     public void ARecallNeedsTheMaAndEverySecondaryArmamentDisabled()
@@ -193,6 +207,19 @@ public sealed class ScenarioA1VehicleBreakdownCalculatorTests
         bad = Is3(11);
         bad["lowersB"] = 1.5m;
         Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(Contract, bad).Outcome);
+        bad = Is3(11);
+        bad["lowersBX"] = 7;
+        Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(Contract, bad).Outcome);
+        bad = Is3(11);
+        bad["printedB"] = 1;
+        Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(Contract, bad).Outcome);
+
+        // A19.131: an Ammunition Shortage has no effect on CC; on a To Hit DR it gives the IS-3 X10.
+        var shortage = Is3(10);
+        shortage["ammunitionShortage"] = true;
+        Assert.Equal("disabled", ScenarioA1RuleContracts.Evaluate(Contract, shortage).Outcome);
+        shortage["drKind"] = "CloseCombat";
+        Assert.Equal("none", ScenarioA1RuleContracts.Evaluate(Contract, shortage).Outcome);
         Assert.All(Contract.Facts, fact => Assert.Equal(ContractDisclosure.All, fact.Disclosure));
     }
 }

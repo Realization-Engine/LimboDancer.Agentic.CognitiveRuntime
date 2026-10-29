@@ -3076,9 +3076,9 @@ public static class ScenarioA1FireCalculator
         /// <summary>
         /// A vehicle's MA MG after its attack (D3.7, C2.24, A9.2): it malfunctions on an Original IFT DR of 12 (its B# of 12), and keeps its
         /// Multiple ROF on an Original colored dr at most its ROF, unless its crew is pinned (A7.82) or it fired in the AFPh (A7.25: only
-        /// Opportunity Fire uses Multiple ROF in the AFPh).
+        /// Opportunity Fire uses Multiple ROF in the AFPh). Keeps its answer (the D3.7 claim, RD3.6): no X# and no circled B#, which
+        /// <see cref="ScenarioA1VehicleBreakdownCalculator.Numbers"/> and <see cref="ScenarioA1VehicleBreakdownCalculator.Outcome"/> give (W-D3.7).
         /// </summary>
-        // D3.7: keeps its answer (the D3.7 claim, RD3.6): no X# and no circled B#, which ScenarioA1VehicleBreakdownCalculator.Numbers and Outcome give (W-D3.7).
         private FireWeaponEffect VehicleWeaponEffect(FireVehicleFire vehicle, FireArithmetic arithmetic)
         {
             var definition = reference.Definitions[vehicle.DefinitionId!];

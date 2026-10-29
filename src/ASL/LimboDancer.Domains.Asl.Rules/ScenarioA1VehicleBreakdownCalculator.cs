@@ -35,7 +35,10 @@ public static class ScenarioA1VehicleBreakdownCalculator
             b--;
         }
 
-        if (lowAmmo && circled)
+        // A Low Ammo counter on the weapon's numbers turns its current B# into the X#, whether its B# is circled or the counter came another way
+        // (E10 work, G10.41): D3.71 says it of the counter (the build's review, finding 1).
+        lowAmmo &= printed;
+        if (lowAmmo)
         {
             x = b;
             b--;
@@ -47,12 +50,14 @@ public static class ScenarioA1VehicleBreakdownCalculator
             b -= facts.LowersB + facts.LowersBX;
         }
 
-        return new(b, x, circled, lowAmmo && circled);
+        return new(b, x, circled, lowAmmo);
     }
 
     /// <summary>
     /// Ruling RD3.3 (D3.7, D3.71): what an Original DR does to the weapon. An X# reached Disables it; else an Original 12 malfunctions it; else a circled
-    /// B# before Low Ammo gives Low Ammo on a To Hit or IFT DR at or above the B#; else a DR at or above the B# malfunctions it.
+    /// B# before Low Ammo gives Low Ammo on a To Hit or IFT DR at or above the B#; else a DR at or above the B# malfunctions it. The caller passes
+    /// <see cref="VehicleBreakdownDr.Ift"/> for the MA Gun only when it fires IFE or on the Area Target Type (D3.71's "IFT DR" is the Gun's own), and, for a
+    /// CC DR, numbers read with no Ammunition Shortage, which "has no effect on CC" (A19.131).
     /// </summary>
     public static VehicleBreakdownOutcome Outcome(int originalDr, VehicleBreakdownNumbers numbers, VehicleBreakdownDr kind)
     {
@@ -75,7 +80,8 @@ public static class ScenarioA1VehicleBreakdownCalculator
     /// Ruling RD3.4 (D3.7, p. 201): why this vehicle weapon may not be repaired now, or null. For a Gun MA, BMG, or CMG: a malfunctioned weapon not
     /// Disabled, once per RPh, by an inherent crew not shocked or stunned (an Unconfirmed Kill, a Recall read as Stun under D5.341, or an Abandoned
     /// vehicle bars it too). For an AAMG, the same, but by a CE crew not shocked or stunned, or by a Hero Rider, who replaces the crew test (D3.7's EXC;
-    /// a reading open to veto). The RPh itself is the caller's phase check.
+    /// a reading the user approved), so a Hero Rider may repair it even on an Abandoned vehicle or an Unconfirmed Kill. A weapon of the SA column is not
+    /// named here (no vehicle the catalog holds has one; W-D3.7). The RPh itself is the caller's phase check.
     /// </summary>
     public static string? RepairRefusal(VehicleRepairFacts facts)
     {
