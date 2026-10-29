@@ -1,0 +1,80 @@
+# ASL C9 Mortars Claim Design
+
+**Status:** Design, 2026-10-29, revised after a sub-agent's review (section 8), waiting for the user's approval. Claim C9 (Claude; reviewer a sub-agent until Codex takes reviews), branch `claim/c9-mortars`, rows C9.1, C9.2, C9.4, and C9.5; C9.3 and C9.31 are the C9.3 claim's. Claimed on main in a09bb944. The first claim made under the Rules-only scope (the Rules conventions, section 2): it changes the Rules project, its tests, its minigame bundle, and the Rule Workbench where the bundle needs it, and no caller.
+
+## 1. The rule (C9.1, C9.2, C9.4, C9.5; p. 179)
+
+Read on the PDF's page 179, with what it leans on: C.1, C1.55, C3.33, C3.7 to C3.74, C6.521, A7.5, A9.12, and A21.13.
+
+- **C9.1:** a mortar is Direct Fire ordnance (it makes a To Hit DR) whose hits are resolved by Indirect Fire principles and modifiers. It always uses the Area Target Type (C3.33) and never the To Kill Tables: its hits on vehicles are resolved on the IFT (C1.55). Its fire is never resolved as Direct Fire, even with the target in its LOS.
+- **C9.2:** a mortar of 60mm or less is a light mortar and a SW. It has no CA, so it takes no To Hit DRM for fire outside one. Any squad or HS fires it with no detriment (no crew needed), with normal leadership To Hit modification. A lone SMC firing it loses its Multiple ROF. It may use Area Target Acquisition (C6.521) and loses it as a Gun does. A 76-82mm mortar may be dismantled (A9.8) and portaged as a five PP SW in its dm state. A21.13 adds: a lone SMC may fire a mortar of 82mm or less as if it were a light mortar. A7.5, A9.12, and the SW Chart's note C: two SMC fire a SW as one combined unit, at full effect, so they are not lone.
+- **C9.4:** a mortar may not fire at a target closer than its minimum range, the first number of its "[#-#]".
+- **C9.5:** a mortar's CH comes only on an Original To Hit DR of 2, "as per 3.7". Its FP for a CH on the Area Target Type is doubled instead of halved, then modified as in C3.71 and C3.72.
+
+## 2. What decides it today
+
+A read-only map (2026-10-29, `rule_sites.py C9.1 C9.2 C9.4 C9.5 --words mortar,RangeMinimum,AirBurst,Indirect`, every site read). The ordnance package calls a counter a mortar only by its catalog kind, `asl:light-mortar`: the German 50mm [2-13], the Russian 50mm [3-20], and the British 51mm. The catalog also holds `campaign-german-81mm-mortar`, a Gun of gun type "mtr" (81mm, [3-60], ROF 2); the package passes "mtr" through as its gun type, `Outside`'s admitted gun types ("at", "inf", "art", "mortar", "latw") do not include it, so no shot of it is accepted today.
+
+**C9.1, the Area Target Type and Indirect Fire.**
+- Decides, in Rules: `ScenarioA1OrdnanceCalculator.Outside` (the Area Target Type for a mortar and only for a mortar, `target-type-outside`; its vehicles in the target hex, at most the column's highest KIA#, no friendly units); `Resolve`, which sends an Area shot to `ScenarioA1AreaCalculator.Run` before any vehicle check, so a mortar never reaches the To Kill Tables; `ScenarioA1AreaCalculator.Run` and `AfvAttack` (C1.55 on the IFT); `ScenarioA1OrdnanceEligibility.AreaTarget`, `AreaVehicle`, `AreaVehicleRefusal`.
+- Indirect Fire is read from the Area Target Type, not from the mortar: `ScenarioA1FireCalculator` near line 3840 (`indirect = hit is { Area: true }`, the C11.4 gunshield), `ScenarioA1OrdnanceMapRules.HeightAdvantage` (C1.52), and `ScenarioA1AreaCalculator` near line 304. They agree with C9.1 only because `Outside` makes the Area Target Type mean a mortar.
+- Decides, outside Rules: Play's `LiveOrdnance.FromState` sets the Area Target Type for a mortar (Rules refuses any other, so they agree); the Play page's `OrdnanceAmmunitionKind` and `OrdnanceTargetFields` give a light mortar no ammunition kind, so no vehicle can be named as a To Kill target. That is the only bar: no Rules refusal says a mortar names no vehicle, and `ScenarioA1ArmorCalculator.Outside` would accept a mortar's HE shot at an unarmored vehicle, which `Resolve` then sends down the Area path.
+- Gathers: `LiveOrdnance` (the hex's targets, B23.32), `GamePlanner.OrdnanceShotFacts` and `SupportWeaponMapFacts`. Records: `GamePlanner.AddOrdnanceEvents`, `ApplyOrdnanceRoll`, `LiveOrdnance.Rolls`, the Studio's `PlayRecords`.
+
+**C9.2, the light mortar as a SW.**
+- Decides, in Rules: `Outside` (a mortar does not turn, which is its lack of a CA; any Personnel kind fires it; a Director only for a mortar or LATW); `ScenarioA1AreaCalculator.Run` (ROF 0 when the firer is a leader or hero: the lone SMC); `Leadership`; `ScenarioA1OrdnanceEligibility.AreaAcquisition` and the acquisition at the end of `Run`; `ScenarioA1FireFollowUps.AcquisitionHolds` (lost as a Gun loses it).
+- Decides, outside Rules: `LiveOrdnance.FromState` (lines 139 to 149) and `GameProjector.Ordnance` (1333 to 1337) let a light mortar's possessor fire it with no crew; the projector does not turn a mortar's facing (near line 1408); the Play page's `OrdnanceDirectors` (a leader directs a light mortar) and its facing shown only for Guns (near line 5875); `LiveOrdnance` line 244 tells a mortar by its kind.
+- Gaps: "light" is the catalog kind, not the caliber; a lone SMC is any one leader or hero firer (only one firer is accepted, so two SMC never fire it); A21.13's lone SMC with a mortar of 82mm or less is not built.
+
+**C9.4, minimum range.**
+- Decides, in Rules: `Outside`, `gun.RangeMinimum is { } minimum && shot.Range < minimum` gives `out-of-range`, for every Gun. A mortar with no recorded minimum would fire at any range.
+- Not C9.4: `Outside`'s own-hex refusal and Play's `play.ordnance-own-hex` (C3.33, C13.3); `CliffRefusal` reads the minimum for B11.31; `ScenarioA1OrdnanceMapRules.GunTargetStatus` checks the maximum (C2.25), not the minimum.
+
+**C9.5, the CH.**
+- Decides, in Rules: `ScenarioA1AreaCalculator.Run` (lines 175 to 195: a CH only on an Original 2, the "Final DR below half the TH#" case not applied, and C3.7's exception that a CH reaching only the lowest Final DR needs a subsequent dr of 1; the CH unit by Random Selection, C3.74); `HitAttack` near line 793 (`area && !critical` halves, so a CH takes the full HE FP); `AfvAttack` near line 491 (`HeFirepower * 2` for an AFV). `ScenarioA1FireCalculator.Arithmetic` near line 3378 doubles every ordnance CH's FP (C3.71, for every Target Type); the C3.71 TEM reversal and C3.72's no TEM are applied in `AfvAttack` and `ScenarioA1FireCalculator` near lines 3554 and 3580.
+
+**Mortar code of other sections, left out:** A4.41 (no AFPh fire after moving: `LightMortarRefusal`, `MovedLightMortars`), B23.423 (not from a building), C2.6 and B11.31 (elevation, cliffs), C2.25 (maximum range), C3.33 to C3.332 and C3.74 (the Area Target Type's own details), C3.71 and C3.72 (a CH's doubling and TEM), C5.6 (Intensive Fire), C6.5 and C6.521 (acquisition itself), A15.23 (the hero's -1), A9.8 (dismantling), A7.351 and A7.531 (SW use, directing), the B# reductions, and C9.3.
+
+## 3. Rulings
+
+- **RC9.1 One calculator, `ScenarioA1MortarCalculator`,** decides what a mortar is and C9.1, C9.2, C9.4, and C9.5; its records are in `ScenarioA1MortarModels.cs`, its contract in `ScenarioA1MortarContract.cs`. The Spotter questions stay in `ScenarioA1SpotterCalculator`. The resolution itself (the IFT attack, Air Bursts, the TEM, each unit's hit, C3.71's doubling) stays where it is, and the shared files ask the new calculator only at the points C9 governs.
+- **RC9.2 A mortar** is a light mortar SW (kind `asl:light-mortar`) or a Gun whose gun type is a mortar, in either spelling the code has ("mortar", "mtr"): `IsMortar(kind, gunType)`. **A light mortar** is one of 60mm or less, by C9.2's words: `IsLight(caliber)`; an unknown caliber is not light. The two differ from `Outside` for the catalog's 81mm "mtr" Gun: `IsMortar` calls it a mortar, `Outside` refuses its gun type. `Outside` keeps its answer (the Gun mortar is backlog, section 4) and does not forward to `IsMortar`.
+- **RC9.3 C9.1:** `IndirectFire(isMortar)`: a mortar's fire is resolved as Indirect Fire, whatever its LOS (C9.1, C.1). The three places that read Indirect Fire from the Area Target Type keep that reading, which agrees while only a mortar fires on the Area Target Type; they move to `IndirectFire` when a Gun's Area HE fire is built (backlog). `TargetTypeRefusal(isMortar, areaTargetType)`: a mortar on another Target Type is refused; the calculator says nothing of a non-mortar, whose refusal in `Outside` is a limit of what is built (C3.33 allows a Gun's Area fire), so `Outside` keeps its whole check and does not forward. New, `VehicleTargetRefusal(isMortar, namesVehicle)`: a mortar names no vehicle as a To Kill target; its hits on vehicles are the Area Target Type's (C1.55). `Outside` keeps its present answer; Play's planner asks the calculator (track 3). Whether any recorded game holds such a shot is checked by a search of the recorded games during the build and written in the as-built section.
+- **RC9.4 C9.2 and A21.13:** `HasCoveredArc(isLight)` is false for a light mortar (no CA, so no turn and no DRM for fire outside one). `CrewNeeded(isLight)` is false: any Personnel fires it at full effect. `FiresAsLight(caliber, loneSmc)`: a light mortar, or a mortar of 82mm or less fired by a lone SMC (A21.13). `MultipleRofKept(caliber, loneSmc)`: a mortar fired by a lone SMC as a light mortar loses its Multiple ROF. **Lone** is one SMC firing without another SMC: two SMC manning a SW are one combined firing unit at full effect (A7.5, A9.12, the SW Chart's note C). A squad in the same Location does not lend its status to the SMC's shot, and a leader who directs a squad's shot is not the firer. Today only one firer is accepted and only light mortars fire, so `Run`'s "a leader or hero firer" gives the same answers and becomes a call to `MultipleRofKept`. `UsesAreaAcquisition(isMortar)`: a mortar acquires by C6.521. Leadership's To Hit modification stays in `Leadership`, as for any SW.
+- **RC9.5 C9.4:** `MinimumRangeRefusal(isMortar, range, minimum)`: refused when the range is less than the minimum; an unknown range is refused, and an unknown minimum is refused for a mortar only (a Gun with no minimum has none). `Outside`'s check becomes a call to `BelowMinimum(range, minimum)` for a recorded minimum, the same answer for every Gun, and keeps allowing a mortar with no recorded minimum; no catalog mortar lacks one.
+- **RC9.6 C9.5:** `CriticalHitAllowed(isMortar, originalToHitDr)`: a mortar's CH comes only on an Original 2, never on the Infantry Target Type's "Final DR below half the TH#". Only that test moves from `Run`; C3.7's exception (a CH that reaches only the lowest Final DR needs a subsequent dr of 1) and the CH unit by Random Selection (C3.74) stay in `Run` as C3.7's. `CriticalFirepower(heFirepower)`: the full HE FP, not halved, as C9.5's "instead of halving"; `HitAttack`'s `area && !critical` branch and `AfvAttack`'s doubling ask it, with the same answers. `ScenarioA1FireCalculator.Arithmetic`'s doubling (C3.71, every Target Type), the TEM reversal with Air Bursts not reversed (C3.71), and C3.72's no TEM stay as they are.
+- **RC9.7 The contract `c9-mortar-shot`:** may this mortar fire at this target, and does it keep its Multiple ROF? Its facts are entered by hand on the workbench: the mortar's kind or gun type, caliber, and minimum range; the range; the target type and whether a vehicle is named; whether the firer is a lone SMC. Owner facts naming the mortar: its values when it is concealed (the counter under a "?"). Owner facts naming the firer: whether it is a lone SMC (a concealed stack hides its SMC). The range is known to All when the firer's Location is known, and is the owner's fact when the mortar or its firer is hidden. Outcomes: may-fire, refused, not-evaluated; its event, the shot. The contract decides C9.1, C9.2, and C9.4 only; the maximum range (C2.25) is not its.
+- **RC9.8 The minigame `c9-mortar`** sits on an imported board chosen with the MapHexIndex: the German 50mm light mortar [2-13] with a squad, targets at range 1 and 2 (below and at the minimum), a truck in one target hex, and a lone leader with a second light mortar. Its checks: below the minimum, at the minimum, a vehicle named as a To Kill target, the lone SMC's ROF, and a squad firing with no crew; range 13 and 14 stay as boundary positions of C2.25 that the contract does not judge.
+
+## 4. Out of the claim
+
+To the backlog (a new section for this claim):
+- The catalog's 81mm "mtr" Gun: refused by the ordnance package's admitted gun types; its fire as a Gun, its dm state and five PP portage (C9.2, A9.8), and `GunTargetStatus`'s missing minimum for it.
+- A lone SMC firing a mortar of 82mm or less as a light mortar (A21.13).
+- Two SMC firing a light mortar as one combined unit (A7.5, the SW Chart's note C); backlog row 212 covers only the PSK.
+- Indirect Fire read from the Area Target Type in three places (section 2), to move to `IndirectFire` when a Gun's Area HE fire is built.
+- A hit on friendly units in the target hex (C3.33, ruling R9.3); Hull Down against a mortar.
+
+Already in the inventory's notes for pass 110: a vehicle in Bypass in the target hex, and Defensive First Fire beside a moving vehicle.
+
+## 5. The wiring row W-C9
+
+Capability: fire. Sites to rewire, each with what replaces it:
+- `LiveOrdnance.FromState`: the mortar's identity (line 244) asks `IsMortar`; its target type asks `TargetTypeRefusal`; its no-crew firer (lines 139 to 149) asks `CrewNeeded`.
+- `GameProjector.Ordnance` (lines 1333 to 1337): the no-crew firer asks `CrewNeeded`; its fixed facing for a mortar (near line 1408) asks `HasCoveredArc`.
+- `GamePlanner.OrdnanceShotFacts`: asks `VehicleTargetRefusal` and `MinimumRangeRefusal` before the shot's validation, so the refusals reach a shot made outside the page.
+- The Play page: `OrdnanceAmmunitionKind` and `OrdnanceTargetFields` ask `VehicleTargetRefusal`; `OrdnanceDirectors` asks `CrewNeeded` and `HasCoveredArc` for the light mortar; the facing shown only for Guns asks `HasCoveredArc`.
+
+Old members to remove once their callers move: none; the forwarding members stay. Behavior changes: a mortar shot naming a vehicle is refused, and a mortar with no recorded minimum range is refused.
+
+## 6. Memory and performance
+
+The calculator is pure, static, and allocates only its refusal strings and verdict records; no new state, event, or cache. The forwarding calls replace inline checks on the same hot path, one static call each.
+
+## 7. Build outputs outside the repository
+
+Claude's Studio in `asl-gate-work/studio-6670` for the minigame and the Rule Workbench, and the filtered test builds, each registered as made and cleaned once CI passes. No merge gate: a rule claim merges on its own unit tests and a green CI run (the batch gate counts it as 1 of 5).
+
+## 8. Review of the design
+
+A sub-agent read the design against pp. 179 and the rules it leans on, and against the code, read-only (2026-10-29): 12 findings, all taken. Blocking: the catalog's 81mm "mtr" Gun, which the first draft said did not exist (section 2, RC9.2, section 4). Fixed in the rulings: "lone" SMC and A21.13 (RC9.4); the CH's C3.7 exception kept in `Run` (RC9.6); C3.71's doubling left to its own code (RC9.6); an `IndirectFire` predicate (RC9.3); the calculator's target type silent on non-mortars (RC9.3); the unknown minimum refused for a mortar only (RC9.5); the contract's owner facts for the firer and a hidden range (RC9.7); the maximum range out of the contract (RC9.7, RC9.8). Added: five C9.2 sites to the wiring row (section 5) and four backlog rows (section 4). The claim that no recorded game names a vehicle for a mortar is now checked during the build (RC9.3).
