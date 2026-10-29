@@ -4529,7 +4529,7 @@ The claim board of the [Rules-first four-track plan](<Plans/ASL Rules-First Four
 - **State**: claimed, built, reviewed, wired, or accepted (the plan's section 4.3).
 - **The batch gate** (the plan's section 4.3, the user, 2026-10-29): a rule claim merges on CI without a gate of its own; after every fifth rule claim merged since the commit below, the merge gate runs on main (`gate.sh rules-batch <commit> baseline`, `build`, `proofs`, `carry`), and the commit it proved replaces the one below. `claim_check.py` counts the merges and holds the next rule claim at five.
 
-**Last batch gate:** `f525ea78` (2026-10-29: the merge of the C9.3 claim, whose own gate proved it; the first batch gate builds its baseline from this commit). Every row the claim owns carries the same state in its Claim state cell, and its Owner cell reads "claim (agent)", for example "C9.3 (Codex)".
+**Last batch gate:** `580aadf6` (2026-10-29: the first batch gate, on main after the C9, C9.3 follow-up, A24.5 and E10, and D3.7 claims and Codex's W-C9.3 wiring; proved against `f525ea78`: the replay digest and the sweep differ in nothing, the text list only by the new texts; its baseline carried, so the next batch gate needs no base stage). Every row the claim owns carries the same state in its Claim state cell, and its Owner cell reads "claim (agent)", for example "C9.3 (Codex)".
 
 | Claim | Agent | Reviewer | Branch | Calculator files | State | Opened | Note |
 |---|---|---|---|---|---|---|---|
