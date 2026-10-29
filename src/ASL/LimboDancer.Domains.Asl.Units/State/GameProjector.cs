@@ -41,10 +41,21 @@ public static partial class GameProjector
     /// <summary>Applies the events that have no state yet, stopping at the first that breaks a rule.</summary>
     internal static ReplayedGame Run(Replay replay, GameEvent[] events, List<GameState> states, List<UnitDiagnostic> diagnostics)
     {
+        IReadOnlyList<string> commandTypes = [];
+        var commandEnd = -1;
         for (var index = states.Count; index < events.Length; index++)
         {
+            if (index >= commandEnd)
+            {
+                commandEnd = index + 1;
+                while (commandEnd < events.Length && SameSpotterCommand(events[commandEnd - 1], events[commandEnd]))
+                {
+                    commandEnd++;
+                }
+                commandTypes = events[index..commandEnd].Select(item => item.Type).ToArray();
+            }
             var errors = Errors(diagnostics);
-            var state = replay.Apply(events[index], states.Count > 0 ? states[^1] : null);
+            var state = replay.Apply(events[index], states.Count > 0 ? states[^1] : null, commandTypes);
             if (Errors(diagnostics) > errors || state is null)
             {
                 break;
@@ -72,6 +83,10 @@ public static partial class GameProjector
 
         // The id of the event being applied, set at each Apply and read only while it applies (pass 71, ruling R71.15): nothing carried between events.
         private string eventId = string.Empty;
+        private IReadOnlyList<string> spotterCommandTypes = [];
+
+        public ReplayedGame Restart(IReadOnlyList<GameEvent> events) =>
+            Begin(events, vocabulary, catalogs, chains, liveSources, fireVerifier, rallyVerifier, closeCombatVerifier, ordnanceVerifier);
 
         /// <summary>
         /// A replay that carries what this one carries and writes to its own diagnostics (pass 31d, design D1): what it applies leaves this one as
@@ -99,8 +114,9 @@ public static partial class GameProjector
             return copy;
         }
 
-        public GameState? Apply(GameEvent gameEvent, GameState? previous)
+        public GameState? Apply(GameEvent gameEvent, GameState? previous, IReadOnlyList<string> commandTypes)
         {
+            spotterCommandTypes = commandTypes;
             path = $"revision {gameEvent.Revision} ({gameEvent.EventId})";
             eventId = gameEvent.EventId;
             if (!CheckEnvelope(gameEvent, previous))
@@ -321,6 +337,7 @@ public static partial class GameProjector
                 PlacedDcWindowReview = gameEvent.Payload is PlacedDcWindowReviewed ? next.PlacedDcWindowReview : null,
             };
             next = MaintainSpotterLosses(previous, next, gameEvent);
+            next = MaintainSpotterOpening(previous, next, gameEvent);
             next = MaintainTurnWork(previous!, next, gameEvent.Payload);
             next = AssaultWeapons(next, gameEvent.Payload);
             next = KeepMovingStack(next, gameEvent.Payload);
@@ -1487,6 +1504,29 @@ public static partial class GameProjector
                 if (!alreadySpotted && state.Unit(id) is { } spotting)
                 {
                     uses = Use(uses, spotting, fired.Gun);
+                }
+                if (fired.SpotterWiringVersion == 1 && state.Unit(id) is { } markedSpotter)
+                {
+                    var phaseCounter = ConditionName(Rules.ScenarioA1SpotterCalculator.FireCounter(state.Phase));
+                    var marks = Rules.ScenarioA1SpotterCalculator.SpottingMarks(state.Phase,
+                        GameState.Condition(markedSpotter, phaseCounter) == ConditionState.True);
+                    if (marks.FireCounter is { } counter)
+                    {
+                        state = Replace(state, markedSpotter with
+                        {
+                            Conditions = new Dictionary<string, ConditionState>(markedSpotter.Conditions, StringComparer.Ordinal)
+                            {
+                                [ConditionName(counter)] = ConditionState.True
+                            }
+                        });
+                    }
+                    if (marks.BarsMovement && !state.NoMoveThisPlayerTurn.Contains(id))
+                    {
+                        state = state with
+                        {
+                            NoMoveThisPlayerTurn = [.. state.NoMoveThisPlayerTurn, id]
+                        };
+                    }
                 }
             }
 
@@ -5459,6 +5499,12 @@ public sealed class ReplayedGame
             throw new ArgumentException("The events do not continue this projection.", nameof(events));
         }
 
+        // An appended suffix may complete a previously partial command and change its opening step. Reconstruct that uncommon case.
+        if (History.Events.Count > 0 && events.Count > History.Events.Count
+            && GameProjector.SameSpotterCommand(History.Events[^1], events[History.Events.Count]))
+        {
+            return replay.Restart(events);
+        }
         var diagnostics = new List<UnitDiagnostic>(History.Diagnostics);
         return GameProjector.Run(replay.Copy(diagnostics), [.. events], [.. History.States], diagnostics);
     }

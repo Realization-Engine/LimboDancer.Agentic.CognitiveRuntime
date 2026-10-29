@@ -55,4 +55,4 @@ Disclosure holds in the reviewed contract: loss and mortar facts concern holderI
 
 Integration finding: ReplacementRefusal returns null for NotEvaluated as well as permission. A filter asks that member, but confirmation must also require Replacement's MayReplace and EstablishesAssignment. W-C9.3 now states this explicitly and groups recorded command events for OpeningStepOf. The prior TI and viewer-fact caller findings remain assigned to W-C9.3. This review does not claim a test rerun or completed wiring. C9.3 review is recorded with those documented limitations.
 
-The inventory state cell remains built because claim_check.py currently rejects a reviewed Rules claim whose wiring is claimed. The review is complete; correcting that state check is required before promoting the cell, without falsely marking wiring complete.
+The wire-fire-1 follow-up corrects claim_check.py to distinguish Rules review from caller wiring. This branch records the completed review as reviewed in the inventory while W-C9.3 remains claimed; publication of that tooling correction and state change awaits its code PR and CI. The review does not mark wiring complete.

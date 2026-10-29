@@ -55,6 +55,25 @@ def main():
     _, f = run({"C9.3": rule("wired")}, [wiring_row("W-C9.3", "C9.3")], [])
     check("a wired rule claim needs its wiring rows wired", any("is wired, and its wiring row" in x for x in f), f)
 
+    _, f = run({"C9.3": rule("reviewed")}, [wiring_row("W-C9.3", "C9.3")], [])
+    check("a reviewed rule claim may still have open wiring", not f, f)
+
+    _, f = run({"C9.3": rule("reviewed")}, [wiring_row("W-C9.3", "C9.3", "wire-fire-1 (Codex)", "claimed")],
+               [wiring_claim("wire-fire-1", "a.cs")])
+    check("a reviewed rule claim may still have claimed wiring", not f, f)
+
+    for state in ("wired", "accepted"):
+        _, f = run({"C9.3": rule(state)}, [wiring_row("W-C9.3", "C9.3", "wire-fire-1 (Codex)", "claimed")],
+                   [wiring_claim("wire-fire-1", "a.cs")])
+        check(f"a {state} rule claim cannot have claimed wiring", any(f"is {state}, and its wiring row" in x for x in f), f)
+
+        _, f = run({"C9.3": rule(state)}, [wiring_row("W-C9.3", "C9.3", "wire-fire-1 (Codex)", "reviewed")],
+                   [wiring_claim("wire-fire-1", "a.cs", state="reviewed")])
+        check(f"a {state} rule claim may have reviewed wiring", not f, f)
+
+    _, f = run({"C9.3": rule("accepted")}, [wiring_row("W-C9.3", "C9.3")], [])
+    check("an accepted rule claim cannot have open wiring", any("is accepted, and its wiring row" in x for x in f), f)
+
     _, f = run({"C9.3": rule("built")}, [wiring_row("W-C9.4", "C9.3")], [])
     check("a row's id is W- and its rule claim", any("its id is" in x for x in f), f)
 
@@ -92,6 +111,24 @@ def main():
     f = []
     c.check_wiring_branch(wiring, "wire/wire-fire-1", ["src/ASL/LimboDancer.Domains.Asl.Units/State/GameProjector.cs"], f)
     check("a wiring branch may not change a file it does not hold", any("held by none" in x for x in f), f)
+    for state in ("wired", "reviewed", "accepted"):
+        completed, f = run({"A": rule("wired"), "B": rule("built")},
+                           [wiring_row("W-A", "A", "wire-fire-1 (Codex)", state),
+                            wiring_row("W-B", "B", "wire-fire-2 (Claude)", "claimed")],
+                           [wiring_claim("wire-fire-1", "LimboDancer.Domains.Asl.Play/LiveOrdnance.cs", state=state),
+                            wiring_claim("wire-fire-2", "LimboDancer.Domains.Asl.Play/LiveOrdnance.cs", agent="Claude")])
+        check(f"a {state} wiring claim releases its whole-file overlap hold", not f, f)
+        f = []
+        c.check_wiring_branch(completed, "wire/wire-fire-1", ["src/ASL/LimboDancer.Domains.Asl.Play/LiveOrdnance.cs"], f)
+        check(f"a {state} wiring branch retains its recorded file scope", not f, f)
+        f = []
+        c.check_wiring_branch(completed, "wire/wire-fire-1", ["src/ASL/LimboDancer.Domains.Asl.Units/State/GameProjector.cs"], f)
+        check(f"a {state} wiring branch cannot change an unlisted file", any("held by none" in x for x in f), f)
+        f = []
+        c.check_wiring_branch(completed, "wire/unrelated", ["src/ASL/LimboDancer.Domains.Asl.Play/LiveOrdnance.cs"], f)
+        check(f"a {state} wiring claim cannot authorize another branch", any("held by none" in x for x in f), f)
+        check(f"a {state} wiring claim is absent from active overlap branches",
+              "wire/wire-fire-1" not in c.others(completed, "wire/wire-fire-2"))
     # The batch gate: merges of rule claims' branches since the recorded commit, read from a faked git log.
     class Out:
         def __init__(self, stdout, returncode=0):

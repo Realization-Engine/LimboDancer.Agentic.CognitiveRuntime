@@ -1126,6 +1126,10 @@ public static class GameEventWriter
 
                 break;
             case OrdnanceFired ordnance:
+                if (ordnance.SpotterWiringVersion is { } spotterWiringVersion)
+                {
+                    writer.WriteNumber("spotterWiringVersion", spotterWiringVersion);
+                }
                 writer.WriteString("gun", ordnance.Gun);
                 writer.WriteString("crew", ordnance.Crew);
                 writer.WriteString("target", ordnance.Target.ToString());

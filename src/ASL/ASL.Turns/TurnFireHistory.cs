@@ -18,12 +18,12 @@ public sealed record TurnFireRecord(TurnFireKind Kind, int GameTurn, string Phas
 
 /// <summary>Authorized present facts. Unknown observations never imply a usable or lost Spotter.</summary>
 public sealed record TurnSpotterRead(string Weapon, string Spotter, bool Known, bool Active,
-    bool SameSide, bool Broken, bool Captured, bool SpottedThisPhase, bool RecordedLoss = false, string? Successor = null);
+    bool SameSide, bool Broken, bool Captured, bool SpottedThisPhase, bool RecordedLoss = false, string? Successor = null, bool Superseded = false);
 
 public sealed record TurnSpotterHistory(string Weapon, string Spotter, int FirstObservedGameTurn, string FirstObservedPhase,
     TurnSpotterState State, bool? SpottedThisPhase, string? Successor = null);
 /// <summary>Disclosed explicit declaration, distinct from the first shot that observed a Spotter. No journal identities.</summary>
-public sealed record TurnSpotterDeclaration(string Weapon, string Spotter, string OwnerSide, int GameTurn, string Phase);
+public sealed record TurnSpotterDeclaration(string Weapon, string Spotter, string OwnerSide, int GameTurn, string Phase, bool Replacement = false);
 
 public sealed record TurnFireHistorySnapshot(ImmutableArray<TurnFireRecord> Shots,
     ImmutableArray<TurnSpotterHistory> Spotters, ImmutableArray<string> EvaluationGaps)
@@ -69,16 +69,17 @@ public static class TurnFireHistory
             string? successor = null;
             if (known is { Known: true })
             {
-                state = ScenarioA1SpotterCalculator.Retains(known.Active, known.SameSide, known.Broken, known.Captured, known.RecordedLoss)
+                state = known.Superseded ? TurnSpotterState.Superseded
+                    : ScenarioA1SpotterCalculator.Retains(known.Active, known.SameSide, known.Broken, known.Captured, known.RecordedLoss)
                     ? TurnSpotterState.Retained : TurnSpotterState.Lost;
-                spotted = known.SpottedThisPhase;
+                spotted = known.Superseded ? null : known.SpottedThisPhase;
                 successor = known.Successor;
             }
             assignments.Add(new(shot.Weapon, shot.Spotter, shot.GameTurn, shot.Phase, state, spotted, successor));
         }
         return new(shots, [.. assignments],
             ["Recorded fire and ROF are history, not current firing eligibility. Undisclosed attacks are omitted.",
-             "Explicit daytime original declarations are recorded when supplied; setup activation, replacement commands, Opportunity Fire and its breakdown check remain pending.",
+             "Explicit daytime original and replacement declarations are recorded when supplied; setup activation, Opportunity Fire and its breakdown check remain pending.",
              "Vehicle/PRC fire combinations and other unregistered rule families remain pending."]);
     }
 }

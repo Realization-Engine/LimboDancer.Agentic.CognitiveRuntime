@@ -1,0 +1,58 @@
+<ActionSection Title="Mortar Spotter" Key="spotter-designation">
+    <p class="muted">Designate a Spotter separately from firing. A replacement records a new assignment without a fire marker.</p>
+    <div class="toolbar">
+        <label>Mortar
+            <select id="spotter-designation-gun" value="@Gun" @onchange="@(args => OnGun.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">choose</option>
+                <UnitOptions Units="@Guns" Text="@Say" />
+            </select>
+        </label>
+        <label>@(Replacement ? "New Spotter" : "Spotter")
+            <select id="spotter-designation-unit" value="@Spotter" disabled="@(Gun.Length == 0)" @onchange="@(args => OnSpotter.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">choose</option>
+                <UnitOptions Units="@Candidates" Text="@Say" />
+            </select>
+        </label>
+        <button id="propose-spotter-designation" disabled="@(!Ready)" aria-describedby="spotter-designation-note" @onclick="@(() => OnPropose.InvokeAsync())">
+            @(Replacement ? "Propose: replace Spotter" : "Propose: designate Spotter")
+        </button>
+        <span id="spotter-designation-note" class="toolbar-note">@Say(Note)</span>
+    </div>
+</ActionSection>
+
+@code {
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PlayChoice> Guns { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PlayChoice> Candidates { get; set; } = [];
+
+    [Parameter]
+    public string Gun { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Spotter { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool Replacement { get; set; }
+
+    [Parameter]
+    public bool Ready { get; set; }
+
+    [Parameter]
+    public string? Note { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnGun { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSpotter { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}
