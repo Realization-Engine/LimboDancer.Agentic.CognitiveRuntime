@@ -225,6 +225,20 @@ Two preparatory tasks open the track:
 - **Split `GameProjector.cs`** (5,468 lines) into partial files by capability, so that several agents can wire at once without editing the same file.
 - **Move the game logic out of MapStudio `Services/`** into Play: live play, replay steps and differences, immediate proposals, movement plans, close combat declarations, scripted dice, and the like. MapStudio then holds only UI.
 
+### 9.1 Wiring on the claim board (the user, 2026-10-29)
+
+**The division of labor.** Claude takes the rule claims (track 2), which change the Rules library and its tests only (the Rules conventions, section 2); Codex takes the wiring (track 3), which moves Play, the Units projector, ASL.Turns, and the Studio's services onto the calculators. It is a default, not a lock: when one queue is empty, either agent takes from the other. Each reviews the other's work: Codex, who will call a calculator, reviews its facts and verdicts; Claude reviews the wiring against the rules.
+
+**The wiring table** (the inventory's section 7). A rule claim that reaches "built" adds one wiring row, `W-<claim>`, from its design's map: the sites outside Rules that decide the rule and the calculator method that replaces each; the old Rules members to remove once their callers have moved; and the behavior changes the wiring will bring (where the claim's reading differs from what play does today). A row is open, claimed, wired, reviewed, or accepted.
+
+**Wiring claims** (the inventory's section 8) are taken by capability (fire, movement, rout, rally, close combat, setup and work, the turn's boundaries), as above: one wiring claim takes the open rows of its capability whose rule claims are built. It is made like a rule claim, by one commit to main, and it holds the files outside Rules it will change, by path under `src/ASL/`, whole or `(shared)`: no two wiring claims hold one file whole. Its branch changes only the files it holds, its tests, and the Rules members its rows name for removal. Behavior changes land here, so a wiring claim runs the merge gate, and each replay or sweep difference is one of its rows' named changes; older recorded games keep their recorded reading.
+
+**States.** A wiring claim and its rows go claimed, wired, reviewed, accepted (when track 3 accepts the phases its capability serves). When every wiring row of a rule claim is wired, that rule claim and its inventory rows move to "wired" too, and to "accepted" with the phase.
+
+**The check.** `claim_check.py` reads both tables: one holder per file across the wiring claims; each wiring row's rule claim exists and is built or later before the row is claimed; a wiring claim's branch changes only what it holds; and a rule claim at "wired" has every wiring row wired.
+
+**Two working folders.** A wiring claim runs the merge gate, so Codex keeps its own working folder (`ASL_GATE_WORK`, which every tool under `code-builders` reads) and its own Studio port; AGENTS.md names them.
+
 ## 10. Coordination between Claude and Codex
 
 - **Separate checkouts.** The main checkout is Claude's; Codex works only in its own worktree. Codex's uncommitted Turns documents now in the main checkout (the plan's review update and the D4.2 design) are committed or moved to its worktree first.
