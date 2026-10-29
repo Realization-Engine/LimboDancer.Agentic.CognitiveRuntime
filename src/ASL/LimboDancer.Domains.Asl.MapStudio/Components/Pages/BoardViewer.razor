@@ -7,6 +7,7 @@
 @inject IBoardProvider Boards
 @inject UnitLibrary UnitLibrary
 @inject GameLibrary Games
+@inject MapHexIndexStore HexIndex
 
 <PageTitle>@(board?.Title ?? BoardName) - ASL Map Studio</PageTitle>
 
@@ -25,8 +26,13 @@ else if (board is null)
         @* Pass 29: the map and its inspector are BoardWorkspace; the page keeps its route, the board's load, and its study controls. *@
         <BoardWorkspace @ref="workspace" Board="@board" View="@view" Trace="@trace" Visible="@visible" ComparisonMode="@comparisonMode" ComparisonValue="@comparisonValue"
                         Units="@(showUnits ? unitOverlay : null)" UnitView="@gameProjection?.View" UnitNote="@UnitNote" Vocabulary="@UnitLibrary.Vocabulary"
-                        StyledModel="@StyledModel" @bind-Selected="selected" @bind-Panel="panel" Extras="@LayerTabs" MapLabel="The board's map">
+                        StyledModel="@StyledModel" @bind-Selected="selected" @bind-Panel="panel" Extras="@LayerTabs" MapLabel="The board's map"
+                        Marks="@TerrainMarks">
             <Toolbar>
+                @if (TerrainHexes is { } outlined)
+                {
+                    <p id="viewer-terrain">@outlined.Count @(outlined.Count == 1 ? "hex holds" : "hexes hold") @TerrainQuery (from the MapHexIndex): @string.Join(", ", outlined.Take(24))@(outlined.Count > 24 ? ", ..." : string.Empty)</p>
+                }
                 @if (GameBanner is { } banner && gameProjection is { } shownGame)
                 {
                     @* The UX analysis (pass 29): a game shown here says which game, whose view, where it stands, and which revision, on the game line Play
@@ -116,6 +122,35 @@ else if (board is null)
     /// <summary>The hex to select when the page opens, such as the one picked on Play (pass 29, task 29.5).</summary>
     [SupplyParameterFromQuery(Name = "hex")]
     public string? HexQuery { get; set; }
+
+    /// <summary>A feature of the MapHexIndex ("terrain:Woods") whose hexes the map outlines, as the board library's "Has terrain" link gives it (ruling RMH.5).</summary>
+    [SupplyParameterFromQuery(Name = "terrain")]
+    public string? TerrainQuery { get; set; }
+
+    /// <summary>The hexes of this board that hold the asked feature, by the newest MapHexIndex; null when none is asked or the index has no such entry.</summary>
+    private IReadOnlyList<string>? TerrainHexes => TerrainQuery is { Length: > 0 } id
+        && HexIndex.Latest()?.Boards.FirstOrDefault(entry => string.Equals(entry.Board, BoardName, StringComparison.OrdinalIgnoreCase)) is { } indexed
+        ? indexed.Features.FirstOrDefault(feature => feature.Id == id)?.Hexes ?? []
+        : null;
+
+    // The outline is built once per board and asked feature, not on each render.
+    private (StudioBoard? Board, string? Query, string? Marks) terrainMarks;
+
+    private string? TerrainMarks
+    {
+        get
+        {
+            if (!ReferenceEquals(terrainMarks.Board, board) || terrainMarks.Query != TerrainQuery)
+            {
+                terrainMarks = (board, TerrainQuery, board is { } shown && TerrainHexes is { Count: > 0 } hexes
+                    ? "<g id=\"layer-marks\">" + string.Concat(hexes.Select(hex => BoardLocation.TryParse($"{BoardName}:{hex}:0", out var at)
+                        ? GameMaps.HexMark(shown, at, "terrain-outline", "#fde68a", "#b45309", 4, dashed: false, label: null) : string.Empty)) + "</g>"
+                    : null);
+            }
+
+            return terrainMarks.Marks;
+        }
+    }
 
     private sealed record Banner(string Game, long Max, bool Historical, string? PlayLink);
 

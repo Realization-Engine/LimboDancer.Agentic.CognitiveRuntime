@@ -2269,6 +2269,22 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
     color: var(--muted);
 }
 
+/* The MapHexIndex Design (RMH.5): a chosen terrain, removed by a click. */
+.library-filters button.terrain-chip {
+    padding: 0.1rem 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 0.8rem;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+#library-terrain {
+    width: 16rem;
+    max-width: 100%;
+}
+
 /* A link button that cannot act now reads as plain text. */
 button.link:disabled {
     color: var(--muted);

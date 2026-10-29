@@ -37,11 +37,15 @@ public sealed class VaslFidelityBatch(StudioOptions options) : IFidelityBatch
             versions["vectorizer"] = Vectorizer.Version;
         }
 
-        return VaslBatchImporter.Run(source, new VaslBatchOptions
+        // The MapHexIndex Design (ruling RMH.3): each board's features are read in the batch's own per-board hook, the facts dropped, and the index
+        // saved once the batch ends, beside its report. A canceled or failed batch throws before the save.
+        var features = new System.Collections.Concurrent.ConcurrentDictionary<string, IReadOnlyList<Maps.Derivation.MapHexFeature>>(StringComparer.Ordinal);
+        var report = VaslBatchImporter.Run(source, new VaslBatchOptions
         {
             OracleDirectory = options.ResolveOracleFixtures(),
             AdditionalChecks = (board, facts, catalog) =>
             {
+                features[board.Board.Value] = Maps.Derivation.MapHexIndexer.Features(facts);
                 var checks = new List<FidelityCheck>(BoardRenderChecks.Run(BoardRenderInput.Create(board.Board, board.Board.Value, board.Grid, catalog, facts)));
                 if (includeF3)
                 {
@@ -53,6 +57,8 @@ public sealed class VaslFidelityBatch(StudioOptions options) : IFidelityBatch
             },
             AdditionalVersions = versions,
         }, progress, cancellationToken);
+        MapHexIndexStore.Save(options, report, features);
+        return report;
     }
 }
 

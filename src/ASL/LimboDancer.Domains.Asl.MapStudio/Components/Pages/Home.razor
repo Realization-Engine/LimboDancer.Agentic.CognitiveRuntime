@@ -5,6 +5,7 @@
 @inject AuthoredBoardService Authored
 @inject MapService MapStore
 @inject LibraryViewState View
+@inject MapHexIndexStore HexIndex
 @inject IJSRuntime JS
 
 <PageTitle>Board library - ASL Map Studio</PageTitle>
@@ -37,10 +38,13 @@ else
     var filter = View.Filter;
     var shownAuthored = filter.Shows("authored") ? authored.Where(entry => filter.Matches(entry.Name, entry.Ref.Value)).ToArray() : [];
     var shownMaps = filter.Shows("maps") ? maps.Where(map => filter.Matches(map.Name, map.Ref.Value)).ToArray() : [];
-    var shownRows = filter.Shows("vasl") ? rows.Where(row => Visible(row, filter)).ToArray() : [];
+    var index = HexIndex.Latest();
+    var holding = filter.TerrainIds is { Count: > 0 } asked && index is not null
+        ? index.BoardsWith(asked).Select(board => board.Board).ToHashSet(StringComparer.OrdinalIgnoreCase) : null;
+    var shownRows = filter.Shows("vasl") ? rows.Where(row => Visible(row, filter) && (holding is null || holding.Contains(row.Ref))).ToArray() : [];
     var shown = shownAuthored.Length + shownMaps.Length + shownRows.Length;
 
-    <LibraryFilterBar Value="@filter" ValueChanged="@(value => View.Filter = value)" Shown="@shown"
+    <LibraryFilterBar Value="@filter" ValueChanged="@(value => View.Filter = value)" Shown="@shown" TerrainIds="@FeatureIds(index)"
                       Total="@(authored.Count + maps.Count + rows.Count(row => filter.OutOfScope || row.Status != VaslBoardTable.LibraryStatus.OutOfScope))" OutOfScopeCount="@rows.Count(row => row.Status == VaslBoardTable.LibraryStatus.OutOfScope)" />
 
     @if (shown == 0 && !filter.IsDefault)
@@ -112,7 +116,7 @@ else
             }
             else
             {
-                <VaslBoardTable Rows="@shownRows" />
+                <VaslBoardTable Rows="@shownRows" LinkQuery="@(filter.TerrainIds is [var first, ..] ? "?terrain=" + Uri.EscapeDataString(first) : string.Empty)" />
             }
         }
     }
@@ -153,6 +157,19 @@ else
         {
             loading = false;
         }
+    }
+
+    // The index's feature ids, kept while the store returns the same index, so a render does not rebuild the list.
+    private (MapHexIndex? Index, IReadOnlyList<string>? Ids) featureIds;
+
+    private IReadOnlyList<string>? FeatureIds(MapHexIndex? index)
+    {
+        if (!ReferenceEquals(featureIds.Index, index) || (index is not null && featureIds.Ids is null))
+        {
+            featureIds = (index, index?.FeatureIds());
+        }
+
+        return featureIds.Ids;
     }
 
     private static bool Visible(VaslBoardTable.Row row, LibraryFilterBar.Filter filter) =>

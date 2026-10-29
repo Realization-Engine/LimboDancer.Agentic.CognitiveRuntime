@@ -12,6 +12,10 @@ REPO = os.path.dirname(TOOLS)
 WORK = os.environ.get("ASL_GATE_WORK", "E:/Archive/GitHub/dlandi/asl-gate-work").replace("\\", "/").rstrip("/")
 # The VASL checkout, whose board archives the proof tool and the test games read.
 VASL_ROOT = os.environ.get("ASL_VASL_ROOT", "E:/Archive/GitHub/dlandi/vasl").replace("\\", "/").rstrip("/")
+# The Map Studio's cache (StudioOptions.ResolveCacheRoot): fidelity reports and the MapHexIndex. Set ASL_MAPS_CACHE when AslMaps:CacheRoot is set.
+CACHE_ROOT = os.environ.get(
+    "ASL_MAPS_CACHE",
+    os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~/.local/share")), "LimboDancer", "AslMaps", "cache")).replace("\\", "/").rstrip("/")
 # The registered rulebook PDF is not in the repository. Set ASL_RULEBOOK_PDF where it is kept elsewhere.
 RULEBOOK_PDF = os.environ.get(
     "ASL_RULEBOOK_PDF",

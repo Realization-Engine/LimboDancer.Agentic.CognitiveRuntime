@@ -1,0 +1,34 @@
+# ASL MapHexIndex Design
+
+**Status:** Built (section 5). Design and build of first task 5 of the [Rules-first four-track plan](<../Plans/ASL Rules-First Four-Track Plan.md>) (section 7.3), 2026-10-28, at the user's word ("proceed with task 5"). The rulings below were decided under that word and are open to the user's veto. A track 1 task: it changes no Rules code and takes no claim.
+
+## 1. What it is for
+
+A minigame sits on an existing VASL board chosen for the terrain its rule needs, never on a hand-made one. The terrain of every hex of every imported board is already derived (`HexFactSet`); what is missing is a search across boards. The `MapHexIndex` is that search, saved: for each board, every terrain and feature it holds and the hexes where each occurs.
+
+## 2. Rulings
+
+- **RMH.1 The name stays the user's: `MapHexIndex`**, in `LimboDancer.Domains.Asl.Maps` (`Derivation/MapHexIndex.cs`), though "map" in the Studio usually means a composed map: the index is per board, and its records say so.
+- **RMH.2 A pure function** `MapHexIndexer.Features(HexFactSet)` lists a board's features, each with the hexes that hold it, in the board's hex order, sorted by feature id. Feature ids are a kind and a name: `terrain:<name>` (each Location's terrain and a hexside's own terrain, a road along it), `depression:<name>`, `hexside:<name>` (walls, hedges, bocage, embankments as hexside terrain), `bridge:<name>`, `level:<n>` (a hex's base level other than 0: hills and depressions below 0), and the flags `flag:cliff`, `flag:slope`, `flag:railroad-embankment`, `flag:partial-orchard`, `flag:stairway`. Off-map hexsides are skipped; a Location is counted once (a hex's `Locations` holds its center).
+- **RMH.3 The fidelity batch writes it.** `VaslFidelityBatch` builds each board's features in the batch's existing per-board hook, keeps the small entry and drops the facts (never 235 `HexFactSet`s at once), and saves the index once the batch ends, as `{CacheRoot}/hexindex/maphexindex-<the report's start>.json`, beside the report and keyed the same way. A canceled or failed batch saves none. No interface, runner, or test fake changes.
+- **RMH.4 The stamp.** The index records the index version (1.0.0), the derivation version, the VASL commit, the shared board metadata blob, the report it was written with, and for each board its LOSData blob and the batch's outcome (verified, ingested, out of scope, failed). A board out of scope or failed has no hex facts, so it is listed with no features: the index cannot say what such a board prints.
+- **RMH.5 The library's "Has terrain" filter.** The board library page offers the index's feature ids; choosing one or more keeps the boards that hold every one, and each board's link opens the viewer with `?terrain=<id>`, where the hexes that hold it are outlined. With no index saved yet, the filter says so and offers to run the batch.
+- **RMH.6 The agents' script**, `code-builders/boards/hex_index.py`, reads the newest index from the Studio's cache (`paths.CACHE_ROOT`, overridable by `ASL_MAPS_CACHE`): `--features` lists the ids, and `--has a b` lists the boards holding all of them, with their hexes. For a question about neighbouring hexes the index narrows the boards and the board viewer confirms (the plan's section 7.3).
+- **RMH.7 Terrain VASL has no type for cannot be found.** VASL's terrain catalog has no Narrow Street, Steeple, Rail Car, or Manhole type; the Step 0 check reports these as absent from the catalog, not from the boards.
+
+## 3. Memory and performance
+
+Nothing during play: the index is written once per batch and read by the library page and the viewer on request (one file, cached by its write time). The batch adds one pass over each board's hexes in the hook it already runs, and keeps only the entry. The file is a few megabytes at most.
+
+## 4. Build outputs outside the repository
+
+Claude's Studio in `asl-gate-work/studio-6670` and the filtered test builds, registered with `outside_outputs.sh` as they are made. The index itself is written in the Studio's existing cache folder.
+
+## 5. As built
+
+- **Maps:** `Derivation/MapHexIndex.cs` (the records, `MapHexIndexer.Features`, `FeatureIds`, `BoardsWith`), with `MapHexIndexTests` (2 tests).
+- **MapStudio:** `Services/MapHexIndexStore.cs` (the save the batch calls and the newest read, kept while the file is unchanged); `VaslFidelityBatch` collects each board's features in its `AdditionalChecks` hook and saves the index after the report is built. The library's filter bar has a "Has terrain" box with the index's ids as suggestions; a chosen id is a chip that removes itself on a click, and Enter or leaving the box takes a known id only. A chosen terrain, like a VASL status, narrows the list to VASL boards. `VaslBoardTable` takes a `LinkQuery`, and the board viewer reads `?terrain=` and outlines the hexes (one outline, built once per board and id) with a line above the map naming them. A new bUnit test, `CollectionPageTests.TheHasTerrainFilterKeepsTheBoardsHoldingEveryFeatureAndLinksTheViewerToIt`.
+- **code-builders:** `paths.CACHE_ROOT` and `boards/hex_index.py` (`--features [text]`, `--has id ...`, `--board`).
+- **First index** (2026-10-28, report `fidelity-20261029T005544Z`, VASL `33324f9a`): 297 boards, 235 verified with features, 61 out of scope and 1 failed with none; 3.9 MB.
+- **The Step 0 check of "no in-scope board prints" (redesign plan, Pass 145).** Railroads: `terrain:Railroad, Ground Level` on bdBFPA (54 hexes) and bdBFPB (67 hexes); no railroad embankment flag on any in-scope board. Towers: `terrain:BFP Tower, 1 Level` on bdBFPA [K6]. Narrow Streets, Steeples, Rail Cars, Manholes: no VASL terrain type (RMH.7). Sewers and tunnels: VASL has the types, no in-scope board holds them. What the 61 out-of-scope boards print the index cannot say (RMH.4). The Pass 145 lines of the redesign plan and the four-track plan's progress note are corrected to match.
+- **Studio check** (my Studio on 6670): the batch wrote the index; the library found bdBFPA for the Tower and both BFP boards for the railroad; the viewer outlined the railroad hexes of bdBFPA; at 320 px the filter bar and the chip fit with no sideways scroll. The check found Enter did not take a typed id (the change event fires only on leaving the box); a key handler was added and checked.
