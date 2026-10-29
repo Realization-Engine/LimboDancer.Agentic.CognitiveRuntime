@@ -217,7 +217,8 @@ def check_wiring(lines, claims, faults):
             faults.append(f"wiring row {row} is taken while its rule claim {rule_claim} is {rule['state']}, not built")
         holder["rows"].append(row)
     for name, claim in claims.items():
-        if claim["state"] in WIRED_OR_LATER:
+        # Rules review precedes wiring; only a wiring claim's review implies completed wiring.
+        if claim["state"] in {"wired", "accepted"}:
             for row, state in claim.get("wiring", []):
                 if state not in WIRED_OR_LATER:
                     faults.append(f"rule claim {name} is {claim['state']}, and its wiring row {row} is {state}")
@@ -236,7 +237,8 @@ def check_wiring(lines, claims, faults):
 
 def check_wiring_branch(wiring, branch, paths, faults):
     """A wiring claim's branch changes only the files it holds and their tests; a Rules file only to remove the old members its rows name."""
-    held = {f"src/ASL/{path}" for claim in wiring.values() if claim["branch"] == branch and claim["state"] == "claimed" for path in claim["files"]}
+    # Completion releases overlap holds, but the recorded branch still needs its file scope for PR checks.
+    held = {f"src/ASL/{path}" for claim in wiring.values() if claim["branch"] == branch for path in claim["files"]}
     for path in paths:
         if not path.startswith("src/") or path.endswith(".md") or path.startswith("src/ASL/tests/") or path.startswith("src/ASL/units/minigames/"):
             continue

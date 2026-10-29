@@ -456,8 +456,7 @@ public sealed partial class GamePlanner
         if (shot.Spotter is { UnitId: { } spotterId } && state.Location(spotterId)?.Location is { } spotterAt)
         {
             // C9.3 (ruling RC93.4): the hex range from the mortar to its Spotter is read here; whether it is in reach is the calculator's.
-            int? range = spotterAt.Board == from.Board && spotterAt.Hex == from.Hex ? 0
-                : Step(state, from, spotterAt).Adjacent ? 1 : Los(state, from, spotterAt)?.Range;
+            var range = SpotterRange(state, from, spotterAt);
             if (!ScenarioA1SpotterCalculator.InReach(range))
             {
                 return (null, ScenarioA1SpotterCalculator.ReachRefusal(spotterId));
@@ -932,7 +931,10 @@ public sealed partial class GamePlanner
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "ordnance-fired",
             new OrdnanceFired(facts.Gun!.GunId!, facts.Crew!.UnitId!, BoardLocation.Parse(facts.TargetLocationId!), facing, gunResult.RateOfFireKept,
                 gunResult.Acquisition, acquired, rollIds, JsonSerializer.SerializeToElement(ScenarioA1ArmorLeaders.Recorded(facts, resolution), LiveFire.Json),
-                JsonSerializer.SerializeToElement(resolution, LiveFire.Json)),
+                JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
+            {
+                SpotterWiringVersion = facts.Spotter is not null ? 1 : null
+            },
             package, null));
 
         // C13.31, C13.36 (ruling R9.7): a PF Check's Original 6 pins or breaks its firer, or gives Casualty Reduction; so does an Original 12 To Hit DR.

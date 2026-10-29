@@ -199,6 +199,17 @@ public sealed record GameState(
     public IReadOnlyList<MortarSpotterUse> MortarSpotterUses { get; init; } = [];
     public IReadOnlyList<MortarSpotterDesignation> MortarSpotterDesignations { get; init; } = [];
 
+    /// <summary>Derived command evidence for the current phase, rebuilt by replay rather than stored in a game record.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public MortarSpotterOpening SpotterOpening { get; init; } = new(null, 0, false, [], []);
+
+    /// <summary>The loss of this assignment occurrence, excluding losses before its latest declaration.</summary>
+    public MortarSpotterLoss? ActiveSpotterLoss(string gun, string spotter)
+    {
+        var since = MortarSpotterDesignations.LastOrDefault(item => item.Gun == gun)?.Revision ?? 0;
+        return MortarSpotterLosses.LastOrDefault(item => item.Gun == gun && item.Spotter == spotter && item.Revision > since);
+    }
+
     /// <summary>The PF shots each side has taken this scenario (C13.31; ruling R9.7), by side id.</summary>
     public IReadOnlyDictionary<string, int> PanzerfaustShots { get; init; } = new Dictionary<string, int>(StringComparer.Ordinal);
 

@@ -243,7 +243,96 @@ public sealed record MortarSpotter(string Gun, string Spotter);
 
 /// <summary>Observed C9.3 assignment loss. A later rally cannot erase it or establish a replacement designation.</summary>
 public sealed record MortarSpotterLoss(string Gun, string Spotter, string EventId, long Revision,
-    Rules.SpotterChange Change, Rules.TurnPhaseOccurrence? Occurrence);
+    Rules.SpotterChange Change, Rules.TurnPhaseOccurrence? Occurrence)
+{
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int PlayerTurnOrdinal
+    {
+        get; init;
+    }
+}
+
+/// <summary>Replay's contiguous command batch and the calculator's steps for the current phase.</summary>
+public sealed record MortarSpotterOpening(string? Command, int Sequence, bool PhaseChangeBatch,
+    IReadOnlyList<string> EventTypes, IReadOnlyList<Rules.MovementOpeningStep> Steps);
+
+/// <summary>State facts shared by the command and projection; all decisions remain in Rules.</summary>
+public static class MortarSpotterFacts
+{
+    /// <summary>Reads assignment history once for a candidate-list refresh. The caller retains it only for this exact immutable state.</summary>
+    public static MortarSpotterAssignmentRead ReadAssignments(GameState state)
+    {
+        var origins = new Dictionary<string, MortarSpotterDesignation>(StringComparer.Ordinal);
+        foreach (var origin in state.MortarSpotterDesignations)
+        {
+            origins[origin.Gun] = origin;
+        }
+        var losses = new Dictionary<(string Gun, string Spotter), MortarSpotterLoss>();
+        foreach (var loss in state.MortarSpotterLosses)
+        {
+            if (loss.Revision > (origins.GetValueOrDefault(loss.Gun)?.Revision ?? 0))
+            {
+                losses[(loss.Gun, loss.Spotter)] = loss;
+            }
+        }
+        var assignments = new Dictionary<string, MortarSpotter>(StringComparer.Ordinal);
+        foreach (var assignment in state.MortarSpotters)
+        {
+            assignments[assignment.Gun] = assignment;
+        }
+        var locations = assignments.Values.Where(item => !losses.ContainsKey((item.Gun, item.Spotter)))
+            .GroupBy(item => item.Spotter).ToDictionary(group => group.Key,
+                group => (IReadOnlyList<(string Gun, string? Location)>)group.Select(item => (item.Gun, state.Location(item.Gun)?.Location.ToString())).ToArray(),
+                StringComparer.Ordinal);
+        return new(state, origins, losses, assignments, locations);
+    }
+
+    public static Rules.SpotterDesignationFacts? Designation(GameState state, string gunId, string spotterId,
+        Vocabulary.UnitVocabulary vocabulary, bool mortar, int? range, MortarSpotterAssignmentRead? assignments = null)
+    {
+        if (state.Equipment.FirstOrDefault(item => item.Id == gunId) is not { Holding: { } holding } gun
+            || state.Unit(holding.Holder) is not { Side: { } owner } holder || state.Unit(spotterId) is not { } unit)
+        {
+            return null;
+        }
+        bool Is(string condition) => GameState.Condition(unit, condition) == ConditionState.True;
+        var phaseFirer = state.PhaseFirers.FirstOrDefault(item => item.Unit == unit.Id);
+        var fired = Is(Conditions.PrepFire) || Is(Conditions.FinalFire) || Is(Conditions.FirstFire);
+        var read = assignments is not null && ReferenceEquals(assignments.State, state) ? assignments : ReadAssignments(state);
+        var assignment = read.Assignments.GetValueOrDefault(gunId);
+        var origin = read.Origins.GetValueOrDefault(gunId);
+        var loss = assignment is null ? null : read.Losses.GetValueOrDefault((gunId, assignment.Spotter));
+        var lossAt = loss is { Occurrence: { } at, PlayerTurnOrdinal: > 0 }
+            ? new Rules.TurnRulePosition(at.GameTurn, loss.PlayerTurnOrdinal, at.Owner, at.Phase, Rules.TurnCheckpoint.DuringPhase) : null;
+        var timing = new Rules.SpotterTimingFacts(owner,
+            new(state.Turn, state.PlayerTurnOrdinal, state.PhasingSide, state.Phase,
+                Rules.ScenarioA1SpotterCalculator.OpeningCheckpoint(state.SpotterOpening.Steps)),
+            origin is not null || assignment is not null, loss?.Change ?? Rules.SpotterChange.None, lossAt);
+        var candidate = new Rules.SpotterCandidateFacts(unit.Status == InstanceStatus.Active && unit.Position is MapPosition,
+            unit.Side == owner, Rules.ScenarioA1SpotterCalculator.Personnel(unit.Kind),
+            GameState.GoodOrder(unit, vocabulary) == ConditionState.True, Is(Conditions.Captured), Is(Conditions.Melee), unit.Id == holder.Id);
+        var gunAt = state.Location(gun.Id)?.Location;
+        var otherLocations = read.Locations.GetValueOrDefault(unit.Id)?.Where(item => item.Gun != gun.Id).Select(item => item.Location).ToArray() ?? [];
+        return new(timing, mortar && gun.Status == InstanceStatus.Active && holder.Status == InstanceStatus.Active && holder.Position is MapPosition,
+            candidate, range, Rules.ScenarioA1SpotterCalculator.SharesLocation(gunAt?.ToString(), otherLocations), state.Night,
+            GameState.Condition(gun, "asl:ti") == ConditionState.True, unit.Kind == "asl:squad", fired,
+            state.SpottedThisPhase.Any(item => item.Spotter == unit.Id),
+            new(unit.Id, unit.Kind == "asl:squad", Is(Conditions.FirstFire), Is(Conditions.PrepFire) || Is(Conditions.FinalFire),
+                phaseFirer is not null, phaseFirer?.Weapon, state.SupportWeaponUses.Any(item => item.Unit == unit.Id)),
+            state.Choice is not null || state.OpenAttempts.Count > 0 || state.PendingSurrenders.Count > 0 || state.Movement is not null,
+            Is("asl:ti"));
+    }
+
+    public static Rules.SpotterReplacementFacts Replacement(GameState state, Rules.SpotterDesignationFacts facts) =>
+        new(facts.Timing, state.SpotterOpening.Steps, facts.Mortar, facts.Candidate, facts.HexRange, facts.SharesLocation, facts.Night, facts.PendingDecision);
+}
+
+/// <summary>Immutable-state assignment index shared by all candidates of one read. No viewer-specific verdicts are cached.</summary>
+public sealed record MortarSpotterAssignmentRead(GameState State,
+    IReadOnlyDictionary<string, MortarSpotterDesignation> Origins,
+    IReadOnlyDictionary<(string Gun, string Spotter), MortarSpotterLoss> Losses,
+    IReadOnlyDictionary<string, MortarSpotter> Assignments,
+    IReadOnlyDictionary<string, IReadOnlyList<(string Gun, string? Location)>> Locations);
 
 /// <summary>The C9.3 Good Order half-squad that inherits an observed assignment, with journal provenance.</summary>
 public sealed record MortarSpotterSuccessor(string Gun, string Predecessor, string Successor, string EventId, long Revision);

@@ -39,7 +39,7 @@ public static class GameActions
     public const string PlayPermission = "asl.game.play";
 
     public static readonly ActionDescriptor DesignateSpotter = Descriptor("asl.game.designate-spotter", "Designate a mortar Spotter",
-        "Record an original daytime Spotter in the owner's PFPh/DFPh and apply its SW-use fire marker. Replacement, setup activation and night remain pending.",
+        "Designate a daytime Spotter, or replace a lost Spotter at the owner's MPh opening. Rules determines eligibility and the designation's effects. Setup activation and night remain pending.",
         PlayPermission, "asl.game.sequence-v1", """
         { "type": "object", "additionalProperties": false,
           "required": ["gameId", "attemptId", "expectedRevision", "gunId", "spotter"],
