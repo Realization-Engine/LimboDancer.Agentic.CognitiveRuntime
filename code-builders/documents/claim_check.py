@@ -237,7 +237,8 @@ def check_wiring(lines, claims, faults):
 
 def check_wiring_branch(wiring, branch, paths, faults):
     """A wiring claim's branch changes only the files it holds and their tests; a Rules file only to remove the old members its rows name."""
-    held = {f"src/ASL/{path}" for claim in wiring.values() if claim["branch"] == branch and claim["state"] == "claimed" for path in claim["files"]}
+    # Completion releases overlap holds, but the recorded branch still needs its file scope for PR checks.
+    held = {f"src/ASL/{path}" for claim in wiring.values() if claim["branch"] == branch for path in claim["files"]}
     for path in paths:
         if not path.startswith("src/") or path.endswith(".md") or path.startswith("src/ASL/tests/") or path.startswith("src/ASL/units/minigames/"):
             continue

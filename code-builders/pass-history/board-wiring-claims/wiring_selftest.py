@@ -111,6 +111,24 @@ def main():
     f = []
     c.check_wiring_branch(wiring, "wire/wire-fire-1", ["src/ASL/LimboDancer.Domains.Asl.Units/State/GameProjector.cs"], f)
     check("a wiring branch may not change a file it does not hold", any("held by none" in x for x in f), f)
+    for state in ("wired", "reviewed", "accepted"):
+        completed, f = run({"A": rule("wired"), "B": rule("built")},
+                           [wiring_row("W-A", "A", "wire-fire-1 (Codex)", state),
+                            wiring_row("W-B", "B", "wire-fire-2 (Claude)", "claimed")],
+                           [wiring_claim("wire-fire-1", "LimboDancer.Domains.Asl.Play/LiveOrdnance.cs", state=state),
+                            wiring_claim("wire-fire-2", "LimboDancer.Domains.Asl.Play/LiveOrdnance.cs", agent="Claude")])
+        check(f"a {state} wiring claim releases its whole-file overlap hold", not f, f)
+        f = []
+        c.check_wiring_branch(completed, "wire/wire-fire-1", ["src/ASL/LimboDancer.Domains.Asl.Play/LiveOrdnance.cs"], f)
+        check(f"a {state} wiring branch retains its recorded file scope", not f, f)
+        f = []
+        c.check_wiring_branch(completed, "wire/wire-fire-1", ["src/ASL/LimboDancer.Domains.Asl.Units/State/GameProjector.cs"], f)
+        check(f"a {state} wiring branch cannot change an unlisted file", any("held by none" in x for x in f), f)
+        f = []
+        c.check_wiring_branch(completed, "wire/unrelated", ["src/ASL/LimboDancer.Domains.Asl.Play/LiveOrdnance.cs"], f)
+        check(f"a {state} wiring claim cannot authorize another branch", any("held by none" in x for x in f), f)
+        check(f"a {state} wiring claim is absent from active overlap branches",
+              "wire/wire-fire-1" not in c.others(completed, "wire/wire-fire-2"))
     # The batch gate: merges of rule claims' branches since the recorded commit, read from a faked git log.
     class Out:
         def __init__(self, stdout, returncode=0):
