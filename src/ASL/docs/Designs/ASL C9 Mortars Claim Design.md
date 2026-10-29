@@ -107,4 +107,4 @@ Read-only review of PR 62's Rules scope against C9.1/.2/.4/.5 on physical rulebo
 
 Integration findings: the hero-over-82mm answer explicitly does not judge all A15.23 restrictions, so W-C9 must enforce those through Rules before enabling it. Two-SMC use needs real participation facts carried into resolution, not a primary SMC relabelled as an MMC. Both requirements are in the W-C9 wiring design. Review recorded in the inventory note; W-C9 remains claimed.
 
-The inventory state cell remains built because claim_check.py currently rejects a reviewed Rules claim whose wiring is claimed. The review is complete; correcting that state check is required before promoting the cell, without falsely marking wiring complete.
+The wire-fire-1 follow-up corrects claim_check.py to distinguish Rules review from caller wiring. This branch records the completed review as reviewed in the inventory while W-C9 remains claimed; publication of that tooling correction and state change awaits its code PR and CI. The review does not mark wiring complete.

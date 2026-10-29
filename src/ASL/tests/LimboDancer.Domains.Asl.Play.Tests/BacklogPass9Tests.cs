@@ -521,6 +521,7 @@ public sealed partial class BacklogPass9Tests : IDisposable
         var privateUse = (await laterPrivatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)).FireHistory!;
         Assert.Single(privateUse.Shots);
         Assert.False(Assert.Single(privateUse.Spotters).SpottedThisPhase);
+        Assert.Equal(JsonSerializer.Serialize(later.Spotters), JsonSerializer.Serialize(privateUse.Spotters));
         Assert.True(Assert.Single((await laterPrivatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "pfph", profile)).FireHistory!.Spotters).SpottedThisPhase);
         var last = store.Read(Scope)!.Events[^1];
         var loss = last with

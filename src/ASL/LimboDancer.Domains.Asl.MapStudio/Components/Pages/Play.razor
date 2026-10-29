@@ -8240,7 +8240,10 @@ else if (state is not null)
                         }
                         else
                         {
-                            refusal ??= candidateRefusal;
+                            if (refusal is null || ScenarioA1SpotterCalculator.CandidateRefusal(facts.Candidate) is null)
+                            {
+                                refusal = candidateRefusal;
+                            }
                         }
                     }
                 }
