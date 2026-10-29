@@ -335,7 +335,7 @@ else if (State is { } state)
 
         var place = DisplayText.Place(State?.Map.Boards.Count ?? 1, at);
         unitChoices = View is { } view
-            ? [.. view.Units.Where(unit => view.Locations.TryGetValue(unit.Id, out var position) && position.Location == at)
+            ? [.. view.Units.Where(unit => view.Locations.TryGetValue(unit.Id, out var position) && position.Location == at && MayName(wanted, unit.Side))
                 .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => (unit.Id, $"{place}: {unit.Id} ({unit.Kind})"))]
             : [];
         (choicesFor, activePick) = (fact, null);
@@ -356,7 +356,16 @@ else if (State is { } state)
     private (string Source, string? Value) Row(RuleContract contract, ContractFact fact)
     {
         var gathered = Gathered(contract);
-        var side = fact.Concerns is { } unitFact && UnitOf(gathered, unitFact) is { } unitId && State?.Unit(unitId) is { } unit ? unit.Side : null;
+        var unitId = fact.Concerns is { } unitFact ? UnitOf(gathered, unitFact) : null;
+        var side = unitId is not null && State?.Unit(unitId) is { } unit ? unit.Side : null;
+
+        // A Unit fact that concerns itself has no side until it is picked: it stays the viewer's to pick, and Pick offers only the units whose
+        // side may know it, so a side can name its own unit and never learns the other side's.
+        if (SelfConcerning(fact) && unitId is null)
+        {
+            return ("pending", null);
+        }
+
         var known = Viewer.IsAdjudicator || fact.Disclosure switch
         {
             ContractDisclosure.All => true,
@@ -374,6 +383,13 @@ else if (State is { } state)
             ? ("gathered", value is null ? "not read: it does not apply here" : value.ToJsonString().Trim('"'))
             : ("pending", null);
     }
+
+    /// <summary>An owner's or an opponent's Unit fact that names itself as the unit it concerns (the C9.3 claim's lesson, 2026-10-29).</summary>
+    private bool SelfConcerning(ContractFact fact) =>
+        !Viewer.IsAdjudicator && fact.Type == ContractFactType.Unit && fact.Concerns == fact.Name && fact.Disclosure is ContractDisclosure.Owner or ContractDisclosure.Opponent;
+
+    /// <summary>Whether the viewer may pick a unit of this side for the fact: for a self-concerning fact, only a unit of a side that may know it.</summary>
+    private bool MayName(ContractFact fact, string side) => !SelfConcerning(fact) || (fact.Disclosure == ContractDisclosure.Owner ? side == viewer : side != viewer);
 
     private string? UnitOf(IReadOnlyDictionary<string, JsonNode?> gathered, string unitFact) =>
         picks.TryGetValue(unitFact, out var id) ? id : gathered.TryGetValue(unitFact, out var value) ? value?.GetValue<string>() : null;

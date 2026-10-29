@@ -1548,3 +1548,15 @@ Written on 2026-10-28. What the index left out or simplified (its design, `Desig
 | Neighbouring-hex questions ("a gully next to a two-level building") in the index itself | The MapHexIndex (ruling RMH.6) | | A minigame that needs it | The index narrows the boards and the board viewer confirms by eye. |
 | The library's filter state is kept per session, not in the URL; the terrain chip has no icon (the icon coverage file marks it needed) | The MapHexIndex (ruling RMH.5) | | The next library change | A reload, a new tab, or a pasted library address starts with no filter; the board viewer's own address keeps its terrain. |
 | Terrain VASL has no type for (Narrow Street, Steeple, Rail Car, Manhole) cannot be found by any index | The MapHexIndex (ruling RMH.7) | Pass 145's terrain | Map data of our own for those terrains (Pass 145) | Pass 145 reads them as absent from the catalog, not from the boards. |
+
+## 81. Added by the claim board's first evaluation (after the C9.3 claim)
+
+Written on 2026-10-29. What the fixes to the board (branch `board/claim-fixes`; the Rules-first plan, sections 4.1 and 10) left out or simplified.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| The large ordnance files (`ScenarioA1OrdnanceCalculator.cs`, `ScenarioA1OrdnanceEligibility.cs`, `ScenarioA1OrdnanceRuleModels.cs`) are not split by rule section | The board's evaluation (shared holds instead) | C2 to C13 | A claim whose rule is decided inside one of them | Claims hold them "shared" when they change only their edges; a claim that must change a rule inside one moves that rule into its own calculator file first. |
+| `asop_steps.py` reads the two-column ASOP pages by text block; a step that runs across a column break can pick up the next column's citations (4.21D lists some of 2.22A's) | The board's evaluation | Appendix 2 | None | The tool is an aid: the claimant reads the step on its PDF page before taking the row. |
+| The overlap warning sees only the branches this checkout has (CI fetches only the pull request's, so it never warns there) | The board's evaluation | | None | Each agent runs `claim_check.py --base origin/main --branch <branch>` locally before a pull request, as AGENTS.md says, and pushes its branch early. |
+| `settle_documents.py` settles a merge of main into a branch, not a rebase, and leaves prose both sides rewrote to a person | The board's evaluation | | None | Claim branches merge main (no force push); a prose conflict is resolved by hand. |
+| The Rule Workbench shows an empty unit list when the picked hex holds no unit the viewer may name for a self-concerning fact | The board's evaluation | | The next Workbench change | The list reads "choose a unit" with no units; nothing is revealed. |
