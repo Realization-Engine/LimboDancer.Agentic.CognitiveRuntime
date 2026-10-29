@@ -1,6 +1,6 @@
 # ASL C9.3 Spotter Replacement Design
 
-**Status:** Design, 2026-10-29, revised after a sub-agent's review (section 8), waiting for the user's approval. A follow-up of the C9.3 claim (Claude; built), on its branch `claim/c9.3-spotters`, in the files it holds (`ScenarioA1SpotterCalculator.cs`, `ScenarioA1SpotterModels.cs`, `ScenarioA1SpotterContract.cs`). It supplies the Rules verdict that Codex's W-C9.3 wiring design asks for before it wires a replacement (backlog section 82, its second row; `Designs/ASL W-C9.3 Fire Wiring Design.md`, section 1). Rules only: no caller changes, so no recorded game replays differently. Rulings continue the C9.3 claim's numbering (RC93.1 to RC93.10 are in `Designs/ASL C9.3 Spotters Claim Design.md`).
+**Status:** Approved by the user and built, 2026-10-29, after a sub-agent's review of the design (section 8). A follow-up of the C9.3 claim (Claude; built), on its branch `claim/c9.3-spotters`, in the files it holds (`ScenarioA1SpotterCalculator.cs`, `ScenarioA1SpotterModels.cs`, `ScenarioA1SpotterContract.cs`). It supplies the Rules verdict that Codex's W-C9.3 wiring design asks for before it wires a replacement (backlog section 82, its second row; `Designs/ASL W-C9.3 Fire Wiring Design.md`, section 1). Rules only: no caller changes, so no recorded game replays differently. Rulings continue the C9.3 claim's numbering (RC93.1 to RC93.10 are in `Designs/ASL C9.3 Spotters Claim Design.md`).
 
 ## 1. The rule (C9.3, p. 179; ASOP 3.11A, p. 679; A.7, p. 43; A4.8, p. 52)
 
