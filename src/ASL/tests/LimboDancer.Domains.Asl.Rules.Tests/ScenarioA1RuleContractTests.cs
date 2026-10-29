@@ -108,6 +108,92 @@ public sealed class ScenarioA1RuleContractTests
     }
 
     [Fact]
+    public void AWholeNumberNoIntHoldsGivesAVerdictNotAnException()
+    {
+        // The review of Wiring Prompt 001, C932: 2147483648 is a whole number that passed the Spotter contract's checks and overflowed its cast.
+        foreach (var contract in ScenarioA1RuleContracts.All.Where(contract => contract.Facts.Any(fact => fact.Type == ContractFactType.Number)))
+        {
+            var facts = Facts(contract);
+            foreach (var fact in contract.Facts.Where(fact => fact.Type == ContractFactType.Number))
+            {
+                facts[fact.Name] = 2147483648m;
+            }
+
+            Assert.Contains(Outcome(ScenarioA1RuleContracts.Evaluate(contract.Id, facts.ToJsonString())), contract.Outcomes);
+        }
+
+        var spotter = Facts(ScenarioA1RuleContracts.Find("c9.3-spotter-designation")!);
+        spotter["hexRange"] = 2147483648m;
+        Assert.Equal(ContractVerdict.NotEvaluated, Outcome(ScenarioA1RuleContracts.Evaluate("c9.3-spotter-designation", spotter.ToJsonString())));
+    }
+
+    [Fact]
+    public void TheRallyContractKeepsTheEnemysLosAndTheRallyingSidesLeadersApart()
+    {
+        // PS1: what the enemy's units see is the enemy's (A12.141); what is known of the leaders in the Location, and Fanatic status, the rallying side's.
+        var facts = ScenarioA1RuleContracts.Find("a10.6-rally")!.Facts.ToDictionary(fact => fact.Name);
+        Assert.Equal((ContractDisclosure.Opponent, "unitId"), (facts["enemyGoodOrderInLosWithin16"].Disclosure, facts["enemyGoodOrderInLosWithin16"].Concerns));
+        foreach (var name in new[] { "unitFanatic", "leaderBroken", "leaderWounded", "leaderConcealed", "goodOrderLeaderInLocation", "brokenLeaderInLocation" })
+        {
+            Assert.Equal((ContractDisclosure.Owner, "unitId"), (facts[name].Disclosure, facts[name].Concerns));
+        }
+    }
+
+    [Fact]
+    public void ARallyingSideThatCannotKnowTheEnemysLosStillLearnsWhetherAndOnWhatItMayRally()
+    {
+        // A12.141 (p. 78): the enemy's LOS decides only whether the "?" is lost, so the owner's view, which leaves it unknown, still gets the verdict.
+        var contract = ScenarioA1RuleContracts.Find("a10.6-rally")!;
+        var facts = RallyFacts();
+        facts["unitConcealed"] = true;
+        var owners = ScenarioA1RuleContracts.Evaluate(contract, facts);
+        Assert.Equal("may-attempt", owners.Outcome);
+        Assert.Contains(owners.Reasons, reason => reason.Rule == "A12.141");
+
+        foreach (var seen in new[] { true, false })
+        {
+            var known = RallyFacts();
+            known["unitConcealed"] = true;
+            known["enemyGoodOrderInLosWithin16"] = seen;
+            var verdict = ScenarioA1RuleContracts.Evaluate(contract, known);
+            Assert.Equal("may-attempt", verdict.Outcome);
+            Assert.Equal(Assert.Single(verdict.Rolls).Target, Assert.Single(owners.Rolls).Target);
+            Assert.DoesNotContain(verdict.Reasons, reason => reason.Rule == "A12.141");
+        }
+
+        // Another refusal still refuses: a unit that is not broken does not rally, whatever the enemy sees.
+        facts["unitBroken"] = false;
+        Assert.Equal("refused", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
+    }
+
+    private static JsonObject RallyFacts() => new()
+    {
+        ["phase"] = "RPh",
+        ["rallyingSide"] = "phasing",
+        ["locationId"] = "bd01:E4:0",
+        ["terrain"] = "woods",
+        ["unitId"] = "ru-1",
+        ["unitDefinition"] = "defender-squad",
+        ["unitBroken"] = true,
+        ["unitDisrupted"] = false,
+        ["unitWounded"] = false,
+        ["unitDesperationMorale"] = false,
+        ["unitConcealed"] = false,
+        ["unitAttemptedThisPlayerTurn"] = false,
+        ["unitOtherActionThisPhase"] = false,
+        ["leaderId"] = "ru-leader",
+        ["leaderDefinition"] = "defender-leader",
+        ["leaderBroken"] = false,
+        ["leaderWounded"] = false,
+        ["leaderConcealed"] = false,
+        ["goodOrderLeaderInLocation"] = true,
+        ["brokenLeaderInLocation"] = false,
+        ["firstMmcRallyOfOwnPlayerTurn"] = false,
+        ["knownEnemyInLos"] = false,
+        ["captors"] = "none",
+    };
+
+    [Fact]
     public void TheRallyContractGivesTheRallyDrsTargetAndRollsNothing()
     {
         var facts = new JsonObject

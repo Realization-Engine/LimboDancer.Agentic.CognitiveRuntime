@@ -110,7 +110,8 @@ public static class ScenarioA1RuleContracts
         {
             return contract.Decide(new ContractFacts(values));
         }
-        catch (Exception error) when (error is ArgumentException or KeyNotFoundException or InvalidOperationException)
+        // ArithmeticException (C932): a number a calculator cannot hold, such as an overflowing cast, is a refusal of the facts, not a crash.
+        catch (Exception error) when (error is ArgumentException or KeyNotFoundException or InvalidOperationException or ArithmeticException)
         {
             return NotEvaluated(contract, $"the calculator refuses these facts: {error.Message}");
         }
@@ -159,16 +160,21 @@ public static class ScenarioA1RuleContracts
             Flag("unitConcealed", "It is concealed"),
             Flag("unitAttemptedThisPlayerTurn", "It has attempted to rally this Player Turn"),
             Flag("unitOtherActionThisPhase", "It has taken another RPh action this phase"),
-            Flag("unitFanatic", "It is Fanatic", mayBeUnknown: true),
+            // The review of Wiring Prompt 001, PS1 (2026-10-29): a leader may be under a "?" when the broken unit is not, so what is known of the
+            // leaders in the Location is the rallying side's (A12.1); so is Fanatic status, which no counter shows.
+            RallyOwners("unitFanatic", "It is Fanatic", mayBeUnknown: true),
             new("leaderId", ContractFactType.Unit, true, ContractDisclosure.All, "The leader who directs the attempt, if any"),
             new("leaderDefinition", ContractFactType.Text, true, ContractDisclosure.Owner, "The leader's definition in the catalog") { Concerns = "leaderId" },
-            Flag("leaderBroken", "The leader is broken", mayBeUnknown: true),
-            Flag("leaderWounded", "The leader is wounded", mayBeUnknown: true),
-            Flag("leaderConcealed", "The leader is concealed", mayBeUnknown: true),
-            Flag("goodOrderLeaderInLocation", "A Good Order leader of its side is in the Location"),
-            Flag("brokenLeaderInLocation", "A broken leader of its side is in the Location"),
+            RallyOwners("leaderBroken", "The leader is broken", mayBeUnknown: true),
+            RallyOwners("leaderWounded", "The leader is wounded", mayBeUnknown: true),
+            RallyOwners("leaderConcealed", "The leader is concealed", mayBeUnknown: true),
+            RallyOwners("goodOrderLeaderInLocation", "A Good Order leader of its side is in the Location"),
+            RallyOwners("brokenLeaderInLocation", "A broken leader of its side is in the Location"),
             Flag("firstMmcRallyOfOwnPlayerTurn", "No MMC of its side has rallied this Player Turn (A10.63 Self-Rally)"),
-            Flag("enemyGoodOrderInLosWithin16", "A Good Order enemy unit within 16 hexes has a LOS to it (A12.141)", mayBeUnknown: true),
+            // A12.141 (p. 78): what the enemy's Good Order units see is the enemy's to know, since they may be concealed or Dummies; it decides
+            // only whether a "?" is lost, never whether the attempt may be made (PS1).
+            Flag("enemyGoodOrderInLosWithin16", "A Good Order enemy unit within 16 hexes has a LOS to it (A12.141)", mayBeUnknown: true,
+                disclosure: ContractDisclosure.Opponent) with { Concerns = "unitId" },
             Flag("knownEnemyInLos", "A Known enemy unit has a LOS to it (A15)", mayBeUnknown: true),
             new("captors", ContractFactType.Text, true, ContractDisclosure.All, "The prisoners it guards (A20.4), comma-separated, or \"none\""),
         ],
@@ -183,7 +189,38 @@ public static class ScenarioA1RuleContracts
         Decide = RallyVerdict,
     };
 
+    private static ContractFact RallyOwners(string name, string description, bool mayBeUnknown = false) =>
+        Flag(name, description, mayBeUnknown, ContractDisclosure.Owner) with
+        {
+            Concerns = "unitId"
+        };
+
+    private const string LosMissing = "asl.a1.rally.fact-missing:enemyGoodOrderInLosWithin16";
+
     private static ContractVerdict RallyVerdict(ContractFacts facts)
+    {
+        // A12.141 (PS1): the enemy's LOS decides only the "?". When this viewer does not know it, the verdict is reached on either answer and
+        // given only if both agree: whether the attempt may be made and its Rally DR's target never depend on it.
+        if (facts.Flag("enemyGoodOrderInLosWithin16") is null)
+        {
+            var seen = RallyVerdict(facts, true);
+            var unseen = RallyVerdict(facts, false);
+            if (seen.Outcome == unseen.Outcome && seen.Rolls.Select(roll => roll.Target).SequenceEqual(unseen.Rolls.Select(roll => roll.Target)))
+            {
+                var needed = RallyVerdict(facts, null).Reasons.Any(reason => reason.Text == LosMissing);
+                return needed
+                    ? unseen with
+                    {
+                        Reasons = [.. unseen.Reasons, new ContractReason("Whether it loses its \"?\" is known to the opponent, whose units may see it", "A12.141", 78)]
+                    }
+                    : unseen;
+            }
+        }
+
+        return RallyVerdict(facts, facts.Flag("enemyGoodOrderInLosWithin16"));
+    }
+
+    private static ContractVerdict RallyVerdict(ContractFacts facts, bool? enemyGoodOrderInLosWithin16)
     {
         var reference = RallyReference.Value;
         var leader = facts.Text("leaderId") is { } leaderId
@@ -197,7 +234,7 @@ public static class ScenarioA1RuleContracts
                 Fanatic = facts.Flag("unitFanatic"),
             },
             leader, facts.Text("locationId"), facts.Text("terrain"), facts.Flag("goodOrderLeaderInLocation"), facts.Flag("brokenLeaderInLocation"),
-            facts.Flag("firstMmcRallyOfOwnPlayerTurn"), facts.Flag("enemyGoodOrderInLosWithin16"), null)
+            facts.Flag("firstMmcRallyOfOwnPlayerTurn"), enemyGoodOrderInLosWithin16, null)
         {
             KnownEnemyInLos = facts.Flag("knownEnemyInLos"),
             Captors = facts.Text("captors") switch
@@ -293,7 +330,9 @@ public static class ScenarioA1RuleContracts
     /// A12.14 (p. 77) and E1.31 (p. 223), as <see cref="ScenarioA1AdvanceCalculator.LosesConcealment"/> decides whether a concealed unit advancing into a
     /// Location loses its "?" (the proving slice: what a viewer may know). Whether a Good Order enemy within 16 hexes sees it is the opponent's fact:
     /// that side knows what its own units see, and the owner does not, since an enemy may be hidden. What is under the "?" is the owner's, and the
-    /// calculator does not need it. The LOS is read only when night and terrain leave the question open.
+    /// calculator does not need it. The LOS is read only when night and terrain leave the question open. The opponent names the advancer by its "?"
+    /// stack, which shows its side and Location and not what is under it (the review of Wiring Prompt 001, PS4); its identity reaches the calculator
+    /// as unknown.
     /// </summary>
     [RuleContract]
     private static RuleContract AdvanceConcealment() => new("a12.14-advance-concealment", "Concealment lost on advancing",

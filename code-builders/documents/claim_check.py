@@ -290,6 +290,7 @@ def changed_rules_files(base):
 # What a claim may change (the Rules conventions, section 2): the Rules library, its tests, its minigame bundle, and the Rule Workbench.
 CLAIM_SCOPE = (RULES_DIR, "src/ASL/tests/LimboDancer.Domains.Asl.Rules.Tests/", "src/ASL/units/minigames/",
                "src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Workbench.razor",
+               "src/ASL/tests/LimboDancer.Domains.Asl.MapStudio.Tests/WorkbenchPageTests.cs",
                "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/MinigameBundleTests.cs")
 
 

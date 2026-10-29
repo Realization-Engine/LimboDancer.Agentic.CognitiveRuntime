@@ -61,10 +61,10 @@ internal static class ScenarioA1SpotterContract
 
     private static ContractVerdict Verdict(ContractFacts facts)
     {
-        // A fact this viewer may not know, or a range that is not a whole number of hexes, leaves the question open: the contract does not refuse for
-        // want of a fact.
+        // A fact this viewer may not know, or a range that is not a whole number of hexes an int holds, leaves the question open: the contract does
+        // not refuse for want of a fact (the review of Wiring Prompt 001, C932: a larger whole number overflowed the cast below).
         var unknown = OwnersFacts.FirstOrDefault(name => facts.Flag(name) is null)
-            ?? (facts.Number("hexRange") is not { } given || given < 0 || given != decimal.Truncate(given) ? "hexRange" : null);
+            ?? (facts.Number("hexRange") is not { } given || given < 0 || given > int.MaxValue || given != decimal.Truncate(given) ? "hexRange" : null);
         if (unknown is not null)
         {
             return new ContractVerdict(ContractVerdict.NotEvaluated,
