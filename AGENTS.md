@@ -26,7 +26,7 @@ The [Rules-first four-track plan](<src/ASL/docs/Plans/ASL Rules-First Four-Track
 - **Review.** The agent that did not build the claim reviews it, read-only: the rules against the PDF and what a side may know (question 3). When only one agent is working, a sub-agent reviews. The reviewer sets the state "reviewed".
 - **The check.** `python code-builders/documents/claim_check.py --base origin/main --branch <your branch>` must pass before a pull request. CI runs it on every pull request and every push, with the status-line check, and the merge gate's strict stage runs both.
 - **Separate checkouts.** The main checkout (`E:\Archive\GitHub\dlandi\LimboDancer.MCP`) is Claude's. Codex works only in its own worktree. Implementation waits for the user's approval of its design; code reaches main by a pull request with a green CI run, and the user gives the word for each merge.
-- **When the board opens.** The board opens with the plan's first task 6, after the proving slice (first task 4). Until then a claim is made only for a first task of the plan, under its own id (for example "proving-slice").
+- **The board is open** (first task 6, the user's word of 2026-10-28). Any rule section may be claimed by the steps above. Claude works the first claim (C9.3 Spotters) alone, with a sub-agent as its reviewer, before Codex takes claims.
 
 ## Other rules that apply to every change
 
