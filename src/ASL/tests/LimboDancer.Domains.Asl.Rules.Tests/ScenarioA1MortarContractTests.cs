@@ -12,7 +12,7 @@ public sealed class ScenarioA1MortarContractTests
 
     private static JsonObject Facts() => new()
     {
-        ["mortarId"] = "g-mortar",
+        ["firerId"] = "g-squad",
         ["weapon"] = "asl:light-mortar",
         ["caliber"] = 50m,
         ["minimumRange"] = 2m,
@@ -55,7 +55,7 @@ public sealed class ScenarioA1MortarContractTests
     public void EveryFactOfTheShotIsItsOwnersAndAnUnknownOneIsNotEvaluated()
     {
         // The mortar may be under a "?", its firer a concealed stack's SMC: the opponent's view leaves them unknown.
-        Assert.All(Contract.Facts, fact => Assert.Equal((ContractDisclosure.Owner, "mortarId"), (fact.Disclosure, fact.Concerns)));
+        Assert.All(Contract.Facts, fact => Assert.Equal((ContractDisclosure.Owner, "firerId"), (fact.Disclosure, fact.Concerns)));
         foreach (var name in new[] { "weapon", "caliber", "minimumRange", "range", "areaTargetType", "namesVehicle", "loneSmc" })
         {
             var facts = Facts();
@@ -63,9 +63,9 @@ public sealed class ScenarioA1MortarContractTests
             Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(Contract, facts).Outcome);
         }
 
-        // The mortar's identity is not needed; a number that is not a whole one an int holds is not read.
+        // The firer's identity is not needed; a number that is not a whole one an int holds is not read.
         var anonymous = Facts();
-        anonymous["mortarId"] = null;
+        anonymous["firerId"] = null;
         Assert.Equal("may-fire", ScenarioA1RuleContracts.Evaluate(Contract, anonymous).Outcome);
         foreach (var number in new JsonNode[] { 2.5m, -1m, 2147483648m })
         {

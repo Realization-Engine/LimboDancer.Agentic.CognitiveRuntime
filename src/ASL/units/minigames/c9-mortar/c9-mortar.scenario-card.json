@@ -1,0 +1,69 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "c9-mortar",
+  "title": "Minigame: C9 Mortars",
+  "catalog": "asl-scenario-a1@1.13.0",
+  "source": {
+    "basis": "Manufactured under R0.3 as the minigame of the C9 claim (the Rules-first plan, section 7): the fewest counters C9.1, C9.2, C9.4, and A21.13 need, on an imported board.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "A minimal card (ruling R22.3): the units are set up by hand, the German 50mm light mortar [2-13] with a squad, Russian targets at range 1 and 2 with a truck in one target hex, and a lone German leader with a second light mortar, in the PFPh."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 0,
+    "month": 7,
+    "year": 0
+  },
+  "introduction": "A light mortar and its squad fire at targets at and inside its minimum range; a lone leader fires the second one.",
+  "boards": [
+    {
+      "board": "bd03",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "german",
+    "movesFirst": "german"
+  },
+  "sides": [
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "russian",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "",
+        "basis": "none",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A minigame has no victory: it proves its rules on the Rule Workbench and in play.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "c9-mortar"
+}

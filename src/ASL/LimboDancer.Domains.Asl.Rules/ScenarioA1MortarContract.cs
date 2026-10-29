@@ -8,14 +8,16 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// </summary>
 internal static class ScenarioA1MortarContract
 {
-    private const string Mortar = "mortarId";
+    // The unit that fires the mortar names the shot: the map offers units, and a mortar is equipment its firer holds (the Studio check of the
+    // claim). Its side is the owner whose facts these are.
+    private const string Mortar = "firerId";
 
     private static readonly string[] Numbers = ["caliber", "minimumRange", "range"];
 
     [RuleContract]
     private static RuleContract Shot() => new("c9-mortar-shot", "Mortar shot", [new("C9.1", 179), new("C9.2", 179), new("C9.4", 179), new("A21.13", 88)],
         [
-            new(Mortar, ContractFactType.Unit, true, ContractDisclosure.Owner, "The mortar") { Concerns = Mortar },
+            new(Mortar, ContractFactType.Unit, true, ContractDisclosure.Owner, "The unit that fires the mortar") { Concerns = Mortar },
             new("weapon", ContractFactType.Text, false, ContractDisclosure.Owner, "Its kind (asl:light-mortar) or its gun type (mortar, mtr, at, ...)") { Concerns = Mortar },
             new("caliber", ContractFactType.Number, false, ContractDisclosure.Owner, "Its caliber, in mm") { Concerns = Mortar },
             new("minimumRange", ContractFactType.Number, false, ContractDisclosure.Owner, "Its minimum range, the first number of its \"[#-#]\"") { Concerns = Mortar },
