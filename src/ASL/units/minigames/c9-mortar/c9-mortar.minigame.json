@@ -1,0 +1,212 @@
+{
+  "id": "c9-mortar",
+  "title": "C9 Mortars",
+  "card": "c9-mortar",
+  "rules": [
+    "C9.1",
+    "C9.2",
+    "C9.4",
+    "A21.13",
+    "A15.23"
+  ],
+  "contracts": [
+    "c9-mortar-shot"
+  ],
+  "example": null,
+  "checks": [
+    {
+      "name": "The squad's 50mm mortar fires at the target at its minimum range of 2",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c9-mortar-shot",
+      "facts": {
+        "firerId": "g-squad",
+        "weapon": "asl:light-mortar",
+        "caliber": 50,
+        "minimumRange": 2,
+        "range": 2,
+        "areaTargetType": true,
+        "namesVehicle": false,
+        "loneSmc": false,
+        "hero": false
+      },
+      "expect": {
+        "outcome": "may-fire",
+        "reasons": [
+          "keeps its Multiple ROF"
+        ]
+      }
+    },
+    {
+      "name": "It may not fire at the target at range 1, inside its minimum range",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c9-mortar-shot",
+      "facts": {
+        "firerId": "g-squad",
+        "weapon": "asl:light-mortar",
+        "caliber": 50,
+        "minimumRange": 2,
+        "range": 1,
+        "areaTargetType": true,
+        "namesVehicle": false,
+        "loneSmc": false,
+        "hero": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "minimum range of 2"
+        ]
+      }
+    },
+    {
+      "name": "It may not name the truck as a To Kill target: its hits on vehicles are the IFT's",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c9-mortar-shot",
+      "facts": {
+        "firerId": "g-squad",
+        "weapon": "asl:light-mortar",
+        "caliber": 50,
+        "minimumRange": 2,
+        "range": 2,
+        "areaTargetType": true,
+        "namesVehicle": true,
+        "loneSmc": false,
+        "hero": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "To Kill Tables"
+        ]
+      }
+    },
+    {
+      "name": "It fires only on the Area Target Type",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c9-mortar-shot",
+      "facts": {
+        "firerId": "g-squad",
+        "weapon": "asl:light-mortar",
+        "caliber": 50,
+        "minimumRange": 2,
+        "range": 2,
+        "areaTargetType": false,
+        "namesVehicle": false,
+        "loneSmc": false,
+        "hero": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "Area Target Type"
+        ]
+      }
+    },
+    {
+      "name": "The lone leader fires the second light mortar and loses its Multiple ROF",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c9-mortar-shot",
+      "facts": {
+        "firerId": "g-leader",
+        "weapon": "asl:light-mortar",
+        "caliber": 50,
+        "minimumRange": 2,
+        "range": 2,
+        "areaTargetType": true,
+        "namesVehicle": false,
+        "loneSmc": true,
+        "hero": false
+      },
+      "expect": {
+        "outcome": "may-fire",
+        "reasons": [
+          "loses its Multiple ROF"
+        ]
+      }
+    },
+    {
+      "name": "A lone SMC fires an 81mm mortar as if it were a light mortar (A21.13)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c9-mortar-shot",
+      "facts": {
+        "firerId": "g-leader",
+        "weapon": "mtr",
+        "caliber": 81,
+        "minimumRange": 3,
+        "range": 3,
+        "areaTargetType": true,
+        "namesVehicle": false,
+        "loneSmc": true,
+        "hero": false
+      },
+      "expect": {
+        "outcome": "may-fire",
+        "reasons": [
+          "loses its Multiple ROF"
+        ]
+      }
+    },
+    {
+      "name": "A lone leader does not fire a mortar larger than 82mm (A21.13)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c9-mortar-shot",
+      "facts": {
+        "firerId": "g-leader",
+        "weapon": "mtr",
+        "caliber": 120,
+        "minimumRange": 3,
+        "range": 3,
+        "areaTargetType": true,
+        "namesVehicle": false,
+        "loneSmc": true,
+        "hero": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "82mm or less"
+        ]
+      }
+    },
+    {
+      "name": "A lone hero fires a mortar larger than 82mm as a captured Gun (A21.13, A15.23)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c9-mortar-shot",
+      "facts": {
+        "firerId": "g-leader",
+        "weapon": "mtr",
+        "caliber": 120,
+        "minimumRange": 3,
+        "range": 3,
+        "areaTargetType": true,
+        "namesVehicle": false,
+        "loneSmc": true,
+        "hero": true
+      },
+      "expect": {
+        "outcome": "may-fire",
+        "reasons": [
+          "captured Gun"
+        ]
+      }
+    },
+    {
+      "name": "The Russian view knows none of the German shot's facts, so the question stays open",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "c9-mortar-shot",
+      "facts": {},
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    }
+  ]
+}

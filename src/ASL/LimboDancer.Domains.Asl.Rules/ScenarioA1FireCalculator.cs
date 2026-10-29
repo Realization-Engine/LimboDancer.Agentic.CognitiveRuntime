@@ -3837,7 +3837,7 @@ public static class ScenarioA1FireCalculator
 
             // C11.4 (ruling R8.3): an HE hit whose DR gives no KIA or K on the Gun is a Near Miss, and the crew's gunshield adds +2 to it. C11.4, C11.5
             // (p. 182; pass 60, ruling R60.14): +1 against Indirect Fire, which the crew takes only where it has no positive TEM, the two never cumulative.
-            var indirect = hit is { Area: true };
+            var indirect = ScenarioA1MortarCalculator.IndirectFireOfHit(hit is { Area: true });
             if (hit is { CriticalHit: false } && GunCrewAlone(attack) && attack.GunTarget is { } shielded && GunshieldFaces(attack, shielded)
                 && !Regex.IsMatch(result, "^([1-7])?KIA$") && !Regex.IsMatch(result, "^K/([1-4])$")
                 && !(indirect && drm.Any(item => item.Value > 0 && (item.Name.StartsWith("tem:", StringComparison.Ordinal) || item.Name.StartsWith("emplacement:", StringComparison.Ordinal)))))

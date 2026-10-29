@@ -192,7 +192,9 @@ internal static class ScenarioA1AreaCalculator
             var isHit = Lowest(item) <= modified ? final <= modified : original == 2 && subsequent is >= 1 and <= 3;
             return (Item: item, Final: final, Hit: isHit);
         }).ToArray();
-        var eligible = judged.Where(item => item.Hit && original == 2 && (Lowest(item.Item) < modified || subsequent == 1)).Select(item => item.Item).ToArray();
+        // C9.5 (ruling RC9.6): only an Original 2 is a mortar's Critical Hit, as the mortar calculator says; C3.7's subsequent dr stays here.
+        var eligible = judged.Where(item => item.Hit && ScenarioA1MortarCalculator.CriticalHitAllowed(original) && (Lowest(item.Item) < modified || subsequent == 1))
+            .Select(item => item.Item).ToArray();
 
         // C3.33 (p. 169; pass 60, ruling R60.24): "a mortar also hits all target-hex units that are out of its firer's (Spotter's ...) LOS if that
         // shot hit the non-hidden enemy target that currently was the hardest for it to hit (i.e., that received the highest net TH DRM)": they are
@@ -220,7 +222,9 @@ internal static class ScenarioA1AreaCalculator
             rof--;
         }
 
-        if (pinned || ScenarioA1OrdnanceCalculator.AfphFire(shot) || reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind is "asl:leader" or "asl:hero")
+        // C9.2, A21.13 (ruling RC9.4): a lone SMC loses the Multiple ROF; only one firer is accepted, so a leader or hero firer is a lone SMC.
+        var loneSmc = reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind is "asl:leader" or "asl:hero";
+        if (pinned || ScenarioA1OrdnanceCalculator.AfphFire(shot) || !ScenarioA1MortarCalculator.MultipleRofKept(loneSmc))
         {
             rof = 0;
         }
@@ -488,7 +492,7 @@ internal static class ScenarioA1AreaCalculator
         bool critical, bool turret, IReadOnlyList<int> dice)
     {
         var armor = reference.Armor.Vehicles[vehicle.DefinitionId!];
-        var firepower = critical ? reference.HeFirepower(gun.Caliber) * 2 : ScenarioA1OrdnanceCalculator.AreaFirepower(shot, gun, reference);
+        var firepower = critical ? ScenarioA1MortarCalculator.CriticalFirepower(reference.HeFirepower(gun.Caliber)) * 2 : ScenarioA1OrdnanceCalculator.AreaFirepower(shot, gun, reference);
         var column = Array.IndexOf(ScenarioA1FireReference.ColumnFp, firepower);
         var drm = new List<FireModifier>();
         int[] factors = [.. (armor.Turreted ? HullAndTurret : Hull).SelectMany(place => Facings.Select(facing => ScenarioA1ArmorReference.ArmorFactor(armor, place, facing))).OfType<int>()];
