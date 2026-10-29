@@ -1,6 +1,6 @@
 # ASL A24.5 Smoke Strength Claim Design
 
-**Status:** Design, 2026-10-29, revised after a sub-agent's review (section 9), waiting for the user's approval. The A24.5 claim (Claude; the inventory's section 6, claimed on main as c2d5b07b), built with the E10 claim as one task on the branch `claim/a24.5-e10` (the user, 2026-10-29; `ASL E10 Ammo Vehicles Claim Design.md`). Rules only: no caller changes, so no recorded game replays differently. Rulings are numbered RA24.n.
+**Status:** Approved by the user and built, 2026-10-29 (section 10), after a sub-agent's review of the design (section 9). The A24.5 claim (Claude; the inventory's section 6, claimed on main as c2d5b07b), built with the E10 claim as one task on the branch `claim/a24.5-e10` (the user, 2026-10-29; `ASL E10 Ammo Vehicles Claim Design.md`). Rules only: no caller changes, so no recorded game replays differently. Rulings are numbered RA24.n.
 
 ## 1. The rule (A24.5, p. 92; A24.2, A24.11, p. 91; A24.8, A24.61, pp. 92 and 93; D13.31 to D13.35, p. 212)
 
@@ -61,3 +61,10 @@ The filtered test builds in `asl-gate-work`, registered as made; a Studio check 
 ## 9. Review of the design
 
 A sub-agent read the first draft against pp. 91 to 93, 143, and 212 and the code, read-only (2026-10-29): ten findings, all taken. Blocking: two more Rules copies of the +2 (`ResidualMapFacts`, `OverrunSmoke`), now in the claim as shared files; the Blaze values decided B25.2, which the claim does not hold (RA24.6); `ScenarioA1SmokeCalculator.cs` already exists (A24.1's), so the new files are named apart. Also taken: the enums reused so `PlacementStrength` forwards exactly, with the dispenser's unknown window; the `crossed` laziness and negative counts; a `TargetTem` overload; `ScenarioA1FireCalculator.cs` dropped from the holds (a false match); the Ordnance site's hex; drifting SMOKE's value; one placement question in the contract, with its places; the old members' tests. Confirmed: the values of A24.5 and D13.31 to D13.35, that A24.5 refuses no placement, the Mild Breeze, and A24.4 left out.
+
+## 10. As built (2026-10-29)
+
+- `ScenarioA1SmokeStrengthCalculator`: `Hindrance`, `PlacementStrength`, `CountedSources`, with `Supported` and `Dispenser` now shared by `TurnWhiteSmokeRules`. `ScenarioA1SmokeStrengthContract`: `a24.5-smoke-placement`.
+- Forwarding with the same answer: `TurnWhiteSmokeRules.InitialStrength`; the count overloads `SmokeDrm`, `OwnHexHindrance`, `TargetTem`, `ResidualMapFacts`, and `OverrunSmoke`, each beside its new by-value overload. None keeps a different answer.
+- Tests: `ScenarioA1SmokeStrengthCalculatorTests` (equality over every input of `InitialStrength`, the count members for counts -1 to 3, the `crossed` laziness). The bundle is `a24-smoke` (ids avoid a dot, as the other bundles do).
+- The wiring row W-A24.5 is in the inventory's section 7.

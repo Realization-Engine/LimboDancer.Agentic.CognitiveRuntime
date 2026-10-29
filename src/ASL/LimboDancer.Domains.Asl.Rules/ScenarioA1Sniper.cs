@@ -446,7 +446,15 @@ public static class ScenarioA1Sniper
     /// plus the in-hex SMOKE DRM of its hex, +2 a source to at most +3 (A24.2).
     /// </summary>
     public static int TargetTem(string? terrain, int smokeSources) =>
-        Math.Max(0, TargetTem(terrain) + (smokeSources > 0 ? ScenarioA1VehicleSightRules.SmokeDrm(smokeSources, false, true, static () => false) : 0));
+        TargetTem(terrain, smokeSources > 0 ? ScenarioA1SmokeStrengthCalculator.CountedSources(smokeSources) : []);
+
+    /// <summary>A14.21 by value (the A24.5 claim, RA24.5): a target's TEM plus its hex's in-hex SMOKE from each source's Hindrance, to a minimum of zero.</summary>
+    public static int TargetTem(string? terrain, IReadOnlyList<int> smokeHindrances)
+    {
+        ArgumentNullException.ThrowIfNull(smokeHindrances);
+        return Math.Max(0, TargetTem(terrain)
+            + (smokeHindrances.Count > 0 ? ScenarioA1VehicleSightRules.SmokeDrm(smokeHindrances, false, true, static () => false) : 0));
+    }
 
     /// <summary>
     /// A14.21 (p. 82; pass 71, ruling R71.12): the target hex, or the closest hex holding an eligible target; "Should ≥ two such hexes be equidistant, the

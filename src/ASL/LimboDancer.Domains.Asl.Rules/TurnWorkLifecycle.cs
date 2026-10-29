@@ -59,7 +59,7 @@ public static class TurnWorkLifecycle
                 && work.CompletedGameTurns + 1 >= work.RequiredGameTurns);
 
     /// <summary>Completing Ammo Replenishment takes an Ammunition DR (E10.3); no other work does.</summary>
-    public static bool RequiresAmmunitionDr(TurnWorkKind kind) => kind == TurnWorkKind.AmmoReplenishment;
+    public static bool RequiresAmmunitionDr(TurnWorkKind kind) => ScenarioA1AmmoVehicleCalculator.RequiresAmmunitionDr(kind);
 
     /// <summary>
     /// The refusal of a phase change while work is open (E10.3-.4; G10): active work needs every phase boundary in order, due work must be
@@ -117,7 +117,7 @@ public static class TurnWorkLifecycle
                     OpenGameTurn = null,
                     Completed = true,
                     CompletedGameTurns = work.Declaration.Kind == TurnWorkKind.AnimalPacking ? work.CompletedGameTurns : work.CompletedGameTurns + 1,
-                    SupplyDepleted = ammunitionDr == 12
+                    SupplyDepleted = ScenarioA1AmmoVehicleCalculator.SupplyExhausted(ammunitionDr)
                 };
             default:
                 throw new InvalidDataException("The work transition is not available in this window.");

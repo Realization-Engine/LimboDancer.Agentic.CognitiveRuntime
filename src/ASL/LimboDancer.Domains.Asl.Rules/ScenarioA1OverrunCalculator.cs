@@ -82,7 +82,14 @@ public static class ScenarioA1OverrunCalculator
     }
 
     /// <summary>A24.2 (ruling R9.6): SMOKE in the OVR's Location hinders the attack within it, +2 per source and at most +3, and +1 more than traced into it.</summary>
-    public static int OverrunSmoke(int sources) => sources == 0 ? 0 : Math.Min(3, 2 * sources) + 1;
+    public static int OverrunSmoke(int sources) => OverrunSmoke(ScenarioA1SmokeStrengthCalculator.CountedSources(sources));
+
+    /// <summary>A24.2, A24.8 by value (the A24.5 claim, RA24.5): the OVR Location's SMOKE, its sources' Hindrance at most +3, and +1 within it.</summary>
+    public static int OverrunSmoke(IReadOnlyList<int> hindrances)
+    {
+        ArgumentNullException.ThrowIfNull(hindrances);
+        return hindrances.Count == 0 ? 0 : Math.Min(3, hindrances.Sum()) + 1;
+    }
 
     /// <summary>B15.6: grain is Open Ground for the OVR's target outside June to September.</summary>
     public static string OverrunTargetTerrain(string terrain, int? month) => terrain == "grain" && month is not (>= 6 and <= 9) ? "open-ground" : terrain;

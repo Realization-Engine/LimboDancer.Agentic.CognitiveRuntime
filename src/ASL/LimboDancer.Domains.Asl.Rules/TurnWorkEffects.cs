@@ -56,20 +56,30 @@ public static class TurnWorkEffects
         {
             TurnWorkEffectKind.PackGun => new(true, false, false),
             TurnWorkEffectKind.UnpackGun => new(false, false, false),
+            // E10.31 keeps a different answer here (the E10 claim, RE10.10): every depleted Ammo Type is restored with no Low Ammo condition;
+            // ScenarioA1AmmoVehicleCalculator.Restored restores only a Low Ammo vehicle's. Track 3 moves the caller (W-E10).
             TurnWorkEffectKind.Replenish => new(null, true, work.SupplyDepleted),
             _ => new(null, false, false, true),
         };
     }
 
-    // E10.12 permits removal only when Immobile (or Depleted); E10.4 moves available supply.
+    /// <summary>
+    /// E10.12 permits removal only when Immobile (or Depleted); E10.4 moves available supply. Keeps its answer (the E10 claim, RE10.10): Immobile
+    /// is read as Immobilized or Bogged only, where <see cref="ScenarioA1AmmoVehicleCalculator.SupplyRemovalRefusal"/> reads D.7's
+    /// <see cref="ScenarioA1AmmoVehicleCalculator.Immobile"/> (Mired, Abandoned, crew broken, Shocked, Stunned too).
+    /// </summary>
     public static bool CanRelocateSupply(bool immobilized, bool bogged) => !ScenarioA1PassengerActionRules.VehicleMobile(immobilized, bogged);
-    public static bool WreckAfterRelocation(bool immobilized) => immobilized;
 
-    public static bool ReplenishmentPostureSupported(bool? buttonedUp) => buttonedUp == false;
+    /// <summary>E10.4, by <see cref="ScenarioA1AmmoVehicleCalculator.WreckAfterTransfer"/>.</summary>
+    public static bool WreckAfterRelocation(bool immobilized) => ScenarioA1AmmoVehicleCalculator.WreckAfterTransfer(immobilized);
+
+    /// <summary>E10.3's CE, by <see cref="ScenarioA1AmmoVehicleCalculator.ReplenishmentPosture"/>.</summary>
+    public static bool ReplenishmentPostureSupported(bool? buttonedUp) => ScenarioA1AmmoVehicleCalculator.ReplenishmentPosture(buttonedUp);
 
     /// <summary>
     /// Replenishment's state at declaration and completion (E10.3): recorded Low Ammo, an own supply vehicle whose available supply is bound
-    /// to it, both vehicles in one Location, and no Passengers aboard the supply vehicle.
+    /// to it, both vehicles in one Location, and no Passengers aboard the supply vehicle. Keeps its answer (the E10 claim, RE10.10): one Location
+    /// only, where <see cref="ScenarioA1AmmoVehicleCalculator.ReplenishmentRefusal"/> allows an Accessible one and also asks TI and the armament.
     /// </summary>
     public static bool ReplenishmentReady(bool ownSupplyVehicle, bool supplyBoundAndAvailable, bool coLocated, bool lowAmmoRecorded,
         bool supplyVehicleHasPassengers) =>
@@ -86,15 +96,21 @@ public static class TurnWorkEffects
 
     /// <summary>
     /// The source of a supply transfer or offload (E10.4, E10.12): its available supply, not yet in a dump, bound to it and its side; an
-    /// Immobile vehicle; no occupants and no held equipment.
+    /// Immobile vehicle; no occupants and no held equipment. Keeps its answer (the E10 claim, RE10.10): E10 asks neither the occupants nor the
+    /// equipment, and <see cref="ScenarioA1AmmoVehicleCalculator.TransferRefusal"/> reads Immobile by D.7 or a Depleted supply.
     /// </summary>
     public static bool RelocationSourceReady(bool supplyBoundAndAvailable, bool immobilized, bool bogged, bool hasOccupants, bool holdsEquipment) =>
         supplyBoundAndAvailable && CanRelocateSupply(immobilized, bogged) && !hasOccupants && !holdsEquipment;
 
-    /// <summary>The destination of a supply transfer (E10.4): an own vehicle in the source's Location with no supply and no Passengers.</summary>
+    /// <summary>
+    /// The destination of a supply transfer (E10.4): an own vehicle in the source's Location with no supply and no Passengers. Keeps its answer (the
+    /// E10 claim, RE10.10): one Location only and no E10.11 check, where <see cref="ScenarioA1AmmoVehicleCalculator.TransferRefusal"/> allows an
+    /// Accessible Location and asks that the vehicle qualify.
+    /// </summary>
     public static bool TransferDestinationReady(bool sameSide, bool coLocated, bool hasSupply, bool hasPassengers) =>
         sameSide && coLocated && !hasSupply && !hasPassengers;
 
-    public static int? PassengerCapacity(int? ordinary, bool hasAmmoSupply) => hasAmmoSupply ? 0 : ordinary;
+    /// <summary>E10.12, by <see cref="ScenarioA1AmmoVehicleCalculator.PassengerCapacity"/>.</summary>
+    public static int? PassengerCapacity(int? ordinary, bool hasAmmoSupply) => ScenarioA1AmmoVehicleCalculator.PassengerCapacity(ordinary, hasAmmoSupply);
     public static string? PackedGunBar(bool packed) => packed ? "play.packed-gun: unpack the Gun before using it; animal loading/transport remains pending (G10)" : null;
 }

@@ -41,27 +41,10 @@ public static class TurnWhiteSmokeRules
 {
     private static readonly string[] Phases = ["rph", "pfph", "mph", "dfph", "afph", "rtph", "aph", "ccph"];
 
+    /// <summary>A24.5's placement side, decided by <see cref="ScenarioA1SmokeStrengthCalculator.PlacementStrength"/> (the A24.5 claim, RA24.3): the same answer.</summary>
     public static TurnWhiteSmokePlacement InitialStrength(TurnSmokeSource source, TurnSmokeChemical chemical,
-        bool ownerPrepFire, bool? beforeNonSmokeFire)
-    {
-        if (!Enum.IsDefined(source) || !Enum.IsDefined(chemical))
-        {
-            throw new ArgumentException("Unknown SMOKE source or chemical.");
-        }
-        if (!Supported(source) || chemical == TurnSmokeChemical.Unknown
-            || Dispenser(source) && chemical != TurnSmokeChemical.Conventional)
-        {
-            return new(TurnSmokeStrength.Unknown, null, "Source/type-specific placement remains unevaluated; this contract does not authorize placement.");
-        }
-        if (!Dispenser(source) && ownerPrepFire && beforeNonSmokeFire is null)
-        {
-            return new(TurnSmokeStrength.Unknown, null, "The early SMOKE window is unknown; full strength cannot be assumed.");
-        }
-        var full = !Dispenser(source) && ownerPrepFire && beforeNonSmokeFire == true;
-        var hindrance = (chemical == TurnSmokeChemical.Conventional ? 3 : 2) - (full ? 0 : 1);
-        return new(full ? TurnSmokeStrength.Full : TurnSmokeStrength.Dispersed, hindrance,
-            "Strength only (A24.5; D13.31-.34). Placement eligibility, weather and consequences require their own rules.");
-    }
+        bool ownerPrepFire, bool? beforeNonSmokeFire) =>
+        ScenarioA1SmokeStrengthCalculator.PlacementStrength(source, chemical, ownerPrepFire, beforeNonSmokeFire);
 
     public static TurnWhiteSmokeVerdict Evaluate(TurnWhiteSmokeFacts facts, TurnRulePosition now)
     {
@@ -130,9 +113,8 @@ public static class TurnWhiteSmokeRules
         })];
     }
 
-    private static bool Supported(TurnSmokeSource source) => source is TurnSmokeSource.Ordnance or TurnSmokeSource.OffboardArtillery || Dispenser(source);
-    private static bool Dispenser(TurnSmokeSource source) => source is TurnSmokeSource.SmokeDischarger or TurnSmokeSource.SmokeMortar
-        or TurnSmokeSource.SmokePots or TurnSmokeSource.CloseDefenseWeapon;
+    private static bool Supported(TurnSmokeSource source) => ScenarioA1SmokeStrengthCalculator.Supported(source);
+    private static bool Dispenser(TurnSmokeSource source) => ScenarioA1SmokeStrengthCalculator.Dispenser(source);
 
     private static void ValidatePast(TurnRulePosition past, TurnRulePosition now)
     {

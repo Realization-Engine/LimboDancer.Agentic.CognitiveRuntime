@@ -37,12 +37,11 @@ public static class TurnWorkRules
         }
 
         ArgumentOutOfRangeException.ThrowIfNegative(completedGameTurns);
+        // The E10 durations are ScenarioA1AmmoVehicleCalculator's (the E10 claim, RE10.4): the same answers.
         int? required = kind switch
         {
-            TurnWorkKind.AmmoTransfer => 4,
-            TurnWorkKind.AmmoReplenishment when originalBNumber is > 0 and <= 9 => 1,
-            TurnWorkKind.AmmoReplenishment when originalBNumber == 10 => 2,
-            TurnWorkKind.AmmoReplenishment when originalBNumber == 11 => 3,
+            TurnWorkKind.AmmoTransfer => ScenarioA1AmmoVehicleCalculator.TransferTurns,
+            TurnWorkKind.AmmoReplenishment => ScenarioA1AmmoVehicleCalculator.ReplenishmentTurns(originalBNumber),
             _ => null,
         };
         var state = !originKnown || eligible is null ? TurnWorkState.NotEvaluated
