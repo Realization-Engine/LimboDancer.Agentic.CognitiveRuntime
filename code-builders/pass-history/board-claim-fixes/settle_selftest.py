@@ -131,6 +131,11 @@ def main():
         backlog = read(BACKLOG)
         check("both backlog sections are kept", "## 81. Added by the C9.4 claim" in backlog and "Added by the A24.5 claim" in backlog)
         check("this branch's backlog section moves to the next number", "## 82. Added by the A24.5 claim" in backlog)
+        check("the backlog's sections stay in order", backlog.index("## 80.") < backlog.index("## 81.") < backlog.index("## 82."))
+        check("this branch's backlog section is whole, its table header included",
+              "## 82. Added by the A24.5 claim\n| Item |\n|---|\n| smoke |" in backlog)
+        check("main's backlog section is whole", "## 81. Added by the C9.4 claim\n| Item |\n|---|\n| mortar |" in backlog)
+        check("the backlog's untouched text is unchanged", backlog.startswith(BASE[BACKLOG].rstrip("\n")) and backlog.endswith("| smoke |\n"))
         timelog = read(TIMELOG)
         check("both time log rows are kept, main's first", timelog.index("C9.4 claim") < timelog.index("C9.3 claim"))
         check("prose both sides rewrote is left for a person", "<<<<<<<" in read(PROSE))

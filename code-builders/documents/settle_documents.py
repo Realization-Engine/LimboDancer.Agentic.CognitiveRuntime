@@ -159,7 +159,10 @@ def settle_hunk(context, base, ours, theirs):
             rows = merge_rows(context, [], ours, theirs)
             if rows is not None:
                 return rows
-        return theirs + [line for line in ours if line not in theirs]
+        # Keep both whole: a table header or a blank line may stand in both, and each side's copy belongs to its own section.
+        while ours and theirs and ours[-1] == "" and theirs[-1] == "":
+            ours = ours[:-1]
+        return theirs + ([""] if theirs and ours and theirs[-1] != "" and ours[0] != "" and not is_row(ours[0]) else []) + ours
     if len(base) == len(ours) == len(theirs):
         lines = [merge_line(context, b, o, t) for b, o, t in zip(base, ours, theirs)]
         if None not in lines:
@@ -213,7 +216,20 @@ def renumber_backlog(text, theirs):
             moves.append((number, free, m.group(2)))
             free += 1
         seen.add(number)
-    return "\n".join(lines), moves
+    # Both sides appended, main's first: put the numbered sections back in order (each runs to the next one's heading).
+    starts = [i for i, line in enumerate(lines) if BACKLOG_HEADING.match(line)]
+    if not starts:
+        return "\n".join(lines), moves
+    blocks = [lines[a:b] for a, b in zip(starts, starts[1:] + [len(lines)])]
+    ending = "\n" if text.endswith("\n") else ""
+    trimmed = []
+    for block in blocks:
+        while block and block[-1] == "":
+            block = block[:-1]
+        trimmed.append(block)
+    trimmed.sort(key=lambda block: int(BACKLOG_HEADING.match(block[0]).group(1)))
+    body = "\n\n".join("\n".join(block) for block in trimmed)
+    return "\n".join(lines[:starts[0]]) + "\n" + body + ending, moves
 
 
 def main():
