@@ -55,6 +55,25 @@ def main():
     _, f = run({"C9.3": rule("wired")}, [wiring_row("W-C9.3", "C9.3")], [])
     check("a wired rule claim needs its wiring rows wired", any("is wired, and its wiring row" in x for x in f), f)
 
+    _, f = run({"C9.3": rule("reviewed")}, [wiring_row("W-C9.3", "C9.3")], [])
+    check("a reviewed rule claim may still have open wiring", not f, f)
+
+    _, f = run({"C9.3": rule("reviewed")}, [wiring_row("W-C9.3", "C9.3", "wire-fire-1 (Codex)", "claimed")],
+               [wiring_claim("wire-fire-1", "a.cs")])
+    check("a reviewed rule claim may still have claimed wiring", not f, f)
+
+    for state in ("wired", "accepted"):
+        _, f = run({"C9.3": rule(state)}, [wiring_row("W-C9.3", "C9.3", "wire-fire-1 (Codex)", "claimed")],
+                   [wiring_claim("wire-fire-1", "a.cs")])
+        check(f"a {state} rule claim cannot have claimed wiring", any(f"is {state}, and its wiring row" in x for x in f), f)
+
+        _, f = run({"C9.3": rule(state)}, [wiring_row("W-C9.3", "C9.3", "wire-fire-1 (Codex)", "reviewed")],
+                   [wiring_claim("wire-fire-1", "a.cs", state="reviewed")])
+        check(f"a {state} rule claim may have reviewed wiring", not f, f)
+
+    _, f = run({"C9.3": rule("accepted")}, [wiring_row("W-C9.3", "C9.3")], [])
+    check("an accepted rule claim cannot have open wiring", any("is accepted, and its wiring row" in x for x in f), f)
+
     _, f = run({"C9.3": rule("built")}, [wiring_row("W-C9.4", "C9.3")], [])
     check("a row's id is W- and its rule claim", any("its id is" in x for x in f), f)
 

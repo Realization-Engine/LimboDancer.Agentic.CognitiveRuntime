@@ -81,7 +81,8 @@ public static class LiveOrdnance
     /// MA shot as a Gun Duel's first shot (C2.2401; pass 55, ruling R55.19): Bounding First Fire made while the DEFENDER's window is open.
     /// </summary>
     public static (OrdnanceShot? Shot, string? Reason) FromState(GameState state, string gunId, BoardLocation target, string? targetVehicle = null,
-        string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null, bool gunDuel = false, bool legacySpotterUse = false)
+        string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null, bool gunDuel = false, bool legacySpotterUse = false,
+        bool currentSpotterAssignment = true)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
@@ -344,7 +345,7 @@ public static class LiveOrdnance
         };
         if (mortar)
         {
-            var (supported, supportReason) = MortarSupport(state, gun.Id, crew, spotter, director, phase, target, legacySpotterUse);
+            var (supported, supportReason) = MortarSupport(state, gun.Id, crew, spotter, director, phase, target, legacySpotterUse, currentSpotterAssignment);
             if (supported is null)
             {
                 return (null, supportReason);
@@ -479,10 +480,12 @@ public static class LiveOrdnance
     /// Adjacency and LOS are the planner's map reads.
     /// </summary>
     private static ((OrdnanceSpotter? Spotter, FireDirector? Director)? Support, string? Reason) MortarSupport(GameState state, string gun, UnitInstance firer, string? spotter,
-        string? director, string phase, BoardLocation target, bool legacySpotterUse = false)
+        string? director, string phase, BoardLocation target, bool legacySpotterUse = false, bool currentSpotterAssignment = true)
     {
         var assignment = state.MortarSpotters.FirstOrDefault(item => item.Gun == gun);
-        var recordedLoss = state.MortarSpotterLosses.Any(item => item.Gun == gun && item.Spotter == assignment?.Spotter);
+        var recordedLoss = currentSpotterAssignment
+            ? assignment is not null && state.ActiveSpotterLoss(gun, assignment.Spotter) is not null
+            : state.MortarSpotterLosses.Any(item => item.Gun == gun && item.Spotter == assignment?.Spotter);
         if (!legacySpotterUse && spotter is not null && ScenarioA1SpotterCalculator.FireBar(recordedLoss) is { } lost)
         {
             return (null, lost);
@@ -809,6 +812,10 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(fired);
         ArgumentNullException.ThrowIfNull(rolls);
+        if (fired.SpotterWiringVersion is not null and not 1)
+        {
+            return "Unknown Spotter wiring version.";
+        }
         OrdnanceShot? recorded;
         try
         {
@@ -831,7 +838,8 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
 
         // C2.2401 (pass 55): a record that names itself a Gun Duel's first shot is read as one; the projector holds the fact to the answered choice.
         var (expected, reason) = LiveOrdnance.FromState(state, fired.Gun, fired.Target, recorded.VehicleTarget?.VehicleId, recorded.Ammunition, recorded.IntensiveFire == true,
-            recorded.Spotter?.UnitId, recorded.Director?.UnitId, recorded.GunDuel == true, recorded.SpotterUseVersion is null);
+            recorded.Spotter?.UnitId, recorded.Director?.UnitId, recorded.GunDuel == true, recorded.SpotterUseVersion is null,
+            fired.SpotterWiringVersion == 1);
         if (expected is null)
         {
             return reason;

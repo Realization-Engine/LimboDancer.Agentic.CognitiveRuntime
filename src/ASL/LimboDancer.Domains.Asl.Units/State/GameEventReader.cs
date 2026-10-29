@@ -1014,7 +1014,10 @@ public static class GameEventReader
                     || !payload.TryGetProperty("resolution", out var ordnanceResolution) || ordnanceResolution.ValueKind != JsonValueKind.Object
                     ? Missing(diagnostics, "An ordnance record names its Gun, crew, target, ROF, Acquisition, rolls, facts, and resolution.", path)
                     : new OrdnanceFired(ordnanceGun, ordnanceCrew, ordnanceTarget, ordnanceFacing, kept.GetBoolean(), acquisition, acquired, ordnanceRolls,
-                        ordnanceFacts.Clone(), ordnanceResolution.Clone());
+                        ordnanceFacts.Clone(), ordnanceResolution.Clone())
+                    {
+                        SpotterWiringVersion = fields.OptionalInteger(payload, "spotterWiringVersion", path)
+                    };
             case "surrender-pending":
                 var surrendering = fields.RequiredString(payload, "unit", path);
                 return surrendering is null

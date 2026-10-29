@@ -14,6 +14,10 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
+    private int? SpotterRange(GameState state, BoardLocation? from, BoardLocation? to) =>
+        MapHexRange.Read(from, to, state.Map.IsPlaced ? Composed(state)?.Layout : null,
+            !state.Map.IsPlaced && from is not null ? Handle(state, from.Board)?.Geometry : null, state.Map.IsPlaced);
+
     /// <summary>The read of one Location of the game's map, or null when it cannot be read.</summary>
     private LocationRead? ReadLocation(GameState state, BoardLocation location) =>
         MemoOf(state).Reads.GetOrAdd(location, static (key, read) => read.Planner.ResolveOnce(read.State, key), (Planner: this, State: state));

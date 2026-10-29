@@ -425,6 +425,10 @@ public sealed partial class PlayRecords
 
             var text = item.Payload switch
             {
+                MortarSpotterDesignated designation => $"{designation.Spotter} is designated for {designation.Gun}"
+                    + (before?.MortarSpotters.Any(assignment => assignment.Gun == designation.Gun) == true
+                        ? " as its replacement Spotter; no fire marker or SW use is recorded."
+                        : " as its original Spotter; its phase fire marker and SW use are recorded."),
                 // A12.15 (pass 70's fixes): a step forced back stays where it was, and says the Location it tried to enter, not "moves from [F5] to [F5]".
                 MovementStepped { Attempted: { } tried } forced => (forced.Movers.Count == 1 ? $"{forced.Movers[0]} tries" : $"{string.Join(", ", forced.Movers)} try")
                     + $" to enter {tried}{From(before, forced.Movers.Count > 0 ? forced.Movers[0] : null)} and {(forced.Movers.Count == 1 ? "is" : "are")} forced back (A12.15)",

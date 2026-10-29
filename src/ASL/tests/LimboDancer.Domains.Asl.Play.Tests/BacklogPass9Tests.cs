@@ -18,7 +18,7 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 /// The backlog pass 9 in live play: a light mortar on the Area Target Type with a Spotter (R9.2 to R9.4), SMOKE grenades (R9.5, R9.6), and
 /// the Panzerfaust (R9.7, R9.8). Board 01's hex facts, fixed dice, and a stub LOS reader.
 /// </summary>
-public sealed class BacklogPass9Tests : IDisposable
+public sealed partial class BacklogPass9Tests : IDisposable
 {
     private static readonly Guid Tenant = Guid.Parse("7b1d2c3e-0000-4000-8000-00000000f509");
     private static readonly GameScope Scope = new(Tenant, "pass9");

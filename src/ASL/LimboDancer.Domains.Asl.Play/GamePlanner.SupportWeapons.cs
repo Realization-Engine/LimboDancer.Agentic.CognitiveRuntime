@@ -212,7 +212,7 @@ public sealed partial class GamePlanner
     /// calculator's reading). Eligibility is checked on proposal.
     /// </summary>
     public static bool RequiresSpotterSuccessor(GameState state, string squadId) => state.MortarSpotters.Any(item => item.Spotter == squadId
-        && ScenarioA1SpotterCalculator.HoldsAssignment(true, state.MortarSpotterLosses.Any(loss => loss.Gun == item.Gun && loss.Spotter == item.Spotter)));
+        && ScenarioA1SpotterCalculator.HoldsAssignment(true, state.ActiveSpotterLoss(item.Gun, item.Spotter) is not null));
 
     private GamePlan PlanDeploy(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor)
     {

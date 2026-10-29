@@ -217,7 +217,8 @@ def check_wiring(lines, claims, faults):
             faults.append(f"wiring row {row} is taken while its rule claim {rule_claim} is {rule['state']}, not built")
         holder["rows"].append(row)
     for name, claim in claims.items():
-        if claim["state"] in WIRED_OR_LATER:
+        # Rules review precedes wiring; only a wiring claim's review implies completed wiring.
+        if claim["state"] in {"wired", "accepted"}:
             for row, state in claim.get("wiring", []):
                 if state not in WIRED_OR_LATER:
                     faults.append(f"rule claim {name} is {claim['state']}, and its wiring row {row} is {state}")

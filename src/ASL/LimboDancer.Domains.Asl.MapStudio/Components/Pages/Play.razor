@@ -576,6 +576,14 @@ else if (state is not null)
                         <span id="advance-other" class="toolbar-note">The @DisplayText.Side(GamePlanner.PhaseEndedBy(state, viewAs)) side ends the @Games.PhaseLabel(state.Phase).</span>
                     }
                 </div>
+                @if (!SetupOpen && SpotterDeclarationChoices.Guns.Count > 0)
+                {
+                    <SpotterDesignationPanel Guns="@SpotterDeclarationChoices.Guns" Candidates="@SpotterDeclarationChoices.Candidates"
+                        Gun="@spotterDeclarationGun" Spotter="@spotterDeclarationUnit" Replacement="@SpotterDeclarationChoices.Replacement"
+                        Ready="@SpotterDeclarationReady" Note="@SpotterDeclarationNote"
+                        OnGun="@(id => { spotterDeclarationGun = id; spotterDeclarationUnit = string.Empty; })"
+                        OnSpotter="@(id => spotterDeclarationUnit = id)" OnPropose="ProposeSpotterDeclaration" />
+                }
                 @* The Play streamlining plan, S7 (ruling R-PS.2): a hidden unit is placed beneath "?" before it moves or advances (A12.32), so the
                    offer is its side's, in that side's own MPh and APh. *@
                 @if (!SetupOpen && state.Phase is "mph" or "aph" && VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Hidden) == ConditionState.True
@@ -5644,6 +5652,9 @@ else if (state is not null)
     /// A3.4, A3.5); none otherwise.
     /// </summary>
     private string ordnanceGun = string.Empty;
+    private string spotterDeclarationGun = string.Empty;
+    private string spotterDeclarationUnit = string.Empty;
+    private (GameState? State, string Viewer, string Gun, IReadOnlyList<PlayChoice>? Guns, IReadOnlyList<PlayChoice>? Candidates, bool Replacement, string? Refusal) spotterDeclarationCache;
     private string ordnanceTarget = string.Empty;
     private string ordnanceVehicle = string.Empty;
     private string ordnanceAmmunition = "ap";
@@ -7407,6 +7418,8 @@ else if (state is not null)
     {
         rallyUnit = rallyLeader = repairWeapon = string.Empty;
         ordnanceGun = ordnanceTarget = ordnanceVehicle = string.Empty;
+        spotterDeclarationGun = spotterDeclarationUnit = string.Empty;
+        spotterDeclarationCache = default;
         ordnanceTurn = "east";
         routUnit = routRoute = routKeep = routLeader = string.Empty;
         routLowCrawl = false;
@@ -7438,9 +7451,15 @@ else if (state is not null)
 
     private void Refresh()
     {
+        var previousRevision = state?.Revision;
         (planCache, offeredCache, maySetUpCache, motionCache) = (default, default, default, null);
         history = gameId.Length > 0 ? Live.History(gameId) : null;
         state = history?.Current ?? (history is { States.Count: > 0 } ? history.States[^1] : null);
+        if (state?.Revision != previousRevision)
+        {
+            spotterDeclarationGun = spotterDeclarationUnit = string.Empty;
+            spotterDeclarationCache = default;
+        }
         var phase = state is null ? null : $"{state.Turn}/{state.Phase}/{state.PhasingSide}";
         if (shownPhase is not null && phase != shownPhase)
         {
@@ -8172,6 +8191,77 @@ else if (state is not null)
         ordnanceCanisterAim = string.Empty;
         ordnanceCanisterFacing = string.Empty;
     }
+
+    private (IReadOnlyList<PlayChoice> Guns, IReadOnlyList<PlayChoice> Candidates, bool Replacement, string? Refusal) SpotterDeclarationChoices
+    {
+        get
+        {
+            if (state is null)
+            {
+                return ([], [], false, null);
+            }
+            if (!ReferenceEquals(spotterDeclarationCache.State, state) || spotterDeclarationCache.Viewer != Viewer.Name
+                || spotterDeclarationCache.Gun != spotterDeclarationGun || spotterDeclarationCache.Guns is null)
+            {
+                var own = ActingUnits.Where(Mine).ToDictionary(unit => unit.Id, StringComparer.Ordinal);
+                var assignments = MortarSpotterFacts.ReadAssignments(state);
+                var guns = VisibleEquipment.Where(gun => gun.Holding is { } holding && own.ContainsKey(holding.Holder)
+                    && Live.Planner.ReadSpotterDesignation(state, gun.Id, holding.Holder, assignments)?.Mortar == true).ToArray();
+                var candidates = new List<PlayChoice>();
+                var replacement = false;
+                string? refusal = null;
+                if (guns.FirstOrDefault(gun => gun.Id == spotterDeclarationGun) is { } selected)
+                {
+                    foreach (var unit in own.Values)
+                    {
+                        if (Live.Planner.ReadSpotterDesignation(state, selected.Id, unit.Id, assignments) is not { } facts)
+                        {
+                            continue;
+                        }
+                        replacement = facts.Timing.HasDesignation == true;
+                        string? candidateRefusal;
+                        var ready = false;
+                        if (replacement)
+                        {
+                            var replacementFacts = GamePlanner.ReadSpotterReplacement(state, facts);
+                            candidateRefusal = ScenarioA1SpotterCalculator.ReplacementRefusal(replacementFacts);
+                            var verdict = ScenarioA1SpotterCalculator.Replacement(replacementFacts);
+                            ready = candidateRefusal is null && verdict.State == SpotterReplacementState.MayReplace && verdict.EstablishesAssignment;
+                            candidateRefusal ??= ready ? null : verdict.Reason;
+                        }
+                        else
+                        {
+                            candidateRefusal = ScenarioA1SpotterCalculator.DesignationRefusal(facts);
+                            ready = candidateRefusal is null;
+                        }
+                        if (ready)
+                        {
+                            candidates.Add(new PlayChoice(unit.Id, unit.Id));
+                        }
+                        else
+                        {
+                            refusal ??= candidateRefusal;
+                        }
+                    }
+                }
+                spotterDeclarationCache = (state, Viewer.Name, spotterDeclarationGun,
+                    [.. guns.Select(gun => new PlayChoice(gun.Id, GunLabel(gun)))], candidates, replacement, refusal);
+            }
+            return (spotterDeclarationCache.Guns!, spotterDeclarationCache.Candidates!, spotterDeclarationCache.Replacement, spotterDeclarationCache.Refusal);
+        }
+    }
+
+    private bool SpotterDeclarationReady => spotterDeclarationUnit.Length > 0 && SpotterDeclarationChoices.Candidates.Any(candidate => candidate.Id == spotterDeclarationUnit);
+
+    private string SpotterDeclarationNote => spotterDeclarationGun.Length == 0 ? "Choose a mortar."
+        : SpotterDeclarationChoices.Candidates.Count == 0 ? SpotterDeclarationChoices.Refusal ?? "No eligible Spotter can be determined for this position."
+        : SpotterDeclarationReady ? "Confirmation records the assignment. A shot is a separate action." : "Choose a Spotter.";
+
+    private Task ProposeSpotterDeclaration() => SpotterDeclarationReady && history is not null
+        ? Propose(GameActions.DesignateSpotter, JsonSerializer.SerializeToElement(new
+        {
+            gameId, attemptId = Attempt("spotter"), expectedRevision = (long)history.Events.Count, gunId = spotterDeclarationGun, spotter = spotterDeclarationUnit,
+        })) : Task.CompletedTask;
 
     private bool OrdnancePanzerfaust => ordnanceGun.EndsWith(":pf", StringComparison.Ordinal);
 

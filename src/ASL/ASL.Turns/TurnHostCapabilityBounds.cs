@@ -23,9 +23,9 @@ public static class TurnHostCapabilityBounds
         }
         if (id is "existing-engine-fire-v1" or "existing-engine-atmosphere-v1" or "existing-engine-work-v1")
         {
-            bounds.Add(new("fireHistory", TurnEvidenceKind.ObservedHistory, "Disclosed shots, recorded ROF, explicit daytime original declarations, observed Spotter use and retention.",
+            bounds.Add(new("fireHistory", TurnEvidenceKind.ObservedHistory, "Disclosed shots, recorded ROF, explicit daytime original and replacement declarations, observed Spotter use and retention.",
                 ["Actual phase occurrence", "Event-time ownership and visibility", "Current disclosed Spotter facts"],
-                ["Not a firing permission", "Setup/DFF activation, replacement, wider designation profiles and Opportunity Fire breakdown remain pending; the daytime command is not yet a guided topic route"], "read"));
+                ["Not a firing permission", "Setup/DFF activation, wider designation profiles and Opportunity Fire breakdown remain pending; original and replacement designations use the governed Mortar Spotter panel, not a guided topic route"], "read"));
         }
         if (id is "existing-engine-atmosphere-v1" or "existing-engine-work-v1")
         {
