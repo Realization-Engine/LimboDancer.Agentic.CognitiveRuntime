@@ -51,7 +51,8 @@ public static class TurnFireHistory
             }
             if (latest.TryGetValue(shot.Weapon, out var index))
             {
-                if (assignments[index].Spotter == shot.Spotter || assignments[index].Successor == shot.Spotter)
+                // C9.3 (the C9.3 claim, ruling RC93.7): whether a later Spotter supersedes the assignment is the calculator's.
+                if (!ScenarioA1SpotterCalculator.Supersedes(assignments[index].Spotter, shot.Spotter, assignments[index].Successor))
                 {
                     continue;
                 }
@@ -68,7 +69,7 @@ public static class TurnFireHistory
             string? successor = null;
             if (known is { Known: true })
             {
-                state = !known.RecordedLoss && ScenarioA1OrdnanceEligibility.RetainsMortarSpotter(known.Active, known.SameSide, known.Broken, known.Captured)
+                state = ScenarioA1SpotterCalculator.Retains(known.Active, known.SameSide, known.Broken, known.Captured, known.RecordedLoss)
                     ? TurnSpotterState.Retained : TurnSpotterState.Lost;
                 spotted = known.SpottedThisPhase;
                 successor = known.Successor;

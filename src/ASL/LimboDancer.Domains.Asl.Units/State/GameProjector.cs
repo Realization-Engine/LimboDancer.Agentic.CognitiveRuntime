@@ -3549,8 +3549,7 @@ public static partial class GameProjector
             }
 
             if (deployment.SpotterHalf is { } selected
-                && Rules.TurnSpotterLossRules.DeploymentChoiceRefusal(state.MortarSpotters.Any(item => item.Spotter == squad.Id
-                    && !state.MortarSpotterLosses.Any(loss => loss.Gun == item.Gun && loss.Spotter == item.Spotter)), selected) is { } refusal)
+                && Rules.ScenarioA1SpotterCalculator.DeploymentChoiceRefusal(HoldsSpotterAssignment(state, squad.Id), selected) is { } refusal)
             {
                 return Fail<GameState>("UNIT-SPOTTER-SUCCESSION", refusal);
             }
@@ -4569,9 +4568,7 @@ public static partial class GameProjector
             if (lineage.SpotterSuccessor is { } spotterSuccessor
                 && (lineage.Action != LineageAction.Deployed || consumed.Count != 1
                     || lineage.Produced.Count(item => item.Id == spotterSuccessor) != 1
-                    || !Rules.TurnSpotterLossRules.DeploymentSuccessorValid(
-                        state.MortarSpotters.Any(item => item.Spotter == consumed[0].Id
-                            && !state.MortarSpotterLosses.Any(loss => loss.Gun == item.Gun && loss.Spotter == item.Spotter)),
+                    || !Rules.ScenarioA1SpotterCalculator.DeploymentSuccessorValid(HoldsSpotterAssignment(state, consumed[0].Id),
                         GameState.GoodOrder(consumed[0], vocabulary) == ConditionState.True,
                         state.SpotterDeploymentChoices.GetValueOrDefault(consumed[0].Id), spotterSuccessor,
                         [.. lineage.Produced.Select(item => item.Id)],

@@ -6,6 +6,13 @@ using System.Text.Json.Serialization;
 namespace LimboDancer.Domains.Asl.Rules;
 
 /// <summary>
+/// Marks a static method with no parameters that returns a <see cref="RuleContract"/>, so the registry finds it (the C9.3 claim, ruling RC93.2): each
+/// claim writes its contract in a file of its own and changes no shared file to register it.
+/// </summary>
+[AttributeUsage(AttributeTargets.Method)]
+public sealed class RuleContractAttribute : Attribute;
+
+/// <summary>
 /// The registry of wiring contracts (the Rules-first plan, sections 5 and 8; the proving slice, first task 4, 2026-10-28) and their JSON entry point.
 /// Each contract only reads its calculator: no calculator changes for its contract, and the order of its checks and its texts stay its own.
 /// </summary>
@@ -19,16 +26,21 @@ public static class ScenarioA1RuleContracts
 
     private static readonly Lazy<ScenarioA1RallyReference> RallyReference = new(() => new ScenarioA1RallyPackage().Reference);
 
-    private static readonly string[] Phases = ["RPh", "PFPh", "MPh", "DFPh", "AFPh", "RtPh", "APh", "CCPh"];
+    /// <summary>The phases, as a contract's phase fact names them.</summary>
+    internal static readonly string[] Phases = ["RPh", "PFPh", "MPh", "DFPh", "AFPh", "RtPh", "APh", "CCPh"];
     private static readonly string[] RallyingSides = ["phasing", "non-phasing"];
     private static readonly string[] Barrels = [.. Enum.GetNames<TurnAmmoBarrel>()];
     private static readonly string[] Uses = [.. Enum.GetNames<TurnAmmoUse>()];
 
-    /// <summary>Every contract, in the order the workbench lists them.</summary>
-    public static IReadOnlyList<RuleContract> All
-    {
-        get;
-    } = [Rally(), AmmoEligibility(), AdvanceConcealment()];
+    // Built on first use, after every static field here is set: a contract in another file reads them (the claim's review, finding 12).
+    private static readonly Lazy<IReadOnlyList<RuleContract>> Registered = new(() => [.. typeof(ScenarioA1RuleContracts).Assembly.GetTypes()
+        .SelectMany(type => type.GetMethods(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic))
+        .Where(method => method.IsDefined(typeof(RuleContractAttribute), false) && method.GetParameters().Length == 0 && method.ReturnType == typeof(RuleContract))
+        .Select(method => (RuleContract)method.Invoke(null, null)!)
+        .OrderBy(contract => contract.Id, StringComparer.Ordinal)]);
+
+    /// <summary>Every contract, each a method marked <see cref="RuleContractAttribute"/> in this assembly, by id, which is the order of their rules.</summary>
+    public static IReadOnlyList<RuleContract> All => Registered.Value;
 
     /// <summary>The contract with an id, or null.</summary>
     public static RuleContract? Find(string id) => All.FirstOrDefault(contract => string.Equals(contract.Id, id, StringComparison.Ordinal));
@@ -123,13 +135,15 @@ public static class ScenarioA1RuleContracts
     private static ContractVerdict NotEvaluated(RuleContract contract, string why) =>
         new(ContractVerdict.NotEvaluated, [new ContractReason(why, contract.Rules[0].Rule, contract.Rules[0].Page)], []);
 
-    private static ContractFact Flag(string name, string description, bool mayBeUnknown = false, ContractDisclosure disclosure = ContractDisclosure.All) =>
+    /// <summary>A flag fact, as the contracts declare most of theirs.</summary>
+    internal static ContractFact Flag(string name, string description, bool mayBeUnknown = false, ContractDisclosure disclosure = ContractDisclosure.All) =>
         new(name, ContractFactType.Flag, mayBeUnknown, disclosure, description);
 
     /// <summary>
     /// A10.6 Rally (p. 68), as <see cref="ScenarioA1RallyCalculator.Precheck"/> decides whether an attempt may be made, and its arithmetic the Rally DR's
     /// target (the proving slice: a rule built and played, every fact gathered by Play). The verdict reads a probe Rally DR of 6 that is never drawn.
     /// </summary>
+    [RuleContract]
     private static RuleContract Rally() => new("a10.6-rally", "Rally", [new("A10.6", 68), new("A10.61", 68), new("A10.62", 68)],
         [
             new("phase", ContractFactType.Choice, false, ContractDisclosure.All, "The phase") { Choices = Phases },
@@ -226,6 +240,7 @@ public static class ScenarioA1RuleContracts
     /// E10.1 to E10.2 eligibility (p. 244), as <see cref="TurnAmmoEligibilityRules.EvaluateRecipients"/> decides it for one recipient (the proving slice: a
     /// calculator with no wiring, its facts entered by hand). The supply's facts are its owner's.
     /// </summary>
+    [RuleContract]
     private static RuleContract AmmoEligibility() => new("e10.1-eligibility", "Ammo Vehicle eligibility", [new("E10.1", 244), new("E10.11", 244), new("E10.2", 244)],
         [
             new("supplyId", ContractFactType.Unit, false, ContractDisclosure.All, "The Ammo Vehicle"),
@@ -280,6 +295,7 @@ public static class ScenarioA1RuleContracts
     /// that side knows what its own units see, and the owner does not, since an enemy may be hidden. What is under the "?" is the owner's, and the
     /// calculator does not need it. The LOS is read only when night and terrain leave the question open.
     /// </summary>
+    [RuleContract]
     private static RuleContract AdvanceConcealment() => new("a12.14-advance-concealment", "Concealment lost on advancing",
         [new("A12.14", 77), new("E1.31", 223)],
         [

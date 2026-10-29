@@ -6,6 +6,10 @@ public static partial class GameProjector
 {
     internal sealed partial class Replay
     {
+        /// <summary>Whether a squad holds a Spotter assignment the record has not lost (C9.3; ruling RC93.6, the calculator's reading).</summary>
+        private static bool HoldsSpotterAssignment(GameState state, string squadId) => state.MortarSpotters.Any(item => item.Spotter == squadId
+            && ScenarioA1SpotterCalculator.HoldsAssignment(true, state.MortarSpotterLosses.Any(loss => loss.Gun == item.Gun && loss.Spotter == item.Spotter)));
+
         private GameState MaintainSpotterLosses(GameState? previous, GameState next, GameEvent gameEvent)
         {
             if (previous is null)
@@ -19,11 +23,11 @@ public static partial class GameProjector
             var inherited = new HashSet<string>(StringComparer.Ordinal);
             foreach (var assignment in previous.MortarSpotters.Where(item => item.Spotter == predecessor?.Id))
             {
-                if (TurnSpotterLossRules.RetainsReducedSquad(reduced?.Action == LineageAction.Reduced && predecessor?.Kind == "asl:squad",
+                if (ScenarioA1SpotterCalculator.RetainsReducedSquad(reduced?.Action == LineageAction.Reduced && predecessor?.Kind == "asl:squad",
                     survivor is { Kind: "asl:half-squad", Status: InstanceStatus.Active }, survivor?.Side == predecessor?.Side,
                     survivor is not null && GameState.GoodOrder(survivor, vocabulary) == ConditionState.True,
                     previous.MortarSpotterLosses.Any(item => item.Gun == assignment.Gun && item.Spotter == assignment.Spotter))
-                    || TurnSpotterLossRules.RetainsDeployedSquad(reduced?.Action == LineageAction.Deployed && predecessor?.Kind == "asl:squad",
+                    || ScenarioA1SpotterCalculator.RetainsDeployedSquad(reduced?.Action == LineageAction.Deployed && predecessor?.Kind == "asl:squad",
                         survivor is { Kind: "asl:half-squad", Status: InstanceStatus.Active } && reduced!.Produced.Any(item => item.Id == survivor.Id),
                         survivor?.Side == predecessor?.Side,
                         survivor is not null && GameState.GoodOrder(survivor, vocabulary) == ConditionState.True,
@@ -56,11 +60,11 @@ public static partial class GameProjector
                 var before = previous.Unit(assignment.Spotter);
                 var after = predecessor?.Id == assignment.Spotter && reduced?.Action == LineageAction.Reduced
                     ? survivor : next.Unit(assignment.Spotter);
-                var change = TurnSpotterLossRules.ObservedLoss(
+                var change = ScenarioA1SpotterCalculator.ObservedLoss(
                     before?.Status == InstanceStatus.Active, after?.Status == InstanceStatus.Eliminated,
                     after is not null && GameState.Condition(after, Conditions.Broken) == ConditionState.True,
                     after is not null && GameState.Condition(after, Conditions.Captured) == ConditionState.True);
-                if (change != TurnSpotterChange.None)
+                if (change != SpotterChange.None)
                 {
                     losses.Add(new(assignment.Gun, assignment.Spotter, gameEvent.EventId, gameEvent.Revision, change, previous.TurnPhaseOccurrence));
                 }

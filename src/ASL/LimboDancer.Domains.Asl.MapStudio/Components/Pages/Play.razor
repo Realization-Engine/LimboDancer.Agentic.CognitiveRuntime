@@ -8181,9 +8181,12 @@ else if (state is not null)
         .. SeenOnly(PanzerfaustFirers(side)).Select(faust => new PlayChoice(faust.Id + ":pf", $"{faust.Id}: Panzerfaust (PF Check first; C13.31)")),
     ];
 
-    /// <summary>The units that may spot for the chosen light mortar (C9.3), or null for any other weapon.</summary>
-    private IReadOnlyList<PlayChoice>? OrdnanceSpotters(string side) => state is not null && state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:light-mortar" }
-        ? [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && !LiveFire.IsVehicle(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal)
+    /// <summary>The units that may spot for the chosen light mortar, as the C9.3 calculator says (ruling RC93.3), or null for any other weapon.</summary>
+    private IReadOnlyList<PlayChoice>? OrdnanceSpotters(string side) => state is not null && state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:light-mortar" } mortar
+        ? [.. ActingUnits.Where(unit => ScenarioA1SpotterCalculator.CandidateRefusal(new SpotterCandidateFacts(unit.Status == InstanceStatus.Active, unit.Side == side,
+                ScenarioA1SpotterCalculator.Personnel(unit.Kind), GameState.GoodOrder(unit, Library.Vocabulary) == ConditionState.True,
+                GameState.Condition(unit, Conditions.Captured) == ConditionState.True, GameState.Condition(unit, Conditions.Melee) == ConditionState.True,
+                unit.Id == mortar.Holding?.Holder)) is null).OrderBy(unit => unit.Id, StringComparer.Ordinal)
             .Select(unit => new PlayChoice(unit.Id, $"{unit.Id} ({state.Location(unit.Id)?.Location})"))]
         : null;
 
@@ -8566,7 +8569,9 @@ else if (state is not null)
                     ordnanceVehicle = string.Empty;
                 }
 
-                if (state?.Unit(ordnanceSpotter) is not { Status: InstanceStatus.Active } spotter || GameState.Condition(spotter, Conditions.Broken) == ConditionState.True)
+                // C9.3 (the C9.3 claim, review finding 4): a Spotter the calculator no longer offers is cleared, not judged here.
+                if (state?.Unit(ordnanceSpotter)?.Side is not { } spotterSide || OrdnanceSpotters(spotterSide) is not { } offered
+                    || offered.All(choice => choice.Id != ordnanceSpotter))
                 {
                     ordnanceSpotter = string.Empty;
                 }
