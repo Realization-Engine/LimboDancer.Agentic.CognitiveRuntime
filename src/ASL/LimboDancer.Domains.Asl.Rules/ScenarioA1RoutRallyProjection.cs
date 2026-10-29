@@ -22,7 +22,8 @@ public static class ScenarioA1RoutRallyProjection
 
     /// <summary>
     /// D3.7 (ruling R6.10; UNIT-STATE-028), as the projector has it: a vehicle's malfunctioned MG, not disabled, is repaired once per RPh by its crew when
-    /// the vehicle is not buttoned up, Stunned, Recalled, Shocked, or an Unconfirmed Kill. The planner's CE test differs (section 12).
+    /// the vehicle is not buttoned up, Stunned, Recalled, Shocked, or an Unconfirmed Kill. The planner's CE test differs (section 12). Keeps its answer
+    /// (the D3.7 claim, RD3.6): <see cref="ScenarioA1VehicleBreakdownCalculator.RepairRefusal"/> is the one AAMG test, with the Hero Rider (W-D3.7).
     /// </summary>
     public static bool VehicleRepairAllowedAsRecorded(string? phase, bool malfunctioned, bool disabled, bool buttonedUp, bool stunned, bool recalled, bool shocked, bool unconfirmedKill,
         bool repairedThisPhase) =>
