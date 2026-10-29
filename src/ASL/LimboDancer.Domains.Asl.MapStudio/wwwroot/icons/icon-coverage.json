@@ -2210,11 +2210,13 @@
       "path": "Components/Play/HandOverScreen.razor",
       "pages": [
         "/games/play",
-        "/games/replay"
+        "/games/replay",
+        "/games/workbench"
       ],
       "usedBy": [
         "Play",
-        "Replay"
+        "Replay",
+        "Workbench"
       ],
       "controls": [
         {
