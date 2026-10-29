@@ -3308,6 +3308,26 @@
       ]
     },
     {
+      "name": "SpotterDesignationPanel",
+      "path": "Components/Play/SpotterDesignationPanel.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(Replacement ? \u0022Propose: replace Spotter\u0022 : \u0022Propose: designate Spotter\u0022)",
+          "dynamic": true,
+          "id": "propose-spotter-designation",
+          "status": "needed",
+          "strip": "SpotterDesignationPanel toolbar"
+        }
+      ]
+    },
+    {
       "name": "StarshellActionPanel",
       "path": "Components/Play/StarshellActionPanel.razor",
       "pages": [

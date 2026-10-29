@@ -79,6 +79,40 @@ No builds are performed for this design. After approval, set `ASL_GATE_WORK=E:/A
 
 Register each outside output when created with `outside_outputs.sh`; stop and remove this task's Studio/build outputs as soon as they are no longer needed, at the latest after CI passes. The final cleanup checks the registry and leaves other tasks' outputs untouched. The source worktree is `C:/Users/dland/.codex/worktrees/wire-fire-c93/LimboDancer.MCP`.
 
-## 9. Approval requested
+## 9. Approval recorded
 
-Approve this revised scope: call the built replacement/opening/mark APIs, bind TI and viewer facts correctly, preserve assignment occurrences and old replay readings, and merge wire-fire-1 before wire-fire-2. The user explicitly required approval before building. Rule review status updates are separate documentation work and do not authorize implementation.
+The user approved the revised W-C9.3 scope on 2026-10-29 and subsequently instructed Codex to proceed independently with implementation. The order remains wire-fire-1 before wire-fire-2. Code merging remains a separate user decision under AGENTS.md.
+
+## 10. As implemented
+
+The command emits `asl.spotter.v2` for new original and replacement declarations. The projector preserves the v1/null reading, including its old TI binding. New command and projection paths share `MortarSpotterFacts`, ask the built designation or replacement calculator, and never treat a null replacement refusal as permission. Replacement updates the active assignment without fire, SW-use or movement marks.
+
+The shot version is an optional `SpotterWiringVersion` property on the `OrdnanceFired` event payload, rather than the event-envelope proposal in section 3. Version 1 selects current assignment-loss reads and actual spotted-shot marks; absence preserves the old reading. This keeps the serialized `OrdnanceShot` facts unchanged and gives the existing payload-only verifier the version directly. Reader and writer preserve absence, and verification refuses unknown versions.
+
+Command identity uses the established source plus `{attempt}-{positive index}` convention, requiring contiguous consecutive indices. Nonmatching event IDs form separate conservative commands. Replay groups all recorded event types of a command before applying it, and passes them to `OpeningStepOf`; the derived steps go to `OpeningCheckpoint`. A phase-change batch is excluded only when its boundary evidence is unambiguous. A globally numbered imported journal spanning several phase boundaries is treated conservatively, so movement cannot disappear into housekeeping. Continuing a partially replayed command with more events restarts that replay, because the completed batch can change the earlier opening answer. Tests include dice before a declaration, a later movement event in the same batch, and both incremental continuations.
+
+`GameState.SpotterOpening` and the loss record's `PlayerTurnOrdinal` are derived replay metadata marked `JsonIgnore`. They do not alter serialized legacy state shape. Active loss reads use the latest declaration revision as the occurrence boundary, preserving older losses without attaching them to a recovered unit's new assignment. History filters successor/loss evidence by that occurrence, respects current-assignment event visibility, and labels replacement declarations separately.
+
+For a candidate-list refresh, one `MortarSpotterAssignmentRead` indexes designation/loss history and sharing locations for the immutable state. All candidates reuse that context; stale state references are rejected and rebuilt. The context lasts only for the refresh and holds no viewer-specific verdict. This implements the once-per-read intent in section 7 without adding a process-wide cache or a new state memo store. Existing map memoization supplies geometry.
+
+The Workbench gathers replacement facts only where the selected holder identifies one active mortar. Several mortars held by one unit leave mortar-dependent facts unknown; adding an explicit gun subject is backlog section 84. The direct Play panel selects a specific mortar and has no such ambiguity. Original/replacement controls, viewer-safe contract reads, history labels and focused tests are implemented. The measured gate and browser results follow. CI, Claude wiring review and user merge approval remain separate.
+
+## 11. Wiring acceptance evidence, 2026-10-29
+
+The gate at source commit `26939718` passed. The strict stage passed (17:29:34 to 17:33:55); the final gate build ran 17:39:49 to 17:42:58, and proofs ran 17:43:55 to 17:45:52. Evidence is in `E:/Archive/GitHub/dlandi/asl-gate-work-codex/proofs-wire-fire-1-console.log` and the `before-wire-fire-1` / `after-wire-fire-1` replay, sweep and text lists. All 3,316 pre-existing replay lines are unchanged. The full fixture-inclusive replay grows from 3,426 to 3,429 lines. All 53,667 sweep lines and all 10,296 early-check lines are unchanged.
+
+The complete intended replay differences are:
+
+| Fresh proof game | Exact changed revisions | Intended difference |
+|---|---|---|
+| `wire-c93-captured-check` | New state 12; diagnostic changes from 12 read / 11 applied to 12 / 12 without refusal | A captured Spotter is replaced at the owner's MPh opening. |
+| `wire-c93-eliminated-check` | New state 12; diagnostic changes from 12 read / 11 applied to 12 / 12 without refusal | An eliminated Spotter is replaced at that opening. |
+| `wire-c93-replacement-check` | New state 12; diagnostic changes from 12 read / 11 applied to 12 / 12 without refusal | A broken Spotter is replaced at that opening. |
+| `wire-c93-retained-dfph-check` | State digests 21, 22 and 23 differ; revision 24 agrees again | The retained original Spotter receives Final Fire immediately on the shot; the later explicit conditions event at revision 24 makes the baseline catch up. |
+| `wire-c93-retained-pfph-check` | State digests 27 through 31 differ | The retained original Spotter receives Prep Fire immediately and the PFPh movement bar; the later explicit Prep Fire event does not supply the missing movement bar, which remains through the recorded MPh transition at revision 31. |
+
+The three removed diagnostics were the legacy original-designation-only refusal (`UNIT-SPOTTER-001`). The text-list differences are the three new `asl.spotter.v2` occurrences, two additional occurrences of the existing `play.spotter: ` prefix, and the new `play.spotter: identify the mortar's holder and candidate` refusal. No existing refusal wording changed. No additional replay or sweep change is attributed to TI, range or disclosure; focused tests cover those corrections.
+
+Six actual live proof games cover original designation/fire, broken replacement, captured replacement, eliminated replacement, retained PFPh and retained DFPh fire. Owner/opponent views, cancellation and keyboard operation were exercised. Requested viewport sizes were 320, 1024 and 1920; browser/device scaling means those exact CSS widths were not independently certified. Focused privacy regression also compares the entire visible Spotter result with a hidden shot versus no such shot, across all three profiles, with identical results.
+
+W-C9.3 and wire-fire-1 are wired on this branch; their Rules claim and owned rows follow to wired. This is not a claim that C9.3 has full rule coverage or that Claude's wiring review, CI or merge approval has finished. C9 remains reviewed and W-C9 remains claimed for wire-fire-2. The CI attempt reported only stale icon coverage, regenerated afterward; final CI is pending.

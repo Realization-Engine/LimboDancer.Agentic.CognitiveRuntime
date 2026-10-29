@@ -11,6 +11,79 @@ public static partial class GameProjector
 
         private GameState? DesignateSpotter(GameState state, MortarSpotterDesignated declaration, GameEvent gameEvent)
         {
+            if (gameEvent.RulePackage != "asl.spotter.v2")
+            {
+                return gameEvent.RulePackage is null or "asl.spotter.v1" ? DesignateSpotterLegacy(state, declaration, gameEvent)
+                    : Fail<GameState>("UNIT-SPOTTER-001", "The Spotter declaration reading is unsupported.");
+            }
+            if (state.TurnPhaseOccurrence is not { } occurrence || state.Equipment.FirstOrDefault(item => item.Id == declaration.Gun) is not { } gun)
+            {
+                return Fail<GameState>("UNIT-SPOTTER-001", "A designation needs an identified mortar and phase occurrence.");
+            }
+            var definition = gun.Definition?.Definition;
+            var mortar = ScenarioA1MortarCalculator.IsMortar(gun.Kind, definition is null ? null : SpotterOrdnance.Value.Guns.GetValueOrDefault(definition)?.GunType);
+            var from = state.Location(gun.Id)?.Location;
+            var to = state.Location(declaration.Spotter)?.Location;
+            var range = Maps.Read.MapHexRange.Read(from, to, layout, from is null ? null : chains?.Geometry(from.Board), state.Map.IsPlaced);
+            var facts = MortarSpotterFacts.Designation(state, gun.Id, declaration.Spotter, vocabulary, mortar, range);
+            if (facts is null)
+            {
+                return Fail<GameState>("UNIT-SPOTTER-001", "A designation needs an identified holder and Spotter.");
+            }
+            var replacement = facts.Timing.HasDesignation == true;
+            if (replacement)
+            {
+                var commandState = MaintainSpotterOpening(state, state, gameEvent);
+                var replacementFacts = MortarSpotterFacts.Replacement(commandState, facts);
+                // Include the whole current command, even if it tries to hide a declaration inside phase-change housekeeping.
+                if (commandState.SpotterOpening.PhaseChangeBatch)
+                {
+                    replacementFacts = replacementFacts with
+                    {
+                        StepsTaken = [.. replacementFacts.StepsTaken, ScenarioA1SpotterCalculator.OpeningStepOf(spotterCommandTypes)]
+                    };
+                }
+                var verdict = ScenarioA1SpotterCalculator.Replacement(replacementFacts);
+                if (verdict.State != SpotterReplacementState.MayReplace || !verdict.EstablishesAssignment)
+                {
+                    return Fail<GameState>("UNIT-SPOTTER-001", verdict.Refusal ?? verdict.Reason);
+                }
+            }
+            else if (ScenarioA1SpotterCalculator.DesignationRefusal(facts) is { } refusal)
+            {
+                return Fail<GameState>("UNIT-SPOTTER-001", refusal);
+            }
+            var result = state with
+            {
+                MortarSpotters = [.. state.MortarSpotters.Where(item => item.Gun != gun.Id), new(gun.Id, declaration.Spotter)],
+                MortarSpotterDesignations = [.. state.MortarSpotterDesignations,
+                    new(gun.Id, declaration.Spotter, facts.Timing.OwnerSide, gameEvent.EventId, gameEvent.Revision, occurrence)],
+            };
+            if (replacement)
+            {
+                return result;
+            }
+            var unit = state.Unit(declaration.Spotter)!;
+            result = Replace(result, unit with
+            {
+                Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal)
+                {
+                    [ConditionName(ScenarioA1SpotterCalculator.FireCounter(state.Phase))] = ConditionState.True
+                }
+            });
+            return result with
+            {
+                SpottedThisPhase = [.. result.SpottedThisPhase, new(gun.Id, unit.Id)],
+                NoMoveThisPlayerTurn = ScenarioA1SpotterCalculator.BarsMovement(state.Phase)
+                    ? [.. result.NoMoveThisPlayerTurn.Append(unit.Id).Distinct(StringComparer.Ordinal)] : result.NoMoveThisPlayerTurn,
+                SupportWeaponUses = facts.UsedAsSpotter ? result.SupportWeaponUses
+                    : [.. ScenarioA1FireFollowUps.SupportWeaponUse([.. result.SupportWeaponUses.Select(item => (item.Unit, item.Weapon))],
+                        unit.Id, facts.Squad, facts.Fired, gun.Id).Select(item => new SupportWeaponUse(item.Unit, item.Weapon))],
+            };
+        }
+
+        private GameState? DesignateSpotterLegacy(GameState state, MortarSpotterDesignated declaration, GameEvent gameEvent)
+        {
             if (gameEvent.Type != "mortar-spotter-designated" || state.TurnPhaseOccurrence is not { } occurrence
                 || state.Equipment.FirstOrDefault(item => item.Id == declaration.Gun) is not { } gun
                 || state.Unit(declaration.Spotter) is not { } unit || gun.Holding is not { } holding

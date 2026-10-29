@@ -18,7 +18,7 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 /// The backlog pass 9 in live play: a light mortar on the Area Target Type with a Spotter (R9.2 to R9.4), SMOKE grenades (R9.5, R9.6), and
 /// the Panzerfaust (R9.7, R9.8). Board 01's hex facts, fixed dice, and a stub LOS reader.
 /// </summary>
-public sealed class BacklogPass9Tests : IDisposable
+public sealed partial class BacklogPass9Tests : IDisposable
 {
     private static readonly Guid Tenant = Guid.Parse("7b1d2c3e-0000-4000-8000-00000000f509");
     private static readonly GameScope Scope = new(Tenant, "pass9");
@@ -521,6 +521,7 @@ public sealed class BacklogPass9Tests : IDisposable
         var privateUse = (await laterPrivatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "pfph", profile)).FireHistory!;
         Assert.Single(privateUse.Shots);
         Assert.False(Assert.Single(privateUse.Spotters).SpottedThisPhase);
+        Assert.Equal(JsonSerializer.Serialize(later.Spotters), JsonSerializer.Serialize(privateUse.Spotters));
         Assert.True(Assert.Single((await laterPrivatePlanner.ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "pfph", profile)).FireHistory!.Spotters).SpottedThisPhase);
         var last = store.Read(Scope)!.Events[^1];
         var loss = last with

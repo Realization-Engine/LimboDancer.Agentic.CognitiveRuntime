@@ -11,7 +11,14 @@ namespace LimboDancer.Domains.Asl.Units.State;
 /// the resolution. The hit's effects follow as ordinary events. Replay hands it to an <see cref="IOrdnanceRecordVerifier"/>.
 /// </summary>
 public sealed record OrdnanceFired(string Gun, string Crew, BoardLocation Target, UnitFacing? Facing, bool RateOfFireKept, int Acquisition,
-    BoardLocation? Acquired, IReadOnlyDictionary<string, string> Rolls, JsonElement Facts, JsonElement Resolution) : EventPayload;
+    BoardLocation? Acquired, IReadOnlyDictionary<string, string> Rolls, JsonElement Facts, JsonElement Resolution) : EventPayload
+{
+    /// <summary>Version 1 uses current assignment occurrences and applies Rules' spotting marks. Absent preserves legacy replay.</summary>
+    public int? SpotterWiringVersion
+    {
+        get; init;
+    }
+}
 
 /// <summary>Recomputes ordnance records from their facts and rolls; supplied to replay by the project that owns the package.</summary>
 public interface IOrdnanceRecordVerifier

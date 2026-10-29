@@ -192,13 +192,111 @@ public sealed class WorkbenchPageTests : IDisposable
         Assert.Equal("sealed", Source(page, "advancerId"));
         Assert.Equal("pending", Source(page, "enemyGoodOrderInLosWithin16"));
         PickAt(page, "to", WideBoards.At(4));
-        page.Find("input.workbench-hand[data-fact='terrain']").Change("open-ground");
-        page.Find("select.workbench-hand[data-fact='enemyGoodOrderInLosWithin16']").Change("true");
+        Assert.Equal("gathered", Source(page, "terrain"));
+        Assert.Equal("gathered", Source(page, "enemyGoodOrderInLosWithin16"));
+        Assert.DoesNotContain("de-c", page.Markup, StringComparison.Ordinal);
         Assert.Equal("loses-concealment", page.Find("#workbench-outcome").GetAttribute("data-outcome"));
 
         // The owner's view of the same game cannot name the Russian squad as its advancer, nor see the Russians' LOS.
         var owner = Open($"games/workbench?game={Minigame}&viewer=german&contract={Contract}");
         PickAt(owner, "advancerId", WideBoards.At(5));
         Assert.Empty(UnitChoices(owner, "advancerId"));
+    }
+
+    [Fact]
+    public async Task RallyFactsDoNotTellTheOwnerWhetherAnEnemyQuestionMarkIsASeerOrADummy()
+    {
+        await Start();
+        var source = live.History(Live)!.Current!;
+        var squad = source.Unit("de-c")! with
+        {
+            Conditions = new Dictionary<string, ConditionState>(source.Unit("de-c")!.Conditions) { [Conditions.Broken] = ConditionState.True, [Conditions.Concealed] = ConditionState.False },
+        };
+        var leader = squad with
+        {
+            Id = "de-leader",
+            Kind = "asl:leader",
+            Definition = new DefinitionReference(source.Catalog, "attacker-leader"),
+            Conditions = new Dictionary<string, ConditionState>(squad.Conditions) { [Conditions.Broken] = ConditionState.False, [Conditions.Concealed] = ConditionState.True },
+        };
+        var enemy = source.Unit("ru-1")! with
+        {
+            Conditions = new Dictionary<string, ConditionState>(source.Unit("ru-1")!.Conditions) { [Conditions.Broken] = ConditionState.False, [Conditions.Concealed] = ConditionState.True },
+        };
+        var real = source with
+        {
+            Phase = "rph",
+            Units = [squad, leader, enemy]
+        };
+        var dummy = real with
+        {
+            Units = [squad, leader, enemy with { Kind = UnitKinds.Dummy, Definition = null }]
+        };
+        var picks = new Dictionary<string, string> { ["unitId"] = squad.Id, ["leaderId"] = leader.Id };
+
+        var ownerReal = live.Planner.ContractFacts("a10.6-rally", real, picks, Perspective.Side("german"));
+        var ownerDummy = live.Planner.ContractFacts("a10.6-rally", dummy, picks, Perspective.Side("german"));
+        Assert.Equal(ownerReal.Select(pair => (pair.Key, pair.Value?.ToJsonString())), ownerDummy.Select(pair => (pair.Key, pair.Value?.ToJsonString())));
+        Assert.False(ownerReal.ContainsKey("enemyGoodOrderInLosWithin16"));
+        Assert.True(ownerReal["goodOrderLeaderInLocation"]!.GetValue<bool>());
+
+        var hiddenEnemy = enemy with
+        {
+            Conditions = new Dictionary<string, ConditionState>(enemy.Conditions) { [Conditions.Hidden] = ConditionState.True },
+        };
+        var hidden = real with
+        {
+            Units = [squad, leader, hiddenEnemy]
+        };
+        var absent = real with
+        {
+            Units = [squad, leader]
+        };
+        var ownerHidden = live.Planner.ContractFacts("a10.6-rally", hidden, picks, Perspective.Side("german"));
+        var ownerAbsent = live.Planner.ContractFacts("a10.6-rally", absent, picks, Perspective.Side("german"));
+        Assert.Equal(ownerAbsent.Select(pair => (pair.Key, pair.Value?.ToJsonString())), ownerHidden.Select(pair => (pair.Key, pair.Value?.ToJsonString())));
+        Assert.False(ownerHidden["knownEnemyInLos"]!.GetValue<bool>());
+        Assert.Equal("none", ownerHidden["captors"]!.GetValue<string>());
+
+        var opponentReal = live.Planner.ContractFacts("a10.6-rally", real, picks, Perspective.Side("russian"));
+        var opponentDummy = live.Planner.ContractFacts("a10.6-rally", dummy, picks, Perspective.Side("russian"));
+        Assert.True(opponentReal["enemyGoodOrderInLosWithin16"]!.GetValue<bool>());
+        Assert.False(opponentDummy["enemyGoodOrderInLosWithin16"]!.GetValue<bool>());
+        Assert.False(opponentReal.ContainsKey("goodOrderLeaderInLocation"));
+        Assert.False(opponentReal.ContainsKey("leaderDefinition"));
+        Assert.Null(opponentReal["leaderId"]);
+        Assert.True(opponentReal["unitBroken"]!.GetValue<bool>());
+
+        var adjudicator = live.Planner.ContractFacts("a10.6-rally", real, picks, Perspective.Adjudicator);
+        Assert.True(adjudicator["enemyGoodOrderInLosWithin16"]!.GetValue<bool>());
+        Assert.Equal(leader.Id, adjudicator["leaderId"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task ContractFactsRejectPrivateIdsAndDoNotResolveASealedHandleToAnIdentity()
+    {
+        await Start();
+        var state = live.History(Live)!.Current!;
+        var viewer = Perspective.Side("russian");
+        var view = live.Planner.ViewOf(state, viewer, []);
+        var handle = Assert.Single(view.Sealed).PlacementId;
+        var privatePick = new Dictionary<string, string> { ["advancerId"] = "de-c", ["to"] = WideBoards.At(4) };
+        var rejected = live.Planner.ContractFacts(Contract, state, privatePick, viewer);
+        Assert.False(rejected.ContainsKey("advancerId"));
+        Assert.False(rejected.ContainsKey("enemyGoodOrderInLosWithin16"));
+
+        privatePick["advancerId"] = handle;
+        var gathered = live.Planner.ContractFacts(Contract, state, privatePick, viewer);
+        Assert.False(gathered.ContainsKey("advancerId"));
+        Assert.True(gathered["enemyGoodOrderInLosWithin16"]!.GetValue<bool>());
+        Assert.DoesNotContain(gathered.Values, value => value?.ToJsonString().Contains("de-c", StringComparison.Ordinal) == true);
+
+        var owner = live.Planner.ContractFacts(Contract, state, new Dictionary<string, string>
+        {
+            ["advancerId"] = "de-c",
+            ["to"] = WideBoards.At(4),
+        }, Perspective.Side("german"));
+        Assert.Equal("de-c", owner["advancerId"]!.GetValue<string>());
+        Assert.False(owner.ContainsKey("enemyGoodOrderInLosWithin16"));
     }
 }

@@ -213,6 +213,7 @@ else
     private readonly Dictionary<string, string> hand = new(StringComparer.Ordinal);
     private (long Revision, string Viewer, GameMapLayers? Layers) mapCache;
     private (long Revision, string Viewer, GameView? View) viewCache;
+    private (GameState? State, string Viewer, string Contract, KeyValuePair<string, string>[] Picks, IReadOnlyDictionary<string, JsonNode?>? Facts) factsCache;
 
     [SupplyParameterFromQuery(Name = "game")]
     public string? GameQuery { get; set; }
@@ -323,6 +324,7 @@ else
     {
         (picked, activePick, choicesFor, unitChoices) = (null, null, null, null);
         (mapCache, viewCache) = (default, default);
+        factsCache = default;
     }
 
     /// <summary>
@@ -405,12 +407,22 @@ else
         : null;
 
     /// <summary>The side of a picked unit, or of a picked "?" stack's handle.</summary>
-    private string? SideOf(string id) => Sealed(id)?.Side ?? State?.Unit(id)?.Side;
+    private string? SideOf(string id) => Sealed(id)?.Side ?? View?.Units.FirstOrDefault(unit => unit.Id == id)?.Side;
 
-    private IReadOnlyDictionary<string, JsonNode?> Gathered(RuleContract contract) =>
-        // A "?" stack's handle names no unit, so Play reads nothing of it (PS4).
-        State is { } state ? Live.Planner.ContractFacts(contract.Id, state, picks.Where(pick => Sealed(pick.Value) is null).ToDictionary(StringComparer.Ordinal))
-            : new Dictionary<string, JsonNode?>();
+    private IReadOnlyDictionary<string, JsonNode?> Gathered(RuleContract contract)
+    {
+        if (State is not { } state)
+        {
+            return new Dictionary<string, JsonNode?>();
+        }
+        if (factsCache.Facts is null || !ReferenceEquals(factsCache.State, state) || factsCache.Viewer != viewer || factsCache.Contract != contract.Id
+            || factsCache.Picks.Length != picks.Count || factsCache.Picks.Any(pick => !picks.TryGetValue(pick.Key, out var value) || value != pick.Value))
+        {
+            // A sealed handle supplies only its authorized side. Play never resolves it to a private identity.
+            factsCache = (state, viewer, contract.Id, [.. picks], Live.Planner.ContractFacts(contract.Id, state, picks, Viewer));
+        }
+        return factsCache.Facts;
+    }
 
     /// <summary>
     /// A fact's row: hidden when the viewer may not know it (ruling RPS.4: the adjudicator knows all; an owner's fact is its unit's side's, an opponent's
