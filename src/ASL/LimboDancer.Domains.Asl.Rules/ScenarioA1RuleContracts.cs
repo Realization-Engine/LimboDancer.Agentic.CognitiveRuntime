@@ -127,7 +127,10 @@ public static class ScenarioA1RuleContracts
         return fact.Type switch
         {
             ContractFactType.Flag => value.TryGetValue<bool>(out var flag) ? flag : null,
-            ContractFactType.Number => value.TryGetValue<decimal>(out var number) ? number : null,
+            // Any JSON number, whatever the CLR type a caller built it from (an int was read as no number, and the verdict "not-evaluated"); one a
+            // decimal cannot hold is no number.
+            ContractFactType.Number => value.GetValueKind() == JsonValueKind.Number
+                && decimal.TryParse(value.ToJsonString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var number) ? number : null,
             ContractFactType.Choice => value.TryGetValue<string>(out var choice) && fact.Choices is { } choices && choices.Contains(choice) ? choice : null,
             _ => value.TryGetValue<string>(out var text) && !string.IsNullOrWhiteSpace(text) ? text : null,
         };

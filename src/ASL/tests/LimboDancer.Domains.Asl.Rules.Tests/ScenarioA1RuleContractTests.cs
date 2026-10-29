@@ -108,6 +108,22 @@ public sealed class ScenarioA1RuleContractTests
     }
 
     [Fact]
+    public void ANumberBuiltFromAnIntReadsAsTheSameNumberAsOneParsedFromJson()
+    {
+        // The C9 claim's tests found it: a JsonObject built in code holds an int as an int, which was read as no number at all.
+        foreach (var contract in ScenarioA1RuleContracts.All.Where(contract => contract.Facts.Any(fact => fact.Type == ContractFactType.Number)))
+        {
+            var built = Facts(contract);
+            var parsed = (JsonObject)JsonNode.Parse(built.ToJsonString())!;
+            var fromCode = ScenarioA1RuleContracts.Evaluate(contract, built);
+            var fromText = ScenarioA1RuleContracts.Evaluate(contract, parsed);
+            Assert.Equal(fromText.Outcome, fromCode.Outcome);
+            Assert.Equal(fromText.Reasons.Select(reason => reason.Text), fromCode.Reasons.Select(reason => reason.Text));
+            Assert.DoesNotContain(fromCode.Reasons, reason => reason.Text.Contains("is not a number", StringComparison.Ordinal));
+        }
+    }
+
+    [Fact]
     public void AWholeNumberNoIntHoldsGivesAVerdictNotAnException()
     {
         // The review of Wiring Prompt 001, C932: 2147483648 is a whole number that passed the Spotter contract's checks and overflowed its cast.
