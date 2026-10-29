@@ -13,8 +13,8 @@ def rule(state):
     return {"agent": "Claude", "branch": "claim/x", "state": state, "files": {}, "rows": ["X.1"]}
 
 
-def wiring_row(row, rule_claim, owner="", state="open"):
-    return f"| {row} | {rule_claim} | sites | none | changes | {owner} | {state} |"
+def wiring_row(row, rule_claim, owner="", state="open", capability="fire"):
+    return f"| {row} | {rule_claim} | {capability} | sites | none | changes | {owner} | {state} |"
 
 
 def wiring_claim(claim, files, state="claimed", agent="Codex", capability="fire", branch=None):
@@ -78,6 +78,10 @@ def main():
 
     _, f = run({"C9.3": rule("built")}, [wiring_row("W-C9.3", "C9.3")], [wiring_claim("wire-fire-1", "a.cs")])
     check("a wiring claim owns a row", any("owns no wiring row" in x for x in f), f)
+
+    _, f = run({"C9.3": rule("built")}, [wiring_row("W-C9.3", "C9.3", "wire-rout-1 (Codex)", "claimed")],
+               [wiring_claim("wire-rout-1", "a.cs", capability="rout")])
+    check("a row's capability is its wiring claim's", any("its wiring claim wire-rout-1 wires rout" in x for x in f), f)
 
     wiring, _ = run({"C9.3": rule("built")}, [wiring_row("W-C9.3", "C9.3", "wire-fire-1 (Codex)", "claimed")],
                     [wiring_claim("wire-fire-1", "LimboDancer.Domains.Asl.Play/LiveOrdnance.cs")])

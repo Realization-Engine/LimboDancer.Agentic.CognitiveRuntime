@@ -4540,15 +4540,15 @@ The claim board of the [Rules-first four-track plan](<Plans/ASL Rules-First Four
 
 The wiring rows of the [Rules-first plan](<Plans/ASL Rules-First Four-Track Plan.md>), section 9.1 (the user, 2026-10-29): what track 3 must move onto a calculator a rule claim built. A rule claim adds its row when it reaches "built"; a wiring claim of section 8 takes it. `code-builders/documents/claim_check.py` checks this table with sections 6 and 8.
 
-- **Wiring**: `W-` and the rule claim's id. **Rule claim**: the claim of section 6 whose calculator is wired.
+- **Wiring**: `W-` and the rule claim's id. **Rule claim**: the claim of section 6 whose calculator is wired. **Capability**: the capability of the plan's section 9 whose wiring claim takes the row (fire, movement, rout, rally, close combat, setup and work, the turn's boundaries).
 - **Sites to rewire**: each place outside Rules that decides the rule today, as `file: member`, with the calculator method that replaces it; or a command or read that does not exist yet and must ask the calculator.
 - **Old members to remove**: the Rules members that keep their callers' answers until the wiring moves them (the Rules conventions, section 2, step 5).
 - **Behavior changes**: what play will allow or refuse differently once wired; each is a named difference at the wiring claim's gate.
 - **Owner**: "wiring claim (agent)", blank while open. **State**: open, claimed, wired, reviewed, or accepted; an owned row's state is its wiring claim's.
 
-| Wiring | Rule claim | Sites to rewire | Old members to remove | Behavior changes | Owner | State |
-|---|---|---|---|---|---|---|
-| W-C9.3 | C9.3 | New: the replacement designation at the owner's MPh opening after a loss (ASOP 3.11A), asking `ScenarioA1SpotterCalculator.Timing` and `CandidateRefusal` (`GamePlanner.Spotters.cs`, `GameProjector.SpotterDesignation.cs`); one hex-range read for Play's `GamePlanner.SupportWeaponMapFacts` and the projector's `SpotterHexRange`, handed to `InReach` (backlog section 80) | None: the C9.3 claim moved its callers itself, before the rule that a claim builds Rules only | A broken, eliminated, or captured Spotter can be replaced at its owner's next MPh opening | | open |
+| Wiring | Rule claim | Capability | Sites to rewire | Old members to remove | Behavior changes | Owner | State |
+|---|---|---|---|---|---|---|---|
+| W-C9.3 | C9.3 | fire | New: the replacement designation at the owner's MPh opening after a loss (ASOP 3.11A), asking `ScenarioA1SpotterCalculator.Timing` and `CandidateRefusal` (`GamePlanner.Spotters.cs`, `GameProjector.SpotterDesignation.cs`); one hex-range read for Play's `GamePlanner.SupportWeaponMapFacts` and the projector's `SpotterHexRange`, handed to `InReach` (backlog section 80) | None: the C9.3 claim moved its callers itself, before the rule that a claim builds Rules only | A broken, eliminated, or captured Spotter can be replaced at its owner's next MPh opening | | open |
 
 ## 8. Wiring claims
 

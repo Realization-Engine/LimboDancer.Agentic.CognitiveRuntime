@@ -128,7 +128,7 @@ def check_ledger(lines, faults):
     return claims
 
 
-WIRING_HEADER = "| Wiring | Rule claim | Sites to rewire | Old members to remove | Behavior changes | Owner | State |"
+WIRING_HEADER = "| Wiring | Rule claim | Capability | Sites to rewire | Old members to remove | Behavior changes | Owner | State |"
 WIRING_CLAIMS_HEADER = "| Claim | Agent | Reviewer | Branch | Held files | Capability | State | Opened | Note |"
 WIRING_ROW_STATES = ["open", "claimed", "wired", "reviewed", "accepted"]
 WIRING_STATES = ["claimed", "wired", "reviewed", "accepted"]
@@ -181,12 +181,14 @@ def check_wiring(lines, claims, faults):
                 faults.append(f"wiring claim {claim}: held file {entry!r} must read 'path' or 'path (shared)'")
             elif m:
                 held[m.group(1)] = bool(m.group(2))
-        wiring[claim] = {"agent": agent, "branch": branch, "state": state, "files": held, "rows": []}
+        wiring[claim] = {"agent": agent, "branch": branch, "state": state, "files": held, "rows": [], "capability": capability}
     seen = set()
-    for row, rule_claim, sites, old, changes, owner, state in table(lines, WIRING_HEADER, 7, faults, "wiring"):
+    for row, rule_claim, capability, sites, old, changes, owner, state in table(lines, WIRING_HEADER, 8, faults, "wiring"):
         if row in seen:
             faults.append(f"wiring row {row} appears twice")
         seen.add(row)
+        if capability not in CAPABILITIES:
+            faults.append(f"wiring row {row}: capability {capability!r} is not one of the plan's section 9")
         if row != f"W-{rule_claim}":
             faults.append(f"wiring row {row}: its id is 'W-' and its rule claim's id ({rule_claim})")
         rule = claims.get(rule_claim)
@@ -207,6 +209,8 @@ def check_wiring(lines, claims, faults):
             continue
         if holder["agent"] != m.group(2):
             faults.append(f"wiring row {row}: Owner says {m.group(2)}, the wiring claims table says {holder['agent']}")
+        if holder.get("capability") and holder["capability"] != capability:
+            faults.append(f"wiring row {row} is {capability}, its wiring claim {m.group(1)} wires {holder['capability']}")
         if state != holder["state"]:
             faults.append(f"wiring row {row}: state {state!r}, its wiring claim {m.group(1)} is {holder['state']}")
         if rule is not None and rule["state"] not in BUILT_OR_LATER:
