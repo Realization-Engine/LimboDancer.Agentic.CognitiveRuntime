@@ -291,6 +291,8 @@ def changed_rules_files(base):
 CLAIM_SCOPE = (RULES_DIR, "src/ASL/tests/LimboDancer.Domains.Asl.Rules.Tests/", "src/ASL/units/minigames/",
                "src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Workbench.razor",
                "src/ASL/tests/LimboDancer.Domains.Asl.MapStudio.Tests/WorkbenchPageTests.cs",
+               # The icon coverage file lists every page's buttons, so a Workbench change regenerates it (PR 60).
+               "src/ASL/LimboDancer.Domains.Asl.MapStudio/wwwroot/icons/icon-coverage.json",
                "src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/MinigameBundleTests.cs")
 
 
