@@ -37,13 +37,13 @@
         <label>
             Revision
             <input type="number" id="workbench-revision" min="1" max="@history.States.Count" value="@revision"
-                   @onchange="@(args => { revision = Math.Clamp(long.TryParse(args.Value as string, CultureInfo.InvariantCulture, out var at) ? at : revision, 1, history.States.Count); Changed(); })" />
+                   @onchange="@(args => { revision = Math.Clamp(long.TryParse(args.Value as string, CultureInfo.InvariantCulture, out var at) ? at : revision, 1, history.States.Count); ViewChanged(viewerChanged: false); })" />
             <span class="muted">of @history.States.Count</span>
         </label>
         <label>
             Viewer
             <select id="workbench-viewer" value="@viewer" disabled="@ViewerLocked" title="@(ViewerLocked ? "A game still being played is read only from the view the link carried (ruling R31b.1)" : null)"
-                    @onchange="@(args => { viewer = args.Value as string ?? Perspective.AdjudicatorName; Changed(); })">
+                    @onchange="@(args => { viewer = args.Value as string ?? Perspective.AdjudicatorName; ViewChanged(viewerChanged: true); })">
                 @foreach (var perspective in State?.Perspectives ?? [])
                 {
                     <option value="@perspective.Name">@(perspective.IsAdjudicator ? "the adjudicator" : DisplayText.Side(perspective.Name))</option>
@@ -75,7 +75,11 @@
 {
     <p class="muted" id="workbench-empty">Choose a game: a minigame, or any live game.</p>
 }
-else if (State is { } state)
+else
+{
+<HandOverScreen Next="@handOver" Label="@DisplayText.ViewName(handOver)" Confirmed="ConfirmView"
+                Why="This game has not ended, so its view is handed over as on the Play page: the workbench reads the game only as that side may know it.">
+@if (State is { } state)
 {
     <div class="workbench" id="workbench">
         @if (MapLayers is { Board: { } board } layers)
@@ -152,7 +156,7 @@ else if (State is { } state)
                                         <input class="workbench-hand" data-fact="@fact.Name" value="@(hand.GetValueOrDefault(fact.Name) ?? string.Empty)" @onchange="@(args => Enter(fact.Name, args.Value as string))" />
                                     }
                                 </td>
-                                <td>@(row.Source switch { "gathered" => "Gathered", "hidden" => "Hidden", _ => fact.Type is ContractFactType.Hex or ContractFactType.Unit ? "Picked" : "Pending: entered by hand" })</td>
+                                <td>@(row.Source switch { "gathered" => "Gathered", "hidden" => "Hidden", "sealed" => "Picked: what is under the \"?\" stays unknown", _ => fact.Type is ContractFactType.Hex or ContractFactType.Unit ? "Picked" : "Pending: entered by hand" })</td>
                             </tr>
                         }
                     </tbody>
@@ -186,6 +190,8 @@ else if (State is { } state)
         }
     </div>
 }
+</HandOverScreen>
+}
 
 @code {
     private string gameId = string.Empty;
@@ -197,6 +203,9 @@ else if (State is { } state)
     private GameEntry? entry;
     private GameHistory? history;
     private BoardLocation? picked;
+
+    // The view waiting for its viewer to confirm it is at the screen (ruling R31b.1; the review of Wiring Prompt 001, PS3).
+    private string? handOver;
     private string? activePick;
     private string? choicesFor;
     private IReadOnlyList<(string Id, string Label)>? unitChoices;
@@ -279,10 +288,20 @@ else if (State is { } state)
         {
             Load(game);
             revision = RevisionQuery is { } at && history is not null ? Math.Clamp(at, 1, history.States.Count) : revision;
-            viewer = ViewerQuery ?? (ViewerLocked && history?.Current is { } current ? current.PhasingSide : viewer);
             contractId = ContractQuery ?? (Contracts.Count == 1 ? Contracts[0].Id : contractId);
+
+            // PS3: the address names a view of this game or none. A game still being played opens that view, or its phasing side's, behind the
+            // hand-over screen, as Play and Replay do (ruling R31b.1): no address shows a view before its viewer confirms it.
+            if (history?.Current is { } current)
+            {
+                var asked = current.Perspectives.FirstOrDefault(perspective => perspective.Name == ViewerQuery)?.Name;
+                viewer = ViewerLocked ? asked ?? current.PhasingSide : asked ?? viewer;
+                handOver = ViewerLocked ? viewer : null;
+            }
         }
     }
+
+    private void ConfirmView() => handOver = null;
 
     private void Choose(string game) => Navigation.NavigateTo(game.Length == 0 ? "games/workbench" : $"games/workbench?game={Uri.EscapeDataString(game)}");
 
@@ -293,6 +312,7 @@ else if (State is { } state)
         history = entry?.History;
         revision = history?.States.Count ?? 1;
         viewer = Perspective.AdjudicatorName;
+        handOver = null;
         contractId = Contracts.Count == 1 ? Contracts[0].Id : string.Empty;
         picks.Clear();
         hand.Clear();
@@ -303,6 +323,32 @@ else if (State is { } state)
     {
         (picked, activePick, choicesFor, unitChoices) = (null, null, null, null);
         (mapCache, viewCache) = (default, default);
+    }
+
+    /// <summary>
+    /// The viewer or the revision changed (the review of Wiring Prompt 001, PS2): nothing the last view knew stays. A hex stays picked; a unit stays
+    /// picked only if the new view shows it and may name it; a sealed "?" stack's handle is the last view's and is dropped; and what the last viewer
+    /// entered by hand is cleared when the viewer changes.
+    /// </summary>
+    private void ViewChanged(bool viewerChanged)
+    {
+        Changed();
+        if (viewerChanged)
+        {
+            hand.Clear();
+        }
+
+        var view = View;
+        foreach (var (name, value) in picks.ToArray())
+        {
+            var fact = Contract?.Facts.FirstOrDefault(item => item.Name == name);
+            var kept = fact?.Type == ContractFactType.Hex
+                || (fact?.Type == ContractFactType.Unit && view?.Units.FirstOrDefault(unit => unit.Id == value) is { } unit && MayName(fact, unit.Side));
+            if (!kept)
+            {
+                picks.Remove(name);
+            }
+        }
     }
 
     private void Enter(string fact, string? value)
@@ -336,17 +382,35 @@ else if (State is { } state)
         var place = DisplayText.Place(State?.Map.Boards.Count ?? 1, at);
         unitChoices = View is { } view
             ? [.. view.Units.Where(unit => view.Locations.TryGetValue(unit.Id, out var position) && position.Location == at && MayName(wanted, unit.Side))
-                .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => (unit.Id, $"{place}: {unit.Id} ({unit.Kind})"))]
+                .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => (unit.Id, $"{place}: {unit.Id} ({unit.Kind})")),
+               .. view.Sealed.Where(stack => stack.Location == at && MaySeal(wanted, stack.Side))
+                .Select(stack => (stack.PlacementId, SealedLabel(stack)))]
             : [];
         (choicesFor, activePick) = (fact, null);
     }
 
+    /// <summary>
+    /// PS4: the side that does not own an owner's self-concerning Unit fact may name the enemy's "?" stack by its handle, which carries its side and
+    /// Location and no identity, so that side can ask its own question of it (A12.14: whether its units see the advancing "?").
+    /// </summary>
+    private bool MaySeal(ContractFact fact, string side) => SelfConcerning(fact) && fact.Disclosure == ContractDisclosure.Owner && side != viewer;
+
+    private SealedPresence? Sealed(string id) => View?.Sealed.FirstOrDefault(stack => stack.PlacementId == id);
+
+    private string SealedLabel(SealedPresence stack) => $"{DisplayText.Place(State?.Map.Boards.Count ?? 1, stack.Location)}: a {DisplayText.Side(stack.Side)} \"?\" stack";
+
     private string? PickLabel(string fact) => picks.TryGetValue(fact, out var value)
-        ? (BoardLocation.TryParse(value, out var at) && at is not null ? DisplayText.Place(State?.Map.Boards.Count ?? 1, at) : value)
+        ? (BoardLocation.TryParse(value, out var at) && at is not null ? DisplayText.Place(State?.Map.Boards.Count ?? 1, at)
+            : Sealed(value) is { } stack ? SealedLabel(stack) : value)
         : null;
 
+    /// <summary>The side of a picked unit, or of a picked "?" stack's handle.</summary>
+    private string? SideOf(string id) => Sealed(id)?.Side ?? State?.Unit(id)?.Side;
+
     private IReadOnlyDictionary<string, JsonNode?> Gathered(RuleContract contract) =>
-        State is { } state ? Live.Planner.ContractFacts(contract.Id, state, picks) : new Dictionary<string, JsonNode?>();
+        // A "?" stack's handle names no unit, so Play reads nothing of it (PS4).
+        State is { } state ? Live.Planner.ContractFacts(contract.Id, state, picks.Where(pick => Sealed(pick.Value) is null).ToDictionary(StringComparer.Ordinal))
+            : new Dictionary<string, JsonNode?>();
 
     /// <summary>
     /// A fact's row: hidden when the viewer may not know it (ruling RPS.4: the adjudicator knows all; an owner's fact is its unit's side's, an opponent's
@@ -357,13 +421,19 @@ else if (State is { } state)
     {
         var gathered = Gathered(contract);
         var unitId = fact.Concerns is { } unitFact ? UnitOf(gathered, unitFact) : null;
-        var side = unitId is not null && State?.Unit(unitId) is { } unit ? unit.Side : null;
+        var side = unitId is not null ? SideOf(unitId) : null;
 
         // A Unit fact that concerns itself has no side until it is picked: it stays the viewer's to pick, and Pick offers only the units whose
         // side may know it, so a side can name its own unit and never learns the other side's.
         if (SelfConcerning(fact) && unitId is null)
         {
             return ("pending", null);
+        }
+
+        // PS4: a "?" stack's handle stays shown and can be picked again; the calculator reads its identity as unknown.
+        if (SelfConcerning(fact) && unitId is not null && Sealed(unitId) is not null)
+        {
+            return ("sealed", null);
         }
 
         var known = Viewer.IsAdjudicator || fact.Disclosure switch
@@ -403,7 +473,7 @@ else if (State is { } state)
             var (source, _) = Row(contract, fact);
             facts[fact.Name] = source switch
             {
-                "hidden" => null,
+                "hidden" or "sealed" => null,
                 "gathered" => gathered.GetValueOrDefault(fact.Name)?.DeepClone(),
                 _ => fact.Type is ContractFactType.Hex or ContractFactType.Unit
                     ? (picks.TryGetValue(fact.Name, out var pick) ? JsonValue.Create(pick) : null)
