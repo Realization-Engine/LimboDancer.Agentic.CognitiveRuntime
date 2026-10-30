@@ -117,7 +117,9 @@ public static class ScenarioA1FireFollowUps
             var tem = terrain is not null && ScenarioA1FireReference.Tem.TryGetValue(terrain, out var value) ? value : 0;
             // A6.7 (referee, pass 12): only SMOKE in the Location hinders its own units; brush, grain, orchard, and marsh do not.
             var smoke = unit.SmokeInHex() ? 2 : 0;
-            gains.Add(new ConcealmentGain(unit.Id, size + leadership + (unit.Lax ? 1 : 0) - tem - smoke - (unit.Stealthy ? 1 : 0)) { With = with });
+            // The A11.17 claim (ruling RA11S.7): a candidate's Stealth status, when given, in place of its old Lax and Stealthy.
+            var stealth = unit.Stealth is { } status ? ScenarioA1StealthCalculator.Drm(status) : (unit.Lax ? 1 : 0) - (unit.Stealthy ? 1 : 0);
+            gains.Add(new ConcealmentGain(unit.Id, size + leadership + stealth - tem - smoke) { With = with });
         }
 
         return gains;

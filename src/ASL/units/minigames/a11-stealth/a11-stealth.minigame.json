@@ -1,0 +1,253 @@
+{
+  "id": "a11-stealth",
+  "title": "A11.17 Stealth and Lax",
+  "card": "a11-stealth",
+  "rules": [
+    "A11.17",
+    "A11.18",
+    "A25.64"
+  ],
+  "contracts": [
+    "a11.17-stealth"
+  ],
+  "example": {
+    "source": "A11.17, Elite/1st-Line Finns; A11.4, the Ambush status dr",
+    "page": 73
+  },
+  "checks": [
+    {
+      "name": "A Finnish 1st Line squad advancing into the woods is Stealthy for the Ambush dr",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a11.17-stealth",
+      "facts": {
+        "unitId": "f-squad",
+        "purpose": "ambush",
+        "goodOrder": true,
+        "berserk": false,
+        "banzaiOrHumanWave": false,
+        "ssrStealthy": false,
+        "ssrLax": false,
+        "kind": "asl:squad",
+        "heroic": false,
+        "nationality": "finnish",
+        "class": "1st-line",
+        "designation": "none",
+        "inexperienced": false
+      },
+      "expect": {
+        "outcome": "stealthy",
+        "reasons": [
+          "Finns"
+        ]
+      }
+    },
+    {
+      "name": "Under an SSR making the Finns Lax, it is Lax: Stealthy unless Lax",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a11.17-stealth",
+      "facts": {
+        "unitId": "f-squad",
+        "purpose": "ambush",
+        "goodOrder": true,
+        "berserk": false,
+        "banzaiOrHumanWave": false,
+        "ssrStealthy": false,
+        "ssrLax": true,
+        "kind": "asl:squad",
+        "heroic": false,
+        "nationality": "finnish",
+        "class": "1st-line",
+        "designation": "none",
+        "inexperienced": false
+      },
+      "expect": {
+        "outcome": "lax",
+        "reasons": [
+          "SSR"
+        ]
+      }
+    },
+    {
+      "name": "A Finnish Green squad stacked with a leader is neither: Green troops never use Stealth",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a11.17-stealth",
+      "facts": {
+        "unitId": "f-green",
+        "purpose": "ambush",
+        "goodOrder": true,
+        "berserk": false,
+        "banzaiOrHumanWave": false,
+        "ssrStealthy": false,
+        "ssrLax": false,
+        "kind": "asl:squad",
+        "heroic": false,
+        "nationality": "finnish",
+        "class": "green",
+        "designation": "none",
+        "inexperienced": false
+      },
+      "expect": {
+        "outcome": "normal",
+        "reasons": [
+          "Green"
+        ]
+      }
+    },
+    {
+      "name": "A Finnish 2nd Line squad is neither Stealthy nor Lax",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a11.17-stealth",
+      "facts": {
+        "unitId": "f-2nd",
+        "purpose": "ambush",
+        "goodOrder": true,
+        "berserk": false,
+        "banzaiOrHumanWave": false,
+        "ssrStealthy": false,
+        "ssrLax": false,
+        "kind": "asl:squad",
+        "heroic": false,
+        "nationality": "finnish",
+        "class": "2nd-line",
+        "designation": "none",
+        "inexperienced": false
+      },
+      "expect": {
+        "outcome": "normal"
+      }
+    },
+    {
+      "name": "A broken Finnish elite squad is not Stealthy: only Good Order troops are",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a11.17-stealth",
+      "facts": {
+        "unitId": "f-elite",
+        "purpose": "ambush",
+        "goodOrder": false,
+        "berserk": false,
+        "banzaiOrHumanWave": false,
+        "ssrStealthy": false,
+        "ssrLax": false,
+        "kind": "asl:squad",
+        "heroic": false,
+        "nationality": "finnish",
+        "class": "elite",
+        "designation": "none",
+        "inexperienced": false
+      },
+      "expect": {
+        "outcome": "normal"
+      }
+    },
+    {
+      "name": "A Russian hero is Stealthy for its Concealment dr",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a11.17-stealth",
+      "facts": {
+        "unitId": "r-hero",
+        "purpose": "concealment",
+        "goodOrder": true,
+        "berserk": false,
+        "banzaiOrHumanWave": false,
+        "ssrStealthy": false,
+        "ssrLax": false,
+        "kind": "asl:hero",
+        "heroic": false,
+        "nationality": "russian",
+        "class": "none",
+        "designation": "none",
+        "inexperienced": false
+      },
+      "expect": {
+        "outcome": "stealthy",
+        "reasons": [
+          "hero"
+        ]
+      }
+    },
+    {
+      "name": "The Russian side cannot tell what the Finnish concealed stack is",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a11.17-stealth",
+      "facts": {
+        "purpose": "ambush",
+        "goodOrder": true,
+        "berserk": false,
+        "banzaiOrHumanWave": false,
+        "ssrStealthy": false,
+        "ssrLax": false
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      },
+      "sealed": {
+        "unitId": "finnish"
+      }
+    },
+    {
+      "name": "A Finnish elite squad Searching is Stealthy for the Searching dr",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a11.17-stealth",
+      "facts": {
+        "unitId": "f-elite",
+        "purpose": "search",
+        "goodOrder": true,
+        "berserk": false,
+        "banzaiOrHumanWave": false,
+        "ssrStealthy": false,
+        "ssrLax": false,
+        "kind": "asl:squad",
+        "heroic": false,
+        "nationality": "finnish",
+        "class": "elite",
+        "designation": "none",
+        "inexperienced": false
+      },
+      "expect": {
+        "outcome": "stealthy"
+      }
+    },
+    {
+      "name": "A non-elite Italian squad is always Lax (A25.64)",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a11.17-stealth",
+      "facts": {
+        "unitId": "i-squad",
+        "purpose": "search-casualty",
+        "goodOrder": true,
+        "berserk": false,
+        "banzaiOrHumanWave": false,
+        "ssrStealthy": false,
+        "ssrLax": false,
+        "kind": "asl:squad",
+        "heroic": false,
+        "nationality": "italian",
+        "class": "1st-line",
+        "designation": "none",
+        "inexperienced": false
+      },
+      "expect": {
+        "outcome": "lax",
+        "reasons": [
+          "Italian"
+        ]
+      }
+    }
+  ],
+  "units": {
+    "f-squad": "finnish",
+    "f-green": "finnish",
+    "f-2nd": "finnish",
+    "f-elite": "finnish",
+    "r-hero": "russian"
+  }
+}

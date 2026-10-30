@@ -1,0 +1,69 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "a11-stealth",
+  "title": "Minigame: A11.17 Stealth and Lax",
+  "catalog": "asl-scenario-a1@1.13.0",
+  "source": {
+    "basis": "Manufactured under R0.3 as the minigame of the A11.17 claim (the Rules-first plan, section 7): Finnish squads advance into CC in woods against concealed Russians, their facts entered by hand.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "A minimal card (ruling R22.3): who is Stealthy, Lax, or neither for the Ambush, Concealment, Search, and Search Casualties drs, asked on the Rule Workbench."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 0,
+    "month": 7,
+    "year": 0
+  },
+  "introduction": "Elite and 1st Line Finns are Stealthy unless Lax (A11.17, A25.7): a Finnish squad advances into a woods Location held by a concealed Russian squad.",
+  "boards": [
+    {
+      "board": "bd04",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "finnish",
+    "movesFirst": "finnish"
+  },
+  "sides": [
+    {
+      "side": "finnish",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "russian",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "",
+        "basis": "none",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A minigame has no victory: it proves its rules on the Rule Workbench and in play.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "a11-stealth"
+}
