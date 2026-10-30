@@ -44,7 +44,15 @@ public static class ScenarioA1FireFollowUps
     /// rows (Cases J and K, never in an enemy's LOS), with what shares their "?"; Lax and Stealthy and a 5/8" US# in the dr.
     /// </summary>
     public static List<ConcealmentGain> ConcealmentGains(IEnumerable<ConcealmentCandidateFacts> units, IEnumerable<WatchingEnemyFacts> watchers, bool night, int? month,
-        IConcealmentFactReader map)
+        IConcealmentFactReader map) => ConcealmentGains(units, watchers, night, month, map, requireStealth: false).Gains!;
+
+    /// <summary>A12.122 and A11.17: current-reading gains, refusing an unknown Stealth status only when a candidate actually needs a dr.</summary>
+    public static (List<ConcealmentGain>? Gains, string? Reason) ConcealmentGainsWithStealth(IEnumerable<ConcealmentCandidateFacts> units,
+        IEnumerable<WatchingEnemyFacts> watchers, bool night, int? month, IConcealmentFactReader map) =>
+        ConcealmentGains(units, watchers, night, month, map, requireStealth: true);
+
+    private static (List<ConcealmentGain>? Gains, string? Reason) ConcealmentGains(IEnumerable<ConcealmentCandidateFacts> units,
+        IEnumerable<WatchingEnemyFacts> watchers, bool night, int? month, IConcealmentFactReader map, bool requireStealth)
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(watchers);
@@ -110,6 +118,11 @@ public static class ScenarioA1FireFollowUps
                 continue;
             }
 
+            if (requireStealth && ScenarioA1StealthCalculator.FactsRefusal([unit.Stealth]) is { } refusal)
+            {
+                return (null, refusal);
+            }
+
             // A12.122: +US# of the unit or its possessed Gun (A1.6: 4 for a 5/8" counter, 5 when large), + the best Good Order leader's Leadership in the
             // Location unless alone, +1 Lax, - the Location's TEM and in-hex Hindrance, -1 Stealthy (pass 70, ruling R70.22).
             var size = ScenarioA1Definitions.UnitSize(unit.Squad, unit.HalfSquad || ScenarioA1Definitions.IsCrew(unit.Kind), fiveEighths, unit.Large);
@@ -122,7 +135,7 @@ public static class ScenarioA1FireFollowUps
             gains.Add(new ConcealmentGain(unit.Id, size + leadership + stealth - tem - smoke) { With = with });
         }
 
-        return gains;
+        return (gains, null);
     }
 
     /// <summary>A12.122: a Final Concealment dr of 5 or less gains "?"; the sentence says the dr, its modifier, and the result.</summary>

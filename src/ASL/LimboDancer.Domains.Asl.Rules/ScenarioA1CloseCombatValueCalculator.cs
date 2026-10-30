@@ -99,6 +99,59 @@ public static class ScenarioA1CloseCombatValueCalculator
     /// </summary>
     public static bool AssaultEngineer(bool? printedTrait, bool designated, bool replaced) => !replaced && (printedTrait == true || designated);
 
+    /// <summary>A25.01 (p. 93): only lower-quality Replacement loses AE, not an underscored squad becoming its own HS or Battle Hardening.</summary>
+    public static bool AssaultEngineerLostByFire(FireUnitEffect effect)
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+        var definition = effect.DefinitionId;
+        foreach (var consequence in effect.Events)
+        {
+            switch (consequence)
+            {
+                case "replaced-elr":
+                case "ammunition-shortage-replaced":
+                    return true;
+                case "battle-hardened":
+                    definition = ScenarioA1FireReference.HardenedOf(definition) ?? definition;
+                    break;
+                case "casualty-reduced-beyond-elr":
+                    if (ScenarioA1FireReference.HalfSquadOf(definition) is { } half && ScenarioA1FireReference.CasualtyHalfSquadOf(half) is not null)
+                    {
+                        return true;
+                    }
+
+                    break;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// A25.01 (p. 93): true retains AE through lineage, false records permanent lower-quality loss, and null uses the printed trait.
+    /// An absent recorded reading keeps the former projector answer. Mixed AE ancestry needs a separate recombination ruling (A1.32, p. 45).
+    /// </summary>
+    public static (bool? Status, string? Reason) AssaultEngineerLineage(bool? lowerQualityReplacement, IReadOnlyList<bool?> parents, bool? printedTrait)
+    {
+        ArgumentNullException.ThrowIfNull(parents);
+        if (lowerQualityReplacement is null)
+        {
+            return (null, null);
+        }
+
+        if (parents.Contains(true) && parents.Any(parent => parent != true))
+        {
+            return (null, "play.ae-lineage: mixed Assault Engineer ancestry is not resolved for recombination");
+        }
+
+        if (parents.Contains(false) || (lowerQualityReplacement == true && parents.Contains(true)))
+        {
+            return (false, null);
+        }
+
+        return (parents.Contains(true) || printedTrait == true ? true : null, null);
+    }
+
     /// <summary>
     /// A11.5 (p. 74; the design's review, finding 7): what a Final DR does to the vehicle. Below the CCV eliminates it, as a burning wreck when the DR is at
     /// most half the CCV (D5.7: a red CS# burns on a DR one lower, through <see cref="ScenarioA1CrewSurvivalRules.BurnsRed"/>); equal immobilizes it;
