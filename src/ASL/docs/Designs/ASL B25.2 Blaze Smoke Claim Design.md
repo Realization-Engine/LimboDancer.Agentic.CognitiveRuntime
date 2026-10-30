@@ -1,6 +1,6 @@
 # ASL B25.2 Blaze Smoke Claim Design
 
-**Status:** Design, 2026-10-29, revised after a sub-agent's review (section 9), waiting for the user's approval. The B25.2 claim (Claude; the inventory's section 6, claimed on main as 8c7f5529, its holds corrected in 9991609d), on the branch `claim/b25.2-blaze-smoke`. It takes the SMOKE of a Blaze, which the A24.5 claim left (ruling RA24.6). Rules only: no caller changes, so no recorded game replays differently. Rulings are numbered RB25.n; RB25.4's second case is a reading the user may veto.
+**Status:** Approved by the user and built, 2026-10-29 (section 10), after a sub-agent's review of the design (section 9); RB25.4's reading approved as proposed. The B25.2 claim (Claude; the inventory's section 6, claimed on main as 8c7f5529, its holds corrected in 9991609d), on the branch `claim/b25.2-blaze-smoke`. It takes the SMOKE of a Blaze, which the A24.5 claim left (ruling RA24.6). Rules only: no caller changes, so no recorded game replays differently. Rulings are numbered RB25.n; RB25.4's second case is a reading the user may veto.
 
 ## 1. The rule (B25.2, p. 143; B25.63, B25.651, p. 144; D9.4, p. 210; A9.22, A9.222; A24.2, A24.4 to A24.8, pp. 91 to 93; E3.53, E3.734)
 
@@ -56,3 +56,10 @@ The filtered test builds in `asl-gate-work`, registered as made, in the worktree
 ## 9. Review of the design
 
 A sub-agent read the first draft against pp. 91 to 93, 143, 144, and 210 (B25.14, B25.63, B25.651, A9.22, A9.222, D9.4, E3.53, E3.734) and the code, read-only (2026-10-29): ten findings, all taken. Blocking: a Fire Lane's Residual FP is read by `FireLaneMap.Los`, which sees no burning wreck today, so the change is +1 where there was none (A9.222), and the fact is the Fire Lane's attack (RB25.4, the wiring row); D9.4's +1 keeps its own conditions, so RB25.4 gives two flags; six more Play sites count a burning wreck's +2, and every count member is named (section 2, RB25.7). Also taken: indoor No Wind (RB25.2); weather, with fog left to A24.6 (RB25.3); a wreck in a terrain Blaze, a reading open to veto (RB25.4); drift counts (RB25.6); the contract's place and impossible pairs (RB25.8); A24.8's +1 (section 1); the missing tests. Confirmed: a terrain Blaze's +3, Heavy Winds leaving no SMOKE, the height from the Fire's level, a Flame without smoke, and a Mild Breeze lowering nothing.
+
+## 10. As built (2026-10-29)
+
+- `ScenarioA1BlazeSmokeCalculator`: `WindFelt`, `Hindrance`, `WreckBlazeLos` (the record `WreckBlazeLosVerdict`), `Height`, `DriftCounters`, `KeepsWreckHindranceInTerrainBlaze`, with the enums `BlazeKind` and `WindForce`; `ScenarioA1BlazeSmokeContract`: `b25.2-blaze-smoke`.
+- Old members: `ScenarioA1VehicleSightRules.SmokeDrm(int ...)`'s summary names `Hindrance` for a burning wreck; no body changed.
+- Tests: `ScenarioA1BlazeSmokeCalculatorTests`; the bundle `b25-blaze-smoke` (seven checks).
+- The wiring row W-B25.2 is in the inventory's section 7.
