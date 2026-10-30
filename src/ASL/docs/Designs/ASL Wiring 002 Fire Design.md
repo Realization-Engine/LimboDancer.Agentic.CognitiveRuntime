@@ -1,6 +1,6 @@
 # Wiring 002: vehicle breakdown and SMOKE strength
 
-**Status:** Proposed, awaiting the user's approval. Claim `wire-fire-3`, Codex, reviewer Claude, branch `codex/wire-fire-3`. Inventory claim commit `49491cce` takes W-D3.7 and W-A24.5 together as the open fire capability. The three Rules reviews are recorded in their claim designs and on main in `4c573630`. No implementation is included in this design.
+**Status:** Approved by the user on 2026-10-29. Claim `wire-fire-3`, Codex, reviewer Claude, branch `codex/wire-fire-3`. Inventory claim commit `49491cce` takes W-D3.7 and W-A24.5 together as the open fire capability. The three Rules reviews are recorded in their claim designs and on main in `4c573630`. Implementation is authorized in the dependency order below; code merge remains separately authorized.
 
 ## 1. Dependencies and implementation order
 
