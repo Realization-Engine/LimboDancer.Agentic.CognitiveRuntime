@@ -1394,6 +1394,24 @@ public static partial class GameProjector
                 return Fail<GameState>("UNIT-STATE-033", reason);
             }
 
+            var participation = fired.Facts.TryGetProperty("participation", out var participantFacts)
+                ? participantFacts.Deserialize<Rules.OrdnanceParticipation>(JsonSerializerOptions.Web) : null;
+            var secondFirer = participation?.Second?.Crew?.UnitId;
+            var currentMortar = false;
+            var noCoveredArc = mortar;
+            if (participation is not null && firer is EquipmentInstance { Definition: { } gunReference } gunCounter)
+            {
+                var definition = catalogs.FirstOrDefault(item => item.Identity == gunReference.Catalog)?.Definition(gunReference.Definition);
+                var type = definition?.Printed("front", "asl:gun-type")?.Value?.Text;
+                var caliber = definition?.Printed("front", "asl:caliber")?.Value?.Number;
+                currentMortar = Rules.ScenarioA1MortarCalculator.IsMortar(gunCounter.Kind, type);
+                if (currentMortar)
+                {
+                    noCoveredArc = !Rules.ScenarioA1MortarCalculator.HasCoveredArc(Rules.ScenarioA1MortarCalculator.FiresAsLight(caliber,
+                        Rules.ScenarioA1OrdnanceParticipationCalculator.SmcCount(shooter.Kind, participation) == 1));
+                }
+            }
+
             if (Choices(state, fired.Facts.TryGetProperty("hit", out var hitFacts) && hitFacts.ValueKind == JsonValueKind.Object ? hitFacts : fired.Facts) is { } choiceReason)
             {
                 return Fail<GameState>("UNIT-STATE-035", choiceReason);
@@ -1451,7 +1469,7 @@ public static partial class GameProjector
                     }
                     : state;
             }
-            else if (!panzerfaust && !mortar)
+            else if (!panzerfaust && !noCoveredArc)
             {
                 var gun = (EquipmentInstance)firer!;
                 var turned = fired.Facing is { } facing && gun.Position is MapPosition map
@@ -1485,7 +1503,26 @@ public static partial class GameProjector
                 GunShotsThisGameTurn = state.Find(fired.Gun) is EquipmentInstance { Kind: "asl:gun" } firedGun
                     ? [.. state.GunShotsThisGameTurn, new GunShotThisGameTurn(fired.Crew, firedGun.Definition?.Definition)] : state.GunShotsThisGameTurn,
             };
-            state = SupportWeapons(state, fired, shooter, mortar, panzerfaust);
+            if (participation is not null)
+            {
+                state = state with
+                {
+                    PhaseFirers = [.. state.PhaseFirers.Where(item => item.Unit != shooter.Id && item.Unit != secondFirer),
+                        new SupportWeaponUse(shooter.Id, fired.Gun),
+                        .. secondFirer is null ? Array.Empty<SupportWeaponUse>() : [new SupportWeaponUse(secondFirer, fired.Gun)]],
+                };
+                if (secondFirer is not null)
+                {
+                    state = state with
+                    {
+                        GunCrewsFired = Rules.ScenarioA1OrdnanceProjection.CrewLosesInherentFp(false, false, state.GunCrewsFired.Contains(secondFirer))
+                            ? [.. state.GunCrewsFired, secondFirer] : state.GunCrewsFired,
+                        GunShotsThisGameTurn = firer is EquipmentInstance { Kind: "asl:gun" } secondGun
+                            ? [.. state.GunShotsThisGameTurn, new GunShotThisGameTurn(secondFirer, secondGun.Definition?.Definition)] : state.GunShotsThisGameTurn,
+                    };
+                }
+            }
+            state = SupportWeapons(state, fired, shooter, mortar || currentMortar, panzerfaust);
             return state with
             {
                 // D3.5, D3.51 (pass 50): a tank's MA shot is one of its weapons' shots of the fire phase, with the turn its turret made.

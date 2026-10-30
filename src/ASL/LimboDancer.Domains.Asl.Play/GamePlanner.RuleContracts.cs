@@ -30,8 +30,81 @@ public sealed partial class GamePlanner
             "a12.14-advance-concealment" => AdvanceConcealmentFacts(state, picks, view),
             "e10.1-eligibility" => AmmoEligibilityFacts(picks, view),
             "c9.3-spotter-replacement" => SpotterReplacementContractFacts(state, picks, view),
+            "c9-ordnance-participation" => OrdnanceParticipationContractFacts(state, picks, view),
+            "c9-mortar-shot" => MortarShotContractFacts(picks, view),
             _ => new Dictionary<string, JsonNode?>(),
         };
+    }
+
+    private static Dictionary<string, JsonNode?> OrdnanceParticipationContractFacts(GameState state, IReadOnlyDictionary<string, string> picks, GameView view)
+    {
+        var facts = new Dictionary<string, JsonNode?>(StringComparer.Ordinal);
+        var primary = picks.TryGetValue("firerId", out var firerId) ? view.Units.FirstOrDefault(unit => unit.Id == firerId) : null;
+        var second = picks.TryGetValue("secondId", out var secondId) ? view.Units.FirstOrDefault(unit => unit.Id == secondId) : null;
+        var primaryKnown = primary is not null && (view.Perspective.IsAdjudicator || primary.Side == view.Perspective.Name);
+        var secondKnown = second is not null && (view.Perspective.IsAdjudicator || second.Side == view.Perspective.Name);
+        if (primaryKnown)
+        {
+            facts["firerId"] = primary!.Id;
+            facts["primaryKind"] = primary.Kind;
+        }
+        if (secondKnown)
+        {
+            facts["secondId"] = second!.Id;
+            facts["secondKind"] = second.Kind;
+        }
+        if (!primaryKnown || !secondKnown)
+        {
+            return facts;
+        }
+        // A Unit pick does not choose among several held weapons. Ambiguous weapon history remains unknown.
+        var weapons = view.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == primary!.Id
+            && ScenarioA1OrdnanceParticipationCalculator.WeaponRefusal(item.Kind) is null).Take(2).ToArray();
+        if (weapons.Length != 1)
+        {
+            return facts;
+        }
+        var read = LiveOrdnance.ParticipantFacts(state, weapons[0].Id, primary!, second!.Id);
+        facts["active"] = read.ActiveWithDefinition;
+        facts["sameSide"] = read.SameSide;
+        facts["sameLocation"] = read.AtFirer;
+        facts["broken"] = read.Crew?.Broken;
+        facts["berserk"] = read.Crew?.Berserk;
+        facts["pinned"] = read.Crew?.Pinned;
+        facts["firedOther"] = read.Crew?.FiredInherentFp;
+        facts["melee"] = read.Melee;
+        facts["captured"] = read.Captured;
+        facts["ti"] = read.Ti;
+        facts["usedOther"] = read.UsedOtherWeapon;
+        facts["directed"] = read.DirectedFire;
+        facts["spotted"] = read.Spotted;
+        return facts;
+    }
+
+    private static Dictionary<string, JsonNode?> MortarShotContractFacts(IReadOnlyDictionary<string, string> picks, GameView view)
+    {
+        var facts = new Dictionary<string, JsonNode?>(StringComparer.Ordinal);
+        if (!picks.TryGetValue("firerId", out var firerId) || view.Units.FirstOrDefault(unit => unit.Id == firerId) is not { } primary
+            || (!view.Perspective.IsAdjudicator && primary.Side != view.Perspective.Name))
+        {
+            return facts;
+        }
+        facts["firerId"] = primary.Id;
+        facts["hero"] = primary.Kind == "asl:hero" || Is(primary, Conditions.Heroic);
+        if (!ScenarioA1OrdnanceParticipationCalculator.Smc(primary.Kind))
+        {
+            facts["loneSmc"] = false;
+        }
+        var mortars = view.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == primary.Id
+            && LiveOrdnance.IsMortar(item)).Take(2).ToArray();
+        if (mortars.Length == 1 && mortars[0].Definition is { } definition && OrdnanceReference.Value.Guns.GetValueOrDefault(definition.Definition) is { } mortar)
+        {
+            facts["weapon"] = mortar.GunType;
+            facts["caliber"] = mortar.Caliber;
+            facts["minimumRange"] = mortar.RangeMinimum;
+        }
+        // This contract selects no target or second firer. Those proposed-shot facts are still entered explicitly.
+        return facts;
     }
 
     private Dictionary<string, JsonNode?> RallyContractFacts(GameState state, IReadOnlyDictionary<string, string> picks, GameView view)

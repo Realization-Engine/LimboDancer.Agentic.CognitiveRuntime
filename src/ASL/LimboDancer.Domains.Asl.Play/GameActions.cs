@@ -562,7 +562,7 @@ public static class GameActions
             "aim": { "type": "integer", "minimum": 1, "maximum": 5 },
             "aimFacing": { "type": "string", "enum": ["east", "north-east", "north-west", "west", "south-west", "south-east"] },
             "intensive": { "type": "boolean" },
-            "spotter": { "type": "string" }, "director": { "type": "string" }
+            "spotter": { "type": "string" }, "director": { "type": "string" }, "secondFirer": { "type": "string" }
           }
         }
         """, JsonSerializer.SerializeToElement(new

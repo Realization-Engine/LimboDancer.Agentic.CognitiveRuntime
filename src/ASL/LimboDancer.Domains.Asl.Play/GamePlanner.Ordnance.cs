@@ -85,7 +85,8 @@ public sealed partial class GamePlanner
         var intensive = arguments.TryGetProperty("intensive", out var intensiveArgument) && intensiveArgument.ValueKind == JsonValueKind.True;
         string? spotter = Text(arguments, "spotter", out var spotterId) ? spotterId : null;
         string? director = Text(arguments, "director", out var directorId) ? directorId : null;
-        var (shot, reason) = LiveOrdnance.FromState(state, gunId, target, targetVehicle, ammunition, intensive, spotter, director, gunDuel);
+        string? secondFirer = Text(arguments, "secondFirer", out var secondId) ? secondId : null;
+        var (shot, reason) = LiveOrdnance.FromState(state, gunId, target, targetVehicle, ammunition, intensive, spotter, director, gunDuel, secondFirer: secondFirer);
         if (shot is null)
         {
             return (null, [reason!]);
@@ -250,6 +251,7 @@ public sealed partial class GamePlanner
             ? $"; {facts.Ammunition!.ToUpperInvariant()} by its {depletionWords}: on an Original To Hit DR above it the Gun had none, has not fired, and has none for the rest of the scenario (C8.9)"
             : string.Empty;
         return $"play.ordnance: {facts.Gun!.GunId} fires {aim} in the {facts.Phase}; range {facts.Range}, {facts.Hit!.TargetTerrain}"
+            + (facts.Participation?.Second?.Crew?.UnitId is { } second ? $"; fired by {facts.Crew!.UnitId} and {second}" : string.Empty)
             + (facts.HexspinesToTurn > 0 ? $", turning {(facts.Vehicle is null ? string.Empty : "its turret ")}{facts.HexspinesToTurn} hexspine(s) to {facing!.Value.Name()}" : string.Empty)
             + toHit + each + depletion
             // D.8A, D.8B (pass 65): the PRC the hit may reach, as Collateral.
@@ -519,8 +521,14 @@ public sealed partial class GamePlanner
         // C2.6, B11.31, B11.32 (pass 55): a LATW is free of the elevation limit and a mortar is held to it firing down; Rules says which, and
         // which of them fires through a cliff hexside to an adjacent Location.
         var definition = OrdnanceReference.Value.Guns.GetValueOrDefault(shot.Gun!.DefinitionId ?? string.Empty);
+        var mapGunType = shot.Participation is not null && ScenarioA1MortarCalculator.IsMortar(null, definition?.GunType) ? "mortar" : definition?.GunType;
+        if (shot.Participation is not null && ScenarioA1MortarCalculator.MinimumRangeRefusal(
+            ScenarioA1MortarCalculator.IsMortar(null, definition?.GunType), ranged.Range, definition?.RangeMinimum) is { } minimumRefusal)
+        {
+            return (null, minimumRefusal);
+        }
         var targetAbove = ReadLocation(state, target) is { } targetRead ? targetRead.Hex.BaseLevel + targetRead.Level.Level - (firerRead.Hex.BaseLevel + firerRead.Level.Level) : 0;
-        if (ScenarioA1OrdnanceMapRules.CliffRefusal(CliffBetween(state, from, target), ranged.Range, targetAbove, definition?.GunType, definition?.LatwType,
+        if (ScenarioA1OrdnanceMapRules.CliffRefusal(CliffBetween(state, from, target), ranged.Range, targetAbove, mapGunType, definition?.LatwType,
             definition?.RangeMinimum) is { } cliff)
         {
             return (null, cliff);
@@ -533,7 +541,7 @@ public sealed partial class GamePlanner
             return (null, backblast);
         }
 
-        if (ScenarioA1OrdnanceMapRules.ElevationRefusal(shot.Gun.GunId ?? "the weapon", targetAbove, ranged.Range, definition?.GunType) is { } elevationBar)
+        if (ScenarioA1OrdnanceMapRules.ElevationRefusal(shot.Gun.GunId ?? "the weapon", targetAbove, ranged.Range, mapGunType) is { } elevationBar)
         {
             return (null, elevationBar);
         }
@@ -547,12 +555,27 @@ public sealed partial class GamePlanner
         }
 
         var heightAdvantage = ScenarioA1OrdnanceMapRules.HeightAdvantage(read.HeightAdvantage, read.HexsideTem?.Tem, area);
+        var turnSteps = 0;
+        UnitFacing? turnFacing = null;
+        if (shot.Participation is not null && area && ScenarioA1MortarCalculator.HasCoveredArc(ScenarioA1MortarCalculator.FiresAsLight(definition?.Caliber,
+            ScenarioA1OrdnanceParticipationCalculator.SmcCount(state.Unit(shot.Crew!.UnitId!)?.Kind, shot.Participation) == 1)))
+        {
+            if (state.Find(shot.Gun.GunId!) is not EquipmentInstance { Position: MapPosition { Facing: { } facing } }
+                || Bearing(state, from, target) is not { } bearing)
+            {
+                return (null, "play.ordnance-facing: the mortar's Covered Arc cannot be read (C3.2)");
+            }
+
+            var turn = ScenarioA1OrdnanceMapRules.CoveredArcTurn((int)facing, bearing);
+            turnSteps = turn.Steps;
+            turnFacing = turnSteps > 0 ? (UnitFacing)turn.Facing : null;
+        }
         return ((shot with
         {
             Range = ranged.Range,
-            HexspinesToTurn = 0,
+            HexspinesToTurn = turnSteps,
             FirerInWoodsOrBuilding = WoodsOrBuilding.Contains(firerTerrain),
-            ElevationAllowed = ScenarioA1OrdnanceMapRules.ElevationAllowed(targetAbove, ranged.Range, definition?.GunType),
+            ElevationAllowed = ScenarioA1OrdnanceMapRules.ElevationAllowed(targetAbove, ranged.Range, mapGunType),
 
             // B10.31, C6.8 (pass 55): Height Advantage is Case Q on a LATW's To Hit DR; the Area Target Type takes no Case Q. C3.71 (pass 60, ruling
             // R60.14): a Critical Hit reverses it, for a shot made since the pass.
@@ -582,7 +605,7 @@ public sealed partial class GamePlanner
             {
                 FromBuilding = ScenarioA1OrdnanceMapRules.IsBackblastLocation(firerTerrain)
             },
-        }, null), null);
+        }, turnFacing), null);
     }
 
     /// <summary>
@@ -712,7 +735,8 @@ public sealed partial class GamePlanner
         return shot with
         {
             BoreSighted = boreSighted ? true : null,
-            CrewSeen = shot.Crew!.Concealed == true && shot.Vehicle is null ? EnemyGoodOrderInLosWithin16(state, side, from) : null,
+            CrewSeen = (shot.Crew!.Concealed == true || shot.Participation?.Second?.Crew?.Concealed == true) && shot.Vehicle is null
+                ? EnemyGoodOrderInLosWithin16(state, side, from) : null,
             FirerOverstack = LiveStacking.Of(state, from, side).AttackPenalty is var over and > 0 ? over : (int?)null,
             TargetOverstack = shot.VehicleTarget is null && state.Sides.FirstOrDefault(item => item.Id != side)?.Id is { } enemy && LiveStacking.Of(state, target, enemy, knownOnly: true).DefensePenalty is var crowded and > 0
                 ? crowded : (int?)null,
@@ -767,7 +791,7 @@ public sealed partial class GamePlanner
     /// A target Location as a Gun's crew reads it (C3.2, C2.25; ruling R8.9): its own Location (Case E), no LOS, beyond the Gun's range, within its
     /// CA, or the hexspines it must turn; null when the Gun or the map cannot be read.
     /// </summary>
-    public string? GunTargetStatus(GameState state, string gunId, BoardLocation target)
+    public string? GunTargetStatus(GameState state, string gunId, BoardLocation target, string? secondFirer = null)
     {
         ArgumentNullException.ThrowIfNull(state);
         if (state.Find(gunId) is not EquipmentInstance { Position: MapPosition { Facing: { } facing } at } gun
@@ -786,6 +810,16 @@ public sealed partial class GamePlanner
             return "no LOS";
         }
 
+        if (LiveOrdnance.IsMortar(gun))
+        {
+            var primary = gun.Holding is { } holding ? state.Unit(holding.Holder) : null;
+            var paired = secondFirer is not null && LiveOrdnance.ParticipantRefusal(state, gunId, secondFirer) is null;
+            return ScenarioA1OrdnanceMapRules.GunTargetStatus(los.Range, definition.RangeMaximum,
+                () => ReadLocation(state, at.Location) is { } mortarRead && ReadLocation(state, target) is { } targetRead
+                    ? targetRead.Hex.BaseLevel + targetRead.Level.Level - (mortarRead.Hex.BaseLevel + mortarRead.Level.Level) : null,
+                () => Bearing(state, at.Location, target), (int)facing, definition.GunType, definition.Caliber, definition.RangeMinimum,
+                ScenarioA1OrdnanceParticipationCalculator.Smc(primary?.Kind) && !paired);
+        }
         return ScenarioA1OrdnanceMapRules.GunTargetStatus(los.Range, definition.RangeMaximum,
             () => ReadLocation(state, at.Location) is { } gunRead && ReadLocation(state, target) is { } targetRead
                 ? Math.Abs(gunRead.Hex.BaseLevel + gunRead.Level.Level - (targetRead.Hex.BaseLevel + targetRead.Level.Level)) : null,
@@ -1142,8 +1176,12 @@ public sealed partial class GamePlanner
         }
 
         // A12.14: a concealed crew that fires loses its "?"; a tank is its own crew and carries the marker once.
-        if (facts.Crew.UnitId != facts.Gun.GunId && state.Unit(facts.Crew.UnitId!) is { } crew)
+        foreach (var participant in new[] { facts.Crew.UnitId, facts.Participation?.Second?.Crew?.UnitId }.OfType<string>())
         {
+            if (participant == facts.Gun.GunId || state.Unit(participant) is not { } crew)
+            {
+                continue;
+            }
             var crewConditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
             if (marker is not null && GameState.Condition(crew, marker) != ConditionState.True)
             {
