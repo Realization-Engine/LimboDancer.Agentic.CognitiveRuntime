@@ -32,6 +32,24 @@ public sealed class ScenarioA1OrdnanceBreakdownAdapterTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public void RecordedVehicleFactsChooseTheCurrentReadingAndNullKeepsTheLegacy(bool vehicleTarget)
+    {
+        var legacy = Shot(vehicleTarget);
+        Assert.False(JsonSerializer.SerializeToElement(legacy).TryGetProperty(nameof(OrdnanceShot.VehicleBreakdown), out _));
+        var current = legacy with { VehicleBreakdown = Circled };
+        var roundTrip = JsonSerializer.Deserialize<OrdnanceShot>(JsonSerializer.Serialize(current))!;
+        Assert.Equal(Circled, roundTrip.VehicleBreakdown);
+        Assert.Equal(JsonSerializer.Serialize(ScenarioA1OrdnanceCalculator.Resolve(current, Reference, Circled)),
+            JsonSerializer.Serialize(ScenarioA1OrdnanceCalculator.Resolve(roundTrip, Reference)));
+        Assert.Equal(ScenarioA1OrdnanceCalculator.Precheck(current, Reference, Circled),
+            ScenarioA1OrdnanceCalculator.Precheck(roundTrip, Reference));
+        Assert.Null(ScenarioA1OrdnanceCalculator.Resolve(legacy, Reference).Gun!.VehicleBreakdown);
+        Assert.Equal(VehicleBreakdownOutcome.LowAmmo, ScenarioA1OrdnanceCalculator.Resolve(roundTrip, Reference).Gun!.VehicleBreakdown!.Outcome);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public void LowAmmoKeepsRofAndAcquisitionButDisabledDoesNot(bool vehicleTarget)
     {
         var shot = Shot(vehicleTarget);
