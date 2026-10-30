@@ -152,11 +152,17 @@ public sealed partial class GamePlanner
     /// The adjacent Locations a SMC may be sent to (A4.151): ground-level hexes it could enter by an ordinary step, in the playable area, that hold
     /// no unit of the other side; Rules leaves Open Ground out when anything else is open.
     /// </summary>
-    private (IReadOnlyList<string> Destinations, string? Refusal) EvadeDestinations(GameState state, BoardLocation from, string side) =>
-        ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([.. Neighbors(state, from)
-            .Select(near => (near.ToString(), InfantryStep(state, from, near).Entry is not null, PlayableBar(state, near) is null,
+    private (IReadOnlyList<string> Destinations, string? Refusal) EvadeDestinations(GameState state, BoardLocation from, string side)
+    {
+        var adjacent = Neighbors(state, from)
+            .Select(near => (Location: near.ToString(), Entry: InfantryStep(state, from, near), Playable: PlayableBar(state, near) is null,
+                EnemyOccupied:
                 state.At(near).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != side && !Is(other, Conditions.Captured)),
-                ScenarioA1OpenGroundCalculator.OpenGroundTerrain(ReadLocation(state, near) is { } read ? TerrainKey(read) : null, state.ScenarioMonth)))]);
+                OpenGround: ScenarioA1OpenGroundCalculator.OpenGroundTerrain(ReadLocation(state, near) is { } read ? TerrainKey(read) : null, state.ScenarioMonth))).ToArray();
+        return ScenarioA1InfantryOverrun.EvadeDestinationsBySeason(
+            [.. adjacent.Select(item => (item.Location, item.Entry.Entry is not null, item.Playable, item.EnemyOccupied, item.OpenGround))],
+            adjacent.Select(item => (item.Playable, item.EnemyOccupied, item.Entry.Reason)));
+    }
 
     /// <summary>The DEFENDER's declaration that its SMC moves away from an Infantry OVR (A4.151): the ATTACKER is then asked where.</summary>
     private GamePlan PlanOverrunEvade(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
