@@ -77,3 +77,11 @@ Measure added per-shot/per-repair allocations and repeated smoke queries on the 
 ## 8. Build outputs outside the repository
 
 Set `ASL_GATE_WORK=E:/Archive/GitHub/dlandi/asl-gate-work-codex` before every `code-builders` tool. Register Studio 6680 output and any focused-test output when created; the gate registers its baseline and proof-tool builds. Keep proof stores, results, logs and played games. Remove disposable registered outputs after CI, using verified Codex-only paths and native PowerShell cleanup on Windows; do not touch Claude's folders. The last implementation task confirms the output registry is empty. This design/review stage creates no build outputs and runs no CI.
+
+## 9. Wiring gate checkpoint, 2026-10-30
+
+The `wire-fire-3` gate completed `base`, `strict`, `baseline`, `build` and `proofs` against main `ee967f71`, with implementation head `e3e7bbc9`. The strict solution build had zero warnings and errors. The early sweep matched all 10,296 lines; the complete sweep matched all 55,839 lines, with no changed answers or words. No older game's replay differed.
+
+The sole replay difference is the owned `wire-ma-low-ammo` acceptance game, 17 comparison lines: its versioned D3.7 shots introduce Low Ammo and then Disabled and Recall, which the baseline cannot reconstruct under its old weapon-breakdown reading. The other owned records are `wire-vehicle-repair`, `wire-smoke-strength` and `wire-smoke-fire`. The pre-existing `p71-sniper-residual` and `wire-stealth-ambush` records remain NOSTATE on both sides; they are not counted as successful replay positions. The source-text comparison contains 27 changed lines from the new refusals and evidence descriptions.
+
+Evidence is retained under `E:/Archive/GitHub/dlandi/asl-gate-work-codex`: `gate-fire3-strict.log`, `gate-fire3-baseline.log`, `gate-fire3-build.log`, `gate-fire3-proofs.log`, and `before-wire-fire-3`/`after-wire-fire-3`. This is replay-gate evidence, not final acceptance or a performance claim. Performance measurements, remaining focused integration checks, CI, and the other agent's wiring review still precede marking the rows wired.
