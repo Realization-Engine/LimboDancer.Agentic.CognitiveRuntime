@@ -4,8 +4,9 @@ namespace LimboDancer.Domains.Asl.Rules;
 public static class ScenarioA1SmokeHeightCalculator
 {
     /// <summary>A24.2/.8: an exact source Location proves occupancy without another LOS walk. An end elsewhere in the same hex still needs height facts.</summary>
-    public static SmokeLosVerdict? ExactLocation(bool sourceLocation, bool targetLocation, bool sourceHex) =>
-        sourceLocation || targetLocation && !sourceHex ? new(true, sourceLocation, targetLocation) : null;
+    public static SmokeLosVerdict? ExactLocation(bool sourceLocation, bool targetLocation, bool sourceHex, bool targetHex) =>
+        sourceLocation && targetLocation || sourceLocation && !targetHex || targetLocation && !sourceHex
+            ? new(true, sourceLocation, targetLocation) : null;
 
     /// <summary>Conventional SMOKE rises two levels, WP four. Unsupported source or chemical facts remain unknown.</summary>
     public static int? Height(TurnSmokeSource source, TurnSmokeChemical chemical)
