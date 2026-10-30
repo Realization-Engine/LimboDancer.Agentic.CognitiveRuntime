@@ -3720,7 +3720,7 @@ public static class ScenarioA1FireCalculator
             else if (hit is { Area: true } && hit.CriticalHit != true && tem != 0)
             {
                 // C3.331 (ruling R9.3): an Area Target Type hit takes its TEM on the Effects DR.
-                drm.Add(new FireModifier("tem:" + attack.TargetTerrain, tem, "C3.331"));
+                drm.Add(new FireModifier("tem:" + (attack.FactoryTem is null ? attack.TargetTerrain : "factory"), tem, "C3.331"));
             }
             else if (hit is { Area: true } && hit.CriticalHit != true && attack.CushionedOpenGround == true && attack.TargetTerrain == "open-ground")
             {
@@ -3733,7 +3733,7 @@ public static class ScenarioA1FireCalculator
                 // positive TEM into a negative Effects DRM (a Direct Fire hit has no Air Burst, B13.3).
                 if (hit.CriticalHit == true && tem != 0)
                 {
-                    drm.Add(new FireModifier("critical-hit-tem:" + attack.TargetTerrain, -Math.Abs(tem), "C3.71"));
+                    drm.Add(new FireModifier("critical-hit-tem:" + (attack.FactoryTem is null ? attack.TargetTerrain : "factory"), -Math.Abs(tem), "C3.71"));
                 }
 
                 // C3.71, B10.31 (p. 170; pass 60, ruling R60.14): the Height Advantage the target claimed on the To Hit DR is reversed as well.

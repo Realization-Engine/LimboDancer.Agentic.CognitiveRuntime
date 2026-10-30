@@ -99,8 +99,8 @@ public static class ScenarioA1TerrainCosts
     /// <paramref name="factory"/> null it is the member without it, word for word. With it: a level change within a Factory hex is refused
     /// (<see cref="ScenarioA1FactoryCalculator.LevelChangeRefusal"/>), and so is a step to or from a Factory Location above or below ground level
     /// (<see cref="ScenarioA1FactoryCalculator.OccupationRefusal"/>); a ground step <see cref="ScenarioA1FactoryCalculator.InfantryHalfMf"/> prices costs
-    /// that, with SMOKE and the weather's read for the terrain entered; a step between hexes of different base levels at that price is not reviewed; any
-    /// other step is the member without it.
+    /// that, with SMOKE and the weather's read for the terrain entered; a step between hexes of different base levels at that price is refused as
+    /// <see cref="ScenarioA1FactoryCalculator.BaseLevelRefusal"/> decides; any other step is the member without it.
     /// </summary>
     public static (InfantryEntry? Entry, string? Reason) InfantryStep(InfantryStepFacts facts, FactoryStepFacts? factory, Func<int> smokeHalfMf, InfantryWeatherRead weather)
     {
@@ -130,9 +130,9 @@ public static class ScenarioA1TerrainCosts
             return InfantryStep(facts, smokeHalfMf, weather);
         }
 
-        if (toRead.BaseLevel != fromRead.BaseLevel)
+        if (ScenarioA1FactoryCalculator.BaseLevelRefusal(fromRead.BaseLevel, toRead.BaseLevel) is { } baseLevel)
         {
-            return (null, "play.move-factory: a Factory step between hexes of different base levels is not reviewed (B23.742)");
+            return (null, baseLevel);
         }
 
         var smoke = smokeHalfMf();

@@ -132,7 +132,8 @@ public static class ScenarioA1FactoryCalculator
     /// <summary>
     /// The half MF of an Infantry step that touches a Factory (B23.742, B23.743; RB23F.10): 2 (one MF) from a Factory hex or its rubble into another hex
     /// of the same Factory across a Factory hexside; 2 (Open Ground) through a Vehicular-Sized Entrance entered from outside the Factory, not when it is
-    /// Roofless; null otherwise, where the building's normal entry applies.
+    /// Roofless; null otherwise, where the building's normal entry applies. The Entrance's Open Ground cost does not need hex control for Infantry: p. 140
+    /// conditions only "Any vehicle" on friendly control, and gives "Any unit" the benefit from outside when the Location is not Roofless.
     /// </summary>
     public static int? InfantryHalfMf(FactoryStepFacts step)
     {
@@ -146,12 +147,21 @@ public static class ScenarioA1FactoryCalculator
     }
 
     /// <summary>
+    /// The refusal of an Infantry step that <see cref="InfantryHalfMf"/> prices between hexes of different base levels (B23.742; the B23.74 claim, ruling
+    /// RB23F.15): B23.742's one MF says nothing of elevation, and A4.13 and B10.4 would double an uphill step, so the case is refused as not reviewed
+    /// rather than priced either way. Null at the same base level.
+    /// </summary>
+    public static string? BaseLevelRefusal(int fromBaseLevel, int toBaseLevel) =>
+        toBaseLevel != fromBaseLevel ? "play.move-factory: a Factory step between hexes of different base levels is not reviewed (B23.742)" : null;
+
+    /// <summary>
     /// A vehicle's step that touches a Factory (B23.742, pp. 139 and 140; B23.41; RB23F.10), in the rule's order. By Bypass, or entering from outside with
     /// no usable Vehicular-Sized Entrance, it is not the Factory's case (B23.41's AFV entry stays its own row). Through a Vehicular-Sized Entrance whose hex
     /// its side controls, entering from outside or leaving to it: Open Ground cost. A fully-tracked AFV inside, to another hex of the same Factory:
     /// one-fourth of its MP allotment (FRU) with a Bog Check at +1. A fully-tracked AFV leaving without an Entrance: the building's entrance cost (half its
     /// printed MP allotment, B23.41), spent inside, with a Bog Check at +3 (+4 stone) and a rubble check before the next hex. Any other vehicle move
-    /// between hexes of the same Factory, or out of it, is refused.
+    /// between hexes of the same Factory, or out of it, is refused. B23.742 cites B23.41 only for the exit's cost, so B23.41's CT, BU, and Riders terms
+    /// are not read for the exit.
     /// </summary>
     public static FactoryVehicleStepVerdict VehicleStep(FactoryVehicleStepFacts facts)
     {

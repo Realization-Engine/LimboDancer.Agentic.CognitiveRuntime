@@ -404,6 +404,25 @@ public sealed class ScenarioA1Pass55RulesTests
         }
 
         Assert.Equal(ScenarioA1GunDuels.Classify("case-q:stone-building"), ScenarioA1GunDuels.Classify("case-q:factory"));
+
+        // C11.2 (the review of the B23.74 build, finding 3): an Emplaced Gun's crew takes the Emplacement's +2 instead of the Factory's lower +1, while
+        // the building's +3 stays.
+        static OrdnanceShot AtEmplacedCrew(int? factoryTem)
+        {
+            var shot = InStone(false, factoryTem);
+            return shot with
+            {
+                Hit = shot.Hit! with
+                {
+                    GunTarget = new FireGunTarget("de-gun", "attacker-inf-gun", "de-s", true, false),
+                },
+            };
+        }
+
+        var crewed = Resolve(AtEmplacedCrew(null));
+        Assert.Equal((3m, null), (Drm(crewed, "case-q:stone-building"), Drm(crewed, "case-q:emplacement")));
+        var emplaced = Resolve(AtEmplacedCrew(1));
+        Assert.Equal((null, null, 2m), (Drm(emplaced, "case-q:stone-building"), Drm(emplaced, "case-q:factory"), Drm(emplaced, "case-q:emplacement")));
     }
 
     [Fact]

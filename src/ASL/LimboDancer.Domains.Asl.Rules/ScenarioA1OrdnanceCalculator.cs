@@ -1029,7 +1029,8 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-n", acquired, "C6.5"));
         }
 
-        // B23.741 (p. 139; the B23.74 claim, ruling RB23F.5): a hit traced entirely within a Factory takes its Factory TEM in place of the key's.
+        // B23.741 (p. 139; the B23.74 claim, ruling RB23F.5): a hit whose Factory TEM is set (ScenarioA1FactoryCalculator.Tem's +1) takes it in place
+        // of the key's.
         var tem = hit.FactoryTem ?? ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
         var unattended = Unattended(shot);
         var gunTarget = unattended || ScenarioA1FireCalculator.GunCrewAlone(hit with
