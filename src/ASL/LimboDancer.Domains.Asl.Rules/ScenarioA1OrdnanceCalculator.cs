@@ -146,7 +146,7 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("smc", 2, "C13.31"));
         }
 
-        if (crew.Cx == true)
+        if (ScenarioA1OrdnanceParticipationCalculator.Cx(shot))
         {
             drm.Add(new FireModifier("cx", 1, "C13.31"));
         }
@@ -165,7 +165,7 @@ public static class ScenarioA1OrdnanceCalculator
 
         var final = dr + (int)drm.Sum(item => item.Value);
         var outcome = dr == 6
-            ? crew.Pinned != true ? OrdnancePanzerfaustCheck.Pinned
+            ? !ScenarioA1OrdnanceParticipationCalculator.Pinned(shot) ? OrdnancePanzerfaustCheck.Pinned
                 : crew.Berserk == true || kind == "asl:hero" || shot.Panzerfaust!.Heroic == true ? OrdnancePanzerfaustCheck.CasualtyReduction : OrdnancePanzerfaustCheck.Broken
             : final <= 3 ? OrdnancePanzerfaustCheck.Shot : OrdnancePanzerfaustCheck.NoShot;
         return new OrdnancePanzerfaustCheck(dr, drm, final, outcome);
@@ -195,6 +195,16 @@ public static class ScenarioA1OrdnanceCalculator
     /// </summary>
     internal static IEnumerable<FireModifier> HeroDrm(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference)
     {
+        if (shot.Participation is not null && ScenarioA1OrdnanceParticipationCalculator.Mortar(shot, gun))
+        {
+            foreach (var modifier in ScenarioA1OrdnanceParticipationCalculator.MortarHeroDrm(shot, gun, reference))
+            {
+                yield return modifier;
+            }
+
+            yield break;
+        }
+
         if (shot.HeroWeapons != true || shot.Vehicle is not null || gun.GunType is not ("mortar" or "latw")
             || reference.Fire.Definitions.GetValueOrDefault(shot.Crew!.DefinitionId ?? string.Empty)?.IsHero != true)
         {
@@ -430,11 +440,20 @@ public static class ScenarioA1OrdnanceCalculator
         // A9.61, D3.54 (pass 60, ruling R60.19): a SW MG, or a vehicle's MA that is a MG, fires as ordnance only at an AFV it names.
         // W-A21.13: a Gun shot that carries UseMultiple was admitted by ScenarioA1NonQualifiedUseCalculator.Use, a captured Gun of another
         // nationality included (A21.13); a shot recorded before keeps the nationality bar.
-        if (reference.Weapon(gunShot.DefinitionId) is not { } gun || (gun.Nationality != shot.FiringNationality && !(shot.UseMultiple is not null && shot.Vehicle is null)) || gun.Mount360
-            || !(gun.GunType == ScenarioA1MachineGunKill.GunType || (shot.Vehicle is null ? AdmittedGunTypes.Contains(gun.GunType) : gun.GunType == "vehicle"))
+        if (reference.Weapon(gunShot.DefinitionId) is not { } gun || (gun.Nationality != shot.FiringNationality && !(shot.UseMultiple is not null && shot.Vehicle is null))
+            || (gun.Mount360 && !(shot.Participation is not null && ScenarioA1MortarCalculator.IsMortar(null, gun.GunType)))
+            || !(gun.GunType == ScenarioA1MachineGunKill.GunType || (shot.Vehicle is null
+                ? AdmittedGunTypes.Contains(gun.GunType) || (shot.Participation is not null && ScenarioA1MortarCalculator.IsMortar(null, gun.GunType))
+                : gun.GunType == "vehicle"))
             || (shot.VehicleTarget is null && !canister && !equivalency && !ScenarioA1ArmorCalculator.Lists(gun, "he") && (gun.NoHe || shot.Ammunition is not (null or "he"))))
         {
             outside.Add(Prefix + "gun-outside");
+            return outside;
+        }
+
+        if (ScenarioA1OrdnanceParticipationCalculator.ReadingRefusal(shot, gun, reference) is { } participationRefusal)
+        {
+            outside.Add(participationRefusal);
             return outside;
         }
 
@@ -471,7 +490,8 @@ public static class ScenarioA1OrdnanceCalculator
         // a LATW never uses the Area Target Type. C8.31, C13.24, C11.52, C13.23 (pass 60, rulings R60.4 to R60.6): a PF or PSK fires at Personnel
         // on the Infantry Target Type, an ATR only at a Gun's crew unless it is 20L (at Personnel it is Small Arms). A SW has no CA, and neither
         // Intensive Fires (Case F is NA to SW).
-        var mortar = gun.GunType == "mortar";
+        var mortar = ScenarioA1OrdnanceParticipationCalculator.Mortar(shot, gun);
+        var lightMortar = ScenarioA1OrdnanceParticipationCalculator.FiresAsLight(shot, gun, reference);
         var latw = gun.GunType == "latw";
         var pf = gun.LatwType == "pf";
         if (!mortar && equivalency)
@@ -481,9 +501,10 @@ public static class ScenarioA1OrdnanceCalculator
 
         if ((shot.TargetType == OrdnanceTargetTypes.Area) != mortar
             || (latw && shot.VehicleTarget is null && gun.LatwType == "atr" && gun.Caliber != 20 && !AtrAtGun(shot, gun))
-            || ((mortar || latw || machineGun) && (shot.HexspinesToTurn != 0 || shot.IntensiveFire == true || shot.BoreSighted == true || shot.NonQualified == true))
+            || ((lightMortar || latw || machineGun) && (shot.HexspinesToTurn != 0 || shot.IntensiveFire == true || shot.BoreSighted == true || shot.NonQualified == true))
             // C9.3: whether a spotted shot may be made now is ScenarioA1SpotterCalculator's (the C9.3 claim, review finding 4).
-            || (shot.Spotter is not null && !ScenarioA1SpotterCalculator.SpottedFireAllowed(mortar, shot.Phase)) || (shot.Director is not null && !mortar && !latw))
+            || (shot.Spotter is not null && !ScenarioA1SpotterCalculator.SpottedFireAllowed(mortar, shot.Phase))
+            || (shot.Director is not null && !(shot.Participation is null ? mortar : lightMortar) && !latw))
         {
             outside.Add(Prefix + "target-type-outside");
             return outside;
@@ -517,8 +538,8 @@ public static class ScenarioA1OrdnanceCalculator
         // only if that SMC is a Hero", with the +1 of HeroDrm; a lone leader stays refused (ruling R9.11), and two SMC together are pass 110's.
         if ((shot.Vehicle is null ? reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!) is not { } crewDefinition
                 || (!used && crewDefinition.Nationality != gun.Nationality)
-                || (used && !(mortar || latw || machineGun) ? false
-                    : mortar || latw || machineGun ? !Personnel.Contains(crewDefinition.Kind) : shot.NonQualified == true ? !crewDefinition.IsMmc : !ScenarioA1Definitions.IsCrew(crewDefinition.Kind))
+                || (used && !(lightMortar || latw || machineGun) ? false
+                    : lightMortar || latw || machineGun ? !Personnel.Contains(crewDefinition.Kind) : shot.NonQualified == true ? !crewDefinition.IsMmc : !ScenarioA1Definitions.IsCrew(crewDefinition.Kind))
                 || (gun.LatwType == "psk" && (crewDefinition.Kind == "asl:leader" || (crewDefinition.Kind == "asl:hero" && shot.HeroWeapons != true)))
                 : crew.DefinitionId != gun.Id || shot.NonQualified == true)
             || crew.Broken == true || (crew.Berserk == true && !pf))
@@ -544,7 +565,7 @@ public static class ScenarioA1OrdnanceCalculator
         var mayFire = pf
             ? gunShot.FiredThisPlayerTurn != true && gunShot.ShotsThisPhase < (reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind == "asl:squad" ? 2 : 1)
             : shot.IntensiveFire == true
-            ? shot.Vehicle is null && phase != "AFPh" && gunShot.IntensiveFired != true && gunShot.FinalFire != true && crew.Pinned != true
+            ? shot.Vehicle is null && phase != "AFPh" && gunShot.IntensiveFired != true && gunShot.FinalFire != true && !ScenarioA1OrdnanceParticipationCalculator.Pinned(shot)
                 && (gunShot.FiredThisPlayerTurn == true || gunShot.FirstFire == true) && gunShot.RateOfFireKept != true
             : gunShot.IntensiveFired != true && !firstFired && (phase == "AFPh" && !OpportunityFire(shot)
                 ? !firedBefore && gunShot.ShotsThisPhase == 0
@@ -598,7 +619,8 @@ public static class ScenarioA1OrdnanceCalculator
         // A7.81, C5.11: a pinned crew cannot change its Gun's CA; a Gun that has fired from woods or a building fires again that phase
         // only inside its current CA (C5.11).
         // C5.13 (p. 172; pass 50): "a Bounding First Firer must always fire within its current CA".
-        if (shot.HexspinesToTurn > 0 && (bounding || crew.Pinned == true || (shot.FirerInWoodsOrBuilding == true && gunShot.ShotsThisPhase > 0)))
+        if (shot.HexspinesToTurn > 0 && (bounding || ScenarioA1OrdnanceParticipationCalculator.Pinned(shot)
+            || (shot.FirerInWoodsOrBuilding == true && gunShot.ShotsThisPhase > 0 && (shot.Participation is null || !mortar))))
         {
             outside.Add(Prefix + "covered-arc-fixed");
         }
@@ -725,7 +747,7 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         // C13.8 (referee, pass 9): from a ground-level building only an unpinned unit fires a PF or PSK without Desperation, which is not built.
-        if (gun.LatwType is "pf" or "psk" && shot.Panzerfaust?.FromBuilding == true && shot.Crew!.Pinned == true)
+        if (gun.LatwType is "pf" or "psk" && shot.Panzerfaust?.FromBuilding == true && ScenarioA1OrdnanceParticipationCalculator.Pinned(shot))
         {
             outside.Add(Prefix + "panzerfaust-backblast");
         }
@@ -951,13 +973,13 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-b", woods ? 3 : 2, "C5.2"));
         }
 
-        if (shot.Crew!.Pinned == true)
+        if (ScenarioA1OrdnanceParticipationCalculator.Pinned(shot))
         {
             drm.Add(new FireModifier("case-d", 2, "C5.4"));
         }
 
         // A4.51 (ruling R5.2): a CX crew adds one to its Gun's To Hit DR.
-        if (shot.Crew.Cx == true)
+        if (ScenarioA1OrdnanceParticipationCalculator.Cx(shot))
         {
             drm.Add(new FireModifier("cx", 1, "A4.51"));
         }
@@ -976,7 +998,7 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         // A7.7 (p. 57; the D5.34 claim, ruling RD5.16): an Encircled crew adds one to its To Hit DR, under the shot's StunEncircledReading.
-        if (shot.StunEncircledReading == true && ScenarioA1EncirclementCalculator.FirerDrm(shot.Crew.Encircled == true) is > 0 and var encircled)
+        if (shot.StunEncircledReading == true && ScenarioA1EncirclementCalculator.FirerDrm(ScenarioA1OrdnanceParticipationCalculator.Encircled(shot)) is > 0 and var encircled)
         {
             drm.Add(new FireModifier("encircled", encircled, "A7.7"));
         }
@@ -1214,7 +1236,7 @@ public static class ScenarioA1OrdnanceCalculator
         // C13.36 (ruling R9.8; pass 60): a PF never malfunctions, but an Original 12 misses and gives its firer Casualty Reduction; an 11 or 12 for
         // Inexperienced Infantry (A19.32).
         var casualty = gun.LatwType == "pf"
-            && original >= (reference.Fire.Definitions.GetValueOrDefault(shot.Crew.DefinitionId ?? string.Empty)?.Class is "green" or "conscript" ? 11 : 12);
+            && original >= (reference.Fire.Definitions.GetValueOrDefault(shot.Crew!.DefinitionId ?? string.Empty)?.Class is "green" or "conscript" ? 11 : 12);
         if (casualty)
         {
             isHit = critical = false;
@@ -1260,7 +1282,8 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         // C13.1 (pass 60): a LATW has no Multiple ROF.
-        if (shot.Crew.Pinned == true || AfphFire(shot) || latw)
+        if (ScenarioA1OrdnanceParticipationCalculator.Pinned(shot) || AfphFire(shot) || latw
+            || ScenarioA1OrdnanceParticipationCalculator.HeroGunLimited(shot, gun, reference))
         {
             rof = 0;
         }
@@ -1373,7 +1396,7 @@ public static class ScenarioA1OrdnanceCalculator
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {
             // A12.14 (ruling R8.5): the "?" is lost only in the view of a Good Order enemy ground unit within 16 hexes.
-            CrewConcealmentLost = shot.Crew.Concealed == true && shot.CrewSeen != false ? true : null,
+            CrewConcealmentLost = shot.Crew!.Concealed == true && shot.CrewSeen != false ? true : null,
             Hit = normal,
             CriticalHit = criticalHit,
             CriticalTarget = criticalTarget,
@@ -1609,9 +1632,9 @@ public static class ScenarioA1OrdnanceCalculator
     /// Whether the shot keeps the Multiple ROF, and the fire counter it leaves otherwise (C2.24, A8.1, C5.6): Prep Fire in the PFPh and
     /// AFPh, First Fire in the MPh, Final Fire in the DFPh, and Intensive Fire after an Intensive Fire shot, which never keeps it.
     /// </summary>
-    internal static (bool Kept, string? Counter) Counter(OrdnanceShot shot, bool malfunctioned, int rof, int colored)
+    internal static (bool Kept, string? Counter) Counter(OrdnanceShot shot, bool malfunctioned, int rof, int colored, bool conditionalNoRof = false)
     {
-        if (shot.IntensiveFire == true)
+        if (shot.IntensiveFire == true || conditionalNoRof)
         {
             return (false, "intensive-fire");
         }

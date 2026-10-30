@@ -29,6 +29,13 @@ public sealed record OrdnanceShot(
         get; init;
     }
 
+    /// <summary>C9.2/A21.13 participation evidence. Null preserves the recorded single-crew reading and serializes without this property.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceParticipation? Participation
+    {
+        get; init;
+    }
+
     /// <summary>The tank whose MA fires (ruling R7.10); null for a Gun manned by its crew.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OrdnanceVehicleFirer? Vehicle
