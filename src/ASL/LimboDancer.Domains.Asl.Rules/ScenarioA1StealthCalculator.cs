@@ -16,6 +16,15 @@ public static class ScenarioA1StealthCalculator
     private const string Leader = "asl:leader";
     private const string Hero = "asl:hero";
 
+    /// <summary>A11.17 and A11.18 (p. 73): a current-reading modifier cannot be resolved from an unknown contributing status.</summary>
+    public static string? FactsRefusal(IEnumerable<StealthStatus?> statuses)
+    {
+        ArgumentNullException.ThrowIfNull(statuses);
+        return statuses.Any(status => status is null)
+            ? "play.stealth-facts: the facts needed to resolve Stealth or Lax are unknown (A11.17, A11.18)"
+            : null;
+    }
+
     /// <summary>A11.17 and A11.18 (p. 73): an explicit side-wide SSR token; no inference from a card's prose.</summary>
     public static (string Side, bool Lax)? SsrToken(string token)
     {
