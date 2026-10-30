@@ -195,7 +195,8 @@ public sealed class WorkbenchPageTests : IDisposable
         Assert.Equal("gathered", Source(page, "terrain"));
         Assert.Equal("gathered", Source(page, "enemyGoodOrderInLosWithin16"));
         Assert.DoesNotContain("de-c", page.Markup, StringComparison.Ordinal);
-        Assert.Equal("loses-concealment", page.Find("#workbench-outcome").GetAttribute("data-outcome"));
+        // The Rules contract requires smoke and cover; their viewer-safe gathering follows in W-A10.531.
+        Assert.Equal("not-evaluated", page.Find("#workbench-outcome").GetAttribute("data-outcome"));
 
         // The owner's view of the same game cannot name the Russian squad as its advancer, nor see the Russians' LOS.
         var owner = Open($"games/workbench?game={Minigame}&viewer=german&contract={Contract}");
