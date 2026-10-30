@@ -447,6 +447,8 @@ public static class GameEventReader
                     : new RepairAttempted(repairUnit, repaired, repairRoll, repairNumber.Value, repairResult)
                     {
                         Weapon = fields.OptionalString(payload, "weapon", path),
+                        VehicleRepairVersion = fields.OptionalInteger(payload, "vehicleRepairVersion", path),
+                        Hero = fields.OptionalString(payload, "hero", path),
                     };
             case "shock-recovery-rolled":
                 var shocked = fields.RequiredString(payload, "vehicle", path);

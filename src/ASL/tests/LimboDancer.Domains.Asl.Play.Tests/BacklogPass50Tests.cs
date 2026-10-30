@@ -38,6 +38,7 @@ public sealed class BacklogPass50Tests : IDisposable
     private readonly StubLos los = new();
     private readonly IBoardCatalog boards = new InMemoryBoardCatalog([Board01Fixture.Handle()]);
     private string[] specialRules = [];
+    private int scenarioYear = 1942;
 
     public BacklogPass50Tests() => store = new FileGameStore(root);
 
@@ -118,7 +119,7 @@ public sealed class BacklogPass50Tests : IDisposable
                 ["boards"] = Bd01,
                 ["firstSide"] = "german",
                 ["scenarioMonth"] = 7,
-                ["scenarioYear"] = 1942,
+                ["scenarioYear"] = scenarioYear,
                 ["specialRules"] = specialRules,
                 ["sides"] = new object[]
                 {
@@ -341,6 +342,76 @@ public sealed class BacklogPass50Tests : IDisposable
         Assert.True(Is(tank, Conditions.Disabled));
         Assert.True(Is(tank, Conditions.Malfunctioned));
         Assert.True(Is(tank, Conditions.Recalled));
+    }
+
+    [Fact]
+    public async Task HeroRiderRepairsTheButtonedUpAamgAndForgedParticipantsDoNotReplay()
+    {
+        scenarioYear = 1943;
+        var halftrack = Tank("north-east", Conditions.Malfunctioned, Conditions.ButtonedUp);
+        halftrack["definition"] = "attacker-halftrack";
+        var hero = new Dictionary<string, object>
+        {
+            ["id"] = "hero",
+            ["kind"] = "asl:leader",
+            ["definition"] = "attacker-leader-8-0",
+            ["side"] = "german",
+            ["position"] = new Dictionary<string, string> { ["in"] = "de-tank", ["role"] = "rider" },
+            ["conditions"] = new Dictionary<string, bool> { [Conditions.Broken] = false, [Conditions.Captured] = false, [Conditions.Heroic] = true },
+        };
+        await Setup(halftrack, hero, Squad("r1", Target));
+        var before = Revision;
+        Refused(await Repair("ma", 1), "play.repair-unit");
+        Assert.Equal(before, Revision);
+        Assert.Equal("hero", Assert.Single(Planner().VehicleRepairHeroes(Current, Current.Unit("de-tank")!, "ma")).Id);
+        Committed(await Do(GameActions.Repair, Once(1), new
+        {
+            unitId = "de-tank",
+            equipmentId = "de-tank",
+            weapon = "ma",
+            hero = "hero",
+        }));
+        var record = Assert.Single(Since(before).Select(item => item.Payload).OfType<RepairAttempted>());
+        Assert.Equal(1, record.VehicleRepairVersion);
+        Assert.Equal("hero", record.Hero);
+        Assert.False(Is(Current.Unit("de-tank")!, Conditions.Malfunctioned));
+        foreach (var forged in new[] { record with { Hero = "r1" }, record with { VehicleRepairVersion = 2 }, record with { VehicleRepairVersion = null } })
+        {
+            var events = store.Read(Scope)!.Events.Select(item => item.Payload is RepairAttempted ? item with { Payload = forged } : item).ToArray();
+            Assert.True(Planner().Replay(events).HasErrors);
+        }
+    }
+
+    [Fact]
+    public async Task LegacyAamgAttemptAndCapturedInherentCrewRemainRecognized()
+    {
+        var halftrack = Tank("north-east", Conditions.Malfunctioned);
+        halftrack["definition"] = "attacker-halftrack";
+        await Setup(halftrack, Squad("r1", Target));
+        var state = Current;
+        var vehicle = state.Unit("de-tank")!;
+        var definition = Catalog.Definition("attacker-halftrack")!;
+        var weapon = Assert.Single(VehicleArmamentFacts.Weapons(definition));
+        var captured = vehicle with
+        {
+            TemporaryCrew = new TemporaryCrew(ScenarioA1CapturedVehicleRules.InfantryCrew, true)
+        };
+        Assert.Null(ScenarioA1VehicleBreakdownResolutionCalculator.RepairRefusal(VehicleArmamentFacts.Repair(state, captured, definition, weapon, null)));
+        Committed(await Repair("ma", 3));
+        var events = store.Read(Scope)!.Events.Select(item => item.Payload is RepairAttempted repair
+            ? item with
+            {
+                Payload = repair with
+                {
+                    VehicleRepairVersion = null,
+                    Weapon = null
+                }
+            } : item).ToArray();
+        var legacy = Planner().Replay(events);
+        Assert.False(legacy.HasErrors);
+        Assert.Contains("de-tank", legacy.Current!.RepairsThisPhase);
+        Assert.NotNull(Planner().VehicleRepairRefusal(legacy.Current, legacy.Current.Unit("de-tank")!, "ma"));
+        Assert.Empty(Planner().VehicleRepairWeapons(legacy.Current, legacy.Current.Unit("de-tank")!));
     }
 
     [Fact]

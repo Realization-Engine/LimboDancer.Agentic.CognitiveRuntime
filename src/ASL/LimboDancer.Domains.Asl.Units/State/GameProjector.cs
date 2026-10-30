@@ -2336,6 +2336,37 @@ public static partial class GameProjector
 
         private GameState? Repair(GameState state, RepairAttempted repair)
         {
+            if (repair.VehicleRepairVersion is not null)
+            {
+                if (repair.VehicleRepairVersion != 1 || repair.Unit != repair.Equipment
+                    || Active(state, repair.Unit) is not UnitInstance currentVehicle || currentVehicle.Kind != "asl:vehicle"
+                    || currentVehicle.Definition is not { } currentReference || catalog?.Definition(currentReference.Definition) is not { } currentDefinition
+                    || VehicleArmamentFacts.Weapons(currentDefinition).FirstOrDefault(item => item.Id == repair.Weapon) is not { } currentWeapon)
+                {
+                    return Fail<GameState>("UNIT-STATE-028", "The vehicle repair version, vehicle or listed weapon is invalid.");
+                }
+                var currentFacts = VehicleArmamentFacts.Repair(state, currentVehicle, currentDefinition, currentWeapon, repair.Hero);
+                var currentRefusal = Rules.ScenarioA1RallyRules.VehicleRepairPhaseBar(state.Phase, currentVehicle.Status == InstanceStatus.Active)
+                    ?? VehicleArmamentFacts.RecallFactsRefusal(currentDefinition)
+                    ?? Rules.ScenarioA1VehicleBreakdownResolutionCalculator.RepairRefusal(currentFacts);
+                if (currentRefusal is not null)
+                {
+                    return Fail<GameState>("UNIT-STATE-028", currentRefusal);
+                }
+                if (!rolls.TryGetValue(repair.Roll, out var currentRoll) || currentRoll.Count != 1 || currentRoll.Sides != 6
+                    || repair.RepairNumber != 1 || repair.Result != RepairResult(Rules.ScenarioA1VehicleBreakdownCalculator.RepairResult(currentRoll.Values[0])))
+                {
+                    return Fail<GameState>("UNIT-STATE-028", "The vehicle repair result does not match its recorded die.");
+                }
+                return state with
+                {
+                    RepairsThisPhase = [.. state.RepairsThisPhase, currentVehicle.Id + ":" + currentWeapon.Id]
+                };
+            }
+            if (repair.Hero is not null)
+            {
+                return Fail<GameState>("UNIT-STATE-028", "A Hero repair participant requires the current vehicle repair reading.");
+            }
             // D3.7 (ruling R6.10): a vehicle's malfunctioned MG, repaired by its CE crew that is not Stunned or Recalled, on a dr of 1; a 6
             // disables it.
             if (repair.Unit == repair.Equipment && Active(state, repair.Unit) is UnitInstance vehicle && vocabulary.IsA(vehicle.Kind, "asl:vehicle"))

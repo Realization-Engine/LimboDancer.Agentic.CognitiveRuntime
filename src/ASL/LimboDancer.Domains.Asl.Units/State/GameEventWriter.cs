@@ -453,6 +453,14 @@ public static class GameEventWriter
                 {
                     writer.WriteString("weapon", repairedWeapon);
                 }
+                if (repair.VehicleRepairVersion is { } repairVersion)
+                {
+                    writer.WriteNumber("vehicleRepairVersion", repairVersion);
+                }
+                if (repair.Hero is { } repairHero)
+                {
+                    writer.WriteString("hero", repairHero);
+                }
                 break;
             case VehicleCloseCombatResolved vehicleCombat:
                 writer.WriteString("location", vehicleCombat.Location.ToString());

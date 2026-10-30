@@ -325,7 +325,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         // Ruling R26.2: a Passenger acts only with its vehicle until it unloads.
         if (ScenarioA1SequenceCalculator.PassengerBar(action.Id.Value, existing.Count > 0,
-            () => Replay(existing).Current is { } boardState ? AboardBar(boardState, arguments) : null) is { } aboard)
+            () => Replay(existing).Current is { } boardState
+                ? action.Id == GameActions.Repair.Id ? RepairParticipantBar(boardState, arguments) : AboardBar(boardState, arguments)
+                : null) is { } aboard)
         {
             return Refused(scope, label, expected, aboard);
         }

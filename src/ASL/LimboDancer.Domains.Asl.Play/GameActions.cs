@@ -307,7 +307,7 @@ public static class GameActions
             package = ScenarioA1RallyPackage.Identity.ToString()
         }));
 
-    public static readonly ActionDescriptor Repair = Descriptor("asl.game.repair", "Repair a SW",
+    public static readonly ActionDescriptor Repair = Descriptor("asl.game.repair", "Repair a weapon",
         "Attempt in the RPh to repair a malfunctioned MG a Good Order unit possesses: a dr at most its Repair Number repairs it, a 6 eliminates it (A9.72).",
         PlayPermission, "asl.game.reviewed-fire-v1", """
         {
@@ -316,7 +316,8 @@ public static class GameActions
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
-            "unitId": { "type": "string" }, "equipmentId": { "type": "string" }
+            "unitId": { "type": "string" }, "equipmentId": { "type": "string" },
+            "weapon": { "type": "string" }, "hero": { "type": ["string", "null"] }
           }
         }
         """, JsonSerializer.SerializeToElement(new

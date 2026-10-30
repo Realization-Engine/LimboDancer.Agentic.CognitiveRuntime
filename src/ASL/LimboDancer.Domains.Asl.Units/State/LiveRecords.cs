@@ -47,6 +47,20 @@ public sealed record ResidualFire(BoardLocation Location, int Fp, string Fire);
 /// </summary>
 public sealed record RepairAttempted(string Unit, string Equipment, string Roll, int RepairNumber, string Result) : EventPayload
 {
+    /// <summary>Current D3.7 weapon and participant validation. Null preserves the recorded legacy repair reading.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? VehicleRepairVersion
+    {
+        get; init;
+    }
+
+    /// <summary>The actual Hero Rider taking the AAMG repair; null selects the inherent crew.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? Hero
+    {
+        get; init;
+    }
+
     public const string Repaired = "repaired";
     public const string NoChange = "no-change";
     public const string Eliminated = "eliminated";
