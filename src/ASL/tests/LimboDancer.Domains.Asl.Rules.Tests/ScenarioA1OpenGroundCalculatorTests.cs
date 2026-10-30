@@ -18,6 +18,18 @@ public sealed class ScenarioA1OpenGroundCalculatorTests
         Assert.False(ScenarioA1Dash.QualifiesAgainstViews([(true, false), (false, true)]));
     }
 
+    [Fact]
+    public void EvadeDestinationsRequireSeasonOnlyWhenItChangesTheChoice()
+    {
+        var uncertain = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, null), ("woods", true, true, false, false)]);
+        Assert.NotNull(uncertain.Refusal);
+        var alone = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, null)]);
+        Assert.Null(alone.Refusal);
+        Assert.Equal(["grain"], alone.Destinations);
+        var october = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, true), ("woods", true, true, false, false)]);
+        Assert.Equal(["woods"], october.Destinations);
+    }
+
     private static readonly string?[] TerrainKeys = ["open-ground", "grain", "brush", "woods", "orchard", "marsh", "wooden-rubble", "stone-rubble", "unknown", null];
 
     private static readonly int?[] MonthsAndNone = [null, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];

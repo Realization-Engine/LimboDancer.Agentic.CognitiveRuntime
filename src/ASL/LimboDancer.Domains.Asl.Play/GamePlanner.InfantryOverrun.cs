@@ -138,20 +138,25 @@ public sealed partial class GamePlanner
         var here = state.Location(unit.Id)?.Location;
         var lastStep = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is MovementStepped);
         var firedSince = lastStep.item is not null && existing.Skip(lastStep.index + 1).Any(item => item.Payload is FireResolved or OrdnanceFired);
+        var destinations = here is null ? default : EvadeDestinations(state, here, unit.Side);
+        if (destinations.Refusal is { } seasonalBar)
+        {
+            return seasonalBar;
+        }
         return ScenarioA1InfantryOverrun.EvadeBar(unit.Id, movement?.InfantryOverrun is { } at && at == here && unit.Side != state.PhasingSide, movement?.WindowOpen == true, firedSince,
             vocabulary.IsA(unit.Kind, "asl:smc"), GameState.GoodOrder(unit, vocabulary) != ConditionState.False, Is(unit, Conditions.Pinned), Is(unit, Conditions.Melee), Is(unit, "asl:ti"),
-            here is null ? 0 : EvadeDestinations(state, here, unit.Side).Count);
+            destinations.Destinations?.Count ?? 0);
     }
 
     /// <summary>
     /// The adjacent Locations a SMC may be sent to (A4.151): ground-level hexes it could enter by an ordinary step, in the playable area, that hold
     /// no unit of the other side; Rules leaves Open Ground out when anything else is open.
     /// </summary>
-    private IReadOnlyList<string> EvadeDestinations(GameState state, BoardLocation from, string side) =>
-        ScenarioA1InfantryOverrun.EvadeDestinations([.. Neighbors(state, from)
+    private (IReadOnlyList<string> Destinations, string? Refusal) EvadeDestinations(GameState state, BoardLocation from, string side) =>
+        ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([.. Neighbors(state, from)
             .Select(near => (near.ToString(), InfantryStep(state, from, near).Entry is not null, PlayableBar(state, near) is null,
                 state.At(near).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != side && !Is(other, Conditions.Captured)),
-                ReadLocation(state, near) is { } read && TerrainKey(read) == "open-ground"))]);
+                ScenarioA1OpenGroundCalculator.OpenGroundTerrain(ReadLocation(state, near) is { } read ? TerrainKey(read) : null, state.ScenarioMonth)))]);
 
     /// <summary>The DEFENDER's declaration that its SMC moves away from an Infantry OVR (A4.151): the ATTACKER is then asked where.</summary>
     private GamePlan PlanOverrunEvade(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
@@ -171,7 +176,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, bar);
         }
 
-        var options = EvadeDestinations(state, state.Location(unit.Id)!.Location, unit.Side);
+        var options = EvadeDestinations(state, state.Location(unit.Id)!.Location, unit.Side).Destinations;
         var key = $"{ChoicePending.OverrunEvade}:{unit.Id}:{expected.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
             [Event(scope, attemptId, 1, expected, "choice-pending", new ChoicePending(key, ChoicePending.OverrunEvade, state.PhasingSide!, options,
