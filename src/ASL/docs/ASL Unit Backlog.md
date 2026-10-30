@@ -1596,7 +1596,7 @@ Written on 2026-10-29. These must be resolved before W-C9 is marked wired.
 |---|---|---|---|---|
 | Carry and validate two-SMC mortar participation through the Rules resolution path | W-C9 design | C9.2, A7.5, A9.12 | Scoped Rules adapter/participation contract and its ledger hold | The recorded shot has one primary crew; Area derives lone status from that crew. Caller code must not fabricate an MMC or override ROF. |
 | Complete larger-mortar heroic authorization and preserve old adapter answers while admitting the 81mm Gun | W-C9 design | A15.23, A21.13, C9 | Scoped Rules follow-up and versioned adapter contract before enabling new caller cases | C9's verdict explicitly leaves the hero's phase and once-per-Game-Turn limits to A15.23. W-C9 must also enforce captured-use, DRM and CA limits through Rules. |
-| Separate Rules review from wiring completion in claim_check.py | Codex PR 62/63 review | Claim-board workflow | Correct the rule-claim state check through a code PR and green CI | The distinction and a regression self-test are implemented on wire-fire-1, pending final CI and merge. Both Rules reviews remain recorded in the inventory notes until the state correction can be published. |
+| Separate Rules review from wiring completion in claim_check.py | Codex PR 62/63 review | Claim-board workflow | Correct the rule-claim state check through a code PR and green CI | Closed by PR 65, merged at 25f8be15 after green CI. Rules review and wiring completion are checked independently; completed wiring branches retain their recorded file scope. |
 
 ## 84. Workbench mortar identity after W-C9.3 wiring
 
@@ -1605,3 +1605,14 @@ Written on 2026-10-29. The direct Play command selects a gun, but the replacemen
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | Identify one mortar explicitly when a Workbench holder has several active mortars | W-C9.3 caller wiring | C9.3 replacement contract | A Rules contract fact for the selected gun and an authorized equipment picker | The gathered contract facts remain unknown when the holder is ambiguous. No mortar is selected arbitrarily and no private facts are guessed. The direct Play panel already selects the specific mortar. |
+
+## 85. Dependencies and corrections from Wiring Prompt 002
+
+Written on 2026-10-29. These are required before the corresponding wiring is called complete. The inventory alone assigns claims.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Versioned vehicle weapon resolution and repair adapters | W-D3.7 design | D3.7, D3.71, A.11, A19.131, A9.71 | Scoped Rules adapter claim; preserve old entry points and frozen fact records | New Low Ammo/Disabled results must pass through Rules-owned ordnance, area, armor, canister, MG and OVR resolution. SA repair and actual Hero Rider qualification need Rules support before enabling those cases. No equivalent rule is added to Play. |
+| E10 composition, complete shared-supply lifecycle and explosion resolution | W-E10 design | E10, D3.71, D.7, Vehicle Note 93 | D3.7 wiring first; scoped Rules support where existing adapters cannot express the facts | Keep two recipients, full-turn interruptions, one Ammunition DR per completion, movement bars and structured Goliath/DC effects explicit. A prose effect string is not a resolution API. |
+| Correct Rules contract citations and inspection summaries | Codex read-only reviews of D3.7 and E10 | A.11 physical PDF p. 43; G10.41 p. 292; A12.16 p. 79; E10.3 p. 244 | Scoped Rules maintenance for source comments/contract metadata | Design review appendices record the corrections. Unconcealed enemies outside the viewer's inspection rights remain unknown; no live leak was found in these currently hand-entered contracts. E10.3's table explicitly prints <=9. |
+| Integrate authoritative smoke source metadata with vertical intersection and B25.2 | W-A24.5 design | A24.2, A24.5, A24.8, B25.2 | Existing geometry and relevant height Rules; Claude's active B25.2 claim and later caller scope | Combine source values at a full Location before the common cap. Keep legacy Blaze readings until its calculator is wired. New SMOKE placement procedures remain their own claims. |
