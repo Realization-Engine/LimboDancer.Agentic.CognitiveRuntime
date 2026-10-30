@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 1,
+  "tenant": "5a7d1f00-0000-4000-8000-0000000057d0",
+  "game": "wire-dc-other-mover",
+  "label": "W-A23.3 DC settlement: other-mover",
+  "synthetic": false,
+  "events": [
+    {
+      "eventId": "wire-dc-other-mover-fixture-1-1",
+      "revision": 1,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "game-started",
+      "visibility": "all",
+      "payload": {
+        "sides": [
+          {
+            "id": "german",
+            "nationality": "german",
+            "elr": 3,
+            "friendlyEdge": "left"
+          },
+          {
+            "id": "russian",
+            "nationality": "russian",
+            "elr": 2,
+            "friendlyEdge": "right"
+          }
+        ],
+        "map": {
+          "reference": "bd03",
+          "version": "ba2920ce55cd954a62394dc81f35833e24054093",
+          "boards": [
+            {
+              "board": "bd03",
+              "version": "ba2920ce55cd954a62394dc81f35833e24054093"
+            }
+          ]
+        },
+        "catalog": "asl-scenario-a1@1.18.0",
+        "turn": 1,
+        "phase": "rph",
+        "phasingSide": "german",
+        "synthetic": false,
+        "scenarioMonth": 7,
+        "scenarioYear": 1942
+      }
+    },
+    {
+      "eventId": "wire-dc-other-mover-fixture-2-1",
+      "revision": 2,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "g1",
+          "kind": "asl:squad",
+          "definition": "attacker-squad",
+          "side": "german",
+          "position": {
+            "at": "bd03:D10:0"
+          },
+          "conditions": {
+            "asl:broken": false,
+            "asl:berserk": false,
+            "asl:captured": false,
+            "asl:melee": false,
+            "asl:ti": false,
+            "asl:disrupted": false,
+            "asl:concealed": false,
+            "asl:hidden": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "wire-dc-other-mover-fixture-3-1",
+      "revision": 3,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "dc",
+          "kind": "asl:dc",
+          "definition": "attacker-dc",
+          "side": "german",
+          "holding": {
+            "holder": "g1",
+            "role": "possessed"
+          },
+          "conditions": {
+            "asl:malfunctioned": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "wire-dc-other-mover-fixture-4-1",
+      "revision": 4,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "g2",
+          "kind": "asl:squad",
+          "definition": "attacker-squad",
+          "side": "german",
+          "position": {
+            "at": "bd03:E10:0"
+          },
+          "conditions": {
+            "asl:broken": false,
+            "asl:berserk": false,
+            "asl:captured": false,
+            "asl:melee": false,
+            "asl:ti": false,
+            "asl:disrupted": false,
+            "asl:concealed": false,
+            "asl:hidden": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "wire-dc-other-mover-fixture-5-1",
+      "revision": 5,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "r1",
+          "kind": "asl:squad",
+          "definition": "defender-squad",
+          "side": "russian",
+          "position": {
+            "at": "bd03:G10:0"
+          },
+          "conditions": {
+            "asl:broken": false,
+            "asl:berserk": false,
+            "asl:captured": false,
+            "asl:melee": false,
+            "asl:ti": false,
+            "asl:disrupted": false,
+            "asl:concealed": false,
+            "asl:hidden": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "wire-dc-other-mover-fixture-6-1",
+      "revision": 6,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "phase-changed",
+      "visibility": "all",
+      "payload": {
+        "turn": 1,
+        "phase": "rph",
+        "phasingSide": "german"
+      }
+    },
+    {
+      "eventId": "wire-dc-other-mover-fixture-7-1",
+      "revision": 7,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "phase-changed",
+      "visibility": "all",
+      "payload": {
+        "turn": 1,
+        "phase": "pfph",
+        "phasingSide": "german"
+      }
+    },
+    {
+      "eventId": "wire-dc-other-mover-fixture-8-1",
+      "revision": 8,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "phase-changed",
+      "visibility": "all",
+      "payload": {
+        "turn": 1,
+        "phase": "mph",
+        "phasingSide": "german"
+      }
+    },
+    {
+      "eventId": "place-dc-2cfd5d6070c2-1",
+      "revision": 9,
+      "time": "2026-10-30T14:18:39.3402039Z",
+      "source": "map-studio",
+      "type": "movement-step",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-fire, Version = sha256:cddf1731745f7ac956f25b467f7e9e42095a244753548daa4355c991fb3a0c53 }",
+      "visibility": "all",
+      "payload": {
+        "movers": [
+          "g1"
+        ],
+        "to": "bd03:D10:0",
+        "halfMf": 2,
+        "step": 1,
+        "dcBy": "g1",
+        "dcSettlementVersion": 1,
+        "dcOwnerSide": "german",
+        "dc": "dc",
+        "dcAt": "bd03:D9:0"
+      }
+    },
+    {
+      "eventId": "pass-94f543c2b967-1",
+      "revision": 10,
+      "time": "2026-10-30T14:18:44.3733754Z",
+      "source": "map-studio",
+      "type": "movement-window-closed",
+      "visibility": "all",
+      "payload": {
+        "step": 1
+      }
+    },
+    {
+      "eventId": "end-f4a6447fb975-1",
+      "revision": 11,
+      "time": "2026-10-30T14:20:10.2493051Z",
+      "source": "map-studio",
+      "type": "movement-ended",
+      "visibility": "all",
+      "payload": {
+        "movers": [
+          "g1"
+        ]
+      }
+    },
+    {
+      "eventId": "move-6ba5af74b75f-1",
+      "revision": 12,
+      "time": "2026-10-30T14:20:24.4185889Z",
+      "source": "map-studio",
+      "type": "movement-step",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-fire, Version = sha256:cddf1731745f7ac956f25b467f7e9e42095a244753548daa4355c991fb3a0c53 }",
+      "visibility": "all",
+      "payload": {
+        "movers": [
+          "g2"
+        ],
+        "to": "bd03:F10:0",
+        "halfMf": 2,
+        "step": 1
+      }
+    }
+  ]
+}
