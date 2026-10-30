@@ -267,12 +267,15 @@ public static class ScenarioA1RoutCalculator
     /// TCA, never from a RST or 1MT AFV whose crew is CE (D1.321, D1.322); the MA Gun through the TCA when turreted, else the VCA, only with a CE crew,
     /// since a BU CT AFV's MA takes Case I's +1 (C5.9: "prevents Interdiction") and a RST or 1MT AFV fires its MA only BU; the MA MG through the VCA. An
     /// open-topped AFV uses no weapon but its BMG unless CE (D5.3), and an AFV's AAMG, which fires in any direction, needs a CE crew (D1.83). An Armor
-    /// Leader's DRM is not read: negating a positive DRM does not let his vehicle Interdict (D3.44).
+    /// Leader's DRM is not read: negating a positive DRM does not let his vehicle Interdict (D3.44). Under a "+1" counter after a Stun
+    /// (<see cref="RoutVehicleFacts.StunRecovery"/>, the D5.34 claim, ruling RD5.14) its armament takes <see cref="ScenarioA1StunCalculator.Drm"/>, so none;
+    /// null reads as before the claim, when only the Stunned side barred it.
     /// </summary>
     public static (int Range, IReadOnlyList<RoutArcWeapon> ArcWeapons) VehicleInterdiction(RoutVehicleFacts vehicle)
     {
         ArgumentNullException.ThrowIfNull(vehicle);
-        if (vehicle.Abandoned || vehicle.Shocked || vehicle.Motion || vehicle.Stunned)
+        if (vehicle.Abandoned || vehicle.Shocked || vehicle.Motion || vehicle.Stunned
+            || ScenarioA1StunCalculator.Drm(StunDr.ToHit, vehicle.StunRecovery == true) > 0)
         {
             return (0, []);
         }

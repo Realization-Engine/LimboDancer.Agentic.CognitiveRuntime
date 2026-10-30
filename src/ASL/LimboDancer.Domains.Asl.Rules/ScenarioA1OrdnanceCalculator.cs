@@ -873,6 +873,11 @@ public static class ScenarioA1OrdnanceCalculator
 
     private static OrdnanceResolution Run(OrdnanceShot shot, ScenarioA1OrdnanceReference reference) => Run(shot, reference, null);
 
+    /// <summary>
+    /// The Infantry Target Type shot. With <see cref="OrdnanceShot.StunEncircledReading"/> null it keeps the answer it had before the D5.34 claim: no Stun
+    /// +1 on the To Hit DR of an AFV under a "+1" counter, which D5.34 (p. 203) gives to "any TH ... DR it makes"; set, it adds
+    /// <see cref="ScenarioA1StunCalculator.Drm"/> ("stun"), as the Vehicle Target Type does (the claim's ruling RD5.16, W-D5.34).
+    /// </summary>
     private static OrdnanceResolution Run(OrdnanceShot shot, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts? breakdownFacts)
     {
         var gun = reference.Guns[shot.Gun!.DefinitionId!];
@@ -951,6 +956,13 @@ public static class ScenarioA1OrdnanceCalculator
         if (shot.Vehicle?.ButtonedUp == true)
         {
             drm.Add(new FireModifier("case-i", 1, "C5.9"));
+        }
+
+        // D5.34 (p. 203; the D5.34 claim, ruling RD5.16): an AFV under a "+1" counter after a Stun adds one to "any TH ... DR it makes", the Infantry
+        // Target Type's too, under the shot's StunEncircledReading; before it, only the Vehicle Target Type took it.
+        if (shot.StunEncircledReading == true && ScenarioA1StunCalculator.Drm(StunDr.ToHit, shot.Vehicle?.StunRecovery == true) is > 0 and var stun)
+        {
+            drm.Add(new FireModifier("stun", stun, "D5.34"));
         }
 
         // D3.44, D3.45 (p. 200; pass 55, rulings R55.16, R55.18): the vehicle's Armor Leader modifies its MA's To Hit DR, BU or not; an

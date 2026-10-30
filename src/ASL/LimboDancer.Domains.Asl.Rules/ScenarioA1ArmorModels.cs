@@ -171,6 +171,17 @@ public sealed record OrdnanceVehicleTarget(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the target is Stunned (the front of its Stun counter) when the shot is fired (D5.34, D5.342, pp. 203 and 204; the D5.34 claim, ruling RD5.16):
+    /// a Carrier's crew so Stunned is Recalled by a failed MC of the hit's Collateral Attack, read only under <see cref="OrdnanceShot.StunEncircledReading"/>.
+    /// A state fact; null is false, as in every record made before the claim.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Stunned
+    {
+        get; init;
+    }
 }
 
 /// <summary>

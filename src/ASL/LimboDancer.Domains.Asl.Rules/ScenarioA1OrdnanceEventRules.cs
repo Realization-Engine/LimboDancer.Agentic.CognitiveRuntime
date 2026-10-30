@@ -15,6 +15,20 @@ public enum FirerCasualty
 /// </summary>
 public static class ScenarioA1OrdnanceEventRules
 {
+    // D5.341, D5.342 (the D5.34 claim): a crew's Recall, as the Fire path's vehicle results set it.
+    private static readonly FireVehicleEffect RecallEffect = new(string.Empty, string.Empty, FireVehicleEffect.None, null, [], 0, null, null, FireVehicleEffect.Recalled);
+
+    private static UnitCondition Unit(VehicleCondition condition) => condition switch
+    {
+        VehicleCondition.Immobilized => UnitCondition.Immobilized,
+        VehicleCondition.Motion => UnitCondition.Motion,
+        VehicleCondition.Stunned => UnitCondition.Stunned,
+        VehicleCondition.StunRecovery => UnitCondition.StunRecovery,
+        VehicleCondition.Recalled => UnitCondition.Recalled,
+        VehicleCondition.ButtonedUp => UnitCondition.ButtonedUp,
+        _ => UnitCondition.Pinned,
+    };
+
     /// <summary>C13.31 (ruling R9.7): the marker a PF's firer carries with a broken result.</summary>
     public static UnitCondition FirerPhaseMarker(string? phase) => phase switch
     {
@@ -58,9 +72,19 @@ public static class ScenarioA1OrdnanceEventRules
 
     /// <summary>
     /// The conditions of a result in the To Kill vocabulary (pass 60): a To Kill DR's, or a mortar's IFT attack on an AFV (C1.55), whose
-    /// <c>shock</c> always Shocks it.
+    /// <c>shock</c> always Shocks it. A MG's Stun is a Stun whatever the AFV's state, where D5.342 (p. 204) Recalls an AFV already Stunned or under a "+1"
+    /// counter: the overload with the AFV's <c>stunned</c> and <c>stunRecovery</c> replaces this one (the D5.34 claim, ruling RD5.16), which forwards to it
+    /// with both false and keeps its answer.
     /// </summary>
-    public static IReadOnlyList<(UnitCondition Condition, bool Value)> KillConditions(string result, bool shocked, bool concealedOrHidden)
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> KillConditions(string result, bool shocked, bool concealedOrHidden) =>
+        KillConditions(result, shocked, concealedOrHidden, false, false);
+
+    /// <summary>
+    /// <see cref="KillConditions(string, bool, bool)"/> with the AFV's Stun counter (the D5.34 claim, ruling RD5.16): a MG's Stun of an AFV already Stunned
+    /// or under a "+1" counter is a second Stun (<see cref="ScenarioA1StunCalculator.SecondStun"/>), which D5.342 (p. 204) makes a Recall, with the
+    /// conditions <see cref="ScenarioA1ResultTables.VehicleConditions"/> gives a Recall.
+    /// </summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> KillConditions(string result, bool shocked, bool concealedOrHidden, bool stunned, bool stunRecovery)
     {
         var changed = new List<(UnitCondition, bool)>();
         if (concealedOrHidden)
@@ -75,8 +99,16 @@ public static class ScenarioA1OrdnanceEventRules
             changed.Add((UnitCondition.Motion, false));
         }
 
+        // D5.342 (p. 204; the D5.34 claim): a MG's Stun of an AFV already Stunned or under a "+1" counter is a Recall.
+        if (result == OrdnanceKill.Stun && ScenarioA1StunCalculator.SecondStun(stunned, stunRecovery))
+        {
+            foreach (var (condition, value) in ScenarioA1ResultTables.VehicleConditions(RecallEffect))
+            {
+                changed.Add((Unit(condition), value));
+            }
+        }
         // D5.34 (p. 203; pass 60): a MG's Stun; the AFV becomes BU and Stops.
-        if (result == OrdnanceKill.Stun)
+        else if (result == OrdnanceKill.Stun)
         {
             changed.Add((UnitCondition.Stunned, true));
             changed.Add((UnitCondition.ButtonedUp, true));

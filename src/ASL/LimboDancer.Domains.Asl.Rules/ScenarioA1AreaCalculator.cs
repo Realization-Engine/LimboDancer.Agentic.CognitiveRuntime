@@ -20,6 +20,11 @@ internal static class ScenarioA1AreaCalculator
 
     public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) => Run(shot, gun, reference, null);
 
+    /// <summary>
+    /// The Area Target Type shot. With <see cref="OrdnanceShot.StunEncircledReading"/> null it keeps the answer it had before the D5.34 claim: no Stun +1 on
+    /// the To Hit DR of an AFV under a "+1" counter, which D5.34 (p. 203) gives to "any TH ... DR it makes"; set, it adds
+    /// <see cref="ScenarioA1StunCalculator.Drm"/> ("stun"; the claim's ruling RD5.16, W-D5.34). No vehicle-mounted mortar is in the catalog today.
+    /// </summary>
     public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts? breakdownFacts)
     {
         var rolls = shot.Rolls!;
@@ -56,6 +61,13 @@ internal static class ScenarioA1AreaCalculator
         if (crew.Cx == true)
         {
             drm.Add(new FireModifier("cx", 1, "A4.51"));
+        }
+
+        // D5.34 (p. 203; the D5.34 claim, ruling RD5.16): an AFV under a "+1" counter after a Stun adds one to its To Hit DR, under the shot's
+        // StunEncircledReading.
+        if (shot.StunEncircledReading == true && ScenarioA1StunCalculator.Drm(StunDr.ToHit, shot.Vehicle?.StunRecovery == true) is > 0 and var stun)
+        {
+            drm.Add(new FireModifier("stun", stun, "D5.34"));
         }
 
         // C9.31 (ruling R9.4): Spotted fire.

@@ -151,7 +151,8 @@ public static class ScenarioA1SequenceProjection
             return new StunEndVerdict(stunRecovery ? [] : [(UnitCondition.StunRecovery, true)]);
         }
 
-        return new StunEndVerdict(stunned ? [(UnitCondition.Stunned, false), (UnitCondition.StunRecovery, true)] : []);
+        // D5.34 (the D5.34 claim): the Stun's flip.
+        return new StunEndVerdict(ScenarioA1StunCalculator.PlayerTurnEnd(active, stunned));
     }
 
     /// <summary>A3.3 (table player, pass 12): as the PFPh ends within a Player Turn, a unit that fired only a SW has Prep Fired and does not move.</summary>
