@@ -14,7 +14,16 @@ public static class ScenarioA1OrdnanceCalculator
 
     private static readonly string[] Personnel = ["asl:squad", "asl:half-squad", "asl:crew", "asl:vehicle-crew", "asl:leader", "asl:hero"];
 
-    public static OrdnanceResolution Resolve(OrdnanceShot shot, ScenarioA1OrdnanceReference reference)
+    public static OrdnanceResolution Resolve(OrdnanceShot shot, ScenarioA1OrdnanceReference reference) => ResolveCore(shot, reference, null);
+
+    /// <summary>D3.7 resolution using supplemental vehicle-weapon facts, without changing the recorded shot's shape or its legacy reading.</summary>
+    public static OrdnanceResolution Resolve(OrdnanceShot shot, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts breakdownFacts)
+    {
+        ArgumentNullException.ThrowIfNull(breakdownFacts);
+        return ResolveCore(shot, reference, breakdownFacts);
+    }
+
+    private static OrdnanceResolution ResolveCore(OrdnanceShot shot, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts? breakdownFacts)
     {
         ArgumentNullException.ThrowIfNull(shot);
         ArgumentNullException.ThrowIfNull(reference);
@@ -34,6 +43,28 @@ public static class ScenarioA1OrdnanceCalculator
         if (undecided.Count != 0)
         {
             return Refused(OrdnanceResolution.Indeterminate, undecided);
+        }
+
+        if (breakdownFacts is not null)
+        {
+            if (ScenarioA1VehicleBreakdownResolutionCalculator.FactsRefusal(breakdownFacts, VehicleBreakdownUse.OrdnanceToHit) is { } invalidFacts)
+            {
+                return Refused(OrdnanceResolution.Abstained, [Prefix + invalidFacts]);
+            }
+
+            if (shot.Vehicle is null || breakdownFacts.Weapon != VehicleBreakdownWeapon.MainArmament)
+            {
+                return Refused(OrdnanceResolution.Abstained, [Prefix + "vehicle-breakdown-weapon"]);
+            }
+
+            if (breakdownFacts.IntensiveFire != (shot.IntensiveFire == true)
+                || breakdownFacts.WinterReduction != (shot.BreakdownReduction ?? 0)
+                || breakdownFacts.AmmunitionShortage != (shot.AmmunitionShortage == true)
+                // Mounted Temporary crews encode their captured/non-qualified multiplier here, not in the equipment-only NonQualified fact.
+                || (breakdownFacts.Captured ? 1 : 0) + (breakdownFacts.NonQualified ? 1 : 0) != (shot.CapturedPenalty ?? 0))
+            {
+                return Refused(OrdnanceResolution.Abstained, [Prefix + "vehicle-breakdown-facts-conflict"]);
+            }
         }
 
         // A9.61, D3.54 (pass 60): a MG fired as ordnance is read beside the Guns.
@@ -56,7 +87,8 @@ public static class ScenarioA1OrdnanceCalculator
             }
 
             // C13.31, C8.31 (pass 60, ruling R60.5): at Personnel a PF fires on the Infantry Target Type at its HE Equivalency.
-            var fired = shot.VehicleTarget is not null ? ScenarioA1ArmorCalculator.Run(shot, gun, reference) : Run(shot, reference);
+            var fired = shot.VehicleTarget is not null ? ScenarioA1ArmorCalculator.Run(shot, gun, reference, breakdownFacts)
+                : breakdownFacts is null ? Run(shot, reference) : Run(shot, reference, breakdownFacts);
             return fired.Disposition == OrdnanceResolution.Resolved ? fired with
             {
                 PanzerfaustCheck = check
@@ -66,11 +98,12 @@ public static class ScenarioA1OrdnanceCalculator
         // C8.4 (pass 55, ruling R55.9): Canister makes no To Hit DR; its IFT DR decides the shot.
         if (IsCanister(shot))
         {
-            return ScenarioA1CanisterCalculator.Run(shot, gun, reference);
+            return ScenarioA1CanisterCalculator.Run(shot, gun, reference, breakdownFacts);
         }
 
-        var resolution = shot.TargetType == OrdnanceTargetTypes.Area ? ScenarioA1AreaCalculator.Run(shot, gun, reference)
-            : shot.VehicleTarget is not null ? ScenarioA1ArmorCalculator.Run(shot, gun, reference) : Run(shot, reference);
+        var resolution = shot.TargetType == OrdnanceTargetTypes.Area ? ScenarioA1AreaCalculator.Run(shot, gun, reference, breakdownFacts)
+            : shot.VehicleTarget is not null ? ScenarioA1ArmorCalculator.Run(shot, gun, reference, breakdownFacts)
+            : breakdownFacts is null ? Run(shot, reference) : Run(shot, reference, breakdownFacts);
 
         // C8.9 (the UI review of pass 55): a resolution that says how its ammunition was used says under which Depletion Number, so that its
         // record is worded from itself and not from the catalog of a later day.
@@ -177,14 +210,23 @@ public static class ScenarioA1OrdnanceCalculator
     /// shot must stop only at its missing To Hit DR, and the Fire package must decide both a normal hit and a Critical Hit on
     /// every unit in the target Location.
     /// </summary>
-    public static IReadOnlyList<string> Precheck(OrdnanceShot shot, ScenarioA1OrdnanceReference reference)
+    public static IReadOnlyList<string> Precheck(OrdnanceShot shot, ScenarioA1OrdnanceReference reference) => PrecheckCore(shot, reference, null);
+
+    /// <summary>Prechecks the same supplemental D3.7 facts the opted-in resolution will use.</summary>
+    public static IReadOnlyList<string> Precheck(OrdnanceShot shot, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts breakdownFacts)
+    {
+        ArgumentNullException.ThrowIfNull(breakdownFacts);
+        return PrecheckCore(shot, reference, breakdownFacts);
+    }
+
+    private static IReadOnlyList<string> PrecheckCore(OrdnanceShot shot, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts? breakdownFacts)
     {
         ArgumentNullException.ThrowIfNull(shot);
         ArgumentNullException.ThrowIfNull(reference);
-        var first = Resolve(shot with
+        var first = ResolveCore(shot with
         {
             Rolls = new OrdnanceRolls(null, null, null, null, null)
-        }, reference);
+        }, reference, breakdownFacts);
         if (first.Disposition != OrdnanceResolution.Indeterminate
             || first.Reasons is not ([Prefix + "roll-missing:toHit"] or [Prefix + "roll-missing:panzerfaustCheck"] or [Prefix + "roll-missing:canister"]))
         {
@@ -818,7 +860,9 @@ public static class ScenarioA1OrdnanceCalculator
         };
     }
 
-    private static OrdnanceResolution Run(OrdnanceShot shot, ScenarioA1OrdnanceReference reference)
+    private static OrdnanceResolution Run(OrdnanceShot shot, ScenarioA1OrdnanceReference reference) => Run(shot, reference, null);
+
+    private static OrdnanceResolution Run(OrdnanceShot shot, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts? breakdownFacts)
     {
         var gun = reference.Guns[shot.Gun!.DefinitionId!];
         var rolls = shot.Rolls!;
@@ -1030,6 +1074,10 @@ public static class ScenarioA1OrdnanceCalculator
 
         var total = (int)drm.Sum(item => item.Value);
         var original = dice[0] + dice[1];
+        var breakdownOutcome = breakdownFacts is null ? null
+            : ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(breakdownFacts, VehicleBreakdownUse.OrdnanceToHit, original);
+        var breakdown = breakdownOutcome?.Numbers.BNumber ?? Breakdown(shot, gun, reference);
+        var failed = breakdownOutcome?.Failed ?? original >= breakdown;
         // C5.35 (p. 172; pass 50): a Motion firer with no Gyrostabilizer doubles the lower dr of its TH DR; the lowest Final DR is then one more.
         var motion = MotionFirer(shot) ? Math.Min(dice[0], dice[1]) : 0;
         if (motion > 0)
@@ -1120,7 +1168,7 @@ public static class ScenarioA1OrdnanceCalculator
         var toHit = new OrdnanceToHit(color, basic, modifications, modified, [.. dice], original, drm, final, improbable, subsequent, isHit, critical);
 
         // C2.28: an Original To Hit DR at or above the B# malfunctions the Gun; C5.62: two lower while Intensive Firing.
-        var malfunctioned = original >= Breakdown(shot, gun, reference);
+        var malfunctioned = breakdownOutcome is null ? failed : breakdownOutcome.Outcome == VehicleBreakdownOutcome.Malfunction;
 
         // C13.36 (ruling R9.8; pass 60): a PF never malfunctions, but an Original 12 misses and gives its firer Casualty Reduction; an 11 or 12 for
         // Inexperienced Infantry (A19.32).
@@ -1145,7 +1193,8 @@ public static class ScenarioA1OrdnanceCalculator
             use = ScenarioA1ArmorCalculator.Use(original, depletion);
             if (use == "none")
             {
-                if (!malfunctioned)
+                // C8.9 (PDF p. 179): Low Ammo also counts as firing when the attempted special ammunition was absent.
+                if (!(breakdownOutcome?.CountsAsFiredOnDepletionFailure ?? failed))
                 {
                     return ScenarioA1ArmorCalculator.Unused(shot, gun, toHit);
                 }
@@ -1174,7 +1223,7 @@ public static class ScenarioA1OrdnanceCalculator
             rof = 0;
         }
 
-        var (kept, counter) = Counter(shot, malfunctioned, rof, dice[0]);
+        var (kept, counter) = Counter(shot, failed, rof, dice[0]);
 
         FireResolution? normal = null, criticalHit = null;
         string? criticalTarget = null;
@@ -1253,10 +1302,13 @@ public static class ScenarioA1OrdnanceCalculator
         // concealed target is acquired only when the shot costs it its concealment.
         var effects = (normal?.Effects ?? []).Concat(criticalHit?.Effects ?? []).ToArray();
         // C6.5 (the chart's G): a non-mortar SW acquires nothing.
-        var acquires = !malfunctioned && !latw && (!concealedTarget || effects.Any(item => item.ConcealmentLost));
+        var acquires = !failed && !latw && (!concealedTarget || effects.Any(item => item.ConcealmentLost));
         var acquisition = !acquires ? 0 : concealedTarget ? -1 : Math.Max((AcquisitionDenied(shot) ? 0 : shot.Acquisition!.Value) - 1, -2);
-        var gunEffect = new OrdnanceGunEffect(Breakdown(shot, gun, reference), malfunctioned, kept ? Math.Max(rof, 0) : shot.IntensiveFire == true ? 0 : Math.Max(rof, 0), kept, counter,
-            acquisition, acquires ? shot.TargetLocationId : null);
+        var gunEffect = new OrdnanceGunEffect(breakdown, malfunctioned, kept ? Math.Max(rof, 0) : shot.IntensiveFire == true ? 0 : Math.Max(rof, 0), kept, counter,
+            acquisition, acquires ? shot.TargetLocationId : null)
+        {
+            VehicleBreakdown = breakdownOutcome
+        };
 
         // C11.4, C11.6 (ruling R8.3): a Critical Hit destroys the Gun; a KIA before the gunshield destroys it, a K malfunctions it. C11.52, C13.23,
         // the table's note 5 (p. 182; pass 60, ruling R60.6): "The Gun and any manning Infantry are destroyed by a CH/any K/KIA result" of AP,
