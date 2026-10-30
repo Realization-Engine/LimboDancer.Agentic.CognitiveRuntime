@@ -4405,7 +4405,7 @@ public static class ScenarioA1FireCalculator
 
             Cause(IsSustained(attack, weapon, reference) ? ScenarioA1FinalFireCalculator.SustainedBreakdownReduction : 0, "in Sustained Fire, A9.3");
             Cause(Inexperience(weapon), "in Inexperienced hands, A19.32");
-            Cause(weapon.Captured == true ? 2 : 0, "captured, A21.11");
+            Cause(ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(weapon.Captured == true ? 1 : 0), "captured, A21.11");
             Cause(attack.BreakdownReduction ?? 0, "in Extreme Winter, E3.741");
             Cause(Shortage(weapon), "for Ammunition Shortage, A19.131");
             if (causes.Count == 0)
@@ -4437,7 +4437,7 @@ public static class ScenarioA1FireCalculator
                         ? reference.Definitions[user.DefinitionId!] : null, weapon.Captured == true,
                         (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true)?.Inexperienced == true)
                     : (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? ScenarioA1FinalFireCalculator.SustainedBreakdownReduction : 0) - Inexperience(weapon)
-                    - (weapon.Captured == true ? 2 : 0) - (attack.BreakdownReduction ?? 0) - Shortage(weapon), StringComparer.Ordinal);
+                    - ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(weapon.Captured == true ? 1 : 0) - (attack.BreakdownReduction ?? 0) - Shortage(weapon), StringComparer.Ordinal);
             var reached = malfunction ? weapons.Where(weapon => original >= breakdown[weapon.EquipmentId!]).Select(weapon => weapon.EquipmentId!).ToArray() : [];
             var malfunctioned = new HashSet<string>(StringComparer.Ordinal);
             var selection = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -4480,7 +4480,7 @@ public static class ScenarioA1FireCalculator
                     && !(operatorUnit is not null && cowering.Contains(operatorUnit.UnitId!))
                     && !(attack.FireKind == FinalProtectiveFire && operatorUnit?.FinalFireMarked == true)
                     && (attack.Phase != "AFPh" || operatorUnit?.OpportunityFire == true)
-                    && reference.Definitions[weapon.DefinitionId!].RateOfFire is { } rof && colored <= rof - (weapon.Captured == true ? 1 : 0);
+                    && reference.Definitions[weapon.DefinitionId!].RateOfFire is { } rof && colored <= rof - ScenarioA1NonQualifiedUseCalculator.RofLowering(weapon.Captured == true ? 1 : 0);
                 // A.11 (p. 43; pass 45): "it also transforms the weapon's Original B# to an X# during that use": a weapon whose B# this fire lowered is
                 // removed on a DR at least its printed B# (the page's LMG in Sustained Fire: B10, X12). A FT's own removal is ruling R15.1's.
                 var definition = reference.Definitions[weapon.DefinitionId!];

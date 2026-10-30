@@ -1894,7 +1894,7 @@ Turns tasks that reach this pass from another: D8.2 (pass 115) takes A23.72, Cle
 
 **Pass 80: Nationalities I: the catalog's counters** (new; 14 rows of the inventory). Counters: none. Needs first: 35.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 17 rows: 12 partly, 5 not built. Claims: 13 open, 4 claimed (owners: A11.17 (Claude), A11.5 (Claude)). A rule decided outside Rules on 1 row. Wiring: 0 of 17. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 17 rows: 12 partly, 5 not built. Claims: 13 open, 4 built (owners: A11.17 (Claude), A11.5 (Claude)). A rule decided outside Rules on 1 row. Wiring: 0 of 17. Minigames: 2.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1979,7 +1979,7 @@ Turns tasks that reach this pass from another: D2.3 (pass 85) and D7.3 (pass 90)
 
 **Pass 100: Position and cover** (new; 43 rows of the inventory). Counters: Wall Advantage and HD as kept states (no catalog counter). Needs first: 55 (levels for ordnance), 40.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 55 rows: 8 built with a deviation, 29 partly, 5 refused, 13 not built. Claims: 54 open, 1 claimed (owners: A10.531 (Claude)). A rule decided outside Rules on 6 rows. Wiring: 0 of 55. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 55 rows: 8 built with a deviation, 29 partly, 5 refused, 13 not built. Claims: 54 open, 1 built (owners: A10.531 (Claude)). A rule decided outside Rules on 6 rows. Wiring: 0 of 55. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1999,7 +1999,7 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: unloading, a Passen
 
 **Pass 105: Armored combat IV: equipment and formations** (new; 68 rows of the inventory). Counters: an armored car; a non-turreted AFV; an AFV with Secondary Armament; a partially armored AFV; a vehicle FT; an AA Gun with IFE of 40mm or less; an AFV with a G and one with Sz; a radioless trait on the T-34 M41. Needs first: 50, 55, 65, 100 (Armored Assault for D14.33).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 2 built with a deviation, 69 partly, 4 refused, 48 not built. Claims: 119 open, 2 claimed, 2 built (owners: A11.5 (Claude), D3.7 (Codex)). A rule decided outside Rules on 6 rows. A Turns calculator on 2 rows. Wiring: 0 of 123. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 2 built with a deviation, 69 partly, 4 refused, 48 not built. Claims: 119 open, 4 built (owners: A11.5 (Claude), D3.7 (Codex)). A rule decided outside Rules on 6 rows. A Turns calculator on 2 rows. Wiring: 0 of 123. Minigames: 2.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2026,7 +2026,7 @@ Turns tasks that reach this pass from another: D4.3 (pass 175) takes D3.71's cir
 
 **Pass 110: Guns and anti-tank weapons II** (new; 77 rows of the inventory). Counters: R# and X# on the Guns; a Gun that is not QSU, with LF or RFNM; a medium mortar with its dm side; a bazooka; a PIAT; a MOL-Projector; an RCL; a Gun of 100mm or more (many values manufactured, R0.3). Needs first: 35; 60 (HE Equivalency for C13.4x).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 3 built with a deviation, 72 partly, 2 refused, 46 not built. Claims: 117 open, 3 claimed, 2 reviewed, 1 wired (owners: A21.13 (Claude), C9 (Claude), C9.3 (Claude)). A rule decided outside Rules on 6 rows. Wiring: 1 of 123. Minigames: 2.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 3 built with a deviation, 72 partly, 2 refused, 46 not built. Claims: 117 open, 3 built, 2 reviewed, 1 wired (owners: A21.13 (Claude), C9 (Claude), C9.3 (Claude)). A rule decided outside Rules on 6 rows. Wiring: 1 of 123. Minigames: 3.
 
 | Task | Rules | Estimate |
 |---|---|---|
