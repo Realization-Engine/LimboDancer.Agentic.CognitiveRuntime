@@ -881,4 +881,117 @@ public sealed class BacklogPass8Tests : IDisposable
         }));
         Refused(await FireAt("de-gun", "bd01:B8:0", null, null, true, 5, 6), "play.ordnance-halted");
     }
+
+    private static GunDefinition GunListing(string definition) => new ScenarioA1OrdnancePackage().Reference.Weapon(definition)!;
+
+    [Fact]
+    public async Task ASquadOnItsOwnGunFiresUnderTheSinglePenalty()
+    {
+        // W-A21.13 (A21.11, A21.12, A21.13, C5.8): a German squad on the German leIG is a non-qualified friendly MMC: the multiple 1, Case H +2, the
+        // red To Hit Numbers, the Multiple ROF one lower, and the B# two lower. A DR of 5 neither malfunctions nor eliminates it.
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"), Gun("de-gun", "attacker-inf-gun", "bd01:B10:0", "north-east", "g1", "german"),
+            Squad("r1", "bd01:B8:0", "russian"));
+        await Advance();
+        var before = Revision;
+        Committed(await FireAt("de-gun", "bd01:B8:0", null, null, 2, 3, 6, 6));
+        var facts = LastFacts(before);
+        Assert.Equal(1, facts.UseMultiple);
+        Assert.Null(facts.NonQualified);
+        var shot = LastShot(before);
+        var listing = GunListing("attacker-inf-gun");
+        Assert.Equal("red", shot.ToHit!.Color);
+        Assert.Contains(shot.ToHit.Drm, item => item.Name == "case-h" && item.Value == 2);
+        Assert.Equal(listing.Breakdown - 2, shot.Gun!.BreakdownNumber);
+        Assert.Equal(Math.Max(0, (listing.RateOfFire ?? 0) - 1), shot.Gun.RateOfFire);
+        Assert.Null(shot.Gun.Eliminated);
+        Assert.Contains(Current.GunShotsThisGameTurn, item => item.Unit == "g1" && item.Definition == "attacker-inf-gun");
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task APenalizedGunIsEliminatedOnItsOriginalBreakdownNumber()
+    {
+        // A.11 (W-A21.13): under a penalty the Original B# is the X#; an Original 12 eliminates the Gun rather than malfunctions it.
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"), Gun("de-gun", "attacker-inf-gun", "bd01:B10:0", "north-east", "g1", "german"),
+            Squad("r1", "bd01:B8:0", "russian"));
+        await Advance();
+        var before = Revision;
+        Committed(await FireAt("de-gun", "bd01:B8:0", null, null, 6, 6));
+        var shot = LastShot(before);
+        Assert.True(shot.Gun!.Eliminated);
+        Assert.False(shot.Gun.Malfunctioned);
+        Assert.NotEqual(InstanceStatus.Active, Current.Find("de-gun")!.Status);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task AnEnemySquadOnACapturedGunTakesTheDoubledPenalty()
+    {
+        // W-A21.13 (A21.13, ruling RA21.4): the Russian 45mm set up by the Russian side and manned by a German squad is captured and fired by a
+        // non-qualified enemy MMC: the multiple 2, Case H +4, the B# four lower. No path captures a Gun yet; the state sets it up so.
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"), Gun("ru-gun", "defender-at-gun", "bd01:B10:0", "north-east", "g1", "russian"),
+            Squad("r1", "bd01:B8:0", "russian"));
+        await Advance();
+        var before = Revision;
+        Committed(await FireAt("ru-gun", "bd01:B8:0", null, null, 2, 3, 6, 6));
+        Assert.Equal(2, LastFacts(before).UseMultiple);
+        var shot = LastShot(before);
+        Assert.Contains(shot.ToHit!.Drm, item => item.Name == "case-h" && item.Value == 4);
+        Assert.Equal(GunListing("defender-at-gun").Breakdown - 4, shot.Gun!.BreakdownNumber);
+    }
+
+    [Fact]
+    public async Task AnAlliedCrewMansItsSidesGunWithoutPenalty()
+    {
+        // W-A21.13 (ruling RA21.4): a crew of another nationality on its own side's Gun is qualified and the Gun is not captured: the multiple 0.
+        // Before the wiring the nationality check refused it.
+        await Setup("german", 7, 1942, Unit("ally-crew", "asl:crew", "defender-crew", "bd01:B10:0", "german"),
+            Gun("de-gun", "attacker-inf-gun", "bd01:B10:0", "north-east", "ally-crew", "german"), Squad("r1", "bd01:B8:0", "russian"));
+        await Advance();
+        var before = Revision;
+        Committed(await FireAt("de-gun", "bd01:B8:0", null, null, 2, 3, 6, 6));
+        Assert.Equal(0, LastFacts(before).UseMultiple);
+        Assert.DoesNotContain(LastShot(before).ToHit!.Drm, item => item.Name.StartsWith("case-h", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ALoneLeaderIsRefusedAGunAndAHeroFiresItUnderTheSinglePenalty()
+    {
+        // A21.13, A15.23 (W-A21.13): a lone SMC fires a Gun only if heroic; a hero fires the 75mm leIG as if captured and fired by an enemy crew.
+        await Setup("german", 7, 1942, Unit("g-l", "asl:leader", "attacker-leader-8-1", "bd01:B10:0", "german"),
+            Gun("de-gun", "attacker-inf-gun", "bd01:B10:0", "north-east", "g-l", "german"), Unit("g-h", "asl:hero", "attacker-hero", "bd01:C10:0", "german"),
+            Gun("de-gun-2", "attacker-inf-gun", "bd01:C10:0", "north-east", "g-h", "german"), Squad("r1", "bd01:B8:0", "russian"));
+        await Advance();
+        Refused(await FireAt("de-gun", "bd01:B8:0", null, null, 2, 3, 6, 6), LiveOrdnance.UseRefusalPrefix + "A lone SMC fires a crew-served weapon only if heroic");
+        var before = Revision;
+        Committed(await FireAt("de-gun-2", "bd01:B8:0", null, null, 2, 3, 6, 6));
+        Assert.Equal(1, LastFacts(before).UseMultiple);
+        Assert.Contains(LastShot(before).ToHit!.Drm, item => item.Name == "case-h" && item.Value == 2);
+    }
+
+    [Fact]
+    public async Task AHeroicLeaderFiresAGunAsAHeroDoes()
+    {
+        // A15.2, A15.23 (W-A21.13): a leader that becomes heroic "retains both its leadership ... and heroic qualities", so he fires the leIG alone
+        // under the single penalty.
+        await Setup("german", 7, 1942, Unit("g-l", "asl:leader", "attacker-leader-8-1", "bd01:B10:0", "german", "asl:heroic"),
+            Gun("de-gun", "attacker-inf-gun", "bd01:B10:0", "north-east", "g-l", "german"), Squad("r1", "bd01:B8:0", "russian"));
+        await Advance();
+        var before = Revision;
+        Committed(await FireAt("de-gun", "bd01:B8:0", null, null, 2, 3, 6, 6));
+        Assert.Equal(1, LastFacts(before).UseMultiple);
+    }
+
+    [Fact]
+    public async Task AVehiclesShotCarriesItsTemporaryCrewsMultiple()
+    {
+        // W-A21.13: a vehicle's weapon keeps A21.22's penalty; its shot records the multiple, 0 for its own crew.
+        await Setup("german", 7, 1942, Vehicle("g-tank", "attacker-tank", "bd01:B10:0", "german", "north-east"), Squad("r1", "bd01:B8:0", "russian"));
+        await Advance();
+        var before = Revision;
+        Committed(await FireAt("g-tank", "bd01:B8:0", null, null, 2, 3, 6, 6));
+        var facts = LastFacts(before);
+        Assert.Equal(0, facts.UseMultiple);
+        Assert.Null(facts.NonQualified);
+    }
 }

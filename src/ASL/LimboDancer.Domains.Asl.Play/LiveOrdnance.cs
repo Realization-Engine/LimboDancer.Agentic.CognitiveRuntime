@@ -46,6 +46,29 @@ public static class LiveOrdnance
     /// <summary>A Gun's or MA's caliber in millimeters, its Gun Size (C2.2); null for a definition that is no ordnance.</summary>
     public static int? CaliberOf(string definition) => Reference.Value.Guns.GetValueOrDefault(definition)?.Caliber;
 
+    /// <summary>The code of a use of a crew-served Gun that <see cref="ScenarioA1NonQualifiedUseCalculator.Use"/> refuses (W-A21.13); its text follows.</summary>
+    public const string UseRefusalPrefix = "play.ordnance-use: ";
+
+    /// <summary>
+    /// The facts of one use of a crew-served Gun for <see cref="ScenarioA1NonQualifiedUseCalculator.Use"/> (W-A21.13): the firer's kind with one SMC
+    /// firing (two SMC together come with W-C9's second participant, decision D2); captured when the Gun was set up by another side than the firer's
+    /// (ruling RA21.4: possessed from an enemy side; an ally of the firer's side is the same side), and not when it was set up with no side, which
+    /// records no other owner; a hero by kind, or a leader marked heroic (A15.2: it "retains both its leadership ... and heroic qualities"); the Gun's
+    /// mortar identity and caliber from its definition; the phase; and whether the firer has fired a Gun over 82mm this Game Turn (A15.23: "If firing
+    /// a Gun &gt; 82mm, it may fire only once per Game Turn", the hero), asked of the calculator for each Gun it fired.
+    /// </summary>
+    internal static NonQualifiedUseFacts UseFacts(GameState state, EquipmentInstance gun, UnitInstance firer, string definition, string phase)
+    {
+        var weapon = Reference.Value.Weapon(definition);
+        return new NonQualifiedUseFacts(ScenarioA1NonQualifiedUseCalculator.User(firer.Kind, 1), gun.Side is not null && gun.Side != firer.Side,
+            firer.Kind == "asl:hero" || Is(firer, Conditions.Heroic), weapon is null ? null : ScenarioA1MortarCalculator.IsMortar(gun.Kind, weapon.GunType), weapon?.Caliber)
+        {
+            Phase = phase,
+            FiredThisGameTurn = state.GunShotsThisGameTurn.Any(item => item.Unit == firer.Id
+                && ScenarioA1NonQualifiedUseCalculator.HeroGunLimited(item.Definition is null ? null : CaliberOf(item.Definition))),
+        };
+    }
+
     /// <summary>
     /// Whether a definition fires as ordnance as a MG (A9.61, D3.54; pass 60, ruling R60.19): a SW MG, or a vehicle whose MA is a MG (the halftrack's
     /// AAMG, the Bren Carrier's MG).
@@ -82,7 +105,7 @@ public static class LiveOrdnance
     /// </summary>
     public static (OrdnanceShot? Shot, string? Reason) FromState(GameState state, string gunId, BoardLocation target, string? targetVehicle = null,
         string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null, bool gunDuel = false, bool legacySpotterUse = false,
-        bool currentSpotterAssignment = true)
+        bool currentSpotterAssignment = true, bool legacyNonQualifiedUse = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
@@ -300,6 +323,25 @@ public static class LiveOrdnance
         var definition = gun is UnitInstance vehicleGun ? vehicleGun.Definition!.Definition : ((EquipmentInstance)gun).Definition!.Definition;
         var fired = gun is UnitInstance firingVehicle ? LiveFire.Fired(firingVehicle) : LiveFire.Fired((EquipmentInstance)gun);
         var depleted = state.DepletedAmmunition.Where(item => item.Gun == gun.Id).Select(item => item.Ammunition).Order(StringComparer.Ordinal).ToArray();
+
+        // W-A21.13 (A21.11 to A21.13, A15.23): who may fire a crew-served Gun, and under what penalty multiple, is ScenarioA1NonQualifiedUseCalculator's;
+        // a vehicle's weapon keeps A21.22's penalty. A shot verified on its recorded reading from before the wiring asks neither.
+        int? useMultiple = null;
+        if (!legacyNonQualifiedUse && gun is EquipmentInstance { Kind: "asl:gun" } crewServed)
+        {
+            var use = ScenarioA1NonQualifiedUseCalculator.Use(UseFacts(state, crewServed, crew, definition, phase));
+            if (use.Refusal is { } useRefusal)
+            {
+                return (null, UseRefusalPrefix + useRefusal);
+            }
+
+            useMultiple = use.Multiple;
+        }
+        else if (!legacyNonQualifiedUse && gun is UnitInstance penalizedVehicle)
+        {
+            useMultiple = LiveFire.CapturedPenalty(penalizedVehicle) ?? 0;
+        }
+
         var shot = new OrdnanceShot(phase, firingSide, state.Side(side)?.Nationality,
             new OrdnanceGun(gun.Id, definition, Is(gun, Conditions.Malfunctioned), shots?.Shots ?? 0, shots?.RateOfFireKept ?? false, fired)
             {
@@ -335,8 +377,9 @@ public static class LiveOrdnance
             ScenarioYear = ScenarioA1OrdnanceEligibility.RecordsYear(vehicleTarget is not null, ammunition is not null || gun.Kind == "asl:latw", state.Side(side)?.Nationality)
                 ? state.ScenarioYear : null,
             IntensiveFire = intensive ? true : null,
-            // C5.8 (ruling R8.8): a squad or HS manning a Gun is non-qualified.
-            NonQualified = ScenarioA1OrdnanceEligibility.NonQualified(gun is EquipmentInstance, crew.Kind, sw),
+            // C5.8 (ruling R8.8): a squad or HS manning a Gun is non-qualified; the reading of a shot recorded before W-A21.13.
+            NonQualified = useMultiple is null ? ScenarioA1OrdnanceEligibility.NonQualified(gun is EquipmentInstance, crew.Kind, sw) : null,
+            UseMultiple = useMultiple,
             TargetType = mortar ? OrdnanceTargetTypes.Area : null,
             AreaAcquisition = areaAcquisition,
 
@@ -836,10 +879,16 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "Unknown Spotter use validation version.";
         }
 
+        // W-A21.13 (rule 6 as amended 2026-10-30): a shot recorded before the wiring carries no UseMultiple and is rebuilt on its recorded reading.
+        if (recorded.UseMultiple is < 0 or > 2)
+        {
+            return "Unknown crew-served use multiple.";
+        }
+
         // C2.2401 (pass 55): a record that names itself a Gun Duel's first shot is read as one; the projector holds the fact to the answered choice.
         var (expected, reason) = LiveOrdnance.FromState(state, fired.Gun, fired.Target, recorded.VehicleTarget?.VehicleId, recorded.Ammunition, recorded.IntensiveFire == true,
             recorded.Spotter?.UnitId, recorded.Director?.UnitId, recorded.GunDuel == true, recorded.SpotterUseVersion is null,
-            fired.SpotterWiringVersion == 1);
+            fired.SpotterWiringVersion == 1, legacyNonQualifiedUse: recorded.UseMultiple is null);
         if (expected is null)
         {
             return reason;

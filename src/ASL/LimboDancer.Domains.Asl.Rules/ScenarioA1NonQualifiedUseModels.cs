@@ -33,7 +33,10 @@ public sealed record NonQualifiedUseFacts(CrewServedUser? User, bool? Captured, 
         get; init;
     }
 
-    /// <summary>Whether the Gun has already been fired this Game Turn, for A15.23's limit on a Gun over 82mm.</summary>
+    /// <summary>
+    /// Whether the hero has already fired a Gun over 82mm this Game Turn, for A15.23's limit ("If firing a Gun &gt; 82mm, it may fire only once per
+    /// Game Turn": the hero; W-A21.13's reading, see <see cref="ScenarioA1NonQualifiedUseCalculator.HeroGunLimited"/>).
+    /// </summary>
     public bool? FiredThisGameTurn
     {
         get; init;
