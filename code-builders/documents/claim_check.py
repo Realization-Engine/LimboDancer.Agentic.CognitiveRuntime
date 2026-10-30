@@ -264,9 +264,13 @@ def batch_gate(lines, claims, branch, faults):
     if out.returncode != 0:
         print(f"NOTE: the last batch gate {m.group(1)} is not in this checkout's history; merges since it are not counted")
         return
+    # The board counts rule claims, not pull requests: one branch may carry several claims (claim/audit-five-b carried five), so each merged
+    # branch counts every claim whose row names it. A branch merged twice counts its claims once.
     branches = {claim["branch"] for claim in claims.values()}
-    merged = [b.group(1) for subject in out.stdout.splitlines() if (b := MERGE.match(subject)) and b.group(1) in branches]
-    print(f"rule claims merged since the last batch gate {m.group(1)}: {len(merged)} of {BATCH_SIZE}" + (f" ({', '.join(merged)})" if merged else ""))
+    merged_branches = list(dict.fromkeys(b.group(1) for subject in out.stdout.splitlines() if (b := MERGE.match(subject)) and b.group(1) in branches))
+    merged = [name for name, claim in claims.items() if claim["branch"] in merged_branches]
+    print(f"rule claims merged since the last batch gate {m.group(1)}: {len(merged)} of {BATCH_SIZE}"
+          + (f" ({', '.join(merged)}; branches {', '.join(merged_branches)})" if merged else ""))
     if len(merged) >= BATCH_SIZE:
         message = (f"{len(merged)} rule claims merged since the last batch gate {m.group(1)}: run it on main "
                    f"(gate.sh rules-batch {m.group(1)} ...) and record the new commit in the inventory's section 6")
