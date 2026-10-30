@@ -7,6 +7,28 @@ public sealed class ScenarioA1SmokeHeightCalculatorTests
 {
     private static SmokeLosEnd End(decimal level, bool cellar = false) => new(level, 0, cellar, false, false, 0);
 
+    [Fact]
+    public void ExactLocationShortcutLeavesOtherLevelsInTheSameHexForTheHeightRead()
+    {
+        Assert.Null(ScenarioA1SmokeHeightCalculator.ExactLocation(true, false, true, true));
+        Assert.Null(ScenarioA1SmokeHeightCalculator.ExactLocation(false, true, true, true));
+        Assert.Equal(new SmokeLosVerdict(true, true, true), ScenarioA1SmokeHeightCalculator.ExactLocation(true, true, true, true));
+        Assert.Equal(new SmokeLosVerdict(true, true, false), ScenarioA1SmokeHeightCalculator.ExactLocation(true, false, true, false));
+        Assert.Equal(new SmokeLosVerdict(true, false, true), ScenarioA1SmokeHeightCalculator.ExactLocation(false, true, false, true));
+        Assert.Equal(new SmokeLosVerdict(true, true, true), ScenarioA1SmokeHeightCalculator.Intersect(
+            new(0, 0, 2, End(0), End(1), 0, 0, false, true, true)));
+    }
+
+    [Fact]
+    public void RooftopAdjustmentAndReversedLosUseTheSamePhysicalBoundary()
+    {
+        var roof = new SmokeLosEnd(2, -0.5m, false, false, false, 0);
+        Assert.Equal(new SmokeLosVerdict(true, true, false), ScenarioA1SmokeHeightCalculator.Intersect(
+            new(0, 0, 2, roof, End(0), 0, 3, false, true, false)));
+        Assert.Equal(new SmokeLosVerdict(true, false, true), ScenarioA1SmokeHeightCalculator.Intersect(
+            new(0, 0, 2, End(0), roof, 3, 0, false, false, true)));
+    }
+
     [Theory]
     [InlineData(TurnSmokeChemical.Conventional, 2)]
     [InlineData(TurnSmokeChemical.WhitePhosphorus, 4)]
