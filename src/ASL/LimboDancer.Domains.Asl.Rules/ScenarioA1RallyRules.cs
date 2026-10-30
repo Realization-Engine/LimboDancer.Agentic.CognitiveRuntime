@@ -378,12 +378,7 @@ public static class ScenarioA1RallyRules
     public static IReadOnlyList<(UnitCondition Condition, bool Value)> VehicleWeaponRepairChanges(string weapon, RepairOutcome outcome, bool passengerOrTowing) => outcome switch
     {
         RepairOutcome.Repaired => [(VehicleWeaponMalfunction(weapon), false)],
-        RepairOutcome.Eliminated when weapon == "ma" && !passengerOrTowing =>
-        [
-            (UnitCondition.Disabled, true), (UnitCondition.Recalled, true), (UnitCondition.Stunned, false), (UnitCondition.StunRecovery, false),
-            (UnitCondition.ButtonedUp, true), (UnitCondition.Motion, false),
-        ],
-        RepairOutcome.Eliminated => [(VehicleWeaponDisabled(weapon), true)],
+        RepairOutcome.Eliminated => ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges(weapon, weapon == "ma" && !passengerOrTowing),
         _ => [],
     };
 

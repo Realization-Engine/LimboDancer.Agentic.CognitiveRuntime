@@ -12,6 +12,19 @@ public sealed class ScenarioA1VehicleBreakdownResolutionTests
         Assert.NotNull(ScenarioA1VehicleBreakdownResolutionCalculator.WeaponUseRefusal(true));
     }
 
+    [Fact]
+    public void RecallFromFireAppliesTheSameCompleteTransitionAsRepair()
+    {
+        var changes = ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges("ma", true).ToDictionary(item => item.Condition, item => item.Value);
+        Assert.True(changes[UnitCondition.Disabled]);
+        Assert.True(changes[UnitCondition.Recalled]);
+        Assert.True(changes[UnitCondition.ButtonedUp]);
+        Assert.False(changes[UnitCondition.Motion]);
+        Assert.False(changes[UnitCondition.Stunned]);
+        Assert.False(changes[UnitCondition.StunRecovery]);
+        Assert.Single(ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges("ma", false));
+    }
+
     [Theory]
     [InlineData(VehicleBreakdownOutcome.None, true)]
     [InlineData(VehicleBreakdownOutcome.Malfunction, false)]
