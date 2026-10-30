@@ -571,7 +571,7 @@ public sealed record FireOverrunEffect(string VehicleId, IReadOnlyList<string> M
 }
 
 /// <summary>Opt-in D3.7 facts for exactly the mounted weapons participating in a vehicle IFT attack, keyed by ma, bmg or cmg.</summary>
-public sealed record FireVehicleBreakdownFacts(IReadOnlyDictionary<string, VehicleBreakdownUseFacts> Weapons);
+public sealed record FireVehicleBreakdownFacts([property: JsonRequired] IReadOnlyDictionary<string, VehicleBreakdownUseFacts> Weapons);
 
 /// <summary>The wall (+2) or hedge (+1) TEM a target claims (B9.3), after any reduction for a higher firer (B9.33).</summary>
 public sealed record FireHexsideTem(string? Terrain, int? Tem);

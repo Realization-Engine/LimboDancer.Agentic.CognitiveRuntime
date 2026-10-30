@@ -11,8 +11,18 @@ public enum VehicleBreakdownUse
 /// WinterReduction is the existing E3.741 weather fact (0, 1 or 2); Captured and NonQualified are the two independent A21.11/.13 penalties.
 /// These facts are separate from frozen shot/attack records. Mounted weapons do not acquire SW inexperience or Sustained Fire penalties.
 /// </summary>
-public sealed record VehicleBreakdownUseFacts(VehicleBreakdownWeapon Weapon, int? PrintedB, int? PrintedX, bool Circled, bool NoteExtends,
-    bool LowAmmo, bool AmmunitionShortage, bool Captured = false, bool NonQualified = false, int WinterReduction = 0, bool IntensiveFire = false);
+public sealed record VehicleBreakdownUseFacts(
+    [property: System.Text.Json.Serialization.JsonRequired] VehicleBreakdownWeapon Weapon,
+    [property: System.Text.Json.Serialization.JsonRequired] int? PrintedB,
+    [property: System.Text.Json.Serialization.JsonRequired] int? PrintedX,
+    [property: System.Text.Json.Serialization.JsonRequired] bool Circled,
+    [property: System.Text.Json.Serialization.JsonRequired] bool NoteExtends,
+    [property: System.Text.Json.Serialization.JsonRequired] bool LowAmmo,
+    [property: System.Text.Json.Serialization.JsonRequired] bool AmmunitionShortage,
+    [property: System.Text.Json.Serialization.JsonRequired] bool Captured = false,
+    [property: System.Text.Json.Serialization.JsonRequired] bool NonQualified = false,
+    [property: System.Text.Json.Serialization.JsonRequired] int WinterReduction = 0,
+    [property: System.Text.Json.Serialization.JsonRequired] bool IntensiveFire = false);
 
 /// <summary>The numbers and outcome of this use. Low Ammo is distinct from a weapon failure.</summary>
 public sealed record VehicleBreakdownResolved(VehicleBreakdownNumbers Numbers, VehicleBreakdownOutcome Outcome)
