@@ -180,6 +180,66 @@ public sealed class ScenarioA1PrisonerEscapeTests
     }
 
     [Fact]
+    public void UnderTheReadingThePrisonersRoundCarriesNoPrisonerWithdrawal()
+    {
+        // RA20.13 (A11.2, A20.55): the Withdrawal is resolved in a round after the prisoners' round, where the attacks against the prisoner are made.
+        Assert.False(ScenarioA1PrisonerCalculator.WithdrawalInRound(true));
+        Assert.True(ScenarioA1PrisonerCalculator.WithdrawalInRound(false));
+
+        // The Guard is in Melee; one prisoner attacks it, the other withdraws.
+        CloseCombatUnit[] units = [Unit("g1", "attacker-squad", "german") with { InMelee = true }, Prisoner("rp1", "g1"), Prisoner("rp2", "g1") with { WithdrawingTo = "bd01:G6:0" }];
+        CloseCombatDeclaration[] escape = [new(["rp1"], ["g1"])];
+
+        // Null: no new refusal; the old checks stand as they were.
+        var older = ScenarioA1CloseCombatCalculator.Precheck(Facts(units, escape, null, CloseCombatFacts.PrisonersRound, null), Reference);
+        Assert.DoesNotContain("asl.a1.cc.prisoner-withdrawal-round", older);
+        Assert.Contains("asl.a1.cc.withdrawal-outside", older);
+
+        // Under the reading: the prisoners' round refuses the Withdrawal, so no prisoner moves away from its Guard unfreed.
+        var reading = ScenarioA1CloseCombatCalculator.Precheck(Facts(units, escape, null, CloseCombatFacts.PrisonersRound, true), Reference);
+        Assert.Contains("asl.a1.cc.prisoner-withdrawal-round", reading);
+        Assert.DoesNotContain("asl.a1.cc.withdrawal-outside", reading);
+        Assert.NotEqual(CloseCombatResolution.Resolved, ScenarioA1CloseCombatCalculator.Resolve(Facts(units, escape, Rolls([1, 2]), CloseCombatFacts.PrisonersRound, true),
+            Reference).Disposition);
+
+        // The prisoners' round without the Withdrawal is made; the later round carries it, and the prisoner escapes there.
+        CloseCombatUnit[] staying = [units[0], units[1], units[2] with { WithdrawingTo = null }];
+        Assert.DoesNotContain("asl.a1.cc.prisoner-withdrawal-round",
+            ScenarioA1CloseCombatCalculator.Precheck(Facts(staying, escape, null, CloseCombatFacts.PrisonersRound, true), Reference));
+        Assert.DoesNotContain("asl.a1.cc.prisoner-withdrawal-round",
+            ScenarioA1CloseCombatCalculator.Precheck(Facts([units[0], units[2]], [new(["g1"], ["rp2"])], null, CloseCombatFacts.Simultaneous, true), Reference));
+    }
+
+    [Fact]
+    public void UnderTheReadingAnAttackWhoseGuardAttackIsForfeitedIsHeldBack()
+    {
+        // The broken Guard holds two Russian HS beside a German HS. The prisoner attacking the Guard fails its NTC, so that attack is forfeited; the
+        // other prisoner's attack on the HS alone is held back, and neither prisoner escapes.
+        CloseCombatUnit[] units = [Unit("g1", "attacker-half-squad", "german") with { Broken = true }, Unit("g2", "attacker-half-squad", "german"), Prisoner("rp1", "g1"),
+            Prisoner("rp2", "g1")];
+        CloseCombatDeclaration[] attacks = [new(["rp1"], ["g1"]), new(["rp2"], ["g2"])];
+        var result = ScenarioA1CloseCombatCalculator.Resolve(Facts(units, attacks, Rolls([1, 2], [1, 2]) with
+        {
+            EscapeNtc = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal) { ["rp1"] = [6, 6], ["rp2"] = [1, 1] },
+        }, CloseCombatFacts.PrisonersRound, true), Reference);
+        Assert.Equal(CloseCombatResolution.Resolved, result.Disposition);
+        Assert.Empty(result.Attacks);
+        Assert.False(Effect(result, "g2").Eliminated);
+        Assert.Null(Effect(result, "rp1").Escaped);
+        Assert.Null(Effect(result, "rp2").Escaped);
+    }
+
+    [Fact]
+    public void TheReadingSwitchIsOmittedFromTheJsonWhenNull()
+    {
+        CloseCombatUnit[] units = [Unit("g1", "attacker-half-squad", "german"), Prisoner("rp", "g1")];
+        var json = System.Text.Json.JsonSerializer.Serialize(Facts(units, [], null, CloseCombatFacts.PrisonersRound, null));
+        Assert.DoesNotContain("prisonerEscapeReading", json, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("prisonerEscapeReading", System.Text.Json.JsonSerializer.Serialize(Facts(units, [], null, CloseCombatFacts.PrisonersRound, true)),
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void TheForwardsKeepTheOldEscapeRound()
     {
         // A Good Order Guard with no Melee: outside; broken: a NTC of 8 against Morale 7 fails, of 6 passes and the prisoner attacks.

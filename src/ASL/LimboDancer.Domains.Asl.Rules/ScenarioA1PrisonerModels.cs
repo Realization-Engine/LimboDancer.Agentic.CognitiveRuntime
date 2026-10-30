@@ -32,6 +32,19 @@ public enum PrisonerCvpStatus
 public sealed record PrisonerEscapeFacts(string PrisonerId, string? Nationality, string? CaptorNationality, bool Infantry, bool? AxisMinorAtHome, bool GuardBroken,
     bool MeleeInLocation);
 
+/// <summary>Which bar refuses a prisoner's escape attempt (A20.55, p. 88; A25.63, A25.82, G1.621).</summary>
+public enum PrisonerEscapeBar
+{
+    /// <summary>The prisoner is not Infantry: only Infantry may escape (A20.55).</summary>
+    NotInfantry,
+
+    /// <summary>Its nationality does not attempt escape, or is not known (A20.55, A25.63, A25.82, G1.621).</summary>
+    Nationality,
+
+    /// <summary>Its Guard is neither broken nor in a Melee (A20.55).</summary>
+    Guard,
+}
+
 /// <summary>
 /// The verdict on one prisoner's escape attempt (A20.55): the refusal and the rule it rests on (null when it may attack its Guard), and whether it must
 /// pass a NTC first.
@@ -40,4 +53,10 @@ public sealed record PrisonerEscapeVerdict(string? Refusal, string? RefusalRule,
 {
     /// <summary>Whether the prisoner may attack its Guard this CCPh.</summary>
     public bool MayAttack => Refusal is null;
+
+    /// <summary>Which bar refused it; null when it may attack.</summary>
+    public PrisonerEscapeBar? Bar
+    {
+        get; init;
+    }
 }

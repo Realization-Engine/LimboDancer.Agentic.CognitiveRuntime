@@ -547,12 +547,22 @@ public static class ScenarioA1CloseCombatCalculator
         // A11.2: only a unit held in Melee withdraws, never a pinned, berserk, or Disrupted one, and a SMC withdraws with the MMC it is
         // stacked with or declared alone. The A20.54 claim (A20.55; ruling RA20.10): under the round's PrisonerEscapeReading a prisoner is held in Melee
         // when ScenarioA1PrisonerCalculator.MayWithdrawFromMelee says so: its Guard is in Melee, which the facts at the CCPh's start show began earlier.
+        // The Guard's one flag answers both of its facts because a Melee present at the CCPh's start was formed in an earlier phase, and A11.2 lets any
+        // unit in Melee then withdraw; a caller that knows the Location's own facts passes them to MayWithdrawFromMelee instead.
         if (units.Any(unit => unit.WithdrawingTo is not null && (!(unit.InMelee == true || (facts.PrisonerEscapeReading == true && unit is { Captured: true, GuardId: { } guard }
                 && byId.TryGetValue(guard, out var custodian) && ScenarioA1PrisonerCalculator.MayWithdrawFromMelee(custodian.InMelee == true, custodian.InMelee == true)))
             || unit.Pinned == true || unit.Berserk == true || unit.Disrupted == true
             || (unit.StackedWith is { } mmc && byId.TryGetValue(mmc, out var under) && under.WithdrawingTo is null))))
         {
             outside.Add("asl.a1.cc.withdrawal-outside");
+        }
+
+        // The A20.54 claim (A11.2, A20.55; ruling RA20.13): under the round's PrisonerEscapeReading a prisoner's Withdrawal is carried by a round after the
+        // prisoners' round, where the attacks against it are made (ScenarioA1PrisonerCalculator.WithdrawalInRound).
+        if (facts.PrisonerEscapeReading == true && !ScenarioA1PrisonerCalculator.WithdrawalInRound(round == CloseCombatFacts.PrisonersRound)
+            && units.Any(unit => unit is { Captured: true, WithdrawingTo: not null }))
+        {
+            outside.Add("asl.a1.cc.prisoner-withdrawal-round");
         }
 
         // The ambusher's attacks are sequential (A11.3), so its units that must attack are checked when the ambushed side's round begins.
@@ -1042,7 +1052,9 @@ public static class ScenarioA1CloseCombatCalculator
             // PrisonerEscapeReading.
             foreach (var unit in units.Values.Where(unit => unit.Escaping))
             {
-                unit.EscapeSucceeds(ScenarioA1PrisonerCalculator.EscapeSucceeds(unit.InfiltratedTo is not null, facts.PrisonerEscapeReading == true && unit.WithdrewTo is not null,
+                var infiltrated = unit.InfiltratedTo is not null;
+                var withdrew = facts.PrisonerEscapeReading == true && unit.WithdrewTo is not null;
+                unit.EscapeSucceeds(infiltrated || withdrew || ScenarioA1PrisonerCalculator.EscapeSucceeds(false, false,
                     units.Values.Any(other => other.Facts.Side != unit.Facts.Side && other.Facts.Captured != true && other.Present)));
             }
 
