@@ -2381,7 +2381,7 @@ Turns tasks that reach this pass from another: D6 (pass 73) names this pass's CC
 
 **Pass 185: Fire** (planned at 3:00 of build; 32 rows of the inventory). Counters: Flame and Blaze as states; the Kindle and Spread numbers of the Terrain Chart. Needs first: 85 (EC and wind), 135 (rubble), 75 (who Kindled).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 35 rows: 6 partly, 29 not built. Claims: 34 open, 1 built (owners: B25.2 (Claude)). Wiring: 0 of 35. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 35 rows: 6 partly, 29 not built. Claims: 34 open, 1 reviewed (owners: B25.2 (Claude)). Wiring: 0 of 35. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
