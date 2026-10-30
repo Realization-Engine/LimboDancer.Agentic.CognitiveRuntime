@@ -36,7 +36,10 @@ public sealed class ScenarioA1OrdnanceBreakdownAdapterTests
     {
         var legacy = Shot(vehicleTarget);
         Assert.False(JsonSerializer.SerializeToElement(legacy).TryGetProperty(nameof(OrdnanceShot.VehicleBreakdown), out _));
-        var current = legacy with { VehicleBreakdown = Circled };
+        var current = legacy with
+        {
+            VehicleBreakdown = Circled
+        };
         var roundTrip = JsonSerializer.Deserialize<OrdnanceShot>(JsonSerializer.Serialize(current))!;
         Assert.Equal(Circled, roundTrip.VehicleBreakdown);
         Assert.Equal(JsonSerializer.Serialize(ScenarioA1OrdnanceCalculator.Resolve(current, Reference, Circled)),
