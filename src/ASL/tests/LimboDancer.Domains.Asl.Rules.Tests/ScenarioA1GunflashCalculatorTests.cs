@@ -72,6 +72,23 @@ public sealed class ScenarioA1GunflashCalculatorTests
         Assert.False(ScenarioA1GunflashCalculator.Marked("bd04:H5:0", [], meleeInLocation: false));
         Assert.True(ScenarioA1GunflashCalculator.Marked("bd04:H5:0", [], meleeInLocation: true));
         Assert.False(ScenarioA1GunflashCalculator.Marked("bd04:H5:0", [new("bd04:H5:0", "german", GunflashCause.DismantleOrAssemble, false)], meleeInLocation: false));
+        Assert.True(ScenarioA1GunflashCalculator.Marked("bd04:H5:0", [new("bd04:H5:0", "german", GunflashCause.OpportunityFireDeclared, false)], meleeInLocation: false));
+        Assert.True(ScenarioA1GunflashCalculator.Marked("bd04:H5:0", [new("bd04:H5:0", "russian", GunflashCause.Melee, true)], meleeInLocation: false));
+        Assert.False(ScenarioA1GunflashCalculator.Marked("bd04:H5:0", [new("bd04:H5:0", "german", GunflashCause.Starshell, false)], meleeInLocation: false));
+    }
+
+    [Fact]
+    public void ALaterMarkOfTheLocationIsFoundPastTheOthers()
+    {
+        GunflashMark[] marks =
+        [
+            new("bd04:H6:0", "german", GunflashCause.Attack, true),
+            new("bd04:H5:0", "german", GunflashCause.Spotting, false),
+            new("bd04:H5:0", "german", GunflashCause.Starshell, false),
+            new("bd04:H5:0", "russian", GunflashCause.Attack, false),
+        ];
+        Assert.True(ScenarioA1GunflashCalculator.Marked("bd04:H5:0", marks, meleeInLocation: false));
+        Assert.False(ScenarioA1GunflashCalculator.Marked("bd04:H5:0", marks[..3], meleeInLocation: false));
     }
 
     [Fact]
@@ -106,6 +123,7 @@ public sealed class ScenarioA1GunflashCalculatorTests
         Assert.True(ScenarioA1GunflashCalculator.OpensFirstStarshell(new GunflashMark("bd04:H5:0", "german", GunflashCause.Attack, true)));
         Assert.False(ScenarioA1GunflashCalculator.OpensFirstStarshell(new GunflashMark("bd04:H5:0", "german", GunflashCause.Attack, false)));
         Assert.True(ScenarioA1GunflashCalculator.OpensFirstStarshell(GunflashCause.Melee, true));
+        Assert.False(ScenarioA1GunflashCalculator.OpensFirstStarshell(GunflashCause.Melee, false));
         Assert.False(ScenarioA1GunflashCalculator.OpensFirstStarshell(GunflashCause.OpportunityFireDeclared, true));
         Assert.False(ScenarioA1GunflashCalculator.OpensFirstStarshell(GunflashCause.DismantleOrAssemble, true));
         Assert.False(ScenarioA1GunflashCalculator.OpensFirstStarshell(GunflashCause.Starshell, true));
@@ -151,5 +169,18 @@ public sealed class ScenarioA1GunflashCalculatorTests
         Assert.Equal("no-gunflash", Outcome("starshell"));
         Assert.Equal(ContractVerdict.NotEvaluated, Outcome("attack", night: false));
         Assert.Equal(ContractVerdict.NotEvaluated, Outcome("no-such-cause"));
+    }
+
+    [Fact]
+    public void AnAttackVsAnEnemyDummyStackOpensTheFirstStarshellAndTellsTheAttackerNothing()
+    {
+        // RE1.3 as corrected (2026-10-30, by the Index's "Unit"): a Dummy stack is a unit, so the attacker's fact is the same for a "?" stack of
+        // Dummies or of real units, and so is every answer.
+        var dummy = new GunflashMark("bd04:H5:0", "german", GunflashCause.Attack, VsEnemyUnit: true);
+        Assert.True(ScenarioA1GunflashCalculator.OpensFirstStarshell(dummy));
+        Assert.Equal("gunflash-opens", Outcome("attack", vsEnemyUnit: true));
+        var contract = ScenarioA1RuleContracts.Find("e1.8-gunflash")!;
+        Assert.All(contract.Facts, fact => Assert.Equal(ContractDisclosure.All, fact.Disclosure));
+        Assert.DoesNotContain(contract.Facts, fact => fact.Name.Contains("dummy", StringComparison.OrdinalIgnoreCase));
     }
 }

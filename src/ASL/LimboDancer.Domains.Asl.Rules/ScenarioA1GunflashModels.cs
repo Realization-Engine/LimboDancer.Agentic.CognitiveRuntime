@@ -33,7 +33,7 @@ public enum GunflashCause
 
 /// <summary>
 /// A Gunflash marked at night (E1.8, p. 226; RE1.2): the Location the act came from, the side that made it, its cause, and whether it was an attack vs a
-/// unit enemy to its attacker (E1.91; RE1.3). It belongs to the Location until the end of the AFPh (ASOP 5.33B, p. 680), whoever is there.
+/// unit enemy to its attacker, a Dummy stack included (E1.91; RE1.3 as corrected 2026-10-30, by the Index's "Unit"). It belongs to the Location until the end of the AFPh (ASOP 5.33B, p. 680), whoever is there.
 /// </summary>
 public sealed record GunflashMark(string Location, string Side, GunflashCause Cause, bool VsEnemyUnit);
 

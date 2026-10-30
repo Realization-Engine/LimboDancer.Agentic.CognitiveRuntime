@@ -17,6 +17,10 @@
       "viewer": "german",
       "contract": "e1.921-starshell-usage",
       "facts": {
+        "night": true,
+        "phase": "PFPh",
+        "firerSidePhasing": true,
+        "attemptedFromHex": false,
         "firerId": "g-squad",
         "firer": "mmc",
         "goodOrder": true,
@@ -46,6 +50,10 @@
       "viewer": "german",
       "contract": "e1.921-starshell-usage",
       "facts": {
+        "night": true,
+        "phase": "PFPh",
+        "firerSidePhasing": true,
+        "attemptedFromHex": false,
         "firerId": "g-squad",
         "firer": "mmc",
         "goodOrder": true,
