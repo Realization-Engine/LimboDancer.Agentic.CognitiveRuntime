@@ -16,6 +16,11 @@ public static class ScenarioA1OrdnanceParticipationCalculator
     /// <summary>A21.13's SMC classification, from the existing non-qualified-use calculator.</summary>
     public static bool Smc(string? kind) => ScenarioA1NonQualifiedUseCalculator.User(kind, 1) == CrewServedUser.LoneSmc;
 
+    /// <summary>A9.12 p. 62 and C9.3 p. 179: an SMC cannot change from participating in one weapon to firing another, directing or spotting.</summary>
+    public static string? PrimaryUseRefusal(string? kind, bool? usedOtherWeapon, bool? directedFire, bool? spotted) =>
+        Smc(kind) && (usedOtherWeapon != false || directedFire != false || spotted != false)
+            ? "play.ordnance-participant: a firer cannot also direct, spot, or use another weapon in this fire phase (A9.12, C9.3)" : null;
+
     /// <summary>The actual SMC count, after CandidateRefusal has admitted any second participant. A directing leader is never counted.</summary>
     public static int SmcCount(string? primaryKind, OrdnanceParticipation? participation) =>
         Smc(primaryKind) ? participation?.Second is null ? 1 : 2 : 0;
@@ -162,9 +167,9 @@ public static class ScenarioA1OrdnanceParticipationCalculator
             return halted;
         }
 
-        return crew.UnitId == directorId || crew.UnitId == spotterId || second.UsedOtherWeapon != false || second.DirectedFire != false || second.Spotted != false
-            ? "play.ordnance-participant: the second firer cannot also direct, spot, or use another weapon in this fire phase (A9.12, C9.3)"
-            : null;
+        return PrimaryUseRefusal(secondKind, second.UsedOtherWeapon,
+            crew.UnitId == directorId || second.DirectedFire == true ? true : second.DirectedFire,
+            crew.UnitId == spotterId || second.Spotted == true ? true : second.Spotted);
     }
 
     /// <summary>A12.14 pp. 77-78: both participants perform the firing action; the existing visibility fact governs concealment loss.</summary>

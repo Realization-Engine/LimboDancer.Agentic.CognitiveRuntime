@@ -9,6 +9,17 @@ public sealed class ScenarioA1OrdnanceParticipationTests
     private static readonly ScenarioA1OrdnanceReference Reference = new ScenarioA1OrdnancePackage().Reference;
     private const string At = "bd01:G5:0";
 
+    [Fact]
+    public void ThePrimarySmcCannotReuseParticipationAsPermissionForAnotherWeapon()
+    {
+        Assert.NotNull(ScenarioA1OrdnanceParticipationCalculator.PrimaryUseRefusal("asl:leader", true, false, false));
+        Assert.NotNull(ScenarioA1OrdnanceParticipationCalculator.PrimaryUseRefusal("asl:hero", false, true, false));
+        Assert.NotNull(ScenarioA1OrdnanceParticipationCalculator.PrimaryUseRefusal("asl:leader", false, false, true));
+        Assert.NotNull(ScenarioA1OrdnanceParticipationCalculator.PrimaryUseRefusal("asl:leader", null, false, false));
+        Assert.Null(ScenarioA1OrdnanceParticipationCalculator.PrimaryUseRefusal("asl:leader", false, false, false));
+        Assert.Null(ScenarioA1OrdnanceParticipationCalculator.PrimaryUseRefusal("asl:squad", true, false, false));
+    }
+
     private static OrdnanceAdditionalFirer Second => new(new("second", "leader-definition", false, false, false, false, false),
         true, true, true, false, false, false, false, false, false);
 
