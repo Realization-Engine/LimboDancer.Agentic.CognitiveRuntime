@@ -4681,7 +4681,10 @@ public static class ScenarioA1FireCalculator
                     {
                         unit.Eliminate("eliminated-kia");
                     }
-                    else if (!unit.Broken && !unit.IsHeroType && !unit.Berserk)
+                    // The A20.54 claim (rulings RA20.2, RA20.9): ScenarioA1PrisonerCalculator.KiaSurvivor decides; a prisoner or an Unarmed unit is
+                    // unarmed there only when the attack carries KiaUnarmedReduction, so an older record breaks it as it did (A7.301, A20.54).
+                    else if (ScenarioA1PrisonerCalculator.KiaSurvivor(unit.Broken, unit.IsHeroType, unit.Berserk,
+                        attack.KiaUnarmedReduction == true && (unit.Target.GuardId is not null || unit.Target.Unarmed == true)) == KiaSurvivorEffect.Broken)
                     {
                         unit.Break("broken-kia");
                     }

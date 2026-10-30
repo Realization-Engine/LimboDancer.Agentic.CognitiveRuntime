@@ -478,15 +478,23 @@ public static class ScenarioA1CloseCombatCalculator
 
             // A20.55, A20.54 (rulings R14.5, R14.6): prisoners attack only in their escape round, each attack taking in the Guard of each of its
             // attackers, whose Guard is broken or held in Melee; they are never attacked, and a CC attack against a Guard does not affect them.
+            // The A20.54 claim (rulings RA20.8, RA20.10, RA20.12): the Guard's state is ScenarioA1PrisonerCalculator.MayAttackGuard's; under the round's
+            // PrisonerEscapeReading an attack may leave out a Guard that an attack declared before it takes in (EscapeTargetsRefusal; the resolution
+            // holds it back unless that attack eliminates the Guard), and a withdrawing prisoner may be attacked in the other rounds.
             if (round == CloseCombatFacts.PrisonersRound)
             {
                 if (attackers.Any(id => byId[id] is not { Captured: true, GuardId: { } guard } || !byId.TryGetValue(guard, out var custodian)
-                    || !(custodian.Broken == true || custodian.InMelee == true) || !defenders.Contains(guard)) || defenders.Any(id => byId[id].Captured == true))
+                    || !ScenarioA1PrisonerCalculator.MayAttackGuard(custodian.Broken == true, custodian.InMelee == true)
+                    || (facts.PrisonerEscapeReading == true
+                        ? ScenarioA1PrisonerCalculator.EscapeTargetsRefusal(defenders.Contains(guard), facts.Attacks!.Take(index).Any(earlier => earlier.Defenders?.Contains(guard) == true)) is not null
+                        : !defenders.Contains(guard))) || defenders.Any(id => byId[id].Captured == true))
                 {
                     outside.Add($"asl.a1.cc.escape-outside:{index}");
                 }
             }
-            else if (attackers.Concat(defenders).Any(id => byId[id].Captured == true))
+            else if (facts.PrisonerEscapeReading == true
+                ? attackers.Any(id => byId[id].Captured == true) || defenders.Any(id => byId[id] is { Captured: true, WithdrawingTo: null })
+                : attackers.Concat(defenders).Any(id => byId[id].Captured == true))
             {
                 outside.Add($"asl.a1.cc.prisoner-outside:{index}");
             }
@@ -537,8 +545,11 @@ public static class ScenarioA1CloseCombatCalculator
         }
 
         // A11.2: only a unit held in Melee withdraws, never a pinned, berserk, or Disrupted one, and a SMC withdraws with the MMC it is
-        // stacked with or declared alone.
-        if (units.Any(unit => unit.WithdrawingTo is not null && (unit.InMelee != true || unit.Pinned == true || unit.Berserk == true || unit.Disrupted == true
+        // stacked with or declared alone. The A20.54 claim (A20.55; ruling RA20.10): under the round's PrisonerEscapeReading a prisoner is held in Melee
+        // when ScenarioA1PrisonerCalculator.MayWithdrawFromMelee says so: its Guard is in Melee, which the facts at the CCPh's start show began earlier.
+        if (units.Any(unit => unit.WithdrawingTo is not null && (!(unit.InMelee == true || (facts.PrisonerEscapeReading == true && unit is { Captured: true, GuardId: { } guard }
+                && byId.TryGetValue(guard, out var custodian) && ScenarioA1PrisonerCalculator.MayWithdrawFromMelee(custodian.InMelee == true, custodian.InMelee == true)))
+            || unit.Pinned == true || unit.Berserk == true || unit.Disrupted == true
             || (unit.StackedWith is { } mmc && byId.TryGetValue(mmc, out var under) && under.WithdrawingTo is null))))
         {
             outside.Add("asl.a1.cc.withdrawal-outside");
@@ -686,7 +697,9 @@ public static class ScenarioA1CloseCombatCalculator
             {
                 foreach (var id in attacks.SelectMany(item => item.Attackers!).Distinct(StringComparer.Ordinal))
                 {
-                    if (units[units[id].Facts.GuardId!].Facts.InMelee == true)
+                    // The A20.54 claim (rulings RA20.7, RA20.11, RA20.12): ScenarioA1PrisonerCalculator.EscapeNtcRequired and EscapeNtcPassed decide, the
+                    // Guard's Melee read for a Melee in the Location.
+                    if (!ScenarioA1PrisonerCalculator.EscapeNtcRequired(units[units[id].Facts.GuardId!].Facts.InMelee == true))
                     {
                         continue;
                     }
@@ -698,7 +711,7 @@ public static class ScenarioA1CloseCombatCalculator
 
                     usedRolls.Add("escapeNtc:" + id);
                     var morale = units[id].Printed.Morale!.Value;
-                    var passed = ntc!.Sum() <= morale;
+                    var passed = ScenarioA1PrisonerCalculator.EscapeNtcPassed(ntc!.Sum(), morale);
                     checks.Add(new CloseCombatEscapeCheck(id, [.. ntc!], morale, passed));
                     if (!passed)
                     {
@@ -720,11 +733,28 @@ public static class ScenarioA1CloseCombatCalculator
             List<string> ActiveAttackers(int index) => [.. attacks[index].Attackers!.Where(id => !failed.Contains(id) && !Gone(id, position[index]))];
             List<string> ActiveDefenders(int index) => [.. attacks[index].Defenders!.Where(id => !Gone(id, position[index]))];
 
+            // The A20.54 claim (A20.55; ruling RA20.8): under the round's PrisonerEscapeReading an escape attack that leaves out a prisoner's Guard is made
+            // only once an attack resolved before it eliminates that Guard (EscapeTargetsRefusal); else it is held back, and its prisoners do not escape.
+            HashSet<string>? heldBack = null;
+            bool HeldBack(int index)
+            {
+                if (facts.PrisonerEscapeReading != true || facts.Round != CloseCombatFacts.PrisonersRound
+                    || !ActiveAttackers(index).Any(id => units[id].Facts.GuardId is { } guard && ScenarioA1PrisonerCalculator.EscapeTargetsRefusal(attacks[index].Defenders!.Contains(guard),
+                        firstPass.Where(item => position[item.Key] < position[index]).Any(item => item.Value.Defending.Any(result => result.UnitId == guard
+                            && result.Result == CloseCombatDefenderResult.Eliminated))) is not null))
+                {
+                    return false;
+                }
+
+                (heldBack ??= new HashSet<string>(StringComparer.Ordinal)).UnionWith(attacks[index].Attackers!);
+                return true;
+            }
+
             // Each attack's DR as its turn comes: an attack none of whose attackers or defenders is left is forfeited (A11.22), and an Original 2 by an
             // attacking MMC calls for a Leader Creation dr at once (A18.12).
             foreach (var index in order)
             {
-                if (ActiveAttackers(index).Count == 0 || ActiveDefenders(index).Count == 0)
+                if (ActiveAttackers(index).Count == 0 || ActiveDefenders(index).Count == 0 || HeldBack(index))
                 {
                     if (rolls.Attacks?.ContainsKey(Key(index)) == true)
                     {
@@ -988,7 +1018,16 @@ public static class ScenarioA1CloseCombatCalculator
 
             if (facts.Round == CloseCombatFacts.PrisonersRound)
             {
-                foreach (var unit in attacks.SelectMany(item => item.Attackers!).Distinct(StringComparer.Ordinal).Where(id => !failed.Contains(id)).Select(id => units[id]))
+                foreach (var unit in attacks.SelectMany(item => item.Attackers!).Distinct(StringComparer.Ordinal).Where(id => !failed.Contains(id) && heldBack?.Contains(id) != true)
+                    .Select(id => units[id]))
+                {
+                    unit.Escape();
+                }
+            }
+            else if (facts.PrisonerEscapeReading == true)
+            {
+                // The A20.54 claim (A20.55, A11.2; ruling RA20.10): a prisoner that withdraws from Melee with its Guard escapes.
+                foreach (var unit in units.Values.Where(unit => unit.Facts.Captured == true && unit.WithdrewTo is not null))
                 {
                     unit.Escape();
                 }
@@ -999,10 +1038,12 @@ public static class ScenarioA1CloseCombatCalculator
             Concealment(arithmetic);
 
             // A20.55: an escape succeeds when no enemy unit but a prisoner is left in the Location, or by Infiltration; only then is a SMC Armed (A20.551).
+            // The A20.54 claim (rulings RA20.10, RA20.12): ScenarioA1PrisonerCalculator.EscapeSucceeds decides; a Withdrawal counts under the round's
+            // PrisonerEscapeReading.
             foreach (var unit in units.Values.Where(unit => unit.Escaping))
             {
-                unit.EscapeSucceeds(unit.InfiltratedTo is not null
-                    || !units.Values.Any(other => other.Facts.Side != unit.Facts.Side && other.Facts.Captured != true && other.Present));
+                unit.EscapeSucceeds(ScenarioA1PrisonerCalculator.EscapeSucceeds(unit.InfiltratedTo is not null, facts.PrisonerEscapeReading == true && unit.WithdrewTo is not null,
+                    units.Values.Any(other => other.Facts.Side != unit.Facts.Side && other.Facts.Captured != true && other.Present)));
             }
 
             var extraRolls = ExtraRolls();
