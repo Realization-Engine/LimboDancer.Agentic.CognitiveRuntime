@@ -39,7 +39,8 @@ public static class ScenarioA1FireMapRules
                     return ("play.fire-grain: grain is Open Ground outside its season, which the game does not name, so FFMO there is not decided (B15.6)", terrain);
                 }
             }
-            else if (known is < 6 or > 9)
+            // The season is A10.531's calculator's (the A10.531 claim, ruling RA10.9).
+            else if (ScenarioA1OpenGroundCalculator.OpenGroundTerrain(terrain, known) == true)
             {
                 return (null, "open-ground");
             }

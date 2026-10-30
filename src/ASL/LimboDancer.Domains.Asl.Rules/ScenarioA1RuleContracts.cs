@@ -330,21 +330,29 @@ public static class ScenarioA1RuleContracts
     }
 
     /// <summary>
-    /// A12.14 (p. 77) and E1.31 (p. 223), as <see cref="ScenarioA1AdvanceCalculator.LosesConcealment"/> decides whether a concealed unit advancing into a
-    /// Location loses its "?" (the proving slice: what a viewer may know). Whether a Good Order enemy within 16 hexes sees it is the opponent's fact:
-    /// that side knows what its own units see, and the owner does not, since an enemy may be hidden. What is under the "?" is the owner's, and the
-    /// calculator does not need it. The LOS is read only when night and terrain leave the question open. The opponent names the advancer by its "?"
-    /// stack, which shows its side and Location and not what is under it (the review of Wiring Prompt 001, PS4); its identity reaches the calculator
-    /// as unknown.
+    /// A12.14 (pp. 77 and 78) and E1.31 (p. 223), as <see cref="ScenarioA1AdvanceCalculator.LosesConcealment(bool, Func{bool})"/> decides whether a
+    /// concealed unit advancing into a Location loses its "?" (the proving slice: what a viewer may know), with A10.531's Open Ground (p. 67) as
+    /// <see cref="ScenarioA1OpenGroundCalculator.OpenGroundTo"/> reads it for concealment (the A10.531 claim, rulings RA10.2 and RA10.6): what is in the
+    /// Location decides, its terrain in the month, SMOKE, a wreck or AFV; a Hindrance or TEM along a seer's LOS does not keep the "?". Whether a Good
+    /// Order enemy within 16 hexes sees it is the opponent's fact: that side knows what its own units see, and the owner does not, since an enemy may be
+    /// hidden. What is under the "?" is the owner's, and the calculator does not need it. The LOS is read only when night and the Location leave the
+    /// question open, so the owner settles a woods advance alone. The opponent names the advancer by its "?" stack, which shows its side and Location
+    /// and not what is under it (the review of Wiring Prompt 001, PS4); its identity reaches the calculator as unknown. The month may be unknown (a game
+    /// that names none): grain is then not evaluated (ruling RA10.7). SMOKE and a wreck or AFV are on the map for both sides; an absent
+    /// <c>smokeInLocation</c> or <c>inLocationCover</c> reads as none, the contract's reading before these facts, until Play's gatherer gives them
+    /// (W-A10.531).
     /// </summary>
     [RuleContract]
     private static RuleContract AdvanceConcealment() => new("a12.14-advance-concealment", "Concealment lost on advancing",
-        [new("A12.14", 77), new("E1.31", 223)],
+        [new("A12.14", 77), new("E1.31", 223), new("A10.531", 67)],
         [
             new("advancerId", ContractFactType.Unit, true, ContractDisclosure.Owner, "The concealed unit that advances") { Concerns = "advancerId" },
             new("to", ContractFactType.Hex, false, ContractDisclosure.All, "The Location it advances into"),
             Flag("night", "The scenario is at night"),
             new("terrain", ContractFactType.Text, false, ContractDisclosure.All, "The terrain of the Location it advances into"),
+            new("month", ContractFactType.Number, true, ContractDisclosure.All, "The scenario month, 1 to 12, unknown when the game names none (B15.6)"),
+            Flag("smokeInLocation", "SMOKE is in the Location it advances into", mayBeUnknown: true),
+            Flag("inLocationCover", "A wreck or AFV is in the Location it advances into", mayBeUnknown: true),
             Flag("enemyGoodOrderInLosWithin16", "A Good Order enemy unit within 16 hexes has a LOS to that Location", mayBeUnknown: true,
                 disclosure: ContractDisclosure.Opponent) with { Concerns = "advancerId" },
         ],
@@ -354,26 +362,47 @@ public static class ScenarioA1RuleContracts
     {
         Decide = facts =>
         {
-            // The LOS is read only when night and terrain leave the question open; an unknown LOS then leaves the verdict unknown.
-            var unknown = false;
-            var loses = ScenarioA1AdvanceCalculator.LosesConcealment(facts.Flag("night")!.Value, facts.Text("terrain")!, () =>
+            // The Location is judged first, then the LOS, each only when what came before leaves the question open; an unknown then leaves the verdict unknown.
+            string? unknown = null;
+            var month = facts.Number("month") is { } number
+                ? number == decimal.Truncate(number) && number is >= 1 and <= 12 ? (int)number : throw new ArgumentOutOfRangeException(nameof(facts), number, "'month' is a whole number from 1 to 12")
+                : (int?)null;
+            var smoke = facts.Flag("smokeInLocation") ?? false;
+            var inLocationCover = facts.Flag("inLocationCover") ?? false;
+            var location = new OpenGroundLocationFacts(facts.Text("terrain")!, month, smoke, false);
+            var view = new OpenGroundViewFacts(true, 0, new RoutCoverFacts(null, 0, false, false, inLocationCover));
+            bool? inLocation = null;
+            var loses = ScenarioA1AdvanceCalculator.LosesConcealment(facts.Flag("night")!.Value, () =>
             {
+                inLocation = ScenarioA1OpenGroundCalculator.OpenGroundTo(location, view, OpenGroundPurpose.Concealment);
+                if (inLocation is null)
+                {
+                    unknown = "the scenario month is needed for grain (B15.6) and is not known";
+                    return false;
+                }
+
+                if (inLocation == false)
+                {
+                    return false;
+                }
+
                 if (facts.Flag("enemyGoodOrderInLosWithin16") is { } seen)
                 {
                     return seen;
                 }
 
-                unknown = true;
+                unknown = "the fact 'enemyGoodOrderInLosWithin16' is needed here and is not known to this viewer";
                 return false;
             });
-            if (unknown)
+            if (unknown is not null)
             {
-                return new ContractVerdict(ContractVerdict.NotEvaluated,
-                    [new ContractReason("the fact 'enemyGoodOrderInLosWithin16' is needed here and is not known to this viewer", "A12.14", 77)], []);
+                return new ContractVerdict(ContractVerdict.NotEvaluated, [new ContractReason(unknown, "A12.14", 77)], []);
             }
 
             return loses
                 ? new ContractVerdict("loses-concealment", [new ContractReason("It enters Open Ground by day in the LOS of a Good Order enemy within 16 hexes", "A12.14", 77)], [])
+                : inLocation == false && (smoke || inLocationCover) && ScenarioA1OpenGroundCalculator.OpenGroundTerrain(location.TerrainKey, month) == true
+                    ? new ContractVerdict("keeps-concealment", [new ContractReason("SMOKE, a wreck, or an AFV in the Location keeps it from being Open Ground (A10.531, A4.6)", "A12.14", 78)], [])
                 : new ContractVerdict("keeps-concealment", [new ContractReason("Night, terrain other than Open Ground, or no Good Order enemy within 16 hexes sees it", "A12.14", 77)], []);
         },
     };

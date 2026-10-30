@@ -1,0 +1,69 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "a10-open-ground",
+  "title": "Minigame: A10.531 Open Ground",
+  "catalog": "asl-scenario-a1@1.13.0",
+  "source": {
+    "basis": "Manufactured under R0.3 as a minigame of the Rules-first plan (the A10.531 claim): a German squad crossing open ground, grain, and a hedged road in view of a Russian squad, on an imported board.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "A minimal card (ruling R22.3): the units are set up by hand, a German squad and a Good Order Russian squad within 16 hexes of it."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 0,
+    "month": 7,
+    "year": 0
+  },
+  "introduction": "A squad crosses open ground, grain, and a hedged road in front of the enemy: where is it in Open Ground, and to whom?",
+  "boards": [
+    {
+      "board": "bd04",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "german",
+    "movesFirst": "german"
+  },
+  "sides": [
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "russian",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "",
+        "basis": "none",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A minigame has no victory: it proves its rules on the Rule Workbench and in play.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "a10-open-ground"
+}
