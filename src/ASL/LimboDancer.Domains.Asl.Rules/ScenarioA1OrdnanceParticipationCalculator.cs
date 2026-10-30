@@ -9,6 +9,10 @@ public static class ScenarioA1OrdnanceParticipationCalculator
     /// <summary>The supported recorded reading; absent evidence remains the earlier reading.</summary>
     public const int CurrentVersion = 1;
 
+    /// <summary>The participant selection belongs to a Gun or light mortar, not a vehicle MA, LATW or MG ordnance request.</summary>
+    public static string? WeaponRefusal(string? kind) => kind is "asl:gun" or "asl:light-mortar" ? null
+        : "play.ordnance-participant: this participant selection requires a Gun or light mortar (A21.13, C9.2)";
+
     /// <summary>A21.13's SMC classification, from the existing non-qualified-use calculator.</summary>
     public static bool Smc(string? kind) => ScenarioA1NonQualifiedUseCalculator.User(kind, 1) == CrewServedUser.LoneSmc;
 
