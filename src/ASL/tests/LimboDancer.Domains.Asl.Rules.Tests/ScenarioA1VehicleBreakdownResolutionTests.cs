@@ -14,8 +14,16 @@ public sealed class ScenarioA1VehicleBreakdownResolutionTests
         var passed = new FireCheck("MC", [4, 5], 9, [], 9, 9, true, "passed");
         Assert.Equal("passed", ScenarioA1MoraleCheck.BailOutResult(passed, false, false, false, true));
         Assert.Equal("pinned", ScenarioA1MoraleCheck.BailOutResult(passed, false, false));
-        Assert.Equal("wounded", ScenarioA1MoraleCheck.BailOutResult(passed with { Passed = false, Consequence = "wounded" }, false, false, false, true));
-        Assert.Equal("eliminated", ScenarioA1MoraleCheck.BailOutResult(passed with { Passed = false, Consequence = "eliminated" }, false, false, false, true));
+        Assert.Equal("wounded", ScenarioA1MoraleCheck.BailOutResult(passed with
+        {
+            Passed = false,
+            Consequence = "wounded"
+        }, false, false, false, true));
+        Assert.Equal("eliminated", ScenarioA1MoraleCheck.BailOutResult(passed with
+        {
+            Passed = false,
+            Consequence = "eliminated"
+        }, false, false, false, true));
     }
 
     [Fact]
