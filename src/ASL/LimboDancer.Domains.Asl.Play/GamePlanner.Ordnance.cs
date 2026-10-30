@@ -973,7 +973,7 @@ public sealed partial class GamePlanner
         }
 
         // C8.9: Special Ammunition the Gun turned out not to have was never fired, unless the Gun malfunctioned: no marker, no Acquisition.
-        if (resolution.AmmunitionUse == "none" && !gunResult.Malfunctioned)
+        if (ScenarioA1OrdnanceProjection.NeverFired(resolution.AmmunitionUse, gunResult.Malfunctioned, gunResult.Eliminated == true))
         {
             return;
         }
@@ -1070,8 +1070,10 @@ public sealed partial class GamePlanner
         string? marker = ScenarioA1OrdnanceEventRules.ShotMarker(facts.Phase, gunResult.FireCounter) is { } shotMarker ? ConditionName(shotMarker) : null;
         var gunConditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
 
-        // C13.47 (ruling R9.11): a PSK is removed on its X#.
-        var removed = gunResult.Malfunctioned && OrdnanceReference.Value.Guns.GetValueOrDefault(facts.Gun.DefinitionId ?? string.Empty)?.LatwType == "psk";
+        // C13.47 (ruling R9.11): a PSK is removed on its X#. A.11 (W-A21.13): a Gun fired under a penalty multiple is removed on its X#, which the
+        // calculator's effect says.
+        var removed = gunResult.Eliminated == true
+            || (gunResult.Malfunctioned && OrdnanceReference.Value.Guns.GetValueOrDefault(facts.Gun.DefinitionId ?? string.Empty)?.LatwType == "psk");
         if (removed)
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(facts.Gun.GunId!), package, null, [recordId]));

@@ -119,7 +119,7 @@ internal static class ScenarioA1AreaCalculator
         foreach (var target in targets)
         {
             var list = new List<FireModifier>();
-            var enemy = target.Dummy == true || reference.Fire.Definitions.GetValueOrDefault(target.DefinitionId ?? string.Empty)?.Nationality != gun.Nationality;
+            var enemy = target.Dummy == true || reference.Fire.Definitions.GetValueOrDefault(target.DefinitionId ?? string.Empty)?.Nationality != ScenarioA1OrdnanceCalculator.FriendlyNationality(shot, gun);
             var concealed = enemy && (target.Concealed == true || target.Hidden == true || target.Dummy == true);
             if (concealed)
             {
@@ -232,9 +232,8 @@ internal static class ScenarioA1AreaCalculator
             hitIds.Length > 0, critical);
 
         // C2.24, C9.31, C9.2: the Multiple ROF, one lower for Spotted fire, none for a lone SMC; C5.4: none when pinned; C5.2: none in the AFPh.
-        // Keeps its answer (the A21.13 claim, ruling RA21.7): no captured or Non-Qualified Use penalty lowers it, where A21.12 lowers it by
-        // ScenarioA1NonQualifiedUseCalculator.RofLowering of the multiple (W-A21.13).
-        var rof = gun.RateOfFire ?? 0;
+        // A21.12 (W-A21.13): the penalty multiple lowers it one each; a shot recorded before the wiring was not lowered.
+        var rof = ScenarioA1OrdnanceCalculator.UnloweredRateOfFire(shot, gun);
         if (shot.Spotter is not null && rof > 0)
         {
             rof--;
@@ -403,9 +402,12 @@ internal static class ScenarioA1AreaCalculator
         var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, failed, rof, dice[0]);
         var acquires = !failed;
         var gained = !acquires ? 0 : Math.Max(acquisition - 1, -2);
-        var gunEffect = new OrdnanceGunEffect(breakdown, malfunctioned, Math.Max(rof, 0), kept, counter, gained, acquires ? shot.TargetLocationId : null)
+        // A.11 (W-A21.13): under a penalty multiple the Original B# is the X#, and a DR at or above it eliminates the Gun.
+        var eliminated = breakdownOutcome is null ? ScenarioA1OrdnanceCalculator.Eliminated(shot, gun, original, failed) : null;
+        var gunEffect = new OrdnanceGunEffect(breakdown, malfunctioned && eliminated != true, Math.Max(rof, 0), kept, counter, gained, acquires ? shot.TargetLocationId : null)
         {
-            VehicleBreakdown = breakdownOutcome
+            VehicleBreakdown = breakdownOutcome,
+            Eliminated = eliminated,
         };
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {

@@ -227,9 +227,23 @@ public sealed record OrdnanceShot(
         get; init;
     }
 
-    /// <summary>Whether a squad or HS of the Gun's nationality mans it (C5.8 Case H, A21.13; ruling R8.8).</summary>
+    /// <summary>
+    /// Whether a squad or HS of the Gun's nationality mans it (C5.8 Case H, A21.13; ruling R8.8). The reading of a shot recorded before W-A21.13;
+    /// a shot that carries <see cref="UseMultiple"/> leaves it null.
+    /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? NonQualified
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The multiple of the A21.11 and A21.12 penalties on this use of a crew-served Gun or a vehicle's weapon, from
+    /// <see cref="ScenarioA1NonQualifiedUseCalculator.Use"/> (a Gun) or A21.22's <c>WeaponPenalty</c> (a vehicle) (W-A21.13; rule 6 as amended
+    /// 2026-10-30). Null is a shot recorded before the wiring, read through <see cref="NonQualified"/> and <see cref="CapturedPenalty"/> as then.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? UseMultiple
     {
         get; init;
     }
@@ -563,6 +577,16 @@ public sealed record OrdnanceGunEffect(int BreakdownNumber, bool Malfunctioned, 
     /// <summary>D3.7's explicit vehicle-weapon result for an opted-in resolution; absent on the recorded legacy reading.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public VehicleBreakdownResolved? VehicleBreakdown
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// A.11 (p. 43; W-A21.13): a Gun fired under a penalty multiple has its Original B# as its X#, and an Original DR at or above it eliminates the
+    /// Gun rather than malfunctions it. Null otherwise, and on every resolution made before the wiring.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Eliminated
     {
         get; init;
     }
