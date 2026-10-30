@@ -537,6 +537,41 @@ Each is settled in the inventory. "By" is as there: the audit's judgment unless 
 - **Repaired in pass 35 (2026-10-09).** **In Mud a road gap in a wall may be charged as a wall for a vehicle (unsettled).** `GamePlanner.VehicleTerrain.cs` sets `road = false` for an unpaved road in Mud before the wall test `wall is not null && !road`, so a truck on such a road across a hexside that also carries a wall or hedge would be refused. I did not find a board hexside to confirm it.
 - **Repaired in pass 35 (2026-10-09).** **Reverse movement multiplies the night and weather MP (unsettled).** The reverse multiplier is applied after the weather cost is added; E3.9 says weather costs are added "after calculating total cost". I could not settle from D2 text in this group whether the reverse multiple covers them.
 
+### 8.3a The survey of 2026-10-29
+
+Five read-only sub-agents checked every bullet of section 8.3 against main at `d4efb76d` (2026-10-29), reading the code each names and the rule's PDF page, without trusting a bullet's own repair note. Of 141 bullets: **88 fixed** (by passes 35 to 72; two only by refusing the counter, one only for ordnance), **50 open**, **2 taken by a rule claim**, and one not a fault (the IFT's last row is printed "15 or more", so clamping to it is right). The open ones, by rule section, the wrong results in play first; a site is a file and line on main. Each is a claim's to fix, on the claim board.
+
+**Wrong results in play today:**
+
+- **A21.13** (p. 88): a Gun manned by a non-qualified squad or HS of its own side takes only Case H's +2; the B#, the ROF, and the red To Hit read `CapturedPenalty` only (`ScenarioA1OrdnanceCalculator.cs:1214`, `:1500`, `:1507`, `:1606`). Every such shot.
+- **A10.531, A12.14:** Open Ground read two ways. `ScenarioA1MovementCalculator.cs:850` (`Unmasked`) and `ScenarioA1AdvanceCalculator.cs:144` test `terrain == "open-ground"`, while the rout's `RoutCalculator.OpenGround` (`:124`) counts out-of-season grain as Open Ground and SMOKE as not: a concealed mover or advancer in such grain keeps its "?", and in open ground with SMOKE loses it.
+- **A8.41** (p. 61): a MG marked First Fire may Final Fire at any range (`ScenarioA1FireCalculator.cs:883`, `:1309` test only the firer's marker); the rule allows only adjacent or same-hex targets.
+- **A25** (pp. 93 to 97), the minor nationalities: non-elite Italian squads Deploy (A25.61; `ScenarioA1Definitions.cs:181`); a capture attempt takes +1 against a non-elite Italian (A25.63; `ScenarioA1CloseCombatCalculator.cs:1025`); Italian and Axis Minor prisoners may escape (A20.55, A25.63, A25.82; `:425`); Finns firing a Russian MG take the Captured Use penalties (A25.75; `ScenarioA1FireEligibility.cs:11`); a Finnish HS cannot Recombine, or a squad Deploy, without a leader (A25.71; `ScenarioA1SupportWeaponRules.cs:33`, a refusal of legal actions).
+- **A11:** Finns (and ANZAC, Gurkhas, Commandos, Partisans) are never Stealthy (A11.17; `ScenarioA1CloseCombatCalculator.cs:150`, `ScenarioA1FireRuleModels.cs:457`); an Assault Engineer's CCV +1 is never read (A11.5; `ScenarioA1VehicleCloseCombat.cs:352` to `:367`; 86 catalog entries carry the trait).
+- **A20.54, A26.222:** a prisoner its own side eliminates counts once, not double, in CVP (`ScenarioA1VictoryCalculator.cs:415` to `:436`; no fact records who eliminated it).
+- **A7.301, A20.54:** a KIA breaks a prisoner or an Unarmed unit instead of Casualty Reducing it (`ScenarioA1FireCalculator.cs:4663`; the MC path was fixed in pass 70). Rare.
+- **B23.31** (p. 136): Residual FP at a Bypassing stack in a building hex takes the lane's terrain, not the building's TEM (`Play/GamePlanner.Fire.cs:1680`, `ScenarioA1FireMapRules.cs:52`).
+- **B23.74:** a Factory by SSR plays as a stone building (the Tractor Works card's SSR 5 is marked not enforced).
+- **A24.4:** SMOKE hinders at any height (`Play/GamePlanner.Wrecks.cs:128` to `:138`); the B25.2 claim's `Height` answers a Blaze's, unwired (W-B25.2); a grenade's two levels are in no claim.
+- **A24.6** (p. 92): the weather exception for SMOKE in a building does not check that the placer is in that building or an ADJACENT Location of it (`ScenarioA1SmokeCalculator.cs:84`). Rare.
+- **C3.9** (p. 171): an upper-superstructure hit on an open-topped AFV is never a Shock (`ScenarioA1ArmorCalculator.cs:754`, `:820`; the SPW 251/1). Recorded as a deviation (R7.4).
+- **D5.34, A7.7:** the ordnance Infantry Target Type path adds neither the Stun +1 nor the Encircled +1 (`ScenarioA1OrdnanceCalculator.cs`, `Run`; only the armor path adds the Stun).
+- **C6.57:** a concealed vehicle hit and revealed is never acquired (`ScenarioA1ArmorCalculator.cs:642`).
+- **C2.21:** a Gun with AP fires AP at an unarmored vehicle by default, decided in Play (`Play/LiveOrdnance.cs:323`).
+- **C10.3:** a Gun pushed in Mud or Deep Snow pays no +3 and keeps the road's -2 (`Play/GamePlanner.Movement.cs:516`, decided in Play). **C10.31:** a Gun that failed its push may still be hooked up (`Play/GamePlanner.Guns.cs:142` to `:177`, decided in Play).
+- **D2.321:** a tank in Bypass fires with its ordinary TCA (not built). **D2.33:** the Target Facing after a VCA change in Bypass may be wrong (`Play/GamePlanner.VehicleTerrain.cs:291` to `:299`; not settled by a run).
+- **E1.8, E1.89:** a Gunflash follows the firer rather than staying in its Location, and dismantling or assembling a MMG at night makes one (`Play/GamePlanner.Night.cs:73`, `GamePlanner.SupportWeapons.cs:747`). **E1.91:** the first Starshell is allowed on any Gunflash, either side's (`Play/GamePlanner.Starshells.cs:67`). **E1.921:** a CE AFV with an Armor Leader rolls for a Starshell as if leaderless (`ScenarioA1Starshells.cs:71`); Interior Building hexes are not checked (rare).
+- **B6.2:** a bridge's Hindrance counts only when both ends are at road level (`Maps/Los/LosCalculator.cs:1505`). Rare.
+- **B16.31:** a DC into marsh keeps its 30 FP (`ScenarioA1FireCalculator.cs:3512`); ordnance HE is halved.
+
+**Wrong only once reached (no card or board in use reaches it yet):** C2.7 and B23.423, no Gun setup restriction (`ScenarioA1SetupCalculator.cs:715`); B16.1, equipment left in marsh survives; B14.2, an orchard is always in season (no month reader in Maps); the depression terrain under an orchard on boards 12a, 29a, 76, 53, 88, 98, 8a, and 8b; C3.3, the To Hit color's red default for Japanese, French, and the British 2-in. mortar; C.7, Heavy Payload; C10.3, an on-map push checks no QSU, NM, or RFNM; D14.2, a lone radioless tank's NTC (no radioless trait in the catalog); D13.1 to D13.35, smoke dispensers and vehicular smoke grenades (no catalog attribute).
+
+**Not wrong results:** B9.35, a wall refused needlessly as a Hillside wall (`ScenarioA1TerrainCosts.cs:420`); B9.33's reduction has no test; wording only: "Continuous Slopes" in two refusals (B.5 is the LOS term), the marsh refusal's citation (B16.41), and `ScenarioA1HeatOfBattle.Subject`'s stale comment on crews; recorded readings: D2.3's failed clearance (R11.2) and the unarmed vehicle's capture at the start of the CCPh (R11.16, A11.52).
+
+**Taken by a rule claim:** B25.2's smoke height (built, unwired: W-B25.2); D3.7's repair and Recall (built; the old repair members keep their answers, RD3.6).
+
+**Stale inventory notes seen:** B13.31 (woods-road hexes read as woods since pass 40), C3.3 (pass 55 made British and American guns black).
+
 ### 8.4 Still true from the first version
 
 - **Stale backlog rows.** Some rows of backlog sections 1 to 15 describe gaps that later passes closed (vehicle CC, TI placement, "vehicles do not Bypass"). Two cite rule numbers the PDF does not have (D8.32 to D8.35; B13.422).
