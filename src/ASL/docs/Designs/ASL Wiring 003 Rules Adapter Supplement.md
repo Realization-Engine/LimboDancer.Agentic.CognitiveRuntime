@@ -39,4 +39,6 @@ Codex's Studio build is `E:/Archive/GitHub/dlandi/asl-gate-work-codex/studio-668
 
 ## Remaining work
 
+The separate A11.17 adapter branch adds explicit `stealthy:<side>` and `lax:<side>` SSR token parsing and validation in Rules, including an optional check against the scenario's actual sides. Group-level SSR selection is not represented by these tokens; the approved wiring uses the context's side lists. Explicit OB designations use `anzac`, `gurkha`, `commando`, `partisan`, or `raider`; absence is None, and an unknown token is not silently treated as ordinary troops. Five focused cases passed with warnings as errors: malformed setup tokens, unknown sides, Lax taking precedence, and an explicit ANZAC designation versus unsupported prose. Existing Stealth verdicts and contracts are unchanged.
+
 The three Wiring 003 caller claims and their played minigames, gates, reviews, and PR CI remain pending. The contract fact requirement above remains pending with its gatherer. Rule claims with findings are not marked reviewed until those findings are corrected and verified.

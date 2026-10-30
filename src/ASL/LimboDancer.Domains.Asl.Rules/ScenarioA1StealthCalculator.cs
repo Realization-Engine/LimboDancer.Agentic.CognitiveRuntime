@@ -16,6 +16,55 @@ public static class ScenarioA1StealthCalculator
     private const string Leader = "asl:leader";
     private const string Hero = "asl:hero";
 
+    /// <summary>A11.17 and A11.18 (p. 73): an explicit side-wide SSR token; no inference from a card's prose.</summary>
+    public static (string Side, bool Lax)? SsrToken(string token)
+    {
+        ArgumentNullException.ThrowIfNull(token);
+        return token.Split(':') switch
+        {
+            ["stealthy", { Length: > 0 } side] => (side, false),
+            ["lax", { Length: > 0 } side] => (side, true),
+            _ => null,
+        };
+    }
+
+    /// <summary>A11.17 and A11.18 (p. 73): Stealth/Lax SSRs name a side; when supplied, the scenario's sides bound that name.</summary>
+    public static string? SsrRulesBar(IReadOnlyList<string> rules, IReadOnlyCollection<string>? sides = null)
+    {
+        ArgumentNullException.ThrowIfNull(rules);
+        foreach (var rule in rules)
+        {
+            if (rule is not ("stealthy" or "lax") && !rule.StartsWith("stealthy:", StringComparison.Ordinal) && !rule.StartsWith("lax:", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (SsrToken(rule) is not { } token)
+            {
+                return $"play.stealth-rule: '{rule}' is not stealthy:<side> or lax:<side> (A11.17, A11.18)";
+            }
+
+            if (sides is not null && !sides.Contains(token.Side, StringComparer.Ordinal))
+            {
+                return $"play.stealth-rule: '{token.Side}' is not a side of this scenario (A11.17, A11.18)";
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>A11.17 (p. 73): the explicit force designation on an OB group; absent means none, an unknown token is not a known designation.</summary>
+    public static StealthDesignation? Designation(string? token) => token switch
+    {
+        null or "none" => StealthDesignation.None,
+        "anzac" => StealthDesignation.Anzac,
+        "gurkha" => StealthDesignation.Gurkha,
+        "commando" => StealthDesignation.Commando,
+        "partisan" => StealthDesignation.Partisan,
+        "raider" => StealthDesignation.Raider,
+        _ => null,
+    };
+
     /// <summary>The Ambush drm of a side with a Lax unit, once (A11.4, A11.18), as the Ambush has always written it.</summary>
     public static readonly FireModifier AmbushLax = new("lax", 1m, "A11.18");
 

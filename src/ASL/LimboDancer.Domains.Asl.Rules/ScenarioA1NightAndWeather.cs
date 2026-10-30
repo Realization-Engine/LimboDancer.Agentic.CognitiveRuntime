@@ -60,6 +60,11 @@ public static class ScenarioA1NightAndWeather
             return $"play.fanatic-rule: '{fanatic}' is not fanatic:<side> or fanatic:<side>:<group>, the side or OB group whose Personnel are Fanatic (A10.8; ruling R70.15)";
         }
 
+        if (ScenarioA1StealthCalculator.SsrRulesBar(rules) is { } stealth)
+        {
+            return stealth;
+        }
+
         // A19.131, A19.132 (pass 72, ruling R72.10): Ammunition Shortage names a side; an SSR ELR for underscored units a side, an OB group, and 0 to 4.
         if (ScenarioA1UnitSubstitution.RulesBar(rules) is { } substitution)
         {
