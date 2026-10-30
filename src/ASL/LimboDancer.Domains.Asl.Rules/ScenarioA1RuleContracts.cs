@@ -373,6 +373,11 @@ public static class ScenarioA1RuleContracts
             bool? inLocation = null;
             var loses = ScenarioA1AdvanceCalculator.LosesConcealment(facts.Flag("night")!.Value, () =>
             {
+                if (facts.Flag("enemyGoodOrderInLosWithin16") == false)
+                {
+                    return false;
+                }
+
                 inLocation = ScenarioA1OpenGroundCalculator.OpenGroundTo(location, view, OpenGroundPurpose.Concealment);
                 if (inLocation is null)
                 {
