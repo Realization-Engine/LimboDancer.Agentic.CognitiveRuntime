@@ -2037,8 +2037,8 @@ public static class ScenarioA1FireCalculator
                 vehicleSpared = true;
 
                 // A23.4 (p. 90): "An Original malfunction DR of 12 (or >= 10 if captured) for a Placed/Thrown DC attack" removes it without detonation.
-                if (position.OriginalDr >= AssaultWeaponRemoval(reference.Definitions[charge.DefinitionId!], reference.Definitions.GetValueOrDefault(charge.UserDefinitionId ?? string.Empty),
-                    charge.Captured == true, charge.Inexperienced == true))
+                if (ScenarioA1DemolitionChargeRules.DcMalfunction(position.OriginalDr, AssaultWeaponRemoval(reference.Definitions[charge.DefinitionId!],
+                    reference.Definitions.GetValueOrDefault(charge.UserDefinitionId ?? string.Empty), charge.Captured == true, charge.Inexperienced == true)))
                 {
                     dcMalfunctioned = true;
                     targetsSpared = true;
@@ -2218,7 +2218,7 @@ public static class ScenarioA1FireCalculator
 
             if (charge.Cx == true)
             {
-                drm.Add(new FireModifier("cx:" + charge.UserId, 1m, "A23.4"));
+                drm.Add(new FireModifier("cx:" + charge.UserId, ScenarioA1DemolitionChargeRules.DcCxDrm(true), "A23.4"));
             }
 
             if (named.HullFacing == "rear")
@@ -3808,7 +3808,9 @@ public static class ScenarioA1FireCalculator
             if (((attack.Firers ?? []).FirstOrDefault(item => item.Cx == true)?.UnitId ?? Directors(attack).FirstOrDefault(item => item.Cx == true)?.UnitId
                 ?? (attack.DemolitionCharge is { Cx: true } cxCharge && !chargeAtAfv ? cxCharge.UserId : null)) is { } exhausted)
             {
-                drm.Add(new FireModifier("cx:" + exhausted, 1m, attack.DemolitionCharge is null ? "A4.51" : "A23.4"));
+                // The DC's +1 is A23.4's (the A23.3 claim, RA23.6); an ordinary firer's is A4.51's.
+                drm.Add(new FireModifier("cx:" + exhausted, attack.DemolitionCharge is null ? 1m : ScenarioA1DemolitionChargeRules.DcCxDrm(true),
+                    attack.DemolitionCharge is null ? "A4.51" : "A23.4"));
             }
 
             // A23.6, A23.62 (ruling R15.3): a Thrown DC is +2 at its target and +3 at its thrower's Location, each +1 more in the AFPh unless its
@@ -3971,8 +3973,9 @@ public static class ScenarioA1FireCalculator
 
             // A23.4 (ruling R15.2): a DC's Original DR at its malfunction number removes it with no effect. C7.346 (pass 60, ruling R60.16): at a named AFV,
             // its Original Position DR does instead.
-            if (attack.DemolitionCharge is { Mode: not FireDemolitionCharge.Thrower } exploded && !chargeAtAfv && original >= AssaultWeaponRemoval(reference.Definitions[exploded.DefinitionId!],
-                reference.Definitions.GetValueOrDefault(exploded.UserDefinitionId ?? string.Empty), exploded.Captured == true, exploded.Inexperienced == true))
+            if (attack.DemolitionCharge is { Mode: not FireDemolitionCharge.Thrower } exploded && !chargeAtAfv
+                && ScenarioA1DemolitionChargeRules.DcMalfunction(original, AssaultWeaponRemoval(reference.Definitions[exploded.DefinitionId!],
+                    reference.Definitions.GetValueOrDefault(exploded.UserDefinitionId ?? string.Empty), exploded.Captured == true, exploded.Inexperienced == true)))
             {
                 dcMalfunctioned = true;
                 result = "none";

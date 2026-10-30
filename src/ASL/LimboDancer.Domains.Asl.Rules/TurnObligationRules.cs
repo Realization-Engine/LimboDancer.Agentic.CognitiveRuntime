@@ -125,6 +125,8 @@ public static class TurnObligationRules
         switch (facts.Family)
         {
             case TurnObligationFamily.PlacedDc:
+                // Keeps its answer (the A23.3 claim, RA23.8): an obligation's deadline, due from the AFPh on and overdue after, not the window itself,
+                // which ScenarioA1DemolitionChargeRules.DetonationWindow decides.
                 if (origin.Phase != "mph" || facts.PlacedDcOperable is null)
                 {
                     return Result(TurnObligationState.NotEvaluated, reference, "Placement or operability evidence is incomplete.");

@@ -42,8 +42,9 @@ public static class TurnPlacedDcWindowRules
         {
             return TurnDecisionTiming.NotEvaluated;
         }
-        if (facts.Occurrence.Phase != "afph" || facts.Occurrence.GameTurn != facts.OriginGameTurn
-            || facts.Occurrence.Owner != facts.OriginOwner || !facts.Operable)
+        // The window is A23.4's (the A23.3 claim, RA23.8): the owner's AFPh of the Game Turn it was Placed, operable. The opening's evidence below is the ASOP's.
+        if (!ScenarioA1DemolitionChargeRules.DetonationWindow(facts.Occurrence.Phase, facts.Occurrence.Owner == facts.OriginOwner, facts.Operable,
+            facts.Occurrence.GameTurn == facts.OriginGameTurn))
         {
             return TurnDecisionTiming.OutsideWindow;
         }
