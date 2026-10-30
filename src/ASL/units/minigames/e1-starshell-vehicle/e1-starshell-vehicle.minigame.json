@@ -1,0 +1,80 @@
+{
+  "id": "e1-starshell-vehicle",
+  "title": "E1.91 a Starshell opened by an enemy vehicle",
+  "card": "e1-starshell-vehicle",
+  "rules": [
+    "E1.91",
+    "E1.921"
+  ],
+  "contracts": [
+    "e1.921-starshell-usage"
+  ],
+  "example": null,
+  "checks": [
+    {
+      "name": "With no German motorized vehicle on board, a Russian motorized vehicle moves 12 hexes from the German squad, which may try the first Starshell on a Usage dr of 2",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e1.921-starshell-usage",
+      "facts": {
+        "firerId": "g-squad",
+        "firer": "mmc",
+        "goodOrder": true,
+        "pinned": false,
+        "ti": false,
+        "captured": false,
+        "stunned": false,
+        "shocked": false,
+        "inPillbox": false,
+        "aerial": false,
+        "interiorOrSubterranean": false,
+        "firerHasEnemyInLos": false,
+        "friendlyMotorizedOnboard": false,
+        "enemyMotorizedMovedWithin16": true,
+        "starshellFiredBefore": false,
+        "firstStarshellTurnPast": false,
+        "startOfPhaseBeforeActs": true,
+        "qualifyingGunflashOccurred": false
+      },
+      "expect": {
+        "outcome": "usage-2"
+      }
+    },
+    {
+      "name": "The Russian motorized vehicle moves 17 hexes from the German squad, beyond 16, so no Starshell is fired yet",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e1.921-starshell-usage",
+      "facts": {
+        "firerId": "g-squad",
+        "firer": "mmc",
+        "goodOrder": true,
+        "pinned": false,
+        "ti": false,
+        "captured": false,
+        "stunned": false,
+        "shocked": false,
+        "inPillbox": false,
+        "aerial": false,
+        "interiorOrSubterranean": false,
+        "firerHasEnemyInLos": false,
+        "friendlyMotorizedOnboard": false,
+        "enemyMotorizedMovedWithin16": false,
+        "starshellFiredBefore": false,
+        "firstStarshellTurnPast": false,
+        "startOfPhaseBeforeActs": true,
+        "qualifyingGunflashOccurred": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "16 hexes"
+        ]
+      }
+    }
+  ],
+  "units": {
+    "g-squad": "german",
+    "r-vehicle": "russian"
+  }
+}
