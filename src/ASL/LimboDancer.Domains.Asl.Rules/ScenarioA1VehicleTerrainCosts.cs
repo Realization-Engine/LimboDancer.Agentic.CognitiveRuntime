@@ -13,7 +13,8 @@ public static class ScenarioA1VehicleTerrainCosts
 
     /// <summary>
     /// The Bog DRM of a vehicle (D8.21; ruling R11.9) that belong to it, whatever the terrain: +1 Normal Ground Pressure (none printed), +2 High, 0 Low;
-    /// +1 towing a Gun; +1 not fully-tracked; +1 truck-type MP.
+    /// +1 towing a Gun; +1 not fully-tracked; +1 truck-type MP. It has no Factory +1 (B23.742), which <see cref="ScenarioA1FactoryCalculator.BogDrm"/> gives
+    /// in a Factory hex (the B23.74 claim, RB23F.12); the wiring adds it there.
     /// </summary>
     public static List<(string Cause, int Drm)> VehicleBogDrm(string? groundPressure, bool towing, string? movementType)
     {
@@ -62,7 +63,10 @@ public static class ScenarioA1VehicleTerrainCosts
 
     /// <summary>
     /// The cost of a vehicle's outright entry of a Location over the hexside it crosses (rulings R11.6 to R11.9), from the facts Play reads: the
-    /// wreck and vehicle penalty, SMOKE, and the weather cost cross as delegates read where the old body read them.
+    /// wreck and vehicle penalty, SMOKE, and the weather cost cross as delegates read where the old body read them. It keeps its answer for a Factory
+    /// (refused as a building, or as terrain with no key), where B23.742 gives a Vehicular-Sized Entrance at Open Ground cost, a fully-tracked AFV's move
+    /// within at one-fourth of its allotment, and its exit: <see cref="ScenarioA1FactoryCalculator.VehicleStep"/> decides those (the B23.74 claim, RB23F.12),
+    /// asked first in a Factory hex.
     /// </summary>
     public static (VehicleTerrainEntry? Entry, string? Reason) EntryCost(string? type, string to, int toLevel, bool cliffOrSlope, string? terrainKey,
         string? terrainName, string? wall, string? hexsideName, bool roadHexside, int rise, int? month, bool mud, bool pavedRoad, bool plowedRule,
@@ -307,7 +311,8 @@ public static class ScenarioA1VehicleTerrainCosts
 
     /// <summary>
     /// A VCA change in a woods, building, or rubble hex off its road (D2.11, B13.41; ruling R11.8): two MP, with a Bog DR in woods and rubble; one MP
-    /// elsewhere.
+    /// elsewhere. It keeps its answer in a Factory hex (no Bog DR), where B23.742 makes every VCA change subject to Bog:
+    /// <see cref="ScenarioA1FactoryCalculator.VcaChangeBog"/> and <see cref="ScenarioA1FactoryCalculator.BogDrm"/> decide it (the B23.74 claim, RB23F.12).
     /// </summary>
     public static (int HalfMp, int? BogDrm, IReadOnlyList<string> Causes) TurnCost(string terrain, Func<List<(string Cause, int Drm)>> bogDrm)
     {
