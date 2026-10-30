@@ -370,6 +370,56 @@ public sealed class ScenarioA1OrdnanceParticipationTests
         Assert.Contains("C2.6", ScenarioA1OrdnanceMapRules.GunTargetStatus(3, 60, () => 6, () => 120, 0));
     }
 
+    [Fact]
+    public void BothParticipantsMustQualifyForOpportunityFireAndBothMayLoseConcealment()
+    {
+        var shot = Shot(false, true);
+        var second = shot.Participation!.Second!;
+        var hidden = second with
+        {
+            Crew = second.Crew! with
+            {
+                Concealed = true
+            },
+            OpportunityFireDeclared = true
+        };
+        Assert.Contains("A7.25", ScenarioA1OrdnanceParticipationCalculator.CandidateRefusal("first", "asl:leader", "asl:leader", hidden, phase: "PFPh"));
+        var result = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            Participation = new(1, hidden with
+            {
+                OpportunityFireDeclared = false
+            })
+        }, Reference);
+        Assert.Equal(OrdnanceResolution.Resolved, result.Disposition);
+        Assert.True(result.CrewConcealmentLost);
+        var opportunity = shot with
+        {
+            Phase = "AFPh",
+            Crew = shot.Crew! with
+            {
+                OpportunityFire = true
+            }
+        };
+        Assert.False(ScenarioA1OrdnanceCalculator.OpportunityFire(opportunity));
+        Assert.True(ScenarioA1OrdnanceCalculator.OpportunityFire(opportunity with
+        {
+            Participation = null
+        }));
+        Assert.True(ScenarioA1OrdnanceCalculator.OpportunityFire(opportunity with
+        {
+            Participation = new(1, second with
+            {
+                Crew = second.Crew! with
+                {
+                    OpportunityFire = true
+                }
+            })
+        }));
+        Assert.NotNull(ScenarioA1OrdnanceParticipationCalculator.WeaponRefusal("asl:latw"));
+        Assert.Null(ScenarioA1OrdnanceParticipationCalculator.WeaponRefusal("asl:gun"));
+    }
+
     private static OrdnanceShot Shot(bool heavy, bool pair)
     {
         var second = Second with

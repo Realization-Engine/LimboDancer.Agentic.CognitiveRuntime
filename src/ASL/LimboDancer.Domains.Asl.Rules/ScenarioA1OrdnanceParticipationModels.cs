@@ -24,6 +24,13 @@ public sealed record OrdnanceAdditionalFirer(
     {
         get; init;
     }
+
+    /// <summary>A7.25: declared Opportunity Fire bars Prep Fire. Null retains the earlier participant reading.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? OpportunityFireDeclared
+    {
+        get; init;
+    }
 }
 
 /// <summary>

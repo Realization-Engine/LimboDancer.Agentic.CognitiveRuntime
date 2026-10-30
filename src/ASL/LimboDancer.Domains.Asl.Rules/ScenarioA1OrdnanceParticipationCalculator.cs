@@ -102,7 +102,7 @@ public static class ScenarioA1OrdnanceParticipationCalculator
         var primary = reference.Fire.Definitions.GetValueOrDefault(shot.Crew!.DefinitionId!);
         if (participation.Second is { } second && CandidateRefusal(shot.Crew.UnitId!, primary?.Kind,
             reference.Fire.Definitions.GetValueOrDefault(second.Crew?.DefinitionId ?? string.Empty)?.Kind, second,
-            shot.Director?.UnitId, shot.Spotter?.UnitId) is { } refusal)
+            shot.Director?.UnitId, shot.Spotter?.UnitId, shot.Phase) is { } refusal)
         {
             return refusal;
         }
@@ -131,10 +131,14 @@ public static class ScenarioA1OrdnanceParticipationCalculator
     /// Existing Gun restrictions decide TI, Melee and captivity. Pinned Infantry may fire, with Case D and no ROF (A7.81 p. 58, C5.4 p. 172).
     /// </summary>
     public static string? CandidateRefusal(string primaryId, string? primaryKind, string? secondKind, OrdnanceAdditionalFirer second,
-        string? directorId = null, string? spotterId = null)
+        string? directorId = null, string? spotterId = null, string? phase = null)
     {
         ArgumentNullException.ThrowIfNull(second);
         var crew = second.Crew;
+        if (phase == "PFPh" && second.OpportunityFireDeclared == true)
+        {
+            return "play.ordnance-participant: an Opportunity Firer cannot fire during the PFPh (A7.25)";
+        }
         if (string.IsNullOrWhiteSpace(primaryId) || second.ActiveWithDefinition != true || second.SameSide != true || second.AtFirer != true
             || crew?.UnitId is not { Length: > 0 } || crew.DefinitionId is not { Length: > 0 })
         {
@@ -162,6 +166,9 @@ public static class ScenarioA1OrdnanceParticipationCalculator
             ? "play.ordnance-participant: the second firer cannot also direct, spot, or use another weapon in this fire phase (A9.12, C9.3)"
             : null;
     }
+
+    /// <summary>A12.14 pp. 77-78: both participants perform the firing action; the existing visibility fact governs concealment loss.</summary>
+    internal static bool Concealed(OrdnanceShot shot) => shot.Crew?.Concealed == true || shot.Participation?.Second?.Crew?.Concealed == true;
 
     /// <summary>C5.4 and A7.81: either participating firer's pin applies to their shot. Absent participation preserves the primary crew alone.</summary>
     public static bool Pinned(OrdnanceShot shot)
