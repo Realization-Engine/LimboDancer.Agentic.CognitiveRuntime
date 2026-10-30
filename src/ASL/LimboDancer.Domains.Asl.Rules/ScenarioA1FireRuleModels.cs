@@ -450,11 +450,29 @@ public sealed record ConcealmentCandidateFacts(
     /// </summary>
     public bool Large => (Vehicle ? VehicleSize : HoldsEmplacedGun ? GunSize : null) is "large" or "very-large";
 
-    /// <summary>Whether it is Lax: an Inexperienced unit (A19.36), not a vehicle, +1 to its Concealment dr (A12.122; ruling R70.22).</summary>
+    /// <summary>
+    /// Whether it is Lax: an Inexperienced unit (A19.36), not a vehicle, +1 to its Concealment dr (A12.122; ruling R70.22). Read only while
+    /// <see cref="Stealth"/> is null; it keeps its answer (the A11.17 claim, ruling RA11S.7): <see cref="ScenarioA1StealthCalculator.ConcealmentDrm"/>
+    /// replaces it, and differs in that SSR Lax and non-elite Italians (A25.64) are Lax and a Lax unit is never also Stealthy.
+    /// </summary>
     public bool Lax => !Vehicle && Inexperienced?.Invoke() == true;
 
-    /// <summary>Whether it is Stealthy: a hero or a heroic leader (A15.24, A15.21), -1 to its Concealment dr (A12.122; ruling R70.22).</summary>
+    /// <summary>
+    /// Whether it is Stealthy: a hero or a heroic leader (A15.24, A15.21), -1 to its Concealment dr (A12.122; ruling R70.22). Read only while
+    /// <see cref="Stealth"/> is null; it keeps its answer (the A11.17 claim, ruling RA11S.7): <see cref="ScenarioA1StealthCalculator.ConcealmentDrm"/>
+    /// replaces it, and differs in that Elite and 1st Line Finns, designated forces, and SSR Stealth are Stealthy, Green and Conscript never, and a Lax
+    /// unit is not ("Stealthy unless Lax", A11.17).
+    /// </summary>
     public bool Stealthy => Kind == "asl:hero" || (Kind == "asl:leader" && Heroic);
+
+    /// <summary>
+    /// Its status as <see cref="ScenarioA1StealthCalculator.Status"/> gives it for the Concealment dr (the A11.17 claim, ruling RA11S.7): when set, its
+    /// drm is read in place of <see cref="Lax"/> and <see cref="Stealthy"/>. Null, as before the claim, reads them.
+    /// </summary>
+    public StealthStatus? Stealth
+    {
+        get; init;
+    }
 
     /// <summary>
     /// What shares its "?" (A12.2: "If a Gun, vehicle ... loses its hidden/concealed status ... so does its manning Infantry or PRC, and vice versa"; ruling

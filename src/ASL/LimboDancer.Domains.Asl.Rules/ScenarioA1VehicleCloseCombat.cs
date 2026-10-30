@@ -240,7 +240,23 @@ public sealed record VehicleCloseCombatResolution(
 /// </summary>
 public static class ScenarioA1VehicleCloseCombat
 {
-    public static VehicleCloseCombatResolution Resolve(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference)
+    /// <summary>
+    /// The attack as every recorded game has read it: <see cref="Resolve(VehicleCloseCombatFacts, ScenarioA1CloseCombatReference, CcvContext?)"/> with no
+    /// context, the same answer. It keeps its answer where A11.5 differs (the A11.5 claim's design, ruling RA11C.6; W-A11.5): no Assault Engineer +1, no
+    /// -1 for a concealed vehicle or an outnumbered Guard, no national CCV, an Unarmed or swimming attacker admitted, a combining leader's DRM for a berserk
+    /// attacker, a Final DR equal to a CCV of 0 or less a burning wreck, and a defender's CCV floored at 1 with no DRM for the excess.
+    /// </summary>
+    public static VehicleCloseCombatResolution Resolve(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference) => Resolve(facts, reference, null);
+
+    /// <summary>
+    /// A11.5, A11.51, A11.62 (the A11.5 claim's design, ruling RA11C.5): the attack with the facts no recorded record holds. With a context, even an empty
+    /// one, the rule's reading through <see cref="ScenarioA1CloseCombatValueCalculator"/>: <see cref="ScenarioA1CloseCombatValueCalculator.AttackerRefusal"/>
+    /// refuses an Unarmed or swimming attacker after <see cref="Precheck"/>; the CCV takes the Assault Engineer, the concealed vehicle, the outnumbered Guard,
+    /// and the national case; <see cref="ScenarioA1CloseCombatValueCalculator.LeaderDrmApplies"/> drops a combining leader's DRM for a berserk attacker;
+    /// <see cref="ScenarioA1CloseCombatValueCalculator.VehicleResult"/> gives the result; and a vehicle's attack takes the defenders' Assault Engineer +1 and
+    /// <see cref="ScenarioA1CloseCombatValueCalculator.DefenseCcvDrm"/>. With null, the recorded reading.
+    /// </summary>
+    public static VehicleCloseCombatResolution Resolve(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, CcvContext? context)
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(reference);
@@ -250,12 +266,36 @@ public static class ScenarioA1VehicleCloseCombat
             return Refused(CloseCombatResolution.Abstained, reasons);
         }
 
+        if (context is not null && facts.ByVehicle != true && AttackersRefusal(facts, context) is { } refusal)
+        {
+            return Refused(CloseCombatResolution.Abstained, [refusal]);
+        }
+
         if (facts.Rolls?.Attack is not [>= 1 and <= 6, >= 1 and <= 6] dice)
         {
             return Refused(CloseCombatResolution.Indeterminate, ["asl.a1.cc-vehicle.roll-missing:attack"]);
         }
 
-        return facts.ByVehicle == true ? ByVehicle(facts, reference, dice) : AgainstVehicle(facts, reference, dice);
+        return facts.ByVehicle == true ? ByVehicle(facts, reference, dice, context) : AgainstVehicle(facts, reference, dice, context);
+    }
+
+    /// <summary>
+    /// A11.5, A20.5, E6.2: the first attacker <see cref="ScenarioA1CloseCombatValueCalculator.AttackerRefusal"/> refuses, after <see cref="Precheck"/> has
+    /// admitted each as an enemy, unbroken, and uncaptured; null when none.
+    /// </summary>
+    private static string? AttackersRefusal(VehicleCloseCombatFacts facts, CcvContext context)
+    {
+        foreach (var id in facts.Attackers!)
+        {
+            var unit = facts.Units!.First(item => item.UnitId == id);
+            if (ScenarioA1CloseCombatValueCalculator.AttackerRefusal(true, unit.Side != facts.Vehicle!.Side, unit.Broken == true, unit.Captured == true,
+                unit.Unarmed == true, context.IsSwimming(id)) is { } refusal)
+            {
+                return refusal;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -267,7 +307,11 @@ public static class ScenarioA1VehicleCloseCombat
     /// <summary>D1.1: a vehicle is an AFV unless the catalog prints it unarmored.</summary>
     private static bool Afv(bool? unarmored) => unarmored != true;
 
-    /// <summary>Why the attack is outside the review; empty when it is admitted.</summary>
+    /// <summary>
+    /// Why the attack is outside the review; empty when it is admitted. It keeps its answer (the A11.5 claim's design, ruling RA11C.6): it admits an
+    /// Unarmed attacker (A20.5) and knows no swimmer (E6.2), which <see cref="ScenarioA1CloseCombatValueCalculator.AttackerRefusal"/> refuses. Its own
+    /// check of the number of attackers gives the answer <see cref="ScenarioA1CloseCombatValueCalculator.CombinationRefusal"/> gives, with its own texts.
+    /// </summary>
     public static IReadOnlyList<string> Precheck(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference)
     {
         ArgumentNullException.ThrowIfNull(facts);
@@ -348,26 +392,18 @@ public static class ScenarioA1VehicleCloseCombat
 
     private static bool Inexperience(FireDefinition definition) => definition.Class is "green" or "conscript";
 
-    /// <summary>A unit's CCV (A11.5): squad 5, crew 4, HS 3, SMC 2.</summary>
-    private static int BaseCcv(FireDefinition definition) => definition.Kind switch
-    {
-        "asl:squad" => 5,
-        var kind when ScenarioA1Definitions.IsCrew(kind) => 4,
-        "asl:half-squad" => 3,
-        _ => 2,
-    };
-
     /// <summary>
     /// The defenders' CCV against a vehicle's attack (ruling R11.15; referee, pass 11): each MMC's CCV, -1 Inexperienced and -1 pinned (A11.5), at least
-    /// one; a SMC adds one when it defends with a MMC, as the A11.622 example counts it, and has its own CCV of 2 when it defends alone.
+    /// one; a SMC adds one when it defends with a MMC, as the A11.622 example counts it, and has its own CCV of 2 when it defends alone. It forwards to
+    /// <see cref="ScenarioA1CloseCombatValueCalculator.DefenseCcv"/>: without a context no defender is an Assault Engineer or has a national case, the
+    /// recorded reading (ruling RA11C.6), and with one they come from it.
     /// </summary>
-    private static int DefenseCcv((CloseCombatUnit Facts, FireDefinition Definition)[] defenders)
-    {
-        var mmc = defenders.Where(item => !IsSmc(item.Definition)).ToArray();
-        var total = mmc.Sum(item => Math.Max(1, BaseCcv(item.Definition) - (item.Facts.Inexperienced == true ? 1 : 0) - (item.Facts.Pinned == true ? 1 : 0)));
-        var smc = defenders.Length - mmc.Length;
-        return total + (mmc.Length > 0 ? smc : smc * 2);
-    }
+    private static int DefenseCcv((CloseCombatUnit Facts, FireDefinition Definition)[] defenders, CcvContext? context) =>
+        ScenarioA1CloseCombatValueCalculator.DefenseCcv([.. defenders.Select(item => DefenderFacts(item.Facts, item.Definition, context))]);
+
+    private static CcvDefenderFacts DefenderFacts(CloseCombatUnit unit, FireDefinition definition, CcvContext? context) =>
+        new(definition.Kind, IsSmc(definition), context?.IsAssaultEngineer(unit.UnitId!) == true, unit.Inexperienced == true, unit.Pinned == true,
+            context?.NationalOf(unit.UnitId!) ?? NationalCcv.None);
 
     /// <summary>
     /// Whether the vehicle has inherent manned, functioning MG armament (A11.51, A11.61): a CMG or BMG not malfunctioned, or an AAMG while CE, with
@@ -384,7 +420,8 @@ public static class ScenarioA1VehicleCloseCombat
         return aamg || (definition.BowMg is not null && vehicle.BmgMalfunctioned != true) || (definition.CoaxialMg is not null && vehicle.CmgMalfunctioned != true);
     }
 
-    private static VehicleCloseCombatResolution AgainstVehicle(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, IReadOnlyList<int> dice)
+    private static VehicleCloseCombatResolution AgainstVehicle(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, IReadOnlyList<int> dice,
+        CcvContext? context)
     {
         var vehicle = facts.Vehicle!;
         var definition = reference.Definitions[vehicle.DefinitionId!];
@@ -426,33 +463,16 @@ public static class ScenarioA1VehicleCloseCombat
 
         // A11.5: the CCV, +1 for a combining SMC, -1 Inexperienced, and -1 for each halving penalty: pinned, and D7.213's fire counter. A18.12: a created
         // leader combines as a SMC, "just as if he had been there all along", only where no SMC already does (A11.5: "No more than two units").
-        var ccv = BaseCcv(main.Definition);
-        var modifiers = new List<FireModifier>();
-        if (smc.Facts is not null)
-        {
-            modifiers.Add(new FireModifier("smc-combining:" + smc.Facts.UnitId, 1m, "A11.5"));
-        }
-        else if (created is not null)
-        {
-            modifiers.Add(new FireModifier("created-leader-combining:" + created.Id, 1m, "A18.12"));
-        }
-
-        if (main.Facts.Inexperienced == true)
-        {
-            modifiers.Add(new FireModifier("inexperienced:" + main.Facts.UnitId, -1m, "A11.5"));
-        }
-
-        if (attackers.Any(item => item.Facts.Pinned == true))
-        {
-            modifiers.Add(new FireModifier("pinned", -1m, "A11.5"));
-        }
-
-        if (facts.Reaction == true && facts.FireMarked?.Any(id => facts.Attackers!.Contains(id)) == true)
-        {
-            modifiers.Add(new FireModifier("reaction-fire-marked", -1m, "D7.213"));
-        }
-
-        var kill = ccv + (int)modifiers.Sum(item => item.Value);
+        // The A11.5 claim (ruling RA11C.6): the block forwards to the calculator; without a context the Assault Engineer, the concealed vehicle, the
+        // outnumbered Guard, and the national case are absent, the same answer as before, and with one they come from it.
+        var ccv = ScenarioA1CloseCombatValueCalculator.AttackCcv(new CcvAttackFacts(main.Facts.UnitId!, main.Definition.Kind,
+            context?.IsAssaultEngineer(main.Facts.UnitId!) == true, main.Facts.Inexperienced == true, smc.Facts?.UnitId, created?.Id,
+            attackers.Any(item => item.Facts.Pinned == true),
+            facts.Reaction == true && facts.FireMarked?.Any(id => facts.Attackers!.Contains(id)) == true,
+            context?.VehicleConcealed == true, context is not null && attackers.Any(item => context.IsOutnumberedGuard(item.Facts.UnitId!)),
+            context?.NationalOf(main.Facts.UnitId!) ?? NationalCcv.None));
+        var modifiers = ccv.Modifiers;
+        var kill = ccv.Ccv;
 
         var drm = new List<FireModifier>();
         if (definition.Unarmored == true)
@@ -519,12 +539,15 @@ public static class ScenarioA1VehicleCloseCombat
         // A18.12: the created leader "must add his leadership to the Original 2 CC DR that created him (even if the modifier is a +1)". A10.7: leadership
         // modifiers are not cumulative, so he takes a combining leader's place; A11.5's "No more than two units" leaves him out where a SMC that is no
         // leader combines (pass 70, ruling R70.46, R29.12's reading).
+        // The A11.5 claim (ruling RA11C.6): without a context the line keeps its answer, a combining leader's DRM even for a berserk attacker; with one,
+        // ScenarioA1CloseCombatValueCalculator.LeaderDrmApplies drops it (A15.42, A11.141).
         var combiningLeader = smc.Facts is not null && smc.Definition.IsLeader;
         if (created is not null && (smc.Facts is null || combiningLeader))
         {
             drm.Add(new FireModifier("created-leader:" + created.Id, created.Leadership ?? 0, "A18.12"));
         }
-        else if (combiningLeader && smc.Facts is { } leaderFacts && smc.Definition.Leadership is { } leadership)
+        else if (combiningLeader && smc.Facts is { } leaderFacts && smc.Definition.Leadership is { } leadership
+            && (context is null || ScenarioA1CloseCombatValueCalculator.LeaderDrmApplies(true, main.Facts.Berserk == true)))
         {
             drm.Add(new FireModifier("leadership:" + leaderFacts.UnitId, leadership + (leaderFacts.Wounded == true ? 1 : 0), "A11.51"));
         }
@@ -540,8 +563,11 @@ public static class ScenarioA1VehicleCloseCombat
         }
 
         var final = original + (int)drm.Sum(item => item.Value);
-        // D5.7, C7.7 note A (pass 65, ruling R65.21): a red CS# burns on a Final DR one lower, for the burn alone.
-        var result = final * 2 <= kill || (final < kill && ScenarioA1CrewSurvivalRules.BurnsRed(definition.CsRed == true, final, lower => lower * 2 <= kill))
+        // D5.7, C7.7 note A (pass 65, ruling R65.21): a red CS# burns on a Final DR one lower, for the burn alone. The A11.5 claim (the design's review,
+        // finding 7; ruling RA11C.6): without a context the block keeps its answer, which tests burning first, so a Final DR equal to a CCV of 0 or less
+        // burns the vehicle; with one, ScenarioA1CloseCombatValueCalculator.VehicleResult immobilizes it, as A11.5 does.
+        var result = context is not null ? ScenarioA1CloseCombatValueCalculator.VehicleResult(final, kill, definition.CsRed == true)
+            : final * 2 <= kill || (final < kill && ScenarioA1CrewSurvivalRules.BurnsRed(definition.CsRed == true, final, lower => lower * 2 <= kill))
                 ? VehicleCloseCombatResolution.BurningWreck
             : final < kill ? VehicleCloseCombatResolution.Eliminated
             : final == kill ? VehicleCloseCombatResolution.Immobilized
@@ -650,19 +676,29 @@ public static class ScenarioA1VehicleCloseCombat
         return (modifiers.Aggregate(fp, (total, item) => total * item.Value), modifiers);
     }
 
-    private static VehicleCloseCombatResolution ByVehicle(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, IReadOnlyList<int> dice)
+    private static VehicleCloseCombatResolution ByVehicle(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, IReadOnlyList<int> dice,
+        CcvContext? context)
     {
         var units = facts.Units!.ToDictionary(unit => unit.UnitId!, StringComparer.Ordinal);
         var defenders = facts.Defenders!.Select(id => (Facts: units[id], Definition: reference.Definitions[units[id].DefinitionId!])).ToArray();
         var (fp, modifiers) = VehicleFirepower(facts, reference);
-        var defense = Math.Max(1, DefenseCcv(defenders));
+        var defense = Math.Max(1, DefenseCcv(defenders, context));
         var (label, kill, _) = reference.Column(fp, defense);
         var original = dice[0] + dice[1];
         var defending = new List<CloseCombatDefenderResult>();
-        foreach (var (defender, _) in defenders)
+        foreach (var (defender, defenderDefinition) in defenders)
         {
+            // A11.62 (p. 76; the A11.5 claim, ruling RA11C.6): with a context, a defender's CCV that would fall below 1 is a DRM instead; without one the
+            // recorded reading, its CCV floored at 1 and no DRM.
+            List<FireModifier> own = context is not null
+                && ScenarioA1CloseCombatValueCalculator.DefenseCcvDrm(DefenderFacts(defender, defenderDefinition, context)) is var below and < 0
+                ? [new FireModifier("ccv-below-one:" + defender.UnitId, below, "A11.62")] : [];
             // A11.16: -2 against a broken unit; A4.51 (ruling R5.2): -1 against a CX unit.
-            List<FireModifier> own = defender.Broken == true ? [new FireModifier("vs-broken", -2m, "A11.16")] : [];
+            if (defender.Broken == true)
+            {
+                own.Add(new FireModifier("vs-broken", -2m, "A11.16"));
+            }
+
             if (defender.Cx == true)
             {
                 own.Add(new FireModifier("vs-cx", -1m, "A4.51"));

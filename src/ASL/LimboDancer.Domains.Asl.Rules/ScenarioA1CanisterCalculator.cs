@@ -276,6 +276,8 @@ public static class ScenarioA1CanisterCalculator
             };
         }
 
+        // Keeps its answer (the A21.13 claim, ruling RA21.7): no penalty lowers this ROF, neither a Temporary crew's CapturedPenalty nor a NonQualified
+        // crew's, where A21.12 lowers it by ScenarioA1NonQualifiedUseCalculator.RofLowering of the multiple (W-A21.13).
         var rof = gun.RateOfFire ?? 0;
         if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
         {

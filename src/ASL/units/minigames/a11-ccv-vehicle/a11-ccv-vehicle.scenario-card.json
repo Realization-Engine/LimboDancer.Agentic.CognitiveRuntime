@@ -1,0 +1,70 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "a11-ccv-vehicle",
+  "title": "Minigame: A11.5 CC vs a vehicle, the CCV",
+  "catalog": "asl-scenario-a1@1.13.0",
+  "source": {
+    "basis": "Manufactured under R0.3 as the minigame of the A11.5 claim (the Rules-first plan, section 7): German Infantry, one a designated Assault Engineer, attack a Russian T-34 in CC, their facts entered by hand.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "A minimal card (ruling R22.3): the attackers' CCV and what a Final DR does to the vehicle, asked on the Rule Workbench.",
+      "The German 8-3-8 is an Assault Engineer by designation (H1.22, A25.12): the catalog's counters carry no DC symbol today."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 0,
+    "month": 7,
+    "year": 0
+  },
+  "introduction": "A11.5's example: the German 9-2 and 4-6-7 attack the T-34 in [F4] with a CCV of 6; beside them an Assault Engineer 8-3-8, a pinned 5-4-8, and an Unarmed squad.",
+  "boards": [
+    {
+      "board": "bd02",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "german",
+    "movesFirst": "german"
+  },
+  "sides": [
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "russian",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "",
+        "basis": "none",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A minigame has no victory: it proves its rules on the Rule Workbench and in play.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "a11-ccv-vehicle"
+}

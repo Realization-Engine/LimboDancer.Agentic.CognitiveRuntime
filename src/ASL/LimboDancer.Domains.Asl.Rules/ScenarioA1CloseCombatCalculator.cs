@@ -25,7 +25,21 @@ public static class ScenarioA1CloseCombatCalculator
                 && (AmbushTerrain.Contains(terrain, StringComparer.Ordinal) || force.Any(unit => unit.Concealed == true))));
     }
 
-    public static AmbushResolution ResolveAmbush(AmbushFacts facts, ScenarioA1CloseCombatReference reference)
+    /// <summary>
+    /// The Ambush under the reading recorded games were made under: forwards to the overload with no <see cref="StealthContext"/>, the same answer on
+    /// every input (the A11.17 claim, ruling RA11S.7). Its Lax and Stealthy lines are <see cref="ScenarioA1StealthCalculator.Status"/> asked with only
+    /// the facts they read before: so only a Good Order hero or heroic leader is Stealthy here, and Elite and 1st Line Finns, non-elite Italians,
+    /// designations, and SSR are not read. <see cref="ResolveAmbush(AmbushFacts, ScenarioA1CloseCombatReference, StealthContext?)"/> with
+    /// <see cref="StealthReading.Calculator"/> reads them.
+    /// </summary>
+    public static AmbushResolution ResolveAmbush(AmbushFacts facts, ScenarioA1CloseCombatReference reference) => ResolveAmbush(facts, reference, null);
+
+    /// <summary>
+    /// The Ambush (A11.4), its Stealth and Lax lines read under <paramref name="stealth"/> (ruling RA11S.8): null, or <see cref="StealthReading.HeroOnly"/>,
+    /// is the reading before the A11.17 claim; <see cref="StealthReading.Calculator"/> gives <see cref="ScenarioA1StealthCalculator.Status"/> each unit's
+    /// catalog nationality and class, its designation, the card's SSR, and a Banzai or Human Wave, and is Indeterminate when a status is unknown.
+    /// </summary>
+    public static AmbushResolution ResolveAmbush(AmbushFacts facts, ScenarioA1CloseCombatReference reference, StealthContext? stealth)
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(reference);
@@ -60,6 +74,17 @@ public static class ScenarioA1CloseCombatCalculator
         }
 
         units = [.. units.Where(unit => unit.Captured != true)];
+        if (stealth is { Reading: StealthReading.Calculator })
+        {
+            // The A11.17 claim (ruling RA11S.8): a status an unknown fact decides, such as an Italian squad's class, is asked for.
+            var unknown = units.Where(unit => ScenarioA1StealthCalculator.Status(StealthFactsOf(unit, reference, stealth), StealthPurpose.Ambush) is null)
+                .Select(unit => "asl.a1.cc.fact-missing:stealth:" + unit.UnitId).ToList();
+            if (unknown.Count != 0)
+            {
+                return new AmbushResolution(CloseCombatResolution.Indeterminate, unknown, [], null);
+            }
+        }
+
         string[] sides = [facts.AttackerSide, .. units.Select(unit => unit.Side!).Where(side => side != facts.AttackerSide).Distinct(StringComparer.Ordinal)];
         var results = new List<AmbushSide>();
         foreach (var side in sides)
@@ -74,7 +99,7 @@ public static class ScenarioA1CloseCombatCalculator
                 return new AmbushResolution(CloseCombatResolution.Abstained, ["asl.a1.cc.roll-malformed"], [], null);
             }
 
-            var drm = AmbushDrm([.. units.Where(unit => unit.Side == side)], reference);
+            var drm = AmbushDrm([.. units.Where(unit => unit.Side == side)], reference, stealth);
 
             // A11.4's table (p. 73; pass 70, ruling R70.30): +2 for a side with a vehicle there, and +1 for each of its BU or Stunned AFV, as the H3 example
             // (p. 74) counts them.
@@ -106,14 +131,15 @@ public static class ScenarioA1CloseCombatCalculator
 
     /// <summary>
     /// A side's Ambush drm (A11.4, A11.17, A11.18): each cause once when any unit of its force has it (rulings R29.9, R14.13): +1 broken,
-    /// +1 pinned, +1 berserk, +1 Lax (Inexperienced, A19.36, or berserk, A15.432), -1 Stealthy (a Good Order hero or heroic leader,
-    /// A15.24, A15.21), -2 concealed (ruling R14.2),
+    /// +1 pinned, +1 berserk, +1 Lax, -2 concealed (ruling R14.2), -1 Stealthy (Lax and Stealthy as <see cref="ScenarioA1StealthCalculator.Status"/>
+    /// decides them, under the reading <paramref name="stealth"/> names; the A11.17 claim),
     /// and the leadership of its best unpinned Good Order leader unless he is alone or any of the force is berserk.
     /// </summary>
-    private static List<FireModifier> AmbushDrm(IReadOnlyList<CloseCombatUnit> force, ScenarioA1CloseCombatReference reference)
+    private static List<FireModifier> AmbushDrm(IReadOnlyList<CloseCombatUnit> force, ScenarioA1CloseCombatReference reference, StealthContext? stealth)
     {
         var drm = new List<FireModifier>();
         bool Any(Func<CloseCombatUnit, bool> test) => force.Any(test);
+        StealthStatus? Stealth(CloseCombatUnit unit) => ScenarioA1StealthCalculator.Status(StealthFactsOf(unit, reference, stealth), StealthPurpose.Ambush);
         if (Any(unit => unit.Broken == true))
         {
             drm.Add(new FireModifier("broken", 1m, "A11.4"));
@@ -136,9 +162,10 @@ public static class ScenarioA1CloseCombatCalculator
             drm.Add(new FireModifier("cx", 1m, "A4.51"));
         }
 
-        if (berserk || Any(unit => Inexperienced(unit, reference)))
+        // A11.18 (the A11.17 claim): on the old reading, berserk (A15.432) or an Inexperienced MMC (A19.36), as before.
+        if (Any(unit => Stealth(unit) == StealthStatus.Lax))
         {
-            drm.Add(new FireModifier("lax", 1m, "A11.18"));
+            drm.Add(ScenarioA1StealthCalculator.AmbushLax);
         }
 
         // A11.4 (ruling R14.2): -2 when any of the force is concealed.
@@ -147,9 +174,10 @@ public static class ScenarioA1CloseCombatCalculator
             drm.Add(new FireModifier("concealed", -2m, "A11.4"));
         }
 
-        if (Any(unit => (reference.Definitions[unit.DefinitionId!].IsHero || (reference.Definitions[unit.DefinitionId!].IsLeader && unit.Heroic == true)) && GoodOrder(unit)))
+        // A11.17 (the A11.17 claim): on the old reading, a Good Order hero or heroic leader (A15.24, A15.21), as before.
+        if (Any(unit => Stealth(unit) == StealthStatus.Stealthy))
         {
-            drm.Add(new FireModifier("stealthy", -1m, "A11.17"));
+            drm.Add(ScenarioA1StealthCalculator.AmbushStealthy);
         }
 
         var leader = force.Where(unit => reference.Definitions[unit.DefinitionId!].IsLeader && GoodOrder(unit) && unit.Pinned != true)
@@ -163,6 +191,32 @@ public static class ScenarioA1CloseCombatCalculator
     }
 
     private static bool GoodOrder(CloseCombatUnit unit) => unit.Broken != true && unit.Berserk != true && unit.Captured != true;
+
+    /// <summary>
+    /// A unit's facts for <see cref="ScenarioA1StealthCalculator"/> (the A11.17 claim): on the old reading only those the Ambush read before (its kind,
+    /// heroic, Inexperienced, berserk, Good Order), so the status is the old one on every input; on the calculator's, its catalog nationality and
+    /// class, its designation, the card's SSR, and a Banzai or Human Wave too.
+    /// </summary>
+    private static StealthFacts StealthFactsOf(CloseCombatUnit unit, ScenarioA1CloseCombatReference reference, StealthContext? stealth)
+    {
+        var definition = reference.Definitions[unit.DefinitionId!];
+        var old = new StealthFacts(definition.Kind, unit.Heroic == true, null, null, StealthDesignation.None, false, false, Inexperienced(unit, reference),
+            unit.Berserk == true, GoodOrder(unit));
+        if (stealth is not { Reading: StealthReading.Calculator })
+        {
+            return old;
+        }
+
+        return old with
+        {
+            Nationality = definition.Nationality,
+            Class = definition.Class,
+            Designation = unit.UnitId is { } id && stealth.Designations?.GetValueOrDefault(id) is { } designation ? designation : StealthDesignation.None,
+            SsrStealthy = stealth.SsrStealthySides?.Contains(unit.Side, StringComparer.Ordinal) == true,
+            SsrLax = stealth.SsrLaxSides?.Contains(unit.Side, StringComparer.Ordinal) == true,
+            BanzaiOrHumanWave = stealth.LaxThisPlayerTurn?.Contains(unit.UnitId, StringComparer.Ordinal) == true,
+        };
+    }
 
     private static bool Inexperienced(CloseCombatUnit unit, ScenarioA1CloseCombatReference reference) =>
         reference.Definitions[unit.DefinitionId!] is { } definition && Mmc(definition)

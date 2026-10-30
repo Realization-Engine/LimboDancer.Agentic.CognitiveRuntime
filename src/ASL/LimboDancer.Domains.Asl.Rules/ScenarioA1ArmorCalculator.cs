@@ -597,8 +597,10 @@ internal static class ScenarioA1ArmorCalculator
             }
         }
 
-        // A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the Multiple ROF one each.
-        var rof = (gun.RateOfFire ?? 0) - (shot.CapturedPenalty ?? 0);
+        // A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the Multiple ROF one each. Forwards to
+        // ScenarioA1NonQualifiedUseCalculator.RofLowering, the same answer (the A21.13 claim, ruling RA21.7), and keeps reading CapturedPenalty alone:
+        // a NonQualified shot is not lowered here, and the subtraction has no floor (W-A21.13).
+        var rof = (gun.RateOfFire ?? 0) - ScenarioA1NonQualifiedUseCalculator.RofLowering(shot.CapturedPenalty ?? 0);
         if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
         {
             rof--;

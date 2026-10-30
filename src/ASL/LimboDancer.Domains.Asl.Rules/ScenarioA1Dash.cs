@@ -104,11 +104,14 @@ public static class ScenarioA1Dash
 
     /// <summary>
     /// Whether a Location is Open Ground to a firer, as Interdiction reads it (A10.531; ruling R35.1): Open Ground terrain, a clear LOS, no Hindrance
-    /// along it, and no TEM the unit there could claim against that firer.
+    /// along it, and no TEM the unit there could claim against that firer. The cover test is
+    /// <see cref="ScenarioA1OpenGroundCalculator.NoFfmoCover"/>'s (the A10.531 claim, ruling RA10.9). The terrain's part is the caller's, and its
+    /// caller reads out-of-season grain as not Open Ground: <see cref="ScenarioA1OpenGroundCalculator.OpenGroundTo"/> with
+    /// <see cref="OpenGroundPurpose.Dash"/> replaces this member, with the season and SMOKE in the Location (W-A10.531).
     /// </summary>
     public static bool OpenGroundTo(bool openGroundTerrain, bool losClear, int losHindrance, RoutCoverFacts cover)
     {
         ArgumentNullException.ThrowIfNull(cover);
-        return openGroundTerrain && losClear && (cover.MapHindrance ?? losHindrance) + cover.OtherHindrance == 0 && !cover.HexsideTem && !cover.HeightAdvantage && !cover.InHexCover;
+        return openGroundTerrain && losClear && ScenarioA1OpenGroundCalculator.NoFfmoCover(cover, losHindrance);
     }
 }

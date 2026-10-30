@@ -91,7 +91,7 @@ public static class ScenarioA1FireCalculator
                 || facts.WinterReduction != (attack.BreakdownReduction ?? 0)
                 || facts.AmmunitionShortage != (attack.AmmunitionShortage == true)
                 || attack.VehicleFire is { } firingVehicle
-                    && (facts.Captured ? 1 : 0) + (facts.NonQualified ? 1 : 0) != (firingVehicle.CapturedPenalty ?? 0)))
+                    && ScenarioA1NonQualifiedUseCalculator.Multiple(facts.Captured, facts.NonQualified) != (firingVehicle.CapturedPenalty ?? 0)))
             {
                 return Refused(FireResolution.Abstained, ["asl.a1.fire.vehicle-breakdown-facts-conflict"]);
             }
@@ -275,17 +275,22 @@ public static class ScenarioA1FireCalculator
         (attack.Firers ?? []).Where(item => item.Concealed == true).Select(item => (item.UnitId!, item.SeenByGoodOrderEnemy))
             .Concat(Directors(attack).Where(item => item.Concealed == true).Select(item => (item.UnitId!, item.SeenByGoodOrderEnemy)));
 
-    // A8.4: in the DFPh, a unit already marked First Fire fires again as Area Fire at an adjacent or same-hex target.
-    private static bool IsFinalFireAgain(FireAttack attack, FireFirer firer) => attack.Phase == "DFPh" && firer.FirstFireMarked == true;
+    // A8.4: in the DFPh, a unit already marked First Fire fires again as Area Fire at an adjacent or same-hex target. It reads the unit's own counter,
+    // the right one for the unit's inherent FP (the A8.41 claim, ruling RA8.2); the two sites that read it for the unit's weapons keep their answers.
+    private static bool IsFinalFireAgain(FireAttack attack, FireFirer firer) => ScenarioA1FinalFireCalculator.FiresAgain(attack.Phase == "DFPh", firer.FirstFireMarked == true);
 
-    // A9.3: a MG firing as Subsequent First Fire or FPF, or in the DFPh while marked First Fire, uses Sustained Fire.
-    private static bool IsSustained(FireAttack attack, FireWeapon weapon, ScenarioA1FireReference reference) =>
-        ((attack.FireKind is SubsequentFirstFire or FinalProtectiveFire
-            && ((attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is not { } user || UsesSubsequentFire(attack, user)))
-            || (attack.Phase == "DFPh" && weapon.FirstFireMarked == true))
-
-        // A9.3 (referee, pass 9b): only a MG uses Sustained Fire.
-        && reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsMg != false;
+    // A9.3: a MG firing as Subsequent First Fire or FPF, or in the DFPh while marked First Fire, uses Sustained Fire (the A8.41 claim: the same
+    // answer on every input, from the Final Fire calculator). A9.3 (referee, pass 9b): only a MG uses Sustained Fire.
+    private static bool IsSustained(FireAttack attack, FireWeapon weapon, ScenarioA1FireReference reference)
+    {
+        var subsequent = attack.FireKind is SubsequentFirstFire or FinalProtectiveFire
+            && ((attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is not { } user || UsesSubsequentFire(attack, user));
+        var dfph = attack.Phase == "DFPh";
+        var marked = weapon.FirstFireMarked == true;
+        // The definition is read only when a case applies, as before the claim (the build review, finding 9).
+        var isMg = subsequent || (dfph && marked) ? reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsMg : false;
+        return ScenarioA1FinalFireCalculator.Sustained(subsequent, dfph, marked, isMg);
+    }
 
     /// <summary>
     /// A firer's own kind in an attack of Subsequent First Fire or FPF, by its own counter (A8.3, A8.31, pp. 61 to 62; pass 45, ruling R45.1): "A unit
@@ -880,6 +885,10 @@ public static class ScenarioA1FireCalculator
         }
 
         // A8.4: a First-Fire-marked unit fires again in the DFPh only at an adjacent or same-hex target.
+        // Keeps its answer (the A8.41 claim, ruling RA8.6): ScenarioA1FinalFireCalculator.FinalFireRefusal replaces it and differs. This reads the
+        // unit's counter for its weapons too, so a First-Fire-marked MG held by an unmarked unit fires here at any range, and an unmarked MG fired
+        // alone by a First-Fire-marked unit is refused beyond range 1; the calculator reads each weapon's own counter, and an unknown range is not
+        // in reach there (here it passes).
         if (firers.Any(item => IsFinalFireAgain(attack, item) && RangeOf(attack, item) > 1))
         {
             outside.Add("asl.a1.fire.final-fire-outside");
@@ -1061,7 +1070,10 @@ public static class ScenarioA1FireCalculator
     /// A vehicle's MA MG attack (ruling R25.7): the MA AAMG, fired in its side's PFPh, AFPh, or DFPh by a CE crew that is not Stunned
     /// (D1.83, D5.3, D5.34), once per Player Turn unless it kept its Multiple ROF (D3.5, C2.24), not malfunctioned (D3.7), within twice
     /// its Normal Range of eight hexes (D1.83, A7.22), with a clear LOS, at an enemy Location other than its own; no Infantry fire group
-    /// or leader joins it (D3.4; D6.64 is not reviewed); never in the PFPh by a vehicle in Motion (D2.4).
+    /// or leader joins it (D3.4; D6.64 is not reviewed); never in the PFPh by a vehicle in Motion (D2.4). Keeps its answer (the A8.41 claim,
+    /// ruling RA8.3): an MA MG marked First Fire is refused here (ruling R50.2, D3.5 alone), where A9.3's EXC lets it sustain once in Final Fire at
+    /// an ADJACENT or same-hex target, as <see cref="ScenarioA1FinalFireCalculator.MaySustain"/> and
+    /// <see cref="ScenarioA1FinalFireCalculator.FinalFireRefusal"/> answer.
     /// </summary>
     private static void VehicleFireOutside(FireAttack attack, FireVehicleFire vehicle, ScenarioA1FireReference reference,
         IReadOnlyList<FireDefinition?> targetDefinitions, List<string> outside)
@@ -1296,17 +1308,21 @@ public static class ScenarioA1FireCalculator
             // A8.31, A8.312 (pass 45, ruling R45.1): a unit with no counter fires First Fire in one group with Subsequent First Fire and FPF firers.
             SubsequentFirstFire => !finalFire && (firstFire || firer.FiredThisPlayerTurn != true),
             FinalProtectiveFire => finalFire || firstFire || firer.FiredThisPlayerTurn != true,
-            _ when attack.Phase == "DFPh" => rateOfFireShot || (!finalFire && (firstFire || firer.FiredThisPlayerTurn != true)),
+            _ when attack.Phase == "DFPh" => rateOfFireShot || ScenarioA1FinalFireCalculator.UnitMayFinalFire(firstFire, finalFire, firer.FiredThisPlayerTurn == true),
             _ => rateOfFireShot || firer.FiredThisPlayerTurn != true,
         };
     }
 
-    /// <summary>Whether a MG may fire in this attack: not yet marked, or marked First Fire where Sustained Fire allows it (A8.3, A8.31, A8.4, A9.3).</summary>
+    /// <summary>
+    /// Whether a MG may fire in this attack: not yet marked, or marked First Fire where Sustained Fire allows it (A8.3, A8.31, A8.4, A9.3). The DFPh
+    /// arm reads the counter alone, from <see cref="ScenarioA1FinalFireCalculator.WeaponMayFinalFire"/> (the A8.41 claim, ruling RA8.8); the range
+    /// of a First-Fire-marked weapon is <see cref="ScenarioA1FinalFireCalculator.FinalFireRefusal"/>'s, which no caller asks yet.
+    /// </summary>
     private static bool WeaponMayFire(FireAttack attack, FireWeapon weapon) => attack.FireKind switch
     {
         FinalProtectiveFire => true,
         SubsequentFirstFire => weapon.FiredThisPlayerTurn != true,
-        _ when attack.Phase == "DFPh" => weapon.FiredThisPlayerTurn != true,
+        _ when attack.Phase == "DFPh" => ScenarioA1FinalFireCalculator.WeaponMayFinalFire(weapon.FiredThisPlayerTurn == true),
         _ => weapon.FiredThisPlayerTurn != true && weapon.FirstFireMarked != true,
     };
 
@@ -3143,11 +3159,13 @@ public static class ScenarioA1FireCalculator
         {
             var definition = reference.Definitions[vehicle.DefinitionId!];
             // E3.741 (ruling R16.14): Extreme Winter lowers the B#.
-            // A21.11, A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the B# two and the ROF one, each time.
+            // A21.11, A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the B# two and the ROF one, each time, by
+            // ScenarioA1NonQualifiedUseCalculator's arithmetic (the A21.13 claim, ruling RA21.7), the same answer.
             var captured = vehicle.CapturedPenalty ?? 0;
-            var breakdown = (definition.Breakdown ?? 12) - (attack.BreakdownReduction ?? 0) - (2 * captured);
+            var breakdown = (definition.Breakdown ?? 12) - (attack.BreakdownReduction ?? 0) - ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(captured);
             var malfunctioned = arithmetic.OriginalDr >= breakdown;
-            var retained = !malfunctioned && vehicle.Pinned != true && attack.Phase != "AFPh" && definition.RateOfFire is { } rof && arithmetic.Dice[0] <= rof - captured;
+            var retained = !malfunctioned && vehicle.Pinned != true && attack.Phase != "AFPh" && definition.RateOfFire is { } rof
+                && arithmetic.Dice[0] <= rof - ScenarioA1NonQualifiedUseCalculator.RofLowering(captured);
             return new FireWeaponEffect(vehicle.VehicleId!, breakdown, malfunctioned, retained, false, FireCounter(), null);
         }
 
@@ -3173,7 +3191,7 @@ public static class ScenarioA1FireCalculator
                     var ma = name == FireOverrunEffect.MainArmament;
                     var rof = reference.Definitions[vehicle.DefinitionId!].RateOfFire;
                     var retained = ma && !outcome.Failed && vehicle.Pinned != true && attack.Phase != "AFPh"
-                        && rof is { } rate && arithmetic.Dice[0] <= rate - (vehicle.CapturedPenalty ?? 0);
+                        && rof is { } rate && arithmetic.Dice[0] <= rate - ScenarioA1NonQualifiedUseCalculator.RofLowering(vehicle.CapturedPenalty ?? 0);
                     return new FireWeaponEffect(vehicle.VehicleId!, outcome.Numbers.BNumber, outcome.Outcome == VehicleBreakdownOutcome.Malfunction,
                         retained, false, index == 0 ? FireCounter() : null,
                         usedRolls.Contains("weaponSelection:" + vehicle.VehicleId + ":" + name) ? attack.Rolls!.WeaponSelection![vehicle.VehicleId + ":" + name] : null)
@@ -3190,7 +3208,7 @@ public static class ScenarioA1FireCalculator
             }
 
             var id = vehicle.VehicleId!;
-            var breakdown = 12 - (attack.BreakdownReduction ?? 0) - (2 * (vehicle.CapturedPenalty ?? 0));
+            var breakdown = 12 - (attack.BreakdownReduction ?? 0) - ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(vehicle.CapturedPenalty ?? 0);
             var selection = new Dictionary<string, int>(StringComparer.Ordinal);
             if (arithmetic.OriginalDr >= breakdown && named.Count > 1)
             {
@@ -4219,6 +4237,9 @@ public static class ScenarioA1FireCalculator
                 foreach (var weapon in weapons)
                 {
                     var mg = reference.Definitions[weapon.DefinitionId!];
+
+                    // Keeps its answer (the A8.41 claim, ruling RA8.6): a weapon's Area Fire is read here from its unit's First Fire counter, so an
+                    // unmarked MG fired alone by a First-Fire-marked unit is halved; ScenarioA1FinalFireCalculator.Verdict reads the weapon's own.
                     var multipliers = Multipliers(range, mg.Range!.Value, vsConcealed, IsFinalFireAgain(attack, firer), IsSustained(attack, weapon, reference), LevelAboveOf(attack, firer), firer);
                     if (mg.IsFt)
                     {
@@ -4388,9 +4409,9 @@ public static class ScenarioA1FireCalculator
                 }
             }
 
-            Cause(IsSustained(attack, weapon, reference) ? 2 : 0, "in Sustained Fire, A9.3");
+            Cause(IsSustained(attack, weapon, reference) ? ScenarioA1FinalFireCalculator.SustainedBreakdownReduction : 0, "in Sustained Fire, A9.3");
             Cause(Inexperience(weapon), "in Inexperienced hands, A19.32");
-            Cause(weapon.Captured == true ? 2 : 0, "captured, A21.11");
+            Cause(ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(weapon.Captured == true ? 1 : 0), "captured, A21.11");
             Cause(attack.BreakdownReduction ?? 0, "in Extreme Winter, E3.741");
             Cause(Shortage(weapon), "for Ammunition Shortage, A19.131");
             if (causes.Count == 0)
@@ -4421,8 +4442,8 @@ public static class ScenarioA1FireCalculator
                     ? -(attack.BreakdownReduction ?? 0) - Shortage(weapon) + AssaultWeaponRemoval(ft, (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is { } user
                         ? reference.Definitions[user.DefinitionId!] : null, weapon.Captured == true,
                         (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true)?.Inexperienced == true)
-                    : (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? 2 : 0) - Inexperience(weapon)
-                    - (weapon.Captured == true ? 2 : 0) - (attack.BreakdownReduction ?? 0) - Shortage(weapon), StringComparer.Ordinal);
+                    : (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? ScenarioA1FinalFireCalculator.SustainedBreakdownReduction : 0) - Inexperience(weapon)
+                    - ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(weapon.Captured == true ? 1 : 0) - (attack.BreakdownReduction ?? 0) - Shortage(weapon), StringComparer.Ordinal);
             var reached = malfunction ? weapons.Where(weapon => original >= breakdown[weapon.EquipmentId!]).Select(weapon => weapon.EquipmentId!).ToArray() : [];
             var malfunctioned = new HashSet<string>(StringComparer.Ordinal);
             var selection = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -4465,7 +4486,7 @@ public static class ScenarioA1FireCalculator
                     && !(operatorUnit is not null && cowering.Contains(operatorUnit.UnitId!))
                     && !(attack.FireKind == FinalProtectiveFire && operatorUnit?.FinalFireMarked == true)
                     && (attack.Phase != "AFPh" || operatorUnit?.OpportunityFire == true)
-                    && reference.Definitions[weapon.DefinitionId!].RateOfFire is { } rof && colored <= rof - (weapon.Captured == true ? 1 : 0);
+                    && reference.Definitions[weapon.DefinitionId!].RateOfFire is { } rof && colored <= rof - ScenarioA1NonQualifiedUseCalculator.RofLowering(weapon.Captured == true ? 1 : 0);
                 // A.11 (p. 43; pass 45): "it also transforms the weapon's Original B# to an X# during that use": a weapon whose B# this fire lowered is
                 // removed on a DR at least its printed B# (the page's LMG in Sustained Fire: B10, X12). A FT's own removal is ruling R15.1's.
                 var definition = reference.Definitions[weapon.DefinitionId!];
@@ -4476,7 +4497,7 @@ public static class ScenarioA1FireCalculator
                 var removed = attack.CoweringMarksAndWeaponResidual == true && !definition.IsFt && malfunctioned.Contains(id) && lowered
                     && original >= printed - (attack.BreakdownReduction ?? 0);
                 return new FireWeaponEffect(id, breakdown[id], malfunctioned.Contains(id), retained, sustained,
-                    retained ? null : sustained ? "final-fire" : operatorUnit is null ? counter : OwnCounter(operatorUnit), selection.TryGetValue(id, out var dr) ? dr : null)
+                    retained ? null : sustained ? ScenarioA1FinalFireCalculator.SustainedCounter : operatorUnit is null ? counter : OwnCounter(operatorUnit), selection.TryGetValue(id, out var dr) ? dr : null)
                 {
                     Removed = removed ? true : null,
                 };

@@ -61,7 +61,7 @@ public static class ScenarioA1OrdnanceCalculator
                 || breakdownFacts.WinterReduction != (shot.BreakdownReduction ?? 0)
                 || breakdownFacts.AmmunitionShortage != (shot.AmmunitionShortage == true)
                 // Mounted Temporary crews encode their captured/non-qualified multiplier here, not in the equipment-only NonQualified fact.
-                || (breakdownFacts.Captured ? 1 : 0) + (breakdownFacts.NonQualified ? 1 : 0) != (shot.CapturedPenalty ?? 0))
+                || ScenarioA1NonQualifiedUseCalculator.Multiple(breakdownFacts.Captured, breakdownFacts.NonQualified) != (shot.CapturedPenalty ?? 0))
             {
                 return Refused(OrdnanceResolution.Abstained, [Prefix + "vehicle-breakdown-facts-conflict"]);
             }
@@ -496,6 +496,9 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         // A21.13, C2.1: its own nationality's Good Order crew mans it; C5.8's non-qualified use is not reviewed, nor a concealed crew.
+        // Keeps its answer (the A21.13 claim, ruling RA21.7): this check and the NonQualified bar above (a mortar, LATW, or MG fired as ordnance)
+        // refuse a captured Gun, an ally's crew on an ally's Gun, two or more SMC, and a lone hero, which ScenarioA1NonQualifiedUseCalculator.UseRefusal
+        // admits; W-A21.13 moves them to it.
         var crew = shot.Crew!;
         // C5.8, A21.13 (ruling R8.8): a squad or HS of the Gun's nationality mans it as non-qualified Infantry, with Case H.
         // C9.2, C13.31 (rulings R9.2, R9.7): any Personnel unit of its nationality fires a light mortar or a PF; a berserk unit may fire a PF. The SW
@@ -517,6 +520,9 @@ public static class ScenarioA1OrdnanceCalculator
         // not after firing earlier in the Player Turn; its crew fires the Gun or its inherent FP, not both.
         // C2.241, C5.6 (ruling R8.2): a Gun that has used its normal ROF (a Prep, First, or Final Fire counter) may Intensive Fire once, never
         // in the AFPh and never a vehicle's; a Gun marked First Fire fires once more only so.
+        // Keeps its answer (the A8.41 claim, ruling RA8.6): a Gun marked First Fire Intensive Fires here in the DFPh at any range, where A8.41 limits
+        // that shot to an ADJACENT or same-hex target, as ScenarioA1FinalFireCalculator.FinalFireRefusal answers for a Gun. That calculator also
+        // lets a vehicle's Gun take it (C5.6 names a shocked or stunned crew), which ruling R8.2 refuses here.
         // C13.31, A7.351 (ruling R9.7): a unit not yet marked as having fired makes a PF Check, a squad twice in a phase, any other once.
         // D3.5 (p. 201; pass 50): a vehicle's fire counter placed by its BMG or CMG alone, in this fire phase, is not the MA's ("it makes no
         // difference which weapon fires first"); a weapon fired in another fire phase forfeits the MA's shot.
@@ -1210,8 +1216,9 @@ public static class ScenarioA1OrdnanceCalculator
 
         // C2.24: an Original colored dr at most the ROF keeps the Multiple ROF; C2.5: a non-vehicular NT Gun's ROF is one lower after a
         // CA change; C5.4: a pinned crew forfeits it; C5.2: none in the AFPh. A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty
-        // lowers it one each.
-        var rof = (gun.RateOfFire ?? 0) - (shot.CapturedPenalty ?? 0);
+        // lowers it one each. Forwards to ScenarioA1NonQualifiedUseCalculator.RofLowering, the same answer (the A21.13 claim, ruling RA21.7), and keeps
+        // reading CapturedPenalty alone: a NonQualified shot is not lowered here, and the subtraction has no floor (W-A21.13).
+        var rof = (gun.RateOfFire ?? 0) - ScenarioA1NonQualifiedUseCalculator.RofLowering(shot.CapturedPenalty ?? 0);
         if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
         {
             rof--;
@@ -1496,19 +1503,26 @@ public static class ScenarioA1OrdnanceCalculator
     /// <summary>The detail of a HEAT refusal at Infantry in the open whose weapon is a PF or a PSK, which has no HE or AP to fire instead.</summary>
     public const string LatwHeat = "latw";
 
-    /// <summary>A21.12 (pass 65, ruling R65.22): "All attacks by captured ordnance must use the red To Hit Numbers", under a Temporary crew's penalty.</summary>
-    internal static string CapturedColor(OrdnanceShot shot, string color) => shot.CapturedPenalty is > 0 ? "red" : color;
+    /// <summary>
+    /// A21.12 (pass 65, ruling R65.22): "All attacks by captured ordnance must use the red To Hit Numbers", under a Temporary crew's penalty. Forwards
+    /// to <see cref="ScenarioA1NonQualifiedUseCalculator.ToHitColor"/> of <see cref="OrdnanceShot.CapturedPenalty"/>, the same answer (the A21.13
+    /// claim, ruling RA21.7). The difference W-A21.13 brings: a <see cref="OrdnanceShot.NonQualified"/> shot is red too, by its multiple.
+    /// </summary>
+    internal static string CapturedColor(OrdnanceShot shot, string color) => ScenarioA1NonQualifiedUseCalculator.ToHitColor(color, shot.CapturedPenalty ?? 0);
 
     /// <summary>
     /// The Gun's B#, two lower while Intensive Firing (C5.62), lower in Extreme Winter (E3.741; ruling R16.14), and a SW's under Ammunition Shortage (A19.131).
     /// Keeps its answer (the D3.7 claim, RD3.6): a vehicle's circled B#, its X#, Low Ammo, and A19.131 for a vehicle are
     /// <see cref="ScenarioA1VehicleBreakdownCalculator.Numbers"/> and <see cref="ScenarioA1VehicleBreakdownCalculator.Outcome"/>, which W-D3.7 wires here.
+    /// Its captured-weapon term forwards to <see cref="ScenarioA1NonQualifiedUseCalculator.BreakdownLowering"/> of <see cref="OrdnanceShot.CapturedPenalty"/>,
+    /// the same answer (the A21.13 claim, ruling RA21.7). The difference W-A21.13 brings: a <see cref="OrdnanceShot.NonQualified"/> shot is lowered too,
+    /// by its multiple, and the Original B# becomes its X# (<see cref="ScenarioA1NonQualifiedUseCalculator.XNumber"/>, A.11), which no shot reads here.
     /// </summary>
     internal static int Breakdown(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) =>
         gun.Breakdown - (shot.IntensiveFire == true ? 2 : 0) - (shot.BreakdownReduction ?? 0)
 
         // A21.11 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty, two lower each.
-        - (2 * (shot.CapturedPenalty ?? 0))
+        - ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(shot.CapturedPenalty ?? 0)
 
         // A19.32 (referee, pass 9b): the B# or X# of a SW Inexperienced Personnel use is one lower.
         - (gun.GunType is "mortar" or "latw" or ScenarioA1MachineGunKill.GunType && gun.LatwType != "pf"
@@ -1594,7 +1608,9 @@ public static class ScenarioA1OrdnanceCalculator
 
     /// <summary>
     /// The firer-based DRM of the backlog pass 8 (rulings R8.2, R8.8, R8.10): Case F for Intensive Fire (C5.61), Case H for a non-qualified
-    /// crew (C5.8), and the overstacking of the firer's and the target's Locations (A5.12, A5.131).
+    /// crew (C5.8), and the overstacking of the firer's and the target's Locations (A5.12, A5.131). Its two Case H values forward to
+    /// <see cref="ScenarioA1NonQualifiedUseCalculator.CaseHDrm"/>, the same answers (the A21.13 claim, ruling RA21.7); W-A21.13 makes them one Case H
+    /// of the shot's multiple.
     /// </summary>
     internal static IEnumerable<FireModifier> PassEightFirerDrm(OrdnanceShot shot)
     {
@@ -1605,13 +1621,13 @@ public static class ScenarioA1OrdnanceCalculator
 
         if (shot.NonQualified == true)
         {
-            yield return new FireModifier("case-h", 2, "C5.8");
+            yield return new FireModifier("case-h", ScenarioA1NonQualifiedUseCalculator.CaseHDrm(1), "C5.8");
         }
 
         // A21.12, A21.13 (pass 65, ruling R65.22): a Temporary crew's captured ordnance adds Case H's +2, doubled for a HS in a captured vehicle.
         if (shot.CapturedPenalty is > 0 and var captured)
         {
-            yield return new FireModifier("case-h:captured", 2 * captured, "A21.12");
+            yield return new FireModifier("case-h:captured", ScenarioA1NonQualifiedUseCalculator.CaseHDrm(captured), "A21.12");
         }
 
         if (shot.FirerOverstack is { } over && over > 0)
