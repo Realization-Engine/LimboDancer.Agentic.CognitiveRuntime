@@ -23,6 +23,13 @@ public sealed record FireAttack(
     int? TargetSideElr,
     FireRolls? Rolls)
 {
+    /// <summary>D3.7 facts for the actual participating vehicle weapons. Null preserves the previously recorded reading.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireVehicleBreakdownFacts? VehicleBreakdown
+    {
+        get; init;
+    }
+
     /// <summary>
     /// The kind of Defensive fire in the MPh (unit step 22): <c>first-fire</c> (A8.1), <c>subsequent-first-fire</c> (A8.3),
     /// <c>final-protective-fire</c> (A8.31), or <c>residual-fp</c> (A8.2); null for the fire phases.

@@ -31,7 +31,10 @@ public static class ScenarioA1FireCalculator
     private static readonly FireDefinition DummyDefinition = new("dummy", "asl:dummy", string.Empty, null, null, null, null, null, null, null);
 
     public static FireResolution Resolve(FireAttack attack, ScenarioA1FireReference reference)
-        => ResolveCore(attack, reference, null);
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        return ResolveCore(attack, reference, attack.VehicleBreakdown);
+    }
 
     /// <summary>D3.7/D3.71 opt-in vehicle breakdown reading. The recorded FireAttack and the legacy entry point remain unchanged.</summary>
     public static FireResolution Resolve(FireAttack attack, ScenarioA1FireReference reference, FireVehicleBreakdownFacts vehicleBreakdown)
@@ -65,6 +68,10 @@ public static class ScenarioA1FireCalculator
 
         if (vehicleBreakdown is not null)
         {
+            if (vehicleBreakdown.Weapons is null || vehicleBreakdown.Weapons.Values.Any(facts => facts is null))
+            {
+                return Refused(FireResolution.Indeterminate, ["asl.a1.fire.vehicle-breakdown: supply the participating vehicle weapon facts"]);
+            }
             var use = attack.Overrun is not null ? VehicleBreakdownUse.Overrun : VehicleBreakdownUse.MachineGun;
             foreach (var facts in vehicleBreakdown.Weapons.Values)
             {

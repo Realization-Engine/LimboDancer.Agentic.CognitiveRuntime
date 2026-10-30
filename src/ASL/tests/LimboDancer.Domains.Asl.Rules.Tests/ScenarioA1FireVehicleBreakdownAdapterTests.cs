@@ -53,6 +53,24 @@ public sealed class ScenarioA1FireVehicleBreakdownAdapterTests
     }
 
     [Fact]
+    public void RecordedWeaponFactsRoundTripAndMissingWeaponFactsAreRefused()
+    {
+        var legacy = Shot();
+        Assert.False(JsonSerializer.SerializeToElement(legacy).TryGetProperty(nameof(FireAttack.VehicleBreakdown), out _));
+        var facts = Supplement(("ma", Facts(VehicleBreakdownWeapon.MainArmament, 11, circled: true)));
+        var current = legacy with { VehicleBreakdown = facts };
+        var roundTrip = JsonSerializer.Deserialize<FireAttack>(JsonSerializer.Serialize(current))!;
+        Assert.Equal(JsonSerializer.Serialize(ScenarioA1FireCalculator.Resolve(current, Reference, facts)),
+            JsonSerializer.Serialize(ScenarioA1FireCalculator.Resolve(roundTrip, Reference)));
+        foreach (var incomplete in new[] { new FireVehicleBreakdownFacts(null!), Supplement(("ma", null!)) })
+        {
+            var refused = ScenarioA1FireCalculator.Resolve(legacy with { VehicleBreakdown = incomplete }, Reference);
+            Assert.Equal(FireResolution.Indeterminate, refused.Disposition);
+            Assert.Contains(refused.Reasons, reason => reason.Contains("vehicle-breakdown", StringComparison.Ordinal));
+        }
+    }
+
+    [Fact]
     public void NewLowAmmoReadingDoesNotChangeTheLegacyAttackOrResolution()
     {
         var attack = Shot();
