@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Rules;
+using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.State;
 using LimboDancer.Domains.Asl.Units.Vocabulary;
 
@@ -18,6 +19,54 @@ public static class LiveFire
 
     /// <summary>The built-in vocabulary (embedded, read once), for the one SMC test the planner makes too, <c>IsA(kind, "asl:smc")</c> (R5's finding 10).</summary>
     private static readonly Lazy<UnitVocabulary> Vocabulary = new(UnitVocabulary.Asl);
+
+    // Keep only the four immutable printed facts per vehicle, not another retained copy of the whole catalog.
+    private static readonly Lazy<IReadOnlyDictionary<string, VehicleBreakdownUseFacts?>> VehiclePrintedNumbers = new(() =>
+        UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary.Value)!.Catalog!.Definitions.Where(definition => definition.Kind == "asl:vehicle")
+            .ToDictionary(definition => definition.Id, PrintedVehicleBreakdown, StringComparer.Ordinal));
+
+    /// <summary>D3.7 (PDF pp. 201-202): read printed evidence without treating the old inherent B12 field as a printed number.</summary>
+    internal static VehicleBreakdownUseFacts? PrintedVehicleBreakdown(UnitDefinition definition)
+    {
+        var b = definition.Printed("front", "asl:printed-breakdown");
+        var x = definition.Printed("front", "asl:printed-elimination");
+        var circled = definition.Printed("front", "asl:breakdown-circled");
+        var extension = definition.Printed("front", "asl:breakdown-note-extends");
+        static bool KnownNumber(PrintedValue? value) => value is { State: PrintedState.NotPrinted }
+            or { State: PrintedState.Printed, Value.Number: not null };
+        if (!KnownNumber(b) || !KnownNumber(x) || circled is not { State: PrintedState.Printed, TraitPresent: { } circle }
+            || extension is not { State: PrintedState.Printed, TraitPresent: { } extends })
+        {
+            return null;
+        }
+        return new(VehicleBreakdownWeapon.MainArmament, b!.Value?.Number, x!.Value?.Number, circle, extends, false, false);
+    }
+
+    /// <summary>One authoritative snapshot for command and replay; callers show it only through the established owner/inspection views.</summary>
+    internal static (VehicleBreakdownUseFacts? Facts, string? Reason) VehicleBreakdownFacts(GameState state, UnitInstance vehicle,
+        VehicleBreakdownWeapon weapon, bool intensive = false)
+    {
+        var printed = vehicle.Definition is { Catalog.Catalog: Catalog } definition
+            ? VehiclePrintedNumbers.Value.GetValueOrDefault(definition.Definition) : null;
+        if (printed is null)
+        {
+            return (null, "play.vehicle-breakdown-facts: printed B/X, circled B and Vehicle Note evidence must be known (D3.7)");
+        }
+        if (printed.NoteExtends && weapon != VehicleBreakdownWeapon.MainArmament)
+        {
+            return (null, "play.vehicle-breakdown-note: the Vehicle Note must identify this armament before its extension can be applied (D3.7)");
+        }
+        var facts = printed with
+        {
+            Weapon = weapon,
+            LowAmmo = state.LowAmmoVehicles.Contains(vehicle.Id, StringComparer.Ordinal),
+            AmmunitionShortage = ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, vehicle.Side),
+            WinterReduction = GamePlanner.ExtremeWinterReduction(state, vehicle.Side) ?? 0,
+            IntensiveFire = intensive,
+        };
+        return (ScenarioA1VehicleBreakdownResolutionCalculator.WithVehicleCrew(facts, vehicle.TemporaryCrew?.Manning,
+            vehicle.TemporaryCrew?.Captured ?? false), null);
+    }
 
     /// <summary>The moving stack's Assault Movement as fire reads it (A4.61; pass 40): declared, and no mover broken or berserk since.</summary>
     private static bool AssaultOf(GameState state) => state.Movement is { } moving && ScenarioA1FireEligibility.AssaultHolds(moving.Assault,
