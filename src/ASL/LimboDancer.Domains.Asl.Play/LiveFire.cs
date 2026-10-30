@@ -20,10 +20,30 @@ public static class LiveFire
     /// <summary>The built-in vocabulary (embedded, read once), for the one SMC test the planner makes too, <c>IsA(kind, "asl:smc")</c> (R5's finding 10).</summary>
     private static readonly Lazy<UnitVocabulary> Vocabulary = new(UnitVocabulary.Asl);
 
-    // Keep only the four immutable printed facts per vehicle, not another retained copy of the whole catalog.
-    private static readonly Lazy<IReadOnlyDictionary<string, VehicleBreakdownUseFacts?>> VehiclePrintedNumbers = new(() =>
+    private sealed record VehiclePrintedFacts(VehicleBreakdownUseFacts? Breakdown, bool NoSecondary, int? Passengers, int? Towing);
+
+    // Keep only immutable source facts per vehicle, not another retained copy of the whole catalog.
+    private static readonly Lazy<IReadOnlyDictionary<string, VehiclePrintedFacts>> VehiclePrintedNumbers = new(() =>
         UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary.Value)!.Catalog!.Definitions.Where(definition => definition.Kind == "asl:vehicle")
-            .ToDictionary(definition => definition.Id, PrintedVehicleBreakdown, StringComparer.Ordinal));
+            .ToDictionary(definition => definition.Id, definition => new VehiclePrintedFacts(PrintedVehicleBreakdown(definition),
+                definition.Printed("front", "asl:sa-mount")?.State == PrintedState.NotPrinted
+                    && definition.Printed("front", "asl:sa-caliber")?.State == PrintedState.NotPrinted,
+                PrintedCapacity(definition, "asl:passenger-capacity"), PrintedCapacity(definition, "asl:towing")), StringComparer.Ordinal));
+
+    private static int? PrintedCapacity(UnitDefinition definition, string attribute) => definition.Printed("front", attribute) switch
+    {
+        { State: PrintedState.NotPrinted } => 0,
+        { State: PrintedState.Printed, Value.Number: { } number } => number,
+        _ => null,
+    };
+
+    internal static bool VehicleRecalledAfterDisable(UnitInstance vehicle, bool maDisabled)
+    {
+        var printed = vehicle.Definition is { Catalog.Catalog: Catalog } definition
+            ? VehiclePrintedNumbers.Value.GetValueOrDefault(definition.Definition) : null;
+        return printed is { NoSecondary: true, Passengers: { } passengers, Towing: { } towing }
+            && ScenarioA1VehicleBreakdownResolutionCalculator.Recalled(maDisabled, false, null, passengers, towing);
+    }
 
     /// <summary>D3.7 (PDF pp. 201-202): read printed evidence without treating the old inherent B12 field as a printed number.</summary>
     internal static VehicleBreakdownUseFacts? PrintedVehicleBreakdown(UnitDefinition definition)
@@ -46,11 +66,27 @@ public static class LiveFire
     internal static (VehicleBreakdownUseFacts? Facts, string? Reason) VehicleBreakdownFacts(GameState state, UnitInstance vehicle,
         VehicleBreakdownWeapon weapon, bool intensive = false)
     {
-        var printed = vehicle.Definition is { Catalog.Catalog: Catalog } definition
+        var listing = vehicle.Definition is { Catalog.Catalog: Catalog } definition
             ? VehiclePrintedNumbers.Value.GetValueOrDefault(definition.Definition) : null;
+        var printed = listing?.Breakdown;
         if (printed is null)
         {
             return (null, "play.vehicle-breakdown-facts: printed B/X, circled B and Vehicle Note evidence must be known (D3.7)");
+        }
+        if (listing is not { NoSecondary: true, Passengers: not null, Towing: not null })
+        {
+            return (null, "play.vehicle-armament-facts: listed Secondary Armament state and Passenger/Towing capability must be known (D3.7)");
+        }
+        var disabledCondition = weapon switch
+        {
+            VehicleBreakdownWeapon.MainArmament => Conditions.Disabled,
+            VehicleBreakdownWeapon.BowMg => Conditions.BmgDisabled,
+            VehicleBreakdownWeapon.CoaxialMg => Conditions.CmgDisabled,
+            _ => null,
+        };
+        if (disabledCondition is { } condition && ScenarioA1VehicleBreakdownResolutionCalculator.WeaponUseRefusal(Is(vehicle, condition)) is { } disabled)
+        {
+            return (null, disabled);
         }
         if (printed.NoteExtends && weapon != VehicleBreakdownWeapon.MainArmament)
         {
@@ -67,6 +103,10 @@ public static class LiveFire
         return (ScenarioA1VehicleBreakdownResolutionCalculator.WithVehicleCrew(facts, vehicle.TemporaryCrew?.Manning,
             vehicle.TemporaryCrew?.Captured ?? false), null);
     }
+
+    /// <summary>The same main-armament source/use check for the owner's weapon list and the command.</summary>
+    public static string? MainArmamentUseRefusal(GameState state, UnitInstance vehicle) =>
+        VehicleBreakdownFacts(state, vehicle, VehicleBreakdownWeapon.MainArmament).Reason;
 
     /// <summary>The moving stack's Assault Movement as fire reads it (A4.61; pass 40): declared, and no mover broken or berserk since.</summary>
     private static bool AssaultOf(GameState state) => state.Movement is { } moving && ScenarioA1FireEligibility.AssaultHolds(moving.Assault,

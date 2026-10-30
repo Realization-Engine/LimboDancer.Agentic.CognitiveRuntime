@@ -37,6 +37,7 @@ public sealed class BacklogPass50Tests : IDisposable
     private readonly FileGameStore store;
     private readonly StubLos los = new();
     private readonly IBoardCatalog boards = new InMemoryBoardCatalog([Board01Fixture.Handle()]);
+    private string[] specialRules = [];
 
     public BacklogPass50Tests() => store = new FileGameStore(root);
 
@@ -118,6 +119,7 @@ public sealed class BacklogPass50Tests : IDisposable
                 ["firstSide"] = "german",
                 ["scenarioMonth"] = 7,
                 ["scenarioYear"] = 1942,
+                ["specialRules"] = specialRules,
                 ["sides"] = new object[]
                 {
                     new { id = "german", nationality = "german", elr = 3, friendlyEdge = "left" },
@@ -194,6 +196,60 @@ public sealed class BacklogPass50Tests : IDisposable
 
     private static decimal DrmOf(JsonElement drm, string prefix) => drm.EnumerateArray()
         .Where(item => item.GetProperty("name").GetString()!.StartsWith(prefix, StringComparison.Ordinal)).Sum(item => item.GetProperty("value").GetDecimal());
+
+    [Fact]
+    public async Task VehicleLowAmmoPersistsAndTheNextDisablingShotRecallsWithoutEliminatingTheTank()
+    {
+        specialRules = ["ammo-shortage:german"];
+        await Setup(Tank("north-east"), Squad("r1", Target));
+        await Advance();
+        var before = Revision;
+        var beforeState = Current;
+        Committed(await FireMa(5, 6));
+        Assert.Contains("de-tank", Current.LowAmmoVehicles);
+        Assert.False(Is(Current.Unit("de-tank")!, Conditions.Malfunctioned));
+        var first = LastShot(before);
+        Assert.False(first.Facts.GetProperty("vehicleBreakdown").GetProperty("lowAmmo").GetBoolean());
+        var forged = JsonSerializer.SerializeToNode(first.Facts)!.AsObject();
+        forged["vehicleBreakdown"]!["lowAmmo"] = true;
+        var rolls = Since(before).Select(item => item.Payload).OfType<DiceRolled>().ToDictionary(item => item.Roll);
+        Assert.NotNull(OrdnanceRecordVerifier.Shared.Verify(beforeState, first with
+        {
+            Facts = JsonSerializer.SerializeToElement(forged)
+        }, rolls));
+
+        for (var phase = 0; phase < 10; phase++)
+        {
+            await Advance();
+        }
+        Assert.Equal("dfph", Current.Phase);
+        before = Revision;
+        Committed(await FireMa(5, 6));
+        Assert.True(LastShot(before).Facts.GetProperty("vehicleBreakdown").GetProperty("lowAmmo").GetBoolean());
+        var tank = Current.Unit("de-tank")!;
+        Assert.Equal(InstanceStatus.Active, tank.Status);
+        Assert.True(Is(tank, Conditions.Disabled));
+        Assert.True(Is(tank, Conditions.Recalled));
+        Assert.True(Is(tank, Conditions.ButtonedUp));
+        Assert.False(Is(tank, Conditions.StunRecovery));
+        var revision = Revision;
+        Refused(await FireMa(), "play.vehicle-weapon-disabled");
+        Assert.Equal(revision, Revision);
+    }
+
+    [Fact]
+    public async Task LegacyVehicleShotsRebuildWithoutNewEvidenceOrDisabledRefusal()
+    {
+        await Setup(Tank("north-east", Conditions.Disabled), Squad("r1", Target));
+        await Advance();
+        var target = BoardLocation.Parse(Target);
+        var current = LiveOrdnance.FromState(Current, "de-tank", target);
+        Assert.Null(current.Shot);
+        Assert.Contains("vehicle-weapon-disabled", current.Reason);
+        var legacy = LiveOrdnance.FromState(Current, "de-tank", target, legacyVehicleBreakdown: true);
+        Assert.NotNull(legacy.Shot);
+        Assert.Null(legacy.Shot.VehicleBreakdown);
+    }
 
     [Fact]
     public async Task ATanksBmgAndCmgFireTogetherAndItsMaFiresAfterThemInTheSamePhase()

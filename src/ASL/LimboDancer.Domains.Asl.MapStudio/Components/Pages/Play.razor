@@ -5673,7 +5673,8 @@ else if (state is not null)
 
         var afvSeen = new Lazy<bool>(() => EnemyAfvSeen(side));
         return state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side
-                && (LiveOrdnance.IsTank(unit) || (LiveFire.IsVehicle(unit) && LiveOrdnance.IsMachineGun(unit.Definition?.Definition) && afvSeen.Value)))
+                && (LiveOrdnance.IsTank(unit) || (LiveFire.IsVehicle(unit) && LiveOrdnance.IsMachineGun(unit.Definition?.Definition) && afvSeen.Value))
+                && LiveFire.MainArmamentUseRefusal(state, unit) is null)
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
     }
 

@@ -1410,7 +1410,17 @@ public static partial class GameProjector
 
             // C8.9: unless the Gun malfunctioned, or reached its X# (A.11, W-A21.13), when the shot counts as fired.
             var eliminatedGun = gunResult.ValueKind == JsonValueKind.Object && gunResult.TryGetProperty("eliminated", out var gone) && gone.ValueKind == JsonValueKind.True;
-            if (Rules.ScenarioA1OrdnanceProjection.NeverFired(use, malfunctioned, eliminatedGun))
+            var breakdown = gunResult.ValueKind == JsonValueKind.Object && gunResult.TryGetProperty("vehicleBreakdown", out var breakdownJson)
+                && breakdownJson.ValueKind == JsonValueKind.Object
+                ? breakdownJson.Deserialize<Rules.VehicleBreakdownResolved>(JsonSerializerOptions.Web) : null;
+            if (breakdown?.LowAmmoGained == true && !state.LowAmmoVehicles.Contains(fired.Gun, StringComparer.Ordinal))
+            {
+                state = state with
+                {
+                    LowAmmoVehicles = [.. state.LowAmmoVehicles, fired.Gun]
+                };
+            }
+            if (Rules.ScenarioA1VehicleBreakdownResolutionCalculator.NeverFired(use, malfunctioned, eliminatedGun, breakdown))
             {
                 return state;
             }
