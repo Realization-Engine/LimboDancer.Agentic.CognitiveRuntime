@@ -1,6 +1,6 @@
 # Wiring 002: ammunition supply
 
-**Status:** Proposed, awaiting the user's approval. Claim `wire-work-1`, Codex, reviewer Claude, branch `codex/wire-work-1`, taking W-E10 in inventory commit `49491cce`. Implementation follows `wire-fire-3`'s D3.7 work. This design includes no implementation.
+**Status:** Approved by the user on 2026-10-29. Claim `wire-work-1`, Codex, reviewer Claude, branch `codex/wire-work-1`, taking W-E10 in inventory commit `49491cce`. Implementation follows `wire-fire-3`'s D3.7 work. Code merge remains separately authorized.
 
 ## 1. Dependencies and the reviewed rule
 
