@@ -51,7 +51,7 @@ public static class LiveFire
     }
 
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.18.0";
+    public const string CatalogVersion = "1.19.0";
 
     /// <summary>Whether the packages read the game's catalog: this catalog at an older or equal version of the same major (ruling R65.4; Rules decides).</summary>
     public static bool ServesCatalog(GameState state)

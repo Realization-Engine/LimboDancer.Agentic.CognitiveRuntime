@@ -63,6 +63,8 @@
       ]
     },
     { "name": "asl:breakdown", "label": "Breakdown Number", "type": "integer", "scope": "face", "rule": "A9.7, p. 65" },
+    { "name": "asl:printed-breakdown", "label": "Printed vehicle B#", "type": "integer", "scope": "face", "rule": "D3.7, p. 201" },
+    { "name": "asl:printed-elimination", "label": "Printed vehicle X#", "type": "integer", "scope": "face", "rule": "D3.7, p. 201" },
     { "name": "asl:rate-of-fire", "label": "Multiple ROF", "type": "integer", "scope": "face", "rule": "A9.2, p. 62" },
     { "name": "asl:portage", "label": "Portage cost", "type": "integer", "scope": "face", "unit": "PP", "rule": "A4.4, p. 50" },
     { "name": "asl:repair", "label": "Repair Number", "type": "integer", "scope": "face", "faces": ["malfunctioned"], "rule": "A9.7 to A9.72, p. 65" },
@@ -237,6 +239,8 @@
     { "name": "asl:self-rally", "label": "Self-Rally", "short": "SR", "faces": ["broken"], "rule": "A1.4, p. 45" },
     { "name": "asl:sapper", "label": "Sapper", "short": "SAP", "rule": "A1.5, p. 45" },
     { "name": "asl:assault-engineer", "label": "Assault Engineer", "short": "AE", "rule": "A1.5, p. 45" },
+    { "name": "asl:breakdown-circled", "label": "Circled vehicle B#", "rule": "D3.71, p. 202" },
+    { "name": "asl:breakdown-note-extends", "label": "Vehicle Note extends printed B# to other armament", "rule": "D3.7, p. 201" },
     { "name": "asl:breakdown-removes", "label": "Eliminated on breakdown (X#)", "short": "X#", "rule": "A9.7, p. 65" },
     { "name": "asl:field-phone", "label": "Field phone", "short": "PHONE", "rule": "C1.2 to C1.23, p. 163" },
     { "name": "asl:no-ap", "label": "Cannot fire AP", "short": "AP NA", "rule": "C2.21, p. 167" },
@@ -384,11 +388,11 @@
       "attributes": ["asl:designation", "asl:identity", "asl:ground-pressure", "asl:movement-type", "asl:movement-points", "asl:amphibious-mp",
         "asl:af-front", "asl:af-side", "asl:turret-af-front", "asl:turret-af-side", "asl:target-size",
         "asl:ma-type", "asl:ma-weapon", "asl:caliber", "asl:caliber-suffix", "asl:rate-of-fire", "asl:breakdown", "asl:special-ammo",
-        "asl:sa-mount", "asl:sa-caliber", "asl:towing", "asl:passenger-capacity",
+        "asl:sa-mount", "asl:sa-caliber", "asl:printed-breakdown", "asl:printed-elimination", "asl:towing", "asl:passenger-capacity",
         "asl:bmg", "asl:cmg", "asl:aamg", "asl:hull-rear-mg", "asl:turret-rear-mg",
         "asl:vehicle-ft-mount", "asl:vehicle-ft-firepower", "asl:vehicle-ft-removal", "asl:crew-survival", "asl:vehicle-class"],
       "traits": ["asl:mechanically-unreliable", "asl:unarmored", "asl:partially-armored", "asl:rear-turret-unarmored", "asl:open-topped",
-        "asl:no-ap", "asl:no-he", "asl:fixed-bmg", "asl:vehicle-ft-range-2", "asl:cs-passengers-only", "asl:cs-red"],
+        "asl:breakdown-circled", "asl:breakdown-note-extends", "asl:no-ap", "asl:no-he", "asl:fixed-bmg", "asl:vehicle-ft-range-2", "asl:cs-passengers-only", "asl:cs-red"],
       "accessibleName": {
         "default": "{side} {designation} {movement-type} {kind} {identity}, {movement-points} MP, AF {af-front}/{af-side}, MA {caliber}{caliber-suffix?} {ma-weapon} {ma-type}",
         "wreck": "{side} wrecked {designation} {kind} {identity}, {survival-label} {crew-survival}"

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, LATW, FT, DC, Guns, vehicles, and tanks, with Commissars and six more nationalities, for the reviewed Scenario A1 cases and the scenario cards",
   "publication": "published",
   "vocabulary": [
@@ -12,9 +12,9 @@
       "id": "asl-counter-sheets:scenario-a1",
       "status": "reviewed",
       "record": "docs/ASL/SourceRegistry/CounterSheets/asl-counter-sheets.scenario-a1.source-record.json",
-      "recordSha256": "68a04b431252015547003c2971a4362408bde9318651fbeea902d346283f3049",
+      "recordSha256": "239886fb993a2ff0bd8dca9820e7d429af3a8ba3a9ae60f1d299268633a8d196",
       "transcription": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
-      "transcriptionSha256": "416a2919b3dc2f4a91de4fb4e9b006740dd14cdedf75dc58b79bf53c9607b044",
+      "transcriptionSha256": "9bdfb3264b8f792ea7ad19c571492cbdb70e8578379c4f5b6910535d7a8865c2",
       "transcriber": "Claude (claude-opus-5-5)",
       "reviewer": "Dennis Landi"
     }
@@ -4409,6 +4409,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3153
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3314
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3315
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3316
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3317
         }
       ]
     },
@@ -4687,6 +4711,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3155
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3318
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3319
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3320
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3321
         }
       ]
     },
@@ -4965,6 +5013,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3157
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3322
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3323
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3324
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3325
         }
       ]
     },
@@ -5245,6 +5317,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3159
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3326
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3327
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3328
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3329
         }
       ]
     },
@@ -5525,6 +5621,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3161
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3330
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3331
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3332
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3333
         }
       ]
     },
@@ -17785,6 +17905,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3163
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3334
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3335
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3336
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3337
         }
       ]
     },
@@ -18063,6 +18207,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3165
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3338
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3339
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3340
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3341
         }
       ]
     },
@@ -18341,6 +18509,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3167
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3342
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3343
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3344
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3345
         }
       ]
     },
@@ -18619,6 +18811,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3169
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3346
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3347
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3348
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3349
         }
       ]
     },
@@ -18897,6 +19113,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3171
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3350
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3351
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3352
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3353
         }
       ]
     },
@@ -19175,6 +19415,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3173
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3354
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3355
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3356
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3357
         }
       ]
     },
@@ -19453,6 +19717,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3175
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3358
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3359
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3360
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3361
         }
       ]
     },
@@ -19731,6 +20019,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3177
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3362
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3363
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3364
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3365
         }
       ]
     },
@@ -20009,6 +20321,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3179
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3366
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3367
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3368
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3369
         }
       ]
     },
@@ -20287,6 +20623,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3181
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3370
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3371
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3372
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3373
         }
       ]
     },
@@ -20565,6 +20925,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3183
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3374
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3375
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3376
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3377
         }
       ]
     },
@@ -20843,6 +21227,30 @@
           "trait": "asl:cs-red",
           "present": false,
           "row": 3185
+        },
+        {
+          "face": "front",
+          "attribute": "printed-breakdown",
+          "printed": false,
+          "row": 3378
+        },
+        {
+          "face": "front",
+          "attribute": "printed-elimination",
+          "printed": false,
+          "row": 3379
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-circled",
+          "present": false,
+          "row": 3380
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-note-extends",
+          "present": false,
+          "row": 3381
         }
       ]
     },
