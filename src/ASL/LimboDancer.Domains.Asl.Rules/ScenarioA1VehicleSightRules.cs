@@ -45,7 +45,8 @@ public static class ScenarioA1VehicleSightRules
 
     /// <summary>
     /// A24.2, A24.5, A24.8 (ruling R9.6): a Location's SMOKE counted at <see cref="ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance"/> a source
-    /// (the A24.5 claim, RA24.5): the same answer for every count, with no allocation.
+    /// (the A24.5 claim, RA24.5): the same answer for every count, with no allocation. A burning wreck counted here at +2 is B25.2's, whose value is
+    /// <see cref="ScenarioA1BlazeSmokeCalculator.Hindrance"/> (the B25.2 claim, RB25.7); the by-value overload takes it once W-B25.2 is wired.
     /// </summary>
     public static int SmokeDrm(int sources, bool firerThere, bool targetThere, Func<bool> crossed) =>
         LocationSmoke(ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance * sources, firerThere, targetThere, crossed);
