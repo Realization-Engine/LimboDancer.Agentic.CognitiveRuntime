@@ -558,7 +558,15 @@ public sealed record OrdnanceToHit(
 
 /// <summary>What the shot did to the Gun: malfunction (C2.28), Multiple ROF kept (C2.24, C2.5), and the Acquisition it holds after it (C6.5).</summary>
 public sealed record OrdnanceGunEffect(int BreakdownNumber, bool Malfunctioned, int RateOfFire, bool RateOfFireKept, string? FireCounter, int Acquisition,
-    string? AcquiredLocationId);
+    string? AcquiredLocationId)
+{
+    /// <summary>D3.7's explicit vehicle-weapon result for an opted-in resolution; absent on the recorded legacy reading.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public VehicleBreakdownResolved? VehicleBreakdown
+    {
+        get; init;
+    }
+}
 
 /// <summary>The Ordnance package's answer: resolved with its To Hit arithmetic, the Gun's state, and the IFT resolutions of the hit.</summary>
 public sealed record OrdnanceResolution(

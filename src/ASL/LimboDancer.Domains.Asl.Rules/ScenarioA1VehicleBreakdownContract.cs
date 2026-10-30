@@ -5,8 +5,8 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// <summary>
 /// The wiring contract of D3.7 and D3.71 (pp. 201 and 202; the D3.7 claim's design, ruling RD3.7): what does this Original DR do to this vehicle weapon,
 /// as <see cref="ScenarioA1VehicleBreakdownCalculator"/> decides it. Every fact is disclosed to All: the Malfunction, Disabled, and Low Ammo counters are
-/// on the vehicle, the DR is public, an unconcealed stack may be inspected (A12.16), and a vehicle that fires reveals itself; a concealed vehicle's facts
-/// are gathered as unknown for its opponent. A printed number left unknown is none printed.
+/// on the vehicle and the DR is public. A12.16 (PDF p. 79) still limits inspection outside the viewer's Good Order units' LOS:
+/// concealed or uninspectable facts stay unknown unless needed for action verification. A printed number left unknown is none printed.
 /// </summary>
 internal static class ScenarioA1VehicleBreakdownContract
 {
@@ -16,7 +16,7 @@ internal static class ScenarioA1VehicleBreakdownContract
 
     [RuleContract]
     private static RuleContract Breakdown() => new("d3.7-vehicle-breakdown", "Vehicle weapon breakdown",
-        [new("D3.7", 201), new("D3.71", 201), new("A.11", 42), new("A19.131", 86)],
+        [new("D3.7", 201), new("D3.71", 201), new("A.11", 43), new("A19.131", 86)],
         [
             new("vehicleId", ContractFactType.Unit, false, ContractDisclosure.All, "The vehicle that fires"),
             new("weapon", ContractFactType.Choice, false, ContractDisclosure.All, "The weapon that fires") { Choices = Weapons },
@@ -72,7 +72,7 @@ internal static class ScenarioA1VehicleBreakdownContract
             numbers.LowAmmo ? ", under Low Ammo" : string.Empty);
         return outcome switch
         {
-            VehicleBreakdownOutcome.Disabled => new("disabled", [new($"{reason}: the X# is reached and the weapon is Disabled", "A.11", 42)], []),
+            VehicleBreakdownOutcome.Disabled => new("disabled", [new($"{reason}: the X# is reached and the weapon is Disabled", "A.11", 43)], []),
             VehicleBreakdownOutcome.LowAmmo => new("low-ammo", [new($"{reason}: Low Ammo, the B# becomes the X# and a new B# one lower", "D3.71", 201)], []),
             VehicleBreakdownOutcome.Malfunction => new("malfunction", [new($"{reason}: the weapon malfunctions", "D3.7", 201)], []),
             _ => new("none", [new($"{reason}: no breakdown", "D3.7", 201)], []),
