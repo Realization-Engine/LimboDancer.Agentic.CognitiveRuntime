@@ -14,7 +14,7 @@ New DC placements record nullable `SettlementVersion = 1`, omitted when null. Nu
 
 ## Review and evidence
 
-The independent read-only movement review found and prompted fixes for advance after PAATC, concealment choices using the wrong seers, unknown facts that cannot change a verdict, and entry attempts settling DC placement. The seasonal adapter review accepted its corrections at 2284e684.
+The independent read-only movement review found and prompted fixes for advance after PAATC, concealment choices using the wrong seers, unknown facts that cannot change a verdict, and entry attempts settling DC placement. Its final boundary audit included SW recovery, Gun hooking, and failed Manhandling: budget changes on existing units and the Manhandling event cover those without treating lineage's inherited expenditure as new movement. Two focused recovery/failed-push regressions passed before the final strict run. The seasonal adapter review accepted its corrections at 2284e684.
 
 - `test-classes/Play.log`: nine focused DC and seasonal movement cases passed after the entry-boundary fix. Earlier, 18 cases including minigame checks passed.
 - `test-classes/Units.log`: three DC record round-trip cases passed, including omission of the new property on legacy records.
@@ -26,8 +26,10 @@ All logs above are under `E:/Archive/GitHub/dlandi/asl-gate-work-codex`. The thr
 
 The baseline has 126 games, 3,471 replay lines, and 55,153 sweep lines. `p71-sniper-residual` reports NOSTATE before these changes too. Changed-side comparison and CI are pending; those counts alone are not a gate result.
 
+PR 78's first CI run found that a broken placer replaced through lineage lost its DC. Pending new-reading placements now follow an active successor only when it is the actual DC holder and its lineage names the consumed placer. The original placement and attack facts stay recorded. Independent review accepted that correction; legacy and already-operable charges retain their existing paths. Nine affected DC cases passed against the strict build (`wiring003-dc-lineage.log`). A further focused run passed both the broken-placer regression and a new unbroken-successor case: inherited MF leaves placement pending, the successor holds the DC, and phase end settles it (`test-classes/Play.log`).
+
 ## Memory and performance
 
-Concealment reads only when a concealed or dummy mover needs the day/assault decision. It reuses the state's sight/map reads and collects qualifying seer indexes once for the decision and later choices. The collection is local to that request, with no retained cache or concurrent mutable state. Infantry Overrun materializes only the neighboring candidates and gives Rules their entry results. DC projection scans the existing pending-charge list, with no new process-wide state. No rendering or counter-fragment path changes. No speed or memory improvement is claimed.
+Concealment reads only when a concealed or dummy mover needs the day/assault decision. It reuses the state's sight/map reads and collects qualifying seer indexes once for the decision and later choices. The collection is local to that request, with no retained cache or concurrent mutable state. Infantry Overrun materializes only the neighboring candidates and gives Rules their entry results. DC projection scans the existing pending-charge list. Only when a new-reading placement remains pending and the unit list changes in the MPh does it compare budgets, once for all pending charges using a local ID index. It retains no new process-wide state. No rendering or counter-fragment path changes. No speed or memory improvement is claimed.
 
 Focused tests reuse their existing fixture infrastructure. No new project or project reference is added. Versioned records and the replay gate protect old games; side-specific Workbench checks protect disclosure. Codex's Studio process is stopped after use. Registered outputs remain until their gate and CI use is complete, then only this work's outputs are cleaned.

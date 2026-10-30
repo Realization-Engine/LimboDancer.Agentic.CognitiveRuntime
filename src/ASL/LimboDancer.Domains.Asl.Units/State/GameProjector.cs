@@ -4960,8 +4960,8 @@ public static partial class GameProjector
 
         /// <summary>
         /// A23.3 (backlog pass 15, ruling R15.2): a DC Placement is recorded with its step; it is operably Placed, and its DC left in its target Location,
-        /// once its placer leaves the Placement Location or ends its move neither broken, pinned, captured, nor eliminated; a placer so affected first keeps
-        /// its DC. A DC no longer in play is gone. Every Placement ends with its Player Turn's CCPh.
+        /// under the recorded settlement reading. New placements wait until departure, another unit's movement, or phase end; legacy placements settle
+        /// at end-move too. A DC no longer in play is gone. Every Placement ends with its Player Turn's CCPh.
         /// </summary>
         private GameState KeepPlacedCharges(GameState? previous, GameState next, EventPayload payload)
         {
@@ -4984,10 +4984,27 @@ public static partial class GameProjector
                 return next;
             }
 
+            HashSet<string>? spentMovement = null;
+            if (previous?.Phase == "mph" && next.Phase == "mph" && !ReferenceEquals(previous.Units, next.Units)
+                && charges.Any(charge => charge.SettlementVersion is not null && !charge.Operable))
+            {
+                var beforeUnits = previous.Units.ToDictionary(unit => unit.Id, StringComparer.Ordinal);
+                foreach (var unit in next.Units)
+                {
+                    // New lineage instances inherit expenditure; they have not begun a different unit's movement.
+                    if (unit.Side == next.PhasingSide && beforeUnits.TryGetValue(unit.Id, out var before)
+                        && unit.MfSpent * 2 + (unit.HalfMfSpent ? 1 : 0) > before.MfSpent * 2 + (before.HalfMfSpent ? 1 : 0))
+                    {
+                        (spentMovement ??= new(StringComparer.Ordinal)).Add(unit.Id);
+                    }
+                }
+            }
+
             var kept = new List<PlacedCharge>();
             var equipment = next.Equipment;
-            foreach (var charge in charges)
+            foreach (var recordedCharge in charges)
             {
+                var charge = recordedCharge;
                 if (next.Find(charge.Charge) is not EquipmentInstance { Status: InstanceStatus.Active } dc)
                 {
                     continue;
@@ -5002,6 +5019,18 @@ public static partial class GameProjector
                 if (charge.SettlementVersion is not null)
                 {
                     var currentPlacer = next.Unit(charge.Unit);
+                    if (currentPlacer is { Status: InstanceStatus.Consumed }
+                        && dc.Holding is { } holding
+                        && next.Unit(holding.Holder) is { Status: InstanceStatus.Active } successor
+                        && successor.From.Contains(charge.Unit))
+                    {
+                        charge = charge with
+                        {
+                            Unit = successor.Id
+                        };
+                        currentPlacer = successor;
+                    }
+
                     var eliminated = currentPlacer is not { Status: InstanceStatus.Active };
                     var failed = Rules.ScenarioA1DemolitionChargeRules.PlacementFailed(
                         currentPlacer is not null && GameState.Condition(currentPlacer, Conditions.Broken) == ConditionState.True,
@@ -5027,7 +5056,10 @@ public static partial class GameProjector
                         next.Phase == "mph" && (payload is VehicleStepped
                             || payload is MovementStepped other && !other.Movers.Contains(charge.Unit)
                             || payload is InstanceMoved { Mf: not null } entered && entered.Id != charge.Unit
-                            || payload is EntryAttempted attempted && attempted.Id != charge.Unit), next.Phase != "mph");
+                            || payload is EntryAttempted attempted && attempted.Id != charge.Unit
+                            || payload is ManhandlingRolled push && previous?.Find(push.Gun) is EquipmentInstance { Holding: { Role: HoldingRole.Manned } crew }
+                                && crew.Holder != charge.Unit
+                            || spentMovement?.Any(id => id != charge.Unit) == true), next.Phase != "mph");
                     if (Rules.ScenarioA1DemolitionChargeRules.PlacementOperable(settled, failed) != true)
                     {
                         kept.Add(charge);

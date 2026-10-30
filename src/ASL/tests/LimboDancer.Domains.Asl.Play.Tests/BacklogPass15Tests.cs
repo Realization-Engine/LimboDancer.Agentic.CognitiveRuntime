@@ -558,6 +558,108 @@ public sealed partial class BacklogPass15Tests : IDisposable
     }
 
     [Fact]
+    public async Task APendingDcFollowsItsUnbrokenSuccessorUntilPhaseEnd()
+    {
+        await SetupAt(2, "german", Unit("g1", "attacker-squad", "E3", "german"), Weapon("dc", "asl:dc", "attacker-dc", "g1", "german"),
+            Unit("r1", "defender-squad", "E4", "russian"));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("E3"),
+            placeDc = "dc",
+            placeDcAt = L("E4")
+        }));
+        var history = store.Read(Scope)!.Events;
+        var lineage = history[^1] with
+        {
+            EventId = "placer-reduced",
+            Revision = Revision + 1,
+            Type = "lineage",
+            Payload = new LineageRecorded(LineageAction.Reduced, ["g1"],
+                [new NewInstance("gh", "asl:half-squad", "attacker-half-squad", "german", null, null, Current.Unit("g1")!.Conditions)]),
+        };
+        var reduced = Planner().Replay([.. history, lineage]).Current!;
+        var pending = Assert.Single(reduced.PlacedCharges);
+        Assert.Equal("gh", pending.Unit);
+        Assert.False(pending.Operable);
+        Assert.Equal("gh", ((EquipmentInstance)reduced.Find("dc")!).Holding!.Holder);
+        Assert.Equal(Current.Unit("g1")!.MfSpent, reduced.Unit("gh")!.MfSpent);
+        var phase = lineage with
+        {
+            EventId = "settle-at-phase-end",
+            Revision = Revision + 2,
+            Type = "phase-changed",
+            Payload = new PhaseChanged(Current.Turn, "dfph", "german"),
+        };
+        Assert.True(Assert.Single(Planner().Replay([.. history, lineage, phase]).Current!.PlacedCharges).Operable);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task APlacedDcSettlesOnAnotherUnitsRecoveryOrFailedPush(bool recovery)
+    {
+        var loose = Weapon("loose", "asl:mg", "attacker-lmg", "g2", "german");
+        loose.Remove("holding");
+        loose["position"] = new
+        {
+            at = L("D3")
+        };
+        var gun = Weapon("gun", "asl:gun", "attacker-inf-gun", "g2", "german");
+        gun["holding"] = new
+        {
+            holder = "g2",
+            role = "manned"
+        };
+        gun["position"] = new
+        {
+            at = L("D3"),
+            facing = "east"
+        };
+        await SetupAt(2, "german", Unit("g1", "attacker-squad", "E3", "german"), Weapon("dc", "asl:dc", "attacker-dc", "g1", "german"),
+            Unit("g2", "attacker-squad", "D3", "german"), loose, gun, Unit("r1", "defender-squad", "E4", "russian"));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("E3"),
+            placeDc = "dc",
+            placeDcAt = L("E4")
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+        Assert.False(Current.PlacedCharges.Single().Operable);
+        var history = store.Read(Scope)!.Events;
+        var roll = history[^1] with
+        {
+            EventId = "other-work-roll",
+            Revision = Revision + 1,
+            Type = "dice-rolled",
+            Payload = new DiceRolled("other-work-roll", recovery ? "recovery" : "manhandling", recovery ? 1 : 2, 6,
+                recovery ? [6] : [6, 6], DiceRolled.SystemSource, "german"),
+        };
+        var work = roll with
+        {
+            EventId = "other-work",
+            Revision = Revision + 2,
+            Type = recovery ? "recovery-attempted" : "manhandling-rolled",
+            Payload = recovery ? new RecoveryAttempted("g2", "loose", "other-work-roll", 0, false)
+                : new ManhandlingRolled("gun", "other-work-roll", 0, 8, ManhandlingRolled.Stay),
+        };
+        var pin = work with
+        {
+            EventId = "pin-after-work",
+            Revision = Revision + 3,
+            Type = "conditions-changed",
+            Payload = new ConditionsChanged("g1", new Dictionary<string, ConditionState> { [Conditions.Pinned] = ConditionState.True }),
+        };
+        Assert.True(Planner().Replay([.. history, roll, work, pin]).Current!.PlacedCharges.Single().Operable);
+    }
+
+    [Fact]
     public async Task ADrEqualToTheEnemySanCallsForASniperAttack()
     {
         // A14.1 (ruling R15.5): the German IFT DR of 6 equals the Russian SAN; the Sniper's dr 1 and Random Location DR (north, one hex) from E7 find E6,
