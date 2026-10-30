@@ -152,7 +152,8 @@ public static class ScenarioA1GunPushCalculator
     /// <summary>
     /// C10.31 (p. 181; E3.64 p. 230; E3.733 p. 231; RC10.4): the least MF, in half MF, a pusher needs left to attempt another Manhandling DR: the cheapest
     /// doubled entry, Open Ground at 1 MF (2 MF, 4 half MF) in Clear or Ground Snow; at 1½ MF (3 MF) in Mud or Deep Snow; at 1 MF there when a paved
-    /// (Mud) or plowed (Deep Snow) road hexside leaves the Gun's hex.
+    /// (Mud) or plowed (Deep Snow) road hexside leaves the Gun's hex. This holds under ruling R8.6's terrain (Open Ground or grain): were R8.6 lifted, the
+    /// floor becomes the cheapest doubled entry around the hex (an orchard in Mud, not Open Ground by E3.65 and exempt by E3.64, costs 1 MF, doubled 2).
     /// </summary>
     public static int PushFloorHalfMf(bool mud, bool deepSnow, bool roadExit) => (mud || deepSnow) && !roadExit ? WeatherFloorHalfMf : ClearFloorHalfMf;
 
