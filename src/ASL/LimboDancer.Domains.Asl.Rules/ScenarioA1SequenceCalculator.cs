@@ -253,11 +253,15 @@ public static class ScenarioA1SequenceCalculator
     /// <summary>A3.8: whether the phase ending is the Player Turn's last.</summary>
     public static bool LastPhase(string phase) => phase == ScenarioA1Definitions.Phases[^1];
 
-    /// <summary>A23.4 (ruling R15.2): an operably Placed DC detonates before the AFPh ends, unless the Fire package refuses its attack.</summary>
+    /// <summary>
+    /// A23.4 (ruling R15.2): an operably Placed DC detonates before the AFPh ends, unless the Fire package refuses its attack. By
+    /// <see cref="ScenarioA1DemolitionChargeRules.DetonationWindow"/> (the A23.3 claim, RA23.8): the projector clears every placement at the CCPh, so
+    /// <paramref name="operable"/> is operable this Player Turn, its owner phasing.
+    /// </summary>
     public static bool PlacedChargeDue(string? phase, bool operable, Func<bool> detonationReady)
     {
         ArgumentNullException.ThrowIfNull(detonationReady);
-        return phase == "afph" && operable && detonationReady();
+        return ScenarioA1DemolitionChargeRules.DetonationWindow(phase, true, operable, true) && detonationReady();
     }
 
     /// <summary>A23.4: the AFPh does not end while a Placed DC could still detonate.</summary>

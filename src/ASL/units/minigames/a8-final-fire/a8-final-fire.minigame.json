@@ -1,0 +1,246 @@
+{
+  "id": "a8-final-fire",
+  "title": "A8.41 Final Fire by a marked weapon",
+  "card": "a8-final-fire",
+  "rules": [
+    "A8.4",
+    "A8.41",
+    "A9.3",
+    "C2.241"
+  ],
+  "contracts": [
+    "a8.41-final-fire"
+  ],
+  "example": {
+    "source": "A9.2's EX, an LMG marked First Fire with no ADJACENT enemy (manufactured under R0.3 on bd02)",
+    "page": 62
+  },
+  "checks": [
+    {
+      "name": "The squad's LMG, marked First Fire, may not Final Fire at the Russian squad four hexes away",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a8.41-final-fire",
+      "facts": {
+        "firerId": "g-squad",
+        "marker": "first-fire",
+        "range": 4,
+        "phase": "DFPh",
+        "weapon": "mg",
+        "loneSmc": false,
+        "vehicular": false,
+        "mainArmament": false,
+        "asOrdnance": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "ADJACENT"
+        ]
+      }
+    },
+    {
+      "name": "The LMG, marked First Fire, sustains once at the ADJACENT Russian squad",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a8.41-final-fire",
+      "facts": {
+        "firerId": "g-squad",
+        "marker": "first-fire",
+        "range": 1,
+        "phase": "DFPh",
+        "weapon": "mg",
+        "loneSmc": false,
+        "vehicular": false,
+        "mainArmament": false,
+        "asOrdnance": false
+      },
+      "expect": {
+        "outcome": "may-fire-once-more",
+        "reasons": [
+          "Sustained Fire"
+        ]
+      }
+    },
+    {
+      "name": "The squad's own FP, with no counter, fires at the squad four hexes away",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a8.41-final-fire",
+      "facts": {
+        "firerId": "g-squad",
+        "marker": "none",
+        "range": 4,
+        "phase": "DFPh",
+        "weapon": "inherent"
+      },
+      "expect": {
+        "outcome": "may-fire"
+      }
+    },
+    {
+      "name": "An LMG with no counter fires at any range, though its squad is marked First Fire",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a8.41-final-fire",
+      "facts": {
+        "firerId": "g-squad",
+        "marker": "none",
+        "range": 4,
+        "phase": "DFPh",
+        "weapon": "mg",
+        "loneSmc": false,
+        "vehicular": false,
+        "mainArmament": false,
+        "asOrdnance": false
+      },
+      "expect": {
+        "outcome": "may-fire"
+      }
+    },
+    {
+      "name": "The squad's own FP, marked First Fire, fires again only as Area Fire at the ADJACENT squad",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a8.41-final-fire",
+      "facts": {
+        "firerId": "g-squad",
+        "marker": "first-fire",
+        "range": 1,
+        "phase": "DFPh",
+        "weapon": "inherent"
+      },
+      "expect": {
+        "outcome": "may-fire-once-more",
+        "reasons": [
+          "Area Fire"
+        ]
+      }
+    },
+    {
+      "name": "A lone leader's LMG marked First Fire may not sustain, so has no Final Fire",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a8.41-final-fire",
+      "facts": {
+        "firerId": "g-leader",
+        "marker": "first-fire",
+        "range": 1,
+        "phase": "DFPh",
+        "weapon": "mg",
+        "loneSmc": true,
+        "vehicular": false,
+        "mainArmament": false,
+        "asOrdnance": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "neither"
+        ]
+      }
+    },
+    {
+      "name": "The Gun marked First Fire may not Intensive Fire at range 5",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a8.41-final-fire",
+      "facts": {
+        "firerId": "g-gun",
+        "marker": "first-fire",
+        "range": 5,
+        "phase": "DFPh",
+        "weapon": "gun",
+        "noIntensiveFire": false,
+        "crewFit": true
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "ADJACENT"
+        ]
+      }
+    },
+    {
+      "name": "The Gun marked First Fire Intensive Fires once at the ADJACENT squad",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a8.41-final-fire",
+      "facts": {
+        "firerId": "g-gun",
+        "marker": "first-fire",
+        "range": 1,
+        "phase": "DFPh",
+        "weapon": "gun",
+        "noIntensiveFire": false,
+        "crewFit": true
+      },
+      "expect": {
+        "outcome": "may-fire-once-more",
+        "reasons": [
+          "Intensive Fire"
+        ]
+      }
+    },
+    {
+      "name": "A \"No IF\" Gun marked First Fire has no Final Fire",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a8.41-final-fire",
+      "facts": {
+        "firerId": "g-gun",
+        "marker": "first-fire",
+        "range": 1,
+        "phase": "DFPh",
+        "weapon": "gun",
+        "noIntensiveFire": true,
+        "crewFit": true
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "neither"
+        ]
+      }
+    },
+    {
+      "name": "The Russian side does not know what a concealed German stack marked First Fire fires at the ADJACENT squad",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a8.41-final-fire",
+      "facts": {
+        "marker": "first-fire",
+        "range": 1,
+        "phase": "DFPh"
+      },
+      "sealed": {
+        "firerId": "german"
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "The Russian side knows a First Fire counter bars any fire four hexes away",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a8.41-final-fire",
+      "facts": {
+        "marker": "first-fire",
+        "range": 4,
+        "phase": "DFPh"
+      },
+      "sealed": {
+        "firerId": "german"
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    }
+  ],
+  "units": {
+    "g-squad": "german",
+    "g-leader": "german",
+    "g-gun": "german"
+  }
+}

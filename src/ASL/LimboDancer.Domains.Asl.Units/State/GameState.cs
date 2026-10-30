@@ -142,6 +142,12 @@ public sealed record GameState(
     public IReadOnlyList<string> GunCrewsFired { get; init; } = [];
 
     /// <summary>
+    /// Each equipment Gun shot of this Game Turn, by its firer and the Gun's definition, cleared when the Game Turn ends (W-A21.13): a record of what
+    /// happened, which A15.23's once-per-Game-Turn limit on a hero firing a Gun over 82mm reads through ScenarioA1NonQualifiedUseCalculator.
+    /// </summary>
+    public IReadOnlyList<GunShotThisGameTurn> GunShotsThisGameTurn { get; init; } = [];
+
+    /// <summary>
     /// Each Gun's Defensive First Fire shots at the moving stack in its present Location (C6.17; ruling R8.1); cleared whenever the stack
     /// enters a new Location and at every phase change.
     /// </summary>
@@ -579,6 +585,11 @@ public sealed record GameState(
             : StampStatus.Stale;
     }
 }
+
+/// <summary>
+/// An equipment Gun shot of this Game Turn (W-A21.13): its firer and the Gun's definition, as it happened.
+/// </summary>
+public sealed record GunShotThisGameTurn(string Unit, string? Definition);
 
 /// <summary>
 /// A DC Placed (A23.3; ruling R15.2): the DC, its placer and the Location it Placed it from, its target Location, whether the placer was CX, whether

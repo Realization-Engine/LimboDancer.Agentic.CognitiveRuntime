@@ -20,7 +20,9 @@
 #   proofs    text list, replay digest, sweep on the gate's side, each compared with the baseline            (about 7 min; it first sweeps
 #             a few older games and stops if a plan's hash alone differs, which is a fault of the skip lists)
 #   carry     only for the rule claims' batch gate on main (pass "rules-batch", passrules-batch.conf): after proofs that differ in nothing,
-#             files the base's baseline under the head's key, so the next batch gate needs no base stage
+#             files the base's baseline under the head's key, so the next batch gate needs no base stage. A carried baseline keeps
+#             the commit whose sources made it (ORIGIN), and the gate's skip list is the properties new since that commit, not since
+#             the base: a property a carried gate skipped is absent from the baseline it carries (the second batch gate, 2026-10-30)
 #   ci        once the branch is pushed and its pull request opened, at the user's word: says whether the CI run of the branch's head has
 #             passed. CI runs the locked restore, the strict build, the Node viewport test, every test project, and the source checks on
 #             Linux, on the branch merged with main (about 14 min). The merge waits for it.
@@ -118,11 +120,24 @@ main_tool() {
   cmp -s "$MAINTOOL/LimboDancer.Domains.Asl.Play.dll" "$S/main-bin/LimboDancer.Domains.Asl.Play.dll" || stop "the tool's copy is not the baseline's build"
 }
 
+# The commit whose sources made the base's baseline: the base itself, or for a carried baseline its ORIGIN file, or failing that the
+# commit its DONE line names (the first carry, 2026-10-29, wrote no ORIGIN; it was made from the commit it was carried from).
+origin() {
+  local key cache from
+  key=$(python "$G/baseline_key.py" "$BASEFULL" "$BOTH_SKIP" "$SWEEP_OLD" "$OWN" < /dev/null) || { echo "$BASEFULL"; return; }
+  cache="$S/baseline-cache/$key"
+  if [ -s "$cache/ORIGIN" ]; then cat "$cache/ORIGIN"; return; fi
+  from=$(sed -n 's/.*carried from \([0-9a-f]\{7,40\}\).*/\1/p' "$cache/DONE" 2>/dev/null)
+  if [ -n "$from" ]; then git -C "$R" rev-parse --verify -q "$from^{commit}" || echo "$BASEFULL"; else echo "$BASEFULL"; fi
+}
+
 # The skip lists of the gate's side, and the signature a finished proofs stage is marked with: the build and both lists.
 skips() {
-  GATE_SKIP=$(python "$G/new_properties.py" "$BASEFULL" < /dev/null)${SKIP_ADD:+,$SKIP_ADD}${BOTH_SKIP:+,$BOTH_SKIP}
+  ORIGINFULL=$(origin)
+  GATE_SKIP=$(python "$G/new_properties.py" "$ORIGINFULL" < /dev/null)${SKIP_ADD:+,$SKIP_ADD}${BOTH_SKIP:+,$BOTH_SKIP}
   GATE_SKIP_JSON="$SKIP_JSON"
-  SIGNATURE="$(cat "$GATE/LimboDancer.Domains.Asl.Play.dll" "$GATE/LimboDancer.Domains.Asl.Rules.dll" "$GATE/LimboDancer.Domains.Asl.Units.dll" | sha256sum | cut -c1-16) $(echo "$GATE_SKIP|$GATE_SKIP_JSON|$BASEFULL|$SWEEP" | sha256sum | cut -c1-16)"
+  SIGNATURE="$(cat "$GATE/LimboDancer.Domains.Asl.Play.dll" "$GATE/LimboDancer.Domains.Asl.Rules.dll" "$GATE/LimboDancer.Domains.Asl.Units.dll" | sha256sum | cut -c1-16) $(echo "$GATE_SKIP|$GATE_SKIP_JSON|$BASEFULL|$ORIGINFULL|$SWEEP" | sha256sum | cut -c1-16)"
+  [ "$ORIGINFULL" = "$BASEFULL" ] || echo "the baseline of ${BASEFULL:0:8} was carried: it was made from ${ORIGINFULL:0:8}'s sources, so the new properties are those since ${ORIGINFULL:0:8}"
   echo "BOTH_SKIP (left out on the baseline's side too): $BOTH_SKIP"
   echo "PROOF_SKIP ($(echo "$GATE_SKIP" | tr ',' '\n' | grep -c .) names): $GATE_SKIP"
   echo "PROOF_SKIP_JSON: $GATE_SKIP_JSON"
@@ -289,8 +304,10 @@ carry)
   [ -f "$S/baseline-cache/$KEY/DONE" ] || stop "no baseline $KEY of ${BASEFULL:0:8} to carry"
   HEADFULL=$(git -C "$R" rev-parse HEAD)
   NEXT=$(python "$G/baseline_key.py" "$HEADFULL" "$BOTH_SKIP" "$SWEEP_OLD" "$OWN" < /dev/null) || stop "no key for the head's baseline"
+  ORIGINFULL=$(origin)
   rm -rf "$S/baseline-cache/$NEXT"; cp -r "$S/baseline-cache/$KEY" "$S/baseline-cache/$NEXT"
-  echo "$(date "+%F %H:%M") carried from ${BASEFULL:0:8} by the batch gate" > "$S/baseline-cache/$NEXT/DONE"
+  echo "$ORIGINFULL" > "$S/baseline-cache/$NEXT/ORIGIN"
+  echo "$(date "+%F %H:%M") carried from ${BASEFULL:0:8} by the batch gate (made from ${ORIGINFULL:0:8})" > "$S/baseline-cache/$NEXT/DONE"
   echo "the baseline of ${HEADFULL:0:8} is $NEXT, carried from ${BASEFULL:0:8}; record ${HEADFULL:0:8} as the last batch gate in the inventory's section 6"
   ;;
 docker)

@@ -240,7 +240,7 @@ internal static class ScenarioA1ArmorCalculator
     {
         var target = shot.VehicleTarget!;
         // D3.2 (pass 50): a shot from inside the target's hex names no Target Facing, and one from outside it names the hull's, and the turret's too.
-        if (!reference.Armor.Vehicles.TryGetValue(target.DefinitionId!, out var armor) || armor.Nationality == gun.Nationality
+        if (!reference.Armor.Vehicles.TryGetValue(target.DefinitionId!, out var armor) || armor.Nationality == ScenarioA1OrdnanceCalculator.FriendlyNationality(shot, gun)
             || (shot.SameHex == true ? target.HullFacing is not null || target.TurretFacing is not null
                 : target.HullFacing is not ("front" or "side" or "rear") || (armor.Turreted && target.TurretFacing is not ("front" or "side" or "rear")))
             || shot.Hit!.Targets is { Count: > 0 })
@@ -306,7 +306,9 @@ internal static class ScenarioA1ArmorCalculator
         }
     }
 
-    public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference)
+    public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) => Run(shot, gun, reference, null);
+
+    public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts? breakdownFacts)
     {
         var rolls = shot.Rolls!;
         var hit = shot.Hit!;
@@ -494,6 +496,10 @@ internal static class ScenarioA1ArmorCalculator
 
         var total = (int)drm.Sum(item => item.Value);
         var original = dice[0] + dice[1];
+        var breakdownOutcome = breakdownFacts is null ? null
+            : ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(breakdownFacts, VehicleBreakdownUse.OrdnanceToHit, original);
+        var breakdown = breakdownOutcome?.Numbers.BNumber ?? ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference);
+        var failed = breakdownOutcome?.Failed ?? original >= breakdown;
 
         // C5.35 (p. 172; pass 50): a Motion firer with no Gyrostabilizer doubles the lower dr of its TH DR; the lowest Final DR is then one more.
         var motion = ScenarioA1OrdnanceCalculator.MotionFirer(shot) ? Math.Min(dice[0], dice[1]) : 0;
@@ -550,7 +556,7 @@ internal static class ScenarioA1ArmorCalculator
         }
 
         var toHit = new OrdnanceToHit(color, basic, modifications, modified, [.. dice], original, drm, final, improbable, subsequent, isHit, critical);
-        var malfunctioned = original >= ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference);
+        var malfunctioned = breakdownOutcome is null ? failed : breakdownOutcome.Outcome == VehicleBreakdownOutcome.Malfunction;
 
         // C13.36 (ruling R9.8): a PF never malfunctions, but an Original 12 misses and gives its firer Casualty Reduction; an 11 or 12 for
         // Inexperienced Infantry (A19.32; referee, pass 9).
@@ -573,14 +579,14 @@ internal static class ScenarioA1ArmorCalculator
         if (ShotDepletion(shot, gun) is { } depletion)
         {
             use = Use(original, depletion);
-            if (use == "none" && !malfunctioned)
+            if (use == "none" && !(breakdownOutcome?.CountsAsFiredOnDepletionFailure ?? failed))
             {
                 return Unused(shot, gun, toHit);
             }
 
             // A round that was not there hits nothing, though the Gun malfunctioned on the DR. An APCR or HEAT record made before pass 55 keeps
             // the To Hit result it shows; no To Kill DR follows it either way.
-            if (use == "none" && ammunition is not ("apcr" or "heat"))
+            if (use == "none" && (breakdownFacts is not null || ammunition is not ("apcr" or "heat")))
             {
                 isHit = critical = false;
                 toHit = toHit with
@@ -591,8 +597,8 @@ internal static class ScenarioA1ArmorCalculator
             }
         }
 
-        // A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the Multiple ROF one each.
-        var rof = (gun.RateOfFire ?? 0) - (shot.CapturedPenalty ?? 0);
+        // A21.12 (pass 65, ruling R65.22; W-A21.13): the penalty multiple lowers the Multiple ROF one each (ScenarioA1OrdnanceCalculator.RateOfFire).
+        var rof = ScenarioA1OrdnanceCalculator.RateOfFire(shot, gun);
         if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
         {
             rof--;
@@ -603,7 +609,7 @@ internal static class ScenarioA1ArmorCalculator
             rof = 0;
         }
 
-        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, malfunctioned, rof, dice[0]);
+        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, failed, rof, dice[0]);
         OrdnanceKill? kill = null;
         if (isHit && use != "none")
         {
@@ -633,10 +639,16 @@ internal static class ScenarioA1ArmorCalculator
         // is acquired only when the shot costs it its "?" (the game decides that, R6.7).
         // C6.5 (the chart's G): a non-mortar SW acquires nothing; nor does a MG fired as ordnance, a vehicle's MA MG included (pass 60).
         // D10.1 (pass 65, ruling R65.23): a wreck is no unit to carry an Acquisition (C6.5: "Known enemy units"), and gives none.
-        var acquires = !malfunctioned && target.Concealed != true && !latw && !machineGun && target.Wreck != true;
+        var acquires = !failed && target.Concealed != true && !latw && !machineGun && target.Wreck != true;
         var acquisition = !acquires ? 0 : Math.Max((ScenarioA1OrdnanceCalculator.AcquisitionDenied(shot) ? 0 : shot.Acquisition!.Value) - 1, -2);
-        var gunEffect = new OrdnanceGunEffect(ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference), malfunctioned, Math.Max(rof, 0), kept, counter, acquisition,
-            acquires ? shot.TargetLocationId : null);
+        // A.11 (W-A21.13): under a penalty multiple the Original B# is the X#, and a DR at or above it eliminates the Gun.
+        var eliminated = breakdownOutcome is null ? ScenarioA1OrdnanceCalculator.Eliminated(shot, gun, original, failed) : null;
+        var gunEffect = new OrdnanceGunEffect(breakdown, malfunctioned && eliminated != true, Math.Max(rof, 0), kept, counter, acquisition,
+            acquires ? shot.TargetLocationId : null)
+        {
+            Eliminated = eliminated,
+            VehicleBreakdown = breakdownOutcome
+        };
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {
             CrewConcealmentLost = shot.Crew.Concealed == true && shot.CrewSeen != false ? true : null,

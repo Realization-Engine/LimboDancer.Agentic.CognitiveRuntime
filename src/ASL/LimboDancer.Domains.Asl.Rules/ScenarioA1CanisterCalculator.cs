@@ -244,7 +244,9 @@ public static class ScenarioA1CanisterCalculator
     /// (C2.28, C5.62), and the colored dr at most the ROF keeps it (C2.24; one lower after a CA change, C2.5; none for a pinned crew, A7.81, or in
     /// the AFPh, C5.2). The Gun loses any Acquisition and gains none (C6.5: "or fires SMOKE, canister or IFE").
     /// </summary>
-    internal static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference)
+    internal static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) => Run(shot, gun, reference, null);
+
+    internal static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts? breakdownFacts)
     {
         if (shot.Rolls!.Canister is not { } dice)
         {
@@ -253,8 +255,11 @@ public static class ScenarioA1CanisterCalculator
 
         var canister = shot.Canister!;
         var original = dice[0] + dice[1];
-        var breakdown = ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference);
-        var malfunctioned = original >= breakdown;
+        var breakdownOutcome = breakdownFacts is null ? null
+            : ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(breakdownFacts, VehicleBreakdownUse.Canister, original);
+        var breakdown = breakdownOutcome?.Numbers.BNumber ?? ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference);
+        var failed = breakdownOutcome?.Failed ?? original >= breakdown;
+        var malfunctioned = breakdownOutcome is null ? failed : breakdownOutcome.Outcome == VehicleBreakdownOutcome.Malfunction;
         var depletion = ScenarioA1ArmorCalculator.ShotDepletion(shot, gun)!.Value;
         var use = ScenarioA1ArmorCalculator.Use(original, depletion);
         var firepower = Firepower(gun.Caliber)!.Value;
@@ -262,7 +267,7 @@ public static class ScenarioA1CanisterCalculator
         OrdnanceCanisterResolution Block(IReadOnlyList<OrdnanceCanisterAttack> attacks) =>
             new(canister.Aim!.Value, canister.Facing!, firepower, [.. dice], original, caseA, depletion, attacks);
 
-        if (use == "none" && !malfunctioned)
+        if (use == "none" && !(breakdownOutcome?.CountsAsFiredOnDepletionFailure ?? failed))
         {
             return new OrdnanceResolution(OrdnanceResolution.Resolved, [], null, new OrdnanceGunEffect(breakdown, false, gun.RateOfFire ?? 0, true, null, shot.Acquisition!.Value, null))
             {
@@ -271,7 +276,8 @@ public static class ScenarioA1CanisterCalculator
             };
         }
 
-        var rof = gun.RateOfFire ?? 0;
+        // A21.12 (W-A21.13): the penalty multiple lowers the Multiple ROF one each; a shot recorded before the wiring was not lowered.
+        var rof = ScenarioA1OrdnanceCalculator.UnloweredRateOfFire(shot, gun);
         if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
         {
             rof--;
@@ -282,14 +288,20 @@ public static class ScenarioA1CanisterCalculator
             rof = 0;
         }
 
-        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, malfunctioned, rof, dice[0]);
+        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, failed, rof, dice[0]);
         OrdnanceCanisterAttack[] attacks = use == "none" ? [] : [.. canister.Locations!.Select(location =>
         {
             var multipliers = Multipliers(AttackFact(shot, gun, location));
             return new OrdnanceCanisterAttack(location.LocationId!, multipliers, multipliers.Aggregate((decimal)firepower, (value, item) => value * item.Value));
         })];
+        // A.11 (W-A21.13): under a penalty multiple the Original B# is the X#, and a DR at or above it eliminates the Gun.
+        var eliminated = breakdownOutcome is null ? ScenarioA1OrdnanceCalculator.Eliminated(shot, gun, original, failed) : null;
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], null,
-            new OrdnanceGunEffect(breakdown, malfunctioned, kept ? Math.Max(rof, 0) : shot.IntensiveFire == true ? 0 : Math.Max(rof, 0), kept, counter, 0, null))
+            new OrdnanceGunEffect(breakdown, malfunctioned && eliminated != true, kept ? Math.Max(rof, 0) : shot.IntensiveFire == true ? 0 : Math.Max(rof, 0), kept, counter, 0, null)
+            {
+                VehicleBreakdown = breakdownOutcome,
+                Eliminated = eliminated,
+            })
         {
             // A12.14 (ruling R8.5): the "?" is lost only in the view of a Good Order enemy ground unit within 16 hexes.
             CrewConcealmentLost = shot.Crew.Concealed == true && shot.CrewSeen != false ? true : null,

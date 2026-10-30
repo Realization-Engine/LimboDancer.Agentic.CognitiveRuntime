@@ -90,6 +90,86 @@
       "expect": {
         "outcome": "keeps-concealment"
       }
+    },
+    {
+      "name": "By day a concealed squad advancing into grain in October, out of season and so Open Ground, in view of a Good Order enemy loses its concealment (B15.6)",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a12.14-advance-concealment",
+      "facts": {
+        "advancerId": "g-squad",
+        "to": "bd04:J5:0",
+        "night": false,
+        "terrain": "grain",
+        "month": 10,
+        "smokeInLocation": false,
+        "inLocationCover": false,
+        "enemyGoodOrderInLosWithin16": true
+      },
+      "expect": {
+        "outcome": "loses-concealment"
+      }
+    },
+    {
+      "name": "Advancing into grain in July it keeps its concealment whatever the German viewer knows",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a12.14-advance-concealment",
+      "facts": {
+        "advancerId": "g-squad",
+        "to": "bd04:J5:0",
+        "night": false,
+        "terrain": "grain",
+        "month": 7,
+        "smokeInLocation": false,
+        "inLocationCover": false
+      },
+      "expect": {
+        "outcome": "keeps-concealment"
+      }
+    },
+    {
+      "name": "With SMOKE in the Open Ground Location it keeps its concealment whatever the German viewer knows (A10.531, A4.6)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a12.14-advance-concealment",
+      "facts": {
+        "advancerId": "g-squad",
+        "to": "bd04:H5:0",
+        "night": false,
+        "terrain": "open-ground",
+        "month": 7,
+        "smokeInLocation": true,
+        "inLocationCover": false
+      },
+      "expect": {
+        "outcome": "keeps-concealment",
+        "reasons": [
+          "SMOKE"
+        ]
+      }
+    },
+    {
+      "name": "Grain in a game that names no month is not evaluated",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a12.14-advance-concealment",
+      "facts": {
+        "advancerId": "g-squad",
+        "to": "bd04:J5:0",
+        "night": false,
+        "terrain": "grain",
+        "month": null,
+        "smokeInLocation": false,
+        "inLocationCover": false,
+        "enemyGoodOrderInLosWithin16": true
+      },
+      "expect": {
+        "outcome": "not-evaluated",
+        "reasons": [
+          "month"
+        ]
+      }
     }
   ],
   "units": {

@@ -42,15 +42,26 @@ def previous_prompt():
 
 def design_link(claim):
     found = sorted(glob.glob(f"{DESIGNS}/ASL {claim} *Claim Design.md"))
+    if not found:
+        # A design of several claims (2026-10-30: the five audit-fault claims) names each in a heading "## n. Claim <id>: ...".
+        heading = re.compile(r"^## [0-9]+\. Claim " + re.escape(claim) + ":")
+        for path in sorted(glob.glob(f"{DESIGNS}/ASL * Claims Design.md")):
+            with open(path, encoding="utf-8") as f:
+                if any(heading.match(line) for line in f):
+                    found = [path]
+                    break
     return f"[{claim}](<../../Designs/{os.path.basename(found[0])}>)" if found else claim
 
 
 def merged_since(commit, claims):
     if not commit:
         return set()
-    branches = {claim["branch"]: name for name, claim in claims.items()}
+    # One branch may carry several claims (claim/audit-five carried five): each of them merged with it.
+    branches = collections.defaultdict(set)
+    for name, claim in claims.items():
+        branches[claim["branch"]].add(name)
     out = git("log", "--merges", "--first-parent", "--format=%s", f"{commit}..HEAD")
-    return {branches[m.group(1)] for line in out.splitlines() if (m := claim_check.MERGE.match(line)) and m.group(1) in branches}
+    return {name for line in out.splitlines() if (m := claim_check.MERGE.match(line)) and m.group(1) in branches for name in branches[m.group(1)]}
 
 
 def main():

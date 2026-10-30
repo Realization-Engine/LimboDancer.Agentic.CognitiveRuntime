@@ -390,8 +390,11 @@ public static class ScenarioA1OrdnanceEligibility
     public static bool RecordsYear(bool vehicleTarget, bool ammunitionNamed, string? firingNationality) =>
         vehicleTarget || ammunitionNamed || firingNationality == "american";
 
-    /// <summary>Whether the Gun's crew is non-qualified (C5.8; ruling R8.8): a squad or HS manning a Gun, not a SW.</summary>
-    public static bool? NonQualified(bool equipment, string? crewKind, bool sw) => equipment && !ScenarioA1Definitions.IsCrew(crewKind) && !sw ? true : null;
+    /// <summary>
+    /// Whether the Gun's crew is non-qualified (C5.8; ruling R8.8): a squad or HS manning a Gun, not a SW. Forwards to
+    /// <see cref="ScenarioA1NonQualifiedUseCalculator.Qualified"/> (the A21.13 claim, ruling RA21.7), the same answer.
+    /// </summary>
+    public static bool? NonQualified(bool equipment, string? crewKind, bool sw) => equipment && !ScenarioA1NonQualifiedUseCalculator.Qualified(crewKind) && !sw ? true : null;
 
     /// <summary>The refusal of a Spotter or director named for what is not a light mortar or SW (C9.3, A7.531).</summary>
     public const string SupportRefusal = "play.ordnance-support: only a light mortar has a Spotter, and only a SW a directing leader (C9.3, A7.531)";

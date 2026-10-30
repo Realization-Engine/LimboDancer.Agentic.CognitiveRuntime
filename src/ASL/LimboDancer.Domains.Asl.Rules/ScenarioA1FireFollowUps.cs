@@ -117,7 +117,9 @@ public static class ScenarioA1FireFollowUps
             var tem = terrain is not null && ScenarioA1FireReference.Tem.TryGetValue(terrain, out var value) ? value : 0;
             // A6.7 (referee, pass 12): only SMOKE in the Location hinders its own units; brush, grain, orchard, and marsh do not.
             var smoke = unit.SmokeInHex() ? 2 : 0;
-            gains.Add(new ConcealmentGain(unit.Id, size + leadership + (unit.Lax ? 1 : 0) - tem - smoke - (unit.Stealthy ? 1 : 0)) { With = with });
+            // The A11.17 claim (ruling RA11S.7): a candidate's Stealth status, when given, in place of its old Lax and Stealthy.
+            var stealth = unit.Stealth is { } status ? ScenarioA1StealthCalculator.Drm(status) : (unit.Lax ? 1 : 0) - (unit.Stealthy ? 1 : 0);
+            gains.Add(new ConcealmentGain(unit.Id, size + leadership + stealth - tem - smoke) { With = with });
         }
 
         return gains;
@@ -257,6 +259,10 @@ public static class ScenarioA1FireFollowUps
         ArgumentNullException.ThrowIfNull(weapon);
         ArgumentNullException.ThrowIfNull(firstFireMarked);
         var conditions = new List<(UnitCondition, bool)>();
+        if (weapon.VehicleBreakdown?.Outcome == VehicleBreakdownOutcome.Disabled)
+        {
+            conditions.Add((ScenarioA1RallyRules.VehicleWeaponDisabled(weapon.VehicleWeapon ?? FireOverrunEffect.MainArmament), true));
+        }
         if (weapon.Malfunctioned)
         {
             // D3.7 (pass 50): a vehicle's BMG or CMG has its own Malfunction counter.
@@ -285,6 +291,11 @@ public static class ScenarioA1FireFollowUps
     {
         ArgumentNullException.ThrowIfNull(effect);
         var conditions = new List<(UnitCondition, bool)>();
+        foreach (var weapon in effect.VehicleBreakdowns?.Where(item => item.Value.Outcome == VehicleBreakdownOutcome.Disabled)
+            ?? Enumerable.Empty<KeyValuePair<string, VehicleBreakdownResolved>>())
+        {
+            conditions.Add((ScenarioA1RallyRules.VehicleWeaponDisabled(weapon.Key), true));
+        }
         foreach (var weapon in effect.MalfunctionedWeapons)
         {
             conditions.Add((weapon switch

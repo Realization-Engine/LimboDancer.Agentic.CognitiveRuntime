@@ -119,11 +119,11 @@ public static class ScenarioA1RoutCalculator
 
     /// <summary>
     /// Open Ground (A10.531; ruling R13.3): a hex where the enemy could apply the FFMO DRM, read as Open Ground or road terrain, or grain outside June to
-    /// September (B15.6; ruling R5.19), with no SMOKE there.
+    /// September (B15.6; ruling R5.19), with no SMOKE there. The terrain's part is <see cref="ScenarioA1OpenGroundCalculator.OpenGroundTerrain"/>'s
+    /// (the A10.531 claim, ruling RA10.9): grain with no month is not Open Ground here (ruling RA10.7).
     /// </summary>
     public static bool OpenGround(RoutLocationFacts? read, int? scenarioMonth) =>
-        read is { } location && !location.Smoke
-            && (location.TerrainKey == "open-ground" || (location.TerrainKey == "grain" && scenarioMonth is < 6 or > 9));
+        read is { } location && !location.Smoke && ScenarioA1OpenGroundCalculator.OpenGroundTerrain(location.TerrainKey, scenarioMonth) == true;
 
     /// <summary>
     /// The cover facts of one LOS (A10.531; pass 35, task 35.4): fire's count of the map Hindrance stands when fire can attribute every Hindrance on
@@ -146,8 +146,8 @@ public static class ScenarioA1RoutCalculator
             return false;
         }
 
-        var cover = reader.Cover(enemyLocation, at, steppedFrom);
-        return (cover.MapHindrance ?? los.Hindrance) + cover.OtherHindrance == 0 && !cover.HexsideTem && !cover.HeightAdvantage && !cover.InHexCover;
+        // The cover test is A10.531's (the A10.531 claim, ruling RA10.9).
+        return ScenarioA1OpenGroundCalculator.NoFfmoCover(reader.Cover(enemyLocation, at, steppedFrom), los.Hindrance);
     }
 
     /// <summary>
