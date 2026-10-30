@@ -6,6 +6,19 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 public sealed class ScenarioA1VehicleBreakdownResolutionTests
 {
     [Fact]
+    public void HeroRiderUsesHisWoundedMoraleAndKeepsTheSharedChecksOutcome()
+    {
+        Assert.Null(ScenarioA1RiderRules.MoraleBar("hero", 9, null, true, 8));
+        Assert.NotNull(ScenarioA1RiderRules.MoraleBar("hero", 9, null, true, null));
+        Assert.NotNull(ScenarioA1RiderRules.MoraleBar("legacy", 9, null));
+        var passed = new FireCheck("MC", [4, 5], 9, [], 9, 9, true, "passed");
+        Assert.Equal("passed", ScenarioA1MoraleCheck.BailOutResult(passed, false, false, false, true));
+        Assert.Equal("pinned", ScenarioA1MoraleCheck.BailOutResult(passed, false, false));
+        Assert.Equal("wounded", ScenarioA1MoraleCheck.BailOutResult(passed with { Passed = false, Consequence = "wounded" }, false, false, false, true));
+        Assert.Equal("eliminated", ScenarioA1MoraleCheck.BailOutResult(passed with { Passed = false, Consequence = "eliminated" }, false, false, false, true));
+    }
+
+    [Fact]
     public void DisabledArmamentCannotFireAgain()
     {
         Assert.Null(ScenarioA1VehicleBreakdownResolutionCalculator.WeaponUseRefusal(false));
