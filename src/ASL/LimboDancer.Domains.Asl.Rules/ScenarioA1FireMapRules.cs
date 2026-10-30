@@ -420,7 +420,11 @@ public static class ScenarioA1FireMapRules
     /// <summary>
     /// An attack's share of an Encirclement (A7.7; ruling R12.11): the units firing inherent FP or a SW at no more than Normal Range, when its FP could
     /// inflict at least a NMC allowing for Cowering, with the positions where their LOS enters the target hex; none for other fire. <paramref name="firers"/>
-    /// gives, for each firer of the attack in order, whether its Location is known and its LOS entry read.
+    /// gives, for each firer of the attack in order, whether its Location is known and its LOS entry read. It keeps the answer it had before the D5.34
+    /// claim (rulings RD5.8, RD5.9, RD5.15, RD5.16): <see cref="ScenarioA1EncirclementCalculator.ValidFire"/> replaces its test of each firer, and differs
+    /// in that vehicular armament and an ordnance hit count (A7.7: "inherent-FP/SW/ordnance/vehicular-armament"; here they count for nothing), a firer of
+    /// inherent FP and a SW counts at the Normal Range of its longest-ranged weapon (here by its inherent range alone), and no weapon counts beyond 16
+    /// hexes (A10.532). W-D5.34 moves its callers.
     /// </summary>
     public static (int Units, List<int> Entries) EncirclementShare(FireAttack facts, FireArithmetic? arithmetic, bool targetKnown, ScenarioA1FireReference reference,
         IReadOnlyList<EncirclementFirerFacts> firers)
@@ -476,7 +480,11 @@ public static class ScenarioA1FireMapRules
     /// The side this attack Encircles in its target Location, or null (A7.7; ruling R12.11): with the side's earlier attacks this phase on that Location,
     /// made consecutively (none of its attacks at another Location between; a Gun's shot at another Location breaks the sequence too), by at least two
     /// counting units whose LOS entries Encircle it. <paramref name="unitSide"/> reads a target's side; <paramref name="encirclementExists"/> whether the
-    /// Location already Encircles a side; <paramref name="earlier"/> is the phase's attacks, latest first, each read when reached.
+    /// Location already Encircles a side; <paramref name="earlier"/> is the phase's attacks, latest first, each read when reached. The seal itself is
+    /// <see cref="ScenarioA1EncirclementCalculator.Seals"/>'s (the D5.34 claim, ruling RD5.7). It keeps the answer it had before the claim (ruling RD5.16):
+    /// it counts each attack by <see cref="EncirclementShare"/>, so an earlier ordnance shot of the side at the same target is skipped even when it hit,
+    /// and it has no pillbox exception, which <see cref="ScenarioA1EncirclementCalculator.SealRefusal"/> and
+    /// <see cref="ScenarioA1EncirclementCalculator.Subject(string?, bool, bool, bool?, bool?, bool?)"/> give (B30.32). W-D5.34 moves its callers.
     /// </summary>
     public static string? EncirclementSeal(string? phase, FireAttack facts, bool targetKnown, Func<string, string?> unitSide, Func<string, bool> encirclementExists,
         ScenarioA1FireReference reference, IReadOnlyList<EncirclementFirerFacts> firers, IEnumerable<EarlierAttackFacts> earlier, string firingSide)
@@ -536,7 +544,7 @@ public static class ScenarioA1FireMapRules
             entries.AddRange(seen);
         }
 
-        return units >= 2 && ScenarioA1Geometry.Encircles(entries) ? targetSide : null;
+        return ScenarioA1EncirclementCalculator.Seals(units, entries) ? targetSide : null;
     }
 
     /// <summary>

@@ -876,7 +876,9 @@ public static class ScenarioA1OrdnanceCalculator
     /// <summary>
     /// The Infantry Target Type shot. With <see cref="OrdnanceShot.StunEncircledReading"/> null it keeps the answer it had before the D5.34 claim: no Stun
     /// +1 on the To Hit DR of an AFV under a "+1" counter, which D5.34 (p. 203) gives to "any TH ... DR it makes"; set, it adds
-    /// <see cref="ScenarioA1StunCalculator.Drm"/> ("stun"), as the Vehicle Target Type does (the claim's ruling RD5.16, W-D5.34).
+    /// <see cref="ScenarioA1StunCalculator.Drm"/> ("stun"), as the Vehicle Target Type does (the claim's ruling RD5.16, W-D5.34). Nor, null, does it add
+    /// the Encircled +1 of an Encircled crew (A7.7, p. 57: "+1 DRM on the IFT (or To Hit DR if ordnance)"); set, it adds
+    /// <see cref="ScenarioA1EncirclementCalculator.FirerDrm"/> for <see cref="OrdnanceCrew.Encircled"/> ("encircled").
     /// </summary>
     private static OrdnanceResolution Run(OrdnanceShot shot, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts? breakdownFacts)
     {
@@ -963,6 +965,12 @@ public static class ScenarioA1OrdnanceCalculator
         if (shot.StunEncircledReading == true && ScenarioA1StunCalculator.Drm(StunDr.ToHit, shot.Vehicle?.StunRecovery == true) is > 0 and var stun)
         {
             drm.Add(new FireModifier("stun", stun, "D5.34"));
+        }
+
+        // A7.7 (p. 57; the D5.34 claim, ruling RD5.16): an Encircled crew adds one to its To Hit DR, under the shot's StunEncircledReading.
+        if (shot.StunEncircledReading == true && ScenarioA1EncirclementCalculator.FirerDrm(shot.Crew.Encircled == true) is > 0 and var encircled)
+        {
+            drm.Add(new FireModifier("encircled", encircled, "A7.7"));
         }
 
         // D3.44, D3.45 (p. 200; pass 55, rulings R55.16, R55.18): the vehicle's Armor Leader modifies its MA's To Hit DR, BU or not; an

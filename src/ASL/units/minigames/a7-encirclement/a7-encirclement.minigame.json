@@ -1,0 +1,138 @@
+{
+  "id": "a7-encirclement",
+  "title": "A7.7 Encirclement",
+  "card": "a7-encirclement",
+  "rules": [
+    "A7.7",
+    "A7.71",
+    "A7.72"
+  ],
+  "contracts": [
+    "a7.7-encirclement-seal",
+    "a7.7-encircled"
+  ],
+  "example": {
+    "source": "A7.7 EX and A7.71 EX, board 3: [U2] then [S5] on [T3], and the four-hex FG [T3]-[U4]-[U5]-[T5] on [T4]",
+    "page": 58
+  },
+  "checks": [
+    {
+      "name": "[U2] then [S5] on [T3]: the LOS enter through opposite hexspines, and the Encirclement is sealed",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a7.7-encirclement-seal",
+      "facts": {
+        "targetId": "r-squad-t3",
+        "phase": "PFPh",
+        "consecutive": true,
+        "countingUnits": 2,
+        "pattern": "opposite-hexspines",
+        "inPillbox": false
+      },
+      "expect": {
+        "outcome": "seals"
+      }
+    },
+    {
+      "name": "[U2] then through the [S4]-[T3] hexside alone: no Encirclement",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a7.7-encirclement-seal",
+      "facts": {
+        "targetId": "r-squad-t3",
+        "phase": "PFPh",
+        "consecutive": true,
+        "countingUnits": 2,
+        "pattern": "none",
+        "inPillbox": false
+      },
+      "expect": {
+        "outcome": "no-seal"
+      }
+    },
+    {
+      "name": "The four-hex FG on [T4] crosses opposite hexsides and Encircles it alone (A7.71)",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a7.7-encirclement-seal",
+      "facts": {
+        "targetId": "r-squad-t4",
+        "phase": "PFPh",
+        "consecutive": true,
+        "countingUnits": 4,
+        "pattern": "three-vertices",
+        "inPillbox": false
+      },
+      "expect": {
+        "outcome": "seals"
+      }
+    },
+    {
+      "name": "Fire at another target between the two attacks breaks the sequence",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a7.7-encirclement-seal",
+      "facts": {
+        "targetId": "r-squad-t3",
+        "phase": "PFPh",
+        "consecutive": false,
+        "countingUnits": 2,
+        "pattern": "opposite-hexspines",
+        "inPillbox": false
+      },
+      "expect": {
+        "outcome": "no-seal",
+        "reasons": [
+          "consecutive"
+        ]
+      }
+    },
+    {
+      "name": "The Encircled squad in [T3]: its morale drops, its fire takes +1, and its first Location costs double MF",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a7.7-encircled",
+      "facts": {
+        "unitId": "r-squad-t3",
+        "marker": true,
+        "melee": false,
+        "berserk": false,
+        "heroic": false,
+        "upperLevelCutOff": false,
+        "kind": "infantry"
+      },
+      "expect": {
+        "outcome": "encircled",
+        "reasons": [
+          "Morale Level is one lower",
+          "+1 on the IFT",
+          "double MF"
+        ]
+      }
+    },
+    {
+      "name": "The German side does not know the kind of a concealed Russian unit under the Encirclement counter",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a7.7-encircled",
+      "facts": {
+        "marker": true,
+        "melee": false,
+        "berserk": false,
+        "heroic": false,
+        "upperLevelCutOff": false
+      },
+      "sealed": { "unitId": "russian" },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    }
+  ],
+  "units": {
+    "r-squad-t3": "russian",
+    "r-squad-t4": "russian",
+    "g-squad-u2": "german",
+    "g-squad-s5": "german",
+    "g-fire-group": "german"
+  }
+}

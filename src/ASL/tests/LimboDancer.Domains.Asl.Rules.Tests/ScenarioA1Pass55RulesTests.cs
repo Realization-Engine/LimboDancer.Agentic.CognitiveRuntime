@@ -2030,6 +2030,7 @@ public sealed class ScenarioA1Pass55RulesTests
         ("case-c3:backblast", ToHitDrmClass.FirerBased), ("case-c4:lower-dr", ToHitDrmClass.LowerDrDoubled), ("case-d", ToHitDrmClass.FirerBased),
         ("case-e", ToHitDrmClass.FirerBased), ("case-f", ToHitDrmClass.FirerBased), ("case-h", ToHitDrmClass.FirerBased), ("case-h:captured", ToHitDrmClass.FirerBased),
         ("case-i", ToHitDrmClass.FirerBased), ("cx", ToHitDrmClass.FirerBased), ("stun", ToHitDrmClass.FirerBased), ("spotted", ToHitDrmClass.FirerBased), ("overstack-firer", ToHitDrmClass.FirerBased),
+        ("encircled", ToHitDrmClass.FirerBased),
         ("leadership:", ToHitDrmClass.FirerBased), ("hero:", ToHitDrmClass.FirerBased), ("hero-two-man:", ToHitDrmClass.FirerBased),
         (ScenarioA1ArmorLeaders.LeaderModifier, ToHitDrmClass.FirerBased),
         (ScenarioA1ArmorLeaders.InexperiencedModifier, ToHitDrmClass.FirerBased), ("case-n", ToHitDrmClass.Acquisition), ("case-j", ToHitDrmClass.TargetBased),

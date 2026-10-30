@@ -500,8 +500,8 @@ public static class ScenarioA1MovementCalculator
         var entry = facts.Entry;
         var terrain = entry.Terrain;
 
-        // A7.7 (ruling R12.11): the first Location an Encircled unit enters costs twice its MF.
-        var halfMf = entry.HalfMf * (facts.AnyEncircled ? 2 : 1);
+        // A7.7 (ruling R12.11; the D5.34 claim, ruling RD5.16): the first Location an Encircled unit enters costs twice its MF.
+        var halfMf = entry.HalfMf * ScenarioA1EncirclementCalculator.EntryMultiplier(facts.AnyEncircled);
 
         // C10.3 (ruling R8.6): a Gun is pushed only into Open Ground or grain (a road hex counted as its terrain), at double the MF, never up a
         // level, into Bypass, or by Minimum Move (A4.134).

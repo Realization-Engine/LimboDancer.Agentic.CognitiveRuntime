@@ -308,6 +308,12 @@ internal static class ScenarioA1ArmorCalculator
 
     public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) => Run(shot, gun, reference, null);
 
+    /// <summary>
+    /// The Vehicle Target Type shot. With <see cref="OrdnanceShot.StunEncircledReading"/> null it keeps the answer it had before the D5.34 claim: no
+    /// Encircled +1 on the To Hit DR of an Encircled crew (A7.7, p. 57: "+1 DRM on the IFT (or To Hit DR if ordnance)"), a LATW's or a Gun's; set, it
+    /// adds <see cref="ScenarioA1EncirclementCalculator.FirerDrm"/> for <see cref="OrdnanceCrew.Encircled"/> ("encircled"; the claim's ruling RD5.16,
+    /// W-D5.34).
+    /// </summary>
     public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts? breakdownFacts)
     {
         var rolls = shot.Rolls!;
@@ -397,6 +403,12 @@ internal static class ScenarioA1ArmorCalculator
         if (ScenarioA1StunCalculator.Drm(StunDr.ToHit, shot.Vehicle?.StunRecovery == true) is > 0 and var stun)
         {
             drm.Add(new FireModifier("stun", stun, "D5.34"));
+        }
+
+        // A7.7 (p. 57; the D5.34 claim, ruling RD5.16): an Encircled crew adds one to its To Hit DR, under the shot's StunEncircledReading.
+        if (shot.StunEncircledReading == true && ScenarioA1EncirclementCalculator.FirerDrm(shot.Crew.Encircled == true) is > 0 and var encircled)
+        {
+            drm.Add(new FireModifier("encircled", encircled, "A7.7"));
         }
 
         drm.AddRange(ScenarioA1OrdnanceCalculator.PassEightFirerDrm(shot));

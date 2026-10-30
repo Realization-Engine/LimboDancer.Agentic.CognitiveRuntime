@@ -3832,10 +3832,18 @@ public static class ScenarioA1FireCalculator
                 drm.Add(new FireModifier("lv-hindrance", lowVisibility, "E1.7"));
             }
 
-            // A7.7 (ruling R12.11): +1 when an Encircled unit fires in the group, once however many do (A7.52).
-            if ((attack.Firers ?? []).FirstOrDefault(item => item.Encircled == true) is { } encircled)
+            // A7.7 (ruling R12.11; the D5.34 claim, ruling RD5.16): +1 when an Encircled unit fires in the group, once however many do (A7.52).
+            if ((attack.Firers ?? []).FirstOrDefault(item => item.Encircled == true) is { } encircled
+                && ScenarioA1EncirclementCalculator.FirerDrm(true) is > 0 and var encircledDrm)
             {
-                drm.Add(new FireModifier("encircled:" + encircled.UnitId, 1m, "A7.7"));
+                drm.Add(new FireModifier("encircled:" + encircled.UnitId, encircledDrm, "A7.7"));
+            }
+
+            // A7.7 (p. 57; the D5.34 claim, ruling RD5.16): a Canister shot has no firers (C8.4), so its crew's Encircled is a fact of the Canister,
+            // read here alone: +1 on the IFT DR, and no other firer term. Null is the reading before the claim.
+            if (attack.Canister is { Encircled: true } encircledCanister && ScenarioA1EncirclementCalculator.FirerDrm(true) is > 0 and var canisterDrm)
+            {
+                drm.Add(new FireModifier("encircled:" + encircledCanister.GunId, canisterDrm, "A7.7"));
             }
 
             // A4.51 (ruling R5.2): +1 when a CX unit makes or directs the attack, once however many do. A23.4, A23.6, A23.62, C7.346 (pass 60, ruling
@@ -5489,18 +5497,17 @@ public static class ScenarioA1FireCalculator
         {
             get;
         } = Morale(definition, target.Broken == true, target.Wounded == true, target.Fanatic == true, target.Heroic == true,
-            target.Berserk == true) - (Encircles(target) ? 1 : 0);
+            target.Berserk == true) - ScenarioA1EncirclementCalculator.MoraleDrop(target.Encircled == true, target.Berserk == true, target.Heroic == true);
 
         /// <summary>
         /// The current Morale Level: one lower when wounded (A17.3); a hero's is printed on his wounded side and never lowered
         /// (A15.2); a heroic leader's is at least 9 (A15.21: a 10-2 is a 1-4-10 hero); a Fanatic unit's is one higher (A10.8);
         /// a hero's or heroic leader's never exceeds 10, or 9 if wounded (A15.2); a berserk unit's is 10, never lowered, and one
-        /// higher when Fanatic (A15.42, ruling R30.3).
+        /// higher when Fanatic (A15.42, ruling R30.3). A7.7 (ruling R12.11; the D5.34 claim, ruling RD5.16): an Encircled unit's is one lower, unless it
+        /// is berserk or heroic, on its counter or by this attack (<see cref="ScenarioA1EncirclementCalculator.MoraleDrop"/>).
         /// </summary>
-        public int? MoraleLevel => Morale(Definition, Broken, Wounded, Fanatic, Heroic, Berserk) - (Encircles(Target) && !Berserk && !Heroic ? 1 : 0);
-
-        /// <summary>A7.7 (ruling R12.11): an Encircled unit's Morale Level is one lower, unless it is berserk or heroic.</summary>
-        private static bool Encircles(FireTarget target) => target.Encircled == true && target.Berserk != true && target.Heroic != true;
+        public int? MoraleLevel => Morale(Definition, Broken, Wounded, Fanatic, Heroic, Berserk)
+            - ScenarioA1EncirclementCalculator.MoraleDrop(Target.Encircled == true, Target.Berserk == true || Berserk, Target.Heroic == true || Heroic);
 
         private static int? Morale(FireDefinition definition, bool broken, bool wounded, bool fanatic, bool heroic, bool berserk)
         {

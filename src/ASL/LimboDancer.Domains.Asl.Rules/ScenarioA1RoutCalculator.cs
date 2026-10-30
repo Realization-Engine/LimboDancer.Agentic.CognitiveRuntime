@@ -395,7 +395,8 @@ public static class ScenarioA1RoutCalculator
 
     /// <summary>
     /// The half MF a routing unit pays to step between ADJACENT Locations (A10.5): the Infantry entry cost, without Bypass or Road Bonus, doubled for the
-    /// first Location an Encircled unit enters (A7.7; ruling R12.11); or why it may not.
+    /// first Location an Encircled unit enters (A7.7; ruling R12.11; <see cref="ScenarioA1EncirclementCalculator.EntryMultiplier"/>, the D5.34 claim,
+    /// ruling RD5.16); or why it may not.
     /// </summary>
     public static RoutStepCost RoutEntry(IRoutFactReader reader, int fromLocation, int toLocation, bool encircledFirst)
     {
@@ -406,7 +407,7 @@ public static class ScenarioA1RoutCalculator
             null => new RoutStepCost(null, false, reason ?? $"play.rout-step: the step from {reader.Name(fromLocation)} to {reader.Name(toLocation)} is not one the game allows"),
             { MinimumMoveOnly: true } => new RoutStepCost(null, false, $"play.rout-step: {reader.Name(toLocation)} is entered only by Minimum Move, which a rout does not use (A10.5)"),
             { AllMf: true } => new RoutStepCost(null, true, null),
-            _ => new RoutStepCost(entry.HalfMf * (encircledFirst ? 2 : 1), false, null),
+            _ => new RoutStepCost(entry.HalfMf * ScenarioA1EncirclementCalculator.EntryMultiplier(encircledFirst), false, null),
         };
     }
 
