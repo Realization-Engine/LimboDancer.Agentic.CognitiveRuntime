@@ -114,6 +114,7 @@
         "vehicleId": "g-afv",
         "cause": "mg-to-kill",
         "crewExposed": false,
+        "originalDr": 7,
         "finalDr": 8,
         "finalTk": 8,
         "oneManTurret": false,
@@ -126,13 +127,37 @@
       }
     },
     {
+      "name": "The MG's Original 12 is a Dud, though its Final TK DR equals the Final TK# (C7.35)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d5.34-stun",
+      "facts": {
+        "vehicleId": "g-afv",
+        "cause": "mg-to-kill",
+        "crewExposed": false,
+        "originalDr": 12,
+        "finalDr": 12,
+        "finalTk": 12,
+        "oneManTurret": false,
+        "stunned": false,
+        "stunRecovery": false,
+        "smcTemporaryCrew": false
+      },
+      "expect": {
+        "outcome": "none",
+        "reasons": [
+          "Dud"
+        ]
+      }
+    },
+    {
       "name": "The Stun +1 AFV adds one to its To Hit DR",
       "position": "setup",
       "viewer": "german",
       "contract": "d5.34-stun-plus-one",
       "facts": {
         "vehicleId": "g-afv-plus",
-        "dr": "ToHit",
+        "dr": "to-hit",
         "stunRecovery": true
       },
       "expect": {
@@ -146,7 +171,7 @@
       "contract": "d5.34-stun-plus-one",
       "facts": {
         "vehicleId": "g-afv-plus",
-        "dr": "ExcessiveSpeedBreakdown",
+        "dr": "excessive-speed-breakdown",
         "stunRecovery": true
       },
       "expect": {
@@ -154,7 +179,7 @@
       }
     },
     {
-      "name": "The Russian side does not know the Stun counters beneath a concealed German AFV's \"?\"",
+      "name": "The Russian side does not know the Stun counters beneath a concealed German AFV's \"?\" (g-afv-concealed)",
       "position": "setup",
       "viewer": "russian",
       "contract": "d5.34-stun",

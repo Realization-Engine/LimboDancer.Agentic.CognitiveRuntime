@@ -38,11 +38,22 @@ public enum StunDr
 /// crew's CE, its normal CE DRM (an Unprotected crew, D5.311, has none), and the failed MC; <see cref="StunCause.SniperDr"/> the CE, the fully armored
 /// AFV, and the Sniper dr; <see cref="StunCause.MachineGunToKill"/> the Final TK DR and the Final TK#; <see cref="StunCause.FallingRubble"/> the CE and
 /// the closed top. <see cref="Stunned"/> and <see cref="StunRecovery"/> are the counter the AFV already carries, its front or its "+1" side (a Recall;
-/// +1 crew reads <see cref="StunRecovery"/> true, as the state keeps it). Null is unknown, and an unknown fact the cause reads never Stuns.
+/// +1 crew reads <see cref="StunRecovery"/> true, as the state keeps it). <see cref="Stunned"/> includes the front of a Recall: D5.341 (p. 204) says
+/// "Recall is treated the same as a Stun", so the caller gathers Stunned or Recalled this Player Turn (as
+/// <see cref="ScenarioA1FireEligibility.VehicleTarget"/> does). Null is unknown, and an unknown fact the cause reads never Stuns.
 /// </summary>
 public sealed record StunFacts(StunCause Cause, bool? CrewExposed, bool? QualifiesForCeDrm, bool? FullyArmored, bool? ClosedTopped, bool? McFailed,
     int? SniperDr, int? FinalDr, int? FinalTk, bool Stunned, bool StunRecovery)
 {
+    /// <summary>
+    /// The MG's Original TK DR (<see cref="StunCause.MachineGunToKill"/> only): an Original 12 is a Dud (C7.35, p. 177: "Any Original TK DR of 12
+    /// (regardless of ammunition or Target Type) has no effect"), so it never Stuns. Null is unknown, read as no Original 12.
+    /// </summary>
+    public int? OriginalDr
+    {
+        get; init;
+    }
+
     /// <summary>Whether the AFV is a 1MT AFV (D1.322), whose Stun D5.341 turns into a Recall (ruling RD5.6). Null is unknown.</summary>
     public bool? OneManTurret
     {

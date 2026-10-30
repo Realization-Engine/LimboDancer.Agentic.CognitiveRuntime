@@ -71,6 +71,17 @@ public static class ScenarioA1OrdnanceEventRules
     }
 
     /// <summary>
+    /// <see cref="KillConditions(OrdnanceKill, bool)"/> with the AFV's Stun counter (the D5.34 claim): the To Kill result read as
+    /// <see cref="KillConditions(string, bool, bool, bool, bool)"/> reads it, so a MG's Stun of an AFV already Stunned (or Recalled) this Player Turn or
+    /// under a "+1" counter is a Recall (D5.342, p. 204).
+    /// </summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> KillConditions(OrdnanceKill kill, bool concealedOrHidden, bool stunned, bool stunRecovery)
+    {
+        ArgumentNullException.ThrowIfNull(kill);
+        return KillConditions(kill.Result, kill.Shocked == true, concealedOrHidden, stunned, stunRecovery);
+    }
+
+    /// <summary>
     /// The conditions of a result in the To Kill vocabulary (pass 60): a To Kill DR's, or a mortar's IFT attack on an AFV (C1.55), whose
     /// <c>shock</c> always Shocks it. A MG's Stun is a Stun whatever the AFV's state, where D5.342 (p. 204) Recalls an AFV already Stunned or under a "+1"
     /// counter: the overload with the AFV's <c>stunned</c> and <c>stunRecovery</c> replaces this one (the D5.34 claim, ruling RD5.16), which forwards to it
@@ -82,7 +93,8 @@ public static class ScenarioA1OrdnanceEventRules
     /// <summary>
     /// <see cref="KillConditions(string, bool, bool)"/> with the AFV's Stun counter (the D5.34 claim, ruling RD5.16): a MG's Stun of an AFV already Stunned
     /// or under a "+1" counter is a second Stun (<see cref="ScenarioA1StunCalculator.SecondStun"/>), which D5.342 (p. 204) makes a Recall, with the
-    /// conditions <see cref="ScenarioA1ResultTables.VehicleConditions"/> gives a Recall.
+    /// conditions <see cref="ScenarioA1ResultTables.VehicleConditions"/> gives a Recall. <paramref name="stunned"/> includes the front of a Recall (D5.341,
+    /// p. 204: "Recall is treated the same as a Stun"): the caller gives Stunned or Recalled this Player Turn.
     /// </summary>
     public static IReadOnlyList<(UnitCondition Condition, bool Value)> KillConditions(string result, bool shocked, bool concealedOrHidden, bool stunned, bool stunRecovery)
     {

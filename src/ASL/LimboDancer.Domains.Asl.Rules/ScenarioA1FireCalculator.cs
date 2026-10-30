@@ -3838,10 +3838,10 @@ public static class ScenarioA1FireCalculator
             {
                 drm.Add(new FireModifier("encircled:" + encircled.UnitId, encircledDrm, "A7.7"));
             }
-
             // A7.7 (p. 57; the D5.34 claim, ruling RD5.16): a Canister shot has no firers (C8.4), so its crew's Encircled is a fact of the Canister,
-            // read here alone: +1 on the IFT DR, and no other firer term. Null is the reading before the claim.
-            if (attack.Canister is { Encircled: true } encircledCanister && ScenarioA1EncirclementCalculator.FirerDrm(true) is > 0 and var canisterDrm)
+            // read here alone: +1 on the IFT DR, and no other firer term; once per attack (A7.52), so never beside an Encircled firer's. Null is the
+            // reading before the claim.
+            else if (attack.Canister is { Encircled: true } encircledCanister && ScenarioA1EncirclementCalculator.FirerDrm(true) is > 0 and var canisterDrm)
             {
                 drm.Add(new FireModifier("encircled:" + encircledCanister.GunId, canisterDrm, "A7.7"));
             }

@@ -598,10 +598,155 @@ public sealed class ScenarioA1StunCalculatorTests
     [Fact]
     public void ThePlusOneContractAnswersEachDr()
     {
-        Assert.Equal("plus-one", Evaluate("d5.34-stun-plus-one", "{\"vehicleId\": \"de-tank\", \"dr\": \"ToHit\", \"stunRecovery\": true}").Outcome);
-        Assert.Equal("none", Evaluate("d5.34-stun-plus-one", "{\"vehicleId\": \"de-tank\", \"dr\": \"ExcessiveSpeedBreakdown\", \"stunRecovery\": true}").Outcome);
-        Assert.Equal("none", Evaluate("d5.34-stun-plus-one", "{\"vehicleId\": \"de-tank\", \"dr\": \"ToHit\", \"stunRecovery\": false}").Outcome);
-        Assert.Equal(ContractVerdict.NotEvaluated, Evaluate("d5.34-stun-plus-one", "{\"vehicleId\": \"de-tank\", \"dr\": \"ToHit\"}").Outcome);
+        var toHit = Evaluate("d5.34-stun-plus-one", "{\"vehicleId\": \"de-tank\", \"dr\": \"to-hit\", \"stunRecovery\": true}");
+        Assert.Equal("plus-one", toHit.Outcome);
+        Assert.Contains("its TH DR", toHit.Reasons[0].Text, StringComparison.Ordinal);
+        Assert.Equal("none", Evaluate("d5.34-stun-plus-one", "{\"vehicleId\": \"de-tank\", \"dr\": \"excessive-speed-breakdown\", \"stunRecovery\": true}").Outcome);
+        Assert.Equal("none", Evaluate("d5.34-stun-plus-one", "{\"vehicleId\": \"de-tank\", \"dr\": \"to-hit\", \"stunRecovery\": false}").Outcome);
+        Assert.Equal(ContractVerdict.NotEvaluated, Evaluate("d5.34-stun-plus-one", "{\"vehicleId\": \"de-tank\", \"dr\": \"to-hit\"}").Outcome);
         Assert.Equal(ContractVerdict.NotEvaluated, Evaluate("d5.34-stun-plus-one", "{\"vehicleId\": \"de-tank\", \"dr\": \"Motion\", \"stunRecovery\": true}").Outcome);
+
+        // Every choice names the StunDr whose Drm it answers.
+        var choices = ScenarioA1RuleContracts.Find("d5.34-stun-plus-one")!.Facts.Single(fact => fact.Name == "dr").Choices!;
+        Assert.Equal(Enum.GetValues<StunDr>().Length, choices.Count);
+        Assert.Equal(Listed.Length, choices.Count(choice =>
+            Evaluate("d5.34-stun-plus-one", "{\"vehicleId\": \"de-tank\", \"dr\": \"" + choice + "\", \"stunRecovery\": true}").Outcome == "plus-one"));
+    }
+
+    // The review's fixes (findings 2, 3, 5, 6, 7, 12).
+
+    [Fact]
+    public void AnOriginal12IsADudAndNeverStuns()
+    {
+        // C7.35 (p. 177): "Any Original TK DR of 12 (regardless of ammunition or Target Type) has no effect".
+        var dud = ScenarioA1StunCalculator.Result(Facts(StunCause.MachineGunToKill, dr: 12, tk: 12) with
+        {
+            OriginalDr = 12
+        });
+        Assert.Equal((StunVerdict.None, "C7.35"), (dud.Outcome, dud.Rule));
+        Assert.Equal(StunVerdict.None, ScenarioA1StunCalculator.Result(Facts(StunCause.MachineGunToKill, dr: null, tk: null) with
+        {
+            OriginalDr = 12
+        }).Outcome);
+
+        // Null reads as no Original 12, and any other Original DR leaves the Final DR to decide.
+        Assert.Equal(StunVerdict.Stunned, ScenarioA1StunCalculator.Result(Facts(StunCause.MachineGunToKill, dr: 12, tk: 12)).Outcome);
+        Assert.Equal(StunVerdict.Stunned, ScenarioA1StunCalculator.Result(Facts(StunCause.MachineGunToKill, dr: 12, tk: 12) with
+        {
+            OriginalDr = 11
+        }).Outcome);
+
+        // The contract agrees with MachineGunKill.Result on an Original 12.
+        Assert.Equal(OrdnanceKill.Dud, ScenarioA1MachineGunKill.Result(12, 12));
+        const string Base = "\"vehicleId\": \"de-tank\", \"cause\": \"mg-to-kill\", \"oneManTurret\": false, \"finalDr\": 12, \"finalTk\": 12, ";
+        var verdict = Evaluate("d5.34-stun", "{" + Base + "\"originalDr\": 12, " + Owned + "}");
+        Assert.Equal((StunVerdict.None, "C7.35"), (verdict.Outcome, verdict.Reasons[0].Rule));
+        Assert.Equal(StunVerdict.Stunned, Evaluate("d5.34-stun", "{" + Base + "\"originalDr\": 10, " + Owned + "}").Outcome);
+        Assert.Equal(ContractVerdict.NotEvaluated, Evaluate("d5.34-stun", "{" + Base + "\"originalDr\": 11.5, " + Owned + "}").Outcome);
+    }
+
+    [Fact]
+    public void AKnownFactThatRulesTheStunOutDecidesNoneThoughAnotherIsUnknown()
+    {
+        Assert.Equal(StunVerdict.None, ScenarioA1StunCalculator.Result(Facts(StunCause.FailedMc, exposed: false, qualifies: null, failed: null)).Outcome);
+        Assert.Equal(StunVerdict.None, ScenarioA1StunCalculator.Result(Facts(StunCause.FailedMc, exposed: null, qualifies: false)).Outcome);
+        Assert.Contains("Unprotected", ScenarioA1StunCalculator.Result(Facts(StunCause.FailedMc, exposed: null, qualifies: false)).Reason, StringComparison.Ordinal);
+        Assert.Equal(StunVerdict.None, ScenarioA1StunCalculator.Result(Facts(StunCause.FailedMc, exposed: null, failed: false)).Outcome);
+        Assert.Equal(StunVerdict.None, ScenarioA1StunCalculator.Result(Facts(StunCause.SniperDr, exposed: false, sniper: null)).Outcome);
+        Assert.Equal(StunVerdict.None, ScenarioA1StunCalculator.Result(Facts(StunCause.SniperDr, armored: false, exposed: null)).Outcome);
+        Assert.Equal(StunVerdict.None, ScenarioA1StunCalculator.Result(Facts(StunCause.SniperDr, exposed: null, sniper: 5)).Outcome);
+        Assert.Equal(StunVerdict.None, ScenarioA1StunCalculator.Result(Facts(StunCause.FallingRubble, exposed: null, closed: false)).Outcome);
+
+        // A fact the answer still needs leaves it not evaluated.
+        Assert.Equal(StunVerdict.NotEvaluated, ScenarioA1StunCalculator.Result(Facts(StunCause.FailedMc, exposed: null)).Outcome);
+        Assert.Equal(StunVerdict.NotEvaluated, ScenarioA1StunCalculator.Result(Facts(StunCause.SniperDr, exposed: null)).Outcome);
+    }
+
+    [Fact]
+    public void ASmcTemporaryCrewInA1mtAfvIsD5343s()
+    {
+        // D5.343 (p. 204): Wounded "even while in a 1MT AFV".
+        var smc = ScenarioA1StunCalculator.Result(Facts(StunCause.SniperDr) with
+        {
+            OneManTurret = true,
+            SmcTemporaryCrew = true
+        });
+        Assert.Equal((StunVerdict.NotEvaluated, "D5.343"), (smc.Outcome, smc.Rule));
+        Assert.Equal("D5.343", ScenarioA1StunCalculator.Result(Facts(StunCause.SniperDr) with
+        {
+            OneManTurret = null,
+            SmcTemporaryCrew = true
+        }).Rule);
+    }
+
+    [Fact]
+    public void TheFrontOfARecallCountsAsStunnedForASecondStun()
+    {
+        // D5.341: "Recall is treated the same as a Stun". The caller gives Stunned or Recalled as stunned; the MG's Stun then gives the Recall list,
+        // which leaves Recalled set and Stunned false (no mixed state).
+        var conditions = ScenarioA1OrdnanceEventRules.KillConditions(OrdnanceKill.Stun, false, false, true, false);
+        Assert.Contains((UnitCondition.Recalled, true), conditions);
+        Assert.Contains((UnitCondition.Stunned, false), conditions);
+        Assert.DoesNotContain((UnitCondition.Stunned, true), conditions);
+        Assert.Equal(StunVerdict.Recalled, ScenarioA1StunCalculator.Result(Facts(StunCause.MachineGunToKill, stunned: true)).Outcome);
+    }
+
+    [Fact]
+    public void TheOrdnanceKillOverloadWithTheStunCounterReadsTheResultAsTheStringOverload()
+    {
+        foreach (var result in KillResults)
+        {
+            foreach (var shocked in new bool?[] { null, false, true })
+            {
+                var kill = new OrdnanceKill("mg", "hull", "front", 8, [], 8, null, 8, [4, 4], 8, result) { Shocked = shocked };
+                foreach (var concealed in Both)
+                {
+                    Assert.Equal(ScenarioA1OrdnanceEventRules.KillConditions(kill, concealed),
+                        ScenarioA1OrdnanceEventRules.KillConditions(kill, concealed, false, false));
+                    foreach (var stunned in Both)
+                    {
+                        foreach (var recovery in Both)
+                        {
+                            Assert.Equal(ScenarioA1OrdnanceEventRules.KillConditions(result, shocked == true, concealed, stunned, recovery),
+                                ScenarioA1OrdnanceEventRules.KillConditions(kill, concealed, stunned, recovery));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void TheOldCrewOutcomeForwardsWithItsAnswerOverEveryIftResultAndDr()
+    {
+        // CrewOutcome is internal: both overloads are reached by reflection.
+        var methods = typeof(ScenarioA1FireCalculator).GetMethods(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
+            .Where(method => method.Name == "CrewOutcome").ToArray();
+        var old = methods.Single(method => method.GetParameters()[2].ParameterType == typeof(bool));
+        var apart = methods.Single(method => method.GetParameters()[2].ParameterType == typeof(int));
+        string[] outcomes = ["1MC", "2MC", "3MC", "4MC", "NMC", "PTC", "1KIA", "K/2", "-"];
+        foreach (var outcome in outcomes)
+        {
+            foreach (var recovery in Both)
+            {
+                for (var a = 1; a <= 6; a++)
+                {
+                    for (var b = 1; b <= 6; b++)
+                    {
+                        int[] dice = [a, b];
+                        var before = ((FireCheck? Check, string Result))old.Invoke(null, [outcome, dice, recovery, 8, null])!;
+                        var after = ((FireCheck? Check, string Result))apart.Invoke(null, [outcome, dice, recovery ? 1 : 0, recovery, 8, null])!;
+                        Assert.Equal(before.Result, after.Result);
+                        Assert.Equal(before.Check is null, after.Check is null);
+                        if (before.Check is { } check)
+                        {
+                            Assert.Equal((check.Kind, check.OriginalDr, check.FinalDr, check.Passed, check.Consequence),
+                                (after.Check!.Kind, after.Check.OriginalDr, after.Check.FinalDr, after.Check.Passed, after.Check.Consequence));
+                            Assert.Equal(check.Drm, after.Check.Drm);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

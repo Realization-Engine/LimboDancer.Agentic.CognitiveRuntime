@@ -121,6 +121,17 @@ public sealed class ScenarioA1EncirclementCalculatorTests
         Assert.False(ScenarioA1EncirclementCalculator.Subject(new EncirclementSubjectFacts("asl:squad", false, false, false, false, true, false)));
         Assert.False(ScenarioA1EncirclementCalculator.Subject(new EncirclementSubjectFacts("asl:squad", false, false, false, false, true, null)));
 
+        // A7.7: "any non-Aerial Infantry"; null Aerial reads as before.
+        var infantry = new EncirclementSubjectFacts("asl:squad", false, false, false, false, false, null);
+        Assert.True(ScenarioA1EncirclementCalculator.Subject(infantry with
+        {
+            Aerial = false
+        }));
+        Assert.False(ScenarioA1EncirclementCalculator.Subject(infantry with
+        {
+            Aerial = true
+        }));
+
         // Under the marker of its side, or in Melee under any marker.
         var squad = new EncirclementSubjectFacts("asl:squad", false, false, false, null, null, null);
         Assert.True(ScenarioA1EncirclementCalculator.Encircled(true, true, true, squad));
@@ -227,7 +238,7 @@ public sealed class ScenarioA1EncirclementCalculatorTests
         Assert.Contains("consecutive", ScenarioA1EncirclementCalculator.SealRefusal("DFPh", false, false), StringComparison.Ordinal);
         Assert.Contains("(B30.32)", ScenarioA1EncirclementCalculator.SealRefusal("AFPh", true, true), StringComparison.Ordinal);
         Assert.NotNull(ScenarioA1EncirclementCalculator.SealRefusal("AFPh", null, false));
-        Assert.NotNull(ScenarioA1EncirclementCalculator.SealRefusal("AFPh", true, null));
+        Assert.Equal("Whether the target is in a pillbox is not known (B30.32)", ScenarioA1EncirclementCalculator.SealRefusal("AFPh", true, null));
     }
 
     // The effects (A7.7) and the old members that forward to them.
@@ -484,6 +495,18 @@ public sealed class ScenarioA1EncirclementCalculatorTests
         Assert.Equal(before.TotalFirepower, after.TotalFirepower);
     }
 
+    [Fact]
+    public void ACanisterBesideAnEncircledFirerIsNeverResolved()
+    {
+        // A7.7 with A7.52: one +1 per attack. A Canister shot with firers is outside (C8.4), so the Canister's term, read only when no Encircled
+        // firer's is, never stands beside one.
+        var attack = CanisterAttack(new FireCanister("gun", 12) { Encircled = true }) with
+        {
+            Firers = [Firer("de-f") with { Encircled = true }]
+        };
+        Assert.Null(ScenarioA1FireCalculator.Resolve(attack, Fire).Arithmetic);
+    }
+
     // The members that keep their answers (ruling RD5.16).
 
     [Fact]
@@ -536,9 +559,10 @@ public sealed class ScenarioA1EncirclementCalculatorTests
             fact => Assert.Equal((ContractDisclosure.Owner, "targetId"), (fact.Disclosure, fact.Concerns)));
     }
 
-    private static string Unit(string kind = "infantry", bool marker = true, bool melee = false, bool berserk = false, bool heroic = false, bool cutOff = false) =>
+    private static string Unit(string kind = "infantry", bool marker = true, bool melee = false, bool berserk = false, bool heroic = false, bool cutOff = false,
+        bool pillbox = false) =>
         "{\"unitId\": \"r-squad\", \"marker\": " + Json(marker) + ", \"melee\": " + Json(melee) + ", \"berserk\": " + Json(berserk) + ", \"heroic\": " + Json(heroic)
-        + ", \"upperLevelCutOff\": " + Json(cutOff) + ", \"kind\": \"" + kind + "\"}";
+        + ", \"upperLevelCutOff\": " + Json(cutOff) + ", \"kind\": \"" + kind + "\", \"inPillbox\": " + Json(pillbox) + "}";
 
     private static string Json(bool value) => value ? "true" : "false";
 
@@ -562,6 +586,14 @@ public sealed class ScenarioA1EncirclementCalculatorTests
         Assert.Equal("not-encircled", Evaluate("a7.7-encircled", Unit(kind: "hero")).Outcome);
         Assert.Equal("not-encircled", Evaluate("a7.7-encircled", Unit(kind: "vehicle")).Outcome);
         Assert.Equal("not-encircled", Evaluate("a7.7-encircled", Unit(kind: "prc")).Outcome);
+
+        // B30.32: "Neither a pillbox nor its contents can be Encircled", under a marker or cut off; the pillbox is its owner's.
+        var pillbox = Evaluate("a7.7-encircled", Unit(pillbox: true));
+        Assert.Equal(("not-encircled", "B30.32"), (pillbox.Outcome, pillbox.Reasons[0].Rule));
+        Assert.Equal("not-encircled", Evaluate("a7.7-encircled", Unit(marker: false, cutOff: true, pillbox: true)).Outcome);
+        Assert.Equal(ContractVerdict.NotEvaluated, Evaluate("a7.7-encircled", Unit().Replace("\"inPillbox\": false", "\"inPillbox\": null", StringComparison.Ordinal)).Outcome);
+        Assert.All(ScenarioA1RuleContracts.Find("a7.7-encircled")!.Facts.Where(fact => fact.Name == "inPillbox"),
+            fact => Assert.Equal((ContractDisclosure.Owner, "unitId"), (fact.Disclosure, fact.Concerns)));
     }
 
     [Fact]
@@ -569,7 +601,7 @@ public sealed class ScenarioA1EncirclementCalculatorTests
     {
         // A concealed unit's kind is its owner's: the other side's viewer gives it as unknown.
         var verdict = Evaluate("a7.7-encircled", "{\"unitId\": \"r-squad\", \"marker\": true, \"melee\": false, \"berserk\": false, \"heroic\": false, "
-            + "\"upperLevelCutOff\": false, \"kind\": null}");
+            + "\"upperLevelCutOff\": false, \"kind\": null, \"inPillbox\": null}");
         Assert.Equal(ContractVerdict.NotEvaluated, verdict.Outcome);
         Assert.All(ScenarioA1RuleContracts.Find("a7.7-encircled")!.Facts.Where(fact => fact.Name == "kind"),
             fact => Assert.Equal((ContractDisclosure.Owner, "unitId"), (fact.Disclosure, fact.Concerns)));

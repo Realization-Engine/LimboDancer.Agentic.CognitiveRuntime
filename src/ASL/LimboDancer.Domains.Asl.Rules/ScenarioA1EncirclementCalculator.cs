@@ -29,11 +29,14 @@ public static class ScenarioA1EncirclementCalculator
     public static bool Subject(string? kind, bool berserk, bool heroic, bool? inPillbox, bool? aboard, bool? vulnerablePrcOfImmobileVehicle) =>
         !berserk && !heroic && kind != "asl:hero" && kind != "asl:vehicle" && inPillbox != true && (aboard != true || vulnerablePrcOfImmobileVehicle == true);
 
-    /// <summary>Whether a unit may be Encircled (A7.7, B30.32), from its facts record: <see cref="Subject(string?, bool, bool, bool?, bool?, bool?)"/>.</summary>
+    /// <summary>
+    /// Whether a unit may be Encircled (A7.7, B30.32), from its facts record: <see cref="Subject(string?, bool, bool, bool?, bool?, bool?)"/>, and never an
+    /// Aerial unit (A7.7: "any non-Aerial Infantry") when <see cref="EncirclementSubjectFacts.Aerial"/> is true.
+    /// </summary>
     public static bool Subject(EncirclementSubjectFacts unit)
     {
         ArgumentNullException.ThrowIfNull(unit);
-        return Subject(unit.Kind, unit.Berserk, unit.Heroic, unit.InPillbox, unit.Aboard, unit.VulnerablePrcOfImmobileVehicle);
+        return unit.Aerial != true && Subject(unit.Kind, unit.Berserk, unit.Heroic, unit.InPillbox, unit.Aboard, unit.VulnerablePrcOfImmobileVehicle);
     }
 
     /// <summary>
@@ -115,12 +118,13 @@ public static class ScenarioA1EncirclementCalculator
 
     /// <summary>
     /// Why the attacks on a Location cannot seal an Encirclement, or null (A7.7, p. 57; B30.32, p. 150): not in a fire phase; the sequence broken by
-    /// fire at another target ("consecutively"); the target in a pillbox. An unknown fact refuses.
+    /// fire at another target ("consecutively"); the target in a pillbox. An unknown fact refuses, and an unknown pillbox says so.
     /// </summary>
     public static string? SealRefusal(string? phase, bool? consecutive, bool? inPillbox) =>
         !FirePhase(phase) ? "Encirclement is made only by fire in the same PFPh, DFPh, or AFPh (A7.7)"
         : consecutive != true ? "The attacks were not consecutive: fire at another target between them breaks the sequence (A7.7)"
-        : inPillbox != false ? "Neither a pillbox nor its contents can be Encircled (B30.32)"
+        : inPillbox is null ? "Whether the target is in a pillbox is not known (B30.32)"
+        : inPillbox.Value ? "Neither a pillbox nor its contents can be Encircled (B30.32)"
         : null;
 
     /// <summary>

@@ -24,7 +24,10 @@ public static class ScenarioA1StunCalculator
     /// <summary>D5.34, A14.3 (pp. 203, 82): "if any CE crew of a fully armored AFV is attacked by a '2' Sniper dr". An unknown fact is no Stun.</summary>
     public static bool SniperStuns(bool? crewExposed, bool? fullyArmored, int? sniperDr) => crewExposed == true && fullyArmored == true && sniperDr == 2;
 
-    /// <summary>D5.34, A9.61 (pp. 203, 64): "if a MG Final TK DR vs any (even a BU) AFV equals the Final TK#". An Original 12 is a Dud first (C7.35), the caller's.</summary>
+    /// <summary>
+    /// D5.34, A9.61 (pp. 203, 64): "if a MG Final TK DR vs any (even a BU) AFV equals the Final TK#". An Original 12 is a Dud first (C7.35, p. 177):
+    /// this member does not see it; <see cref="Stuns"/> reads it from <see cref="StunFacts.OriginalDr"/>.
+    /// </summary>
     public static bool MachineGunStuns(int finalDr, int finalTk) => finalDr == finalTk;
 
     /// <summary>D5.34, B24.121 (pp. 203, 141): "if Falling Rubble lands on a CE CT AFV". An unknown fact is no Stun.</summary>
@@ -38,7 +41,7 @@ public static class ScenarioA1StunCalculator
         {
             StunCause.FailedMc => FailedMcStuns(facts.CrewExposed, facts.QualifiesForCeDrm, facts.McFailed),
             StunCause.SniperDr => SniperStuns(facts.CrewExposed, facts.FullyArmored, facts.SniperDr),
-            StunCause.MachineGunToKill => facts.FinalDr is { } dr && facts.FinalTk is { } tk && MachineGunStuns(dr, tk),
+            StunCause.MachineGunToKill => facts.OriginalDr != 12 && facts.FinalDr is { } dr && facts.FinalTk is { } tk && MachineGunStuns(dr, tk),
             StunCause.FallingRubble => FallingRubbleStuns(facts.CrewExposed, facts.ClosedTopped),
             _ => false,
         };
@@ -47,13 +50,16 @@ public static class ScenarioA1StunCalculator
     /// <summary>
     /// D5.342 (p. 204; ruling RD5.3): "An AFV crew that suffers a second Stun result (e.g., while already under the effects of a '+1' counter) suffers
     /// Recall instead." By the "e.g.", a crew still Stunned (the counter's front) suffers it too. A Recall; +1 crew reads <paramref name="stunRecovery"/> true.
+    /// <paramref name="stunned"/> includes the front of a Recall (D5.341, p. 204: "Recall is treated the same as a Stun"): the caller gives Stunned or
+    /// Recalled this Player Turn.
     /// </summary>
     public static bool SecondStun(bool stunned, bool stunRecovery) => stunned || stunRecovery;
 
     /// <summary>
     /// What the result does to the crew (D5.34, D5.342; rulings RD5.2, RD5.6): <see cref="StunVerdict.None"/>, <see cref="StunVerdict.Stunned"/>, or
-    /// <see cref="StunVerdict.Recalled"/> for a Stun that is a second Stun. <see cref="StunVerdict.NotEvaluated"/> when a fact its cause reads is unknown,
-    /// and for a Stun of a 1MT AFV (D5.341 makes it a Recall) or of a SMC Temporary crew (D5.343 Wounds him), whose rules decide it.
+    /// <see cref="StunVerdict.Recalled"/> for a Stun that is a second Stun. <see cref="StunVerdict.NotEvaluated"/> when a fact its cause reads is unknown
+    /// and no known fact already rules the Stun out, and for a Stun of a SMC Temporary crew (D5.343 Wounds him, "even while in a 1MT AFV") or of a 1MT AFV
+    /// (D5.341 makes it a Recall), whose rules decide it.
     /// </summary>
     public static StunVerdict Result(StunFacts facts)
     {
@@ -68,16 +74,7 @@ public static class ScenarioA1StunCalculator
             return NoStun(facts);
         }
 
-        if (facts.OneManTurret is not { } oneManTurret)
-        {
-            return new(StunVerdict.NotEvaluated, "the fact 'oneManTurret' is not known", "D5.341", 203);
-        }
-
-        if (oneManTurret)
-        {
-            return new(StunVerdict.NotEvaluated, "A Stun of a 1MT AFV is a Recall: D5.341 decides", "D5.341", 203);
-        }
-
+        // D5.343 (p. 204) first: a SMC Temporary crew "becomes Wounded if he suffers a Stun result (even while in a 1MT AFV)".
         if (facts.SmcTemporaryCrew is not { } smc)
         {
             return new(StunVerdict.NotEvaluated, "the fact 'smcTemporaryCrew' is not known", "D5.343", 204);
@@ -86,6 +83,16 @@ public static class ScenarioA1StunCalculator
         if (smc)
         {
             return new(StunVerdict.NotEvaluated, "A SMC Temporary crew is Wounded by a Stun: D5.343 decides", "D5.343", 204);
+        }
+
+        if (facts.OneManTurret is not { } oneManTurret)
+        {
+            return new(StunVerdict.NotEvaluated, "the fact 'oneManTurret' is not known", "D5.341", 203);
+        }
+
+        if (oneManTurret)
+        {
+            return new(StunVerdict.NotEvaluated, "A Stun of a 1MT AFV is a Recall: D5.341 decides", "D5.341", 203);
         }
 
         return SecondStun(facts.Stunned, facts.StunRecovery)
@@ -112,7 +119,18 @@ public static class ScenarioA1StunCalculator
     /// </summary>
     public static IReadOnlyList<(UnitCondition Condition, bool Value)> PlayerTurnEnd(bool active, bool stunned) => active && stunned ? FlipChanges : NoChanges;
 
-    private static string? Unknown(StunFacts facts) => facts.Cause switch
+    // A known fact that already rules the Stun out (a BU crew, an Unprotected one, a passed MC, an AFV not fully armored or not closed-topped, a Sniper dr
+    // other than 2, an Original 12) decides "none" whatever the unknown facts are.
+    private static bool RuledOut(StunFacts facts) => facts.Cause switch
+    {
+        StunCause.FailedMc => facts.CrewExposed == false || facts.QualifiesForCeDrm == false || facts.McFailed == false,
+        StunCause.SniperDr => facts.CrewExposed == false || facts.FullyArmored == false || facts.SniperDr is { } dr && dr != 2,
+        StunCause.MachineGunToKill => facts.OriginalDr == 12,
+        StunCause.FallingRubble => facts.CrewExposed == false || facts.ClosedTopped == false,
+        _ => false,
+    };
+
+    private static string? Unknown(StunFacts facts) => RuledOut(facts) ? null : facts.Cause switch
     {
         StunCause.FailedMc => facts.CrewExposed is null ? "crewExposed" : facts.QualifiesForCeDrm is null ? "qualifiesForCeDrm" : facts.McFailed is null ? "mcFailed" : null,
         StunCause.SniperDr => facts.CrewExposed is null ? "crewExposed" : facts.FullyArmored is null ? "fullyArmored" : facts.SniperDr is null ? "sniperDr" : null,
@@ -123,12 +141,13 @@ public static class ScenarioA1StunCalculator
 
     private static StunVerdict NoStun(StunFacts facts) => facts.Cause switch
     {
-        StunCause.FailedMc when facts.CrewExposed != true => new(StunVerdict.None, "A BU crew takes no MC from this attack", "D5.34", 203),
-        StunCause.FailedMc when facts.QualifiesForCeDrm != true => new(StunVerdict.None, "An Unprotected crew is not susceptible to Stun/Recall", "D5.311", 203),
+        StunCause.FailedMc when facts.CrewExposed == false => new(StunVerdict.None, "A BU crew takes no MC from this attack", "D5.34", 203),
+        StunCause.FailedMc when facts.QualifiesForCeDrm == false => new(StunVerdict.None, "An Unprotected crew is not susceptible to Stun/Recall", "D5.311", 203),
         StunCause.FailedMc => new(StunVerdict.None, "The crew passed its MC", "D5.34", 203),
-        StunCause.SniperDr when facts.CrewExposed != true || facts.FullyArmored != true =>
+        StunCause.SniperDr when facts.CrewExposed == false || facts.FullyArmored == false =>
             new(StunVerdict.None, "Only the CE crew of a fully armored AFV is Stunned by a Sniper dr 2", "A14.3", 82),
         StunCause.SniperDr => new(StunVerdict.None, "Only a Sniper dr 2 Stuns", "A14.3", 82),
+        StunCause.MachineGunToKill when facts.OriginalDr == 12 => new(StunVerdict.None, "An Original 12 is a Dud (C7.35)", "C7.35", 177),
         StunCause.MachineGunToKill => new(StunVerdict.None, "The Final TK DR does not equal the Final TK#", "A9.61", 64),
         _ => new(StunVerdict.None, "Falling Rubble Stuns only a CE CT AFV", "B24.121", 141),
     };
